@@ -1,0 +1,28 @@
+# Generated from effects_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "hardlight"
+dirs = 1
+frames = 16
+delays = [1]
+
+[[state]]
+name = "hardlight_colorable"
+dirs = 1
+frames = 16
+delays = [1]
+
+[[state]]
+name = "confetti"
+dirs = 4
+frames = 7
+delays = [1]
+loop = 1
+
+[[state]]
+name = "fakesun"
+dirs = 1
+frames = 1

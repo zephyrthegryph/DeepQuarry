@@ -1,0 +1,84 @@
+# Generated from straylight.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "straylight"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "straylight_mag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "straylight_slide"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "straylight_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "straylight_mag_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "straylight_mag_slide"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "straylight_slide_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "straylight_mag_slide_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lefthand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand_mag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand_mag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand_mag_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand_mag_s"
+dirs = 4
+frames = 1

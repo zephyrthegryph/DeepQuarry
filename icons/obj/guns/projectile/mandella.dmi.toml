@@ -1,0 +1,34 @@
+# Generated from mandella.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "mandella"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mandella_mag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mandella_slide"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mandella_mag_slide"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lefthand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand"
+dirs = 4
+frames = 1

@@ -1,0 +1,460 @@
+# Generated from catborg_medical.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 26
+
+[[state]]
+name = "meowdical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "meowdical-glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-glow"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "meowdical-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-eyes"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "meowdical-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-lights"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "meowdical-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-sleeper-1"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "meowdical-sleeper-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-sleeper-2"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "meowdical-throat-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-throat-1"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "meowdical-throat-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-throat-2"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "meowdical-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-bellyup-glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-sleeper-1-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-sleeper-2-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-sit-glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-sleeper-1-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-sleeper-2-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-rest-glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "openpanel-nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel-nc"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "openpanel-c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel-c"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "openpanel-w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel-w"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "meowdical-disabler"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-disabler"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "meowdical-taser"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-taser"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "meowdical-laser"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-laser"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "sleeper-g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sleeper-g"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "sleeper-r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sleeper-r"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "meowdical-sleeper-1-g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-sleeper-1-g"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "meowdical-sleeper-2-g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-sleeper-2-g"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "meowdical-sleeper-1-r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-sleeper-1-r"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "meowdical-sleeper-2-r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-sleeper-2-r"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "meowdical-sleeper-1-r-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-sleeper-1-g-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-sleeper-2-r-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-sleeper-2-g-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-sleeper-1-r-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-sleeper-1-g-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-sleeper-2-r-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-sleeper-2-g-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-shield"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wreck-overlay"
+dirs = 1
+frames = 18
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 40]
+
+[[state]]
+name = "SPRITES-PAST-HERE-ARE-NOT-IMPLEMENTED"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-sleeper-1-default"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-throat-1-default"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-throat-1-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-throat-1-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-sleeper-2-default"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-throat-2-default"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-throat-2-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-throat-2-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-sleeper-1-r-default"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-sleeper-1-g-default"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-sleeper-2-r-default"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-sleeper-2-g-default"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-sleeper-1-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-sleeper-2-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-throat-1-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-throat-2-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-sleeper-1-r-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-sleeper-1-g-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-sleeper-2-r-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-sleeper-2-g-restmeowdical-sleeper-2-g-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowdical-sleeper-2-g-rest"
+dirs = 4
+frames = 1

@@ -1,0 +1,267 @@
+# Generated from ghost.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 20
+
+[[state]]
+name = "blank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ghost"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ghost1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ghost2"
+dirs = 1
+frames = 3
+delays = [5]
+rewind = true
+
+[[state]]
+name = "corgi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ghostking"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shade"
+dirs = 1
+frames = 10
+delays = [1]
+
+[[state]]
+name = "ghost-narsie"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "armour"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "artificer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "behemoth"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "harvester"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wraith"
+dirs = 4
+frames = 4
+delays = [10]
+
+[[state]]
+name = "viscerator"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "otherthing"
+dirs = 4
+frames = 7
+delays = [1]
+
+[[state]]
+name = "bat"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "robe_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "faithless"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "forgotten"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackcat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bloodguardian"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lightguardian"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "magicPink"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "magicRed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "magicOrange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "magicGreen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "magicBlue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "daemon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "guard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hunter"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nurse"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "carp"
+dirs = 4
+frames = 3
+delays = [3, 4, 3]
+rewind = true
+
+[[state]]
+name = "bear"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "drone"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ed209"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "secbot"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "chicken_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lizard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tamaskan"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "goat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "parrot_fly"
+dirs = 4
+frames = 12
+delays = [1]
+
+[[state]]
+name = "goose"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "penguin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crab"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "evilcrab"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "trout-swim"
+dirs = 4
+frames = 4
+delays = [3]
+
+[[state]]
+name = "salmon-swim"
+dirs = 4
+frames = 4
+delays = [3]
+
+[[state]]
+name = "pike-swim"
+dirs = 4
+frames = 4
+delays = [3]
+
+[[state]]
+name = "koi-swim"
+dirs = 4
+frames = 8
+delays = [2]

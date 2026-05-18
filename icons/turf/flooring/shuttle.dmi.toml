@@ -1,0 +1,123 @@
+# Generated from shuttle.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "floor_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floor_yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floor_white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floor_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floor_purple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floor_dred"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floor_black"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floor_glass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vfloor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "void"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "void_dark"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "void_light"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alienplating"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alienpod1"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "alienpod2"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "alienpod3"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "alienpod4"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "alienpod5"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "alienpod6"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "alienpod7"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "alienpod8"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "alienpod9"
+dirs = 1
+frames = 6
+delays = [1]

@@ -1,0 +1,1316 @@
+# Generated from ammo.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 19
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dnalockchip"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "s-casing"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "s-casing-spent"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "r-casing"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "r-casing-spent"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "w-casing"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "w-casing-spent"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "rifle-casing"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "rifle-casing-spent"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "empcasing"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "empcasing-spent"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "lcasing"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lcasing-spent"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gshell-spent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gshell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bshell-spent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bshell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slshell-spent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slshell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blshell-spent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blshell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stunshell-spent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stunshell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fshell-spent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fshell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pshell-spent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pshell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bbshell-spent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bbshell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "empshell-spent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "empshell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "empshell_alt-spent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "empshell_alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sshell-spent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sshell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sshell_alt-spent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sshell_alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sshellr-spent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sshellr"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syringe-cartridge"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syringe-cartridge-flight"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "speedloader_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "38"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "12gclipshell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "12gclipshell-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "12gclipshell-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "12gclipshell-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "12gclipbean"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "12gclipbean-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "12gclipbean-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "12gclipbean-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "12gclipslug"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "12gclipslug-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "12gclipslug-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "12gclipslug-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "38-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "38-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "38-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "38-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "38-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "38-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "38-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "T38"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "T38-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "T38-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "T38-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "T38-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "T38-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "T38-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "T38-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "S38"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "S38-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "S38-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "S38-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "S38-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "S38-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "S38-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "S38-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "45s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "45s-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "45s-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "45s-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "45s-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "45s-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "45s-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "45s-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "44"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "44-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "44-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "44-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "44-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "44-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "44-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "44-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "R44"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "R44-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "R44-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "R44-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "R44-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "R44-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "R44-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "R44-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "RI44"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "RI44-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "RI44-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "RI44-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "RI44-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "RI44-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "RI44-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "RI44-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m91"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m91-10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m91-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m92"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m92-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m92-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m93"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m93-17"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m93-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "45"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "45-10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "45-9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "45-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "45-7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "45-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "45-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "45-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "45-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "45-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "45-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "45-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m44"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m44-7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m44-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m44-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m44-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m44-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m44-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m44-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m44-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "9x19p-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "9x19p"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "9x19p-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "S9mm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "S9mm-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tomstick-30"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tomstick"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tomstick-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tomdrum-50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tomdrum"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tomdrum-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rcd"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "MagSpear"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "MagSpear"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dart"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dartcasing"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dartcasing-spent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "12mm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "10mm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "10mm-20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "10mm-16"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "10mm-12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "10mm-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "10mm-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "10mm-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "p90"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "p90-35"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "p90-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "uzi45"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "uzi45-16"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "uzi45-14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "uzi45-12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "uzi45-10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "uzi45-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "uzi45-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "uzi45-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "75-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "75-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "a545-50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "a545-40"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "a545-30"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "a545-20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "a545-10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "a545-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "a545"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darts-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darts"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darts-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darts-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darts-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darts-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darts-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darts_small-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darts_small-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darts_small-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darts_small-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m545"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m545-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m545-small"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m545-small-10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m545-small-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "svd-762"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "svd-762-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m762"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m762-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m762-small"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m762-small-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "9mmt-20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "9mmt-16"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "9mmt-12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "9mmt-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "9mmt-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "9mmt-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "9mmt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "uzi45-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "uzi45-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clip_rifle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clip_rifle-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clip_rifle-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clip_rifle-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clip_rifle-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clip_rifle-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clip_rifle-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clip_pistol"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clip_pistol-9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clip_pistol-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clip_pistol-7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clip_pistol-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clip_pistol-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clip_pistol-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clip_pistol-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clip_pistol-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clip_pistol-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clip_pistol-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "enbloc"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "enbloc-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "enbloc-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "enbloc-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "enbloc-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "enbloc-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "enbloc-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "enbloc-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "enbloc-7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "enbloc-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartmag-empty"
+dirs = 1
+frames = 2
+delays = [5, 2]
+
+[[state]]
+name = "smartmag-filled"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ashot-mag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ashot-mag-24"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ashot-mag-12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ashot-mag-0"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "caseless-mag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "caseless-mag-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "caseless-mag-alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "caseless-mag-alt-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "caseless-mag-short"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "caseless-mag-short-alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sam48"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sam48-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sam48-casing"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sam48-casing-spent"
+dirs = 1
+frames = 1

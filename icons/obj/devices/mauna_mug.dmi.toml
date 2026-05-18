@@ -1,0 +1,29 @@
+# Generated from mauna_mug.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "maunamug_no_bat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maunamug_bat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maunamug"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maunamug_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maunamug_incand"
+dirs = 1
+frames = 1

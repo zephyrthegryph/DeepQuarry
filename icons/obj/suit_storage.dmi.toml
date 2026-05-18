@@ -1,0 +1,266 @@
+# Generated from suit_storage.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "suitstorage110000100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitstorage100000100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitstorage010000100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitstorage000000100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitstorage010100100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitstorage100100100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitstorage110100100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitstorage000100100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitstorage000100000"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitstorage110001100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitstorage100001100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitstorage100011100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitstorage010001100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitstorage010010100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitstorage100010100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitstorage110010100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitstorage000010100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitstorage110011100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitstorage000011100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitstorage000001100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitstorage010011100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitstorage110011101"
+dirs = 1
+frames = 5
+delays = [3, 3, 8, 3]
+
+[[state]]
+name = "suitstorage100011101"
+dirs = 1
+frames = 5
+delays = [3, 3, 8, 3]
+
+[[state]]
+name = "suitstorage010011101"
+dirs = 1
+frames = 5
+delays = [3, 3, 8, 3]
+
+[[state]]
+name = "suitstorage110001101"
+dirs = 1
+frames = 5
+delays = [3, 3, 8, 3]
+
+[[state]]
+name = "suitstorage100001101"
+dirs = 1
+frames = 5
+delays = [3, 3, 8, 3]
+
+[[state]]
+name = "suitstorage010001101"
+dirs = 1
+frames = 5
+delays = [3, 3, 8, 3]
+
+[[state]]
+name = "suitstorage000100110"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitstorage000100010"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitstorage001000100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitstorage001000101"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitstorage001010100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitstorage001010101"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitstorage001011100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitstorage001011101"
+dirs = 1
+frames = 5
+delays = [3, 3, 8, 3]
+
+[[state]]
+name = "suitstorage110000101"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitstorage100000101"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitstorage010000101"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitstorage000000101"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitstorage010100101"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitstorage100100101"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitstorage110100101"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitstorage000100101"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitstorage000100001"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitstorage010010101"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitstorage100010101"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitstorage110010101"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitstorage000010101"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitstorage000100111"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitstorage000100011"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "derpplaceholder"
+dirs = 1
+frames = 1

@@ -1,0 +1,29 @@
+# Generated from writing.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "writing2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "writing3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "writing4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "writing5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "writing1"
+dirs = 1
+frames = 1

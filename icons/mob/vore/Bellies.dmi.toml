@@ -1,0 +1,103 @@
+# Generated from Bellies.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 22
+
+[[state]]
+name = "HBelly3"
+dirs = 4
+frames = 12
+delays = [1]
+
+[[state]]
+name = "HBelly3 idle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "HBelly2"
+dirs = 4
+frames = 12
+delays = [1]
+
+[[state]]
+name = "HBelly2 idle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "HBelly1"
+dirs = 4
+frames = 12
+delays = [1]
+
+[[state]]
+name = "HBelly1 idle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TBelly3"
+dirs = 4
+frames = 12
+delays = [1]
+
+[[state]]
+name = "TBelly3 idle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TBelly2"
+dirs = 4
+frames = 12
+delays = [1]
+
+[[state]]
+name = "TBelly2 idle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TBelly1"
+dirs = 4
+frames = 12
+delays = [1]
+
+[[state]]
+name = "TBelly1 idle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "LBelly3"
+dirs = 4
+frames = 12
+delays = [1]
+
+[[state]]
+name = "LBelly3 idle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "LBelly2"
+dirs = 4
+frames = 12
+delays = [1]
+
+[[state]]
+name = "LBelly2 idle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "LHBelly1"
+dirs = 4
+frames = 12
+delays = [1]
+
+[[state]]
+name = "LHBelly1 idle"
+dirs = 4
+frames = 1

@@ -1,0 +1,10 @@
+# Generated from caelus.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 671
+height = 671
+cols = 9
+
+[[state]]
+name = "aurora"
+dirs = 1
+frames = 68
+delays = [15]

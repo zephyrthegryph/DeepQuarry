@@ -1,0 +1,49 @@
+# Generated from techfloor.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "techfloor_gray"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "techfloor_gray_broken3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "techfloor_grid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "broken0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "broken1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "broken2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "burned0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "burned1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "burned2"
+dirs = 1
+frames = 1

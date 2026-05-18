@@ -1,0 +1,769 @@
+# Generated from vore_lamia.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 24
+
+[[state]]
+name = "copper"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "copper_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "copper_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "copper_vore_1_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "copper_vore_1_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "copper_vore_0_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "copper_rest_vore_1_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "copper_rest_vore_1_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "copper_rest_vore_0_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "copper_bra"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "copper_bra_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "copper_bra_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "copper_bra_vore_1_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "copper_bra_vore_1_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "copper_bra_vore_0_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "copper_bra_rest_vore_1_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "copper_bra_rest_vore_1_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "copper_bra_rest_vore_0_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "copper_shirt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "copper_shirt_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "copper_shirt_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "copper_shirt_vore_1_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "copper_shirt_vore_1_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "copper_shirt_vore_0_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "copper_shirt_rest_vore_1_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "copper_shirt_rest_vore_1_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "copper_shirt_rest_vore_0_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "albino"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "albino_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "albino_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "albino_vore_1_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "albino_vore_1_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "albino_vore_0_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "albino_rest_vore_1_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "albino_rest_vore_1_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "albino_rest_vore_0_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "albino_bra"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "albino_bra_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "albino_bra_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "albino_bra_vore_1_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "albino_bra_vore_1_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "albino_bra_vore_0_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "albino_bra_rest_vore_1_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "albino_bra_rest_vore_1_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "albino_bra_rest_vore_0_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "albino_shirt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "albino_shirt_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "albino_shirt_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "albino_shirt_vore_1_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "albino_shirt_vore_1_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "albino_shirt_vore_0_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "albino_shirt_rest_vore_1_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "albino_shirt_rest_vore_1_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "albino_shirt_rest_vore_0_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cobra"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cobra_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cobra_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cobra_vore_1_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cobra_vore_1_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cobra_vore_0_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cobra_rest_vore_1_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cobra_rest_vore_1_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cobra_rest_vore_0_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cobra_bra"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cobra_bra_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cobra_bra_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cobra_bra_vore_1_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cobra_bra_vore_1_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cobra_bra_vore_0_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cobra_bra_rest_vore_1_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cobra_bra_rest_vore_1_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cobra_bra_rest_vore_0_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cobra_shirt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cobra_shirt_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cobra_shirt_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cobra_shirt_vore_1_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cobra_shirt_vore_1_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cobra_shirt_vore_0_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cobra_shirt_rest_vore_1_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cobra_shirt_rest_vore_1_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cobra_shirt_rest_vore_0_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ffta"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ffta_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ffta_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ffta_vore_1_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ffta_vore_1_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ffta_vore_0_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ffta_rest_vore_1_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ffta_rest_vore_1_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ffta_rest_vore_0_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ffta_bra"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ffta_bra_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ffta_bra_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ffta_bra_vore_1_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ffta_bra_vore_1_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ffta_bra_vore_0_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ffta_bra_rest_vore_1_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ffta_bra_rest_vore_1_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ffta_bra_rest_vore_0_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "green_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "green_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green_vore_1_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "green_vore_1_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "green_vore_0_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "green_rest_vore_1_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "green_rest_vore_1_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "green_rest_vore_0_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "green_bra"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "green_bra_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "green_bra_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green_bra_vore_1_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "green_bra_vore_1_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "green_bra_vore_0_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "green_bra_rest_vore_1_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "green_bra_rest_vore_1_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "green_bra_rest_vore_0_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "green_shirt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "green_shirt_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "green_shirt_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green_shirt_vore_1_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "green_shirt_vore_1_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "green_shirt_vore_0_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "green_shirt_rest_vore_1_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "green_shirt_rest_vore_1_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "green_shirt_rest_vore_0_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zebra"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zebra_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zebra_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "zebra_vore_1_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zebra_vore_1_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zebra_vore_0_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zebra_rest_vore_1_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zebra_rest_vore_1_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zebra_rest_vore_0_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zebra_bra"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zebra_bra_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zebra_bra_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "zebra_bra_vore_1_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zebra_bra_vore_1_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zebra_bra_vore_0_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zebra_bra_rest_vore_1_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zebra_bra_rest_vore_1_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zebra_bra_rest_vore_0_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zebra_shirt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zebra_shirt_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zebra_shirt_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "zebra_shirt_vore_1_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zebra_shirt_vore_1_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zebra_shirt_vore_0_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zebra_shirt_rest_vore_1_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zebra_shirt_rest_vore_1_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zebra_shirt_rest_vore_0_1"
+dirs = 4
+frames = 1

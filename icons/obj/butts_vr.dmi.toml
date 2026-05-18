@@ -1,0 +1,99 @@
+# Generated from butts_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "human"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skrell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "unathi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slime"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vulp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tajaran"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "drask"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plasma"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kidan"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "machine"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "diona"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nymph"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xeno"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "drone"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sergal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian"
+dirs = 1
+frames = 1

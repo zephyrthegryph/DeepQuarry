@@ -1,0 +1,379 @@
+# Generated from teshari_hood_yw.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 18
+
+[[state]]
+name = "tesh_hcloak_bo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bmg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_blg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bw"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_br"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bn"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_by"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bgr"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bbl"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bp"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bpi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bbr"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_og"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_rainbow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_lgg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_wg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_rg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_on"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_yg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_gg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_blug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_pg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_pig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_brg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bo_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bg_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bmg_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_blg_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bw_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_br_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bn_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_by_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bgr_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bbl_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bp_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bpi_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bbr_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_og_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_rainbow_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_lgg_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_wg_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_rg_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_on_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_yg_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_gg_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_blug_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_pg_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_pig_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_brg_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_bo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_bg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_bmg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_blg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_bw"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_br"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_bn"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_by"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_bgr"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_bbl"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_bp"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_bpi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_bbr"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_og"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_rainbow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_lgg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_wg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_rg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_on"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_yg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_gg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_blug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_pg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_pig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_brg"
+dirs = 4
+frames = 1

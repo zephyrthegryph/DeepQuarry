@@ -1,0 +1,104 @@
+# Generated from sts.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "sts_mag30"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sts_mag30_slide"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sts_mag20_slide"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sts_mag20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sts_slide"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sts"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "righthand_mag20"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand_mag30"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand_mag20"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand_mag30"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "back"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "back_empty"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "onsuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "onsuit_empty"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand_doble_mag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand_doble"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand_doble_mag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand_doble"
+dirs = 4
+frames = 1

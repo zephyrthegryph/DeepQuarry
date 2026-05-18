@@ -1,0 +1,1483 @@
+# Generated from stacks_ch.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 18
+
+[[state]]
+name = "sheet-metal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-metal_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-metal_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-plasteel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-plasteel_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-plasteel_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-glass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-glass_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-glass_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-rglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-rglass_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-rglass_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-phoronglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-phoronglass_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-phoronglass_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-phoronrglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-phoronrglass_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-phoronrglass_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-plastic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-plastic_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-plastic_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-brass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-brass_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-brass_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-bronze"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-bronze_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-bronze_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-paper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-paper_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-paper_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rods"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rods-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rods-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rods-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rods-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rods-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-runed"
+dirs = 1
+frames = 11
+delays = [50, 1]
+rewind = true
+
+[[state]]
+name = "sheet-runed_2"
+dirs = 1
+frames = 11
+delays = [50, 1]
+rewind = true
+
+[[state]]
+name = "sheet-runed_3"
+dirs = 1
+frames = 11
+delays = [50, 1]
+rewind = true
+
+[[state]]
+name = "sheet-titanium"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-titanium_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-titanium_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-titaniumglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-titaniumglass_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-titaniumglass_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-plastitaniumglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-plastitaniumglass_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-plastitaniumglass_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-sandstone"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-sandstone_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-sandstone_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-diamond"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 9, y = 21 }]
+
+[[state]]
+name = "sheet-diamond_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-diamond_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-gold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-gold_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-gold_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-uranium"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-uranium_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-uranium_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-phoron"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-phoron_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-phoron_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-silver"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-silver_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-silver_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-adamantine"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-adamantine_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-adamantine_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-bananium"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-bananium_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-bananium_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-lessergem"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-greatergem"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-cotton"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-cotton_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-cotton_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-cloth"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-cloth_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-cloth_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-durathreadraw"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-durathreadraw_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-durathreadraw_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-durathread"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-durathread_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-durathread_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-silk"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-card"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-bamboo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-bamboo_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-bamboo_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-shadoww"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-plaswood"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-gmushroom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-wetleather"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-wetleather_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-wetleather_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-leather"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-leather_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-leather_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-hairlesshide"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-hairlesshide_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-hairlesshide_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-hide"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-hide_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-hide_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aloe_mesh"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aloe_mesh_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aloe_mesh_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aloe_mesh_closed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aloe_paste"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gauze"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gauze_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gauze_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pgauze"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pgauze_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pgauze_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brutepack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brutepack_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brutepack_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ointment"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ointment_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ointment_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sandbags"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "SmallBucket"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "SmallBucket_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "SmallBucket_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wrap_paper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deliveryPaper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "c_tube"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-xeno"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-cat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-monkey"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "sheet-lizard"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "sheet-corgi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-gondola"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-snow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-snow_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-snow_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "burnkit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "traumakit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "splint"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tape-splint"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nanopaste"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nanopaste_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nanopaste_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-marble"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-marble_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-marble_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-mythril"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-mythril_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-mythril_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_white_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_white_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_freezer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_freezer_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_freezer_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_steel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_steel_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_steel_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fr_tile"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_grass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_grass_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_grass_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-carpet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-carpet_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-carpet_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-wood"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-wood_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-wood_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "techtile_grey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "techtile_grey_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "techtile_grey_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "techtile_grid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "techtile_grid_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "techtile_grid_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-tealcarpet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-tealcarpet_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-tealcarpet_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-linoleum"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-linoleum_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-linoleum_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-log"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-log_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-log_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-snowbrick"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-snowbrick_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-snowbrick_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-sifwood"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-sifwood_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-sifwood_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-super"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-super_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-super_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-gem"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-gem_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-gem_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-wavy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-wavy_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-wavy_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-resin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-wmarble"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-wmarble_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-wmarble_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-bmarble"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-bmarble_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-bmarble_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-greyhide"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-greyhide_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-greyhide_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chitin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chitin_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chitin_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-plank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-ingot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-ingot_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-ingot_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-bone"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-bone_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-bone_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-skin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-skin_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-skin_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-puck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-puck_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-puck_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-void_opal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-void_opal_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-void_opal_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-brick"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-brick_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-brick_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rods-1-o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rods-2-o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rods-3-o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rods-4-o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rods-5-o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rods-o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-reinforced"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-reinforced_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-reinforced_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-transparent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-transparent_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-transparent_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-wood"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-wood_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-wood_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-fabric"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-fabric_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-fabric_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-rtransparent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-rtransparent_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-rtransparent_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-plastic-o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-plastic_2-o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-plastic_3-o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-refined"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-refined_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-refined_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-fiber"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-fiber_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-fiber_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arcade-ticket"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arcade-ticket_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arcade-ticket_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arcade-ticket_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-carpet-deco"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-carpet-deco_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-carpet-deco_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-carpet-retro"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-carpet-retro_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-carpet-retro_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-stick"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-stick_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-stick_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-rock"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet_rock2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-rock_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-durasteel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-durasteel_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-durasteel_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-glamour"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-glamour_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-glamour_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-card_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-card_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-agate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-agate_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-agate_3"
+dirs = 1
+frames = 1

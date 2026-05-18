@@ -1,0 +1,411 @@
+# Generated from tools.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 12
+
+[[state]]
+name = "screwdriver"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "screwdriver2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "screwdriver3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "screwdriver4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "screwdriver5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "screwdriver6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "screwdriver7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red_crowbar"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crowbar"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_crow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cutters"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cutters-b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cutters-y"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wrench"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pipe_wrench"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "welder"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "welder100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "welder75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "welder50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "welder25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "welder0"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "welder-on"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "indwelder"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "indwelder100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "indwelder75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "indwelder50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "indwelder25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "indwelder0"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "indwelder-on"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "upindwelder"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "upindwelder100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "upindwelder75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "upindwelder50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "upindwelder25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "upindwelder0"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "upindwelder-on"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "miniwelder"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "miniwelder-on"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "miniwelder2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "miniwelder2-on"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "arcwelder"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arcwelder-on"
+dirs = 1
+frames = 3
+delays = [0.75]
+
+[[state]]
+name = "arcwelder0"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "arcwelder25"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "arcwelder50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arcwelder75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arcwelder100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "exwelder"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "exwelder-on"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "drill_screw"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "drill_bolt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jaws_cutter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jaws_pry"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tubewelder"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tubewelder-on"
+dirs = 1
+frames = 2
+delays = [2, 1]
+
+[[state]]
+name = "rcd"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "electric_rcd"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "adv_rcd"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "debug_rcd"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "legacyscrewdriver"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "legacycutters"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "legacywrench"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hedget"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hybwelder"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hybwelder-on"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "hybcutters"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "hybcrowbar"
+dirs = 1
+frames = 9
+delays = [30, 0.5]
+
+[[state]]
+name = "hybscrewdriver"
+dirs = 1
+frames = 4
+delays = [30, 0.5]
+
+[[state]]
+name = "hybwrench"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "rpd"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crowbar_brass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cutters_brass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "screwdriver_brass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wrench_brass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brasswelder"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brasswelder-on"
+dirs = 1
+frames = 2
+delays = [2, 1]
+
+[[state]]
+name = "neutralizer"
+dirs = 1
+frames = 1

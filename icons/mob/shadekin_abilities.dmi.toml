@@ -1,0 +1,44 @@
+# Generated from shadekin_abilities.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "minion0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_maw_ic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_respite"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shadekin_regen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phase_shift"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "create_shade"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grey_spell_base"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grey_spell_ready"
+dirs = 1
+frames = 1

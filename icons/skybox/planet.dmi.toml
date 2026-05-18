@@ -1,0 +1,59 @@
+# Generated from planet.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 256
+height = 256
+cols = 4
+
+[[state]]
+name = "atmoring"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shadow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clouds"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mountains"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lightrim"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weak_clouds"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "base"
+dirs = 1
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "water"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ruins"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "icecaps"
+dirs = 1
+frames = 1

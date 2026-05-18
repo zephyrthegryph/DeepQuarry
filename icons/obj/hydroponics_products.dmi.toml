@@ -1,0 +1,710 @@
+# Generated from hydroponics_products.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 12
+
+[[state]]
+name = "blank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ambrosia"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "leafy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bananas"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bean"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "berry"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cabbage"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lettuce"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carrot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carrot2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chili"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "corn"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pineapple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "diona"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eggplant"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flower2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flower3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flower4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flower5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flowers"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grapes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nettles"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nuts"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "potato"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stalk"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tomato"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "treefruit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "apple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cherry"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lemon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "unknown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spinefruit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vine"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vine2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wheat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pod"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gnomes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eyepod"
+dirs = 1
+frames = 4
+delays = [30, 1]
+
+[[state]]
+name = "alien-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien2-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien3-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien4-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien5-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ambrosia-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "leafy-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "leafy-leaf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bananas-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bean-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "berry-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cabbage-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lettuce-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carrot-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carrot2-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chili-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "corn-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cherry-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eggplant-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flower2-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flower3-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flower4-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flower5-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flowers-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grapes-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass2-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom10-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom11-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom2-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom3-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom4-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom5-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom6-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom7-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom8-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom9-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nettles-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nuts-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spinefruit-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "potato-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rice-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stalk-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tomato-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "treefruit-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "unknown-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vine-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vine2-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wheat-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pod-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carrot-leaf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chili-leaf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carrot2-leaf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eggplant-leaf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flower2-leaf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flower5-leaf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flowers-leaf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grapes-leaf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom-leaf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom10-leaf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom2-leaf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rice-leaf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stalk-leaf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tomato-leaf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "apple-leaf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cherry-leaf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vine2-leaf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wheat-leaf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flower6-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flower6-leaf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flower6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lemon-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "onion-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "apple-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pineapple-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pineapple-leaf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gnomes-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pod-leaf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eyepod-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eyepod-leaf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tea-product"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tea"
+dirs = 1
+frames = 1

@@ -1,0 +1,139 @@
+# Generated from plating.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "plating"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plating0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plating1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plating2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plating3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plating4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plating5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plating6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plating7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plating8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plating9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plating10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plating11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plating12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plating13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plating14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plating15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plating16"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plating17"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plating18"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plating_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "plating_corners"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "asteroidplating"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "OLDplating"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "under"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "under_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "under_corners"
+dirs = 8
+frames = 1

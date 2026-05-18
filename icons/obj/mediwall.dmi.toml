@@ -1,0 +1,29 @@
+# Generated from mediwall.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "brute_wall"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "burn_wall"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oxygen_wall"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toxin_wall"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medical_wall_open"
+dirs = 1
+frames = 1

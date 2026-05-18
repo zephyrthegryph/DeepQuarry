@@ -1,0 +1,72 @@
+# Generated from modular_shiny_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 10
+
+[[state]]
+name = "suit"
+dirs = 4
+frames = 4
+delays = [50, 10, 25, 5]
+
+[[state]]
+name = "hood_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "socks"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gloves"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leotard"
+dirs = 4
+frames = 4
+delays = [50, 10, 25, 5]
+
+[[state]]
+name = "suit_col"
+dirs = 4
+frames = 4
+delays = [50, 10, 25, 5]
+
+[[state]]
+name = "hood_col_c"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "gloves_col"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "socks_col"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "leotard_col"
+dirs = 4
+frames = 4
+delays = [50, 10, 25, 5]
+
+[[state]]
+name = "hood_o"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hood_col_o"
+dirs = 4
+frames = 1
+loop = 1

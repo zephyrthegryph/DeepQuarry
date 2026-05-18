@@ -1,0 +1,83 @@
+# Generated from atm_fieldgen.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "arfg_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arfg_on"
+dirs = 1
+frames = 5
+delays = [5]
+rewind = true
+
+[[state]]
+name = "arfg_broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arfg_open_wires"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arfg_open_wirescut"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arfg_field_old"
+dirs = 1
+frames = 5
+delays = [5]
+rewind = true
+
+[[state]]
+name = "arfg_field"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arfg_field0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "arfg_field1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "arfg_field2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "arfg_field3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "arfg_field4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "arfg_field5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "arfg_field6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "arfg_field7"
+dirs = 4
+frames = 1

@@ -1,0 +1,758 @@
+# Generated from projectile.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 13
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dartgun-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dartgun-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dartgun-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dartgun-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dartgun-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dartgun-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dartgun-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "generic_smg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carbine"
+dirs = 1
+frames = 2
+delays = [1, 3]
+
+[[state]]
+name = "carbine-20"
+dirs = 1
+frames = 2
+delays = [1, 3]
+
+[[state]]
+name = "carbine-16"
+dirs = 1
+frames = 2
+delays = [1, 3]
+
+[[state]]
+name = "carbine-12"
+dirs = 1
+frames = 2
+delays = [1, 3]
+
+[[state]]
+name = "carbine-8"
+dirs = 1
+frames = 2
+delays = [1, 3]
+
+[[state]]
+name = "carbine-4"
+dirs = 1
+frames = 2
+delays = [1, 3]
+
+[[state]]
+name = "carbine-0"
+dirs = 1
+frames = 2
+delays = [1, 3]
+
+[[state]]
+name = "hm_pistol"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hm_pistol_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "IH_heavyrifle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "IH_heavyrifle-full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "IH_smg_mag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "IH_smg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "IH_smg_mag_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "IH_smg_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "IH_sidearm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "IH_sidearm_mag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "IH_sidearm_mag_slide"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "IH_sidearm_slide"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "IH_sidearm_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "IH_sidearm_mag_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "IH_sidearm_mag_slide_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "IH_sidearm_slide_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "IH_mp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "IH_mp_mag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "IH_mp_mag_slide"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "IH_mp_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "IH_mp_mag_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "IH_mp_mag_slide_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "IH_mp_slide_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "giskard"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "giskard_slide"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "giskard_mag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "giskard_mag_slide"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "giskard_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "giskard_slide_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "giskard_mag_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "giskard_mag_slide_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "giskard_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "giskard_old_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "olivawcivil"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "olivawcivil_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shotgun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cshotgun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dshotgun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sawnshotgun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gladstone"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mateba"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mandella"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mandella_mag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mandella_mag_slide"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mandella_slide"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "revolver"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "revolver_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "revolver_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "detective"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deckard"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deckard_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deckard_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deckard_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deckard_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "idaho"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "idaho-full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mac"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mac-full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mk58_wood_full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mk58_wood_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mk58_wood"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mk58_full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mk58_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mk58"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "AK-30"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "AK-20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "AK"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "black-AK-30"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "black-AK-20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "black-AK"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sol-para-full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sol-para"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sol-eot-full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sol-eot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sol_100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sol_75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sol_50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sol_25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sol_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dallas"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dallas-full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "inspector"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "heavysniper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "heavysniper-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sts-30"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sts-20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sts"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "colt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deagle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "c20r"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "c20r-20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "c20r-16"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "c20r-12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "c20r-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "c20r-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "c20r-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clarissa"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clarissa_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clarissa_slide"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clarissa_slide_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clarissa_mag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clarissa_mag_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clarissa_mag_slide"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clarissa_mag_slide_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "makarov"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "makarov_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "makarov_slide"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "makarov_slide_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "makarov_mag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "makarov_mag_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "makarov_mag_slide"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "makarov_mag_slide_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gyropistol"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gyropistolloaded"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "PeaceWalker"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "100_PW"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "75_PW"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "50_PW"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "25_PW"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "0_PW"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maxim-full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maxim"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rocket"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lamia-10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lamia-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lamia-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lamia-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lamia-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lamia-0"
+dirs = 1
+frames = 2
+delays = [2, 4]
+
+[[state]]
+name = "lamia"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "drozd"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "drozd_mag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sky_driver"
+dirs = 1
+frames = 1

@@ -1,0 +1,273 @@
+# Generated from janitor.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 10
+
+[[state]]
+name = "caution"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cleaner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bucket"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "water_bucket"
+dirs = 1
+frames = 3
+delays = [6]
+
+[[state]]
+name = "lid_bucket"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "woodbucket"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "water_woodbucket"
+dirs = 1
+frames = 3
+delays = [6]
+
+[[state]]
+name = "lid_woodbucket"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mop"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "adv_mop"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cone"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lightreplacer1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lightreplacer0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "4no_raisins"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "candy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chips"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "popcorn"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cheesie_honkers"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sosjerky"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndi_cakes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "waffles"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snack_bowl"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pistachios_pack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "semki_pack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tray"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "trashbag0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "trashbag1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "trashbag2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "trashbag3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "laundry-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "laundry-full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mopbucket"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "water_mopbucket"
+dirs = 1
+frames = 3
+delays = [6]
+
+[[state]]
+name = "cart"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cart_bucket"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "water_cart"
+dirs = 4
+frames = 3
+delays = [6]
+
+[[state]]
+name = "cart_mop"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cart_replacer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cart_spray"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cart_sign1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cart_sign2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cart_sign3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cart_sign4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cart_garbage"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cleaner-industrial"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cleaner-industrial+hose"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluetrashbag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "atmos_nozzle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "misterjani"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mister"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "misterop"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mistersec"
+dirs = 1
+frames = 1

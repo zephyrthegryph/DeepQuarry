@@ -1,0 +1,26 @@
+# Generated from fulton.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "extraction_pointoff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "extraction_point"
+dirs = 1
+frames = 2
+delays = [4, 6]
+
+[[state]]
+name = "extraction_point_old"
+dirs = 1
+frames = 2
+delays = [10]
+
+[[state]]
+name = "extraction_pack"
+dirs = 1
+frames = 1

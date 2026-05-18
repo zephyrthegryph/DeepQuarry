@@ -1,0 +1,149 @@
+# Generated from hair_unathi_add.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 11
+
+[[state]]
+name = "soghun_longspines_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "soghun_longfrills_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "soghun_shortspines_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "soghun_shortfrills_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "soghun_horns_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "unathi_bighorn_s"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "unathi_ramhorn_s"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "unathi_smallhorn_s"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "unathi_sidefrills_s"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "unathi_cobrahood_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "unathi_horns_demon_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "unathi_horns_ram_big_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "unathi_frills_aqua_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "unathi_horns_curled_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "unathi_horns_ram_s"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "unathi_horns_ram_thick_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "unathi_horns_double_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "unathi_spined_long_frills_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "unathi_spined_short_frills_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "unathi_horns_swept_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fin_hawk_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "curved_down_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "curved_up_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "samurai_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "big_frills_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "head_spikes_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "overgrown_head_spikes_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1

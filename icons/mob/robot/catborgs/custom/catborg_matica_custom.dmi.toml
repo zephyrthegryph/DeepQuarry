@@ -1,0 +1,300 @@
+# Generated from catborg_matica_custom.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 22
+
+[[state]]
+name = "chonker"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chonker"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "chonker-glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chonker-glow"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "chonker-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chonker-eyes"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "chonker-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chonker-lights"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "chonker-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chonker-sleeper-1"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "chonker-throat-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chonker-throat-1"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "chonker-throat-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chonker-throat-2"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "chonker-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chonker-bellyup-glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chonker-sleeper-1-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chonker-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chonker-sit-glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chonker-sleeper-1-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chonker-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chonker-rest-glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chonker-sleeper-1-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chonker-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "openpanel-nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel-nc"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "openpanel-c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel-c"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "openpanel-w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel-w"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "chonker-disabler"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chonker-disabler"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "chonker-taser"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chonker-taser"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "chonker-laser"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chonker-laser"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "sleeper-g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sleeper-g"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "sleeper-r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sleeper-r"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "chonker-shield"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wreck-overlay"
+dirs = 1
+frames = 18
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 40]
+
+[[state]]
+name = "SPRITES-PAST-HERE-ARE-NOT-IMPLEMENTED"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chonker-sleeper-1-default"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chonker-throat-1-default"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chonker-throat-1-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chonker-throat-1-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chonker-sleeper-2-default"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chonker-throat-2-default"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chonker-throat-2-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chonker-throat-2-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chonker-throat-1-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chonker-throat-2-rest"
+dirs = 4
+frames = 1

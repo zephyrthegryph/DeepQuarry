@@ -1,0 +1,317 @@
+# Generated from refinery_machines.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 13
+
+[[state]]
+name = "grinder_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grinder_on"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "grinder_dot_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grinder_dot_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grinder_cons"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vat_dot_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vat_dot_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vat_intakes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vat_cons"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vat_r_2"
+dirs = 1
+frames = 4
+delays = [4]
+
+[[state]]
+name = "vat_r_4"
+dirs = 1
+frames = 4
+delays = [4]
+
+[[state]]
+name = "vat_r_6"
+dirs = 1
+frames = 4
+delays = [4]
+
+[[state]]
+name = "vat_r_8"
+dirs = 1
+frames = 4
+delays = [4]
+
+[[state]]
+name = "vat_r_10"
+dirs = 1
+frames = 4
+delays = [4]
+
+[[state]]
+name = "pump"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pump_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "filter_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "filter_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "filter_l_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "filter_r_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pipe"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pipe_intakes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "waste"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "waste_intakes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "waste_burn"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "hub"
+dirs = 1
+frames = 2
+delays = [30, 10]
+
+[[state]]
+name = "hub_intakes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hub_cons"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reactor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reactor_dot_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reactor_dot_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reactor_intakes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reactor_cons"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "furnace_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "furnace_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "furnace_l_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "furnace_r_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pumprelay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pumprelay_r_10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pumprelay_r_9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pumprelay_r_8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pumprelay_r_7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pumprelay_r_6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pumprelay_r_5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pumprelay_r_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pumprelay_r_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pumprelay_r_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pumprelay_r_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mixer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mixer_dot_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mixer_dot_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mixer_arm"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "mixer_intakes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mixer_cons"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mixer_r_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mixer_r_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mixer_r_6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mixer_r_8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mixer_r_10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "splitter"
+dirs = 4
+frames = 1

@@ -1,0 +1,24 @@
+# Generated from eyes.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 2
+
+[[state]]
+name = "rseye"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "seye"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rheye"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "heye"
+dirs = 1
+frames = 1

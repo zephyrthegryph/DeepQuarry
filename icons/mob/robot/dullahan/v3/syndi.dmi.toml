@@ -1,0 +1,109 @@
+# Generated from syndi.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 10
+
+[[state]]
+name = "dullahansyndi"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahansyndi-decals"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahansyndi-rest"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahansyndi-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullahansyndi-openpanel_nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahansyndi-openpanel_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahansyndi-openpanel_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahansyndi-sit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullahansyndi-eyes"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahansyndi-lights"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahansyndi-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahansyndi-sleeper-1-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahansyndi-sleeper-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahansyndi-sleeper-2-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahansyndi-sleeper-3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahansyndi-sleeper-3-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "extrabellyincasemessup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahansyndi-sleeper-1-sit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullahansyndi-sleeper-2-sit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullahansyndi-sleeper-3-sit"
+dirs = 1
+frames = 1

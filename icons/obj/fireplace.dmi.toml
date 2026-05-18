@@ -1,0 +1,44 @@
+# Generated from fireplace.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 8
+
+[[state]]
+name = "fireplace"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fireplace_fire0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fireplace_fire1"
+dirs = 4
+frames = 3
+delays = [1]
+
+[[state]]
+name = "fireplace_fire2"
+dirs = 4
+frames = 3
+delays = [1]
+
+[[state]]
+name = "fireplace_fire3"
+dirs = 4
+frames = 3
+delays = [1]
+
+[[state]]
+name = "fireplace_fire4"
+dirs = 4
+frames = 3
+delays = [1]
+
+[[state]]
+name = "fireplace_glow"
+dirs = 4
+frames = 2
+delays = [4, 1]

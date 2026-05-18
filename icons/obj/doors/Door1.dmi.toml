@@ -1,0 +1,550 @@
+# Generated from Door1.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 21
+
+[[state]]
+name = "pdoor1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pdoorc0"
+dirs = 1
+frames = 6
+delays = [3]
+
+[[state]]
+name = "pdoor0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pdoorc1"
+dirs = 1
+frames = 6
+delays = [3]
+
+[[state]]
+name = "door1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_deny"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "door_locked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "doorc0"
+dirs = 1
+frames = 6
+delays = [2]
+loop = 1
+
+[[state]]
+name = "doorc1"
+dirs = 1
+frames = 6
+delays = [2]
+loop = 1
+
+[[state]]
+name = "door0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "doorl"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "o_doorl"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "o_door1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "o_doorc0"
+dirs = 1
+frames = 6
+delays = [2]
+loop = 1
+
+[[state]]
+name = "o_doorc1"
+dirs = 1
+frames = 6
+delays = [2]
+loop = 1
+
+[[state]]
+name = "door_spark"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "o_door0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sdoor1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sdoor_deny"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "sdoor_locked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sdoorc1"
+dirs = 1
+frames = 6
+delays = [2]
+loop = 1
+
+[[state]]
+name = "sdoor0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "so_door0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sdoorl"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "so_door1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "so_doorc0"
+dirs = 1
+frames = 6
+delays = [2]
+loop = 1
+
+[[state]]
+name = "so_doorc1"
+dirs = 1
+frames = 6
+delays = [2]
+loop = 1
+
+[[state]]
+name = "sdoor_spark"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "so_doorl"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "edoor1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "edoor_deny"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "edoor_locked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "edoorc0"
+dirs = 1
+frames = 6
+delays = [2]
+loop = 1
+
+[[state]]
+name = "edoorc1"
+dirs = 1
+frames = 6
+delays = [2]
+loop = 1
+
+[[state]]
+name = "edoor0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "edoorl"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eo_doorl"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eo_door1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eo_doorc0"
+dirs = 1
+frames = 6
+delays = [2]
+loop = 1
+
+[[state]]
+name = "eo_doorc1"
+dirs = 1
+frames = 6
+delays = [2]
+loop = 1
+
+[[state]]
+name = "edoor_spark"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "eo_door0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fdoor1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fdoor_deny"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "fdoor_c0"
+dirs = 1
+frames = 6
+delays = [2]
+loop = 1
+
+[[state]]
+name = "fdoorc1"
+dirs = 1
+frames = 6
+delays = [2]
+loop = 1
+
+[[state]]
+name = "fdoor0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fdoorl"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "adoor1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "adoor_deny"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "adoor_locked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "adoorc0"
+dirs = 1
+frames = 6
+delays = [2]
+loop = 1
+
+[[state]]
+name = "adoorc1"
+dirs = 1
+frames = 6
+delays = [2]
+loop = 1
+
+[[state]]
+name = "adoor0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "adoorl"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ao_doorl"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ao_door1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ao_doorc0"
+dirs = 1
+frames = 6
+delays = [2]
+loop = 1
+
+[[state]]
+name = "ao_doorc1"
+dirs = 1
+frames = 6
+delays = [2]
+loop = 1
+
+[[state]]
+name = "adoor_spark"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "ao_door0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mdoor1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mdoorc0"
+dirs = 4
+frames = 15
+delays = [1]
+
+[[state]]
+name = "mdoorc1"
+dirs = 4
+frames = 15
+delays = [1]
+
+[[state]]
+name = "mdoor0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mdoor_deny"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mdoor_spark"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cdoor1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cdoor_deny"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "cdoor_locked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cdoorc0"
+dirs = 1
+frames = 6
+delays = [2]
+loop = 1
+
+[[state]]
+name = "sdoorc0"
+dirs = 1
+frames = 6
+delays = [2]
+loop = 1
+
+[[state]]
+name = "cdoorc1"
+dirs = 1
+frames = 6
+delays = [2]
+loop = 1
+
+[[state]]
+name = "cdoor0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "codoor0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "co_door1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "co_doorl"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cdoorl"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cdoor_spark"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "co_doorc0"
+dirs = 1
+frames = 6
+delays = [2]
+loop = 1
+
+[[state]]
+name = "co_doorc1"
+dirs = 1
+frames = 6
+delays = [2]
+loop = 1
+
+[[state]]
+name = "wdoor1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wdoor_deny"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "wdoor_locked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wdoorc0"
+dirs = 1
+frames = 6
+delays = [2]
+loop = 1
+
+[[state]]
+name = "wdoorc1"
+dirs = 1
+frames = 6
+delays = [2]
+loop = 1
+
+[[state]]
+name = "wdoor0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wdoorl"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wo_doorl"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wo_door1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wo_doorc0"
+dirs = 1
+frames = 6
+delays = [2]
+loop = 1
+
+[[state]]
+name = "o_doorc1"
+dirs = 1
+frames = 6
+delays = [2]
+loop = 1
+
+[[state]]
+name = "wdoor_spark"
+dirs = 1
+frames = 5
+delays = [1]
+loop = 1
+
+[[state]]
+name = "wo_door0"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "air"
+dirs = 1
+frames = 1

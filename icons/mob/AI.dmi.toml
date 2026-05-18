@@ -1,0 +1,537 @@
+# Generated from AI.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 40
+
+[[state]]
+name = "ai"
+dirs = 1
+frames = 15
+delays = [2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1]
+
+[[state]]
+name = "ai-red"
+dirs = 1
+frames = 15
+delays = [2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1]
+
+[[state]]
+name = "ai-red-crash"
+dirs = 1
+frames = 4
+delays = [60, 2]
+
+[[state]]
+name = "ai-crash"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ai-empty"
+dirs = 1
+frames = 2
+delays = [7]
+
+[[state]]
+name = "ai-holo-old"
+dirs = 4
+frames = 15
+delays = [1]
+hotspots = [{ frame = 1, x = 14, y = 15 }]
+
+[[state]]
+name = "holo1"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 14, y = 15 }]
+
+[[state]]
+name = "holo2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holo4"
+dirs = 4
+frames = 4
+delays = [4]
+
+[[state]]
+name = "0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "3b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ai-clown"
+dirs = 1
+frames = 24
+delays = [2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1]
+
+[[state]]
+name = "ai-clown2"
+dirs = 1
+frames = 24
+delays = [2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1]
+
+[[state]]
+name = "ai-glitchman_dead"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "ai-clown2-crash"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ai-u-crash"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ai-boxfort"
+dirs = 1
+frames = 16
+delays = [10, 10, 1, 1, 5, 1, 1, 10, 1, 1, 1, 5, 1, 1, 1, 10]
+
+[[state]]
+name = "ai-boxfort-crash"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ai-ravensdale"
+dirs = 1
+frames = 16
+delays = [1]
+
+[[state]]
+name = "ai-ravensdale-crash"
+dirs = 1
+frames = 9
+delays = [1]
+
+[[state]]
+name = "ai-gentoo-crash"
+dirs = 1
+frames = 4
+delays = [3, 1, 3, 1]
+
+[[state]]
+name = "ai-serithi"
+dirs = 1
+frames = 4
+delays = [5]
+
+[[state]]
+name = "ai-serithi-crash"
+dirs = 1
+frames = 13
+delays = [1, 1, 1, 1, 1, 50, 1, 1, 1, 1, 1, 1, 100]
+
+[[state]]
+name = "ai-alien"
+dirs = 1
+frames = 19
+delays = [1, 1, 1, 3, 1, 4, 1, 1, 1, 2, 1, 2, 1, 1, 1, 1, 2, 1]
+
+[[state]]
+name = "ai-alien-crash"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "ai-syndicatmeow"
+dirs = 1
+frames = 16
+delays = [2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1]
+
+[[state]]
+name = "ai-wasp"
+dirs = 1
+frames = 18
+delays = [1]
+
+[[state]]
+name = "ai-sheltered"
+dirs = 1
+frames = 25
+delays = [5, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 15, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 6, 15]
+
+[[state]]
+name = "ai-fabulous"
+dirs = 1
+frames = 99
+delays = [10, 3, 1, 1, 10, 5, 1, 10, 1, 10, 1, 10, 1, 10, 1, 1, 1, 1, 1, 20, 1, 20, 1, 2, 2, 5, 2, 2, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 10, 1, 5, 1, 1, 10, 1, 10, 1, 10, 1, 10, 1, 10, 1, 1, 1, 1, 1, 1, 1, 5]
+
+[[state]]
+name = "ai-eager-old"
+dirs = 1
+frames = 30
+delays = [1]
+rewind = true
+hotspots = [{ frame = 16, x = 7, y = 21 }]
+
+[[state]]
+name = "ai-eager"
+dirs = 1
+frames = 30
+delays = [1]
+rewind = true
+hotspots = [{ frame = 16, x = 7, y = 21 }]
+
+[[state]]
+name = "ai-eager-crash"
+dirs = 1
+frames = 7
+delays = [30, 1, 1, 1, 30, 3, 1]
+
+[[state]]
+name = "ai-bored"
+dirs = 1
+frames = 30
+delays = [1]
+rewind = true
+hotspots = [{ frame = 16, x = 7, y = 21 }]
+
+[[state]]
+name = "ai-royal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ai-pirate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ai-bloodylove"
+dirs = 1
+frames = 39
+delays = [1]
+
+[[state]]
+name = "ai-ahasuerus"
+dirs = 1
+frames = 15
+delays = [2]
+
+[[state]]
+name = "ai-godfrey"
+dirs = 1
+frames = 20
+delays = [2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 1, 1, 2, 2, 1, 14, 1]
+
+[[state]]
+name = "ai-magma"
+dirs = 1
+frames = 12
+delays = [2, 2, 1, 2]
+
+[[state]]
+name = "ai-mono"
+dirs = 1
+frames = 15
+delays = [2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1]
+
+[[state]]
+name = "ai-mono-crash"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "ai-u"
+dirs = 1
+frames = 15
+delays = [2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1]
+
+[[state]]
+name = "ai-wierd"
+dirs = 1
+frames = 15
+delays = [2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1]
+
+[[state]]
+name = "ai-wierd-crash"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "ai-static"
+dirs = 1
+frames = 14
+delays = [1, 1, 1, 1, 1, 2, 2, 1]
+
+[[state]]
+name = "ai-static-crash"
+dirs = 1
+frames = 10
+delays = [1, 1, 1, 2, 6, 1]
+
+[[state]]
+name = "ai-triumvirate-malf"
+dirs = 1
+frames = 71
+delays = [1]
+
+[[state]]
+name = "ai-triumvirate"
+dirs = 1
+frames = 71
+delays = [1]
+
+[[state]]
+name = "ai-text"
+dirs = 1
+frames = 67
+delays = [1]
+
+[[state]]
+name = "ai-smiley"
+dirs = 1
+frames = 18
+delays = [1]
+
+[[state]]
+name = "ai-angryface"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ai-matrix"
+dirs = 1
+frames = 32
+delays = [1]
+
+[[state]]
+name = "ai-dorf"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "ai-bliss"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ai-malf"
+dirs = 1
+frames = 60
+delays = [2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1]
+
+[[state]]
+name = "ai-soviet"
+dirs = 1
+frames = 21
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 1, 2]
+
+[[state]]
+name = "ai-soviet-crash"
+dirs = 1
+frames = 13
+delays = [1]
+
+[[state]]
+name = "ai-hades"
+dirs = 1
+frames = 15
+delays = [2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1]
+
+[[state]]
+name = "ai-hades-crash"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "ai-heartline-crash"
+dirs = 1
+frames = 13
+delays = [1.5]
+
+[[state]]
+name = "ai-heartline"
+dirs = 1
+frames = 22
+delays = [1]
+
+[[state]]
+name = "ai-president"
+dirs = 1
+frames = 17
+delays = [1]
+
+[[state]]
+name = "ai-helios"
+dirs = 1
+frames = 35
+delays = [1]
+
+[[state]]
+name = "ai-toodeep"
+dirs = 1
+frames = 15
+delays = [2, 2, 1, 2, 3, 3, 3, 3, 3, 3, 10, 1, 1, 2, 1]
+
+[[state]]
+name = "ai-goon"
+dirs = 1
+frames = 18
+delays = [20, 1, 1, 1, 1, 1, 1, 1, 15, 3, 2, 2, 1, 4, 3, 2, 5, 20]
+
+[[state]]
+name = "ai-goon-crash"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ai-database"
+dirs = 1
+frames = 183
+delays = [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 2, 2, 2, 2, 4, 4, 4, 2, 2, 2, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 2, 2, 2, 2, 4, 4, 4, 2, 2, 2, 2, 4, 4, 4, 4, 2, 2, 2, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 2, 2, 2, 2, 4, 4, 4, 2, 2, 2, 2, 4, 4, 4, 4, 4, 4, 4, 2, 2, 2, 2, 4, 4, 4, 4, 4, 4, 4, 4, 2, 2, 2, 2, 4, 4, 4, 4, 4, 4, 4, 2, 2, 2, 2, 4, 4, 4, 4, 4, 4, 2, 2, 2, 2, 4]
+
+[[state]]
+name = "ai-database-crash"
+dirs = 1
+frames = 2
+delays = [7]
+
+[[state]]
+name = "ai-glitchman"
+dirs = 1
+frames = 19
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 10]
+
+[[state]]
+name = "ai-lonestar"
+dirs = 1
+frames = 20
+delays = [1]
+
+[[state]]
+name = "ai-lonestar-crash"
+dirs = 1
+frames = 22
+delays = [1]
+
+[[state]]
+name = "ai-nanotrasen"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "ai-angel"
+dirs = 1
+frames = 6
+delays = [0.8]
+
+[[state]]
+name = "ai-angel-crash"
+dirs = 1
+frames = 4
+delays = [10, 0.8, 5, 2]
+
+[[state]]
+name = "ai-hourglass"
+dirs = 1
+frames = 16
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 20, 2]
+loop = 1
+
+[[state]]
+name = "holohumm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holohumf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holounam"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holounaf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holotajm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holotajf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holotesm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holotesf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holoskrm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holoskrf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "punpun"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ai-gentoo-old"
+dirs = 1
+frames = 59
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 5, 2, 2, 2, 2, 2, 2, 1, 10, 10, 20, 30]
+
+[[state]]
+name = "ai-gentoo"
+dirs = 1
+frames = 47
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 10, 10, 20, 30]

@@ -1,0 +1,239 @@
+# Generated from kittyborg_cargo.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 19
+
+[[state]]
+name = "cargo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargo"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "cargo-glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargo-glow"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "cargo-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargo-eyes"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "cargo-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargo-lights"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "cargo-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargo-sleeper-1"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "cargo-sleeper-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargo-sleeper-2"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "cargo-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargo-bellyup-glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargo-sleeper-1-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargo-sleeper-2-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargo-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargo-sit-glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargo-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargo-rest-glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargo-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cargo-gun"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargo-gun"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "openpanel-nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel-nc"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "openpanel-c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel-c"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "openpanel-w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel-w"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "cargo-shield"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "SPRITES-PAST-HERE-ARE-NOT-IMPLEMENTED"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargo-sleeper-1-default"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargo-sleeper-1-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargo-throat-1-default"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargo-throat-1-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargo-throat-1-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargo-sleeper-2-default"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargo-sleeper-2-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargo-throat-2-default"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargo-throat-2-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargo-throat-2-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargo-sleeper-1-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargo-sleeper-2-rest"
+dirs = 4
+frames = 1

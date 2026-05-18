@@ -1,0 +1,17 @@
+# Generated from 64x32.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 4
+
+[[state]]
+name = "shark"
+dirs = 4
+frames = 3
+delays = [3, 4, 3]
+rewind = true
+
+[[state]]
+name = "shark_dead"
+dirs = 1
+frames = 1
+rewind = true

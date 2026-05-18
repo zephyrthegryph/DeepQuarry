@@ -1,0 +1,109 @@
+# Generated from janitor.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 10
+
+[[state]]
+name = "dullahanjanitor"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahanjanitor-decals"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahanjanitor-rest"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahanjanitor-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "openpanel_nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahanjanitor-sit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullahanjanitor-eyes"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahanjanitor-lights"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahanjanitor-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahanjanitor-sleeper-1-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahanjanitor-sleeper-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahanjanitor-sleeper-2-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahanjanitor-sleeper-3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahanjanitor-sleeper-3-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "extrabellyincasemessup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahanjanitor-sleeper-1-sit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullahanjanitor-sleeper-2-sit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullahanjanitor-sleeper-3-sit"
+dirs = 1
+frames = 1

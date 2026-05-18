@@ -1,0 +1,15 @@
+# Generated from title_yw.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 480
+height = 480
+cols = 7
+
+[[state]]
+name = "cryogaia2"
+dirs = 1
+frames = 40
+delays = [1]
+
+[[state]]
+name = "cryogaia"
+dirs = 1
+frames = 1

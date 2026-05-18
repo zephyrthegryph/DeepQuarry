@@ -1,0 +1,239 @@
+# Generated from kittyborg_service.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 19
+
+[[state]]
+name = "service"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "service"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "service-glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "service-glow"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "service-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "service-eyes"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "service-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "service-lights"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "service-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "service-sleeper-1"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "service-sleeper-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "service-sleeper-2"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "service-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "service-bellyup-glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "service-sleeper-1-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "service-sleeper-2-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "service-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "service-sit-glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "service-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "service-rest-glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "service-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "service-gun"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "service-gun"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "openpanel-nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel-nc"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "openpanel-c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel-c"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "openpanel-w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel-w"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "service-shield"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "SPRITES-PAST-HERE-ARE-NOT-IMPLEMENTED"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "service-sleeper-1-default"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "service-sleeper-1-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "service-throat-1-default"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "service-throat-1-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "service-throat-1-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "service-sleeper-2-default"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "service-sleeper-2-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "service-throat-2-default"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "service-throat-2-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "service-throat-2-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "service-sleeper-1-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "service-sleeper-2-rest"
+dirs = 4
+frames = 1

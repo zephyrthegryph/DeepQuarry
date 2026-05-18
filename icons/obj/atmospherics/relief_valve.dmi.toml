@@ -1,0 +1,34 @@
+# Generated from relief_valve.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "relief_valve-e"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "relief_valve-t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "relief_valve-e-blown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "relief_valve-t-blown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rupture-disc-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rupture-disc-2"
+dirs = 1
+frames = 1

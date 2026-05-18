@@ -1,0 +1,272 @@
+# Generated from vore64x32_ch.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 16
+
+[[state]]
+name = "muffinmonster"
+dirs = 4
+frames = 6
+delays = [2.5]
+
+[[state]]
+name = "muffinmonster-1"
+dirs = 4
+frames = 6
+delays = [2.5]
+
+[[state]]
+name = "muffinmonster_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "muffinmonster_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "muffinmonster-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "muffinmonster-2"
+dirs = 4
+frames = 6
+delays = [2]
+
+[[state]]
+name = "xeyakin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeyakin-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "synddog"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synddog_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndotie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndotie_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndcotie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndcotie_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synddog_wht"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synddog_wht-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synddog_wht_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synddog_wht_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synddog_wht-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "synddog_blk"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synddog_blk-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synddog_blk_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synddog_blk_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synddog_blk-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndotie_std"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndotie_std-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndotie_std_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndotie_std_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndotie_std-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndcotie_std"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndcotie_std-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndcotie_std_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndcotie_std_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndcotie_std-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "synditaur"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synditaur-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synditaur_lmg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synditaur_lmg-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synditaur_r1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synditaur_r1-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synditaur_r2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synditaur_r2-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synditaur_r3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synditaur_r3-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synditaur_smg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synditaur_smg-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synditaur_awp"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synditaur_awp-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_kiriga"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_kiriga-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "zorgoia_kiriga-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_kiriga-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_kiriga-3"
+dirs = 4
+frames = 1

@@ -1,0 +1,59 @@
+# Generated from custom_clothes_robe_item.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "purple_robes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hood"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purple_robes_corrupted"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purple_robes_corrupted_south"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purple_robes_corrupted_north"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purple_robes_corrupted_east"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purple_robes_corrupted_west"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purple_robes_corrupted_southeast"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purple_robes_corrupted_southwest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purple_robes_corrupted_northeast"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purple_robes_corrupted_northwest"
+dirs = 1
+frames = 1

@@ -1,0 +1,104 @@
+# Generated from coins.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "coin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coin_silver"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coin_gold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coin_uranium"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coin_phoron"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coin_iron"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coin_diamond"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coin_platinum"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coin_clown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coin_aluminium"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coin-mythril"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coin_verdantium"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coin_morphium"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coin_steel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coin_copper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coin_durasteel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coin_graphite"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coin_lead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coin_plasteel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coin_titanium"
+dirs = 1
+frames = 1

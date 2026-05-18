@@ -1,0 +1,61 @@
+# Generated from mecha64x64.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 6
+
+[[state]]
+name = "pzrmech"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pzrwreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pzrmech-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shuttle_standard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shuttle_standard-mask+base"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shuttle_standard-mask+central"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shuttle_standard-mask+front"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shuttle_standard-mask+engine"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shuttle_standard"
+dirs = 4
+frames = 1
+movement = true
+
+[[state]]
+name = "shuttle_standard-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shuttle_standard-broken"
+dirs = 1
+frames = 3
+delays = [30, 1]

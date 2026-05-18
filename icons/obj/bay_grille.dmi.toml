@@ -1,0 +1,184 @@
+# Generated from bay_grille.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 12
+
+[[state]]
+name = "grille"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grille0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grille1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grille2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grille3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grille4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grille5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grille6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grille7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grille_other0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grille_other1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grille_other2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grille_other3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grille_other4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grille_other5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grille_other6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grille_other7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grille_onframe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "broken_onframe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grille_onframe0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grille_onframe1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grille_onframe2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grille_onframe3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grille_onframe4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grille_onframe5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grille_onframe6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grille_onframe7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grille_other_onframe0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grille_other_onframe1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grille_other_onframe2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grille_other_onframe3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grille_other_onframe4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grille_other_onframe5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grille_other_onframe6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grille_other_onframe7"
+dirs = 4
+frames = 1

@@ -1,0 +1,109 @@
+# Generated from sludgeoverlay_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "green"
+dirs = 1
+frames = 1
+rewind = true
+hotspots = [{ frame = 1, x = 29, y = 25 }]
+
+[[state]]
+name = "white"
+dirs = 1
+frames = 1
+rewind = true
+hotspots = [{ frame = 1, x = 29, y = 25 }]
+
+[[state]]
+name = "black"
+dirs = 1
+frames = 1
+rewind = true
+hotspots = [{ frame = 1, x = 29, y = 25 }]
+
+[[state]]
+name = "grey"
+dirs = 1
+frames = 1
+rewind = true
+hotspots = [{ frame = 1, x = 29, y = 25 }]
+
+[[state]]
+name = "yellow"
+dirs = 1
+frames = 1
+rewind = true
+hotspots = [{ frame = 1, x = 29, y = 25 }]
+
+[[state]]
+name = "red"
+dirs = 1
+frames = 1
+rewind = true
+hotspots = [{ frame = 1, x = 29, y = 25 }]
+
+[[state]]
+name = "blue"
+dirs = 1
+frames = 1
+rewind = true
+hotspots = [{ frame = 1, x = 29, y = 25 }]
+
+[[state]]
+name = "orange"
+dirs = 1
+frames = 1
+rewind = true
+hotspots = [{ frame = 1, x = 29, y = 25 }]
+
+[[state]]
+name = "purple"
+dirs = 1
+frames = 1
+rewind = true
+hotspots = [{ frame = 1, x = 29, y = 25 }]
+
+[[state]]
+name = "lime"
+dirs = 1
+frames = 1
+rewind = true
+hotspots = [{ frame = 1, x = 29, y = 25 }]
+
+[[state]]
+name = "brown"
+dirs = 1
+frames = 1
+rewind = true
+hotspots = [{ frame = 1, x = 29, y = 25 }]
+
+[[state]]
+name = "darkred"
+dirs = 1
+frames = 1
+rewind = true
+hotspots = [{ frame = 1, x = 29, y = 25 }]
+
+[[state]]
+name = "cyan"
+dirs = 1
+frames = 1
+rewind = true
+hotspots = [{ frame = 1, x = 29, y = 25 }]
+
+[[state]]
+name = "beige"
+dirs = 1
+frames = 1
+rewind = true
+hotspots = [{ frame = 1, x = 29, y = 25 }]
+
+[[state]]
+name = "pink"
+dirs = 1
+frames = 1
+rewind = true
+hotspots = [{ frame = 1, x = 29, y = 25 }]

@@ -1,0 +1,53 @@
+# Generated from flight_computer.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "left"
+dirs = 4
+frames = 5
+delays = [1]
+
+[[state]]
+name = "center"
+dirs = 4
+frames = 2
+delays = [5]
+
+[[state]]
+name = "right"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "left0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "center0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "right-open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leftb"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "centerb"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "center_old"
+dirs = 4
+frames = 2
+delays = [1]

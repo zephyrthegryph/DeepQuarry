@@ -1,0 +1,94 @@
+# Generated from taursuits_noodle.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 9
+
+[[state]]
+name = "rig-engineering"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-atmos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-medical_emt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-sec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-mining"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "void_explorer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "void_exp_medic"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bio_virology"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bio_security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bio_janitor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bio_scientist"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bio_cmo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate-orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apron"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apron_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "surgical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "poncho"
+dirs = 4
+frames = 1

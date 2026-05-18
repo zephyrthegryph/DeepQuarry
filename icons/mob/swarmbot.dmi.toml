@@ -1,0 +1,182 @@
+# Generated from swarmbot.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 15
+
+[[state]]
+name = "eyes-repairbot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "repairbot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "repairbot"
+dirs = 4
+frames = 2
+delays = [1]
+movement = true
+
+[[state]]
+name = "pod"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pod-surge"
+dirs = 1
+frames = 12
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 1]
+loop = 1
+
+[[state]]
+name = "pod-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "barricade"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "barricade-surge"
+dirs = 1
+frames = 9
+delays = [1]
+
+[[state]]
+name = "barricade-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "trap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "trap-surge"
+dirs = 1
+frames = 8
+delays = [2, 2, 2, 2, 2, 2, 2, 1]
+
+[[state]]
+name = "trap-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "swarmer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swarmer"
+dirs = 4
+frames = 6
+delays = [1]
+movement = true
+
+[[state]]
+name = "swarmer_unactivated"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "disintegrate_pulse"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "disintegrate"
+dirs = 1
+frames = 8
+delays = [1]
+loop = 1
+
+[[state]]
+name = "dismantle"
+dirs = 1
+frames = 12
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 1]
+loop = 1
+
+[[state]]
+name = "integrate"
+dirs = 1
+frames = 5
+delays = [1]
+loop = 1
+
+[[state]]
+name = "swarmer_rod"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "swarmer_wires"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "swarmer_tele1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "swarmer_tele2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "swarmer_killer"
+dirs = 1
+frames = 2
+delays = [6, 1]
+
+[[state]]
+name = "swarmer_killer_pulse"
+dirs = 1
+frames = 12
+delays = [1]
+
+[[state]]
+name = "swarmer_console_boot"
+dirs = 1
+frames = 15
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2]
+
+[[state]]
+name = "swarmer_console"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "swarmer_ranged"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swarmer_ranged"
+dirs = 4
+frames = 6
+delays = [1]
+movement = true
+
+[[state]]
+name = "swarmer_melee"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swarmer_melee"
+dirs = 4
+frames = 6
+delays = [1]
+movement = true

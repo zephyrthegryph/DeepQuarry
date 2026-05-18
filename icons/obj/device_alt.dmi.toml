@@ -1,0 +1,737 @@
+# Generated from device_alt.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 20
+
+[[state]]
+name = "forensic0-old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "forensic1-old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndbeacon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "multitool"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tonercartridge"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "batterer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "battererburnt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "implant"
+dirs = 1
+frames = 2
+delays = [10, 1]
+
+[[state]]
+name = "implant_evil"
+dirs = 1
+frames = 2
+delays = [10, 1]
+
+[[state]]
+name = "implant_melted"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eftpos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "retail_idle"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "retail_scan"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "retail_approve"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "bunsen0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bunsen1"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "solution_tray"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "megaphone"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gripper-old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gripper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gripper-medical"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gripper-sci"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gripper-mining"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gripper-sheet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "decompiler"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gripper-flesh"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gripper-sec"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gripper-mech"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitcooler1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitcooler0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitcooler2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spyglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sunflower"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "uv_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "uv_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "communicator"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "communicator-called"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "communicator-active"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "communicator-video"
+dirs = 1
+frames = 5
+delays = [4]
+
+[[state]]
+name = "taperecorder_idle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tape_white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tape_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tape_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tape_yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tape_purple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "defib_kit0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "defib_kit1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "defib_kit2"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "defib_kit3"
+dirs = 1
+frames = 2
+delays = [10, 5]
+
+[[state]]
+name = "camcorder"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "camcorder_on"
+dirs = 1
+frames = 2
+delays = [8, 5]
+
+[[state]]
+name = "atmos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "atmos1"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "atmos2"
+dirs = 1
+frames = 7
+delays = [1, 1, 1, 30, 3, 2, 8]
+
+[[state]]
+name = "spectrometer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spectrometer_s"
+dirs = 1
+frames = 3
+delays = [4]
+rewind = true
+
+[[state]]
+name = "adv_spectrometer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "adv_spectrometer_s"
+dirs = 1
+frames = 2
+delays = [4]
+
+[[state]]
+name = "flash"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flash2"
+dirs = 1
+frames = 3
+delays = [1, 1, 3]
+
+[[state]]
+name = "sflash"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sflash2"
+dirs = 1
+frames = 3
+delays = [1, 1, 3]
+
+[[state]]
+name = "flashburnt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shield0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shield1"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "hand_tele"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "hand_tele_w"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "hand_tele_o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "motion0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "motion1"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "motion2"
+dirs = 1
+frames = 2
+delays = [1, 5]
+
+[[state]]
+name = "motion3"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "t-ray0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "t-ray1"
+dirs = 1
+frames = 9
+delays = [1]
+
+[[state]]
+name = "emp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "empar"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "powersink0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "powersink1"
+dirs = 1
+frames = 3
+delays = [2, 1]
+
+[[state]]
+name = "pinoff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinonfar"
+dirs = 8
+frames = 2
+delays = [6]
+
+[[state]]
+name = "pinonmedium"
+dirs = 8
+frames = 2
+delays = [4]
+
+[[state]]
+name = "pinonclose"
+dirs = 8
+frames = 2
+delays = [2]
+
+[[state]]
+name = "pinondirect"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "pinonnull"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "pinonalert"
+dirs = 8
+frames = 2
+delays = [2]
+
+[[state]]
+name = "taperecorderidle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "taperecorderrecording"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "taperecorderplaying"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "voice0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mindflash"
+dirs = 1
+frames = 6
+delays = [2]
+rewind = true
+
+[[state]]
+name = "mindflash2"
+dirs = 1
+frames = 3
+delays = [1, 2, 5]
+rewind = true
+
+[[state]]
+name = "mindflashburnt"
+dirs = 1
+frames = 1
+rewind = true
+
+[[state]]
+name = "eftpos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "forensic0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "forensic1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "forensic2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "modkit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dest_tagger"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "binoculars"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sampler0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sampler1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "health"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "health2"
+dirs = 1
+frames = 2
+delays = [2, 3]
+
+[[state]]
+name = "hydro"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hydro2"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "robotanalyzer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bimplant"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bimplant4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bimplant3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bimplant2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bimplant1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bimplant0"
+dirs = 1
+frames = 2
+delays = [3, 10]
+
+[[state]]
+name = "nif_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nif_1"
+dirs = 1
+frames = 2
+delays = [10, 3]
+
+[[state]]
+name = "nif_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nif_full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nif_open1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nif_open2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nif_open3"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "sleevemate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sleevemate_on"
+dirs = 1
+frames = 2
+delays = [4]
+
+[[state]]
+name = "houseball"
+dirs = 1
+frames = 21
+delays = [1, 1, 1, 1, 1, 1, 1, 3, 1]
+
+[[state]]
+name = "minitrans"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "minitrans_w"
+dirs = 1
+frames = 2
+delays = [1, 2]
+
+[[state]]
+name = "minitrans_o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pointer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pointer_red_laser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pointer_blue_laser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pointer_green_laser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pointer_purple_laser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alientele"
+dirs = 1
+frames = 12
+delays = [1]
+
+[[state]]
+name = "alientele_w"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "alientele_o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "frontiertrans"
+dirs = 1
+frames = 2
+delays = [10]
+
+[[state]]
+name = "frontiertrans_w"
+dirs = 1
+frames = 3
+delays = [3]
+
+[[state]]
+name = "frontiertrans_o"
+dirs = 1
+frames = 1

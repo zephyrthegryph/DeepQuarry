@@ -1,0 +1,26 @@
+# Generated from ghost_trap.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "base"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "on"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "item"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "item_captured"
+dirs = 1
+frames = 2
+delays = [1, 5]

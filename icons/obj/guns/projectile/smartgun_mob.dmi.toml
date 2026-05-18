@@ -1,0 +1,19 @@
+# Generated from smartgun_mob.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 4
+
+[[state]]
+name = "smartgun_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smartgun_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smartgun"
+dirs = 4
+frames = 1

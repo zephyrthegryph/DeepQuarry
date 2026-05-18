@@ -1,0 +1,84 @@
+# Generated from fence.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "straight"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "end"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "post"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "corner"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "door_closed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "door_opened"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "straight_cut1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "straight_cut2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "straight_cut3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wood_straight"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wood_end"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wood_corner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hedge_end"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hedge"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hedge_straight"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hedge_corner"
+dirs = 4
+frames = 1

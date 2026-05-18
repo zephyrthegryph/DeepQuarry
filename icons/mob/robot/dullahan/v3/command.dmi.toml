@@ -1,0 +1,109 @@
+# Generated from command.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 10
+
+[[state]]
+name = "dullahancommand"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahancommand-decals"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahancommand-rest"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahancommand-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "openpanel_nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahancommand-sit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullahancommand-eyes"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahancommand-lights"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahancommand-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahancommand-sleeper-1-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahancommand-sleeper-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahancommand-sleeper-2-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahancommand-sleeper-3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahancommand-sleeper-3-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "extrabellyincasemessup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahancommand-sleeper-1-sit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullahancommand-sleeper-2-sit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullahancommand-sleeper-3-sit"
+dirs = 1
+frames = 1

@@ -1,0 +1,912 @@
+# Generated from weapons.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 17
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "towel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "offhand"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snowball"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whetstone"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pepperspray"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tome"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cane"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toddler"
+dirs = 1
+frames = 4
+delays = [30, 3, 4, 5]
+
+[[state]]
+name = "esword"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "esword_blade"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "esword_blade_rainbow"
+dirs = 1
+frames = 12
+delays = [1.5, 0.5, 1, 1, 0.5, 1.5, 1.5, 0.5, 1, 1, 0.5, 1.5]
+
+[[state]]
+name = "dualsaber"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dualsaber_blade"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "dualsaber_blade_rainbow"
+dirs = 1
+frames = 12
+delays = [1.5, 0.5, 1, 1, 0.5, 1.5, 1.5, 0.5, 1, 1, 0.5, 1.5]
+
+[[state]]
+name = "ionrapier"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ionrapier_blade"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "espear"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "espear_blade"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "espear_blade_rainbow"
+dirs = 1
+frames = 12
+delays = [1.5, 0.5, 1, 1, 0.5, 1.5, 1.5, 0.5, 1, 1, 0.5, 1.5]
+
+[[state]]
+name = "cutlass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cutlass_blade"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "cutlass_blade_rainbow"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "eaxe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eaxe_blade"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "baton"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stunbaton_active"
+dirs = 1
+frames = 7
+delays = [14, 2, 2, 2, 2, 2, 1]
+loop = 5
+
+[[state]]
+name = "stunbaton"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stunbaton_nocell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slimebaton"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slimebaton_active"
+dirs = 1
+frames = 6
+delays = [2]
+
+[[state]]
+name = "slimebaton_nocell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shocker"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shocker_active"
+dirs = 1
+frames = 13
+delays = [1]
+
+[[state]]
+name = "shocker_nocell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "landmine"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "landmine_armed"
+dirs = 1
+frames = 3
+delays = [4, 1.5, 1]
+
+[[state]]
+name = "nettle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deathnettle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blade"
+dirs = 1
+frames = 4
+delays = [2, 2, 1]
+
+[[state]]
+name = "fireaxe0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fireaxe1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fireaxe_mask0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fireaxe_mask1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndballoon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ntballoon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "colorballoon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cultblade"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sord"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "claymore"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "katana"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "soulblade"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nullrod"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "autoharvester"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "hoe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hatchet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clippers"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hedget"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scythe0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scythe1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scythemask0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scythemask1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whitecane1in"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whitecane1out"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whitecane"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sledgehammer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "harpoon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal-rod"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bolt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal-rod-superheated"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "quill"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "unathiknife"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crossbowframe0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crossbowframe1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crossbowframe2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crossbowframe3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crossbowframe4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crossbowframe5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crossbow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crossbow-nocked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crossbow-drawn"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pneumatic0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pneumatic1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pneumatic2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pneumatic3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pneumatic4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pneumatic5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wiredrod"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stunprod_nocell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stunprod"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stunprod_active"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "switchblade_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "switchblade"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "butterflyknife"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "butterflyknife_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spearglass0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spearglass1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spear_mask0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spear_mask1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "star"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "woodbat0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metalbat0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "woodbat1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metalbat1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tacknife"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tacknife2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tacknife3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arm_blade"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ling_claw"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "electric_hand"
+dirs = 1
+frames = 4
+delays = [3]
+
+[[state]]
+name = "telebaton1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "telebaton0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "buckler"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teleriot1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teleriot0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "riot_alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "riot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eshield"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eshield_blade"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brassknuckles"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boxcutter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boxcutter_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gravemarker"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gravemarker_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gravemarker_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gravemarker_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chainsaw1"
+dirs = 1
+frames = 2
+delays = [0.4]
+
+[[state]]
+name = "chainsaw0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fishing_rod1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fishing_rod_string"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fishing_rod"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fishing_rod_modern1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fishing_rod_modern_string"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fishing_rod_modern"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crutch"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "riding_crop"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "riding_crop0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "riding_crop1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whip"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chain"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "curator_whip"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bow_loaded"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pitchfork1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pitchfork0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pike1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sabre"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arrow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bow_hardlight_loaded"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rapier"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pike0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hardlight"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gladius"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "axe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "zweihander1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "zweihander0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bow_firing"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bow_hardlight"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bow_hardlight_firing"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "halberd0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "longsword"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "halberd1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "caneblade"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "caneshaft"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "forcemaul0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "forcemaul_active0"
+dirs = 1
+frames = 3
+delays = [2]
+
+[[state]]
+name = "forcemaul_nocell0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "forcemaul1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "forcemaul_active1"
+dirs = 1
+frames = 3
+delays = [2]
+
+[[state]]
+name = "forcemaul_nocell1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "claw_hammer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tagknifeomni"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tagknifeblue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tagknifered"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "icepick"
+dirs = 1
+frames = 1

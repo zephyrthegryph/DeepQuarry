@@ -1,0 +1,24 @@
+# Generated from rig_back_ch.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "pursuit_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kwi_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nanomachine_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "clockwork_rig"
+dirs = 4
+frames = 1

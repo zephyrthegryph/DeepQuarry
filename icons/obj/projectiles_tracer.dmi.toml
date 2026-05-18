@@ -1,0 +1,114 @@
+# Generated from projectiles_tracer.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "bolt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beam"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xray"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beam_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beam_omni"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emitter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beam_heavy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "u_laser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lightning"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "invert"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mhd_laser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cannon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beam_pointdef"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meep"
+dirs = 1
+frames = 5
+delays = [1]
+loop = 1
+
+[[state]]
+name = "em_laser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ratmining"
+dirs = 1
+frames = 10
+delays = [1]
+
+[[state]]
+name = "rainbow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tracer_coildef"
+dirs = 1
+frames = 2
+delays = [1, 2]
+loop = 3

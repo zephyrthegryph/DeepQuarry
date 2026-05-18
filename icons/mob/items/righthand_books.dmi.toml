@@ -1,0 +1,179 @@
+# Generated from righthand_books.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 12
+
+[[state]]
+name = "book"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "book1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "book15"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "book2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "book10"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "book8"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "book3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "book11"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "book5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "book9"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "book4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "book7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "book12"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "book13"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "book14"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "book6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "book16"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bible"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "quran"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scrapbook"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "creeper"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "trinary"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holylight"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "atheist"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kojiki"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "torah"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scroll"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tome"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kingyellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ithaqua"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scientology"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "necronomicon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "melted"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrellbible"
+dirs = 4
+frames = 1

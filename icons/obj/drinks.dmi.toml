@@ -1,0 +1,2074 @@
+# Generated from drinks.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 26
+
+[[state]]
+name = "carafe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holywineglass"
+dirs = 1
+frames = 8
+delays = [1.5]
+
+[[state]]
+name = "spacersbrewglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "irishcarbomb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "booger"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snowwhite"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "antifreeze"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hippiesdelightglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "neurotoxinglass"
+dirs = 1
+frames = 9
+delays = [1.5]
+
+[[state]]
+name = "acidspitglass"
+dirs = 1
+frames = 9
+delays = [2]
+
+[[state]]
+name = "longislandicedteaglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ginfizzglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "proj_manhattanglass"
+dirs = 1
+frames = 6
+delays = [2]
+
+[[state]]
+name = "doctorsdelightglass"
+dirs = 1
+frames = 14
+delays = [2]
+
+[[state]]
+name = "whiterussianglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tequillasunriseglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "screwdriverglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "irishcreamglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whiskeycolaglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "patronglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "goldschlagerglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "driestmartiniglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "galacticpanicglass"
+dirs = 1
+frames = 12
+delays = [0.75, 0.25, 0.75, 0.25, 0.75, 0.25, 0.75, 0.25, 0.75, 0.25, 0.75, 0.25]
+
+[[state]]
+name = "bulldogglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sbagliatoglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "italiancrisisglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bigbeerglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sugarrushglass"
+dirs = 1
+frames = 14
+delays = [1]
+
+[[state]]
+name = "lotusglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "russianrouletteglass"
+dirs = 1
+frames = 4
+delays = [4, 2, 4, 2]
+
+[[state]]
+name = "b52glass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gargleblasterglass"
+dirs = 1
+frames = 14
+delays = [2]
+
+[[state]]
+name = "devilskiss"
+dirs = 1
+frames = 4
+delays = [1.5]
+
+[[state]]
+name = "lovepotionglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "honeyshotglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "appletiniglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glowingappletiniglass"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "brownstar"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slowcomfortablescrewagainstthewallglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "choccymilkglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sweetteaglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redspaceflushglass"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "graveyardglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bananahonkglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "unsweetteaglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deathbellglass"
+dirs = 1
+frames = 7
+delays = [1.5]
+
+[[state]]
+name = "the monster"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hairoftheratglass"
+dirs = 1
+frames = 3
+delays = [30, 0.5]
+
+[[state]]
+name = "silencerglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bloodymaryglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kiraspecial"
+dirs = 1
+frames = 12
+delays = [1]
+
+[[state]]
+name = "holymaryglass"
+dirs = 1
+frames = 3
+delays = [3]
+
+[[state]]
+name = "angelskiss"
+dirs = 1
+frames = 4
+delays = [2]
+rewind = true
+
+[[state]]
+name = "ginzamaryglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glass_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glass_clear"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glass_white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glass_yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glass_brown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shotglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pglass_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinkrussianglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shroomjuiceglass"
+dirs = 1
+frames = 16
+delays = [1]
+
+[[state]]
+name = "originalsinglass"
+dirs = 1
+frames = 16
+delays = [1]
+
+[[state]]
+name = "whiskeysourglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "newyorksourglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mudslideglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "windgaritaglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coffeecan"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "watercan"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bepis"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cranberry"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shambler"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "buzzfuzz"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "textmug"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "burnout"
+dirs = 1
+frames = 7
+delays = [1.5]
+
+[[state]]
+name = "manager_summoner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "broken_bottle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flask"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "detflask"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "barflask"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vacuumflask"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shinyflask"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lithiumflask"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shaker"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alco-blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alco-red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alco-green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alco-clear"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alco-white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alco-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "golden_cup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holyflask"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teapot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rag_lit"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "rag_small"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rag_small_lit"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "bigteacup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teacup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hot_coco"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "britcup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hot_coffee"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cup_empty"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 3, y = 25 }]
+
+[[state]]
+name = "cup_coffee"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 3, y = 25 }]
+
+[[state]]
+name = "cup_coco"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 3, y = 25 }]
+
+[[state]]
+name = "cup_latte"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 3, y = 25 }]
+
+[[state]]
+name = "cup_cream"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 3, y = 25 }]
+
+[[state]]
+name = "cup_brown"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 3, y = 25 }]
+
+[[state]]
+name = "cup_tea"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 3, y = 25 }]
+
+[[state]]
+name = "shake-blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shake-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shake-meat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shake-white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shake-robo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mintapplesparkle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gintonicglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whiskeyglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ginvodkaglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tequillaglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rumglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kahluaglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wineglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cognacglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cubalibreglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rumcolaglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beepskysmashglass"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "manlydorfglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "martiniglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "icedteaglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bravebullglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aleglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beerglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toxinsspecialglass"
+dirs = 1
+frames = 5
+delays = [2]
+
+[[state]]
+name = "vermouthglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glass_green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glass_orange"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glass_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vodkatonicglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "manhattanglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lemonadeglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "threemileislandglass"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "margaritaglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "irishcoffeeglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "atomicbombglass"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "whiskeysodaglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whiskeysodaglass2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glass_brown2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blackrussianglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Space_mountain_wind_glass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emeraldglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "curacaoglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pwineglass"
+dirs = 1
+frames = 11
+delays = [150, 3, 3, 3, 3, 3, 2]
+
+[[state]]
+name = "sdreamglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "thirteen_loko_glass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dr_gibb_glass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "space-up_glass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mojito"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hell"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "berryjuice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grapejuice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bahama_mama"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "absintheglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "banana"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glass_lemonjuice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carrotjuice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jar"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jar_metroid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jar_what"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jar_rad"
+dirs = 1
+frames = 7
+delays = [30, 1]
+
+[[state]]
+name = "jar_oil"
+dirs = 1
+frames = 3
+delays = [3]
+
+[[state]]
+name = "jar_water"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sbitenglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red_meadglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meadglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "iced_beerglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grogglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nuka_colaglass"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "grenadineglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "amasecglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "singulo"
+dirs = 1
+frames = 12
+delays = [1]
+
+[[state]]
+name = "chocolateglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lemonglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "poisonberryjuice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottleofnothing"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottleofnothing_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nothing"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aloe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "andalusia"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alliescocktail"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "b&p"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "demonsblood"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "changelingsting"
+dirs = 1
+frames = 10
+delays = [3, 1, 3, 1, 3, 1, 3, 1, 3, 1]
+
+[[state]]
+name = "syndicatebomb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "erikasurprise"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "iceglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "icedcoffeeglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rewriter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "milkshake"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "watermelon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gsodaglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lemonlime"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fitness-cup_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fitness-cup_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fitness-cup_black"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sakeporcelain"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sakecup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "angelswrath"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "ichor_meadglass"
+dirs = 1
+frames = 3
+delays = [3, 2, 3]
+rewind = true
+
+[[state]]
+name = "eggnog"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ciderglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "driverspunch"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "elysiumfacepunch"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "entdraught"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "erebusmoonrise"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "euphoria"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "collinsmix"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "daiquiri"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dreamcream"
+dirs = 1
+frames = 3
+delays = [1.7]
+
+[[state]]
+name = "debugger"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "binmanbliss"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chrysanthemum"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cloverclub"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coldfront"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "balloon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "berrycordial"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chocoshake"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coffeeshake"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "berryshake"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "melonade"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "appleade"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pineappleade"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lemonade"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arnoldpalmer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ramen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coffee"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "greentea_vended"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chai_vended"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "soy_latte"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cafe_latte"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hot_choc"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orangejuice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "applejuice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tomatojuice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cream"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bitters"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grenadinebottle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lemonjuice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "limejuice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mini-milk"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mini-milk_choco"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "milk"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "soymilk"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "water"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "waterbottle"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 2, y = 29 }]
+
+[[state]]
+name = "water_cup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "water_cup_e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vodkabottle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "godkabottle"
+dirs = 1
+frames = 4
+delays = [2, 3, 2, 3]
+
+[[state]]
+name = "redeemersbrew"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "schnapps_pea"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "schnapps_pep"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "schnapps_lem"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rumbottle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whiskeybottle1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whiskeybottle_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whiskeybottle2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whiskeybottle2_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ginbottle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "victorygin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brandybottle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cognacbottle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "goldschlagerbottle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "patronbottle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vermouthbottle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kahluabottle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tequilabottle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sakebottle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "champagne"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "winebottle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whitewinebottle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pwinebottle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carnoth"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grapejuicebottle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "absinthebottle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "messa_mead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jager_bottle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "melon_liqueur"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue_curacao"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cider"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alebottle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alebottle2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beer2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beerprem"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beerlite"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "colabottle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "decafcolabottle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "space-up_bottle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "space_mountain_wind_bottle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dr_gibb_bottle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "colabottle2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "space-up_bottle2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "space_mountain_wind_bottle2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dr_gibb_bottle2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "base_can"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sodawater"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tonic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cola"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "decafcola"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purple_can"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ice_tea_can"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "space_mountain_wind"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dr_gibb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dr_gibb_diet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "root_beer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "starkist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "decafstarkist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "space-up"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lemon-lime"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gingerale"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bodaplus"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boda"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kvass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kompot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "terra_cola"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red_army"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arst_bru"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lemoncoke"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "applecoke"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "strawcoke"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "porkcoke"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grapesoda"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orangesoda"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sarsaparilla"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beercan"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alecan"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "energy_drink"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "thirteen_loko"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "protein_shake"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "protean_shake"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pint_mug"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nukie_peach"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nukie_pear"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nukie_cherry"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nukie_melon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nukie_banana"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nukie_lemon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nukie_rose"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nukie_fruit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nukie_special"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nukie_mega_sight"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nukie_mega_heart"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nukie_mega_sleep"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nukie_mega_strong"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nukie_mega_fast"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nukie_mega_high"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nukie_mega_shrink"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nukie_mega_grow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nukie_one"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "tall_cup_empty"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 3, y = 25 }]
+
+[[state]]
+name = "tall_cup_coffee"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 3, y = 25 }]
+
+[[state]]
+name = "tall_cup_coco"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 3, y = 25 }]
+
+[[state]]
+name = "tall_cup_latte"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 3, y = 25 }]
+
+[[state]]
+name = "tall_cup_cream"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 3, y = 25 }]
+
+[[state]]
+name = "tall_cup_brown"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 3, y = 25 }]
+
+[[state]]
+name = "tall_cup_tea"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 3, y = 25 }]
+
+[[state]]
+name = "grande_cup_empty"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 3, y = 25 }]
+
+[[state]]
+name = "grande_cup_coffee"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 3, y = 25 }]
+
+[[state]]
+name = "grande_cup_coco"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 3, y = 25 }]
+
+[[state]]
+name = "grande_cup_latte"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 3, y = 25 }]
+
+[[state]]
+name = "grande_cup_cream"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 3, y = 25 }]
+
+[[state]]
+name = "grande_cup_brown"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 3, y = 25 }]
+
+[[state]]
+name = "grande_cup_tea"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 3, y = 25 }]
+
+[[state]]
+name = "venti_cup_empty"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 3, y = 25 }]
+
+[[state]]
+name = "venti_cup_coffee"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 3, y = 25 }]
+
+[[state]]
+name = "venti_cup_coco"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 3, y = 25 }]
+
+[[state]]
+name = "venti_cup_latte"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 3, y = 25 }]
+
+[[state]]
+name = "venti_cup_cream"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 3, y = 25 }]
+
+[[state]]
+name = "venti_cup_brown"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 3, y = 25 }]
+
+[[state]]
+name = "venti_cup_tea"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 3, y = 25 }]
+
+[[state]]
+name = "pitcher15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pitcher30"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pitcher50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pitcher70"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pitcher85"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pitcher100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pitcher"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carafe10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carafe20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carafe30"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carafe40"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carafe50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carafe60"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carafe70"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carafe80"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carafe90"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carafe100"
+dirs = 1
+frames = 1

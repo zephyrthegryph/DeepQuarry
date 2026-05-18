@@ -1,0 +1,109 @@
+# Generated from warning_stripes.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "N"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "N-corner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "S"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "S-corner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "E"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "E-corner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "W"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "W-corner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "NW-in"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "NW-out"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "NE-in"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "NE-out"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "SW-in"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "SW-out"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "SE-in"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "SE-out"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "U-N"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "U-S"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "U-E"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "U-W"
+dirs = 1
+frames = 1

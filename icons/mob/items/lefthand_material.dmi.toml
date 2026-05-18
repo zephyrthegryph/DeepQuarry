@@ -1,0 +1,351 @@
+# Generated from lefthand_material.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 18
+
+[[state]]
+name = "shard-glass"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rolling_pin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fork"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "knife"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spoon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hoe"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "butch"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "machete"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hatchet"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scythe0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scythe1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scythe_mask0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scythe_mask1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "harpoon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "unathiknife"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "butterflyknife_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "switchblade_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boxcutter_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hook_knife"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "metalbat0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "metalbat1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fireaxe0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fireaxe1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dualsaber0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dualsaber1"
+dirs = 4
+frames = 2
+delays = [2]
+
+[[state]]
+name = "spearglass0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spearglass1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fireaxe_mask0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fireaxe_mask1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spear_mask0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spear_mask1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "claymore"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "katana"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheet-glass"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheet-rglass"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheet-metal"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheet-plasteel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheet-plastic"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheet-phoronglass"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheet-phoronrglass"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheet-sandstone"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheet-marble"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheet-diamond"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheet-gold"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheet-uranium"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheet-phoron"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheet-silver"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheet-adamantine"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheet-mythril"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheet-cloth"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheet-leather"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheet-wetleather"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheet-hairlesshide"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheet-hide"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rods"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fishing_rod"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "net"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "riding_crop1"
+dirs = 4
+frames = 8
+delays = [1, 1, 1, 1, 5, 1]
+
+[[state]]
+name = "riding_crop0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "render"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stone_wood_axe"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stone_bone_axe"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stone_wood_knife"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stone_bone_knife"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sabre"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "longsword"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "longsword0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "longsword1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheet-agate"
+dirs = 4
+frames = 1

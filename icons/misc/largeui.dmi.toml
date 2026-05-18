@@ -1,0 +1,9 @@
+# Generated from largeui.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 480
+height = 160
+cols = 1
+
+[[state]]
+name = "testbg"
+dirs = 1
+frames = 1

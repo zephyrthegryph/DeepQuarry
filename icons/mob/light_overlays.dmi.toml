@@ -1,0 +1,110 @@
+# Generated from light_overlays.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 10
+
+[[state]]
+name = "helmet_light"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "helmet_light_dual"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "helmet_light_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "helmet_light_dual_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hardhat_light"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hardhat_light_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "4,0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "helmet_light_fire"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "hood_light"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "helmet_light_dual_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jackolantern"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "explorer_light"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "null_light"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "EMS_light"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yellow_light"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yellow_double_light"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "DC_light"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "helmet_light_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "helmet_light_green_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "helmet_light_dual_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "helmet_light_wide"
+dirs = 4
+frames = 1

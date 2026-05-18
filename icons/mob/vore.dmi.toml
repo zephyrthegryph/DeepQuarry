@@ -1,0 +1,2098 @@
+# Generated from vore.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 42
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacebear"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spacebear-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "brownbear"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "brownbear-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spacebear-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brownbear-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bear-gib"
+dirs = 1
+frames = 15
+delays = [1]
+
+[[state]]
+name = "dino"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dino-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dino-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alien_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aliend_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "aliend_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aliend_sleep"
+dirs = 1
+frames = 2
+delays = [15]
+
+[[state]]
+name = "aliend_running"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "aliend_unconscious"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aliend_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aliend_husked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aliens_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "aliens_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aliens_sleep"
+dirs = 1
+frames = 2
+delays = [10]
+
+[[state]]
+name = "aliens_running"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "aliens_unconscious"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aliens_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aliens_husked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alienh_s_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alienh_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alienh_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alienh_sleep"
+dirs = 1
+frames = 2
+delays = [10]
+
+[[state]]
+name = "alienh_running"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alienh_unconscious"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alienh_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alienh_husked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alienq_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alienq_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alienq_sleep"
+dirs = 1
+frames = 2
+delays = [15]
+
+[[state]]
+name = "alienq_running"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alienq_unconscious"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alienq_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alienq_husked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Hunter Stalking"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gibbed-a"
+dirs = 1
+frames = 12
+delays = [1]
+
+[[state]]
+name = "xenohunter"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xenodrone"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xenosentinel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xenohunter-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xenodrone-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xenosentinel-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xenohunter-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xenodrone-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xenosentinel-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xenoqueen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xenoqueen-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xenoqueen-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polarbear"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "polarbear-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "polarbear-dead"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolf-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolf-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "frog"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 4, y = 11 }]
+
+[[state]]
+name = "frog-1"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 4, y = 11 }]
+
+[[state]]
+name = "frog-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "horse"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 4, y = 11 }]
+
+[[state]]
+name = "horse-1"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 4, y = 11 }]
+
+[[state]]
+name = "horse-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bee"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bee-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bee-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "catgirl"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirl-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirl-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "catgirlasleep"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlasleep-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlasleep-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "catgirlbrown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlbrown-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlbrown-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "catgirlbrownasleep"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlbrownasleep-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlbrownasleep-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "catgirlred"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlred-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlred-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "catgirlredasleep"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlredasleep-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlredasleep-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "catgirlblack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlblack-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlblack-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "catgirlblackasleep"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlblackasleep-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlblackasleep-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "catgirlbikini"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlbikini-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlbikini-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "catgirlbikiniasleep"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlbikiniasleep-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlbikiniasleep-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "catgirlbrownbikini"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlbrownbikini-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlbrownbikini-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "catgirlbrownbikiniasleep"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlbrownbikiniasleep-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlbrownbikiniasleep-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "catgirlredbikini"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlredbikini-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlredbikini-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "catgirlredbikiniasleep"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlredbikiniasleep-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlredbikiniasleep-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "catgirlblackbikini"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlblackbikini-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlblackbikini-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "catgirlblackbikiniasleep"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlblackbikiniasleep-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlblackbikiniasleep-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "catgirlnude"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlnude-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlnude-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "catgirlnudeasleep"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlnudeasleep-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlnudeasleep-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "catgirlbrownnude"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlbrownnude-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlbrownnude-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "catgirlbrownnudeasleep"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlbrownnudeasleep-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlbrownnudeasleep-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "catgirlrednude"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlrednude-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlrednude-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "catgirlrednudeasleep"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlrednudeasleep-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlrednudeasleep-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "catgirlblacknude"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlblacknude-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlblacknude-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "catgirlblacknudeasleep"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlblacknudeasleep-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catgirlblacknudeasleep-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wolfgirl"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolfgirl-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wolfgirl-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wah"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wah_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wah-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wah_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wah_fae"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wah_fae_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wah_fae-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wah_fae_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "solargrub"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solargrub-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grublarva"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grublarva-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fennec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fennec_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fennec_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fennec-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jelly"
+dirs = 4
+frames = 7
+delays = [1]
+
+[[state]]
+name = "jelly_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jelly-1"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "cookiegirl"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cookiegirl-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cookiegirl_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cookiegirl_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cookiegirl-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "generic_gib"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "fennix"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fennix_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rabbit_brown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rabbit_brown_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rabbit_brown-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rabbit_brown_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rabbit_black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rabbit_black_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rabbit_black-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rabbit_black_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rabbit_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rabbit_white_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rabbit_white-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rabbit_white_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rabbit_killer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rabbit_killer_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rabbit_killer-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rabbit_killer_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oregrub"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "oregrub-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lavagrub"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lavagrub-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cass"
+dirs = 4
+frames = 10
+delays = [1]
+
+[[state]]
+name = "cass-1"
+dirs = 4
+frames = 10
+delays = [1]
+
+[[state]]
+name = "cass-2"
+dirs = 4
+frames = 10
+delays = [1]
+
+[[state]]
+name = "cass-3"
+dirs = 4
+frames = 10
+delays = [1]
+
+[[state]]
+name = "cass_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cass_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cass_rest-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cass_rest-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cass_rest-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "woof"
+dirs = 4
+frames = 10
+delays = [1]
+
+[[state]]
+name = "woof-1"
+dirs = 4
+frames = 10
+delays = [1]
+
+[[state]]
+name = "woof-2"
+dirs = 4
+frames = 10
+delays = [1]
+
+[[state]]
+name = "woof-3"
+dirs = 4
+frames = 10
+delays = [1]
+
+[[state]]
+name = "woof_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "woof_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "woof_rest-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "woof_rest-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "woof_rest-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheep"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheep-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheep-dead"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vagrant"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vagrant_glowing"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "wah_bloo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wah_bloo_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wah_bloo_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wah_bloo-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pakkun"
+dirs = 4
+frames = 3
+delays = [3, 4, 3]
+rewind = true
+
+[[state]]
+name = "pakkun-1"
+dirs = 4
+frames = 3
+delays = [3, 4, 3]
+rewind = true
+
+[[state]]
+name = "pakkun-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pakkun-rest"
+dirs = 1
+frames = 2
+delays = [15, 10]
+
+[[state]]
+name = "snapdragon"
+dirs = 4
+frames = 3
+delays = [3, 4, 3]
+rewind = true
+
+[[state]]
+name = "snapdragon-1"
+dirs = 4
+frames = 3
+delays = [3, 4, 3]
+rewind = true
+
+[[state]]
+name = "snapdragon-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snapdragon-rest"
+dirs = 1
+frames = 2
+delays = [15, 10]
+
+[[state]]
+name = "snappy"
+dirs = 4
+frames = 3
+delays = [3, 4, 3]
+rewind = true
+
+[[state]]
+name = "snappy-1"
+dirs = 4
+frames = 3
+delays = [3, 4, 3]
+rewind = true
+
+[[state]]
+name = "snappy-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snappy-rest"
+dirs = 1
+frames = 2
+delays = [15, 10]
+
+[[state]]
+name = "seagull"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "seagull-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "seagull-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "seagull-3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "seagull-4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "seagull-5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "seagull_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pakkunyellow"
+dirs = 4
+frames = 3
+delays = [3, 4, 3]
+rewind = true
+
+[[state]]
+name = "pakkunyellow-1"
+dirs = 4
+frames = 3
+delays = [3, 4, 3]
+rewind = true
+
+[[state]]
+name = "pakkunyellow-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pakkunyellow-rest"
+dirs = 1
+frames = 2
+delays = [15, 10]
+
+[[state]]
+name = "pakkunred"
+dirs = 4
+frames = 3
+delays = [3, 4, 3]
+rewind = true
+
+[[state]]
+name = "pakkunred-1"
+dirs = 4
+frames = 3
+delays = [3, 4, 3]
+rewind = true
+
+[[state]]
+name = "pakkunred-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pakkunred-rest"
+dirs = 1
+frames = 2
+delays = [15, 10]
+
+[[state]]
+name = "pakkunpurp"
+dirs = 4
+frames = 3
+delays = [3, 4, 3]
+rewind = true
+
+[[state]]
+name = "pakkunpurp-1"
+dirs = 4
+frames = 3
+delays = [3, 4, 3]
+rewind = true
+
+[[state]]
+name = "pakkunpurp-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pakkunpurp-rest"
+dirs = 1
+frames = 2
+delays = [15, 10]
+
+[[state]]
+name = "puffercarp"
+dirs = 4
+frames = 3
+delays = [3, 4, 3]
+rewind = true
+
+[[state]]
+name = "puffercarp_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "succubus"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "succubus-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "succubus-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "succubusasleep"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "succubusasleep-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "succubusasleep-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "succubusbob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "succubusbob-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "succubusbob-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "succubusbobasleep"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "succubusbobasleep-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "succubusbobasleep-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "succubusginger"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "succubusginger-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "succubusginger-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "succubusgingerasleep"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "succubusgingerasleep-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "succubusgingerasleep-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "succubusclothed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "succubusclothed-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "succubusclothed-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "succubusclothedasleep"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "succubusclothedasleep-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "succubusclothedasleep-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "succubusbobclothed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "succubusbobclothed-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "succubusbobclothed-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "succubusbobclothedasleep"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "succubusbobclothedasleep-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "succubusbobclothedasleep-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "succubusgingerclothed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "succubusgingerclothed-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "succubusgingerclothed-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "succubusgingerclothedasleep"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "succubusgingerclothedasleep-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "succubusgingerclothedasleep-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "countess"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "countess-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "countess-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "countessasleep"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "countessasleep-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "countessasleep-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "countessnude"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "countessnude-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "countessnude-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "countessnudeasleep"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "countessnudeasleep-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "countessnudeasleep-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "countnude"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "countnude-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "countnude-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "countnudeasleep"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "countnudeasleep-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "countnudeasleep-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "count"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "count-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "count-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "countasleep"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "countasleep-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "countasleep-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bat"
+dirs = 4
+frames = 2
+delays = [5]
+
+[[state]]
+name = "bat-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bat-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "batasleep"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "batasleep-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "batasleep-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "peasantfa"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "peasantfa-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "peasantfa-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "peasantfaasleep"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "peasantfaasleep-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "peasantfaasleep-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "peasantfb"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "peasantfb-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "peasantfb-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "peasantfbasleep"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "peasantfbasleep-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "peasantfbasleep-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "peasantfc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "peasantfc-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "peasantfc-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "peasantfcasleep"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "peasantfcasleep-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "peasantfcasleep-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "peasantma"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "peasantma-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "peasantma-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "peasantmaasleep"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "peasantmaasleep-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "peasantmaasleep-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "peasantmb"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "peasantmb-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "peasantmb-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "peasantmbasleep"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "peasantmbasleep-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "peasantmbasleep-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "countessqueen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "countessqueen-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "countessqueen-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "countessqueenasleep"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "countessqueenasleep-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "countessqueenasleep-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flytrap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flytrap-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flytrap-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pitcher"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pitcher-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pitcher-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scrubble"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scrubble-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scrubble_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scrubble-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scrubble_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "homunculus"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowl"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowl-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowl-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meowl_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowl_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meowl"
+dirs = 4
+frames = 4
+delays = [3]
+movement = true
+
+[[state]]
+name = "meowl-1"
+dirs = 4
+frames = 4
+delays = [3]
+movement = true
+
+[[state]]
+name = "fluffball"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fluffball-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fluffball-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "turkey"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "turkey-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "turkeyrest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "turkeydead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ysbryd"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ysbryd-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ysbryd_deco"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ysbryd_deco-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "slug"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "slug-1"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "slug-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chocobo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chocobo"
+dirs = 4
+frames = 4
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "chocobo-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chocobo-1"
+dirs = 4
+frames = 4
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "chocobo_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sif_crab"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sif_crab_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sif_crab-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "piranha_plant"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "piranha_plant"
+dirs = 4
+frames = 4
+delays = [2]
+movement = true
+
+[[state]]
+name = "piranha_plant-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "piranha_plant-1"
+dirs = 4
+frames = 4
+delays = [2]
+movement = true
+
+[[state]]
+name = "piranha_plant_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pitcher_plant"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pitcher_plant-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pitcher_plant_dead"
+dirs = 1
+frames = 1

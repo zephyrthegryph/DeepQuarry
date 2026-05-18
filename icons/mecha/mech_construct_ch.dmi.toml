@@ -1,0 +1,39 @@
+# Generated from mech_construct_ch.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "scarab_r_legs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scarab_l_legs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scarab_chassis"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scarab_r_arm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scarab_l_arm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scarab_torso"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scarab_head"
+dirs = 1
+frames = 1

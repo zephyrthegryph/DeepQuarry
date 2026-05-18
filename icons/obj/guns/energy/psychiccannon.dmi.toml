@@ -1,0 +1,45 @@
+# Generated from psychiccannon.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "psychic_lasercannon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "psychic_lasercannon100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "psychic_lasercannon75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "psychic_lasercannon50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "psychic_lasercannon25"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "psychic_lasercannon0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lefthand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand"
+dirs = 4
+frames = 1

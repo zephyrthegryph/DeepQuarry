@@ -1,0 +1,229 @@
+# Generated from human.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 14
+
+[[state]]
+name = "white_norm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "white_short"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "white_knee"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "white_thigh"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "socks_norm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "socks_short"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "socks_knee"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "socks_thigh"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "black_norm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "black_short"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "black_knee"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "black_thigh"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "assblastusa_knee"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "assblastusa_thigh"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "uk_knee"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "uk_thigh"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "commie_knee"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "commie_thigh"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stockings_lpink"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stockings_purple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stockings_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stockings_cyan"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stockings_orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stockings_yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stockings_dpink"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stockings_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bee_thigh"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bee_knee"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "thocks"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ace_thigh"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ace_knee"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "trans_knee"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "trans_thigh"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leggings-stir-black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "socks_thigh-stir"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "socks_knee-stir"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "socks_norm-stir"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "thin_knee"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "thin_thigh"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pantyhose"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rainbow_knee"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rainbow_thigh"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "striped_knee"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "striped_thigh"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fishnet"
+dirs = 4
+frames = 1

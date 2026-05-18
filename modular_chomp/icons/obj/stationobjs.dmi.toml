@@ -1,0 +1,66 @@
+# Generated from stationobjs.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "nuclearbomb0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nuclearbomb1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nuclearbomb2"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "nuclearbomb3"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "slab1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slab1-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slab2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slab2-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slab3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slab3-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slab4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slab4-off"
+dirs = 1
+frames = 1

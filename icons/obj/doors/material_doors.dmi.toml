@@ -1,0 +1,92 @@
+# Generated from material_doors.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "wood"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "woodopening"
+dirs = 1
+frames = 6
+delays = [2]
+
+[[state]]
+name = "woodclosing"
+dirs = 1
+frames = 6
+delays = [2]
+
+[[state]]
+name = "woodopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "resinopening"
+dirs = 1
+frames = 7
+delays = [1, 1, 1, 1, 1, 1, 5, 1]
+
+[[state]]
+name = "resinclosing"
+dirs = 1
+frames = 7
+delays = [1, 1, 1, 1, 1, 1, 5, 1]
+
+[[state]]
+name = "resinopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "resin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stone"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stoneopening"
+dirs = 1
+frames = 6
+delays = [2]
+
+[[state]]
+name = "stoneclosing"
+dirs = 1
+frames = 6
+delays = [2]
+
+[[state]]
+name = "stoneopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metalopening"
+dirs = 1
+frames = 6
+delays = [2]
+
+[[state]]
+name = "metalclosing"
+dirs = 1
+frames = 6
+delays = [2]
+
+[[state]]
+name = "metalopen"
+dirs = 1
+frames = 1

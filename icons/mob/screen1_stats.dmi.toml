@@ -1,0 +1,159 @@
+# Generated from screen1_stats.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "template"
+dirs = 1
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "melee_protection_a"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bullet_protection_a"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "laser_protection_a"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radiation_protection_a"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "biohazard_protection_a"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "biohazard_protection_icon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "energy_protection_a"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bomb_protection_a"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "template"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "protection"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "melee_protection"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "laser_protection"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bullet_protection"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bomb_protection"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "energy_protection"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radiation_protection"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "biohazard_protection"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "protection"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "protection"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "template"
+dirs = 1
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "offhand"
+dirs = 1
+frames = 1

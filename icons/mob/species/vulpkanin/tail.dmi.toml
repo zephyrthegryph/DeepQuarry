@@ -1,0 +1,212 @@
+# Generated from tail.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 37
+
+[[state]]
+name = "vulptail_master"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vulptailw_s"
+dirs = 4
+frames = 9
+delays = [10, 2, 2, 2, 2, 2, 2, 2, 5]
+
+[[state]]
+name = "vulptail_delay"
+dirs = 4
+frames = 9
+delays = [2]
+
+[[state]]
+name = "vulptail_static"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vulptail_once"
+dirs = 4
+frames = 9
+delays = [2]
+
+[[state]]
+name = "vulptail_idle0"
+dirs = 4
+frames = 13
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 150]
+
+[[state]]
+name = "vulptail_loop0"
+dirs = 4
+frames = 9
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 5]
+
+[[state]]
+name = "vulptail_slow0"
+dirs = 4
+frames = 9
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 30]
+
+[[state]]
+name = "vulptail_idle1"
+dirs = 4
+frames = 13
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 150]
+
+[[state]]
+name = "vulptail_idle2"
+dirs = 4
+frames = 13
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 150]
+
+[[state]]
+name = "vulptail_idle3"
+dirs = 4
+frames = 13
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 150]
+
+[[state]]
+name = "vulptail_idle4"
+dirs = 4
+frames = 13
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 150]
+
+[[state]]
+name = "vulptail_idle5"
+dirs = 4
+frames = 13
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 150]
+
+[[state]]
+name = "vulptail_idle6"
+dirs = 4
+frames = 13
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 150]
+
+[[state]]
+name = "vulptail_idle7"
+dirs = 4
+frames = 13
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 150]
+
+[[state]]
+name = "vulptail_idle8"
+dirs = 4
+frames = 13
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 150]
+
+[[state]]
+name = "vulptail_idle9"
+dirs = 4
+frames = 13
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 150]
+
+[[state]]
+name = "vulptail_loop1"
+dirs = 4
+frames = 9
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 5]
+
+[[state]]
+name = "vulptail_loop2"
+dirs = 4
+frames = 9
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 5]
+
+[[state]]
+name = "vulptail_loop3"
+dirs = 4
+frames = 9
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 5]
+
+[[state]]
+name = "vulptail_loop4"
+dirs = 4
+frames = 9
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 5]
+
+[[state]]
+name = "vulptail_loop5"
+dirs = 4
+frames = 9
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 5]
+
+[[state]]
+name = "vulptail_loop6"
+dirs = 4
+frames = 9
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 5]
+
+[[state]]
+name = "vulptail_loop7"
+dirs = 4
+frames = 9
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 5]
+
+[[state]]
+name = "vulptail_loop8"
+dirs = 4
+frames = 9
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 5]
+
+[[state]]
+name = "vulptail_loop9"
+dirs = 4
+frames = 9
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 5]
+
+[[state]]
+name = "vulptail_slow1"
+dirs = 4
+frames = 9
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 30]
+
+[[state]]
+name = "vulptail_slow2"
+dirs = 4
+frames = 9
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 30]
+
+[[state]]
+name = "vulptail_slow3"
+dirs = 4
+frames = 9
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 30]
+
+[[state]]
+name = "vulptail_slow4"
+dirs = 4
+frames = 9
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 30]
+
+[[state]]
+name = "vulptail_slow5"
+dirs = 4
+frames = 9
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 30]
+
+[[state]]
+name = "vulptail_slow6"
+dirs = 4
+frames = 9
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 30]
+
+[[state]]
+name = "vulptail_slow7"
+dirs = 4
+frames = 9
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 30]
+
+[[state]]
+name = "vulptail_slow8"
+dirs = 4
+frames = 9
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 30]
+
+[[state]]
+name = "vulptail_slow9"
+dirs = 4
+frames = 9
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 30]

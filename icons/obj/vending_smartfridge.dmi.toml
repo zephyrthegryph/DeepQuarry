@@ -1,0 +1,516 @@
+# Generated from vending_smartfridge.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 13
+
+[[state]]
+name = ""
+dirs = 1
+frames = 4
+delays = [1.2]
+
+[[state]]
+name = "base_smartsheet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartsheet-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartsheet-0-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartsheet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartsheet-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartsheet-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartsheet-panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartsheet-sheets1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartsheet-sheets2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartsheet-sheets3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartsheet-sheets1-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartsheet-sheets2-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartsheet-sheets3-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "industrial-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "industrial-0-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "base_industrial"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "industrial"
+dirs = 1
+frames = 3
+delays = [2]
+
+[[state]]
+name = "industrial-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "industrial-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "industrial-panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "industrial-sheet1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "industrial-sheet2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "industrial-sheet3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "industrial-sheet1-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "industrial-sheet2-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "industrial-sheet3-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mining-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mining-0-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "base_mining"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mining"
+dirs = 1
+frames = 3
+delays = [2]
+
+[[state]]
+name = "mining-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mining-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mining-panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mining-sheet1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mining-sheet2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mining-sheet3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mining-sheet1-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mining-sheet2-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mining-sheet3-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "base_showcase"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "showcase"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "showcase-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "showcase-broken"
+dirs = 1
+frames = 14
+delays = [10, 0.5, 0.5, 0.5, 0.5, 1, 10, 1, 1, 10, 1]
+
+[[state]]
+name = "showcase-fill"
+dirs = 1
+frames = 3
+delays = [60, 1]
+
+[[state]]
+name = "showcase-panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-0-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "base_smartfridge"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge"
+dirs = 1
+frames = 3
+delays = [2]
+
+[[state]]
+name = "smartfridge-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-drinks1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-drinks2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-drinks3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-drinks1-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-drinks2-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-drinks3-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-plants1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-plants2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-plants3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-plants1-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-plants2-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-plants3-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-petri1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-petri2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-petri3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-petri1-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-petri2-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-petri3-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-viro1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-viro2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-viro3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-viro1-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-viro2-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-viro3-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-slime1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-slime2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-slime3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-slime1-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-slime2-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-slime3-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-food1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-food2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-food3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-food1-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-food2-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-food3-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-chem1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-chem2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-chem3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-chem1-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-chem2-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartfridge-chem3-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "drying_rack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "drying_rack-plant"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "drying_rack-close"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "drying_rack-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "drying_rack-plant-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "drying_rack-close-off"
+dirs = 4
+frames = 1

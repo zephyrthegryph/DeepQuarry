@@ -1,0 +1,19 @@
+# Generated from sc_hats.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 2
+
+[[state]]
+name = "pilot_helmet2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pilot_helmet2up"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pilot_helmet1"
+dirs = 1
+frames = 1

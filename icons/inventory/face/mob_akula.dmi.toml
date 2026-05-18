@@ -1,0 +1,361 @@
+# Generated from mob_akula.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 22
+
+[[state]]
+name = "balaclava"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swatclava"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "muzzle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sterile"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swat"
+dirs = 4
+frames = 3
+delays = [3]
+rewind = true
+
+[[state]]
+name = "owl"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "clown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "death"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "breath"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facehugger"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facehugger_inactive"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facehugger_dead"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facehugger_corgi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facehugger_corgipuppy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "plaguedoctor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mime"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "s-ninja"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "horsehead"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fake-moustache"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sexyclown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "monkeymask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sexymime"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "luchador"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "luchag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "luchar"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ty_necklace"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tooth-necklace"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holomask-cord"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "konaahirano"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snorkel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "michael_guess_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tape_cross"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "guyfawkes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "halfgas"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "halfgas_up"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fullgas"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "death_commando_mask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "explorer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "explorerdown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shark"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "dolphin"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "demon"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "goblin"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "cig_on"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "cig_burnt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cigar_on"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "cigar_burnt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cigar"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cigar2off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cobpipeon"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "cobpipe_burnt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cobpipe"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "breathdown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pipeon"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "pipe_burnt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pipe"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cigar2on"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "joint"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "joint_burnt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "joint_on"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "hosmask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "officermask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wardenmask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gas_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gas_mask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gas_clear"
+dirs = 4
+frames = 1

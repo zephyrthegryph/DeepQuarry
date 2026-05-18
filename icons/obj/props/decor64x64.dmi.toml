@@ -1,0 +1,201 @@
+# Generated from decor64x64.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 9
+
+[[state]]
+name = "bigdice"
+dirs = 1
+frames = 2
+delays = [50]
+
+[[state]]
+name = "30mm_cannon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "30mm_cannon_loaded1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "30mm_cannon_loaded0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rocket_pod"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "single"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "widowmaker"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rocket_pod_loaded"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "banshee"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rocket_pod_loadedb"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "keeper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rocket_pod_loadedk"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rocket_pod_loadedf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "napalm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rocket_pod_loadedn"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "minirocket_pod"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "minirocket_pod_loaded"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "laser_beam"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "laser_beam_loaded"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cannon_tray"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cannon_tray_explosive"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cannon_tray_incendiary"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cannon_tray_cluster"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cannon_tray_plasma"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cannon_tray_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cannon_tray_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cannon_tray_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cannon_tray_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cannon_tray_5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cannon_tray_6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ship_memorial"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alteviangen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alteviangenon"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "alteviangenwrecked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alteviangen-fuel-100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alteviangen-fuel-66"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alteviangen-fuel-33"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sunkensail"
+dirs = 4
+frames = 1

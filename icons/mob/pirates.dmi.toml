@@ -1,0 +1,132 @@
+# Generated from pirates.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 11
+
+[[state]]
+name = "piratemelee"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "piratemelee-machete"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "piratemelee-machete-armor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "piratemelee-armor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "piratemelee-shield"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "piratemelee-shield-machete"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "piratemelee-shield-armor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "piratemelee-shield-machete-armor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pirateranged"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pirateranged-handcannon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pirateranged-blunder"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pirateranged-armor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pirateranged-handcannon-armor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pirateranged-blunder-armor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "piratemelee-las"
+dirs = 4
+frames = 2
+delays = [9, 1]
+
+[[state]]
+name = "piratemelee-las-armor"
+dirs = 4
+frames = 2
+delays = [9, 1]
+
+[[state]]
+name = "mate"
+dirs = 4
+frames = 2
+delays = [2]
+
+[[state]]
+name = "bosun"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mate-pistoler"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mate-shotgun"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mate-rifle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "captain"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pirate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pirate-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pirate-broken"
+dirs = 1
+frames = 1

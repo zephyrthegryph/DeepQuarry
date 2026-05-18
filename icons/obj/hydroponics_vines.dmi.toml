@@ -1,0 +1,85 @@
+# Generated from hydroponics_vines.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "vines-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vines-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vines-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vines-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vines-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mold-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mold-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mold-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mold-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mold-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mass-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mass-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mass-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mass-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mass-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "worms"
+dirs = 1
+frames = 4
+delays = [10]

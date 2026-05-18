@@ -1,0 +1,206 @@
+# Generated from mecha.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 14
+
+[[state]]
+name = "honker"
+dirs = 4
+frames = 2
+delays = [10]
+
+[[state]]
+name = "honker-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "honker-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ripley"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ripley-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ripley-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gygax"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gygax-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gygax-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "durand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "durand-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "durand-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "marauder"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marauder-open"
+dirs = 1
+frames = 3
+delays = [5, 1, 2]
+
+[[state]]
+name = "marauder-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "seraph"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "seraph-open"
+dirs = 1
+frames = 3
+delays = [5, 1, 2]
+
+[[state]]
+name = "seraph-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phazon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phazon-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phazon-phase"
+dirs = 4
+frames = 5
+delays = [1]
+
+[[state]]
+name = "phazon-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ripley-old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ripley-broken-old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mauler"
+dirs = 4
+frames = 16
+delays = [1]
+
+[[state]]
+name = "mauler-open"
+dirs = 1
+frames = 7
+delays = [5, 1]
+
+[[state]]
+name = "mauler-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "odysseus"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "odysseus-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "odysseus-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "firefighter"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "firefighter-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "firefighter-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deathripley"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "deathripley-open"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 30, y = 26 }]
+
+[[state]]
+name = "deathripley-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "titan"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "titan-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "titan-broken"
+dirs = 1
+frames = 1

@@ -1,0 +1,15 @@
+# Generated from ore_silo.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "silo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "silo_active"
+dirs = 1
+frames = 6
+delays = [1]

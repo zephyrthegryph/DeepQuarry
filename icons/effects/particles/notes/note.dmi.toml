@@ -1,0 +1,44 @@
+# Generated from note.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "note_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "note_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "note_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "note_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "note_5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "note_6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "note_7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "note_8"
+dirs = 1
+frames = 1

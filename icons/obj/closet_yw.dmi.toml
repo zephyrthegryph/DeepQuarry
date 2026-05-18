@@ -1,0 +1,81 @@
+# Generated from closet_yw.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "bssecure"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bssecure1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bssecureoff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bssecureopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bssecurebroken"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "lumber"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lumberopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secpilot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secpilot1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secpilotopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secpilotoff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secpilotbroken"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "engicloset"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engicloset_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secpilotbrokenopen"
+dirs = 1
+frames = 1

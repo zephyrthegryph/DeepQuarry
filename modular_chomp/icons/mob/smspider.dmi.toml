@@ -1,0 +1,33 @@
+# Generated from smspider.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "smspider"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smspider"
+dirs = 1
+frames = 3
+delays = [1]
+movement = true
+
+[[state]]
+name = "smspider_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smspideroc"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smspideroc"
+dirs = 1
+frames = 3
+delays = [1]
+movement = true

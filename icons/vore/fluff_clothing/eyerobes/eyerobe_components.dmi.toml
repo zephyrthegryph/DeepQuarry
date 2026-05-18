@@ -1,0 +1,119 @@
+# Generated from eyerobe_components.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "uncorrupted"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hood"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eyes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pointer - S"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pointer - N"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pointer - E"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pointer - W"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pointer - SE"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pointer - SW"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pointer - NE"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pointer - NW"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "onmobs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "uncorrupted"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hood"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pointer - S"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pointer - N"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pointer - E"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pointer - W"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pointer - SE"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pointer - SW"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pointer - NE"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pointer - NW"
+dirs = 4
+frames = 1

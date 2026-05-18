@@ -1,0 +1,64 @@
+# Generated from sandbags.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "blank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sandbags"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sandbags0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sandbags1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sandbags2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sandbags3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sandbags4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sandbags5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sandbags6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sandbags7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sandbag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sandbag_e"
+dirs = 1
+frames = 1

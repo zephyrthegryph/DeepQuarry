@@ -1,0 +1,29 @@
+# Generated from power_breaker.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "light1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "light0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "light-p"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "light1-overlay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "light0-overlay"
+dirs = 4
+frames = 1

@@ -1,0 +1,429 @@
+# Generated from ammo_ch.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 10
+
+[[state]]
+name = "m41mag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m41mag-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m41rubbermag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m41rubbermag-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "762mag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "762mag-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "762rubbermag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "762rubbermag-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "556mag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "556mag-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "556rubbermag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "556rubbermag-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "patriotmag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "patriotmag-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "molniyamag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "molniyamag-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plamyamag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plamyamag-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plamyarubbermag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plamyarubbermag-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ppshmag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ppshmag-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "strelamag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "strelamag-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vityazmag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vityazmag-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vityazrubbermag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vityazrubbermag-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "awp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "awp-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sts35"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sts35-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hectate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hectate-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "9mmmag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "9mmmag-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "9mmrubbermag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "9mmrubbermag-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "45mag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "45mag-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "45rubbermag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "45rubbermag-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "railgun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "railgun-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mp5mag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mp5mag-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mp5rubbermag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mp5rubbermag-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "veprcell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "veprcell_o1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "veprcell_o2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "10mmmag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "10mmmag-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "10mmrubbermag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "10mmrubbermag-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rpdmag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rpdmag-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "545plum"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "545plum-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "545bake"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "545bake-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "545plumrubber"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "545plumrubber-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "545bakerubber"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "545bakerubber-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pitchmag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pitchmag-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pitchrubbermag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pitchrubbermag-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kordmag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kordmag-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "svd"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "svd-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "asval"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "asval-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "asvalrubber"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "asvalrubber-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stechkin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stechkin-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stechkinrubber"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stechkinrubber-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "t12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "t12-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "t12rubber"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "t12rubber-0"
+dirs = 1
+frames = 1

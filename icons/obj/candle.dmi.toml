@@ -1,0 +1,312 @@
+# Generated from candle.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "candle1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "candle1_lit"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "candle2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "candle2_lit"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "candle3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "candle3_lit"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "candle4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "candle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "candlebox1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "candlebox2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "candlebox3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "candlebox4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "candlebox5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "candlebox0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smallcandle1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smallcandle1_lit"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "smallcandle2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smallcandle2_lit"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "smallcandle3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smallcandle3_lit"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "smallcandle4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smallcandle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "candlebox1old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "candlebox2old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "candlebox3old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "candlebox4old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "candlebox5old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "candlebox0old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "candelabra"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "candelabra_lit"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "candelabra_melted"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whitecandle1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whitecandle1_lit"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "whitecandle2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whitecandle2_lit"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "whitecandle3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whitecandle3_lit"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "whitecandle4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whitecandle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whitecandlebox1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whitecandlebox2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whitecandlebox3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whitecandlebox4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whitecandlebox5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whitecandlebox0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blackcandle1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blackcandle1_lit"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "blackcandle2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blackcandle2_lit"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "blackcandle3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blackcandle3_lit"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "blackcandle4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blackcandle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blackcandlebox1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blackcandlebox2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blackcandlebox3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blackcandlebox4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blackcandlebox5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blackcandlebox0"
+dirs = 1
+frames = 1

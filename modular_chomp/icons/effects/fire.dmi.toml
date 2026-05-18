@@ -1,0 +1,25 @@
+# Generated from fire.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "fire-0"
+dirs = 1
+frames = 3
+delays = [1]
+rewind = true
+
+[[state]]
+name = "fire-1"
+dirs = 1
+frames = 3
+delays = [1]
+rewind = true
+
+[[state]]
+name = "fire-2"
+dirs = 1
+frames = 3
+delays = [1]
+rewind = true

@@ -1,0 +1,26 @@
+# Generated from vore_grayscale_drake.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 147
+height = 115
+cols = 7
+
+[[state]]
+name = "drake"
+dirs = 4
+frames = 4
+delays = [3]
+
+[[state]]
+name = "drake-1"
+dirs = 4
+frames = 4
+delays = [3]
+
+[[state]]
+name = "drake_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "drake_rest"
+dirs = 4
+frames = 1

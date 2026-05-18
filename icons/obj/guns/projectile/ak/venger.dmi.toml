@@ -1,0 +1,164 @@
+# Generated from venger.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 11
+
+[[state]]
+name = "AK_mag30"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "AK_mag20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "AK_mag10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "AK"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "AK_mag30_f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "AK_mag20_f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "AK_mag10_f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "AK_f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "onsuit_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "onsuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "back_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "back"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand_full_doble"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand_doble"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand_doble"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand_full_doble"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand_full_f"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand_f"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand_full_f"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand_f"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand_full_doble_f"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand_doble_f"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand_full_doble_f"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand_doble_f"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "onsuit_full_f"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "onsuit_f"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "back_full_f"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "back_f"
+dirs = 4
+frames = 1

@@ -1,0 +1,15 @@
+# Generated from stelardelightskybox.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 150
+height = 225
+cols = 3
+
+[[state]]
+name = "skybox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glow"
+dirs = 1
+frames = 4
+delays = [100, 1, 100, 1]

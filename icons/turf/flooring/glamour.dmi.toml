@@ -1,0 +1,75 @@
+# Generated from glamour.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "glamour"
+dirs = 1
+frames = 6
+delays = [10]
+
+[[state]]
+name = "water"
+dirs = 1
+frames = 3
+delays = [3]
+rewind = true
+
+[[state]]
+name = "wood"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glamourbrick"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock-light"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rock_side-light"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rock_side-light_w"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_side-light_e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_side-light_n"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_side-light_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glamour-border"
+dirs = 1
+frames = 6
+delays = [10]
+
+[[state]]
+name = "glamour-nub"
+dirs = 1
+frames = 6
+delays = [10]
+
+[[state]]
+name = "glamour-corner"
+dirs = 1
+frames = 6
+delays = [10]

@@ -1,0 +1,219 @@
+# Generated from mob_vox.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 14
+
+[[state]]
+name = ""
+dirs = 4
+frames = 1
+
+[[state]]
+name = "black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fingerlessgloves"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bmgloves"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boxing"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boxingblue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boxinggreen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boxingyellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "brown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "captain"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "furgloves"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leather"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gloves-armalis"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gloves-vox"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gray"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "latex"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lightbrown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ngloves"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "power_armour_gloves"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "purple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "r_hands"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rainbow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "s-ninja"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "s-ninjak"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "s-ninjan"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stungloves"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swat_gl"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "forensic"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_sec_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_sec_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "voxstealth_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_engineer_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "voxstealth_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_engineer_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "heavy_engi"
+dirs = 4
+frames = 1

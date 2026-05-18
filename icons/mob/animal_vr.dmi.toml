@@ -1,0 +1,206 @@
+# Generated from animal_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 14
+
+[[state]]
+name = "fluffy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fluffy_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fluffy_sleep"
+dirs = 1
+frames = 2
+delays = [10, 30]
+
+[[state]]
+name = "fluffy"
+dirs = 4
+frames = 5
+delays = [1]
+movement = true
+
+[[state]]
+name = "morph"
+dirs = 1
+frames = 3
+delays = [3]
+rewind = true
+
+[[state]]
+name = "morph_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "c_pet"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "c_pet"
+dirs = 4
+frames = 4
+delays = [2, 1, 2, 1]
+movement = true
+
+[[state]]
+name = "dave1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dave_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "c_pet_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m_pet"
+dirs = 4
+frames = 4
+delays = [2, 1, 2, 1]
+movement = true
+
+[[state]]
+name = "m_pet"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dave2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dave3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dave4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dave5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dave6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dave7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dave8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dave9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dave10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mouse_brown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mouse_brown_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "new_morph"
+dirs = 1
+frames = 5
+delays = [5, 1, 5, 2]
+
+[[state]]
+name = "new_morph"
+dirs = 4
+frames = 5
+delays = [1]
+movement = true
+
+[[state]]
+name = "new_morph_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cockroach"
+dirs = 4
+frames = 2
+delays = [2.5]
+
+[[state]]
+name = "whitegoose"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "whitegoose_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "raccoon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raccoon"
+dirs = 4
+frames = 4
+delays = [1.25]
+movement = true
+
+[[state]]
+name = "raccoon_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raccoon_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "raccoon-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raccoon-1"
+dirs = 4
+frames = 4
+delays = [1.25]
+movement = true
+
+[[state]]
+name = "raccoon_rest-1"
+dirs = 4
+frames = 1

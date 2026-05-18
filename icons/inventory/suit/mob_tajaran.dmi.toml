@@ -1,0 +1,663 @@
+# Generated from mob_tajaran.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 23
+
+[[state]]
+name = "rig-syndie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-engineering"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-atmos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-medical"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 4, y = 20 }]
+
+[[state]]
+name = "rig-medicalalt"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 4, y = 20 }]
+
+[[state]]
+name = "rig-sec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-secalt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-mining"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zhan_furs"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ce_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ce_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "security_rig_sealed"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "security_rig"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "ninja_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ninja_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medical_legs"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "medical_gloves"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "medical_rig"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "medical_rig_sealed"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "medical_sealed_hands"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "medical_sealed_legs"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "hacker_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hacker_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ert_security_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ert_commander_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ert_medical_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ert_engineer_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ert_security_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ert_commander_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ert_medical_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ert_engineer_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "breacher_rig_cheap_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "breacher_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "breacher_rig_cheap"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "breacher_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hazard_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hazard_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hazard_sealed_legs"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hazard_sealed_hands"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "merc_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "merc_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-engineering_rad"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-engineering_con"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-medical_bio"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 4, y = 20 }]
+
+[[state]]
+name = "rig-sec_riot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-medical_emt"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 4, y = 20 }]
+
+[[state]]
+name = "rig-firebug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "science_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "science_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eva_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eva_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engineering_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engineering_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-pilot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-pilot2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "void_explorer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "void_exp_medic"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "void_explorer_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "capsuit_void"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hosproto_void"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "asset_protection_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "asset_protection_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ert_janitor_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ert_janitor_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pmc_commandergrey_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pmc_commandergrey_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pmc_commandergreen_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pmc_commandergreen_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pmc_securitygrey_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pmc_securitygrey_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pmc_securitygreen_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pmc_securitygreen_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pmc_medicalgrey_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pmc_medicalgrey_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pmc_medicalgreen_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pmc_medicalgreen_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pmc_engineergrey_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pmc_engineergrey_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pmc_engineergreen_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pmc_engineergreen_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "military_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "military_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "void_explorer2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "void_explorer2_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-vintagecrew"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-vintageengi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-vintagemarine"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-vintagemedic"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-vintageofficer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-vintagepilot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-vintagescientist"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-vintageminer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-vintagemerc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "breaker_suit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "autoloksuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ertsuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ertsuit_e"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ertsuit_m"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ertsuit_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ertsuit_j"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hev_violet"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hev_orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crusader_suit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "custodian"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "moebiussuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "techno_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "techno_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ihs_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ihs_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "makeshift_void"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "excelsior"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "void_mining_bay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "void_excavation_bay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "void_secalt_bay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "void_pilot_bay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "void_medicalalt_bay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "void_explorer_bay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "void_engineeringalt_bay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "void_atmosalt_bay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "void_command_bay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engineering_rig_bay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engineering_rig_bay_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medical_rig_bay"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "medical_rig_bay_sealed"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "null_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "null_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pathfinder_rig_bay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pathfinder_rig_bay_sealed"
+dirs = 4
+frames = 1

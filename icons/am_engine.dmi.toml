@@ -1,0 +1,52 @@
+# Generated from am_engine.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 64
+cols = 4
+
+[[state]]
+name = "core_on"
+dirs = 1
+frames = 7
+delays = [3]
+rewind = true
+
+[[state]]
+name = "injector_matter_antimatter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "injector_antimatter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "injector_matter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "injector"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "antimatter_cell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "matter_cell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "core_connected"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "core_off"
+dirs = 1
+frames = 1
+rewind = true

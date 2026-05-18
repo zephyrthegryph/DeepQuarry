@@ -1,0 +1,124 @@
+# Generated from mods.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "silencer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Excruciator"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Glass_Widow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Danger_Zone"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Cop_Block"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Boom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Overshooter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Weintraub"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Reverse_loader"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dampener"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "battery_shunt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "overdrive"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "honker"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toxin_coater"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "isotope_diffuser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Forged_barrel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Penetrator"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Caster"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "psionic_catalyst"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Gauss"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Watchman"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Killer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "2,0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gravbarrel"
+dirs = 1
+frames = 1

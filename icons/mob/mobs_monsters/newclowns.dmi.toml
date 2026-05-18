@@ -1,0 +1,128 @@
+# Generated from newclowns.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 13
+
+[[state]]
+name = "c_punished"
+dirs = 4
+frames = 4
+delays = [5]
+
+[[state]]
+name = "c_thicc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "c_perm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "c_thin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "c_normal"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "c_wide"
+dirs = 4
+frames = 7
+delays = [2]
+rewind = true
+
+[[state]]
+name = "cluwne"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tunnel_new"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sentinel_new"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tunnel_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sentinel_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cluwne_dead"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "perm_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wide_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "thicc_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "punished_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "c_boned"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clown_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "thin_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "c_raze"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "generic_gib"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "tp_in"
+dirs = 4
+frames = 8
+delays = [1]
+loop = 1
+
+[[state]]
+name = "tp_out"
+dirs = 4
+frames = 7
+delays = [1]
+loop = 1

@@ -1,0 +1,83 @@
+# Generated from structures_yw64x48.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 48
+cols = 12
+
+[[state]]
+name = "Fence"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holograph_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holograph_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holograph_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holograph_turnon"
+dirs = 1
+frames = 25
+delays = [1]
+
+[[state]]
+name = "hologram_turnoff"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "hologram_turnoff"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "hologram_turnon"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "hologram_ship"
+dirs = 4
+frames = 8
+delays = [2]
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hologram_ship2"
+dirs = 1
+frames = 16
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 1]
+
+[[state]]
+name = "hologram_whiteship"
+dirs = 1
+frames = 12
+delays = [1]
+
+[[state]]
+name = ""
+dirs = 4
+frames = 3
+delays = [1]
+
+[[state]]
+name = ""
+dirs = 1
+frames = 6
+delays = [1]

@@ -1,0 +1,15 @@
+# Generated from ghost_beam.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "ghost_beam"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ghost_beam_active"
+dirs = 1
+frames = 15
+delays = [1, 1, 1, 1, 1, 7, 7, 7, 1]

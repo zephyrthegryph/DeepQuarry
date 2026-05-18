@@ -1,0 +1,45 @@
+# Generated from unknown_boss.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 11
+
+[[state]]
+name = "glitch_boss"
+dirs = 1
+frames = 22
+delays = [2]
+
+[[state]]
+name = "glitch_boss_75"
+dirs = 1
+frames = 22
+delays = [2]
+
+[[state]]
+name = "glitch_boss_50"
+dirs = 1
+frames = 22
+delays = [2]
+
+[[state]]
+name = "glitch_boss_25"
+dirs = 1
+frames = 22
+delays = [2]
+
+[[state]]
+name = "parts"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "glitch_boss_base"
+dirs = 1
+frames = 22
+delays = [2]
+
+[[state]]
+name = "glitch_boss_dead"
+dirs = 1
+frames = 1

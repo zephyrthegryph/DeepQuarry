@@ -1,0 +1,84 @@
+# Generated from shuttle_tubed.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "tube"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tube0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tube1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tube4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tube2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tube8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tube3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tube12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tube6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tube9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tube10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tube5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tube10h"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tube6h"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tube5h"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tube9h"
+dirs = 1
+frames = 1

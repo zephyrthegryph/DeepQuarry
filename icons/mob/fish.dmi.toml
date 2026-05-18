@@ -1,0 +1,197 @@
+# Generated from fish.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 19
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bass-swim"
+dirs = 4
+frames = 4
+delays = [3]
+
+[[state]]
+name = "bass-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "trout-swim"
+dirs = 4
+frames = 4
+delays = [3]
+
+[[state]]
+name = "trout-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "salmon-swim"
+dirs = 4
+frames = 4
+delays = [3]
+
+[[state]]
+name = "salmon-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "perch-swim"
+dirs = 4
+frames = 4
+delays = [3]
+
+[[state]]
+name = "perch-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pike-swim"
+dirs = 4
+frames = 4
+delays = [3]
+
+[[state]]
+name = "pike-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "koi-swim"
+dirs = 4
+frames = 8
+delays = [2]
+
+[[state]]
+name = "koi-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "murkin-swim"
+dirs = 4
+frames = 4
+delays = [3]
+
+[[state]]
+name = "murkin-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "javelin-swim"
+dirs = 4
+frames = 4
+delays = [3]
+
+[[state]]
+name = "javelin-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "solarfin-swim"
+dirs = 4
+frames = 12
+delays = [1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 2, 30, 1.5]
+
+[[state]]
+name = "solarfin-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "solarfin-swim-eyes"
+dirs = 4
+frames = 12
+delays = [1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 2, 30, 1.5]
+
+[[state]]
+name = "sifbass-swim"
+dirs = 4
+frames = 4
+delays = [3]
+
+[[state]]
+name = "sifbass-swim_mask-body"
+dirs = 4
+frames = 4
+delays = [3]
+
+[[state]]
+name = "sifbass-swim_mask-belly"
+dirs = 4
+frames = 4
+delays = [3]
+
+[[state]]
+name = "sifbass-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sifbass-dead_mask-body"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sifbass-dead_mask-belly"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rockfish-swim"
+dirs = 4
+frames = 4
+delays = [4, 4, 4, 4, 3]
+
+[[state]]
+name = "rockfish-swim_mask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rockfish-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rockfish-dead_mask"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crab"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "crab_dead"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "crab"
+dirs = 4
+frames = 3
+delays = [1]
+movement = true
+
+[[state]]
+name = "evilcrab"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "evilcrab_dead"
+dirs = 1
+frames = 1

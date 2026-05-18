@@ -1,0 +1,289 @@
+# Generated from random_spawners.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "monster"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "animal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "animal_group"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "animal_hostile"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "animal_passive"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "humanoid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "robot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bird"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fish"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sus_mob"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gun_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gun_energy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gun_energy_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gun_shotgun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gun_rifle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gun_auto"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ammo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grenade"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grenade_box"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grenade_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grenade_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gun_scrap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "generic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "generic_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "generic_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "security"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medical"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medicalkit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "science"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tool"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tool_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tool_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toolbox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tech"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tech_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tech_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cell_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cell_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pill"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pillbottle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sus"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "material"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "material_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "material_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluespace"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "potion"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ingredient"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "base"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fantasy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fantasy2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brain"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chips"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chips_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chips_2"
+dirs = 1
+frames = 1

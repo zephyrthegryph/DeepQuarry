@@ -1,0 +1,399 @@
+# Generated from dice.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "d61"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d62"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d63"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d64"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d65"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d66"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d201"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d202"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d203"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d204"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d205"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d206"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d207"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d208"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d209"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d2010"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d2011"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d2012"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d2013"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d2014"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d2015"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d2016"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d2017"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d2018"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d2019"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d2020"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d41"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d42"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d43"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d44"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d81"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d82"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d83"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d84"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d85"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d86"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d87"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d88"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d101"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d102"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d103"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d104"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d105"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d106"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d107"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d108"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d109"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d1010"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d1001"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d1002"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d1003"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d1004"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d1005"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d1006"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d1007"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d1008"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d1009"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d10010"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d121"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d122"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d123"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d124"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d125"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d126"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d127"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d128"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d129"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d1210"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d1211"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d1212"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ceph_d61"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ceph_d62"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ceph_d63"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ceph_d64"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ceph_d65"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ceph_d66"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dicebag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "magicdicebag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dicecup"
+dirs = 1
+frames = 1

@@ -1,0 +1,140 @@
+# Generated from singularity.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 12
+
+[[state]]
+name = "ca"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ca_on"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "ca_active"
+dirs = 1
+frames = 5
+delays = [1]
+loop = 1
+
+[[state]]
+name = "ca_deactive"
+dirs = 1
+frames = 5
+delays = [1]
+loop = 1
+
+[[state]]
+name = "ptank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "on"
+dirs = 1
+frames = 10
+delays = [1]
+
+[[state]]
+name = "error"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "cu 1 on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cu 2 on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cu 3 on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cu 4 on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cu n error"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cu on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cu sing"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cu conterr"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cu"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "TheSingGen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Contain_F"
+dirs = 4
+frames = 16
+delays = [1]
+
+[[state]]
+name = "singularity_s1"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "beacon0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beacon1"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "beaconsynd0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beaconsynd1"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "emitter"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "emitter_+a"
+dirs = 4
+frames = 1

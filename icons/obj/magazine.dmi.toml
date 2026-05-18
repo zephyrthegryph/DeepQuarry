@@ -1,0 +1,9 @@
+# Generated from magazine.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 1
+
+[[state]]
+name = "magazine"
+dirs = 1
+frames = 1

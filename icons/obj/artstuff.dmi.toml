@@ -1,0 +1,99 @@
+# Generated from artstuff.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "easel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "24x24"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "23x23"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "23x19"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "19x19"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "11x11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "24x24wip"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "23x23wip"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "23x19wip"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "19x19wip"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "11x11wip"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "24x24frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "23x23frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "23x19frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "19x19frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "11x11frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "palette"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brush"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brush_color"
+dirs = 1
+frames = 1

@@ -1,0 +1,34 @@
+# Generated from rig_back_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "techno_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ihs_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medical_rig_bay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engineering_rig_bay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "null_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pathfinder_rig_bay"
+dirs = 4
+frames = 1

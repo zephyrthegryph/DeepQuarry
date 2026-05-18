@@ -1,0 +1,178 @@
+# Generated from objects_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "launcherbtt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "launcheract"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shelf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gunrack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "modkit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dancepole"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "watertank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weldtank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "watertank_high"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weldtank_high"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "foamtank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dispenser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phoron-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phoron-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phoron-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phoron-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phoron-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oxygen-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oxygen-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oxygen-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oxygen-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oxygen-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "barrel"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "barrel2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "barrel3"
+dirs = 1
+frames = 8
+delays = [1.5]
+
+[[state]]
+name = "panicbutton_base"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "panicbutton"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "panicbutton_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "panicbutton_launched"
+dirs = 1
+frames = 12
+delays = [2]
+
+[[state]]
+name = "smallpanicbutton_base"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smallpanicbutton"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smallpanicbutton_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smallpanicbutton_launched"
+dirs = 1
+frames = 2
+delays = [4]

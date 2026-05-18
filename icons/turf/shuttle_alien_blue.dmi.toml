@@ -1,0 +1,399 @@
+# Generated from shuttle_alien_blue.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 13
+
+[[state]]
+name = "alien"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien-hc"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien-nj"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alienplatinghalf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alienplating"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alienpod1"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "alienpod2"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "alienpod3"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "alienpod4"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "alienpod5"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "alienpod6"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "alienpod7"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "alienpod8"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "alienpod9"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "alien_d"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "alien0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien6h"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien10h"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien5h"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien9h"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "1-i"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "2-i"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "3-i"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "4-i"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "1-n"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "2-n"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "3-s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "4-s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "1-w"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "2-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "3-w"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "4-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "1-nw"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "2-ne"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "3-sw"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "4-se"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "1-f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "2-f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "3-f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "4-f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d-se-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d-se-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d-se"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d-sw-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d-sw-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d-sw"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d-ne-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d-ne-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d-ne"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d-nw-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d-nw-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d-nw"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien_preview"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alien_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alien_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alien_3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alien_4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alien_5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alien_6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alien_7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "recharge_floor"
+dirs = 1
+frames = 2
+delays = [10]

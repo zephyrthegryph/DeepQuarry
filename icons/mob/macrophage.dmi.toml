@@ -1,0 +1,24 @@
+# Generated from macrophage.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 2
+
+[[state]]
+name = "macrophage-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "macrophage-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "macrophage-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "macrophage-4"
+dirs = 1
+frames = 1

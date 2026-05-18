@@ -1,0 +1,96 @@
+# Generated from screen_full_vore.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 480
+height = 480
+cols = 7
+
+[[state]]
+name = "dark"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "base"
+dirs = 1
+frames = 4
+delays = [250, 1]
+
+[[state]]
+name = "brown_internals"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "a_tumby"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "another_tumby"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "da_tumby"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yet_another_tumby"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "synth_tumby"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "you_know_what_this_is"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "you_know_what_this_is_b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "a_kind_of_tumby"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "a_kind_of_tumby_b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "a_kind_of_coils"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "a_kind_of_coils_tight"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "a_kind_of_vines"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "a_anim_belly"
+dirs = 1
+frames = 27
+delays = [1]
+
+[[state]]
+name = "a_bright_tumby"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "multi_layer_test_tummy"
+dirs = 1
+frames = 1

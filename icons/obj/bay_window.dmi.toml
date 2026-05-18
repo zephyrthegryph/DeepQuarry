@@ -1,0 +1,224 @@
+# Generated from bay_window.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 13
+
+[[state]]
+name = "preview_glass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "preview_rglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "preview_phoron"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "preview_rphoron"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "window_onframe0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "window_onframe1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "window_onframe2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "window_onframe3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "window_onframe4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "window_onframe5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "window_onframe6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "window_onframe7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "window_other_onframe0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "window_other_onframe1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "window_other_onframe2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "window_other_onframe3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "window_other_onframe4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "window_other_onframe5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "window_other_onframe6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rwindow_onframe0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rwindow_onframe1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rwindow_onframe2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rwindow_onframe3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rwindow_onframe4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rwindow_onframe5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rwindow_onframe6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rwindow_onframe7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rwindow_other_onframe0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rwindow_other_onframe1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rwindow_other_onframe2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rwindow_other_onframe3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rwindow_other_onframe4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rwindow_other_onframe5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rwindow_other_onframe6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rwindow_other_onframe7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "window0_damage"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "window_onframe0_damage"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "window_onframe1_damage"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "window_onframe_2_damage"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "window_onframe3_damage"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "window_onframe4_damage"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "window_onframe5_damage"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "window_onframe6_damage"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "window_onframe7_damage"
+dirs = 4
+frames = 1

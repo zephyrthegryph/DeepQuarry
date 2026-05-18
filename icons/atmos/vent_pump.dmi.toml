@@ -1,0 +1,136 @@
+# Generated from vent_pump.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 18
+
+[[state]]
+name = "off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "out"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "in"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "weld"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hoff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hout"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "hin"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "hweld"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "map_vent"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "map_vent_aux"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "map_dp_vent"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "map_vent_in"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "map_vent_out"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "map_dp_vent_in"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "map_dp_vent_out"
+dirs = 4
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "retro_hoff"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "retro_hweld"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "retro_hout"
+dirs = 4
+frames = 6
+delays = [0.3]
+
+[[state]]
+name = "retro_hin"
+dirs = 4
+frames = 6
+delays = [0.3]
+
+[[state]]
+name = "retro_off"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "retro_weld"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "retro_out"
+dirs = 4
+frames = 6
+delays = [0.3]
+
+[[state]]
+name = "retro_in"
+dirs = 4
+frames = 6
+delays = [0.3]

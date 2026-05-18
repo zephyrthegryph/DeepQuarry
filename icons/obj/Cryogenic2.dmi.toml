@@ -1,0 +1,312 @@
+# Generated from Cryogenic2.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 20
+
+[[state]]
+name = "scanner_0"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "scanner_1"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "sleeperconsole"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "sleeperconsole-p"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sleeper_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sleeper_1"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "freezer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "freezer_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "freezer_1"
+dirs = 4
+frames = 6
+delays = [2]
+rewind = true
+
+[[state]]
+name = "heater"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "heater_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "heater_1"
+dirs = 4
+frames = 6
+delays = [2]
+rewind = true
+
+[[state]]
+name = "celltop-p"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cellbottom-p"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "celltop_1"
+dirs = 1
+frames = 5
+delays = [2, 2, 2, 2, 1]
+
+[[state]]
+name = "celltop"
+dirs = 1
+frames = 5
+delays = [2]
+
+[[state]]
+name = "cellbottom"
+dirs = 1
+frames = 5
+delays = [2]
+
+[[state]]
+name = "cellconsole"
+dirs = 1
+frames = 5
+delays = [2]
+rewind = true
+
+[[state]]
+name = "cellconsole-p"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cryo_bottom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cryo_bottom_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cryo_bottom_1"
+dirs = 1
+frames = 5
+delays = [2]
+
+[[state]]
+name = "body_scannerconsole"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "body_scannerconsole-p"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cryopod_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cryopod_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cryo_rear"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scanner_red"
+dirs = 4
+frames = 6
+delays = [3]
+
+[[state]]
+name = "scanner_death"
+dirs = 4
+frames = 4
+delays = [3]
+
+[[state]]
+name = "scanner_green"
+dirs = 4
+frames = 6
+delays = [3]
+
+[[state]]
+name = "scanner_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scanner_yellow"
+dirs = 4
+frames = 7
+delays = [3]
+
+[[state]]
+name = "scanner_terminal_blue"
+dirs = 4
+frames = 4
+delays = [3]
+
+[[state]]
+name = "scanner_terminal_dead"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "scanner_terminal_green"
+dirs = 4
+frames = 4
+delays = [3]
+
+[[state]]
+name = "scanner_terminal_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scanner_terminal_red"
+dirs = 4
+frames = 4
+delays = [3]
+
+[[state]]
+name = "scanner_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lift_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lift_closed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "new_scanner_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alpha_mask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scan_beam"
+dirs = 1
+frames = 7
+delays = [3]
+
+[[state]]
+name = "gradient_green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gradient_yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gradient_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gradient_gray"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "securitycamera"
+dirs = 4
+frames = 4
+delays = [24]
+
+[[state]]
+name = "body_scanner_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "body_scanner_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndipod_0"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "syndipod_1"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "syndipod_0-r"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "syndipod_1-r"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "alienpod_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alienpod_1"
+dirs = 1
+frames = 1

@@ -1,0 +1,56 @@
+# Generated from screen_preview_vore_ch.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 120
+height = 120
+cols = 7
+
+[[state]]
+name = "dark"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "base"
+dirs = 1
+frames = 4
+delays = [250, 1]
+
+[[state]]
+name = "brown_internals"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brown_internals_hole"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "synth_flesh_mono"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "synth_flesh_mono_hole"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "a_tumby"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "another_tumby"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "da_tumby"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "anim_belly"
+dirs = 1
+frames = 27
+delays = [1]

@@ -1,0 +1,24 @@
+# Generated from custom_clothes_left_hand_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "nikki-hat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "avidahat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "avidadress"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "avidahatnoears"
+dirs = 4
+frames = 1

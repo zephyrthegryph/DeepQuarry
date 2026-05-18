@@ -1,0 +1,57 @@
+# Generated from inflatable.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "folded"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "folded_door"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "folded_wall"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "folded_door_torn"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "folded_wall_torn"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wall"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_closed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_opening"
+dirs = 1
+frames = 6
+delays = [2]
+loop = 1
+
+[[state]]
+name = "door_closing"
+dirs = 1
+frames = 6
+delays = [2]

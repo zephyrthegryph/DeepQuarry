@@ -1,0 +1,23 @@
+# Generated from blackhole32x96.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 96
+cols = 3
+
+[[state]]
+name = "monolith"
+dirs = 1
+frames = 3
+delays = [5, 1, 2]
+rewind = true
+
+[[state]]
+name = "monolith-dead"
+dirs = 1
+frames = 1
+rewind = true
+
+[[state]]
+name = "monolith-eyes"
+dirs = 1
+frames = 1
+rewind = true

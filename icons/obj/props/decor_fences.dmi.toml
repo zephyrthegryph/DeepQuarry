@@ -1,0 +1,174 @@
+# Generated from decor_fences.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "fence0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "0-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "0-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "1-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "0-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "1-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "2-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "1-2-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "0-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "1-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "2-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "1-2-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "4-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "1-4-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "2-4-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "1-2-4-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brokenfence0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "b0-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "b0-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "b1-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "b0-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "b1-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "b2-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "b1-2-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "b0-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "b1-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "b2-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "b1-2-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "b4-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "b1-4-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "b2-4-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "b1-2-4-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bs1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bs2"
+dirs = 1
+frames = 1

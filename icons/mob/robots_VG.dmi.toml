@@ -1,0 +1,1245 @@
+# Generated from robots_VG.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 40
+
+[[state]]
+name = "gib1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gibdown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gibup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gib2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gib3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gib4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gib5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gib6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gibbl1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gib7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gibleg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gibarm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floor1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floor2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floor3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floor4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floor5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floor6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floor7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "streak1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "streak2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "streak3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "streak4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "streak5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "remainsrobot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ov-openpanel -c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ov-openpanel +c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ov-openpanel +w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spiderbot-chassis"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spiderbot-chassis-posi"
+dirs = 4
+frames = 22
+delays = [1]
+
+[[state]]
+name = "spiderbot-chassis-mmi"
+dirs = 4
+frames = 2
+delays = [30, 1]
+
+[[state]]
+name = "spiderbot-smashed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "robot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-robot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "robot_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-robot_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engibot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-engibot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "minerbot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-minerbot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "brobot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-brobot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "maximillion"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-maximillion"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "servbot_f"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-servbot_f"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "servbot_m"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-servbot_m"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hydrobot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-hydrobot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medbot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-medbot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "secbot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-secbot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "janbot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-janbot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "toiletbot"
+dirs = 4
+frames = 3
+delays = [1, 2, 1]
+
+[[state]]
+name = "eyes-toiletbot"
+dirs = 4
+frames = 3
+delays = [1, 2, 15]
+
+[[state]]
+name = "bloodhound"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-bloodhound"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "surgeon"
+dirs = 4
+frames = 3
+delays = [1, 2, 1]
+
+[[state]]
+name = "eyes-surgeon"
+dirs = 4
+frames = 3
+delays = [1, 2, 15]
+
+[[state]]
+name = "landmate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-landmate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mopgearrex"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "eyes-mopgearrex"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "miner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-miner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "droid"
+dirs = 4
+frames = 20
+delays = [1]
+
+[[state]]
+name = "eyes-droid"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "droid-miner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-droid-miner"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "droid-medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-droid-medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "droid-security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-droid-security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "droid-engineer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-droid-engineer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "droid-janitor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-droid-janitor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "droid-combat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-droid-combat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "droid-combat-shield"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "droid-combat-roll"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "droid-combat-roll"
+dirs = 4
+frames = 4
+delays = [1]
+movement = true
+
+[[state]]
+name = "rottweiler-combat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-rottweiler-combat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rottweiler-combat-roll"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "rottweiler-combat-shield"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "needles"
+dirs = 4
+frames = 2
+delays = [10]
+
+[[state]]
+name = "eyes-needles"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engiseer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-engiseer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "booty-blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-booty-blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "booty-yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-booty-yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "booty-flower"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-booty-flower"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "booty-green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-booty-green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "booty-red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-booty-red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "booty-white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-booty-white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mechaduster"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "eyes-mechaduster"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marina"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-marina"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marinaSV"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-marinaSV"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marinaMN"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-marinaMN"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marinaSC"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-marinaSC"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marinaEN"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-marinaEN"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marinaJN"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-marinaJN"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mrgutsy"
+dirs = 4
+frames = 12
+delays = [2]
+
+[[state]]
+name = "eyes-mrgutsy"
+dirs = 4
+frames = 5
+delays = [4, 4, 8, 4]
+
+[[state]]
+name = "mrgutsy-roll"
+dirs = 4
+frames = 12
+delays = [2]
+
+[[state]]
+name = "eyes-mrgutsy-roll"
+dirs = 4
+frames = 5
+delays = [4, 4, 8, 4]
+
+[[state]]
+name = "securitron"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "securitron"
+dirs = 4
+frames = 2
+delays = [5, 3]
+movement = true
+
+[[state]]
+name = "eyes-securitron"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-securitron"
+dirs = 4
+frames = 2
+delays = [5, 3]
+movement = true
+
+[[state]]
+name = "marinaSD"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-marinaSD"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marinaCB"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-marinaCB"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marinaCB-shield"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "marinaCB-roll"
+dirs = 4
+frames = 6
+delays = [3, 1]
+
+[[state]]
+name = "eyes-marinaCB-roll"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sleekstandard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-sleekstandard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sleekjanitor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-sleekjanitor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sleekmedic"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-sleekmedic"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sleeksecurity"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-sleeksecurity"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sleekminer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-sleekminer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sleekengineer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-sleekengineer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sleekservice"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-sleekservice"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bladewolfmk2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-bladewolfmk2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bladewolfmk2-shield"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "bladewolfmk2-roll"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-bladewolfmk2-roll"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bladewolfmk2-roll"
+dirs = 4
+frames = 4
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "spider-standard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-spider-standard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kodiak-standard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-kodiak-standard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "arachne"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-arachne"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kodiak-service"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-kodiak-service"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kodiak-eng"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-kodiak-eng"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kodiak-miner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-kodiak-miner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kodiak-sec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-kodiak-sec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kodiak-combat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-kodiak-combat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kodiak-combat-shield"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "kodiak-combat-roll"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "omoikane"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "omoikane"
+dirs = 4
+frames = 3
+delays = [1]
+movement = true
+
+[[state]]
+name = "eyes-omoikane"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-omoikane"
+dirs = 1
+frames = 1
+movement = true
+
+[[state]]
+name = "peaceborg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-peaceborg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "peaceborg-clown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-peaceborg-clown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "peaceborg-noir"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-peaceborg-noir"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "peaceborg-noirbw"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-peaceborg-noirbw"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "peaceborg-warden"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-peaceborg-warden"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chesty"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-chesty"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chesty-shield"
+dirs = 4
+frames = 3
+delays = [1]
+
+[[state]]
+name = "chesty-roll"
+dirs = 4
+frames = 6
+delays = [10, 1, 1, 5, 1]
+
+[[state]]
+name = "eyes-chesty-roll"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chesty-roll"
+dirs = 4
+frames = 3
+delays = [1]
+movement = true
+
+[[state]]
+name = "eyes-chesty-roll"
+dirs = 4
+frames = 1
+movement = true
+
+[[state]]
+name = "Noble-JAN-H"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-Noble-JAN-H"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Noble-SUP-H"
+dirs = 4
+frames = 5
+delays = [5, 0.5]
+
+[[state]]
+name = "eyes-Noble-SUP-H"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Noble-MED-H"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "eyes-Noble-MED-H"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Noble-SEC-H"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-Noble-SEC-H"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Noble-ENG-H"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "eyes-Noble-ENG-H"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Noble-STD-H"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-Noble-STD-H"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Noble-JAN"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-Noble-JAN"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Noble-SUP"
+dirs = 4
+frames = 5
+delays = [10, 0.5]
+
+[[state]]
+name = "eyes-Noble-SUP"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Noble-MED"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-Noble-MED"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Noble-SEC"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-Noble-SEC"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Noble-ENG"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "eyes-Noble-ENG"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Noble-STD"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-Noble-STD"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Noble-SRV"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-Noble-SRV"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wall-e"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-wall-e"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wall-a"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-wall-a"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wall-e"
+dirs = 4
+frames = 2
+delays = [1]
+movement = true
+
+[[state]]
+name = "wall-a"
+dirs = 4
+frames = 2
+delays = [1]
+movement = true
+
+[[state]]
+name = "eve"
+dirs = 4
+frames = 5
+delays = [4]
+
+[[state]]
+name = "eyes-eve"
+dirs = 4
+frames = 5
+delays = [4]
+
+[[state]]
+name = "r2d2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bladewolf"
+dirs = 4
+frames = 8
+delays = [4, 4, 10, 10, 4, 4, 10, 7]
+
+[[state]]
+name = "eyes-bladewolf"
+dirs = 4
+frames = 8
+delays = [4, 4, 10, 10, 4, 4, 10, 7]
+
+[[state]]
+name = "bladewolf-roll"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "motile-syndie"
+dirs = 4
+frames = 9
+delays = [1]
+movement = true
+
+[[state]]
+name = "eyes-motile-syndie"
+dirs = 4
+frames = 9
+delays = [1]
+movement = true
+
+[[state]]
+name = "motile-syndie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-motile-syndie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "droid-crisis"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-droid-crisis"
+dirs = 4
+frames = 1

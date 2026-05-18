@@ -1,0 +1,214 @@
+# Generated from suit_yw.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 12
+
+[[state]]
+name = "secjacket"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secjacket_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blueshieldcoat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blueshield"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brigphysician-vest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paramedic-vest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secjacket_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "secjacket_open_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tailcoat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ladiesvictoriancoat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ladiesredvictoriancoat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blueshieldcoat_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blueshield_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "brigphysician-vest_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "paramedic-vest_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackservice"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackservice_crew"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackservice_med"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackservice_medcom"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackservice_eng"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackservice_engcom"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackservice_sup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackservice_sec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackservice_seccom"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackservice_com"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snowsuit_command"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snowsuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snowsuit_science"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snowsuit_security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snowsuit_engineering"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snowsuit_medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snowsuit_cargo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snowsuit_command_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snowsuit_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snowsuit_science_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snowsuit_security_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snowsuit_engineering_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snowsuit_medical_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snowsuit_cargo_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tailcoat_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ladiesvictoriancoat_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ladiesredvictoriancoat_s"
+dirs = 4
+frames = 1

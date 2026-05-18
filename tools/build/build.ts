@@ -156,6 +156,26 @@ export const DmMapsIncludeTarget = new Juke.Target({
   },
 });
 
+// DQAdd Start — regenerate .dmi files from their PNG + .dmi.toml sources
+// before DM compile. Architecture A migration: every DMI has editable
+// PNG + TOML sources alongside it; this target re-packs them when stale.
+//
+// No `inputs`/`outputs` declared on purpose: build_step.py does its own
+// per-file mtime check, so letting Juke pre-glob 4800+ source files just
+// to decide whether to invoke us is pure overhead — Juke's stat pass
+// costs ~5s/build, build_step.py's own dirty-check is 0.9s. The target
+// runs unconditionally; the script no-ops when nothing's stale.
+export const IconRepackTarget = new Juke.Target({
+  executes: async () => {
+    await Juke.exec('python3', [
+      '-m', 'tools.dq_icons.build_step',
+      '--output', 'icons/gen',
+      'icons', 'modular_chomp/icons', 'modular_dq/icons', 'maps',
+    ]);
+  },
+});
+// DQAdd End
+
 export const DmTarget = new Juke.Target({
   parameters: [
     DefineParameter,
@@ -167,6 +187,7 @@ export const DmTarget = new Juke.Target({
   dependsOn: ({ get }) => [
     get(DefineParameter).includes('ALL_MAPS') && DmMapsIncludeTarget,
     !get(SkipIconCutter) && IconCutterTarget,
+    IconRepackTarget, // DQAdd — regenerate .dmi from PNG+TOML before DM compile
   ],
   inputs: [
     '_maps/map_files/generic/**',
@@ -288,6 +309,31 @@ export const AutowikiTarget = new Juke.Target({
 export const BunTarget = new Juke.Target({
   parameters: [CiParameter],
   inputs: ['tgui/**/package.json'],
+  // DQAdd Start — skip `bun install` when tgui/node_modules is newer
+  // than every package.json + bun.lock under tgui/. Without this Juke
+  // re-runs `bun install --frozen-lockfile` on every build (~5s) even
+  // when nothing has changed; the install itself then no-ops in ~70ms
+  // but the spawn overhead is real. Same onlyWhen pattern as
+  // BiomeInstallTarget below.
+  onlyWhen: () => {
+    if (!fs.existsSync('tgui/node_modules')) return true;
+    try {
+      const nmMt = fs.statSync('tgui/node_modules').mtimeMs;
+      if (fs.statSync('tgui/bun.lock').mtimeMs > nmMt) return true;
+      // tgui/**/package.json matches inside tgui/node_modules/ too,
+      // where Bun's per-install file writes always look "newer" than
+      // the parent directory. Filter those out so we only watch
+      // authored workspace package.json files.
+      for (const pkg of Juke.glob('tgui/**/package.json')) {
+        if (pkg.includes('node_modules')) continue;
+        if (fs.statSync(pkg).mtimeMs > nmMt) return true;
+      }
+      return false;
+    } catch {
+      return true; // bail conservatively if any stat fails
+    }
+  },
+  // DQAdd End
   executes: () => {
     return bun('install', '--frozen-lockfile', '--ignore-scripts');
   },

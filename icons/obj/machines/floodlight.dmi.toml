@@ -1,0 +1,49 @@
+# Generated from floodlight.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "floodob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floodo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flood00"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flood01"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floodob00"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floodo00"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floodob01"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floodo01"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ads"
+dirs = 4
+frames = 1

@@ -1,0 +1,194 @@
+# Generated from deptjacket.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 13
+
+[[state]]
+name = "tesh_uniform_car"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_mine"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_ce_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_comm_g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_comm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_ce"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_atmos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_engie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_cmo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_doc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_chem"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_viro"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_para"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_sci"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_robo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_sec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_qm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_serv"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_iaa"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_car_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_mine_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_ce_w_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_comm_g_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_comm_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_ce_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_atmos_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_engie_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_cmo_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_doc_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_chem_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_viro_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_para_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_sci_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_robo_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_sec_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_qm_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_serv_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_iaa_s"
+dirs = 4
+frames = 1

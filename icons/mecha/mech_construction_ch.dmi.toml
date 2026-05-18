@@ -1,0 +1,54 @@
+# Generated from mech_construction_ch.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "scarab_chassis_complete"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scarab_weld2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scarab_wire1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scarab_wire2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scarab_chip1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scarab_chip2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scarab_chip3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scarab_chip4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scarab_chip5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scarab_weld1"
+dirs = 1
+frames = 1

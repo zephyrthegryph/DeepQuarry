@@ -1,0 +1,19 @@
+# Generated from passive_gate.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "on"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "map"
+dirs = 4
+frames = 1

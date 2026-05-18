@@ -1,0 +1,44 @@
+# Generated from taurs_yw.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 6
+
+[[state]]
+name = "husky_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "huskyf_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolf2_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kentauri_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kentauri_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "big_liz_mark"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "big_liz"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "taur_clip_mask_def"
+dirs = 4
+frames = 1

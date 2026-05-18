@@ -1,0 +1,474 @@
+# Generated from radio.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 16
+
+[[state]]
+name = "beacon"
+dirs = 1
+frames = 2
+delays = [18, 1]
+
+[[state]]
+name = "radio"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "walkietalkieOLD"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "signaller"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "intercom"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "intercom_ov"
+dirs = 4
+frames = 9
+delays = [1, 1, 1, 1, 1, 20, 1]
+
+[[state]]
+name = "intercom-p"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "intercom_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "intercom-p_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "secintercom"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "secintercom_ov"
+dirs = 4
+frames = 9
+delays = [1, 1, 1, 1, 1, 20, 1]
+
+[[state]]
+name = "secintercom-p"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medintercom"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medintercom_ov"
+dirs = 4
+frames = 9
+delays = [1, 1, 1, 1, 1, 20, 1]
+
+[[state]]
+name = "medintercom-p"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "headset"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "headset_alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "headset_earbud"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "com_headset"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "com_headset_alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "com_earbud"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eng_headset"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eng_headset_alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eng_earbud"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "med_headset"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "med_headset_alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "med_earbud"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sec_headset"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sec_headset_alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sec_earbud"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "srv_headset"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "srv_headset_alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "srv_earbud"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rob_headset"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mine_headset"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cargo_headset"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cargo_headset_alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cargo_earbud"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "exp_headset"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "exp_headset_alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sar_headset"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sar_headset_alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pilot_headset"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pilot_headset_alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cent_headset"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cent_headset_alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nt_headset"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nt_headset_alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndie_headset"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndie_headset_alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndie_earbud"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "walkietalkiebay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "med_walkietalkie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "retro_walkietalkie"
+dirs = 1
+frames = 9
+delays = [1, 1, 1, 1, 20, 1]
+
+[[state]]
+name = "walkietalkie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "walkietalkie-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cypherkey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "med_cypherkey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sci_cypherkey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medsci_cypherkey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "srv_cypherkey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sec_cypherkey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cargo_cypherkey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mine_cypherkey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "qm_cypherkey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eng_cypherkey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rob_cypherkey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "com_cypherkey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hop_cypherkey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cap_cypherkey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rd_cypherkey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hos_cypherkey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ce_cypherkey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cmo_cypherkey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bin_cypherkey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syn_cypherkey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cent_cypherkey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cent_cypherkey_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floor_beacon"
+dirs = 1
+frames = 5
+delays = [2, 2, 2, 2, 5]
+rewind = true
+
+[[state]]
+name = "floor_beacon_dead"
+dirs = 1
+frames = 1
+rewind = true
+
+[[state]]
+name = "electropack0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "electropack1"
+dirs = 1
+frames = 3
+delays = [3]
+rewind = true
+
+[[state]]
+name = "intercom_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "intercom-p_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cent_headset_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medintercom_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cent_headset_alt_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secintercom_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "secintercom-p_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medintercom-p_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "radiopack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red_phone"
+dirs = 1
+frames = 1

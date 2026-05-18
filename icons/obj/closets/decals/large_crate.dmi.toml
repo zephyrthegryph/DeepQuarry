@@ -1,0 +1,179 @@
+# Generated from large_crate.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oxy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "airholes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crate_bracing"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "text"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "text_upper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "marking"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crate_bracing_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripes_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "text_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "text_upper_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "marking_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "airholes_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oxy_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bracketed_text"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bracketed_text_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brackets"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brackets_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "no_entry"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "no_entry_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "elec_corner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "elec_corner_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "elec_center"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "elec_center_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fire_corner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fire_corner_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fire_center"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fire_center_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "exclam_corner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "exclam_corner_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "exclam_center"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "exclam_center_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "border"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "border_only"
+dirs = 1
+frames = 1

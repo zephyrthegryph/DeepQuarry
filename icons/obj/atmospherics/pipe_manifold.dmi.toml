@@ -1,0 +1,279 @@
+# Generated from pipe_manifold.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 10
+
+[[state]]
+name = "manifold"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "manifold-f"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "manifold_10_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "manifold_12_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "manifold_6_8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "manifold_10_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "manifold_3_8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "manifold_9_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "manifold_3_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "manifold_5_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "manifold_6_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "manifold_12_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "manifold_5_8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "manifold_9_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "manifold_2_12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "manifold_4_10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "manifold_8_6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "manifold_2_9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "manifold_1_10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "manifold_8_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "manifold_2_5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "manifold_1_6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "manifold_4_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "manifold_1_12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "manifold_4_9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "manifold_8_5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "manifold-b"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "manifold-b-f"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "manifold-c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "manifold-c-f"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "manifold-y"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "manifold-y-f"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "manifold-g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "manifold-g-f"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "manifold-r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "manifold-r-f"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "manifold-p"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "manifold-p-f"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "manifold4w"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "manifold4w_ex"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "manifold4w-f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "manifold4w-b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "manifold4w-b-f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "manifold4w-c"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "manifold4w-c-f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "manifold4w-y"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "manifold4w-y-f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "manifold4w-g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "manifold4w-g-f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "manifold4w-r"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "manifold4w-r-f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "manifold4w-p"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "manifold4w-p-f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "manifold4w_con"
+dirs = 4
+frames = 1

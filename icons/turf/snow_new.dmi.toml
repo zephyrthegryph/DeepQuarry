@@ -1,0 +1,29 @@
+# Generated from snow_new.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "snow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snow1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snow2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "footprint1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "footprint2"
+dirs = 4
+frames = 1

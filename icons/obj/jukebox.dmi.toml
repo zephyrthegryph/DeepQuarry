@@ -1,0 +1,109 @@
+# Generated from jukebox.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "skyrat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jukebox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jukebox-nopower"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jukebox-broken"
+dirs = 1
+frames = 6
+delays = [3]
+
+[[state]]
+name = "jukebox-emagged"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "jukebox-running"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "jukebox2-nopower"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "jukebox2-broken"
+dirs = 1
+frames = 5
+delays = [1, 5, 5, 5, 1]
+
+[[state]]
+name = "jukebox2"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "jukebox2-emagged"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "jukebox2-running"
+dirs = 1
+frames = 4
+delays = [1]
+rewind = true
+
+[[state]]
+name = "superjuke"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "superjuke-nopower"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "superjuke-broken"
+dirs = 1
+frames = 5
+delays = [1, 5, 5, 5, 1]
+
+[[state]]
+name = "superjuke-running"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "mixer"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "panel_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jukebox2-virtual"
+dirs = 1
+frames = 1
+loop = 1

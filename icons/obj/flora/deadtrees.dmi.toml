@@ -1,0 +1,114 @@
+# Generated from deadtrees.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 5
+
+[[state]]
+name = "tree_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree_5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree_6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree_stump"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree_sif0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree_sif0_glow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree_sif1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree_sif1_glow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree_sif2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree_sif2_glow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree_sif4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree_sif4_glow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree_sif3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree_sif3_glow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree_sif5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree_sif5_glow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree_sif_stump"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree_sif"
+dirs = 1
+frames = 1

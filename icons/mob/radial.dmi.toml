@@ -1,0 +1,419 @@
+# Generated from radial.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 10
+
+[[state]]
+name = "radial_slice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radial_slice_focus"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radial_center"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radial_center_focus"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radial_down"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radial_up"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radial_right"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radial_left"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radial_highlight"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radial_pull"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radial_pickup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radial_examine"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radial_examine2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radial_lookat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radial_use"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radial_point"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radial_eject"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radial_next_noicon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radial_next"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radial_grind"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radial_juice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radial_mix"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radial_eject_input"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radial_eject_output"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radial_temp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radial_add"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radial_pair"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radial_wrench"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radial_power"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radial_airtank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radial_light"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wallfloor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grillewindow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "airlock"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "delete"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "access"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "airlocktype"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "windowtype"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "machine"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "computer_dir"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cnorth"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ceast"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "csouth"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cwest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cable_0-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cable_0-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cable_0-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cable_0-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cable_0-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cable_0-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cable_0-9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cable_0-10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cable_invalid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cable_1-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cable_1-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cable_1-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cable_1-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cable_1-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cable_1-9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cable_1-10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cable_2-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cable_2-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cable_2-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cable_2-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cable_2-9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cable_2-10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cable_4-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cable_4-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cable_4-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cable_4-9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cable_4-10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cable_5-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cable_5-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cable_5-9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cable_5-10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cable_6-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cable_6-9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cable_6-10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cable_8-9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cable_8-10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cable_9-10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radial_change_output"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radial_safety"
+dirs = 1
+frames = 1

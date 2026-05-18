@@ -1,0 +1,54 @@
+# Generated from amayastuff.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "log2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lilypad3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lilypad2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lilypad1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "log1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smallerboulder"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bigboulder1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rocks2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rocks1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bigboulder2"
+dirs = 1
+frames = 1

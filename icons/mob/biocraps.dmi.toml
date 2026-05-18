@@ -1,0 +1,90 @@
+# Generated from biocraps.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "flesh"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flesh1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flesh2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fleshnode"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "livingflesh"
+dirs = 4
+frames = 7
+delays = [1]
+
+[[state]]
+name = "1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "12"
+dirs = 1
+frames = 1

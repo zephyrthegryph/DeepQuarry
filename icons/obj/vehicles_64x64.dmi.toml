@@ -1,0 +1,139 @@
+# Generated from vehicles_64x64.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 11
+
+[[state]]
+name = "quad"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "quad"
+dirs = 4
+frames = 6
+delays = [0.5]
+movement = true
+
+[[state]]
+name = "quad_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "quad-frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "quad-frame0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "quad-frame1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "quad-frame2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "quad-frame3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "quad-frame4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "quad-frame5"
+dirs = 1
+frames = 2
+delays = [1, 5]
+
+[[state]]
+name = "quad-frame6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "quad-frame7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "quad_a"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "quad_b"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "quad_overlay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "quad_overlay_a"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "quad_overlay_b"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "quadtrailer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "quadtrailer"
+dirs = 4
+frames = 6
+delays = [0.5]
+movement = true
+
+[[state]]
+name = "quadtrailer_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "quadtrailer-frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "quadtrailer-frame0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "quadtrailer-frame1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "quadtrailer-frame2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "quadtrailer_b"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "quadtrailer_a"
+dirs = 4
+frames = 1

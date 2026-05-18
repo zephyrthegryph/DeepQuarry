@@ -1,0 +1,1948 @@
+# Generated from markings_ch.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 43
+
+[[state]]
+name = "orca-groin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "orca-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "orca-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "orca-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "orca-l_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "orca-r_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "orca-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "orca-preview"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sharktail_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "paint-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "paintfront-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "athena-lights_ref"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "athena-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "athena-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "athena-r_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "athena-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "athena-l_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "athena-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rook-l-ref"
+dirs = 4
+frames = 7
+delays = [4, 1]
+
+[[state]]
+name = "rook-l-r_arm"
+dirs = 4
+frames = 7
+delays = [4, 1]
+
+[[state]]
+name = "rook-l-l_arm"
+dirs = 4
+frames = 7
+delays = [4, 1]
+
+[[state]]
+name = "rook-l-r_hand"
+dirs = 4
+frames = 7
+delays = [4, 1]
+
+[[state]]
+name = "rook-l-l_hand"
+dirs = 4
+frames = 7
+delays = [4, 1]
+
+[[state]]
+name = "rook-l-groin"
+dirs = 4
+frames = 7
+delays = [4, 1]
+
+[[state]]
+name = "rook-l-r_leg"
+dirs = 4
+frames = 7
+delays = [4, 1]
+
+[[state]]
+name = "rook-l-l_leg"
+dirs = 4
+frames = 7
+delays = [4, 1]
+
+[[state]]
+name = "rook-l-r_foot"
+dirs = 4
+frames = 7
+delays = [4, 1]
+
+[[state]]
+name = "rook-l-l_foot"
+dirs = 4
+frames = 7
+delays = [4, 1]
+
+[[state]]
+name = "rook-l-torso"
+dirs = 4
+frames = 7
+delays = [4, 1]
+
+[[state]]
+name = "rook-l-head"
+dirs = 4
+frames = 7
+delays = [4, 1]
+
+[[state]]
+name = "athena_p-ref"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "athena_p-r_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "athena_p-r_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "athena_p-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "athena_p-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "athena_p-l_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "athena_p-l_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "athena_p-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "athena_p-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "athena_p-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "athena_p-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "athena_p-groin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grointojaw-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grointojaw-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grointojaw-groin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vale_back-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vale_belly-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vale_eyes-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vale_belly-groin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vulpskull-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "manedwolf1-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "manedwolf1-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "manedwolf1-r_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "manedwolf1-r_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "manedwolf1-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "manedwolf1-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "manedwolf1-l_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "manedwolf1-l_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "manedwolf1-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "manedwolf1-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "manedwolf2-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "manedwolf2-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "manedwolf2-groin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_talons-r_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_talons-l_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_talons-r_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_talons-l_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_talons-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_talons-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_talons-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_talons-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_beak-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "guilmon_chest-torso"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "guilmon_head-head"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "guilmon_marking-torso"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "guilmon-r_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "guilmon-l_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "guilmon-r_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "guilmon-l_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "guilmon-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "guilmon-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "guilmon-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "guilmon-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshlarge_eyes_het-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sylveon-bowribbons1-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nightstalker_desert-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nightstalker_desert-ref"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nightstalker_desert-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nightstalker_desert-groin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nightstalker_desert-r_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nightstalker_desert-l_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nightstalker_desert-r_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nightstalker_desert-l_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nightstalker_desert-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nightstalker_desert-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nightstalker_desert-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nightstalker_desert-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nightstalker_1-ref"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nightstalker_1-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nightstalker_1-groin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nightstalker_1-r_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nightstalker_1-l_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nightstalker_1-r_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nightstalker_1-l_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nightstalker_1-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nightstalker_1-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nightstalker_1-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nightstalker_1-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nightstalker_2-ref"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nightstalker_2-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nightstalker_2-groin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nightstalker_2-r_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nightstalker_2-l_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nightstalker_2-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nightstalker_2-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spots_extremities-ref"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spots_extremities-r_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spots_extremities-l_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spots_extremities-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spots_extremities-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spots_extremities-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spots_extremities-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nightstalker_1-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nightstalker_2-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nightstalker_3-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "anthrovirus-r_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "anthrovirus-l_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "anthrovirus-r_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "anthrovirus-l_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "anthrovirus-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "anthrovirus-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "anthrovirus-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "anthrovirus"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "anthrovirus-groin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "anthrovirus-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "anthrovirus-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "anthrovirus-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "virus-r_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "virus-l_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "virus-r_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "virus-l_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "virus-groin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "virusgroin-groin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "virus-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "virus-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "virus-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "virus-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "virus-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "virus-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tyranid-r_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tyranid-l_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tyranid-r_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tyranid-l_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tyranid-groin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tyranid-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tyranid-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tyranid-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tyranid-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tyranid-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tyranid-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tyranidarmor-r_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tyranidarmor-l_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tyranidarmor-r_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tyranidarmor-l_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tyranidarmor-groin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tyranidarmor-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tyranidarmor-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tyranidarmor-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tyranidarmor-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tyranidarmor-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tyranidarmor-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sectdrone-r_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sectdrone-l_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sectdrone-r_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sectdrone-l_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sectdrone-groin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sectdrone-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sectdrone-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sectdrone-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sectdrone-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sectdrone-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sectdrone-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sectdrone-head2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sectdrone_eyes-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "thickneck-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "thickerneck-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "thickthroat-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fangs2-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fangs3-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "normeyes-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "neckfluff-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "protogen_snout-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "frills_simple-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "frills_short-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "frills_aqua-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "husky-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "husky-groin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ram_horns-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hawktalon-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hawktalon-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hawktalon-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hawktalon-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "deerhoof-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "deerhoof-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fox-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fox-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fox-groin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fox-r_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fox-l_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fox-r_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fox-l_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fox-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fox-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fox-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fox-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hshark-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hshark_snout-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gradient-r_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gradient-l_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gradient-r_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gradient-l_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gradient-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gradient-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gradient-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gradient-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tiger-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tiger-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tiger-groin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tiger-r_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tiger-l_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tiger-r_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tiger-l_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tiger-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tiger-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tiger-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tiger-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hellscout_p-r_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hellscout_p-l_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hellscout_p-r_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hellscout_p-l_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hellscout_p-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hellscout_p-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hellscout_p-full_ref"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hellscout_r-groin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hellscout_r-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spectre-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spectre-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spectre-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spectre-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spectre-l_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spectre-r_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spectre-l_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spectre-r_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spectre-groin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spectre-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spectre-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spectre_eyes-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeno-r_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeno-l_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeno-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeno_f-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeno-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeno-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeno_drone-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeno_royal-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeno_hollywood-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeno_warrior-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeno-r_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeno-l_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "organs_gastro-groin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "organs_gastro-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "organs_cardio-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "organs_ribs-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeno_queen_striped-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeno_queen-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeno_teeth-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeno_teeth_queen-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "softbelly_fem-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "softbelly_fem-groin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "softbelly-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "softbelly-groin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "softbelly_fem_navel-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "softbelly_fem_navel-groin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "softbelly_navel-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "softbelly_navel-groin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chitin_belly-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chitin_belly-groin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chitinbelly_fem-torso"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "chitinbelly_fem-groin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chestfluff_big-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "extra_eyes-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bignostrils-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "breasts-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "breasts_smooth-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "breasts_reptile-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "molewhiskers-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vulp_lips-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mushroom_head-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mushroom_head_under-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mushroom_head_top-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mushroom_head_spots-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hippo_upperjaw-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hippo_lowerjaw-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "trex_upperjaw-head"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "trex_lowerjaw-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crocodile_upperjaw-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crocodile_lowerjaw-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crocodile_neck-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "firstdragon_upperjaw-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "firstdragon_lowerjaw-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bovine_snout-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bovine_nose-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smallchubbybelly-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smallchubbybelly-groin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smallchubbybelly-l_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smallchubbybelly-r_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smallchubbybellly-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smallchubbybelly-r_leg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scaled_belly-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scaled_belly-groin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scaled_belly-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scaled_belly-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "six_pack-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "six_pack-groin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "horse_head-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "horse_eyes-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "horse_fringe-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "horse_muzzle-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_plating-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_plating-r_arm"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "yr3_plating-l_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_plating-r_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_plating-l_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_plating-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_plating-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_plating-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_plating-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_plating-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_groin_plating-groin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_groin_plating-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hazard_sign-groin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hazard_sign-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hazard_sign-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hazard_sign-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hazard_sign_belly_left-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hazard_sign_belly_right-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hazard_triangle-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hazard_exclamation-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_stripes-r_arm"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "yr3_stripes-l_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_stripes-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_stripes-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_stripes-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_sleek_plating-groin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_sleek_plating-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_sleek_plating-r_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_sleek_plating-l_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_sleek_plating-r_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_sleek_plating-l_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_sleek_plating-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_sleek_plating-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_sleek_plating-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_sleek_plating-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_sleek_plating-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_sleek_lights-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_sleek_lights-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_sleek_lights-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_sleek_lights-r_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_sleek_lights-l_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_sleek_lights-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_proto_frame-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_shoulder-r_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_shoulder-l_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_proto_neck-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_proto_neck-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_proto-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_proto-r_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_proto-l_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_proto-r_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_proto-l_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_proto-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_proto-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_proto-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_proto-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3_proto-head"
+dirs = 4
+frames = 1

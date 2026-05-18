@@ -1,0 +1,379 @@
+# Generated from rig_modules.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "generic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ert_commander_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ert_security_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ert_medical_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ert_engineer_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_merc_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grenadelauncher"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grenadelauncher_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eblade"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "enet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ewar"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deadman"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "powersink"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lcannon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "taser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pulse"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rcd"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "datajack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "night"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meson"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "thermal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "optics"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "healthhud"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "securityhud"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fulloptics"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teleporter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cloak"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sprinter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "atmosoak"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radsoak"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "thrusters"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "IIS"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plasmacutter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eldersasparilla"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scanner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "drill"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "exdrill"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "injector"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "megaphone"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flash"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hazard_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "asset_protection_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "merc_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ninja_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "breacher_rig_cheap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "breacher_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "science_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ce_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medical_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engineering_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hacker_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eva_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "security_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "internalaffairs_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stealth_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox_sec_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "voxstealth_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox_engineer_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pmc_commandergrey_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pmc_commandergreen_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pmc_securitygrey_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pmc_securitygreen_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pmc_medicalgrey_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pmc_medicalgreen_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pmc_engineergrey_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pmc_engineergreen_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "military_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "void_explorer2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "elecsoak"
+dirs = 1
+frames = 1

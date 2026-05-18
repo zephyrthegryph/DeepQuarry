@@ -1,0 +1,544 @@
+# Generated from vending_job.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 16
+
+[[state]]
+name = "bardrobe"
+dirs = 1
+frames = 8
+delays = [10, 1, 10, 1, 10, 1, 10, 1]
+
+[[state]]
+name = "bardrobe-vend"
+dirs = 1
+frames = 8
+delays = [10, 1, 10, 1, 10, 1, 10, 1]
+
+[[state]]
+name = "bardrobe-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bardrobe-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bardrobe-panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secdrobe"
+dirs = 1
+frames = 6
+delays = [10, 1, 10, 1, 10, 1]
+
+[[state]]
+name = "secdrobe-vend"
+dirs = 1
+frames = 6
+delays = [10, 1, 10, 1, 10, 1]
+
+[[state]]
+name = "secdrobe-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secdrobe-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secdrobe-panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chefdrobe"
+dirs = 1
+frames = 4
+delays = [10, 1, 10, 1]
+
+[[state]]
+name = "chefdrobe-vend"
+dirs = 1
+frames = 4
+delays = [10, 1, 10, 1]
+
+[[state]]
+name = "chefdrobe-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chefdrobe-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chefdrobe-panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medidrobe"
+dirs = 1
+frames = 6
+delays = [10, 1, 10, 1, 10, 1]
+
+[[state]]
+name = "medidrobe-vend"
+dirs = 1
+frames = 6
+delays = [10, 1, 10, 1, 10, 1]
+
+[[state]]
+name = "medidrobe-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medidrobe-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medidrobe-panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chemdrobe"
+dirs = 1
+frames = 4
+delays = [10, 1, 10, 1]
+
+[[state]]
+name = "chemdrobe-vend"
+dirs = 1
+frames = 4
+delays = [10, 1, 10, 1]
+
+[[state]]
+name = "chemdrobe-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chemdrobe-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chemdrobe-panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "genedrobe"
+dirs = 1
+frames = 4
+delays = [10, 1, 10, 1]
+
+[[state]]
+name = "genedrobe-vend"
+dirs = 1
+frames = 4
+delays = [10, 1, 10, 1]
+
+[[state]]
+name = "genedrobe-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "genedrobe-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "genedrobe-panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "virodrobe"
+dirs = 1
+frames = 4
+delays = [10, 1, 10, 1]
+
+[[state]]
+name = "virodrobe-vend"
+dirs = 1
+frames = 4
+delays = [10, 1, 10, 1]
+
+[[state]]
+name = "virodrobe-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "virodrobe-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "virodrobe-panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scidrobe"
+dirs = 1
+frames = 4
+delays = [10, 1, 10, 1]
+
+[[state]]
+name = "scidrobe-vend"
+dirs = 1
+frames = 4
+delays = [10, 1, 10, 1]
+
+[[state]]
+name = "scidrobe-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scidrobe-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scidrobe-panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "robodrobe"
+dirs = 1
+frames = 4
+delays = [10, 1, 10, 1]
+
+[[state]]
+name = "robodrobe-vend"
+dirs = 1
+frames = 4
+delays = [10, 1, 10, 1]
+
+[[state]]
+name = "robodrobe-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "robodrobe-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "robodrobe-panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chapdrobe"
+dirs = 1
+frames = 4
+delays = [10, 1, 10, 1]
+
+[[state]]
+name = "chapdrobe-vend"
+dirs = 1
+frames = 4
+delays = [10, 1, 10, 1]
+
+[[state]]
+name = "chapdrobe-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chapdrobe-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chapdrobe-panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engidrobe"
+dirs = 1
+frames = 6
+delays = [10, 1, 10, 1, 10, 1]
+
+[[state]]
+name = "engidrobe-vend"
+dirs = 1
+frames = 6
+delays = [10, 1, 10, 1, 10, 1]
+
+[[state]]
+name = "engidrobe-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engidrobe-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engidrobe-panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "atmosdrobe"
+dirs = 1
+frames = 6
+delays = [10, 1, 10, 1, 10, 1]
+
+[[state]]
+name = "atmosdrobe-vend"
+dirs = 1
+frames = 6
+delays = [10, 1, 10, 1, 10, 1]
+
+[[state]]
+name = "atmosdrobe-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "atmosdrobe-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "atmosdrobe-panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hydrobe"
+dirs = 1
+frames = 6
+delays = [10, 1, 10, 1, 10, 1]
+
+[[state]]
+name = "hydrobe-vend"
+dirs = 1
+frames = 6
+delays = [10, 1, 10, 1, 10, 1]
+
+[[state]]
+name = "hydrobe-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hydrobe-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hydrobe-panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cargodrobe"
+dirs = 1
+frames = 4
+delays = [10, 1, 10, 1]
+
+[[state]]
+name = "cargodrobe-vend"
+dirs = 1
+frames = 4
+delays = [10, 1, 10, 1]
+
+[[state]]
+name = "cargodrobe-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cargodrobe-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cargodrobe-panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "curadrobe"
+dirs = 1
+frames = 4
+delays = [10, 1, 10, 1]
+
+[[state]]
+name = "curadrobe-vend"
+dirs = 1
+frames = 4
+delays = [10, 1, 10, 1]
+
+[[state]]
+name = "curadrobe-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "curadrobe-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "curadrobe-panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "janidrobe"
+dirs = 1
+frames = 4
+delays = [10, 1, 10, 1]
+
+[[state]]
+name = "janidrobe-vend"
+dirs = 1
+frames = 4
+delays = [10, 1, 10, 1]
+
+[[state]]
+name = "janidrobe-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "janidrobe-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "janidrobe-panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lawdrobe"
+dirs = 1
+frames = 4
+delays = [10, 1, 10, 1]
+
+[[state]]
+name = "lawdrobe-vend"
+dirs = 1
+frames = 4
+delays = [10, 1, 10, 1]
+
+[[state]]
+name = "lawdrobe-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lawdrobe-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lawdrobe-panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "detdrobe"
+dirs = 1
+frames = 4
+delays = [10, 1, 10, 1]
+
+[[state]]
+name = "detdrobe-vend"
+dirs = 1
+frames = 4
+delays = [10, 1, 10, 1]
+
+[[state]]
+name = "detdrobe-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "detdrobe-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "detdrobe-panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mimedrobe"
+dirs = 1
+frames = 4
+delays = [10, 1, 10, 1]
+
+[[state]]
+name = "mimedrobe-vend"
+dirs = 1
+frames = 4
+delays = [10, 1, 10, 1]
+
+[[state]]
+name = "mimedrobe-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mimedrobe-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mimedrobe-panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clowndrobe"
+dirs = 1
+frames = 4
+delays = [10, 1, 10, 1]
+
+[[state]]
+name = "clowndrobe-vend"
+dirs = 1
+frames = 4
+delays = [10, 1, 10, 1]
+
+[[state]]
+name = "clowndrobe-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clowndrobe-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clowndrobe-panel"
+dirs = 1
+frames = 1

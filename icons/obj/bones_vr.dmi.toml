@@ -1,0 +1,74 @@
+# Generated from bones_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "generic-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "generic-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "generic-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "generic-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ribcage"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skull"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skull_taj"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skull_unathi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skull_xenohybrid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "horn"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "synth-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "synth-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "synth-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "synth-4"
+dirs = 1
+frames = 1

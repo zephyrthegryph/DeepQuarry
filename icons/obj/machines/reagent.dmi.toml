@@ -1,0 +1,118 @@
+# Generated from reagent.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "distiller"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "distiller"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "distiller-output"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "distiller-input"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "distiller-bad"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "distiller-heat"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "distiller-cool"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "distiller-good"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "distiller-dump"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "distiller-connector"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pump"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pump-volume"
+dirs = 1
+frames = 4
+delays = [3]
+
+[[state]]
+name = "pump-running"
+dirs = 1
+frames = 4
+delays = [10, 1]
+rewind = true
+
+[[state]]
+name = "pump-open"
+dirs = 1
+frames = 1
+rewind = true
+
+[[state]]
+name = "pump-cell"
+dirs = 1
+frames = 1
+rewind = true
+
+[[state]]
+name = "pump-lowpower"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "node"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "node-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "node-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hose"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pump-glass"
+dirs = 1
+frames = 1

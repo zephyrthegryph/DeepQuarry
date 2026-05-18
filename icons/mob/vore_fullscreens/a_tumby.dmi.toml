@@ -1,0 +1,14 @@
+# Generated from a_tumby.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 480
+height = 480
+cols = 2
+
+[[state]]
+name = "a_tumby"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "a_tumby-2"
+dirs = 1
+frames = 1

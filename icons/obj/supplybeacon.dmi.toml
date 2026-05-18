@@ -1,0 +1,20 @@
+# Generated from supplybeacon.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "beacon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beacon_active"
+dirs = 1
+frames = 15
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 5]
+
+[[state]]
+name = "beacon_depleted"
+dirs = 1
+frames = 1

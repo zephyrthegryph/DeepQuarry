@@ -1,0 +1,14 @@
+# Generated from planet_rings.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 512
+height = 512
+cols = 2
+
+[[state]]
+name = "sparse"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dense"
+dirs = 1
+frames = 1

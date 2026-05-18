@@ -1,0 +1,42 @@
+# Generated from shadekin_portal.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "hub_portal"
+dirs = 1
+frames = 40
+delays = [1]
+
+[[state]]
+name = "minion0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "minion1"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "dark_maw_waiting"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_maw_triggered"
+dirs = 1
+frames = 10
+delays = [1]
+
+[[state]]
+name = "dark_maw_used"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_net"
+dirs = 1
+frames = 1

@@ -1,0 +1,14 @@
+# Generated from logo.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 2
+
+[[state]]
+name = "64x64"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "32x32"
+dirs = 1
+frames = 1

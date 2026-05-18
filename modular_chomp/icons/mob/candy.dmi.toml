@@ -1,0 +1,137 @@
+# Generated from candy.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 10
+
+[[state]]
+name = "red_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purple_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orange_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "marshmellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "purple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marshmellow_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chocoshake"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cherry_bomb"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "candy_arrow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cherry_pit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "choclate_sphere"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ouroboros"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "slainouroboros"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "peppermint"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm"
+dirs = 4
+frames = 4
+delays = [3]
+
+[[state]]
+name = "worm_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "peppermint_dead"
+dirs = 1
+frames = 1

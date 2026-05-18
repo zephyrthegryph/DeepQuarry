@@ -1,0 +1,51 @@
+# Generated from partslathe_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "partslathe-lidclose"
+dirs = 1
+frames = 6
+delays = [1]
+loop = 1
+
+[[state]]
+name = "partslathe-lidopen"
+dirs = 1
+frames = 6
+delays = [1]
+loop = 1
+
+[[state]]
+name = "partslathe-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "partslathe-idle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "partslathe-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "partslathe-load-glass"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "partslathe-load-steel"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "partslathe-load-cardboard"
+dirs = 1
+frames = 6
+delays = [1]

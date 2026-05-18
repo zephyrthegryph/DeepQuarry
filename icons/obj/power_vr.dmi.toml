@@ -1,0 +1,222 @@
+# Generated from power_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 14
+
+[[state]]
+name = "light1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "light0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "light-p"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "light1-overlay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "light0-overlay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lightswitch-s3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lightswitch-s2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lightswitch-s1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smes"
+dirs = 1
+frames = 5
+delays = [2]
+rewind = true
+
+[[state]]
+name = "smes-crit"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "smes-og1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smes-og2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smes-og3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smes-og4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smes-og5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smes-op0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smes-op1"
+dirs = 1
+frames = 2
+delays = [10]
+
+[[state]]
+name = "smes-op2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smes-oc1"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "smes-oc2"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "smes-oc0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rtg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rtg-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "portgen0"
+dirs = 1
+frames = 1
+rewind = true
+
+[[state]]
+name = "portgen0on"
+dirs = 1
+frames = 21
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 0.5]
+rewind = true
+
+[[state]]
+name = "portgen1"
+dirs = 1
+frames = 1
+rewind = true
+
+[[state]]
+name = "portgen1on"
+dirs = 1
+frames = 21
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 0.5]
+rewind = true
+
+[[state]]
+name = "portgen2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "portgen2on"
+dirs = 1
+frames = 21
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 0.5]
+rewind = true
+
+[[state]]
+name = "rtg_gen"
+dirs = 1
+frames = 21
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 0.5]
+rewind = true
+
+[[state]]
+name = "core"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "core-open"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "core-nocell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coreb"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "coreb-open"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "coreb-nocell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cell"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "cellb"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "potatoon"
+dirs = 1
+frames = 10
+delays = [1, 1, 1, 1, 1, 20, 70, 20, 1]

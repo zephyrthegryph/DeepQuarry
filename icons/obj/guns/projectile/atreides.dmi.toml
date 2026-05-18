@@ -1,0 +1,64 @@
+# Generated from atreides.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "atreides"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "atreides_mag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "atreides_slide"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "atreides_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "atreides_mag_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "atreides_mag_slide"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "atreides_slide_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "atreides_mag_slide_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lefthand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand_mag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand_mag"
+dirs = 4
+frames = 1

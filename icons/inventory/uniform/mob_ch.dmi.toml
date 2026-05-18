@@ -1,0 +1,49 @@
+# Generated from mob_ch.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "sexybunny_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sexybunny_black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vrsuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "santacoat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cshorts_olive"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cshorts_khaki"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mailman2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "white_tabard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "black_tabard"
+dirs = 4
+frames = 1

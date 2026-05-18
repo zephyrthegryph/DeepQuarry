@@ -1,0 +1,26 @@
+# Generated from telescience_ch.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "hpad"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "hpad_on"
+dirs = 8
+frames = 2
+delays = [1]
+
+[[state]]
+name = "hpad_centre"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hpad_centre_on"
+dirs = 1
+frames = 2
+delays = [1]

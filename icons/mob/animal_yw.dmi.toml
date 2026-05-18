@@ -1,0 +1,24 @@
+# Generated from animal_yw.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "mouse_miner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mouse_miner_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mouse_miner_splat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mouse_miner_sleep"
+dirs = 1
+frames = 1

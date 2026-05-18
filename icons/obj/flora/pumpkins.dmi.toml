@@ -1,0 +1,34 @@
+# Generated from pumpkins.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "decor-pumpkin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "decor-jackolantern"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "decor-jackolantern-girly"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "decor-jackolantern-scream"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "decor-jackolantern-owo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spawner-jackolantern"
+dirs = 1
+frames = 1

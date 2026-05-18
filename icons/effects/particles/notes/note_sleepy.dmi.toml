@@ -1,0 +1,54 @@
+# Generated from note_sleepy.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "sleepy_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sleepy_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sleepy_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sleepy_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sleepy_5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sleepy_6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sleepy_7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sleepy_8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sleepy_9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sleepy_10"
+dirs = 1
+frames = 1

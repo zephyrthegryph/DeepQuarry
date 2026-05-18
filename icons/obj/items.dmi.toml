@@ -1,0 +1,1220 @@
+# Generated from items.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 23
+
+[[state]]
+name = "wrap_paper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deliveryPaper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "c_tube"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fcardholder0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fcardholder1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "implantcase-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "implantcase-r"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "implantcase-b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "implantpad-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "implantpad-1"
+dirs = 1
+frames = 3
+delays = [2]
+
+[[state]]
+name = "implanter0_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "implanter0_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "implanter1_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "implanter1_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "broken_beer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dnainjector"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dnainjector0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ointment"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brutepack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "handcuff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beartrap0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beartrap1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cuff_white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetblue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetorange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetred"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetpurple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetgreen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetyellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetrainbow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetbrown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetcaptain"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheethop"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetce"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheethos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetmedical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetrd"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetclown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetmime"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetian"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "earmuffs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nucleardisk"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "spacecash1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacecash10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacecash20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacecash50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacecash100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacecash200"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacecash500"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacecash1000"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "game_kit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toyhammer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bike_horn"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "banana"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "banana_peel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "zippo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "zippoon"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "zippo1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "zippoclick"
+dirs = 1
+frames = 3
+delays = [1, 3, 1]
+
+[[state]]
+name = "lighter-c"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lighter-con"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "lighter-g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lighter-gon"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "lighter-r"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lighter-ron"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "lighter-y"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lighter-yon"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "glass_wire"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rack_parts"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "table_parts"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood_tableparts"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gamble_tableparts"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_tableparts"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lipstick"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lipstick_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lipstick_purple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lipstick_jade"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lipstick_black"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blueprints"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coin_string_overlay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paint_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paint_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paint_green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paint_neutral"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paint_yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paint_black"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paint_white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paint_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paint_violet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paint_orange"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paint_cyan"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paint_purple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shovel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spade"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "woodshovel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pickaxe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spickaxe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dpickaxe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gpickaxe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "upickaxe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ppickaxe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "drill"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "advdrill"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "diamonddrill"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jackhammer"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "borg_pick"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plasmacutter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pcutter_borg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "miniFE0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "miniFE1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fire_extinguisher0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fire_extinguisher1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fire_extinguisherO1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fire_extinguisherO2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fire_extinguisherO3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fire_extinguisherO4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fire_extinguisherO5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fire_extinguisherO6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "atmos_extinguisher0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "atmos_extinguisher1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "latexballon_blow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "latexballon_bursted"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "latexballon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "soap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "soapnt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "soapdeluxe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "soapsyndie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "towel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellowcake"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "album"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "photo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "camera_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "camera"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "film"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cimplanter1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cimplanter0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cimplanter2"
+dirs = 1
+frames = 5
+delays = [2]
+
+[[state]]
+name = "efundcard"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purplecomb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "combitool"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d_analyzer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "portable_analyzer"
+dirs = 1
+frames = 3
+delays = [3]
+
+[[state]]
+name = "portable_analyzer_load"
+dirs = 1
+frames = 6
+delays = [3]
+
+[[state]]
+name = "portable_analyzer_full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "portable_analyzer_scan"
+dirs = 1
+frames = 8
+delays = [3, 3, 3, 3, 3, 3, 3, 10]
+
+[[state]]
+name = "portable_scanner"
+dirs = 1
+frames = 2
+delays = [4]
+
+[[state]]
+name = "portable_scanner-scan"
+dirs = 1
+frames = 7
+delays = [2, 2, 2, 2, 1]
+
+[[state]]
+name = "implanted_scanner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "implanted_scanner-scan"
+dirs = 1
+frames = 7
+delays = [1, 1, 1, 1, 1, 1, 2]
+
+[[state]]
+name = "jar_water"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jar"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "headphones_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "headphones_on"
+dirs = 1
+frames = 8
+delays = [2]
+
+[[state]]
+name = "doublesheetcaptain"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "doublesheetce"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "doublesheethop"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "doublesheetorange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "doublesheetrainbow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "doublesheethos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "doublesheet"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "doublesheetgreen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "doublesheetpurple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "doublesheetclown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "doublesheetian"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "doublesheetrd"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "doublesheetmime"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "doublesheetblue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "doublesheetred"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "doublesheetbrown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "doublesheetyellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fuzzycuff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armor_plate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armor_plate_wired"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "legcuff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "banner-nt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "banner-red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "banner-blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "banner-green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "banner-solgov"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "banner-solgov_alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "banner-virgov"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "banner-altevian"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bouquet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "umbrella_closed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "umbrella_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "umbrella_closed_a"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "umbrella_open_a"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "trinketbox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "trinketbox_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ring_trinket"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coin_trinket"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medal_trinket"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "net"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "net_full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deskbell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "needle_thread"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pizza_voucher"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "virussample-ruined"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coin_aluminium"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "virussample"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "butterfly_net"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "butterfly_net_full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "monster_bait"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_hammer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "acorn_branch"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "windowsealant"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "verkdisk"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fuzzylegcuff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheetcosmos"
+dirs = 4
+frames = 6
+delays = [2]
+rewind = true
+
+[[state]]
+name = "sheetpirate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dobulesheetcosmos"
+dirs = 4
+frames = 6
+delays = [2]
+rewind = true
+
+[[state]]
+name = "doublesheetpirate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shield_pack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shield_back_active"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "shield_belt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shield_belt_active"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "shield_pack_mining"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shield_pack_mining_active"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "shield_belt_mining"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shield_belt_mining_active"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "shield_pack_security"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shield_back_security_active"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "shield_belt_security"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shield_belt_security_active"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "shieldpack_basestruct"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shieldpack_orb_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shieldpack_orb_on"
+dirs = 1
+frames = 10
+delays = [1]
+
+[[state]]
+name = "shieldpack_basic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shieldpack_basic_on"
+dirs = 1
+frames = 10
+delays = [1]
+
+[[state]]
+name = "shieldpack_security"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shieldpack_security_on"
+dirs = 1
+frames = 10
+delays = [1]
+
+[[state]]
+name = "shieldpack_mining"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shieldpack_mining_on"
+dirs = 1
+frames = 10
+delays = [1]
+
+[[state]]
+name = "glamourcrystal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crystalholder"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crystalholder_full"
+dirs = 1
+frames = 1

@@ -1,0 +1,53 @@
+# Generated from filter.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 10
+
+[[state]]
+name = "intact_onOLD"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "intact_offOLD"
+dirs = 4
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "intact_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "intact_off-f"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "intact_on"
+dirs = 4
+frames = 5
+delays = [2]
+
+[[state]]
+name = "intact_on-f"
+dirs = 4
+frames = 5
+delays = [2]
+
+[[state]]
+name = "hintact_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hintact_on"
+dirs = 4
+frames = 5
+delays = [2]

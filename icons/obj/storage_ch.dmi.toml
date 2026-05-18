@@ -1,0 +1,30 @@
+# Generated from storage_ch.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "rainbowcrate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rainbowcrate_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "box"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "box_casino"
+dirs = 1
+frames = 20
+delays = [1]
+
+[[state]]
+name = "santasack"
+dirs = 1
+frames = 1

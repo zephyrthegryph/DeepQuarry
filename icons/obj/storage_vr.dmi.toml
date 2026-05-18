@@ -1,0 +1,528 @@
+# Generated from storage_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 12
+
+[[state]]
+name = ""
+dirs = 1
+frames = 4
+delays = [1.2]
+
+[[state]]
+name = "syringe_case"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ointment"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "firstaid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "antitoxin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "o2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "advfirstaid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bezerk"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clottingkit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinky"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lunchbox_survival"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "deliverycrate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deliverycloset"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deliverycrateSmall"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deliverycrate5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deliverycrate4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deliverycrate3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deliverycrate2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deliverycrate1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "trashcart"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "trashcartopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "trashcartweld"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sotiecrate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "otiecrate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "otiecrate2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "densecrate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mulecrate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lisacrate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vehiclecrate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "critter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "critteropen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "largemetal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "largemetalopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "largermetal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "largermetalopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "largemetalsecure"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "largemetalsecureopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "largemetalr"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "largemetalg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crateopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medicalcrate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medicalcrateopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radiation"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radiationopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "o2crate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "o2crateopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hydrocrate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hydrocrateopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plasticcrate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plasticcrateopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scicrate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scicrateopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engi_crate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engi_crateopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engi_e_crate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engi_e_crateopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blood"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bloodopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secgearcrate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secgearcrateopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "securecrate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "securecrateopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "freezer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "freezeropen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weaponcrate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weaponcrateopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phoroncrate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phoroncrateopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hydrosecurecrate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hydrosecurecrateopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scisecurecrate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scisecurecrateopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engi_secure_crate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engi_secure_crateopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "securecrater"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "securecrateg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "securecrateemag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "securecratesparks"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "secure0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secureb"
+dirs = 1
+frames = 2
+delays = [15]
+
+[[state]]
+name = "securespark"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "nifsoft_kit_mining"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nifsoft_kit_med"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nifsoft_kit_eng"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nifsoft_kit_sec"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clownbox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndicate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "RPED"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "DBRPED"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "RPED_old"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "DBRPED_old"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "gunboxw"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chembag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xenobag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "biobag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "detbag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "foodbag"
+dirs = 1
+frames = 1

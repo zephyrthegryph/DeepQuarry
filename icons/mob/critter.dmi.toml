@@ -1,0 +1,142 @@
+# Generated from critter.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 11
+
+[[state]]
+name = "lizard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lizard-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "viscerator"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "viscerator_attack"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "blobpurple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blobsquiggle"
+dirs = 1
+frames = 5
+delays = [2]
+
+[[state]]
+name = "killertomato"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "killertomato-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spideregg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blob"
+dirs = 1
+frames = 4
+delays = [10, 3, 5, 3]
+
+[[state]]
+name = "otherthing"
+dirs = 4
+frames = 7
+delays = [1]
+
+[[state]]
+name = "dead"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "otherthing-dead"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "guard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hunter"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nurse"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ward"
+dirs = 1
+frames = 5
+delays = [5, 1, 5, 1, 5]
+
+[[state]]
+name = "ward_spotted"
+dirs = 1
+frames = 8
+delays = [2.5, 2.5, 1, 2.5, 2.5, 1, 2.5]
+
+[[state]]
+name = "ward-eyes"
+dirs = 1
+frames = 5
+delays = [5, 1, 5, 1, 5]
+
+[[state]]
+name = "viscerator_b"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "viscerator_b_attack"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "ward-nt"
+dirs = 1
+frames = 4
+delays = [5, 1, 5, 1, 5]
+
+[[state]]
+name = "ward-nt_spotted"
+dirs = 1
+frames = 6
+delays = [2.5, 2.5, 1, 2.5, 2.5, 1, 2.5]
+
+[[state]]
+name = "ward-nt-eyes"
+dirs = 1
+frames = 4
+delays = [5, 1, 5, 1, 5]

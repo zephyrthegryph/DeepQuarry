@@ -1,0 +1,31 @@
+# Generated from pdw.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "PDW"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "righthand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "taser_pdw"
+dirs = 1
+frames = 4
+delays = [1.5]
+
+[[state]]
+name = "lazer_pdw"
+dirs = 1
+frames = 4
+delays = [1.5]

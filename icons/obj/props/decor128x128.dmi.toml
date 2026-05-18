@@ -1,0 +1,47 @@
+# Generated from decor128x128.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 128
+height = 128
+cols = 5
+
+[[state]]
+name = "altevian_jump_drive"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian_jump_drive-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian_jump_drive-active"
+dirs = 1
+frames = 5
+delays = [1.5]
+
+[[state]]
+name = "altevian_jump_drive_wrecked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jump_drive_open_overlay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jump_drive_glow_overlay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jump_drive_glow_anim_overlay"
+dirs = 1
+frames = 5
+delays = [1.5]
+
+[[state]]
+name = "jump_drive_misc_anim_overlay"
+dirs = 1
+frames = 5
+delays = [1.5]

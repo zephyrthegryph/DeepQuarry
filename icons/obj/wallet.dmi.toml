@@ -1,0 +1,180 @@
+# Generated from wallet.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "wallet-orange"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wallet-white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wallet-emp"
+dirs = 1
+frames = 6
+delays = [3, 4, 2, 4, 3, 5]
+
+[[state]]
+name = "olay-primary"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "olay-secondary"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id-generic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id-gold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id-silver"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id-centcom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id-centcomGold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id-centcomNew"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id-blank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id-cargo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id-cargoGold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id-civ"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id-civGold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id-eng"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id-engGold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id-sec"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id-secGold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id-med"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id-medGold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id-sci"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id-sciGold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id-cyan"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id-cyanGold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id-green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id-greenGold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id-pink"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id-pinkGold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id-changeling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id-syndiegold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id-syndicate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id-syndie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "girl_wallet"
+dirs = 1
+frames = 1

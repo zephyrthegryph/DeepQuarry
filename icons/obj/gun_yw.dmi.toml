@@ -1,0 +1,512 @@
+# Generated from gun_yw.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 14
+
+[[state]]
+name = "ppk"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ppk-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ppk-mag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glock"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glock-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glock-mag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lasgunstun100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lasgunkill100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lasgunstun0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lasgunkill0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lasgunstun_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lasgunkill_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lasgunstun75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lasgunstun50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lasgunstun25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lasgunkill75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lasgunkill50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lasgunkill25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m2024"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m2024-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "45-7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "45-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "45-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "45-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "45-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "45-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "45-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "45-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nova"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cerb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mg42closed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mg42open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mg42open-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mg42closed-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mg42_75rnd"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mg42open0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mg42-eclosed-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mg42-e-drum"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mg42-e_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mg42-e100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mg42-e75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mg42-e50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mg42-e25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mg42-e0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m1911"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m1911_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Arcrifle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "subtlesniperunfolded"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "subtlesniper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "x01laserbase"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "x01laser_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "x01stun25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "x01stun50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "x01stun75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "x01stun100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "x01stun0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "x01stun_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "x01stun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "x01laser0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "x01laser25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "x01laser50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "x01laser75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "x01laser100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "x01laser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stunshieldoff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stunshieldon"
+dirs = 4
+frames = 17
+delays = [1]
+
+[[state]]
+name = "gausspistol"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gausspistol100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gausspistol75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gausspistol50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gausspistol25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gausspistol0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gaussrifle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gaussrifle100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gaussrifle75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gaussrifle50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gaussrifle25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gaussrifle0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gausscannon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gausscannon75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gausscannon50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gausscannon25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gausscannon0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gausscannon100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plasmarifle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plasmarifle100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plasmarifle75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plasmarifle50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plasmarifle25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plasmarifle0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plasmapistol"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "plasmapistol100"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "x01gauss0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "x01gauss25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "x01gauss50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "x01gauss75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "x01gauss100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "x01gauss"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "x01gauss_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "revolvshot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "revolvshot-empty"
+dirs = 1
+frames = 1

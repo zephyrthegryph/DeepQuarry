@@ -1,0 +1,98 @@
+# Generated from door.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 13
+
+[[state]]
+name = "closed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "deny"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "opening"
+dirs = 4
+frames = 6
+delays = [2]
+loop = 1
+
+[[state]]
+name = "closing"
+dirs = 4
+frames = 6
+delays = [2]
+loop = 1
+
+[[state]]
+name = "construction"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "palert"
+dirs = 4
+frames = 2
+delays = [5]
+
+[[state]]
+name = "alert_cold_1"
+dirs = 4
+frames = 2
+delays = [5]
+
+[[state]]
+name = "alert_cold_2"
+dirs = 4
+frames = 2
+delays = [5]
+
+[[state]]
+name = "alert_cold_4"
+dirs = 4
+frames = 2
+delays = [5]
+
+[[state]]
+name = "alert_cold_8"
+dirs = 4
+frames = 2
+delays = [5]
+
+[[state]]
+name = "alert_hot_1"
+dirs = 4
+frames = 2
+delays = [5]
+
+[[state]]
+name = "alert_hot_2"
+dirs = 4
+frames = 2
+delays = [5]
+
+[[state]]
+name = "alert_hot_4"
+dirs = 4
+frames = 2
+delays = [5]
+
+[[state]]
+name = "alert_hot_8"
+dirs = 4
+frames = 2
+delays = [5]
+
+[[state]]
+name = "preview"
+dirs = 4
+frames = 1

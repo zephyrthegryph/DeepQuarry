@@ -1,0 +1,26 @@
+# Generated from mech_bay.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "recharge_port"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "support_lattice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "recharge_floor_asteroid"
+dirs = 1
+frames = 2
+delays = [6]
+
+[[state]]
+name = "recharge_floor"
+dirs = 1
+frames = 2
+delays = [6]

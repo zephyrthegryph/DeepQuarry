@@ -1,0 +1,788 @@
+# Generated from item.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 13
+
+[[state]]
+name = "black"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "latex"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nitrile"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "leather"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "s-ninja"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "s-ninjan"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "s-ninjak"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orange"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lightbrown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "captain"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rainbow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gloves_wire"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gloves_cell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boxing"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boxinggreen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boxingblue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boxingyellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "waterwings"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gloves-vox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gloves-armalis"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ninja_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ninja_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medical_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medical_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hacker_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hacker_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ert_commander_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ert_engineer_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ert_medical_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ert_security_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ert_commander_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ert_engineer_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ert_medical_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ert_security_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ce_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ce_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "breacher_rig_cheap_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "breacher_rig_cheap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "breacher_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "breacher_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engineering_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engineering_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "security_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "security_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "merc_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "merc_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "science_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "science_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "asset_protection_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "asset_protection_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eva_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eva_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hazard_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hazard_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stealth_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ert_janitor_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stealth_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ert_janitor_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arm_guards"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arm_guards_laser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arm_guards_riot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arm_guards_bullet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arm_guards_combat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "regen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "evening_gloves"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "forensic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "work"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "voxstealth_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "voxstealth_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fingerlessgloves"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fingerlessgloves_rc"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fingerlessgloves_alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fingerlessgloves_rc_alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fingerlesslong_white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fingerlesslong_black"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fingerlessmid_white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fingerlessmid_black"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "swat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "evening_gloves_a"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "knuckledusters"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "circuitry"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "circuitry-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pmc_commandergrey_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pmc_commandergrey_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pmc_commandergreen_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pmc_commandergreen_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pmc_securitygrey_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pmc_securitygrey_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pmc_securitygreen_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pmc_securitygreen_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pmc_medicalgrey_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pmc_medicalgrey_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pmc_medicalgreen_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pmc_medicalgreen_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pmc_engineergrey_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pmc_engineergrey_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pmc_engineergreen_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pmc_engineergreen_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "military_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "military_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arm_guards_flexitac"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "diamond"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "material"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cti-grad"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mariner-grad"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "seal-signet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "seal-secgen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "seal-masonic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "magic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maid_arms"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wristwatch_basic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wristwatch_silver"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wristwatch_gold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wristwatch_survival"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bracelet"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 17, y = 11 }]
+
+[[state]]
+name = "materialbracelet"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 17, y = 11 }]
+
+[[state]]
+name = "friendbracelet"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 17, y = 11 }]
+
+[[state]]
+name = "wristband"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wristband_collection"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wristband_collection2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wristband_collection3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wristband_collection4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wristband_collection5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wristband_collection6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wristband_spiked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nanomachine_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nanomachine_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lingchameleon"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "wedring_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wedring_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ge_gloves"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "knight_gloves_black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "knight_gloves_brown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "techno_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "techno_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ihs_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ihs_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medical_rig_bay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medical_rig_bay_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engineering_rig_bay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engineering_rig_bay_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pathfinder_rig_bay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pathfinder_rig_bay_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "heavy_engi"
+dirs = 1
+frames = 1

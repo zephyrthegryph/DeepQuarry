@@ -1,0 +1,579 @@
+# Generated from blood.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 14
+
+[[state]]
+name = "thisisfuckingstupid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "itemblood"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gibarm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gibarm_flesh"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gibleg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gibleg_flesh"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gibtorso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gibtorso_flesh"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gibmid1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gib1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gib1_flesh"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gib2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gib2_flesh"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gib3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gib3_flesh"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gib5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gib5_flesh"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gib6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gib6_flesh"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gibup1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gibup1_flesh"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gibdown1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gibdown1_flesh"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gibmid2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gibmid2_flesh"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gibmid3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gibmid3_flesh"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gibhead"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "u_ketchup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "u_guilty"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "u_madman"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "u_psycopath"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "u_ketchup_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "u_guilty_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "u_dangerous_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "u_madman_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "u_psycopath_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tracks"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "clown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xgibhead"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xgibtorso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xgibup1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xgibdown1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xgibmid1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xgibmid2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xgibmid3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xgibarm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xgibleg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xtracks"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "xgib1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xgib2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xgib3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xgib4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xgib5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xgib6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "remains"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "remainsxeno"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gibbearcore"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gibbear1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gibbear2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gibbear3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gibbear4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gibbear5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gibbearhead"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vomit_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vomit_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vomit_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vomit_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vomittox_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vomittox_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vomittox_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vomittox_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vomitpurp_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vomitpurp_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vomitpurp_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vomitpurp_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vomit_1-old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vomit_2-old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vomit_3-old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vomit_4-old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vomitnanite_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vomitnanite_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vomitnanite_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vomitnanite_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metroid_gib1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metroid_gib2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metroid_gib3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metroid_gib4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "writing2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "writing3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "writing4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "writing5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mgibbl1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mgibbl2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mgibbl3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mgibbl4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mgibbl5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mfloor1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mfloor2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mfloor3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mfloor4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mfloor5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mfloor6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mfloor7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "writing1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mucus"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mouse"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lizard"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "remainsribcage"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "remainsunathi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "remainstajaran"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "remainsposi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "remainsdeer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mummified1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mummified2"
+dirs = 1
+frames = 1

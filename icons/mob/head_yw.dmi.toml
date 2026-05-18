@@ -1,0 +1,44 @@
+# Generated from head_yw.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "commandhood"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hood"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scihood"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sechood"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engihood"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medihood"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargohood"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_blueshield"
+dirs = 4
+frames = 1

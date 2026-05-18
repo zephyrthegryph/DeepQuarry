@@ -1,0 +1,19 @@
+# Generated from vehicles_36x32.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 36
+height = 32
+cols = 4
+
+[[state]]
+name = "boat_older"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boatold"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boat"
+dirs = 4
+frames = 1

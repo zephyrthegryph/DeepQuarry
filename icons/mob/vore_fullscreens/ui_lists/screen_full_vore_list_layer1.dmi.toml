@@ -1,0 +1,149 @@
+# Generated from screen_full_vore_list_layer1.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 120
+height = 120
+cols = 6
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "a_tumby"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "another_tumby"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "da_tumby"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_belly8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_fleshs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_belly9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_intestines9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_maw13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_maw14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_maw15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_maw16"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_maw17"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_maw18"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_maw19"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_maw20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_maw21"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_maw22"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_maw23"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_maw24"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_maw25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_maw26"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_maw27"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_wriggly"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_paw"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_gematically_angular"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_notbelly"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_belly9_fluidless"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_intestines9_fluidless"
+dirs = 1
+frames = 1

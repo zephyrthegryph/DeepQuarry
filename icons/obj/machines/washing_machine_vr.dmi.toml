@@ -1,0 +1,51 @@
+# Generated from washing_machine_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "wm_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wm_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wm_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wm_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wm_5"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "wm_6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wm_7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wm_8"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "panel"
+dirs = 1
+frames = 1

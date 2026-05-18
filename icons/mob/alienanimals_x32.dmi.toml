@@ -1,0 +1,731 @@
+# Generated from alienanimals_x32.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 26
+
+[[state]]
+name = "teppi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teppi_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teppi_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "body_base"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "body_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "body_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eye_base"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eye_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eye_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "horn_base"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "horn_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "horn_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skin_base"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skin_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skin_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "catslug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catslug-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catslug_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "catslug_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "space_mouse"
+dirs = 4
+frames = 4
+delays = [1]
+movement = true
+
+[[state]]
+name = "space_mouse"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "space_mouse_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "space_mouse-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tulidaan"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tulidaan-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tulidaan_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tulidaan_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "startreader"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "startreader-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "startreader-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "startreader_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "startreader_flipped"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "space_jellyfish"
+dirs = 1
+frames = 9
+delays = [1]
+
+[[state]]
+name = "space_jellyfish-1"
+dirs = 1
+frames = 9
+delays = [1]
+
+[[state]]
+name = "space_jellyfish-eyes"
+dirs = 1
+frames = 9
+delays = [1]
+
+[[state]]
+name = "space_jellyfish_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spookyghost-2"
+dirs = 4
+frames = 6
+delays = [1]
+movement = true
+
+[[state]]
+name = "spookyghost-1"
+dirs = 4
+frames = 4
+delays = [1]
+movement = true
+
+[[state]]
+name = "space_ghost"
+dirs = 4
+frames = 3
+delays = [1]
+movement = true
+
+[[state]]
+name = "space_ghost-eyes"
+dirs = 4
+frames = 3
+delays = [1]
+movement = true
+
+[[state]]
+name = "space_ghost_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "space_whale"
+dirs = 4
+frames = 21
+delays = [10, 1]
+
+[[state]]
+name = "space_whale_restless"
+dirs = 4
+frames = 21
+delays = [0.5]
+
+[[state]]
+name = "unknown_state"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skeleton"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skeleton-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skeleton_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altskeleton"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "altskeleton-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "altskeleton_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spaceslug_dead"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "spaceslug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spaceslug-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spaceslug_rest"
+dirs = 1
+frames = 15
+delays = [1]
+
+[[state]]
+name = "engislug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engislug-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engislug_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engislug_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gatslug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gatslug-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gatslug_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gatslug_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medislug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medislug-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medislug_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medislug_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scienceslug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scienceslug-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scienceslug_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scienceslug_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cargoslug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargoslug-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargoslug_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cargoslug_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suslug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "suslug-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "suslug_rest"
+dirs = 1
+frames = 4
+delays = [5]
+
+[[state]]
+name = "suslug_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suslug-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "suslug-1-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "suslug_rest-eyes"
+dirs = 1
+frames = 4
+delays = [5]
+
+[[state]]
+name = "suslug_dead-eyes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deathslug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "deathslug-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "deathslug_rest"
+dirs = 1
+frames = 4
+delays = [5]
+
+[[state]]
+name = "deathslug_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndislug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndislug-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndislug_rest"
+dirs = 1
+frames = 4
+delays = [5]
+
+[[state]]
+name = "syndislug_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "responseslug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "responseslug-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "responseslug_rest"
+dirs = 1
+frames = 4
+delays = [5]
+
+[[state]]
+name = "responseslug_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "capslug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "capslug-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "capslug_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "capslug_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "succlet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "succlet-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "big_succlet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "big_succlet-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_succlet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_succlet-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "poison_succlet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "poison_succlet-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "moss_succlet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "moss_succlet-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "king_succlet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "king_succlet-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "succlet_dead"
+dirs = 1
+frames = 9
+delays = [1]
+
+[[state]]
+name = "squirrel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "squirrel"
+dirs = 4
+frames = 2
+delays = [1]
+movement = true
+
+[[state]]
+name = "squirrel-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "squirrel-1"
+dirs = 4
+frames = 2
+delays = [1]
+movement = true
+
+[[state]]
+name = "squirrel_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "squirrel_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "squirrel_eye"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "squirrel_eye"
+dirs = 4
+frames = 2
+delays = [1]
+movement = true
+
+[[state]]
+name = "squirrel-1_eye"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "squirrel-1_eye"
+dirs = 4
+frames = 2
+delays = [1]
+movement = true
+
+[[state]]
+name = "squirrel_rest_eye"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "squirrel_dead_eye"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "catslugking"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catslugking-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catslugking_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "catslugking_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cryptslug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cryptslug-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cryptslug_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cryptslug_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "exploslug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "exploslug-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "exploslug_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "exploslug_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "santaslug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "santaslug-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "santaslug_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "santaslug_dead"
+dirs = 1
+frames = 1

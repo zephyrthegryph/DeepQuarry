@@ -1,0 +1,224 @@
+# Generated from walls48.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 48
+height = 48
+cols = 7
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "r_wall"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_Uranium"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_Iron"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_Gold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_Diamond"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_Silver"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_Plasma"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_Adamantine"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_Coal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_Clown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wall0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wall1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wall2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wall3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wall4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wall5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wall6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wall7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wall8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wall9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wall10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wall11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wall12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wall13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wall14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wall15"
+dirs = 1
+frames = 1

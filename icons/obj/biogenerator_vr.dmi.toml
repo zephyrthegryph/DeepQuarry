@@ -1,0 +1,28 @@
+# Generated from biogenerator_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "biogen-empty"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "biogen-empty-o"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "biogen-stand"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "biogen-work"
+dirs = 1
+frames = 8
+delays = [1]

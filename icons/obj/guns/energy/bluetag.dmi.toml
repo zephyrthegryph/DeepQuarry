@@ -1,0 +1,55 @@
+# Generated from bluetag.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "bluetag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluetag100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluetag75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluetag50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluetag25"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "bluetag0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lefthand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand-0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand-0"
+dirs = 4
+frames = 1

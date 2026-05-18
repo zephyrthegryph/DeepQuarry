@@ -1,0 +1,109 @@
+# Generated from pipe_underlays.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "intact"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "down"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "retracted"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "exposed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "intact-supply"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "down-supply"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "exposed-supply"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "retracted-supply"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "intact-scrubbers"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "down-scrubbers"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "exposed-scrubbers"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "retracted-scrubbers"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "intact-fuel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "down-fuel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "exposed-fuel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "retracted-fuel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "intact-aux"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "down-aux"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "exposed-aux"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "retracted-aux"
+dirs = 4
+frames = 1

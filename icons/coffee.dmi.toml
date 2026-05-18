@@ -1,0 +1,55 @@
+# Generated from coffee.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "bluespace_coffee"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cup_dispenser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cup_dispenser-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hot_dispenser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Plant-27"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Plant-28"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 15, y = 16 }]
+
+[[state]]
+name = "coffee_sign"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "west"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "East"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "South"
+dirs = 1
+frames = 1

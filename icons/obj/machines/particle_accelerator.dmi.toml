@@ -1,0 +1,275 @@
+# Generated from particle_accelerator.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 17
+
+[[state]]
+name = "tank_holder"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "particle"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "emitter_right"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "emitter_center"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "emitter_left"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "power_box"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fuel_chamber"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "control_box"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "end_cap"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 1, y = 14 }]
+
+[[state]]
+name = "emitter_rightw"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "emitter_centerw"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "emitter_leftw"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "power_boxw"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fuel_chamberw"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "control_boxw"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "end_capw"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 1, y = 14 }]
+
+[[state]]
+name = "emitter_rightc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "emitter_centerc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "emitter_leftc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "power_boxc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fuel_chamberc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "control_boxc"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "end_capc"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 1, y = 14 }]
+
+[[state]]
+name = "emitter_rightp"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "emitter_centerp"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "emitter_leftp"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "power_boxp"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fuel_chamberp"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "control_boxp"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ucontrol_boxp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "end_capp"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 1, y = 14 }]
+
+[[state]]
+name = "emitter_rightp0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "emitter_centerp0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "emitter_leftp0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "power_boxp0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fuel_chamberp0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "control_boxp0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "end_capp0"
+dirs = 4
+frames = 7
+delays = [1]
+hotspots = [{ frame = 1, x = 1, y = 14 }]
+
+[[state]]
+name = "emitter_rightp1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "emitter_centerp1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "emitter_leftp1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "power_boxp1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fuel_chamberp1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "control_boxp1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "end_capp1"
+dirs = 4
+frames = 7
+delays = [1]
+hotspots = [{ frame = 1, x = 1, y = 14 }]
+
+[[state]]
+name = "emitter_rightp2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "emitter_centerp2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "emitter_leftp2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "power_boxp2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fuel_chamberp2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "control_boxp2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "end_capp2"
+dirs = 4
+frames = 7
+delays = [1]
+hotspots = [{ frame = 1, x = 1, y = 14 }]

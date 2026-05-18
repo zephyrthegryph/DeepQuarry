@@ -1,0 +1,75 @@
+# Generated from blastdoors_shutters.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 15
+
+[[state]]
+name = "pdoorc1"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "pdoorc0"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "pdoor0"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "pdoor1"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "shutterc1"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "shutterc0"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "shutter0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shutter1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pdoor2c1"
+dirs = 4
+frames = 8
+delays = [1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.2, 0.1]
+
+[[state]]
+name = "pdoor2c0"
+dirs = 4
+frames = 9
+delays = [1]
+
+[[state]]
+name = "pdoor20"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "pdoor21"
+dirs = 4
+frames = 5
+delays = [1]
+rewind = true

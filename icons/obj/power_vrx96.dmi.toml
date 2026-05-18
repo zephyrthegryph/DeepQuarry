@@ -1,0 +1,25 @@
+# Generated from power_vrx96.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 96
+height = 96
+cols = 3
+
+[[state]]
+name = "reg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reg-a"
+dirs = 1
+frames = 6
+delays = [0.7]
+
+[[state]]
+name = "reg-o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "geothermal"
+dirs = 1
+frames = 1

@@ -1,0 +1,10 @@
+# Generated from modifier_effects_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "deflect"
+dirs = 1
+frames = 7
+delays = [1, 1, 2, 2, 2, 1]

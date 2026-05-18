@@ -1,0 +1,274 @@
+# Generated from outdoors_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "sidewalk"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sidewalk1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sidewalk2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sidewalk3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sidewalk4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sidewalk5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sidewalk6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sidewalk7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sidewalk8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sidewalk9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sidewalk10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "side-walk"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "side-walk1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "side-walk2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "side-walk3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "side-walk4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "side-walk5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "side-walk6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "side-walk7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "side-walk8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "side-walk9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "side-walk10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slab"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slab1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slab2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slab3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slab4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slab5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slab6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slab7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slab8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slab9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slab10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dirt0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dirt1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dirt2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dirt3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dirt4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dirt5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dirt6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dirt7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dirt8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dirt9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cityslab"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cityslab1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cityslab2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cityslab3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cityslab4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cityslab5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cityslab6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cityslab7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cityslab8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cityslab9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cityslab10"
+dirs = 1
+frames = 1

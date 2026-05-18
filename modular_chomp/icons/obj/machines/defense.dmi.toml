@@ -1,0 +1,27 @@
+# Generated from defense.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "traptile"
+dirs = 1
+frames = 1
+rewind = true
+
+[[state]]
+name = "paradox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "obelisk"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "obelisk_blue"
+dirs = 1
+frames = 2
+delays = [1]

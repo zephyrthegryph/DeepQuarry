@@ -1,0 +1,704 @@
+# Generated from uav.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 24
+
+[[state]]
+name = "uav"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "uav_on"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "uav_packed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "uav_pairing"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "drone_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "drone_os"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "drone_st"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "radio_os"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "radio_st"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shell_os"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shell_grey"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shell_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shell_medical_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shell_metal"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shell_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shell_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shell_cyan"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shell_pink"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shell_purple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shell_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shell_orange_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shell_orange_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marks_os"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marks_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marks_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marks_cyan"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marks_pink"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marks_purple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marks_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marks_orange_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marks_orange_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marks_medic_os"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marks_medic_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marks_medic_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marks_medic_cyan"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marks_medic_pink"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marks_medic_purple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marks_medic_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marks_medic_orange_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marks_medic_orange_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "screen_os"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "screen_os_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "screen_yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "screen_cyan"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "screen_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "screen_magenta"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "screen_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "speech_os_medic"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "speech_os_shield"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "speech_os_anger"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "speech_os_wrench"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "speech_os_shock"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "speech_anger"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "speech_shield"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "speech_medic"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "speech_heart"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "speech_shock"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "speech_wrench"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "speech_no_o2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_scanner_os"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_scanner_os_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_laser_os"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_laser_os_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_medic_os"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_medic_os_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_welder_os"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_welder_os_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_mg_os"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_flamer_os"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_scanner_yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_scanner_cyan"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_scanner_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_scanner_magenta"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_scanner_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_laser_yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_laser_cyan"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_laser_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_laser_magenta"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_laser_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_medic_yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_medic_cyan"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_medic_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_medic_megenta"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_medic_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_welder_green_yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_welder_green_cyan"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_welder_green_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_welder_green_magenta"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_welder_green_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_welder_blue_yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_welder_blue_cyan"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_welder_blue_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_welder_blue_magenta"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_welder_blue_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_welder_cyan_yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_welder_cyan_cyan"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_welder_cyan_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_welder_cyan_magenta"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_welder_cyan_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_welder_pink_yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_welder_pink_cyan"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_welder_pink_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_welder_pink_magenta"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_welder_pink_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_welder_purple_yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_welder_purple_cyan"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_welder_purple_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_welder_purple_magenta"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_welder_purple_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_welder_red_yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_welder_red_cyan"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_welder_red_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_welder_red_magenta"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_welder_red_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_welder_orange_1_yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_welder_orange_1_cyan"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_welder_orange_1_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_welder_orange_1_magenta"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_welder_orange_1_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_welder_orange_2_yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_welder_orange_2_cyan"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_welder_orange_2_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_welder_orange_2_magenta"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_welder_orange_2_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_mg_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_mg_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_mg_cyan"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_mg_pink"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_mg_purple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_mg_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_mg_orange_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_mg_orange_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_flamer_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_flamer_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_flamer_cyan"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_flamer_pink"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_flamer_purple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_flamer_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_flamer_orange_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool_flamer_orange_2"
+dirs = 4
+frames = 1

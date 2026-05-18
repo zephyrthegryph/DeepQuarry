@@ -1,0 +1,22 @@
+# Generated from 64x64.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 10
+
+[[state]]
+name = "wheel_of_fortune_spinning-winning"
+dirs = 1
+frames = 40
+delays = [1]
+
+[[state]]
+name = "wheel_of_fortune_spinning"
+dirs = 1
+frames = 16
+delays = [1]
+
+[[state]]
+name = "wheel_of_fortune"
+dirs = 1
+frames = 32
+delays = [1]

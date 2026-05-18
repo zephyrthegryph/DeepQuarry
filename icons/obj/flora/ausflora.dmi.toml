@@ -1,0 +1,284 @@
+# Generated from ausflora.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "firstbush_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "firstbush_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "firstbush_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "firstbush_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reedbush_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reedbush_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reedbush_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reedbush_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "leafybush_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "leafybush_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "leafybush_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "palebush_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "palebush_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "palebush_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "palebush_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stalkybush_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stalkybush_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stalkybush_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grassybush_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grassybush_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grassybush_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grassybush_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fernybush_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fernybush_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fernybush_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sunnybush_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sunnybush_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sunnybush_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "genericbush_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "genericbush_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "genericbush_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "genericbush_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pointybush_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pointybush_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pointybush_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pointybush_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lavendergrass_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lavendergrass_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lavendergrass_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lavendergrass_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ywflowers_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ywflowers_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ywflowers_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ywflowers_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brflowers_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brflowers_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brflowers_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ppflowers_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ppflowers_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ppflowers_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sparsegrass_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sparsegrass_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sparsegrass_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fullgrass_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fullgrass_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fullgrass_3"
+dirs = 1
+frames = 1

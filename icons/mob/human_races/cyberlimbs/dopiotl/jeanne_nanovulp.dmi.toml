@@ -1,0 +1,86 @@
+# Generated from jeanne_nanovulp.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 29
+
+[[state]]
+name = "head_m"
+dirs = 4
+frames = 17
+delays = [10, 2, 1.5, 1.75, 2.3, 2.4, 2, 2.5, 2]
+
+[[state]]
+name = "head_f"
+dirs = 4
+frames = 17
+delays = [10, 2, 1.5, 1.75, 2.3, 2.4, 2, 2.5, 2]
+
+[[state]]
+name = "torso_f"
+dirs = 4
+frames = 17
+delays = [10, 2, 1.5, 1.75, 2.3, 2.4, 2, 2.5, 2]
+
+[[state]]
+name = "torso_m"
+dirs = 4
+frames = 17
+delays = [10, 2, 1.5, 1.75, 2.3, 2.4, 2, 2.5, 2]
+
+[[state]]
+name = "l_arm"
+dirs = 4
+frames = 17
+delays = [10, 2, 1.5, 1.75, 2.3, 2.4, 2, 2.5, 2]
+
+[[state]]
+name = "r_arm"
+dirs = 4
+frames = 17
+delays = [10, 2, 1.5, 1.75, 2.3, 2.4, 2, 2.5, 2]
+
+[[state]]
+name = "l_hand"
+dirs = 4
+frames = 17
+delays = [10, 2, 1.5, 1.75, 2.3, 2.4, 2, 2.5, 2]
+
+[[state]]
+name = "r_hand"
+dirs = 4
+frames = 17
+delays = [1]
+
+[[state]]
+name = "l_leg"
+dirs = 4
+frames = 17
+delays = [10, 2, 1.5, 1.75, 2.3, 2.4, 2, 2.5, 2]
+
+[[state]]
+name = "r_leg"
+dirs = 4
+frames = 17
+delays = [10, 2, 1.5, 1.75, 2.3, 2.4, 2, 2.5, 2]
+
+[[state]]
+name = "r_foot"
+dirs = 4
+frames = 17
+delays = [10, 2, 1.5, 1.75, 2.3, 2.4, 2, 2.5, 2]
+
+[[state]]
+name = "l_foot"
+dirs = 4
+frames = 17
+delays = [10, 2, 1.5, 1.75, 2.3, 2.4, 2, 2.5, 2]
+
+[[state]]
+name = "tails"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ears"
+dirs = 4
+frames = 1

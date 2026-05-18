@@ -1,0 +1,44 @@
+# Generated from door.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 10
+
+[[state]]
+name = "closed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "deny"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "opening"
+dirs = 4
+frames = 6
+delays = [2]
+loop = 1
+
+[[state]]
+name = "closing"
+dirs = 4
+frames = 6
+delays = [2]
+loop = 1
+
+[[state]]
+name = "construction"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "preview"
+dirs = 4
+frames = 1

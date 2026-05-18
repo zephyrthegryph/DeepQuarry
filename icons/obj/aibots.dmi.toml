@@ -1,0 +1,610 @@
+# Generated from aibots.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 16
+
+[[state]]
+name = "bucket_proxy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cleanbot0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cleanbot1"
+dirs = 1
+frames = 3
+delays = [6]
+
+[[state]]
+name = "cleanbot-c"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "toolbox_tiles"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toolbox_tiles_sensor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floorbot0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floorbot0e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floorbot1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floorbot1e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floorbot-c"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "medibot0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medibot1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medibots"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "medibots_dna"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "medibotd"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "medibota"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medibotb"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "mediboto"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "medibotpb"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "medibotp_red"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "medibotp_blue"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "medibotp_orange"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "medibotp_green"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "medibotp_redblue"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "honkbuddy0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "honkbuddy1_honk"
+dirs = 1
+frames = 2
+delays = [10, 1]
+
+[[state]]
+name = "honkbuddyhack"
+dirs = 1
+frames = 2
+delays = [3, 1]
+
+[[state]]
+name = "secbot0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "secbot1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "secbot-c"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "slimesecbot0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "slimesecbot1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "slimesecbot-c"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "helmet_signaler"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hs_hole"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hs_eye"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hs_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "firstaid_arm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "na_scanner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medskin_tox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medskin_ointment"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kit_skin_ointment"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kit_skin_tox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medibot_spark"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "medskin_bezerk"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mulebot0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mulebot1"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "mulebot-hatch"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mulebot-emagged"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "water_arm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "farmbot0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "farmbot1"
+dirs = 1
+frames = 1
+rewind = true
+
+[[state]]
+name = "farmbot_water"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "farmbot_hoe"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "farmbot_fertile"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "farmbot_collect"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "farmbot_broke"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "farmbot_hatch"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ed209_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ed209_hat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ed209_leg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ed209_legs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ed209_prox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ed209_shell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ed209_taser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ed2090"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ed209-c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ed2091"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medskin_o2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kit_skin_o2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "honkbuddy1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "servoskull"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "fetchbot0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fetchbot1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "box_proxy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fetchbot-c"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "rtoolbox_tiles"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rtoolbox_tiles_sensor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rfloorbot0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rfloorbot0e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rfloorbot1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rfloorbot1e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rfloorbot-c"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "ytoolbox_tiles"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ytoolbox_tiles_sensor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yfloorbot0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yfloorbot0e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yfloorbot1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yfloorbot1e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yfloorbot-c"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "red209_shell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red209_hat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red209_prox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red209_taser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red2090"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red209-c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "red2091"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bed209_shell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bed209_hat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bed209_prox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bed209_taser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bed2090"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bed209-c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bed2091"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "edCLN_bucket"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "edCLN_mop"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "edCLN_prox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "edCLN"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "edCLN0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "edCLN1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sled209_taser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sled2090"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sled209-c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sled2091"
+dirs = 4
+frames = 1

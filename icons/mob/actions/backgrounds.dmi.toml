@@ -1,0 +1,226 @@
+# Generated from backgrounds.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "bg_default"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_default_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_default_border"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ab_goldborder"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_mime"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_mime_border"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_spell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_spell_border"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_spell_border_active_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_spell_border_active_yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_spell_border_active_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_alien"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_alien_border"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_revenant"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_revenant_border"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_demon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_demon_border"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_cult"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_cult_border"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_clock"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_clock_border"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_tech_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_tech_blue_active"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_tech_blue_border"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_tech"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_tech_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_tech_border"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_hive"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_hive_border"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_agent"
+dirs = 1
+frames = 15
+delays = [1]
+
+[[state]]
+name = "bg_agent_border"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_changeling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_changeling_border"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_fugu"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_fugu_border"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_nature"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_nature_border"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_heretic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_heretic_border"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_mod"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_mod_border"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_void"
+dirs = 1
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 4
+delays = [1.2]
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1

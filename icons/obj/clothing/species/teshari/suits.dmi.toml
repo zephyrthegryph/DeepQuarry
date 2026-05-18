@@ -1,0 +1,119 @@
+# Generated from suits.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "rig-syndie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig-engineering"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig-medical"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig-sec"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig-secalt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig-mining"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig-atmos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig-engineering_rad"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig-engineering_con"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig-medical_bio"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig-sec_riot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig-medical_emt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig-firebug"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig-pilot2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig-pilot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesharicoat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesharicoat_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesharicoatwhite"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesharicoatwhite_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ce_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ce_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "void_explorer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rad_fitted"
+dirs = 1
+frames = 1

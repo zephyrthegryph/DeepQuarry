@@ -1,0 +1,104 @@
+# Generated from projectiles_impact.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "impact_laser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "impact_xray"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "impact_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "impact_omni"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "impact_emitter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "impact_beam_heavy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "impact_u_laser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "impact_stun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "impact_lightning"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "impact_darkb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "impact_darkt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "impact_invert"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "impact_mhd_laser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "impact_pointdef"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "impact_meep"
+dirs = 1
+frames = 5
+delays = [1]
+loop = 1
+
+[[state]]
+name = "impact_em_laser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "impact_ratmining"
+dirs = 1
+frames = 10
+delays = [1]
+
+[[state]]
+name = "impact_rainbow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "impact_coildef"
+dirs = 1
+frames = 2
+delays = [1, 2]
+loop = 3

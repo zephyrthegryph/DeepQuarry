@@ -1,0 +1,44 @@
+# Generated from plating.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "dmg1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dmg2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dmg3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dmg4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "asteroidplating"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "asteroidplating2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plating"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "solarpanel"
+dirs = 1
+frames = 1

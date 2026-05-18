@@ -1,0 +1,64 @@
+# Generated from chess.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "white_pawn"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_rook"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_knight"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_bishop"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_king"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_queen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "black_pawn"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "black_rook"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "black_knight"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "black_bishop"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "black_king"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "black_queen"
+dirs = 1
+frames = 1

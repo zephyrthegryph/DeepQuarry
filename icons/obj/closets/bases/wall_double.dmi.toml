@@ -1,0 +1,40 @@
+# Generated from wall_double.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lock"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "light"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "welded"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sparks"
+dirs = 4
+frames = 7
+delays = [10, 1, 1, 1, 1, 1, 40]
+
+[[state]]
+name = "interior"
+dirs = 4
+frames = 1

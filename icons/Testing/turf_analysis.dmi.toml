@@ -1,0 +1,84 @@
+# Generated from turf_analysis.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "individual_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suspended"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "individual_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "on1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "on1_border"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "on2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "on2_border"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "on3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "on3_border"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "on4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "on4_border"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "on5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "on5_border"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arrow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "red_arrow"
+dirs = 4
+frames = 1

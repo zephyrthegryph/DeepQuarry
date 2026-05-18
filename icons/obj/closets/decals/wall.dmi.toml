@@ -1,0 +1,64 @@
+# Generated from wall.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stripe_inner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stripe_outer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cross"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vent"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vent_lower"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "glass"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mining"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "electric"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fire"
+dirs = 4
+frames = 1

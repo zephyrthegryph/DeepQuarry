@@ -1,0 +1,64 @@
+# Generated from trash_piles.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "randompile"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pile1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pile2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pilechair"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "piletable"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pilevending"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brtrashpile"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "microwavepile"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rackpile"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boxfort"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "trashbag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brokecomp"
+dirs = 1
+frames = 1

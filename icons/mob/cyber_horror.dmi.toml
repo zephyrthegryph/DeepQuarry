@@ -1,0 +1,92 @@
+# Generated from cyber_horror.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 10
+
+[[state]]
+name = "vox_cyber_horror"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_cyber_horror_dead"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ling_cyber_horror"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ling_cyber_horror_dead"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tajaran_cyber_horror"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tajaran_cyber_horror_dead"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grey_cyber_horror"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grey_cyber_horror_dead"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "plasma_cyber_horror"
+dirs = 4
+frames = 6
+delays = [0.75]
+
+[[state]]
+name = "plasma_cyber_horror_dead"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cyber_horror"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cyber_horror_dead"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "corgi_cyber_horror"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "corgi_cyber_horror_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cat_cyber_horror"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cat_cyber_horror"
+dirs = 4
+frames = 2
+delays = [1]
+movement = true
+
+[[state]]
+name = "cat_cyber_horror_dead"
+dirs = 1
+frames = 1

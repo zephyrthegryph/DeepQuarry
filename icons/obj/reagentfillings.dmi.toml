@@ -1,0 +1,379 @@
+# Generated from reagentfillings.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "vial-10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vial-20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vial-40"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vial-60"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vial-80"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vial-100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beaker-10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beaker-20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beaker-40"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beaker-60"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beaker-80"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beaker-100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beakerlarge-10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beakerlarge-20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beakerlarge-40"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beakerlarge-60"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beakerlarge-80"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beakerlarge-100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle-1-10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle-1-20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle-1-40"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle-1-60"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle-1-80"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle-1-100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syringe5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syringe10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syringe15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle-2--10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle-2-10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle-2-20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle-2-40"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle-2-60"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle-2-80"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle-2-100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle-3--10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle-3-10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle-3-20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle-3-40"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle-3-60"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle-3-80"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle-3-100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle-4--10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle-4-10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle-4-20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle-4-40"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle-4-60"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle-4-80"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle-4-100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shotglass1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shotglass5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shotglass12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fitness-cup10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fitness-cup20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fitness-cup30"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fitness-cup40"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fitness-cup50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fitness-cup60"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fitness-cup70"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fitness-cup80"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fitness-cup90"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fitness-cup100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "measure_cup-10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "measure_cup10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "measure_cup25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "measure_cup50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "measure_cup75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "measure_cup80"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "measure_cup100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle-5--10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle-5-10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle-5-20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle-5-40"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle-5-60"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle-5-80"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle-5-100"
+dirs = 1
+frames = 1

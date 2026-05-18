@@ -1,0 +1,314 @@
+# Generated from wall_masks_eris.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 15
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "generic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rgeneric"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_over"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_metal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_stone0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reinf_stone1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reinf_stone2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reinf_stone3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reinf_stone4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reinf_stone5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reinf_ston6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reinf_stone7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reinf_construct-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_construct-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_construct-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_construct-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_construct-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_construct-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "debug0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "debug1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "debug2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "debug3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "debug4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "debug5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "debug6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "debug7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rdebug"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "solid0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solid1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solid2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solid3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solid4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solid5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solid6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solid7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reinf_over0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reinf_over1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reinf_over2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reinf_over3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reinf_over4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reinf_over5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reinf_over6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reinf_over7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "onestar_standard0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "onestar_standard1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "onestar_standard2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "onestar_standard3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "onestar_standard4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "onestar_standard5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "onestar_standard6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "onestar_standard7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "onestar_standard"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "onestar_reinforced0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "onestar_reinforced1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "onestar_reinforced2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "onestar_reinforced3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "onestar_reinforced4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "onestar_reinforced5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "onestar_reinforced6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "onestar_reinforced7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "onestar_reinforced"
+dirs = 1
+frames = 1

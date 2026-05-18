@@ -1,0 +1,1045 @@
+# Generated from wall_masks_tgmc.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 15
+
+[[state]]
+name = "metal0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray_deco0"
+dirs = 1
+frames = 4
+delays = [7, 5, 7, 5]
+
+[[state]]
+name = "gray_deco1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray_deco2"
+dirs = 1
+frames = 2
+delays = [7]
+
+[[state]]
+name = "gray_deco3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkwall0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkwall1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkwall2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkwall3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkwall4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkwall5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkwall6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkwall7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkwall8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkwall9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkwall10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkwall11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkwall12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkwall13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkwall14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkwall15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkwall_deco0"
+dirs = 1
+frames = 4
+delays = [7, 5, 7, 5]
+
+[[state]]
+name = "darkwall_deco1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkwall_deco2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkwall_deco3"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "white0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkband0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkband1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkband2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkband3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkband4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkband5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkband6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkband7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkband8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkband9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkband10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkband11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkband12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkband13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkband14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkband15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkband_deco0"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "darkband_deco1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkband_deco2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkband_deco3"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "whiteband0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whiteband1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whiteband2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whiteband3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whiteband4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whiteband5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whiteband6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whiteband7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whiteband8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whiteband9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whiteband10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whiteband11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whiteband12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whiteband13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whiteband14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whiteband15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chigusa0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chigusa1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chigusa2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chigusa3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chigusa4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chigusa5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chigusa6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chigusa7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chigusa8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chigusa9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chigusa10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chigusa11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chigusa12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chigusa13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chigusa14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chigusa15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chigusa_deco0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chigusa_deco1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chigusa_deco2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redstripe0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redstripe1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redstripe2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redstripe3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redstripe4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redstripe5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redstripe6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redstripe7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redstripe8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redstripe9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redstripe10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redstripe11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redstripe12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redstripe13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redstripe14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redstripe15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redstriper0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redstriper1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redstriper2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redstriper3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redstriper4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redstriper5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redstriper6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redstriper7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redstriper8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redstriper9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redstriper10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redstriper11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redstriper12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redstriper13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redstriper14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redstriper15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstripe0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstripe1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstripe2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstripe3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstripe4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstripe5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstripe6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstripe7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstripe8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstripe9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstripe10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstripe11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstripe12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstripe13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstripe14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstripe15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper15"
+dirs = 1
+frames = 1

@@ -1,0 +1,98 @@
+# Generated from snake_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 10
+
+[[state]]
+name = "python"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "python_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "green"
+dirs = 4
+frames = 6
+delays = [1]
+movement = true
+
+[[state]]
+name = "green_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "red"
+dirs = 4
+frames = 6
+delays = [1]
+movement = true
+
+[[state]]
+name = "red_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sneksnakbox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snack_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snack_green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snack_pink"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snack_yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snek"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snek-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snek_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snek_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snek_dead"
+dirs = 1
+frames = 1

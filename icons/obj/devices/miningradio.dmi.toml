@@ -1,0 +1,84 @@
+# Generated from miningradio.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 11
+
+[[state]]
+name = "miningradio"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weatherwarning"
+dirs = 1
+frames = 9
+delays = [1]
+
+[[state]]
+name = "m_idle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m_active"
+dirs = 1
+frames = 10
+delays = [1]
+
+[[state]]
+name = "s_idle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "s_active"
+dirs = 1
+frames = 11
+delays = [1]
+
+[[state]]
+name = "urgentwarning"
+dirs = 1
+frames = 9
+delays = [1]
+
+[[state]]
+name = "direwarning"
+dirs = 1
+frames = 9
+delays = [1]
+
+[[state]]
+name = "wallmount"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emissive"
+dirs = 1
+frames = 14
+delays = [1]
+
+[[state]]
+name = "wallgreen"
+dirs = 1
+frames = 15
+delays = [1]
+
+[[state]]
+name = "wallyellow"
+dirs = 1
+frames = 15
+delays = [1]
+
+[[state]]
+name = "wallred"
+dirs = 1
+frames = 15
+delays = [1]
+
+[[state]]
+name = "small_emissive"
+dirs = 1
+frames = 9
+delays = [1]

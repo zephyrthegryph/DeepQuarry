@@ -1,0 +1,107 @@
+# Generated from clockwork_mobs.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 16
+
+[[state]]
+name = "anime_fragment"
+dirs = 1
+frames = 8
+delays = [0.7]
+
+[[state]]
+name = "clockwork_marauder"
+dirs = 4
+frames = 8
+delays = [0.7]
+
+[[state]]
+name = "marauder_emerge"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_gear"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_clock"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aiframe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eye1"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "eye2"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "eye3"
+dirs = 4
+frames = 4
+delays = [3]
+
+[[state]]
+name = "eye4"
+dirs = 4
+frames = 4
+delays = [4]
+
+[[state]]
+name = "eye5"
+dirs = 4
+frames = 4
+delays = [5]
+
+[[state]]
+name = "eye6"
+dirs = 4
+frames = 4
+delays = [6]
+
+[[state]]
+name = "eye7"
+dirs = 4
+frames = 4
+delays = [7]
+
+[[state]]
+name = "eye8"
+dirs = 4
+frames = 4
+delays = [8]
+
+[[state]]
+name = "eye9"
+dirs = 4
+frames = 4
+delays = [9]
+
+[[state]]
+name = "clockwork_marauder"
+dirs = 4
+frames = 8
+delays = [0.7]
+
+[[state]]
+name = "ignis"
+dirs = 4
+frames = 8
+delays = [0.7]
+
+[[state]]
+name = "fallen_armor"
+dirs = 1
+frames = 1

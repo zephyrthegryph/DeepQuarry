@@ -1,0 +1,19 @@
+# Generated from righthand_medigun.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "medblaster-wielded"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medblaster"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medblaster_cmo"
+dirs = 4
+frames = 1

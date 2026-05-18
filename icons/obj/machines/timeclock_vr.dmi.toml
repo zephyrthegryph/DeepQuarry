@@ -1,0 +1,58 @@
+# Generated from timeclock_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 10
+
+[[state]]
+name = "timeclock"
+dirs = 4
+frames = 8
+delays = [45]
+
+[[state]]
+name = "timeclock_card"
+dirs = 4
+frames = 6
+delays = [5, 1, 5, 1, 5, 1]
+
+[[state]]
+name = "timeclock_approved"
+dirs = 4
+frames = 2
+delays = [3]
+
+[[state]]
+name = "timeclock_denied"
+dirs = 4
+frames = 2
+delays = [3]
+
+[[state]]
+name = "timeclock_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "timeclock_b0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "timeclock_b1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "timeclock_b2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "timeclock_b3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "timeclock_b4"
+dirs = 4
+frames = 1

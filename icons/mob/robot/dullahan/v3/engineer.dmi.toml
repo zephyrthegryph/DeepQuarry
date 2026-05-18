@@ -1,0 +1,109 @@
+# Generated from engineer.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 10
+
+[[state]]
+name = "dullahanengineer"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahanengineer-decals"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahanengineer-rest"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahanengineer-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "openpanel_nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahanengineer-sit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullahanengineer-eyes"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahanengineer-lights"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahanengineer-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahanengineer-sleeper-1-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahanengineer-sleeper-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahanengineer-sleeper-2-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahanengineer-sleeper-3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahanengineer-sleeper-3-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "extrabellyincasemessup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahanengineer-sleeper-1-sit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullahanengineer-sleeper-2-sit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullahanengineer-sleeper-3-sit"
+dirs = 1
+frames = 1

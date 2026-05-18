@@ -1,0 +1,54 @@
+# Generated from balls_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "tennis_classic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tennis_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tennis_yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tennis_green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tennis_cyan"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tennis_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tennis_purple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baseball"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "basketball"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dodgeball"
+dirs = 1
+frames = 1

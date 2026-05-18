@@ -1,0 +1,11 @@
+# Generated from timestop.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 160
+height = 160
+cols = 4
+
+[[state]]
+name = "time"
+dirs = 1
+frames = 10
+delays = [1]
+rewind = true

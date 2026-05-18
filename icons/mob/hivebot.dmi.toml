@@ -1,0 +1,91 @@
+# Generated from hivebot.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "basic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "SecBot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "JanBot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ov-openpanel -c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ov-openpanel +c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ov-openpanel +w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hive_main-crash"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hive_main"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "def_radar-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "def_radar"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "pow_gen"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "fab_robot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "commdish"
+dirs = 1
+frames = 1

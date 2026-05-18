@@ -1,0 +1,189 @@
+# Generated from entrepreneur.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "horoscope"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crystal_ball"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fortune_teller"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mirror"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sickle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "probe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scaler"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dentist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "exercise_mat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "exercise_mat_placed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fitness_trainer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yoga_teacher"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dumbbell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emf-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emf-20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emf-40"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emf-60"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emf-80"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paranormal_investigator"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spirit_board"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crystal_pink"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crystal_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crystal_green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crystal_orange"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crystal_dblue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crystal_purple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oil"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spirit_healer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rollerbed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rollerbed_up"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "folded_rollerbed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "private_investigator"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "magnifying_glass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "selfie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "selfie_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stylist"
+dirs = 1
+frames = 1

@@ -1,0 +1,3431 @@
+# Generated from food.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 31
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mint"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "badrecipe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plaincake"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cheesecake"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chocolatecake"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "birthdaycake"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "applecake"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orangecake"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lemoncake"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "peanutcake"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carrotcake"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "limecake"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pumpkinpie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "keylimepie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "quiche"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "braincake"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cheesewheel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plaincake_slice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cheesecake_slice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chocolatecake_slice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "birthdaycakeslice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "applecakeslice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orangecake_slice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lemoncake_slice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "peanutcake_slice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carrotcake_slice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "limecake_slice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pumpkinpieslice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "keylimepieslice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "quicheslice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "braincakeslice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cheesewedge"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "applepie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meatpie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cherrypie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xenomeatpie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "waffles"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "soylent_green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rofflewaffles"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "soylent_yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "koiswaffles"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brownies"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cosmicbrownies"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "browniesslice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cosmicbrowniesslice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "momo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grilled_carp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grilled_killmaw"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sashimi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bread"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bananabread"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "creamcheesebread"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meatbread"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tofubread"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xenomeatbread"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spidermeatbread"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mimanbread"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "breadslice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "moldybreadslice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bananabreadslice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "creamcheesebreadslice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meatbreadslice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tofubreadslice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xenobreadslice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spidermeatslice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mimanbreadslice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "twobread"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "notasandwich"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jellytoast"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "honeytoast"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cheesytoast"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "garlicbread"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sandwich"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toastedsandwich"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jellysandwich"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pbandj"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baguette"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "croissant"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bunbun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "poppypretzel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "burger_top"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "burger_bottom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cheeseburger"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hburger"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xburger"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brainburger"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jellyburger"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fishburger"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tofuburger"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ghostburger"
+dirs = 1
+frames = 18
+delays = [1, 0.8, 0.6, 0.5, 0.4, 0.4, 0.7, 1, 1.3, 1.1, 0.9, 0.7, 0.5, 0.6, 0.7, 0.8, 1, 1.2]
+
+[[state]]
+name = "spellburger"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clownburger"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mimeburger"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "roburger"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "bigbiteburger"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "superbiteburger"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baconburger"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ratburger"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bearburger"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chickenfillet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hotdog"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "taco"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fishtaco"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "breakfastwrap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fuegoburrito"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carneburrito"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eggroll"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cheeseburrito"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "burrito"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spicyburrito"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cheesemeatburrito"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spicycheesemeatburrito"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "veganburrito"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mysteryburrito"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hellfireburrito"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tortilla"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bacon_flatbread"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pineapple_pizza"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pizzamargherita"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meatpizza"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroompizza"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vegetablepizza"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pizzacrunch"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oldpizza"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pineapple_pizza_slice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pizzamargheritaslice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meatpizzaslice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroompizzaslice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vegetablepizzaslice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pizzacrunchslice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oldpizzaslice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spagetti"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spagettiboiled"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meatballspagetti"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pastatomato"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spesslaw"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coldchili"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hotchili"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chilied_eggs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meatballsoup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nettlesoup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wishsoup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tomatosoup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vegetablesoup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clownstears"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slimesoup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroomsoup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mysterysoup"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "ambrosiavulgariscrushed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flowerchildsalad"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rosesalad"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "herbsalad"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aesirsalad"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "validsalad"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boiledrice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rpudding"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "porkbowl"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eggbowl"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kudzudonburi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "curryrice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "onionsoup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beetsoup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "macncheese"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fruitsalad"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bakedbeans"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redcurry"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "greencurry"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellowcurry"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bearchili"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bibimbap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "friedrice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hatchling_suprise"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red_sun_special"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "riztizkzi_sea"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chickennoodlesoup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sweet_and_sour"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "risotto"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "risottoballs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "milosoup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacylibertyduff"
+dirs = 1
+frames = 10
+delays = [1]
+
+[[state]]
+name = "amanitajelly"
+dirs = 1
+frames = 6
+delays = [50, 1, 1, 1, 1, 10]
+rewind = true
+
+[[state]]
+name = "bearstew"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stew"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wingfangchu"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stuffed_meatball"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dip_salsa"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dip_cheese"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dip_guac"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chip_basket"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nachos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cheesenachos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cubannachos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chip"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chip_salsa"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chip_cheese"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chip_guac"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nacho"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nacho_salsa"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nacho_cheese"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nacho_guac"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chip_half"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chip_salsa_half"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chip_cheese_half"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chip_guac_half"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nacho_half"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nacho_salsa_half"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nacho_cheese_half"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nacho_guac_half"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "omelette"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bacon_and_eggs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "friedegg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "benedict"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "poachedegg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fries"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cheesyfries"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carrotfries"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ovenfries"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "microfries"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chilicheesefries"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "onionrings"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mashedpotato"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cheesymash"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bangersandmash"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "loadedbakedpotato"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "soydope"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stewedsoymeat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lomein"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bellefritter"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "eggplantparm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "berryclafoutis"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gappletart"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fishandchips"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dionaroast"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "funnelcake"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "tofurkey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cubancarp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chickensteak"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meatstake"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ribplate"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 21, y = 16 }]
+
+[[state]]
+name = "pisanggoreng"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "father_breakfast"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grilledcarp_slice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crablegs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pancakes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pancake_berry"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tofu"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bearmeat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chickenbreast"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fishfillet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crabmeat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rottenmeat"
+dirs = 1
+frames = 20
+delays = [1, 1, 1, 1, 1, 10, 1]
+
+[[state]]
+name = "xenomeat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grubmeat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rawturkey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crustacean-meat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wormmeat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hugemushroomslice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tomatomeat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pineapple_ring"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sausage"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "zestfish"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rawbacon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bacon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meatball"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nugget_lump"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nugget_star"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nugget_corgi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nugget_lizard"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kabob"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "monkeycubebox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "monkeycubewrap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "monkeycube"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eggmuffin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phelmbiscuit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg-purple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg-blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg-red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg-orange"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg-yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg-green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg-rainbow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg-mime"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chocolateegg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dankpocket"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donkpocketspicy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donkpocketteriyaki"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donkpocketpizza"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donkpocketbanana"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donkpocketberry"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donkpocketgondola"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donkpocket"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eggbox5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eggbox1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eggbox2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eggbox3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eggbox4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eggbox11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eggbox6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eggbox7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eggbox8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eggbox9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eggbox10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eggbox12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eggbox0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eggbox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crackerbox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crackerbox6"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "crackerbox5"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "crackerbox4"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "crackerbox3"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "crackerbox2"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "crackerbox1"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "crackerbox0"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "cracker"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "tray"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "platter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "muffin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "berrymuffin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emptycondiment"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mixedcondiments"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "enzyme"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hotsauce"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coldsauce"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "barbecue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ketchup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mustard"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "soysauce"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mayo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vinegar"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oliveoil"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "saltshakersmall"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "peppershakersmall"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "peppermill"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sugarsmall"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacespicebottle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "peanutbutter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yeast"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plump_pie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "amanita_pie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "enchiladas"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "monkeysdelight"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "watermelonslice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "candiedapple1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "candiedapple2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "corndog"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bacon_stick"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "butter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lard"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "marge"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chocolatebar"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cocoa"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boiledslimecore"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fishfingers"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chawanmushi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pizzabox_messy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pizzabox_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pizzabox1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pizzabox2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pizzabox3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pizzabox4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pizzabox5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pizzabox_tag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "honeycomb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stuffing"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cereal_box"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "icecream_cone_waffle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "icecream_cone_chocolate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "icecream_vanilla"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "icecream_strawberry"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "icecream_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "icecream_chocolate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "icecreamsandwich"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blackpudding"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "piginblanket"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meatbun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "heartbox_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "heartbox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chocolatepiece_truffle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chocolatepiece"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chocolatepiece_white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "truffle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "candy_corn"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cookie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sugarcookie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fortune_cookie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cinnamonbun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "worm_sickly"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "worm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "worm_deluxe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wormcan_empty_sickly"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wormcan_sickly"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wormcan_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wormcan"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wormcan_empty_deluxe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wormcan_deluxe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sunflowerseed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "roastnuts"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "devilledegg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "liquidfood"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "liquidprotein"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "liquidvitamin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mre"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mre1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vegmre"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vegmre1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meatmre"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meatmre1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crayonmre"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crayonmre1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meatcube"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pouch_small1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pouch_small"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pouch_medium1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pouch_medium"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "packet_medium"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "packet_small_white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "packet_small_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "packet_small_black"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "packet_small"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "protein_powder1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "protein_powder2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "protein_powder3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "protein_powder4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "protein_powder5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tgmc_mre"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tgmc_mre_opened"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tgmcmre_entree"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tgmcmre_boneless pork ribs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tgmcmre_grilled chicken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tgmcmre_pizza square"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tgmcmre_spaghetti"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tgmcmre_chicken tenders"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tgmcmre_tofurkey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tgmcmre_side"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tgmcmre_meatballs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tgmcmre_beef turnover"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tgmcmre_cheese spread"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tgmcmre_mashed potatoes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tgmcmre_stuffing"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tgmcmre_snack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tgmcmre_cracker"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tgmcmre_biscuit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tgmcmre_pretzels"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tgmcmre_peanuts"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tgmcmre_dessert"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tgmcmre_spiced apples"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tgmcmre_chocolate brownie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tgmcmre_sugar cookie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tgmcmre_choco bar"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tgmcmre_upp_ration"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tgmcmre_upp_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tgmcmre_upp_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tgmcmre_drink"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bagelplain"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bagelsunflower"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bagelcheese"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bagelraisin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bagelpoppy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bageleverything"
+dirs = 1
+frames = 15
+delays = [1, 5, 1, 1, 1, 5, 1, 1, 2, 2, 1, 2, 2, 1, 2]
+
+[[state]]
+name = "chaoscake_layer-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chaoscake_layer-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chaoscake_layer-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chaoscake_layer-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chaoscake_layer-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chaoscake_layer-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chaoscake_layer-7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chaoscake_layer-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chaoscake_layer-9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chaoscake_slice-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chaoscake_slice-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chaoscake_slice-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chaoscake_slice-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chaoscake_slice-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chaoscake_slice-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lasagna"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 28, y = 14 }]
+
+[[state]]
+name = "gigapuddi"
+dirs = 1
+frames = 9
+delays = [1]
+rewind = true
+
+[[state]]
+name = "happypuddi"
+dirs = 1
+frames = 9
+delays = [1]
+rewind = true
+
+[[state]]
+name = "angerpuddi"
+dirs = 1
+frames = 9
+delays = [0.25]
+rewind = true
+
+[[state]]
+name = "buche"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "buche_slice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "turkey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "turkey_drumstick"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "roastturkey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "roastturkeydrumstick"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "roastturkeynmash"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suppermatter"
+dirs = 1
+frames = 5
+delays = [4, 4, 4, 2]
+rewind = true
+
+[[state]]
+name = "suppermattershard"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "excitingsuppermatter"
+dirs = 1
+frames = 4
+delays = [8, 4, 8, 4]
+
+[[state]]
+name = "excitingsuppermattershard"
+dirs = 1
+frames = 8
+delays = [2]
+rewind = true
+
+[[state]]
+name = "omurice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "omuriceheart"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "omuriceface"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ancient_burger"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ancient_horse_burger"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ancient_fries"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ancient_hotdog"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ancient_taco"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ancient_pizza"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "batteredsausage"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "popper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_pancake"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "friedmushroom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "katsu"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meat_pocket"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flour-100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flour-75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flour-50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flour-25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flour-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flour"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sugar-100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sugar-75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sugar-50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sugar-25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sugar-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sugar"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flour_bag-100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flour_bag-75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flour_bag-50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flour_bag-25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flour_bag-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flour_bag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sugar_bag-100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sugar_bag-75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sugar_bag-50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sugar_bag-25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sugar_bag-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sugar_bag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sprinkles"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sprinkles_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clubsandwich"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "big_mushroom_slice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "big_veggie_slice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "big_pineapple_slice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "big_meat_slice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "big_cheese_slice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "petcubebox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sushi"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 28, y = 14 }]
+
+[[state]]
+name = "sushi_s"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 28, y = 14 }]
+
+[[state]]
+name = "doner_kebab"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 28, y = 14 }]
+
+[[state]]
+name = "reishiscup"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 28, y = 14 }]
+
+[[state]]
+name = "wings5"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 28, y = 14 }]
+
+[[state]]
+name = "wings4"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 28, y = 14 }]
+
+[[state]]
+name = "wings3"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 28, y = 14 }]
+
+[[state]]
+name = "wings2"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 28, y = 14 }]
+
+[[state]]
+name = "wings1"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 28, y = 14 }]
+
+[[state]]
+name = "wings0"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 28, y = 14 }]
+
+[[state]]
+name = "wing"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chocolatefountain"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "popout_cake"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pillbugball"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pillbug"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pillbugempty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vegetable_pizza_cargo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vegetable_pizza_slice_cargo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "margharita_pizza_cargo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "margharita_pizza_slice_cargo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meat_pizza_cargo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meat_pizza_slice_cargo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom_pizza_cargo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom_pizza_slice_cargo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vegetable_pizza_frozen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "margharita_pizza_frozen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meat_pizza_frozen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom_pizza_frozen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lobster_raw"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lobster_cooked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cuttlefish_raw"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cuttlefish_cooked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "monkfish_remains"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "monkfish_fillet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "monkfish_cooked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sharkmeat_chunk"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sharkmeat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sharkmeat_cooked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sharkmeat_dip"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sharkmeat_cubes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "proteincube"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nutrimentcube"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "proteinslab"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nutrimentslab"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tray0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tray1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tray2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tray3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tray4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tray5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tray6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tray7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tray8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "honeybun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scorpion"
+dirs = 1
+frames = 3
+delays = [2]
+
+[[state]]
+name = "scorpion_cooked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "honeyant"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "honeyant_clean"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "candy_honey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "locust"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "locust_cooked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grub_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grub_pink"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grub"
+dirs = 1
+frames = 7
+delays = [1.5, 1.5, 1.5, 1, 1.5, 1.5, 1]
+rewind = true
+
+[[state]]
+name = "grub_purple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bucket6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bucket5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bucket4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bucket3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bucket2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bucket1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bucket0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hotandsoursoup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kitsuneudon"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 28, y = 14 }]
+
+[[state]]
+name = "generaltso"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "roastbeef"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "goulash"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "makaroni"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mammi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jellyfish_core"
+dirs = 1
+frames = 5
+delays = [100, 1]
+
+[[state]]
+name = "donkpocket_ascended"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "altevian_cheese_block"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian_cheese_block-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian_veggies"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian_veggies-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian_juice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian_juice-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian_steak"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian_fruitcake"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian_fruitcake-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian_pack_burger"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "altevian_pack_burger-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian_pack_burger-opening"
+dirs = 1
+frames = 9
+delays = [2]
+
+[[state]]
+name = "altevian_pack_cheese"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "altevian_pack_cheese-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian_pack_cheese-opening"
+dirs = 1
+frames = 9
+delays = [2]
+
+[[state]]
+name = "altevian_pack_turkey"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "altevian_pack_turkey-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian_pack_turkey-opening"
+dirs = 1
+frames = 9
+delays = [2]
+
+[[state]]
+name = "altevian_pack_ramen"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "altevian_pack_ramen_standard-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian_pack_ramen_standard-opening"
+dirs = 1
+frames = 9
+delays = [2]
+loop = 1
+
+[[state]]
+name = "altevian_pack_ramen_lacquer1-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian_pack_ramen_lacquer1-opening"
+dirs = 1
+frames = 9
+delays = [2]
+loop = 1
+
+[[state]]
+name = "altevian_pack_ramen_lacquer2-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian_pack_ramen_lacquer2-opening"
+dirs = 1
+frames = 9
+delays = [2]
+loop = 1
+
+[[state]]
+name = "altevian_pack_ramen_lacquer3-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian_pack_ramen_lacquer3-opening"
+dirs = 1
+frames = 9
+delays = [2]
+loop = 1
+
+[[state]]
+name = "altevian_pack_ramen_fleet-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian_pack_ramen_fleet-opening"
+dirs = 1
+frames = 9
+delays = [2]
+loop = 1
+
+[[state]]
+name = "altevian_pack_ramen_trans-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian_pack_ramen_trans-opening"
+dirs = 1
+frames = 9
+delays = [2]
+loop = 1
+
+[[state]]
+name = "altevian_pack_ramen_ace-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian_pack_ramen_ace-opening"
+dirs = 1
+frames = 9
+delays = [2]
+loop = 1
+
+[[state]]
+name = "altevian_pack_taco"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "altevian_pack_taco-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian_pack_taco-opening"
+dirs = 1
+frames = 9
+delays = [2]
+loop = 1
+
+[[state]]
+name = "altevian_pack_cake"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "altevian_pack_cake-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian_pack_cake-opening"
+dirs = 1
+frames = 9
+delays = [2]
+
+[[state]]
+name = "altevian_pack_meat"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "altevian_pack_meat-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian_pack_meat-opening"
+dirs = 1
+frames = 9
+delays = [2]
+
+[[state]]
+name = "jaffacake"
+dirs = 1
+frames = 1
+rewind = true
+
+[[state]]
+name = "jaffacake_pack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "churro"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "burgerpatty"
+dirs = 1
+frames = 1

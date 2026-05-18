@@ -1,0 +1,1397 @@
+# Generated from vore64x32.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 37
+
+[[state]]
+name = "otie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "otie-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cotie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cotie-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "otie_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "otie_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cotie_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cotie_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "otie-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sotie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sotie-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sotie_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sotie_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sotie-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "photie"
+dirs = 4
+frames = 4
+delays = [30, 1.5, 1.5, 1]
+
+[[state]]
+name = "photie_rest"
+dirs = 4
+frames = 4
+delays = [40, 1.5, 1.5, 1]
+
+[[state]]
+name = "photie-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "photie_rest-1"
+dirs = 4
+frames = 4
+delays = [40, 1.5, 1.5, 1]
+
+[[state]]
+name = "photie-1"
+dirs = 4
+frames = 4
+delays = [30, 1.5, 1.5, 1]
+
+[[state]]
+name = "secphotie"
+dirs = 4
+frames = 4
+delays = [30, 1.5, 1.5, 1]
+hotspots = [{ frame = 1, x = 29, y = 8 }]
+
+[[state]]
+name = "secphotie_rest"
+dirs = 4
+frames = 4
+delays = [40, 1.5, 1.5, 1]
+
+[[state]]
+name = "secphotie-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secphotie_rest-1"
+dirs = 4
+frames = 4
+delays = [40, 1.5, 1.5, 1]
+
+[[state]]
+name = "secphotie-1"
+dirs = 4
+frames = 4
+delays = [30, 1.5, 1.5, 1]
+
+[[state]]
+name = "pcotie"
+dirs = 4
+frames = 4
+delays = [30, 1.5, 1.5, 1]
+
+[[state]]
+name = "pcotie-1"
+dirs = 4
+frames = 4
+delays = [30, 1.5, 1.5, 1]
+
+[[state]]
+name = "pcotie_rest"
+dirs = 4
+frames = 4
+delays = [40, 1.5, 1.5, 1]
+hotspots = [{ frame = 1, x = 31, y = 16 }]
+
+[[state]]
+name = "pcotie_rest-1"
+dirs = 4
+frames = 4
+delays = [40, 1.5, 1.5, 1]
+
+[[state]]
+name = "photie-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pcotie-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sotie-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "secphotie-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "badboi"
+dirs = 4
+frames = 4
+delays = [2.6]
+rewind = true
+
+[[state]]
+name = "badboi-1"
+dirs = 4
+frames = 4
+delays = [2.6]
+rewind = true
+
+[[state]]
+name = "badboi_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "badboi_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "badboi-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prettyboi"
+dirs = 4
+frames = 4
+delays = [2.6]
+rewind = true
+
+[[state]]
+name = "prettyboi-1"
+dirs = 4
+frames = 4
+delays = [2.6]
+rewind = true
+
+[[state]]
+name = "prettyboi_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "prettyboi_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "prettyboi-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "badboi-eyes"
+dirs = 4
+frames = 4
+delays = [2.6]
+rewind = true
+
+[[state]]
+name = "rous"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rous_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rous-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rous_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rous-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phorous"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phorous_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phorous-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phorous_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phorous-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hotie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hotie-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hotie_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hotie_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hotie-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hotie-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sechotie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sechotie_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sechotie-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sechotie_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sechotie-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fotie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fotie-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fotie_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fotie_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fotie-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fcotie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fcotie-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fcotie_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fcotie_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fsotie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fsotie-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fsotie_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fsotie_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fsotie-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fsotie-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "photiec"
+dirs = 4
+frames = 4
+delays = [30, 1.5, 1.5, 1]
+
+[[state]]
+name = "photiec_rest"
+dirs = 4
+frames = 4
+delays = [40, 1.5, 1.5, 1]
+
+[[state]]
+name = "photiec_rest-1"
+dirs = 4
+frames = 4
+delays = [40, 1.5, 1.5, 1]
+
+[[state]]
+name = "photiec-1"
+dirs = 4
+frames = 4
+delays = [30, 1.5, 1.5, 1]
+
+[[state]]
+name = "photiec-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hotiec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hotiec-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hotiec_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hotiec_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hotiec-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hotiesc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hotiesc-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hotiesc_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hotiesc_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hotiesc-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "direwolf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "direwolf-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "direwolf_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "direwolf_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "direwolf-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "diredog"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "diredog-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "diredog_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "diredog_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "diredog-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "direwolfs"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "direwolfs-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "direwolfs_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "direwolfs_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "direwolfs-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "diredogs"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "diredogs-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "diredogs_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "diredogs_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "diredogs-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "andrews"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "andrews-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "andrews_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "andrews_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "andrews-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rykka"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rykka-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rykka_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rykka_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rykka-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rykka-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolftaurwhite"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolftaurwhite-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolftaurwhite_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolftaurwhite_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolftaurwhite-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wolftaurbrown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolftaurbrown-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolftaurbrown_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolftaurbrown_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolftaurbrown-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wolftaurblack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolftaurblack-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolftaurblack_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolftaurblack_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolftaurblack-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wolftaurwood"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolftaurwood-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolftaurwood_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolftaurwood_rest1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolftaurwood-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wolftaurdark"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolftaurdark-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolftaurdark_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolftaurdark_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolftaurdark-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wolftaurwhitec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolftaurwhitec-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolftaurwhitec_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolftaurwhitec_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolftaurwhitec-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wolftaurbrownc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolftaurbrownc-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolftaurbrownc_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolftaurbrownc-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wolftaurbrownc_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolftaurblackc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolftaurblackc-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolftaurblackc_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolftaurblackc_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolftaurblackc-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wolftaurwoodc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolftaurwoodc-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolftaurwoodc_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolftaurwoodc_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolftaurwoodc-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wolftaurclown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolftaurclown-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolftaurclown_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolftaurclown_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolftaurclown-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stalker"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stalker-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stalker_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stalker_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stalker-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "badboi_fire"
+dirs = 4
+frames = 4
+delays = [2.6]
+rewind = true
+
+[[state]]
+name = "badboi_fire-1"
+dirs = 4
+frames = 4
+delays = [2.6]
+rewind = true
+
+[[state]]
+name = "badboi_fire_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "badboi_fire_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "badboi_fire-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "badboi_laser"
+dirs = 4
+frames = 4
+delays = [2.6]
+rewind = true
+
+[[state]]
+name = "badboi_laser-1"
+dirs = 4
+frames = 4
+delays = [2.6]
+rewind = true
+
+[[state]]
+name = "badboi_laser_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "badboi_laser_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "badboi_laser-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "badboi_fast"
+dirs = 4
+frames = 4
+delays = [2.6]
+rewind = true
+
+[[state]]
+name = "badboi_fast-1"
+dirs = 4
+frames = 4
+delays = [2.6]
+rewind = true
+
+[[state]]
+name = "badboi_fast_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "badboi_fast_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "badboi_fast-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "badboi_fire-eyes"
+dirs = 4
+frames = 4
+delays = [2.6]
+rewind = true
+
+[[state]]
+name = "badboi_laser-eyes"
+dirs = 4
+frames = 4
+delays = [2.6]
+rewind = true
+
+[[state]]
+name = "badboi_fast-eyes"
+dirs = 4
+frames = 4
+delays = [2.6]
+rewind = true
+
+[[state]]
+name = "blaidd"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blaidd-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blaidd_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blaidd_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blaidd-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blaidd_cloaked"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blaidd_cloaked-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "labrat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "labrat_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "labrat-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "labrat_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "labrat-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chungus"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chungus-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chungus-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chungus-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chungus-rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "zorgoia-1"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 14, y = 1 }]
+
+[[state]]
+name = "zorgoia-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia-3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cjhound"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cjhound-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cjhound-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cjhound-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cjhound_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cjhound_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cjhound_rest-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cshound"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cshound-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cshound-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cshound-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cshound_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cshound_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cshound_rest-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cmhound"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cmhound-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cmhound-2"
+dirs = 4
+frames = 8
+delays = [4, 4, 4, 4, 5, 2, 3, 1]
+
+[[state]]
+name = "cmhound-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "panther"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "panther-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "panther-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "panther-3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "panther_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "panther-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "panther-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lion"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lion-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lion_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lion_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lion-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lioness"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lioness-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lioness_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lioness_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lioness-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mane"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mane-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mane_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mane_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mane-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reindeerfes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reindeerfes-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reindeerfes_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reindeerfes-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reindeer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reindeer-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reindeer_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reindeer-dead"
+dirs = 1
+frames = 1

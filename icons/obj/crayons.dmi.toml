@@ -1,0 +1,164 @@
+# Generated from crayons.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "crayonred"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crayonorange"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crayonyellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crayongreen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crayonblue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crayonpurple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crayonrainbow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crayonmime"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crayonbox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orange"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "markeryellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "markerblue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "markerrainbow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "markergreen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "markermime"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "markerorange"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "markerpurple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "markerred"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "markerblack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "myellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mblack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mblue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mgreen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "markerbox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "morange"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mpurple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mred"
+dirs = 1
+frames = 1

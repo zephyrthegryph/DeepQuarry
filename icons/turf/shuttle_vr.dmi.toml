@@ -1,0 +1,59 @@
+# Generated from shuttle_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "gwall_wfloor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gwall_drfloor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gwall_bfloor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wall_wood"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wall_grass"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wall_snow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wall_wfloor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wall_pfloor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wall_ofloor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = ""
+dirs = 4
+frames = 1
+
+[[state]]
+name = ""
+dirs = 4
+frames = 1

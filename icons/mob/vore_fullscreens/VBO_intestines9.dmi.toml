@@ -1,0 +1,19 @@
+# Generated from VBO_intestines9.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 480
+height = 480
+cols = 2
+
+[[state]]
+name = "VBO_intestines9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_intestines9-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_intestines9-3"
+dirs = 1
+frames = 1

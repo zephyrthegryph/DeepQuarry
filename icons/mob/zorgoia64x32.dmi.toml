@@ -1,0 +1,261 @@
+# Generated from zorgoia64x32.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 15
+
+[[state]]
+name = "zorgoia_main"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_tailfade"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_main-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_tailfade-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia-death"
+dirs = 1
+frames = 9
+delays = [1]
+loop = 1
+
+[[state]]
+name = "zorgoia_spike"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_spike-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_spike2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_spike2-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_eyes2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_eyes-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_eyes2-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_belly-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_belly-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_belly-3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_stripes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_stripes-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_backline"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_fullhead"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_backline-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_fullhead-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_ears"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_ears-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_spots"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_stars"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_spots-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_stars-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_claws"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_claws-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_spines"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_spines-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_underbelly"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_underbelly-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_underbellystripe"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_underbellystripe-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_fluff"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_fluff-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "null"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "zorgoia_ears2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_ears2-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_feetpaws"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_feetpaws-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_justfangs"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_justfangs-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_underbelly-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_underbellystripe-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_underbelly-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_underbellystripe-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_underbelly-3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_underbellystripe-3"
+dirs = 4
+frames = 1

@@ -1,0 +1,194 @@
+# Generated from desert_plants.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "potplant0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "potplant1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "potplant2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "thicket0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "thicket1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "thicket2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "thicket3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "thicket4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "thicket5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "thicket6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shrub0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shrub1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shrub2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shrub3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shrub4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shrub5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "barrelcacti0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "barrelcacti1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "barrelcacti2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "barrelcacti3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "anthill0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "anthill1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "anthill2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "palmy0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "palmy1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "palmy2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shrubber0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shrubber1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shrubber2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lbarrelcacti0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lbarrelcacti1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lbarrelcacti2"
+dirs = 1
+frames = 1

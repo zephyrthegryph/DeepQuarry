@@ -1,0 +1,37 @@
+# Generated from wallthermal.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 11
+
+[[state]]
+name = "lasergen-heat"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "wallthermalbroken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wallthermalpowereddown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lasergen-on"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "lasergen-cool"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "lasergen"
+dirs = 4
+frames = 1

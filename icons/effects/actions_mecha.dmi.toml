@@ -1,0 +1,144 @@
+# Generated from actions_mecha.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "mech_lights_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mech_lights_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mech_view_stats"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mech_eject"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mech_internals_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mech_internals_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mech_cycle_equip_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mech_cycle_equip_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mech_defense_mode_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mech_defense_mode_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mech_thrusters_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mech_thrusters_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mech_zoom_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mech_zoom_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mech_phasing_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mech_phasing_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mech_damtype_brute"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mech_damtype_fire"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mech_damtype_tox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mech_overload_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mech_overload_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mech_strafe_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mech_strafe_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meson"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mech_smoke_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mech_smoke_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mech_cloaking_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mech_cloaking_on"
+dirs = 1
+frames = 1

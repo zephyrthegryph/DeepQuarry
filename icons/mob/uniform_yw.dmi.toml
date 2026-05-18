@@ -1,0 +1,184 @@
+# Generated from uniform_yw.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 12
+
+[[state]]
+name = "blueshield"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wardenformal"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "securityformal"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hosformal"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "brigphysicianf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "brigphysician"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "robotics2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blueshield2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "combatpilot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackutility"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackutility_crew"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackutility_med"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackutility_medcom"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackutility_eng"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackutility_engcom"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackutility_sup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackutility_sec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackutility_seccom"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackutility_com"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "navyutility"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "navyutility_med"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "navyutility_eng"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "navyutility_sup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "navyutility_sec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "navyutility_com"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greyutility"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greyutility_eng"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greyutility_med"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greyutility_sup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greyutility_sec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greyutility_com"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "victorianblred"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "victorianredvest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "victorianvest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "victorianblackdress"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "victorianreddress"
+dirs = 4
+frames = 1

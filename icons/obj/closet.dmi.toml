@@ -1,0 +1,1273 @@
+# Generated from closet.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 21
+
+[[state]]
+name = "closed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "welded"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mixed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orange"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pink"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "black"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bio"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bioopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bio_general"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bio_generalopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bio_virology"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bio_virologyopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bio_security"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bio_securityopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bio_janitor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bio_janitoropen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bio_scientist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bio_scientistopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndicate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndicateopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndicate1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndicate1open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emergency"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emergencyopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secure"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secure1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secureopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secureoff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "securebroken"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "securebrokenopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medical"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medical1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medicalopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medicalbroken"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "medicaloff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coffin_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coffin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grave_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grave"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fridge1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fridgeopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fridge"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fridgebroken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "firecloset"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fireclosetopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toolcloset"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radsuitcloset"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toolclosetopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mining"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "miningopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "miningsec"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "miningsec1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "miningsecopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "miningsecoff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "miningsecbroken"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "miningsecbrokenopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bombsuit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bombsuitopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bombsuitsecopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bombsuitsec"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "extinguisher"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "extinguisher_empty"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "extinguisher_standard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "extinguisher_mini"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "extinguisher_advanced"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "extinguisher_closed_empty"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "extinguisher_closed_standard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "extinguisher_closed_mini"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "extinguisher_closed_advanced"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oldextinguisher"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "oldextinguisher_empty"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "oldextinguisher_standard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "oldextinguisher_mini"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "oldextinguisher_closed_empty"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "oldextinguisher_closed_standard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "oldextinguisher_closed_mini"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hydrant"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hydrant_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medical_wall"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medical_wall_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medical_wall_locked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medical_wall_unlocked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medical_wall_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medical_wall_spark"
+dirs = 1
+frames = 9
+delays = [1, 1, 1, 1, 20, 1, 1, 1, 60]
+
+[[state]]
+name = "fireaxe1100opening"
+dirs = 1
+frames = 5
+delays = [2]
+loop = 1
+
+[[state]]
+name = "fireaxe1000"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fireaxe1100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fireaxe0000"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fireaxe1000closing"
+dirs = 1
+frames = 5
+delays = [2]
+loop = 1
+
+[[state]]
+name = "fireaxe0100opening"
+dirs = 1
+frames = 5
+delays = [2]
+
+[[state]]
+name = "fireaxe0000closing"
+dirs = 1
+frames = 5
+delays = [2]
+
+[[state]]
+name = "fireaxe1010"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fireaxe1020"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fireaxe1030"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fireaxe1141"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fireaxe0010"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fireaxe0020"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fireaxe0030"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fireaxe0141"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fireaxe0100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "acloset"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aclosetopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cabinet_closed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cabinet_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cabinetdetective"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cabinetdetective_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cabinetdetective_locked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cabinetdetective_broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secureeng"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secureeng1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secureengoff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secureengopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secureengbroken"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "secureengbrokenopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "securece"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "securece1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secureceoff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secureceopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "securecebroken"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "securecebrokenopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secureengelec"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secureengelec1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secureengelecoff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secureengelecbroken"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "secureengweld"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secureengweld1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secureengweldoff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secureengweldbroken"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "securemed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "securemed1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "securemedopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "securemedoff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "securemedbroken"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "securemedbrokenopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secureres"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secureres1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secureresopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secureresoff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secureresbroken"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "secureresbrokenopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "securecargo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "securecargo1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "securecargoopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "securecargooff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "securecargobroken"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "securecargobrokenopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secureqm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secureqm1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secureqmopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secureqmoff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secureqmbroken"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "secureqmopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sec"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sec1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secoff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secbroken"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "secbrokenopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wardensecure"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wardensecure1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wardensecureopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wardensecureoff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wardensecurebroken"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "wardensecurebrokenopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fireaxe1110opening"
+dirs = 1
+frames = 5
+delays = [2]
+loop = 1
+
+[[state]]
+name = "fireaxe1010closing"
+dirs = 1
+frames = 5
+delays = [2]
+loop = 1
+
+[[state]]
+name = "fireaxe1120opening"
+dirs = 1
+frames = 5
+delays = [2]
+loop = 1
+
+[[state]]
+name = "fireaxe1020closing"
+dirs = 1
+frames = 5
+delays = [2]
+loop = 1
+
+[[state]]
+name = "fireaxe1130opening"
+dirs = 1
+frames = 5
+delays = [2]
+loop = 1
+
+[[state]]
+name = "fireaxe1030closing"
+dirs = 1
+frames = 5
+delays = [2]
+loop = 1
+
+[[state]]
+name = "fireaxe1110"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fireaxe1120"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fireaxe1130"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "capsecure"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "capsecure1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "capsecureopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "capsecureoff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "capsecurebroken"
+dirs = 1
+frames = 5
+delays = [1]
+hotspots = [{ frame = 1, x = 15, y = 15 }]
+
+[[state]]
+name = "capsecurebrokenopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hopsecure"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hopsecure1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hopsecureopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hopsecureoff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hopsecurebroken"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "hopsecurebrokenopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hossecure"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hossecure1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hossecureopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hossecureoff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hossecurebroken"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "hossecurebrokenopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cmosecure"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cmosecure1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cmosecureopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cmosecureoff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cmosecurebroken"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "cmosecurebrokenopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rdsecure"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rdsecure1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rdsecureopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rdsecureoff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rdsecurebroken"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "rdsecurebrokenopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hydrosecure"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hydrosecure1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hydrosecureopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hydrosecureoff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hydrosecurebroken"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "hydrosecurebrokenopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secureatm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secureatmopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secureatmbrokenopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secureatm1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secureatmoff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secureatmbroken"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "wall-locker"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wall-locker1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wall-lockeropen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wall-lockeroff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wall-lockerbroken"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "scihydrosecure"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scihydrosecure1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scihydrosecureopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scihydrosecureoff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scihydrosecurebroken"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "scihydrosecurebrokenopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secC"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secC1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secCopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secCoff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secCbroken"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "secCbrokenopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secureexp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secureexp1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secureexpopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secureexpoff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secureexpbroken"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "secureexpbrokenopen"
+dirs = 1
+frames = 1

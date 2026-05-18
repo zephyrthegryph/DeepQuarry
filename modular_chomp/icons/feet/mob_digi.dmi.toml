@@ -1,0 +1,496 @@
+# Generated from mob_digi.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 20
+
+[[state]]
+name = "red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "orange1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "purple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "brown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rain_bow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "detective"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boots"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chef"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "clown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "galoshes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jackboots"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jackboots_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swat_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "digithighboots"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "thighboots"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kneeboots"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "digikneeboots"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "digiboots"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cowboy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "magboots0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "magboots1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "s-ninja"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "s-ninja2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "s-ninjan"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cult"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "secshoes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "laceups"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "atmosmagboots0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "atmosmagboots1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "workboots"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "workbootstoeless"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jungle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duty"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "explorer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "heels"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "heels-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "combat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tourist"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "magboots-old0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "magboots-old1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mime"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cultalt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "advmag0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "advmag1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndiemag0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndiemag1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "clown_prototype_off"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 11, y = 28 }]
+
+[[state]]
+name = "clown_prototype_on"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 11, y = 28 }]
+
+[[state]]
+name = "winterboots"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "griffinboots"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "galoshes_dry"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crusader"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crusader-red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crusader-blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "clockwork_treads"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jetboots"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ysing"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bsing"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bling"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jester_shoes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wheelys"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kindleKicks"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "DON'T FUCK THE REF"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "digitigrade_reference"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shoeblood"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gildedcuffs"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "silvergildedcuffs"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "redcuffs"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bluecuffs"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "christmasbootsr"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "santaboots"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "christmasbootsg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rus_shoes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walkboots"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "para_magboots0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "para_magboots1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sneakboots"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "iceboots"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "winterboots_atmos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "winterboots_cap"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "winterboots_eng"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "winterboots_hydro"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "winterboots_med"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "winterboots_mining"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "winterboots_sci"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "winterboots_sec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "winterboots_sup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flatswhite"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nanomachine_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nanomachine_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wizard"
+dirs = 4
+frames = 1

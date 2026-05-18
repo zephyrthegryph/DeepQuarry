@@ -1,0 +1,105 @@
+# Generated from projectiles_ch.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "fuel-blitz"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "phaser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phaser_light"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phaser_heavy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phaser_muzzle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phaser_light_muzzle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phaser_heavy_muzzle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phaser_impact"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phaser_light_impact"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phaser_heavy_impact"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phaser_tracer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phaser_light_tracer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phaser_heavy_tracer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vepr"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vepr_muzzle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "t25b_muzzle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "t25b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "impact_prec"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "muzzle_prec"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prec"
+dirs = 1
+frames = 1

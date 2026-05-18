@@ -1,0 +1,256 @@
+# Generated from dogborg_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 11
+
+[[state]]
+name = "dbag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nose"
+dirs = 1
+frames = 1
+rewind = true
+
+[[state]]
+name = "pounce"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "synthtongue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jaws"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kibble"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndietongue"
+dirs = 1
+frames = 11
+delays = [10, 1]
+
+[[state]]
+name = "smalljaws"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smalljaws_textless"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "combatshocker"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ertjaws"
+dirs = 1
+frames = 7
+delays = [10, 0.5]
+
+[[state]]
+name = "defibpaddles1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "defibpaddles0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "defibpaddles1_cooldown"
+dirs = 1
+frames = 17
+delays = [1]
+
+[[state]]
+name = "defibpaddles0_cooldown"
+dirs = 1
+frames = 17
+delays = [1]
+
+[[state]]
+name = "sleeper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "compactor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sleeperb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "analyzer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "decompiler"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sleeperc"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sleeperd"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brewer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sleeperert"
+dirs = 1
+frames = 10
+delays = [20, 20, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 5]
+
+[[state]]
+name = "sleeperlost"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sleepersyndiebrig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sleepersyndiemed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sleepersyndieeng"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scrub0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scrub1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "swordtail_original"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "swordtail"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "swordtail_blade"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "taskmanager"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ertgunkill100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ertgunkill75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ertgunkill50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ertgunkill25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ertgunkill0"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "ertgunstun100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ertgunstun75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ertgunstun50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ertgunstun25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ertgunstun0"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "bluespace_pounce"
+dirs = 1
+frames = 4
+delays = [2, 3, 2, 10]
+
+[[state]]
+name = "belly-standard"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "belly-medical"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clowngut"
+dirs = 1
+frames = 1

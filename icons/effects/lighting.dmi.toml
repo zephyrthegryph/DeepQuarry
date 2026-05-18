@@ -1,0 +1,19 @@
+# Generated from lighting.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 2
+
+[[state]]
+name = "dither50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "on"
+dirs = 1
+frames = 1

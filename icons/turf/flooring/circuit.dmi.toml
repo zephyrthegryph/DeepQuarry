@@ -1,0 +1,24 @@
+# Generated from circuit.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 2
+
+[[state]]
+name = "bcircuit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bcircuit_broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gcircuit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gcircuit_broken"
+dirs = 1
+frames = 1

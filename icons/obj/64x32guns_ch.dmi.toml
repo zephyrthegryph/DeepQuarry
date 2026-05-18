@@ -1,0 +1,1043 @@
+# Generated from 64x32guns_ch.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 17
+
+[[state]]
+name = "m41a"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m41a-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m41b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m41b-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m4-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sts35"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sts35-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m16"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m16-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "patriot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "patriot-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "type901"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "type901-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "type901b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "type901b-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vepr"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vepr100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vepr75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vepr50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vepr25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vepr0"
+dirs = 1
+frames = 4
+delays = [3]
+
+[[state]]
+name = "vepr_open"
+dirs = 1
+frames = 4
+delays = [3]
+
+[[state]]
+name = "plamya"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plamya-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plamyac"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plamyac-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plamyab"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plamyab-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vityaz"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vityaz-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hectate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hectate-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "molniya"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "molniya-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "strela"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "strela-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sks"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sks-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "memegun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "memegun-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "awp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "awp-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lcarbine"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lcarbine100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lcarbine75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lcarbine50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lcarbine25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lcarbine0"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "lcarbine_open"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "winchester"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "winchester-pump"
+dirs = 1
+frames = 8
+delays = [0.75, 0.75, 0.75, 0.75, 1.25, 0.75]
+
+[[state]]
+name = "railgun"
+dirs = 1
+frames = 19
+delays = [6, 0.3]
+
+[[state]]
+name = "railgun-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ssp4s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ssp4s-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mp5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mp5-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shorty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shorty-pump"
+dirs = 1
+frames = 9
+delays = [0.5]
+
+[[state]]
+name = "pitchgun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pitchgun-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ionrifle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ionrifle100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ionrifle75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ionrifle50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ionrifle25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ionrifle0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ionrifle_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "l6closed-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "l6closed100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "l6closed75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "l6closed50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "l6closed25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "l6closed0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "l6open-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "l6open100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "l6open75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "l6open50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "l6open25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "l6open0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "c20r"
+dirs = 1
+frames = 2
+delays = [4]
+
+[[state]]
+name = "c20r-20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "c20r-16"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "c20r-12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "c20r-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "c20r-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "c20r-0"
+dirs = 1
+frames = 2
+delays = [4]
+
+[[state]]
+name = "carbine"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carbine-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carbine-10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carbine-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carbine-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carbine-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carbine-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carbine-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sniper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sniper_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sniper100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sniper75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sniper50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sniper25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sniper0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "t12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "t12-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fal-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wt550"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wt550-20-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wt550-20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wt550-16"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wt550-12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wt550-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wt550-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wt550-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mini-uzi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mini-uzi-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spas12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spas12-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spas12-pump"
+dirs = 1
+frames = 7
+delays = [0.5, 0.5, 0.5, 1.5, 0.5]
+
+[[state]]
+name = "dshotgunN"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dshotgunR"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dshotgunB"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dshotgunW"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dshotgunPR"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dshotgunPW"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "keltecN"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "keltecN-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "keltecG"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "keltecG-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "keltecB"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "keltecB-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "keltecW"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "keltecW-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "keltecD"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "keltecD-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cshotgun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cshotgun-pump"
+dirs = 1
+frames = 8
+delays = [0.75, 0.75, 0.75, 0.75, 1.25, 0.75]
+
+[[state]]
+name = "ar10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ar10-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ak74"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ak74plum"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ak74-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aks74u"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aks74uplum"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aks74u-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aks74un"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aks74unplum"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aks74un-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ak74mplum"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ak74m"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ak74m-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rpdclosed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rpdclosed-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rpdopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rpdopen-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rpd"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rpd-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kordclosed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kordclosed-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kordopen-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kordopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kord"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kord-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hunter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hunter-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pkmclosed100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pkmclosed0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pkmopen100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pkmopen0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pkmclosed-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pkmopen-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pkm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pkm-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rpk47"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rpk47drum"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rpk47-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tkb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tkb-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "groza"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grozadrum"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "groza-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "asval"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "asval-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scrapak"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scrapakdrum"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scrapak-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "krinkov"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "krinkovdrum"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "krinkov-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "akm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "akmdrum"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "akm-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ppsh"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ppsh-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scopedmosin-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mosin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mosin-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scopedmosin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "t25b100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "t25b75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "t25b50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "t25b25"
+dirs = 1
+frames = 5
+delays = [1]
+rewind = true
+
+[[state]]
+name = "t25b0"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "t25b_open"
+dirs = 1
+frames = 1

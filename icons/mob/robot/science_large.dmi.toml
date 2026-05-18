@@ -1,0 +1,363 @@
+# Generated from science_large.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 21
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "openpanel_nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptor-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptor-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "raptor-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptor-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptor-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptor"
+dirs = 4
+frames = 4
+delays = [2]
+movement = true
+
+[[state]]
+name = "raptor-eyes"
+dirs = 4
+frames = 4
+delays = [2]
+movement = true
+
+[[state]]
+name = "raptor-sleeper-1"
+dirs = 4
+frames = 4
+delays = [2]
+movement = true
+
+[[state]]
+name = "raptor-taser"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptor-taser"
+dirs = 4
+frames = 4
+delays = [2]
+movement = true
+
+[[state]]
+name = "mekacredit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meka"
+dirs = 4
+frames = 4
+delays = [10, 1, 1, 10]
+loop = 1
+
+[[state]]
+name = "meka-eyes"
+dirs = 4
+frames = 4
+delays = [50, 1, 5, 1]
+
+[[state]]
+name = "meka-wreck"
+dirs = 1
+frames = 10
+delays = [5, 1, 1, 1, 50, 1, 2.5, 1, 1, 10]
+loop = 1
+
+[[state]]
+name = "meka-rest"
+dirs = 4
+frames = 4
+delays = [50, 1, 5, 1]
+
+[[state]]
+name = "meka-sit"
+dirs = 4
+frames = 4
+delays = [50, 1, 5, 1]
+
+[[state]]
+name = "meka-lights"
+dirs = 4
+frames = 4
+delays = [50, 1, 5, 1]
+
+[[state]]
+name = "meka-openpanel_nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meka-openpanel_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meka-openpanel_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "newmeka"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "newmeka-eyes"
+dirs = 4
+frames = 4
+delays = [50, 1, 5, 1]
+
+[[state]]
+name = "newmeka-wreck"
+dirs = 1
+frames = 8
+delays = [5, 1, 1, 1, 50, 1]
+loop = 1
+
+[[state]]
+name = "newmeka-rest"
+dirs = 4
+frames = 4
+delays = [50, 1, 5, 1]
+
+[[state]]
+name = "newmeka-sit"
+dirs = 4
+frames = 4
+delays = [50, 1, 5, 1]
+
+[[state]]
+name = "newmeka-sleeper-1"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "newmeka-lights"
+dirs = 4
+frames = 4
+delays = [50, 1, 5, 1]
+
+[[state]]
+name = "newmeka-openpanel_nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "newmeka-openpanel_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "newmeka-openpanel_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mmeka"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mmeka-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mmeka-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mmeka-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mmeka-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mmeka-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mmeka-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mmeka-openpanel_nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mmeka-openpanel_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mmeka-openpanel_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fmeka"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fmeka-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fmeka-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fmeka-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fmeka-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fmeka-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fmeka-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fmeka-openpanel_nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fmeka-openpanel_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fmeka-openpanel_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mekacredit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "k4tcredit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "k4t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "k4t-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "k4t-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "k4t-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "k4t-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "k4t-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "k4t-openpanel_nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "k4t-openpanel_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "k4t-openpanel_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "k4tcredit"
+dirs = 1
+frames = 1

@@ -1,0 +1,177 @@
+# Generated from TGClowns.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 13
+
+[[state]]
+name = "honkhulk"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "banana tree"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "long face"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pie spewer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lube"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "honkmunculus"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "giggles"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chlown"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "scary_clown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fleshclown"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "destroyer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "clowns"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mutant"
+dirs = 1
+frames = 12
+delays = [1]
+
+[[state]]
+name = "blob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "honkling"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "generic_gib"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "honkmunculus_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "honkling_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blob_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mutant_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clowns_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "destroyer_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flesh_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scary_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "giggles_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lube_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spewer_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hulk_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tp_in"
+dirs = 4
+frames = 8
+delays = [1]
+loop = 1
+
+[[state]]
+name = "tp_out"
+dirs = 4
+frames = 7
+delays = [1]
+loop = 1
+
+[[state]]
+name = "long_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chlown_dead"
+dirs = 1
+frames = 1

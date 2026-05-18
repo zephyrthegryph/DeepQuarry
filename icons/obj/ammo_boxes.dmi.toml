@@ -1,0 +1,834 @@
+# Generated from ammo_boxes.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 13
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pistol"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pistol-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pistol-24"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pistol_p"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pistol_p-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pistol_p-24"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pistol_hp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pistol_hp-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pistol_hp-24"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pistol_r"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pistol_r-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pistol_r-24"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pistol_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pistol_s-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pistol_s-24"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pistol_hw"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pistol_hw-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pistol_hw-24"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pistol_ap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pistol_ap-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pistol_ap-24"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "box10mm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "box10mm-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "box10mm-40"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "box10mm-rubber"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "box10mm-rubber-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "box10mm-rubber-40"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "box10mm-hw"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "box10mm-hw-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "box10mm-hw-40"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "box10mm-practice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "box10mm-practice-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "box10mm-practice-40"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_wrap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_wrap-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_wrap-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rifle-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rifle-30"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rifle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rifle_hunter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rifle_hunter-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rifle_hunter-30"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rifle_p"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rifle_p-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rifle_p-30"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rifle_ap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rifle_ap-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rifle_ap-30"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rifle_hp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rifle_hp-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rifle_hp-30"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "box50-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "box50-30"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "box50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "box50-lethal-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "box50-lethal-30"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "box50-lethal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "box50-rubber-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "box50-rubber-30"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "box50-rubber"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "box50-hv-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "box50-hv-30"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "box50-hv"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "box50-practice-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "box50-practice-30"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "box50-practice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bean-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bean-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bean"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "buckshot-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "buckshot-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "buckshot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blank-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blank-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flash-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flash-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flash"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "practice-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "practice-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "practice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stunslug-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stunslug-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stunslug"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emp-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emp-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slug-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slug-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slug"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flechette-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flechette-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flechette"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sniper-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sniper-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sniper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "box44"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "box44-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "box44-24"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "box44-rubber"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "box44-rubber-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "box44-rubber-24"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "magnum"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "magnum-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "magnum-24"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "magnum_r"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "magnum_r-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "magnum_r-24"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "magnum_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "magnum_l-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "magnum_l-24"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "magnum_p"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "magnum_p-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "magnum_p-24"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "magnum_hv"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "magnum_hv-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "magnum_hv-24"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hrifle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hrifle-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hrifle-30"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hrifle-ap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hrifle-ap-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hrifle-ap-30"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hrifle-hp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hrifle-hp-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hrifle-hp-30"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hrifle-hunter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hrifle-hunter-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hrifle-hunter-30"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hrifle_p"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hrifle_p-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hrifle_p-30"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hrifle-blank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hrifle-blank-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hrifle-blank-30"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boxhrifle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boxhrifle-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boxhrifle-100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boxhrifle-75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boxhrifle-50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boxhrifle-25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boxhrifle-ap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boxhrifle-ap-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boxhrifle-ap-100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boxhrifle-ap-75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boxhrifle-ap-50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boxhrifle-ap-25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boxhrifle-hp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boxhrifle-hp-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boxhrifle-hp-100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boxhrifle-hp-75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boxhrifle-hp-50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boxhrifle-hp-25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boxhrifle-hunter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boxhrifle-hunter-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boxhrifle-hunter-100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boxhrifle-hunter-75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boxhrifle-hunter-50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boxhrifle-hunter-25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boxhrifle-practice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boxhrifle-practice-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boxhrifle-practice-100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boxhrifle-practice-75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boxhrifle-practice-50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boxhrifle-practice-25"
+dirs = 1
+frames = 1

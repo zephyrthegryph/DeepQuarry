@@ -1,0 +1,27 @@
+# Generated from 160x160.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 160
+height = 160
+cols = 5
+
+[[state]]
+name = "Singularity"
+dirs = 1
+frames = 10
+delays = [3, 1]
+
+[[state]]
+name = "singularity_s5"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "new-year-tree"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emfield_s5"
+dirs = 1
+frames = 4
+delays = [1]

@@ -1,0 +1,555 @@
+# Generated from holo.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 17
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "template"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "template_small"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "unused_oxy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "unused_tox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "internal0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "internal1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "internal2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "not_enough_co2"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "too_much_co2"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "not_enough_nitro"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "too_much_nitro"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "not_enough_oxy"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "too_much_oxy"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "not_enough_tox"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "too_much_tox"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "health_numb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hungry"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "starving"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "c_fat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "c_hungry"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "c_starving"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "v_fat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "v_hungry"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "v_starving"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hot1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hot2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hot3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fire"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "cold1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cold2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cold3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cold"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "lowpressure1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lowpressure2"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "highpressure1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "highpressure2"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "reinforce"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reinforce1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kill"
+dirs = 4
+frames = 9
+delays = [5]
+loop = 1
+
+[[state]]
+name = "kill1"
+dirs = 4
+frames = 5
+delays = [3, 2, 2, 1]
+rewind = true
+
+[[state]]
+name = "act_equip"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hand1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hand2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "facing"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "walking"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "running"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "act_resist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "act_throw_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "act_throw_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "act_drop"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pull0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pull1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "intent_harm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "intent_grab"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "intent_disarm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "intent_help"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "intent_all"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "intent_none"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "r_hand_inactive"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "l_hand_inactive"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "r_hand_active"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "l_hand_active"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pocket"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mask"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "center"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hair"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gloves"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glasses"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ears"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shoes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitstore"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "belt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "other"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "otherB"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "back"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "zone_sel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "no_walk1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "no_walk0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "no_items1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "no_items0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "no_run1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "no_run0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "no_radio1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "no_radio0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gun0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gun1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "black"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark128"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark64"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark32"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "druggy"
+dirs = 1
+frames = 27
+delays = [1]
+hotspots = [{ frame = 1, x = 12, y = 22 }]
+
+[[state]]
+name = "noise"
+dirs = 1
+frames = 40
+delays = [1]
+
+[[state]]
+name = "blank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flash"
+dirs = 1
+frames = 10
+delays = [3]
+
+[[state]]
+name = "e_flash"
+dirs = 1
+frames = 20
+delays = [3]
+
+[[state]]
+name = "dither50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blurry"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "craft"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nif"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vore"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "character"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "use"
+dirs = 1
+frames = 1

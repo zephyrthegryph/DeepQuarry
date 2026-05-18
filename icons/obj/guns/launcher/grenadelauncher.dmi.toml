@@ -1,0 +1,59 @@
+# Generated from grenadelauncher.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "Grenadelauncher_PMC"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grenademag_99"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grenademag_66"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grenademag_33"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grenademag_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "back"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "onsuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand_doble"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthhand_doble"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand"
+dirs = 4
+frames = 1

@@ -1,0 +1,74 @@
+# Generated from 64x16_actions.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 16
+cols = 4
+
+[[state]]
+name = "screen_ai_palette"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "screen_alien_palette"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "screen_clockwork_palette"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "screen_cyborg_palette"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "screen_gen_palette"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "screen_glass_palette"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "screen_midnight_palette"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "screen_operative_palette"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "screen_pai_palette"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "screen_plasmafire_palette"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "screen_retro_palette"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "screen_slimecore_palette"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "screen_trasenknox_palette"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "screen_detective"
+dirs = 1
+frames = 1

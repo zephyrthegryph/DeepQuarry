@@ -1,0 +1,24 @@
+# Generated from synx_labels.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 2
+
+[[state]]
+name = "Body"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Horns"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Marks"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Eyes"
+dirs = 1
+frames = 1

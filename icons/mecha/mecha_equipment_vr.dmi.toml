@@ -1,0 +1,70 @@
+# Generated from mecha_equipment_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "mecha_mousetrapmrtr"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_bananamrtr"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_honker"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "micromech_shotgun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "micromech_taser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "micromech_lasercannon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "micromech_laser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "micromech_launcher"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "microdrill"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "microscoop"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medbeam"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_tiler"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_phase_array"
+dirs = 1
+frames = 5
+delays = [1]

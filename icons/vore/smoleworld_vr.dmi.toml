@@ -1,0 +1,137 @@
+# Generated from smoleworld_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 10
+
+[[state]]
+name = "carfourway"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "carthreeway"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "carstraight"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "carturn"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ruins"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smolehouses"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smolebusiness"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smolewarehouses"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smolemuseum"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smolecarA"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sp_storage"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sp_planetC"
+dirs = 1
+frames = 15
+delays = [1]
+
+[[state]]
+name = "sp_planetA"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sp_planetB"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sp_phoron"
+dirs = 1
+frames = 13
+delays = [1, 1, 3, 1, 1, 3, 1, 1, 3, 1]
+
+[[state]]
+name = "sp_earth"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sp_mars"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sp_virgoprime"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sp_Virgo3B"
+dirs = 1
+frames = 13
+delays = [3]
+
+[[state]]
+name = "tether_trash"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sp_moon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smolematerial"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smolestorage"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "megablocksturf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stomp"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sp_candychunk"
+dirs = 1
+frames = 1

@@ -1,0 +1,24 @@
+# Generated from ears_yw.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "big_liz"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_female_pattern"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_male_pattern"
+dirs = 4
+frames = 1

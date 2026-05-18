@@ -1,0 +1,109 @@
+# Generated from smolraptor_med.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 9
+
+[[state]]
+name = "smolraptor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smolraptor-rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smolraptor-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smolraptor-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smolraptor-tipped"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smolraptor-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smolraptor-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smolraptor-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smolraptor-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smolraptor_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smolraptor_alt-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smolraptor_alt-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smolraptor_alt-tipped"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smolraptor_alt-rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smolraptor_alt-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smolraptor_alt-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smolraptor_alt-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smolraptor_alt-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_nc"
+dirs = 4
+frames = 1

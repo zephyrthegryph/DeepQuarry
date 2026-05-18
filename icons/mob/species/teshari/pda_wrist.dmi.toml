@@ -1,0 +1,164 @@
+# Generated from pda_wrist.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 12
+
+[[state]]
+name = "pda"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pda-m"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pda-e"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pda-s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pda-tox"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pda-h"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pda-cargo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pda-v"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pda-det"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pda-warden"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pda-j"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pda-clown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pda-mime"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pda-hop"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pda-hos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pda-ce"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pda-cmo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pda-rd"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pda-c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pda-q"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pda-miner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pda-syn"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pda-holy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pda-lawyer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pda-hydro"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pda-robot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pda-libb"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pda-chef"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pda-bar"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pda-atmo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pda-chem"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pda-gene"
+dirs = 4
+frames = 1

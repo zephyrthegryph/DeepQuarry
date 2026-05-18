@@ -1,0 +1,119 @@
+# Generated from catwalks.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "catwalk"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "catwalk0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catwalk1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catwalk2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catwalk3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catwalk4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catwalk5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catwalk6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catwalk7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catwalk_plated"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "catwalk_techfloor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "catwalk_techmaint"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "catwalk_plateddark"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "catwalk_platedwhite"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plated"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plated0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "plated1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "plated2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "plated3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "plated4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "plated5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "plated6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "plated7"
+dirs = 4
+frames = 1

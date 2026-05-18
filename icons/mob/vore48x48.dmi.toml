@@ -1,0 +1,82 @@
+# Generated from vore48x48.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 48
+height = 48
+cols = 10
+
+[[state]]
+name = "wah_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wah_alt"
+dirs = 4
+frames = 4
+delays = [1.75]
+movement = true
+
+[[state]]
+name = "wah_alt_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wah_alt-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wah_alt-1"
+dirs = 4
+frames = 4
+delays = [1.75]
+movement = true
+
+[[state]]
+name = "wah_alt_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wah_alt_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wah_altwaaah"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wah_altwaaah"
+dirs = 4
+frames = 4
+delays = [0.5]
+movement = true
+
+[[state]]
+name = "wah_altwaaah_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wah_altwaaah-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wah_altwaaah-1"
+dirs = 4
+frames = 4
+delays = [0.5]
+movement = true
+
+[[state]]
+name = "wah_altwaaah_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wah_altwaaah_dead"
+dirs = 1
+frames = 1

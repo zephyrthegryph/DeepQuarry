@@ -1,0 +1,19 @@
+# Generated from AxisMech.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 3
+
+[[state]]
+name = "pzrmech"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pzrwreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pzrmech-open"
+dirs = 1
+frames = 1

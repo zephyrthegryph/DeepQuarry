@@ -1,0 +1,71 @@
+# Generated from pipes2.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "filter"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "filter-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pipepump-stop"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pipepump-run"
+dirs = 4
+frames = 5
+delays = [1]
+
+[[state]]
+name = "filter-o2"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "filter-n2"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "filter-co2"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "filter-tox"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "filter-bypass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "filter-emag"
+dirs = 1
+frames = 3
+delays = [2]
+
+[[state]]
+name = "filter-spark"
+dirs = 1
+frames = 3
+delays = [2]
+
+[[state]]
+name = "filter-open"
+dirs = 1
+frames = 1

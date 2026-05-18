@@ -1,0 +1,127 @@
+# Generated from screen_rigmech.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "pwr5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pwr4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pwr3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pwr2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pwr1"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "pwr0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "health5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "health4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "health3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "health2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "health1"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "health0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "air5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "air4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "air3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "air2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "air1"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "air0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "airon0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "airon1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "frame1_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "frame1_2_far"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "frame1_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "frame1_1_far"
+dirs = 1
+frames = 1

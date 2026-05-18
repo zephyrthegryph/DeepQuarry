@@ -1,0 +1,239 @@
+# Generated from soap.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "purple_soap-alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue_soap-alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brown_soap-alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyan_soap-alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "diamond_soap-alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fire_soap-alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green_soap-alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grey_soap-alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orange_soap-alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pink_soap-alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow_soap-alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rainbow_soap-alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red_soap-alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "silver_soap-alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "space_soap-alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "uranium_soap-alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "water_soap-alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_soap-alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "golden_soap-alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "soapsyndie-alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "soap-alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "soapdeluxe-alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "soapnt-alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purple_soap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue_soap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brown_soap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyan_soap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "diamond_soap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fire_soap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green_soap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grey_soap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orange_soap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pink_soap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow_soap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rainbow_soap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red_soap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "silver_soap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "space_soap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "uranium_soap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "water_soap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_soap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "golden_soap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "soapsyndie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "soap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "soapdeluxe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "soapgibs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "soapnt"
+dirs = 1
+frames = 1

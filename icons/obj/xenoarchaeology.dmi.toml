@@ -1,0 +1,795 @@
+# Generated from xenoarchaeology.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 19
+
+[[state]]
+name = "ano00"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ano01"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "ano10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ano11"
+dirs = 1
+frames = 3
+delays = [3, 2, 1]
+rewind = true
+
+[[state]]
+name = "ano20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ano21"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "ano30"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ano31"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "ano40"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ano41"
+dirs = 1
+frames = 9
+delays = [1]
+
+[[state]]
+name = "ano50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ano51"
+dirs = 1
+frames = 11
+delays = [5, 1]
+
+[[state]]
+name = "ano60"
+dirs = 1
+frames = 1
+rewind = true
+
+[[state]]
+name = "ano61"
+dirs = 1
+frames = 6
+delays = [3, 4, 4, 3, 4]
+
+[[state]]
+name = "ano70"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ano71"
+dirs = 1
+frames = 5
+delays = [3, 2, 2, 1]
+
+[[state]]
+name = "ano80"
+dirs = 1
+frames = 1
+rewind = true
+
+[[state]]
+name = "ano81"
+dirs = 1
+frames = 4
+delays = [3]
+rewind = true
+
+[[state]]
+name = "ano90"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ano91"
+dirs = 1
+frames = 6
+delays = [10, 2, 1, 2]
+rewind = true
+
+[[state]]
+name = "ano100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ano101"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ano110"
+dirs = 1
+frames = 1
+loop = 65535
+
+[[state]]
+name = "ano111"
+dirs = 1
+frames = 4
+delays = [2]
+loop = 65535
+
+[[state]]
+name = "ano121"
+dirs = 1
+frames = 3
+delays = [2]
+
+[[state]]
+name = "ano120"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ano131"
+dirs = 1
+frames = 9
+delays = [1]
+
+[[state]]
+name = "ano130"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ano140"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ano141"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "ano150"
+dirs = 1
+frames = 12
+delays = [2]
+
+[[state]]
+name = "ano151"
+dirs = 1
+frames = 12
+delays = [1]
+
+[[state]]
+name = "ano160"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ano161"
+dirs = 1
+frames = 11
+delays = [1]
+
+[[state]]
+name = "ano170"
+dirs = 1
+frames = 1
+loop = 65535
+
+[[state]]
+name = "ano171"
+dirs = 1
+frames = 14
+delays = [1]
+
+[[state]]
+name = "ano180"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ano181"
+dirs = 1
+frames = 13
+delays = [1]
+
+[[state]]
+name = "ano190"
+dirs = 1
+frames = 1
+loop = 41
+
+[[state]]
+name = "ano191"
+dirs = 1
+frames = 4
+delays = [1]
+loop = 65535
+
+[[state]]
+name = "bone"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shell"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 23, y = 24 }]
+
+[[state]]
+name = "hskull"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 23, y = 24 }]
+
+[[state]]
+name = "skull"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 23, y = 24 }]
+
+[[state]]
+name = "plant1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plant2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plant3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plant4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "uskel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "urn"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "statuette"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "instrument"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "unknown1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "unknown2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "unknown3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "unknown4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egun1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egun2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egun3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egun4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egun5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egun6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egun7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egun8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egun9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egun10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egun11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egun12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gun1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gun2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gun3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gun4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gun5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gun6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gun7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gunold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Phazon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "soulstone2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Green lump"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "changerock"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "urn1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "urn2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "urn3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "statuette1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "statuette2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "statuette3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blade1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pen1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bowl"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "box"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "talk_crystal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "talk_crystal2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sliver1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sliver2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sliver3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "strange"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "freezerold"
+dirs = 1
+frames = 1
+loop = 695430241
+
+[[state]]
+name = "borgcharger0(old)"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "borgcharger1(old)"
+dirs = 1
+frames = 4
+delays = [6, 1, 1, 6]
+rewind = true
+
+[[state]]
+name = "sleeper_2old"
+dirs = 1
+frames = 4
+delays = [2]
+loop = 65535
+
+[[state]]
+name = "scanner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scanner_active"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "flashgun"
+dirs = 1
+frames = 10
+delays = [1, 10, 1, 25, 1, 5, 1, 20, 1, 5]
+
+[[state]]
+name = "ano_scanner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ano_scanner2"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "excavationdrill0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "excavationdrill1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "excavationdrill2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "excavationdrill3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "excavationdrill4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "excavationdrill5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "excavationdrill6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "excavationdrill7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "anobattery0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "anobattery25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "anobattery50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "anobattery75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "anobattery100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "anodev"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "anodev0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "anodev25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "anodev50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "anodev75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "anodev100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xenoarch_console"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "xenoarch_analyser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "measuring"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pick_brush"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pick1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pick2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pick3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pick4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pick5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pick6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pick_hand"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xenoarch_scanner"
+dirs = 1
+frames = 7
+delays = [20, 2, 2, 1, 1, 0.5, 1]
+
+[[state]]
+name = "depth_scanner"
+dirs = 1
+frames = 4
+delays = [3]
+
+[[state]]
+name = "anomaly_container"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suspension_on"
+dirs = 4
+frames = 5
+delays = [1]
+
+[[state]]
+name = "suspension_wrenched"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "suspension"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "suspension_panel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "egun13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egun17"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egun18"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egun14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egun15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egun16"
+dirs = 1
+frames = 1

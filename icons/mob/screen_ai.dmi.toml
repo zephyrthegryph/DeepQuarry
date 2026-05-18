@@ -1,0 +1,124 @@
+# Generated from screen_ai.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "template"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "view_images"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "take_picture"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "announcement"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "track"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ai_core"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "camera_light"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "camera"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crew_monitor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda_receive"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda_send"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "state_laws"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "call_shuttle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "manifest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alerts"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "botcall"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ai_sensor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "multicam"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "new_cam"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "up"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "down"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vore"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "character"
+dirs = 1
+frames = 1

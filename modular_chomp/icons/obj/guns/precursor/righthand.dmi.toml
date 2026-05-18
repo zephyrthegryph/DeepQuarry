@@ -1,0 +1,66 @@
+# Generated from righthand.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "topshield"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "topshield_blade"
+dirs = 4
+frames = 2
+delays = [2]
+
+[[state]]
+name = "topshield_blade_rainbow"
+dirs = 4
+frames = 8
+delays = [2]
+
+[[state]]
+name = "sabre"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sabre_blade"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "katar"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "katar_blade"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hammer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hammer_blade"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "barrier"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chainsaw"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chainsaw_blade"
+dirs = 4
+frames = 1

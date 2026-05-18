@@ -1,0 +1,24 @@
+# Generated from shuttlewall_masks.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "quartz"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "void"
+dirs = 1
+frames = 1

@@ -1,0 +1,165 @@
+# Generated from lascannon.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 11
+
+[[state]]
+name = "lasercannon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lasercannon100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lasercannon75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lasercannon50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lasercannon25"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "lasercannon0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "righthand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand-100"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand-100"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand-75"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand-75"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand-50"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand-50"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand-25"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand-25"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand-0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand-0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "onsuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "back"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand_doble"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand_doble"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand_doble-100"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand_doble-100"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand_doble-75"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand_doble-75"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand_doble-50"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand_doble-50"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand_doble-25"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand_doble-25"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand_doble-0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand_doble-0"
+dirs = 4
+frames = 1

@@ -1,0 +1,9 @@
+# Generated from Long_dragon_horns_v1.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 2
+
+[[state]]
+name = "longdragonhorns_v1"
+dirs = 4
+frames = 1

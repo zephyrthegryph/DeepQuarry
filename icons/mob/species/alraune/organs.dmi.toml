@@ -1,0 +1,24 @@
+# Generated from organs.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 2
+
+[[state]]
+name = "neurostroma"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "photoreceptors"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phytoextractor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rhyzofilter"
+dirs = 1
+frames = 1

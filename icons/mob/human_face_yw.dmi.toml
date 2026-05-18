@@ -1,0 +1,9 @@
+# Generated from human_face_yw.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 2
+
+[[state]]
+name = "eyes_grey"
+dirs = 4
+frames = 1

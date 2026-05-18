@@ -1,0 +1,24 @@
+# Generated from munitions.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "old_slug"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_ap"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "slug"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ap"
+dirs = 4
+frames = 1

@@ -1,0 +1,24 @@
+# Generated from item.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 2
+
+[[state]]
+name = "vox_engineer_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox_engineer_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox_sec_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox_sec_rig_sealed"
+dirs = 1
+frames = 1

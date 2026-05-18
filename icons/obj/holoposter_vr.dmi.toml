@@ -1,0 +1,69 @@
+# Generated from holoposter_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 19
+
+[[state]]
+name = "off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "attention"
+dirs = 4
+frames = 7
+delays = [1]
+
+[[state]]
+name = "hephaestus"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "aether"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "moreau"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "cybersun"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "veymed"
+dirs = 4
+frames = 44
+delays = [1]
+
+[[state]]
+name = "grayson"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "ares"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "moebius"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "glitch"
+dirs = 4
+frames = 22
+delays = [5, 0.5, 5, 0.5, 2, 1, 1, 1, 0.5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.5, 5, 1, 0.5]

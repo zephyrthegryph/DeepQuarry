@@ -1,0 +1,409 @@
+# Generated from mining.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 25
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "openpanel_nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "default"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "default-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyebot"
+dirs = 4
+frames = 4
+delays = [5, 3, 5, 3]
+
+[[state]]
+name = "eyebot-eyes"
+dirs = 4
+frames = 4
+delays = [5, 3, 5, 3]
+
+[[state]]
+name = "marina"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marina-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "toiletbot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "toiletbot-eyes"
+dirs = 4
+frames = 3
+delays = [1, 2, 1]
+
+[[state]]
+name = "sleek"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sleek-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spider"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spider-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "heavy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "heavy-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "droid"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "droid-eyes"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "treadhead"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "treadhead"
+dirs = 4
+frames = 2
+delays = [1]
+movement = true
+
+[[state]]
+name = "treadhead-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "drone"
+dirs = 4
+frames = 4
+delays = [3, 8, 3, 8]
+
+[[state]]
+name = "drone-eyes"
+dirs = 4
+frames = 4
+delays = [3, 8, 3, 8]
+
+[[state]]
+name = "drone-openpanel_nc"
+dirs = 4
+frames = 9
+delays = [3, 2, 1, 1, 1, 1, 2, 3, 8]
+
+[[state]]
+name = "drone-openpanel_c"
+dirs = 4
+frames = 8
+delays = [3, 4, 1, 3, 3, 4, 1, 3]
+
+[[state]]
+name = "drone-openpanel_w"
+dirs = 4
+frames = 4
+delays = [3, 8, 3, 8]
+
+[[state]]
+name = "tall2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tall2-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "glitterfly"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "glitterfly-eyes"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "glitterfly-openpanel_nc"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "glitterfly-openpanel_c"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "glitterfly-openpanel_w"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "decapod"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "decapod-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "decapod-openpanel_nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "decapod-openpanel_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "decapod-openpanel_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pneuma"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pneuma-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pneuma-openpanel_nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pneuma-openpanel_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pneuma-openpanel_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "drider"
+dirs = 4
+frames = 5
+delays = [1.3]
+rewind = true
+
+[[state]]
+name = "drider"
+dirs = 4
+frames = 5
+delays = [1.3]
+rewind = true
+movement = true
+
+[[state]]
+name = "drider-eyes"
+dirs = 4
+frames = 5
+delays = [1.3]
+rewind = true
+
+[[state]]
+name = "drider-eyes"
+dirs = 4
+frames = 5
+delays = [1.3]
+rewind = true
+movement = true
+
+[[state]]
+name = "drider-openpanel_nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "drider-openpanel_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "drider-openpanel_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "handy"
+dirs = 4
+frames = 3
+delays = [4]
+rewind = true
+
+[[state]]
+name = "handy-eyes"
+dirs = 4
+frames = 3
+delays = [4]
+rewind = true
+
+[[state]]
+name = "mechoid"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mechoid-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "noble"
+dirs = 4
+frames = 5
+delays = [10, 0.5]
+
+[[state]]
+name = "noble-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "noble-openpanel_nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "noble-openpanel_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "noble-openpanel_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zoomba"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zoomba"
+dirs = 4
+frames = 2
+delays = [5, 1]
+movement = true
+
+[[state]]
+name = "zoomba-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-zoomba-miner"
+dirs = 4
+frames = 2
+delays = [5, 1]
+movement = true
+
+[[state]]
+name = "zoomba-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "worm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-openpanel_nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-openpanel_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-openpanel_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "uptall"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "uptall-eyes"
+dirs = 4
+frames = 1

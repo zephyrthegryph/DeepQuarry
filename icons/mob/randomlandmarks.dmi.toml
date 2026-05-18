@@ -1,0 +1,74 @@
+# Generated from randomlandmarks.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "monster"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "animal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "humanoid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "robot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bird"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fish"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vore"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sus"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "key"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "awayloot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "trejur"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fanc_trejur"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "foodstuffs"
+dirs = 1
+frames = 1

@@ -1,0 +1,194 @@
+# Generated from mech_construct_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "gopher-chassis"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gopher-torso"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gopher-arm-right"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gopher-arm-left"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gopher-leg-right"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gopher-leg-left"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polecat-chassis"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polecat-torso"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polecat-arm-right"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polecat-arm-left"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polecat-leg-right"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polecat-leg-left"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polecat-armor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weasel-chassis"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weasel-torso"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weasel-arm-right"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weasel-arm-left"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weasel-leg-right"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weasel-leg-left"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weasel-leg-all"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weasel-head"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gopher-torso+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gopher-arm-right+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gopher-arm-left+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gopher-leg-right+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gopher-leg-left+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polecat-torso+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polecat-arm-right+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polecat-arm-left+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polecat-leg-right+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polecat-leg-left+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weasel-torso+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weasel-arm-right+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weasel-arm-left+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weasel-leg-right+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weasel-leg-left+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weasel-leg-all+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weasel-head+o"
+dirs = 1
+frames = 1

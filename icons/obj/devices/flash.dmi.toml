@@ -1,0 +1,72 @@
+# Generated from flash.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "mindflash"
+dirs = 1
+frames = 6
+delays = [2]
+rewind = true
+
+[[state]]
+name = "mindflash2"
+dirs = 1
+frames = 3
+delays = [1, 2, 5]
+rewind = true
+
+[[state]]
+name = "mindflash_burnt"
+dirs = 1
+frames = 1
+rewind = true
+
+[[state]]
+name = "memorizer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "memorizerburnt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "memorizer2"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "flash"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flash-f"
+dirs = 1
+frames = 2
+delays = [1, 3]
+
+[[state]]
+name = "flashburnt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flash_left"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flash-f_l"
+dirs = 1
+frames = 2
+delays = [1, 3]
+
+[[state]]
+name = "flashburnt_l"
+dirs = 1
+frames = 1

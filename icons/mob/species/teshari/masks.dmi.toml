@@ -1,0 +1,139 @@
+# Generated from masks.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 14
+
+[[state]]
+name = ""
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gas_mask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sterile"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swat"
+dirs = 4
+frames = 3
+delays = [3]
+rewind = true
+
+[[state]]
+name = "clown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pocky"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cig_on"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "cigar"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cigar_on"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "cigar2"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "cigar2_on"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "horsehead"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fake-moustache"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "muzzle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gas_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fullgas"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "explorer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "explorerdown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hosmask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "officermask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wardenmask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gas_clear"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "breath"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "breathdown"
+dirs = 4
+frames = 1

@@ -1,0 +1,49 @@
+# Generated from note_holy.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "holy_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holy_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holy_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holy_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holy_5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holy_6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holy_7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holy_8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holy_9"
+dirs = 1
+frames = 1

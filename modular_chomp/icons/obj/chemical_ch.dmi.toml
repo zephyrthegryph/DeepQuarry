@@ -1,0 +1,47 @@
+# Generated from chemical_ch.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 11
+
+[[state]]
+name = "synth_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "synth_idle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "synth_idle_bottle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "synth_finished"
+dirs = 1
+frames = 32
+delays = [1]
+
+[[state]]
+name = "synth_broken"
+dirs = 1
+frames = 32
+delays = [1]
+
+[[state]]
+name = "synth_working"
+dirs = 1
+frames = 32
+delays = [1]
+
+[[state]]
+name = "synth_catalyst"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "synth_vessel"
+dirs = 1
+frames = 1

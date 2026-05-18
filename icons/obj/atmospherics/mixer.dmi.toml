@@ -1,0 +1,31 @@
+# Generated from mixer.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "OLDintact_on"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "OLDintact_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "intact_on"
+dirs = 4
+frames = 5
+delays = [2]
+
+[[state]]
+name = "intact_off"
+dirs = 4
+frames = 1

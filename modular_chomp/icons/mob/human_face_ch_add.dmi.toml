@@ -1,0 +1,174 @@
+# Generated from human_face_ch_add.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 12
+
+[[state]]
+name = "hair_cotton_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_unshaven_reversemohawk_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeno_drone"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeno_unused"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeno_hunter"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeno_queen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeno_sentinel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeno_praetorian"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bxeno_drone"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bxeno_unused"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bxeno_hunter"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bxeno_queen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bxeno_sentinel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bxeno_praetorian"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cxeno_drone_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cxeno_sentinel_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cxeno_hunter_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cxeno_queen_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cxeno_sentinel_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cxeno_praetorian_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_vox_afro_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_vox_crestedquills_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_vox_emperorquills_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_vox_horns_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_vox_keelquills_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_vox_keetquills_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_vox_kingly_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_vox_mohawk_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_vox_nights_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_vox_razorclipped_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_vox_razor_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_vox_shortquills_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_vox_tielquills_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_vox_yasu_s"
+dirs = 4
+frames = 1

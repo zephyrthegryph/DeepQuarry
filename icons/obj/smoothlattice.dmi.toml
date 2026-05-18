@@ -1,0 +1,89 @@
+# Generated from smoothlattice.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "lattice-simple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lattice0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lattice1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lattice2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lattice3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lattice4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lattice5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lattice6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lattice7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lattice8"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lattice9"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lattice10"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lattice11"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lattice12"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lattice13"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lattice14"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lattice15"
+dirs = 1
+frames = 1

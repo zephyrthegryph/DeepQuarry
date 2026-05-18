@@ -1,0 +1,727 @@
+# Generated from power.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 23
+
+[[state]]
+name = "light1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "light0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "light-p"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "term"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "term-f"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coil"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coil2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coil1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wire"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wire2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wire1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ccharger2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ccharger0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ccharger1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ccharger-standard-on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ccharger-mech-on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ccharger-emergency-on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ccharger-slime-on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ccharger-o0"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "ccharger-o1"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "ccharger-o2"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "ccharger-o3"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "ccharger-o4"
+dirs = 1
+frames = 2
+delays = [2, 3.25, 1]
+
+[[state]]
+name = "teg-unassembled"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teg-assembled"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teg-op1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teg-op2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teg-op3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teg-op4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teg-op5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teg-op6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teg-op7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teg-op8"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teg-op9"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teg-op10"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teg-op11"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "circ-unassembled"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "circ-assembled"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "circ-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "circ-slow"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "circ-run"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "circ-excold"
+dirs = 4
+frames = 4
+delays = [2, 1, 1, 2]
+rewind = true
+
+[[state]]
+name = "circ-cold"
+dirs = 4
+frames = 4
+delays = [2, 1, 1, 2]
+rewind = true
+
+[[state]]
+name = "circ-hot"
+dirs = 4
+frames = 4
+delays = [2, 1, 1, 2]
+rewind = true
+
+[[state]]
+name = "circ-exhot"
+dirs = 4
+frames = 4
+delays = [2, 1, 1, 2]
+rewind = true
+
+[[state]]
+name = "teg-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teg_mid"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "teg-oc00"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teg-oc10"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "teg-oc01"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "teg-oc11"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "crema_switch"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "portgen0legacy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "portgen1legacy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "portgen2legacy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "filter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "portgen0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "portgen1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "portgen2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "switch-dbl-down"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "switch-dbl-up"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "switch-down"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "switch-up"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smes-og1"
+dirs = 1
+frames = 2
+delays = [10]
+
+[[state]]
+name = "smes-og2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smes-og3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smes-og4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smes-og5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smes-op0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smes-op1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smes-op2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smes-oc1"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "smes-oc2"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "smes-oc0"
+dirs = 1
+frames = 2
+delays = [10]
+
+[[state]]
+name = "potato_cell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "apc0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apco3-1"
+dirs = 4
+frames = 6
+delays = [1, 1, 1, 1, 1, 2]
+
+[[state]]
+name = "apco3-0"
+dirs = 4
+frames = 2
+delays = [10, 20]
+
+[[state]]
+name = "apco3-2"
+dirs = 4
+frames = 2
+delays = [10]
+
+[[state]]
+name = "apc-spark"
+dirs = 4
+frames = 7
+delays = [1]
+
+[[state]]
+name = "apcewires"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apcemag"
+dirs = 4
+frames = 2
+delays = [5]
+
+[[state]]
+name = "apc1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apc1-nocover"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apc1-b-nocover"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apc2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apc2-b-nocover"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apc2-nocover"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apc-b"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apcmaint"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apcox-0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apcox-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apco0-0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apco0-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apco0-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apco0-3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apco1-0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apco1-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apco1-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apco1-3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apco2-0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apco2-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apco2-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apco2-3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gsmes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gsmes_og1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gsmes_og2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gsmes_og3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gsmes_og4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gsmes_overcharge"
+dirs = 1
+frames = 6
+delays = [4]
+
+[[state]]
+name = "gsmes_charging"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gsmes_outputting"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smes-crit"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "light1-overlay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "light0-overlay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "light-p-overlay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bbox_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bbox_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bbox_fault"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gridchecker_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gridchecker_off"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "solar_panel-b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "solar_panel"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "sp_base"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tracker"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "solarold"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "solarbold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spbaseold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "trackerold"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "potatoon"
+dirs = 1
+frames = 10
+delays = [1, 1, 1, 1, 1, 20, 70, 20, 1]
+
+[[state]]
+name = "eggrad"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "potato"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "potatodanger"
+dirs = 1
+frames = 5
+delays = [1, 1, 1, 1, 10]
+
+[[state]]
+name = "portgen2on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "portgen1on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "portgen0on"
+dirs = 1
+frames = 1

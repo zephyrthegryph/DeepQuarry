@@ -1,0 +1,49 @@
+# Generated from r_digi.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "template"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shibari_None"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shibari_Arms"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shibari_Legs"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shibari_Both"
+dirs = 4
+frames = 1

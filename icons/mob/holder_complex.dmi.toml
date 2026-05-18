@@ -1,0 +1,49 @@
+# Generated from holder_complex.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "teshari_holder_slot_l_hand_base"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_holder_slot_l_hand_hair"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_holder_slot_l_hand_eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_holder_slot_r_hand_base"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_holder_slot_r_hand_hair"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_holder_slot_r_hand_eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_holder_slot_back_base"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_holder_slot_back_hair"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_holder_slot_back_eyes"
+dirs = 4
+frames = 1

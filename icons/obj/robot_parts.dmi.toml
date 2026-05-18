@@ -1,0 +1,74 @@
+# Generated from robot_parts.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "blank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "robo_suit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "head+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chest+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "r_arm+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "r_leg+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "l_arm+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "l_leg+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "l_arm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "r_arm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "l_leg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "r_leg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "head"
+dirs = 1
+frames = 1

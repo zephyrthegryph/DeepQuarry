@@ -1,0 +1,1228 @@
+# Generated from toy.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 19
+
+[[state]]
+name = "foamdart"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "capgun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "foamcrossbow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snappop"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spbox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "waterballoon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "burst"
+dirs = 1
+frames = 5
+delays = [1]
+loop = 1
+
+[[state]]
+name = "broken"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "waterballoon-e"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 14, y = 8 }]
+
+[[state]]
+name = "rag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "raglit"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "ripleytoy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ripleymkiitoy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "haulertoy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fireripleytoy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deathripleytoy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gygaxtoy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgygaxtoy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "durandtoy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "honktoy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkhonktoy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maraudertoy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "seraphtoy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maulertoy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "odysseustoy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phazontoy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reticencetoy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clarketoy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "savannahivanovtoy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mech_stand_template"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "therapyred"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "therapyorange"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "therapyyellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "therapygreen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "therapyblue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "therapypurple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bosunwhistle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cmo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "assistant"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "atmos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bartender"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "borg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "botanist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "captain"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cargotech"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ce"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chaplain"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chef"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chemist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ian"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "detective"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dsquad"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engineer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hop"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "qm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "janitor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "agent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "librarian"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "md"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mime"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "miner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ninja"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wizard"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rd"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "roboticist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scientist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secofficer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "virologist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "warden"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "geneticist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "psychologist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paramedic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ert"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "droneplushie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ianplushie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "carpplushie"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "beepskyplushie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kittenplushie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nymphplushie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mouseplushie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mouseplushie-old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lizardplushie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spiderplushie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "farwaplushie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ship"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tinyxmastree"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "icecarp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "silentcarp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "electriccarp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "goldcarp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toxincarp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dragoncarp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinkcarp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "candycarp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nebulacarp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "voidcarp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "corgi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "girlycorgi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "robotcorgi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "loveable"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "huggable"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redfox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blackfox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "marblefox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluefox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orangefox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coffeefox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinkfox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purplefox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crimsonfox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blackcat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "greycat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whitecat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orangecat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "siamesecat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tabbycat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tuxedocat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eight-ball"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "conch"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "thiefcharacter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aliencharacter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "warriorcharacter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wizardcharacter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lichcharacter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clericcharacter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkmastercharacter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "griffinprize"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "owlprize"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "AI"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nuketoy"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "nuketoycool"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "nuketoyidle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stickhorse"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "basecarp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "greensquid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluesquid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mintsquid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orangesquid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinksquid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellowsquid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teshariplushie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "batballoon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ghostballoon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "excelsior"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "serbian"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "acolyte"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carrion"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "roach"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vagabond"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rooster"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "barking_dog"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red_soldier"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metacat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shitcurity"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metro_patrolman"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fumoplushie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plushie_tin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plushie_tinsec"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mistletoe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plushie_lizard"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plushie_slime"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plushie_nuke"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "securityk9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kobold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medihound"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scrubpuppy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "box"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plushie_otter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "marketable_resh"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plushie_vox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plushie_ipc"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plushie_snake"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "marketable_pip"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toast"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "marketable_tost"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "moth"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crab"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "possum"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "goose"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mouse"
+dirs = 1
+frames = 2
+delays = [15]
+
+[[state]]
+name = "gnome"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sus_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sus_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sus_white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "big_cat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "basset"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blahaj"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bigred"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fred"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "roxie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cat_toy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toy_mouse"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dogbone"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chewtoy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dogbone_poly"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chewtoy_poly"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "generic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gibber"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xeno"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xenocool"
+dirs = 1
+frames = 23
+delays = [2.1, 2]
+loop = 1
+
+[[state]]
+name = "revolver"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shoot"
+dirs = 1
+frames = 12
+delays = [0.5, 0.5, 0.5, 0.5, 1]
+
+[[state]]
+name = "tastybread"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tastybread_popped"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glitched"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "bandit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bandit_lead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "action_abe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ranger"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prof_who"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prisoner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "time_cap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "universal_id"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "universal_id_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sonic_driver"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "broken_radio"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fan"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fan-on"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "newtoncradle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "newtoncradle-on"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "desktoy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "desktoy-on"
+dirs = 1
+frames = 16
+delays = [2, 1, 1, 1, 1, 1, 1, 1, 2, 1]
+
+[[state]]
+name = "dippybird"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dippybird-on"
+dirs = 1
+frames = 17
+delays = [2, 2, 2, 2, 2, 2, 2, 4, 2]
+
+[[state]]
+name = "stellar_delight"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stellar_delight-on"
+dirs = 1
+frames = 6
+delays = [2]
+
+[[state]]
+name = "partypopper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "partypopper_e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reddragon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "greendragon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purpledragon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whiteeasterndragon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redeasterndragon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "greeneasterndragon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "goldeasterndragon"
+dirs = 1
+frames = 1

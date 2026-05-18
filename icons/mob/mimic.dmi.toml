@@ -1,0 +1,64 @@
+# Generated from mimic.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "amimicopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "amimic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cmimic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cmimicopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "copen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wmimic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wmimicopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tmimic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tmimicopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pmimic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pmimicopen"
+dirs = 1
+frames = 1

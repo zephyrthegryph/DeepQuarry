@@ -1,0 +1,679 @@
+# Generated from turf.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 12
+
+[[state]]
+name = "autumn-overlay1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "autumn-overlay2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "autumn-overlay3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "autumn-overlay4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "autumn-overlay5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "autumn-overlay6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spring-overlay1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spring-overlay2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spring-overlay3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spring-overlay4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spring-overlay5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spring-overlay6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spring-overlay7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spring-overlay8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spring-overlay9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spring-overlay10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spring-overlay11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spring-overlay12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spring-overlay13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spring-overlay14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spring-overlay15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spring-overlay16"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spring-overlay17"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spring-overlay18"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spring-overlay19"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-spring0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-spring1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-spring2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-spring3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-spring4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-spring5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-spring6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-spring7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-spring8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-spring9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-spring10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-spring11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-summer0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-summer1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-summer2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-summer3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-summer4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-summer5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-summer6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-summer7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-summer8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-summer9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-summer10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-summer11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-autumn0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-autumn1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-autumn2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-autumn3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-autumn4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-autumn5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-autumn6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-autumn7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-autumn8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-autumn9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-autumn10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-autumn11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-winter0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-winter1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-winter2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-winter3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-winter4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-winter5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-winter6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-winter7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-winter8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-winter9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-winter10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-winter11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-spring0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-spring1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-spring2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-spring3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-spring4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-spring5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-spring6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-spring7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-spring8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-spring9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-spring10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-spring11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-summer0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-summer1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-summer2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-summer3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-summer4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-summer5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-summer6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-summer7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-summer8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-summer9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-summer10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-summer11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-autumn0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-autumn1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-autumn2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-autumn3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-autumn4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-autumn5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-autumn6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-autumn7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-autumn8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-autumn9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-autumn10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-autumn11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-winter0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-winter1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-winter2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-winter3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-winter4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-winter5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-winter6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-winter7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-winter8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-winter9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-winter10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgrass-winter11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "s-grass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ds-grass"
+dirs = 1
+frames = 1

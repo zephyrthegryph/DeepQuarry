@@ -1,0 +1,24 @@
+# Generated from entertainment_monitor.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 2
+
+[[state]]
+name = "screen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinboard"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mask"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glass"
+dirs = 1
+frames = 1

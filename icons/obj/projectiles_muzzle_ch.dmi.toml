@@ -1,0 +1,11 @@
+# Generated from projectiles_muzzle_ch.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 2
+
+[[state]]
+name = "muzzle_coildef"
+dirs = 1
+frames = 2
+delays = [1, 2, 2, 1, 2, 1, 2]
+loop = 3

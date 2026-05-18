@@ -1,0 +1,304 @@
+# Generated from pai64x64.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 14
+
+[[state]]
+name = "rat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rat_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rat_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rat_rest_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rat_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rat-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rat_rest-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rat_full-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rat_rest_full-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "panther"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "panther_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "panther_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "panther_rest-eyes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "panther_rest_full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "panther_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "panther-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "panther_full-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teppi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teppi_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teppi_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teppi_rest_full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teppi-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teppi_rest-eyes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teppi_full-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teppi_rest_full-eyes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teppi_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "type13-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-horse_lune"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-horse_lune_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-horse_soleil"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-horse_soleil_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-horse_lune-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-horse_lune_full-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-horse_soleil-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-horse_soleil_full-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-horse_lune_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pai-horse_soleil_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pai-pdragon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-pdragon_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-pdragon-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-pdragon_full-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-pdragon_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pai-diredog"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-diredog_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-diredog_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-diredog_rest_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-diredog_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pai-diredog-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-diredog_full-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-diredog_rest-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-diredog_rest_full-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-protodog"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-protodog_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-protodog_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-protodog_rest_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-protodog_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pai-protodog-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-protodog_rest-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-protodog_full-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-protodog_rest_full-eyes"
+dirs = 4
+frames = 1

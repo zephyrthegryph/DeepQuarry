@@ -1,0 +1,15 @@
+# Generated from blackmarket.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "uplink"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "madonna"
+dirs = 1
+frames = 1

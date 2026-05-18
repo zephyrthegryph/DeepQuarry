@@ -1,0 +1,174 @@
+# Generated from moth_wings.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 45
+height = 34
+cols = 12
+
+[[state]]
+name = "m_moth_wings_monarch_BEHIND"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "m_moth_wings_monarch_FRONT"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "m_moth_wings_luna_BEHIND"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "m_moth_wings_luna_FRONT"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "m_moth_wings_atlas_BEHIND"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "m_moth_wings_atlas_FRONT"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "m_moth_wings_plain_BEHIND"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "m_moth_wings_plain_FRONT"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "m_moth_wings_redish_BEHIND"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "m_moth_wings_redish_FRONT"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "m_moth_wings_royal_BEHIND"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "m_moth_wings_royal_FRONT"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "m_moth_wings_gothic_BEHIND"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "m_moth_wings_gothic_FRONT"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "m_moth_wings_lovers_BEHIND"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "m_moth_wings_lovers_FRONT"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "m_moth_wings_whitefly_BEHIND"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "m_moth_wings_whitefly_FRONT"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "m_moth_wings_punished_BEHIND"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "m_moth_wings_punished_FRONT"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "m_moth_wings_firewatch_BEHIND"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "m_moth_wings_firewatch_FRONT"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "m_moth_wings_deathhead_BEHIND"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "m_moth_wings_deathhead_FRONT"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "m_moth_wings_poison_BEHIND"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "m_moth_wings_poison_FRONT"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "m_moth_wings_ragged_BEHIND"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "m_moth_wings_ragged_FRONT"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "m_moth_wings_moonfly_BEHIND"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "m_moth_wings_moonfly_FRONT"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "m_moth_wings_snow_BEHIND"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "m_moth_wings_snow_FRONT"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "m_moth_wings_clockwork_BEHIND"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "m_moth_wings_clockwork_FRONT"
+dirs = 4
+frames = 1

@@ -1,0 +1,11 @@
+# Generated from chempuff.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = ""
+dirs = 4
+frames = 5
+delays = [1, 1, 1, 1, 20, 1]
+loop = 1

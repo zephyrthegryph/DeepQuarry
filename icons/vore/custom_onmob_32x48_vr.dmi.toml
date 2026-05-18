@@ -1,0 +1,19 @@
+# Generated from custom_onmob_32x48_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 48
+cols = 4
+
+[[state]]
+name = "nikki-hat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "avidahatnoears"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "avidahat"
+dirs = 4
+frames = 1

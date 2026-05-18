@@ -1,0 +1,38 @@
+# Generated from dummystairs.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "goo_template"
+dirs = 4
+frames = 3
+delays = [4]
+rewind = true
+
+[[state]]
+name = "stair"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stair_bronze"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stair_grey"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stair_hazard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stair_hazard_nanite"
+dirs = 4
+frames = 3
+delays = [4]
+rewind = true

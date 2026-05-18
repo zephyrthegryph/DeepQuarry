@@ -1,0 +1,149 @@
+# Generated from toy_ch.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "teshplush_gold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teshplush_grey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teshplush_rainbow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "taaa_plush"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hunter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "station"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sif"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "greenfox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teppi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teppialt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blankdurg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "durg_fur"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "double_h_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "double_h_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "classic_h_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "classic_h_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "classic_w_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "classic_w_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fairy_w_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fairy_w_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blankdurg2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "classic_w_misc"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fairy_w_misc"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "durg_spines"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "thick_h_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "thick_h_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "angular_w_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "angular_w_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "angular_w_misc"
+dirs = 1
+frames = 1

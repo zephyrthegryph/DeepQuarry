@@ -1,0 +1,138 @@
+# Generated from glamour.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "translator"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "translator1"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "translator2"
+dirs = 1
+frames = 9
+delays = [1]
+
+[[state]]
+name = "transparent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shrinking"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "twinkling"
+dirs = 1
+frames = 14
+delays = [10, 3]
+
+[[state]]
+name = "inactive"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "inactive-busy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "animation"
+dirs = 1
+frames = 14
+delays = [1]
+
+[[state]]
+name = "empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "empty-busy"
+dirs = 1
+frames = 4
+delays = [4]
+
+[[state]]
+name = "full-busy"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "face"
+dirs = 1
+frames = 2
+delays = [500, 1]
+
+[[state]]
+name = "ring"
+dirs = 1
+frames = 6
+delays = [3]
+
+[[state]]
+name = "pillar_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pillar_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pillar_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gems_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gems_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gems_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gems_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bubble"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pocket"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "unstable"
+dirs = 1
+frames = 8
+delays = [30, 1, 30, 1, 30, 1, 30, 1]

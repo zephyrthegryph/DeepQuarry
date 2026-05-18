@@ -1,0 +1,124 @@
+# Generated from shuttle_dark.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "dark"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "dark-hc"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark-nj"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wall_d"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "dark0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark5h"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark6h"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark9h"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark10h"
+dirs = 1
+frames = 1

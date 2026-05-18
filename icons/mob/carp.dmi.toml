@@ -1,0 +1,44 @@
+# Generated from carp.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "base"
+dirs = 4
+frames = 3
+delays = [3, 4, 3]
+
+[[state]]
+name = "base_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carp_gib"
+dirs = 1
+frames = 10
+
+[[state]]
+name = "base_mouth"
+dirs = 4
+frames = 3
+delays = [3, 4, 3]
+rewind = true
+
+[[state]]
+name = "base_dead_mouth"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carp"
+dirs = 4
+frames = 3
+delays = [3, 4, 3]
+rewind = true
+
+[[state]]
+name = "carp_dead"
+dirs = 1
+frames = 1

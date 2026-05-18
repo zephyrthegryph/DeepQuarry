@@ -1,0 +1,41 @@
+# Generated from narsie.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 504
+height = 532
+cols = 7
+
+[[state]]
+name = "narsie_old"
+dirs = 1
+frames = 4
+delays = [2]
+rewind = true
+
+[[state]]
+name = "narsie"
+dirs = 1
+frames = 9
+delays = [1]
+
+[[state]]
+name = "narsie-chains"
+dirs = 1
+frames = 9
+delays = [1]
+
+[[state]]
+name = "glow-narsie"
+dirs = 1
+frames = 9
+delays = [1]
+
+[[state]]
+name = "narsie-small"
+dirs = 1
+frames = 9
+delays = [1]
+
+[[state]]
+name = "narsie-small-chains"
+dirs = 1
+frames = 9
+delays = [1]

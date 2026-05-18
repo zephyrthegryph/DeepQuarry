@@ -1,0 +1,336 @@
+# Generated from Taur_Bellies.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 26
+
+[[state]]
+name = "TaurN-Belly-1"
+dirs = 4
+frames = 12
+delays = [1]
+rewind = true
+
+[[state]]
+name = "TaurN-Belly-1 idle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurN-Belly-2"
+dirs = 4
+frames = 12
+delays = [1]
+
+[[state]]
+name = "TaurN-Belly-2 idle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurN-Belly-3"
+dirs = 4
+frames = 12
+delays = [1]
+
+[[state]]
+name = "TaurN-Belly-3 idle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurE-Belly-1"
+dirs = 4
+frames = 12
+delays = [1]
+rewind = true
+
+[[state]]
+name = "TaurE-Belly-1 idle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurE-Belly-2"
+dirs = 4
+frames = 12
+delays = [1]
+
+[[state]]
+name = "TaurE-Belly-2 idle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurE-Belly-3"
+dirs = 4
+frames = 12
+delays = [1]
+
+[[state]]
+name = "TaurE-Belly-3 idle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurSectDrone-Belly-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurSectDrone-Belly-1 idle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurSectDrone-Belly-1 loaf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurSectDrone-Belly-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurSectDrone-Belly-2 idle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurSectDrone-Belly-2 loaf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurSectDrone-Belly-3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurSectDrone-Belly-3 idle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurSectDrone-Belly-3 loaf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurNaga-Belly-1 idle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurHorse-Belly-1 idle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurCow-Belly-1 idle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurLizard-Belly-1 idle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurFeline-Belly-1 idle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurFeline-Belly-1 loaf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurSlug-Belly-1 idle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurDrake-Belly-1 idle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurDrake-Belly-1 loaf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurDrake-Belly-2 idle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurDrake-Belly-2 loaf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurDrake-Belly-3 idle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurDrake-Belly-3 loaf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurOtie-Belly-1 idle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurOtie-Belly-1 loaf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurSynthLiz-Belly-1 idle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurDeer-Belly-1 idle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurDeer-Belly-2 idle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurDeer-Belly-3 idle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurDeer-Belly-1 loaf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurDeer-Belly-2 loaf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurDeer-Belly-3 loaf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurNagaAlt-Belly-1 idle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurCowAlt-Belly-1 idle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Taurbigleggy-Belly-1 idle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Taurbigleggy-Belly-2 idle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Taurbigleggy-Belly-3 idle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurSkunk-Belly-1 idle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurSkunk-Belly-1 loaf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurNaga3Piece-Belly-1 idle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurFatDrake-Belly-1 idle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurFatDrake-Belly-1 loaf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurFatDrake-Belly-2 idle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurFatDrake-Belly-2 loaf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurF-Belly-1"
+dirs = 4
+frames = 12
+delays = [1]
+rewind = true
+
+[[state]]
+name = "TaurF-Belly-1 idle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurF-Belly-2"
+dirs = 4
+frames = 12
+delays = [1]
+
+[[state]]
+name = "TaurF-Belly-2 idle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurF-Belly-3"
+dirs = 4
+frames = 12
+delays = [1]
+
+[[state]]
+name = "TaurF-Belly-3 idle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurTesh-Belly-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurTesh-Belly-1 idle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "TaurTesh-Belly-1 loaf"
+dirs = 4
+frames = 1

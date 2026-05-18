@@ -1,0 +1,19 @@
+# Generated from vox.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 40
+cols = 4
+
+[[state]]
+name = "armalis"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "armour"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "amplifier"
+dirs = 4
+frames = 1

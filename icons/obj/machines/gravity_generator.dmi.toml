@@ -1,0 +1,304 @@
+# Generated from gravity_generator.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 10
+
+[[state]]
+name = "on_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "on_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "on_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "on_6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "on_5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "on_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "on_9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "on_8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "on_7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "off_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "off_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "off_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "off_6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "off_5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "off_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "off_9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "off_8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "off_7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fix3_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fix3_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fix3_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fix3_6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fix3_5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fix3_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fix3_9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fix3_8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fix3_7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fix2_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fix2_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fix2_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fix2_6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fix2_5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fix2_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fix2_9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fix2_8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fix2_7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fix1_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fix1_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fix1_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fix1_6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fix1_5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fix1_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fix1_9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fix1_8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fix1_7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fix0_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fix0_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fix0_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fix0_6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fix0_5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fix0_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fix0_9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fix0_8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fix0_7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "startup"
+dirs = 1
+frames = 10
+delays = [1]
+
+[[state]]
+name = "idle"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "activating"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "activated"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "overclocked"
+dirs = 1
+frames = 4
+delays = [0.5]

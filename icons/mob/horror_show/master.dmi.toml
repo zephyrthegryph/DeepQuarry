@@ -1,0 +1,20 @@
+# Generated from master.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 3
+
+[[state]]
+name = "Helix"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "generic_gib"
+dirs = 1
+frames = 6
+delays = [1]

@@ -1,0 +1,237 @@
+# Generated from atmos_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "can-o3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "can-o2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "can-o1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "can-o0"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orange"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "black"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redws"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "can-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "can-connector"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orange-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "black-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grey-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redws-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vent0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vent1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vent2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vent-p"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pscrubber:0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pscrubber:1"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "psiphon:0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "psiphon:1"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "heater1"
+dirs = 1
+frames = 3
+delays = [3]
+
+[[state]]
+name = "heater-p"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "heater1-h"
+dirs = 1
+frames = 3
+delays = [3]
+
+[[state]]
+name = "scrubber:0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scrubber:1"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "scrubber:T"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "siphon:0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "siphon:1"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "siphon:T"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheater0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheater1"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "sheater-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "can-oa1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scrubber-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scrubber-connector"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "siphon-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "siphon-connector"
+dirs = 1
+frames = 1

@@ -1,0 +1,107 @@
+# Generated from gifts.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "gift"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "strangepresent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gift_chaos"
+dirs = 1
+frames = 15
+delays = [1]
+
+[[state]]
+name = "gift1_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gift2_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gift3_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gift1_r"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gift2_r"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gift3_r"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gift1_b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gift2_b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gift3_b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gift1_y"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gift2_y"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gift3_y"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gift1_p"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gift2_p"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gift3_p"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chomp_present"
+dirs = 1
+frames = 2
+delays = [2.5]
+
+[[state]]
+name = "chomp_present_chaos"
+dirs = 1
+frames = 16
+delays = [1]

@@ -1,0 +1,470 @@
+# Generated from status_display.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 22
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "outline"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "default"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "status_display_green"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "status_display_yellow"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "status_display_orange"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "status_display_violet"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "status_display_blue"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "status_display_red"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "status_display_delta"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "entertainment"
+dirs = 1
+frames = 35
+delays = [2]
+
+[[state]]
+name = "biohazard"
+dirs = 1
+frames = 10
+delays = [1]
+
+[[state]]
+name = "lockdown"
+dirs = 1
+frames = 2
+delays = [9, 1]
+
+[[state]]
+name = "~"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = ":"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "'"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "("
+dirs = 1
+frames = 1
+
+[[state]]
+name = ")"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "*"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "+"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "="
+dirs = 1
+frames = 1
+
+[[state]]
+name = "/"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "."
+dirs = 1
+frames = 1
+
+[[state]]
+name = ","
+dirs = 1
+frames = 1
+
+[[state]]
+name = "-"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "?"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "!"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "A"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "B"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "C"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "D"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "E"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "F"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "G"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "H"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "I"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "J"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "K"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "L"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "N"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "O"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "P"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Q"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "R"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "S"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "T"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "U"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "V"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "W"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "X"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Y"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Z"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ai_happy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ai_neutral"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ai_upset"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ai_veryhappy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ai_sad"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ai_angry"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ai_unsure"
+dirs = 1
+frames = 2
+delays = [6]
+
+[[state]]
+name = "ai_confused"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ai_bsod"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ai_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ai_surprised"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ai_trollface"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ai_friend"
+dirs = 1
+frames = 22
+delays = [30, 1]
+
+[[state]]
+name = "ai_facepalm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ai_awesome"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ai_urist"
+dirs = 1
+frames = 9
+delays = [30, 1]
+
+[[state]]
+name = "ai_tribunal"
+dirs = 1
+frames = 71
+delays = [1]
+
+[[state]]
+name = "ai_tribunal_malf"
+dirs = 1
+frames = 71
+delays = [1]
+
+[[state]]
+name = "ai_beer"
+dirs = 1
+frames = 18
+delays = [50, 3, 3, 3, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 10, 3, 3, 1]
+
+[[state]]
+name = "ai_dwarf"
+dirs = 1
+frames = 56
+delays = [20, 3, 3, 3, 3, 3, 10, 3, 3, 3, 10, 1, 1, 1, 1, 1, 5, 1]
+
+[[state]]
+name = "ai_fishtank"
+dirs = 1
+frames = 6
+delays = [3]
+
+[[state]]
+name = "ai_plump"
+dirs = 1
+frames = 17
+delays = [10, 10, 10, 50, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 50, 3]
+
+[[state]]
+name = "ai_corgi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ai_redoctober"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ai_heart"
+dirs = 1
+frames = 2
+delays = [3]

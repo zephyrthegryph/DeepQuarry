@@ -1,0 +1,46 @@
+# Generated from tallhorror.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 64
+cols = 11
+
+[[state]]
+name = "timling"
+dirs = 4
+frames = 6
+delays = [4, 1, 4, 1, 4, 1, 4]
+
+[[state]]
+name = "timling"
+dirs = 4
+frames = 6
+delays = [4, 1, 4, 1, 4, 1, 4]
+movement = true
+
+[[state]]
+name = "shitty_tim"
+dirs = 4
+frames = 6
+delays = [4, 1, 4, 1, 4, 1, 4]
+
+[[state]]
+name = "shitty_tim"
+dirs = 4
+frames = 6
+delays = [4, 1, 4, 1, 4, 1, 4]
+movement = true
+
+[[state]]
+name = "tt_head"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tst_head"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "generic_gib"
+dirs = 1
+frames = 6
+delays = [1]

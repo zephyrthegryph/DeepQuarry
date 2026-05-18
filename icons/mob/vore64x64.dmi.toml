@@ -1,0 +1,613 @@
+# Generated from vore64x64.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 21
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snake"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snake-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snake-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "megacarp"
+dirs = 4
+frames = 3
+delays = [3, 4, 3]
+rewind = true
+
+[[state]]
+name = "megacarp-1"
+dirs = 4
+frames = 3
+delays = [3, 4, 3]
+rewind = true
+
+[[state]]
+name = "megacarp-2"
+dirs = 4
+frames = 3
+delays = [3, 4, 3]
+rewind = true
+
+[[state]]
+name = "megacarp-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "queen_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "queen_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "queen_sleep"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "queen_sleep-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "queen_sleep-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "queen_sleep-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "queen_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "queen_s-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "queen_s-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "queen_s-3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "deathclaw"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "deathclaw-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "deathclaw-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "deathclaw-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shark"
+dirs = 4
+frames = 3
+delays = [3, 4, 3]
+rewind = true
+
+[[state]]
+name = "shark-1"
+dirs = 4
+frames = 3
+delays = [3, 4, 3]
+rewind = true
+
+[[state]]
+name = "shark-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shark-gib"
+dirs = 1
+frames = 10
+delays = [1]
+
+[[state]]
+name = "panther"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "panther-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "panther-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "panther-rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "panther-rest-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "panther-rest-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "panther-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reddragon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reddragon-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reddragon-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reddragon-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prat_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "prat_s-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "prat_sleep"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prat_sleep-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prat_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prat_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "generic_gib"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "hippo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hippo-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hippo-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phoron_dragon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phoron_dragon-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phoron_dragon-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phoron_dragon-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phoron_dragon-1-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phoron_dragon-2-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phoron_dragon_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "horse"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "horse-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "horse-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "horse-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xeno"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeno-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeno-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeno_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sect_queen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sect_queen-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sect_queen-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sect_queen-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sect_queen-1-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sect_queen-2-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sect_queen_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sect_drone"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sect_drone-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sect_drone-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sect_drone-1-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sect_drone_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "space_dragon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "space_dragon-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "space_dragon-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "space_dragon-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "space_dragon_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "space_dragon-1-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "space_dragon-2-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kelpie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kelpie-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kelpie-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kelpie-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sonadile"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sonadile-1"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "sonadile-2"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "sonadile-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "devil"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "devil-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "devil-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "devil_target"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "devil_target-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "unicorn"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "unicorn-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "unicorn-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "unicorn-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deathclaw_new"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "deathclaw_new-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "deathclaw_new-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "deathclaw_new-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "swoopie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swoopie-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swoopie_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swoopie_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "swoopie_stomach-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swoopie_rest_stomach-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swoopie_neck1-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swoopie_neck2-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swoopie_neck3-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swoopie_neck4-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swoopie_rest_neck1-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swoopie_rest_neck2-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swoopie_rest_neck3-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swoopie_rest_neck4-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gryphon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gryphon_throat-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gryphon_stomach-1"
+dirs = 4
+frames = 1

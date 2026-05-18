@@ -1,0 +1,63 @@
+# Generated from purinadoor.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "door_closed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "door_locked"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "door_opening"
+dirs = 4
+frames = 6
+delays = [1]
+loop = 1
+
+[[state]]
+name = "door_closing"
+dirs = 4
+frames = 6
+delays = [1]
+loop = 1
+
+[[state]]
+name = "door_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "door_deny"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "welded"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "welded_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "palert"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alert_cold"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alert_hot"
+dirs = 4
+frames = 1

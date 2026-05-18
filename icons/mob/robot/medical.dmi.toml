@@ -1,0 +1,246 @@
+# Generated from medical.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 17
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "openpanel_nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "default"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "default-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyebot"
+dirs = 4
+frames = 4
+delays = [5, 3, 5, 3]
+
+[[state]]
+name = "eyebot-eyes"
+dirs = 4
+frames = 4
+delays = [5, 3, 5, 3]
+
+[[state]]
+name = "marina"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marina-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "arachne"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "arachne-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tall"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tall-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "heavy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "heavy-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "droid"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "droid-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "needles"
+dirs = 4
+frames = 2
+delays = [10]
+
+[[state]]
+name = "handy"
+dirs = 4
+frames = 3
+delays = [4]
+rewind = true
+
+[[state]]
+name = "handy-eyes"
+dirs = 4
+frames = 3
+delays = [4]
+rewind = true
+
+[[state]]
+name = "insekt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "insekt-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tall2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tall2-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "drider"
+dirs = 4
+frames = 5
+delays = [1.3]
+rewind = true
+
+[[state]]
+name = "drider"
+dirs = 4
+frames = 5
+delays = [1.3]
+rewind = true
+movement = true
+
+[[state]]
+name = "drider-eyes"
+dirs = 4
+frames = 5
+delays = [1.3]
+rewind = true
+
+[[state]]
+name = "drider-eyes"
+dirs = 4
+frames = 5
+delays = [1.3]
+rewind = true
+movement = true
+
+[[state]]
+name = "drider-openpanel_nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "drider-openpanel_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "drider-openpanel_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mechoid"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mechoid-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "noble"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "noble-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "noble-openpanel_nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "noble-openpanel_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "noble-openpanel_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-openpanel_nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-openpanel_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-openpanel_w"
+dirs = 4
+frames = 1

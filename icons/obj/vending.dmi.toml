@@ -1,0 +1,1759 @@
+# Generated from vending.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 59
+
+[[state]]
+name = ""
+dirs = 4
+frames = 8
+delays = [30, 1, 25, 1, 1, 1, 20, 1]
+
+[[state]]
+name = "nutrimat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nutrimat-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nutrimat-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nutrimat-panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tool"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool-vend"
+dirs = 4
+frames = 3
+delays = [1, 4, 1]
+
+[[state]]
+name = "tool-deny"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "tool-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool-panel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engivend"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engivend-vend"
+dirs = 4
+frames = 3
+delays = [1, 4, 1]
+
+[[state]]
+name = "engivend-deny"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "engivend-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engivend-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engivend-panel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "minevend"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "minevend-vend"
+dirs = 4
+frames = 3
+delays = [1, 4, 1]
+
+[[state]]
+name = "minevend-deny"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "minevend-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "minevend-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "minevend-panel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cart"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-vend"
+dirs = 1
+frames = 5
+delays = [5, 0.5, 5, 0.5, 1]
+loop = 1
+
+[[state]]
+name = "cart-deny"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "cart-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coffee-hellfire"
+dirs = 1
+frames = 3
+delays = [2.5]
+
+[[state]]
+name = "coffee"
+dirs = 4
+frames = 5
+delays = [6]
+
+[[state]]
+name = "coffee-vend"
+dirs = 4
+frames = 13
+delays = [2, 2, 4, 3, 3, 3, 3, 3, 3, 2, 2, 2, 8]
+
+[[state]]
+name = "coffee-deny"
+dirs = 4
+frames = 2
+delays = [2]
+
+[[state]]
+name = "coffee-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coffee-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coffee-screen"
+dirs = 4
+frames = 4
+delays = [6]
+
+[[state]]
+name = "coffee-panel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cigs"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cigs-vend"
+dirs = 4
+frames = 5
+delays = [1, 1, 8, 1]
+
+[[state]]
+name = "cigs-deny"
+dirs = 4
+frames = 3
+delays = [1]
+
+[[state]]
+name = "cigs-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cigs-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cigs-panel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Cola_Machine"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Cola_Machine-vend"
+dirs = 4
+frames = 5
+delays = [1, 1, 8, 1]
+
+[[state]]
+name = "Cola_Machine-deny"
+dirs = 4
+frames = 3
+delays = [1]
+
+[[state]]
+name = "Cola_Machine-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Cola_Machine-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Cola_Machine-panel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dinnerware"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dinnerware-vend"
+dirs = 4
+frames = 8
+delays = [1, 1, 1, 6, 1]
+
+[[state]]
+name = "dinnerware-deny"
+dirs = 4
+frames = 3
+delays = [1]
+
+[[state]]
+name = "dinnerware-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dinnerware-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dinnerware-panel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engi-vend"
+dirs = 4
+frames = 3
+delays = [1, 4, 1]
+
+[[state]]
+name = "engi-deny"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "engi-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engi-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engi-panel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fitness"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fitness-vend"
+dirs = 4
+frames = 5
+delays = [1, 1, 8, 1]
+
+[[state]]
+name = "fitness-deny"
+dirs = 4
+frames = 3
+delays = [1]
+
+[[state]]
+name = "fitness-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fitness-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fitness-overlay"
+dirs = 4
+frames = 16
+delays = [20, 1]
+
+[[state]]
+name = "fitness-panel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "games"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "games-vend"
+dirs = 4
+frames = 5
+delays = [1, 1, 8, 1]
+
+[[state]]
+name = "games-deny"
+dirs = 4
+frames = 3
+delays = [1]
+
+[[state]]
+name = "games-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "games-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "games-panel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "generic"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "generic-vend"
+dirs = 4
+frames = 5
+delays = [1, 1, 8, 1]
+
+[[state]]
+name = "generic-deny"
+dirs = 4
+frames = 3
+delays = [1]
+
+[[state]]
+name = "generic-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "generic-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "generic-panel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hotfood"
+dirs = 4
+frames = 15
+delays = [1]
+
+[[state]]
+name = "hotfood-vend"
+dirs = 4
+frames = 5
+delays = [2]
+
+[[state]]
+name = "hotfood-deny"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "hotfood-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hotfood-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hotfood-heater"
+dirs = 4
+frames = 3
+delays = [10, 1]
+
+[[state]]
+name = "hotfood-panel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "laptop"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "laptop-vend"
+dirs = 4
+frames = 3
+delays = [1, 8, 1]
+
+[[state]]
+name = "laptop-deny"
+dirs = 4
+frames = 7
+delays = [1]
+
+[[state]]
+name = "laptop-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "laptop-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "laptop-panel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lavatory"
+dirs = 4
+frames = 2
+delays = [10]
+
+[[state]]
+name = "lavatory-vend"
+dirs = 4
+frames = 5
+delays = [2, 2, 8, 2]
+
+[[state]]
+name = "lavatory-deny"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "lavatory-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lavatory-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lavatory-panel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "MagiVend"
+dirs = 4
+frames = 2
+delays = [40, 1]
+
+[[state]]
+name = "MagiVend-vend"
+dirs = 4
+frames = 5
+delays = [1, 1, 7, 1]
+
+[[state]]
+name = "MagiVend-deny"
+dirs = 4
+frames = 3
+delays = [1]
+
+[[state]]
+name = "MagiVend-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "MagiVend-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "MagiVend-panel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "med"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "med-vend"
+dirs = 4
+frames = 3
+delays = [1, 4, 1]
+
+[[state]]
+name = "med-deny"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "med-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "med-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "med-panel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nutri"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nutri-vend"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "nutri_deny"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "nutri-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nutri-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nutri-panel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nutri_generic"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nutri_generic-vend"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "nutri_generic-deny"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "nutri_generic-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nutri_generic-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nutri_generic-panel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "robotics"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "robotics-vend"
+dirs = 4
+frames = 3
+delays = [1, 4, 1]
+
+[[state]]
+name = "robotics-deny"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "robotics-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "robotics-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "robotics-panel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sec-vend"
+dirs = 4
+frames = 3
+delays = [1, 4, 1]
+
+[[state]]
+name = "sec-deny"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "sec-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sec-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sec-panel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "seeds"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "seeds-vend"
+dirs = 4
+frames = 6
+delays = [1, 4, 1]
+
+[[state]]
+name = "seeds-deny"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "seeds-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "seeds-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "seeds-panel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "seeds-shelf0"
+dirs = 4
+frames = 5
+delays = [1]
+
+[[state]]
+name = "seeds-shelf1"
+dirs = 4
+frames = 5
+delays = [1]
+
+[[state]]
+name = "seeds-shelf2"
+dirs = 4
+frames = 5
+delays = [1]
+
+[[state]]
+name = "seeds-shelf3"
+dirs = 4
+frames = 5
+delays = [1]
+
+[[state]]
+name = "seeds_generic"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "seeds_generic-vend"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "seeds_generic-deny"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "seeds_generic-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "seeds_generic-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "seeds_generic-panel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "seeds_generic-shelf0"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "seeds_generic-shelf1"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "seeds_generic-shelf2"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "seeds_generic-shelf3"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "snack"
+dirs = 4
+frames = 3
+delays = [8]
+
+[[state]]
+name = "snack-vend"
+dirs = 4
+frames = 5
+delays = [1, 1, 8, 1]
+
+[[state]]
+name = "snack-deny"
+dirs = 4
+frames = 3
+delays = [1]
+
+[[state]]
+name = "snack-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snack-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snack-panel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snix"
+dirs = 4
+frames = 11
+delays = [40, 1, 30, 5]
+
+[[state]]
+name = "snix-vend"
+dirs = 4
+frames = 5
+delays = [1, 1, 8, 1]
+
+[[state]]
+name = "snix-deny"
+dirs = 4
+frames = 3
+delays = [1]
+
+[[state]]
+name = "snix-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snix-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snix-fan"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "snix-panel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "soda"
+dirs = 4
+frames = 3
+delays = [1]
+
+[[state]]
+name = "soda-vend"
+dirs = 4
+frames = 5
+delays = [1, 1, 8, 1]
+
+[[state]]
+name = "soda-deny"
+dirs = 4
+frames = 3
+delays = [1]
+
+[[state]]
+name = "soda-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "soda-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "soda-panel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sovietsoda"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sovietsoda-vend"
+dirs = 4
+frames = 5
+delays = [1, 1, 8, 1]
+
+[[state]]
+name = "sovietsoda-deny"
+dirs = 4
+frames = 2
+delays = [4]
+
+[[state]]
+name = "sovietsoda-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sovietsoda-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sovietsoda-panel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "theater"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "theater-vend"
+dirs = 4
+frames = 5
+delays = [1, 1, 8, 1]
+
+[[state]]
+name = "theater-deny"
+dirs = 4
+frames = 3
+delays = [1]
+
+[[state]]
+name = "theater-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "theater-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "theater-overlay"
+dirs = 4
+frames = 2
+delays = [30, 1]
+
+[[state]]
+name = "theater-panel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "uniform"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "uniform-vend"
+dirs = 4
+frames = 3
+delays = [1, 4, 1]
+
+[[state]]
+name = "uniform-deny"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "uniform-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "uniform-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "uniform-panel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wallmed"
+dirs = 4
+frames = 13
+delays = [24, 1, 1, 1, 1, 5, 5, 5, 5, 5, 1]
+
+[[state]]
+name = "wallmed-vend"
+dirs = 4
+frames = 10
+delays = [1]
+
+[[state]]
+name = "wallmed-deny"
+dirs = 4
+frames = 4
+delays = [2]
+loop = 1
+
+[[state]]
+name = "wallmed-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wallmed-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wallmed-light-mask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wallmed-panel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "heater"
+dirs = 4
+frames = 2
+delays = [6]
+
+[[state]]
+name = "cooler"
+dirs = 4
+frames = 2
+delays = [6]
+
+[[state]]
+name = "screen_small"
+dirs = 4
+frames = 17
+delays = [1, 20, 1, 1, 1, 1, 1, 1, 1, 20, 1]
+
+[[state]]
+name = "screen_big"
+dirs = 4
+frames = 17
+delays = [20, 1, 1, 1, 1, 1, 1, 1, 20, 1]
+
+[[state]]
+name = "smartfridge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smartfridge-vend"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "smartfridge-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smartfridge-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smartfridge-misc1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smartfridge-misc2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smartfridge-misc3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smartfridge-boxes1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smartfridge-boxes2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smartfridge-boxes3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smartfridge-drinks1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smartfridge-drinks2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smartfridge-drinks3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boozeomat"
+dirs = 1
+frames = 32
+delays = [2]
+
+[[state]]
+name = "boozeomat-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boozeomat-vend"
+dirs = 1
+frames = 13
+delays = [0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 3]
+
+[[state]]
+name = "boozeomat-deny"
+dirs = 1
+frames = 5
+delays = [1, 1, 1, 1, 8]
+
+[[state]]
+name = "boozeomat-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boozeomat-panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "serbomat"
+dirs = 1
+frames = 103
+delays = [1]
+
+[[state]]
+name = "serbomat-vend"
+dirs = 1
+frames = 103
+delays = [1]
+
+[[state]]
+name = "serbomat-off"
+dirs = 1
+frames = 15
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 10]
+loop = 1
+
+[[state]]
+name = "serbomat-broken"
+dirs = 1
+frames = 15
+delays = [1]
+loop = 1
+
+[[state]]
+name = "serbomat-panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "trashvend"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "trashvend-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "trashvend-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "trashvend-panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fridge_sci"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fridge_sci-vend"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "fridge_sci-deny"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "fridge_sci-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fridge_sci-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fridge_sci-panel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fridge_sci-slime1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fridge_sci-slime2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fridge_sci-slime3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fridge_sci-slime4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "adh-tool"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "adh-tool-vend"
+dirs = 4
+frames = 3
+delays = [1, 4, 1]
+
+[[state]]
+name = "adh-tool-deny"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "adh-tool-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "adh-tool-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "adh-tool-panel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solsnack"
+dirs = 4
+frames = 3
+delays = [8]
+
+[[state]]
+name = "solsnack-vend"
+dirs = 4
+frames = 5
+delays = [1, 1, 8, 1]
+
+[[state]]
+name = "solsnack-deny"
+dirs = 4
+frames = 3
+delays = [1]
+
+[[state]]
+name = "solsnack-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solsnack-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "weeb"
+dirs = 4
+frames = 2
+delays = [40, 1]
+
+[[state]]
+name = "weeb-vend"
+dirs = 4
+frames = 5
+delays = [1, 1, 8, 1]
+
+[[state]]
+name = "weeb-deny"
+dirs = 4
+frames = 3
+delays = [1]
+
+[[state]]
+name = "weeb-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "weeb-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "weeb-fan"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "weeb-panel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Soda_Machine"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Soda_Machine-vend"
+dirs = 4
+frames = 5
+delays = [1, 1, 8, 1]
+
+[[state]]
+name = "Soda_Machine-deny"
+dirs = 4
+frames = 3
+delays = [1]
+
+[[state]]
+name = "Soda_Machine-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Soda_Machine-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Soda_Machine-panel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "giftvendor"
+dirs = 1
+frames = 4
+delays = [17, 1, 2, 1]
+
+[[state]]
+name = "giftvendor-vend"
+dirs = 1
+frames = 6
+delays = [2]
+
+[[state]]
+name = "giftvendor-deny"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "giftvendor-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "giftvendor-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "giftvendor-panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_giftvendor"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "old_giftvendor-vend"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "old_giftvendor-deny"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "old_giftvendor-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_giftvendor-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_giftvendor-panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_fishvendor"
+dirs = 1
+frames = 10
+delays = [16, 2]
+
+[[state]]
+name = "old_fishvendor-vend"
+dirs = 1
+frames = 10
+delays = [16, 2]
+
+[[state]]
+name = "old_fishvendor-deny"
+dirs = 1
+frames = 10
+delays = [16, 2]
+
+[[state]]
+name = "old_fishvendor-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_fishvendor-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_fishvendor-panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "water_cooler_bottle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "water_cooler"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "water_cooler-vend"
+dirs = 4
+frames = 7
+delays = [3]
+
+[[state]]
+name = "water_cooler-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fishvendor"
+dirs = 4
+frames = 10
+delays = [32, 2]
+
+[[state]]
+name = "fishvendor-vend"
+dirs = 4
+frames = 5
+delays = [2, 3, 4, 3, 2]
+
+[[state]]
+name = "fishvendor-deny"
+dirs = 4
+frames = 5
+delays = [2, 3, 4, 3, 2]
+
+[[state]]
+name = "fishvendor-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fishvendor-broke"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fishvendor-panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snlvendor"
+dirs = 4
+frames = 2
+delays = [2]
+
+[[state]]
+name = "snlvendor-vend"
+dirs = 4
+frames = 6
+delays = [2]
+
+[[state]]
+name = "snlvendor-deny"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "snlvendor-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snlvendor-broke"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snlvend-panel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sovietvend"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "sovietvend-vend"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "sovietvend-deny"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "sovietvend-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sovietvend-broke"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sovietvend-panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radren"
+dirs = 4
+frames = 5
+delays = [2]
+
+[[state]]
+name = "radren-vend"
+dirs = 4
+frames = 5
+delays = [2]
+
+[[state]]
+name = "radren-deny"
+dirs = 4
+frames = 5
+delays = [2]
+
+[[state]]
+name = "radren-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "radren-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "radren-panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donksoft"
+dirs = 4
+frames = 8
+delays = [5, 1, 5, 1, 5, 1, 5, 1]
+
+[[state]]
+name = "donksoft-vend"
+dirs = 4
+frames = 5
+delays = [1, 1, 8, 1]
+
+[[state]]
+name = "donksoft-deny"
+dirs = 4
+frames = 4
+delays = [3, 2, 3, 2]
+
+[[state]]
+name = "donksoft-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "donksoft-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "donksoft-panel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "talondrobe"
+dirs = 1
+frames = 4
+delays = [10, 1, 10, 1]
+
+[[state]]
+name = "talondrobe-vend"
+dirs = 1
+frames = 4
+delays = [10, 1, 10, 1]
+
+[[state]]
+name = "talondrobe-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "talondrobe-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "talondrobe-panel"
+dirs = 1
+frames = 1

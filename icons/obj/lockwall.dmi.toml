@@ -1,0 +1,19 @@
+# Generated from lockwall.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 31
+height = 31
+cols = 3
+
+[[state]]
+name = "emerg1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emergold"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "emerg"
+dirs = 4
+frames = 1

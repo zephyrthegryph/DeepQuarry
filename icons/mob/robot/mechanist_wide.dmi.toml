@@ -1,0 +1,89 @@
+# Generated from mechanist_wide.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 14
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "openpanel_nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wreck-overlay"
+dirs = 1
+frames = 18
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 40]
+
+[[state]]
+name = "pupdozer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pupdozer"
+dirs = 4
+frames = 9
+delays = [0.8]
+movement = true
+hotspots = [{ frame = 1, x = 34, y = 21 }]
+
+[[state]]
+name = "pupdozer-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pupdozer-eyes"
+dirs = 4
+frames = 9
+delays = [0.8]
+movement = true
+
+[[state]]
+name = "pupdozer-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pupdozer-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pupdozer-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pupdozer-sleeper-1"
+dirs = 4
+frames = 9
+delays = [0.8]
+movement = true
+
+[[state]]
+name = "pupdozer-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pupdozer-lights"
+dirs = 4
+frames = 9
+delays = [0.8]
+movement = true

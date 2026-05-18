@@ -1,0 +1,161 @@
+# Generated from lefthand_melee_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 12
+
+[[state]]
+name = "impshield"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "impshield_blade"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "impsword"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "impsword_blade"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolfgirlshield"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolfgirlsword"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolfgirlsword_sharp"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "explorer_shield"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "explorer_shield_lighted"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "explorer_shield_P"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "explorer_shield_P_lighted"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rapier"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crusher0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crusher1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "c-machete"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "c-knife"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "c-gauntlets"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "longsword"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "longsword0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "longsword1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "altevian-cutter_blade"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "altevian-cutter"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "altevian-wrench"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "altevian-crowbar"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "altevian-wirecutter"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "altevian-screwdriver"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "altevian-pulser"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "altevian-welder-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "altevian-welder-on"
+dirs = 4
+frames = 3
+delays = [1]
+
+[[state]]
+name = "mat_staff0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mat_staff1"
+dirs = 4
+frames = 1

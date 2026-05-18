@@ -1,0 +1,37 @@
+# Generated from Shadekin_powers.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "dark_net"
+dirs = 1
+frames = 23
+delays = [1]
+
+[[state]]
+name = "dark_maw"
+dirs = 1
+frames = 20
+delays = [1]
+
+[[state]]
+name = "dark_maw_tr"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "dark_maw_ic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_maw_waiting"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_maw_used"
+dirs = 1
+frames = 1

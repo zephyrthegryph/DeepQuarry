@@ -1,0 +1,58 @@
+# Generated from spacevines.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "Hvy1"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "Hvy2"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "Hvy3"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "Med1"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "Med2"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "Med3"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "Light1"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "Light2"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "Light3"
+dirs = 1
+frames = 1
+loop = 1

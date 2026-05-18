@@ -1,0 +1,254 @@
+# Generated from reinf_glass.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "reinf_glass-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-21"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-23"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-29"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-31"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-38"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-39"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-46"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-47"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-55"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-63"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-74"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-78"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-79"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-95"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-110"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-111"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-127"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-137"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-139"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-141"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-143"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-157"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-159"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-175"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-191"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-203"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-207"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-223"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-239"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-255"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-damaged1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-damaged2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_glass-damaged3"
+dirs = 1
+frames = 1

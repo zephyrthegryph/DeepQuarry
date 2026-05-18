@@ -1,0 +1,567 @@
+# Generated from vore128x64.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 128
+height = 92
+cols = 23
+
+[[state]]
+name = "cryptdrake"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cryptdrake-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cryptdrake-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cryptdrake-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "leopardmander_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leopardmander_blue-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leopardmander_blue-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leopardmander_blue-3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leopardmander_blue-4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leopardmander_blue-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "leopardmander_blue-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leopardmander_blue-rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leopardmander_blue-rest-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leopardmander_blue-rest-3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leopardmander_blue-rest-4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leopardmander"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leopardmander-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leopardmander-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leopardmander-3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leopardmander-4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leopardmander-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "leopardmander-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leopardmander-rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leopardmander-rest-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leopardmander-rest-3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leopardmander-rest-4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leopardmander_exotic"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leopardmander_exotic-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leopardmander_exotic-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leopardmander_exotic-3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leopardmander_exotic-4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leopardmander_exotic-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "leopardmander_exotic-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leopardmander_exotic-rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leopardmander_exotic-rest-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leopardmander_exotic-rest-3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leopardmander_exotic-rest-4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "whitewolf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "whitewolf-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "whitewolf-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "whitewolf-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "whitewolf-eyes-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "whitewolf-eyes-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "whitewolf-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whitewolf-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "whitewolf-rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "whitewolf-rest-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackwolf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackwolf-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blackwolf-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackwolf-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackwolf-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackwolf-rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackwolf-rest-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackwolf-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackwolf-eyes-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackwolf-eyes-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sifwolf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sifwolf-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sifwolf-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sifwolf-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sifwolf-rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sifwolf-rest-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sifwolf-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sifwolf-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sifwolf-eyes-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sifwolf-eyes-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dragon_bodySmooth"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dragon_bodyScaled"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dragon_underSmooth"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dragon_underSmooth-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dragon_underSmooth-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dragon_underPlated"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dragon_underPlated-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dragon_underPlated-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dragon_hornsPointy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dragon_hornsCurved"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dragon_hornsCurved2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dragon_hornsJagged"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dragon_hornsCrown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dragon_hornsSkull"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dragon_maneNone"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dragon_maneShaggy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dragon_maneDorsalfin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dragon_mane2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dragon_earsNormal"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dragon_eyesNormal"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dragon_bodySmooth-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dragon_bodyScaled-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dragon_underSmooth-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dragon_underPlated-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dragon_eyesNormal-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dragon_hornsPointy-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dragon_hornsCurved-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dragon_hornsCurved2-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dragon_hornsJagged-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dragon_hornsCrown-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dragon_hornsSkull-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dragon_maneNone-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dragon_maneShaggy-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dragon_maneDorsalfin-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dragon-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dragon_flame"
+dirs = 4
+frames = 10
+delays = [1]
+
+[[state]]
+name = "dragon_flame-rest"
+dirs = 4
+frames = 10
+delays = [1]
+
+[[state]]
+name = "dragon_rage"
+dirs = 4
+frames = 2
+delays = [3]
+
+[[state]]
+name = "cryptdrake_albedo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cryptdrake_albedo-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cryptdrake_albedo-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cryptdrake_albedo-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cryptdrake_albedo-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cryptdrake_albedo-eyes-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cryptdrake_albedo-eyes-2"
+dirs = 4
+frames = 1

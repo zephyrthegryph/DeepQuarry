@@ -1,0 +1,117 @@
+# Generated from dullahan_explorer.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 64
+cols = 11
+
+[[state]]
+name = "dullahanexplo"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahanexplo-rest"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahanexplo-sit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullahanexplo-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "openpanel_nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahanexplo-breastplate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahanexplo-breastplate-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahanexplo-rest-eyes"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahanexplo-rest-lights"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahanexplo-lights"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahanexplo-eyes"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahanexplo-eyecover"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahanexplo-eyecover-rest"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahanexplo-loincloth"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahanexplo-loincloth-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahanexplo-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahanexplo-sleeper-1-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahanexplo-sit-lights"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullahanexplo-sit-eyes"
+dirs = 1
+frames = 1

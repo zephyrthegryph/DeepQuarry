@@ -1,0 +1,34 @@
+# Generated from mobcap.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "mobcap0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mobcap1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mobcap2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mobcap3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mobcap4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mobcap5"
+dirs = 1
+frames = 1

@@ -1,0 +1,181 @@
+# Generated from paper.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "stamp-hos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-hop"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-cap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-qm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-ce"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-rd"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-clown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-cmo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-cent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-intaff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_bin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_bin1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_binb"
+dirs = 1
+frames = 3
+delays = [2]
+
+[[state]]
+name = "paper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_words"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_stamped"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_talisman"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_stamp-cap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_stamped_hop"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_stamped_ce"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_stamped_hos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_stamped_rd"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_stamped_clown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_stamped_cmo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_stamped_denied"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_stamped_cent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_stamp-intaff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_fire"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "featherpen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pen_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pen_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pen_fountain"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-sg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_stamp-sg"
+dirs = 1
+frames = 1

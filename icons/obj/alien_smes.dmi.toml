@@ -1,0 +1,79 @@
+# Generated from alien_smes.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "smes"
+dirs = 1
+frames = 9
+delays = [1]
+
+[[state]]
+name = "smes-og1"
+dirs = 1
+frames = 9
+delays = [1]
+
+[[state]]
+name = "smes-og2"
+dirs = 1
+frames = 9
+delays = [1]
+
+[[state]]
+name = "smes-og3"
+dirs = 1
+frames = 9
+delays = [1]
+
+[[state]]
+name = "smes-og4"
+dirs = 1
+frames = 9
+delays = [1]
+
+[[state]]
+name = "smes-og5"
+dirs = 1
+frames = 9
+delays = [1]
+
+[[state]]
+name = "smes-op0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smes-op1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smes-op2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smes-oc1"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "smes-oc2"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "smes-oc0"
+dirs = 1
+frames = 2
+delays = [10]
+
+[[state]]
+name = "unit"
+dirs = 1
+frames = 9
+delays = [1]

@@ -1,0 +1,624 @@
+# Generated from rocks.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 13
+
+[[state]]
+name = "1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "16"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "17"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "18"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "19"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "21"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "22"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "23"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "24"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "26"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "27"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "28"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "29"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "30"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "31"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "32"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "33"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "34"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "35"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "36"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "37"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "small_rock1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "small_rock2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "small_rock3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "small_rock4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "small_rock5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "big_rocks1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "big_rocks2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "big_rocks3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "big_rocks4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "big_rocks5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lavarocks3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lavarocks1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lavarocks2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Basalt Sand"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Basalt Floor Color Palette"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Basalt Wall, Rocks, & Bones Color Palette"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "basalt1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "basalt2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "basalt3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliffbuilder"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "cliffbuilder-corner"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "cliffbuilder-ramp"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "cliff-1a"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-1a-subtract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-1a-bottom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-1b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-1b-subtract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-1b-bottom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-1c"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-1c-subtract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-1c-bottom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-2a"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-2a-subtract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-2b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-2b-subtract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-2c"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-2c-subtract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-4a"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-4a-subtract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-4b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-4b-subtract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-4c"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-4c-subtract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-8a"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-8a-subtract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-8b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-8b-subtract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-8c"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-8c-subtract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-10-subtract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-6-subtract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-5-subtract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-5-bottom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-9-subtract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-9-bottom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-10-corner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-10-corner-subtract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-6-corner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-6-corner-subtract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-9-corner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-9-corner-subtract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-5-corner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-5-corner-subtract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-9-bottom-corner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-5-bottom-corner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-5-ramp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-5-bottom-ramp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-9-ramp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cliff-9-bottom-ramp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "basalt_water1"
+dirs = 1
+frames = 4
+delays = [3]
+
+[[state]]
+name = "basalt_water2"
+dirs = 1
+frames = 4
+delays = [3]
+
+[[state]]
+name = "basalt_water3"
+dirs = 1
+frames = 4
+delays = [3]
+
+[[state]]
+name = "waterrocks1"
+dirs = 1
+frames = 3
+delays = [4]
+
+[[state]]
+name = "waterrocks2"
+dirs = 1
+frames = 3
+delays = [4]
+
+[[state]]
+name = "basalt4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "warmrocks"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ice1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ice2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ice3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ice4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "icesmall1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "icesmall2"
+dirs = 1
+frames = 1

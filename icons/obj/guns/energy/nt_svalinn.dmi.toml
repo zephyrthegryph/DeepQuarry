@@ -1,0 +1,45 @@
+# Generated from nt_svalinn.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "nt_svalinn"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nt_svalinn100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nt_svalinn75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nt_svalinn50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nt_svalinn25"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "nt_svalinn0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lefthand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand"
+dirs = 4
+frames = 1

@@ -1,0 +1,501 @@
+# Generated from decor.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 22
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsb_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsb_on"
+dirs = 1
+frames = 6
+delays = [1, 1, 1, 3, 1]
+
+[[state]]
+name = "bsc"
+dirs = 1
+frames = 4
+delays = [20, 1, 2, 1]
+hotspots = [{ frame = 1, x = 0, y = 0 }]
+
+[[state]]
+name = "bsc_dust"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "biosyphon"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "von_krabin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "last_shelter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "complicator"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "random_radio"
+dirs = 1
+frames = 2
+delays = [4, 1]
+
+[[state]]
+name = "nt_pedestal0_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nt_pedestal1_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nt_reader_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nt_reader_on"
+dirs = 1
+frames = 4
+delays = [100, 20]
+
+[[state]]
+name = "nt_reader_panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nt_reader_c_green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nt_reader_c_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nt_biocan"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nt_biocan_panel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nt_optable-idle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nt_optable-active"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "optable_panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nt_obelisk"
+dirs = 1
+frames = 2
+delays = [6]
+
+[[state]]
+name = "nt_obelisk_on"
+dirs = 1
+frames = 12
+delays = [0.8]
+
+[[state]]
+name = "nt_cruciforge"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nt_cruciforge_start"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "nt_cruciforge_work"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "nt_cruciforge_pause"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "nt_cruciforge_finish"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "nt_solidifier"
+dirs = 1
+frames = 8
+delays = [3, 3, 3, 6, 3, 3, 3, 6]
+
+[[state]]
+name = "nt_solidifier_on"
+dirs = 1
+frames = 8
+delays = [0.7]
+
+[[state]]
+name = "artwork_statue_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "artwork_statue_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "artwork_statue_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "artwork_statue_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "artwork_statue_5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "artwork_statue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dominator"
+dirs = 1
+frames = 4
+delays = [4, 1, 4, 1]
+
+[[state]]
+name = "dominator-broken"
+dirs = 1
+frames = 8
+delays = [50, 1]
+
+[[state]]
+name = "dominator-blue"
+dirs = 1
+frames = 12
+delays = [1]
+
+[[state]]
+name = "dominator-red"
+dirs = 1
+frames = 12
+delays = [1]
+
+[[state]]
+name = "dominator-orange"
+dirs = 1
+frames = 12
+delays = [1]
+
+[[state]]
+name = "dominator-yellow"
+dirs = 1
+frames = 12
+delays = [1]
+
+[[state]]
+name = "dominator-green"
+dirs = 1
+frames = 12
+delays = [1]
+
+[[state]]
+name = "dominator-purple"
+dirs = 1
+frames = 12
+delays = [1]
+
+[[state]]
+name = "dom_damage"
+dirs = 1
+frames = 9
+delays = [1]
+
+[[state]]
+name = "gel_cocoon"
+dirs = 1
+frames = 20
+delays = [1]
+
+[[state]]
+name = "tank_broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tank_larva"
+dirs = 1
+frames = 2
+delays = [10]
+
+[[state]]
+name = "stump"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "conduit_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "conduit_starting"
+dirs = 1
+frames = 19
+delays = [1, 1, 1, 1, 2, 1]
+loop = 1
+
+[[state]]
+name = "conduit_spin"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "conduit_stopping"
+dirs = 1
+frames = 5
+delays = [1, 1, 0.7, 0.3, 0.4]
+loop = 1
+
+[[state]]
+name = "core_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "core_inactive"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "core_active"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "core_warmup"
+dirs = 1
+frames = 6
+delays = [5, 1, 1, 4, 0.5, 1]
+loop = 1
+
+[[state]]
+name = "core_shutdown"
+dirs = 1
+frames = 5
+delays = [0.5, 1]
+loop = 1
+
+[[state]]
+name = "tradebeacon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tradebeacon_active"
+dirs = 1
+frames = 9
+delays = [2]
+
+[[state]]
+name = "tradebeacon_panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tradebeacon_sending"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "treadebeacon_sending_active"
+dirs = 1
+frames = 7
+delays = [2]
+
+[[state]]
+name = "tradebeacon_sending_panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smelter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smelter-process"
+dirs = 1
+frames = 8
+delays = [1, 0.7]
+
+[[state]]
+name = "sorter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sorter-process"
+dirs = 1
+frames = 6
+delays = [2, 2, 3, 4, 3, 2]
+
+[[state]]
+name = "stamper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamper_on"
+dirs = 1
+frames = 64
+delays = [1]
+loop = 1
+
+[[state]]
+name = "stamper_proc"
+dirs = 1
+frames = 64
+delays = [1]
+loop = 1
+
+[[state]]
+name = "stamper_but"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tgmc_console1_on"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "tgmc_console1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tgmc_console2_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tgmc_console2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tgmc_console3_on"
+dirs = 1
+frames = 3
+delays = [3]
+
+[[state]]
+name = "tgmc_console3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tgmc_console4_on"
+dirs = 1
+frames = 5
+delays = [10, 4, 3]
+
+[[state]]
+name = "tgmc_console4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tgmc_console5_on"
+dirs = 1
+frames = 3
+delays = [3]
+
+[[state]]
+name = "tgmc_console5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tgmc_sentry"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "minirocket_pod"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ob_warhead_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ob_warhead_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ob_warhead_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ob_warhead_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "angel"
+dirs = 4
+frames = 1

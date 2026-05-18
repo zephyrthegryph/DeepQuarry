@@ -1,0 +1,26 @@
+# Generated from meatland.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "bloodfloor_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bloodfloor_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bloodwall_2"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "bloodwall_4"
+dirs = 1
+frames = 12
+delays = [1]

@@ -1,0 +1,169 @@
+# Generated from synx_modular.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 12
+
+[[state]]
+name = "synx_stomach_distended"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synx_transformed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synx_living"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synx_bodyNormal-s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synx_bodyNormal-t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synx_bodyNormal"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synx_dead"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synx_living-stomach-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synx_living-stomach-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synx_eyes-t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synx_eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synx_eyesNormal-t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synx_eyesNormal"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synx_hornsNone-t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synx_hornsNone"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synx_hornsCurved-t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synx_hornsCurved"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synx_hornsStraight-t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synx_hornsStraight"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synx_hornsNub-t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synx_hornsNub"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synx_hornsCapra-t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synx_hornsCapra"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synx_markingsNone-t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synx_markingsNone"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synx_markingsStar-t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synx_markingsStar"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synx_markingsBasic-t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synx_markingsBasic"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synx_markingsShort-t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synx_markingsShort"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synx_markingsLong-t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synx_markingsLong"
+dirs = 4
+frames = 1

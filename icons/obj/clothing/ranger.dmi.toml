@@ -1,0 +1,154 @@
+# Generated from ranger.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "ranger_satchel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ranger_belt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_ranger_helmet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_ranger_uniform"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_ranger_gloves"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_ranger_boots"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "black_ranger_helmet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "black_ranger_uniform"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "black_ranger_gloves"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "black_ranger_boots"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green_ranger_helmet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green_ranger_uniform"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green_ranger_gloves"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green_ranger_boots"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pink_ranger_helmet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pink_ranger_uniform"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pink_ranger_gloves"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pink_ranger_boots"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyan_ranger_helmet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyan_ranger_uniform"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyan_ranger_gloves"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyan_ranger_boots"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orange_ranger_helmet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orange_ranger_uniform"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orange_ranger_gloves"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orange_ranger_boots"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow_ranger_helmet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow_ranger_uniform"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow_ranger_gloves"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow_ranger_boots"
+dirs = 1
+frames = 1

@@ -1,0 +1,358 @@
+# Generated from lefthand_melee.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 24
+
+[[state]]
+name = "cane"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "browncane"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "staff"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "broom"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "foldcane"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eaxe"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eaxe_blade"
+dirs = 4
+frames = 2
+delays = [2]
+
+[[state]]
+name = "baton"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blade"
+dirs = 4
+frames = 4
+delays = [2, 2, 1]
+
+[[state]]
+name = "bucklerOLD"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "classic_baton"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "riot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "riot_walk"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "riot_run"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eshield"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eshield_blade"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cutlass"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cutlass_blade"
+dirs = 4
+frames = 2
+delays = [2]
+
+[[state]]
+name = "cutlass_blade_rainbow"
+dirs = 4
+frames = 12
+delays = [1.5, 0.5, 1, 1, 0.5, 1.5, 1.5, 0.5, 1, 1, 0.5, 1.5]
+
+[[state]]
+name = "cultblade_old"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "buckler"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chain"
+dirs = 4
+frames = 12
+delays = [1]
+
+[[state]]
+name = "curator_whip"
+dirs = 4
+frames = 12
+delays = [1]
+
+[[state]]
+name = "prod"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "arm_blade"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ling_claw"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teleriot1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teleriot0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "telebaton1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "telebaton0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "slimebaton"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sord"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "toysword0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "toysword1"
+dirs = 4
+frames = 2
+delays = [2]
+
+[[state]]
+name = "swordchain"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vhammer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "esword"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "esword_blade"
+dirs = 4
+frames = 2
+delays = [2]
+
+[[state]]
+name = "esword_blade_rainbow"
+dirs = 4
+frames = 12
+delays = [1.5, 0.5, 1, 1, 0.5, 1.5, 1.5, 0.5, 1, 1, 0.5, 1.5]
+
+[[state]]
+name = "ionrapier"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ionrapier_blade"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "umbrella_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "umbrella_closed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "umbrella_open_a"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "umbrella_closed_a"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "soulblade"
+dirs = 4
+frames = 4
+delays = [10, 3]
+
+[[state]]
+name = "whitecane"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crutch"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crysknife"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bone_dagger"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spectral"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "sabre"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spellblade"
+dirs = 4
+frames = 7
+delays = [8, 1, 1, 5, 1, 1, 4]
+
+[[state]]
+name = "lightblade"
+dirs = 4
+frames = 2
+delays = [2]
+
+[[state]]
+name = "cultblade"
+dirs = 4
+frames = 5
+delays = [10, 0.6, 0.6, 0.6, 3]
+rewind = true
+
+[[state]]
+name = "augment_handblade"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "augment_armblade"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "forcemaul0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "forcemaul_active0"
+dirs = 4
+frames = 3
+delays = [2]
+
+[[state]]
+name = "forcemaul_nocell0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "forcemaul1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "forcemaul_active1"
+dirs = 4
+frames = 3
+delays = [2]
+
+[[state]]
+name = "forcemaul_nocell1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "claw_hammer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tagknifeomni"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tagknifeblue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tagknifered"
+dirs = 4
+frames = 1

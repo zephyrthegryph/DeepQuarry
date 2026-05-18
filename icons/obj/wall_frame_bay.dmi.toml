@@ -1,0 +1,219 @@
+# Generated from wall_frame_bay.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 12
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "frame0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "frame1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "frame2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "frame3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "frame4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "frame5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "frame6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "frame7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "frame_other0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "frame_other1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "frame_other2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "frame_other3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "frame_other4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "frame_other5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "frame_other6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "frame_other7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stripe0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stripe1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stripe2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stripe3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stripe4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stripe5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stripe6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stripe7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stripe_other0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stripe_other1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stripe_other2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stripe_other3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stripe_other4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stripe_other5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stripe_other6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stripe_other7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sp_glass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sp_rglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sp_phoron"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sp_rphoron"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spr_glass_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spr_rglass_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spr_phoron_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spr_rphoron_g"
+dirs = 1
+frames = 1

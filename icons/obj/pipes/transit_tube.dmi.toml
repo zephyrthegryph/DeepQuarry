@@ -1,0 +1,139 @@
+# Generated from transit_tube.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "E-W"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "N-S"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "D-SE"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "D-SW"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "D-NW"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "D-NE"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "S-NE"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "N-SW"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "W-SE"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "E-NW"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "E-SW"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "S-NW"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "W-NE"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "N-SE"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "NE-SW"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "NW-SE"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "S-NE-NW"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "W-NE-SE"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "N-SE-SW"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "E-NW-SW"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "E-SW-NW"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "W-SE-NE"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "S-NW-NE"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "N-SW-SE"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "E-W-Pass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "N-S-Pass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "auto"
+dirs = 1
+frames = 1

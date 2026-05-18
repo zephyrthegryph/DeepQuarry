@@ -1,0 +1,26 @@
+# Generated from 96x96.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 96
+height = 96
+cols = 4
+
+[[state]]
+name = "empress_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "empress_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "empress_sleep"
+dirs = 1
+frames = 4
+delays = [30, 15, 30, 15]
+
+[[state]]
+name = "empress_rest"
+dirs = 1
+frames = 4
+delays = [30, 15, 30, 15]

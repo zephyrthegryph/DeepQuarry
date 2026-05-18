@@ -1,0 +1,29 @@
+# Generated from voidwalker.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "kidnap_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kidnap_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kidnap_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "void_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "void_2"
+dirs = 1
+frames = 1

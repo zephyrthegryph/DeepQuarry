@@ -1,0 +1,994 @@
+# Generated from catborg_variant.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 49
+
+[[state]]
+name = "vixmed-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vixmed-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixmed-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixmed-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixmed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixmed"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "vixjani-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vixjani-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixjani-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixjani-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixjani"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixjani"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "vixmine-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vixmine-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixmine-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixmine-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixmine"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixmine"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "vixcargo-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vixcargo-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixcargo-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixcargo-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixcargo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixcargo"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "vixserv-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vixserv-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixserv-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixserv-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixserv"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixserv"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "vixsci-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vixsci-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixsci-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixsci-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixsci"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixsci"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "vixengi-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vixengi-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixengi-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixengi-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixengi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixengi"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "vixsec-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vixsec-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixsec-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixsec-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixsec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixsec"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "vixpk-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vixpk-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixpk-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixpk-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixpk"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixpk"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "vixmed-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixmed-eyes"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "vixmed-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixmed-lights"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "vixjani-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixjani-eyes"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "vixjani-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixjani-lights"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "vixmine-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixmine-eyes"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "vixmine-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixmine-lights"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "vixcargo-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixcargo-eyes"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "vixcargo-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixcargo-lights"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "vixserv-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixserv-eyes"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "vixserv-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixserv-lights"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "vixsci-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixsci-eyes"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "vixsci-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixsci-lights"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "vixengi-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixengi-eyes"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "vixengi-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixengi-lights"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "vixsec-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixsec-eyes"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "vixsec-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixsec-lights"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "vixpk-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixpk-eyes"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "vixpk-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixpk-lights"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "vixmed-sleeper-1-g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixmed-sleeper-1-r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixmed-sleeper-1-g"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "vixmed-sleeper-1-r"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "vixmed-sleeper-1-r-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixmed-sleeper-1-g-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixmed-sleeper-1-r-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixmed-sleeper-1-g-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixmed-sleeper-1-r-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixmed-sleeper-1-g-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixjani-sleeper-1-r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixjani-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixjani-sleeper-1"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "vixjani-sleeper-1-r"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "vixjani-sleeper-1-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixjani-sleeper-1-r-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixjani-sleeper-1-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixjani-sleeper-1-r-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixjani-sleeper-1-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixjani-sleeper-1-r-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixmine-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixmine-sleeper-1-r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixmine-sleeper-1"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "vixmine-sleeper-1-r"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "vixmine-sleeper-1-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixmine-sleeper-1-r-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixmine-sleeper-1-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixmine-sleeper-1-r-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixmine-sleeper-1-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixmine-sleeper-1-r-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixengi-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixengi-sleeper-1-r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixengi-sleeper-1"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "vixengi-sleeper-1-r"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "vixengi-sleeper-1-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixengi-sleeper-1-r-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixengi-sleeper-1-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixengi-sleeper-1-r-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixengi-sleeper-1-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixengi-sleeper-1-r-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixpk-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixpk-sleeper-1-r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixpk-sleeper-1"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "vixpk-sleeper-1-r"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "vixpk-sleeper-1-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixpk-sleeper-1-r-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixpk-sleeper-1-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixpk-sleeper-1-r-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixpk-sleeper-1-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixpk-sleeper-1-r-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixcargo-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixcargo-sleeper-1-r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixcargo-sleeper-1"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "vixcargo-sleeper-1-r"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "vixcargo-sleeper-1-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixcargo-sleeper-1-r-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixcargo-sleeper-1-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixcargo-sleeper-1-r-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixcargo-sleeper-1-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixcargo-sleeper-1-r-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixserv-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixserv-sleeper-1-r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixserv-sleeper-1"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "vixserv-sleeper-1-r"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "vixserv-sleeper-1-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixserv-sleeper-1-r-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixserv-sleeper-1-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixserv-sleeper-1-r-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixserv-sleeper-1-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixserv-sleeper-1-r-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixsci-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixsci-sleeper-1-r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixsci-sleeper-1"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "vixsci-sleeper-1-r"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "vixsci-sleeper-1-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixsci-sleeper-1-r-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixsci-sleeper-1-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixsci-sleeper-1-r-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixsci-sleeper-1-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixsci-sleeper-1-r-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixsec-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixsec-sleeper-1-r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixsec-sleeper-1"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "vixsec-sleeper-1-r"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "vixsec-sleeper-1-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixsec-sleeper-1-r-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixsec-sleeper-1-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixsec-sleeper-1-r-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixsec-sleeper-1-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vixsec-sleeper-1-r-sit"
+dirs = 4
+frames = 1

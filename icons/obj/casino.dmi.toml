@@ -1,0 +1,528 @@
+# Generated from casino.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 24
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "headset"
+dirs = 1
+frames = 8
+delays = [5]
+
+[[state]]
+name = "headset_alt"
+dirs = 1
+frames = 8
+delays = [5]
+
+[[state]]
+name = "cypherkey"
+dirs = 1
+frames = 8
+delays = [5]
+
+[[state]]
+name = "spacecasinocash1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacecasinocash10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacecasinocash20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacecasinocash50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacecasinocash100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacecasinocash200"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacecasinocash500"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacecasinocash1000"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "platinum_chip"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "casinomanual"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "casinowallet_black"
+dirs = 1
+frames = 18
+delays = [1]
+
+[[state]]
+name = "casinowallet_brown"
+dirs = 1
+frames = 18
+delays = [1]
+
+[[state]]
+name = "casinowallet_white"
+dirs = 1
+frames = 18
+delays = [1]
+
+[[state]]
+name = "dance_pole"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "casinoslave_hub_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "casinoslave_hub_on"
+dirs = 1
+frames = 10
+delays = [5]
+
+[[state]]
+name = "chipmachine"
+dirs = 1
+frames = 12
+delays = [1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 25]
+
+[[state]]
+name = "ntslotmachine"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ntslotmachine_rolling"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "ntslotmachine_winning"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "ntslotmachine_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ntslotmachine_broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slotmachine"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slotmachine_rolling"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "slotmachine_winning"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "slotmachine_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "premiumdispenser"
+dirs = 4
+frames = 7
+delays = [2]
+
+[[state]]
+name = "premiumbooze"
+dirs = 4
+frames = 12
+delays = [2]
+
+[[state]]
+name = "premiumbooze-vend"
+dirs = 4
+frames = 6
+delays = [2]
+
+[[state]]
+name = "premiumbooze-deny"
+dirs = 4
+frames = 2
+delays = [2]
+
+[[state]]
+name = "premiumbooze-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "premiumbooze-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "premiumbooze-panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "premiumfood"
+dirs = 4
+frames = 12
+delays = [2]
+
+[[state]]
+name = "premiumfood-vend"
+dirs = 4
+frames = 6
+delays = [2]
+
+[[state]]
+name = "premiumfood-deny"
+dirs = 4
+frames = 2
+delays = [2]
+
+[[state]]
+name = "premiumfood-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "premiumfood-panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "premiumfood-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "premiumcigs"
+dirs = 4
+frames = 12
+delays = [2]
+
+[[state]]
+name = "premiumcigs-vend"
+dirs = 4
+frames = 6
+delays = [2]
+
+[[state]]
+name = "premiumcigs-deny"
+dirs = 4
+frames = 2
+delays = [2]
+
+[[state]]
+name = "premiumcigs-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "premiumcigs-panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "premiumcigs-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "roulette_table"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "roulette_long"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "roulette_wheel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "roulette_wheel_spinning"
+dirs = 1
+frames = 2
+delays = [1.7]
+
+[[state]]
+name = "roulette_wheel_long"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "roulette_wheel_long_spinning"
+dirs = 1
+frames = 2
+delays = [1.7]
+
+[[state]]
+name = "blackjack_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackjack_m"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackjack_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "craps_table"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "casino_prize_dispenser"
+dirs = 1
+frames = 24
+delays = [4, 1]
+
+[[state]]
+name = "casino_prize_dispenser-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "casino_prize_dispenser-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "casino_prize_dispenser-vend"
+dirs = 1
+frames = 9
+delays = [1, 1, 3, 1, 1, 1, 1, 3, 1]
+
+[[state]]
+name = "casino_prize_dispenser-deny"
+dirs = 1
+frames = 6
+delays = [1, 1, 3, 1]
+
+[[state]]
+name = "casino_prize_dispenser-panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "casino_delivery"
+dirs = 1
+frames = 2
+delays = [8]
+
+[[state]]
+name = "casino_delivery_active"
+dirs = 1
+frames = 2
+delays = [2.5]
+
+[[state]]
+name = "casino_box"
+dirs = 1
+frames = 20
+delays = [1]
+
+[[state]]
+name = "roulette_ball"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "roulette_ball_glass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "roulette_ball_glass_full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "roulette_ball_gold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "roulette_ball_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "roulette_ball_purple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "roulette_ball_green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "roulette_ball_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "roulette_ball_yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "roulette_ball_orange"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "roulette_ball_moon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "roulette_ball_earth"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacecasinocash1-old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacecasinocash10-old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacecasinocash20-old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacecasinocash50-old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacecasinocash100-old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacecasinocash200-old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacecasinocash500-old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacecasinocash1000-old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "platinum_chip-old"
+dirs = 1
+frames = 28
+delays = [1]
+
+[[state]]
+name = "generic_delivery"
+dirs = 1
+frames = 2
+delays = [8]
+
+[[state]]
+name = "generic_delivery_active"
+dirs = 1
+frames = 2
+delays = [2.5]
+
+[[state]]
+name = "gamble_sweeper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gamble_four"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gamble_space"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gamble_dice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gamble_chess"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gamble_ninemen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gamble_toe"
+dirs = 1
+frames = 1

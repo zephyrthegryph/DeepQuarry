@@ -1,0 +1,327 @@
+# Generated from catborg_science.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 23
+
+[[state]]
+name = "sci"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sci"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "sci-glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sci-glow"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "sci-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sci-eyes"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "sci-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sci-lights"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "sci-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sci-sleeper-1"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "sci-sleeper-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sci-sleeper-2"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "sci-throat-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sci-throat-1"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "sci-throat-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sci-throat-2"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "sci-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sci-bellyup-glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sci-sleeper-1-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sci-sleeper-2-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sci-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sci-sit-glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sci-sleeper-1-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sci-sleeper-2-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sci-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sci-rest-glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sci-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "openpanel-nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel-nc"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "openpanel-c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel-c"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "openpanel-w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel-w"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "sci-disabler"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sci-disabler"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "sci-taser"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sci-taser"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "sci-laser"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sci-laser"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "sleeper-g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sleeper-g"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "sleeper-r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sleeper-r"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "sci-shield"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wreck-overlay"
+dirs = 1
+frames = 18
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 40]
+
+[[state]]
+name = "SPRITES-PAST-HERE-ARE-NOT-IMPLEMENTED"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sci-sleeper-1-default"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sci-throat-1-default"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sci-throat-1-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sci-throat-1-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sci-sleeper-2-default"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sci-throat-2-default"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sci-throat-2-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sci-throat-2-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sci-sleeper-1-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sci-sleeper-2-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sci-throat-1-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sci-throat-2-rest"
+dirs = 4
+frames = 1

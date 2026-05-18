@@ -1,0 +1,37 @@
+# Generated from holosign.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "surgery"
+dirs = 1
+frames = 12
+delays = [15, 1, 1, 1, 20, 1, 1, 1, 15, 1]
+
+[[state]]
+name = "sign_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sign_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emergencyexit"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "baropen"
+dirs = 1
+frames = 10
+delays = [5, 5, 1, 1, 1, 1, 5]
+
+[[state]]
+name = "barclosed"
+dirs = 1
+frames = 1

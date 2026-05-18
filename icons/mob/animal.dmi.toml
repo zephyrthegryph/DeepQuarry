@@ -1,0 +1,1056 @@
+# Generated from animal.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 29
+
+[[state]]
+name = "cow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cow_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cow_gib"
+dirs = 1
+frames = 12
+delays = [1]
+
+[[state]]
+name = "chicken_brown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chicken_black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chicken_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chicken_brown"
+dirs = 4
+frames = 3
+delays = [2]
+movement = true
+
+[[state]]
+name = "chicken_black"
+dirs = 4
+frames = 3
+delays = [2]
+movement = true
+
+[[state]]
+name = "chicken_white"
+dirs = 4
+frames = 3
+delays = [2]
+movement = true
+
+[[state]]
+name = "chicken_brown_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chicken_black_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chicken_white_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chick"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chick_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chick_gib"
+dirs = 1
+frames = 16
+delays = [6, 1]
+
+[[state]]
+name = "lizard_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lizard_green_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lizard_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lizard_red_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lizard_orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lizard_orange_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lizard_yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lizard_yellow_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lizard_cyan"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lizard_cyan_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lizard_redblue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lizard_redblue_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lizard_gib"
+dirs = 1
+frames = 11
+delays = [6, 1]
+
+[[state]]
+name = "brownbear"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "brownbear_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brownbear_gib"
+dirs = 1
+frames = 15
+delays = [1]
+
+[[state]]
+name = "bearfloor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bear"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bear_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bear_gib"
+dirs = 1
+frames = 15
+delays = [1]
+
+[[state]]
+name = "tomato"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tomato_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tomato"
+dirs = 4
+frames = 3
+delays = [2]
+movement = true
+
+[[state]]
+name = "guard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "guard_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "guard-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hunter"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hunter_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hunter-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nurse"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nurse_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nurse-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pepper"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pepper_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pepper-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phoron"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phoron-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phoron_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spark"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spark_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spark-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "frost"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "frost_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "frost-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lurker"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lurker_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lurker-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tunneler"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tunneler_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tunneler-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pit_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pit-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "webslinger"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "webslinger_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "webslinger-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "carrier"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "carrier_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carrier-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nursemed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nursemed_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nursemed-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mushroom"
+dirs = 4
+frames = 3
+delays = [1]
+rewind = true
+
+[[state]]
+name = "mushroom_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crab"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "crab"
+dirs = 4
+frames = 3
+delays = [1]
+movement = true
+
+[[state]]
+name = "crab_dead"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "sif_crab"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sif_crab_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mouse_brown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mouse_brown"
+dirs = 4
+frames = 3
+delays = [2]
+movement = true
+
+[[state]]
+name = "mouse_brown_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mouse_brown_splat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mouse_brown_sleep"
+dirs = 1
+frames = 2
+delays = [15]
+
+[[state]]
+name = "mouse_gray"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mouse_gray"
+dirs = 4
+frames = 3
+delays = [2]
+movement = true
+
+[[state]]
+name = "mouse_gray_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mouse_gray_splat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mouse_gray_sleep"
+dirs = 1
+frames = 2
+delays = [15]
+
+[[state]]
+name = "mouse_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mouse_white"
+dirs = 4
+frames = 3
+delays = [2]
+movement = true
+
+[[state]]
+name = "mouse_white_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mouse_white_splat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mouse_white_sleep"
+dirs = 1
+frames = 2
+delays = [15]
+
+[[state]]
+name = "mouse_rat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mouse_rat"
+dirs = 4
+frames = 3
+delays = [2]
+movement = true
+
+[[state]]
+name = "mouse_rat_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mouse_rat_splat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mouse_rat_sleep"
+dirs = 1
+frames = 2
+delays = [15]
+
+[[state]]
+name = "mouse_black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mouse_black"
+dirs = 4
+frames = 3
+delays = [2]
+movement = true
+
+[[state]]
+name = "mouse_black_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mouse_black_splat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mouse_black_sleep"
+dirs = 1
+frames = 2
+delays = [15]
+
+[[state]]
+name = "mouse_operative"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mouse_operative_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mouse_operative_splat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mouse_operative_sleep"
+dirs = 1
+frames = 2
+delays = [15]
+
+[[state]]
+name = "goat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "goat_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "evilcrab"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "evilcrab_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "clown_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "forgotten"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "forgotten_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "russianmelee"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "russianranged"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "drone"
+dirs = 4
+frames = 9
+delays = [1]
+
+[[state]]
+name = "drone_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "droneM"
+dirs = 4
+frames = 9
+delays = [1]
+
+[[state]]
+name = "droneM_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brainslug_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brainslug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "goose"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "goose_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "penguin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "penguin_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "generic_gib"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "drone-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "miningdrone-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "miningdrone"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "miningdrone_attack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "miningdrone_dead"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "firefly_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "firefly"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duck_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "butterfly_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "leech_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "leech"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raccoon_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "raccoon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "firefly-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "butterfly"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "duck"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duck-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duck_base"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pillbug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pillbug"
+dirs = 4
+frames = 4
+delays = [1]
+movement = true
+
+[[state]]
+name = "pillbug_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hare_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hare_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hare"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "moth"
+dirs = 4
+frames = 4
+delays = [3]
+
+[[state]]
+name = "moth_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "siffet"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "siffet_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "possum"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "possum_sleep"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "possum_aaa"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "possum_dead"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "poppy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "poppy_sleep"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "poppy_aaa"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "poppy_dead"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fennec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fennec_sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fennec_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fennec_dead"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mothroach"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mothroach_sleep"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mothroach_dead"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mothroach_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "barroach_dead"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "barroach_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "barroach_sleep"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "barroach"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "armadillo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "armadillo"
+dirs = 4
+frames = 4
+delays = [1]
+movement = true
+
+[[state]]
+name = "armadillo_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armadillo_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mouse_miner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mouse_miner_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mouse_miner_splat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mouse_miner_sleep"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "golden_goose"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "golden_goose_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Deer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Deer_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Kyle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Kyle_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "synx"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "polynoodle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "guardpet-eyes"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "guardpet"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "guardpet_dead"
+dirs = 1
+frames = 2
+delays = [1]

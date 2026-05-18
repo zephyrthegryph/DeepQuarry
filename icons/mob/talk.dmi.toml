@@ -1,0 +1,243 @@
+# Generated from talk.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "normal_typing"
+dirs = 1
+frames = 3
+delays = [5]
+
+[[state]]
+name = "normal0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "normal1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "normal2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slime_typing"
+dirs = 1
+frames = 3
+delays = [5]
+
+[[state]]
+name = "slime0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slime1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slime2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "comm_typing"
+dirs = 1
+frames = 3
+delays = [5]
+
+[[state]]
+name = "comm0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "comm1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "comm2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "machine_typing"
+dirs = 1
+frames = 3
+delays = [5]
+
+[[state]]
+name = "machine0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "machine1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "machine2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "synthetic_typing"
+dirs = 1
+frames = 3
+delays = [5]
+
+[[state]]
+name = "synthetic0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "synthetic1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "synthetic2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "synthetic_evil_typing"
+dirs = 1
+frames = 3
+delays = [5]
+
+[[state]]
+name = "synthetic_evil0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "synthetic_evil1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "synthetic_evil2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyber_typing"
+dirs = 1
+frames = 3
+delays = [5]
+
+[[state]]
+name = "cyber0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyber1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyber2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ghost_typing"
+dirs = 1
+frames = 3
+delays = [5]
+
+[[state]]
+name = "ghost0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ghost1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ghost2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "h0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "h1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hR0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hR1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radio1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radio0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radio2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "h2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hR2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "typing"
+dirs = 1
+frames = 3
+delays = [4]

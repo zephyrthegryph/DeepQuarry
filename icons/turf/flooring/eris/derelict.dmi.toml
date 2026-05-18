@@ -1,0 +1,44 @@
+# Generated from derelict.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "derelict1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "derelict1_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "derelict2_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "derelict3_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "derelict4_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "derelict2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "derelict3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "derelict4"
+dirs = 1
+frames = 1

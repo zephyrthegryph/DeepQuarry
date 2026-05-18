@@ -1,0 +1,359 @@
+# Generated from gun_toy.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 10
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "foambox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "foamdart_proj"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "foamdart"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "foambox_riot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "foamdart_riot_proj"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "foamdart_riot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "toy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toy-9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toy-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toysmg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toysmg-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "foamcrossbow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "foamcrossbow_halloween"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pistol"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pistol-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "n99"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "n99-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shotgun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shotgun-pump"
+dirs = 1
+frames = 6
+delays = [1, 1, 1, 1.5, 1]
+
+[[state]]
+name = "moistnugget"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "moistnugget-cycling"
+dirs = 1
+frames = 6
+delays = [2, 0.75, 0.5, 0.5, 0.5, 1]
+rewind = true
+
+[[state]]
+name = "leveraction"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "leveraction-cycling"
+dirs = 1
+frames = 4
+delays = [2, 1, 1, 2]
+rewind = true
+
+[[state]]
+name = "sawnshotgun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "revolver"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "big_iron"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smg-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "capbox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cap_gun_box"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cap_gun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "omnitag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "omnitag_open"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "omnitag0"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "omnitag25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "omnitag50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "omnitag75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "omnitag100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluetag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluetag_open"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "bluetag0"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "bluetag25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluetag50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluetag75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluetag100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redtag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redtag_open"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "redtag0"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "redtag25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redtag50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redtag75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redtag100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluetwo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluetwo_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluetwo0"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "bluetwo25"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "bluetwo50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluetwo75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluetwo100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redtwo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redtwo_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redtwo0"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "redtwo25"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "redtwo50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redtwo75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redtwo100"
+dirs = 1
+frames = 1

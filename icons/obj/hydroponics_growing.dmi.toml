@@ -1,0 +1,1191 @@
+# Generated from hydroponics_growing.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 16
+
+[[state]]
+name = "alien-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien2-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien2-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien2-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien2-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien2-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien3-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien3-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien3-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien3-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien4-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien4-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien4-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien4-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien4-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien4-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien4-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ambrosia-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ambrosia-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ambrosia-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ambrosia-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ambrosia-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ambrosia-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ambrosia-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush2-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush2-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush2-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush2-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush2-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush2-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush2-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush3-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush3-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush3-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush3-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush3-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush3-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush3-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush4-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush4-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush4-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush4-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush4-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush4-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush4-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush5-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush5-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush5-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush5-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush5-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush5-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush6-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush6-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush6-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush6-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush6-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush7-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush7-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush7-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush7-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush7-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carrot-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carrot-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carrot-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carrot-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carrot-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carrot2-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carrot2-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carrot2-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carrot2-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carrot2-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carrot2-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carrot2-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chute-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chute-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chute-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chute-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chute-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chute-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chute-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "corn-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "corn-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "corn-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "corn-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "corn-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flower-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flower-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flower-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flower-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flower-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flower2-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flower2-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flower2-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flower2-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flower3-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flower3-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flower3-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flower3-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass2-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass2-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass2-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass2-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass2-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom10-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom10-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom10-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom10-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom2-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom2-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom2-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom2-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom3-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom3-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom3-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom3-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom4-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom4-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom4-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom4-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom5-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom5-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom5-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom5-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom6-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom6-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom6-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom6-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom6-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom7-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom7-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom7-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom7-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom7-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom8-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom8-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom8-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom8-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom9-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom9-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom9-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom9-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stalk-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stalk-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stalk-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stalk-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stalk-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stalk-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stalk2-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stalk2-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stalk2-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stalk2-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stalk2-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stalk2-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stalk2-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stalk3-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stalk3-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stalk3-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stalk3-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stalk3-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree2-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree2-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree2-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree2-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree2-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree2-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree3-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree3-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree3-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree3-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree3-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree3-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree4-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree4-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree4-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree4-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree4-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree4-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree4-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree5-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree5-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree5-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree5-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree5-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree5-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree5-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vine-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vine-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vine-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vine2-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vine2-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vine2-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vine2-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vine2-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flower4-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flower4-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flower4-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flower4-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flower4-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gnomes-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gnomes-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gnomes-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gnomes-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gnomes-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gnomes-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gnomes-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "worm-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "worm-2"
+dirs = 1
+frames = 5
+delays = [10]
+
+[[state]]
+name = "worm-3"
+dirs = 1
+frames = 3
+delays = [5]
+rewind = true
+
+[[state]]
+name = "worm-4"
+dirs = 1
+frames = 4
+delays = [5]
+rewind = true
+
+[[state]]
+name = "worm-5"
+dirs = 1
+frames = 4
+delays = [5]
+rewind = true
+
+[[state]]
+name = "worm-dead"
+dirs = 1
+frames = 1

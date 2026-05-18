@@ -1,0 +1,65 @@
+# Generated from nt_sprayer.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "nt_sprayer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nt_sprayer_slide"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nt_sprayer_mag_slide"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nt_sprayer_mag"
+dirs = 1
+frames = 3
+delays = [1.5]
+
+[[state]]
+name = "righthand_mag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand_mag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "onsuit_mag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "onsuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "back_mag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "back"
+dirs = 4
+frames = 1

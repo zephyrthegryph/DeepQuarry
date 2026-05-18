@@ -1,0 +1,14 @@
+# Generated from env_message.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 2
+
+[[state]]
+name = "env_message"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "env_message_red"
+dirs = 1
+frames = 1

@@ -1,0 +1,79 @@
+# Generated from loot_piles.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "randompile"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "junk_pile1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "junk_pile2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "junk_pile3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "junk_pile4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "junk_pile5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "trash_pile1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "trash_pile2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boxfort"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "technical_pile1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "technical_pile2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "technical_pile3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien_pile1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien_pile2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medicine_cabinet"
+dirs = 1
+frames = 1

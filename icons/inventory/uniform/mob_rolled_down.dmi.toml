@@ -1,0 +1,450 @@
+# Generated from mob_rolled_down.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 19
+
+[[state]]
+name = ""
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkblue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lightblue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "aqua"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lightgreen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yellowgreen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lightbrown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "brown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "prison"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lightred"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkred"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "maroon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pink"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lightpurple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "purple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grey"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "captain"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hop"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cmo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "genetics"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chemistry"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "virology"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sterile"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chief"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engine"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hazard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "atmos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "aether"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "qm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "miner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "robotics"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "science"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chef"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hydroponics"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "janitor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ert_uniform"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tactifool"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hos_corporate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "warden"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "warden_corporate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sec_corporate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pcrc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "det_corporate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "harper_uniform"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kilt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackutility"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackutility_crew"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackutility_com"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "navyutility"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "navyutilityoff"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "navycombat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greyutility"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tanutility"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greenutility"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "explorer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mbill_flight"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hedberg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gsa_work"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gsa"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xion"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "retro_sweater"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pizzadelivery"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "talon_jumpsuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "talon_captain"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "talon_pilot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "talon_security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "talon_basic"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bodysuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bodysuit_eva"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bodysuit_cent"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bodysuit_com"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bodysuit_sec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bodysuit_seccom"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 4, y = 24 }]
+
+[[state]]
+name = "bodysuit_haz"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bodysuit_min"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bodysuit_emt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bodysuit_exp"
+dirs = 4
+frames = 1

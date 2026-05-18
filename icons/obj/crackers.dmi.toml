@@ -1,0 +1,44 @@
+# Generated from crackers.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_crown_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "joke"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "heart"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hazard"
+dirs = 1
+frames = 1

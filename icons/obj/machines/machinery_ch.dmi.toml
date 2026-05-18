@@ -1,0 +1,56 @@
+# Generated from machinery_ch.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "mw"
+dirs = 1
+frames = 3
+delays = [10]
+
+[[state]]
+name = "mw1"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "mw0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mwo"
+dirs = 1
+frames = 2
+delays = [2.5]
+
+[[state]]
+name = "mwb"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "mwbloody"
+dirs = 1
+frames = 3
+delays = [10]
+
+[[state]]
+name = "mwbloodyo"
+dirs = 1
+frames = 2
+delays = [2.5]
+
+[[state]]
+name = "mwbloody1"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "mwbloody0"
+dirs = 1
+frames = 1

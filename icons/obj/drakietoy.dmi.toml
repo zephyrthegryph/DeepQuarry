@@ -1,0 +1,74 @@
+# Generated from drakietoy.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "secdrake"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meddrake"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scidrake"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "traumadrake"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "janidrake"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engdrake"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "minedrake"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secdrake-lights"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meddrake-lights"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scidrake-lights"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "traumadrake-lights"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "janidrake-lights"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engdrake-lights"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "minedrake-lights"
+dirs = 1
+frames = 1

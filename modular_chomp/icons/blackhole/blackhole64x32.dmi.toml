@@ -1,0 +1,86 @@
+# Generated from blackhole64x32.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 10
+
+[[state]]
+name = "heavytrooper"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "heavytrooper-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "heavytrooper_shield"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "heavytrooper_shield-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "heavytrooper_lmg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "heavytrooper_lmg-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "heavytrooper_hmg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "heavytrooper_hmg-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "heavytrooper_sniper"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "heavytrooper_sniper-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "heavytrooper-dead"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "otiearmor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bhotie-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bhotie"
+dirs = 4
+frames = 4
+delays = [30, 1.5, 1.5, 1]
+
+[[state]]
+name = "bhotie-1"
+dirs = 4
+frames = 4
+delays = [30, 1.5, 1.5, 1]
+
+[[state]]
+name = "bhotie-dead"
+dirs = 1
+frames = 1

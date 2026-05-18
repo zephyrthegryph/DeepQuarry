@@ -1,0 +1,184 @@
+# Generated from eris_window.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 12
+
+[[state]]
+name = "preview_glass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "preview_rglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "preview_phoron"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "preview_rphoron"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "window0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "window1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "window2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "window3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "window4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "window5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "window6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "window7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rwindow0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rwindow1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rwindow2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rwindow3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rwindow4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rwindow5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rwindow6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rwindow7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pwindow0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pwindow1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pwindow2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pwindow3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pwindow4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pwindow5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pwindow6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pwindow7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rpwindow0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rpwindow1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rpwindow2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rpwindow3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rpwindow4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rpwindow5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rpwindow6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rpwindow7"
+dirs = 4
+frames = 1

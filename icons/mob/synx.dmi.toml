@@ -1,0 +1,88 @@
+# Generated from synx.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 10
+
+[[state]]
+name = "synx_transformed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synx_living"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synx_dead"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synx_diablo_living"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synx_diablo_dead"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synx_greed_living"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synx_greed_dead"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synx_hardlight_living"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synx_hardlight_dead"
+dirs = 4
+frames = 3
+delays = [1]
+loop = 1
+
+[[state]]
+name = "synx_pet_rainbow"
+dirs = 4
+frames = 4
+delays = [1.2]
+
+[[state]]
+name = "synx_C_living"
+dirs = 4
+frames = 2
+delays = [2]
+
+[[state]]
+name = "synx_C_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "synx_asteri_living"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synx_asteri_living-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synx_asteri_living-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synx_asteri_dead"
+dirs = 4
+frames = 1

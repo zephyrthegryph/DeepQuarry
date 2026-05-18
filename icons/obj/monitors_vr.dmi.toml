@@ -1,0 +1,129 @@
+# Generated from monitors_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 22
+
+[[state]]
+name = "camera"
+dirs = 8
+frames = 9
+delays = [2]
+rewind = true
+
+[[state]]
+name = "cameraemp"
+dirs = 8
+frames = 4
+delays = [2, 2, 1]
+
+[[state]]
+name = "camera1"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "camerax"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "cameracase"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alarm_0"
+dirs = 4
+frames = 2
+delays = [28]
+
+[[state]]
+name = "alarm_1"
+dirs = 4
+frames = 14
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 4]
+
+[[state]]
+name = "alarm_2"
+dirs = 4
+frames = 20
+delays = [6, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 6]
+hotspots = [{ frame = 5, x = 13, y = 24 }]
+
+[[state]]
+name = "alarmp"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alarmx"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "air_alarm_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "air_alarm_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "air_alarm_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "air_alarm_3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alarm_Pmode"
+dirs = 4
+frames = 2
+delays = [28]
+
+[[state]]
+name = "alarm_Mmode"
+dirs = 4
+frames = 2
+delays = [28]
+
+[[state]]
+name = "alarm_Xmode"
+dirs = 4
+frames = 2
+delays = [28]
+
+[[state]]
+name = "alarm_ovP"
+dirs = 4
+frames = 2
+delays = [28]
+
+[[state]]
+name = "alarm_ov0"
+dirs = 4
+frames = 2
+delays = [28]
+
+[[state]]
+name = "alarm_ov2"
+dirs = 4
+frames = 20
+delays = [6, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 6]
+hotspots = [{ frame = 5, x = 13, y = 24 }]
+
+[[state]]
+name = "alarm_ov1"
+dirs = 4
+frames = 14
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 4]
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1

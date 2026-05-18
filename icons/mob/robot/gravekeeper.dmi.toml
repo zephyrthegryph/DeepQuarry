@@ -1,0 +1,76 @@
+# Generated from gravekeeper.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 16
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "openpanel_nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "drone"
+dirs = 4
+frames = 4
+delays = [3, 8, 3, 8]
+
+[[state]]
+name = "drone-eyes"
+dirs = 4
+frames = 4
+delays = [3, 8, 3, 8]
+
+[[state]]
+name = "drone-shield"
+dirs = 4
+frames = 22
+delays = [1]
+
+[[state]]
+name = "drone-openpanel_nc"
+dirs = 4
+frames = 9
+delays = [3, 2, 1, 1, 1, 1, 2, 3, 8]
+
+[[state]]
+name = "drone-openpanel_c"
+dirs = 4
+frames = 8
+delays = [3, 4, 1, 3, 3, 4, 1, 3]
+
+[[state]]
+name = "drone-openpanel_w"
+dirs = 4
+frames = 4
+delays = [3, 8, 3, 8]
+
+[[state]]
+name = "sleek"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sleek-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sleek-shield"
+dirs = 4
+frames = 2
+delays = [1]

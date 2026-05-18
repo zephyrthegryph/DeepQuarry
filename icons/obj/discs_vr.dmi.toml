@@ -1,0 +1,133 @@
+# Generated from discs_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "black"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ironhammer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "technomancers"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "excelsior"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "neotheology"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "frozenstar"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "guild"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "moebius"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "onestar"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nucleardisk"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "data-red"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "data-yellow"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "data-blue"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "data-purple"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "data-green"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "data-black"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "data-white"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "serbian"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "quicksave"
+dirs = 1
+frames = 4
+delays = [2]

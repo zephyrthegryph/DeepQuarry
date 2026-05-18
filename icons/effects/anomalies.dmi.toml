@@ -1,0 +1,81 @@
+# Generated from anomalies.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 11
+
+[[state]]
+name = "dimensional"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "dimensional_overlay"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "ectoplasm_heavy"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "hallucination"
+dirs = 1
+frames = 28
+delays = [1]
+
+[[state]]
+name = "bioscrambler"
+dirs = 1
+frames = 16
+delays = [1]
+
+[[state]]
+name = "flux"
+dirs = 1
+frames = 12
+delays = [1, 1, 15, 1, 1, 15, 1, 1, 15, 1, 1, 15]
+
+[[state]]
+name = "vortex"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "pyroclastic"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "ectoplasm"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "bluespace"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "gravity"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "weather"
+dirs = 1
+frames = 3
+delays = [1, 1, 15]
+
+[[state]]
+name = "dust"
+dirs = 1
+frames = 1

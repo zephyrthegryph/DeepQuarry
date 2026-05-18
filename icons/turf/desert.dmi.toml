@@ -1,0 +1,39 @@
+# Generated from desert.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "desert"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "desert_dug"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "desert0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "desert1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "desert2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "desert3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "desert4"
+dirs = 1
+frames = 1

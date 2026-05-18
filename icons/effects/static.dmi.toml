@@ -1,0 +1,225 @@
+# Generated from static.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 16
+
+[[state]]
+name = "1 heavy"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "2 heavy"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "3 heavy"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "4 heavy"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "5 heavy"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "6 heavy"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "7 heavy"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "8 heavy"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "9 heavy"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "1 moderate"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "2 moderate"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "3 moderate"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "4 moderate"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "5 moderate"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "6 moderate"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "7 moderate"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "8 moderate"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "9 moderate"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "1 very light"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "2 very light"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "3 very light"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "4 very light"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "5 very light"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "6 very light"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "7 very light"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "8 very light"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "9 very light"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "1 light"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "2 light"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "3 light"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "4 light"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "5 light"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "6 light"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "7 light"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "8 light"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "9 light"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "scanlines"
+dirs = 1
+frames = 1

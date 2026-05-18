@@ -1,0 +1,44 @@
+# Generated from pinetrees.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 96
+cols = 3
+
+[[state]]
+name = "pine_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pine_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pine_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pine_c"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "festivus_pole"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pine_stump"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "festivus_pole_stump"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinepresents"
+dirs = 1
+frames = 1

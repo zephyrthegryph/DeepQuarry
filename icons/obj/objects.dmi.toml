@@ -1,0 +1,615 @@
+# Generated from objects.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 17
+
+[[state]]
+name = "launcherbtt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "launcheract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "anom"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "shards"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bhole2"
+dirs = 1
+frames = 32
+delays = [1]
+
+[[state]]
+name = "shieldon"
+dirs = 1
+frames = 4
+delays = [1]
+rewind = true
+
+[[state]]
+name = "shieldoff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shieldonbr"
+dirs = 1
+frames = 9
+delays = [2, 2, 2, 2, 4, 2]
+
+[[state]]
+name = "shieldoffbr"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "oldshieldon"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "oldshieldoff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oldshieldonbr"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "oldshieldoffbr"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ash"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "watertank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weldtank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "watertank_high"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coolanttank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "echair0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "echair1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "echair_over"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "echair_shock"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "rack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rack_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beertankTEMP"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "navbeacon0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "navbeacon0-f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "navbeacon1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "navbeacon1-f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floor_magnet"
+dirs = 1
+frames = 4
+delays = [20, 5, 4, 1]
+
+[[state]]
+name = "floor_magnet-f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floor_magnet0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floor_magnet0-f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floor_beacon"
+dirs = 1
+frames = 5
+delays = [2, 2, 2, 2, 5]
+rewind = true
+
+[[state]]
+name = "floor_beaconf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boxingbell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pews"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "barrier0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "barrier1"
+dirs = 1
+frames = 5
+delays = [1, 1, 1, 1, 5]
+rewind = true
+
+[[state]]
+name = "immrod"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "effigy"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "borgcharger0(old)"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "borgcharger1(old)"
+dirs = 1
+frames = 4
+delays = [6, 1, 1, 6]
+rewind = true
+
+[[state]]
+name = "borgcharger1"
+dirs = 1
+frames = 4
+delays = [1]
+rewind = true
+
+[[state]]
+name = "borgcharger0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "target_stake"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "target_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "target_q"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "target_h"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dispenser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phoron-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phoron-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phoron-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phoron-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phoron-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oxygen-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oxygen-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oxygen-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oxygen-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "peppertank_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "peppertank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bhole3"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "virusfoodtank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nymph"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "drone"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cat"
+dirs = 1
+frames = 4
+delays = [1, 2, 1, 2]
+rewind = true
+
+[[state]]
+name = "cat3"
+dirs = 1
+frames = 4
+delays = [1, 2, 1, 2]
+rewind = true
+
+[[state]]
+name = "borer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "statn_c0"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "statn_c20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "statn_c40"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "statn_c60"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "statn_c80"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "statn_c100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "acidtank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "monkey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ashtray"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "borgcharger2"
+dirs = 1
+frames = 1
+rewind = true
+
+[[state]]
+name = "ashtray_full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ashtray_half"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "farwa"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stok"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ashtray_broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pai-repairbot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stool"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wheelchair"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chair"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stool_padding"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stool_preview"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "psychbed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wooden_chair"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "comfychair_armrest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "abed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mouse_brown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "officechair_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stool_base"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mouse_gray"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wooden_chair_wings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stool_padded_preview"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nearea"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "officechair_dark"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mouse_white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pai-monkey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pai-cat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "comfychair"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-mouse"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slime_crystal_small"
+dirs = 1
+frames = 5
+delays = [30, 1]
+rewind = true
+
+[[state]]
+name = "slime_crystal_large"
+dirs = 1
+frames = 5
+delays = [20, 1]
+rewind = true
+
+[[state]]
+name = "pascalb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "poireactor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "poireactor_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "poireactor_broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oiltank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beertankfantasy"
+dirs = 1
+frames = 1

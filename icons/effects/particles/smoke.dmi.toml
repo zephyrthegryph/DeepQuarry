@@ -1,0 +1,89 @@
+# Generated from smoke.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "smoke_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smoke_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smoke_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "steam_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "steam_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "steam_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ash_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ash_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ash_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chill_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chill_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chill_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "steam_cloud_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "steam_cloud_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "steam_cloud_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "steam_cloud_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "steam_cloud_5"
+dirs = 1
+frames = 1

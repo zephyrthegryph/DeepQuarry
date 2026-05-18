@@ -1,0 +1,34 @@
+# Generated from fridge.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "closed_locked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "closed_unlocked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "closed_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "open_off"
+dirs = 1
+frames = 1

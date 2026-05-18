@@ -1,0 +1,19 @@
+# Generated from nanoweave.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 3
+
+[[state]]
+name = "derg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jellyfish"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dyson"
+dirs = 1
+frames = 1

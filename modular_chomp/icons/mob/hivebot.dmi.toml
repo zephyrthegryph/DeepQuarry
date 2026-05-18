@@ -1,0 +1,80 @@
+# Generated from hivebot.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "precursorhive"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orange"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyan"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bright_green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pink"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "king"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arti"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "limedisk"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyandisk"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orangedisk"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "powertower"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluetower"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reddisk"
+dirs = 1
+frames = 1

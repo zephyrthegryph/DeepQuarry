@@ -1,0 +1,14 @@
+# Generated from strangeflora.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 2
+
+[[state]]
+name = "opal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weep"
+dirs = 1
+frames = 1

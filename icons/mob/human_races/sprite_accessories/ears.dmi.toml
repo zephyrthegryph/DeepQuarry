@@ -1,0 +1,865 @@
+# Generated from ears.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 27
+
+[[state]]
+name = "squirrel-orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "squirrel-red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "squirrel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kitty"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kittyinner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bunny"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bear-brown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bear"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolf-grey"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolf-green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolf-wise"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolfinner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mouse-grey"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mouse"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mouseinner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bee"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "molenar-kitsune"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "molenar-deathclaw"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "runac"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kerena"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rosey"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "aronai"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "oni-h1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "demon-horns1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bunny-white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "serg_plain_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fenears"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fenearshc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fenears-inner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "foxears"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "foxearshc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tigressears"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "miria-fluffdragonears"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "miria-kitsuneears"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "molenar-tentacle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "antlers"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "antennae"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shock"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "otie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "donkey"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "otie-inner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cow-c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zears"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alurane-ears"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sleek"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "demon-horns2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lilimoth_antennae"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vulp"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vulp-inner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vulp-tips"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "panda"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cow-nohorns"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "antlers_mark"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floppy_bun"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshariinner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesharihigh"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesharihighinner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesharilow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesharilowinner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "curly_bug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "demon-horns1_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dragon-horns"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dual_robot_antennae"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "left_robot_antennae"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "right_robot_antennae"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "oni-h1_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "drake"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "caprahorns"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smallbear"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smallantlers"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "deer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shadekin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "frosted_tips"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pipears"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "big_liz"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vulp_terrier"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vulp_terrier-inner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vulp_terrier-tips"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vulp_jackal"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vulp_jackal-inner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vulp_jackal-tips"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ears_plain"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ears_plain-inner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "msai_plain"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "msai_plain-inner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ears_pointy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ears_pointy_long"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ears_pointy_down"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ears_pointy_long_down"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "elfs"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_inner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_tips"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dangleantennae_robot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hyena"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hyena-inner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "moth"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_female_pattern"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_male_pattern"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synthhorns_plain"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synthhorns_plain_light"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synthhorns_thick"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synthhorns_thick_lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synthhorns_curled"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "succu-horns_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "succu-horns_gc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "succu-horns_b"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ram_horns_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chorn_nubby"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chorn_herk"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chorn_bork"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chorn_bull"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chorn_ocean"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chorn_bicarrot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chorn_longcarrot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chorn_shortcarrot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chorn_scorp"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chorn_chub"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ears_tajaran_standard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "altevian"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "altevian-inner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wild_dog"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wild_doginner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "curly_bug_tesh"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshantenna"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshbee"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alien_slug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syrishroom"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "single-side-horn"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kara_horn"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shark_ears"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "shark_ears_upper"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shark_ears_lower"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shark_fin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shark_fin_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cobra_hood"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cobra_hood-inner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "feather_fan_ears"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "feather_fan_ears-outer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "triceratops_frill"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "triceratops_frill_spikes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fox"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fox-inner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catbig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catbig-inner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "deer_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "deer_alt-inner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hare"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hare-inner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hare-tips"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dog_flop"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hopefulhorns"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "angler"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "angler_bulb"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "demi-tesh-kit-ears"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "demi-tesh-kit-ears_male"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "demi-tesh-kit-ears_female"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "naga-ears"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "example"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swept_horns"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swept_horns_broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swept_horns_broken_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swept_horns_broken_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swept_horns_tricorn"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fourlowears"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fourlowears_inner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fourlowears_frills"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "unihorn"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backwards_headspikes"
+dirs = 4
+frames = 1

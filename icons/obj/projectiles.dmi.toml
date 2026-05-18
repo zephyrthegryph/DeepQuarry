@@ -1,0 +1,452 @@
+# Generated from projectiles.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 13
+
+[[state]]
+name = "spark"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "bullet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cbbolt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plasma"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "laser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ibeam"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "u_laser"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "bee"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toxin"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "energy"
+dirs = 1
+frames = 3
+delays = [1]
+rewind = true
+
+[[state]]
+name = "magicm"
+dirs = 1
+frames = 4
+delays = [1]
+rewind = true
+
+[[state]]
+name = "fireball"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "spell"
+dirs = 1
+frames = 3
+delays = [1]
+rewind = true
+
+[[state]]
+name = "pulse0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pulse1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pulse1_bl"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pulse0_bl"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ice_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ice_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "declone"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "heavylaser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bolter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ion"
+dirs = 1
+frames = 3
+delays = [1]
+rewind = true
+
+[[state]]
+name = "SpearFlight"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "MSpearFlight"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emitter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluespace"
+dirs = 1
+frames = 8
+delays = [1]
+rewind = true
+
+[[state]]
+name = "energy2"
+dirs = 1
+frames = 3
+delays = [1]
+rewind = true
+
+[[state]]
+name = "xray"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gauss_silenced"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gauss"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluelaser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "omnilaser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "neurotoxin"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "stun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dart"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "force_missile"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plasma_stun"
+dirs = 1
+frames = 9
+delays = [0.5]
+loop = 5
+
+[[state]]
+name = "bullet_alt"
+dirs = 1
+frames = 2
+delays = [0.5]
+
+[[state]]
+name = "sound"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_pellet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fuel-deuterium"
+dirs = 1
+frames = 2
+delays = [0.5]
+
+[[state]]
+name = "fuel-phoron"
+dirs = 1
+frames = 2
+delays = [0.5]
+
+[[state]]
+name = "fuel-tritium"
+dirs = 1
+frames = 2
+delays = [0.5]
+
+[[state]]
+name = "red_pellet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fuel-supermatter"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "blue_pellet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bola"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "bola_energy"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "shell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "canister"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue_laser"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "red_laser"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "green_laser"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "missile"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "arc_shadow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purple_laser"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "green_pellet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phase"
+dirs = 1
+frames = 3
+delays = [1]
+rewind = true
+
+[[state]]
+name = "mortar"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "particle"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "particle-heavy"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "ka_tracer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kinetic_blast"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "syringe_piercing"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syringe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purpleemitter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flechette"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flight"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "tentacle_end"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arrow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesla_projectile"
+dirs = 1
+frames = 12
+delays = [0.5, 0.8]
+
+[[state]]
+name = "chronobolt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arcane_barrage"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gaussphase"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "84mm-hedp"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "fireball2"
+dirs = 1
+frames = 5
+delays = [0.95]
+
+[[state]]
+name = "atrocket"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "glitch"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sam48"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "rainbow"
+dirs = 1
+frames = 1

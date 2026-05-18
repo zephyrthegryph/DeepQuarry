@@ -1,0 +1,74 @@
+# Generated from desert_rocks.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "desert_rock0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "desert_rock1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "desert_rock2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "desert_rock3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "desert_rock4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "desert_rock5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "desert_rock6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "desert_pebble0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "desert_pebble1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "desert_pebble2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "desert_pebble3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "desert_pebble4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "desert_pebble5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "desert_pebble6"
+dirs = 1
+frames = 1

@@ -1,0 +1,66 @@
+# Generated from snowglobe_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "snowvillage"
+dirs = 1
+frames = 3
+delays = [2]
+
+[[state]]
+name = "tether"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stellardelight"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rascalspass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "base"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smolbase"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smolglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smolsnowvillage"
+dirs = 1
+frames = 3
+delays = [2]
+
+[[state]]
+name = "smoltether"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smolstellardelight"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smolrascalspass"
+dirs = 1
+frames = 1

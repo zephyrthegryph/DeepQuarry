@@ -1,0 +1,255 @@
+# Generated from mecha_equipment.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "mecha_equip"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_mousetrapmrtr"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_bananamrtr"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_honker"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_mime"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_scatter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_carbine"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_disabler"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_grenadelnchr"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_uac2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_taser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_pulse"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_laser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_missilerack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_teleport"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_exting"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_drill"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_diamond_drill"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_plasmacutter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_clamp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_wire"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_wholegen"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "mecha_rcd"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "repair_droid_a"
+dirs = 1
+frames = 21
+delays = [1]
+rewind = true
+
+[[state]]
+name = "repair_droid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_abooster_ccw"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_abooster_proj"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_abooster_emp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesla"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_ion"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_analyzer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_medigun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_punching_glove"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_weapon_bay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ripleyupgrade"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "mecha_missilerack_six"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "thrusters"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_kineticgun"
+dirs = 1
+frames = 1
+rewind = true
+
+[[state]]
+name = "mecha_camera"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_bin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_air_tank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_radio"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_sleeper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_syringegun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paddy_claw"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paddyupgrade"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "mecha_sleeper_miner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_cryogun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_pyrogun"
+dirs = 1
+frames = 1

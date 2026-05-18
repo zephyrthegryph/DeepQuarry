@@ -1,0 +1,74 @@
+# Generated from prepdoor_charlie.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 12
+
+[[state]]
+name = "door_closed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "door_locked"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "door_opening"
+dirs = 4
+frames = 5
+delays = [1, 1, 1, 1, 2]
+loop = 1
+
+[[state]]
+name = "door_deny"
+dirs = 4
+frames = 3
+delays = [1]
+
+[[state]]
+name = "door_closing"
+dirs = 4
+frames = 5
+delays = [1, 1, 1, 1, 2]
+loop = 1
+
+[[state]]
+name = "door_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "door_spark"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "panel_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "welded"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "o_door_opening"
+dirs = 4
+frames = 5
+delays = [1, 1, 1, 1, 2]
+loop = 1
+
+[[state]]
+name = "o_door_closing"
+dirs = 4
+frames = 5
+delays = [1, 1, 1, 1, 2]
+loop = 1
+
+[[state]]
+name = "o_door_locked"
+dirs = 4
+frames = 1

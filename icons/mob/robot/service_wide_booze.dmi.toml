@@ -1,0 +1,268 @@
+# Generated from service_wide_booze.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 28
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "openpanel_nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wreck-overlay"
+dirs = 1
+frames = 18
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 40]
+
+[[state]]
+name = "booze"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 28, y = 11 }]
+
+[[state]]
+name = "booze"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "booze-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "booze-eyes"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "booze-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "booze-rest"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "booze-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "booze-sleeper-1"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "boozegreen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boozegreen"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+hotspots = [{ frame = 1, x = 28, y = 11 }]
+
+[[state]]
+name = "boozegreen-rest"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "boozegreen-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boozegreen-sleeper-1"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "boozeblue"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 28, y = 11 }]
+
+[[state]]
+name = "boozeblue"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "boozeblue-rest"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "boozeblue-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boozeblue-sleeper-1"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "boozepurple"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 28, y = 11 }]
+
+[[state]]
+name = "boozepurple"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+hotspots = [{ frame = 1, x = 28, y = 11 }]
+
+[[state]]
+name = "boozepurple-rest"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "boozepurple-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boozepurple-sleeper-1"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "boozered"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 28, y = 11 }]
+
+[[state]]
+name = "boozered"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+hotspots = [{ frame = 1, x = 28, y = 11 }]
+
+[[state]]
+name = "boozered-rest"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "boozered-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boozered-sleeper-1"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "boozeorange"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 28, y = 11 }]
+
+[[state]]
+name = "boozeorange"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+hotspots = [{ frame = 1, x = 28, y = 11 }]
+
+[[state]]
+name = "boozeorange-rest"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "boozeorange-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boozeorange-sleeper-1"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "boozebrown"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 28, y = 11 }]
+
+[[state]]
+name = "boozebrown"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+hotspots = [{ frame = 1, x = 28, y = 11 }]
+
+[[state]]
+name = "boozebrown-rest"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "boozebrown-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boozebrown-sleeper-1"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true

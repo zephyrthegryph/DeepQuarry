@@ -1,0 +1,49 @@
+# Generated from directional_test.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "screwdriver"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "screwdriver_north"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "screwdriver_east"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "screwdriver_south"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "screwdriver_west"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "screwdriver_northeast"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "screwdriver_northwest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "screwdriver_southeast"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "screwdriver_southwest"
+dirs = 1
+frames = 1

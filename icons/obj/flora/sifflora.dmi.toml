@@ -1,0 +1,86 @@
+# Generated from sifflora.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "glowplant1"
+dirs = 1
+frames = 3
+delays = [5]
+rewind = true
+
+[[state]]
+name = "glowplant2"
+dirs = 1
+frames = 3
+delays = [5]
+rewind = true
+
+[[state]]
+name = "eyeplant1"
+dirs = 1
+frames = 4
+delays = [20]
+rewind = true
+
+[[state]]
+name = "eyeplant2"
+dirs = 1
+frames = 4
+delays = [20]
+rewind = true
+
+[[state]]
+name = "eyeplant3"
+dirs = 1
+frames = 4
+delays = [20]
+rewind = true
+
+[[state]]
+name = "grass1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "frostbelle1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "frostbelle2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "frostbelle3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "frostbelle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eyeplant"
+dirs = 1
+frames = 4
+delays = [20]
+rewind = true
+
+[[state]]
+name = "grass"
+dirs = 1
+frames = 1

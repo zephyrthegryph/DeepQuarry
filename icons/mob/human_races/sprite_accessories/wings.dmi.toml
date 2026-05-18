@@ -1,0 +1,585 @@
+# Generated from wings.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 22
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "succubus-red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "succubus-black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bat-purple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bat-black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bat-red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "feathered"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "moth"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "moth_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beewings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dragon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "harpywings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "miria-fluffdragontail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bat-color"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "miria-fluffwings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scree-wings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snag-backplate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kerena-wings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spider-legs"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "liquidfirefly-eyestalks"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "citheronia_wings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "feathered2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shock"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sepulchre_wings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "feathered3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dragonfly"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sepulchre_wingsc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cyberdragon_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cyberdragon_red_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cyberdoe_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "moth_full_gray"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kaiju-spikes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "miria-fluffdragontail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "liquidfirefly-eyestalks"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyestalkc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyestalkc_eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sepulchre_wingsc_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "harpywings_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "neckfur"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "neckfur_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "harpywings_bat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "harpywings_batmarkings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "harpywings_altmarkings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "drago_wing"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "drago_wing_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "aeromorph_flat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "aeromorph_flat_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "aeromorph_flat_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mantisarms_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "harpyarmwings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "harpyarmwings_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "harpyarmwings_bat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "harpyarmwings_batmarkings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dragonfly_tesh"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beewings_tesh"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snail_shell"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snail_shell_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sectdrone_wing"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "feathered_kara"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "winglets"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wingarms_speckles"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wingarms_speckles-speckles"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wingarms_2tone"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wingarms_2tone-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "feather2_speckles"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "feather2_speckles-speckles"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "feather2_tricolor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "feather2_tricolor-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "feather2_tricolor-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pterodactyl_wing_frame"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kaiju_spikes_a"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kaiju_spikes_a_glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pterodactyl_wing_membrane"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shadow_tricolor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shadow_tricolor-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shadow_tricolor-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shadow_tricolor-2-sparkle"
+dirs = 4
+frames = 4
+delays = [5]
+
+[[state]]
+name = "cyber_angel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dragon_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dragon_2_mark"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "csnag-backplate-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snail_shell_new"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeno_standard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeno_royal"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeno_down"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "csnag-backplate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeno_queen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cloakmoth"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cloakmoth_eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jet_wing_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jet_wing_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jet_wing"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mothwings_clockwork"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mothwings_monarch"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mothwings_luna"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mothwings_atlas"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mothwings_plain"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mothwings_redish"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mothwings_royal"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mothwings_gothic"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mothwings_lovers"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mothwings_whitefly"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mothwings_burntoff"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mothwings_firewatch"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mothwings_deathhead"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mothwings_poison"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mothwings_ragged"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mothwings_moonfly"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mothwings_snow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mothwings_luna_colorable"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mothwings_angel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mothwings_no_antennae_color"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "neckfur_noback"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cybertendrils"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cybertendrils_plugs"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeno_queen_new"
+dirs = 4
+frames = 1

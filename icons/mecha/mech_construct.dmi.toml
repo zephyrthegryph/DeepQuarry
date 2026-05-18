@@ -1,0 +1,539 @@
+# Generated from mech_construct.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 11
+
+[[state]]
+name = "backbone"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gygax_harness"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gygax_l_arm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gygax_r_arm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gygax_l_leg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gygax_r_leg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gygax_head"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gygax_r_leg+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gygax_l_leg+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gygax_l_arm+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gygax_r_arm+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gygax_harness+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gygax_head+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gygax_head2+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gygax_head3+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gygax_harness2+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gygax_harness3+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ripley_harness"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ripley_harness+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ripley_harness2+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ripley_r_arm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ripley_r_arm+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ripley_l_arm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ripley_l_arm+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ripley_r_leg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ripley_r_leg+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ripley_l_leg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ripley_l_leg+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ripley_harness3+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "honker_harness"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "honker_harness+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "honker_harness2+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "honker_head"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "honker_head+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "honker_head2+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "honker_l_arm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "honker_l_arm+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "honker_r_arm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "honker_r_arm+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "honker_l_leg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "honker_l_leg+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "honker_r_leg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "honker_r_leg+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gygax_armour"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ripley+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "honker+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gygax+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gygax_chassis"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ripley_chassis"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "honker_chassis"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "durand_head+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "durand_head"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "durand_harness+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "durand_harness"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "durand_l_arm+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "durand_l_arm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "durand_r_arm+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "durand_r_arm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "durand_l_leg+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "durand_l_leg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "durand_r_leg+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "durand_r_leg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "durand_armour"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phazon_head+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phazon_head"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phazon_harness+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phazon_harness"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phazon_l_arm+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phazon_l_arm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phazon_r_arm+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phazon_r_arm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phazon_l_leg+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phazon_l_leg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phazon_r_leg+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phazon_r_leg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "odysseus_head"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "odysseus_head+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "odysseus_l_arm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "odysseus_l_arm+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "odysseus_l_leg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "odysseus_l_leg+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "odysseus_r_arm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "odysseus_r_arm+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "odysseus_r_leg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "odysseus_r_leg+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "odysseus_torso"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "odysseus_torso+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "odysseus_armour"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "firesuit+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgygax_harness"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgygax_harness+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgygax_head"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gygax_head+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "janus_chassis"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "janus_harness"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "janus_harness+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "janus_r_arm+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "janus_r_arm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "janus_l_arm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "janus_l_arm+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "janus_head+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "janus_head"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "janus_r_leg+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "janus_l_leg+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "janus_r_leg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "janus_l_leg"
+dirs = 1
+frames = 1

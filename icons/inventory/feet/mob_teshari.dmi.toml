@@ -1,0 +1,181 @@
+# Generated from mob_teshari.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 12
+
+[[state]]
+name = ""
+dirs = 4
+frames = 1
+
+[[state]]
+name = "brown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "purple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leather"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rain_bow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "orange1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jackboots"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "digiboots"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wizard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mime"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "clown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cult"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "slippers"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boots"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "laceups"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flippers"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "galoshes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "magboots0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "magboots1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "workboots"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "clothwrap"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ninja_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ninja_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medical_rig"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "medical_rig_sealed"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "science_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "science_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshwrap"
+dirs = 4
+frames = 1

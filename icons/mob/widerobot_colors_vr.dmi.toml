@@ -1,0 +1,476 @@
+# Generated from widerobot_colors_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 37
+
+[[state]]
+name = "boozeborg"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 28, y = 11 }]
+
+[[state]]
+name = "boozeborg"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "boozeborg-rest"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "boozeborg-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eyes-boozeborg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-boozeborg"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "boozeborg-sleeper_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boozeborg-sleeper_r"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "boozeborg-sleeper_g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boozeborg-sleeper_g"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "boozeborg(blue)"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 28, y = 11 }]
+
+[[state]]
+name = "boozeborg(blue)"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "boozeborg(blue)-rest"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "boozeborg(blue)-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eyes-boozeborg(blue)"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-boozeborg(blue)"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "boozeborg(blue)-sleeper_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boozeborg(blue)-sleeper_r"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "boozeborg(blue)-sleeper_g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boozeborg(blue)-sleeper_g"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "boozeborg(coffee)"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 28, y = 11 }]
+
+[[state]]
+name = "boozeborg(coffee)"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+hotspots = [{ frame = 1, x = 28, y = 11 }]
+
+[[state]]
+name = "boozeborg(coffee)-rest"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "boozeborg(coffee)-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eyes-boozeborg(coffee)"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-boozeborg(coffee)"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "boozeborg(coffee)-sleeper_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boozeborg(coffee)-sleeper_r"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "boozeborg(coffee)-sleeper_g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boozeborg(coffee)-sleeper_g"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "boozeborg(green)"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boozeborg(green)"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+hotspots = [{ frame = 1, x = 28, y = 11 }]
+
+[[state]]
+name = "boozeborg(green)-rest"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "boozeborg(green)-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eyes-boozeborg(green)"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-boozeborg(green)"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "boozeborg(green)-sleeper_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boozeborg(green)-sleeper_r"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "boozeborg(green)-sleeper_g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boozeborg(green)-sleeper_g"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "boozeborg(orange)"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 28, y = 11 }]
+
+[[state]]
+name = "boozeborg(orange)"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+hotspots = [{ frame = 1, x = 28, y = 11 }]
+
+[[state]]
+name = "boozeborg(orange)-rest"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "boozeborg(orange)-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eyes-boozeborg(orange)"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-boozeborg(orange)"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "boozeborg(orange)-sleeper_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boozeborg(orange)-sleeper_r"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "boozeborg(orange)-sleeper_g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boozeborg(orange)-sleeper_g"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "boozeborg(purple)"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 28, y = 11 }]
+
+[[state]]
+name = "boozeborg(purple)"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+hotspots = [{ frame = 1, x = 28, y = 11 }]
+
+[[state]]
+name = "boozeborg(purple)-rest"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "boozeborg(purple)-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eyes-boozeborg(purple)"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-boozeborg(purple)"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "boozeborg(purple)-sleeper_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boozeborg(purple)-sleeper_r"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "boozeborg(purple)-sleeper_g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boozeborg(purple)-sleeper_g"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "boozeborg(red)"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 28, y = 11 }]
+
+[[state]]
+name = "boozeborg(red)"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+hotspots = [{ frame = 1, x = 28, y = 11 }]
+
+[[state]]
+name = "boozeborg(red)-rest"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "boozeborg(red)-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eyes-boozeborg(red)"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-boozeborg(red)"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "boozeborg(red)-sleeper_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boozeborg(red)-sleeper_r"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "boozeborg(red)-sleeper_g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boozeborg(red)-sleeper_g"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "boozeborg(vodka)"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 28, y = 11 }]
+
+[[state]]
+name = "boozeborg(vodka)-rest"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "boozeborg(vodka)-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eyes-boozeborg(vodka)"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "boozeborg(vodka)-sleeper_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boozeborg(vodka)-sleeper_g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ov-openpanel -c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ov-openpanel +c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ov-openpanel +w"
+dirs = 4
+frames = 1

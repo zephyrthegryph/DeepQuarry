@@ -1,0 +1,34 @@
+# Generated from rollerbed.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "rollerbed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rollerbed_up"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "folded_rollerbed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rollerbedadv"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rollerbedadv_up"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "folded_rollerbedadv"
+dirs = 1
+frames = 1

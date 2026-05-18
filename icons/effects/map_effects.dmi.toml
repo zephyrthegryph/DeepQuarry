@@ -1,0 +1,91 @@
+# Generated from map_effects.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "loop_template"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smoke_emitter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spark_emitter"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "steam_emitter"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "permalight"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radiation_emitter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beam_point"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sound_emitter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "screen_shaker"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "portal_side_a"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "portal_side_b"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "portal_projection_side_a"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "portal_projection_side_b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "portal_line_side_a"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "portal_line_side_b"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "graffiti"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gibspawn"
+dirs = 1
+frames = 1

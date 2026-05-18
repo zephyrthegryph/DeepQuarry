@@ -1,0 +1,84 @@
+# Generated from lava_land.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "ash"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ashrock"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "basalt1"
+dirs = 1
+frames = 4
+delays = [20]
+
+[[state]]
+name = "basalt2"
+dirs = 1
+frames = 4
+delays = [20]
+
+[[state]]
+name = "basalt3"
+dirs = 1
+frames = 4
+delays = [20]
+
+[[state]]
+name = "basalt4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "basalt5"
+dirs = 1
+frames = 4
+delays = [20]
+
+[[state]]
+name = "basalt6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "basalt7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "basalt8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "basalt9"
+dirs = 1
+frames = 4
+delays = [20]
+
+[[state]]
+name = "basalt10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "basalt11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "basalt12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "basalt0"
+dirs = 1
+frames = 1

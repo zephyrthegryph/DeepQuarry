@@ -1,0 +1,117 @@
+# Generated from GHPS.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 14
+
+[[state]]
+name = "Willy"
+dirs = 4
+frames = 2
+delays = [1]
+rewind = true
+movement = true
+
+[[state]]
+name = "Willy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "w_head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Smiley"
+dirs = 4
+frames = 2
+delays = [1]
+movement = true
+
+[[state]]
+name = "Smiley"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "s_head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Bradley"
+dirs = 4
+frames = 6
+delays = [1]
+movement = true
+
+[[state]]
+name = "Bradley"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "b_head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Eddy"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "Eddy"
+dirs = 4
+frames = 4
+delays = [1, 2, 1]
+movement = true
+
+[[state]]
+name = "e_head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Steve"
+dirs = 4
+frames = 6
+delays = [1, 1, 1, 1, 1, 3]
+rewind = true
+
+[[state]]
+name = "Steve"
+dirs = 4
+frames = 6
+delays = [1]
+rewind = true
+movement = true
+
+[[state]]
+name = "sg_head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Rickey"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Rickey"
+dirs = 4
+frames = 4
+delays = [1]
+movement = true
+
+[[state]]
+name = "r_head"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "generic_gib"
+dirs = 1
+frames = 6
+delays = [1]

@@ -1,0 +1,46 @@
+# Generated from holoplants.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "plant-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plant-10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plant-09"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plant-15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plant-13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plant-xmas"
+dirs = 1
+frames = 3
+delays = [8]
+
+[[state]]
+name = "emagged"
+dirs = 4
+frames = 4
+delays = [6, 4, 6, 4]
+
+[[state]]
+name = "holopot"
+dirs = 1
+frames = 1

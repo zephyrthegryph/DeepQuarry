@@ -1,0 +1,234 @@
+# Generated from casino_ch.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 17
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacecasinocash1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacecasinocash10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacecasinocash20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacecasinocash50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacecasinocash100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacecasinocash200"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacecasinocash500"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacecasinocash1000"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "roulette_table"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "roulette_wheel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "roulette_wheel_spinning"
+dirs = 1
+frames = 2
+delays = [1.75]
+
+[[state]]
+name = "slotmachine"
+dirs = 1
+frames = 18
+delays = [1]
+
+[[state]]
+name = "slotmachine_rolling"
+dirs = 1
+frames = 18
+delays = [1]
+
+[[state]]
+name = "slotmachine_winning"
+dirs = 1
+frames = 9
+delays = [1]
+
+[[state]]
+name = "blackjack_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackjack_m"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackjack_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wheel_of_fortune"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wheel_of_fortune_spinning"
+dirs = 1
+frames = 16
+delays = [0.75]
+
+[[state]]
+name = "stripper_pole"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "platinum_chip"
+dirs = 1
+frames = 28
+delays = [1]
+
+[[state]]
+name = "deluxe_dispenser"
+dirs = 1
+frames = 4
+delays = [2.75]
+
+[[state]]
+name = "deluxe_boozeomat"
+dirs = 1
+frames = 12
+delays = [2]
+
+[[state]]
+name = "deluxe_boozeomat_deny"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "deluxe_dining"
+dirs = 1
+frames = 12
+delays = [2]
+
+[[state]]
+name = "deluxe_dining_deny"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "casinojukebox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "casinojukebox-nopower"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "casinojukebox-broken"
+dirs = 1
+frames = 5
+delays = [1, 5, 5, 5, 1]
+
+[[state]]
+name = "casino_atm"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "casinowallet_black"
+dirs = 1
+frames = 18
+delays = [1]
+
+[[state]]
+name = "casinowallet_brown"
+dirs = 1
+frames = 18
+delays = [1]
+
+[[state]]
+name = "casinowallet_white"
+dirs = 1
+frames = 18
+delays = [1]
+
+[[state]]
+name = "casino_prize_dispenser-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "casino_prize_dispenser"
+dirs = 1
+frames = 10
+delays = [5]
+
+[[state]]
+name = "casino_prize_dispenser-vend"
+dirs = 1
+frames = 11
+delays = [5, 1.25]
+
+[[state]]
+name = "casinoslave_hub_on"
+dirs = 1
+frames = 10
+delays = [5]
+
+[[state]]
+name = "casinoslave_hub_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "casinomanual"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "casinomanual-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "headset"
+dirs = 1
+frames = 8
+delays = [5]

@@ -1,0 +1,99 @@
+# Generated from righthand_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "resonator"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "resonator_u"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nanomod"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "poncho"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lance"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rcd"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ircd"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rcdammo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "inducer-engi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "inducer-sci"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "inducer-syndi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "inducer-hybrid"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rpd"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rms"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hazard_a"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "laserdome_flag_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "laserdome_flag_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hyperball_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hyperball_red"
+dirs = 4
+frames = 1

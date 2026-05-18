@@ -1,0 +1,1579 @@
+# Generated from mob.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 40
+
+[[state]]
+name = "body_m_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheet"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetcentcom"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetcaptain"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheethop"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheethos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetce"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetcmo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetrd"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetqm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetmedical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetrainbow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetgreen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetblue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetorange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetpurple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetred"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetyellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetbrown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetmime"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetclown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetian"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wizard_cloak"
+dirs = 4
+frames = 4
+delays = [3, 2, 3, 2]
+
+[[state]]
+name = "fireaxe0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fireaxe1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "staffofchange_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "katana"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scythe0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scythe1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spearglass0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spearglass1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spear_mask0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spear_mask1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "metalbat0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "metalbat1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shotgun"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cshotgun"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dshotgun"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sniper"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sniper100"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sniper75"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sniper50"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sniper25"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sniper0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "heavysniper"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pneumatic"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pneumatic-tank"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crossbow-solid"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "carbine"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "arifle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boltaction"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leveraction"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lasercannon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lasercannon_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lasercannon100"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lasercannon75"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lasercannon50"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lasercannon25"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lasercannon0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pulse100"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pulse75"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pulse50"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pulse25"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pulse0"
+dirs = 4
+frames = 2
+delays = [3]
+
+[[state]]
+name = "barretsniper-empty"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "barretsniper"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ionrifle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ionrifle100"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ionrifle75"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ionrifle50"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ionrifle25"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ionrifle0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ionrifle_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "z8carbine"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "c20r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "oxygen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "oxygen_f"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "oxygen_fr"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "anesthetic"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jetpack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jetpack-on"
+dirs = 4
+frames = 2
+delays = [2]
+
+[[state]]
+name = "jetpack-void"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jetpack-void-on"
+dirs = 4
+frames = 2
+delays = [4]
+
+[[state]]
+name = "jetpack-black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jetpack-black-on"
+dirs = 4
+frames = 2
+delays = [2]
+
+[[state]]
+name = "engiepackOLD"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engiepack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "welderpack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "electropack0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "electropack1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel_grey"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel_purple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel_orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel_hydro"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel_captain"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel_industrial"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel_medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel_military"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel_security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel_ironhammer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel_fancy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backpack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backpack_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backpack_purple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backpack_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backpack_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backpack_orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backpack_hydro"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backpack_captain"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backpack_industrial"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backpack_medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backpack_military"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backpack_security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backpack_ironhammer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backpack_fancy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backsport"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backsport_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backsport_purple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backsport_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backsport_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backsport_orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backsport_hydro"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backsport_ironhammer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backsport_fancy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backpack_clown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holdingpack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backpack_cult"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ert_commander"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ert_security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ert_medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ert_engineering"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ert_janitor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = ""
+dirs = 4
+frames = 1
+
+[[state]]
+name = "witch"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holdingduffle"
+dirs = 4
+frames = 7
+delays = [1]
+
+[[state]]
+name = "brokenpack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "giftbag0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "giftbag1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "giftbag2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chronobackpack"
+dirs = 4
+frames = 3
+delays = [1]
+
+[[state]]
+name = "technomancer_core_old"
+dirs = 4
+frames = 10
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 30]
+
+[[state]]
+name = "technomancer_core"
+dirs = 4
+frames = 10
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 30]
+
+[[state]]
+name = "duffle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffle_syndie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffle_syndieammo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffle_medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffle_syndiemed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffle_captain"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffle_security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffle_industrial"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffle_emt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffle_science"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffle_drone"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffle_curse"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holdingduffle_tilted"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "duffle_tilted"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffle_syndie_tilted"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffle_syndiemed_tilted"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffle_syndieammo_tilted"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffle_captain_tilted"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffle_security_tilted"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffle_medical_tilted"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffle_emt_tilted"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffle_industrial_tilted"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffle_drone_tilted"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffle_science_tilted"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffle_curse_tilted"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "riot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teleriot1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cape"
+dirs = 1
+frames = 7
+delays = [2]
+
+[[state]]
+name = "bandolier"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "courier"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "courier_chemistry"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "courier_medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "courier_virology"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "courier_toxins"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "courier_captain"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "courier_industrial"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "courier_hydro"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "courier_security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "courier_black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "purse"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "purse_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phoron_vox"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "defibunit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffle_sci"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "folded_rollerbed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "folded_rollerbedadv"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boltaction_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "parachute"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gravchute"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coilgun"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pulse"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "laser"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xray"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "freezegun"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "soulblade"
+dirs = 4
+frames = 4
+delays = [10, 3]
+
+[[state]]
+name = "stunrifle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tasercarbine"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phasecarbine"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phaserifle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phasecannon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "caseless"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ranger_satchel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scopedrifle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rifle2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "huntrifle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "battlerifle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "radiopack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "staffofchange"
+dirs = 4
+frames = 5
+delays = [4]
+rewind = true
+
+[[state]]
+name = "staffofanimation"
+dirs = 4
+frames = 4
+delays = [5]
+rewind = true
+
+[[state]]
+name = "staffofhealing"
+dirs = 4
+frames = 12
+delays = [2, 2, 1, 2, 2, 1, 2, 2, 1, 2, 2, 1]
+
+[[state]]
+name = "staffofchaos"
+dirs = 4
+frames = 4
+delays = [5]
+
+[[state]]
+name = "staffofdoor"
+dirs = 4
+frames = 4
+delays = [20]
+
+[[state]]
+name = "staffofstorms"
+dirs = 4
+frames = 2
+delays = [16, 4]
+
+[[state]]
+name = "honker"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "godstaff-blue"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "godstaff-red"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "flightstaff"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lockerstaff"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sapstaff"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "necrostaff"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wipestaff"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "staff"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "slimepouch"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "waterbackpack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "waterbackpackjani"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "waterbackpackatmos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "waterbackpackop"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pepperbackpacksec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "heavyparticle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "altevian-wrench"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "altevian-crowbar"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "altevian-wirecutter"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "altevian-screwdriver"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "altevian-pulser"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "altevian-welder-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "altevian-welder-on"
+dirs = 4
+frames = 3
+delays = [1]
+
+[[state]]
+name = "altevian-miner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "forcemaul0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "forcemaul_active0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "forcemaul_nocell0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "forcemaul1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "forcemaul_active1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "forcemaul_nocell1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jetpack-breaker"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jetpack-breaker-on"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "saddlebag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "saddlebag_wolf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "saddlebag_cow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "saddlebag_lizard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "saddlebag_feline"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "saddlebag_horse"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "robustsaddle_wolf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "robustsaddle_cow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "robustsaddle_horse"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "robustsaddle_lizard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "robustsaddle_feline"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "taurvest_wolf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "taurvest_cow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "taurvest_horse"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "taurvest_lizard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "taurvest_feline"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "taurvest_drake"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "taurvest_otie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "robustsaddle_drake"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "robustsaddle_otie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "saddlebag_drake"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "saddlebag_otie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "saddlebag_deer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "robustsaddle_deer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "taurvest_deer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "radiopack_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel-robo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backpack-robo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nambackpack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kr_rucksack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ru_rucksack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "robustsaddle_skunk"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "taurvest_skunk"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "saddlebag_skunk"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "explorer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "explorer_satchel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "explorer_courier"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "explorer_duffle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "talon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "talon_satchel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "talon_courier"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "talon_duffle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "explorer_satchel_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "explorer_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "explorer_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "explorer_satchel_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "explorer_courier_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "explorer_duffle_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "radiopack_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "explorer_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "explorer_satchel_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "explorer_courier_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "explorer_duffle_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "radiopack_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel_strapless"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "explorer_duffle_tilted"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "talon_duffle_tilted"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "methane"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "proton_pack"
+dirs = 4
+frames = 10
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 30]

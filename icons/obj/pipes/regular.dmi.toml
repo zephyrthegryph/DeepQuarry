@@ -1,0 +1,129 @@
+# Generated from regular.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "3-f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "12-f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "6-f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "10-f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "5-f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "9-f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "3-b-f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "12-b-f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "6-b-f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "10-b-f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "5-b-f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "9-b-f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "3-b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "12-b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "10-b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "5-b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "9-b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "6-b"
+dirs = 1
+frames = 1

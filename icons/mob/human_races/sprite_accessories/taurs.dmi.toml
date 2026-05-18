@@ -1,0 +1,1384 @@
+# Generated from taurs.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 35
+
+[[state]]
+name = "DEBUG"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "taur_clip_mask_def"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolf_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "naga_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "horse_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cow_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lizard_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spider_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tent_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tentacle_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "feline_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "slug_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tempest_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "serdy_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "heavy_wolf_armor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lilithsuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ariana_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "drake_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "drake_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "otie_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "otie_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolf_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "naga_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lizard_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "feline_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alraune_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alraune_closed_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "taur_clip_mask_alraune"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "roiz_tail_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synthwolf_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synthwolf_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synthfeline_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synthfeline_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synthhorse_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synthhorse_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synthlizard_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synthlizard_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "frog_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "deer_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "deer_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alraunecolor_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alraunecolor_closed_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alraunecolor_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alraunecolor_closed_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wasp_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wasp_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shadekin_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shadekin_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shadekin_long_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "taur_clip_mask_wasp"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatwolf_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatwolf_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatfeline_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatfeline_w"
+dirs = 4
+frames = 16
+delays = [90, 1, 1, 1, 1, 1, 1, 1, 15, 1]
+
+[[state]]
+name = "fatfeline_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatfeline_markings_vwag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatfeline_markings_vwag2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mermaid_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_fluff"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_fat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolf_markings_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "horse_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snail_shell_marking"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "otie_markings_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "feline_markings_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synthwolf_glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synthfeline_glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synthhorse_glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synthlizard_glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skunk_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skunk_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skunk_markings_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pawcow_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pawcow_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatsynthwolf_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatsynthwolf_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatsynthwolf_glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatsynthfeline_s"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "fatsynthfeline_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatsynthfeline_glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatsynthlizard_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatsynthlizard_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatsynthlizard_glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synthtaur1_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "taur_clip_mask_synthtaur1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synthtaur1_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synthtaur1_glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synthtaur1_fat_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatlizard_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatlizard_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rat_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rat_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "taur_clip_mask_rat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "noodle_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "taur_clip_mask_noodle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "noodle_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "noodle_markings_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "altnaga_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "altnaga_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "altnaga_stripes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "altnaga_rattler"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "altnagatailmaw_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "altnagatailmaw_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "altnagatailmaw_eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatdrake_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatdrake_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "drake_markings_loaf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "drake_s_loaf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sect_drone"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sect_drone_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fat_sect_drone"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fat_sect_drone_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "giantspidertaur"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "giantspidertaur-colorable"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "giantspidertaur-colorable-markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "carrierspidertaur"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phoronspidertaur"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sparkspidertaur"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "frostspidertaur"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ant_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ant_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatnaga_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatnaga_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zaprat_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zaprat_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zaprat_heart_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zaprat_heart_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "altmermaid_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "altmermaid_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "altmermaid_markings2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kitsune"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fox"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fox_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fox_markings2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "orcamermaid_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kaiju_long_a"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kaiju_long_a_spikes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kaiju_long_a_spikes_glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatdeer_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatdeer_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatcow_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tiger_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tiger_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tiger_markings_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fattiger_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fattiger_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fattiger_markings_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "demitesh_fluffytail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "demitesh_fluffytail_marks"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "CHOMP_SPRITES_PAST_HERE"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatwolf2_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatwolf2_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatwolf2_markings_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolf2_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolf2_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolf2_markings_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatfeline2_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatfeline2_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatfeline2_markings_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "feline2_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "feline2_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "feline2_markings_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "redpanda"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "redpanda_dc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "redpanda_dc_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatwolfalt_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatwolfalt_markings2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatwolfalt_markings1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "naga_alt_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "naga_alt_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synthnaga"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synthnaga_belly"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scoli_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scoli_markings1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scoli_markings2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sergwheat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sergwheat_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "longflufftail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bigringtail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bigringtail_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nightstalker_desert"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nightstalker_desert_w"
+dirs = 4
+frames = 5
+delays = [0.75, 0.5, 0.75, 0.5, 10]
+
+[[state]]
+name = "nightstalker_diamondback"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nightstalker_diamondback_w"
+dirs = 4
+frames = 5
+delays = [0.75, 0.5, 0.75, 0.5, 10]
+
+[[state]]
+name = "nightstalker_diamondback_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nightstalker_diamondback_markings_w"
+dirs = 4
+frames = 5
+delays = [0.75, 0.5, 0.75, 0.5, 10]
+
+[[state]]
+name = "longvirus_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "longvirus_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sectdrone"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sectdrone_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatsectdrone"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatsectdrone_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatsergal"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cow_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cow_alt_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bigleggy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bigleggy_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bigleggy_stanced"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bigleggy_markings_stanced"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bigleggy_canine"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bigleggy_feline"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bigleggy_reptile"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bigleggy_snake"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bigleggy_vulpine"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bigleggy_m_bird"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bigleggy_m_bird_stanced"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bigleggy_bird"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bigleggy_plug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bigleggy_alienslug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bigleggy_alienslug_m"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bigleggy_full_alienslug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "extended_fatdrake"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "extended_fatdrake_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "extended_fatdrake_markings2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spottedlizard_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spottedlizard_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spottedlizard_markings_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatspottedlizard_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatspottedlizard_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatspottedlizard_markings_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spottedextended_fatdrake"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spottedextended_fatdrake_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spottedextended_fatdrake_markings_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spotteddrake_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spotteddrake_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spotteddrake_markings_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatspotteddrake_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatspotteddrake_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatspotteddrake_markings_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spottedextended_drake"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spottedextended_drake_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spottedextended_drake_markings_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "extended_drake"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "extended_drake_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "extended_drake_markings_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_new"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_new_fluff"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_new_fat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_new_fat_overlay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shadekin_fat_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shadekin_fat_spots"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sloog"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sloog_glowstripe"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_fat2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Dragon_maid_tail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "large-shark"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "large-shark-finless"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "large-shark-underbelly"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "large-shark-tips"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "large-shark-tips-finless"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "large-shark-stripes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "large-shark-stripes-underbelly"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "husky_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "huskyf_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolf3_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kentauri_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kentauri_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "big_liz_mark"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "big_liz"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "qaavos_tail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "anteater_tail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatfeline_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatfeline_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatfeline_markings_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatfeline_markings_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tree_oak_roots"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "example"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bigsnaketailbrush"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bigsnaketailbrushunder"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bigsnaketailbrush_brush"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bigsnaketailbrushunder_scutes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bigsnaketailclaw_claw"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scug_markings"
+dirs = 4
+frames = 1

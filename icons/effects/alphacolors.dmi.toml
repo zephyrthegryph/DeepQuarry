@@ -1,0 +1,31 @@
+# Generated from alphacolors.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "blue"
+dirs = 1
+frames = 4
+delays = [4, 2, 2, 1]
+
+[[state]]
+name = "green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blurry"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red"
+dirs = 1
+frames = 4
+delays = [4, 2, 2, 1]
+
+[[state]]
+name = "dither50"
+dirs = 1
+frames = 1

@@ -1,0 +1,24 @@
+# Generated from lefthand_guns_ch.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "clockrifle-wielded"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "clockrifle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "c20rnew"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "c20rnew-wielded"
+dirs = 4
+frames = 1

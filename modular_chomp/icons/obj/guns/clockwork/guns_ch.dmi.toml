@@ -1,0 +1,64 @@
+# Generated from guns_ch.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "clockrifle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clockrifle100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clockrifle75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clockrifle50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clockrifle25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clockrifle0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flintclock"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flintclock100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flintclock75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flintclock50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flintclock25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flintclock0"
+dirs = 1
+frames = 1

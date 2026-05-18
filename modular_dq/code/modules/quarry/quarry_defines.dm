@@ -8,6 +8,12 @@
 #define QUARRY_LAYER_SIZE 256
 #endif
 
+// Percent of per-goal completion required for a layer to count as
+// "stabilised". Stabilising a layer unlocks the next-deeper depth on
+// the elevator. Referenced from quarry_controller.dm / elevator_panel,
+// which sort before quarry_goal.dm where the goal datum itself lives.
+#define QUARRY_STABILITY_THRESHOLD 80
+
 // Raw-chemistry mineral names. These index GLOB.ore_data the same way
 // the upstream ORE_HEMATITE / ORE_PHORON defines do, and have to be
 // available at parse time wherever a quarry feature lists them in

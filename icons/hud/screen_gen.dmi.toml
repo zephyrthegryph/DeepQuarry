@@ -1,0 +1,1015 @@
+# Generated from screen_gen.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 26
+
+[[state]]
+name = "internal0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "internal1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "internal2"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "black"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "x"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "x2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "x3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "x4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arrow"
+dirs = 1
+frames = 4
+delays = [1.5, 1, 1, 2]
+rewind = true
+
+[[state]]
+name = "arrow_white"
+dirs = 1
+frames = 4
+delays = [1.5, 1, 1, 2]
+rewind = true
+
+[[state]]
+name = "arrow_white_highlights"
+dirs = 1
+frames = 4
+delays = [1.5, 1, 1, 2]
+rewind = true
+
+[[state]]
+name = "arrow_large"
+dirs = 1
+frames = 5
+delays = [1, 1, 1, 1, 2]
+rewind = true
+
+[[state]]
+name = "arrow_large_still"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arrow_large_white"
+dirs = 1
+frames = 5
+delays = [1, 1, 1, 1, 2]
+rewind = true
+
+[[state]]
+name = "arrow_large_white_highlights"
+dirs = 1
+frames = 5
+delays = [1, 1, 1, 1, 2]
+rewind = true
+
+[[state]]
+name = "arrow_large_white_still"
+dirs = 1
+frames = 1
+rewind = true
+
+[[state]]
+name = "arrow_large_white_still_highlights"
+dirs = 1
+frames = 1
+rewind = true
+
+[[state]]
+name = "blank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "catcher"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flash"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flash-eps"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "selector"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blurry"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinforce"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "disarm/kill"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "disarm/kill1"
+dirs = 1
+frames = 3
+delays = [2]
+rewind = true
+
+[[state]]
+name = "dark128"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark64"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark32"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "druggy"
+dirs = 1
+frames = 27
+delays = [1]
+hotspots = [{ frame = 1, x = 12, y = 22 }]
+
+[[state]]
+name = "noise"
+dirs = 1
+frames = 40
+delays = [1]
+
+[[state]]
+name = "markus"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gabrielle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "help"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "disarm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grab"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "harm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "groin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "r_arm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "l_arm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "r_leg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "l_leg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eyes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mouth"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "head"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blocked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "block"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "!reinforce"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pulse"
+dirs = 1
+frames = 28
+delays = [0.5]
+
+[[state]]
+name = "health0"
+dirs = 1
+frames = 28
+delays = [0.5]
+
+[[state]]
+name = "health1"
+dirs = 1
+frames = 28
+delays = [0.5]
+
+[[state]]
+name = "health2"
+dirs = 1
+frames = 28
+delays = [0.5]
+
+[[state]]
+name = "health3"
+dirs = 1
+frames = 28
+delays = [0.5]
+
+[[state]]
+name = "health4"
+dirs = 1
+frames = 28
+delays = [0.5]
+
+[[state]]
+name = "health5"
+dirs = 1
+frames = 28
+delays = [0.5]
+
+[[state]]
+name = "health6"
+dirs = 1
+frames = 28
+delays = [0.5]
+
+[[state]]
+name = "health7"
+dirs = 1
+frames = 28
+delays = [1]
+
+[[state]]
+name = "healthdoll_DEAD"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "healthdoll_OVERLAY"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "head1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chest1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "l_arm1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "r_arm1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "l_leg1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "r_leg1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "head2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chest2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "l_arm2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "r_arm2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "l_leg2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "r_leg2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "head3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chest3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "l_arm3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "r_arm3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "l_leg3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "r_leg3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "head4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chest4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "l_arm4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "r_arm4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "l_leg4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "r_leg4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "head5"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "chest5"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "l_arm5"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "r_arm5"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "l_leg5"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "r_leg5"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "head6"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "chest6"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "l_arm6"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "r_arm6"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "l_leg6"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "r_leg6"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "head7"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "chest7"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "l_arm7"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "r_arm7"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "l_leg7"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "r_leg7"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "backpack_close"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "talk_help"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "talk_hello"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "talk_stop"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "talk_bye"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "talk_come"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "talk_thanks"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "talk_out"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "talk_yes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "talk_no"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "talk_wheel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mapfixmarker"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mood1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mood2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mood3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mood4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mood5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mood6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mood7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mood8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mood9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mood_happiness_good"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mood_happiness_bad"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mood_despair"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mood_desentized"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "badass_sun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "honked_nose"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "birthday"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "template"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reserved"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scroll_up"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scroll_down"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pull"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "living0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "living1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "living2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "living3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "living4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "living5"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "living6"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "megasprite"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacesuit_high"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacesuit_mid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacesuit_low"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacesuit_very_low"
+dirs = 1
+frames = 2
+delays = [4]
+
+[[state]]
+name = "spacesuit_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacesuit_coreless"
+dirs = 1
+frames = 2
+delays = [4]
+
+[[state]]
+name = "spacesuit_missing"
+dirs = 1
+frames = 2
+delays = [4]
+
+[[state]]
+name = "mega_legion"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dragon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bubblegum"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hierophant"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "miner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "watcher"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pine_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "festivus_pole"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crawling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "megacarp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "legion"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacedragon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Fugu0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eva"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "legionnaire"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pandora"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "broodmother"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "herald"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alienq"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "combo"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "combo_E"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "combo_D"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "combo_G"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "combo_H"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "togglefull_flash"
+dirs = 1
+frames = 39
+delays = [1]
+
+[[state]]
+name = "stamina_full"
+dirs = 1
+frames = 10
+delays = [5, 1, 1, 1, 1, 1, 1, 1, 1, 5]
+
+[[state]]
+name = "stamina_1"
+dirs = 1
+frames = 10
+delays = [1]
+
+[[state]]
+name = "stamina_2"
+dirs = 1
+frames = 10
+delays = [1]
+
+[[state]]
+name = "stamina_3"
+dirs = 1
+frames = 10
+delays = [1]
+
+[[state]]
+name = "stamina_4"
+dirs = 1
+frames = 10
+delays = [1]
+
+[[state]]
+name = "stamina_5"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "stamina_crit"
+dirs = 1
+frames = 10
+delays = [1]
+
+[[state]]
+name = "stamina_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hungerbar0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hungerbar2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hungerbar1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hungerbar-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hungerbar-2"
+dirs = 1
+frames = 1

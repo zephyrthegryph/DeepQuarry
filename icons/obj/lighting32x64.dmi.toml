@@ -1,0 +1,69 @@
+# Generated from lighting32x64.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 64
+cols = 6
+
+[[state]]
+name = "big_flamp0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "big_flamp1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "big_flamp-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "big_flamp-construct-stage1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "big_flamp-construct-stage2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "big_flamp-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "big_flamp-burned"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "big_flamp-overlay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lamppost0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lamppost1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lamppost-empty"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lamppost-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lamppost-burned"
+dirs = 4
+frames = 1

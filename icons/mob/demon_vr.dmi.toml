@@ -1,0 +1,191 @@
+# Generated from demon_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 33
+height = 47
+cols = 35
+
+[[state]]
+name = "boxfox"
+dirs = 4
+frames = 13
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 10]
+
+[[state]]
+name = "boxfox_rest"
+dirs = 4
+frames = 9
+delays = [2, 5, 5, 5, 5, 5, 5, 5, 2]
+
+[[state]]
+name = "boxfox-1"
+dirs = 4
+frames = 13
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 10]
+
+[[state]]
+name = "boxfox_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phaseout"
+dirs = 1
+frames = 21
+delays = [2, 2, 1, 2, 1, 2, 2, 2, 3, 2, 2, 1]
+loop = 1
+
+[[state]]
+name = "phasein"
+dirs = 1
+frames = 21
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 3, 2, 2, 2, 1, 2, 1, 2, 4]
+loop = 1
+
+[[state]]
+name = "engorge"
+dirs = 4
+frames = 13
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 10]
+
+[[state]]
+name = "engorge_rest"
+dirs = 4
+frames = 8
+delays = [2, 2, 2, 2, 2, 2, 2, 20]
+
+[[state]]
+name = "engorge_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "zellic"
+dirs = 4
+frames = 13
+delays = [2, 2, 2, 2, 2, 2, 10, 2, 2, 2, 2, 2, 10]
+
+[[state]]
+name = "zellic_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eater"
+dirs = 4
+frames = 13
+delays = [2, 2, 4, 4, 4, 4, 6, 4, 4, 4, 4, 2]
+
+[[state]]
+name = "eater"
+dirs = 4
+frames = 13
+delays = [4]
+movement = true
+
+[[state]]
+name = "Ashes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wendigo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wendigo-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wendigo_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wendigo_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "avarn"
+dirs = 4
+frames = 13
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 10]
+
+[[state]]
+name = "covern"
+dirs = 4
+frames = 13
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 10]
+
+[[state]]
+name = "ira"
+dirs = 4
+frames = 13
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3]
+
+[[state]]
+name = "ire"
+dirs = 4
+frames = 13
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3]
+
+[[state]]
+name = "laxel"
+dirs = 4
+frames = 13
+delays = [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 10]
+
+[[state]]
+name = "lutra"
+dirs = 4
+frames = 13
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 10]
+
+[[state]]
+name = "eater_rest"
+dirs = 4
+frames = 13
+delays = [2, 2, 4, 4, 4, 4, 6, 4, 4, 4, 4, 2]
+
+[[state]]
+name = "zellic_rest"
+dirs = 4
+frames = 13
+delays = [2, 2, 2, 2, 2, 2, 10, 2, 2, 2, 2, 2, 10]
+
+[[state]]
+name = "avarn_rest"
+dirs = 4
+frames = 13
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 10]
+
+[[state]]
+name = "covern_rest"
+dirs = 4
+frames = 13
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 10]
+
+[[state]]
+name = "ira_rest"
+dirs = 4
+frames = 13
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3]
+
+[[state]]
+name = "ire_rest"
+dirs = 4
+frames = 13
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3]
+
+[[state]]
+name = "laxel_rest"
+dirs = 4
+frames = 13
+delays = [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 10]
+
+[[state]]
+name = "lutra_rest"
+dirs = 4
+frames = 13
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 10]

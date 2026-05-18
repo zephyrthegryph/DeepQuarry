@@ -1,0 +1,99 @@
+# Generated from desert_tiles.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "deep_sand0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deep_sand1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deep_sand2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sand0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sand1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sand2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sand_dug"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gravel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mud"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deep_grass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deep_water"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deep_water_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "water"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "water_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "sandy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sandrock_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "sandrock"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stonewall"
+dirs = 1
+frames = 1

@@ -1,0 +1,79 @@
+# Generated from sol.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "sol-full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sol"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sol_100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sol_75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sol_50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sol_25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sol_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lefthand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "onsuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "back"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "onsuit-full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "back-full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand_doble"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand_doble"
+dirs = 4
+frames = 1

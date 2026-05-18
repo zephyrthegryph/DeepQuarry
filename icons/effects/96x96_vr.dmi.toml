@@ -1,0 +1,18 @@
+# Generated from 96x96_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 96
+height = 96
+cols = 4
+
+[[state]]
+name = "explosion"
+dirs = 1
+frames = 7
+delays = [1]
+loop = 1
+
+[[state]]
+name = "explosionfast"
+dirs = 1
+frames = 8
+delays = [0.6]
+loop = 1

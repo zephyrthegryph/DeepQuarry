@@ -1,0 +1,54 @@
+# Generated from snow.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "snow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snow_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "snow_surround"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gravsnow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gravsnow_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "gravsnow_surround"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snowyplating"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snowyplayingdrift"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "footprint1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "footprint2"
+dirs = 4
+frames = 1

@@ -1,0 +1,875 @@
+# Generated from robots_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 30
+
+[[state]]
+name = "ov-openpanel -c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ov-openpanel +c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ov-openpanel +w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "handy-hydro"
+dirs = 4
+frames = 3
+delays = [4]
+rewind = true
+
+[[state]]
+name = "handy-clerk"
+dirs = 4
+frames = 3
+delays = [4]
+rewind = true
+
+[[state]]
+name = "handy-janitor"
+dirs = 4
+frames = 3
+delays = [4]
+rewind = true
+
+[[state]]
+name = "handy-service"
+dirs = 4
+frames = 3
+delays = [4]
+rewind = true
+
+[[state]]
+name = "handy-miner"
+dirs = 4
+frames = 3
+delays = [4]
+rewind = true
+
+[[state]]
+name = "handy-sec"
+dirs = 4
+frames = 3
+delays = [4]
+rewind = true
+
+[[state]]
+name = "handy-standard"
+dirs = 4
+frames = 3
+delays = [4]
+rewind = true
+
+[[state]]
+name = "eyes-handy-hydro"
+dirs = 4
+frames = 3
+delays = [4]
+rewind = true
+
+[[state]]
+name = "eyes-handy-clerk"
+dirs = 4
+frames = 3
+delays = [4]
+rewind = true
+
+[[state]]
+name = "eyes-handy-janitor"
+dirs = 4
+frames = 3
+delays = [4]
+rewind = true
+
+[[state]]
+name = "eyes-handy-service"
+dirs = 4
+frames = 3
+delays = [4]
+rewind = true
+
+[[state]]
+name = "eyes-handy-miner"
+dirs = 4
+frames = 3
+delays = [4]
+rewind = true
+
+[[state]]
+name = "eyes-handy-sec"
+dirs = 4
+frames = 3
+delays = [4]
+rewind = true
+
+[[state]]
+name = "eyes-handy-standard"
+dirs = 4
+frames = 3
+delays = [4]
+rewind = true
+
+[[state]]
+name = "mechoid-Standard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mechoid-Service"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mechoid-Miner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mechoid-Medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mechoid-Engineering"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mechoid-Security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mechoid-Janitor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mechoid-Combat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mechoid-Combat-roll"
+dirs = 4
+frames = 6
+delays = [1, 1, 2, 1, 1, 2]
+
+[[state]]
+name = "mechoid-Science"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-mechoid-Standard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-mechoid-Service"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-mechoid-Miner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-mechoid-Medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-mechoid-Engineering"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-mechoid-Security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-mechoid-Janitor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-mechoid-Combat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-mechoid-Science"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Noble-CLN"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Noble-SRV"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Noble-DIG"
+dirs = 4
+frames = 5
+delays = [10, 0.5]
+
+[[state]]
+name = "Noble-MED"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Noble-SEC"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Noble-ENG"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "Noble-STD"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Noble-open-panel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-Noble-STD"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-Noble-CLN"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-Noble-SRV"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-Noble-DIG"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-Noble-MED"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-Noble-SEC"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-Noble-ENG"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-corrupt-repairbot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "corrupt-repairbot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "corrupt-repairbot"
+dirs = 4
+frames = 2
+delays = [1]
+movement = true
+
+[[state]]
+name = "zoomba-standard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-zoomba-standard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zoomba-standard-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "zoomba-standard"
+dirs = 4
+frames = 2
+delays = [5, 1]
+movement = true
+
+[[state]]
+name = "eyes-zoomba-standard"
+dirs = 4
+frames = 2
+delays = [5, 1]
+movement = true
+
+[[state]]
+name = "zoomba-clerical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-zoomba-clerical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zoomba-clerical-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "zoomba-clerical"
+dirs = 4
+frames = 2
+delays = [5, 1]
+movement = true
+
+[[state]]
+name = "eyes-zoomba-clerical"
+dirs = 4
+frames = 2
+delays = [5, 1]
+movement = true
+
+[[state]]
+name = "zoomba-engineering"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-zoomba-engineering"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zoomba-engineering-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "zoomba-engineering"
+dirs = 4
+frames = 2
+delays = [5, 1]
+movement = true
+
+[[state]]
+name = "eyes-zoomba-engineering"
+dirs = 4
+frames = 2
+delays = [5, 1]
+movement = true
+
+[[state]]
+name = "zoomba-janitor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-zoomba-janitor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zoomba-janitor-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "zoomba-janitor"
+dirs = 4
+frames = 2
+delays = [5, 1]
+movement = true
+
+[[state]]
+name = "eyes-zoomba-janitor"
+dirs = 4
+frames = 2
+delays = [5, 1]
+movement = true
+
+[[state]]
+name = "zoomba-medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-zoomba-medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zoomba-medical-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "zoomba-medical"
+dirs = 4
+frames = 2
+delays = [5, 1]
+movement = true
+
+[[state]]
+name = "eyes-zoomba-medical"
+dirs = 4
+frames = 2
+delays = [5, 1]
+movement = true
+
+[[state]]
+name = "zoomba-crisis"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-zoomba-crisis"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zoomba-crisis-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "zoomba-crisis"
+dirs = 4
+frames = 2
+delays = [5, 1]
+movement = true
+
+[[state]]
+name = "eyes-zoomba-crisis"
+dirs = 4
+frames = 2
+delays = [5, 1]
+movement = true
+
+[[state]]
+name = "zoomba-miner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-zoomba-miner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zoomba-miner-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "zoomba-miner"
+dirs = 4
+frames = 2
+delays = [5, 1]
+movement = true
+
+[[state]]
+name = "eyes-zoomba-miner"
+dirs = 4
+frames = 2
+delays = [5, 1]
+movement = true
+
+[[state]]
+name = "zoomba-research"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-zoomba-research"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zoomba-research-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "zoomba-research"
+dirs = 4
+frames = 2
+delays = [5, 1]
+movement = true
+
+[[state]]
+name = "zoomba-eyes-research"
+dirs = 4
+frames = 2
+delays = [5, 1]
+movement = true
+
+[[state]]
+name = "zoomba-security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-zoomba-security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zoomba-security-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "zoomba-security"
+dirs = 4
+frames = 2
+delays = [5, 1]
+movement = true
+
+[[state]]
+name = "eyes-zoomba-security"
+dirs = 4
+frames = 2
+delays = [5, 1]
+movement = true
+
+[[state]]
+name = "zoomba-service"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-zoomba-service"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zoomba-service-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "zoomba-service"
+dirs = 4
+frames = 2
+delays = [5, 1]
+movement = true
+
+[[state]]
+name = "eyes-zoomba-service"
+dirs = 4
+frames = 2
+delays = [5, 1]
+movement = true
+
+[[state]]
+name = "zoomba-combat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-zoomba-combat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zoomba-combat-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "zoomba-combat"
+dirs = 4
+frames = 2
+delays = [5, 1]
+movement = true
+
+[[state]]
+name = "eyes-zoomba-combat"
+dirs = 4
+frames = 2
+delays = [5, 1]
+movement = true
+
+[[state]]
+name = "zoomba-combat-roll"
+dirs = 4
+frames = 4
+delays = [15, 1, 15, 1]
+
+[[state]]
+name = "zoomba-combat-roll"
+dirs = 4
+frames = 6
+delays = [1]
+movement = true
+
+[[state]]
+name = "zoomba-combat-shield"
+dirs = 4
+frames = 2
+delays = [5, 1]
+
+[[state]]
+name = "mechoid-Combat-shield"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spiderscience"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-spiderscience"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "uptall-standard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-uptall-standard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "uptall-standard2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-uptall-standard2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "uptall-engineering"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-uptall-engineering"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "uptall-medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-uptall-medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "uptall-miner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-uptall-miner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "uptall-science"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-uptall-science"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "uptall-crisis"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-uptall-crisis"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "uptall-service"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-uptall-service"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "uptall-security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-uptall-security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "uptall-janitor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-uptall-janitor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-standard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-worm-standard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-engineering"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-worm-engineering"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-janitor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-worm-janitor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-crisis"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-worm-crisis"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-miner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-worm-miner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-worm-security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-combat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-worm-combat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-combat-shield"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-surgeon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-worm-surgeon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-service"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-worm-service"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-openpanel +c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-openpanel -c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-openpanel +w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-hotpink"
+dirs = 4
+frames = 1

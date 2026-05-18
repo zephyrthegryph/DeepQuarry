@@ -1,0 +1,118 @@
+# Generated from robot_component.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "armor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armor_broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "working"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "motor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "motor_broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "analyser"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "analyser_broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radio"
+dirs = 1
+frames = 4
+delays = [15, 1]
+
+[[state]]
+name = "radio_broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "binradio"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "binradio_broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "camera"
+dirs = 1
+frames = 4
+delays = [20, 1, 0.5, 1]
+
+[[state]]
+name = "camera_broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armor_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armor_l_broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armor_e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armor_e_broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armor_r"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armor_r_broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armor_c"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armor_c_broken"
+dirs = 1
+frames = 1

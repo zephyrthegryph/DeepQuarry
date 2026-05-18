@@ -1,0 +1,24 @@
+# Generated from limb_mask.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "right_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "left_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "left_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "right_l"
+dirs = 1
+frames = 1

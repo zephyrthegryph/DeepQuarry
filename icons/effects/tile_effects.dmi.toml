@@ -1,0 +1,70 @@
+# Generated from tile_effects.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "phoron"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "nitrous_oxide"
+dirs = 1
+frames = 12
+delays = [1]
+
+[[state]]
+name = "freon"
+dirs = 1
+frames = 8
+delays = [2, 2, 2, 3, 3, 2]
+
+[[state]]
+name = "water_vapor"
+dirs = 1
+frames = 8
+delays = [2, 2, 2, 3, 3, 2]
+
+[[state]]
+name = "fusion_gas"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "nitryl"
+dirs = 1
+frames = 12
+delays = [1]
+
+[[state]]
+name = "tritium"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "miasma"
+dirs = 1
+frames = 8
+delays = [2, 2, 2, 3, 3, 2]
+
+[[state]]
+name = "phoron-old"
+dirs = 1
+frames = 3
+delays = [2]
+
+[[state]]
+name = "phoron-orange"
+dirs = 1
+frames = 3
+delays = [2]
+
+[[state]]
+name = "sleeping_agent-old"
+dirs = 1
+frames = 3
+delays = [2]

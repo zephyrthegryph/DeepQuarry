@@ -1,0 +1,24 @@
+# Generated from echo.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 2
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "echo1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "echo2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "echo3"
+dirs = 1
+frames = 1

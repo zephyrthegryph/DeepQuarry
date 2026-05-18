@@ -1,0 +1,588 @@
+# Generated from featherzone.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 27
+
+[[state]]
+name = "blank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "broken-overlay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "0b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "1b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "2b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "3b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "4b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "5b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "6b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "7b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "8b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "9b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "10b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "11b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "12b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "13b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "14b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "15b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flockwall0"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "flockwall1"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "flockwall2"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "flockwall3"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "flockwall4"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "flockwall5"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "flockwall5h"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "flockwall6"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "flockwall6h"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "flockwall7"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "flockwall8"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "flockwall9"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "flockwall9h"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "flockwall10"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "flockwall10h"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "flockwall11"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "flockwall12"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "flockwall13"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "flockwall14"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "flockwall15"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "floor-on"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "floor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floor-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spawn-floor"
+dirs = 1
+frames = 21
+delays = [1]
+loop = 1
+
+[[state]]
+name = "spawn-wall"
+dirs = 1
+frames = 22
+delays = [1]
+loop = 1
+
+[[state]]
+name = "window"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "drone"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "drone-dead"
+dirs = 1
+frames = 8
+delays = [10, 1, 1, 1, 10, 1]
+
+[[state]]
+name = "spawn-floor-loop"
+dirs = 1
+frames = 4
+delays = [1]
+rewind = true
+
+[[state]]
+name = "spawn-wall-loop"
+dirs = 1
+frames = 4
+delays = [1]
+rewind = true
+
+[[state]]
+name = "flockdoor"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "flockdooropen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flockdooropening"
+dirs = 4
+frames = 10
+delays = [1]
+loop = 1
+
+[[state]]
+name = "flockdoorclosing"
+dirs = 4
+frames = 10
+delays = [1]
+loop = 1
+
+[[state]]
+name = "flockdoorbroken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "egg"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "flockmind-ghost"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flockmind-death"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "flockmind"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "obscure"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "frontier"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hazard"
+dirs = 1
+frames = 3
+delays = [1]
+rewind = true
+
+[[state]]
+name = "hazard-corners"
+dirs = 1
+frames = 3
+delays = [1]
+rewind = true
+
+[[state]]
+name = "door_deny"
+dirs = 4
+frames = 8
+delays = [0.5]
+
+[[state]]
+name = "cage"
+dirs = 1
+frames = 12
+delays = [0.75]
+
+[[state]]
+name = "gib1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gib2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gib3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gib4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gib5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fluid1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fluid2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fluid3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stunbolt"
+dirs = 1
+frames = 3
+delays = [0.75]
+
+[[state]]
+name = "drone-long-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "drone-d1"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "drone-d2"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "drone-dormant"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shuttle-wall"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "telemarker"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "reclaimer"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "fibrenet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "barricade-0"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "barricade-1"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "barricade-2"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "barricade-3"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "shuttle-floor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "antenna"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "antenna-end"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "atenna-broken-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "antenna-broken-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wingrille"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "barricade-cut"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "minicache"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "teleblocker-on"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "teleblocker-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shuttle-bay-middle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shuttle-bay"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "door-broke"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flocktrace-ghost"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flocktrace-death"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "flocktrace"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "flockbit"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "totem"
+dirs = 1
+frames = 16
+delays = [1]
+
+[[state]]
+name = "totem-angry"
+dirs = 1
+frames = 16
+delays = [1]
+
+[[state]]
+name = "totem-dead"
+dirs = 1
+frames = 16
+delays = [1]

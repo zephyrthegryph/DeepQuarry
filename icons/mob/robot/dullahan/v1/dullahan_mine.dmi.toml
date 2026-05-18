@@ -1,0 +1,117 @@
+# Generated from dullahan_mine.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 64
+cols = 11
+
+[[state]]
+name = "dullahanmine"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahanmine-rest"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahanmine-sit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullahanmine-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "openpanel_nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahanmine-breastplate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahanmine-breastplate-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahanmine-rest-eyes"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahanmine-eyes"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahanmine-lights"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahanmine-rest-lights"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahanmine-loincloth"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahanmine-loincloth-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahanmine-eyecover"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahanmine-eyecover-rest"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahanmine-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahanmine-sleeper-1-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahanmine-sit-lights"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullahanmine-sit-eyes"
+dirs = 1
+frames = 1

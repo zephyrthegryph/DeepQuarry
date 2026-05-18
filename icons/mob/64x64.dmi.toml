@@ -1,0 +1,192 @@
+# Generated from 64x64.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 13
+
+[[state]]
+name = "megacarp"
+dirs = 4
+frames = 3
+delays = [3, 4, 3]
+rewind = true
+
+[[state]]
+name = "megacarp_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spider_queen"
+dirs = 4
+frames = 2
+delays = [5]
+movement = true
+
+[[state]]
+name = "spider_queen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spider_queen_dead"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "queen_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "queen_sleep"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "queen_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "queen_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prat_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "prat_sleep"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prat_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prat_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "AshDragon-01"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "AshDragon-Dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "swoop"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shadow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arachnid"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "arachnid-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "arachnid-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "arachnid_sleeping"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arachnid_sleeping-1"
+dirs = 1
+frames = 7
+delays = [30, 1, 2, 1, 0.7, 1, 0.7]
+
+[[state]]
+name = "arachnid_sleeping-2"
+dirs = 1
+frames = 7
+delays = [30, 1, 2, 1, 0.7, 1, 0.7]
+
+[[state]]
+name = "arachnid_stunned"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arachnid_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alpha_chocobo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alpha_chocobo"
+dirs = 4
+frames = 4
+delays = [2]
+movement = true
+
+[[state]]
+name = "alpha_chocobo-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alpha_chocobo-1"
+dirs = 4
+frames = 4
+delays = [2]
+movement = true
+
+[[state]]
+name = "alpha_chocobo-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alpha_chocobo-2"
+dirs = 4
+frames = 4
+delays = [2]
+movement = true
+
+[[state]]
+name = "alpha_chocobo_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bigcat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bigcat_sleep"
+dirs = 1
+frames = 2
+delays = [30, 5]
+
+[[state]]
+name = "bigcat_dead"
+dirs = 1
+frames = 1

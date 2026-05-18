@@ -1,0 +1,104 @@
+# Generated from tiles_old.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "steel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "steel_broken0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "steel_broken1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "steel_broken2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "steel_broken3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "steel_broken4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "steel_burned0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "steel_burned1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinforced"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "steel_dirty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "freezer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "neutral"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hydrofloor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "asteroidfloor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tiled"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tiled2"
+dirs = 1
+frames = 1

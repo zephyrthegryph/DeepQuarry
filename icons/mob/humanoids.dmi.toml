@@ -1,0 +1,194 @@
+# Generated from humanoids.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 13
+
+[[state]]
+name = "nt_officer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nt_shotgunner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nt_lasertrooper"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nt_spacesec_human"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nt_spacesec_una"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nt_spacesec_taj"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "salvage_crew_human"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "salvage_crew_una"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "salvage_crew_taj"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "salvage_guard_human"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "salvage_guard_una"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "salvage_guard_taj"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "salvage_engi_human"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "salvage_engi_una"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "salvage_engi_taj"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "salvage_merc_human"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "salvage_merc_una"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "salvage_merc_taj"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "salvage_medic_human"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "salvage_medic_una"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "salvage_medic_taj"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "salvage_officer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "paramedic"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "homesteader_shotgunner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "homesteader_sharpshooter"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pcrc_officer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pcrc_shotgunner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "saare_officer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "saare_tactical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "saare_riot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "generic_green_officer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "generic_green_tactical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "generic_navy_officer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "generic_navy_tactical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "generic_navy_sniper"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "milsuit_laser"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cheapbreacher_laser"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "breacher_mhd"
+dirs = 4
+frames = 1

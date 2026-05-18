@@ -1,0 +1,234 @@
+# Generated from widerobot_car_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 25
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ov-openpanel -c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ov-openpanel +c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ov-openpanel +w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wreck-overlay"
+dirs = 1
+frames = 18
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 40]
+
+[[state]]
+name = "kmine-sleeper_r"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "kmine"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "eyes-kmine"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "kmine-sleeper_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kmine"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-kmine"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kmine-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kmine-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kmine-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kmine-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-kmine-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-kmine-lights"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "cargohounddark"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargohounddark"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "cargohounddark-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cargohounddark-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargohounddark-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargohounddark-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-cargohounddark"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-cargohounddark"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "eyes-cargohounddark-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-cargohounddark-lights"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "cargohounddark-sleeper_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargohounddark-sleeper_r"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "cargohound"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargohound"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "cargohound-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cargohound-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargohound-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargohound-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-cargohound"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-cargohound"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "eyes-cargohound-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-cargohound-lights"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "cargohound-sleeper_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargohound-sleeper_r"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true

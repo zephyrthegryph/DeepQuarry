@@ -1,0 +1,154 @@
+# Generated from railing.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 11
+
+[[state]]
+name = "railing1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "railing0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "corneroverlay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "frontoverlay_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "frontoverlay_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mcorneroverlay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grey_railing1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grey_railing0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grey_corneroverlay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grey_frontoverlay_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grey_frontoverlay_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grey_mcorneroverlay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hazard_railing0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hazard_railing1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hazard_frontoverlay_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hazard_frontoverlay_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hazard_mcorneroverlay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hazard_corneroverlay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "inactive_railing0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "inactive_railing1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "inactive_frontoverlay_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "inactive_frontoverlay_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "inactive_mcorneroverlay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "inactive_corneroverlay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "active_railing0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "active_railing1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "active_frontoverlay_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "active_frontoverlay_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "active_mcorneroverlay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "active_corneroverlay"
+dirs = 4
+frames = 1

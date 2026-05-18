@@ -1,0 +1,135 @@
+# Generated from surgery_op.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "butt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "butt_assisted"
+dirs = 1
+frames = 2
+delays = [1, 2]
+
+[[state]]
+name = "butt_prosthetic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tumor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "parasite"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "parasite-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "potato"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinata"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluetumor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beerbelly"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crypto"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lattice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lattice-grown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chem_phoron"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chem_tricord"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chem_tramadol"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chem_dylo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chem_cita"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chem_bicar"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chem_derma"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chem_kelo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chem_dexa"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chem_hyper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chem_cillin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chem_inapro"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chem_bliss"
+dirs = 1
+frames = 1

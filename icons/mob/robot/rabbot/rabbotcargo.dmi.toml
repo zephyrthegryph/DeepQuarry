@@ -1,0 +1,54 @@
+# Generated from rabbotcargo.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "rabbotcargo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rabbotcargo-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rabbotcargo-rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rabbotcargo-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rabbotcargo-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rabbotcargo-glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rabbotcargo-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_nc"
+dirs = 4
+frames = 1

@@ -1,0 +1,94 @@
+# Generated from xenoqueen_64.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 6
+
+[[state]]
+name = "alienq"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alienq_running"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alienq_sleep"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alienq_unconscious"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alienq_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alienq_husked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alienp"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alienp_running"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alienp_sleep"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alienp_unconscious"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alienp_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alienp_husked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alienqmaid"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alienqmaid_running"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alienqmaid_sleep"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alienqmaid_unconscious"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alienqmaid_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alienqmaid_husked"
+dirs = 1
+frames = 1

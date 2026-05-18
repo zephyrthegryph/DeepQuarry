@@ -1,0 +1,65 @@
+# Generated from map_helpers.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 25, y = 23 }]
+
+[[state]]
+name = "sensin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sensout"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sens"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "doorin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "doorout"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "doorsimple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pump"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pumpdin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pumpdout"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "btnout"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "btnin"
+dirs = 1
+frames = 1

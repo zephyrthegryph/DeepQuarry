@@ -1,0 +1,30 @@
+# Generated from combat_medic.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "openpanel_nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "toiletbot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "toiletbot-eyes"
+dirs = 4
+frames = 3
+delays = [1, 2, 1]

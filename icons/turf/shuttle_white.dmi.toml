@@ -1,0 +1,148 @@
+# Generated from shuttle_white.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "light"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "light-hc"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "light-nj"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "light_d"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "light0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "light1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "light4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "light2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "light8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "light3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "light12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "light14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "light11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "light7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "light13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "light15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "light10"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "light5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "light6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "light9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "light6h"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "light10h"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "light5h"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "light9h"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "doorc0"
+dirs = 1
+frames = 8
+delays = [2]
+
+[[state]]
+name = "door1"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "doorc1"
+dirs = 1
+frames = 8
+delays = [2]
+
+[[state]]
+name = "door0"
+dirs = 1
+frames = 1
+loop = 1

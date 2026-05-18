@@ -1,0 +1,9 @@
+# Generated from virgo5.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 736
+height = 736
+cols = 1
+
+[[state]]
+name = "v5"
+dirs = 1
+frames = 1

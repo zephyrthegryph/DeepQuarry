@@ -1,0 +1,40 @@
+# Generated from pandemic.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "pandemic0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pandemic1"
+dirs = 1
+frames = 22
+delays = [1]
+
+[[state]]
+name = "pandemic0_nopower"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pandemic1_nopower"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pandemic0_b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pandemic1_b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "waitlight"
+dirs = 1
+frames = 1

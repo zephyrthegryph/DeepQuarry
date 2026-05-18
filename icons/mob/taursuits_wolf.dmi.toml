@@ -1,0 +1,339 @@
+# Generated from taursuits_wolf.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 17
+
+[[state]]
+name = "rig-syndie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-engineering"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-atmos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-sec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-secalt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-mining"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-sec_riot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-medicalalt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rad"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bombsuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ce_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ce_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engineering_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engineering_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "breacher_rig_cheap_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "breacher_rig_cheap"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medical_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medical_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "science_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "science_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "heavy_wolf_armor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jessiecoat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jessiecoat_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "katesuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lilithsuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "serdy_armor_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatcargo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatcargo_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coathydro"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coathydro_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatscience"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatscience_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatengineer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatengineer_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatatmos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatatmos_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatsecurity"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatsecurity_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatmedical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatmedical_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatminer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatminer_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatcaptain"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatcaptain_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apron"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apron_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "surgical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "white_dress"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "poncho"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "whitedress1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "janitaur"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "serdy_armor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolf_item"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "void_secalt_bay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "void_medicalalt_bay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "void_engineeringalt_bay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-vintagecrew"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-vintageengi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-vintagemarine"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-vintagemedic"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-vintageofficer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-vintagepilot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-vintagescientist"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-vintageminer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-vintagemerc"
+dirs = 4
+frames = 1

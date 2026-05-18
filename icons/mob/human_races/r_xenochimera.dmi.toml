@@ -1,0 +1,99 @@
+# Generated from r_xenochimera.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "r_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "l_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "r_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "l_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "groin_m"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "groin_f"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "torso_f"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "torso_m"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "torso_f_fat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "torso_m_fat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "head_f"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "head_m"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "overlay_husk"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tail_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "preview"
+dirs = 1
+frames = 1

@@ -1,0 +1,284 @@
+# Generated from monitor_icons.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 27
+
+[[state]]
+name = "ipc_blank-colored"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ipc_pink-colored"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "ipc_green-colored"
+dirs = 4
+frames = 2
+delays = [6]
+
+[[state]]
+name = "ipc_red-colored"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "ipc_blue-colored"
+dirs = 4
+frames = 6
+delays = [24]
+
+[[state]]
+name = "ipc_shower-colored"
+dirs = 4
+frames = 12
+delays = [8]
+
+[[state]]
+name = "ipc_orange-colored"
+dirs = 4
+frames = 6
+delays = [8]
+
+[[state]]
+name = "ipc_nature-colored"
+dirs = 4
+frames = 12
+delays = [100, 1, 1, 1, 1, 1, 100, 1]
+
+[[state]]
+name = "ipc_eight-colored"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "ipc_goggles-colored"
+dirs = 4
+frames = 2
+delays = [2, 40]
+
+[[state]]
+name = "ipc_heart-colored"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "ipc_monoeye-colored"
+dirs = 4
+frames = 4
+delays = [40, 1]
+
+[[state]]
+name = "ipc_breakout-colored"
+dirs = 4
+frames = 8
+delays = [8]
+
+[[state]]
+name = "ipc_yellow-colored"
+dirs = 4
+frames = 2
+delays = [20]
+
+[[state]]
+name = "ipc_static-colored"
+dirs = 4
+frames = 12
+delays = [8]
+
+[[state]]
+name = "ipc_purple-colored"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "ipc_scroll"
+dirs = 4
+frames = 5
+delays = [1]
+
+[[state]]
+name = "ipc_console"
+dirs = 4
+frames = 2
+delays = [10]
+
+[[state]]
+name = "ipc_rgb-colored"
+dirs = 4
+frames = 3
+delays = [20]
+
+[[state]]
+name = "ipc_gol_glider"
+dirs = 4
+frames = 4
+delays = [3]
+
+[[state]]
+name = "ipc_rainbow-colored"
+dirs = 4
+frames = 7
+delays = [1]
+
+[[state]]
+name = "ipc_smiley-colored"
+dirs = 4
+frames = 2
+delays = [15, 3]
+
+[[state]]
+name = "ipc_database-colored"
+dirs = 4
+frames = 3
+delays = [1]
+
+[[state]]
+name = "hesphiastos_alt_off-colored"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hesphiastos_alt_pink-colored"
+dirs = 4
+frames = 4
+delays = [40, 1]
+
+[[state]]
+name = "hesphiastos_alt_orange-colored"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "hesphiastos_alt_goggles-colored"
+dirs = 4
+frames = 2
+delays = [2, 40]
+
+[[state]]
+name = "hesphiastos_alt_scroll"
+dirs = 4
+frames = 7
+delays = [1]
+
+[[state]]
+name = "hesphiastos_alt_rgb-colored"
+dirs = 4
+frames = 3
+delays = [5]
+
+[[state]]
+name = "hesphiastos_alt_rainbow-colored"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "grayson_alt_off-colored"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grayson_alt_green-colored"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grayson_alt_rgb-colored"
+dirs = 4
+frames = 3
+delays = [20]
+
+[[state]]
+name = "grayson_alt_scroll-colored"
+dirs = 4
+frames = 7
+delays = [1]
+
+[[state]]
+name = "grayson_alt_rainbow-colored"
+dirs = 4
+frames = 7
+delays = [1]
+
+[[state]]
+name = "grayson_off-colored"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grayson_green-colored"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "grayson_red-colored"
+dirs = 4
+frames = 2
+delays = [20]
+
+[[state]]
+name = "grayson_blue-colored"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "grayson_rgb-colored"
+dirs = 4
+frames = 3
+delays = [20]
+
+[[state]]
+name = "xion_off-colored"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xion_green-colored"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "xion_red-colored"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "xion_blue-colored"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "xion_rgb-colored"
+dirs = 4
+frames = 3
+delays = [20]
+
+[[state]]
+name = "monitor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "athena_red-colored"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "athena_off-colored"
+dirs = 4
+frames = 1

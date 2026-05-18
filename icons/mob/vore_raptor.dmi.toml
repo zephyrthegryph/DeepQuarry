@@ -1,0 +1,212 @@
+# Generated from vore_raptor.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 128
+height = 92
+cols = 18
+
+[[state]]
+name = "raptorpurple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptorpurple-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptorpurple_fat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptorpurple_fat-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptorpurple_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "raptorgreen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptorgreen-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptorgreen_fat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptorgreen_fat-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptorgreen_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "raptorred"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptorred-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptorred_fat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptorred_fat-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptorred_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "raptorblue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptorblue-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptorblue_fat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptorblue_fat-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptorblue_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "raptorblack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptorblack-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptorblack_fat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptorblack_fat-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptorblack_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "raptorwhite"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptorwhite-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptorwhite_fat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptorwhite_fat-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptorwhite_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "raptoryellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptoryellow-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptoryellow_fat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptoryellow_fat-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptoryellow_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "raptoryellow_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptoryellow"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "raptoryellow_fat-1"
+dirs = 4
+frames = 11
+delays = [1]
+movement = true
+
+[[state]]
+name = "raptoryellow_fat"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "raptoryellow-1"
+dirs = 4
+frames = 11
+delays = [1]
+movement = true

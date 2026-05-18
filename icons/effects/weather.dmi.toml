@@ -1,0 +1,216 @@
+# Generated from weather.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 24
+
+[[state]]
+name = "snowfall_light"
+dirs = 1
+frames = 8
+delays = [2]
+
+[[state]]
+name = "snowfall_med"
+dirs = 1
+frames = 8
+delays = [2]
+
+[[state]]
+name = "snowfall_heavy"
+dirs = 1
+frames = 32
+delays = [0.2]
+
+[[state]]
+name = "snowfall_heavy_old"
+dirs = 1
+frames = 32
+delays = [0.3]
+
+[[state]]
+name = "snowfall_heavy_older"
+dirs = 1
+frames = 8
+delays = [2]
+
+[[state]]
+name = "rain"
+dirs = 1
+frames = 16
+delays = [0.2]
+
+[[state]]
+name = "rain_old2"
+dirs = 1
+frames = 16
+delays = [0.2]
+
+[[state]]
+name = "rain_old"
+dirs = 1
+frames = 16
+delays = [0.2]
+
+[[state]]
+name = "storm_old"
+dirs = 1
+frames = 8
+delays = [0.5]
+
+[[state]]
+name = "storm_old2"
+dirs = 1
+frames = 8
+delays = [0.5]
+
+[[state]]
+name = "storm"
+dirs = 1
+frames = 32
+delays = [0.3]
+
+[[state]]
+name = "storm_old3"
+dirs = 1
+frames = 8
+delays = [0.5]
+
+[[state]]
+name = "hail"
+dirs = 1
+frames = 32
+delays = [0.3]
+
+[[state]]
+name = "hail_old3"
+dirs = 1
+frames = 8
+delays = [0.5]
+
+[[state]]
+name = "hail_old"
+dirs = 1
+frames = 8
+delays = [0.5]
+
+[[state]]
+name = "lightning_flash"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "ashfall_heavy"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "ashfall_moderate"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "ashfall_moderate-alt"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "ashfall_light"
+dirs = 1
+frames = 32
+delays = [1]
+
+[[state]]
+name = "fallout"
+dirs = 1
+frames = 32
+delays = [1]
+
+[[state]]
+name = "fog"
+dirs = 1
+frames = 12
+delays = [1]
+
+[[state]]
+name = "party"
+dirs = 1
+frames = 8
+delays = [2, 2, 2, 2, 2, 1]
+
+[[state]]
+name = "confetti"
+dirs = 1
+frames = 8
+delays = [7]
+
+[[state]]
+name = "underwater"
+dirs = 1
+frames = 3
+delays = [3]
+rewind = true
+
+[[state]]
+name = "starry_night"
+dirs = 1
+frames = 5
+delays = [2]
+
+[[state]]
+name = "midnight_fog"
+dirs = 1
+frames = 16
+delays = [180, 0.3, 0.3, 0.3, 180, 0.3, 0.3, 0.3, 180, 0.3, 0.3, 0.3, 180, 0.3]
+
+[[state]]
+name = "sandstorm"
+dirs = 1
+frames = 32
+delays = [0.2]
+
+[[state]]
+name = "toxic_rain"
+dirs = 1
+frames = 8
+delays = [0.5]
+
+[[state]]
+name = "downpour"
+dirs = 1
+frames = 10
+delays = [0.2]
+
+[[state]]
+name = "downpourfatal"
+dirs = 1
+frames = 10
+delays = [0.15]
+
+[[state]]
+name = "acidfog"
+dirs = 1
+frames = 31
+delays = [2]
+
+[[state]]
+name = "underwater-indoors"
+dirs = 1
+frames = 3
+delays = [3]
+rewind = true
+
+[[state]]
+name = "anom_rain"
+dirs = 1
+frames = 32
+delays = [0.25]
+
+[[state]]
+name = "anom_rain_fast"
+dirs = 1
+frames = 32
+delays = [0.15]

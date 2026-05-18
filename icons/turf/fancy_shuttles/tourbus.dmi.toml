@@ -1,0 +1,1704 @@
+# Generated from tourbus.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 37
+
+[[state]]
+name = "walls"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 0,0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 1,0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 2,0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 3,0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 4,0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 5,0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 6,0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 7,0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 8,0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 9,0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 10,0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 11,0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 12,0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 0,1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 1,1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 2,1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 3,1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 4,1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 5,1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 6,1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 7,1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 8,1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 9,1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 10,1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 11,1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 12,1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 0,2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 1,2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 2,2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 3,2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 4,2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 5,2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 6,2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 7,2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 8,2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 9,2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 10,2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 11,2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 12,2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 0,3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 1,3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 2,3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 3,3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 4,3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 5,3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 6,3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 7,3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 8,3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 9,3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 10,3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 11,3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 12,3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 0,4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 1,4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 2,4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 3,4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 4,4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 5,4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 6,4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 7,4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 8,4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 9,4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 10,4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 11,4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 12,4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 0,5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 1,5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 2,5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 3,5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 4,5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 5,5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 6,5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 7,5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 8,5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 9,5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 10,5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 11,5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 12,5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 0,6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 1,6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 2,6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 3,6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 4,6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 5,6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 6,6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 7,6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 8,6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 9,6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 10,6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 11,6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 12,6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 0,7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 1,7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 2,7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 3,7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 4,7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 5,7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 6,7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 7,7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 8,7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 9,7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 10,7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 11,7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 12,7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 0,8"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 1,8"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 2,8"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 3,8"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 4,8"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 5,8"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 6,8"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 7,8"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 8,8"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 9,8"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 10,8"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 11,8"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 12,8"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 0,9"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 1,9"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 2,9"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 3,9"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 4,9"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 5,9"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 6,9"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 7,9"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 8,9"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 9,9"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 10,9"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 11,9"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 12,9"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 0,10"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 1,10"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 2,10"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 3,10"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 4,10"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 5,10"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 6,10"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 7,10"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 8,10"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 9,10"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 10,10"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 11,10"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 12,10"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 0,11"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 1,11"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 2,11"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 3,11"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 4,11"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 5,11"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 6,11"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 7,11"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 8,11"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 9,11"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 10,11"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 11,11"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 12,11"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 0,12"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 1,12"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 2,12"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 3,12"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 4,12"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 5,12"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 6,12"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 7,12"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 8,12"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 9,12"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 10,12"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 11,12"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walls 12,12"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 0,0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 1,0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 2,0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 3,0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 4,0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 5,0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 6,0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 7,0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 8,0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 9,0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 10,0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 11,0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 12,0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 0,1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 1,1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 2,1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 3,1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 4,1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 5,1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 6,1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 7,1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 8,1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 9,1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 10,1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 11,1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 12,1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 0,2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 1,2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 2,2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 3,2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 4,2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 5,2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 6,2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 7,2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 8,2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 9,2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 10,2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 11,2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 12,2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 0,3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 1,3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 2,3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 3,3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 4,3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 5,3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 6,3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 7,3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 8,3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 9,3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 10,3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 11,3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 12,3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 0,4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 1,4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 2,4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 3,4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 4,4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 5,4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 6,4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 7,4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 8,4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 9,4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 10,4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 11,4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 12,4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 0,5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 1,5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 2,5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 3,5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 4,5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 5,5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 6,5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 7,5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 8,5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 9,5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 10,5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 11,5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 12,5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 0,6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 1,6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 2,6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 3,6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 4,6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 5,6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 6,6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 7,6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 8,6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 9,6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 10,6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 11,6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 12,6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 0,7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 1,7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 2,7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 3,7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 4,7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 5,7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 6,7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 7,7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 8,7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 9,7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 10,7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 11,7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 12,7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 0,8"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 1,8"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 2,8"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 3,8"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 4,8"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 5,8"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 6,8"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 7,8"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 8,8"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 9,8"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 10,8"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 11,8"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 12,8"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 0,9"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 1,9"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 2,9"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 3,9"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 4,9"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 5,9"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 6,9"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 7,9"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 8,9"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 9,9"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 10,9"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 11,9"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 12,9"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 0,10"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 1,10"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 2,10"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 3,10"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 4,10"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 5,10"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 6,10"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 7,10"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 8,10"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 9,10"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 10,10"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 11,10"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 12,10"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 0,11"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 1,11"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 2,11"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 3,11"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 4,11"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 5,11"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 6,11"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 7,11"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 8,11"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 9,11"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 10,11"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 11,11"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 12,11"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 0,12"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 1,12"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 2,12"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 3,12"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 4,12"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 5,12"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 6,12"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 7,12"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 8,12"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 9,12"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 10,12"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 11,12"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors 12,12"
+dirs = 4
+frames = 1

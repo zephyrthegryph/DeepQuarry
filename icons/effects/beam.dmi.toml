@@ -1,0 +1,305 @@
+# Generated from beam.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 21
+
+[[state]]
+name = "1-full"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "1-half"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "1-corner"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "2-full"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "2-half"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "2-corner"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "3-full"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "3-half"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "3-corner"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "b_beam"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "r_beam"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "g_beam"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "n_beam"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "medbeam"
+dirs = 1
+frames = 16
+delays = [1]
+
+[[state]]
+name = "nzcrentrs_power"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "blood"
+dirs = 1
+frames = 16
+delays = [1]
+rewind = true
+
+[[state]]
+name = "bsa_beam"
+dirs = 1
+frames = 3
+delays = [2]
+rewind = true
+
+[[state]]
+name = "sat_beam"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "red_lightning"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "purple_lightning"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "drain_life"
+dirs = 1
+frames = 32
+delays = [0.1]
+
+[[state]]
+name = "lichbeam"
+dirs = 1
+frames = 32
+delays = [0.1]
+
+[[state]]
+name = "drainbeam"
+dirs = 1
+frames = 32
+delays = [0.15]
+
+[[state]]
+name = "sendbeam"
+dirs = 1
+frames = 32
+delays = [0.15]
+
+[[state]]
+name = "lightning1"
+dirs = 1
+frames = 2
+delays = [1.2, 0.8]
+
+[[state]]
+name = "lightning2"
+dirs = 1
+frames = 2
+delays = [1.2, 0.8]
+
+[[state]]
+name = "lightning3"
+dirs = 1
+frames = 2
+delays = [1.2, 0.8]
+
+[[state]]
+name = "lightning4"
+dirs = 1
+frames = 2
+delays = [1.2, 0.8]
+
+[[state]]
+name = "lightning5"
+dirs = 1
+frames = 2
+delays = [1.2, 0.8]
+
+[[state]]
+name = "lightning6"
+dirs = 1
+frames = 2
+delays = [1.2, 0.8]
+
+[[state]]
+name = "lightning7"
+dirs = 1
+frames = 2
+delays = [1.2, 0.8]
+
+[[state]]
+name = "lightning8"
+dirs = 1
+frames = 2
+delays = [1.2, 0.8]
+
+[[state]]
+name = "lightning9"
+dirs = 1
+frames = 2
+delays = [1.2, 0.8]
+
+[[state]]
+name = "lightning10"
+dirs = 1
+frames = 2
+delays = [1.2, 0.8]
+
+[[state]]
+name = "lightning11"
+dirs = 1
+frames = 2
+delays = [1.2, 0.8]
+
+[[state]]
+name = "lightning12"
+dirs = 1
+frames = 2
+delays = [1.2, 0.8]
+
+[[state]]
+name = "rped_upgrade"
+dirs = 1
+frames = 4
+delays = [0.3]
+
+[[state]]
+name = "chain"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vine"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tentacle"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "volt_ray"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "volt"
+dirs = 1
+frames = 15
+delays = [1]
+
+[[state]]
+name = "blur"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "curse0"
+dirs = 1
+frames = 15
+delays = [4]
+
+[[state]]
+name = "curse1"
+dirs = 1
+frames = 15
+delays = [4]
+
+[[state]]
+name = "solar_beam"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "drain_life_grey"
+dirs = 1
+frames = 32
+delays = [0.1]
+
+[[state]]
+name = "slime_consume"
+dirs = 1
+frames = 32
+delays = [0.1]
+
+[[state]]
+name = "holo_beam"
+dirs = 1
+frames = 6
+delays = [2]
+
+[[state]]
+name = "holo_beam_alt"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "sniper_beam"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "hose"
+dirs = 1
+frames = 1

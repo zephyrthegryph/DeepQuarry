@@ -1,0 +1,21 @@
+# Generated from drone_fab.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 4
+
+[[state]]
+name = "drone_fab_idle"
+dirs = 1
+frames = 4
+delays = [5]
+
+[[state]]
+name = "drone_fab_active"
+dirs = 1
+frames = 6
+delays = [2]
+
+[[state]]
+name = "drone_fab_nopower"
+dirs = 1
+frames = 1

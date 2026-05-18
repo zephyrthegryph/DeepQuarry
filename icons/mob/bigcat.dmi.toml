@@ -1,0 +1,25 @@
+# Generated from bigcat.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 7
+
+[[state]]
+name = "bigcat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bigcat-1"
+dirs = 4
+frames = 7
+delays = [20, 3, 3, 3, 3, 8, 3]
+
+[[state]]
+name = "bigcat_belly"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bigcat_dead"
+dirs = 1
+frames = 1

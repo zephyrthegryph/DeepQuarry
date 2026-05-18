@@ -1,0 +1,25 @@
+# Generated from injector.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "on"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "inject"
+dirs = 4
+frames = 2
+delays = [2, 5]
+
+[[state]]
+name = "map_injector"
+dirs = 4
+frames = 1

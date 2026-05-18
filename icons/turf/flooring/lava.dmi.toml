@@ -1,0 +1,146 @@
+# Generated from lava.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 10
+
+[[state]]
+name = "1-i"
+dirs = 1
+frames = 4
+delays = [20]
+
+[[state]]
+name = "2-i"
+dirs = 1
+frames = 4
+delays = [20]
+
+[[state]]
+name = "3-i"
+dirs = 1
+frames = 4
+delays = [20]
+
+[[state]]
+name = "4-i"
+dirs = 1
+frames = 4
+delays = [20]
+
+[[state]]
+name = "1-n"
+dirs = 1
+frames = 4
+delays = [20]
+
+[[state]]
+name = "2-n"
+dirs = 1
+frames = 4
+delays = [20]
+
+[[state]]
+name = "3-s"
+dirs = 1
+frames = 4
+delays = [20]
+
+[[state]]
+name = "4-s"
+dirs = 1
+frames = 4
+delays = [20]
+
+[[state]]
+name = "1-w"
+dirs = 1
+frames = 4
+delays = [20]
+
+[[state]]
+name = "2-e"
+dirs = 1
+frames = 4
+delays = [20]
+
+[[state]]
+name = "3-w"
+dirs = 1
+frames = 4
+delays = [20]
+
+[[state]]
+name = "4-e"
+dirs = 1
+frames = 4
+delays = [20]
+
+[[state]]
+name = "1-nw"
+dirs = 1
+frames = 4
+delays = [20]
+
+[[state]]
+name = "2-ne"
+dirs = 1
+frames = 4
+delays = [20]
+
+[[state]]
+name = "3-sw"
+dirs = 1
+frames = 4
+delays = [20]
+
+[[state]]
+name = "4-se"
+dirs = 1
+frames = 4
+delays = [20]
+
+[[state]]
+name = "1-f"
+dirs = 1
+frames = 4
+delays = [20]
+
+[[state]]
+name = "2-f"
+dirs = 1
+frames = 4
+delays = [20]
+
+[[state]]
+name = "3-f"
+dirs = 1
+frames = 4
+delays = [20]
+
+[[state]]
+name = "4-f"
+dirs = 1
+frames = 4
+delays = [20]
+
+[[state]]
+name = "smooth"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Lava Color Palette"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "unsmooth"
+dirs = 1
+frames = 4
+delays = [20]
+
+[[state]]
+name = "lava"
+dirs = 1
+frames = 8
+delays = [3]

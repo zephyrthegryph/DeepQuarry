@@ -1,0 +1,9 @@
+# Generated from artifacts.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 1
+
+[[state]]
+name = "changerock"
+dirs = 1
+frames = 1

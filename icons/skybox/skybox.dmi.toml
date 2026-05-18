@@ -1,0 +1,59 @@
+# Generated from skybox.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 736
+height = 736
+cols = 4
+
+[[state]]
+name = "dyable"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stars"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "narsie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cascade"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "diagnostic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "space1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "space2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "space3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "space4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "space5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "space6"
+dirs = 1
+frames = 1

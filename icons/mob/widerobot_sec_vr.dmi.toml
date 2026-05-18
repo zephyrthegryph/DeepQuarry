@@ -1,0 +1,374 @@
+# Generated from widerobot_sec_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 28
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ov-openpanel -c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ov-openpanel +c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ov-openpanel +w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wreck-overlay"
+dirs = 1
+frames = 18
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 40]
+
+[[state]]
+name = "k9"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "k9"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "k9-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "k9-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "k9-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "k9-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-k9"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-k9"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "eyes-k9-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-k9-lights"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "k9-sleeper_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "k9-sleeper_r"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "laser"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "taser"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "disabler"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "laser_big"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "disabler_big"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "k92"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "k92"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "k92-sleeper_r"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "k92-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "k92-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "k92-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "k92-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "k92-sleeper_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-k92"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eyes-k92-lights"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secborg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "secborg"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "secborg-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "secborg-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "secborg-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "secborg-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eyes-secborg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-secborg"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "eyes-secborg-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-secborg-lights"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "secborg-sleeper_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "secborg-sleeper_r"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "borgi-sec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borgi-sec"
+dirs = 4
+frames = 6
+delays = [1]
+movement = true
+
+[[state]]
+name = "borgi-sec-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borgi-sec-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borgi-sec-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borgi-sec-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "borgi-sec-sleeper_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borgi-sec-sleeper_r"
+dirs = 4
+frames = 6
+delays = [1]
+movement = true
+
+[[state]]
+name = "eyes-borgi-sec-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-borgi-sec-lights"
+dirs = 4
+frames = 6
+delays = [1]
+movement = true
+
+[[state]]
+name = "eyes-borgi-sec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "oties"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "oties-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "oties-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "oties-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "oties-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eyes-oties"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-oties-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "oties-sleeper_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "oties"
+dirs = 4
+frames = 6
+delays = [0.9]
+movement = true
+
+[[state]]
+name = "oties-sleeper_r"
+dirs = 4
+frames = 6
+delays = [0.9]
+movement = true
+
+[[state]]
+name = "eyes-oties"
+dirs = 4
+frames = 6
+delays = [0.9]
+movement = true
+
+[[state]]
+name = "eyes-oties-lights"
+dirs = 4
+frames = 6
+delays = [0.9]
+movement = true

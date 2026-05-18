@@ -1,0 +1,27 @@
+# Generated from 64x64_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 5
+
+[[state]]
+name = "rejuvinate"
+dirs = 1
+frames = 12
+delays = [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 1]
+loop = 1
+
+[[state]]
+name = "legend"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "notfound"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "strategic"
+dirs = 1
+frames = 1

@@ -1,0 +1,364 @@
+# Generated from grenade.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 11
+
+[[state]]
+name = "chemg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chemg_ass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chemg_locked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chemg_active"
+dirs = 1
+frames = 2
+delays = [6, 2]
+
+[[state]]
+name = "chemg_primed"
+dirs = 1
+frames = 2
+delays = [0.7]
+
+[[state]]
+name = "large_grenade"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "large_grenade_ass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "large_grenade_locked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "large_grenade_active"
+dirs = 1
+frames = 2
+delays = [6, 2]
+
+[[state]]
+name = "large_grenade_primed"
+dirs = 1
+frames = 2
+delays = [0.7]
+
+[[state]]
+name = "cleaner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cleaner_active"
+dirs = 1
+frames = 2
+delays = [6, 2]
+
+[[state]]
+name = "moebius_grenade"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "moebius_grenade_ass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "moebius_grenade_locked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "moebius_grenade_active"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "moebius_grenade_primed"
+dirs = 1
+frames = 2
+delays = [0.7]
+
+[[state]]
+name = "flashbang"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flashbang_active"
+dirs = 1
+frames = 2
+delays = [0.7]
+
+[[state]]
+name = "teargas"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teargas_active"
+dirs = 1
+frames = 2
+delays = [0.7]
+
+[[state]]
+name = "incendiary"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "incendiary_active"
+dirs = 1
+frames = 2
+delays = [0.7]
+
+[[state]]
+name = "delivery"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "delivery_active"
+dirs = 1
+frames = 4
+delays = [1, 2, 1, 2]
+
+[[state]]
+name = "emp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emp_active"
+dirs = 1
+frames = 2
+delays = [0.7]
+
+[[state]]
+name = "lyemp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lyemp_active"
+dirs = 1
+frames = 2
+delays = [0.7]
+
+[[state]]
+name = "emp_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grenade"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grenade_active"
+dirs = 1
+frames = 2
+delays = [0.7]
+
+[[state]]
+name = "grenade_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "foam"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "foam_active"
+dirs = 1
+frames = 2
+delays = [0.7]
+
+[[state]]
+name = "frggrenade"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "frggrenade_active"
+dirs = 1
+frames = 2
+delays = [0.7]
+
+[[state]]
+name = "explosive"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "explosive_active"
+dirs = 1
+frames = 2
+delays = [0.7]
+
+[[state]]
+name = "missile"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "screamer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flashbang_nt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flashbang_nt_active"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "frag_nt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "frag_nt_active"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "smokegrenade_nt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smokegrenade_nt_active"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "smokegrenade_nt_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "explosive_nt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "explosive_nt_active"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "clusterbang"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clusterbang_active"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "clusterbang_segment"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "clusterbang_segment_active"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "banana"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "banana_active"
+dirs = 1
+frames = 2
+delays = [0.7]
+
+[[state]]
+name = "concussion"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "concussion_active"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "briefcase"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "briefcase_active"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "camgrenade"
+dirs = 1
+frames = 2
+delays = [10]
+
+[[state]]
+name = "camgrenadeoff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "camgrenadebroken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "minifrag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "minifrag_active"
+dirs = 1
+frames = 2
+delays = [1, 2]
+
+[[state]]
+name = "party_ball"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "party_ball_active"
+dirs = 1
+frames = 1

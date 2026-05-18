@@ -1,0 +1,59 @@
+# Generated from uristrunes.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "blank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rune-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rune-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rune-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rune-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rune-16"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rune-32"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rune-64"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rune-128"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rune-256"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rune-512"
+dirs = 1
+frames = 1

@@ -1,0 +1,535 @@
+# Generated from clockwork_objects.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 25
+
+[[state]]
+name = "rare_pepe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dread_ipad"
+dirs = 1
+frames = 15
+delays = [1]
+
+[[state]]
+name = "overlay_template"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "judicial"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vanguard"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "compromise"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "geis"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "volt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hateful_manacles"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "belligerent_eye"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "vanguard_cogwheel"
+dirs = 1
+frames = 10
+delays = [20, 1]
+
+[[state]]
+name = "geis_capacitor"
+dirs = 1
+frames = 18
+delays = [20, 1]
+
+[[state]]
+name = "replicant_alloy"
+dirs = 1
+frames = 17
+delays = [25, 1, 0.3, 20, 0.7, 1]
+
+[[state]]
+name = "hierophant_ansible"
+dirs = 1
+frames = 13
+delays = [20, 1, 1, 10, 1, 1, 1, 1, 1, 20, 1]
+
+[[state]]
+name = "judicial_visor_0"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 15, y = 14 }]
+
+[[state]]
+name = "judicial_visor_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "truesight_lens"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wraith_specs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "soul_vessel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "soul_vessel-searching"
+dirs = 1
+frames = 30
+delays = [1, 0.9, 0.9, 2, 0.9, 1, 0.9, 0.9, 0.9, 4, 0.9, 0.9, 0.9, 0.9, 5, 0.9, 0.9, 0.9, 0.9, 2, 0.9, 0.9, 0.9, 1.5, 0.9, 0.9, 0.9, 0.9, 1, 0.9]
+
+[[state]]
+name = "soul_vessel-occupied"
+dirs = 1
+frames = 30
+delays = [0.9]
+
+[[state]]
+name = "replica_fabricator"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "ratvarian_spear"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brass_filaments"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ocular_warden"
+dirs = 4
+frames = 2
+delays = [5]
+
+[[state]]
+name = "ocular_warden_unwrenched"
+dirs = 4
+frames = 2
+delays = [10]
+
+[[state]]
+name = "blind_eye"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gear_base"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tinkerers_cache"
+dirs = 1
+frames = 8
+delays = [1.2]
+
+[[state]]
+name = "tinkerers_cache_unwrenched"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "interdiction_lens"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "interdiction_lens_inactive"
+dirs = 1
+frames = 6
+delays = [0.5]
+rewind = true
+
+[[state]]
+name = "interdiction_lens_recharged"
+dirs = 1
+frames = 9
+delays = [0.5]
+
+[[state]]
+name = "interdiction_lens_active"
+dirs = 1
+frames = 4
+delays = [0.5]
+
+[[state]]
+name = "interdiction_lens_discharged"
+dirs = 1
+frames = 10
+delays = [0.5]
+
+[[state]]
+name = "interdiction_lens_unwrenched"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lens_gem"
+dirs = 1
+frames = 1
+rewind = true
+
+[[state]]
+name = "prolonging_prism"
+dirs = 1
+frames = 32
+delays = [20, 1.2, 0.9]
+
+[[state]]
+name = "prolonging_prism_inactive"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prolonging_prism_unwrenched"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "onyx_prism"
+dirs = 1
+frames = 4
+delays = [25, 1, 2, 3]
+rewind = true
+
+[[state]]
+name = "mania_motor"
+dirs = 1
+frames = 20
+delays = [5, 0.65, 0.65, 0.65, 0.65, 0.65, 0.65, 0.65, 0.65, 0.65, 0.65, 0.65, 0.65, 0.65, 0.65, 0.8, 1]
+
+[[state]]
+name = "mania_motor_inactive"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mania_motor_unwrenched"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mania_motor_antennae"
+dirs = 1
+frames = 8
+delays = [20, 1, 1, 1, 20, 1]
+
+[[state]]
+name = "tinkerers_daemon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tinkerers_daemon_unwrenched"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "replication_plate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "t_belligerent_eye"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "t_vanguard_cogwheel"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "t_geis_capacitor"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "t_replicant_alloy"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "t_hierophant_ansible"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "t_random_component"
+dirs = 1
+frames = 15
+delays = [1]
+
+[[state]]
+name = "tinkerglow"
+dirs = 1
+frames = 23
+delays = [1]
+
+[[state]]
+name = "obelisk"
+dirs = 1
+frames = 32
+delays = [6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 2]
+
+[[state]]
+name = "obelisk_inactive"
+dirs = 1
+frames = 2
+delays = [6]
+
+[[state]]
+name = "obelisk_unwrenched"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "obelisk_prism"
+dirs = 1
+frames = 22
+delays = [30, 2]
+
+[[state]]
+name = "stargazer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stargazer_unwrenched"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stargazer_light"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brass_skewer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brass_skewer_extended"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brass_skewer_pokeybit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "steam_vent_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "steam_vent_1"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "pressure_sensor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lever"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "repeater"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "repeater_on"
+dirs = 1
+frames = 1
+rewind = true
+
+[[state]]
+name = "clockwork_floor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clockwork_wall"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wall_gear"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "marauder_armor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fallen_armor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "anime_fragment"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smashed_anime_fragment"
+dirs = 1
+frames = 4
+delays = [49, 21, 49, 21]
+
+[[state]]
+name = "cogscarab_shell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alloy_shards"
+dirs = 1
+frames = 17
+delays = [50, 2, 0.6, 40, 1.4, 2]
+
+[[state]]
+name = "pinion_lock"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shard_small1"
+dirs = 1
+frames = 17
+delays = [50, 2, 0.6, 40, 1.4, 2]
+
+[[state]]
+name = "shard_small2"
+dirs = 1
+frames = 17
+delays = [50, 2, 0.6, 40, 1.4, 2]
+
+[[state]]
+name = "shard_small3"
+dirs = 1
+frames = 17
+delays = [50, 2, 0.6, 40, 1.4, 2]
+
+[[state]]
+name = "shard_medium1"
+dirs = 1
+frames = 17
+delays = [50, 2, 0.6, 40, 1.4, 2]
+
+[[state]]
+name = "shard_medium2"
+dirs = 1
+frames = 17
+delays = [50, 2, 0.6, 40, 1.4, 2]
+
+[[state]]
+name = "shard_large1"
+dirs = 1
+frames = 17
+delays = [50, 2, 0.6, 40, 1.4, 2]
+
+[[state]]
+name = "shard_large2"
+dirs = 1
+frames = 17
+delays = [50, 2, 0.6, 40, 1.4, 2]
+
+[[state]]
+name = "clockgolem_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gear_bit1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gear_bit2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gear_bit3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gear_bit4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "relay"
+dirs = 1
+frames = 27
+delays = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 14]
+
+[[state]]
+name = "relay_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "relay_o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass"
+dirs = 1
+frames = 1

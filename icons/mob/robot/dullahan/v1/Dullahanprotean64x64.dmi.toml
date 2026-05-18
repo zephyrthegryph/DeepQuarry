@@ -1,0 +1,211 @@
+# Generated from Dullahanprotean64x64.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 14
+
+[[state]]
+name = "dullahanbody"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahanwings"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahaneyes"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahanmetal-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "unused"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahandecals2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahanwings2-rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullahanwings2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahandecals4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahanwings3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahanwings3-rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullahancommand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "emptydecals"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullahancommand-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahanbody-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahaneyes-rest"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "unused2"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "dullahanmetal"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahanmetal2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahanextendedon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahanextendedoff"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahanmetal2-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahanextendedon-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahanextendedoff-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahandecals"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullahanclothes4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahanclothes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahanclothes2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahanengibreastplate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahanhead"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahanhead-rest"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahanclothesempty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullahanlightsempty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullahanhead2"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahanhead2-rest"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahanlights-rest"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahanlights"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahanlights2"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahanlights2-rest"
+dirs = 4
+frames = 2
+delays = [8]

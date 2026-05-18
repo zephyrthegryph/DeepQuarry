@@ -1,0 +1,1319 @@
+# Generated from card_alt.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 17
+
+[[state]]
+name = "data"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id-robot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Site Manager"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Head of Personnel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Command Secretary"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spare"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Head of Security"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Warden"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Detective"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Security Officer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Chief Engineer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Atmospheric Technician"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Engineer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Chief Medical Officer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Chemist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Medical Doctor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Paramedic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Psychiatrist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Research Director"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Roboticist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Scientist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Xenobiologist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Xenobotanist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Quartermaster"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Cargo Technician"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Shaft Miner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Pathfinder"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Explorer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Field Medic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Bartender"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Botanist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Chaplain"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Chef"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Clown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Entertainer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Intern"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Entrepreneur"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Internal Affairs Agent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Janitor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Librarian"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Mime"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Pilot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Visitor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Off-duty Officer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Off-duty Engineer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Off-duty Medic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Off-duty Scientist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Off-duty Cargo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Off-duty Explorer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Off-duty Worker"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "CentCom Officer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Emergency Responder"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nanotrasen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndieGold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "greenGold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pink"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinkGold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Talon Captain"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Talon Pilot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Talon Engineer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Talon Guard"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Talon Doctor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "guest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "guest_invalid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gurg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "picture"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_grey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_black"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_brown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_cyan"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_magenta"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_orange"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_purple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "silver_pip"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "silver_pips"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gold_pip"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gold_pips"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red_color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_red_color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orange_color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow_color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brown_color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green_color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_green_color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dull_green_color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyan_color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue_color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purple_color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "magenta_color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pink_color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "black_color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray_color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_grey_color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dull_cyan_color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue_cyan_color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_cyan_color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gold_color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red_accent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_red_accent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orange_accent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow_accent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brown_accent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green_accent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_green_accent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dull_green_accent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyan_accent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue_accent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purple_accent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "magenta_accent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pink_accent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_accent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "black_accent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray_accent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dull_cyan_accent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue_cyan_accent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_cyan_accent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gold_accent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red_stripe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_red_stripe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orange_stripe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow_stripe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brown_stripe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green_stripe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_green_stripe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dull_green_stripe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyan_stripe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue_stripe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purple_stripe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "magenta_stripe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pink_stripe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_stripe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "black_stripe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_grey_stripe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray_stripe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dull_cyan_stripe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue_cyan_stripe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_cyan_stripe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gold_stripe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red_n"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_red_n"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orange_n"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow_n"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brown_n"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green_n"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_green_n"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dull_green_n"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyan_n"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue_n"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purple_n"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "magenta_n"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pink_n"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_n"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "black_n"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray_n"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dull_cyan_n"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue_cyan_n"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_cyan_n"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gold_n"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red-t"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orange-t"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brown-t"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green-t"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white-cyan-t"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue-t"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndie-s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skullthing"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "corn-w"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red-tri"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orange-tri"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow-tri"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green-tri"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyan-tri"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue-tri"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purple-tri"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red-square"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orange-square"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow-square"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green-square"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyan-square"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue-square"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purple-square"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red-circle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orange-circle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow-circle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green-circle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyan-circle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue-circle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purple-circle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyan_cross"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue_cross"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gold_cross"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blank_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Site Manager_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Head of Personnel_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Command Secretary_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spare_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Head of Security_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Warden_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Detective_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Security Officer_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Chief Engineer_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Atmospheric Technician_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Station Engineer_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Chief Medical Officer_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Chemist_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Medical Doctor_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Paramedic_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Psychiatrist_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Research Director_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Roboticist_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Scientist_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Xenobiologist_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Xenobotanist_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Quartermaster_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Cargo Technician_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Shaft Miner_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Pathfinder_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Explorer_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Field Medic_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Bartender_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Botanist_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Chaplain_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Chef_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Clown_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Entertainer_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Intern_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Internal Affairs Agent_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Janitor_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Librarian_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Mime_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Pilot_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Visitor_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "CentCom Officer_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Emergency Responder_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nanotrasen_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndieGold_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndie_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "greenGold_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pink_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinkGold_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Off-duty Officer_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Off-duty Engineer_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Off-duty Medic_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Off-duty Scientist_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Off-duty Cargo_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Off-duty Explorer_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Off-duty Worker_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Talon Captain_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Talon Pilot_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Talon Engineer_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Talon Guard_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Talon Doctor_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Entrepreneur_digested"
+dirs = 1
+frames = 1

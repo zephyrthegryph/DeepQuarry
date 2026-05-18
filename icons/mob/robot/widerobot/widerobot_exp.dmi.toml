@@ -1,0 +1,190 @@
+# Generated from widerobot_exp.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 23
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "openpanel_nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wreck-overlay"
+dirs = 1
+frames = 18
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 40]
+
+[[state]]
+name = "exploration"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "exploration"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "exploration-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "exploration-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "exploration-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "exploration-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "exploration-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "exploration-eyes"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "exploration-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "exploration-lights"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "exploration-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "exploration-sleeper-1"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "exploration-sleeper-1-r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "exploration-sleeper-1-r"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "exploration-v2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "exploration-v2"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "exploration-v2-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "exploration-v2-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "exploration-v2-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "exploration-v2-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "exploration-v2-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "exploration-v2-eyes"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "exploration-v2-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "exploration-v2-lights"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "exploration-v2-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "exploration-v2-sleeper-1"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "exploration-v2-sleeper-1-r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "exploration-v2-sleeper-1-r"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true

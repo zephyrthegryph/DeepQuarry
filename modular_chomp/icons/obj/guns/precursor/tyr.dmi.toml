@@ -1,0 +1,236 @@
+# Generated from tyr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "crystal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "generator"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "core"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hilt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "violence"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "violence100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "violence75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "violence50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "violence25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "violence0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crystal_blaster"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crystal_blaster100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crystal_blaster75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crystal_blaster50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crystal_blaster25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crystal_blaster0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "solider_blaster"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "solider_blaster100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "solider_blaster75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "solider_blaster50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "solider_blaster25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "solider_blaster0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shotgun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shotgun100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shotgun75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shotgun50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shotgun25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shotgun0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shotgun_blast"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blaster_blast"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spikeenergyball"
+dirs = 1
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ultima"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ultima100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ultima75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ultima50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ultima25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ultima0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plasma"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gravity_well"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "squish"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pool"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "astral_sea_blade"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arti"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "explosion_marker"
+dirs = 1
+frames = 2
+delays = [1]

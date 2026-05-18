@@ -1,0 +1,475 @@
+# Generated from modular_pda.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 18
+
+[[state]]
+name = "comm_logs"
+dirs = 1
+frames = 2
+delays = [15, 5]
+
+[[state]]
+name = "comm_monitor"
+dirs = 1
+frames = 3
+delays = [4]
+rewind = true
+
+[[state]]
+name = "hostile"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "generic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "atmos_control"
+dirs = 1
+frames = 3
+delays = [4]
+rewind = true
+
+[[state]]
+name = "alert-green"
+dirs = 1
+frames = 4
+delays = [5]
+rewind = true
+
+[[state]]
+name = "alert-red"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "power_monitor"
+dirs = 1
+frames = 8
+delays = [5, 1, 5, 1, 5, 1, 5, 1]
+
+[[state]]
+name = "power_monitor_warn"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "menu"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsod"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "command"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crew"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "__MASK__"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smmon_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smmon_1"
+dirs = 1
+frames = 4
+delays = [10, 5, 10, 5]
+
+[[state]]
+name = "smmon_2"
+dirs = 1
+frames = 4
+delays = [10, 5, 10, 5]
+
+[[state]]
+name = "smmon_3"
+dirs = 1
+frames = 4
+delays = [10, 5, 10, 5]
+
+[[state]]
+name = "smmon_4"
+dirs = 1
+frames = 4
+delays = [10, 5, 10, 5]
+
+[[state]]
+name = "smmon_5"
+dirs = 1
+frames = 4
+delays = [5, 1, 5, 1]
+
+[[state]]
+name = "smmon_6"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "arcade"
+dirs = 1
+frames = 2
+delays = [2, 4]
+
+[[state]]
+name = "arcade_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "air"
+dirs = 1
+frames = 4
+delays = [1]
+rewind = true
+
+[[state]]
+name = "gambling"
+dirs = 1
+frames = 11
+delays = [20, 1]
+
+[[state]]
+name = "modsuit_control"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "robot"
+dirs = 1
+frames = 2
+delays = [5, 10]
+
+[[state]]
+name = "research"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "shipping"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bounty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mafia"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radarntos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radarntosfar"
+dirs = 8
+frames = 2
+delays = [2]
+
+[[state]]
+name = "radarntosmedium"
+dirs = 8
+frames = 2
+delays = [2]
+
+[[state]]
+name = "radarntosclose"
+dirs = 8
+frames = 2
+delays = [2]
+
+[[state]]
+name = "radarntosdirect"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "radarntoslost"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radarsyndicate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radarsyndicatefar"
+dirs = 8
+frames = 2
+delays = [2]
+
+[[state]]
+name = "radarsyndicatemedium"
+dirs = 8
+frames = 2
+delays = [2]
+
+[[state]]
+name = "radarsyndicateclose"
+dirs = 8
+frames = 2
+delays = [2]
+
+[[state]]
+name = "radarsyndicatedirect"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "radarsyndicatelost"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "camera"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "bountyboard"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "request"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "tablet-silicon"
+dirs = 1
+frames = 3
+delays = [5]
+
+[[state]]
+name = "tablet-silicon-syndicate"
+dirs = 1
+frames = 3
+delays = [5]
+
+[[state]]
+name = "command-syndicate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "signal"
+dirs = 1
+frames = 4
+delays = [10, 1, 1, 10]
+
+[[state]]
+name = "pda_screen_borders"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda_base"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "light_overlay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id_overlay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda_cross"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda_stripe_thick"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda_stripe_split"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda_stripe_mime"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda_buttons"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda_stripe_head"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-clown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-clear"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-silicon-human"
+dirs = 1
+frames = 3
+delays = [5]
+
+[[state]]
+name = "pda-library"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda_stripe_clown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pai_inserted"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda_stripe_double"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "contractor-assign"
+dirs = 1
+frames = 20
+delays = [45, 1]
+
+[[state]]
+name = "contractor-contract"
+dirs = 1
+frames = 3
+delays = [5, 10, 5]
+
+[[state]]
+name = "contractor-extracted"
+dirs = 1
+frames = 13
+delays = [3]
+
+[[state]]
+name = "contractor-contractlist"
+dirs = 1
+frames = 9
+delays = [3, 3, 6, 3, 3, 3, 3, 3, 25]
+
+[[state]]
+name = "spectre_meter_0"
+dirs = 1
+frames = 2
+delays = [10]
+
+[[state]]
+name = "spectre_meter_15"
+dirs = 1
+frames = 2
+delays = [10]
+
+[[state]]
+name = "spectre_meter_30"
+dirs = 1
+frames = 2
+delays = [10]
+
+[[state]]
+name = "spectre_meter_45"
+dirs = 1
+frames = 2
+delays = [9]
+
+[[state]]
+name = "spectre_meter_60"
+dirs = 1
+frames = 2
+delays = [8]
+
+[[state]]
+name = "spectre_meter_75"
+dirs = 1
+frames = 2
+delays = [7]
+
+[[state]]
+name = "spectre_meter_90"
+dirs = 1
+frames = 2
+delays = [5.5]
+
+[[state]]
+name = "spectre_meter_105"
+dirs = 1
+frames = 2
+delays = [3.8]
+
+[[state]]
+name = "spectre_meter_120"
+dirs = 1
+frames = 6
+delays = [1.7]
+
+[[state]]
+name = "restock"
+dirs = 1
+frames = 3
+delays = [1]

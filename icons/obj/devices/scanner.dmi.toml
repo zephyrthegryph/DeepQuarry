@@ -1,0 +1,358 @@
+# Generated from scanner.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 16
+
+[[state]]
+name = "analyzer"
+dirs = 1
+frames = 8
+delays = [10, 1]
+
+[[state]]
+name = "hilbertsanalyzer"
+dirs = 1
+frames = 8
+delays = [10, 1]
+
+[[state]]
+name = "analyzerranged"
+dirs = 1
+frames = 8
+delays = [10, 1]
+
+[[state]]
+name = "mining0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mining1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "first_aid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "first_aid_pinprick"
+dirs = 1
+frames = 12
+delays = [1]
+loop = 1
+
+[[state]]
+name = "+no_wounds"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "+fail_scan"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "+wound_warn"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "+angry"
+dirs = 1
+frames = 2
+delays = [1.5]
+
+[[state]]
+name = "miner_aid"
+dirs = 1
+frames = 2
+delays = [4]
+
+[[state]]
+name = "miner_aid_pinprick"
+dirs = 1
+frames = 12
+delays = [1]
+loop = 1
+
+[[state]]
+name = "surgical_processor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "+downloaded"
+dirs = 1
+frames = 5
+delays = [1.5]
+
+[[state]]
+name = "slime_scanner"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "disease_aid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "disease_aid_pinprick"
+dirs = 4
+frames = 12
+delays = [1]
+loop = 1
+
+[[state]]
+name = "+infected"
+dirs = 1
+frames = 2
+delays = [4]
+
+[[state]]
+name = "+not_infected"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "+unknown_scan"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "+rancurous"
+dirs = 1
+frames = 2
+delays = [4]
+
+[[state]]
+name = "demo pinprick"
+dirs = 1
+frames = 12
+delays = [1]
+loop = 1
+
+[[state]]
+name = "health"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "health-scan"
+dirs = 1
+frames = 12
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 5]
+loop = 1
+
+[[state]]
+name = "health1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "health_adv"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "health_adv-scan"
+dirs = 1
+frames = 12
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 5]
+
+[[state]]
+name = "gene"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "gene_recharging"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "hydro"
+dirs = 1
+frames = 12
+delays = [1]
+
+[[state]]
+name = "autopsy_scanner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "host_monitor"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "forensicnew"
+dirs = 1
+frames = 2
+delays = [8, 2]
+
+[[state]]
+name = "geiger_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "geiger_on_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "geiger_on_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "geiger_on_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "geiger_on_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "geiger_on_5"
+dirs = 1
+frames = 2
+delays = [2, 1]
+
+[[state]]
+name = "geiger_on_emag"
+dirs = 1
+frames = 2
+delays = [10, 4]
+
+[[state]]
+name = "manual_mining"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "advmining0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "advmining1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fish_analyzer_case"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fish_analyzer"
+dirs = 1
+frames = 2
+delays = [10, 0.2]
+
+[[state]]
+name = "fish_analyzer_map"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fish_analyzer_emissive"
+dirs = 1
+frames = 2
+delays = [10, 0.2]
+
+[[state]]
+name = "inspector"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "experiscanner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "experiscanner_closed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "t-ray0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "t-ray1"
+dirs = 1
+frames = 2
+delays = [1, 10]
+
+[[state]]
+name = "forensic0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "forensic1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "export scanner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "price tagger"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sales tagger"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scanner_wand"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scanner_wand_active"
+dirs = 1
+frames = 10
+delays = [1]
+
+[[state]]
+name = "raptor_dex"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holosheet"
+dirs = 1
+frames = 5
+delays = [3, 2, 3, 2, 3]
+
+[[state]]
+name = "crew_monitor"
+dirs = 1
+frames = 7
+delays = [2, 2, 2, 1, 1, 2]
+
+[[state]]
+name = "bloodscanner"
+dirs = 1
+frames = 1

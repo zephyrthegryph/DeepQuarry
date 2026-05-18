@@ -1,0 +1,419 @@
+# Generated from food_snacks.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 10
+
+[[state]]
+name = "gum_pack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "candy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cb01"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cb02"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cb03"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cb04"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cb05"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cb06"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cb07"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cb08"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cb09"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cb10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "proteinbar"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "koisbar"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kokobar"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fruitbar"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chips"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chips_bbq"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chips_snv"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "popcorn"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "candy_gums"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cookiesnack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tuna"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sosjerky"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cheesie_honkers"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "4no_raisins"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndi_cakes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "admint_pack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "admint"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skrellsnacks"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tastybread"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "unathitinred"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pistachios"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "semki"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pigfat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "driedfish"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "squid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "croutons"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jupiter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tidegobs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "saturn0s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pluto"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "venus"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oort"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mars"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sun_snax"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weebonuts"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "namagashi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wasabi_peas"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pockys"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "goma_dango"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hanami_dango"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chocobanana"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dorayaki"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "daifuku"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ricecake"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pretzel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hakarl"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "space_twinkie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "winegum_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "winegum_yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "winegum_black"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "winegum_green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "winegum_orange"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "winegum_white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "winegum_pack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "saucer_pink"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "saucer_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "saucer_orange"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "saucer_green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "saucer_yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "saucer_pack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "custard_cream"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "custard_cream_pack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bourbon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bourbon_pack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "foam_banana"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "foam_shrimp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shrimpbanana_pack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rhubarbcustard_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rhubarbcustard_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rhubarbcustard_pack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "acorn"
+dirs = 1
+frames = 1

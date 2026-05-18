@@ -1,0 +1,9 @@
+# Generated from food48x48_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 48
+height = 48
+cols = 1
+
+[[state]]
+name = "monkfish_raw"
+dirs = 1
+frames = 1

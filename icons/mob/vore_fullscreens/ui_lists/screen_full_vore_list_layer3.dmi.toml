@@ -1,0 +1,39 @@
+# Generated from screen_full_vore_list_layer3.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 120
+height = 120
+cols = 3
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_maw13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_maw17"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_maw18"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_maw22"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_maw24"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_maw27"
+dirs = 1
+frames = 1

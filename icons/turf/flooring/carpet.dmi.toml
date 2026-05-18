@@ -1,0 +1,294 @@
+# Generated from carpet.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 16
+
+[[state]]
+name = "carpet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carpet_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "carpet_corners"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "carpet_broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bcarpet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bcarpet_corners"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "bcarpet_broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bcarpet_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "blucarpet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blucarpet_corners"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "blucarpet_broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blucarpet_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "turcarpet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "turcarpet_corners"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "turcarpet_broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "turcarpet_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "sblucarpet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sblucarpet_corners"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "sblucarpet_broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sblucarpet_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "gaycarpet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gaycarpet_corners"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "gaycarpet_broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gaycarpet_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "purcarpet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purcarpet_corners"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "purcarpet_broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purcarpet_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "oracarpet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oracarpet_corners"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "oracarpet_broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oracarpet_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "tealcarpet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tealcarpet_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "geocarpet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "geocarpet_broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "retrocarpet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "retrocarpet_broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "retrocarpet_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "retrocarpet_red_broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "happycarpet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "happycarpet_broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brncarpet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brncarpet_corners"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "brncarpet_broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brncarpet_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "blue1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue1_corners"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "blue1_broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue1_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green_corners"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "green_broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "purple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purple_corners"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "purple_broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purple_edges"
+dirs = 8
+frames = 1

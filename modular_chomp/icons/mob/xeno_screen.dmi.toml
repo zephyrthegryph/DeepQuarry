@@ -1,0 +1,301 @@
+# Generated from xeno_screen.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 10
+
+[[state]]
+name = "Resin Door"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Resin Membrane"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Nest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Resin Wall"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Weed Node"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Acid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Neuro Spit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Acid Spit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Pounce"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Spin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pocket"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hand_r"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hand_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hand_active"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pull"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "act_resist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "act_drop"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "act_throw_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "act_throw_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "swap_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "swap_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "harm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "help"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "disarm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grab"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "walking"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "running"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "zone_sel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "leap_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "leap_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "template"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "template_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "health0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "health1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "health2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "health3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "health4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "health5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "health6"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "health7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "health8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "groin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "r_arm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "l_arm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "r_leg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "l_leg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eyes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mouth"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "head"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nightvision0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nightvision1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "queen_finder"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "finder_med"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "finder_near"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "finder_center"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "finder_far"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "spit"
+dirs = 1
+frames = 1

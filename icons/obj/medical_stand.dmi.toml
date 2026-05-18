@@ -1,0 +1,94 @@
+# Generated from medical_stand.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "tank_anest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tank_nitro"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tank_oxyg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tank_plasma"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tank_hydro"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tank_other"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medical_stand_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tube_active"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tube"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beaker"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "line_active"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "line"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reagent100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reagent10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reagent25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reagent50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reagent75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reagent80"
+dirs = 1
+frames = 1

@@ -1,0 +1,76 @@
+# Generated from mob_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "wedring_g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wedring_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ge_gloves"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "techno_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "techno_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ihs_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ihs_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engineering_rig_bay_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engineering_bay_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medical_rig_bay"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "medical_rig_bay_sealed"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "pathfinder_rig_bay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pathfinder_rig_bay_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "heavy_engi"
+dirs = 4
+frames = 1

@@ -1,0 +1,234 @@
+# Generated from shuttle_void.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "Missing Overlay Catcher"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "void"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "void-hc"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "void-nj"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "void0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "o_void0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "void1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "o_void1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "void4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "o_void4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "void2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "o_void2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "void8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "o_void8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "void3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "o_void3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "void12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "o_void12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "void7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "o_void7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "void11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "o_void11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "void14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "o_void14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "void13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "o_void13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "void15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "o_void15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "void255"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "o_void255"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "void10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "o_void10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "void9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "o_void9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "void6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "o_void6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "void5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "o_void5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "void9h"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "o_void9h"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "void5h"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "o_void5h"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "void10h"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "o_void10h"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "void6h"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "o_void6h"
+dirs = 1
+frames = 1

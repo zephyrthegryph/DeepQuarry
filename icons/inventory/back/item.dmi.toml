@@ -1,0 +1,568 @@
+# Generated from item.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 12
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "backpack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "backpack_white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "backpack_medical"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "backpack_industrial"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "backpack_security"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "backpack_hydro"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "backpack_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "backpack_orange"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "backpack_purple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "backpack_green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "backpack_captain"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "backpack_fancy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "backpack_military"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "backpack_cult"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "backpack_clown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "satchel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "satchel_grey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "satchel_white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "satchel_industrial"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "satchel_medical"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "satchel_orange"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "satchel_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "satchel_purple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "satchel_green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "satchel_hydro"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "satchel_security"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "satchel_captain"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "satchel_fancy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "satchel_military"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "backsport"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "backsport_white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "backsport_purple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "backsport_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "backsport_green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "backsport_orange"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "backsport_hydro"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "backsport_security"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "backsport_fancy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "courier"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "courier_chemistry"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "courier_medical_alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "courier_medical"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "courier_virology"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "courier_toxins"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "courier_captain"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "courier_industrial"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "courier_hydro"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "courier_security"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "courier_black"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "duffle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "duffle_syndie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "duffle_syndiemed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "duffle_syndieammo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "duffle_captain"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "duffle_security"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "duffle_medical"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "duffle_industrial"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "duffle_science"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "duffle_emt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "duffle_drone"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "duffle_curse"
+dirs = 1
+frames = 8
+delays = [1, 1, 20, 1, 1, 5, 25, 5]
+
+[[state]]
+name = "holdingpack"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "holdingduffle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brokenpack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purse"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "parachute"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gravchute"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ert_commander"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ert_security"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ert_medical"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ert_engineering"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slimepouch"
+dirs = 1
+frames = 4
+delays = [97, 1]
+
+[[state]]
+name = "waterbackpackatmos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "waterbackpackjani"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "waterbackpack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "waterbackpackop"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pepperbackpacksec"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "duffle_tilted"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "duffle_syndie_tilted"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "duffle_syndiemed_tilted"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "duffle_syndieammo_tilted"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "duffle_captain_tilted"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "duffle_security_tilted"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "duffle_medical_tilted"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "duffle_industrial_tilted"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "duffle_science_tilted"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "duffle_emt_tilted"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "duffle_drone_tilted"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "duffle_curse_tilted"
+dirs = 1
+frames = 8
+delays = [1, 1, 20, 1, 1, 5, 25, 5]
+
+[[state]]
+name = "holdingduffle_tilted"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "saddlebag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "robustsaddle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "taurvest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "satchel-robo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "backpack-robo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nambackpack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ru_rucksack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kr_rucksack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "explorer_satchel_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "explorer_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "explorer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "explorer_satchel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "explorer_courier"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "explorer_duffle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "talon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "talon_satchel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "talon_courier"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "talon_duffle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "satchel_strapless"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "talon_duffle_tilted"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "explorer_duffle_tilted"
+dirs = 1
+frames = 1

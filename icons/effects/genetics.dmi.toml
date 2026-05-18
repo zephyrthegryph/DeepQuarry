@@ -1,0 +1,417 @@
+# Generated from genetics.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 15
+
+[[state]]
+name = "seizureman_s"
+dirs = 4
+frames = 3
+delays = [1]
+rewind = true
+
+[[state]]
+name = "seizureman_l"
+dirs = 1
+frames = 3
+delays = [1]
+rewind = true
+
+[[state]]
+name = "hulk_m_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hulk_m_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hulk_f_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hulk_f_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hulk_fat_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hulk_fat_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fire_s"
+dirs = 4
+frames = 3
+delays = [2, 1]
+rewind = true
+
+[[state]]
+name = "fire_l"
+dirs = 1
+frames = 3
+delays = [2]
+rewind = true
+
+[[state]]
+name = "telekinesishead_s"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "firefat_s"
+dirs = 1
+frames = 3
+delays = [2]
+rewind = true
+
+[[state]]
+name = "firefat_s"
+dirs = 1
+frames = 3
+delays = [2]
+rewind = true
+
+[[state]]
+name = "telekinesisheadfat_s"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "telekinesisheadfat_l"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "lasereyes_s"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "lasereyes_l"
+dirs = 1
+frames = 1
+rewind = true
+
+[[state]]
+name = "eyelasers"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lizard_male_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lizard_male_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lizard_female_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lizard_female_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lizardfat_male_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lizardfat_male_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lizardfat_female_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lizardfat_female_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jelly_male_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jelly_male_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jelly_female_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jelly_female_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jellyfat_male_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jellyfat_male_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jellyfat_female_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jellyfat_female_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "telekinesishead_l"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "golem_male_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "golem_male_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "golemfat_male_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "golemfat_male_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "golem_female_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "golem_female_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "golemfat_female_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "golemfat_female_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plant_male_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "plant_female_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "plantfat_male_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "plantfat_female_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "plant_male_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plant_female_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plantfat_male_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plantfat_female_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plant_d"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "zombie_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zombie_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shadow_portal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shadow_male_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shadow_male_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shadow_female_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shadow_female_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shadowfat_male_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shadowfat_male_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shadowfat_female_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shadowfat_female_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slime_male_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "slime_male_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slimefat_male_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "slimefat_male_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slime_female_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "slime_female_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slimefat_female_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "slimefat_female_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "adamantine_male_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "adamantine_female_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "adamantine_male_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "adamantine_female_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "adamantinefat_male_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "adamantinefat_female_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "adamantinefat_male_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "adamantinefat_female_l"
+dirs = 1
+frames = 1

@@ -1,0 +1,139 @@
+# Generated from pipes.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 14
+
+[[state]]
+name = "intact"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "exposed01"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "exposed10"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "exposed00"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "intact-supply"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "exposed01-supply"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "exposed10-supply"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "exposed00-supply"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "intact-scrubbers"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "exposed01-scrubbers"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "exposed10-scrubbers"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "exposed00-scrubbers"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "intact-fuel"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "exposed01-fuel"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "exposed10-fuel"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "exposed00-fuel"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "intact-aux"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "exposed01-aux"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "exposed10-aux"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "exposed00-aux"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "universal"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "map_universal"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cap"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cap-supply"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cap-scrubbers"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cap-fuel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cap-aux"
+dirs = 4
+frames = 1

@@ -1,0 +1,79 @@
+# Generated from artwork_revolver.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "artwork_revolver_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "righthand_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "artwork_revolver_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "righthand_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "artwork_revolver_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "righthand_3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand_3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "artwork_revolver_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "righthand_4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand_4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "artwork_revolver_5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "righthand_5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand_5"
+dirs = 4
+frames = 1

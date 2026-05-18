@@ -1,0 +1,64 @@
+# Generated from nanomods.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "medical"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medical-animate"
+dirs = 1
+frames = 3
+delays = [1]
+loop = 1
+
+[[state]]
+name = "engineering"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engineering-animate"
+dirs = 1
+frames = 3
+delays = [1]
+loop = 1
+
+[[state]]
+name = "mining"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mining-animate"
+dirs = 1
+frames = 3
+delays = [1]
+loop = 1
+
+[[state]]
+name = "security"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "security-animate"
+dirs = 1
+frames = 3
+delays = [1]
+loop = 1
+
+[[state]]
+name = "compliance"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "compliance-animate"
+dirs = 1
+frames = 8
+delays = [1]
+loop = 1

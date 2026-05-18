@@ -1,0 +1,574 @@
+# Generated from birds.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 35
+
+[[state]]
+name = "poly"
+dirs = 4
+frames = 12
+delays = [1]
+
+[[state]]
+name = "poly-flap"
+dirs = 4
+frames = 12
+delays = [1]
+
+[[state]]
+name = "poly-held"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "poly-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "parrot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "parrot"
+dirs = 4
+frames = 2
+delays = [1, 2]
+movement = true
+
+[[state]]
+name = "parrot-held"
+dirs = 4
+frames = 10
+delays = [250, 1, 2, 1, 1, 1, 3, 1, 2, 1]
+
+[[state]]
+name = "parrot-flap"
+dirs = 4
+frames = 2
+delays = [1, 2]
+
+[[state]]
+name = "parrot-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kea"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kea"
+dirs = 4
+frames = 2
+delays = [1, 2]
+movement = true
+
+[[state]]
+name = "kea-held"
+dirs = 4
+frames = 10
+delays = [250, 1, 2, 1, 1, 1, 3, 1, 2, 1]
+
+[[state]]
+name = "kea-flap"
+dirs = 4
+frames = 2
+delays = [1, 2]
+
+[[state]]
+name = "kea-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eclectus"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eclectus"
+dirs = 4
+frames = 2
+delays = [1, 2]
+movement = true
+
+[[state]]
+name = "eclectus-held"
+dirs = 4
+frames = 10
+delays = [250, 1, 2, 1, 1, 1, 3, 1, 2, 1]
+
+[[state]]
+name = "eclectus-flap"
+dirs = 4
+frames = 2
+delays = [1, 2]
+
+[[state]]
+name = "eclectus-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eclectusf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eclectusf"
+dirs = 4
+frames = 2
+delays = [1, 2]
+movement = true
+
+[[state]]
+name = "eclectusf-held"
+dirs = 4
+frames = 10
+delays = [250, 1, 2, 1, 1, 1, 3, 1, 2, 1]
+
+[[state]]
+name = "eclectusf-flap"
+dirs = 4
+frames = 2
+delays = [1, 2]
+
+[[state]]
+name = "eclectusf-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "agrey"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "agrey"
+dirs = 4
+frames = 2
+delays = [1, 2]
+movement = true
+
+[[state]]
+name = "agrey-held"
+dirs = 4
+frames = 10
+delays = [250, 1, 2, 1, 1, 1, 3, 1, 2, 1]
+
+[[state]]
+name = "agrey-flap"
+dirs = 4
+frames = 2
+delays = [1, 2]
+
+[[state]]
+name = "agrey-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bcaique"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bcaique"
+dirs = 4
+frames = 2
+delays = [1, 2]
+movement = true
+
+[[state]]
+name = "bcaique-held"
+dirs = 4
+frames = 10
+delays = [250, 1, 2, 1, 1, 1, 3, 1, 2, 1]
+
+[[state]]
+name = "bcaique-flap"
+dirs = 4
+frames = 2
+delays = [1, 2]
+
+[[state]]
+name = "bcaique-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wcaique"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wcaique"
+dirs = 4
+frames = 2
+delays = [1, 2]
+movement = true
+
+[[state]]
+name = "wcaique-held"
+dirs = 4
+frames = 10
+delays = [250, 1, 2, 1, 1, 1, 3, 1, 2, 1]
+
+[[state]]
+name = "wcaique-flap"
+dirs = 4
+frames = 2
+delays = [1, 2]
+
+[[state]]
+name = "wcaique-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gbudge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gbudge"
+dirs = 4
+frames = 2
+delays = [1, 2]
+movement = true
+
+[[state]]
+name = "gbudge-held"
+dirs = 4
+frames = 10
+delays = [250, 1, 2, 1, 1, 1, 3, 1, 2, 1]
+
+[[state]]
+name = "gbudge-flap"
+dirs = 4
+frames = 2
+delays = [1, 2]
+
+[[state]]
+name = "gbudge-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bbudge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bbudge"
+dirs = 4
+frames = 2
+delays = [1, 2]
+movement = true
+
+[[state]]
+name = "bbudge-held"
+dirs = 4
+frames = 10
+delays = [250, 1, 2, 1, 1, 1, 3, 1, 2, 1]
+
+[[state]]
+name = "bbudge-flap"
+dirs = 4
+frames = 2
+delays = [1, 2]
+
+[[state]]
+name = "bbudge-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bgbudge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bgbudge"
+dirs = 4
+frames = 2
+delays = [1, 2]
+movement = true
+
+[[state]]
+name = "bgbudge-held"
+dirs = 4
+frames = 10
+delays = [250, 1, 2, 1, 1, 1, 3, 1, 2, 1]
+
+[[state]]
+name = "bgbudge-flap"
+dirs = 4
+frames = 2
+delays = [1, 2]
+
+[[state]]
+name = "bgbudge-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "commonblackbird"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "commonblackbird-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "azuretit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "azuretit-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "europeanrobin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "europeanrobin-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "goldcrest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "goldcrest-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ringneckdove"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ringneckdove-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tiel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tiel"
+dirs = 4
+frames = 2
+delays = [1, 2]
+movement = true
+
+[[state]]
+name = "tiel-held"
+dirs = 4
+frames = 10
+delays = [250, 1, 2, 1, 1, 1, 3, 1, 2, 1]
+
+[[state]]
+name = "tiel-flap"
+dirs = 4
+frames = 2
+delays = [1, 2]
+
+[[state]]
+name = "tiel-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wtiel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wtiel"
+dirs = 4
+frames = 2
+delays = [1, 2]
+movement = true
+
+[[state]]
+name = "wtiel-held"
+dirs = 4
+frames = 10
+delays = [250, 1, 2, 1, 1, 1, 3, 1, 2, 1]
+
+[[state]]
+name = "wtiel-flap"
+dirs = 4
+frames = 2
+delays = [1, 2]
+
+[[state]]
+name = "wtiel-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "luttiel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "luttiel"
+dirs = 4
+frames = 2
+delays = [1, 2]
+movement = true
+
+[[state]]
+name = "luttiel-held"
+dirs = 4
+frames = 10
+delays = [250, 1, 2, 1, 1, 1, 3, 1, 2, 1]
+
+[[state]]
+name = "luttiel-flap"
+dirs = 4
+frames = 2
+delays = [1, 2]
+
+[[state]]
+name = "luttiel-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blutiel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blutiel"
+dirs = 4
+frames = 2
+delays = [1, 2]
+movement = true
+
+[[state]]
+name = "blutiel-held"
+dirs = 4
+frames = 10
+delays = [250, 1, 2, 1, 1, 1, 3, 1, 2, 1]
+
+[[state]]
+name = "blutiel-flap"
+dirs = 4
+frames = 2
+delays = [1, 2]
+
+[[state]]
+name = "bluetiel-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "too"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "too"
+dirs = 4
+frames = 2
+delays = [1, 2]
+movement = true
+
+[[state]]
+name = "too-held"
+dirs = 4
+frames = 10
+delays = [250, 1, 2, 1, 1, 1, 3, 1, 2, 1]
+
+[[state]]
+name = "too-flap"
+dirs = 4
+frames = 2
+delays = [1, 2]
+
+[[state]]
+name = "too-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "utoo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "utoo"
+dirs = 4
+frames = 2
+delays = [1, 2]
+movement = true
+
+[[state]]
+name = "utoo-held"
+dirs = 4
+frames = 10
+delays = [250, 1, 2, 1, 1, 1, 3, 1, 2, 1]
+
+[[state]]
+name = "utoo-flap"
+dirs = 4
+frames = 2
+delays = [1, 2]
+
+[[state]]
+name = "utoo-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mtoo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mtoo"
+dirs = 4
+frames = 2
+delays = [1, 2]
+movement = true
+
+[[state]]
+name = "mtoo-held"
+dirs = 4
+frames = 10
+delays = [250, 1, 2, 1, 1, 1, 3, 1, 2, 1]
+
+[[state]]
+name = "mtoo-flap"
+dirs = 4
+frames = 2
+delays = [1, 2]
+
+[[state]]
+name = "mtoo-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "invis"
+dirs = 1
+frames = 1

@@ -1,0 +1,69 @@
+# Generated from module.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "std_mod"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blank_mod"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "card_mod"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "power_mod"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id_mod"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mainboard"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mcontroller"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyborg_upgrade"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyborg_upgrade1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyborg_upgrade2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyborg_upgrade3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyborg_upgrade4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyborg_upgrade5"
+dirs = 1
+frames = 1

@@ -1,0 +1,329 @@
+# Generated from closet.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lower_vent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "upper_vent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "biohazard"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripe_horizontal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripe_horizontal_lower"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripe_horizontal_upper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripes_horizontal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "research"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medical"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "atmos_upper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cargo_upper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "forensics"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "exped"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "security"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nanotrasen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripe_personnel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripe_vertical_left_partial"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripe_vertical_mid_partial"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripe_vertical_right_partial"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripe_vertical_left_full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripe_vertical_mid_full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripe_vertical_right_full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripe_vertical_left_partial_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripe_vertical_mid_partial_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripe_vertical_right_partial_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripe_vertical_left_full_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripe_vertical_mid_full_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripe_vertical_right_full_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "electric"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fire"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nano"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "corp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "command"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "l2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "l3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "l4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripe_w"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "upper_holes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lower_holes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "upper_side_vent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lower_side_vent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "captain"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eng"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eng_narrow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "circle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medcircle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "atmos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "viro"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sci"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hydro"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cargo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hop"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oxy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "extinguisher"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vertical_stripe_simple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lower_half_solid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripe_horizontal_narrow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripe_horizontal_broad"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "inset"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mining"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tool"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rads"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "top_stripe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pick"
+dirs = 1
+frames = 1

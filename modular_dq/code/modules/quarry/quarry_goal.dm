@@ -19,7 +19,9 @@
 //   - "Exploration": tally unique floor tiles a player has walked.
 //   - "Demolition": tally destroyed decorations on this layer.
 
-#define QUARRY_STABILITY_THRESHOLD 80
+// QUARRY_STABILITY_THRESHOLD moved to quarry_defines.dm so it can be
+// referenced from quarry_controller.dm / quarry_elevator_panel.dm, which
+// the dme auto-sort lists before quarry_goal.dm.
 
 /datum/quarry_goal
 	// Human-readable name shown in the elevator UI.

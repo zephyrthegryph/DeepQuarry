@@ -1,0 +1,373 @@
+# Generated from railgun.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 11
+
+[[state]]
+name = "coilgun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coilgun_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coilgun_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coilgun_amber"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coilgun_green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coilgun_loaded"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coilgun_capacitor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coilgun_cell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "railgun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "railgun_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "railgun_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "railgun_amber"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "railgun_green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "railgun_loaded"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "heavy_railgun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "heavy_railgun_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "heavy_railgun_loaded"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "heavy_railgun_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "heavy_railgun_amber"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "heavy_railgun_green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flechette_gun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flechette_gun_green"
+dirs = 1
+frames = 7
+delays = [2, 2, 2, 2, 2, 2, 3]
+
+[[state]]
+name = "flechette_gun_amber"
+dirs = 1
+frames = 2
+delays = [4, 3]
+
+[[state]]
+name = "flechette_gun_red"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "flechette_gun_loaded"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fuelrodgun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fuelrodgun_red"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "fuelrodgun_amber"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "fuelrodgun_green"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "fuelrodgun_loaded"
+dirs = 1
+frames = 5
+delays = [0.5]
+
+[[state]]
+name = "fuelrodgun_capacitor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fuelrodgun_cell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bore"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bore_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bore_amber"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bore_green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bore_loaded"
+dirs = 1
+frames = 3
+delays = [5, 3, 4]
+rewind = true
+
+[[state]]
+name = "bore_capacitor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bore_cell"
+dirs = 1
+frames = 8
+delays = [10, 3]
+
+[[state]]
+name = "railgun_sec"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "railgun_sec_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "railgun_sec_amber"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "railgun_sec_green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "railgun_sec_loaded"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "peacemaker"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "peacemaker_loaded"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "peacemaker_capacitor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "peacemaker_cell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "peacemaker_red"
+dirs = 1
+frames = 5
+delays = [3, 0.5, 0.5, 0.5, 1]
+rewind = true
+
+[[state]]
+name = "peacemaker_amber"
+dirs = 1
+frames = 3
+delays = [1]
+rewind = true
+
+[[state]]
+name = "peacemaker_green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "railgun_sifguard"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "railgun_sifguard_green"
+dirs = 1
+frames = 7
+delays = [2, 2, 2, 2, 2, 2, 3]
+
+[[state]]
+name = "railgun_sifguard_amber"
+dirs = 1
+frames = 2
+delays = [4, 3]
+
+[[state]]
+name = "railgun_sifguard_red"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "gasthrower"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gasthrower_cell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gasthrower_loaded"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gasthrower_capacitor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gasthrower_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gasthrower_amber"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "gasthrower_green"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "railpistol"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "railpistol_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "railpistol_amber"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "railpistol_green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "railpistol_loaded"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "railpistol_capacitor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "railpistol_cell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "railauto"
+dirs = 1
+frames = 1

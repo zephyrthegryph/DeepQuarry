@@ -1,0 +1,34 @@
+# Generated from wings64.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 5
+
+[[state]]
+name = "sectdrone_wing_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sectdrone_wing_alt_nomark"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "taurdrake_wing"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Harpy_wings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sloogshell"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "naga_wing"
+dirs = 4
+frames = 1

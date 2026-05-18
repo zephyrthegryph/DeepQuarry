@@ -1,0 +1,195 @@
+# Generated from policetape.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 11
+
+[[state]]
+name = "start"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stop"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "police"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "police_door_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "police_door_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "police_dir_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "police_v_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "police_h_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "police_dir_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "police_v_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "police_h_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engineering"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engineering_door_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engineering_door_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engineering_dir_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engineering_v_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engineering_h_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engineering_dir_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engineering_v_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engineering_h_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "atmos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "atmos_door_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "atmos_door_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "atmos_dir_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "atmos_v_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "atmos_h_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "atmos_dir_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "atmos_v_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "atmos_h_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tape"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 14, y = 4 }]
+
+[[state]]
+name = "tape_door_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tape_door_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tape_dir_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tape_v_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tape_h_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tape_dir_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tape_v_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tape_h_1"
+dirs = 4
+frames = 1

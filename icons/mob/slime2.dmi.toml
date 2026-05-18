@@ -1,0 +1,202 @@
+# Generated from slime2.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 13
+
+[[state]]
+name = "aslime-pout"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "aslime-sad"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "aslime-angry"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "aslime-angry_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "aslime-mischevous"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "aslime-:3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "aslime-:33"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "aslime-feral"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "slime adult old"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "slime adult"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "slime baby"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "slime baby old"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "slime baby eating"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "slime adult eating"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "slime extracted"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slime extract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slime shiny"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "slime light"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "slime adult dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slime baby dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slime cube old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slime cube active old"
+dirs = 1
+frames = 6
+delays = [2]
+
+[[state]]
+name = "slime cube"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slime cube active"
+dirs = 1
+frames = 6
+delays = [2]
+
+[[state]]
+name = "rainbow slime adult"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "rainbow slime adult eating"
+dirs = 1
+frames = 6
+delays = [0.66]
+
+[[state]]
+name = "rainbow slime baby"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "rainbow slime baby eating"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "rainbow slime baby dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rainbow slime adult dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluespace slime adult"
+dirs = 1
+frames = 28
+delays = [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3]
+
+[[state]]
+name = "bluespace slime adult eating"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "bluespace slime baby"
+dirs = 1
+frames = 28
+delays = [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3]
+
+[[state]]
+name = "bluespace slime baby eating"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "bluespace slime baby dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluespace slime adult dead"
+dirs = 1
+frames = 1

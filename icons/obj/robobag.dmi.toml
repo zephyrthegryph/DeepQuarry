@@ -1,0 +1,94 @@
+# Generated from robobag.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "tag_blank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bodybag_closed1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bodybag_folded"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bodybag_closed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bodybag_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bodybag_used"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tag_nt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tag_ward"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tag_zeng"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tag_gil"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tag_vey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tag_heph"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tag_grayson"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tag_xion"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tag_bishop"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tag_badge_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tag_badge_gold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tag_badge_silver"
+dirs = 1
+frames = 1

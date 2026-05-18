@@ -1,0 +1,16 @@
+# Generated from misc_ch.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "flailing_helmet"
+dirs = 4
+frames = 8
+delays = [0.4]
+
+[[state]]
+name = "flailing_helmet_worn"
+dirs = 4
+frames = 8
+delays = [0.4]

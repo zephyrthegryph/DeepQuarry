@@ -1,0 +1,327 @@
+# Generated from new_assemblies.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 11
+
+[[state]]
+name = "blank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prox_scanning"
+dirs = 1
+frames = 2
+delays = [1, 9]
+
+[[state]]
+name = "prox_timing"
+dirs = 1
+frames = 2
+delays = [1, 9]
+
+[[state]]
+name = "prox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holder"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prox_scanning_l"
+dirs = 1
+frames = 2
+delays = [1, 9]
+
+[[state]]
+name = "prox_timing_l"
+dirs = 1
+frames = 2
+delays = [1, 9]
+
+[[state]]
+name = "prox_left"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prox_scanning_r"
+dirs = 1
+frames = 2
+delays = [1, 9]
+
+[[state]]
+name = "prox_timing_r"
+dirs = 1
+frames = 2
+delays = [1, 9]
+
+[[state]]
+name = "prox_right"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "igniter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "igniter_left"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "igniter_right"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "timer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "timer_timing_l"
+dirs = 1
+frames = 2
+delays = [1, 9]
+
+[[state]]
+name = "timer_left"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "timer_timing_r"
+dirs = 1
+frames = 2
+delays = [1, 9]
+
+[[state]]
+name = "timer_right"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "infrared_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "infrared"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "infrared_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "infrared_on_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "infrared_left"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "infrared_on_r"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "infrared_right"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "signaller"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "signaller_left"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "signaller_right"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mousetrap"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mousetraparmed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mousetrap_left"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mousetraparmed_left"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mousetrap_right"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mousetraparmed_right"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "voice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "voice_left"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "voice_right"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_device"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_device_left"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_device_right"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_device-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_device-open_left"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_device-open_right"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_device0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_device0_left"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_device0_right"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_device0-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_device0-open_left"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_device0-open_right"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "anomaly_core"
+dirs = 1
+frames = 3
+delays = [6, 1]
+
+[[state]]
+name = "flux_core"
+dirs = 1
+frames = 3
+delays = [6, 1]
+
+[[state]]
+name = "pyro_core"
+dirs = 1
+frames = 3
+delays = [6, 1]
+
+[[state]]
+name = "grav_core"
+dirs = 1
+frames = 3
+delays = [6, 1]
+
+[[state]]
+name = "vortex_core"
+dirs = 1
+frames = 3
+delays = [6, 1]
+
+[[state]]
+name = "hallucination_core"
+dirs = 1
+frames = 3
+delays = [6, 1]
+
+[[state]]
+name = "bioscrambler_core"
+dirs = 1
+frames = 3
+delays = [6, 1]
+
+[[state]]
+name = "dimensional_core"
+dirs = 1
+frames = 3
+delays = [6, 1]
+
+[[state]]
+name = "weather_core"
+dirs = 1
+frames = 3
+delays = [6, 1]
+
+[[state]]
+name = "dust_core"
+dirs = 1
+frames = 3
+delays = [6, 1]
+
+[[state]]
+name = "inert"
+dirs = 1
+frames = 1

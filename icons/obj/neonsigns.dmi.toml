@@ -1,0 +1,30 @@
+# Generated from neonsigns.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "barcode"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sign_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sign_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cafesign_on"
+dirs = 1
+frames = 5
+delays = [4, 5, 5, 3, 5]
+
+[[state]]
+name = "cafesign_off"
+dirs = 1
+frames = 1

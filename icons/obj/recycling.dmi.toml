@@ -1,0 +1,209 @@
+# Generated from recycling.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 17
+
+[[state]]
+name = "conveyor0"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "conveyor1"
+dirs = 8
+frames = 4
+delays = [1]
+
+[[state]]
+name = "conveyor-1"
+dirs = 8
+frames = 4
+delays = [1]
+
+[[state]]
+name = "conveyor-broken"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "diverter0"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "diverter1"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "diverter10"
+dirs = 8
+frames = 4
+delays = [2]
+
+[[state]]
+name = "diverter01"
+dirs = 8
+frames = 4
+delays = [2]
+
+[[state]]
+name = "switch-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "switch-rev"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "switch-fwd"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grinder-a0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grinder-a1"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "grinder-b0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grinder-o0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grinder-o0bld"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grinder-o1"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "grinder-o1bld"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "grinder-b1"
+dirs = 1
+frames = 6
+delays = [1]
+rewind = true
+
+[[state]]
+name = "separator-AO0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "separator-AO1"
+dirs = 1
+frames = 3
+delays = [3]
+
+[[state]]
+name = "separator-A0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "separator-A1"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "separator-B0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "separator-BO0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "separator-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "separator-"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crusher"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crusher-process"
+dirs = 1
+frames = 8
+delays = [1, 0.7]
+
+[[state]]
+name = "crusher-panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sorter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sorter-process"
+dirs = 1
+frames = 6
+delays = [2, 2, 3, 4, 3, 2]
+
+[[state]]
+name = "sorter-panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamper-process"
+dirs = 1
+frames = 64
+delays = [1]
+loop = 1
+
+[[state]]
+name = "stamper-panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "debris"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "matdust"
+dirs = 1
+frames = 1

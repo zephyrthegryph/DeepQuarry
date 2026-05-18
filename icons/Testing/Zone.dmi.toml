@@ -1,0 +1,44 @@
+# Generated from Zone.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "created"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "assigned"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "merged"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "invalid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mark"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "block"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zoneblock"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fullblock"
+dirs = 1
+frames = 1

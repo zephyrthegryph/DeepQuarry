@@ -1,0 +1,19 @@
+# Generated from fakesnow.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "snow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snow_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "snow_corners"
+dirs = 8
+frames = 1

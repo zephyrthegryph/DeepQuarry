@@ -1,0 +1,389 @@
+# Generated from modular_armor.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "pcarrier"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pcarrier_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pcarrier_navy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pcarrier_green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pcarrier_tan"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pcarrier_press"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "riot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ablative"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ballistic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armor_light"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armor_medium"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armor_stab"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armor_blast"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armor_ablative"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armor_riot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armor_ballistic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armor_tactical"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armor_merc"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pouches"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pouches_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pouches_navy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pouches_green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pouches_tan"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pouches_white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lpouches"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lpouches_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lpouches_navy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lpouches_green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lpouches_tan"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armguards"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armguards_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armguards_navy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armguards_green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armguards_tan"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armguards_material"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armguards_merc"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armguards_riot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armguards_ablative"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armguards_ballistic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "legguards"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "legguards_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "legguards_navy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "legguards_green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "legguards_tan"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "legguards_material"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "legguards_merc"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "legguards_riot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "legguards_ablative"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "legguards_ballistic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nanotag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pcrctag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "saaretag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "presstag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sectag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "comtag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medictag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "agenttag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "opostag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "onegtag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "apostag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "anegtag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bpostag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bnegtag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "abpostag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "abnegtag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "helmcover_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "helmcover_navy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "helmcover_green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "helmcover_tan"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "helmcover_nt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "helmcover_pcrc"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "helmcover_saare"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "explorer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "legguards_sec_white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armguards_sec_white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nanotag_white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "helmcover_ntblack"
+dirs = 1
+frames = 1

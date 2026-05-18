@@ -1,0 +1,117 @@
+# Generated from dullahan_eng.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 64
+cols = 11
+
+[[state]]
+name = "dullahaneng"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahaneng-rest"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahaneng-sit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullahaneng-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullahaneng-eyes"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahaneng-lights"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "openpanel_nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahaneng-breastplate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahaneng-breastplate-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahaneng-rest-lights"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahaneng-loincloth"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahaneng-loincloth-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahaneng-rest-eyes"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahaneng-eyecover"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahaneng-eyecover-rest"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahaneng-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahaneng-sleeper-1-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahaneng-sit-lights"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullahaneng-sit-eyes"
+dirs = 1
+frames = 1

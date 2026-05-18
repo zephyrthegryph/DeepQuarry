@@ -1,0 +1,849 @@
+# Generated from dullataur.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 31
+
+[[state]]
+name = "dullataurjani"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurjani-rest"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataursci"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataursci-rest"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurengi"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurengi-rest"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurmed"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurmed-rest"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataursec"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataursec-rest"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurcargo"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurcargo-rest"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurmine-rest"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurmine"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurclown"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurclown-rest"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurserv"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurserv-rest"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurstandard"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurstandard-rest"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurninja"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurninja-rest"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurexplo"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurexplo-rest"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataursyndi"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataursyndi-rest"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurclown-breastplate-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullataurclown-breastplate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullataurserv-breastplate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullataurserv-breastplate-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullataurcargo-breastplate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullataurcargo-breastplate-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullataurjani-breastplate-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullataurjani-breastplate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullataurmine-breastplate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullataurmine-breastplate-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullataurmed-breastplate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullataurmed-breastplate-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullataurexplo-breastplate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullataurexplo-breastplate-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullataurninja-breastplate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullataurninja-breastplate-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullataurengi-breastplate-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullataurengi-breastplate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullataurstandard-breastplate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullataurstandard-breastplate-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullataursci-breastplate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullataursci-breastplate-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullataursyndi-breastplate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullataursyndi-breastplate-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullataursec-breastplate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullataursec-breastplate-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullataurexplo-eyes"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurexplo-rest-eyes"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurninja-eyes"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurninja-rest-eyes"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurmed-rest-eyes"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurmed-eyes"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurjani-rest-eyes"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurjani-eyes"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurmine-rest-eyes"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurmine-eyes"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataursyndi-eyes"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataursyndi-rest-eyes"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurengi-eyes"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurengi-rest-eyes"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurclown-eyes"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurclown-rest-eyes"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurserv-eyes"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurserv-rest-eyes"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurcargo-eyes"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurcargo-rest-eyes"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurstandard-eyes"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurstandard-rest-eyes"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataursec-eyes"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataursec-rest-eyes"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataursci-eyes"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataursci-rest-eyes"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurexplo-lights"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurexplo-rest-lights"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurninja-lights"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurninja-rest-lights"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurmed-rest-lights"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurmed-lights"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurjani-rest-lights"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurjani-lights"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurmine-rest-lights"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurmine-lights"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurengi-lights"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurengi-rest-lights"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurclown-lights"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurclown-rest-lights"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurserv-lights"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurserv-rest-lights"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurcargo-lights"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurcargo-rest-lights"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurstandard-lights"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurstandard-rest-lights"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataursec-lights"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataursec-rest-lights"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataursci-lights"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataursci-rest-lights"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataursyndi-lights"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataursyndi-rest-lights"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "openpanel_nc"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "openpanel_c"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "openpanel_w"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurcommand"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurcommand-rest"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurcommand-maidoutfit-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullataurcommand-maidoutfit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullataurcommand-breastplate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullataurcommand-breastplate-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullataurcommand-rest-lights"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurcommand-lights"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurcommand-rest-eyes"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurcommand-eyes"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurjani-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullataurengitwo-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullataursci-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullataurengi-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullataurmed-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullataursec-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullataurcargo-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullataurmine-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullataurclown-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullataurserv-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullataurstandard-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullataurninja-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullataurexplo-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullataursyndi-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullataurcommand-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullataurengitwo"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurengitwo-rest"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurengitwo-rest-lights"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurengitwo-lights"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurengitwo-rest-eyes"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurengitwo-eyes"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurengitwo-loincloth"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullataurengitwo-loincloth-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullataurengitwo-maidoutfit-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullataurengitwo-maidoutfit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullataurengitwo-breastplate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullataurengitwo-breastplate-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullataurninja-breastplatehalo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullataurninja-swordhalo-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullataurninja-breastplatehalo-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullataurninja-swordhalo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullataurninja-tophalo"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullataurninja-tophalo-rest"
+dirs = 4
+frames = 2
+delays = [8]

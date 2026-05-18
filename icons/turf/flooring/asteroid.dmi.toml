@@ -1,0 +1,74 @@
+# Generated from asteroid.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "asteroid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "asteroid_edges"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "asteroidfloor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dug_overlay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "asteroid_dug"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "asteroid_dug_overlay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "asteroid_cracked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sand-light"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sand-light-border"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sand-light-nub"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sand-light-corner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sand-icey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dirt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mud"
+dirs = 1
+frames = 1

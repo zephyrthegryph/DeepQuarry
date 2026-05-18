@@ -1,0 +1,1067 @@
+# Generated from overmap.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 17
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ship_nosprite"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sector"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "event"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "globe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shuttle_nosprite"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vector"
+dirs = 4
+frames = 6
+delays = [20, 1]
+
+[[state]]
+name = "shield0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shield1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shield2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "energy0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "energy1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "energy2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "power0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "power1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "power2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ohgodohfuck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "poi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nodata"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "object"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ship"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "planet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "star"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "field"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "station"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "turn_back"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "go_back"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "nothing_here"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "distress"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "generic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fueldepot_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lucky7_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluedwarf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reddwarf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellowgiant"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blackhole"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "illusive"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clockwork"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "barren"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chlorine"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "desert"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ruined"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lush"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "penumbra"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "frozen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "volcanic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metallic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dyson"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "os_fortress"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "os_fortress_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "os_fortress_r"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ring"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ring_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ring_active"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ring_active_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ring_destroyed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ring_destroyed_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "asteroid0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "asteroid0_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "asteroid1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "asteroid1_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "asteroid2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "asteroid2_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "asteroid3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "asteroid3_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "os_ruins"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "os_ruins_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacehulk"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacehulk_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carps_school1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carps_school2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carps_school3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carps_school4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carps_school1_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carps_school2_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carps_school3_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carps_school4_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carp1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carp2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carp3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carp4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carp1_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carp2_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carp3_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carp4_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meteor1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meteor2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meteor3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meteor4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meteors1_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meteors2_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meteors3_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meteors4_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dust1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dust2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dust3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dust4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dust1_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dust2_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dust3_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dust4_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ion1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ion2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ion3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ion4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ion1_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ion2_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ion3_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ion4_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "electrical1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "electrical2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "electrical3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "electrical4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "electrical1_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "electrical2_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "electrical3_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "electrical4_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "talon_v2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eris"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eris_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "htu"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "htu_station"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "htu_station_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "htu_station_r"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "htu_capital"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "htu_capital_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "htu_capital_r"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "htu_cruiser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "htu_cruiser_g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "htu_cruiser_r"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "htu_destroyer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "htu_destroyer_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "htu_destroyer_r"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "htu_frigate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "htu_frigate_g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "htu_frigate_r"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meobius"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "moe_station"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "moe_station_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "moe_station_r"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "moe_capital"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "moe_capital_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "moe_capital_r"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "moe_cruiser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "moe_cruiser_g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "moe_cruiser_r"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "moe_destroyer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "moe_destroyer_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "moe_destroyer_r"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "moe_frigate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "moe_frigate_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "moe_frigate_r"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ihs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ihs_capital"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ihs_capital_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ihs_capital_r"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ihs_cruiser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ihs_cruiser_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ihs_cruiser_r"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ihs_destroyer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ihs_destroyer_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ihs_destroyer_r"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ihs_frigate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ihs_frigate_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ihs_frigate_r"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nt_cruiser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nt_cruiser_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nt_cruiser_r"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nt_destroyer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nt_destroyer_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nt_destroyer_r"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nt_frigate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nt_frigate_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nt_frigate_r"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "serb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "serb_cruiser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "serb_cruiser_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "serb_cruiser_r"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "serb_destroyer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "serb_destroyer_g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "serb_destroyer_r"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "serb_frigate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "serb_frigate_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "serb_frigate_r"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oberth"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oberth_cruiser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oberth_cruiser_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oberth_cruiser_r"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oberth_destroyer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oberth_destroyer_g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "oberth_destroyer_r"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oberth_frigate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oberth_frigate_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oberth_frigate_r"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "os"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "os_frigate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "os_frigate_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "os_frigate_r"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "unknown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "capital"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "capital_o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "capital_r"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mothership"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mothership_o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mothership_r"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "planetcracker"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "planetcraker_o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "planetcraker_r"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "unkn"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "unkn_o"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "unkn_r"
+dirs = 4
+frames = 1

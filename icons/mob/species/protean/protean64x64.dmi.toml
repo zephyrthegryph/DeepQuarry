@@ -1,0 +1,114 @@
+# Generated from protean64x64.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 8
+
+[[state]]
+name = "drake"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darke-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "drake-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "drake-1-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "drake_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "drake_rest-eyes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "drake_rest-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "drake_rest-1-eyes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teppi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teppi-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teppi-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teppi-1-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teppi_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teppi_rest-eyes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teppi_rest-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teppi_rest-1-eyes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "panther"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "panther-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "panther-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "panther-1-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "panther_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "panther_rest-1"
+dirs = 1
+frames = 1

@@ -1,0 +1,775 @@
+# Generated from energy.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 15
+
+[[state]]
+name = "energy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "energy100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "energy75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "energy50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "energy25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "energy0"
+dirs = 1
+frames = 2
+delays = [3, 1]
+
+[[state]]
+name = "energykill"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "energystun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "energystun100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "energystun75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "energystun50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "energystun25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "energystun0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "energykill100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "energykill75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "energykill50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "energykill25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "energykill0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ionrifle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ionrifle100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ionrifle75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ionrifle50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ionrifle25"
+dirs = 1
+frames = 2
+delays = [4, 3]
+
+[[state]]
+name = "ionrifle0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "caplaser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "caplaser100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "caplaser75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "caplaser50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "caplaser25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "caplaser0"
+dirs = 1
+frames = 2
+delays = [4, 1]
+
+[[state]]
+name = "sniper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sniper100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sniper75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sniper50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sniper25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sniper0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "laser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "laser100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "laser75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "laser50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "laser25"
+dirs = 1
+frames = 2
+delays = [4, 3]
+
+[[state]]
+name = "laser0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lasercannon0"
+dirs = 1
+frames = 6
+delays = [1]
+rewind = true
+
+[[state]]
+name = "lasercannon25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lasercannon50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lasercannon75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lasercannon100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "freezegun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "freezegun100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "freezegun75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "freezegun50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "freezegun25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "freezegun0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "florayield100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "florayield75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "florayield50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "florayield25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "florayield0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floramut100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floramut75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floramut50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floramut25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floramut0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toxgun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toxgun100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toxgun75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toxgun50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toxgun25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toxgun0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "PDWstun0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "PDWstun25"
+dirs = 1
+frames = 4
+delays = [1.5]
+
+[[state]]
+name = "PDWstun50"
+dirs = 1
+frames = 4
+delays = [1.5]
+
+[[state]]
+name = "PDWstun75"
+dirs = 1
+frames = 4
+delays = [1.5]
+
+[[state]]
+name = "PDWstun100"
+dirs = 1
+frames = 4
+delays = [1.5]
+
+[[state]]
+name = "PDWkill0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "PDWkill25"
+dirs = 1
+frames = 4
+delays = [1.5]
+
+[[state]]
+name = "PDWkill50"
+dirs = 1
+frames = 4
+delays = [1.5]
+
+[[state]]
+name = "PDWkill75"
+dirs = 1
+frames = 4
+delays = [1.5]
+
+[[state]]
+name = "PDWkill100"
+dirs = 1
+frames = 4
+delays = [1.5]
+
+[[state]]
+name = "crossbow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xray"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xray100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xray75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xray50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xray25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xray0"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "taser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "taser0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "taser25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "taser50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "taser75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "taser100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stunrevolver"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stunrevolver100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stunrevolver75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stunrevolver50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stunrevolver25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stunrevolver0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stunrevolver_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pulse"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pulse100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pulse75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pulse50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pulse25"
+dirs = 1
+frames = 2
+delays = [4, 3]
+
+[[state]]
+name = "pulse0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cassad"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cassad100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cassad75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cassad50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cassad25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cassad0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nucgun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nucgun-stun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nucgun-kill"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nucgun-100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nucgun-75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nucgun-50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nucgun-25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nucgun-0"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "nucgun-whee"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "nucgun-clean"
+dirs = 1
+frames = 4
+delays = [10]
+
+[[state]]
+name = "nucgun-light"
+dirs = 1
+frames = 5
+delays = [7]
+
+[[state]]
+name = "nucgun-medium"
+dirs = 1
+frames = 5
+delays = [4]
+
+[[state]]
+name = "nucgun-crit"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "decloner"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "decloner100"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "decloner75"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "decloner50"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "decloner25"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "decloner0"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "retro"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "retro100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "retro75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "retro50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "retro25"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "retro0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redtag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redtag100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redtag75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redtag50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redtag25"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "redtag0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluetag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluetag100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluetag75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluetag50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluetag25"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "bluetag0"
+dirs = 1
+frames = 1

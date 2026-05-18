@@ -1,0 +1,55 @@
+# Generated from righthand_balls_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "tennis_classic"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tennis_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tennis_yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tennis_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tennis_cyan"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tennis_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tennis_purple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "baseball"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "basketball"
+dirs = 4
+frames = 5
+delays = [1]
+
+[[state]]
+name = "dodgeball"
+dirs = 4
+frames = 1

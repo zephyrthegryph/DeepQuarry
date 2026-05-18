@@ -1,0 +1,124 @@
+# Generated from protean64x32.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 10
+
+[[state]]
+name = "lizard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lizard-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lizard-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lizard-1-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lizard_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lizard_rest-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lizard_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lizard_rest-1-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rat-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rat_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rat_rest-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rat-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rat-1-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rat_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rat_rest-1-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolf-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolf-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolf-1-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolf_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolf_rest-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolf_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolf_rest-1-eyes"
+dirs = 4
+frames = 1

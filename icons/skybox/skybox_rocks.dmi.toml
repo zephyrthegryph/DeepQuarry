@@ -1,0 +1,49 @@
+# Generated from skybox_rocks.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "a2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "a3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "a4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "a5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "a6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "a7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "a8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "a9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "a10"
+dirs = 1
+frames = 1

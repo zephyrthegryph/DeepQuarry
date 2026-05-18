@@ -1,0 +1,51 @@
+# Generated from marble_decals.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "bronze"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "damage"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "mural"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stairs"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "moss"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "border"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "border_invert"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "power"
+dirs = 1
+frames = 10
+delays = [1, 10, 1, 8, 1, 1, 30, 1, 20, 1]
+
+[[state]]
+name = "teleporter"
+dirs = 1
+frames = 16
+delays = [1, 1, 1, 1, 5, 1, 1, 1, 1, 10, 1, 2, 1, 1, 2, 1]

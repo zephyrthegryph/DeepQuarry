@@ -1,0 +1,35 @@
+# Generated from meteor_turret.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "turret1"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "turret1_fire"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "turret0"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "original turret"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "missile"
+dirs = 8
+frames = 2
+delays = [1]
+
+[[state]]
+name = "broke"
+dirs = 1
+frames = 1

@@ -1,0 +1,164 @@
+# Generated from tk.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 10
+
+[[state]]
+name = "tkclosed-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tkopen-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tkopen100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tkopen75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tkopen50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tkopen25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tkopen0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tkclosed100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tkclosed75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tkclosed50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tkclosed25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tkclosed0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lefthand-mag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand-openmag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand-nomag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand-opennomag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand-mag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand-openmag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand-nomag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand-opennomag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "back-nomag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "onsuit-nomag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "back-mag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "onsuit-mag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand_doble_mag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand_doble_mag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand_doble_openmag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand_doble_openmag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand_doble"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand_doble"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand_doble_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand_doble_open"
+dirs = 4
+frames = 1

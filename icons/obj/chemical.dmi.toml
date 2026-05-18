@@ -1,0 +1,853 @@
+# Generated from chemical.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 21
+
+[[state]]
+name = "powder"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pill"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pillA"
+dirs = 1
+frames = 3
+delays = [3]
+rewind = true
+
+[[state]]
+name = "pill1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pill2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pill3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pill4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pill5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pill6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pill7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pill8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pill9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pill10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pill11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pill12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pill13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pill14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pill15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pill16"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pill17"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pill18"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pill19"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pill20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pill21"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pill22"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pill23"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pill24"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orange"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pillbottle_wrap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle16"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle17"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle18"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle19"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pill_canister"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "solid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "liquid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vapour"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dispenser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mixer0b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mixer1b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vial"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lid_vial"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "label_vial"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vial0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vial1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vial-blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vial-green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dropper0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dropper1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chempuff"
+dirs = 4
+frames = 5
+delays = [1]
+loop = 1
+
+[[state]]
+name = "weedpuff"
+dirs = 4
+frames = 5
+delays = [1]
+loop = 1
+
+[[state]]
+name = "syringeproj"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "molten"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "genesploicer0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "genesploicer1"
+dirs = 1
+frames = 4
+delays = [4]
+
+[[state]]
+name = "beaker"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lid_beaker"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "label_beaker"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beakerlarge"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lid_beakerlarge"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "label_beakerlarge"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beakergold_unused"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lid_beakergold_unused"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "label_beakergold_unused"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beakerbluespace"
+dirs = 1
+frames = 5
+delays = [1.5]
+
+[[state]]
+name = "lid_beakerbluespace"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "label_beakerbluespace"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beakernoreact"
+dirs = 1
+frames = 18
+delays = [0.5]
+
+[[state]]
+name = "lid_beakernoreact"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "soda_dispenser"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "booze_dispenser"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coffee_dispenser"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bottle-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lid_bottle-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "label_bottle-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lid_bottle-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "label_bottle-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lid_bottle-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "label_bottle-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lid_bottle-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "label_bottle-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cartridge"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "potgreen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "potred"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "potpink"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "potpurple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "potsilver"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "potyellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "potorange"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "potblue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "potcyan"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "potlightpink"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bouilloncube"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chem_analyzer"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "chem_analyzer-working"
+dirs = 1
+frames = 6
+delays = [2]
+rewind = true
+
+[[state]]
+name = "patch"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "patch1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "patch2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "patch3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "patch4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mixer0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mixer1"
+dirs = 4
+frames = 33
+delays = [1]
+
+[[state]]
+name = "mixer0_nopower"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mixer1_nopower"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mixer1_b"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mixer0_b"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stopperedbottle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lid_stopperedbottle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chemg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chemg_ass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chemg_locked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chemg_armed"
+dirs = 1
+frames = 2
+delays = [1, 2]
+
+[[state]]
+name = "large_grenade"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "large_grenade_ass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "large_grenade_locked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "large_grenade_armed"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "lid_bottle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bottle-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lid_bottle-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "label_bottle-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alembic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alembic-full"
+dirs = 1
+frames = 1
+rewind = true
+
+[[state]]
+name = "alembic-bubble"
+dirs = 1
+frames = 3
+delays = [1]
+rewind = true
+
+[[state]]
+name = "alembic-done"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alembic-base"
+dirs = 1
+frames = 1
+rewind = true
+
+[[state]]
+name = "kettle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syrup_dispenser"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "container"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "container_c25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "container_c50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "container_c75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "container_c100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dispenser-small-green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dispenser-small"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "measure_cup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chemkit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "injector"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "injector_b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "injector_pb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "injector_p"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "injector_i"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "injector_ib"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "injector_ipb"
+dirs = 1
+frames = 1

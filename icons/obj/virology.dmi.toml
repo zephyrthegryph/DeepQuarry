@@ -1,0 +1,72 @@
+# Generated from virology.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "isolator_in"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "isolator"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "isolator_processing"
+dirs = 1
+frames = 7
+delays = [2]
+
+[[state]]
+name = "isolator_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "analyser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "analyser_processing"
+dirs = 1
+frames = 5
+delays = [2]
+
+[[state]]
+name = "incubator"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "incubator_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "centrifuge"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "centrifuge_moving"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "centrifuge0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "centrifugeb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "virusfoodtank"
+dirs = 1
+frames = 1

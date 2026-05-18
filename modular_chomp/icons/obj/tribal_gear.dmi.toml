@@ -1,0 +1,154 @@
+# Generated from tribal_gear.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "outcrop"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stonetree"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lilly"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "leaves"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tyrflora"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tyrflora1gb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tyrflora2gb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tyrflora3gb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tyrflora4gb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tyrflora5gb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hiddenitem"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crystal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "generator"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "core"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hilt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hole"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "agate_sword"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "agate_hammer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "agate_spear"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "elevator"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slow_trap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "burn_trap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "knock_trap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wall"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "antling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "outcrop-verdantium"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "outcrop-hydrogen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "confusion_trap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "trip_trap"
+dirs = 1
+frames = 1

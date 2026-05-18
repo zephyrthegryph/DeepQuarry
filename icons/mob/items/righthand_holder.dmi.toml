@@ -1,0 +1,269 @@
+# Generated from righthand_holder.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 15
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cat2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cat3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bscat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "repairbot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nymph"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "monkey"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "neara"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "farwa"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stok"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-cat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-repairbot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-monkey"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-mouse"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-borgi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-rabbit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-parrot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-fox"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "constructiondrone"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kitten"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "brainslug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fish"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "possum"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "poppy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "corgi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lisa"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "old_corgi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "void_puppy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "narsian"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fox"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sloth"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cak"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "original"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spacecat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bullterrier"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "breadcat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catslug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spaceslug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tulidaan"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mouse_brown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mouse_gray"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mouse_rat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mouse_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mouse_black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mouse_operative"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engislug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gatslug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medislug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scienceslug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargoslug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "capslug"
+dirs = 4
+frames = 1

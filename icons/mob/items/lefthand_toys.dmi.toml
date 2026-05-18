@@ -1,0 +1,34 @@
+# Generated from lefthand_toys.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "strixplush"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshariplushie_brown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshariplushie_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshariplushie_black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshariplushie_yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jeans_eiliplush"
+dirs = 4
+frames = 1

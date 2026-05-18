@@ -1,0 +1,912 @@
+# Generated from slimes.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 19
+
+[[state]]
+name = "blue slime extract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue adult slime"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "blue adult slime eat"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "blue baby slime"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "blue baby slime eat"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "blue baby slime dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue baby slime dead-nocore"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aslime-pout"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "aslime-sad"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "aslime-angry"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "aslime-mischevous"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "aslime-:3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "aslime-:33"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dark blue slime extract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark blue adult slime"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "dark blue adult slime eat"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "dark blue baby slime"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "dark blue baby slime eat"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "dark blue baby slime dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark blue baby slime dead-nocore"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green slime extract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green adult slime"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "green adult slime eat"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "green baby slime"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "green baby slime eat"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "green baby slime dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green baby slime dead-nocore"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grey slime extract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grey adult slime"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "grey adult slime eat"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "grey baby slime"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "grey baby slime eat"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "grey baby slime dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grey baby slime dead-nocore"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purple slime extract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purple adult slime"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "purple adult slime eat"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "purple baby slime"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "purple baby slime eat"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "purple baby slime dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purple baby slime dead-nocore"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orange slime extract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orange adult slime"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "orange adult slime eat"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "orange baby slime"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "orange baby slime eat"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "orange baby slime dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orange baby slime dead-nocore"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pink slime extract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pink adult slime"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "pink adult slime eat"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "pink baby slime"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "pink baby slime eat"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "pink baby slime dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pink baby slime dead-nocore"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark purple slime extract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark purple adult slime"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "dark purple adult slime eat"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "dark purple baby slime"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "dark purple baby slime eat"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "dark purple baby slime dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark purple baby slime dead-nocore"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red slime extract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red adult slime"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "red adult slime eat"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "red baby slime"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "red baby slime eat"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "red baby slime dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red baby slime dead-nocore"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow slime extract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow adult slime"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "yellow adult slime eat"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "yellow baby slime"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "yellow baby slime eat"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "yellow baby slime dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow baby slime dead-nocore"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gold slime extract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gold adult slime"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "gold adult slime eat"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "gold baby slime"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "gold baby slime eat"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "gold baby slime dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gold baby slime dead-nocore"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal slime extract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal adult slime"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "metal adult slime eat"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "metal baby slime"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "metal baby slime eat"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "metal baby slime dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal baby slime dead-nocore"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "silver slime extract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "silver adult slime"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "silver adult slime eat"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "silver baby slime"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "silver baby slime eat"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "silver baby slime dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "silver baby slime dead-nocore"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "light pink adult slime"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "light pink adult slime eat"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "light pink baby slime"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "light pink baby slime eat"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "light pink baby slime dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "light pink baby slime dead-nocore"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "light pink slime extract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "black adult slime"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "black adult slime eat"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "black baby slime"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "black baby slime eat"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "black baby slime dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "black baby slime dead-nocore"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "black slime extract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rainbow adult slime"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "rainbow adult slime eat"
+dirs = 1
+frames = 6
+delays = [0.66]
+
+[[state]]
+name = "rainbow baby slime"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "rainbow baby slime eat"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "rainbow baby slime dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rainbow baby slime dead-nocore"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rainbow slime extract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "adamantine adult slime"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "adamantine adult slime eat"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "adamantine baby slime"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "adamantine baby slime eat"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "adamantine baby slime dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "adamantine baby slime dead-nocore"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "adamantine slime extract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oil adult slime"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "oil adult slime eat"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "oil baby slime"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "oil baby slime eat"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "oil baby slime dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oil baby slime dead-nocore"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oil slime extract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluespace slime extract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluespace adult slime"
+dirs = 1
+frames = 28
+delays = [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3]
+
+[[state]]
+name = "bluespace adult slime eat"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "bluespace baby slime"
+dirs = 1
+frames = 28
+delays = [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3]
+
+[[state]]
+name = "bluespace baby slime eat"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "bluespace baby slime dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluespace baby slime dead-nocore"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pyrite slime extract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pyrite adult slime"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "pyrite adult slime eat"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "pyrite baby slime"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "pyrite baby slime eat"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "pyrite baby slime dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pyrite baby slime dead-nocore"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sepia slime extract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sepia adult slime"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "sepia adult slime eat"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "sepia baby slime"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "sepia baby slime eat"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "sepia baby slime dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sepia baby slime dead-nocore"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cerulean slime extract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cerulean adult slime"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "cerulean adult slime eat"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "cerulean baby slime"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "cerulean baby slime eat"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "cerulean baby slime dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cerulean baby slime dead-nocore"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sapphire slime extract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emerald slime extract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ruby slime extract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "amber slime extract"
+dirs = 1
+frames = 1

@@ -1,0 +1,143 @@
+# Generated from 64x64_ch.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 13
+
+[[state]]
+name = "thecake_onelayer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "thecake_twolayers"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "thecake_threelayers"
+dirs = 1
+frames = 8
+delays = [1.5]
+
+[[state]]
+name = "thecake_fourlayers"
+dirs = 1
+frames = 8
+delays = [1.5]
+
+[[state]]
+name = "thecake_fivelayers"
+dirs = 1
+frames = 8
+delays = [1.5]
+
+[[state]]
+name = "thecake_finished"
+dirs = 1
+frames = 8
+delays = [1.5]
+
+[[state]]
+name = "chaoscake_unfinished-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chaoscake_unfinished-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chaoscake_unfinished-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chaoscake_unfinished-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chaoscake_unfinished-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chaoscake_unfinished-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chaoscake_unfinished-7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chaoscake_unfinished-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chaoscake-6"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "chaoscake-5"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "chaoscake-4"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "chaoscake-3"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "chaoscake-2"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "chaoscake-1"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "chaoscake-0"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "wheel_of_fortune_spinning-winning"
+dirs = 1
+frames = 40
+delays = [1]
+
+[[state]]
+name = "wheel_of_fortune_spinning"
+dirs = 1
+frames = 16
+delays = [1]
+
+[[state]]
+name = "wheel_of_fortune"
+dirs = 1
+frames = 32
+delays = [1]
+
+[[state]]
+name = "dragon_statue"
+dirs = 1
+frames = 1

@@ -1,0 +1,39 @@
+# Generated from mob_werebeast.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 64
+cols = 5
+
+[[state]]
+name = "blank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "latex"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ngloves"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fingerlessgloves"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "heavy_engi"
+dirs = 4
+frames = 1

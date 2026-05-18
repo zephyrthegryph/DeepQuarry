@@ -1,0 +1,110 @@
+# Generated from outcrop.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "outcrop-random"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "outcrop"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "outcrop-diamond"
+dirs = 1
+frames = 4
+delays = [10]
+
+[[state]]
+name = "outcrop-coal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "outcrop-iron"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "outcrop-lead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "outcrop-phoron"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "outcrop-platinum"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "outcrop-silver"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "outcrop-gold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "outcrop-uranium"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "outcrop-egg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "outcrop-diamond-egg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "outcrop-phoron-egg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "outcrop-lead-egg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "outcrop-iron-egg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "outcrop-coal-egg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "outcrop-platinum-egg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "outcrop-silver-egg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "outcrop-gold-egg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "outcrop-uranium-egg"
+dirs = 1
+frames = 1

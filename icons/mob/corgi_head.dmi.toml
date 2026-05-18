@@ -1,0 +1,275 @@
+# Generated from corgi_head.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 13
+
+[[state]]
+name = "helmet"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "helmet2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sun"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sun2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "captain"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "captain2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tophat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tophat2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bunnycrap"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bunnycrap2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kitty"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "kitty2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheriff"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "detective"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "detective2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheriff2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sombrero"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sombrero2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nursehat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nursehat2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beret"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pirate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pirate2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wizard2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "santahat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "santahat2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wizard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wizard2-fake"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wizard-fake"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bunny"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ushankadown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bunny2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ushankadown2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ushankaup2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ushankaup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chef"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chef2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hardhat0_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hardhat1_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hardhat0_white2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hardhat1_white2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hardhat0_yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hardhat1_yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hardhat0_yellow2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hardhat1_yellow2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheet2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "policehelm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "policehelm2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "paper2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cargosoft"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargosoft2"
+dirs = 1
+frames = 1

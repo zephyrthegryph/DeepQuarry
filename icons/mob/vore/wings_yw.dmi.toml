@@ -1,0 +1,39 @@
+# Generated from wings_yw.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "succubus-purple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sepulchre_wings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sepulchre_wingsc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cyberdragon_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cyberdragon_red_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cyberdoe_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cyber_angel"
+dirs = 4
+frames = 1

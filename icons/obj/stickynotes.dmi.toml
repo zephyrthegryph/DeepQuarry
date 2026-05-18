@@ -1,0 +1,99 @@
+# Generated from stickynotes.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "paper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_words"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scrap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pad"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pad_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pad_used"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pad_full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pad_empty_writing"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pad_used_writing"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pad_full_writing"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "poster"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "poster_words"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scrap_poster"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "poster_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "poster_used"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "poster_full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "poster_empty_writing"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "poster_used_writing"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "poster_full_writing"
+dirs = 1
+frames = 1

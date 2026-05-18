@@ -1,0 +1,59 @@
+# Generated from helmet.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nanomachine_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nanomachine_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "precusor_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "precursor_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "aegis_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "aegis_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crystal_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crystal_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pursuit_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pursuit_rig_sealed"
+dirs = 4
+frames = 1

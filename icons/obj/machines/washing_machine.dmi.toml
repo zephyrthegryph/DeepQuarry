@@ -1,0 +1,88 @@
+# Generated from washing_machine.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "wm_10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wm_11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wm_20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wm_21"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wm_30"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wm_31"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wm_40"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wm_41"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wm_50"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "wm_51"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "wm_60"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wm_61"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wm_70"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wm_71"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wm_80"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "wm_81"
+dirs = 1
+frames = 8
+delays = [1]

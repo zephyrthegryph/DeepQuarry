@@ -1,0 +1,255 @@
+# Generated from combat_large.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 19
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "openpanel_nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "derg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "derg-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "derg-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "derg-wreck"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "derg-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "derg-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "derg-shield"
+dirs = 4
+frames = 2
+delays = [1.5]
+
+[[state]]
+name = "derg-roll"
+dirs = 4
+frames = 6
+delays = [0.8]
+
+[[state]]
+name = "derg-gun"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hound"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "hound-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hound-wreck"
+dirs = 1
+frames = 2
+delays = [5]
+rewind = true
+
+[[state]]
+name = "hound-rest"
+dirs = 1
+frames = 1
+rewind = true
+
+[[state]]
+name = "hound-sleeper-1"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "hound-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borgi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borgi"
+dirs = 4
+frames = 6
+delays = [1]
+movement = true
+
+[[state]]
+name = "borgi-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "borgi-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borgi-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borgi-sleeper-1"
+dirs = 4
+frames = 6
+delays = [1]
+movement = true
+
+[[state]]
+name = "borgi-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borgi-lights"
+dirs = 4
+frames = 6
+delays = [1]
+movement = true
+
+[[state]]
+name = "raptor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptor-eyes"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "raptor-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "raptor-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptor-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptor-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptor-shield"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "raptor-gun"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptor-lights"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "raptor-roll"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptor-roll"
+dirs = 4
+frames = 4
+delays = [1]
+movement = true
+
+[[state]]
+name = "raptor"
+dirs = 4
+frames = 4
+delays = [2]
+movement = true
+
+[[state]]
+name = "raptor-eyes"
+dirs = 4
+frames = 4
+delays = [2]
+movement = true
+
+[[state]]
+name = "raptor-sleeper-1"
+dirs = 4
+frames = 4
+delays = [2]
+movement = true
+
+[[state]]
+name = "raptor-shield"
+dirs = 4
+frames = 4
+delays = [2]
+movement = true
+
+[[state]]
+name = "raptor-gun"
+dirs = 4
+frames = 4
+delays = [2]
+movement = true
+
+[[state]]
+name = "raptor-lights"
+dirs = 4
+frames = 4
+delays = [2]
+movement = true

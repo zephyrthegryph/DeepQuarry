@@ -1,0 +1,14 @@
+# Generated from VBO_maw21.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 480
+height = 480
+cols = 2
+
+[[state]]
+name = "VBO_maw21"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_maw21-2"
+dirs = 1
+frames = 1

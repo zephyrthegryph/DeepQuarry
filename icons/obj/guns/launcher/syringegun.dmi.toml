@@ -1,0 +1,24 @@
+# Generated from syringegun.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "syringegun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syringegun_medical"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lefthand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand"
+dirs = 4
+frames = 1

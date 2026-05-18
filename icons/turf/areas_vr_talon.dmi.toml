@@ -1,0 +1,94 @@
+# Generated from areas_vr_talon.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "unknown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray-c"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray-f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray-p"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray-s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow-p"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow-s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark-a"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark-p"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark-s"
+dirs = 1
+frames = 1

@@ -1,0 +1,80 @@
+# Generated from antimatter.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "shielding"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "core"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "control"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shield_8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shield_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shield_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shield_5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shield_9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shield_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shield_6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shield_10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shield"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "control_on"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "jar"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "box"
+dirs = 1
+frames = 1

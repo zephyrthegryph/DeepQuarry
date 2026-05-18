@@ -1,0 +1,336 @@
+# Generated from cooking_machines.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 12
+
+[[state]]
+name = "mixer_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mixer_on"
+dirs = 1
+frames = 4
+delays = [0.5]
+
+[[state]]
+name = "cereal_on"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "cereal_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "icecream_vat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_mixer_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_grill_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_grill_on"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "old_mixer_on"
+dirs = 1
+frames = 4
+delays = [0.5]
+
+[[state]]
+name = "old_fryer_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_fryer_on"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "old_cereal_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_cereal_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_icecream_vat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "still_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "still_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_ovenclosed_cooking"
+dirs = 1
+frames = 7
+delays = [2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 10]
+
+[[state]]
+name = "old_ovenclosed_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_ovenclosed_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_ovenopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "light_idle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "light_preheating"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "light_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fryer_light_idle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fryer_light_preheating"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fryer_light_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "basket"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "basket1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "basket2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "basket3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "basket4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "basket5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ovendish"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ovendish1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ovendish2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ovendish3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ovendish4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ovendish5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grillrack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grillrack1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grillrack2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grillrack3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grillrack4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grillrack5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ovenclosed_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ovenclosed_cooking"
+dirs = 1
+frames = 8
+delays = [10, 2.5]
+
+[[state]]
+name = "ovenclosed_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ovenopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grill_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grill_on"
+dirs = 1
+frames = 4
+delays = [3, 3, 4, 3]
+
+[[state]]
+name = "fryer_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fryer_on"
+dirs = 1
+frames = 14
+delays = [4, 2]
+
+[[state]]
+name = "old_ovenclosed_on2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_ovenclosed_cooking2"
+dirs = 1
+frames = 8
+delays = [10, 2.5]
+
+[[state]]
+name = "old_ovenclosed_off2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_ovenopen2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_grill_off2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_grill_on2"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "old_fryer_off2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_fryer_on2"
+dirs = 1
+frames = 14
+delays = [4, 2]
+
+[[state]]
+name = "yeoldovenclosed_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yeoldovenclosed_cooking"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yeoldovenclosed_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yeoldovenopen"
+dirs = 1
+frames = 1

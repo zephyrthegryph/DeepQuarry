@@ -1,0 +1,114 @@
+# Generated from hats_ch.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "wahcap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wahcap_flipped"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "goose_king"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "goose_queen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bearpelt_black"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bearpelt_brown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tigerpelt_shiny"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tigerpelt_snow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tigerpelt_pink"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wolfpelt_brown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wolfpelt_gray"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nanomachine_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nanomachine_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pursuit_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pursuit_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clockwork_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clockwork_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "precursor_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "precursor_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aegis_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aegis_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mailman2"
+dirs = 1
+frames = 1

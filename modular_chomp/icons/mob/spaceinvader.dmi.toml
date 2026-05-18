@@ -1,0 +1,65 @@
+# Generated from spaceinvader.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "solarray"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "livingice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hermitcrab"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solarray-dead"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "livingice-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hermitcrab-dead"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "galaxyray"
+dirs = 4
+frames = 5
+delays = [3]
+
+[[state]]
+name = "superhermitcrab"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dreameel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gravityshell"
+dirs = 4
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cleanseshell"
+dirs = 4
+frames = 1

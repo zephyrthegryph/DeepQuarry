@@ -1,0 +1,129 @@
+# Generated from screen1_purity.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "walking"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "running"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "r_hand_active"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "l_hand_inactive"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "r_hand_inactive"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "l_hand_active"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hand2"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "act_equip"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "hand1"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "act_drop"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "act_throw_off"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "act_throw_on"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "act_resist"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "pull1"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "template"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "templatesmall"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "zone_sel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pull1_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "intent_harm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "intent_grab"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "intent_disarm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "intent_help"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "intent_all"
+dirs = 1
+frames = 1

@@ -1,0 +1,305 @@
+# Generated from pda_wrist.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "pda"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-m"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-tox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-h"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-cargo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "NONE"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-r"
+dirs = 1
+frames = 2
+delays = [10]
+
+[[state]]
+name = "pda-v"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-det"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-warden"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-j"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-clown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-mime"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-hop"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-hos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-ce"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-cmo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-rd"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-c"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-q"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-miner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-syn"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-holy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-lawyer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-hydro"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-robot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-libb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-chef"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-bar"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-atmo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-chem"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-gene"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-explore"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-sar"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-pilot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-transp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-a"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-c"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-ce"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-chem"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-clown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-cmo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-h"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-hos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-j"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-m"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-mi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-q"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-rd"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-tox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-tear"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-eye"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "light-o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-id"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-pen"
+dirs = 1
+frames = 1

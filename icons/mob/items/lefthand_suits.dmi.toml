@@ -1,0 +1,760 @@
+# Generated from lefthand_suits.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 25
+
+[[state]]
+name = "wcoat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bombvest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wizard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "judge"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "space"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate-green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate-green-dark"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate-orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate-blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate-black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate-black-green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate-black-blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate-black-red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate-black-med"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate-black-orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate-black-engie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "santa"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "straight_jacket"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "s-ninja_suit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig_suit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eng_voidsuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ce_hardsuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mining_voidsuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medical_voidsuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sec_voidsuitTG"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "atmos_voidsuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndie_voidsuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wiz_voidsuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_suit_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_suit_black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "firesuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nun"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "imperium_monk"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chickensuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hotdog"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "turnip"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cultrobes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "caparmor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cardborg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engspace_suit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cespace_suit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "overalls"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apronchef"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chef"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "captunic"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "capjacket"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mantle-unathi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "robe-unathi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zhan_furs"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hostrench"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "warden_jacket"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "warden_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "armor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "armor_reflec_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tdgreen"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "tdred"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "tdblue"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "death_commando_suit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chainmail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "riot_new"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "armor_reflec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "combat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bio"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bio_virology"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "bio_security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bio_janitor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bio_scientist"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bio_cmo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fire"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rad"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bombsuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bombsuitsec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hazard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hazard_b"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hazard_g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hazard_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "detective"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greatcoat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "johnny_coat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leather_jacket"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "brown_jacket"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "suit_black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "suit_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "suit_purple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "suit_navy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "suit_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "suit_olive"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "suit_grey"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "suit_orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "suit_yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fr_jacket"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ems_jacket"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "classicponcho"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greenponcho"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "redponcho"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "purpleponcho"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blueponcho"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "secponcho"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medponcho"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engiponcho"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sciponcho"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargoponcho"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatwinter"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatminer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatcaptain"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coathydro"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatcargo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatsecurity"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatengineer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatmedical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatatmos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatscience"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eng_voidsuit_rad"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eng_voidsuit_con"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medical_voidsuit_bio"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "denim_jacket"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sec_voidsuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sec_voidsuit_riot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medical_voidsuit_emt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sec_dep_jacket"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kimono"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engi_dep_jacket"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "supply_dep_jacket"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sci_dep_jacket"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grey_dep_jacket"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blue_dep_jacket"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "med_dep_jacket"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "peacoat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duster"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "autoloksuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "space_suit_syndicate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "labcoat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "red_labcoat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blue_labcoat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "purple_labcoat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "orange_labcoat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "green_labcoat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yellow_labcoat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pink_labcoat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "black_labcoat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cmo_labcoat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "genetics_labcoat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chemist_labcoat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "virologist_labcoat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "science_labcoat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "emt_labcoat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tdomni"
+dirs = 4
+frames = 1
+loop = 1

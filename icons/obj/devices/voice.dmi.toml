@@ -1,0 +1,128 @@
+# Generated from voice.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 10
+
+[[state]]
+name = "megaphone"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "megaphone-sec"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "megaphone-cargo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "megaphone-command"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "megaphone-clown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nukietalkie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "walkietalkie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "s_idle"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "s_active"
+dirs = 1
+frames = 13
+delays = [1]
+loop = 1
+
+[[state]]
+name = "m_idle"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "m_active"
+dirs = 1
+frames = 13
+delays = [1]
+loop = 1
+
+[[state]]
+name = "taperecorder_idle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "taperecorder_recording"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "taperecorder_playing"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "taperecorder_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red_phone"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radio"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radio_s_idle"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "radio_s_active"
+dirs = 1
+frames = 13
+delays = [1]
+loop = 1
+
+[[state]]
+name = "radio_m_idle"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "radio_m_active"
+dirs = 1
+frames = 13
+delays = [1]
+loop = 1
+
+[[state]]
+name = "walkieian"
+dirs = 1
+frames = 1

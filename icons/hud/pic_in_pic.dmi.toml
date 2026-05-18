@@ -1,0 +1,50 @@
+# Generated from pic_in_pic.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "x"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "room_background"
+dirs = 1
+frames = 17
+delays = [8]
+
+[[state]]
+name = "expand"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shrink"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "move"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "background"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "background_highlight"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pop"
+dirs = 1
+frames = 1

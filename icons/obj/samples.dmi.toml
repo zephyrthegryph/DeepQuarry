@@ -1,0 +1,139 @@
+# Generated from samples.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "sample"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sample_container_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sample_container_1"
+dirs = 1
+frames = 4
+delays = [3, 3, 3, 21]
+
+[[state]]
+name = "sample_container_2"
+dirs = 1
+frames = 4
+delays = [3, 3, 3, 21]
+
+[[state]]
+name = "sample_container_3"
+dirs = 1
+frames = 4
+delays = [3, 3, 3, 21]
+
+[[state]]
+name = "sample_container_4"
+dirs = 1
+frames = 4
+delays = [3, 3, 3, 21]
+
+[[state]]
+name = "sample_container_5"
+dirs = 1
+frames = 4
+delays = [3, 3, 3, 21]
+
+[[state]]
+name = "sample_container_6"
+dirs = 1
+frames = 4
+delays = [3, 3, 3, 21]
+
+[[state]]
+name = "sample_container_7"
+dirs = 1
+frames = 4
+delays = [3, 3, 3, 21]
+
+[[state]]
+name = "sample_container_8"
+dirs = 1
+frames = 4
+delays = [3, 3, 3, 21]
+
+[[state]]
+name = "sample_spawner1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sample_spawner2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sample_spawner3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "generic_sample1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "generic_sample2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "generic_sample3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "generic_sample4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "generic_sample5"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 6, y = 15 }]
+
+[[state]]
+name = "generic_sample6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "generic_sample7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "generic_sample8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "generic_sample9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "generic_sample10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sample_bluespace"
+dirs = 1
+frames = 6
+delays = [3.5]
+
+[[state]]
+name = "generic_sample11"
+dirs = 1
+frames = 1

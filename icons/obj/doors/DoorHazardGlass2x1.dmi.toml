@@ -1,0 +1,48 @@
+# Generated from DoorHazardGlass2x1.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 10
+
+[[state]]
+name = "door_opening"
+dirs = 4
+frames = 8
+delays = [1.3]
+
+[[state]]
+name = "door_locked"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "door_deny"
+dirs = 4
+frames = 3
+delays = [1.3]
+
+[[state]]
+name = "door_closed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "door_open"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "welded"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "door_closing"
+dirs = 4
+frames = 8
+delays = [1.3]
+
+[[state]]
+name = "welded_open"
+dirs = 4
+frames = 1

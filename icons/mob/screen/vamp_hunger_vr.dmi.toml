@@ -1,0 +1,69 @@
+# Generated from vamp_hunger_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "nutrition0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nutrition1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nutrition2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nutrition3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nutrition4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cnutrition0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cnutrition1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cnutrition2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cnutrition3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cnutrition4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "unused1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "unused2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "unused3"
+dirs = 1
+frames = 1

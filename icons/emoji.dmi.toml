@@ -1,0 +1,581 @@
+# Generated from emoji.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 16
+height = 16
+cols = 12
+
+[[state]]
+name = "toolbox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wetfloorsign"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paperwrote"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "capid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ian"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "surprised"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sad"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reallyhappy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "happy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "face"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "superhappy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mad"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluetank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ai"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toysword"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clean"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medbot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "thelaw"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "head"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ninja"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "honkman"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "silentman"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "unknownman"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "owlman"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pigman"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "neigh"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "monkey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xeno"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hug"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "heart"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "igloves"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "capgun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "revolver"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "disk"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "singulo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "newcop"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cardborg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shades"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brain"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flash"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flashbang"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "c4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "burn"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "salt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "popcorn"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "burger"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donut"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donut2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "faggot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whiskey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "peel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "honk"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bball"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pepper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "1997"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blob"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rune"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "onisoma"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rollie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ambrosia"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hugbox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "liz"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fedora"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eggplant"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dosh"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "goliathold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "goliath"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "trophy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coffee"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tea"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gear"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "supermatter"
+dirs = 1
+frames = 14
+delays = [2]
+
+[[state]]
+name = "forcesword"
+dirs = 1
+frames = 2
+delays = [0.1, 0.7]
+
+[[state]]
+name = "gift"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kudzu"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chrono"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nya"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tophat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "candycorn"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "evilcrab"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paperman"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arrrman"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skull"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snya"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hip"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "riot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "viva"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "drone"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyka"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "up"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "down"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "unepipe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plague"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rainhonk"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "thenews"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "help"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "disarm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grab"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "harm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "volmaw"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deerito"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maw"
+dirs = 1
+frames = 1

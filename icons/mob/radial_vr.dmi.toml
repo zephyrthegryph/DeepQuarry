@@ -1,0 +1,79 @@
+# Generated from radial_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "tl_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tl_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tl_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tl_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tl_5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tl_6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tl_plus"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tl_set"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tl_seton"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-metal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-glass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-cloth"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-plastic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-sandstone"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-random"
+dirs = 1
+frames = 1

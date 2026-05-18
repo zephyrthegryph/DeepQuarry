@@ -1,0 +1,1020 @@
+# Generated from talk_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 20
+
+[[state]]
+name = "normal_typing"
+dirs = 1
+frames = 3
+delays = [5]
+
+[[state]]
+name = "normal_thinking"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "normal0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "normal1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "normal2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "square_typing"
+dirs = 1
+frames = 3
+delays = [5]
+
+[[state]]
+name = "square_thinking"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "square0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "square1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "square2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slime_typing"
+dirs = 1
+frames = 3
+delays = [5]
+
+[[state]]
+name = "slime_thinking"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "slime0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slime1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slime2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "comm_typing"
+dirs = 1
+frames = 3
+delays = [5]
+
+[[state]]
+name = "comm_thinking"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "comm0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "comm1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "comm2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "machine_typing"
+dirs = 1
+frames = 3
+delays = [5]
+
+[[state]]
+name = "machine_thinking"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "machine0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "machine1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "machine2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "synthetic_typing"
+dirs = 1
+frames = 3
+delays = [5]
+
+[[state]]
+name = "synthetic_thinking"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "synthetic0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "synthetic1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "synthetic2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "synthetic_evil_typing"
+dirs = 1
+frames = 3
+delays = [5]
+
+[[state]]
+name = "synthetic_evil_thinking"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "synthetic_evil0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "synthetic_evil1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "synthetic_evil2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyber_typing"
+dirs = 1
+frames = 3
+delays = [5]
+
+[[state]]
+name = "cyber_thinking"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "cyber0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyber1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyber2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ghost_typing"
+dirs = 1
+frames = 3
+delays = [5]
+
+[[state]]
+name = "ghost_thinking"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "ghost0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ghost1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ghost2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slime_green_typing"
+dirs = 1
+frames = 3
+delays = [5]
+
+[[state]]
+name = "slime_green_thinking"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "slime_green0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slime_green1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slime_green2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_typing"
+dirs = 1
+frames = 3
+delays = [5]
+
+[[state]]
+name = "dark_thinking"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "dark0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plant_typing"
+dirs = 1
+frames = 3
+delays = [5]
+
+[[state]]
+name = "plant_thinking"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "plant0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plant1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plant2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clown_typing"
+dirs = 1
+frames = 3
+delays = [5]
+
+[[state]]
+name = "clown_thinking"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "clown0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clown1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clown2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fox_typing"
+dirs = 1
+frames = 3
+delays = [5]
+
+[[state]]
+name = "fox_thinking"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "fox0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fox1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fox2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maus_typing"
+dirs = 1
+frames = 3
+delays = [5]
+
+[[state]]
+name = "maus_thinking"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "maus0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maus1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maus2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "heart_typing"
+dirs = 1
+frames = 3
+delays = [5]
+
+[[state]]
+name = "heart_thinking"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "heart0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "heart1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "heart2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "textbox_typing"
+dirs = 1
+frames = 3
+delays = [5]
+
+[[state]]
+name = "textbox_thinking"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "textbox0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "textbox1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "textbox2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "posessed_typing"
+dirs = 1
+frames = 3
+delays = [5]
+
+[[state]]
+name = "posessed_thinking"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "posessed0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "posessed1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "posessed2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "h0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "h1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hR0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hR1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radio1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radio0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radio2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "h2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hR2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "typing"
+dirs = 1
+frames = 3
+delays = [4]
+
+[[state]]
+name = "slime_yellow_typing"
+dirs = 1
+frames = 3
+delays = [5]
+
+[[state]]
+name = "slime_yellow_thinking"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "slime_yellow0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slime_yellow1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slime_yellow2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slime_red_typing"
+dirs = 1
+frames = 3
+delays = [5]
+
+[[state]]
+name = "slime_red_thinking"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "slime_red0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slime_red1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slime_red2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slime_blue_typing"
+dirs = 1
+frames = 3
+delays = [5]
+
+[[state]]
+name = "slime_blue_thinking"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "slime_blue0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slime_blue1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slime_blue2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wolf_typing"
+dirs = 1
+frames = 3
+delays = [5]
+
+[[state]]
+name = "wolf_thinking"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "wolf0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wolf1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wolf2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tentacles_typing"
+dirs = 1
+frames = 3
+delays = [5]
+
+[[state]]
+name = "tentacles_thinking"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "tentacles0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tentacles1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tentacles2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red_panda_typing"
+dirs = 1
+frames = 3
+delays = [5]
+
+[[state]]
+name = "red_panda_thinking"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "red_panda0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red_panda1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red_panda2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue_panda_typing"
+dirs = 1
+frames = 3
+delays = [5]
+
+[[state]]
+name = "blue_panda_thinking"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "blue_panda0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue_panda1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue_panda2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "latte_fox_typing"
+dirs = 1
+frames = 3
+delays = [5]
+
+[[state]]
+name = "latte_fox_thinking"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "latte_fox0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "latte_fox1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "latte_fox2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue_fox_typing"
+dirs = 1
+frames = 3
+delays = [5]
+
+[[state]]
+name = "blue_fox_thinking"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "blue_fox0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue_fox1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue_fox2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medical_typing"
+dirs = 1
+frames = 4
+delays = [5]
+
+[[state]]
+name = "medical_thinking"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "medical0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medical1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medical2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medical_square_typing"
+dirs = 1
+frames = 3
+delays = [5]
+
+[[state]]
+name = "medical_square_thinking"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "medical_square0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medical_square1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medical square2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cardiogram_typing"
+dirs = 1
+frames = 8
+delays = [5, 2]
+
+[[state]]
+name = "cardiogram_thinking"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "cardiogram0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cardiogram1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cardiogram2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "security_typing"
+dirs = 1
+frames = 3
+delays = [5]
+
+[[state]]
+name = "security_thinking"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "security0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "security1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "security2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "notepad_typing"
+dirs = 1
+frames = 3
+delays = [5]
+
+[[state]]
+name = "notepad_thinking"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "notepad0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "notepad1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "notepad2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "science_typing"
+dirs = 1
+frames = 8
+delays = [5, 5, 5, 2, 2, 1, 1, 5]
+
+[[state]]
+name = "science_thinking"
+dirs = 1
+frames = 4
+delays = [2, 2, 2, 2, 5, 1, 1, 2]
+
+[[state]]
+name = "science0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "science1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "science2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engineering_typing"
+dirs = 1
+frames = 4
+delays = [5]
+
+[[state]]
+name = "engineering_thinking"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "engineering0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engineering1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engineering2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cargo_typing"
+dirs = 1
+frames = 10
+delays = [5, 2]
+
+[[state]]
+name = "cargo_thinking"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "cargo0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cargo1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cargo2"
+dirs = 1
+frames = 1

@@ -1,0 +1,484 @@
+# Generated from turf_edge.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 20
+
+[[state]]
+name = "grass-spring0-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-spring1-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-spring2-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-spring3-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-spring4-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-spring5-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-spring6-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-spring7-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-spring8-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-spring9-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-spring10-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-spring11-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-winter0-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-winter1-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-winter2-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-winter3-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-winter4-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-winter5-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-winter6-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-winter7-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-winter8-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-winter9-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-winter10-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-winter11-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-autumn0-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-autumn1-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-autumn2-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-autumn3-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-autumn4-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-autumn5-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-autumn6-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-autumn7-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-autumn8-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-autumn9-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-autumn10-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-autumn11-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-summer0-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-summer1-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-summer2-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-summer3-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-summer4-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-summer5-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-summer6-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-summer7-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-summer8-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-summer9-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-summer10-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-summer11-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-spring0-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-spring1-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-spring2-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-spring3-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-spring4-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-spring5-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-spring6-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-spring7-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-spring8-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-spring9-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-spring10-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-spring11-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-summer0-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-summer1-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-summer2-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-summer3-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-summer4-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-summer5-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-summer6-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-summer7-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-summer8-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-summer9-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-summer10-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-summer11-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-autumn0-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-autumn1-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-autumn2-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-autumn3-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-autumn4-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-autumn5-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-autumn6-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-autumn7-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-autumn8-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-autumn9-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-autumn10-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-autumn11-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-winter0-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-winter1-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-winter2-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-winter3-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-winter4-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-winter5-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-winter6-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-winter7-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-winter8-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-winter9-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-winter10-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkgrass-winter11-edge"
+dirs = 4
+frames = 1

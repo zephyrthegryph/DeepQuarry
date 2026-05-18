@@ -1,0 +1,344 @@
+# Generated from tilestack.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_steel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_steel_panels"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_steel_techfloor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_steel_techfloor_grid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_steel_brownperforated"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_steel_grayperforated"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_steel_cargo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_steel_brownplatform"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_steel_grayplatform"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_steel_danger"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_steel_golden"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_steel_bluecorner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_steel_orangecorner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_steel_cyancorner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_steel_violetcorener"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_steel_monofloor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_white_panels"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-white-techfloor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_white_techfloor_grid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_white_brownperforated"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_white_grayperforated"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_white_cargo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_white_brownplatform"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_white_grayplatform"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_white_danger"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_white_golden"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_white_bluecorner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_white_orangecorner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_white_cyancorner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_white_violetcorener"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_white_monofloor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_dark"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_dark_panels"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_dark_techfloor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_dark_techfloor_grid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_dark_brownperforated"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_dark_grayperforated"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_dark_cargo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_dark_brownplatform"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_dark_grayplatform"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_dark_danger"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_dark_golden"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_dark_bluecorner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_dark_orangecorner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_dark_cyancorner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_dark_violetcorener"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_dark_monofloor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_cafe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_grass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_carpet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_bcarpet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_blucarpet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_turcarpet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_sblucarpet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_gaycarpet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_purcarpet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_oracarpet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_wood"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_techmaint"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_techmaint_perforated"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_techmaint_panels"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_techmaint_cargo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_steel_bar_dance"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_steel_bar_light"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_steel_bar_flat"
+dirs = 1
+frames = 1

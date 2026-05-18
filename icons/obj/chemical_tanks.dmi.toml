@@ -1,0 +1,119 @@
+# Generated from chemical_tanks.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "water"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "water_high"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "water_stationary"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fuel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fuel_high"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fuel_stationary"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "he3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "foam"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tank_stationary"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tank_chem_overlay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "water_arm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "farmbot0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "farmbot1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "farmbot_hatch"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "farmbot_broke"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "farmbot_water"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "farmbot_hoe"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "farmbot_fertile"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "farmbot_collect"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "waterbarrel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bloodbarrel"
+dirs = 1
+frames = 1

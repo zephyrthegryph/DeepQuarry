@@ -1,0 +1,34 @@
+# Generated from maglevs.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "maglevup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maglevside"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "magleveastturn"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maglevturnwest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "magleveasttonorth"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maglevwesttonorth"
+dirs = 1
+frames = 1

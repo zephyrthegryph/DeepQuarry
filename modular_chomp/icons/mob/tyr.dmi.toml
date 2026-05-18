@@ -1,0 +1,192 @@
+# Generated from tyr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 13
+
+[[state]]
+name = "firefly"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "dead_ant"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "firefly_dead"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "new_ant"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dead_new"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bronze_ant"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "copper_ant"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "agate_ant"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "quartz_ant"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "painite_ant"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "builder_ant"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "queen_ant"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "diamond_ant"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rad_ant"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "verdantium_ant"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mhydro_ant"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rex"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rex_75"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rex_50"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rex_25"
+dirs = 4
+frames = 2
+delays = [5, 1]
+
+[[state]]
+name = "jellyfish"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jellyfish_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "UPshield_boss"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "shield_boss"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jellyfish_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jellyfish_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jellyfish_yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "guardian"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crystalized"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "graphite_ant"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gold_ant"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tritium_ant"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "silver_ant"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "slime_boss"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sec_core"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engi_core"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "final_core"
+dirs = 1
+frames = 1

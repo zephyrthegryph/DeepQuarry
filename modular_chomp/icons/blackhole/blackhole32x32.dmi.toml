@@ -1,0 +1,151 @@
+# Generated from blackhole32x32.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 11
+
+[[state]]
+name = "trooper"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "trooper-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "trooper_shield"
+dirs = 4
+frames = 2
+delays = [0.5]
+
+[[state]]
+name = "trooper_shield-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "trooper_pistol"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "trooper_pistol-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "trooper_smg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "trooper_smg-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "trooper_rifle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "trooper_rifle-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "trooper_lmg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "trooper_lmg-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "trooper_rpg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "trooper_rpg-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "trooper-dead"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mech1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mech1-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mech1_wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mech2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mech2-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mech2_wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grotesque"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grotesque-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grotesque-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rocket"
+dirs = 1
+frames = 7
+delays = [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.5]
+
+[[state]]
+name = "bullet"
+dirs = 1
+frames = 1

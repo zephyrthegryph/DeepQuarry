@@ -1,0 +1,124 @@
+# Generated from cardboard_cutout.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "cutout_basic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cutout_random"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cutout_pushed_over"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cutout_greytide"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cutout_clown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cutout_mime"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cutout_traitor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cutout_fluke"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cutout_cultist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cutout_servant"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cutout_new_servant"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cutout_viva"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cutout_wizard"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cutout_shadowling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cutout_fukken_xeno"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cutout_swarmer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cutout_free_antag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cutout_deathsquad"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cutout_ian"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cutout_ntsec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cutout_lusty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cutout_gondola"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cutout_monky"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cutout_law"
+dirs = 1
+frames = 1

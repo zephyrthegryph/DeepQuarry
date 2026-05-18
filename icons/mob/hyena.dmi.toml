@@ -1,0 +1,24 @@
+# Generated from hyena.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 48
+height = 32
+cols = 4
+
+[[state]]
+name = "yeen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yeen_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nyria_yeen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nyria_yeen_dead"
+dirs = 1
+frames = 1

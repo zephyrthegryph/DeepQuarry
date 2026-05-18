@@ -1,0 +1,224 @@
+# Generated from tracker.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 15
+
+[[state]]
+name = "gps-c"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gps-s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gps-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gps-m"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gps-b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gpsemp"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "working"
+dirs = 1
+frames = 16
+delays = [1]
+
+[[state]]
+name = "locator"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "pinpointer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinpointer_syndicate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinpointer_crew"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinpointer_vent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinpointer_sniffer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinondirect"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "pinonfar"
+dirs = 8
+frames = 2
+delays = [2]
+
+[[state]]
+name = "pinonmedium"
+dirs = 8
+frames = 2
+delays = [2]
+
+[[state]]
+name = "pinonclose"
+dirs = 8
+frames = 2
+delays = [2]
+
+[[state]]
+name = "pinonnull"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "pinonalertnull"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "pinonalert"
+dirs = 8
+frames = 2
+delays = [2]
+
+[[state]]
+name = "pinonalertdirect"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "pinpointer_hunter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinonfar_hunter"
+dirs = 8
+frames = 2
+delays = [3]
+
+[[state]]
+name = "pinonmedium_hunter"
+dirs = 8
+frames = 2
+delays = [3]
+
+[[state]]
+name = "pinonclose_hunter"
+dirs = 8
+frames = 2
+delays = [3]
+
+[[state]]
+name = "pinondirect_hunter"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "pinonnull_hunter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinonalertnull_hunter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinonalert_hunter"
+dirs = 8
+frames = 2
+delays = [3]
+
+[[state]]
+name = "pinonalertdirect_hunter"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "hand_tele"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "syndi-tele"
+dirs = 1
+frames = 10
+delays = [1]
+
+[[state]]
+name = "beacon"
+dirs = 1
+frames = 2
+delays = [18, 2]
+
+[[state]]
+name = "beacon-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "supplypod_beacon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sp_orange"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sp_yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sp_green"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "dragnet_beacon"
+dirs = 1
+frames = 1

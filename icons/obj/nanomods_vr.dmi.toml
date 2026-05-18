@@ -1,0 +1,16 @@
+# Generated from nanomods_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 2
+
+[[state]]
+name = "pilot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pilot-animate"
+dirs = 1
+frames = 3
+delays = [1]
+loop = 1

@@ -1,0 +1,304 @@
+# Generated from wall_machines_angled.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 20
+
+[[state]]
+name = "apc0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apcewires"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apc-spark"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "apcemag"
+dirs = 4
+frames = 2
+delays = [5]
+
+[[state]]
+name = "apcmaint"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apc1-b-nocover"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apc1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apc1-nocover"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apc2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apc2-nocover"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apc2-b-nocover"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apc-b"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apco3-0"
+dirs = 4
+frames = 5
+delays = [1, 1, 1, 1, 50]
+
+[[state]]
+name = "apco3-1"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "apco3-2"
+dirs = 4
+frames = 2
+delays = [10]
+
+[[state]]
+name = "apcox-0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apcox-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apco0-0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apco0-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apco0-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apco0-3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apco1-0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apco1-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apco1-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apco1-3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apco2-0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apco2-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apco2-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apco2-3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alarm_0"
+dirs = 4
+frames = 6
+delays = [5]
+
+[[state]]
+name = "alarm_ov0"
+dirs = 4
+frames = 6
+delays = [5]
+
+[[state]]
+name = "alarm_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alarm_ov1"
+dirs = 4
+frames = 2
+delays = [5]
+
+[[state]]
+name = "alarm_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alarm_ov2"
+dirs = 4
+frames = 2
+delays = [5]
+
+[[state]]
+name = "alarmp"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alarmx"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "air_alarm_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "air_alarm_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "air_alarm_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "air_alarm_3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fire"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "firep"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "firex"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fire0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fire1"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "overlay_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "overlay_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "overlay_yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "overlay_red"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "overlay_orange"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "overlay_violet"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "overlay_delta"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "alarm_ovP"
+dirs = 4
+frames = 6
+delays = [5]
+
+[[state]]
+name = "alarm_Pmode"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alarm_Mmode"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alarm_Xmode"
+dirs = 4
+frames = 1

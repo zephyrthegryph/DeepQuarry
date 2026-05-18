@@ -1,0 +1,1761 @@
+# Generated from areas.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 20
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "unknown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bridge"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bridge_conf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engineering"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engineering_foyer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "atmos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "atmos_monitoring"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "atmos_storage"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engine"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engine_waste"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engineering_storage"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engineering_aft_hallway"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engineering_supply"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "drone_fab"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engine_monitoring"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engine_smes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engine_eva"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engineering_locker"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engineering_break"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engineering_workshop"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teleporter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chapel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chapel_morgue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chapeloffice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "robotics"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkred"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "security"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sec_prison"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sec_hos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "security_sub"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toxlab"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xeno_lab"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xeno_f_lab"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xeno_f_store"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toxstorage"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toxtest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toxmisc"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chem"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "decontamination"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crew_quarters"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "research"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "research_foyer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "research_foyer_aux"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "research_dock"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "research_storage"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mechbay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sci_workshop"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "morgue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "storage"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "exit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "start"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dk_yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bar"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lounge"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cafeteria"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coffee_shop"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "conference"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "restrooms"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "observatory"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "evidence_storage"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "interrogation"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "security_aid_station"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "security_cell_hallway"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "security_equip_storage"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "security_lockerroom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "security_processing"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "riot_control"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armory"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "captain"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "courtroom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ai_upload"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ai_server"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ai_foyer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ai_chamber"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ai_cyborg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "detective"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "checkpoint1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eva"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kitchen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medbay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medbay2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medbay_mental"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medbay3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medbay4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medbay_breakroom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medbay_triage"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medbay_emt_bay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medbay_primary_storage"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medbay_restroom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "primarystorage"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "panelsS"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "panelsP"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "SolarcontrolS"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "SolarcontrolP"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "construction"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "auxstorage"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emergencystorage"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "locker"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "recreation_area"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "recreation_area_restroom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fitness"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pool"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "laundry"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "head_quarters"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maintcentral"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maint"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fsmaint"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fmaint"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fpmaint"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pmaint"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "apmaint"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smaint"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "amaint"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "asmaint"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maint_engine"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maint_e_shuttle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maint_research"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maint_research_shuttle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maint_research_port"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maint_research_starboard"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maint_research_cargo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maint_bar"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 8, y = 17 }]
+
+[[state]]
+name = "maint_cafe_dock"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maint_chapel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maint_cargo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maint_cargo_research"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maint_central"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maint_library"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maint_locker"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maint_arrivals"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maint_engineering"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maint_medbay_aft"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maint_medbay_fore"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maint_medbay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maint_eva"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maint_dormitory"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maint_holodeck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maint_pool"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maint_security_port"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maint_security_starboard"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maint_tool_storage"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hallC"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hallC1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hallC2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hallC3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hallC4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hallF"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hallS"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hallA"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hallP"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "escape"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "entry_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "entry_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "entry_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "entry_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "entry_5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "entry_D1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "entry_D2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "entry_D3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "entry_D4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "docking_lounge"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hallway"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engineering_primary_hallway"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eva_hallway"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cargo_hallway"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chapel_hallway"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aft_civilian_hallway"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fore_civilian_hallway"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mid_civilian_hallway"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dock_escape_pod_hallway_port"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dock_escape_pod_hallway_starboard"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fore_port_escape_pod_hallway"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fore_escape_pod_hallway"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medical_escape_pod_hallway"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medical_emergency_hallway"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cryostorage_hallway"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "docking_hallway"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "recreation_area_hallway"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "quart"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "quartdelivery"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "quartoffice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "quartstorage"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "janitor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ai"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "disposal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mining"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mining_production"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mining_eva"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mining_living"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "explored"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "explored_deep"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "unexplored"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "unexplored_deep"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cave"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hydro"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cafe_garden"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "garden"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "library"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "library_conference_room"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "law"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toxmix"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nuke_storage"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "virology"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "CMO"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Warden"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "panelsA"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Sleep"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "visitor_lodging"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "visitor_room_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "visitor_room_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "visitor_room_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "visitor_room_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "visitor_room_5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "visitor_room_6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "visitor_room_7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "visitor_room_8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "visitor_room_9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "visitor_room_10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "visitor_room_11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "visitor_room_12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "visitor_laundry"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "visitor_dinning"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "SolarcontrolA"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toilet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "research_restroom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "security_bathroom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "LP"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "LPS"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "showroom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vacant_shop"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vacant_site"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Theatre"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "exam_room"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "surgery_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "surgery_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "surgery"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "surgery_hallway"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "surgery_storage"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "genetics"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cloning"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "server"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "thunder"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cryo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "patients"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medbay_patient_room_a"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medbay_patient_room_b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medbay_patient_room_c"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medbay_patient_room_d"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medbay_patient_room_e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndie-ship"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndie-control"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndie-elite"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "firingrange"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tcomsatcham"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tcomsatentrance"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tcomsatfoyer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tcomsatlob"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tcomsatstore"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tcomsateast"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tcomsatwest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tcomsatcomp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tcomsatlounge"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Holodeck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holodeck_control"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "away"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "away1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "away2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "away3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "away4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue-red2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue-red-d"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue-red"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "invi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blueold"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "dark"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark160"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark128"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "party"
+dirs = 1
+frames = 8
+delays = [2, 2, 2, 2, 2, 1]
+
+[[state]]
+name = "blue"
+dirs = 1
+frames = 4
+delays = [3, 2]
+
+[[state]]
+name = "bluenew"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "anomaly"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "anog"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "anosample"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "anoentry"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "anohallway"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "anofilter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "anolab"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "anospectro"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "iso1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "iso2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "iso3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "center"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "north"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "northeast"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "northwest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "south"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "southeast"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "southwest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "east"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "west"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Tactical"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "substation"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "space"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "outpost_research"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "outpost_engine"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "outpost_mine_main"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "outpost_mine_west"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "outpost_mine_north"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "centcom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "centcom_dock"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "centcom_medical"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "centcom_security"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "centcom_command"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "centcom_crew"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "centcom_hallway1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maint_pumpstation"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hangar"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hangarcontrol"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "escape_pod"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shuttle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shuttle2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shuttle3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shuttlegrn"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shuttlegrn2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shuttlered"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shuttlered2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "submap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "submap2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "submap3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "submap_trespass_alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "submap_trespass_area"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "submap_hostile_area"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ai_camera_room"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Virtual_Reality"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "casino"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "casino2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arcade"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arcade2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "art"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "artsupply"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gaming"
+dirs = 1
+frames = 1

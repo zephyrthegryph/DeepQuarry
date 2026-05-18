@@ -1,0 +1,29 @@
+# Generated from mining_yw.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "bluetrail_light"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redtrail_light"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluetrail_light_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redtrail_light_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellowtrail_light_on"
+dirs = 1
+frames = 1

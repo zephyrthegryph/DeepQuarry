@@ -1,0 +1,41 @@
+# Generated from protean_recon.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "recon-nopower"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "recon-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "recon"
+dirs = 1
+frames = 6
+delays = [3]
+
+[[state]]
+name = "recon-tank_full"
+dirs = 1
+frames = 3
+delays = [4, 4, 4, 3]
+
+[[state]]
+name = "recon-brain"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "recon-orchestrator"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "recon-refactory"
+dirs = 1
+frames = 1

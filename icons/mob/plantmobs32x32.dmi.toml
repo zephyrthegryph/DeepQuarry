@@ -1,0 +1,48 @@
+# Generated from plantmobs32x32.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "piranha-plant"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "piranha-plant"
+dirs = 4
+frames = 4
+delays = [2]
+movement = true
+
+[[state]]
+name = "piranha-plant-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "piranha-plant-1"
+dirs = 4
+frames = 4
+delays = [2]
+movement = true
+
+[[state]]
+name = "piranha-plant_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pitcher-plant"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pitcher-plant-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pitcher-plant_dead"
+dirs = 1
+frames = 1

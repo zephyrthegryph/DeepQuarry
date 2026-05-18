@@ -1,0 +1,689 @@
+# Generated from library.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 18
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scanner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scanner_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "newscodex"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "newscodex-open"
+dirs = 1
+frames = 6
+delays = [4]
+
+[[state]]
+name = "newscodexOLD"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bigscanner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bigscanner1"
+dirs = 1
+frames = 16
+delays = [0.5]
+rewind = true
+
+[[state]]
+name = "photocopier"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "photocopier_scan"
+dirs = 1
+frames = 16
+delays = [0.5]
+rewind = true
+
+[[state]]
+name = "photocopier_toner"
+dirs = 1
+frames = 3
+delays = [1, 1, 5]
+rewind = true
+
+[[state]]
+name = "photocopier_print"
+dirs = 1
+frames = 16
+delays = [0.5]
+
+[[state]]
+name = "photocopier_notoner"
+dirs = 1
+frames = 10
+delays = [1]
+
+[[state]]
+name = "binder"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fax"
+dirs = 1
+frames = 4
+delays = [5]
+
+[[state]]
+name = "faxreceive"
+dirs = 1
+frames = 24
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 10]
+
+[[state]]
+name = "faxsend"
+dirs = 1
+frames = 16
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 10]
+
+[[state]]
+name = "computer"
+dirs = 1
+frames = 2
+delays = [5, 2]
+
+[[state]]
+name = "book-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "book-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "book-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "book-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "book-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "book-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bookcart-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bookcart-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bookcart-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bookcart-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bookcart-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bookcart-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "codex"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "codex-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "corp_regs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "corp_regs-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "codex_robutt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "codex_robutt-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scroll"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "book_template"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pamphlet_template"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "magazine_template"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "book"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "book_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "book1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "book1_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "book15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "book2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "book10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "book8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "book3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "book11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "book5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "book9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "book4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "book7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "book12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "book13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "book14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "book6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "book16"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bookEngineeringSingularitySafety"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bookSupermatter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bookTesla"
+dirs = 1
+frames = 6
+delays = [20, 1, 1, 1, 1, 2]
+hotspots = [{ frame = 1, x = 20, y = 25 }]
+
+[[state]]
+name = "cqcmanual"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rulebook"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "borgbook"
+dirs = 1
+frames = 8
+delays = [90, 2, 60, 2, 30, 2]
+
+[[state]]
+name = "bookParticleAccelerator"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bookNTSL"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bookHacking"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bookDetective"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "corporate-procedure"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hadii-manifesto"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chefbook"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "battlemonsters"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bookEngineering"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bookEngineering2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pipingbook"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bookNuclear"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bookHydroponicsPodPeople"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bookbee"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bookCloning"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "evabook"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "barbook"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rdbook"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bookMedical"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tcfl_book"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bookSpaceLaw"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "excavation"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "analysis"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "anomaly"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "triangulate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chemistry"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stasis"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cooked_book"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holybook"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bible"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "quran"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scrapbook"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "creeper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "book_integrated_circuits"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holylight"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "atheist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kojiki"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "torah"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tome"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kingyellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ithaqua"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scientology"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "necronomicon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "melted"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skrellbible"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bookfireball"
+dirs = 1
+frames = 4
+delays = [1]
+rewind = true
+
+[[state]]
+name = "booksmoke"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "bookblind"
+dirs = 1
+frames = 6
+delays = [1]
+rewind = true
+
+[[state]]
+name = "bookmindswap"
+dirs = 1
+frames = 6
+delays = [1]
+rewind = true
+
+[[state]]
+name = "bookforcewall"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "bookknock"
+dirs = 1
+frames = 6
+delays = [1]
+rewind = true
+
+[[state]]
+name = "bookhorses"
+dirs = 1
+frames = 4
+delays = [1]
+rewind = true
+
+[[state]]
+name = "bookcharge"
+dirs = 1
+frames = 4
+delays = [1]
+rewind = true
+
+[[state]]
+name = "booksummons"
+dirs = 1
+frames = 4
+delays = [1]
+rewind = true
+
+[[state]]
+name = "booksacredflame"
+dirs = 1
+frames = 4
+delays = [1]
+rewind = true
+
+[[state]]
+name = "bookvirology"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bookrefinery"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "commandGuide"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bookRedspace"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sop"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cook-guide"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bar-guide"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spellbook"
+dirs = 1
+frames = 13
+delays = [5, 1]
+
+[[state]]
+name = "pamphlet"
+dirs = 1
+frames = 1

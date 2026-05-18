@@ -1,0 +1,52 @@
+# Generated from rig_modules.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = ""
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stealth_active"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stealth_inactive"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mounted-injector"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "mounted-taser"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mounted-drill"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "maneuvering_inactive"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "maneuvering_active"
+dirs = 4
+frames = 2
+delays = [1, 1, 5]
+
+[[state]]
+name = "plasmacutter"
+dirs = 4
+frames = 1

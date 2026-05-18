@@ -1,0 +1,214 @@
+# Generated from ears_ch.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 13
+
+[[state]]
+name = "paint"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "paintfront"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alien_slug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leaf_ears"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "demon-horns3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "valeears"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dragonforward"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dhornsears"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dhornsears_inner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshbee"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshantenna"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "curly_bug_tesh"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Guilmon_Horns"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chorn_nubby"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chorn_herk"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chorn_bork"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chorn_bull"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chorn_ocean"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chorn_bicarrot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chorn_longcarrot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chorn_shortcarrot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chorn_scorp"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chorn_chub"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "goatflops"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "goatflops_horn"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "miqote"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "miqote_inner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "protogen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "protogen_fluff"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fourears"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fourears_fluff"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shadekin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shadekin-under"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kitty"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kittyinner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "antennae_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "protogen_horny"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "protogen_horny_fluff"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "protogen_horny_horns"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sloog_bobbers"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sloog_tips"
+dirs = 4
+frames = 1

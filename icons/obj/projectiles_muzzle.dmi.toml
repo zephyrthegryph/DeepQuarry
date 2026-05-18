@@ -1,0 +1,115 @@
+# Generated from projectiles_muzzle.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "muzzle_bullet"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "muzzle_laser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "muzzle_xray"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "muzzle_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "muzzle_omni"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "muzzle_emitter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "muzzle_beam_heavy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "muzzle_u_laser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "muzzle_pulse"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "muzzle_stun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "muzzle_lightning"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "muzzle_darkb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "muzzle_darkt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "muzzle_invert"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "muzzle_mhd_laser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "muzzle_pointdef"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "muzzle_meep"
+dirs = 1
+frames = 5
+delays = [1]
+loop = 1
+
+[[state]]
+name = "muzzle_em_laser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "muzzle_ratmining"
+dirs = 1
+frames = 10
+delays = [1]
+
+[[state]]
+name = "muzzle_rainbow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "muzzle_coildef"
+dirs = 1
+frames = 2
+delays = [1, 2, 2, 1, 2, 1, 2]
+loop = 3

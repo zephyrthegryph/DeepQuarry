@@ -1,0 +1,131 @@
+# Generated from construct.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 21
+
+[[state]]
+name = "floating"
+dirs = 4
+frames = 6
+delays = [3]
+
+[[state]]
+name = "artificer"
+dirs = 4
+frames = 6
+delays = [5]
+
+[[state]]
+name = "caster_artificer"
+dirs = 4
+frames = 6
+delays = [5]
+
+[[state]]
+name = "harvester"
+dirs = 4
+frames = 2
+delays = [7]
+
+[[state]]
+name = "behemoth"
+dirs = 4
+frames = 2
+delays = [12]
+
+[[state]]
+name = "chosen"
+dirs = 4
+frames = 2
+delays = [7]
+
+[[state]]
+name = "proteon"
+dirs = 4
+frames = 6
+delays = [3]
+
+[[state]]
+name = "behemoth-eyes"
+dirs = 4
+frames = 2
+delays = [12]
+
+[[state]]
+name = "floating-eyes"
+dirs = 4
+frames = 6
+delays = [3]
+
+[[state]]
+name = "harvester-eyes"
+dirs = 4
+frames = 2
+delays = [7]
+
+[[state]]
+name = "artificer-eyes"
+dirs = 4
+frames = 6
+delays = [5]
+
+[[state]]
+name = "shade"
+dirs = 1
+frames = 10
+delays = [1]
+
+[[state]]
+name = "shade_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phase_shift"
+dirs = 4
+frames = 13
+delays = [1]
+loop = 1
+
+[[state]]
+name = "phase_shift2"
+dirs = 4
+frames = 12
+delays = [1]
+loop = 1
+
+[[state]]
+name = "laity"
+dirs = 4
+frames = 6
+delays = [3]
+
+[[state]]
+name = "deacon"
+dirs = 4
+frames = 6
+delays = [7]
+
+[[state]]
+name = "priest"
+dirs = 4
+frames = 6
+delays = [5]
+
+[[state]]
+name = "bishop"
+dirs = 4
+frames = 6
+delays = [3]
+
+[[state]]
+name = "archbishop"
+dirs = 4
+frames = 2
+delays = [7]
+
+[[state]]
+name = "cardinal"
+dirs = 4
+frames = 2
+delays = [12]

@@ -1,0 +1,1140 @@
+# Generated from mob_teshari.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 30
+
+[[state]]
+name = ""
+dirs = 4
+frames = 1
+
+[[state]]
+name = "unique tesh uniforms ->"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "seromi_grey"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "seromi_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "seromi_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "seromi_yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "seromi_medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_science"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "seromi_rainbow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "seromi_dress_cap"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_dress_science"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_dress_security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_dress_engine"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_dress_medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "seromi_captain"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "seromi_captain_formal"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_blackutility_com"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_greydress"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_blackutility"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_bluegreydress"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_black_red_worksuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_black_purple_worksuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_black_orange_worksuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_black_blue_worksuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_black_green_worksuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_white_red_worksuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_white_purple_worksuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_white_orange_worksuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_white_blue_worksuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_white_green_worksuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_bo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_bg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_bmg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_blg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_bw"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_br"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_bn"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_by"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_bgr"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_bbl"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_bp"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_bpi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_bbr"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_og"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_rainbow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_lgg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_wg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_rg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_on"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_yg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_gg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_blug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_pg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_pig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_brg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_cap"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_hop"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_ce"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_hos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_rd"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_engie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_atmos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_cmo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_qm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_car"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_mine"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_doc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_chem"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_viro"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_psych"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_para"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_sci"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_robo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_sec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_serv"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_iaa"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "officer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "non-unique ->"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkred"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "captain"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grey"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engine"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "atmos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hop"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "science"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "genetics"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chemistry"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "virology"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "warden"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "janitor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chef"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "qm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chief"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hydroponics"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "miner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "robotics"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "maroon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cmo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "aqua"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "purple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lightpurple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pink"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lightgreen_d"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lightblue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lightbrown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "brown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yellowgreen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkblue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lightred"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greenshorts"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "redshorts"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greyshorts"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackshorts"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blueshorts"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "centcom"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lawyer_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lawyer_black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lawyer_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "psyche"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "director"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "overalls"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "red_suit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teal_suit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "green_suit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "black_suit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chaplain"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "forensicsred"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ba_suit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "psych"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scrubsblack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scrubsblue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scrubsgreen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scrubspurple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "detective"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "explorer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flower_dress"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cohesionsuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cohesionsuit_striped"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cohesionsuit_hazard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cohesionsuit_pattern"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cohesionsuit_decal"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "workpants_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "workpants_orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "workpants_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "workpants_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "workpants_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "overalls_sleek"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ascetic"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sari_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sari_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kilt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kilt_d"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scratch"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lawyer_purp"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "really_black_suit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "black_suit_fem"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sundress"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tian_dress"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dress_fire"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dress_orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "internalaffairs"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dress_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dress_pink"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "plaid_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "plaid_purple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "plaid_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "oldman"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "huresource"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cheongsam-white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gentlesuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sundress_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "charcoal_suit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "navy_suit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "burgundy_suit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "checkered_suit_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackjumpskirt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blue_blazer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "roboticsf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "detective2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bluesuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tan_suit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "detective3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skirt_swept"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skirt_khaki"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "whitedress1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "whitedress2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "whitedress2_a"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "whitedress3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "whitedress3_a"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "whitedress4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "whitedress4_a"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "frontier"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "maid"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "clown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "janimaid"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackskirt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blue_blazer_skirt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cheongsam-red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cheongsam-darkred"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gear_harness"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swim_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swim_purp"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pinksun"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "whitesun"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bowsun"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bluesun"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shortpink"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "twopiece"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gothic2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hazard"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 14, y = 15 }]
+
+[[state]]
+name = "scrubs"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "unused ->"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_ce_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_comm_g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_uniform_comm"
+dirs = 4
+frames = 1

@@ -1,0 +1,10 @@
+# Generated from greyscale_error.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 2
+
+[[state]]
+name = ""
+dirs = 1
+frames = 4
+delays = [1.2]

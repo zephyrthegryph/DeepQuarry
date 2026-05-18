@@ -1,0 +1,94 @@
+# Generated from shards.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "large"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medium"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "small"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phoronlarge"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phoronmedium"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phoronsmall"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shrapnellarge"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shrapnelmedium"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shrapnelsmall"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shardlarge"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shardmedium"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shardsmall"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "splinterslarge"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "splintersmedium"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "splinterssmall"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "piecelarge"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "piecemedium"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "piecesmall"
+dirs = 1
+frames = 1

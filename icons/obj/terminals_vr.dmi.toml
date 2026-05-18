@@ -1,0 +1,136 @@
+# Generated from terminals_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 16
+
+[[state]]
+name = "atm"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "atm_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "atm_cardin"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "newscaster_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "newscaster_normal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "newscaster_normal_ov"
+dirs = 1
+frames = 8
+delays = [3]
+
+[[state]]
+name = "newscaster_wanted"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "newscaster_wanted_ov"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "newscaster_alert"
+dirs = 1
+frames = 11
+delays = [5, 1, 1, 1, 1, 1, 1, 1, 5]
+
+[[state]]
+name = "crack1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crack2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crack3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "req_comp_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "req_comp_ov0"
+dirs = 4
+frames = 2
+delays = [4]
+
+[[state]]
+name = "req_comp_1"
+dirs = 4
+frames = 2
+delays = [5]
+
+[[state]]
+name = "req_comp_ov1"
+dirs = 4
+frames = 2
+delays = [5]
+
+[[state]]
+name = "req_comp_2"
+dirs = 4
+frames = 2
+delays = [2]
+
+[[state]]
+name = "req_comp_ov2"
+dirs = 4
+frames = 2
+delays = [2]
+
+[[state]]
+name = "req_comp_3"
+dirs = 4
+frames = 20
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 8]
+
+[[state]]
+name = "req_comp_ov3"
+dirs = 4
+frames = 20
+delays = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 8]
+
+[[state]]
+name = "req_comp_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "req_comp_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "req_comp_resrewed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "req_comp_rewired"
+dirs = 1
+frames = 1

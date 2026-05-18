@@ -1,0 +1,825 @@
+# Generated from lighting.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 21
+
+[[state]]
+name = "bulb1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bulb0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bulb-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bulb-empty"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bulb-burned"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tube1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tube0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tube-empty"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tube-burned"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tube-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tube-alert-fire"
+dirs = 4
+frames = 2
+delays = [4, 5]
+
+[[state]]
+name = "tube-alert-atmos"
+dirs = 4
+frames = 2
+delays = [4, 5]
+
+[[state]]
+name = "ltube"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ltube-burned"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ltube-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lbulb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lbulb-burned"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lbulb-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lbulb_large"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lbulb_large-burned"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lbulb_large-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ltube_large"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ltube_large-burned"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ltube_large-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glowshroomf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glowshroom1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "glowshroom2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "glowshroom3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "glowshroomfold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floor1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floor0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floor-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floor-burned"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floor-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "firelight1"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "firelight0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "firelight-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flight"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flight-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tube-construct-stage1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bulb-construct-stage1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flamp-construct-stage1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tube-construct-stage2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bulb-construct-stage2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flamp-construct-stage2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tube-construct-item"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bulb-construct-item"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "random_flashlight"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flashlight"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flashlight-on"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "maglight"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "maglight-on"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flashlight_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flashlight_blue-on"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flashlight_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flashlight_green-on"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flashlight_purple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flashlight_purple-on"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flashlight_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flashlight_red-on"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flashlight_orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flashlight_orange-on"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flashlight_yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flashlight_yellow-on"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "penlight"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "penlight-on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lamp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lamp-on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lampgreen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lampgreen-on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bananalamp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bananalamp-on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lantern-on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lantern"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flare-on"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "flare-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flare"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glowstick-on"
+dirs = 1
+frames = 4
+delays = [3, 2]
+rewind = true
+
+[[state]]
+name = "glowstick"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glowstick-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glowstick_blue-on"
+dirs = 1
+frames = 4
+delays = [3, 2]
+rewind = true
+
+[[state]]
+name = "glowstick_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glowstick_blue-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glowstick_green-on"
+dirs = 1
+frames = 4
+delays = [3, 2]
+rewind = true
+
+[[state]]
+name = "glowstick_green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glowstick_green-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glowstick_orange-on"
+dirs = 1
+frames = 4
+delays = [3, 2]
+rewind = true
+
+[[state]]
+name = "glowstick_orange"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glowstick_orange-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glowstick_red-on"
+dirs = 1
+frames = 4
+delays = [3, 2]
+rewind = true
+
+[[state]]
+name = "glowstick_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glowstick_red-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glowstick_yellow-on"
+dirs = 1
+frames = 4
+delays = [3, 2]
+rewind = true
+
+[[state]]
+name = "glowstick_yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glowstick_yellow-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glowstick_isotope-on"
+dirs = 1
+frames = 4
+delays = [2, 1.25]
+rewind = true
+
+[[state]]
+name = "glowstick_isotope"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glowstick_isotope-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flamp1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flamp0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flamp-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flamp-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flamp-burned"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flampshade0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flampshade1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lampshade"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "markerrandom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "markerburgundy-on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "markerburgundy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "markerbronze-on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "markerbronze"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "markeryellow-on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "markeryellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "markerlime-on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "markerlime"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "markerolive-on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "markerolive"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "markerjade-on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "markerjade"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "markerteal-on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "markerteal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "markercerulean-on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "markercerulean"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "markerindigo-on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "markerindigo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "markerpurple-on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "markerpurple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "markerviolet-on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "markerviolet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "markerfuchsia-on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "markerfuchsia"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "techfloor_lightedcorner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "techfloor_lightedcorner_grid"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "techfloor_lightedcorner_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "techfloor_lightedcorner_grid_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floortube0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floortube1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floortube-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floortube-burned"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floortube-empty"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floortube-construct-stage1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floortube-construct-stage2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fairy_lights0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fairy_lights-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fairy_lights-burned"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fairy_lights-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fairy_lights-overlay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fairy_lights1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bulb-overlay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tube-overlay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tube-alert-fire-overlay"
+dirs = 4
+frames = 2
+delays = [4, 5]
+
+[[state]]
+name = "tube-alert-atmos-overlay"
+dirs = 4
+frames = 2
+delays = [4, 5]
+
+[[state]]
+name = "floortube-overlay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lamppost0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lamppost1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lamppost-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lamppost-burned"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lamppost-empty"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "torch1"
+dirs = 4
+frames = 3
+delays = [2]
+
+[[state]]
+name = "torch0"
+dirs = 4
+frames = 1

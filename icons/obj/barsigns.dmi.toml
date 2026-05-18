@@ -1,0 +1,325 @@
+# Generated from barsigns.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 43
+
+[[state]]
+name = "Off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "On"
+dirs = 4
+frames = 2
+delays = [4, 8]
+
+[[state]]
+name = "Empty"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Cyber Sylph"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "Cindi Kate's"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "Armok's Bar N Grill"
+dirs = 4
+frames = 2
+delays = [4, 8]
+
+[[state]]
+name = "The Broken Drum"
+dirs = 4
+frames = 2
+delays = [4, 8]
+
+[[state]]
+name = "The Limbo"
+dirs = 4
+frames = 2
+delays = [4, 8]
+
+[[state]]
+name = "The Magma Sea"
+dirs = 4
+frames = 2
+delays = [4, 8]
+
+[[state]]
+name = "The Pink Flamingo"
+dirs = 4
+frames = 2
+delays = [4, 8]
+
+[[state]]
+name = "The Rusty Axe"
+dirs = 4
+frames = 2
+delays = [4, 8]
+
+[[state]]
+name = "Mead Bay"
+dirs = 4
+frames = 2
+delays = [4, 8]
+
+[[state]]
+name = "The Cavern"
+dirs = 4
+frames = 2
+delays = [4, 8]
+
+[[state]]
+name = "The Clown's Head"
+dirs = 4
+frames = 2
+delays = [4, 8]
+
+[[state]]
+name = "The Orchard"
+dirs = 4
+frames = 2
+delays = [4, 8]
+
+[[state]]
+name = "The Saucy Clown"
+dirs = 4
+frames = 2
+delays = [4, 8]
+
+[[state]]
+name = "The Damn Wall"
+dirs = 4
+frames = 2
+delays = [4, 8]
+
+[[state]]
+name = "Whiskey Implant"
+dirs = 4
+frames = 2
+delays = [4, 8]
+
+[[state]]
+name = "Carpe Carp"
+dirs = 4
+frames = 2
+delays = [4, 8]
+
+[[state]]
+name = "Robust Roadhouse"
+dirs = 4
+frames = 2
+delays = [4, 8]
+
+[[state]]
+name = "The Grey Tide"
+dirs = 4
+frames = 2
+delays = [4, 8]
+
+[[state]]
+name = "The Redshirt"
+dirs = 4
+frames = 2
+delays = [4, 8]
+
+[[state]]
+name = "The Bark"
+dirs = 4
+frames = 9
+delays = [30, 4, 16, 1, 34, 1, 4, 1, 8]
+
+[[state]]
+name = "The Harmbaton"
+dirs = 4
+frames = 9
+delays = [30, 4, 16, 1, 34, 1, 4, 1, 8]
+
+[[state]]
+name = "The Harmedbaton"
+dirs = 4
+frames = 2
+delays = [4, 8]
+
+[[state]]
+name = "The Singulo"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "The Drunk Carp"
+dirs = 4
+frames = 8
+delays = [5, 1, 4, 10, 5, 3, 1, 10]
+
+[[state]]
+name = "Scotch Servin' Willy's"
+dirs = 4
+frames = 9
+delays = [30, 4, 16, 1, 34, 1, 4, 1, 8]
+
+[[state]]
+name = "Nar-sie Bistro"
+dirs = 4
+frames = 2
+delays = [4, 8]
+
+[[state]]
+name = "Boot Knives"
+dirs = 4
+frames = 7
+delays = [10, 2, 2, 2, 15, 1.25]
+
+[[state]]
+name = "The Net"
+dirs = 4
+frames = 60
+delays = [1]
+rewind = true
+
+[[state]]
+name = "Meow Mix"
+dirs = 4
+frames = 4
+delays = [4, 12, 4, 12]
+
+[[state]]
+name = "Honked N Loaded"
+dirs = 4
+frames = 2
+delays = [4, 10]
+
+[[state]]
+name = "Slippery Shots"
+dirs = 4
+frames = 2
+delays = [4, 10]
+
+[[state]]
+name = "Maltese Falcon"
+dirs = 4
+frames = 8
+delays = [38, 4, 16, 1, 56, 1, 4, 1]
+
+[[state]]
+name = "Offier Beepsky"
+dirs = 4
+frames = 9
+delays = [30, 4, 16, 1, 34, 1, 4, 1, 8]
+
+[[state]]
+name = "The Outer Spess"
+dirs = 4
+frames = 2
+delays = [10]
+
+[[state]]
+name = "The Syndi Cat"
+dirs = 4
+frames = 20
+delays = [1, 9, 25, 10, 25, 1, 0.5, 2, 1, 0.5, 25, 10, 25, 1, 0.5, 2, 1, 0.5, 25, 10]
+
+[[state]]
+name = "UNKNOWN"
+dirs = 4
+frames = 52
+delays = [1]
+
+[[state]]
+name = "The Nest"
+dirs = 4
+frames = 23
+delays = [6, 6, 6, 6, 6, 2, 2, 6, 6, 4, 1, 4, 4, 4, 4, 4, 4, 4, 1, 4, 1, 4]
+
+[[state]]
+name = "The Coderbus"
+dirs = 4
+frames = 2
+delays = [25, 15]
+
+[[state]]
+name = "The Adminbus"
+dirs = 4
+frames = 2
+delays = [25, 15]
+
+[[state]]
+name = "Old Cock Inn"
+dirs = 4
+frames = 12
+delays = [18, 1, 1, 6, 8, 6, 8, 6, 24, 1]
+
+[[state]]
+name = "The Wretched Hive"
+dirs = 4
+frames = 16
+delays = [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 1, 1, 1, 4]
+
+[[state]]
+name = "Robusta Cafe"
+dirs = 4
+frames = 19
+delays = [18, 1, 1, 1, 1, 16, 1, 1, 6, 6, 6, 6, 6, 6, 6, 6, 6, 1]
+
+[[state]]
+name = "Emergency Rum Party"
+dirs = 4
+frames = 8
+delays = [10, 10, 10, 50, 10]
+
+[[state]]
+name = "Combo Cafe"
+dirs = 4
+frames = 16
+delays = [1]
+
+[[state]]
+name = "Vlad's Salad Bar"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "The Shaken"
+dirs = 4
+frames = 19
+delays = [18, 1, 1, 1, 1, 16, 1, 1, 6, 6, 6, 6, 6, 6, 6, 6, 6, 1]
+
+[[state]]
+name = "The Ale Nath"
+dirs = 4
+frames = 27
+delays = [18, 1, 1, 1, 1, 16, 1, 1, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1]
+
+[[state]]
+name = "Aloha Snackbar"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Maid Cafe"
+dirs = 4
+frames = 16
+delays = [10, 0.3, 0.3, 0.3, 0.3, 6, 0.3, 0.3, 20, 0.3, 0.3, 0.3, 0.3, 20, 0.3]
+
+[[state]]
+name = "The Lightbulb"
+dirs = 4
+frames = 14
+delays = [3, 3, 3, 3, 3, 3, 3, 3, 16, 1, 13, 2, 20, 3]
+
+[[state]]
+name = "The Loose Goose"
+dirs = 4
+frames = 12
+delays = [5]

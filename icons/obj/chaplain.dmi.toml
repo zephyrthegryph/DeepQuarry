@@ -1,0 +1,149 @@
+# Generated from chaplain.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "frobe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mpose"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mrobe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "horned"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "onyxking"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mrobedark"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "onyxanimalm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stoneseat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stonehead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "onyxqueen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "onyxanimalf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mwarrior"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fwarrior"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stonedwarf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hammer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stonesnake"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "robot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "elephant"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "singularity"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gemeye"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skull"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "onyxbird"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "devil"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stoneanimal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stonevenus"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bronzearms"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "catrobe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "moon"
+dirs = 1
+frames = 1

@@ -1,0 +1,15 @@
+# Generated from 288x288.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 288
+height = 288
+cols = 3
+
+[[state]]
+name = "singularity_s9old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "singularity_s9"
+dirs = 1
+frames = 8
+delays = [1]

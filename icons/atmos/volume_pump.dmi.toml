@@ -1,0 +1,25 @@
+# Generated from volume_pump.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "on"
+dirs = 4
+frames = 11
+delays = [1]
+
+[[state]]
+name = "off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "map_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "map_on"
+dirs = 4
+frames = 1

@@ -1,0 +1,22 @@
+# Generated from plasma.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "onturf"
+dirs = 1
+frames = 3
+delays = [2]
+
+[[state]]
+name = "onturf-purple"
+dirs = 1
+frames = 3
+delays = [2]
+
+[[state]]
+name = "sl_gas"
+dirs = 1
+frames = 3
+delays = [2]

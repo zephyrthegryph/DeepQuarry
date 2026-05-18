@@ -1,0 +1,289 @@
+# Generated from thor.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "deeprock"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deeprock-solid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deeprock_side"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "deeprock_side_n"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deeprock_side_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deeprock_side_w"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deeprock_side_e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "overlay_archaeo1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "overlay_archaeo2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "overlay_archaeo3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "overlay_excv1_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "overlay_excv1_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "overlay_excv1_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "overlay_excv2_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "overlay_excv2_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "overlay_excv2_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "overlay_excv3_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "overlay_excv3_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "overlay_excv3_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "overlay_excv4_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "overlay_excv4_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "overlay_excv4_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "overlay_excv5_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "overlay_excv5_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "overlay_excv5_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "overlay_damage"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ironsand1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ironsand2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ironsand3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ironsand4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ironsand5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ironsand6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ironsand7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ironsand8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ironsand9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ironsand10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ironsand11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ironsand12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ironsand13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ironsand14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ironsand15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "basalt0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "basalt1"
+dirs = 1
+frames = 4
+delays = [20]
+
+[[state]]
+name = "basalt2"
+dirs = 1
+frames = 4
+delays = [20]
+
+[[state]]
+name = "basalt3"
+dirs = 1
+frames = 4
+delays = [20]
+
+[[state]]
+name = "basalt4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "basalt5"
+dirs = 1
+frames = 4
+delays = [20]
+
+[[state]]
+name = "basalt6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "basalt7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "basalt8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "basalt9"
+dirs = 1
+frames = 4
+delays = [20]
+
+[[state]]
+name = "basalt10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "basalt11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "basalt12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "basalt_dug"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "basalt"
+dirs = 1
+frames = 1

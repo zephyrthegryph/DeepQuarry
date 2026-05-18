@@ -1,0 +1,109 @@
+# Generated from hud_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "hudblank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudhealthy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vantag_vore"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vantag_vore_ye"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vantag_vore_yd"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vantag_vore_ya"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vantag_vore_d"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vantag_vore_de"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vantag_vore_dd"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vantag_vore_da"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vantag_kidnap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vantag_kill"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudill"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "huddead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudxeno"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudbrainworm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hud_backup_norm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hud_backup_nobody"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hud_backup_nomind"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "example"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ghostjoin"
+dirs = 1
+frames = 1

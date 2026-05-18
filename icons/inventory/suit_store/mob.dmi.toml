@@ -1,0 +1,871 @@
+# Generated from mob.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 24
+
+[[state]]
+name = "template"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "template2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gun"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gun2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "handcuff"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "legcuff"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "handcuff2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "healthanalyzer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "healthanalyzer2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "electronic"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "electronic2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "classic_baton"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "classic_baton2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pen2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gun_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gun_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gun_3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gun_12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gun_22"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gun_32"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "handcuff_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "handcuff_5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "handcuff_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "handcuff_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "handcuff_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "handcuff_12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "handcuff_52"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "handcuff_22"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "handcuff_42"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "handcuff_32"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "electronic_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "electronic_5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "electronic_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "electronic_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "electronic_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "electronic_12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "electronic_52"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "electronic_22"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "electronic_42"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "electronic_32"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "healthanalyzer_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "healthanalyzer_5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "healthanalyzer_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "healthanalyzer_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "healthanalyzer_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "healthanalyzer_12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "healthanalyzer_52"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "healthanalyzer_22"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "healthanalyzer_22"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "healthanalyzer_42"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "healthanalyzer_32"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pen_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pen_5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pen_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pen_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pen_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pen_12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pen_52"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pen_22"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pen_42"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pen_32"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "em_oxtank"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "em_oxtank2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "injector"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "injector"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suspenders"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "suspenders2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fluff_rbelt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fluff_rbelt2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shotgun"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cshotgun"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dshotgun"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sniper"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sniper100"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sniper75"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sniper50"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sniper25"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sniper0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "heavysniper"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pneumatic"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pneumatic-tank"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crossbow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "carbine"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "assltrifle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boltaction"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boltaction_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leveraction"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lasercannon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lasercannon_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lasercannon100"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lasercannon75"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lasercannon50"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lasercannon25"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lasercannon0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pulse100"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pulse75"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pulse50"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pulse25"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pulse0"
+dirs = 4
+frames = 2
+delays = [3]
+
+[[state]]
+name = "barretsniper-empty"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "barretsniper"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ionrifle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ionrifle100"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ionrifle75"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ionrifle50"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ionrifle25"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ionrifle0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "z8carbine"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "c20r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "freezegun"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "utility"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "oxygen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "oxygen_f"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "oxygen_fr"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "anesthetic"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phoron_vox"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cultblade"
+dirs = 4
+frames = 4
+delays = [100, 0.75]
+
+[[state]]
+name = "gun"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stunrevolver"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "taser0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "taser25"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "taser50"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "taser75"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "taser100"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "taser"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "energystun0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "energystun25"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "energystun50"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "energystun75"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "energystun100"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "energystun"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "energykill0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "energykill25"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "energykill50"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "energykill75"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "energykill100"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "energykill"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "baton"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pepperspray"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "emergency_engi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "emergency_double"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "screwdriver"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "screwdriver_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "screwdriver_purple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "screwdriver_brown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "screwdriver_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "screwdriver_cyan"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "screwdriver_yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wrench"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "welder"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crowbar"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cutters"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coil"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pickaxe"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spickaxe"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gpickaxe"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dpickaxe"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jackhammer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "emergency_nitro"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holobadge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marshalbadge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holobadge-cord"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "goldbadge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "silverbadge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "permit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "permit_drone"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "laser"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stunrifle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tasercarbine"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phasecarbine"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jetpack-breaker"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jetpack-breaker-on"
+dirs = 4
+frames = 1

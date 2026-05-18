@@ -1,0 +1,1424 @@
+# Generated from decals_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 32
+
+[[state]]
+name = "corner_white"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "corner_white_diagonal"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "corner_white_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bot_outline"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bot_corners"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cut_corners"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tri-arrows"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "warning_color"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "warningcorner_color"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "warningcee_color"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "warningfull_color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "warningtile_color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "caution"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stand_clear"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "delivery"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "outline"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "loading"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "exit_and_entrance"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "handicap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "full_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "semi_outline"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rad_floor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "warning"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "warningcorner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "warningcee"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "warningfull"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "warningtile"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "warning_dust"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "warningcorner_dust"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "warningcee_dust"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "warningfull_dust"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "warningtile_dust"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "danger"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "dangercorner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dangerfull"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dangercee"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spline_fancy"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "spline_fancy_corner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spline_fancy_cee"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spline_fancy_full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spline_plain"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "spline_plain_corner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spline_plain_cee"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spline_plain_full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_base"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_a"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_c"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_di"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_ex"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_m"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_cmo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_v"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_p"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_d"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_d1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_d2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_d3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plaque"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "L1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "L2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "L3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "L4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "L5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "L6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "L7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "L8"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "L9"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "L10"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "L11"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "L12"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "L13"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "L14"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "L15"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "L16"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "derelict1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "derelict2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "derelict3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "derelict4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "derelict5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "derelict6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "derelict7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "derelict8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "derelict9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "derelict10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "derelict11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "derelict12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "derelict13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "derelict14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "derelict15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "derelict16"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "asteroid_dug_overlay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "asteroid0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "asteroid1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "asteroid2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "asteroid3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "asteroid4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "asteroid5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "asteroid6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "asteroid7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "asteroid8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "asteroid9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chapel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "techfloor_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "techfloor_corners"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "techfloororange_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "techfloororange_corners"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "techfloor_hole_left"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "techfloor_hole_right"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "corner_oldtile"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "corner_oldtile_diagonal"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "corner_oldtile_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "corner_kafel"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "corner_kafel_diagonal"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "corner_kafel_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rust"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mono_rusted1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mono_rusted2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mono_rusted3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "part_rusted1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "part_rusted2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "part_rusted3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "color_rusted"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "color_rustedcorner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "color_rustedfull"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "color_rustedcee"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "steel_decals_rusted1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "steel_decals_rusted2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "corner_techfloor_gray"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "corner_techfloor_gray_diagonal"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "corner_techfloor_gray_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "corner_techfloor_grid"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "corner_techfloor_grid_diagonal"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "corner_techfloor_grid_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "steel_grid"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "steel_grid_diagonal"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "steel_grid_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borderfloor"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "borderfloorcorner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borderfloorcorner2"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "borderfloorfull"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "borderfloorcee"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borderfloor_black"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "borderfloorcorner_black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borderfloorcorner2_black"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "borderfloorfull_black"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "borderfloorcee_black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borderfloor_white"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "borderfloorcorner_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borderfloorcorner2_white"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "borderfloorfull_white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "borderfloorcee_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "steel_decals1"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "steel_decals2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "steel_decals3"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "steel_decals4"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "steel_decals5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "steel_decals6"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "steel_decals7"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "steel_decals8"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "steel_decals9"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "steel_decals10"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "steel_decals_central1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "steel_decals_central2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "steel_decals_central3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "steel_decals_central4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "steel_decals_central5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "steel_decals_central6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "steel_decals_central7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bordercolor"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "bordercolorcorner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bordercolorcorner2"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "bordercolorfull"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bordercolorcee"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass_edge"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "grass_edge_corner"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "bordercolor_shifted"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "borderfloor_shifted"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "borderfloor_black_shifted"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "borderfloor_white_shifted"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "blu"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blu_big"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red_big"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "black"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "black_big"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "sword"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sword_big"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "ark"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ark_big"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "talon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "talon_big"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "talon_center"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "itgdauntless"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "aronai"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "aroplate1"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "aroplate2"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "monofloor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "milspec"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ms_plating_striped"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "ms_test_floor4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ms_test_floor5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ms_blue"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "ms_bluecorner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ms_bluefull"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ms_red"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "ms_redcorner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ms_redfull"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ms_purple"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "ms_purplecorner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ms_purplefull"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ms_emerald"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "ms_emeraldcorner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ms_emeraldfull"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ms_orange"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "ms_orangecorner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ms_orangefull"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ms_green"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "ms_greencorner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ms_greenfull"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ms_black"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "ms_blackcorner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ms_blackfull"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ms_silver"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "ms_silvercorner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ms_silverfull"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ms_white"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "ms_whitecorner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ms_whitefull"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ms_cargo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ms_cargo_arrow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mss_green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mss_green_side"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "mss_green_corner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mss_purple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mss_purple_side"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "mss_purple_corner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ms_mono"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nt1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nt2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nt3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "small_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "small_f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "small_e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "small_d"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "small_c"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "small_b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "small_a"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "small_8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "small_7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "small_6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "small_5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "small_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "small_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "small_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "small_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "small_h"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arrivals_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "arrivals_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shuttle_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shuttle_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "arrows"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "arrow_single"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stellar_delight"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "stellar_delight_center"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orange_line"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "center_lines"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "andromeda1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "andromeda2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "andromeda3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "andromeda4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "andromeda5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "andromeda6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cetus1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cetus2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cetus3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cetus4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cetus5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cetus6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cetus7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cetus8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cetus9"
+dirs = 1
+frames = 1

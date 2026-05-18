@@ -1,0 +1,203 @@
+# Generated from screen_full.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 480
+height = 480
+cols = 9
+
+[[state]]
+name = "blackimageoverlay"
+dirs = 1
+frames = 4
+delays = [250, 1]
+
+[[state]]
+name = "oxydamageoverlay0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oxydamageoverlay1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oxydamageoverlay2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oxydamageoverlay3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oxydamageoverlay4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oxydamageoverlay5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oxydamageoverlay6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oxydamageoverlay7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brutedamageoverlay0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brutedamageoverlay1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brutedamageoverlay2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brutedamageoverlay3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brutedamageoverlay4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brutedamageoverlay5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brutedamageoverlay6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "passage0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "passage1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "passage2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "passage3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "passage4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "passage5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "passage6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "passage7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "passage8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "passage9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "passage10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "impairedoverlay1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "impairedoverlay2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "impairedoverlay3"
+dirs = 1
+frames = 4
+delays = [250, 1]
+
+[[state]]
+name = "fishbed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fear1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fear2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fear3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fear4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fear5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fear6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fear0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scrolls1"
+dirs = 1
+frames = 25
+delays = [10, 1, 1, 1, 15, 1, 1, 1, 10, 1, 1, 1, 15, 1, 1, 1, 10, 3, 3, 3, 3, 3, 3, 3, 150]
+loop = 1

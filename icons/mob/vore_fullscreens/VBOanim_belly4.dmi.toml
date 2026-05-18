@@ -1,0 +1,10 @@
+# Generated from VBOanim_belly4.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 480
+height = 480
+cols = 12
+
+[[state]]
+name = "VBOanim_belly4"
+dirs = 1
+frames = 138
+delays = [0.3]

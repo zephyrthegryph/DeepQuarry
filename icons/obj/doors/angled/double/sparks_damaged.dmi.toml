@@ -1,0 +1,16 @@
+# Generated from sparks_damaged.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 4
+
+[[state]]
+name = "closed"
+dirs = 1
+frames = 7
+delays = [1, 1, 1, 1, 1, 1, 17]
+
+[[state]]
+name = "open"
+dirs = 1
+frames = 6
+delays = [1]

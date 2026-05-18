@@ -1,0 +1,307 @@
+# Generated from widerobot_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 23
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ov-openpanel -c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ov-openpanel +c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ov-openpanel +w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wreck-overlay"
+dirs = 1
+frames = 18
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 40]
+
+[[state]]
+name = "laser"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "taser"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "disabler"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "laser_big"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "disabler_big"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blade"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blade-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "saw"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blade-sleeper_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blade-sleeper_g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stray"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stray"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "stray-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stray-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stray-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stray-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eyes-stray"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-stray"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "eyes-stray-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-stray-lights"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "stray-sleeper_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stray-sleeper_r"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "stray-sleeper_g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stray-sleeper_g"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "borgi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borgi"
+dirs = 4
+frames = 6
+delays = [1]
+movement = true
+
+[[state]]
+name = "borgi-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borgi-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borgi-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borgi-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "borgi-sleeper_g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borgi-sleeper_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borgi-sleeper_g"
+dirs = 4
+frames = 6
+delays = [1]
+movement = true
+
+[[state]]
+name = "borgi-sleeper_r"
+dirs = 4
+frames = 6
+delays = [1]
+movement = true
+
+[[state]]
+name = "eyes-borgi-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-borgi-lights"
+dirs = 4
+frames = 6
+delays = [1]
+movement = true
+
+[[state]]
+name = "eyes-borgi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-SecVale"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "SecVale-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "SecVale-sleeper_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "SecVale-rest"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "SecVale_sleeper_g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "SecVale"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-SecVale-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vale2-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vale2-sleeper_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vale2-sleeper_g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vale2-rest"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "vale2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-vale2-lights"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "eyes-vale2"
+dirs = 4
+frames = 2
+delays = [1]

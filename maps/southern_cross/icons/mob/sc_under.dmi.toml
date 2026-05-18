@@ -1,0 +1,24 @@
+# Generated from sc_under.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "pilot2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pilot2_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pilot2_d"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pilot1"
+dirs = 4
+frames = 1
