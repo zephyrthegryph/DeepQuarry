@@ -39,7 +39,6 @@
 	attack_sharp = FALSE
 	attacktext = list("spooked", "startled", "jumpscared", "screamed at")
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/space_ghost
 
 	min_oxy = 0
 	max_oxy = 0
@@ -79,13 +78,6 @@
 
 	can_be_drop_prey = FALSE
 
-
-/datum/ai_holder/simple_mob/ranged/kiting/space_ghost
-	hostile = TRUE
-	retaliate = TRUE
-	destructive = TRUE
-	violent_breakthrough = TRUE
-	speak_chance = 0
 
 /mob/living/simple_mob/vore/alienanimals/space_ghost/apply_melee_effects(atom/A)
 	var/mob/living/L = A
@@ -169,7 +161,6 @@
 
 	vore_active = 0
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/space_ghost
 
 /mob/living/simple_mob/vore/alienanimals/spooky_ghost/Initialize(mapload)
 	. = ..()
@@ -177,13 +168,6 @@
 	icon_state = icon_living
 	addtimer(CALLBACK(src, PROC_REF(death)), 35 SECONDS)
 	update_icon()
-
-/datum/ai_holder/simple_mob/melee/space_ghost
-	hostile = TRUE
-	retaliate = TRUE
-	destructive = TRUE
-	violent_breakthrough = TRUE
-	speak_chance = 0
 
 /mob/living/simple_mob/vore/alienanimals/spooky_ghost/death(gibbed, deathmessage = "fades away!")
 	. = ..()

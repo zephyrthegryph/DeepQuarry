@@ -15,7 +15,6 @@
 	movement_cooldown = 0.5
 	color = "#ccff4a"
 	projectilesound = 'sound/weapons/wave.ogg'
-	ai_holder_type = /datum/ai_holder/simple_mob/intentional/adv_dark_gygax
 	var/grenade_type = /obj/item/grenade/shooter/energy/tesla
 	var/grenade_timer = 10
 	var/grenade_type2 = /obj/item/grenade/shooter/rubber
@@ -68,8 +67,7 @@
 		G.det_time = grenade_timer	//CHOMPEdit
 		G.activate(src)	//CHOMPEdit
 
-	set_AI_busy(FALSE)
-
+	if(ai_brain) ai_brain.busy = FALSE
 /mob/living/simple_mob/mechanical/hivebot/precusor/chrono/proc/launch_rockets(atom/target)
 	set waitfor = FALSE
 	visible_message(span_warning("\The [src] creates weak looking hivebots!"))
@@ -80,9 +78,7 @@
 		G.det_time = grenade_timer
 		G.activate(src)
 
-	set_AI_busy(FALSE)
-
-
+	if(ai_brain) ai_brain.busy = FALSE
 /mob/living/simple_mob/mechanical/hivebot/precusor/chrono/proc/electric_defense(atom/target)
 	var/turf/T = get_turf(target)
 	visible_message(span_warning("\The [src] fires an energetic sphere into the air!"))

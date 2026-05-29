@@ -57,7 +57,6 @@
 	maxbodytemp = 900
 
 	say_list_type = /datum/say_list/corrupthound
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/evasive/corrupthound
 
 	has_langs = list(LANGUAGE_GALCOM, LANGUAGE_EAL) //Robots speak in beep, yes?
 
@@ -184,10 +183,6 @@
 	say_maybe_target = list("MEAT?", "NEW FRIEND?", "WHAT!", "Not again. NOT AGAIN!", "FRIEND?")
 	say_got_target = list("HERE COMES BIG MEAN HUG MACHINE!", "I'LL BE GENTLE!", "FUEL ME FRIEND!", "I*M SO SORRY!", "YUMMY TREAT DETECTED!", "LOVE ME!", "Not again. NOT AGAIN!")
 
-/datum/ai_holder/simple_mob/melee/evasive/corrupthound
-	violent_breakthrough = TRUE
-	can_breakthrough = TRUE
-
 /mob/living/simple_mob/vore/aggressive/corrupthound/fire
 	icon_state = "badboi_fire"
 	icon_living = "badboi_fire"
@@ -197,7 +192,6 @@
 	maxHealth = 150
 	health = 150
 
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/aggressive
 
 	projectiletype = /obj/item/projectile/scatter/flamethrower
 	ranged_attack_delay = 2 SECONDS
@@ -211,7 +205,6 @@
 	maxHealth = 150
 	health = 150
 
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged
 
 	ranged_attack_delay = 2 SECONDS
 	projectiletype = /obj/item/projectile/beam/midlaser
@@ -305,7 +298,6 @@
 	maxbodytemp = 900
 
 	say_list_type = /datum/say_list/corrupthound/janihound
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/thor_underground
 	max_buckled_mobs = 1 //Yeehaw
 	can_buckle = TRUE
 	buckle_movable = TRUE
@@ -406,11 +398,3 @@
 	emote_see = list("stares ferociously.", "snarls.", "jitters and snaps.", "convulses.", "suddenly attacks something unseen.", "appears to howl unaudibly.", "shakes violently.", "dissociates for a moment.", "twitches.")
 	say_maybe_target = list("MEAT?", "N0w YOU DNE FcukED UP b0YO!", "WHAT!", "Not again. NOT AGAIN!")
 	say_got_target = list("D##FIN1Tly DNE FcukED UP nOW b0YO!", "YOU G1T D#V0VRED nOW!", "FUEL ME bOYO!", "I*M SO SORRY?!", "D1E Meat. DIG#ST!", "G1T DVNKED DWN The HaaTCH!", "Not again. NOT AGAIN!")
-
-/datum/ai_holder/simple_mob/melee/thor_underground
-	cooperative = FALSE
-	vision_range = 5
-	retaliate = TRUE
-	violent_breakthrough = TRUE
-	can_breakthrough = TRUE
-	faction_friends = list("otie", "angrydrones", "goia", "mimic", "mouse", "corrupt") //this is probably really lazy but this is just so mobs dont beat eachother up

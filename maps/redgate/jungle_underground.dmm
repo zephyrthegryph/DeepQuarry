@@ -3816,7 +3816,6 @@
 /area/redgate/jungle/facilityne)
 "TN" = (
 /mob/living/simple_mob/vore/aggressive/panther{
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate;
 	melee_damage_lower = 2;
 	melee_damage_upper = 5;
 	vore_pounce_chance = 50;
@@ -3926,7 +3925,6 @@
 /area/redgate/jungle/facilityse)
 "Vs" = (
 /mob/living/simple_mob/vore/aggressive/panther{
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate;
 	ghostjoin = 1;
 	melee_damage_lower = 2;
 	melee_damage_upper = 5;

@@ -29,7 +29,6 @@
 	corpse = /obj/effect/landmark/mobcorpse/altevian
 	loot_list = list(/obj/item/melee/energy/sword/altevian = 100)
 
-	ai_holder_type = /datum/ai_holder/simple_mob/merc
 	say_list_type = /datum/say_list/merc/altevian
 
 /datum/say_list/merc/altevian
@@ -83,7 +82,6 @@
 	projectiletype = /obj/item/projectile/beam/meeplaser
 	projectilesound = 'sound/weapons/Laser.ogg'
 
-	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged
 
 /mob/living/simple_mob/humanoid/merc/altevian/ranged/strong
 	desc = "An Altevian Naval Salvage Shield, adorned in the top of the line Heartbreaker suit. Armed with a large energy gun."

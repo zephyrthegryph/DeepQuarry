@@ -372,9 +372,8 @@
 	var/mob/living/simple_mob/illusion/decoy = new(owner.loc)
 	decoy.copy_appearance(owner)
 	decoy.copy_overlays(owner, TRUE)
-	var/datum/ai_holder/AI = decoy.ai_holder
 	var/turf/rand_turf = pick(get_turf(orange(5, 10)))
-	AI.give_destination(rand_turf)
+	decoy.ai_brain?.give_destination(rand_turf)
 	owner.alpha = 0
 	in_stealth = TRUE
 	owner.visible_message(span_danger("[owner] is hit by [attack_text] in the chest!"))

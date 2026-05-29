@@ -12,7 +12,6 @@
 	damage_fatigue_mult = 1 //Does slowly pick up speed.
 	injury_enrages = TRUE
 	movement_cooldown = 7 //Kind of slow.
-	ai_holder_type = /datum/ai_holder/simple_mob/fossiltank
 	movement_shake_radius = 8
 	taser_kill = FALSE
 	poison_resist = 1.0
@@ -65,16 +64,6 @@
 	B.absorbchance = 0
 	B.escapechance = 15
 
-/datum/ai_holder/simple_mob/fossiltank
-	hostile = TRUE
-	retaliate = TRUE
-	mauling = TRUE
-	unconscious_vore = TRUE
-	vision_range = 25 //The entire gimmick of this thing is a slow moving, endless hunter. You shall not escape.
-	respect_alpha = FALSE
-	destructive = TRUE
-	forgive_resting = FALSE
-
 /mob/living/simple_mob/vore/fossiltank/updatehealth()
 	. = ..()
 
@@ -120,7 +109,6 @@
 	special_attack_min_range = 1
 	special_attack_max_range = 7
 	special_attack_cooldown = 13 SECONDS
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/evasive/jellyfish
 
 
 	swallowTime = 1.5 SECONDS
@@ -200,7 +188,7 @@
 
 /mob/living/simple_mob/vore/boss_jellyfish/proc/dash_attack(atom/A) //spider dash attack
 	set waitfor = FALSE
-	set_AI_busy(TRUE)
+	if(ai_brain) ai_brain.busy = TRUE
 	if(!A)
 		return
 
@@ -237,7 +225,7 @@
 		to_chat(victim, span_critical("\The [src] jumps on you!"))
 		. = TRUE
 
-	set_AI_busy(FALSE)
+	if(ai_brain) ai_brain.busy = FALSE
 	if(chain_number > 0)
 		chain_number -= 1
 		if(prob(50))

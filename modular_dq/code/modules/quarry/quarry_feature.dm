@@ -159,7 +159,6 @@
 		var/key = "[G.type]|[G.merge_key()]"
 		var/datum/quarry_goal/existing = by_key[key]
 		if(existing)
-			existing.target += G.target
 			qdel(G)
 		else
 			by_key[key] = G

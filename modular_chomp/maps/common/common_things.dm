@@ -71,7 +71,7 @@
 /* //VORESTATION AI TEMPORARY REMOVAL
 		if(guard)
 			my_mob.returns_home = TRUE
-			my_mob.wander_distance = guard
+			// DQEdit: legacy .wander reference removed (no equivalent on /datum/ai_brain).
 */
 		return
 	else

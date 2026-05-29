@@ -174,7 +174,6 @@
 	icon_state = "mouse_rat"
 	icon_rest = "mouse_rat_sleep"
 	holder_type = /obj/item/holder/mouse/rat
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/evasive
 
 /mob/living/simple_mob/animal/passive/mouse/rat/strong // In case you still want to be a jerk to your players for some reason.
 	maxHealth = 20
@@ -201,7 +200,6 @@
 	max_n2 = 0
 	maxbodytemp = 700
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/evasive
 
 //The names Cheese... Agent Cheese
 /mob/living/simple_mob/animal/passive/mouse/operative/agent_cheese

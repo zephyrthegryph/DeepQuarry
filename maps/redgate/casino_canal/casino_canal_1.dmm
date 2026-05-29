@@ -3463,7 +3463,6 @@
 /area/redgate/underwater_casino/indoors/lower/maintenance)
 "jh" = (
 /mob/living/simple_mob/vore/alienanimals/skeleton/alt{
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate
 	},
 /turf/simulated/floor/outdoors/rocks/caves,
 /area/redgate/underwater_casino/indoors/lower/secret/piratebasetunnel)

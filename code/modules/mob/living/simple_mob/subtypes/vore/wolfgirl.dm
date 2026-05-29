@@ -22,7 +22,6 @@
 	attacktext = list("slashed")
 
 	say_list_type = /datum/say_list/wolfgirl
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate/cooperative/wolfgirl
 	can_be_drop_prey = FALSE
 	species_sounds = "Canine"
 	pain_emote_1p = list("yelp", "whine", "bark", "growl")
@@ -32,44 +31,6 @@
 	vore_active = 1
 	vore_pounce_chance = 40
 	vore_icons = SA_ICON_LIVING
-
-/datum/ai_holder/simple_mob/retaliate/cooperative/wolfgirl
-	belly_attack = FALSE
-
-/datum/ai_holder/simple_mob/retaliate/cooperative/wolfgirl/on_hear_say(mob/living/speaker, message)
-
-	if(!speaker.client)
-		return
-
-	if(findtext(message, "hello") || findtext(message, "hi") || findtext(message, "greetings"))
-		delayed_say(pick("Heya!", "Hey!"), speaker)
-
-	if(findtext(message, "Are you a dog?"))
-		delayed_say(pick("Who, me?! No! Stop saying that!"), speaker)
-
-	if(findtext(message, "Awoo?"))
-		delayed_say(pick("Awoo."), speaker)
-
-	if(findtext(message, "Awoo!"))
-		delayed_say(pick("AwooooOOOOooo!"), speaker)
-
-	if(findtext(message, "Awoo."))
-		delayed_say(pick("Awoo?"), speaker)
-
-	if(findtext(message, "Nice hat"))
-		delayed_say(pick("Thanks my grandma made it for me."), speaker)
-
-	if(findtext(message, "What's your phone number?"))
-		delayed_say(pick("Five six seven oh nine! Wait, who are you?"), speaker)
-
-	if(findtext(message, "Are you horny?"))
-		delayed_say(pick("No! I'm just hyperactive!"), speaker)
-
-	if(findtext(message, "Good girl"))
-		delayed_say(pick("Aww thanks... Wait, I'm not a dog!"), speaker)
-
-	if(findtext(message, "Fuyu"))
-		delayed_say(pick("You know my sister?!", "Is she causing problems again?"), speaker)
 
 
 /datum/say_list/wolfgirl

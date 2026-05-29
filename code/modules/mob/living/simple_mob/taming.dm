@@ -51,7 +51,7 @@
 	handle_tame_item(O, user)
 
 	tamers |= user
-	ai_holder.forget_everything()
+	ai_brain.forget_everything()
 
 /mob/living/simple_mob/proc/handle_tame_item(obj/O, mob/user)
 	user.drop_from_inventory(O)

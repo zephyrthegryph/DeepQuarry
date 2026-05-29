@@ -275,5 +275,5 @@
 
 /obj/item/melee/baton/shocker/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
 	..(target, user, hit_zone)
-	if(status && target.has_AI())
+	if(status && (target.ai_brain != null))
 		target.taunt(user)

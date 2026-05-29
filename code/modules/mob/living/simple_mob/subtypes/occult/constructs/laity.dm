@@ -21,5 +21,3 @@
 	attacktext = list("rammed")
 	attack_sound = 'sound/weapons/rapidslice.ogg'
 	movement_cooldown = 0
-
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate/cooperative

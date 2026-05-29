@@ -67,9 +67,10 @@
 			shadekin.init_vore(TRUE)
 			shadekin.ability_flags |= 0x1
 			shadekin.phase_shift()
-			shadekin.ai_holder.give_target(target)
-			shadekin.ai_holder.hostile = FALSE
-			shadekin.ai_holder.mauling = TRUE
+			shadekin.ai_brain?.give_target(target, TRUE)
+			shadekin.ai_brain?.set_hostile(FALSE)
+			if(shadekin.ai_brain)
+				shadekin.ai_brain.mauling = TRUE
 			shadekin.Life()
 			//Remove when done
 			spawn(10 SECONDS)

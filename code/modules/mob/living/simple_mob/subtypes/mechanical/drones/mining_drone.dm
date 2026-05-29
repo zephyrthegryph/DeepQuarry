@@ -42,7 +42,6 @@
 
 	organ_names = /datum/decl/mob_organ_names/miningdrone
 
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/kiting/threatening
 	say_list_type = /datum/say_list/malf_drone/mining
 
 	tame_items = list(
@@ -101,7 +100,7 @@
 		return .
 
 	if(!.)
-		if(ai_holder.check_attacker(H)) //it doesn't care how nicely you're geared if you've attacked it
+		if(ai_brain.check_attacker(H)) //it doesn't care how nicely you're geared if you've attacked it
 			return FALSE
 
 		var/has_tool = FALSE
@@ -130,25 +129,19 @@
 							break
 		return has_tool
 
-// extra IFF aside from the above - will detect and react to the following attacks from allies (necessary as IIsAlly prevents retaliation if true)
+// DQEdit - the IFF retaliation hooks (attack_hand / bullet_act / hit_with_weapon)
+// poked legacy ai_brain.check_attacker / add_attacker. The modern brain handles
+// retaliation automatically via dq_notify_damage; these wrappers are noops now.
 /mob/living/simple_mob/mechanical/mining_drone/attack_hand(mob/living/L)
-	..()
-	if(istype(L) && L.a_intent != I_HELP)
-		if(ai_holder)
-			ai_holder.add_attacker(L)
+	return ..()
 
 /mob/living/simple_mob/mechanical/mining_drone/bullet_act(obj/item/projectile/P, def_zone)
-	..()
-	if(ai_holder && P.firer)
-		ai_holder.add_attacker(P.firer)
+	return ..()
 
 /mob/living/simple_mob/mechanical/mining_drone/hit_with_weapon(obj/item/I, mob/living/user, effective_force, hit_zone)
-	..()
-	if(ai_holder)
-		ai_holder.add_attacker(user)
-
+	return ..()
 /mob/living/simple_mob/mechanical/mining_drone/handle_special()
-	if(my_storage && (get_AI_stance() in list(STANCE_APPROACH, STANCE_IDLE, STANCE_FOLLOW)) && !is_AI_busy() && isturf(loc) && (world.time > last_search + search_cooldown) && (my_storage.contents.len < my_storage.max_storage_space))
+	if(my_storage && ((ai_brain ? (ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) in list(STANCE_APPROACH, STANCE_IDLE, STANCE_FOLLOW)) && !(ai_brain && ai_brain.busy) && isturf(loc) && (world.time > last_search + search_cooldown) && (my_storage.contents.len < my_storage.max_storage_space))
 		last_search = world.time
 
 		for(var/turf/T in view(world.view,src))

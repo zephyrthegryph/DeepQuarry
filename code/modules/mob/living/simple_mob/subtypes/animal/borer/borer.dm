@@ -27,7 +27,6 @@
 	can_be_antagged = TRUE
 
 	holder_type = /obj/item/holder/borer
-	ai_holder_type = null // This is player-controlled, always.
 
 	var/mob/living/carbon/human/host = null		// The humanoid host for the brain worm.
 	var/mob/living/captive_brain/host_brain		// Used for swapping control of the body back and forth.

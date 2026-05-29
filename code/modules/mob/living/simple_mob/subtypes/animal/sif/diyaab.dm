@@ -41,7 +41,6 @@
 	attacktext = list("gouged")
 
 	say_list_type = /datum/say_list/diyaab
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate/cooperative
 
 	// What do you hit the mob with (on help) to get something from it?
 	harvest_tool = /obj/item/tool/wirecutters

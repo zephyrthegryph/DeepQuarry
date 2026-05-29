@@ -57,7 +57,6 @@
 	mount_offset_x = 5
 	mount_offset_y = 30
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/deathclaw
 
 	allow_mind_transfer = TRUE
 
@@ -104,10 +103,6 @@
 		"Every clench of the giant predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!",
 		"The deathclaw licks its lips in delight over your flavor before patting its taut gut a few times, filling the roiling chamber with muted, reverberating thuds!",
 		"The creature's thick scales make it difficult to move around in that organ, and the clenches it gives whenever you try don't help the situation, those confines churning a little closer every time. You're its meal now, and it has no intention of letting you out easily!")
-
-/datum/ai_holder/simple_mob/melee/deathclaw
-	can_breakthrough = TRUE
-	violent_breakthrough = TRUE
 
 /mob/living/simple_mob/vore/aggressive/deathclaw/den
 

@@ -8,7 +8,6 @@
 
 	organ_names = /datum/decl/mob_organ_names/quadruped
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee
 
 	internal_organs = list(\
 		/obj/item/organ/internal/brain,\

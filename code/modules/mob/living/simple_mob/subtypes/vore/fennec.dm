@@ -48,7 +48,6 @@
 	attacktext = list("bapped")
 
 	say_list_type = /datum/say_list/fennec
-	ai_holder_type = /datum/ai_holder/simple_mob/passive
 
 	allow_mind_transfer = TRUE
 	pain_emote_1p = list("yelp", "whine", "bark", "growl")
@@ -126,7 +125,6 @@
 	response_help = "pats the paw of"
 	response_disarm = "somehow shoves aside"
 
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate/cooperative
 	var/image/bigshadow
 	var/autodoom = TRUE
 
@@ -168,7 +166,7 @@
 			var/obj/belly/B = vore_organs[1]
 			automatic_custom_emote(message = "snatches and devours [L]!")
 			B.nom_atom(L)
-			ai_holder.find_target()
+			ai_brain?.find_target()  // recalc primary threat now that prey is in belly
 			return
 		else if(L.size_multiplier <= 0.5 && L.step_mechanics_pref)
 			automatic_custom_emote(message = "stomps [L] into oblivion!")

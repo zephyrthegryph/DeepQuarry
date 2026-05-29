@@ -83,9 +83,9 @@
 
 /obj/item/deadringer/proc/deathprevent()
 	for(var/mob/living/simple_mob/D in oviewers(7, src))
-		if(!D.has_AI())
+		if(!(D.ai_brain != null))
 			continue
-		D.ai_holder.lose_target()
+		D.ai_brain.lose_target()
 	watchowner.alpha = 7 //10 is too visible, 5 is too in-visible... 7 is difficult to see but manageable.
 	makeacorpse(watchowner)
 	return

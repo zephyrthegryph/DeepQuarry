@@ -2172,7 +2172,6 @@
 "bJC" = (
 /mob/living/simple_mob/construct/artificer{
 	dir = 4;
-	ai_holder_type = null
 	},
 /turf/simulated/floor/cult,
 /area/casino/mountains)
@@ -7536,7 +7535,6 @@
 "hhl" = (
 /mob/living/simple_mob/construct/harvester{
 	dir = 8;
-	ai_holder_type = null
 	},
 /turf/simulated/floor/cult,
 /area/casino/mountains)
@@ -17559,7 +17557,6 @@
 /area/casino/wilderness)
 "qIi" = (
 /mob/living/simple_mob/vore/alienanimals/skeleton/alt{
-	ai_holder_type = null
 	},
 /obj/machinery/light{
 	dir = 4
@@ -18084,7 +18081,6 @@
 "rjV" = (
 /mob/living/simple_mob/construct/harvester{
 	dir = 4;
-	ai_holder_type = null
 	},
 /turf/simulated/floor/cult,
 /area/casino/mountains)
@@ -20644,7 +20640,6 @@
 /area/casino/north_foyer)
 "twv" = (
 /mob/living/simple_mob/vore/alienanimals/skeleton/alt{
-	ai_holder_type = null
 	},
 /obj/machinery/light{
 	dir = 8
@@ -21243,7 +21238,6 @@
 	dir = 4
 	},
 /mob/living/simple_mob/vore/alienanimals/skeleton/alt{
-	ai_holder_type = null
 	},
 /turf/simulated/floor/carpet/bcarpet,
 /area/casino/south_foyer)
@@ -24541,7 +24535,6 @@
 "xbz" = (
 /mob/living/simple_mob/construct/artificer{
 	dir = 8;
-	ai_holder_type = null
 	},
 /turf/simulated/floor/cult,
 /area/casino/mountains)

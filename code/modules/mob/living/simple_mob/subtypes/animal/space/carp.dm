@@ -60,7 +60,6 @@
 	meat_amount = 5
 	meat_type = /obj/item/reagent_containers/food/snacks/carpmeat
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee
 
 	var/knockdown_chance = 15
 
@@ -193,7 +192,6 @@
 
 // Won't wander away.
 /mob/living/simple_mob/animal/space/carp/event
-	ai_holder_type = /datum/ai_holder/simple_mob/event
 
 
 /mob/living/simple_mob/animal/space/carp/large
@@ -261,7 +259,6 @@
 	meat_amount = 15
 
 	knockdown_chance = 50
-	ai_holder_type = /datum/ai_holder/simple_mob/vore
 
 /mob/living/simple_mob/animal/space/carp/large/huge/vorny/load_default_bellies()
 	. = ..()
@@ -301,9 +298,9 @@
 // Presumably the holodeck emag code requires this.
 // Pass TRUE to make safe. Pass FALSE to make unsafe.
 /mob/living/simple_mob/animal/space/carp/holographic/proc/set_safety(safe)
-	if(!isnull(get_AI_stance())) // Will return null if lacking an AI holder or a player is controlling it w/o autopilot var.
-		ai_holder.hostile = !safe // Inverted so safe = TRUE means hostility = FALSE.
-		ai_holder.forget_everything() // Reset state so it'll stop chewing on its target.
+	if(ai_brain)
+		ai_brain.set_hostile(!safe) // safe=TRUE means hostility=FALSE.
+		ai_brain.forget_everything()
 
 // Called on death.
 /mob/living/simple_mob/animal/space/carp/holographic/proc/derez()

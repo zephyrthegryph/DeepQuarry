@@ -9,7 +9,6 @@
 
 	faction = "synthtide"
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/evasive/cyber_horror
 
 	maxHealth = 175
 	health = 175
@@ -48,26 +47,6 @@
 	say_threaten = list ("FR@#DOM","EN@ T#I$-$","N0$ M^> B@!#")
 	say_got_target = list("I *#@ Y@%","!E@#$P","F#RR @I","D0@#$ ##OK %","IT $##TS")
 	threaten_sound = 'sound/mob/robots/Cyber_Horror.ogg'
-
-/datum/ai_holder/simple_mob/melee/evasive/cyber_horror
-	threaten = TRUE
-	threaten_delay = 1 SECOND
-	threaten_timeout = 30 SECONDS
-
-/datum/ai_holder/simple_mob/melee/cyber_horror
-	threaten = TRUE
-	threaten_delay = 1 SECOND
-	threaten_timeout = 30 SECONDS
-
-/datum/ai_holder/simple_mob/melee/hit_and_run/cyber_horror
-	threaten = TRUE
-	threaten_delay = 1 SECOND
-	threaten_timeout = 30 SECONDS
-
-/datum/ai_holder/simple_mob/ranged/kiting/cyber_horror
-	threaten = TRUE
-	threaten_delay = 1 SECOND
-	threaten_timeout = 30 SECONDS
 
 // Fragile but dangerous
 /mob/living/simple_mob/mechanical/cyber_horror/plasma_cyber_horror
@@ -132,7 +111,6 @@
 	movement_cooldown = 9
 	movement_sound = 'sound/effects/houndstep.ogg'
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/cyber_horror
 
 // You do NOT Want to get in touchy range of this thing.
 	armor = list(melee = 75, bullet = -10, laser = -25, bio = 100, rad = 100)
@@ -162,8 +140,7 @@
 // The actual leaping attack.
 /mob/living/simple_mob/mechanical/cyber_horror/ling_cyber_horror/do_special_attack(atom/A)
 	set waitfor = FALSE
-	set_AI_busy(TRUE)
-
+	if(ai_brain) ai_brain.busy = TRUE
 // Telegraph, since getting stunned suddenly feels bad.
 	do_windup_animation(A, leap_warmup)
 // For the telegraphing.
@@ -208,9 +185,7 @@
 		to_chat(victim, span_critical("\The [src] jumps on you!"))
 		. = TRUE
 
-	set_AI_busy(FALSE)
-
-
+	if(ai_brain) ai_brain.busy = FALSE
 //Slightly more durable fodder
 /mob/living/simple_mob/mechanical/cyber_horror/vox
 	name = "Vox shambles"
@@ -220,7 +195,6 @@
 	say_list_type = /datum/say_list/cyber_horror/vox
 
 	armor = list(melee = 40, bullet = 30, laser = 30, bio = 100, rad = 100)
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/cyber_horror
 
 /datum/say_list/cyber_horror/vox
 	threaten_sound = 'sound/mob/robots/Cyber_Horror_Vox.ogg'
@@ -236,7 +210,6 @@
 	attack_sound = 'sound/weapons/meleetear.ogg'
 
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/hit_and_run/cyber_horror
 
 	var/cloaked_alpha = 30
 	var/cloaked_bonus_damage = 30
@@ -314,7 +287,6 @@
 
 	projectiletype = /obj/item/projectile/arc/blue_energy
 	projectilesound = 'sound/weapons/plasmaNEW.ogg'
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/kiting/cyber_horror
 
 	armor = list(melee = -30, bullet = 10, laser = 10, bio = 100, rad = 100)
 
@@ -337,7 +309,6 @@
 	projectilesound = 'sound/weapons/SmallLaser.ogg'
 	movement_sound = 'sound/effects/servostep.ogg'
 
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/kiting/threatening
 
 /datum/say_list/cyber_horror/corgi
 	threaten_sound = 'sound/mob/robots/Cyber_Horror_Corgi.ogg'

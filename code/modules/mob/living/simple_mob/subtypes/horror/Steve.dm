@@ -34,7 +34,6 @@
 
 
 	say_list_type = /datum/say_list/Steve
-	ai_holder_type = /datum/ai_holder/simple_mob/horror
 
 /mob/living/simple_mob/horror/Steve/death()
 	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)

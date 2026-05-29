@@ -47,7 +47,6 @@
 	buckle_movable = TRUE
 	buckle_lying = FALSE
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee
 	say_list_type = /datum/say_list/dragonboss
 
 	can_be_drop_prey = FALSE

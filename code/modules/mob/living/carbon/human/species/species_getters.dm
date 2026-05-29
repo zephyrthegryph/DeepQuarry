@@ -57,7 +57,7 @@
 	if(H)
 		if(H.looksSynthetic())
 			return "flashing a 'system offline' light"
-		else if(!H.ai_holder)
+		else if(!H.ai_brain)
 			return show_ssd
 		else
 			return

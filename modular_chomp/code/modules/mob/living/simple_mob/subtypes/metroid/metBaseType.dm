@@ -44,7 +44,6 @@
 	speak_emote = list("chirps")
 	friendly = list("pokes")
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee
 	say_list_type = /datum/say_list/metroid
 
 	harm_intent_damage = 5 //When someone uses fists. Default is 3

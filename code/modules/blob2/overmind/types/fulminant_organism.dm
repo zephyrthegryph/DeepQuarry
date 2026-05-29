@@ -48,5 +48,5 @@
 		S.faction = user.faction
 		S.blob_type = src
 		S.update_icons()
-		S.ai_holder.forget_everything()
+		S.ai_brain.forget_everything()
 		S.add_modifier(/datum/modifier/doomed, 2 MINUTES)

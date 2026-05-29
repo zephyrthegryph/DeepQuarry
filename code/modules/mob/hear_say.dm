@@ -134,8 +134,8 @@
 // Done here instead of on_hear_say() since that is NOT called if the mob is clientless (which includes most AI mobs).
 /mob/living/hear_say(list/message_pieces, verb = "says", italics = 0, mob/speaker = null, sound/speech_sound, sound_vol)
 	.=..()
-	if(has_AI()) // Won't happen if no ai_holder exists or there's a player inside w/o autopilot active.
-		ai_holder.on_hear_say(speaker, multilingual_to_message(message_pieces))
+	if((ai_brain != null)) // Won't happen if no ai_brain exists or there's a player inside w/o autopilot active.
+		ai_brain.on_hear_say(speaker, multilingual_to_message(message_pieces))
 
 /mob/proc/on_hear_say(message, mob/speaker = null)
 	if(client)

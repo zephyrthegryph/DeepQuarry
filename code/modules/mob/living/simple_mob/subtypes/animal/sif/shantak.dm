@@ -74,11 +74,11 @@
 	for(var/mob/living/simple_mob/animal/sif/shantak/S in hearers(7, src))
 		if(istype(S, /mob/living/simple_mob/animal/sif/shantak/leader)) // Leaders won't follow other leaders. Also avoids trying to follow ourselves.
 			continue
-		if(!S.ai_holder)
+		if(!S.ai_brain)
 			continue
 		if(S.faction != src.faction)
 			continue
-		var/datum/ai_holder/AI = S.ai_holder
+		var/datum/ai_brain/AI = S.ai_brain
 		AI.set_follow(src)
 
 // Variant that automatically commands nearby allies to follow it when created.
@@ -89,15 +89,12 @@
 
 // These ones only retaliate. Used for PoIs.
 /mob/living/simple_mob/animal/sif/shantak/retaliate
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate
 
 /mob/living/simple_mob/animal/sif/shantak/leader/autofollow/retaliate
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate
 
 //Vorestation Addition
 /mob/living/simple_mob/animal/sif/shantak/scruffy
 	name = "Scruffy"
-	ai_holder_type = /datum/ai_holder/simple_mob/passive
 	makes_dirt = 0
 	faction = FACTION_NEUTRAL
 

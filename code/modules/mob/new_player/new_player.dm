@@ -276,7 +276,6 @@
 			var/vorgans = join_props["vorgans"]
 			cryst.bound_mob = new cryst.spawn_mob_type(cryst)
 			cryst.spawn_mob_type = null
-			cryst.bound_mob.ai_holder_type = /datum/ai_holder/simple_mob/inert
 			cryst.bound_mob.key = src.key
 			log_and_message_admins("[key_name_admin(src)] joined [cryst.bound_mob] inside a capture crystal [ADMIN_FLW(cryst.bound_mob)]")
 			if(vorgans)

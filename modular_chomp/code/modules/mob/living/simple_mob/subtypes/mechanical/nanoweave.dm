@@ -11,7 +11,6 @@
 	maxHealth = 600
 	health = 600
 	deflect_chance = 20
-	ai_holder_type = /datum/ai_holder/simple_mob/intentional/three_phases/zoomy
 	armor = list(melee = 50, bullet = 40, laser = 40, energy = 40, bomb = 80, bio = 100, rad = 100)
 	projectiletype = /obj/item/projectile/energy/wallbreaker/boss
 	specialattackprojectile = /obj/item/projectile/energy/hazardmover/omni
@@ -20,12 +19,6 @@
 /mob/living/simple_mob/mechanical/mecha/eclipse/nanoweavedrake/Initialize(mapload)
 	shields = new /obj/item/shield_projector/rectangle/automatic/hivebot_drone(src)
 	return ..()
-
-/datum/ai_holder/simple_mob/intentional/three_phases/zoomy
-
-/datum/ai_holder/simple_mob/intentional/three_phases/zoomy/on_engagement(atom/movable/AM)
-	step_rand(holder)
-	holder.face_atom(AM)
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/nanoweavedrake/do_special_attack(atom/A)
 	. = TRUE

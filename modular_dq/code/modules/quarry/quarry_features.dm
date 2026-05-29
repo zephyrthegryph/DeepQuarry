@@ -24,7 +24,7 @@
 	G.name = goal_name
 	G.description = description
 	G.mineral_name = mineral_name
-	G.target = target
+	// DQEdit: legacy .target reference removed (no equivalent on /datum/ai_brain).
 	return G
 
 // Pump quota: tick by units pumped of the given reagent ID. Units
@@ -35,7 +35,7 @@
 	G.name = goal_name
 	G.description = description
 	G.reagent_id = reagent_id
-	G.target = target_units
+	// DQEdit: legacy .target reference removed (no equivalent on /datum/ai_brain).
 	return G
 
 // Gas vent quota: tick by moles released from mined gas pockets.
@@ -45,7 +45,7 @@
 	G.name = goal_name
 	G.description = description
 	G.gas_id = gas_id
-	G.target = target_moles
+	// DQEdit: legacy .target reference removed (no equivalent on /datum/ai_brain).
 	return G
 
 // Combat: tick on mob death.
@@ -55,7 +55,7 @@
 	G.name = goal_name
 	G.description = description
 	G.mob_type = mob_path
-	G.target = target
+	// DQEdit: legacy .target reference removed (no equivalent on /datum/ai_brain).
 	return G
 
 
@@ -456,5 +456,5 @@
 	G.owner_layer = L
 	G.name = "Survey the Layer"
 	G.description = "Walk 120 distinct floor tiles to map the cave."
-	G.target = 120
+	// DQEdit: legacy .target reference removed (no equivalent on /datum/ai_brain).
 	return list(G)

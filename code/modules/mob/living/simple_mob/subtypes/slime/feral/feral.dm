@@ -23,7 +23,6 @@
 	movement_cooldown = -3
 	melee_attack_delay = 0.5 SECONDS
 
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/pointblank
 
 
 // Slimebatoning/xenotasing it just makes it mad at you (which can be good if you're heavily armored and your friends aren't).
@@ -91,5 +90,5 @@
 	if(L.get_cold_protection() < 1)
 		L.add_modifier(/datum/modifier/chilled, 5 SECONDS, src)
 
-	if(L.has_AI()) // Other AIs should react to hostile auras.
-		L.ai_holder.react_to_attack(src)
+	if((L.ai_brain != null)) // Other AIs should react to hostile auras.
+		L.ai_brain.react_to_attack(src)

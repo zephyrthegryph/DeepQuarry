@@ -260,8 +260,8 @@
 
 /mob/living/simple_mob/slime/xenobio/dark_blue/proc/chill(mob/living/L)
 	L.inflict_cold_damage(is_adult ? 10 : 5)
-	if(L.get_cold_protection() < 1 && L.has_AI()) // Harmful auras will make the AI react to its bearer.
-		L.ai_holder.react_to_attack(src)
+	if(L.get_cold_protection() < 1 && (L.ai_brain != null)) // Harmful auras will make the AI react to its bearer.
+		L.ai_brain.react_to_attack(src)
 
 
 /mob/living/simple_mob/slime/xenobio/silver
@@ -492,7 +492,6 @@
 			/mob/living/simple_mob/slime/xenobio/orange
 		)
 
-	ai_holder_type = /datum/ai_holder/simple_mob/xenobio_slime
 
 
 /mob/living/simple_mob/slime/xenobio/green
@@ -650,7 +649,7 @@
 
 		// Otherwise blow ourselves up.
 		say(pick("Sacrifice...!", "Sssss...", "Boom...!"))
-		set_AI_busy(TRUE)
+		if(ai_brain) ai_brain.busy = TRUE
 		sleep(2 SECONDS)
 		log_and_message_admins("has suicide-bombed themselves while trying to kill \the [L].", src)
 		explode()
@@ -687,7 +686,6 @@
 	shiny = TRUE
 	glow_toggle = TRUE
 	coretype = /obj/item/slime_extract/sapphire
-	ai_holder_type = /datum/ai_holder/simple_mob/xenobio_slime/sapphire
 
 	description_info = "This slime uses more robust tactics when fighting and won't hold back, so it is dangerous to be alone \
 	with one if hostile, and especially dangerous if they outnumber you."
@@ -744,7 +742,6 @@
 		/mob/living/simple_mob/slime/xenobio/light_pink
 	)
 
-	ai_holder_type = /datum/ai_holder/simple_mob/xenobio_slime/light_pink
 
 // Special
 /mob/living/simple_mob/slime/xenobio/rainbow
@@ -777,9 +774,8 @@
 	name = "Kendrick"
 	desc = "The " + JOB_RESEARCH_DIRECTOR + "'s pet slime.  It shifts colors constantly."
 	rainbow_core_candidate = FALSE
-	// Doing pacify() in initialize() won't actually pacify the AI due to the ai_holder not existing due to parent initialize() not being called yet.
-	// Instead lets just give them an ai_holder that does that for us.
-	ai_holder_type = /datum/ai_holder/simple_mob/xenobio_slime/passive
+	// Doing pacify() in initialize() won't actually pacify the AI due to the ai_brain not existing due to parent initialize() not being called yet.
+	// Instead lets just give them an ai_brain that does that for us.
 
 /mob/living/simple_mob/slime/xenobio/rainbow/kendrick/Initialize(mapload)
 	pacify() // So the physical mob also gets made harmless.
@@ -790,7 +786,6 @@
 	name = "Sana"
 	desc = "A pink slime that seems to be oddly friendly, and doesn't seem interested in eating your face like the rest of them."
 	rainbow_core_candidate = FALSE
-	ai_holder_type = /datum/ai_holder/simple_mob/xenobio_slime/passive
 
 /mob/living/simple_mob/slime/xenobio/pink/sana/Initialize(mapload)
 	pacify() // So the physical mob also gets made harmless.

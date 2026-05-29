@@ -282,7 +282,6 @@
 /area/redgate/jungle/aboveground)
 "cM" = (
 /mob/living/simple_mob/vore/rabbit/white{
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate;
 	vore_bump_chance = 1
 	},
 /turf/simulated/floor/outdoors/grass/forest,
@@ -1070,7 +1069,6 @@
 /area/redgate/jungle/temple)
 "lN" = (
 /mob/living/simple_mob/animal/space/bear/brown{
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate;
 	vore_bump_chance = 5;
 	vore_bump_emote = "lunges at";
 	vore_pounce_chance = 50
@@ -2051,7 +2049,6 @@
 /area/redgate/jungle/aboveground)
 "xj" = (
 /mob/living/simple_mob/vore/wolf/direwolf{
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate;
 	faction = "sif";
 	melee_damage_lower = 2;
 	melee_damage_upper = 5;
@@ -2080,7 +2077,6 @@
 "xt" = (
 /obj/structure/flora/ausbushes/genericbush,
 /mob/living/simple_mob/vore/rabbit{
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate;
 	vore_bump_chance = 1
 	},
 /turf/simulated/floor/outdoors/grass/forest,
@@ -2167,7 +2163,6 @@
 /area/redgate/jungle/aboveground)
 "xQ" = (
 /mob/living/simple_mob/vore/rabbit{
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate;
 	ghostjoin = 1;
 	vore_bump_chance = 1
 	},
@@ -2213,7 +2208,6 @@
 /area/redgate/jungle/eastcaves)
 "yr" = (
 /mob/living/simple_mob/vore/wolf/direwolf{
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate;
 	faction = "sif";
 	ghostjoin = 1;
 	melee_damage_lower = 2;
@@ -2914,7 +2908,6 @@
 /area/redgate/jungle/temple)
 "GK" = (
 /mob/living/simple_mob/vore/alienanimals/skeleton/alt{
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate
 	},
 /turf/simulated/floor/tiled/kafel_full/yellow,
 /area/redgate/jungle/temple)
@@ -3463,7 +3456,6 @@
 /area/redgate/jungle/temple)
 "MS" = (
 /mob/living/simple_mob/vore/weretiger{
-	ai_holder_type = /datum/ai_holder/simple_mob/vore
 	},
 /turf/simulated/mineral/floor/light{
 	nitrogen = 82.1472;
@@ -4126,7 +4118,6 @@
 "UC" = (
 /obj/structure/flora/ausbushes/grassybush,
 /mob/living/simple_mob/vore/wolf/direwolf{
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate;
 	faction = "sif";
 	melee_damage_lower = 2;
 	melee_damage_upper = 5;
@@ -4273,7 +4264,6 @@
 /area/redgate/jungle/westcaves)
 "Wk" = (
 /mob/living/simple_mob/vore/rabbit{
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate;
 	vore_bump_chance = 1
 	},
 /turf/simulated/floor/outdoors/grass/forest,

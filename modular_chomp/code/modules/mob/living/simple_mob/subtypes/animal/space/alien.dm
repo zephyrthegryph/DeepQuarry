@@ -8,7 +8,6 @@
 	needs_reload = 1
 	projectiletype = /obj/item/projectile/sonic/strong
 	reload_time = 150 SECONDS
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/careful
 
 /mob/living/simple_mob/animal/space/alien/sentinel/praetorian/ion
 	name = "alien Ionic praetorian"
@@ -20,7 +19,6 @@
 	projectiletype = /obj/item/projectile/arc/emp_blast
 	reload_time = 150 SECONDS
 	reload_max = 3
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/careful
 	size_multiplier = 1.5
 
 /mob/living/simple_mob/animal/space/alien/sentinel/praetorian/blaze
@@ -33,7 +31,6 @@
 	projectiletype = /obj/item/projectile/energy/fireball
 	reload_max = 3
 	reload_time = 200
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/careful
 
 /mob/living/simple_mob/animal/space/alien/sentinel/praetorian/splat
 	name = "alien splattetorian"
@@ -64,7 +61,6 @@
 
 /mob/living/simple_mob/animal/space/alien/queen/empress/star
 	name = "alien Staticlisk"
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/careful
 	base_attack_cooldown = 15
 	color = "#38b9ff"
 	health = 500
@@ -99,7 +95,6 @@
 
 /mob/living/simple_mob/animal/space/alien/sentinel/electro
 	name = "alien Electrosentinel"
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/careful
 	color = "#ccff4a"
 	health = 200
 	maxHealth = 200
@@ -124,7 +119,6 @@
 
 /mob/living/simple_mob/animal/space/alien/sentinel/cyro
 	name = "alien cryosentinel"
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/careful
 	armor = list(melee = 0, bullet = 15, laser = 0, energy = 0, bomb = 0, bio = 100, rad = 100)
 	color = "#4f83ff"
 	health = 200
@@ -165,7 +159,6 @@
 	size_multiplier = 1.25
 
 /mob/living/simple_mob/animal/space/alien/queen/empress/mother/big
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/careful
 	needs_reload = 1
 	projectiletype = /obj/item/projectile/energy/blob/toxic/splattering
 	reload_max = 5

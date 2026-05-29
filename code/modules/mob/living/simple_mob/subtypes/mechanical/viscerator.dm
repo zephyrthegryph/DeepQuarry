@@ -48,7 +48,6 @@
 
 	organ_names = /datum/decl/mob_organ_names/viscerator
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/evasive
 
 /mob/living/simple_mob/mechanical/viscerator/Initialize(mapload)
 	. = ..()

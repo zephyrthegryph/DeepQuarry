@@ -35,7 +35,6 @@
 	attacktext = list("pecked", "pinched", "wingslapped")
 
 	say_list_type = /datum/say_list/seagull
-	ai_holder_type = /datum/ai_holder/simple_mob/passive
 
 	vore_active = 1
 	vore_capacity = 5

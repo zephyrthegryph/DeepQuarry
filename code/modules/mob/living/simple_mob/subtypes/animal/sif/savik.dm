@@ -54,7 +54,6 @@
 	)
 
 	say_list_type = /datum/say_list/savik
-	ai_holder_type = /datum/ai_holder/simple_mob/savik
 
 /datum/say_list/savik
 	speak = list("Hruuugh!","Hrunnph")
@@ -62,7 +61,7 @@
 	emote_hear = list("snuffles")
 
 /mob/living/simple_mob/animal/sif/savik/handle_special()
-	if((get_AI_stance() in list(STANCE_APPROACH, STANCE_FIGHT)) && !is_AI_busy() && isturf(loc))
+	if(((ai_brain ? (ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) in list(STANCE_APPROACH, STANCE_FIGHT)) && !(ai_brain && ai_brain.busy) && isturf(loc))
 		if(health <= (maxHealth * 0.5)) // At half health, and fighting someone currently.
 			berserk()
 
@@ -71,9 +70,6 @@
 
 	if(prob(30))	// They don't like people messing with them and their food.
 		berserk()
-
-/datum/ai_holder/simple_mob/savik
-	mauling = TRUE
 
 // So players can use it too.
 /mob/living/simple_mob/animal/sif/savik/verb/berserk()

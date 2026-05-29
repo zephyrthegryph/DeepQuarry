@@ -39,7 +39,6 @@
 	response_disarm = "pushes"
 	response_harm = "roughly pushes"
 
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate
 	say_list_type = /datum/say_list/solarmoth
 
 	var/poison_per_bite = 5 //grubs cause a shock when they bite someone

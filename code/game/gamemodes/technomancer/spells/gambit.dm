@@ -67,7 +67,7 @@
 		// Spiders, carp... bears.
 		if(isanimal(L))
 			var/mob/living/simple_mob/SM = L
-			if(!is_ally(SM) && SM.has_AI() && SM.ai_holder.hostile)
+			if(!is_ally(SM) && (SM.ai_brain != null) && SM.ai_brain.hostile)
 				hostile_mobs++
 				if(SM.summoned || SM.supernatural) // Our creations might be trying to kill us.
 					potential_spells |= /obj/item/spell/abjuration

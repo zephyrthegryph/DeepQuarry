@@ -6020,7 +6020,6 @@
 /obj/effect/floor_decal/rust,
 /obj/random/trash,
 /mob/living/simple_mob/vore/retaliate/corrupthound/janihound/medihound{
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate;
 	vore_bump_chance = 80;
 	vore_stomach_flavor = "You have ended up in the medihound sleeper of this corrupted machine. This place would be comfortable, if it weren't for the ominous gurgles and the thick, red, numbing liquid that pools over your body as soon as you settle into the rubbery stomach. The heated and cramped surroundings oozing potent fluids all over your form, eager to do nothing less than breaking you apart to fuel its aimless wanders for the next few days... hours... minutes? Oh dear...";
 	vore_stomach_name = "medihound sleeper"
@@ -17046,7 +17045,6 @@
 /obj/random/trash,
 /obj/effect/decal/cleanable/dirt,
 /mob/living/simple_mob/vore/retaliate/corrupthound/janihound/old{
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate;
 	desc = "A very old looking BARC janihound chassis! Evidently, it doesn't seem to be lawed anymore. You should probably leave it alone.";
 	health = 300;
 	maxHealth = 300;
@@ -18458,7 +18456,6 @@
 /obj/effect/decal/cleanable/dirt,
 /obj/effect/decal/cleanable/generic,
 /mob/living/simple_mob/vore/retaliate/corrupthound/janihound/old{
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate;
 	desc = "It's the old BARC unit that is in charge of the trash pit. Apparently he's been here since before the outpost was rebuilt by NT, back when it was owned by the SCG. Though, he doesn't do a very good job anymore... Don't get too close, he is known to mistake people for the trash he's supposed to be disposing of.";
 	health = 500;
 	maxHealth = 500;

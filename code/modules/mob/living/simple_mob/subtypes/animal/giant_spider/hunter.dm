@@ -32,7 +32,6 @@
 
 	movement_cooldown = -2 // Hunters are FAST.
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/hunter_spider
 
 	player_msg = "You are very fast, and <b>can perform a leaping attack</b> by clicking on someone from a short distance away.<br>\
 	If the leap succeeds, the target will be knocked down briefly and you will be on top of them.<br>\
@@ -60,8 +59,7 @@
 // The actual leaping attack.
 /mob/living/simple_mob/animal/giant_spider/hunter/do_special_attack(atom/A)
 	set waitfor = FALSE
-	set_AI_busy(TRUE)
-
+	if(ai_brain) ai_brain.busy = TRUE
 	// Telegraph, since getting stunned suddenly feels bad.
 	do_windup_animation(A, leap_warmup)
 	sleep(leap_warmup) // For the telegraphing.
@@ -101,8 +99,7 @@
 		to_chat(victim, span_critical("\The [src] jumps on you!"))
 		. = TRUE
 
-	set_AI_busy(FALSE)
-
+	if(ai_brain) ai_brain.busy = FALSE
 //		var/obj/item/grab/G = new(src, victim)
 //		put_in_active_hand(G)
 
@@ -115,68 +112,8 @@
 
 
 // This AI would've isolated people it stuns with its 'leap' attack, by dragging them away.
-/datum/ai_holder/simple_mob/melee/hunter_spider
-
 /*
 
-/datum/ai_holder/simple_mob/melee/hunter_spider/post_special_attack(mob/living/L)
-	drag_away(L)
-
 // Called after a successful leap.
-/datum/ai_holder/simple_mob/melee/hunter_spider/proc/drag_away(mob/living/L)
-	to_world("Doing drag_away attack on [L]")
-	if(!istype(L))
-		to_world("Invalid type.")
-		return FALSE
-
-	// If they didn't get stunned, then don't bother.
-	if(!L.incapacitated(INCAPACITATION_DISABLED))
-		to_world("Not incapcitated.")
-		return FALSE
-
-	// Grab them.
-	if(!holder.start_pulling(L))
-		to_world("Failed to pull.")
-		return FALSE
-
-	holder.visible_message(span_danger("\The [holder] starts to drag \the [L] away!"))
-
-	var/list/allies = list()
-	var/list/enemies = list()
-	for(var/mob/living/thing in hearers(vision_range, holder))
-		if(thing == holder || thing == L) // Don't count ourselves or the thing we just started pulling.
-			continue
-		if(holder.IIsAlly(thing))
-			allies += thing
-		else
-			enemies += thing
-
-	// First priority: Move our victim to our friends.
-	if(allies.len)
-		to_world("Going to move to ally")
-		give_destination(get_turf(pick(allies)), min_distance = 2, combat = TRUE) // This will switch our stance.
-
-	// Second priority: Move our victim away from their friends.
-	// There's a chance of it derping and pulling towards enemies if there's more than two people.
-	// Preventing that will likely be both a lot of effort for developers and the CPU.
-	else if(enemies.len)
-		to_world("Going to move away from enemies")
-		var/mob/living/hostile = pick(enemies)
-		var/turf/move_to = get_turf(hostile)
-		for(var/i = 1 to vision_range) // Move them this many steps away from their friend.
-			move_to = get_step_away(move_to, L, 7)
-		if(move_to)
-			give_destination(move_to, min_distance = 2, combat = TRUE) // This will switch our stance.
-
-	// Third priority: Move our victim SOMEWHERE away from where they were.
-	else
-		to_world("Going to move away randomly")
-		var/turf/move_to = get_turf(L)
-		move_to = get_step(move_to, pick(GLOB.cardinal))
-		for(var/i = 1 to vision_range) // Move them this many steps away from where they were before.
-			move_to = get_step_away(move_to, L, 7)
-		if(move_to)
-			give_destination(move_to, min_distance = 2, combat = TRUE) // This will switch our stance.
 */
 /mob/living/simple_mob/animal/giant_spider/hunter/event
-	ai_holder_type = /datum/ai_holder/simple_mob/event

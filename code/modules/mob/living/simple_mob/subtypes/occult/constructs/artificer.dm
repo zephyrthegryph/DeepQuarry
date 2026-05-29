@@ -30,7 +30,6 @@
 							/datum/spell/targeted/occult_repair_aura,
 							/datum/spell/targeted/construct_advanced/mend_acolyte
 							)
-	ai_holder_type = /datum/ai_holder/mimic
 
 /datum/decl/mob_organ_names/artificer
 	hit_zones = list("body", "carapace", "right manipulator", "left manipulator", "upper left appendage", "upper right appendage", "eye")
@@ -46,7 +45,6 @@
 	desc = "A bulbous construct dedicated to building and maintaining temples to their otherworldly lords. Its central eye glows with unknowable power."
 	icon_state = "caster_artificer"
 	icon_living = "caster_artificer"
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/kiting
 	projectiletype = /obj/item/projectile/energy/inversion
 	projectiletype = /obj/item/projectile/beam/inversion
 	projectilesound = 'sound/weapons/spiderlunge.ogg'
@@ -72,5 +70,3 @@
 	attacktext = list("rammed")
 	attack_sound = 'sound/weapons/rapidslice.ogg'
 	movement_cooldown = 0
-
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/evasive

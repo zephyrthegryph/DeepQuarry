@@ -62,5 +62,3 @@
 /mob/living/simple_mob/animal/passive/lizard/large/defensive
 	maxHealth = 30
 	health = 30
-
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate/cooperative

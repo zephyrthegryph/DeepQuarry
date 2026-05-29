@@ -28,7 +28,6 @@
 	a brawl, but you barely generate any of your own energy. You can stand in a dark spot to gather scraps \
 	of energy in a pinch, but otherwise need to take it, by force if necessary."
 	vore_active = TRUE
-	ai_holder_type = /datum/ai_holder/simple_mob/melee
 
 /mob/living/simple_mob/shadekin/red/white
 	icon_state = "white"
@@ -79,7 +78,6 @@
 	vore_active = TRUE
 
 /mob/living/simple_mob/shadekin/blue/
-	ai_holder_type = /datum/ai_holder/simple_mob/passive
 
 /mob/living/simple_mob/shadekin/blue/white
 	icon_state = "white"
@@ -125,7 +123,6 @@
 	vore_active = TRUE
 
 /mob/living/simple_mob/shadekin/purple
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate
 
 /mob/living/simple_mob/shadekin/purple/white
 	icon_state = "white"
@@ -172,7 +169,6 @@
 	vore_active = TRUE
 
 /mob/living/simple_mob/shadekin/yellow
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/hit_and_run
 
 /mob/living/simple_mob/shadekin/yellow/white
 	icon_state = "white"
@@ -182,7 +178,6 @@
 	icon_state = "brown"
 
 /mob/living/simple_mob/shadekin/yellow/retaliate
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate
 
 /mob/living/simple_mob/shadekin/yellow/retaliate/white
 	icon_state = "white"
@@ -227,7 +222,6 @@
 	vore_active = TRUE
 
 /mob/living/simple_mob/shadekin/green
-	ai_holder_type = /datum/ai_holder/simple_mob/passive
 
 /mob/living/simple_mob/shadekin/green/white
 	icon_state = "white"
@@ -268,7 +262,6 @@
 	vore_active = TRUE
 
 /mob/living/simple_mob/shadekin/orange
-	ai_holder_type = /datum/ai_holder/simple_mob/melee
 
 /mob/living/simple_mob/shadekin/orange/white
 	icon_state = "white"
@@ -283,7 +276,6 @@
 	name = "Rivyr"
 	desc = "She appears to be a fluffer of some sort. Deep blue eyes and curious attitude."
 	icon_state = "rivyr"
-	ai_holder_type = /datum/ai_holder/simple_mob/passive
 	eye_desc = ""
 	vore_stomach_flavor = "Blue flesh gleams in the fading light as you slip down the little mar's gullet! \
 	Gooey flesh and heat surrounds your form as you're tucked away into the darkness of her stomach! Thick slimes cling \

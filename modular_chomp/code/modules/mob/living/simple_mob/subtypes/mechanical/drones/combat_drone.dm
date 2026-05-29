@@ -5,7 +5,6 @@
 	desc = "A Vir System Authority automated combat drone with an aged apperance."
 	movement_cooldown = 10
 	say_list_type = /datum/say_list/malf_drone/drone_aerostat
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/kiting/threatening/drone_aerostat
 
 /datum/say_list/malf_drone/drone_aerostat
 	speak = list("ALERT.","Hostile-ile-ile entities dee-twhoooo-wected.","Threat parameterszzzz- szzet.","Bring sub-sub-sub-systems uuuup to combat alert alpha-a-a.")
@@ -21,9 +20,6 @@
 	threaten_sound = 'sound/mob/robots/DroneFreezeLong.ogg'
 	stand_down_sound = 'sound/mob/robots/DroneLostTarget.ogg'
 
-/datum/ai_holder/simple_mob/ranged/kiting/threatening/drone_aerostat
-	threaten_delay = 10 SECOND
-	threaten_timeout = 30 SECONDS
 /* Combat refactor walkback
 /mob/living/simple_mob/mechanical/combat_drone
 	maxHealth = 25

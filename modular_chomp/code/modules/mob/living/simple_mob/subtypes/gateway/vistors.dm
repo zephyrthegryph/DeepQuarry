@@ -12,7 +12,6 @@
 
 	melee_damage_lower = 25
 	melee_damage_upper = 25
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/kiting
 
 	wreckage = null
 	pilot_type = /mob/living/simple_mob/mechanical/mecha/vistor/vistorblue
@@ -76,7 +75,6 @@
 
 	melee_damage_lower = 25 //Old 12
 	melee_damage_upper = 25
-	ai_holder_type = /datum/ai_holder/simple_mob/intentional/adv_dark_gygax
 
 	armor = list(
 				"melee"		= 20,
@@ -117,8 +115,7 @@
 // Yes? Throw the grenade
 /mob/living/simple_mob/mechanical/mecha/vistor/vistorblue/do_special_attack(atom/A)
 	set waitfor = FALSE
-	set_AI_busy(TRUE)
-
+	if(ai_brain) ai_brain.busy = TRUE
 	var/obj/item/grenade/G = new grenade_type(get_turf(src))
 	if(istype(G))
 		G.throw_at(A, G.throw_range, G.throw_speed, src)
@@ -126,8 +123,7 @@
 		G.activate(src)	//CHOMPEdit
 		special_attack_charges = max(special_attack_charges-1, 0)
 
-	set_AI_busy(FALSE)
-
+	if(ai_brain) ai_brain.busy = FALSE
 /obj/item/grenade/shooter/energy/homing //This is a horrid idea
 	name = "homing grenade"
 	desc = "A horrifically dangerous rave in a can."
@@ -150,7 +146,6 @@
 
 	melee_damage_lower = 25
 	melee_damage_upper = 25
-	ai_holder_type = /datum/ai_holder/hostile/ranged/robust
 
 	special_attack_cooldown = 2 SECONDS
 	special_attack_min_range = 2
@@ -204,7 +199,6 @@
 	attack_armor_pen = 25
 	melee_damage_lower = 5
 	melee_damage_upper = 20
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/kiting
 	mob_size = MOB_MINISCULE
 	density = 0
 
@@ -237,7 +231,6 @@
 
 	melee_damage_lower = 25
 	melee_damage_upper = 25
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/kiting
 
 	ranged_attack_delay = 3 SECONDS
 	loot_list = list(/obj/item/clothing/suit/armor/alien/vistor = 100
@@ -287,7 +280,6 @@
 	wreckage = /obj/structure/loot_pile/mecha/phazon/forgotten
 	pilot_type = null
 
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/kiting/artillery
 
 	melee_attack_delay = 3 SECOND
 
@@ -316,10 +308,3 @@
 	name = "forgotten wreckage"
 	desc = "The ruins of some unfortunate forgoten mecha type. Perhaps something is salvageable."
 	icon_state = "mime-broken"
-
-/datum/ai_holder/simple_mob/ranged/kiting/artillery
-	mauling = TRUE
-	run_if_this_close = 2
-	min_distance_to_destination = 3
-	can_flee = TRUE
-	base_wander_delay = 4

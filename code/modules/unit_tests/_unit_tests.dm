@@ -129,6 +129,7 @@
 // macros in scope, which are #undef'd at the bottom of this file.
 #include "../../../modular_dq/code/unit_tests/dq_audit_tests.dm"
 #include "../../../modular_dq/code/unit_tests/dq_bodyscanner_tests.dm"
+#include "../../../modular_dq/code/unit_tests/dq_combat_ai_tests.dm"
 #include "../../../modular_dq/code/unit_tests/dq_medical_tests.dm"
 #include "../../../modular_dq/code/unit_tests/dq_preferences_tests.dm"
 #include "../../../modular_dq/code/unit_tests/dq_quarry_persistence_tests.dm"

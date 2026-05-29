@@ -16,7 +16,6 @@ Only physical attributes are copied.
 	//Lets write down our base stats so we can revert easily
 	var/list/base_values = list()
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/pack_mob //A pack of these would be absolutely terrifying.
 	var/flesh_mimic = FALSE //are we currently posing as something else?
 
 /mob/living/simple_mob/fleshtaker/Initialize(mapload)

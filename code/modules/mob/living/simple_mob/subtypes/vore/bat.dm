@@ -20,7 +20,6 @@
 	attacktext = list("bites","scratches")
 
 	say_list_type = /datum/say_list/bat
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate/edible
 
 	faction = FACTION_VAMPIRE
 

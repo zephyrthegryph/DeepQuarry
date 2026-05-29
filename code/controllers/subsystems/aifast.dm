@@ -24,7 +24,7 @@ SUBSYSTEM_DEF(aifast)
 	var/list/currentrun = src.currentrun
 
 	while(length(currentrun))
-		var/datum/ai_holder/A = currentrun[length(currentrun)]
+		var/datum/ai_brain/A = currentrun[length(currentrun)]
 		--currentrun.len
 		if(!A || QDELETED(A) || A.busy) // Doesn't exist or won't exist soon or not doing it this tick
 			continue

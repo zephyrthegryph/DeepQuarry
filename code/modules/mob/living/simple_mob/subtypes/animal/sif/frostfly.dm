@@ -68,7 +68,6 @@
 	var/datum/effect/effect/system/smoke_spread/frost/smoke_special
 
 	say_list_type = /datum/say_list/frostfly
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/kiting/threatening/frostfly
 
 /mob/living/simple_mob/animal/sif/frostfly/get_cold_protection()
 	return 1	// It literally produces a cryogenic mist inside itself. Cold doesn't bother it.
@@ -127,35 +126,6 @@
 				return TRUE
 
 			return FALSE
-
-/datum/ai_holder/simple_mob/ranged/kiting/threatening/frostfly
-	can_flee = TRUE
-	dying_threshold = 0.5
-	flee_when_outmatched = TRUE
-	run_if_this_close = 3
-
-/datum/ai_holder/simple_mob/ranged/kiting/threatening/frostfly/special_flee_check()
-	var/mob/living/simple_mob/animal/sif/frostfly/F = holder
-	if(F.energy < F.max_energy * 0.2)
-		return TRUE
-	return FALSE
-
-/datum/ai_holder/simple_mob/ranged/kiting/threatening/frostfly/pre_special_attack(atom/A)
-	if(isliving(A))
-		holder.a_intent = I_DISARM
-	else
-		holder.a_intent = I_HURT
-
-/datum/ai_holder/simple_mob/ranged/kiting/threatening/frostfly/post_ranged_attack(atom/A)
-	var/mob/living/simple_mob/animal/sif/frostfly/F = holder
-	if(isliving(A))
-		var/new_dir = turn(F.dir, -90)
-		if(prob(50))
-			new_dir = turn(F.dir, 90)
-		holder.IMove(get_step(holder, new_dir))
-		holder.face_atom(A)
-
-	F.energy = max(0, F.energy - 1)	// The AI will eventually flee.
 
 
 /datum/decl/mob_organ_names/frostfly

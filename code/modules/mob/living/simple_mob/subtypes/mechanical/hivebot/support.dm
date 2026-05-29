@@ -49,11 +49,11 @@
 // Useful to avoid having to manually set follow to a lot of hivebots that are gonna die in the next minute anyways.
 /mob/living/simple_mob/mechanical/hivebot/support/commander/autofollow/Initialize(mapload)
 	for(var/mob/living/L in hearers(7, src))
-		if(!L.ai_holder)
+		if(!L.ai_brain)
 			continue
 		if(L.faction != src.faction)
 			continue
-		var/datum/ai_holder/AI = L.ai_holder
+		var/datum/ai_brain/AI = L.ai_brain
 		AI.set_follow(src)
 	return ..()
 
@@ -95,7 +95,6 @@
 	desc = "A severely corroded hivebot, covered in barnacles and seaweed."
 	maxHealth = 5 // 1 health
 	health = 5
-	ai_holder_type = /datum/ai_holder/simple_mob/passive/speedy
 	say_list_type = /datum/say_list/hivebot/harry
 	melee_damage_lower = 0
 	melee_damage_upper = 0

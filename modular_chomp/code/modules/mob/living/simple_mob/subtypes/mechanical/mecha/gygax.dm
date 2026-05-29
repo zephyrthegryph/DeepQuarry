@@ -7,7 +7,6 @@
 
 /mob/living/simple_mob/mechanical/mecha/combat/gygax/aerostat
 	desc = "A Vir System Authority automated combat mech with an aged apperance."
-	ai_holder_type = /datum/ai_holder/simple_mob/intentional/adv_dark_gygax
 	say_list = /datum/say_list/gygax_aerostat
 
 /datum/say_list/gygax_aerostat
@@ -23,7 +22,3 @@
 	say_escalate = list("Intruder is tresspassing. Maximum force authorized by Vir System Suthority.")
 	threaten_sound = 'sound/mob/robots/GygaxIntruder4.ogg'
 	stand_down_sound = 'sound/mob/robots/GygaxDanger.ogg'
-
-/datum/ai_holder/simple_mob/ranged/kiting/threatening/drone_aerostat
-	threaten_delay = 20 SECOND
-	threaten_timeout = 30 SECONDS

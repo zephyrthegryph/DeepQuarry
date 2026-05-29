@@ -154,7 +154,6 @@ Field studies suggest analytical abilities on par with some species of cepholapo
 
 	organ_names = /datum/decl/mob_organ_names/grafadreka
 	say_list_type = /datum/say_list/grafadreka
-	ai_holder_type = /datum/ai_holder/simple_mob/intentional/grafadreka
 
 	scavenger = TRUE
 	burrower = TRUE
@@ -468,16 +467,14 @@ GLOBAL_LIST_EMPTY(wounds_being_tended_by_drakes)
 
 		var/friend_ref = "\ref[friend]"
 		global.wounds_being_tended_by_drakes[friend_ref] = world.time + (8 SECONDS)
-		set_AI_busy(TRUE)
-
+		if(ai_brain) ai_brain.busy = TRUE
 		if(!do_after(src, 8 SECONDS, target = friend) || QDELETED(friend) || friend.has_modifier_of_type(/datum/modifier/sifsap_salve) || incapacitated() || !spend_sap(10))
 			global.wounds_being_tended_by_drakes -= friend_ref
-			set_AI_busy(FALSE)
+			if(ai_brain) ai_brain.busy = FALSE
 			return TRUE
 
 		global.wounds_being_tended_by_drakes -= friend_ref
-		set_AI_busy(FALSE)
-
+		if(ai_brain) ai_brain.busy = FALSE
 		if(friend == src)
 			visible_message(span_notice("\The [src] finishes licking at their wounds."))
 		else
@@ -576,8 +573,8 @@ GLOBAL_LIST_EMPTY(wounds_being_tended_by_drakes)
 			continue
 		if(drake.client)
 			to_chat(drake, span_boldnotice("The pack leader wishes for you to follow them."))
-		else if(drake.ai_holder)
-			drake.ai_holder.set_follow(src)
+		else if(drake.ai_brain)
+			drake.ai_brain.set_follow(src)
 
 /mob/living/simple_mob/animal/sif/grafadreka/has_appetite()
 	return reagents && abs(reagents.total_volume - reagents.maximum_volume) >= 10

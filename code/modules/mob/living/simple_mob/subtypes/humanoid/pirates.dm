@@ -46,7 +46,6 @@
 
 	corpse = /obj/effect/landmark/mobcorpse/pirate
 
-	ai_holder_type = /datum/ai_holder/simple_mob/merc
 	say_list_type = /datum/say_list/pirate
 
 /mob/living/simple_mob/humanoid/pirate/Initialize(mapload)
@@ -149,7 +148,7 @@
 		if(prob(15))
 			visible_message(span_danger("\The [src] blocks \the [O] with its shield!"))
 			if(user)
-				ai_holder.react_to_attack(user)
+				ai_brain.react_to_attack(user)
 			return
 		else
 			..()
@@ -162,7 +161,7 @@
 	if(prob(25))
 		visible_message(span_bolddanger("[src] blocks [Proj] with its shield!"))
 		if(Proj.firer)
-			ai_holder.react_to_attack(Proj.firer)
+			ai_brain.react_to_attack(Proj.firer)
 		return
 	else
 		..()
@@ -235,7 +234,6 @@
 
 	loot_list = list(/obj/item/gun/projectile/pirate = 100, /obj/item/material/knife/tacknife = 100)
 
-	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged
 
 
 //Armored Variant
@@ -268,7 +266,6 @@
 
 	loot_list = list(/obj/item/gun/projectile/shotgun/doublebarrel/sawn = 100, /obj/item/material/knife/tacknife = 100)
 
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/aggressive
 
 //Armored Variant
 /mob/living/simple_mob/humanoid/pirate/ranged/shotgun/armored
@@ -300,7 +297,6 @@
 
 	loot_list = list(/obj/item/gun/energy/zip = 100, /obj/item/material/knife/tacknife = 100)
 
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/aggressive
 
 //Armored Variant
 /mob/living/simple_mob/humanoid/pirate/ranged/handcannon/armored
@@ -360,7 +356,6 @@
 
 	loot_list = list(/obj/item/gun/energy/retro = 100, /obj/item/clothing/suit/pirate = 100)
 
-	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged
 
 /mob/living/simple_mob/humanoid/pirate/mate/ranged/bosun /// Special Mech Pilot Pirate
 	name = "Bosun"
@@ -368,7 +363,6 @@
 	icon_state = "bosun"
 	icon_living = "bosun"
 	movement_cooldown = 3
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/aggressive/blood_hunter // This is for use in the Pirate Ripley Mecha
 
 	loot_list = list(/obj/item/gun/energy/retro = 100, /obj/item/clothing/head/welding = 100, /obj/item/clothing/suit/pirate = 100)
 
@@ -498,7 +492,6 @@
 	name = "Xeno Ripper"
 	desc = "A Ripley modified by a desperate merc. It sports additional riveted armor plating splattered with dried xeno blood and a jury rigged machine gun in addition to its drill.\
 			A repair drone flits around the intimidating mech."
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/aggressive
 	maxHealth = 170				//Less Health
 	has_repair_droid = TRUE		//But has repair drone
 	pilot_type = /mob/living/simple_mob/humanoid/possessed/merc/feral	//Possessed rig suit piloting a mech. Tremble in fear

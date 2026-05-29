@@ -8,7 +8,6 @@
 	pass_flags = PASSTABLE
 	movement_cooldown = 1
 
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/guard_limit/pointblank
 
 	mob_size = MOB_MINISCULE //need to click the tiny sprite
 

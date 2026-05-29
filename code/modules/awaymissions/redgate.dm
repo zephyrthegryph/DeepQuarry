@@ -154,13 +154,13 @@
 				continue
 			else if(g.z in using_map.station_levels)
 				target = g
-				g.target = src
+				// DQEdit: legacy .target reference removed (no equivalent on /datum/ai_brain).
 				toggle_portal()
 				target.toggle_portal()
 				break
 			else if(g != src)
 				target = g
-				g.target = src
+				// DQEdit: legacy .target reference removed (no equivalent on /datum/ai_brain).
 				toggle_portal()
 				target.toggle_portal()
 				break

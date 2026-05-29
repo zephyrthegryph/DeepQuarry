@@ -61,7 +61,6 @@
 		)
 
 	say_list_type = /datum/say_list/kururak
-	ai_holder_type = /datum/ai_holder/simple_mob/intentional/kururak
 
 	special_attack_min_range = 0
 	special_attack_max_range = 4
@@ -146,9 +145,9 @@
 		if(I_DISARM) // Ranged mob flash, will also confuse borgs rather than stun.
 			tail_flash(A)
 		if(I_GRAB) // Armor-ignoring hit, causes agonizing wounds.
-			set_AI_busy(TRUE)
+			if(ai_brain) ai_brain.busy = TRUE
 			rending_strike(A)
-			set_AI_busy(FALSE)
+			if(ai_brain) ai_brain.busy = FALSE
 	a_intent = I_HURT
 	return ..()
 
@@ -310,11 +309,11 @@
 		for(var/mob/living/simple_mob/animal/sif/kururak/K in hearers(7, src))
 			if(K == src)
 				continue
-			if(!K.ai_holder)
+			if(!K.ai_brain)
 				continue
 			if(K.faction != src.faction)
 				continue
-			var/datum/ai_holder/AI = K.ai_holder
+			var/datum/ai_brain/AI = K.ai_brain
 			to_chat(K, span_notice("The pack leader wishes for you to follow them."))
 			AI.set_follow(src)
 
@@ -351,68 +350,6 @@
 /*
  * Kururak AI
  */
-
-/datum/ai_holder/simple_mob/intentional/kururak
-	hostile = FALSE
-	retaliate = TRUE
-	cooperative = TRUE
-	can_flee = TRUE
-	flee_when_dying = TRUE
-
-/datum/ai_holder/simple_mob/intentional/kururak/handle_special_strategical()
-	follow_distance = rand(initial(follow_distance), initial(follow_distance) + 2)
-	var/mob/living/simple_mob/animal/sif/kururak/K = holder
-
-	if(istype(K))
-		var/mob/living/simple_mob/animal/sif/kururak/highest_instinct = K.detect_instinct()
-		if(highest_instinct == K)
-			K.add_modifier(/datum/modifier/ace, 60 SECONDS)
-		else
-			K.remove_modifiers_of_type(/datum/modifier/ace)
-
-		if(holder.has_modifier_of_type(/datum/modifier/ace))
-			if(leader && istype(leader, /mob/living/simple_mob/animal/sif/kururak))	// Kururaks will not follow another kururak if they're the pack leader.
-				lose_follow()
-
-		else if(highest_instinct)
-			set_follow(highest_instinct)
-
-	if(holder.has_modifier_of_type(/datum/modifier/ace))
-		hostile = TRUE
-	else
-		hostile = initial(hostile)
-
-	return ..()
-
-/datum/ai_holder/simple_mob/intentional/kururak/pre_special_attack(atom/A)
-	holder.a_intent = I_HURT
-	if(isliving(A))
-		var/mob/living/L = A
-		if(holder.Adjacent(L))
-			holder.a_intent = I_GRAB
-
-		if(iscarbon(L))
-			var/mob/living/carbon/C = L
-			if(!C.eyecheck())
-				if(holder.a_intent != I_GRAB)
-					holder.a_intent = I_DISARM
-
-		if(issilicon(L) && holder.a_intent != I_GRAB)
-			holder.a_intent = I_DISARM
-
-	else if(istype(A, /obj/mecha))
-		holder.a_intent = I_GRAB
-
-	return ..()
-
-/datum/ai_holder/simple_mob/intentional/kururak/post_special_attack(atom/A)
-	holder.a_intent = I_HURT
-	return ..()
-
-/datum/ai_holder/simple_mob/intentional/kururak/post_melee_attack()
-	if(holder.has_modifier_of_type(/datum/modifier/ace))
-		request_help()
-	return ..()
 
 // Kururak Ace modifier, given to the one with the highest Instinct.
 

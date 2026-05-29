@@ -58,7 +58,6 @@
 	meat_amount = 5
 	meat_type = /obj/item/reagent_containers/food/snacks/carpmeat/ray
 
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate/chill
 	mob_bump_flag = 0
 
 	say_list_type = /datum/say_list/space_ray
@@ -71,7 +70,7 @@
 		if(prob(knockdown_chance))
 			L.add_modifier(/datum/modifier/entangled, 4 SECONDS) // replacing weaken/slowdown with slow down
 			L.visible_message(span_danger("\The [src] buffets \the [L]!"))
-			src.ai_holder.remove_target()
+			ai_brain?.lose_target()
 			L.visible_message(span_notice("\The [src] seems to lose interest in \the [L]..."))
 
 /datum/say_list/space_ray

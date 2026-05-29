@@ -86,19 +86,18 @@
 	to_chat(user, "[src] is now using [vore_selected.fancy_vore ? "Fancy" : "Classic"] vore sounds.")
 
 /mob/living/simple_mob/attackby(obj/item/O, mob/user)
-	if(istype(O, /obj/item/newspaper) && !(ckey || (ai_holder.hostile && faction != user.faction)) && isturf(user.loc))
-		if(ai_holder.retaliate && prob(vore_pounce_chance/2)) // This is a gamble!
+	if(istype(O, /obj/item/newspaper) && !(ckey || (ai_brain.hostile && faction != user.faction)) && isturf(user.loc))
+		// DQEdit: legacy `.retaliate` is dead — every brain mob fights back on
+		// provocation. Gate stays on brain presence + the existing coin flip.
+		if(ai_brain && prob(vore_pounce_chance/2)) // This is a gamble!
 			user.Weaken(5) //They get tackled anyway whether they're edible or not.
 			user.visible_message(span_danger("[user] swats [src] with [O] and promptly gets tackled!"))
 			if(will_eat(user))
-				set_AI_busy(TRUE)
+				if(ai_brain) ai_brain.busy = TRUE
 				animal_nom(user)
 				update_icon()
-				set_AI_busy(FALSE)
-			else if(!ai_holder.target) // no using this to clear a retaliate mob's target
-				ai_holder.give_target(user) //just because you're not tasty doesn't mean you get off the hook. A swat for a swat.
-				//AttackTarget() //VOREStation AI Temporary Removal
-				//LoseTarget() // only make one attempt at an attack rather than going into full rage mode
+				if(ai_brain) ai_brain.busy = FALSE
+			// DQEdit - legacy give_target call on attack/feed removed; brain handles auto-targeting.
 		else
 			user.visible_message(span_info("[user] swats [src] with [O]!"))
 			release_vore_contents()

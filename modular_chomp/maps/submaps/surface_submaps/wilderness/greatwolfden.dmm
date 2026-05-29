@@ -2,7 +2,6 @@
 "aa" = (
 /obj/effect/decal/cleanable/blood/drip,
 /mob/living/simple_mob/vore/wolf/direwolf{
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate;
 	desc = "The biggest and baddest wolf around. Seems pretty chill, for a wolf.";
 	faction = "sif";
 	max_co2 = 0;
@@ -188,7 +187,6 @@
 /area/submap/GreatWolfDen)
 "uz" = (
 /mob/living/simple_mob/vore/wolf/direwolf{
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate;
 	desc = "The biggest and baddest wolf around. Seems pretty chill, for a wolf.";
 	faction = "sif";
 	max_co2 = 0;
@@ -272,7 +270,6 @@
 /area/template_noop)
 "Cd" = (
 /mob/living/simple_mob/vore/otie/feral/chubby{
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate;
 	desc = "The classic bioengineered longdog. No pets. Only bite. What an absolute unit.";
 	faction = "sif";
 	minbodytemp = 0

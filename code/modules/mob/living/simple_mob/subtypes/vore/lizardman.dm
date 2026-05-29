@@ -31,7 +31,6 @@
 	vore_icons = SA_ICON_LIVING
 
 	say_list_type = /datum/say_list/lizardman
-	ai_holder_type = /datum/ai_holder/simple_mob/melee
 
 	can_be_drop_prey = FALSE
 	allow_mind_transfer = TRUE

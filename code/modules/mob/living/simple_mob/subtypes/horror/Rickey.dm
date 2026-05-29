@@ -27,7 +27,6 @@
 
 
 	say_list_type = /datum/say_list/Rickey
-	ai_holder_type = /datum/ai_holder/simple_mob/horror
 
 /mob/living/simple_mob/horror/Rickey/death()
 	playsound(src, 'sound/h_sounds/headcrab.ogg', 50, 1)

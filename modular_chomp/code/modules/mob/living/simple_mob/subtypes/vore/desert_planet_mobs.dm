@@ -40,7 +40,6 @@
 
 	meat_amount = 7
 	holder_type = /obj/item/holder/armadillo
-	ai_holder_type = /datum/ai_holder/simple_mob/armadillo
 
 	speak_emote = list("rumbles", "chirr?", "churr")
 

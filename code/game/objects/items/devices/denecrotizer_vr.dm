@@ -150,7 +150,11 @@
 		if(!advanced)
 			to_chat(user, span_notice("[src] doesn't seem to work on that."))
 			return FALSE
-		if(target.ai_holder.retaliate || target.ai_holder.hostile) // You can be friends with still living mobs if they are passive I GUESS
+		// DQEdit: legacy `.retaliate` is dead in the modern brain (every brain
+		// mob retaliates on damage automatically). Only refuse to revive
+		// aggro-on-sight mobs. Null-safe on ai_brain since mobs without a
+		// brain (e.g. opted-out subtypes) are by definition not aggressive.
+		if(target.ai_brain?.hostile)
 			to_chat(user, span_notice("[src] doesn't seem to work on that."))
 			return FALSE
 		if(!target.mind)

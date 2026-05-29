@@ -21,7 +21,6 @@
 	attack_sound = 'sound/weapons/bladeslice.ogg'
 	attacktext = list("slashed")
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee
 
 	// Cataloguer data below - strange we can catalogue space golem wizards
 /datum/category_item/catalogue/technology/drone/wahlem

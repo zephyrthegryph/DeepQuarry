@@ -6542,7 +6542,6 @@
 /area/redgate/city/house4)
 "iKi" = (
 /mob/living/simple_mob/vore/alienanimals/skeleton/alt{
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate
 	},
 /turf/simulated/floor/plating,
 /area/redgate/city/dump)
@@ -8161,7 +8160,6 @@
 /area/redgate/city/hospital)
 "kQo" = (
 /mob/living/simple_mob/vore/aggressive/frog{
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate
 	},
 /turf/simulated/floor/water/indoors,
 /area/redgate/city/sims)
@@ -11079,7 +11077,6 @@
 /area/redgate/city/streets)
 "oCK" = (
 /mob/living/simple_mob/animal/passive/mouse/rat{
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate
 	},
 /turf/simulated/floor/wood/alt/panel,
 /area/redgate/city/rats)
@@ -12820,7 +12817,6 @@
 /area/redgate/city/house8)
 "qJn" = (
 /mob/living/simple_mob/animal/passive/mouse/rat{
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate
 	},
 /turf/simulated/floor/outdoors/sidewalk/slab/city,
 /area/redgate/city/streets)

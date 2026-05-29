@@ -24,7 +24,6 @@
 							/datum/spell/targeted/construct_advanced/mend_purity
 							)
 
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate/cooperative
 
 /datum/decl/mob_organ_names/artificer
 	hit_zones = list("body", "carapace", "right manipulator", "left manipulator", "upper left appendage", "upper right appendage", "eye")

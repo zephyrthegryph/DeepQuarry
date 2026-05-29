@@ -45,7 +45,6 @@
 	you will do bonus damage, stun the target, and unstealth for a period of time.<br>\
 	Getting attacked will also break your stealth."
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/hit_and_run
 
 	var/cloaked_alpha = 45			// Lower = Harder to see.
 	var/cloaked_bonus_damage = 30	// This is added on top of the normal melee damage.

@@ -64,8 +64,7 @@
 				if(!T.is_space())
 					break;
 				target = T
-			if(target)
-				M.ai_holder?.give_destination(target) // Ask gnat to swim towards the middle of the map
+			M.ai_brain?.give_destination(target)
 		i++
 
 // Spawn a single gnat at given location.

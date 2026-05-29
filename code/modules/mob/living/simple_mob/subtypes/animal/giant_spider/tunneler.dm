@@ -42,8 +42,6 @@
 	poison_per_bite = 3
 	poison_type = REAGENT_ID_SEROTROTIUMV
 
-//	ai_holder_type = /datum/ai_holder/simple_mob/melee/tunneler
-
 	player_msg = "You <b>can perform a tunneling attack</b> by clicking on someone from a distance.<br>\
 	There is a noticable travel delay as you tunnel towards the tile the target was at when you started the tunneling attack.<br>\
 	Any entities inbetween you and the targeted tile will be stunned for a brief period of time.<br>\
@@ -82,8 +80,7 @@
 
 /mob/living/simple_mob/animal/giant_spider/tunneler/do_special_attack(atom/A)
 	set waitfor = FALSE
-	set_AI_busy(TRUE)
-
+	if(ai_brain) ai_brain.busy = TRUE
 	// Save where we're gonna go soon.
 	var/turf/destination = get_turf(A)
 	var/turf/starting_turf = get_turf(src)
@@ -97,13 +94,13 @@
 	submerge()
 
 	if(handle_tunnel(destination) == FALSE)
-		set_AI_busy(FALSE)
+		if(ai_brain) ai_brain.busy = FALSE
 		emerge()
 		return FALSE
 
 	// Did we make it?
 	if(!(src in destination))
-		set_AI_busy(FALSE)
+		if(ai_brain) ai_brain.busy = FALSE
 		emerge()
 		return FALSE
 
@@ -120,7 +117,7 @@
 		overshoot = FALSE
 
 	if(!overshoot) // We hit the target, or something, at destination, so we're done.
-		set_AI_busy(FALSE)
+		if(ai_brain) ai_brain.busy = FALSE
 		emerge()
 		return TRUE
 
@@ -132,11 +129,11 @@
 		destination = get_step(destination, dir_to_go)
 
 	if(handle_tunnel(destination) == FALSE)
-		set_AI_busy(FALSE)
+		if(ai_brain) ai_brain.busy = FALSE
 		emerge()
 		return FALSE
 
-	set_AI_busy(FALSE)
+	if(ai_brain) ai_brain.busy = FALSE
 	emerge()
 	return FALSE
 
@@ -220,7 +217,6 @@
 	harm_intent_damage = 5
 	melee_damage_lower = 5
 	melee_damage_upper = 5
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate
 	meat_amount = 1 // Scrawny little things! It's no wonder they don't want to fight you!
 
 /mob/living/simple_mob/animal/giant_spider/tunneler/cave/Initialize(mapload)

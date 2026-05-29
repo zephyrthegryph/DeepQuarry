@@ -48,7 +48,6 @@
 	mount_offset_y = 20
 
 	say_list_type = /datum/say_list/hippo
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate
 
 	can_be_drop_prey = FALSE
 

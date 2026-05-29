@@ -382,7 +382,6 @@
 "ck" = (
 /obj/effect/floor_decal/rust,
 /mob/living/simple_mob/vore/otie/red{
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/thor_underground;
 	faction = "corrupt"
 	},
 /turf/simulated/floor/plating,
@@ -527,7 +526,6 @@
 	dir = 9
 	},
 /mob/living/simple_mob/vore/aggressive/mimic{
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/thor_underground;
 	faction = "corrupt"
 	},
 /turf/simulated/floor/tiled/steel_dirty,
@@ -897,7 +895,6 @@
 "fT" = (
 /obj/effect/floor_decal/rust,
 /mob/living/simple_mob/mechanical/corrupt_maint_drone{
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/thor_underground;
 	faction = "corrupt"
 	},
 /obj/effect/zone_divider,
@@ -961,7 +958,6 @@
 /obj/effect/floor_decal/rust,
 /obj/random/mouseremains,
 /mob/living/simple_mob/vore/otie/red{
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/thor_underground;
 	faction = "corrupt"
 	},
 /turf/simulated/floor/plating,
@@ -1416,7 +1412,6 @@
 "jH" = (
 /obj/effect/decal/cleanable/dirt,
 /mob/living/simple_mob/vore/otie/feral{
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/thor_underground;
 	faction = "corrupt"
 	},
 /obj/effect/zone_divider,
@@ -1633,7 +1628,6 @@
 	},
 /obj/effect/decal/cleanable/dirt,
 /mob/living/simple_mob/vore/otie/feral/chubby{
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/thor_underground;
 	attacktext = list("pounced on");
 	faction = "corrupt";
 	melee_damage_lower = 5;
@@ -1938,7 +1932,6 @@
 /obj/effect/floor_decal/rust,
 /obj/structure/table/steel,
 /mob/living/simple_mob/mechanical/corrupt_maint_drone{
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/thor_underground;
 	faction = "corrupt"
 	},
 /turf/simulated/floor/plating,
@@ -2063,7 +2056,6 @@
 /area/maintenance/underground/catacombs)
 "po" = (
 /mob/living/simple_mob/vore/retaliate/corrupthound/janihound/medihound{
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate;
 	vore_bump_chance = 80;
 	vore_stomach_flavor = "You have ended up in the medihound sleeper of this corrupted machine. This place would be comfortable, if it weren't for the ominous gurgles and the thick, red, numbing liquid that pools over your body as soon as you settle into the rubbery stomach. The heated and cramped surroundings oozing potent fluids all over your form, eager to do nothing less than breaking you apart to fuel its aimless wanders for the next few days... hours... minutes? Oh dear...";
 	vore_stomach_name = "medihound sleeper"
@@ -2242,7 +2234,6 @@
 "qD" = (
 /obj/effect/floor_decal/rust,
 /mob/living/simple_mob/vore/otie/feral/chubby{
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/thor_underground;
 	attacktext = list("pounced on");
 	faction = "corrupt";
 	melee_damage_lower = 5;
@@ -2389,7 +2380,6 @@
 /area/maintenance/underground/catacombs)
 "rJ" = (
 /mob/living/simple_mob/mechanical/corrupt_maint_drone{
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/thor_underground;
 	faction = "corrupt"
 	},
 /turf/simulated/floor/outdoors/rocks/caves{
@@ -2628,7 +2618,6 @@
 	},
 /obj/effect/decal/cleanable/dirt,
 /mob/living/simple_mob/vore/otie/feral{
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/thor_underground;
 	faction = "corrupt"
 	},
 /turf/simulated/floor/outdoors/rocks/caves{
@@ -2848,7 +2837,6 @@
 "uD" = (
 /obj/effect/floor_decal/rust,
 /mob/living/simple_mob/vore/retaliate/corrupthound/janihound/medihound{
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate;
 	vore_bump_chance = 80;
 	vore_stomach_flavor = "You have ended up in the medihound sleeper of this corrupted machine. This place would be comfortable, if it weren't for the ominous gurgles and the thick, red, numbing liquid that pools over your body as soon as you settle into the rubbery stomach. The heated and cramped surroundings oozing potent fluids all over your form, eager to do nothing less than breaking you apart to fuel its aimless wanders for the next few days... hours... minutes? Oh dear...";
 	vore_stomach_name = "medihound sleeper"
@@ -3965,7 +3953,6 @@
 /area/maintenance/underground/catacombs)
 "DO" = (
 /mob/living/simple_mob/vore/otie/red{
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/thor_underground;
 	faction = "corrupt"
 	},
 /turf/simulated/floor/outdoors/mud{
@@ -4028,7 +4015,6 @@
 	light_color = "#7F0000"
 	},
 /mob/living/simple_mob/mechanical/corrupt_maint_drone{
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/thor_underground;
 	faction = "corrupt"
 	},
 /obj/effect/zone_divider,
@@ -4152,7 +4138,6 @@
 "Fl" = (
 /obj/effect/decal/cleanable/dirt,
 /mob/living/simple_mob/vore/otie/feral{
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/thor_underground;
 	faction = "corrupt"
 	},
 /turf/simulated/floor/outdoors/rocks/caves{
@@ -4553,7 +4538,6 @@
 "Ig" = (
 /obj/effect/decal/cleanable/dirt,
 /mob/living/simple_mob/vore/otie/feral/chubby{
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/thor_underground;
 	attacktext = list("pounced on");
 	faction = "corrupt";
 	melee_damage_lower = 5;
@@ -4853,7 +4837,6 @@
 /obj/effect/floor_decal/rust,
 /obj/effect/decal/cleanable/dirt,
 /mob/living/simple_mob/vore/otie/red{
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/thor_underground;
 	faction = "corrupt"
 	},
 /turf/simulated/floor/plating,
@@ -5460,7 +5443,6 @@
 "PM" = (
 /obj/structure/catwalk,
 /mob/living/simple_mob/vore/wolf/direwolf/dog{
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/thor_underground;
 	color = "#212121";
 	desc = "The biggest (emphasis on biggest) and goodest dog around.";
 	faction = "corrupt";
@@ -5531,7 +5513,6 @@
 /obj/structure/catwalk,
 /obj/effect/floor_decal/rust,
 /mob/living/simple_mob/vore/otie/feral/chubby{
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/thor_underground;
 	attacktext = list("pounced on");
 	faction = "corrupt";
 	melee_damage_lower = 5;
@@ -6105,7 +6086,6 @@
 /obj/effect/floor_decal/rust,
 /obj/random/powercell,
 /mob/living/simple_mob/vore/otie/feral/chubby{
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/thor_underground;
 	attacktext = list("pounced on");
 	faction = "corrupt";
 	melee_damage_lower = 5;
@@ -6301,7 +6281,6 @@
 /obj/effect/floor_decal/rust,
 /obj/effect/decal/cleanable/dirt,
 /mob/living/simple_mob/vore/otie/feral/chubby{
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/thor_underground;
 	attacktext = list("pounced on");
 	faction = "corrupt";
 	melee_damage_lower = 5;

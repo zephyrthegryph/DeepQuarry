@@ -18,7 +18,6 @@
 	attacktext = list("flinches at")
 	see_in_dark = 8
 	minbodytemp = 0
-	ai_holder_type = /datum/ai_holder/simple_mob/passive/mantrap
 
 	density = 0
 	anchored = 1
@@ -63,10 +62,6 @@
 	Despite its size, it is a patient predator that will lay in wait for multiple months before claiming a meal. Whilst it is able to rapidly digest creatures of significant sizes, its metabolism is slow and the nutrients it prey provides can sustain it for a long period of time."
 	value = CATALOGUER_REWARD_HARD
 
-/datum/ai_holder/simple_mob/passive/mantrap
-	vision_range = 1
-	wander = FALSE
-
 /mob/living/simple_mob/vore/mantrap/Crossed(atom/movable/AM) // Transplanting this from /mob/living/carbon/human/Crossed()
 	if(AM == src || AM.is_incorporeal()) // We're not going to run over ourselves or ghosts
 		return
@@ -103,7 +98,6 @@
 	attacktext = list("flinches at")
 	see_in_dark = 8
 	minbodytemp = 0
-	ai_holder_type = /datum/ai_holder/simple_mob/vore/pitcher
 
 	density = 0
 	anchored = 1
@@ -153,12 +147,6 @@
 	Despite the size of these plants, they are perfectly capable of trapping an adult human and should be treated with heavy caution. More typically, they predate on small mammals and reptiles in their local ecological environment."
 	value = CATALOGUER_REWARD_HARD
 
-/datum/ai_holder/simple_mob/vore/pitcher
-	vision_range = 3
-	wander = FALSE
-	retaliate = FALSE
-	pointblank = TRUE
-
 /*/mob/living/simple_mob/vore/pitcher/do_special_attack(atom/A)
 	. = TRUE
 	if(ckey)
@@ -172,21 +160,3 @@
 	P.launch_projectile(A, BP_TORSO, src)*/
 
 //NEVER MOVE!!!
-
-/datum/ai_holder/simple_mob/vore/pitcher/walk_to_destination()
-	return
-
-/datum/ai_holder/simple_mob/vore/pitcher/give_destination()
-	return
-
-/datum/ai_holder/simple_mob/vore/pitcher/walk_path()
-	return
-
-/datum/ai_holder/simple_mob/vore/pitcher/move_once()
-	return
-
-/datum/ai_holder/simple_mob/vore/pitcher/handle_wander_movement()
-	return
-
-/datum/ai_holder/simple_mob/vore/pitcher/walk_to_target()
-	return

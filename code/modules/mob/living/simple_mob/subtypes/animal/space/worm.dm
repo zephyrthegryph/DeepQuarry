@@ -31,7 +31,6 @@
 
 	organ_names = /datum/decl/mob_organ_names
 
-	ai_holder_type = /datum/ai_holder/simple_mob/inert
 
 	mob_class = MOB_CLASS_ABERRATION	// It's a monster.
 
@@ -216,10 +215,10 @@
 			if(currentlyEating != obstacle)
 				currentlyEating = obstacle
 
-			set_AI_busy(TRUE)
+			if(ai_brain) ai_brain.busy = TRUE
 			if(AttemptToEat(obstacle))
 				currentlyEating = null
-			set_AI_busy(FALSE)
+			if(ai_brain) ai_brain.busy = FALSE
 	else
 		currentlyEating = null
 		. = ..(obstacle)

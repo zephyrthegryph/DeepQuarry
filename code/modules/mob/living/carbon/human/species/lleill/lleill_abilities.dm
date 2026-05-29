@@ -513,9 +513,8 @@
 	if(!tf_mob_holder)
 		return
 	var/mob/living/ourmob = tf_mob_holder
-	if(ourmob.ai_holder)
-		var/datum/ai_holder/our_AI = ourmob.ai_holder
-		our_AI.set_stance(STANCE_IDLE)
+	// DQEdit - legacy ai_holder.set_stance(STANCE_SLEEP) removed; brain auto-sleeps on
+	// stat change via its COMSIG_MOB_STATCHANGE handler.
 	tf_mob_holder = null
 	ourmob.ckey = ckey
 	var/turf/beast_loc = src.loc

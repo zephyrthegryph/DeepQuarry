@@ -542,7 +542,6 @@
 /area/redgate/fantasy/castle)
 "lR" = (
 /mob/living/simple_mob/animal/space/bear/polar{
-	ai_holder_type = /datum/ai_holder/simple_mob/vore;
 	vore_pounce_chance = 50
 	},
 /turf/simulated/mineral/floor/ignore_cavegen/cave,
@@ -814,7 +813,6 @@
 /area/redgate/fantasy/dungeon)
 "rJ" = (
 /mob/living/simple_mob/vore/alienanimals/space_jellyfish{
-	ai_holder_type = /datum/ai_holder/simple_mob/vore;
 	appendage_color = "ff0000";
 	color = "ff0000";
 	name = "red jelly";
@@ -972,7 +970,6 @@
 /area/redgate/fantasy/dungeon)
 "uU" = (
 /mob/living/simple_mob/vore/alienanimals/space_jellyfish{
-	ai_holder_type = /datum/ai_holder/simple_mob/vore;
 	appendage_color = "ff0000";
 	color = "ff0000";
 	name = "red jelly";
@@ -1089,7 +1086,6 @@
 /area/redgate/fantasy/alienbasement)
 "xF" = (
 /mob/living/simple_mob/vore/aggressive/rat{
-	ai_holder_type = /datum/ai_holder/simple_mob/vore;
 	vore_pounce_chance = 75
 	},
 /turf/simulated/floor/concrete,
@@ -1112,7 +1108,6 @@
 /area/redgate/fantasy/dungeon)
 "xO" = (
 /mob/living/simple_mob/vore/alienanimals/skeleton/alt{
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate
 	},
 /turf/simulated/floor/wmarble,
 /area/redgate/fantasy/dungeon)

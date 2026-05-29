@@ -8,7 +8,6 @@
 	size_multiplier = 2
 	maxHealth = 500
 	health = 500
-	ai_holder_type = /datum/ai_holder/simple_mob/intentional/three_phases/no_movement
 	anchored = 1
 	armor = list(melee = 40, bullet = 40, laser = 40, energy = 40, bomb = 50, bio = 100, rad = 100)
 	projectiletype = /obj/item/projectile/energy/eclipse_boss/tyrjavelin
@@ -58,7 +57,6 @@
 	health = 600
 	projectiletype = /obj/item/projectile/energy/wallbreaker/boss
 	wreckage = /obj/structure/loot_pile/surface/alien/engineering
-	ai_holder_type = /datum/ai_holder/simple_mob/intentional/three_phases/no_movement
 	anchored = 1
 	armor = list(melee = 60, bullet = 60, laser = 60, energy = 60, bomb = 50, bio = 100, rad = 100)
 	loot_list = list(/obj/item/prop/alien/junk = 100,

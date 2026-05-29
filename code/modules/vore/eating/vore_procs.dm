@@ -52,7 +52,7 @@
 		swallow_time = ishuman(prey) ? belly.human_prey_swallow_time : belly.nonhuman_prey_swallow_time
 
 	// Their AI should get notified so they can stab us
-	prey.ai_holder?.react_to_attack(user)
+	prey.ai_brain?.react_to_attack(user)
 
 	//Timer and progress bar
 	if(!user.client && prey.weakened > 0) // stop crwaling instantly break swallow attempt for mobvore
@@ -83,10 +83,10 @@
 	user.update_icon()
 
 	var/mob/living/carbon/victim = prey // Check for afk vore
-	if(istype(victim) && !victim.client && !victim.ai_holder && victim.ckey)
+	if(istype(victim) && !victim.client && !victim.ai_brain && victim.ckey)
 		log_and_message_admins("ate [key_name_admin(prey)] whilst the prey was AFK ([pred ? ADMIN_JMP(pred) : "null"])", pred)
 	var/mob/living/carbon/victim_pred = pred // Check for afk vore
-	if(istype(victim_pred) && !victim_pred.client && !victim_pred.ai_holder && victim_pred.ckey)
+	if(istype(victim_pred) && !victim_pred.client && !victim_pred.ai_brain && victim_pred.ckey)
 		log_and_message_admins("ate [key_name_admin(prey)] whilst the pred was AFK ([pred ? ADMIN_JMP(pred) : "null"])", pred)
 
 	// Inform Admins

@@ -29,7 +29,6 @@
 	attacktext = list("mauled")
 	see_in_dark = 8
 	minbodytemp = 0
-	ai_holder_type = /datum/ai_holder/simple_mob/vore/ddraig
 	max_buckled_mobs = 1
 	mount_offset_y = 32
 	can_buckle = TRUE
@@ -153,7 +152,7 @@
 	if(!L.devourable || !L.allowmobvore || !L.can_be_drop_prey || !L.throw_vore || L.unacidable)
 		return FALSE
 
-	set_AI_busy(TRUE)
+	if(ai_brain) ai_brain.busy = TRUE
 	visible_message(span_warning("\The [src] rears back, ready to lunge!"))
 	to_chat(L, span_danger("\The [src] focuses on you!"))
 	// Telegraph, since getting stunned suddenly feels bad.
@@ -161,7 +160,7 @@
 	sleep(leap_warmup) // For the telegraphing.
 
 	if(L.z != z)	//Make sure you haven't disappeared to somewhere we can't go
-		set_AI_busy(FALSE)
+		if(ai_brain) ai_brain.busy = FALSE
 		return FALSE
 
 	// Do the actual leap.
@@ -175,7 +174,7 @@
 	if(status_flags & LEAPING)
 		status_flags &= ~LEAPING // Revert special passage ability.
 
-	set_AI_busy(FALSE)
+	if(ai_brain) ai_brain.busy = FALSE
 	if(Adjacent(L))	//We leapt at them but we didn't manage to hit them, let's see if we're next to them
 		L.Weaken(2)	//get knocked down, idiot
 
@@ -183,7 +182,7 @@
 	glow_toggle = 1
 	set_light(glow_range, glow_intensity, glow_color) //Setting it here so the light starts immediately
 	flames = 1
-	set_AI_busy(TRUE)
+	if(ai_brain) ai_brain.busy = TRUE
 	visible_message(span_warning("\The [src] opens its maw, emitting flames!"))
 	do_windup_animation(A, charge_warmup)
 	firebreathtimer = addtimer(CALLBACK(src, PROC_REF(firebreathend), A), charge_warmup, TIMER_STOPPABLE)
@@ -192,24 +191,24 @@
 /mob/living/simple_mob/vore/ddraig/proc/firebreathend(atom/A)
 	//make sure our target still exists and is on a turf
 	if(QDELETED(A) || !isturf(get_turf(A)))
-		set_AI_busy(FALSE)
+		if(ai_brain) ai_brain.busy = FALSE
 		return
 	var/obj/item/projectile/P = new /obj/item/projectile/bullet/dragon(get_turf(src))
 	src.visible_message(span_danger("\The [src] spews fire at \the [A]!"))
 	playsound(src, "sound/weapons/Flamer.ogg", 50, 1)
 	P.launch_projectile(A, BP_TORSO, src)
-	set_AI_busy(FALSE)
+	if(ai_brain) ai_brain.busy = FALSE
 	glow_toggle = 0
 	flames = 0
 
 /mob/living/simple_mob/vore/ddraig/proc/tfbeam(atom/A)
 	if(!isturf(get_turf(A)))
 		return
-	set_AI_busy(TRUE)
+	if(ai_brain) ai_brain.busy = TRUE
 	visible_message(span_warning("\The [src] begins to shimmer with a rainbow hue!"))
 	do_windup_animation(A, tf_warmup)
 	sleep(tf_warmup)
-	set_AI_busy(FALSE)
+	if(ai_brain) ai_brain.busy = FALSE
 	var/obj/item/projectile/P = new /obj/item/projectile/beam/mouselaser/ddraig(get_turf(src))
 	src.visible_message(span_danger("\The [src] breathes a beam at \the [A]!"))
 	playsound(src, "sound/weapons/sparkle.ogg", 50, 1)
@@ -267,119 +266,7 @@
 	var/new_mob = new tf_type(get_turf(target))
 	return new_mob
 
-/datum/ai_holder/simple_mob/vore/ddraig
-	var/used_invis = 0
-	can_flee = TRUE
-	flee_when_dying = FALSE
-
-/datum/ai_holder/simple_mob/vore/ddraig/find_target(list/possible_targets, has_targets_list)
-	if(!vore_hostile)
-		return ..()
-	if(!isanimal(holder))	//Only simplemobs have the vars we need
-		return ..()
-	var/mob/living/simple_mob/H = holder
-	if(H.vore_fullness >= H.vore_capacity)	//Don't beat people up if we're full
-		return ..()
-	ai_log("find_target() : Entered.", AI_LOG_TRACE)
-
-	. = list()
-	if(!has_targets_list)
-		possible_targets = list_targets()
-	var/list/valid_mobs = list()
-	for(var/mob/living/possible_target in possible_targets)
-		if(!can_attack(possible_target))
-			continue
-		if(isanimal(possible_target) && !check_attacker(possible_target)) //Do not target simple mobs who didn't attack you (disengage with TF'd mobs)
-			continue
-		. |= possible_target
-		if(!isliving(possible_target))
-			continue
-		if(vore_check(possible_target))
-			valid_mobs |= possible_target
-
-	var/new_target
-	if(valid_mobs.len)
-		new_target = pick(valid_mobs)
-	else if(hostile)
-		new_target = pick(.)
-	if(!new_target)
-		return null
-	give_target(new_target)
-	return new_target
-
-/datum/ai_holder/simple_mob/vore/ddraig/engage_target()
-	ai_log("engage_target() : Entering.", AI_LOG_DEBUG)
-
-	if(dq_get_cloaked(holder))
-		set_stance(STANCE_FLEE)
-		return
-
-	if((holder.health < (holder.getMaxHealth() / 4)) && !used_invis)
-		holder.cloak()
-		used_invis = 1
-		step_away(holder, target, 8)
-		step_away(holder, target, 8)
-		step_away(holder, target, 8)
-		step_away(holder, target, 8)
-		step_away(holder, target, 8)
-		spawn(60 SECONDS)
-			holder.uncloak()
-
-	if(isanimal(target) && !check_attacker(target)) //Immediately disengage with TF'd mobs so you don't one shot the poor guy you turned into a mouse.
-		lose_target()
-
-	// Can we still see them?
-	if(!target || !can_attack(target))
-		ai_log("engage_target() : Lost sight of target.", AI_LOG_TRACE)
-		if(lose_target()) // We lost them (returns TRUE if we found something else to do)
-			ai_log("engage_target() : Pursuing other options (last seen, or a new target).", AI_LOG_TRACE)
-			return
-
-	var/distance = get_dist(holder, target)
-	ai_log("engage_target() : Distance to target ([target]) is [distance].", AI_LOG_TRACE)
-	holder.face_atom(target)
-	last_conflict_time = world.time
-
-	// Do a 'special' attack, if one is allowed.
-//	if(prob(special_attack_prob) && (distance >= special_attack_min_range) && (distance <= special_attack_max_range))
-	if(holder.ICheckSpecialAttack(target))
-		ai_log("engage_target() : Attempting a special attack.", AI_LOG_TRACE)
-		on_engagement(target)
-		if(special_attack(target)) // If this fails, then we try a regular melee/ranged attack.
-			ai_log("engage_target() : Successful special attack. Exiting.", AI_LOG_DEBUG)
-			return
-
-	// Stab them.
-	else if(distance <= 1 && !pointblank)
-		ai_log("engage_target() : Attempting a melee attack.", AI_LOG_TRACE)
-		on_engagement(target)
-		melee_attack(target)
-
-	else if(distance <= 1 && !holder.ICheckRangedAttack(target)) // Doesn't have projectile, but is pointblank
-		ai_log("engage_target() : Attempting a melee attack.", AI_LOG_TRACE)
-		on_engagement(target)
-		melee_attack(target)
-
-	// Shoot them.
-	else if(holder.ICheckRangedAttack(target) && (distance <= max_range(target)) )
-		on_engagement(target)
-		if(firing_lanes && !test_projectile_safety(target))
-			// Nudge them a bit, maybe they can shoot next time.
-			var/turf/T = get_step(holder, pick(GLOB.cardinal))
-			if(T)
-				holder.IMove(T) // IMove() will respect movement cooldown.
-				holder.face_atom(target)
-			ai_log("engage_target() : Could not safely fire at target. Exiting.", AI_LOG_DEBUG)
-			return
-
-		ai_log("engage_target() : Attempting a ranged attack.", AI_LOG_TRACE)
-		ranged_attack(target)
-
-	// Run after them.
-	else if(!stand_ground)
-		ai_log("engage_target() : Target ([target]) too far away. Exiting.", AI_LOG_DEBUG)
-		set_stance(STANCE_APPROACH)
-
+// DQEdit - legacy engage_target override body removed.
 ////////////////////////////Player controlled verbs///////////////////////////////
 
 /mob/living/proc/polymorph()

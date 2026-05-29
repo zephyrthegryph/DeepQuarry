@@ -1,7 +1,6 @@
 /mob/living/carbon/human/ai_controlled
 	name = "Nameless Joe"
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/evasive
 
 	a_intent = I_HURT
 

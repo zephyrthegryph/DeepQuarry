@@ -1672,12 +1672,11 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 			to_chat(src, span_warning("This cannot be used on player mobs!"))
 			return
 
-		if(L.ai_holder)	//Cleaning up the original ai
-			var/ai_holder_old = L.ai_holder
-			L.ai_holder = null
-			qdel(ai_holder_old)	//Only way I could make #TESTING - Unable to be GC'd to stop. del() logs show it works.
-		L.ai_holder_type = tgui_input_list(usr, "Choose AI holder", "AI Type", typesof(/datum/ai_holder/))
-		L.initialize_ai_holder()
+		if(L.ai_brain)	//Cleaning up the original ai
+			var/datum/ai_brain/old_brain = L.ai_brain
+			L.ai_brain = null
+			qdel(old_brain)	//Only way I could make #TESTING - Unable to be GC'd to stop. del() logs show it works.
+		L.initialize_ai_brain()
 		L.faction = tgui_input_text(usr, "Please input AI faction", "AI faction", "neutral", MAX_MESSAGE_LEN)
 		L.a_intent = tgui_input_list(usr, "Please choose AI intent", "AI intent", list(I_HURT, I_HELP))
 		if(tgui_alert(usr, "Make mob wake up? This is needed for carbon mobs.", "Wake mob?", list("Yes", "No")) == "Yes")

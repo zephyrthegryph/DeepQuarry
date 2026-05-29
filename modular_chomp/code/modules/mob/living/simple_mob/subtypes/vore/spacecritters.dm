@@ -26,7 +26,6 @@
 	melee_damage_upper = 12
 	melee_miss_chance = 0
 	melee_attack_delay = 1.5
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate
 	// DQEdit — dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
 	heat_resist = 1.0

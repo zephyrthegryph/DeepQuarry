@@ -161,8 +161,7 @@
 
 /mob/living/simple_mob/proc/try_reload()
 	set waitfor = FALSE
-	set_AI_busy(TRUE)
-
+	if(ai_brain) ai_brain.busy = TRUE
 	if(do_after(src, reload_time, target = src))
 		if(reload_sound)
 			playsound(src, reload_sound, 70, 1)
@@ -170,8 +169,7 @@
 		. = TRUE
 	else
 		. = FALSE
-	set_AI_busy(FALSE)
-
+	if(ai_brain) ai_brain.busy = FALSE
 /mob/living/simple_mob/proc/calculate_dispersion()
 	. = projectile_dispersion // Start with the basic var.
 
@@ -247,8 +245,7 @@
 // Sleeps the proc that called it for the correct amount of time.
 // Also makes sure the AI doesn't do anything stupid in the middle of the delay.
 /mob/living/simple_mob/proc/handle_attack_delay(atom/A, delay_amount)
-	set_AI_busy(TRUE)
-
+	if(ai_brain) ai_brain.busy = TRUE
 	// Click delay modifiers also affect telegraphing time.
 	// This means berserked enemies will leave less time to dodge.
 	var/true_attack_delay = delay_amount
@@ -260,8 +257,7 @@
 
 	sleep(true_attack_delay)
 
-	set_AI_busy(FALSE)
-
+	if(ai_brain) ai_brain.busy = FALSE
 // Override these four for special custom animations (like the GOLEM).
 /mob/living/simple_mob/proc/melee_pre_animation(atom/A)
 	do_windup_animation(A, melee_attack_delay)

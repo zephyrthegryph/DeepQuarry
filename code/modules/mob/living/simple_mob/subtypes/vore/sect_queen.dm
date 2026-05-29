@@ -82,7 +82,6 @@
 	buckle_lying = FALSE
 	mount_offset_y = 26
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee
 	say_list_type = /datum/say_list/sect_queen
 
 	allow_mind_transfer = TRUE

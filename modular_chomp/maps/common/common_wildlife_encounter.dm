@@ -70,7 +70,7 @@
 
 		if(spawning_turf)
 			var/mob/living/simple_mob/M = new build_path(spawning_turf)
-			M.ai_holder?.give_destination(get_turf(victim))
+			M.ai_brain?.give_destination(get_turf(victim))
 		else
 			log_game("Failed to locate turf to spawn encounter.")
 

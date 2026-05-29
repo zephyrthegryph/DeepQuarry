@@ -34,7 +34,6 @@
 	corpse = /obj/effect/landmark/mobcorpse/syndicatesoldier
 	loot_list = list(/obj/item/material/knife/tacknife = 100)	// Might as well give it the knife
 
-	ai_holder_type = /datum/ai_holder/simple_mob/merc
 	say_list_type = /datum/say_list/merc
 
 	// Grenade special attack vars
@@ -68,8 +67,7 @@
 // Yes? Throw the grenade
 /mob/living/simple_mob/humanoid/merc/do_special_attack(atom/A)
 	set waitfor = FALSE
-	set_AI_busy(TRUE)
-
+	if(ai_brain) ai_brain.busy = TRUE
 	var/obj/item/grenade/G = new grenade_type(get_turf(src))
 	if(istype(G))
 		G.throw_at(A, G.throw_range, G.throw_speed, src)
@@ -77,40 +75,10 @@
 		G.activate(src)
 		special_attack_charges = max(special_attack_charges-1, 0)
 
-	set_AI_busy(FALSE)
-
-
+	if(ai_brain) ai_brain.busy = FALSE
 ////////////////////////////////
 //		Merc AI Types
 ////////////////////////////////
-/datum/ai_holder/simple_mob/merc
-	threaten = TRUE
-	returns_home = TRUE		// Stay close to the base...
-	wander = TRUE			// ... but "patrol" a little.
-	intelligence_level = AI_SMART // Also knows not to walk while confused if it risks death.
-	threaten_delay = 30 SECONDS // Mercs will give you 30 seconds to leave or get shot.
-	use_astar = TRUE //CHOMPEdit
-
-/datum/ai_holder/simple_mob/merc/guard_limit
-	guard_limit = TRUE
-
-/datum/ai_holder/simple_mob/merc/ranged
-	pointblank = TRUE		// They get close? Just shoot 'em!
-	firing_lanes = TRUE		// But not your buddies!
-	conserve_ammo = TRUE	// And don't go wasting bullets!
-
-/datum/ai_holder/simple_mob/merc/ranged/guard_limit
-	guard_limit = TRUE
-
-/datum/ai_holder/simple_mob/merc/ranged/sniper
-	vision_range = 14	// We're a person with a long-ranged gun.
-
-/datum/ai_holder/simple_mob/merc/ranged/sniper/guard_limit
-	guard_limit = TRUE
-
-/datum/ai_holder/simple_mob/merc/ranged/sniper/max_range(atom/movable/AM)
-	return holder.ICheckRangedAttack(AM) ? 14 : 1
-
 ////////////////////////////////
 //			Melee
 ////////////////////////////////
@@ -137,7 +105,7 @@
 		if(prob(20))
 			visible_message(span_danger("\The [src] blocks \the [O] with its shield!"))
 			if(user)
-				ai_holder.react_to_attack(user)
+				ai_brain.react_to_attack(user)
 			return
 		else
 			..()
@@ -150,7 +118,7 @@
 	if(prob(35))
 		visible_message(span_bolddanger("[src] blocks [Proj] with its shield!"))
 		if(Proj.firer)
-			ai_holder.react_to_attack(Proj.firer)
+			ai_brain.react_to_attack(Proj.firer)
 		return
 	else
 		..()
@@ -172,7 +140,6 @@
 
 	needs_reload = TRUE
 	reload_max = 7		// Not the best default, but it fits the pistol
-	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged
 
 // C20r SMG
 /mob/living/simple_mob/humanoid/merc/ranged/smg
@@ -309,7 +276,6 @@
 	reload_max = 1
 	reload_time = 5 SECONDS
 
-	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged/sniper
 
 	ranged_attack_delay = 2.5 SECONDS
 
@@ -483,7 +449,6 @@
 	projectiletype = /obj/item/projectile/bullet/pellet/shotgun		// Buckshot
 	projectilesound = 'sound/weapons/Gunshot_shotgun.ogg'
 	loot_list = list(/obj/item/gun/projectile/automatic/as24 = 100)
-	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged/suppressor
 
 //Machine Gun Merc
 /mob/living/simple_mob/humanoid/merc/ranged/space/heavy
@@ -496,7 +461,6 @@
 	projectiletype = /obj/item/projectile/bullet/rifle/a545
 	projectilesound = 'sound/weapons/Gunshot_light.ogg'
 	loot_list = list(/obj/item/gun/projectile/automatic/l6_saw = 100)
-	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged/suppressor
 
 //Tommy-Las Merc
 /mob/living/simple_mob/humanoid/merc/ranged/space/tommylas
@@ -510,7 +474,6 @@
 	projectiletype = /obj/item/projectile/beam/weaklaser
 	projectilesound = 'sound/weapons/Laser.ogg'
 	// loot_list = list(/obj/item/gun/energy/tommylaser = 100) // Downstream
-	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged/suppressor
 
 /mob/living/simple_mob/humanoid/merc/ranged/space/fal
 	name = "mercenary commando"
@@ -528,7 +491,6 @@
 	icon_state = "syndi-ranged-space-sup"
 	icon_living = "syndi-ranged-space-sup"
 	armor = list(melee = 80, bullet = 65, laser = 50, energy = 15, bomb = 80, bio = 100, rad = 100) // this is the merc rig's stats
-	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged/suppressor
 	say_list_type = /datum/say_list/merc/elite
 	projectiletype = /obj/item/projectile/bullet/pistol/medium/ap/suppressor // it's high velocity
 	projectilesound = 'sound/weapons/doompistol.ogg' // converted from .wavs extracted from doom 2
@@ -555,7 +517,7 @@
 		if(prob(50))
 			visible_message(span_danger("\The [src] blocks \the [O] with its shield!"))
 			if(user)
-				ai_holder.react_to_attack(user)
+				ai_brain.react_to_attack(user)
 			return
 		else
 			..()
@@ -567,7 +529,7 @@
 	if(prob(50))
 		visible_message(span_warning("[src] blocks [Proj] with its shield!"))
 		if(Proj.firer)
-			ai_holder.react_to_attack(Proj.firer)
+			ai_brain.react_to_attack(Proj.firer)
 		return
 	else
 		..()
@@ -623,34 +585,23 @@
 
 // Most likely to drop a broken weapon matching them, if it's a gun.
 /mob/living/simple_mob/humanoid/merc/melee/poi/guard_limit
-	ai_holder_type = /datum/ai_holder/simple_mob/merc/guard_limit
 
 /mob/living/simple_mob/humanoid/merc/melee/sword/poi/guard_limit
-	ai_holder_type = /datum/ai_holder/simple_mob/merc/guard_limit
 
 /mob/living/simple_mob/humanoid/merc/ranged/poi/guard_limit
-	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged/guard_limit
 
 /mob/living/simple_mob/humanoid/merc/ranged/smg/poi/guard_limit
-	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged/guard_limit
 
 /mob/living/simple_mob/humanoid/merc/ranged/laser/poi/guard_limit
-	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged/guard_limit
 
 /mob/living/simple_mob/humanoid/merc/ranged/ionrifle/poi/guard_limit
-	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged/guard_limit
 
 /mob/living/simple_mob/humanoid/merc/ranged/grenadier/poi/guard_limit
-	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged/guard_limit
 
 /mob/living/simple_mob/humanoid/merc/ranged/rifle/poi/guard_limit
-	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged/guard_limit
 
 /mob/living/simple_mob/humanoid/merc/ranged/rifle/mag/poi/guard_limit
-	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged/guard_limit
 
 /mob/living/simple_mob/humanoid/merc/ranged/technician/poi/guard_limit
-	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged/guard_limit
 
 /mob/living/simple_mob/humanoid/merc/ranged/sniper/guard_limit
-	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged/sniper/guard_limit

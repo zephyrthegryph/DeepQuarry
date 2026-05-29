@@ -156,7 +156,6 @@
 /area/redgate/facility/ne)
 "anp" = (
 /mob/living/simple_mob/vore/wolf/direwolf/sec{
-	ai_holder_type = /datum/ai_holder/simple_mob/vore
 	},
 /turf/simulated/floor/tiled/milspec,
 /area/redgate/facility/ne)
@@ -1632,7 +1631,6 @@
 /area/redgate/facility/cell24)
 "crX" = (
 /mob/living/simple_mob/vore/aggressive/corrupthound/prettyboi{
-	ai_holder_type = /datum/ai_holder/simple_mob/vore
 	},
 /turf/simulated/floor/gorefloor,
 /area/redgate/facility/ne)
@@ -6082,7 +6080,6 @@
 /area/redgate/facility/cell1)
 "iop" = (
 /mob/living/simple_mob/animal/space/alien/drone{
-	ai_holder_type = /datum/ai_holder/simple_mob/vore
 	},
 /turf/simulated/floor/tiled/techfloor/grid,
 /area/redgate/facility/cell25)
@@ -6408,7 +6405,6 @@
 "iJw" = (
 /obj/structure/flora/ausbushes/fullgrass,
 /mob/living/simple_mob/vore/aggressive/giant_snake{
-	ai_holder_type = /datum/ai_holder/simple_mob/vore;
 	vore_bump_chance = 50;
 	vore_default_mode = "Hold";
 	vore_digest_chance = 0;
@@ -8467,7 +8463,6 @@
 /area/redgate/facility/se)
 "lTL" = (
 /mob/living/simple_mob/vore/aggressive/frog{
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate
 	},
 /turf/simulated/floor/grass,
 /area/redgate/facility/cell13)
@@ -11142,7 +11137,6 @@
 /area/redgate/facility/entrance)
 "pNw" = (
 /mob/living/simple_mob/vore/sect_queen{
-	ai_holder_type = /datum/ai_holder/simple_mob/vore
 	},
 /turf/simulated/floor/tiled/dark,
 /area/redgate/facility/cell10)
@@ -11188,7 +11182,6 @@
 /area/redgate/facility/cell14)
 "pQF" = (
 /mob/living/simple_mob/animal/giant_spider{
-	ai_holder_type = /datum/ai_holder/simple_mob/passive;
 	size_multiplier = 2
 	},
 /turf/simulated/floor/tiled/white,

@@ -10,7 +10,6 @@
 
 	melee_miss_chance = 0
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/evasive
 
 	see_in_dark = 3
 	melee_damage_lower = 12
@@ -234,7 +233,6 @@
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/painite //flames
 	name = "painite metal ant"
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/evasive
 	icon_state = "painite_ant"
 	icon_living = "painite_ant"
 	butchery_loot = list(\
@@ -301,7 +299,7 @@
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/builder/handle_special()
 	set waitfor = FALSE
-	if(get_AI_stance() == STANCE_IDLE && !is_AI_busy() && isturf(loc))
+	if((ai_brain ? (ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) == STANCE_IDLE && !(ai_brain && ai_brain.busy) && isturf(loc))
 		build_tile(loc)
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/builder/proc/build_tile(turf/T)
@@ -316,10 +314,9 @@
 
 	visible_message(span_notice("\The [src] begins to secrete a sticky substance."))
 	// Get our AI to stay still.
-	set_AI_busy(TRUE)
-
+	if(ai_brain) ai_brain.busy = TRUE
 	if(!do_after(src, 5 SECONDS, T))
-		set_AI_busy(FALSE)
+		if(ai_brain) ai_brain.busy = FALSE
 		to_chat(src, span_warning("You need to stay still to spin a web on \the [T]."))
 		return FALSE
 
@@ -328,7 +325,7 @@
 		return FALSE // Spamclick protection.
 
 	adjust_nutrition(-30)
-	set_AI_busy(FALSE)
+	if(ai_brain) ai_brain.busy = FALSE
 	new build_type(T)
 	return TRUE
 
@@ -389,7 +386,7 @@
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/queen/handle_special()
 	set waitfor = FALSE
-	if(get_AI_stance() == STANCE_IDLE && !is_AI_busy() && isturf(loc))
+	if((ai_brain ? (ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) == STANCE_IDLE && !(ai_brain && ai_brain.busy) && isturf(loc))
 		build_tile(loc)
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/queen/proc/build_tile(turf/T)
@@ -404,10 +401,9 @@
 
 	visible_message(span_notice("\The [src] begins to secrete a sticky substance."))
 	// Get our AI to stay still.
-	set_AI_busy(TRUE)
-
+	if(ai_brain) ai_brain.busy = TRUE
 	if(!do_after(src, 5 SECONDS, T))
-		set_AI_busy(FALSE)
+		if(ai_brain) ai_brain.busy = FALSE
 		to_chat(src, span_warning("You need to stay still to spin a web on \the [T]."))
 		return FALSE
 
@@ -416,7 +412,7 @@
 		return FALSE // Spamclick protection.
 
 	adjust_nutrition(-75)
-	set_AI_busy(FALSE)
+	if(ai_brain) ai_brain.busy = FALSE
 	new build_type(T)
 	return TRUE
 

@@ -810,7 +810,7 @@
 /mob/living/simple_mob/mechanical/mecha/eclipse/proc/bomb_lines(atom/A, next_cycle)
 	if(!A)
 		return
-	var/list/potential_targets = ai_holder.list_targets()
+	var/list/potential_targets = ai_brain.list_targets()
 	for(var/atom/entry in potential_targets)
 		if(istype(entry, /mob/living/simple_mob/mechanical/mecha/eclipse))
 			potential_targets -= entry
@@ -858,7 +858,7 @@
 /mob/living/simple_mob/mechanical/mecha/eclipse/proc/bomb_chaos(atom/A, next_cycle)
 	if(!A)
 		return
-	var/list/potential_targets = ai_holder.list_targets()
+	var/list/potential_targets = ai_brain.list_targets()
 	for(var/atom/entry in potential_targets)
 		if(istype(entry, /mob/living/simple_mob/mechanical/mecha/eclipse))
 			potential_targets -= entry

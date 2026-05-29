@@ -2025,7 +2025,6 @@
 	dir = 8
 	},
 /mob/living/simple_mob/vore/wolf/direwolf/andrews{
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate;
 	desc = "Someone thought it'd be a good idea to make long-extinct megafauna into a pet. Beware, affectionate headbutts might break ribs.";
 	name = "Brutus"
 	},
@@ -5666,7 +5665,6 @@
 /area/chapel/main)
 "cGJ" = (
 /mob/living/simple_mob/vore/wolf/direwolf/dog{
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate;
 	faction = "otie";
 	name = "dire wolf";
 	vore_bump_chance = 15;
@@ -7140,7 +7138,6 @@
 "dlZ" = (
 /obj/effect/floor_decal/rust,
 /mob/living/simple_mob/vore/otie/friendly/chubby{
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate;
 	faction = "otie";
 	vore_bump_chance = 50;
 	vore_pounce_chance = 100;
@@ -10918,7 +10915,6 @@
 /area/surface/outpost/main/gym)
 "eLw" = (
 /mob/living/simple_mob/vore/otie/friendly/chubby{
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate;
 	faction = "otie";
 	vore_bump_chance = 50;
 	vore_pounce_chance = 100;
@@ -14417,7 +14413,6 @@
 "giI" = (
 /obj/structure/flora/ausbushes/ppflowers,
 /mob/living/simple_mob/vore/otie/friendly/chubby{
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate;
 	faction = "otie";
 	vore_bump_chance = 50;
 	vore_pounce_chance = 100;
@@ -25881,7 +25876,6 @@
 "llu" = (
 /obj/structure/flora/ausbushes/ppflowers,
 /mob/living/simple_mob/vore/wolf/direwolf/dog{
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate;
 	faction = "otie";
 	name = "dire wolf";
 	vore_bump_chance = 15;
@@ -36742,7 +36736,6 @@
 /area/medical/medbay_emt_bay)
 "qaK" = (
 /mob/living/simple_mob/vore/otie/friendly/chubby{
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate;
 	faction = "otie";
 	vore_bump_chance = 50;
 	vore_pounce_chance = 100;
@@ -47278,7 +47271,6 @@
 /area/crew_quarters/heads/sc/hor)
 "uDd" = (
 /mob/living/simple_mob/vore/wolf/direwolf/dog{
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate;
 	faction = "otie";
 	name = "dire wolf";
 	vore_bump_chance = 15;
@@ -48520,7 +48512,6 @@
 /area/rnd/research_lockerroom)
 "uYj" = (
 /mob/living/simple_mob/vore/wolf/direwolf/dog{
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate;
 	faction = "otie";
 	name = "dire wolf";
 	vore_bump_chance = 15;
@@ -53014,7 +53005,6 @@
 /area/expoutpost/prep/recovery)
 "wMu" = (
 /mob/living/simple_mob/vore/otie/friendly/chubby{
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate;
 	faction = "otie";
 	vore_bump_chance = 50;
 	vore_pounce_chance = 100;
@@ -55528,7 +55518,6 @@
 "xIw" = (
 /obj/structure/flora/ausbushes/lavendergrass,
 /mob/living/simple_mob/vore/wolf/direwolf/dog{
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate;
 	faction = "otie";
 	name = "dire wolf";
 	vore_bump_chance = 15;
@@ -56438,7 +56427,6 @@
 "xWM" = (
 /obj/structure/flora/ausbushes/lavendergrass,
 /mob/living/simple_mob/vore/wolf/direwolf/dog{
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate;
 	faction = "otie";
 	name = "dire wolf";
 	vore_bump_chance = 15;

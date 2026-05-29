@@ -24,7 +24,6 @@
 	response_harm   = "punches"
 	attacktext = list("chomped", "bashed", "monched", "bumped")
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/spacewhale
 
 	speak_emote = list("rumbles")
 
@@ -104,8 +103,8 @@
 		hazard_pickup_chance = initial(hazard_pickup_chance)
 		hazard_drop_chance = initial(hazard_drop_chance)
 		movement_cooldown = initial(movement_cooldown)
-		ai_holder.base_wander_delay = initial(ai_holder.base_wander_delay)
-		ai_holder.wander = FALSE
+		if(ai_brain)
+			ai_brain.wander = FALSE
 		post_restless_tired = 250
 		update_icon()
 	else
@@ -113,9 +112,8 @@
 		hazard_pickup_chance *= 1.5
 		hazard_drop_chance *= 1.5
 		movement_cooldown = -1
-		ai_holder.base_wander_delay = 2
-		ai_holder.wander_delay = 2
-		ai_holder.wander = TRUE
+		if(ai_brain)
+			ai_brain.wander = TRUE
 		update_icon()
 
 /mob/living/simple_mob/vore/overmap/spacewhale/update_icon()
@@ -127,30 +125,6 @@
 		else
 			child_om_marker.icon_state = "space_whale"
 			visible_message(span_notice("\The [child_om_marker.name] settles down."))
-
-/datum/ai_holder/simple_mob/melee/spacewhale
-	hostile = TRUE
-	retaliate = TRUE
-	destructive = TRUE
-	violent_breakthrough = TRUE
-	unconscious_vore = TRUE
-	handle_corpse = TRUE
-	mauling = TRUE
-	base_wander_delay = 50
-
-/datum/ai_holder/simple_mob/melee/spacewhale/set_stance(new_stance)
-	. = ..()
-	var/mob/living/simple_mob/vore/overmap/spacewhale/W = holder
-	if(stance == STANCE_FIGHT)
-		W.movement_cooldown = -2
-		W.child_om_marker.glide_size = 0
-	if(stance == STANCE_IDLE)
-		W.hazard_pickup_chance = initial(W.hazard_pickup_chance)
-		W.hazard_drop_chance = initial(W.hazard_drop_chance)
-		W.restless = FALSE
-		W.handle_restless()
-		W.movement_cooldown = initial(W.movement_cooldown)
-		W.child_om_marker.glide_size = 0.384
 
 /mob/living/simple_mob/vore/overmap/spacewhale/apply_melee_effects(atom/A)
 	. = ..()

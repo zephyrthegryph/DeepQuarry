@@ -2635,7 +2635,6 @@
 /area/redgate/underwater_casino/indoors/upper/secret/piratebase)
 "gF" = (
 /mob/living/simple_mob/vore/alienanimals/skeleton/alt{
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate
 	},
 /turf/simulated/floor/wood/alt,
 /area/redgate/underwater_casino/indoors/upper/secret/piratebase)

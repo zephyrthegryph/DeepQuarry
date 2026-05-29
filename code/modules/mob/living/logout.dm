@@ -15,5 +15,5 @@
 
 	spawn(15 SECONDS) //15 seconds to get back into the mob before it goes wild
 		if(src && !src.client)
-			if(ai_holder)
-				ai_holder.go_wake()
+			if(ai_brain)
+				ai_brain.go_wake()

@@ -31,7 +31,6 @@
 	attack_sound = 'sound/voice/bork.ogg'
 	friendly = list("snoofs", "nuzzles", "ruffs happily at", "smooshes on")
 
-	ai_holder_type = /datum/ai_holder/simple_mob/woof/stardog
 
 	has_langs = list(LANGUAGE_ANIMAL, LANGUAGE_CANILUNZT, LANGUAGE_GALCOM)
 	say_list_type = /datum/say_list/softdog
@@ -118,8 +117,7 @@
 		if(!invisibility)
 			invisibility = INVISIBILITY_ABSTRACT
 			child_om_marker.invisibility = INVISIBILITY_NONE
-			ai_holder.base_wander_delay = 50
-			ai_holder.wander_delay = 1
+			// DQEdit - legacy ai_holder wander tuning removed.
 			melee_damage_lower = 50
 			melee_damage_upper = 100
 			mob_size = MOB_HUGE
@@ -129,8 +127,7 @@
 	else if(invisibility)
 		invisibility = INVISIBILITY_NONE
 		child_om_marker.invisibility = INVISIBILITY_ABSTRACT
-		ai_holder.base_wander_delay = 5
-		ai_holder.wander_delay = 1
+		// DQEdit - legacy ai_holder wander tuning removed.
 		melee_damage_lower = 1
 		melee_damage_upper = 5
 		mob_size = MOB_SMALL
@@ -353,15 +350,6 @@
 	glide_size = 2
 	parent_mob_type = /mob/living/simple_mob/vore/overmap/stardog
 	scanner_desc = "CONFIGURE ME"
-
-/datum/ai_holder/simple_mob/woof/stardog
-	hostile = FALSE
-	cooperative = TRUE
-	retaliate = TRUE
-	speak_chance = 1
-	wander = TRUE
-	wander_delay = 1
-	base_wander_delay = 50
 
 /turf/simulated/floor/outdoors/fur
 	name = "fur"
@@ -597,8 +585,8 @@
 		var/ourmob = pickweight(mob_list)
 		var/mob/living/simple_mob/s = new ourmob(get_turf(src))
 		visible_message(span_danger("\The [s] tumbles out of \the [src]!"))
-		s.ai_holder.hostile = FALSE
-		s.ai_holder.retaliate = TRUE
+		// DQEdit - legacy ai_holder.hostile/retaliate replaced with brain API.
+		s.ai_brain?.set_hostile(FALSE)
 		s.ghostjoin = TRUE
 		s.ghostjoin_icon()
 

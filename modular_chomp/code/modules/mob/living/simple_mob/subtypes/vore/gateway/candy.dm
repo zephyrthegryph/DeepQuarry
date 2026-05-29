@@ -19,7 +19,6 @@
 	catalogue_data = list(/datum/category_item/catalogue/fauna/livingcandy)
 
 	mob_class = MOB_CLASS_ABERRATION
-	ai_holder_type = /datum/ai_holder/simple_mob/melee
 
 	faction = "candy"
 
@@ -328,7 +327,6 @@
 	icon_living = "marshmellow"
 	icon_dead = "marshmellow_dead"
 
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/kiting
 
 	melee_damage_lower = 4
 	melee_damage_upper = 8
@@ -344,20 +342,19 @@
 			)
 
 /mob/living/simple_mob/vore/candy/marshmellowserpent/do_special_attack(atom/A)
-	set_AI_busy(TRUE)
+	if(ai_brain) ai_brain.busy = TRUE
 	do_windup_animation(A, 20)
 	addtimer(CALLBACK(src, PROC_REF(chargeend), A), 20)
 
 /mob/living/simple_mob/vore/candy/marshmellowserpent/proc/chargeend(atom/A)
 	if(stat) //you are dead
-		set_AI_busy(FALSE)
+		if(ai_brain) ai_brain.busy = FALSE
 		return
 	playsound(src, 'sound/vore/sunesound/pred/schlorp.ogg', 25)
 	var/obj/item/projectile/beam/appendage/appendage_attack = new /obj/item/projectile/beam/appendage(get_turf(loc))
 	appendage_attack.old_style_target(A, src)
 	appendage_attack.launch_projectile(A, BP_TORSO, src)
-	set_AI_busy(FALSE)
-
+	if(ai_brain) ai_brain.busy = FALSE
 //Modifiers
 /datum/modifier/aura/candy_purple //Healz
 	name = "candy_purple"
@@ -412,7 +409,6 @@
 	catalogue_data = list(/datum/category_item/catalogue/fauna/livingcandy)
 
 	mob_class = MOB_CLASS_ABERRATION
-	ai_holder_type = /datum/ai_holder/simple_mob/melee
 
 	faction = "candy"
 	icon_state = "ouroboros"
@@ -527,22 +523,6 @@
 		sleep(0.5)
 		P.launch_projectile(target, BP_TORSO, src)
 
-/datum/ai_holder/simple_mob/intentional/ouroboros
-	unconscious_vore = TRUE
-	handle_corpse = TRUE
-	vision_range = 13
-	respect_alpha = FALSE
-	lose_target_timeout = 60 SECONDS
-	intelligence_level = AI_SMART
-
-/datum/ai_holder/simple_mob/intentional/ouroboros/proc/update_health()
-	if(prob(35))
-		holder.a_intent = I_GRAB
-	if(prob(35))
-		holder.a_intent = I_DISARM
-	else
-		holder.a_intent = I_HURT
-
 
 /obj/random/mob/candycritter
 	name = "Random Gummy Candy Critter"
@@ -637,7 +617,7 @@
 		if(prob(80))
 			visible_message(span_danger("\The [src] deflects \the [O] with its shell!"))
 			if(user)
-				ai_holder.react_to_attack(user)
+				ai_brain.react_to_attack(user)
 			return
 		else
 			..()

@@ -217,7 +217,6 @@ i just hope whatever happens, she finds the mercy we werent equipped to give her
 	tt_desc = null
 	health = 75
 	maxHealth = 75
-	ai_holder_type = /datum/ai_holder/simple_mob/merc/tanker_escort
 	say_list_type = /datum/say_list/merc/drone/tanker_escort
 	corpse = /obj/effect/landmark/mobcorpse/syndicatesoldier/drone/tanker
 	loot_list = list(/obj/item/poi/broken_drone_circuit/phoron_tanker = 100, /obj/item/material/knife/tacknife = 100)
@@ -239,7 +238,6 @@ i just hope whatever happens, she finds the mercy we werent equipped to give her
 	health = 35 // Glass cannon
 	maxHealth = 75
 	tt_desc = null
-	ai_holder_type = /datum/ai_holder/simple_mob/merc/tanker_escort
 	say_list_type = /datum/say_list/merc/drone/tanker_escort
 	corpse = /obj/effect/landmark/mobcorpse/syndicatesoldier/drone/tanker
 	loot_list = list(/obj/item/poi/broken_drone_circuit/phoron_tanker = 100,
@@ -259,7 +257,6 @@ i just hope whatever happens, she finds the mercy we werent equipped to give her
 	desc = "A rudimentary combat drone! You might recognize this as an automated gamma escort for semi-autonomous NanoTrasen vessels."
 	tt_desc = "Escort Gamma Drone"
 	health = 100 //Max health stays same, but our guy got hit with a mateba a few times..
-	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged/tanker_escort
 	say_list_type = /datum/say_list/merc/drone/tanker_escort
 	corpse = /obj/effect/landmark/mobcorpse/syndicatesoldier/drone/tanker
 	loot_list = list(/obj/item/poi/broken_drone_circuit/phoron_tanker = 100, /obj/item/gun/projectile/automatic/c20r = 100)
@@ -282,11 +279,9 @@ i just hope whatever happens, she finds the mercy we werent equipped to give her
 	var/number = rand(0,999)
 	return "[letter]-[number] Guard Drone"
 
-/datum/ai_holder/simple_mob/merc/tanker_escort
-	threaten = FALSE //We're jumping from shadows!
-
-/datum/ai_holder/simple_mob/merc/ranged/tanker_escort
-	threaten_delay = 3 SECONDS //Bugged escort drones, we give a warning, take aim... FIRE!
+// DQEdit: legacy /datum/ai_holder/simple_mob/merc/tanker_escort and .../ranged/tanker_escort
+// subtype definitions removed — /datum/ai_holder no longer exists. The merc drone mobs in
+// this POI run on the default modern brain.
 
 /datum/say_list/merc/drone/tanker_escort
 	speak = list( "Attempt Do-dock... Do-dock... Err-",

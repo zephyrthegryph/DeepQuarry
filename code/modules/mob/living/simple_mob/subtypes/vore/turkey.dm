@@ -27,7 +27,6 @@
 	attacktext = list("pecked")
 
 	say_list_type = /datum/say_list/turkey
-	ai_holder_type = /datum/ai_holder/simple_mob/passive
 
 	allow_mind_transfer = TRUE
 

@@ -2246,7 +2246,6 @@
 /area/vr/powered/bar)
 "bTl" = (
 /mob/living/simple_mob/construct/shade{
-	ai_holder_type = null
 	},
 /obj/effect/floor_decal/techfloor,
 /turf/simulated/floor/cult,
@@ -3789,7 +3788,6 @@
 /area/vr/powered/space/whiteship)
 "dmD" = (
 /mob/living/simple_mob/construct/shade{
-	ai_holder_type = null
 	},
 /turf/simulated/floor/tiled/steel_dirty{
 	color = "grey"
@@ -5403,7 +5401,6 @@
 /area/vr/powered/vendor)
 "eAn" = (
 /mob/living/simple_mob/construct/harvester{
-	ai_holder_type = null;
 	dir = 8
 	},
 /turf/simulated/floor/redgrid/off,
@@ -7428,7 +7425,6 @@
 /area/vr/powered/mall)
 "gfB" = (
 /mob/living/simple_mob/construct/wraith{
-	ai_holder_type = null;
 	dir = 8
 	},
 /turf/simulated/floor/redgrid/off,
@@ -8718,7 +8714,6 @@
 /area/vr/powered/mall/vw)
 "htW" = (
 /mob/living/simple_mob/construct/harvester{
-	ai_holder_type = null;
 	dir = 1
 	},
 /turf/simulated/floor/redgrid/animated,
@@ -10855,7 +10850,6 @@
 /area/vr/powered/mall)
 "jjh" = (
 /mob/living/simple_mob/construct/shade{
-	ai_holder_type = null
 	},
 /turf/simulated/floor/tiled/steel_dirty,
 /area/vr/powered/cult)
@@ -12259,7 +12253,6 @@
 /area/vr/powered/mall/backrooms)
 "kuc" = (
 /mob/living/simple_mob/construct/artificer{
-	ai_holder_type = null;
 	dir = 8
 	},
 /turf/simulated/floor/redgrid/off,
@@ -12773,7 +12766,6 @@
 /area/vr/powered/dungeon)
 "kPH" = (
 /mob/living/simple_mob/construct/harvester{
-	ai_holder_type = null;
 	dir = 1
 	},
 /turf/simulated/floor/cult,
@@ -12783,7 +12775,6 @@
 /area/vr/powered/space/sciship)
 "kQv" = (
 /mob/living/simple_mob/construct/harvester{
-	ai_holder_type = null
 	},
 /turf/simulated/floor/cult,
 /area/vr/powered/cult)
@@ -15296,7 +15287,6 @@
 /area/vr/outdoors/powered)
 "mLi" = (
 /mob/living/simple_mob/construct/wraith{
-	ai_holder_type = null
 	},
 /turf/simulated/floor/redgrid/animated,
 /area/vr/powered/cult)
@@ -16080,7 +16070,6 @@
 /area/vr/outdoors/powered)
 "ntG" = (
 /mob/living/simple_mob/construct/wraith{
-	ai_holder_type = null;
 	dir = 1
 	},
 /turf/simulated/floor/cult,
@@ -17621,7 +17610,6 @@
 /area/vr/powered/space/whiteship)
 "oxR" = (
 /mob/living/simple_mob/construct/shade{
-	ai_holder_type = null
 	},
 /obj/effect/floor_decal/techfloor{
 	dir = 1
@@ -18800,7 +18788,6 @@
 /area/vr/powered)
 "pvS" = (
 /mob/living/simple_mob/construct/juggernaut/behemoth{
-	ai_holder_type = null
 	},
 /turf/simulated/floor/tiled/steel_dirty,
 /area/vr/powered/cult)
@@ -23661,7 +23648,6 @@
 /area/vr/powered/mall)
 "tzL" = (
 /mob/living/simple_mob/construct/juggernaut/behemoth{
-	ai_holder_type = null;
 	dir = 8
 	},
 /turf/simulated/floor/redgrid/off,
@@ -24797,7 +24783,6 @@
 /area/vr/powered/mall/backrooms)
 "utA" = (
 /mob/living/simple_mob/construct/wraith{
-	ai_holder_type = null
 	},
 /turf/simulated/floor/cult,
 /area/vr/powered/cult)
@@ -27175,7 +27160,6 @@
 /area/vr/powered/space/mechfactory)
 "wvb" = (
 /mob/living/simple_mob/construct/juggernaut/behemoth{
-	ai_holder_type = null
 	},
 /turf/simulated/floor/redgrid/animated,
 /area/vr/powered/cult)
@@ -27309,7 +27293,6 @@
 /area/vr/powered/mall/dorms/dorms6)
 "wBm" = (
 /mob/living/simple_mob/construct/juggernaut/behemoth{
-	ai_holder_type = null;
 	dir = 1
 	},
 /turf/simulated/floor/redgrid/animated,
@@ -28554,7 +28537,6 @@
 /area/vr/powered/dungeon)
 "xBc" = (
 /mob/living/simple_mob/construct/wraith{
-	ai_holder_type = null;
 	dir = 1
 	},
 /turf/simulated/floor/redgrid/animated,
@@ -28612,7 +28594,6 @@
 /area/vr/powered/space/whiteship)
 "xEd" = (
 /mob/living/simple_mob/construct/juggernaut/behemoth{
-	ai_holder_type = null;
 	dir = 1
 	},
 /turf/simulated/floor/tiled/steel_dirty,
@@ -28865,7 +28846,6 @@
 /area/vr/powered/mall/backrooms)
 "xMW" = (
 /mob/living/simple_mob/construct/harvester{
-	ai_holder_type = null
 	},
 /turf/simulated/floor/redgrid/animated,
 /area/vr/powered/cult)

@@ -35,7 +35,7 @@ SUBSYSTEM_DEF(ai)
 	var/list/currentrun = src.currentrun
 
 	while(length(currentrun))
-		var/datum/ai_holder/A = currentrun[length(currentrun)]
+		var/datum/ai_brain/A = currentrun[length(currentrun)]
 		--currentrun.len
 		if(!A || QDELETED(A) || A.busy) // Doesn't exist or won't exist soon or not doing it this tick
 			continue
@@ -48,7 +48,6 @@ SUBSYSTEM_DEF(ai)
 			A.handle_strategicals()
 		else
 			slept_mobs++
-			A.set_stance(STANCE_IDLE)
-
+			A.set_stance(STANCE_IDLE)  // brain has set_stance as a no-op
 		if(MC_TICK_CHECK)
 			return

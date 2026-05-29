@@ -50,7 +50,6 @@
 
 	projectilesound = 'sound/weapons/Gunshot_light.ogg'
 
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/astral_collective
 
 	special_attack_cooldown = 15 SECONDS
 	special_attack_min_range = 0
@@ -176,44 +175,11 @@
 		if(4)
 			add_modifier(/datum/modifier/astralcollect_mistake, null, src)
 
-/datum/ai_holder/simple_mob/ranged/astral_collective
-	pointblank = TRUE
-	can_breakthrough = TRUE
-	violent_breakthrough = TRUE
-	unconscious_vore = TRUE
-	handle_corpse = TRUE
-	hostile = TRUE
-	mauling = TRUE
-	destructive = TRUE
-
-/datum/ai_holder/simple_mob/ranged/astral_collective/pre_ranged_attack(atom/A)
-	holder.IMove(get_step(holder, pick(GLOB.alldirs)))
-	holder.face_atom(A)
-
-/datum/ai_holder/simple_mob/ranged/astral_collective/post_ranged_attack(atom/A)
-	holder.IMove(get_step(holder, pick(GLOB.alldirs)))
-	holder.face_atom(A)
-
-/datum/ai_holder/simple_mob/ranged/astral_collective/post_melee_attack(atom/A)
-	holder.IMove(get_step_away(holder, A))
-	holder.face_atom(A)
-
-/datum/ai_holder/simple_mob/melee/evasive/astral_collective
-
-/datum/ai_holder/simple_mob/melee/evasive/astral_collective/pre_special_attack(atom/A)
-	holder.IMove(get_step(holder, pick(GLOB.alldirs)))
-	holder.face_atom(A)
-
-/datum/ai_holder/simple_mob/melee/evasive/astral_collective/post_special_attack(atom/A)
-	holder.IMove(get_step(holder, pick(GLOB.alldirs)))
-	holder.face_atom(A)
-
 /mob/living/simple_mob/humanoid/astral_collective/purity
 	name = "Astral Collective Purity"
 	desc = "A strange living bioweapon"
 	icon_state = "purity"
 	icon_living = "purity"
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/evasive/astral_collective
 	melee_damage_lower = 32 //25ish with explo voidsuit
 	melee_damage_upper = 32
 	attack_armor_pen = 20
@@ -328,7 +294,7 @@
 	if(prob(60))
 		visible_message(span_boldwarning(span_orange("[Proj] is blocked by the shield.")))
 		if(Proj.firer)
-			ai_holder.react_to_attack(Proj.firer)
+			ai_brain.react_to_attack(Proj.firer)
 		return
 	else
 		..()
@@ -481,7 +447,6 @@
 	maxHealth = 150
 
 /mob/living/simple_mob/humanoid/astral_collective/soul/spear_bearer
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/evasive/astral_collective
 	melee_damage_lower = 27 //25ish with explo voidsuit
 	melee_damage_upper = 27
 	attack_armor_pen = 40
@@ -502,7 +467,7 @@
 		barrier_health --
 		visible_message(span_boldwarning(span_orange("[Proj] is blocked by the shield.")))
 		if(Proj.firer)
-			ai_holder.react_to_attack(Proj.firer)
+			ai_brain.react_to_attack(Proj.firer)
 		if(barrier_health == 0)
 			icon_state = "clock_cat"
 		return

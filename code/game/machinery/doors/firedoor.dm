@@ -226,20 +226,20 @@
 			var/time_to_force = (2 + (2 * blocked)) * 5
 			if(src.density)
 				visible_message(span_danger("\The [user] starts forcing \the [src] open!"))
-				user.set_AI_busy(TRUE) // If the mob doesn't have an AI attached, this won't do anything.
+				if(user.ai_brain) user.ai_brain.busy = TRUE // If the mob doesn't have an AI attached, this won't do anything.
 				if(do_after(user, time_to_force, target = src))
 					visible_message(span_danger("\The [user] forces \the [src] open!"))
 					src.blocked = 0
 					open(1)
-				user.set_AI_busy(FALSE)
+				if(user.ai_brain) user.ai_brain.busy = FALSE
 			else
 				time_to_force = (time_to_force / 2)
 				visible_message(span_danger("\The [user] starts forcing \the [src] closed!"))
-				user.set_AI_busy(TRUE) // If the mob doesn't have an AI attached, this won't do anything.
+				if(user.ai_brain) user.ai_brain.busy = TRUE // If the mob doesn't have an AI attached, this won't do anything.
 				if(do_after(user, time_to_force, target = src))
 					visible_message(span_danger("\The [user] forces \the [src] closed!"))
 					close(1)
-				user.set_AI_busy(FALSE)
+				if(user.ai_brain) user.ai_brain.busy = FALSE
 		else
 			visible_message(span_notice("\The [user] strains fruitlessly to force \the [src] [density ? "open" : "closed"]."))
 		return

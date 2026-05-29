@@ -48,7 +48,6 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 	attack_sound = 'sound/weapons/tap.ogg'
 	attacktext = list("drained", "bludgeoned", "wraped", "tentacle whipped")
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/evasive/jellyfish
 
 	min_oxy = 0
 	max_oxy = 0
@@ -153,14 +152,6 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 
 /mob/living/simple_mob/vore/alienanimals/space_jellyfish/Process_Spacemove(check_drift = 0)
 	return TRUE
-
-/datum/ai_holder/simple_mob/melee/evasive/jellyfish
-	hostile = TRUE
-	cooperative = FALSE
-	retaliate = TRUE
-	speak_chance = 2
-	wander = TRUE
-	unconscious_vore = TRUE
 
 /obj/item/reagent_containers/food/snacks/jellyfishcore
 	name = "jellyfish core"

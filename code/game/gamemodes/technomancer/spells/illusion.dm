@@ -39,9 +39,7 @@
 				return 1
 		else
 			if(pay_energy(100))
-				var/datum/ai_holder/AI = illusion.ai_holder
-				AI.give_destination(T)
-
+				illusion.ai_brain?.give_destination(T)
 /obj/item/spell/illusion/on_use_cast(mob/user)
 	if(illusion)
 		var/choice = tgui_alert(user, "Would you like to have \the [illusion] speak, or do an emote?", "Illusion", list("Speak","Emote","Cancel"))
