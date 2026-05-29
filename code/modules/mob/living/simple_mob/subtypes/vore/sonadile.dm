@@ -26,7 +26,6 @@
 	attacktext = list("bites")
 	see_in_dark = 8
 	minbodytemp = 0
-	ai_holder_type = /datum/ai_holder/simple_mob/say_aggro
 	say_list_type = /datum/say_list/sonadile
 
 	vore_bump_chance = 25

@@ -16,10 +16,9 @@
 	var/death_sound_override = null
 	var/datum/looping_sound/mob/on_fire/firesoundloop
 
-/mob/living/Initialize(mapload)
-	if(say_list_type)
-		say_list = new say_list_type(src)
-	return ..()
+// say_list creation moved to modular_dq/code/modules/combat_ai/integration/mob_living.dm
+// (DM resolves duplicate /mob/living/Initialize overrides to the last-included,
+// silently dropping earlier ones).
 
 /datum/say_list
 	var/list/speak = list()				// Things the mob might say if it talks while idle.
@@ -44,6 +43,11 @@
 
 
 // Subtypes.
+
+// DQEdit: legacy duplicate /datum/say_list/pirate (single-line "Yarr!" variant)
+// removed — the fuller pirate say_list defined later in this file wins via
+// DM's last-included rule. Same applies to /datum/say_list/cyber_horror,
+// which had an identical-content duplicate further down — kept only one.
 
 // Mercs!
 /datum/say_list/merc
@@ -156,6 +160,10 @@
 	say_threaten = list("Gets out of heres!")
 	say_stand_down = list("Yaya, runs!", "Kikikiki!")
 	say_escalate = list("Skrek!", "Bringings it!", "Takings shot", "Lock claws!")
+
+
+// DQEdit: legacy duplicate /datum/say_list/cyber_horror removed here — its
+// identical twin further down in this file was the surviving copy.
 
 //Roach Saylists Woo Hoo
 /datum/say_list/roach

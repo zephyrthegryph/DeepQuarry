@@ -70,7 +70,6 @@
 	armor = list(melee = 60, bullet = 50, laser = 30, energy = 80, bomb = 30, bio = 100, rad = 100)	// Same armor are cult armor, may nerf since DAMN THAT IS GOOD ARMOR
 	attack_sound = 'sound/weapons/bladeslice.ogg'
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee
 
 /mob/living/simple_mob/humanoid/cultist/human/death()
 	new /obj/effect/decal/remains/human (src.loc)
@@ -80,7 +79,6 @@
 
 /mob/living/simple_mob/humanoid/cultist/human/bloodjaunt //Teleporting Cultists
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/evasive
 
 	var/jaunt_warning = 0.5 SECONDS	// How long the jaunt telegraphing is.
 	var/jaunt_tile_speed = 20		// How long to wait between each tile. Higher numbers result in an easier to dodge tunnel attack.
@@ -92,8 +90,7 @@
 
 /mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/do_special_attack(atom/A)
 	set waitfor = FALSE
-	set_AI_busy(TRUE)
-
+	if(ai_brain) ai_brain.busy = TRUE
 	// Save where we're gonna go soon.
 	var/turf/destination = get_turf(A)
 	var/turf/starting_turf = get_turf(src)
@@ -110,14 +107,14 @@
 	icon_state = "bloodout"
 
 	if(handle_jaunt(destination) == FALSE)
-		set_AI_busy(FALSE)
+		if(ai_brain) ai_brain.busy = FALSE
 		flick("bloodin",A)
 		icon_state = "bloodin"
 		return FALSE
 
 	// Did we make it?
 	if(!(src in destination))
-		set_AI_busy(FALSE)
+		if(ai_brain) ai_brain.busy = FALSE
 		icon_state = "bloodin"
 		flick("bloodin",A)
 		return FALSE
@@ -136,7 +133,7 @@
 		overshoot = FALSE
 
 	if(!overshoot) // We hit the target, or something, at destination, so we're done.
-		set_AI_busy(FALSE)
+		if(ai_brain) ai_brain.busy = FALSE
 		icon_state = "bloodin"
 		flick("bloodin",A)
 		return TRUE
@@ -149,12 +146,12 @@
 		destination = get_step(destination, dir_to_go)
 
 	if(handle_jaunt(destination) == FALSE)
-		set_AI_busy(FALSE)
+		if(ai_brain) ai_brain.busy = FALSE
 		icon_state = "bloodin"
 		flick("bloodin",A)
 		return FALSE
 
-	set_AI_busy(FALSE)
+	if(ai_brain) ai_brain.busy = FALSE
 	icon_state = "bloodin"
 	flick("bloodin",A)
 	return FALSE
@@ -233,7 +230,6 @@
 	armor = list(melee = 45, bullet = 40, laser = 30, energy = 80, bomb = 20, bio = 100, rad = 100)	// Reduced Resistance to Approximate increased Tesh damage.
 	attack_sound = 'sound/weapons/bladeslice.ogg'
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee
 
 /mob/living/simple_mob/humanoid/cultist/tesh/death()
 	new /obj/effect/decal/cleanable/ash (src.loc)
@@ -284,7 +280,6 @@
 	movement_cooldown = 4
 	base_attack_cooldown = 7.5 //Two knives mean double stab.
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee
 
 /mob/living/simple_mob/humanoid/cultist/lizard/death()
 	new /obj/effect/decal/remains/unathi (src.loc)
@@ -332,7 +327,6 @@
 	attack_sound = 'sound/weapons/rapidslice.ogg'
 	projectilesound = 'sound/weapons/spiderlunge.ogg'
 
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged
 
 /mob/living/simple_mob/humanoid/cultist/caster/death()
 	new /obj/effect/decal/remains/human (src.loc)
@@ -381,7 +375,6 @@
 	attack_sound = 'sound/weapons/rapidslice.ogg'
 	movement_cooldown = 4
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee
 
 /mob/living/simple_mob/humanoid/cultist/initiate/death()
 	new /obj/effect/decal/remains/human (src.loc)
@@ -426,7 +419,6 @@
 	base_attack_cooldown = 7.5
 	projectilesound = 'sound/weapons/spiderlunge.ogg'
 
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/kiting
 
 /mob/living/simple_mob/humanoid/cultist/castertesh/death()
 	new /obj/effect/decal/cleanable/ash (src.loc)
@@ -470,14 +462,13 @@
 	armor = list(melee = 60, bullet = 50, laser = 30, energy = 80, bomb = 30, bio = 100, rad = 100)	// Same armor are cult armor, may nerf since DAMN THAT IS GOOD ARMOR
 	attack_sound = 'sound/weapons/bladeslice.ogg'
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee
 
 /mob/living/simple_mob/humanoid/cultist/elite/attackby(obj/item/O as obj, mob/user as mob)
 	if(O.force)
 		if(prob(30))
 			visible_message(span_danger("\The [src] blocks \the [O] with its shield!"))
 			if(user)
-				ai_holder.react_to_attack(user)
+				ai_brain.react_to_attack(user)
 			return
 		else
 			..()
@@ -490,7 +481,7 @@
 	if(prob(50))
 		visible_message(span_bolddanger("[Proj] disappears into the mirror world as it hits the shield."))
 		if(Proj.firer)
-			ai_holder.react_to_attack(Proj.firer)
+			ai_brain.react_to_attack(Proj.firer)
 		return
 	else
 		..()
@@ -544,7 +535,6 @@
 	projectilesound = 'sound/weapons/spiderlunge.ogg'
 	var/obj/item/shield_projector/shields = null
 
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/kiting
 
 /mob/living/simple_mob/humanoid/cultist/magus/death()
 	new /obj/effect/decal/cleanable/blood/gibs (src.loc)
@@ -603,7 +593,6 @@
 	reload_max = 2
 	projectilesound = 'sound/weapons/Gunshot_shotgun.ogg'
 
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/aggressive/blood_hunter
 
 /mob/living/simple_mob/humanoid/cultist/hunter/death()
 	new /obj/effect/decal/cleanable/blood/gibs (src.loc)
@@ -615,10 +604,6 @@
 ////////////////////////////
 //		Hunter AI
 ////////////////////////////
-
-/datum/ai_holder/simple_mob/ranged/aggressive/blood_hunter //This directs the AI to charge while shooting at its victim then entering Glorious melee combat.
-	pointblank = FALSE
-	closest_distance = 0
 
 ////////////////////////////
 //		Ash Hunter

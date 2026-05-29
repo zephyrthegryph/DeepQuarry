@@ -24,7 +24,6 @@
 	construct_spells = list(/datum/spell/targeted/ethereal_jaunt/shift,
 							/datum/spell/targeted/ambush_mode
 							)
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/evasive
 	var/jaunt_warning = 0.5 SECONDS	// How long the jaunt telegraphing is.
 	var/jaunt_tile_speed = 20		// How long to wait between each tile. Higher numbers result in an easier to dodge tunnel attack.
 	special_attack_min_range = 2
@@ -53,8 +52,7 @@
 
 /mob/living/simple_mob/construct/wraith/do_special_attack(atom/A)
 	set waitfor = FALSE
-	set_AI_busy(TRUE)
-
+	if(ai_brain) ai_brain.busy = TRUE
 	// Save where we're gonna go soon.
 	var/turf/destination = get_turf(A)
 	var/turf/starting_turf = get_turf(src)
@@ -70,14 +68,14 @@
 	icon_state = "phase_shift"
 
 	if(handle_jaunt(destination) == FALSE)
-		set_AI_busy(FALSE)
+		if(ai_brain) ai_brain.busy = FALSE
 		flick("phase_shift2",A)
 		icon_state = "phase_shift2"
 		return FALSE
 
 	// Did we make it?
 	if(!(src in destination))
-		set_AI_busy(FALSE)
+		if(ai_brain) ai_brain.busy = FALSE
 		icon_state = "phase_shift2"
 		flick("phase_shift2",A)
 		return FALSE
@@ -95,7 +93,7 @@
 		overshoot = FALSE
 
 	if(!overshoot) // We hit the target, or something, at destination, so we're done.
-		set_AI_busy(FALSE)
+		if(ai_brain) ai_brain.busy = FALSE
 		icon_state = "phase_shift2"
 		flick("phase_shift2",A)
 		return TRUE
@@ -108,12 +106,12 @@
 		destination = get_step(destination, dir_to_go)
 
 	if(handle_jaunt(destination) == FALSE)
-		set_AI_busy(FALSE)
+		if(ai_brain) ai_brain.busy = FALSE
 		icon_state = "phase_shift2"
 		flick("phase_shift2",A)
 		return FALSE
 
-	set_AI_busy(FALSE)
+	if(ai_brain) ai_brain.busy = FALSE
 	icon_state = "phase_shift2"
 	flick("phase_shift2",A)
 	return FALSE

@@ -7,7 +7,6 @@
 	icon_state = "homunculus"
 	icon = 'icons/mob/vore.dmi'
 
-	ai_holder_type = /datum/ai_holder/simple_mob/passive
 
 	min_oxy = 0
 	max_oxy = 0
@@ -46,7 +45,6 @@
 	melee_damage_lower = 5
 	melee_damage_upper = 7
 
-	ai_holder_type = /datum/ai_holder/simple_mob/hostile
 
 /mob/living/simple_mob/homunculus/evil/Life()
 	handle_homunculus()

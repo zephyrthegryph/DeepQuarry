@@ -44,62 +44,6 @@
 	critter_type = /mob/living/simple_mob/animal/passive/opossum
 
 // Possum AI holder, mostly just handles playing dead.
-/datum/ai_holder/simple_mob/passive/possum
-	var/is_angry = FALSE
-	var/play_dead_until = 0
-	var/be_angery_until = 0
-
-/datum/ai_holder/simple_mob/passive/possum/handle_special_strategical()
-	. = ..()
-	if(holder?.stat != DEAD && !holder.ckey && isturf(holder.loc))
-		if(holder.resting && world.time < play_dead_until)
-			return
-
-		var/last_resting = holder.resting
-		var/last_angery = is_angry
-		holder.resting = (holder.stat == UNCONSCIOUS)
-		if(!holder.resting)
-			wander = initial(wander)
-			speak_chance = initial(speak_chance)
-			holder.set_stat(CONSCIOUS)
-			is_angry = (world.time < be_angery_until) || prob(1)
-		else
-			wander = FALSE
-			speak_chance = 0
-			holder.set_stat(UNCONSCIOUS)
-			is_angry = FALSE
-
-		if(last_resting != holder.resting || last_angery != is_angry)
-			holder.update_icon()
-
-/datum/ai_holder/simple_mob/passive/possum/poppy
-	var/static/list/aaa_words = list(
-		"delaminat",
-		"meteor",
-		"fire",
-		"breach",
-		"loose",
-		"level 7",
-		"level seven",
-		"biohazard",
-		"blob",
-		"vine"
-	)
-
-/datum/ai_holder/simple_mob/passive/possum/poppy/on_hear_say(mob/living/speaker, message)
-	. = ..()
-	addtimer(CALLBACK(src, PROC_REF(check_keywords), message), rand(1 SECOND, 3 SECONDS))
-
-/datum/ai_holder/simple_mob/passive/possum/poppy/proc/check_keywords(message)
-	var/mob/living/simple_mob/animal/passive/opossum/poss = holder
-	if(!istype(poss) || holder.client || holder.stat != CONSCIOUS)
-		return
-	message = lowertext(message)
-	for(var/aaa in aaa_words)
-		if(findtext(message, aaa))
-			poss.respond_to_damage()
-			return
-
 /datum/say_list/possum
 	speak = list("Hiss!","Aaa!","Aaa?")
 	emote_hear = list("hisses")
@@ -119,7 +63,6 @@
 	icon_rest = "possum_dead"
 	speak_emote = list("hisses")
 	pass_flags = PASSTABLE
-	ai_holder_type = /datum/ai_holder/simple_mob/passive/possum
 	see_in_dark = 6
 	maxHealth = 50
 	health = 50
@@ -154,31 +97,11 @@
 	. = ..()
 	update_icon()
 
+// DQEdit - respond_to_damage and update_icon for opossum moved to
+// modular_dq/.../ports/possum.dm where they read the modern mob-side
+// is_angry / play_dead_until vars instead of the deleted ai_holder.
 /mob/living/simple_mob/animal/passive/opossum/proc/respond_to_damage()
-	if(!resting && stat == CONSCIOUS)
-		var/datum/ai_holder/simple_mob/passive/possum/poss_ai = ai_holder
-		if(!client && istype(poss_ai))
-			if(!poss_ai.is_angry)
-				visible_message(span_infoplain(span_bold("\The [src]") + " hisses!"))
-				poss_ai.is_angry = TRUE
-				poss_ai.be_angery_until = world.time + rand(30 SECONDS, 1 MINUTE)
-			else
-				visible_message(span_infoplain(span_bold("\The [src]") + " dies!"))
-				resting = TRUE
-				poss_ai.play_dead_until = world.time + rand(1 MINUTE, 2 MINUTES)
-		update_icon()
-
-/mob/living/simple_mob/animal/passive/opossum/update_icon()
-	var/datum/ai_holder/simple_mob/passive/possum/poss_ai = ai_holder
-	var/is_angry = (!client && istype(poss_ai) && poss_ai.is_angry)
-	if(stat == DEAD || (resting && is_angry))
-		icon_state = icon_dead
-	else if(resting || stat == UNCONSCIOUS)
-		icon_state = "[icon_living]_sleep"
-	else if(is_angry)
-		icon_state = "[icon_living]_aaa"
-	else
-		icon_state = icon_living
+	return
 
 /mob/living/simple_mob/animal/passive/opossum/Initialize(mapload)
 	. = ..()
@@ -196,7 +119,6 @@
 	tt_desc = "Didelphis astrum salutem"
 	organ_names = /datum/decl/mob_organ_names/poppy
 	holder_type = /obj/item/holder/possum/poppy
-	ai_holder_type = /datum/ai_holder/simple_mob/passive/possum/poppy
 
 /datum/decl/mob_organ_names/possum
 	hit_zones = list("head", "body", "left foreleg", "right foreleg", "left hind leg", "right hind leg", "pouch")

@@ -21,13 +21,13 @@
 		S.remove_soul_sharer(src) // If a sharer is destroy()'d, they are simply removed.
 	shared_soul_links = null
 
-	if(ai_holder)
-		ai_holder.holder = null
-		ai_holder.UnregisterSignal(src,COMSIG_MOB_STATCHANGE)
-		if(ai_holder.faction_friends && ai_holder.faction_friends.len) //This list is shared amongst the faction
-			ai_holder.faction_friends -= src
-			ai_holder.faction_friends = null
-		QDEL_NULL(ai_holder)
+	if(ai_brain)
+		ai_brain.holder = null
+		ai_brain.UnregisterSignal(src,COMSIG_MOB_STATCHANGE)
+		// DQEdit: legacy faction_friends list cleanup removed — the modern
+		// brain stores relationships as weakrefs in personal[], which
+		// invalidate automatically when the referenced mob qdels.
+		QDEL_NULL(ai_brain)
 	if(dsoverlay)
 		dsoverlay.loc = null //I'll take my coat with me
 		dsoverlay = null
@@ -706,8 +706,8 @@
 	BITSET(hud_updateflag, HEALTH_HUD)
 	BITSET(hud_updateflag, STATUS_HUD)
 	BITSET(hud_updateflag, LIFE_HUD)
-	if(ai_holder) // AI gets told to sleep when killed. Since they're not dead anymore, wake it up.
-		ai_holder.go_wake()
+	if(ai_brain) // AI gets told to sleep when killed. Since they're not dead anymore, wake it up.
+		ai_brain.go_wake()
 
 	SEND_SIGNAL(src, COMSIG_HUMAN_DNA_FINALIZED)
 	SEND_SIGNAL(src, COMSIG_LIVING_AHEAL)

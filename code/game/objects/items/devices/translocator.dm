@@ -271,7 +271,7 @@ This device records all warnings given and teleport events for admin review in c
 		var/mob/living/L = target
 		if(!L.stat)
 			if(L != user)
-				if(L.a_intent != I_HELP || L.has_AI())
+				if(L.a_intent != I_HELP || (L.ai_brain != null))
 					to_chat(user, span_notice("[L] is resisting your attempt to teleport them with \the [src]."))
 					to_chat(L, span_danger(" [user] is trying to teleport you with \the [src]!"))
 					if(!do_after(user, 3 SECONDS, target = L))

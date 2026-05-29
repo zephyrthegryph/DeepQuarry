@@ -32,7 +32,6 @@ GLOBAL_LIST_INIT(succubus_safewords, list(
 	attacktext = list("swatted","bapped")
 
 	say_list_type = /datum/say_list/succubus
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate/edible
 
 	var/random_skin = 1
 	var/list/skins = list(
@@ -138,7 +137,7 @@ GLOBAL_LIST_INIT(succubus_safewords, list(
 	. = ..()
 
 	// Don't do this if we have a player
-	if(!has_AI())
+	if(!(ai_brain != null))
 		return
 
 	// Ignore ourselves
@@ -159,5 +158,5 @@ GLOBAL_LIST_INIT(succubus_safewords, list(
 
 /mob/living/simple_mob/vore/succubus/animal_nom()
 	. = ..()
-	if(has_AI())
+	if((ai_brain != null))
 		whisper("Remember cutie, the safeword is \"[safeword]\"~")

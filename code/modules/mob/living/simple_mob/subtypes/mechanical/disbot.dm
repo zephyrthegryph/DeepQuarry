@@ -57,7 +57,6 @@
 	attacktext = "drugged"
 	attack_sound = 'sound/weapons/bite.ogg'
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee
 	say_list_type = /datum/say_list/disbot
 
 	var/poison_chance = 100

@@ -101,9 +101,10 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			shadekin.init_vore(TRUE)
 			shadekin.ability_flags |= 0x1
 			shadekin.phase_shift()
-			shadekin.ai_holder.give_target(target)
-			shadekin.ai_holder.hostile = FALSE
-			shadekin.ai_holder.mauling = TRUE
+			shadekin.ai_brain?.give_target(target, TRUE)
+			shadekin.ai_brain?.set_hostile(FALSE)
+			if(shadekin.ai_brain)
+				shadekin.ai_brain.mauling = TRUE
 			shadekin.Life()
 			//Remove when done
 			spawn(10 SECONDS)
@@ -807,12 +808,11 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 				to_chat(ui.user, span_warning("This cannot be used on player mobs!"))
 				return
 
-			if(L.ai_holder)	//Cleaning up the original ai
-				var/ai_holder_old = L.ai_holder
-				L.ai_holder = null
-				qdel(ai_holder_old)	//Only way I could make #TESTING - Unable to be GC'd to stop. del() logs show it works.
-			L.ai_holder_type = tgui_input_list(ui.user, "Choose AI holder", "AI Type", typesof(/datum/ai_holder/))
-			L.initialize_ai_holder()
+			if(L.ai_brain)	//Cleaning up the original ai
+				var/datum/ai_brain/old_brain = L.ai_brain
+				L.ai_brain = null
+				qdel(old_brain)	//Only way I could make #TESTING - Unable to be GC'd to stop. del() logs show it works.
+			L.initialize_ai_brain()
 			L.faction = tgui_input_text(ui.user, "Please input AI faction", "AI faction", "neutral", MAX_MESSAGE_LEN)
 			L.a_intent = tgui_input_list(ui.user, "Please choose AI intent", "AI intent", list(I_HURT, I_HELP))
 			if(tgui_alert(ui.user, "Make mob wake up? This is needed for carbon mobs.", "Wake mob?", list("Yes", "No")) == "Yes")

@@ -40,7 +40,6 @@
 	attack_sharp = FALSE
 	attacktext = list("spooked", "startled", "jumpscared", "rattled at")
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/evasive/skeleton
 
 	min_oxy = 0
 	max_oxy = 0
@@ -101,9 +100,3 @@
 
 /mob/living/simple_mob/vore/alienanimals/skeleton/death(gibbed, deathmessage = "falls down and stops moving...")
 	. = ..()
-
-/datum/ai_holder/simple_mob/melee/evasive/skeleton
-	hostile = TRUE
-	retaliate = TRUE
-	destructive = TRUE
-	violent_breakthrough = TRUE

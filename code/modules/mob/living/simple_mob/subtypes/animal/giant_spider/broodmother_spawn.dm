@@ -77,7 +77,6 @@
 	health = 60
 
 	movement_cooldown = 3
-	ai_holder_type = /datum/ai_holder/simple_mob/melee
 
 /mob/living/simple_mob/animal/giant_spider/nurse/broodling/Initialize(mapload)
 	. = ..()

@@ -9,7 +9,6 @@
 	icon_state = "ysbryd"
 	icon = 'icons/mob/vore.dmi'
 
-	ai_holder_type = /datum/ai_holder/simple_mob/passive
 
 	min_oxy = 0
 	max_oxy = 0
@@ -31,7 +30,6 @@
 	maxHealth = 150
 	attacktext = list("haunts")
 	see_in_dark = 8
-	ai_holder_type = /datum/ai_holder/simple_mob/ysbryd
 	catalogue_data = list(/datum/category_item/catalogue/fauna/ysbryd)
 
 	var/list/emote_threats = list(
@@ -163,48 +161,3 @@
 
 
 ///////////////////////////AI stuff
-
-/datum/ai_holder/simple_mob/ysbryd
-	var/find_target_cooldown = 1 MINUTE
-
-/datum/ai_holder/simple_mob/ysbryd/find_target(list/possible_targets, has_targets_list = FALSE)
-	ai_log("find_target() : Entered.", AI_LOG_TRACE)
-	if(world.time <= (find_target_cooldown + last_target_time))
-		return
-	if(!hostile) // So retaliating mobs only attack the thing that hit it.
-		return null
-	. = list()
-	if(!has_targets_list)
-		possible_targets = list_targets()
-	for(var/atom/possible_target as anything in possible_targets)
-		if(guard_limit)
-			if((holder.dir == 1 && holder.y >= possible_target.y) || (holder.dir == 2 && holder.y <= possible_target.y) || (holder.dir == 4 && holder.x >= possible_target.x) || (holder.dir == 8 && holder.x <= possible_target.x)) //Ignore targets that are behind you
-				continue
-		if(can_attack(possible_target)) // Can we attack it?
-			. += possible_target
-
-	var/new_target = pick_target(.)
-	give_target(new_target)
-	last_target_time = world.time
-	return new_target
-
-
-/datum/ai_holder/simple_mob/ysbryd/lose_target()
-	if(istype(holder,/mob/living/simple_mob/ysbryd))
-		var/mob/living/simple_mob/ysbryd/Y = holder
-		Y.disconnect_target()
-	last_target_time = world.time
-	..()
-
-/datum/ai_holder/simple_mob/ysbryd/handle_stance_strategical()
-	if(istype(holder,/mob/living/simple_mob/ysbryd))
-		var/mob/living/simple_mob/ysbryd/Y = holder
-		if(target)
-			if(target != Y.chosen_target)
-				if(Y.chosen_target)
-					Y.disconnect_target()
-				Y.connect_target(target)
-		else if(!target)
-			if(Y.chosen_target)
-				Y.disconnect_target()
-	..()

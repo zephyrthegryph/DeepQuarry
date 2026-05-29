@@ -44,7 +44,6 @@
 				"bomb" = 10,
 				"bio" = 100,
 				"rad" = 100)
-	ai_holder_type = /datum/ai_holder/simple_mob/destructive
 
 /mob/living/simple_mob/construct/juggernaut/Life()
 	SetWeakened(0)
@@ -153,7 +152,6 @@
 	desc = "The pinnacle of occult technology, Behemoths are nothing shy of both an Immovable Object, and Unstoppable Force."
 	melee_damage_lower = 45
 	melee_damage_upper = 65
-	ai_holder_type = /datum/ai_holder/simple_mob/intentional/adv_dark_gygax
 	projectiletype = /obj/item/projectile/energy/inversion
 	movement_cooldown = 1
 

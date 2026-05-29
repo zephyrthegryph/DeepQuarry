@@ -52,7 +52,6 @@
 	pixel_x = -16
 	pixel_y = -16
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee
 
 	can_be_drop_prey = FALSE
 	allow_mind_transfer = TRUE

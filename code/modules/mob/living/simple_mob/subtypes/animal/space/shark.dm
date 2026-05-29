@@ -41,7 +41,6 @@
 	meat_amount = 10
 	meat_type = /obj/item/reagent_containers/food/snacks/carpmeat/shark
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee
 
 	var/knockdown_chance = 10	//slightly reduced their knockdown prob compared to carp given their greater power
 
@@ -53,4 +52,3 @@
 			L.visible_message(span_danger("\The [src] knocks down \the [L]!"))
 
 /mob/living/simple_mob/animal/space/shark/event
-	ai_holder_type = /datum/ai_holder/simple_mob/event

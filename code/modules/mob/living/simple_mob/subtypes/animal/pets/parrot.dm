@@ -5,7 +5,6 @@
 	To remove it, click the bird while on grab intent."
 	has_langs = list(LANGUAGE_GALCOM, LANGUAGE_ANIMAL)
 
-	ai_holder_type = /datum/ai_holder/simple_mob/passive/parrot
 
 	// A headset, so that talking parrots can yell at the crew over comms.
 	// If set to a type, on initialize it will be instantiated into that type.
@@ -242,12 +241,3 @@
 
 
 // AI
-/datum/ai_holder/simple_mob/passive/parrot
-	speak_chance = 2
-	base_wander_delay = 8
-
-/datum/ai_holder/simple_mob/passive/parrot/on_hear_say(mob/living/speaker, message)
-	if(holder.stat || !holder.say_list || !message || speaker == holder)
-		return
-	var/datum/say_list/S = holder.say_list
-	S.speak |= message

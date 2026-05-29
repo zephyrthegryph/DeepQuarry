@@ -75,7 +75,6 @@
 
 	organ_names = /datum/decl/mob_organ_names/crab
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/hooligan
 	say_list_type = /datum/say_list/crab
 
 	var/weaken_amount = 2 // Be careful with this number. High values will equal a permastun.
@@ -96,19 +95,3 @@
 			visible_message(span_danger("\The [src] crushes \the [L]!"))
 
 // The AI for hooligan crabs. Follows people for awhile.
-/datum/ai_holder/simple_mob/melee/hooligan
-	hostile = FALSE
-	retaliate = TRUE
-	returns_home = TRUE
-	max_home_distance = 12
-	mauling = TRUE
-	var/random_follow = TRUE // Turn off if you want to bus with crabs.
-
-/datum/ai_holder/simple_mob/melee/hooligan/handle_stance_strategical()
-	..()
-	if(random_follow && stance == STANCE_IDLE && !leader)
-		if(prob(10))
-			for(var/mob/living/L in hearers(holder))
-				if(!istype(L, holder)) // Don't follow other hooligan crabs.
-					holder.visible_message(span_infoplain(span_bold("\The [holder]") + " starts to follow \the [L]."))
-					set_follow(L, rand(20 SECONDS, 40 SECONDS))

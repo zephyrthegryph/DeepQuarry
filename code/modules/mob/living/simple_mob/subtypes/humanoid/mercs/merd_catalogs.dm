@@ -73,8 +73,3 @@
 	the latest gear and the best training, you can bet your bottom Thaler that \
 	they've got a Corporate sponsor backing them up."
 	value = CATALOGUER_REWARD_MEDIUM
-
-/datum/ai_holder/simple_mob/merc/ranged/suppressor
-	respect_alpha = FALSE // he really just shoots you
-	vision_range = 10 // plutonia experience
-	conserve_ammo = FALSE

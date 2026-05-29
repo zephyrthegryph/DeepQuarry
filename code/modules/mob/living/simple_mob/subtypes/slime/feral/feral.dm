@@ -23,7 +23,6 @@
 	movement_cooldown = -3
 	melee_attack_delay = 0.5 SECONDS
 
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/pointblank
 
 
 // Slimebatoning/xenotasing it just makes it mad at you (which can be good if you're heavily armored and your friends aren't).
@@ -91,10 +90,5 @@
 	if(L.get_cold_protection() < 1)
 		L.add_modifier(/datum/modifier/chilled, 5 SECONDS, src)
 
-	if(L.has_AI()) // Other AIs should react to hostile auras.
-		L.ai_holder.react_to_attack(src)
-
-
-// === merged from feral_vr.dm during hard-fork de-suffix (verified no override-order change) ===
-/mob/living/simple_mob/slime/feral/dark_blue
-	base_attack_cooldown = 3 SECONDS
+	if((L.ai_brain != null)) // Other AIs should react to hostile auras.
+		L.ai_brain.react_to_attack(src)

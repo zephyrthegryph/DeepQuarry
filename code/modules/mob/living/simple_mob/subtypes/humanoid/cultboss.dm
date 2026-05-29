@@ -18,7 +18,6 @@
 	special_attack_cooldown = 7 SECONDS
 	icon_state = "void-magnus"
 	icon_living = "void-magnus"
-	ai_holder_type = /datum/ai_holder/simple_mob/intentional/adv_dark_gygax
 	vore_active = 1
 	vore_capacity = 6
 	vore_bump_chance = 20

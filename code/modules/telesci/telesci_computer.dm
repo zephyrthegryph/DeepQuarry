@@ -213,8 +213,7 @@
 				for(var/i in 1 to rand(1,4))
 					var/chosen = pick(hostiles)
 					var/mob/living/simple_mob/vore/H = new chosen
-					if(H.ai_holder)
-						H.ai_holder.hostile = TRUE
+					H.ai_brain?.set_hostile(TRUE)
 					H.forceMove(L)
 			return
 		if(99)

@@ -47,7 +47,6 @@
 	projectiletype = /obj/item/projectile/beam/appendage
 	projectilesound = 'sound/effects/slime_squish.ogg'
 
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/pakkun
 	vore_default_mode = DM_SELECT
 
 	var/extra_possessive = FALSE					// Enable if you want their tummy hugs to be inescapable
@@ -64,12 +63,12 @@
 	. = ..()
 	if(client)
 		return
-	if(!ai_holder)
+	if(!ai_brain)
 		return
 
 	if(autorest_cooldown)
 		autorest_cooldown --
-	else if(prob(5) && (resting || ai_holder.stance == STANCE_IDLE))
+	else if(prob(5) && (resting || !ai_brain.primary_threat))
 		autorest_cooldown = rand(50,200)
 		lay_down()
 
@@ -77,18 +76,18 @@
 	. = ..()
 	if(client)
 		return
-	if(!ai_holder)
+	if(!ai_brain)
 		return
 
 	if(resting)
 		if(isbelly(vore_selected))
 			vore_selected.digest_mode = DM_UNABSORB
-		ai_holder.go_sleep()
+		ai_brain.go_sleep()
 
 	else
 		if(isbelly(vore_selected))
 			vore_selected.digest_mode = vore_default_mode
-		ai_holder.go_wake()
+		ai_brain.go_wake()
 
 /mob/living/simple_mob/vore/pakkun/attack_hand(mob/user)
 	if(stat == DEAD)
@@ -103,50 +102,11 @@
 	else
 		return ..()
 
-/datum/ai_holder/simple_mob/ranged/pakkun
-	pointblank = TRUE
-	var/recent_target = null
-
-/datum/ai_holder/simple_mob/ranged/pakkun/list_targets()
-	var/list/our_targets = ..()
-	for(var/list_target in our_targets)
-		if(!isliving(list_target))
-			our_targets -= list_target
-			continue
-		var/mob/living/L = list_target
-		if(!(L.can_be_drop_prey && L.throw_vore && L.allowmobvore && !L.buckled))
-			our_targets -= list_target
-			continue
-		if((L.dir == 1 && holder.y >= L.y) || (L.dir == 2 && holder.y <= L.y) || (L.dir == 4 && holder.x >= L.x) || (L.dir == 8 && holder.x <= L.x)) //eliminate targets facing the pakkun's direction
-			our_targets -= list_target
-			continue
-		if(abs(holder.x - L.x)>6 || abs(holder.y - L.y)>6) //finally, pakkuns on the very very edge of the screen won't target you
-			our_targets -= list_target
-			continue
-	if(isanimal(holder))
-		var/mob/living/simple_mob/SM = holder
-		our_targets -= SM.prey_excludes // Lazylist, but subtracting a null from the list seems fine.
-	return our_targets
-
-/datum/ai_holder/simple_mob/ranged/pakkun/can_attack(atom/movable/the_target, vision_required = TRUE)
-	.=..()
-	if(isliving(the_target))
-		var/mob/living/L = the_target
-		if(!(L.can_be_drop_prey && L.throw_vore && L.allowmobvore))
-			return FALSE
-		if(isanimal(holder))
-			var/mob/living/simple_mob/SM = holder
-			if(LAZYFIND(SM.prey_excludes, L))
-				return FALSE
-	else
-		return FALSE
-
 /mob/living/simple_mob/vore/pakkun/on_throw_vore_special(pred, mob/living/target)
 	if(pred && !extra_possessive && !(LAZYFIND(prey_excludes, target)))
 		LAZYSET(prey_excludes, target, world.time)
 		addtimer(CALLBACK(src, PROC_REF(removeMobFromPreyExcludes), WEAKREF(target)), 5 MINUTES)
-	if(ai_holder)
-		ai_holder.remove_target()
+	// DQEdit: legacy if-block emptied.
 
 /mob/living/simple_mob/vore/pakkun/load_default_bellies()
 	. = ..()
@@ -241,25 +201,8 @@
 	digestable = 0 // pet mob, do not eat
 	devourable = 0
 
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/pakkun/snappy
 	vore_default_mode = DM_HOLD
 	var/list/petters = list()
-
-/datum/ai_holder/simple_mob/ranged/pakkun/snappy/list_targets()
-	var/mob/living/simple_mob/vore/pakkun/snapdragon/snappy/SM = holder
-	if (!LAZYLEN(SM.petters)) //very quick and dirty dropout if there are no valid targets
-		return
-	var/list/our_targets = ..()
-	for(var/list_target in our_targets) //otherwise check the viable targets to see if any of them have petted
-		if(!(list_target in SM.petters))
-			our_targets -= list_target
-	return our_targets
-
-/datum/ai_holder/simple_mob/ranged/pakkun/snappy/can_attack(atom/movable/the_target, vision_required = TRUE)
-	.=..()
-	var/mob/living/simple_mob/vore/pakkun/snapdragon/snappy/SM = holder
-	if(!(the_target in SM.petters))
-		return FALSE
 
 /mob/living/simple_mob/vore/pakkun/snapdragon/snappy/attack_hand(mob/living/carbon/human/M as mob)
 	if(M.a_intent == I_HELP && !(M in petters))

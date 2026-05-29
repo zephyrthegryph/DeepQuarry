@@ -68,7 +68,6 @@ GLOBAL_LIST_INIT(slime_default_emotes, list(
 	speak_emote = list("chirps")
 	friendly = list("pokes")
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee
 	say_list_type = /datum/say_list/slime
 
 	var/cores = 1 // How many cores you get when placed in a Processor.

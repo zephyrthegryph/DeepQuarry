@@ -25,7 +25,6 @@
 	meat_amount = 100
 	meat_type = /obj/item/reagent_containers/food/snacks/meat/chicken
 
-	ai_holder_type = /datum/ai_holder/simple_mob/passive
 
 	say_list_type = /datum/say_list/turkey
 

@@ -81,7 +81,6 @@ I think I covered everything.
 	maxbodytemp = 99999
 	min_oxy = 0
 	heat_resist = 1
-	ai_holder_type = /datum/ai_holder/simple_mob/intentional/dragon
 	max_buckled_mobs = 1
 	mount_offset_y = 32
 	mount_offset_x = -16
@@ -191,7 +190,6 @@ I think I covered everything.
 ///
 
 /mob/living/simple_mob/vore/bigdragon/friendly
-	ai_holder_type = /datum/ai_holder/simple_mob/healbelly/retaliate/dragon
 	desc = "A large, intimidating creature reminiscent of the traditional idea of medieval fire breathing lizards. This one seems particularly relaxed and jovial."
 	faction = FACTION_NEUTRAL
 	player_msg = "You're a variant of the large dragon stripped of its firebreath attack (harm intent). You can still charge (disarm) and tail sweep (grab). Rest to heal slowly. Check your abilities tab for functions."
@@ -666,13 +664,6 @@ I think I covered everything.
 ///		AI handling stuff
 ///
 
-/datum/ai_holder/simple_mob/intentional/dragon
-	intelligence_level = 3
-	mauling = 1
-	var/yeet_range = 2
-	var/yeet_threshold = 2
-	var/charge_max = 5
-
 /mob/living/simple_mob/vore/bigdragon/handle_special()
 	if(!noenrage)
 		if(!enraged)
@@ -687,31 +678,6 @@ I think I covered everything.
 		adjustFireLoss(-2.5)
 		adjustToxLoss(-5)
 		adjustOxyLoss(-5)
-
-/datum/ai_holder/simple_mob/intentional/dragon/pre_special_attack(atom/A)
-	if(isliving(A))
-		var/mob/living/target = A
-		var/tally = 0
-		var/list/potential_targets = list_targets()
-		//Spin attack if surrounded
-		for(var/atom/movable/AM in potential_targets)
-			if(get_dist(holder, AM) > yeet_range)
-				continue
-			if(!can_attack(AM))
-				continue
-			tally++
-		if(tally >= yeet_threshold)
-			holder.a_intent = I_GRAB
-			return
-
-		//Charge attack if target is far away, but not if there's no line of sight
-		if(get_dist(holder, target) > charge_max)
-			if(target in check_trajectory(target, holder, pass_flags = PASSTABLE))
-				holder.a_intent = I_DISARM
-				return
-
-	//Default to firebreath if we can't charge or yeet
-	holder.a_intent = I_HURT
 
 /mob/living/simple_mob/vore/bigdragon/do_special_attack(atom/A)
 	. = TRUE
@@ -771,8 +737,7 @@ I think I covered everything.
 
 /mob/living/simple_mob/vore/bigdragon/proc/chargestart(atom/A)
 	if(!enraged)
-		set_AI_busy(TRUE)
-
+		if(ai_brain) ai_brain.busy = TRUE
 	do_windup_animation(A, charge_warmup)
 	//callbacks are more reliable than byond's process scheduler
 	chargetimer = addtimer(CALLBACK(src, PROC_REF(chargeend), A), charge_warmup, TIMER_STOPPABLE)
@@ -781,7 +746,7 @@ I think I covered everything.
 /mob/living/simple_mob/vore/bigdragon/proc/chargeend(atom/A, explicit = 0, gentle = 0)
 	//make sure our target still exists and is on a turf
 	if(QDELETED(A) || !isturf(get_turf(A)))
-		set_AI_busy(FALSE)
+		if(ai_brain) ai_brain.busy = FALSE
 		return
 	status_flags |= LEAPING
 	flying  = 1		//So we can thunk into things
@@ -808,13 +773,12 @@ I think I covered everything.
 			return // We were blocked.
 	if(target)
 		yeet(target, gentle)
-	set_AI_busy(FALSE)
-
+	if(ai_brain) ai_brain.busy = FALSE
 /mob/living/simple_mob/vore/bigdragon/proc/firebreathstart(atom/A)
 	glow_toggle = 1
 	set_light(glow_range, glow_intensity, glow_color) //Setting it here so the light starts immediately
 	if(!enraged)
-		set_AI_busy(TRUE)
+		if(ai_brain) ai_brain.busy = TRUE
 	flames = 1
 	build_icons()
 	firebreathtimer = addtimer(CALLBACK(src, PROC_REF(firebreathend), A), charge_warmup, TIMER_STOPPABLE)
@@ -823,13 +787,13 @@ I think I covered everything.
 /mob/living/simple_mob/vore/bigdragon/proc/firebreathend(atom/A)
 	//make sure our target still exists and is on a turf
 	if(QDELETED(A) || !isturf(get_turf(A)))
-		set_AI_busy(FALSE)
+		if(ai_brain) ai_brain.busy = FALSE
 		return
 	var/obj/item/projectile/P = new /obj/item/projectile/bullet/dragon(get_turf(src))
 	src.visible_message(span_danger("\The [src] spews fire at \the [A]!"))
 	playsound(src, "sound/weapons/Flamer.ogg", 50, 1)
 	P.launch_projectile(A, BP_TORSO, src)
-	set_AI_busy(FALSE)
+	if(ai_brain) ai_brain.busy = FALSE
 	glow_toggle = 0
 	flames = 0
 	build_icons()
@@ -902,156 +866,29 @@ I think I covered everything.
 
 	handle_tame_item(O, user)
 
-	qdel(ai_holder)	//Dragon goes to therapy
+	// DQEdit - legacy ai_brain swap removed. Modern brain uses set_hostile() /
+	// personal disposition for state changes.
 	faction = FACTION_NEUTRAL
 	norange = 1		//Don't start fires while friendly
 	vore_selected = gut2 //Just incase it eats someone right after being tamed
-	ai_holder = new /datum/ai_holder/simple_mob/healbelly/retaliate/dragon(src)
+	ai_brain?.set_hostile(FALSE)
+	ai_brain?.lose_target()
 
 	//Cancel any charges or firebreaths winding up
 	canceltimers()
 
-/datum/ai_holder/simple_mob/healbelly
-	intelligence_level = 3
-	can_breakthrough = 0
-	var/vocal = 1
-	var/last_speak
-
-/datum/ai_holder/simple_mob/healbelly/retaliate
-	retaliate = 1
-
 //dragon variant that'll swap back to hostile if pissed off
-/datum/ai_holder/simple_mob/healbelly/retaliate/dragon
-	var/warnings = 0
-	var/last_warning
-
-/datum/ai_holder/simple_mob/healbelly/proc/confirmPatient(mob/living/P)
-	if(isanimal(holder))
-		var/mob/living/simple_mob/H = holder
-		if(H.will_eat(P))
-			if(issilicon(P))
-				return
-			if(!iscarbon(P))	//Makes healbelly mobs target synths now.
-				if(!P.client)	//Don't target simple mobs that aren't player controlled
-					return
-			if(P.stat == DEAD)
-				return
-			if(P.suiciding)
-				return
-			if(P.health <= (P.getMaxHealth() * 0.95))	//Nom em'
-				if(vocal)
-					if(last_speak + 30 SECONDS < world.time)
-						var/message_options = list(
-							"Hey, [P.name]! You are injured, hold still.",
-							"[P.name]! Come here, let me help.",
-							"[P.name], you need help."
-							)
-						var/message = pick(message_options)
-						H.say(message)
-						last_speak = world.time
-					return 1
-
 //Attack overrides to let us """Attack""" allies and heal them
-/datum/ai_holder/simple_mob/healbelly/can_attack(atom/movable/the_target, vision_required = 1)
-	if(!can_see_target(the_target) && vision_required)
-		return
-
-	if(isliving(the_target))
-		var/mob/living/L = the_target
-		if(ishuman(L) || issilicon(L))
-			if(!L.client)	// SSD players get a pass
-				return
-		if(L.stat)
-			if(L.stat == DEAD && !handle_corpse) // Leave dead things alone
-				return
-		if(isanimal(L))	//Don't attack simplemobs unless they are hostile.
-			var/mob/living/simple_mob/M = L
-			if(M.client)	//Don't attack players for no reason even if they're a traditionally hostile mob
-				return 0
-			if(M.nom_mob)	//Don't attack mobs that are hostile for their vore functions to work
-				return 0
-			if(M.ai_holder)	//Don't attack non-hostile mobs
-				if(M.ai_holder.hostile)
-					return 1
-				else return 0
-			else return 0
-		if(holder.IIsAlly(L))
-			if(confirmPatient(L))
-				holder.a_intent = I_HELP
-				return 1
-			else
-				return 0
-	holder.a_intent = I_HURT
-	return 1
-
-/datum/ai_holder/simple_mob/healbelly/retaliate/dragon/can_attack(atom/movable/the_target, vision_required = TRUE)
-	if(istype(holder,/mob/living/simple_mob/vore/bigdragon))
-		var/mob/living/simple_mob/vore/bigdragon/BG = holder
-		if(holder.IIsAlly(the_target))
-			BG.vore_selected = BG.gut2	//Nom them into the heal guts
-		else
-			BG.vore_selected = BG.gut1	//Gurgle them if not
-	return .=..()
-
-/datum/ai_holder/simple_mob/healbelly/melee_attack(atom/A)
-	if(isliving(A))
-		var/mob/living/L = A
-		if(holder.a_intent == I_HELP)
-			var/mob/living/simple_mob/H = holder
-			if(H.will_eat(L))
-				H.PounceTarget(L)
-				//The following is some reagent injections to cover our bases, since being swallowed and dying from internal injuries sucks
-				//If this ends up being op because medbay gets replaced by a voremob buckled to a chair, feel free to remove some.
-				//Alternatively bully a coder (me) to make a unique digest_mode for mob healbellies that prevents death, or something.
-				if(ishuman(A))
-					var/mob/living/carbon/human/P = L
-					var/list/to_inject = list(REAGENT_ID_MYELAMINE,REAGENT_ID_OSTEODAXON,REAGENT_ID_SPACEACILLIN,REAGENT_ID_PERIDAXON, REAGENT_ID_IRON, REAGENT_ID_HYRONALIN)
-					//Lets not OD them...
-					for(var/RG in to_inject)
-						if(!P.reagents.has_reagent(RG))
-							P.reagents.add_reagent(RG, 10)
-				L.extinguish_mob()
-			return //Don't attack people if we're on help intent
-	return .=..()
-
-
-/datum/ai_holder/simple_mob/healbelly/retaliate/dragon/handle_special_strategical()
-	if(last_warning + 1 MINUTE < world.time)
-		warnings = 0	//calm down
-
-/datum/ai_holder/simple_mob/healbelly/retaliate/dragon/react_to_attack(atom/movable/attacker, ignore_timers = FALSE)
-	if(holder.stat)
-		return
-	if(istype(holder,/mob/living/simple_mob/vore/bigdragon))
-		var/mob/living/simple_mob/vore/bigdragon/H = holder
-		if(!H.noenrage)
-			if(H.IIsAlly(attacker))
-				switch(warnings)
-					if(0)
-						H.say("Stop that.")
-					if(1)
-						H.say("I'm warning you here.")
-					if(2)
-						H.say("You do that again, and you'll regret it.")
-					if(3)
-						H.enrage(attacker)
-						return
-				last_warning = world.time
-				warnings += 1
-				dissuade(attacker)
-				return
-	return .=..()
-
 /mob/living/simple_mob/vore/bigdragon/proc/enrage(atom/movable/attacker)
 	enraged = 1
 	norange = 0
 	faction = FACTION_DRAGON
 	say("HAVE IT YOUR WAY THEN")
-	qdel(ai_holder)
-	var/datum/ai_holder/simple_mob/intentional/dragon/D = new /datum/ai_holder/simple_mob/intentional/dragon(src)
-	ai_holder = D
+	// DQEdit - legacy ai_brain swap removed; brain stays put.
+	ai_brain?.set_hostile(TRUE)
 	vore_selected = gut1
-	D.give_target(attacker)
+	if(attacker)
+		ai_brain?.give_target(attacker, TRUE)
 
 /mob/living/simple_mob/vore/bigdragon/proc/canceltimers()
 	//Cancel any charges or firebreaths winding up
@@ -1062,15 +899,8 @@ I think I covered everything.
 		deltimer(chargetimer)
 		chargetimer = null
 	//re-enable the AI
-	set_AI_busy(FALSE)
-
+	if(ai_brain) ai_brain.busy = FALSE
 //Smack people it warns
-/datum/ai_holder/simple_mob/healbelly/retaliate/dragon/proc/dissuade(chump)
-	if(chump in check_trajectory(chump, holder, pass_flags = PASSTABLE))
-		if(istype(holder,/mob/living/simple_mob/vore/bigdragon))
-			var/mob/living/simple_mob/vore/bigdragon/H = holder
-			H.chargeend(chump,1,1)
-
 /mob/living/simple_mob/vore/bigdragon/proc/export_style()
 	set name = "Export style string"
 	set desc = "Export a string of text that can be used to instantly get the current style back using the import style verb"

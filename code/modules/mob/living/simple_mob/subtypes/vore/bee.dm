@@ -22,7 +22,6 @@
 	attacktext = list("stung")
 
 	say_list_type = /datum/say_list/bee
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate
 
 	meat_amount = 5
 	meat_type = /obj/item/reagent_containers/food/snacks/xenomeat/spidermeat

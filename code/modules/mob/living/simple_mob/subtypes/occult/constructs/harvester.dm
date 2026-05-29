@@ -36,7 +36,6 @@
 			/datum/spell/targeted/construct_advanced/agonizing_sphere,
 			/datum/spell/rune_write
 		)
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/evasive
 	attack_edge = TRUE
 
 /datum/decl/mob_organ_names/harvester
@@ -64,6 +63,5 @@
 	friendly = list("caresses")
 	movement_cooldown = 0
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/evasive
 
 	attack_sound = 'sound/weapons/pierce.ogg'

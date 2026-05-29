@@ -33,7 +33,6 @@
 	special_attack_min_range = 0
 	special_attack_max_range = 10
 	special_attack_cooldown = 20 SECONDS
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/aggressive/bossmob_glitch
 
 	var/next_special_attack = GA_ADS
 	var/recently_used_attack = GA_SPEEDUP
@@ -131,7 +130,7 @@
 				target.client.create_fake_ad_popup_multiple(/atom/movable/screen/popup/default, 5)
 
 /mob/living/simple_mob/glitch_boss/proc/bombardment(atom/A)
-	var/list/potential_targets = ai_holder.list_targets()
+	var/list/potential_targets = ai_brain.list_targets()
 	for(var/atom/entry in potential_targets)
 		if(istype(entry, /mob/living/simple_mob/glitch_boss_fake))
 			potential_targets -= entry
@@ -154,7 +153,7 @@
 		bomb_range -= T
 
 /mob/living/simple_mob/glitch_boss/proc/bomb_lines(atom/A)
-	var/list/potential_targets = ai_holder.list_targets()
+	var/list/potential_targets = ai_brain.list_targets()
 	for(var/atom/entry in potential_targets)
 		if(istype(entry, /mob/living/simple_mob/glitch_boss_fake))
 			potential_targets -= entry
@@ -188,7 +187,7 @@
 		new /obj/effect/calldown_attack(dropspot)
 
 /mob/living/simple_mob/glitch_boss/proc/confuse_inflict(atom/A)
-	var/list/potential_targets = ai_holder.list_targets()
+	var/list/potential_targets = ai_brain.list_targets()
 	for(var/atom/entry in potential_targets)
 		if(istype(entry, /mob/living/simple_mob/glitch_boss_fake))
 			potential_targets -= entry
@@ -256,39 +255,6 @@
 		if(GA_SPEEDUP)
 			speed_up_boost(A)
 
-/datum/ai_holder/simple_mob/ranged/aggressive/bossmob_glitch
-	wander = TRUE
-	pointblank = TRUE
-	intelligence_level = AI_SMART
-	vision_range = 10
-	closest_distance = 4
-
-/datum/ai_holder/simple_mob/ranged/aggressive/bossmob_glitch/pre_special_attack(atom/A)
-	var/mob/living/simple_mob/glitch_boss/GB
-	if(istype(holder, /mob/living/simple_mob/glitch_boss))
-		GB = holder
-	if(GB)
-		if(isliving(A) || ismecha(A))
-			var/list/possible_attacks = list()
-			possible_attacks += GB.all_special_attacks - GB.recently_used_attack
-			var/illusion_count = 0
-			var/list/potential_targets = list_targets()
-			for(var/atom/illusion_maybe in potential_targets)
-				if(istype(illusion_maybe, /mob/living/simple_mob/glitch_boss_fake))
-					illusion_count++
-					potential_targets -= illusion_maybe
-			if(potential_targets.len < 2)
-				possible_attacks -= GA_CONFUSION
-				possible_attacks += GA_SPEEDUP			// Double chance when fighting single target
-			if(illusion_count > 4)
-				possible_attacks -= GA_ILLUSION
-			if(!(possible_attacks.len))
-				GB.next_special_attack = GA_BULLETHELL
-			else
-				GB.next_special_attack = pick(possible_attacks)
-		else
-			GB.next_special_attack = GA_BULLETHELL
-
 
 
 /mob/living/simple_mob/glitch_boss_fake
@@ -316,7 +282,6 @@
 
 	var/prob_respawn = 15
 
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/aggressive/bossmob_glitch_fake
 
 	can_pain_emote = FALSE
 
@@ -343,13 +308,6 @@
 
 	fire_sound = 'sound/effects/uncloak.ogg'
 	combustion = TRUE
-
-/datum/ai_holder/simple_mob/ranged/aggressive/bossmob_glitch_fake		//Same AI, but without special attack calculation stuff
-	wander = TRUE
-	pointblank = TRUE
-	intelligence_level = AI_SMART
-	vision_range = 9
-	closest_distance = 4
 
 #undef GA_ADS
 #undef GA_CALLDOWN

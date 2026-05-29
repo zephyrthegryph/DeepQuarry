@@ -27,7 +27,6 @@
 							/datum/spell/targeted/construct_advanced/banishment
 							)
 
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate/cooperative
 
 //	environment_smash = 1	// Whatever this gets renamed to, Wraiths need to break things
 
@@ -64,7 +63,6 @@
 	organ_names = /datum/decl/mob_organ_names/wraith
 	movement_cooldown = 0
 
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate/cooperative
 
 	//	environment_smash = 1	// Whatever this gets renamed to, Harvesters need to break things
 

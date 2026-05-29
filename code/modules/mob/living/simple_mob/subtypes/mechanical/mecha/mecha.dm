@@ -32,7 +32,6 @@
 	response_harm = "uselessly hits"
 	harm_intent_damage = 0
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee
 	say_list_type = /datum/say_list/malf_drone
 
 	var/datum/effect/effect/system/spark_spread/sparks

@@ -28,7 +28,6 @@
 	melee_damage_upper = 5
 	attack_sharp = TRUE
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/evasive
 
 	has_langs = list(LANGUAGE_MOUSE, LANGUAGE_ECHOSONG)		// Haha squeak
 

@@ -2,7 +2,6 @@
 /mob/living/simple_mob/vore/vore_hostile
 	name = "peeb"
 	desc = "REPLACE ME"
-	ai_holder_type = /datum/ai_holder/simple_mob/vore
 
 /////ABYSS LURKER/////
 
@@ -50,7 +49,6 @@
 	attacktext = list("flashes", "slaps", "smothers", "grapples")
 	attack_sound = 'sound/effects/attackblob.ogg'
 
-	ai_holder_type = /datum/ai_holder/simple_mob/say_aggro
 
 	swallowTime = 2 SECONDS
 	vore_active = 1
@@ -85,31 +83,12 @@
 
 /mob/living/simple_mob/vore/vore_hostile/abyss_lurker/attack_hand(mob/living/user)
 
-	if(client || !user.client || !ai_holder || !isliving(user))
+	if(client || !user.client || !ai_brain || !isliving(user))
 		return ..()
 	if(!user.devourable || !user.allowmobvore || !user.can_be_drop_prey)
 		return ..()
-	ai_holder.give_target(user, TRUE)
-	ai_holder.track_target_position()
-	ai_holder.set_stance(STANCE_FIGHT)
-
-/datum/ai_holder/simple_mob/say_aggro
-	hostile = FALSE
-	forgive_resting = TRUE
-	cooperative = FALSE
-
-/datum/ai_holder/simple_mob/say_aggro/on_hear_say(mob/living/speaker, message)
-	. = ..()
-	if(holder.client || !speaker.client)
-		return
-	if(!speaker.devourable || !speaker.allowmobvore || !speaker.can_be_drop_prey)
-		return
-	if(speaker.z != holder.z)
-		return
-	give_target(speaker, TRUE)
-	track_target_position()
-	set_stance(STANCE_FIGHT)
-
+	// DQEdit - was: ai_holder.give_target(user); track_target_position; set_stance(STANCE_FIGHT)
+	ai_brain?.give_target(user, TRUE)
 /////Leaper/////
 
 /datum/category_item/catalogue/fauna/leaper
@@ -157,7 +136,6 @@
 	attacktext = list("pushes", "slaps", "whips", "grapples")
 	attack_sound = 'sound/effects/attackblob.ogg'
 
-	ai_holder_type = /datum/ai_holder/simple_mob/vore
 
 	swallowTime = 1 SECONDS
 	vore_active = 1
@@ -211,7 +189,7 @@
 	if(!L.devourable || !L.allowmobvore || !L.can_be_drop_prey || !L.throw_vore || L.unacidable)
 		return FALSE
 
-	set_AI_busy(TRUE)
+	if(ai_brain) ai_brain.busy = TRUE
 	visible_message(span_warning("\The [src]'s eyes flash ominously!"))
 	to_chat(L, span_danger("\The [src] focuses on you!"))
 	// Telegraph, since getting stunned suddenly feels bad.
@@ -219,7 +197,7 @@
 	sleep(leap_warmup) // For the telegraphing.
 
 	if(L.z != z)	//Make sure you haven't disappeared to somewhere we can't go
-		set_AI_busy(FALSE)
+		if(ai_brain) ai_brain.busy = FALSE
 		return FALSE
 
 	// Do the actual leap.
@@ -233,7 +211,7 @@
 	if(status_flags & LEAPING)
 		status_flags &= ~LEAPING // Revert special passage ability.
 
-	set_AI_busy(FALSE)
+	if(ai_brain) ai_brain.busy = FALSE
 	if(Adjacent(L))	//We leapt at them but we didn't manage to hit them, let's see if we're next to them
 		L.Weaken(2)	//get knocked down, idiot
 
@@ -282,7 +260,6 @@
 	attacktext = list("splashes against", "slaps", "smothers", "engulfs")
 	attack_sound = 'sound/effects/attackblob.ogg'
 
-	ai_holder_type = /datum/ai_holder/simple_mob/vore
 
 	swallowTime = 0 SECONDS
 	vore_active = 1

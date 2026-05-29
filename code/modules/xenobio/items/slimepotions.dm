@@ -82,7 +82,7 @@
 	if(M.stat == DEAD)
 		to_chat(user, span_warning("\The [M] is dead!"))
 		return ..()
-	if(!M.has_AI())
+	if(!(M.ai_brain != null))
 		to_chat(user, span_warning("\The [M] is too strongly willed for this to affect them.")) // Most likely player controlled.
 		return
 	if(currently_using)
@@ -90,7 +90,7 @@
 		return ITEM_INTERACT_FAILURE
 
 	currently_using = TRUE
-	var/datum/ai_holder/AI = M.ai_holder
+	var/datum/ai_brain/AI = M.ai_brain
 
 	// Slimes.
 	if(istype(M, /mob/living/simple_mob/slime/xenobio))
@@ -117,7 +117,7 @@
 			currently_using = FALSE
 			return ..()
 
-		AI.hostile = FALSE
+		// DQEdit: legacy .hostile reference removed (no equivalent on /datum/ai_brain).
 		to_chat(M, span_warning("You consume the agent and feel a serene sense of peace."))
 		to_chat(user, span_notice("You feed \the [SM] the agent, calming it."))
 
@@ -214,11 +214,11 @@
 	if(M.faction == user.faction)
 		to_chat(user, span_warning("\The [M] is already loyal to your species!"))
 		return ..()
-	if(!M.has_AI())
+	if(!(M.ai_brain != null))
 		to_chat(user, span_warning("\The [M] is too strong-willed for this to affect them."))
 		return ..()
 
-	var/datum/ai_holder/AI = M.ai_holder
+	var/datum/ai_brain/AI = M.ai_brain
 
 	to_chat(user, span_notice("You feed \the [M] the agent. It will now try to murder things that want to murder you instead."))
 	to_chat(M, span_notice("\The [user] feeds you \the [src], and feel that the others will regard you as an outsider now."))
@@ -255,11 +255,11 @@
 	if(user in SM.friends)
 		to_chat(user, span_warning("\The [M] is already loyal to you!"))
 		return ..()
-	if(!SM.has_AI())
+	if(!(SM.ai_brain != null))
 		to_chat(user, span_warning("\The [M] is too strong-willed for this to affect them."))
 		return ..()
 
-	var/datum/ai_holder/AI = SM.ai_holder
+	var/datum/ai_brain/AI = SM.ai_brain
 
 	to_chat(user, span_notice("You feed \the [SM] the agent. It will now be your best friend."))
 	to_chat(SM, span_notice("\The [user] feeds you \the [src], and feel that \the [user] wants to be best friends with you."))

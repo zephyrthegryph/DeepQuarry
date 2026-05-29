@@ -79,7 +79,7 @@
 		if(damage >= STRUCTURE_MIN_DAMAGE_THRESHOLD)
 			if(locked || welded)
 				visible_message(span_danger("\The [user] begins breaking into \the [src] internals!"))
-				user.set_AI_busy(TRUE) // If the mob doesn't have an AI attached, this won't do anything.
+				if(user.ai_brain) user.ai_brain.busy = TRUE // If the mob doesn't have an AI attached, this won't do anything.
 				if(do_after(user, 10 SECONDS, target = src))
 					locked = FALSE
 					welded = FALSE
@@ -87,7 +87,7 @@
 					open(TRUE)
 					if(prob(25))
 						shock(user, 100)
-				user.set_AI_busy(FALSE)
+				if(user.ai_brain) user.ai_brain.busy = FALSE
 			else if(density)
 				visible_message(span_danger("\The [user] forces \the [src] open!"))
 				open(TRUE)

@@ -43,7 +43,6 @@
 
 
 	say_list_type = /datum/say_list/chungus
-	ai_holder_type = /datum/ai_holder/simple_mob/melee
 	can_be_drop_prey = FALSE
 
 /mob/living/simple_mob/vore/aggressive/chungus/death()

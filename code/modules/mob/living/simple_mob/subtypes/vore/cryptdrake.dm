@@ -28,7 +28,6 @@
 	attacktext = list("mauled")
 	see_in_dark = 8
 	minbodytemp = 0
-	ai_holder_type = /datum/ai_holder/simple_mob/vore
 	max_buckled_mobs = 1
 	mount_offset_y = 32
 	mount_offset_x = -16
@@ -105,7 +104,7 @@
 	if(!L.devourable || !L.allowmobvore || !L.can_be_drop_prey || !L.throw_vore || L.unacidable)
 		return FALSE
 
-	set_AI_busy(TRUE)
+	if(ai_brain) ai_brain.busy = TRUE
 	visible_message(span_warning("\The [src]'s eyes flash ominously!"))
 	to_chat(L, span_danger("\The [src] focuses on you!"))
 	// Telegraph, since getting stunned suddenly feels bad.
@@ -113,7 +112,7 @@
 	sleep(leap_warmup) // For the telegraphing.
 
 	if(L.z != z)	//Make sure you haven't disappeared to somewhere we can't go
-		set_AI_busy(FALSE)
+		if(ai_brain) ai_brain.busy = FALSE
 		return FALSE
 
 	// Do the actual leap.
@@ -127,7 +126,7 @@
 	if(status_flags & LEAPING)
 		status_flags &= ~LEAPING // Revert special passage ability.
 
-	set_AI_busy(FALSE)
+	if(ai_brain) ai_brain.busy = FALSE
 	if(Adjacent(L))	//We leapt at them but we didn't manage to hit them, let's see if we're next to them
 		L.Weaken(2)	//get knocked down, idiot
 

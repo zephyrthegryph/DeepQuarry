@@ -40,7 +40,6 @@
 	buckle_lying = FALSE
 	mount_offset_y = 10
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/evasive/otie
 	say_list_type = /datum/say_list/otie
 
 	var/mob/living/carbon/human/friend
@@ -243,7 +242,7 @@
 	if(istype(O, /obj/item/reagent_containers/food))
 		qdel(O)
 		playsound(src,'sound/items/eatfood.ogg', rand(10,50), 1)
-		if(!has_AI())//No autobarf on player control.
+		if(!(ai_brain != null))//No autobarf on player control.
 			return
 		if(istype(O, /obj/item/reagent_containers/food/snacks/donut) && istype(src, /mob/living/simple_mob/vore/otie/security))
 			to_chat(user,span_notice("The guard pup accepts your offer for their catch."))
@@ -285,12 +284,11 @@
 					if(M.vore_bellyrub(src))
 						return
 				M.visible_message(span_notice("[M] [response_help] \the [src]."))
-				if(has_AI())
-					var/datum/ai_holder/AI = ai_holder
-					AI.set_stance(STANCE_IDLE)
+				if(ai_brain)
+					var/datum/ai_brain/AI = ai_brain
+					AI.lose_target()
 					if(prob(tame_chance))
-						AI.violent_breakthrough = FALSE
-						AI.hostile = FALSE
+						AI.set_hostile(FALSE)
 						friend = M
 						AI.set_follow(friend)
 						if(tamed != 1)
@@ -300,8 +298,8 @@
 
 		if(I_GRAB)
 			if(health > 0)
-				if(has_AI())
-					var/datum/ai_holder/AI = ai_holder
+				if((ai_brain != null))
+					var/datum/ai_brain/AI = ai_brain
 					audible_emote("growls disapprovingly at [M].")
 					if(M == friend)
 						AI.lose_follow()
@@ -335,10 +333,3 @@
 	emote_see = list("stares ferociously", "snarls", "licks their chops", "stretches", "yawns")
 	say_maybe_target = list("Ruh?", "Waf?")
 	say_got_target = list("Rurrr!", "ROAR!", "MARR!", "RERR!", "RAHH!", "RAH!", "WARF!")
-
-/datum/ai_holder/simple_mob/melee/evasive/otie
-
-/datum/ai_holder/simple_mob/melee/evasive/otie/New(mob/living/simple_mob/vore/otie/new_holder)
-	.=..()
-	if(new_holder.tamed)
-		hostile = FALSE

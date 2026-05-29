@@ -119,8 +119,8 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 		to_chat(L, span_notice("\The [src] is now your friend! Meow."))
 		visible_emote(pick("nuzzles [friend].", "brushes against [friend].", "rubs against [friend].", "purrs."))
 
-		if(has_AI())
-			var/datum/ai_holder/AI = ai_holder
+		if((ai_brain != null))
+			var/datum/ai_brain/AI = ai_brain
 			AI.set_follow(friend)
 	else
 		to_chat(L, span_notice("[src] ignores you."))

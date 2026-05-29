@@ -46,7 +46,6 @@
 	attack_sound = 'sound/voice/bork.ogg'
 	friendly = list("snoofs", "nuzzles", "ruffs happily at", "smooshes on")
 
-	ai_holder_type = /datum/ai_holder/simple_mob/woof
 
 	mob_size = MOB_SMALL
 
@@ -66,13 +65,6 @@
 	emote_see = list("wags its tail", "stretches", "yawns", "swivels its ears")
 	say_maybe_target = list("Whuff?")
 	say_got_target = list("Grrrr YIP YAP!!!")
-
-/datum/ai_holder/simple_mob/woof
-	hostile = FALSE
-	cooperative = TRUE
-	retaliate = TRUE
-	speak_chance = 1
-	wander = TRUE
 
 // Activate Noms!
 /mob/living/simple_mob/vore/woof
@@ -174,25 +166,9 @@
 
 	faction = FACTION_THEATRE
 	gender = PLURAL
-	ai_holder_type = /datum/ai_holder/simple_mob/woof/cass
 	vore_digest_chance = 0
 	vore_escape_chance = 25
 	digestable = 0
-
-/datum/ai_holder/simple_mob/woof/cass
-	retaliate = 0
-	violent_breakthrough = 0
-
-/datum/ai_holder/simple_mob/ranged/kiting/threatening/woof
-	hostile = 1
-	retaliate = 1
-	cooperative = TRUE
-	speak_chance = 1
-	lose_target_timeout = 0 // Easily distracted
-
-/datum/ai_holder/simple_mob/woof/hostile
-	hostile = 1
-	retaliate = 1
 
 /mob/living/simple_mob/vore/woof/apply_melee_effects(atom/A)
 	if(isliving(A))
@@ -205,18 +181,15 @@
 
 	movement_cooldown = -2
 
-	ai_holder_type = /datum/ai_holder/simple_mob/woof/hostile
 
 /mob/living/simple_mob/vore/woof/hostile/ranged
 
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/kiting/threatening/woof
 
 	projectiletype = /obj/item/projectile/awoo_missile
 	projectilesound = 'sound/voice/long_awoo.ogg'
 
 /mob/living/simple_mob/vore/woof/hostile/horrible
 
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/kiting/threatening/woof
 	armor = list(
 			"melee" = 75,
 			"bullet" = 75,
@@ -241,7 +214,6 @@
 
 /mob/living/simple_mob/vore/woof/hostile/terrible
 
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/kiting/threatening/woof
 
 	projectiletype = /obj/item/projectile/forcebolt/harmless/awoobolt
 	projectilesound = 'sound/voice/long_awoo.ogg'
@@ -301,12 +273,10 @@ GLOBAL_VAR_INIT(woof_current, 0)
 
 	movement_cooldown = -2
 
-	ai_holder_type = /datum/ai_holder/simple_mob/woof/hostile
 
 /mob/living/simple_mob/vore/woof/hostile/aweful/ranged
 	movement_cooldown = -2
 
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/kiting/threatening/woof
 
 	projectiletype = /obj/item/projectile/awoo_missile
 	projectilesound = 'sound/voice/long_awoo.ogg'

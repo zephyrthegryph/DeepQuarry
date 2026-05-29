@@ -58,7 +58,6 @@
 /mob/living/simple_mob/mechanical/hivebot/ranged_damage/strong/guard
 	name = "guard hivebot"
 	desc = "A robot that seems to be guarding something."
-//	ai_holder_type = todo
 
 
 // Inflicts a damage-over-time modifier on things it hits.

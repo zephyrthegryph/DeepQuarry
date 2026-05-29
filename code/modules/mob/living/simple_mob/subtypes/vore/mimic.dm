@@ -111,7 +111,6 @@
 	max_n2 = 0
 	minbodytemp = 0
 
-	ai_holder_type = /datum/ai_holder/mimic
 
 	var/obj/structure/closet/crate/real_crate
 
@@ -128,10 +127,6 @@
 	vore_capacity = 1
 	vore_default_mode = DM_DIGEST
 	can_be_drop_prey = FALSE
-
-/datum/ai_holder/mimic
-	wander = FALSE
-	hostile = TRUE
 
 /mob/living/simple_mob/vore/aggressive/mimic/apply_melee_effects(atom/A)
 	if(isliving(A))

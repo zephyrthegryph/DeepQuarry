@@ -38,12 +38,9 @@ SUBSYSTEM_DEF(pathfinder)
 	var/datum/pathfinding/astar/instance = new(actor, start, goal, target_distance, max_path_length)
 	return run_pathfinding(instance)
 
-/datum/controller/subsystem/pathfinder/proc/default_ai_pathfinding(datum/ai_holder/holder, turf/goal, min_dist = 1, max_path = 128)
-	var/datum/pathfinding/astar/instance = new(holder.holder, get_turf(holder.holder), goal, min_dist, max_path * 2)
-	var/obj/item/card/id/potential_id = holder.holder.GetIdCard()
-	if(!isnull(potential_id))
-		instance.ss13_with_access = potential_id.access?.Copy()
-	return run_pathfinding(instance)
+// DQEdit - default_ai_pathfinding was a /datum/ai_brain helper. The modern
+// brain has its own wrapper in modular_dq/combat_ai/brain/pathing.dm
+// (`dq_pathfind`). The legacy proc has no remaining callers and is removed.
 
 /datum/controller/subsystem/pathfinder/proc/default_circuit_pathfinding(obj/item/electronic_assembly/assembly, turf/goal, min_dist = 1, max_path = 128, list/access)
 	var/datum/pathfinding/jps/instance = new(assembly, get_turf(assembly), goal, min_dist, max_path)

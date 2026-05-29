@@ -7,7 +7,6 @@
 	icon_state = "dino"
 	icon = 'icons/mob/vore.dmi'
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee
 
 	// By default, this is what most vore mobs are capable of.
 	response_help = "pets"

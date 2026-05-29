@@ -22,7 +22,6 @@
 	health = 100
 	attacktext = list("headbutted")
 	minbodytemp = 80
-	ai_holder_type = /datum/ai_holder/simple_mob/passive/slug_ch
 	vore_icons = SA_ICON_LIVING
 	armor = list(
 				"melee" = 98,
@@ -112,7 +111,7 @@
 	if(ckey) //If we're player controlled, use the default attack code.
 		return ..()
 	if(istype(A, /mob/living) && !will_eat(A))
-		ai_holder.lose_target() //Ignore anybody we can't eat.
+		ai_brain.lose_target() //Ignore anybody we can't eat.
 		return
 	else //This is the parent do_attack() code for determining whether or not attacks can hit.
 		face_atom(A)
@@ -132,13 +131,6 @@
 /mob/living/simple_mob/vore/slug/perform_the_nom(mob/living/user, mob/living/prey, mob/living/pred, obj/belly/belly, delay)
 	..()
 	last_prey = WEAKREF(prey)
-
-/datum/ai_holder/simple_mob/passive/slug_ch
-	wander = TRUE
-	base_wander_delay = 7
-	wander_when_pulled = TRUE
-	vision_range = 10
-	can_flee = FALSE //Otherwise it'll run as soon as it gets a target.
 
 /obj/effect/slug_glue
 	name = "liquid"
@@ -222,14 +214,14 @@
 	if(my_slug.last_prey?.resolve() == victim) //Getting eaten lets you get stuck once without alerting the slug. This is to prevent instantly getting eaten again if you struggle free with run intent on.
 		my_slug.last_prey = null
 		return
-	my_slug.ai_holder.give_target(victim)
+	my_slug.ai_brain?.give_target(victim, TRUE)
 
 /obj/effect/slug_glue/proc/unalert_slug(mob/living/victim as mob)
 	var/mob/living/simple_mob/vore/slug/my_slug = owner_slug?.resolve()
 	if(!my_slug)
 		return
-	if(my_slug.ai_holder.target == victim)
-		my_slug.ai_holder.remove_target() //Instant loss of target. Necessary to simulate the mob giving up if the prey escapes.
+	if(my_slug.ai_brain?.primary_threat == victim)
+		my_slug.ai_brain.lose_target() // Instant loss of target — sim mob giving up if prey escapes.
 
 /obj/effect/slug_glue/user_unbuckle_mob(mob/living/buckled_mob, mob/user)
 	user.setClickCooldown(user.get_attack_speed())

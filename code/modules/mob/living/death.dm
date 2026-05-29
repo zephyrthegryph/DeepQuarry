@@ -1,8 +1,8 @@
 /mob/living/death(gibbed)
 	clear_fullscreens()
 	update_mob_action_buttons()
-	if(ai_holder)
-		ai_holder.go_sleep()
+	if(ai_brain)
+		ai_brain.go_sleep()
 
 	if(nest) //Ew.
 		if(istype(nest, /obj/structure/prop/nest))

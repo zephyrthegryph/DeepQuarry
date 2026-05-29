@@ -46,15 +46,14 @@
 	var/mob/living/simple_mob/M = new build_path(src.loc)
 	if(!istype(M))
 		return
-	if(M.has_AI())
-		var/datum/ai_holder/AI = M.ai_holder
+	if(M.ai_brain)
+		var/datum/ai_brain/AI = M.ai_brain
 		AI.go_sleep() //Don't fight eachother while we're still setting up!
 		AI.returns_home = mob_returns_home
 		AI.wander = mob_wander
 		AI.max_home_distance = mob_wander_distance
 		if(overwrite_hostility)
-			AI.hostile = mob_hostile
-			AI.retaliate = mob_retaliate
+			AI.set_hostile(mob_hostile)
 		AI.go_wake() //Now you can kill eachother if your faction didn't override.
 
 	if(pixel_x || pixel_y)
@@ -352,15 +351,14 @@
 		if(!istype(M))
 			continue
 
-		if(M.has_AI())
-			var/datum/ai_holder/AI = M.ai_holder
+		if(M.ai_brain)
+			var/datum/ai_brain/AI = M.ai_brain
 			AI.go_sleep() //Don't fight eachother while we're still setting up!
 			AI.returns_home = mob_returns_home
 			AI.wander = mob_wander
 			AI.max_home_distance = mob_wander_distance
 			if(overwrite_hostility)
-				AI.hostile = mob_hostile
-				AI.retaliate = mob_retaliate
+				AI.set_hostile(mob_hostile)
 			AI.go_wake() //Now you can kill eachother if your faction didn't override.
 
 		if(pixel_x || pixel_y)

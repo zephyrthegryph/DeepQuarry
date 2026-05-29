@@ -49,7 +49,6 @@
 
 	devourable = FALSE
 
-	ai_holder_type = /datum/ai_holder/simple_mob/vore/gryphon
 	say_list_type = /datum/say_list/gryphon
 
 	can_be_drop_prey = FALSE
@@ -74,57 +73,6 @@
 	vore_capacity_ex = list("stomach" = 1, "throat" = 1)
 	vore_fullness_ex = list("stomach" = 0, "throat" = 0)
 	vore_icon_bellies = list("stomach", "throat")
-
-/datum/ai_holder/simple_mob/vore/gryphon
-	var/eat_attempts = 0
-	var/maybe_eating = null
-
-/datum/ai_holder/simple_mob/vore/gryphon/find_target(list/possible_targets, has_targets_list)
-	ai_log("find_target() : Entered.", AI_LOG_TRACE)
-	var/targets = list()
-	if(!has_targets_list)
-		possible_targets = list_targets()
-	var/mob/sentient = null
-	var/alone = TRUE
-	for(var/mob/possible_target in possible_targets)
-		if(can_attack(possible_target)) // Can we attack it?
-			targets += possible_target
-			if (possible_target.client != null)
-				if (sentient == null)
-					if (vore_check(possible_target))
-						sentient = possible_target
-					else
-						alone = FALSE
-				else
-					alone = FALSE
-
-	// Only one player, consider eating them
-	if (sentient != null)
-		return possibly_eat(sentient, alone)
-
-	// Only one mob, eat them
-	if (length(targets) == 1 && alone)
-		var/target = pick_target(targets)
-		if (vore_check(target) && can_attack(target))
-			give_target(target)
-			return target
-	eat_attempts = 0
-	return null
-
-/datum/ai_holder/simple_mob/vore/gryphon/proc/possibly_eat(target, alone)
-	if (target != maybe_eating)
-		eat_attempts = 0
-
-	maybe_eating = target
-	if (eat_attempts == 5)
-		to_chat(target, span_danger("\The [holder] licks its beak"))
-	else if (eat_attempts == 10)
-		to_chat(target, span_danger("\The [holder]'s stomach grumbles loudly"))
-	else if (alone && eat_attempts > 15 && can_attack(target))
-		give_target(target)
-
-	if (eat_attempts < 11 || alone)
-		eat_attempts += 1
 
 /mob/living/simple_mob/vore/gryphon/load_default_bellies()
 	var/obj/belly/B = new /obj/belly/gryphon/beak(src)
@@ -157,7 +105,7 @@
 	if(!L.devourable || !L.allowmobvore || !L.can_be_drop_prey || !L.throw_vore || L.unacidable)
 		return FALSE
 
-	set_AI_busy(TRUE)
+	if(ai_brain) ai_brain.busy = TRUE
 	visible_message(span_warning("\The [src] crouches down and wiggles its haunches!"))
 	to_chat(L, span_danger("\The [src] is looking right at you!"))
 	// Telegraph, since getting stunned suddenly feels bad.
@@ -165,7 +113,7 @@
 	sleep(leap_warmup) // For the telegraphing.
 
 	if(L.z != z)	//Make sure you haven't disappeared to somewhere we can't go
-		set_AI_busy(FALSE)
+		if(ai_brain) ai_brain.busy = FALSE
 		return FALSE
 
 	// Do the actual leap.
@@ -179,7 +127,7 @@
 	if(status_flags & LEAPING)
 		status_flags &= ~LEAPING // Revert special passage ability.
 
-	set_AI_busy(FALSE)
+	if(ai_brain) ai_brain.busy = FALSE
 	if(Adjacent(L))	//We leapt at them but we didn't manage to hit them, let's see if we're next to them
 		L.Weaken(2)	//get knocked down, idiot
 

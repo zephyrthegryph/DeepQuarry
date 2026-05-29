@@ -13,17 +13,6 @@
 	On the plus side, it's sure to contain even more valuable minerals within its bowels, if you can catch up with it to crack it open..."
 	value = CATALOGUER_REWARD_MEDIUM
 
-/datum/ai_holder/simple_mob/oregrub
-	hostile = FALSE			//docile, unless you hit them
-	retaliate = TRUE		//they *may* bite you...
-	can_flee = TRUE			//but they'd rather run away
-	dying_threshold = 1		//and ideally, we flee as soon as possible
-	flee_when_outmatched = TRUE	//especially when outmatched
-	outmatched_threshold = 25	//and we're outmatched by... basically everything!
-
-/datum/ai_holder/simple_mob/oregrub/lava
-	outmatched_threshold = 15
-
 /mob/living/simple_mob/vore/oregrub
 	name = "juvenile oregrub"
 	desc = "A young, leathery oregrub."
@@ -48,7 +37,6 @@
 	response_disarm = "pushes"
 	response_harm = "roughly pushes"
 
-	ai_holder_type = /datum/ai_holder/simple_mob/oregrub
 	say_list_type = /datum/say_list/oregrub
 
 	var/poison_per_bite = 2.5
@@ -104,7 +92,6 @@
 	health = 75
 	vore_pounce_chance = 80 // Full-grown grubs should pounce. More homf opportunities if you're dumb enough to poke it.
 	vore_pounce_maxhealth = 100 // They won't pounce by default, as they're passive. This is just so the nom check succeeds (and allows it to try and eat you) once you poke the damn thing. :u
-	ai_holder_type = /datum/ai_holder/simple_mob/oregrub/lava
 	//lavagrubs have even more armor than oregrubs
 	armor = list(
 				"melee"		= 50,

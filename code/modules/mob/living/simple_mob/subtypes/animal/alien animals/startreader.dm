@@ -34,7 +34,6 @@
 	attack_sharp = FALSE
 	attacktext = list("chomped", "bashed", "monched", "bumped")
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/startreader
 
 	min_oxy = 0
 	max_oxy = 0
@@ -94,12 +93,6 @@
 	B.digestchance = 10
 	B.absorbchance = 0
 	B.escapechance = 15
-
-/datum/ai_holder/simple_mob/melee/startreader
-	hostile = TRUE
-	retaliate = TRUE
-	destructive = TRUE
-	violent_breakthrough = TRUE
 
 /mob/living/simple_mob/vore/alienanimals/startreader/apply_melee_effects(mob/living/L)
 	if(!isliving(L))

@@ -27,7 +27,6 @@
 
 	organ_names = /datum/decl/mob_organ_names/faithless
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee
 
 
 	taser_kill = FALSE

@@ -20,7 +20,6 @@
 	attacktext = list("tail whips")
 	see_in_dark = 8
 	minbodytemp = 0
-	ai_holder_type = /datum/ai_holder/simple_mob/hostile/fluffball
 	say_list_type = /datum/say_list/fluffball
 
 	faction = FACTION_GLAMOUR
@@ -135,81 +134,10 @@
 		user.drop_item(W)
 		qdel(W)
 		visible_message("<span class='notice'>\The [src] quickly steals \the [W] into its fluff, it seems to have become a little less shy!</span>!")
-		var/datum/ai_holder/simple_mob/hostile/fluffball/A = ai_holder
-		if(istype(A))
-			A.friend_list |= user
+		// DQEdit - friend_list lived on the deleted ai_holder; modern brain
+		// stores friendliness as personal entries via add_personal but the
+		// DQ_DISPOSITION_* defines live in modular_dq/combat_ai/_defines.dm
+		// which is included after this file. Use the numeric value 2 (FRIENDLY).
+		ai_brain?.add_personal(user, 2, 0, "fluffball gift")
 
 //AI
-
-/datum/ai_holder/simple_mob/hostile/fluffball
-	can_flee = TRUE
-	vision_range = 3 //Only react if you get close
-	can_flee = TRUE					// If they're even allowed to flee.
-	flee_when_dying = TRUE			// If they should flee when low on health.
-	dying_threshold = 1.1			// Flee at max health
-	var/list/friend_list = list()
-
-/datum/ai_holder/simple_mob/hostile/fluffball/flee_from_target()
-	ai_log("flee_from_target() : Entering.", AI_LOG_DEBUG)
-
-	if(!target || !should_flee() || !can_attack(target)) // can_attack() is used since it checks the same things we would need to anyways.
-		ai_log("flee_from_target() : Lost target to flee from.", AI_LOG_INFO)
-		lose_target()
-		set_stance(STANCE_IDLE)
-		ai_log("flee_from_target() : Exiting.", AI_LOG_DEBUG)
-		return
-
-	var/mob/living/simple_mob/vore/H = holder
-	var/mob/living/L = target
-	var/distance = get_dist(holder, target)
-	if(distance <= 1)
-		if(H.will_eat(L) && H.CanPounceTarget(L))
-			H.face_atom(L)
-			H.PounceTarget(L)
-			return
-
-	ai_log("flee_from_target() : Stepping away.", AI_LOG_TRACE)
-	step_away(holder, target, 5)
-	ai_log("flee_from_target() : Exiting.", AI_LOG_DEBUG)
-
-/datum/ai_holder/simple_mob/hostile/fluffball/find_target(list/possible_targets, has_targets_list)
-	if(!isanimal(holder))	//Only simplemobs have the vars we need
-		return ..()
-	var/list/L = list()
-	if(!has_targets_list)
-		possible_targets = list_targets()
-	var/list/valid_mobs = list()
-	for(var/mob/living/possible_target in possible_targets)
-		var/mob/living/carbon/human/H = possible_target
-		if(istype(H))
-			var/obj/item/reagent_containers/food/B = H.get_active_hand()
-			var/obj/item/reagent_containers/food/R = H.get_inactive_hand()
-			if(istype(R) || istype(B))
-				continue
-		if(!can_attack(possible_target))
-			continue
-		if((possible_target in friend_list) && !check_attacker(possible_target))
-			continue
-		L |= possible_target
-		if(!isliving(possible_target))
-			continue
-		if(vore_check(possible_target))
-			valid_mobs |= possible_target
-
-	var/new_target
-	if(valid_mobs.len)
-		new_target = pick(valid_mobs)
-	else if(hostile && L.len)
-		new_target = pick(L)
-	if(!new_target)
-		return null
-	give_target(new_target)
-	return new_target
-
-/datum/ai_holder/simple_mob/vore/fluffball
-	vision_range = 4
-	hostile = FALSE
-	retaliate = TRUE
-	vore_hostile = FALSE
-	forgive_resting = TRUE
-	cooperative = FALSE

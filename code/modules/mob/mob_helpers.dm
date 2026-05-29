@@ -639,7 +639,7 @@ It's fairly easy to fix if dealing with single letters but not so much with comp
 	if(. == SAFE_PERP)
 		return SAFE_PERP
 
-	if(has_AI() && ai_holder.hostile && faction != "neutral") // Otherwise Runtime gets killed.
+	if((ai_brain != null) && ai_brain.hostile && faction != "neutral") // Otherwise Runtime gets killed.
 		threatcount += 4
 	return threatcount
 
@@ -663,9 +663,10 @@ It's fairly easy to fix if dealing with single letters but not so much with comp
 	if(victim)
 		threatcount += 4
 */
-	if(has_AI())
-		var/datum/ai_holder/simple_mob/xenobio_slime/AI = ai_holder
-		if(AI.rabid)
+	// DQEdit - slime rabid check moved to /datum/slime_state.
+	if(istype(src, /mob/living/simple_mob/slime/xenobio))
+		var/mob/living/simple_mob/slime/xenobio/X = src
+		if(X.slime_state && X.slime_state.rabid)
 			threatcount = 10
 
 	return threatcount

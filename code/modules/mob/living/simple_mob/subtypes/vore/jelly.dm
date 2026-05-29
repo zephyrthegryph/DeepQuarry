@@ -26,7 +26,6 @@
 	melee_damage_upper = 7
 
 	say_list_type = /datum/say_list/jelly
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate/jelly
 
 	can_be_drop_prey = FALSE
 
@@ -51,9 +50,6 @@
 /datum/say_list/jelly
 	emote_hear = list("squishes","spluts","splorts","sqrshes","makes slime noises")
 	emote_see = list("undulates quietly")
-
-/datum/ai_holder/simple_mob/retaliate/jelly
-	speak_chance = 2
 
 /mob/living/simple_mob/vore/jelly/load_default_bellies()
 	. = ..()

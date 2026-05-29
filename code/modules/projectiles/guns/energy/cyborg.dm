@@ -395,7 +395,7 @@
 
 		// Make lesser robots really mad at us.
 		if(target.mob_class & MOB_CLASS_SYNTHETIC)
-			if(target.has_AI())
+			if((target.ai_brain != null))
 				target.taunt(user)
 			target.adjustFireLoss(force * 6) // 30 Burn, for 50 total.
 
@@ -531,7 +531,7 @@
 
 /obj/item/melee/robotic/baton/shocker/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
 	..(target, user, hit_zone)
-	if(target.has_AI())
+	if((target.ai_brain != null))
 		target.taunt(user)
 
 /obj/item/melee/robotic/baton/slime

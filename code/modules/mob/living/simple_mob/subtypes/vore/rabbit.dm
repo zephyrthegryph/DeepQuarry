@@ -30,7 +30,6 @@
 	movement_cooldown = 0
 
 	say_list_type = /datum/say_list/rabbit
-	ai_holder_type = /datum/ai_holder/simple_mob/passive
 
 	meat_amount = 3
 	meat_type = /obj/item/reagent_containers/food/snacks/meat
@@ -163,7 +162,6 @@
 	body_color = "killer" // Set this so New() doesn't try to randomize us.
 
 	say_list_type = /datum/say_list/rabbit
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/evasive
 
 /mob/living/simple_mob/vore/rabbit/killer/ex_act()
 	gib()

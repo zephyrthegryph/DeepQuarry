@@ -93,9 +93,8 @@
 		tf_mob_holder = null
 		return
 	new /obj/effect/effect/teleport_greyscale(src.loc)
-	if(ourmob.ai_holder)
-		var/datum/ai_holder/our_AI = ourmob.ai_holder
-		our_AI.set_stance(STANCE_IDLE)
+	// DQEdit - legacy ai_holder.set_stance(STANCE_SLEEP) removed; brain auto-sleeps
+	// when the mob's stat changes via its COMSIG_MOB_STATCHANGE handler.
 	tf_mob_holder = null
 	ourmob.ckey = ckey
 	var/turf/get_dat_turf = get_turf(src)
@@ -192,12 +191,8 @@
 			new_mob.ckey = src.ckey
 			if(new_mob.tf_form_ckey)
 				src.ckey = new_mob.tf_form_ckey
-			if(src.ai_holder && new_mob.ai_holder)
-				var/datum/ai_holder/old_AI = src.ai_holder
-				old_AI.set_stance(STANCE_SLEEP)
-				var/datum/ai_holder/new_AI = new_mob.ai_holder
-				new_AI.hostile = old_AI.hostile
-				new_AI.retaliate = old_AI.retaliate
+			// DQEdit - legacy ai_holder state transfer between original and TF'd mob
+			// no longer needed; modern brain spawns fresh on the new mob.
 			src.loc = new_mob
 			src.forceMove(new_mob)
 			new_mob.tf_mob_holder = src

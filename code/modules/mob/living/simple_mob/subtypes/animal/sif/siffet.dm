@@ -39,21 +39,11 @@
 	attacktext = list("sliced", "snapped", "gnawed")
 
 	say_list_type = /datum/say_list/siffet
-	ai_holder_type = /datum/ai_holder/simple_mob/siffet
 
 /datum/say_list/siffet
 	speak = list("Yap!", "Heh!", "Huff.")
 	emote_see = list("sniffs its surroundings","flicks its ears", "scratches the ground")
 	emote_hear = list("chatters", "huffs")
-
-/datum/ai_holder/simple_mob/siffet
-	hostile = TRUE
-	retaliate = TRUE
-
-/datum/ai_holder/simple_mob/siffet/post_melee_attack(atom/A) //Evasive
-	if(holder.Adjacent(A))
-		holder.IMove(get_step(holder, pick(GLOB.alldirs)))
-		holder.face_atom(A)
 
 /mob/living/simple_mob/animal/sif/siffet/IIsAlly(mob/living/L)
 	. = ..()

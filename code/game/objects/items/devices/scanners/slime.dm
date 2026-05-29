@@ -30,11 +30,11 @@
 		user.show_message(span_warning("Warning: Subject is hungry."))
 	user.show_message("Electric change strength: [S.power_charge]")
 
-	if(S.has_AI())
-		var/datum/ai_holder/simple_mob/xenobio_slime/AI = S.ai_holder
-		if(AI.resentment)
+	// DQEdit - resentment/rabid moved to /datum/slime_state on the slime mob.
+	if(S.slime_state)
+		if(S.slime_state.resentment)
 			user.show_message(span_warning("Warning: Subject is harboring resentment."))
-		if(AI.rabid)
+		if(S.slime_state.rabid)
 			user.show_message(span_danger("Subject is enraged and extremely dangerous!"))
 	if(S.harmless)
 		user.show_message("Subject has been pacified.")

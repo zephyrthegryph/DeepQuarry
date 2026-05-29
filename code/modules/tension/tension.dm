@@ -19,9 +19,11 @@
 	var/threat_guess = 0
 
 	// First lets consider their attack ability.
+	// DQEdit: legacy ai_brain.pointblank is dead in the modern brain — ranged
+	// behaviors have min_range >= 2, so no mob fires at point-blank. Leave
+	// the var here in case a future behavior wants to set it, but it's FALSE
+	// for every brain today.
 	var/will_point_blank = FALSE
-	if(has_AI())
-		will_point_blank = ai_holder.pointblank
 
 	var/potential_damage = 0
 	if(!projectiletype || ( ( get_dist(src, threatened) >= 1) && !will_point_blank ) ) // Melee damage.
@@ -60,8 +62,8 @@
 /mob/living/simple_mob/get_threat(mob/living/threatened)
 	. = ..()
 
-	if(has_AI())
-		if(!ai_holder.hostile)
+	if((ai_brain != null))
+		if(!ai_brain.hostile)
 			return 0 // Can't hurt anyone.
 
 	if(incapacitated(INCAPACITATION_DISABLED))
@@ -103,8 +105,8 @@
 /mob/living/carbon/get_threat(mob/living/threatened)
 	. = ..()
 
-	if(has_AI())
-		if(!ai_holder.hostile)
+	if((ai_brain != null))
+		if(!ai_brain.hostile)
 			return 0
 
 	if(incapacitated(INCAPACITATION_DISABLED))
@@ -140,9 +142,11 @@
 	var/threat_guess = 0
 
 	// First lets consider their attack ability.
+	// DQEdit: legacy ai_brain.pointblank is dead in the modern brain — ranged
+	// behaviors have min_range >= 2, so no mob fires at point-blank. Leave
+	// the var here in case a future behavior wants to set it, but it's FALSE
+	// for every brain today.
 	var/will_point_blank = FALSE
-	if(has_AI())
-		will_point_blank = ai_holder.pointblank
 
 	. = ..()
 

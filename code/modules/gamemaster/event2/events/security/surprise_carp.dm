@@ -52,7 +52,7 @@
 		if(spawning_turf)
 			var/mob/living/simple_mob/animal/space/carp/C = new(spawning_turf)
 			// Ask carp to swim onto the victim's screen. The AI will then switch to hostile and try to eat them.
-			C.ai_holder?.give_destination(get_turf(victim))
+			C.ai_brain?.give_destination(get_turf(victim))
 		else
 			log_game("Surprise carp attack failed to find any space turfs offscreen to the victim.")
 

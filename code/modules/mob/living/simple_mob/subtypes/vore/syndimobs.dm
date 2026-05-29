@@ -35,7 +35,6 @@
 	buckle_movable = TRUE
 	buckle_lying = FALSE
 	mount_offset_y = 10
-	ai_holder_type = /datum/ai_holder/simple_mob/melee
 	say_list_type = /datum/say_list/otie
 	tame_chance = 0
 
@@ -100,8 +99,7 @@
 
 /mob/living/simple_mob/vore/otie/syndicate/do_special_attack(atom/A)
 	set waitfor = FALSE
-	set_AI_busy(TRUE)
-
+	if(ai_brain) ai_brain.busy = TRUE
 	do_windup_animation(A, leap_warmup)
 	sleep(leap_warmup) // For the telegraphing.
 
@@ -139,8 +137,7 @@
 		to_chat(victim, span_critical("\The [src] jumps on you!"))
 		. = TRUE
 
-	set_AI_busy(FALSE)
-
+	if(ai_brain) ai_brain.busy = FALSE
 /mob/living/simple_mob/vore/wolf/direwolf/syndicate
 	name = "mercenary commandoggo"
 	desc = "A huge white furred wolfdog, wearing a blood red combat harness. They look ravenously hungry, too..."
@@ -193,41 +190,6 @@
 	icon_rest = "synddog_blk_rest"
 
 
-/datum/ai_holder/simple_mob/merc/ranged/torch //Only use these ai types if you want them not to give any warning before blastin'
-	threaten = FALSE
-	returns_home = TRUE
-	wander = TRUE
-	intelligence_level = AI_SMART
-	threaten_delay = 0 SECONDS
-	use_astar = TRUE
-
-/datum/ai_holder/simple_mob/merc/ranged/torch/lmg
-	threaten = FALSE
-	returns_home = TRUE
-	wander = TRUE
-	intelligence_level = AI_SMART
-	threaten_delay = 0 SECONDS
-	use_astar = TRUE
-	conserve_ammo = FALSE
-
-/datum/ai_holder/simple_mob/merc/ranged/torch/lmg/chill
-	threaten = FALSE
-	returns_home = TRUE
-	wander = TRUE
-	intelligence_level = AI_SMART
-	threaten_delay = 30 SECONDS
-	use_astar = TRUE
-	conserve_ammo = FALSE
-
-/datum/ai_holder/simple_mob/merc/ranged/sniper/torch
-	vision_range = 20
-	threaten = FALSE
-	returns_home = TRUE
-	wander = TRUE
-	intelligence_level = AI_SMART
-	threaten_delay = 0 SECONDS
-	use_astar = TRUE
-
 /mob/living/simple_mob/vore/wolftaur/syndicate
 	name = "mercenary commando"
 	desc = "A tough looking armored canid creature armed with a battle rifle."
@@ -271,7 +233,6 @@
 	projectile_accuracy = -15
 	base_attack_cooldown = 8
 	reload_max = 30
-	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged
 
 	say_list_type = /datum/say_list/merc
 
@@ -344,7 +305,6 @@
 	random_skin = 0
 	base_attack_cooldown = 0.3
 	reload_max = 50
-	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged/torch/lmg/chill
 
 /mob/living/simple_mob/vore/wolftaur/syndicate/smg
 	name = "mercenary commando"
@@ -362,7 +322,6 @@
 	random_skin = 0
 	base_attack_cooldown = 0.1
 	reload_max = 15
-	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged
 /*
 /mob/living/simple_mob/vore/wolftaur/syndicate/awp
 	name = "mercenary commando sniper"
@@ -381,7 +340,6 @@
 	base_attack_cooldown = 30
 	ranged_attack_delay = 2.5
 	reload_max = 5
-	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged/sniper/torch
 \*
 */
 

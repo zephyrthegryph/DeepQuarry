@@ -28,14 +28,13 @@
 	if(!(L.mob_class & allowed_mob_classes))
 		return FALSE
 
-	if(!L.has_AI())
+	if(!(L.ai_brain != null))
 		return FALSE
 
-	var/datum/ai_holder/our_ai_holder = L.ai_holder
-	our_ai_holder.hostile = FALSE // The Technomancer chooses the target, not the our_ai_holder.
-	our_ai_holder.retaliate = TRUE
-	our_ai_holder.wander = FALSE
-	our_ai_holder.forget_everything()
+	var/datum/ai_brain/brain = L.ai_brain
+	brain.set_hostile(FALSE)
+	brain.wander = FALSE
+	brain.forget_everything()
 
 	if(isanimal(L))
 		var/mob/living/simple_mob/SM = L
@@ -49,12 +48,12 @@
 	if(!(L in controlled_mobs))
 		return FALSE
 
-	if(L.has_AI())
-		var/datum/ai_holder/our_ai_holder = L.ai_holder
-		our_ai_holder.hostile = initial(our_ai_holder.hostile)
-		our_ai_holder.retaliate = initial(our_ai_holder.retaliate)
-		our_ai_holder.wander = initial(our_ai_holder.wander)
-		our_ai_holder.forget_everything()
+	if(L.ai_brain)
+		var/datum/ai_brain/brain = L.ai_brain
+		// Restore defaults so the mob resumes normal behaviour after release.
+		brain.set_hostile(initial(brain.hostile))
+		brain.wander = initial(brain.wander)
+		brain.forget_everything()
 
 	if(isanimal(L))
 		var/mob/living/simple_mob/SM = L
@@ -65,17 +64,17 @@
 
 /obj/item/spell/control/proc/move_all(turf/T)
 	for(var/mob/living/L in controlled_mobs)
-		if(!L.has_AI() || L.stat)
+		if(!L.ai_brain || L.stat)
 			deselect(L)
 			continue
-		L.ai_holder.give_destination(T, 0, TRUE)
+		L.ai_brain.give_destination(T)
 
 /obj/item/spell/control/proc/attack_all(mob/target)
 	for(var/mob/living/L in controlled_mobs)
-		if(!L.has_AI() || L.stat)
+		if(!L.ai_brain || L.stat)
 			deselect(L)
 			continue
-		L.ai_holder.give_target(target)
+		L.ai_brain.give_target(target, TRUE)
 
 /obj/item/spell/control/Initialize(mapload)
 	control_overlay = image('icons/obj/spells.dmi',"controlled")
@@ -109,7 +108,7 @@
 				if(L.client)
 					to_chat(user, span_danger("\The [L] seems to resist you!"))
 					return 0
-				if(!L.has_AI())
+				if(!(L.ai_brain != null))
 					to_chat(user, span_warning("\The [L] seems too dim for this to work on them."))
 					return FALSE
 				if(pay_energy(500))
