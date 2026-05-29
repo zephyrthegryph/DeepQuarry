@@ -62,13 +62,11 @@
 		to_chat(M, span_notice("\The [src] emits an unpleasant tone... There is nothing to command."))
 		playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
 	else if(isanimal(bound_mob) && !bound_mob.client)
-		if(!isnull(bound_mob.get_AI_stance()))
-			var/datum/ai_holder/AI = bound_mob.ai_holder
-			AI.hostile = !AI.hostile
-			if(!AI.hostile)
-				AI.set_stance(STANCE_IDLE)
-			to_chat(M, span_notice("\The [bound_mob] is now [AI.hostile ? "hostile" : "passive"]."))
-			log_admin("[key_name_admin(M)] set [bound_mob] to [AI.hostile].")
+		if(bound_mob.ai_brain)
+			var/datum/ai_brain/AI = bound_mob.ai_brain
+			AI.set_hostile(!AI.get_hostile())
+			to_chat(M, span_notice("\The [bound_mob] is now [AI.get_hostile() ? "hostile" : "passive"]."))
+			log_admin("[key_name_admin(M)] set [bound_mob] to [AI.get_hostile()].")
 	else if(bound_mob.client)
 		var/transmit_msg = tgui_input_text(user, "What is your command?", "Command")
 		if(length(transmit_msg) >= MAX_MESSAGE_LEN)
@@ -102,31 +100,33 @@
 	else if(bound_mob.client)
 		to_chat(bound_mob, span_notice("\The [owner] wishes for you to follow them."))
 	else if(bound_mob in contents)
-		if(!bound_mob.ai_holder)
+		if(!bound_mob.ai_brain)
 			to_chat(M, span_notice("\The [src] emits an unpleasant tone... \The [bound_mob] is not able to follow your command."))
 			playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
 			return
-		var/datum/ai_holder/AI = bound_mob.ai_holder
-		if(AI.leader)
-			to_chat(M, span_notice("\The [src] chimes~ \The [bound_mob] stopped following [AI.leader]."))
-			AI.lose_follow(AI.leader)
+		var/datum/ai_brain/AI = bound_mob.ai_brain
+		var/mob/current_leader = AI.get_leader()
+		if(current_leader)
+			to_chat(M, span_notice("\The [src] chimes~ \The [bound_mob] stopped following [current_leader]."))
+			AI.lose_follow()
 		else
 			AI.set_follow(M)
-			to_chat(M, span_notice("\The [src] chimes~ \The [bound_mob] started following following [AI.leader]."))
+			to_chat(M, span_notice("\The [src] chimes~ \The [bound_mob] started following [M]."))
 	else if(!(bound_mob in view(M)))
 		to_chat(M, span_notice("\The [src] emits an unpleasant tone... \The [bound_mob] is not able to hear your command."))
 		playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
-		if(!bound_mob.ai_holder)
+		if(!bound_mob.ai_brain)
 			to_chat(M, span_notice("\The [src] emits an unpleasant tone... \The [bound_mob] is not able to follow your command."))
 			playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
 			return
-		var/datum/ai_holder/AI = bound_mob.ai_holder
-		if(AI.leader)
-			to_chat(M, span_notice("\The [src] chimes~ \The [bound_mob] stopped following [AI.leader]."))
-			AI.lose_follow(AI.leader)
+		var/datum/ai_brain/AI = bound_mob.ai_brain
+		var/mob/current_leader = AI.get_leader()
+		if(current_leader)
+			to_chat(M, span_notice("\The [src] chimes~ \The [bound_mob] stopped following [current_leader]."))
+			AI.lose_follow()
 		else
 			AI.set_follow(M)
-			to_chat(M, span_notice("\The [src] chimes~ \The [bound_mob] started following following [AI.leader]."))
+			to_chat(M, span_notice("\The [src] chimes~ \The [bound_mob] started following [M]."))
 
 //Don't really want people 'haha funny' capturing and releasing one another willy nilly. So! If you wanna release someone, you gotta destroy the thingy.
 //(Which is consistent with how it works with digestion anyway.)
@@ -313,7 +313,7 @@
 	if(M.paralysis)			//Oh noooo
 		capture_chance += 0.1
 		effect_count += 1
-	if(M.ai_holder.stance == STANCE_IDLE)	//SNEAK ATTACK???
+	if((M.ai_brain && M.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) == STANCE_IDLE)	//SNEAK ATTACK???
 		capture_chance += 0.1
 		effect_count += 1
 
@@ -405,7 +405,7 @@
 			playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
 			return
 		var/mob/living/simple_mob/S = M
-		if(!S.ai_holder)						//We don't really want to capture simplemobs that don't have an AI
+		if(!S.ai_brain)						//We don't really want to capture simplemobs that don't have an AI
 			to_chat(user, span_warning("This creature is not suitable for capture."))
 			playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
 		else if(prob(capture_chance(S, user)))				//OKAY! So we have an NPC simplemob with an AI, let's calculate its capture chance! It varies based on the mob's condition.
@@ -414,8 +414,8 @@
 			recall(user)
 			active = TRUE
 		else									//Shoot, it didn't work and now it's mad!!!
-			S.ai_holder.go_wake()
-			S.ai_holder.give_target(user, urgent = TRUE)
+			S.ai_brain.go_wake()
+			S.ai_brain.give_target(user, TRUE)
 			user.visible_message("\The [src] bonks into \the [S], angering it!")
 			playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
 			to_chat(user, span_notice("\The [src] clicks unsatisfyingly."))
@@ -449,9 +449,9 @@
 /obj/item/capture_crystal/proc/recall(mob/living/user)
 	if(bound_mob in view(user))		//We can only recall it if we can see it
 		var/turf/turfmemory = get_turf(bound_mob)
-		if(isanimal(bound_mob) && bound_mob.ai_holder)
+		if(isanimal(bound_mob) && bound_mob.ai_brain)
 			var/mob/living/simple_mob/M = bound_mob
-			M.ai_holder.go_sleep()	//AI doesn't need to think when it's in the crystal
+			M.ai_brain.go_sleep()	//AI doesn't need to think when it's in the crystal
 		bound_mob.forceMove(src)
 		last_activate = world.time
 		bound_mob.visible_message("\The [user]'s [src] flashes, disappearing [bound_mob] in an instant!!!", "\The [src] pulls you back into confinement in a flash of light!!!")
@@ -476,7 +476,7 @@
 	last_activate = world.time
 	if(isanimal(bound_mob))
 		var/mob/living/simple_mob/M = bound_mob
-		M.ai_holder.go_wake()		//Okay it's time to do work, let's wake up!
+		M.ai_brain.go_wake()		//Okay it's time to do work, let's wake up!
 	bound_mob.faction = owner.faction	//Let's make sure we aren't hostile to our owner or their friends
 	bound_mob.visible_message("\The [user]'s [src] flashes, \the [bound_mob] appears in an instant!!!", "The world around you rematerialize as you are unleashed from the [src] next to \the [user]. You feel a strong compulsion to enact \the [owner]'s will.")
 	animate_action(get_turf(bound_mob))
@@ -958,12 +958,12 @@
 			playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
 			return
 		var/mob/living/simple_mob/S = M
-		if(!S.ai_holder)						//We don't really want to capture simplemobs that don't have an AI
+		if(!S.ai_brain)						//We don't really want to capture simplemobs that don't have an AI
 			to_chat(user, span_warning("This creature is not suitable for capture."))
 			playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
 		else									//Shoot, it didn't work and now it's mad!!!
-			S.ai_holder.go_wake()
-			S.ai_holder.give_target(user, urgent = TRUE)
+			S.ai_brain.go_wake()
+			S.ai_brain.give_target(user, TRUE)
 			user.visible_message("\The [src] bonks into \the [S], angering it!")
 			playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
 			to_chat(user, span_notice("\The [src] clicks unsatisfyingly."))

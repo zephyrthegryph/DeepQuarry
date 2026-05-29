@@ -25,7 +25,6 @@
 	attacktext = list("bit")
 
 	say_list_type = /datum/say_list/fennix
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate/cooperative
 
 	allow_mind_transfer = TRUE
 

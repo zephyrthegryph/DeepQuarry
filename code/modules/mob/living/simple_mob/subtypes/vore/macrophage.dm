@@ -51,7 +51,6 @@
 	pass_flags = PASSTABLE | PASSMOB
 	mob_size = MOB_TINY
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/macrophage
 
 /mob/living/simple_mob/vore/aggressive/macrophage/giant
 	name = "Giant Germ"
@@ -98,13 +97,13 @@
 /*
 /mob/living/simple_mob/vore/aggressive/macrophage/do_special_attack(atom/A)
 	. = TRUE
-	set_AI_busy(TRUE)
+	if(ai_brain) ai_brain.busy = TRUE
 	do_windup_animation(A, 20)
 	addtimer(CALLBACK(src, PROC_REF(charge), A), 20, TIMER_STOPPABLE)
 
 /mob/living/simple_mob/vore/aggressive/macrophage/proc/charge(atom/A)
 	if(QDELETED(A) || !isturf(get_turf(A)))
-		set_AI_busy(FALSE)
+		if(ai_brain) ai_brain.busy = FALSE
 		return
 	status_flags |= LEAPING
 	flying = TRUE
@@ -123,7 +122,7 @@
 	if(ishuman(target))
 		var/mob/living/carbon/human/H = target
 		H.ContractDisease(base_disease)
-	set_AI_busy(FALSE)
+	if(ai_brain) ai_brain.busy = FALSE
 */
 /mob/living/simple_mob/vore/aggressive/macrophage/death()
 	..()
@@ -159,17 +158,3 @@
 /mob/living/simple_mob/vore/aggressive/macrophage/load_default_bellies()
 	var/obj/belly/B = new /obj/belly/macrophage(src)
 	vore_selected = B
-
-/datum/ai_holder/simple_mob/melee/macrophage
-	var/datum/disease/virus = null
-
-/datum/ai_holder/simple_mob/melee/macrophage/list_targets()
-	var/list/our_targets = ..()
-	var/mob/living/simple_mob/vore/aggressive/macrophage/macrophage = holder
-	for(var/list_target in our_targets)
-		var/mob/living/victim = list_target
-		if(victim.IsInfected())
-			if(victim.HasDisease(macrophage.base_disease) && prob(75)) // Less likely to be a target if you're infected
-				our_targets -= list_target
-				continue
-	return our_targets

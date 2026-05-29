@@ -27,7 +27,6 @@
 
 
 	say_list_type = /datum/say_list/bradley
-	ai_holder_type = /datum/ai_holder/simple_mob/horror
 
 /mob/living/simple_mob/horror/bradley/death()
 	playsound(src, 'sound/h_sounds/mumble.ogg', 50, 1)

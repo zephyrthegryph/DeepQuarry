@@ -41,7 +41,6 @@
 	adminbus_trash = TRUE //You know what, sure whatever. It's not like anyone's gonna be taking this bird on unga trips to be their gamer backpack, which kinda was the main reason for the trash eater restrictions in the first place anyway.
 	faction = "neutral"
 	say_list_type = /datum/say_list/swoopie
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate/swoopie
 	mob_bump_flag = 0
 	player_msg = "You are a SWOOPIE XL cleaning bot! Use DISARM intent on yourself to change your integrated Vac-Pack settings, or GRAB intent to swoop stuff up! Turning off the Vac-Pack will make your grab clicks function as normal grab intent clicks."
 
@@ -68,7 +67,7 @@
 		return L?.type in crew_creatures
 
 /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/attack_target(atom/A)
-	if(!has_AI())
+	if(!(ai_brain != null))
 		return ..()
 	if(istype(A, /mob/living)) //Swoopie gonn swoop
 		var/mob/living/M = A //typecast
@@ -206,7 +205,7 @@
 		if(!vac_output)
 			if(isbelly(vore_selected))
 				Vac.output_dest = WEAKREF(vore_selected)
-	if(!istype(T) || !istype(Vac) || !has_AI() || Vac.loc != src || stat)
+	if(!istype(T) || !istype(Vac) || !(ai_brain != null) || Vac.loc != src || stat)
 		return
 	if(istype(T, /turf/simulated))
 		var/turf/simulated/S = T
@@ -297,31 +296,9 @@
 				return
 			L.put_in_active_hand(Vac)
 
-/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/verb/change_settings()
-	set name = "Change Settings"
-	set desc = "Change the swoopie's settings"
-	set category = "IC"
-	set src in oview(1)
-	if(!has_AI() || !IIsAlly(usr))
-		to_chat(usr, span_danger(""))
-	if(!ai_holder == /datum/ai_holder/simple_mob/retaliate/swoopie || !ai_holder)
-		to_chat(usr, span_warning("This [src] doesnt seem to have changable settings!"))
-		return
-	var/datum/ai_holder/simple_mob/retaliate/swoopie/ai = ai_holder
-	var/list/swooping_options = list(
-		"Swoop Pests",
-		"Swoop Trash",
-	)
-
-	var/setting_selection = tgui_input_list(usr, "Toggle Swoopie Swooping Options", "Swoopie Options", swooping_options)
-
-	switch(setting_selection)
-		if("Swoop Pests")
-			ai.swoop_pests = !ai.swoop_pests // invert the option
-			to_chat(usr, "You press a button on \the [src], [ai.swoop_pests ? "" : "de"]activating it's pest seeking routines!")
-		if("Swoop Trash")
-			ai.swoop_trash = !ai.swoop_trash // invert the option
-			to_chat(usr, "you press a button on \the [src], [ai.swoop_trash ? "" : "de"]activating it's trash seeking routines!")
+// DQEdit - change_settings verb body moved to
+// modular_dq/.../ports/swoopie.dm where it toggles mob-side swoop_pests /
+// swoop_trash vars (the legacy AI subtype is gone).
 
 
 /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/Login()
@@ -342,62 +319,4 @@
 	forceMove(vac_owner)
 
 //Custom Swoopie AI to make it swoop up trash when asked to
-/datum/ai_holder/simple_mob/retaliate/swoopie //TODO: make a general item-seeking AI type and use it for other stuff (Teppi seeking food automatically?)
-	hostile = TRUE			// Hostile, but it wont actually attack stuff unless it's allowed to. Maybe also in retaliation.
-	var/swoop_pests = FALSE // Do we go after living pests?
-	var/swoop_trash = FALSE	// Do we go after trash and junk?
-	var/original_power = 0  // What the swoopie's last vaccum strength was before we went to go vaccum stuff up actively.
-	cooperative = FALSE		// Swoop works independantly
-	mauling = TRUE			// Swoop doesnt care how hurt you are. If it's trying to attack you, it's just trying to eat you
-	handle_corpse = TRUE	// See above.
-
-/datum/ai_holder/simple_mob/retaliate/swoopie/list_targets() //Kinda stolen from nurse spiders. Mostly stolen.
-	. = ..()
-
-	var/static/alternative_targets = typecacheof(list(/obj/item/trash))
-
-	for(var/obj/O as anything in typecache_filter_list(range(vision_range, holder), alternative_targets))
-		if(can_see(holder, O, vision_range) && !O.anchored)
-			. += O
-
 // Select an obj if no mobs are around.
-/datum/ai_holder/simple_mob/retaliate/swoopie/pick_target(list/targets)
-	var/mobs_only = locate(/mob/living) in targets // If a mob is in the list of targets, then ignore objects.
-	if(mobs_only)
-		for(var/A in targets)
-			if(!isliving(A))
-				targets -= A
-
-	return ..(targets)
-
-/datum/ai_holder/simple_mob/retaliate/swoopie/find_target(list/possible_targets, has_targets_list = FALSE)
-	ai_log("find_target() : Entered.", AI_LOG_TRACE)
-	if(!hostile) // So retaliating mobs only attack the thing that hit it.
-		return null
-	. = list()
-	if(!has_targets_list)
-		possible_targets = list_targets()
-	for(var/possible_target in possible_targets)
-		if(can_attack(possible_target)) // Can we attack it?
-			if(isliving(possible_target) && !swoop_pests) // Are we allowed to attack living things?
-				continue
-			if(!isliving(possible_target) && !swoop_trash) // Otherwise, are we allowed to swoop trash?
-				continue
-			. += possible_target
-
-	var/new_target = pick_target(.)
-	give_target(new_target)
-	return new_target
-
-/datum/ai_holder/simple_mob/retaliate/swoopie/give_target(new_target, urgent = FALSE)
-	. = ..()
-	if(istype(holder, /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie))
-		var/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/bird = holder //Typecast
-		original_power = bird.Vac.vac_power
-		bird.Vac.vac_power = 7
-
-/datum/ai_holder/simple_mob/retaliate/swoopie/remove_target()
-	. = ..()
-	if(istype(holder, /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie))
-		var/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/bird = holder //Typecast
-		bird.Vac.vac_power = original_power

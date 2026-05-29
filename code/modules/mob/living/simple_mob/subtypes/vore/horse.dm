@@ -33,7 +33,6 @@
 	mount_offset_x = 0
 
 	say_list_type = /datum/say_list/horse
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate
 
 	can_be_drop_prey = FALSE
 	allow_mind_transfer = TRUE
@@ -130,7 +129,6 @@
 	pixel_y = 0
 	mount_offset_y = 22
 	say_list_type = /datum/say_list/horse/kelpie
-	ai_holder_type = /datum/ai_holder/simple_mob/vore/kelpie
 
 	vore_bump_chance = 75
 	vore_pounce_chance = 75
@@ -169,31 +167,3 @@
 	speak = list("...","?")
 	emote_hear = list("whispers something","lets out a high pitched, distorted neigh")
 	emote_see = list("beckons you near", "watches", "swishes it's grass-like tail")
-
-/datum/ai_holder/simple_mob/vore/kelpie
-
-/datum/ai_holder/simple_mob/vore/kelpie/handle_wander_movement()
-	if(!holder)
-		return
-	ai_log("handle_wander_movement() : Entered.", AI_LOG_TRACE)
-	if(isturf(holder.loc) && can_act())
-		wander_delay--
-		var/turf/simulated/floor/water/underwater/surface = holder.loc
-		var/mob/living/simple_mob/H = holder
-		if(isdiveablewater(holder.loc) && H.vore_fullness)
-			holder.zMove(DOWN)
-			wander_delay = base_wander_delay
-		else if(istype(surface) && !H.vore_fullness)
-			holder.zMove(UP)
-			wander_delay = base_wander_delay
-		else if(wander_delay <= 0)
-			if(!wander_when_pulled && (holder.pulledby || holder.grabbed_by.len))
-				ai_log("handle_wander_movement() : Being pulled and cannot wander. Exiting.", AI_LOG_DEBUG)
-				return
-
-			var/moving_to = 0 // Apparently this is required or it always picks 4, according to the previous developer for simplemob AI.
-			moving_to = pick(GLOB.cardinal)
-			holder.set_dir(moving_to)
-			holder.IMove(get_step(holder,moving_to))
-			wander_delay = base_wander_delay
-	ai_log("handle_wander_movement() : Exited.", AI_LOG_TRACE)

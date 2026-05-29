@@ -37,7 +37,6 @@
 	mount_offset_y = 12
 
 	say_list_type = /datum/say_list/panther
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/hit_and_run
 	var/cloaked_alpha = 60			// Lower = Harder to see.
 	var/cloaked_bonus_damage = 30	// This is added on top of the normal melee damage.
 	var/cloaked_weaken_amount = 10	// How long to stun for.

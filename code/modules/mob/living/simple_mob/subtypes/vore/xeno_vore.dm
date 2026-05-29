@@ -61,7 +61,6 @@
 	pixel_x = -16
 	pixel_y = 0
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee
 	say_list_type = /datum/say_list/xeno_defanged
 
 	allow_mind_transfer = TRUE

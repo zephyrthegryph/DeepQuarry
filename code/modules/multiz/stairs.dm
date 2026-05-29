@@ -137,7 +137,7 @@
 /obj/structure/stairs/bottom/Crossed(atom/movable/AM, atom/oldloc)
 	if(isliving(AM))
 		var/mob/living/L = AM
-		if(L.has_AI())
+		if((L.ai_brain != null))
 			use_stairs(AM, oldloc)
 	..()
 
@@ -393,7 +393,7 @@
 /obj/structure/stairs/top/Crossed(atom/movable/AM, atom/oldloc)
 	if(isliving(AM))
 		var/mob/living/L = AM
-		if(L.has_AI())
+		if((L.ai_brain != null))
 			use_stairs(AM, oldloc)
 	..()
 

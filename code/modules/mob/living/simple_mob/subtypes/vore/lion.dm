@@ -40,7 +40,6 @@
 
 	minbodytemp = 200
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/evasive
 	max_buckled_mobs = 1 //Yeehaw
 	can_buckle = TRUE
 	buckle_movable = TRUE

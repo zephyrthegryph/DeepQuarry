@@ -28,7 +28,6 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 	health = 200
 	a_intent = I_HELP // While this is already help by default, I'm leaving this variable here as a reminder that disarm will prevent players from swapping places with the pitcher, but interfere with vore bump.
 	faction = FACTION_PLANTS // Makes plant-b-gone deadly.
-	ai_holder_type = /datum/ai_holder/simple_mob/passive/pitcher //It's a passive carnivorous plant, it can't detect or interact with people.
 
 	min_oxy = 0 //Immune to atmos because so are space vines. This is arbitrary and can be tweaked if desired.
 	max_oxy = 0
@@ -284,9 +283,6 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 	if(istype(AM, /mob/living) && will_eat(AM) && !istype(AM, type) && prob(vore_bump_chance) && !ckey)
 		animal_nom(AM)
 	..()
-
-/datum/ai_holder/simple_mob/passive/pitcher
-	wander = 0
 
 /obj/item/reagent_containers/food/snacks/pitcher_fruit //As much as I want to tie hydroponics harvest code to the mob, this is simpler (albeit kinda hacky).
 	name = "squishy fruit"

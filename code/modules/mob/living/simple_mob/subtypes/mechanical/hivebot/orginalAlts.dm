@@ -40,7 +40,6 @@
 	health = 6 LASERS_TO_KILL // 240 hp
 	icon_state = "guardian"
 	icon_living = "guardian"
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/kiting/dodge
 	projectiletype = /obj/item/projectile/energy/agate_lighting/fast
 
 /mob/living/simple_mob/mechanical/hivebot/tyr/meteor/bullet_act(obj/item/projectile/Proj)
@@ -48,12 +47,6 @@
 		return
 	projectiletype = Proj
 	..()
-
-/datum/ai_holder/simple_mob/ranged/kiting/dodge
-
-/datum/ai_holder/simple_mob/ranged/kiting/dodge/post_ranged_attack(atom/A)
-	holder.IMove(get_step(holder, pick(GLOB.alldirs)))
-	holder.face_atom(A)
 
 /obj/item/projectile/energy/spikeenergy_ball/boss
 	damage = 40
@@ -73,4 +66,3 @@
 	icon_state = "janitor"
 	icon_living = "janitor"
 	projectiletype = /obj/item/projectile/beam/midlaser/shortrange
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/pointblank

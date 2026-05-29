@@ -130,6 +130,7 @@
 #include "dq_atmos_tests.dm"
 #include "dq_audit_tests.dm"
 #include "dq_bodyscanner_tests.dm"
+#include "dq_combat_ai_tests.dm"
 #include "dq_medical_tests.dm"
 #include "dq_preferences_tests.dm"
 #include "dq_quarry_persistence_tests.dm"

@@ -59,8 +59,9 @@
 				if(isliving(M))
 					var/mob/living/L = M
 
-					// AI Stuff
-					ai_type = (L.ai_holder_type ? L.ai_holder_type : /datum/ai_holder/simple_mob/inert)
+					// DQEdit - legacy ai_holder_type removed; modern brain has no
+					// equivalent of swapping AI subtype at runtime.
+					ai_type = null
 					faction = (L.faction ? L.faction : "neutral")
 					intent  = (L.a_intent ? L.a_intent : I_HELP)
 					new_path = FALSE
@@ -105,8 +106,9 @@
 			intent = tgui_input_list(ui.user, "Please select preferred intent", "Select Intent", list(I_HELP, I_HURT), (intent ? intent : I_HELP))
 			return TRUE
 		if("set_ai_path")
-			ai_type = tgui_input_list(ui.user, "Select AI path. Not all subtypes are compatible!", "AI type", \
-			typesof(/datum/ai_holder/), (ai_type ? ai_type : /datum/ai_holder/simple_mob/inert))
+			// DQEdit - modern brain has no equivalent of "swap AI subtype at runtime";
+			// behaviors are declared per mob subtype via get_ai_behaviors().
+			to_chat(ui.user, span_warning("AI path selection no longer available; mob behaviors are per-subtype."))
 			return TRUE
 		if("loc_lock")
 			loc_lock = !loc_lock
@@ -155,10 +157,9 @@
 							if(isnum(params["melee_damage_upper"]))
 								S.melee_damage_upper = params["melee_damage_upper"]
 						if(use_custom_ai)
-							L.ai_holder_type = ai_type
 							L.faction = faction
 							L.a_intent = intent
-							L.initialize_ai_holder()
+							L.initialize_ai_brain()
 							L.AdjustSleeping(-100)
 						else
 							to_chat(ui.user, span_notice("You can only set AI for subtypes of mob/living!"))

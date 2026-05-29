@@ -13,8 +13,8 @@
 	client.screen |= GLOB.global_hud.darksight
 	client.images |= dsoverlay
 
-	if(ai_holder && !ai_holder.autopilot)
-		ai_holder.go_sleep()
+	if(ai_brain && !ai_brain.autopilot)
+		ai_brain.go_sleep()
 		to_chat(src,span_notice("Mob AI disabled while you are controlling the mob."))
 
 	AddComponent(/datum/component/character_setup)

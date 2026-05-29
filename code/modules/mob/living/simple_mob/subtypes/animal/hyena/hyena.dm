@@ -73,7 +73,6 @@ They're also cool, and Rykka/Nyria wrote this uwu
 	vore_default_contamination_flavor = "Acrid"
 	vore_default_contamination_color = "yellow"
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/pack_mob // Define here what type of enemy hyena is.
 
 	heat_damage_per_tick = 20
 	cold_damage_per_tick = 20

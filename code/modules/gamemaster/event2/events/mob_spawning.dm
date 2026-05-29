@@ -75,7 +75,7 @@
 				// Finally, make the simple_mob go towards the edge of the station.
 				var/mob/living/simple_mob/M = spawn_one_mob(spawn_turf, mob_type)
 				if(edge_of_station)
-					M.ai_holder?.give_destination(edge_of_station) // Ask simple_mobs to fly towards the edge of the station.
+					M.ai_brain?.give_destination(edge_of_station) // Ask simple_mobs to fly towards the edge of the station.
 		i++
 
 /datum/event2/event/mob_spawning/proc/spawn_one_mob(new_loc, mob_type)

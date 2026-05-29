@@ -28,7 +28,6 @@
 	friendly = list("nuzzles", "boops", "bumps against", "leans on")
 
 
-	ai_holder_type = null
 
 /mob/living/simple_mob/horror/Master/death()
 	playsound(src, 'sound/h_sounds/imbeciles.ogg', 50, 1)

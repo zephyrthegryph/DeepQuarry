@@ -254,7 +254,7 @@
 /obj/machinery/door/blast/attack_generic(mob/living/user, damage)
 	if(stat & (BROKEN|NOPOWER))
 		if(damage >= STRUCTURE_MIN_DAMAGE_THRESHOLD)
-			user.set_AI_busy(TRUE) // If the mob doesn't have an AI attached, this won't do anything.
+			if(user.ai_brain) user.ai_brain.busy = TRUE // If the mob doesn't have an AI attached, this won't do anything.
 			if(src.density)
 				visible_message(span_danger("\The [user] starts forcing \the [src] open!"))
 				if(do_after(user, 5 SECONDS, target = src))
@@ -265,7 +265,7 @@
 				if(do_after(user, 2 SECONDS, target = src))
 					visible_message(span_danger("\The [user] forces \the [src] closed!"))
 					force_close(1)
-			user.set_AI_busy(FALSE)
+			if(user.ai_brain) user.ai_brain.busy = FALSE
 		else
 			visible_message(span_notice("\The [user] strains fruitlessly to force \the [src] [density ? "open" : "closed"]."))
 		return

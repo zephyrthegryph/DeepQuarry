@@ -82,7 +82,6 @@
 		)
 
 	say_list_type = /datum/say_list/leech
-	ai_holder_type = /datum/ai_holder/simple_mob/intentional/leech
 
 /mob/living/simple_mob/animal/sif/leech/IIsAlly(mob/living/L)
 	. = ..()
@@ -123,14 +122,13 @@
 	if(istype(A, /mob/living/carbon))
 		switch(a_intent)
 			if(I_DISARM) // Poison
-				set_AI_busy(TRUE)
+				if(ai_brain) ai_brain.busy = TRUE
 				poison_inject(src, A)
-				set_AI_busy(FALSE)
+				if(ai_brain) ai_brain.busy = FALSE
 			if(I_GRAB) // Infesting!
-				set_AI_busy(TRUE)
+				if(ai_brain) ai_brain.busy = TRUE
 				do_infest(src, A)
-				set_AI_busy(FALSE)
-
+				if(ai_brain) ai_brain.busy = FALSE
 /mob/living/simple_mob/animal/sif/leech/handle_special()
 	if(prob(5))
 		randomized_reagent = pick(produceable_chemicals)
@@ -147,9 +145,9 @@
 		infest_target = pick(bodypart_targets)
 
 	if(host && !stat && !host.stat)
-		if(ai_holder)
-			ai_holder.hostile = FALSE
-			ai_holder.lose_target()
+		if(ai_brain)
+			ai_brain.set_hostile(FALSE)
+			ai_brain.lose_target()
 		alpha = 5
 		if(host.reagents.has_reagent(REAGENT_ID_CORDRADAXON) && !docile)	// Overwhelms the leech with food.
 			var/message = "We feel the rush of cardiac pluripotent cells in your host's blood, lulling us into docility."
@@ -209,10 +207,7 @@
 
 			if(prob(15 + (20 * heartless_mod)))
 				feed_on_organ()
-	else
-		if(ai_holder)
-			ai_holder.hostile = initial(ai_holder.hostile)
-
+	// DQEdit: legacy else-clause emptied (was ai_holder reset).
 	if(host && host.stat == DEAD && istype(get_turf(host), /turf/simulated/floor/water))
 		leave_host()
 
@@ -289,9 +284,9 @@
 
 		src.host = M
 		src.forceMove(M)
-		if(ai_holder)
-			ai_holder.hostile = FALSE
-			ai_holder.lose_target()
+		if(ai_brain)
+			ai_brain.set_hostile(FALSE)
+			ai_brain.lose_target()
 
 		if(ishuman(M))
 			var/mob/living/carbon/human/H = M
@@ -438,51 +433,6 @@
 		host.add_modifier(/datum/modifier/grievous_wounds, 60 SECONDS)
 		adjustBruteLoss(rand(-10,-60))
 		adjustFireLoss(rand(-10,-60))
-
-/datum/ai_holder/simple_mob/intentional/leech
-	hostile = TRUE
-	retaliate = TRUE
-	vision_range = 3
-	mauling = TRUE
-	returns_home = TRUE
-	can_flee = TRUE
-	home_low_priority = TRUE	// If we've got a target, we're going for them.
-	max_home_distance = 1	// Low to ensure the creature doesn't leave the water unless it has a host.
-
-/datum/ai_holder/simple_mob/intentional/leech/handle_special_strategical()
-	var/mob/living/simple_mob/animal/sif/leech/SL = holder
-	if(!SL.host && !istype(get_turf(SL), /turf/simulated/floor/water))
-		var/list/nearby_water = list()
-		for(var/turf/simulated/floor/water/W in view(holder, 10))
-			nearby_water |= W
-		if(nearby_water && nearby_water.len)
-			var/turf/T = pick(nearby_water)
-			if(T && can_attack(T))
-				home_turf = T
-
-/datum/ai_holder/simple_mob/intentional/leech/special_flee_check()
-	var/mob/living/simple_mob/animal/sif/leech/SL = holder
-
-	if(!SL.host && !istype(get_turf(SL), /turf/simulated/floor/water))
-		return TRUE
-
-/datum/ai_holder/simple_mob/intentional/leech/pre_special_attack(atom/A)
-	if(isliving(A))
-		var/mob/living/L = A
-		if(ishuman(L) && !L.isSynthetic())
-			if(L.incapacitated() || (L.stat && L.stat != DEAD) || L.resting || L.paralysis)
-				holder.a_intent = I_GRAB		// Infesting time.
-			else
-				holder.a_intent = I_DISARM	// They're standing up! Try to drop or stun them.
-		else
-			holder.a_intent = I_HURT		// Otherwise, bite.
-
-	else if(istype(A, /obj/item))
-		var/obj/item/I = A
-		if(istype(I, /obj/item/reagent_containers/food/snacks))
-			holder.a_intent = I_HURT
-	else
-		holder.a_intent = I_HURT
 
 /datum/decl/mob_organ_names/leech
 	hit_zones = list("mouthparts", "central segment", "tail segment")

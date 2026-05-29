@@ -41,7 +41,6 @@
 
 	meat_amount = 2
 	holder_type = /obj/item/holder/armadillo
-	ai_holder_type = /datum/ai_holder/simple_mob/armadillo
 
 	speak_emote = list("rumbles", "chirr?", "churr")
 
@@ -119,7 +118,6 @@
 /mob/living/simple_mob/animal/passive/armadillo/torta
 	name = "Torta"
 	desc = "A small, armored mammal. It seems to be territorial and protective of the dorms."
-	ai_holder_type = /datum/ai_holder/simple_mob/armadillo/torta
 
 /mob/living/simple_mob/animal/passive/armadillo/torta/Initialize(mapload)
 	. = ..()
@@ -131,26 +129,3 @@
 /datum/say_list/armadillo
 	emote_hear = list("churrs","rumbles","chirrs")
 	emote_see = list("rolls in place", "shuffles", "scritches at something")
-
-/datum/ai_holder/simple_mob/armadillo
-	hostile = FALSE
-	retaliate = TRUE
-	can_flee = TRUE
-	flee_when_dying = TRUE
-	dying_threshold = 0.9
-	speak_chance = 1
-
-/datum/ai_holder/simple_mob/armadillo/torta
-
-/datum/ai_holder/simple_mob/armadillo/torta/on_hear_say(mob/living/speaker, message)
-	. = ..()
-	addtimer(CALLBACK(src, PROC_REF(grande), message), 1 SECOND)
-
-/datum/ai_holder/simple_mob/armadillo/torta/proc/grande(message)
-	var/mob/living/simple_mob/animal/passive/armadillo/bol = holder
-	if(!istype(bol))
-		return
-	message = lowertext(message)
-	if(findtext(message, "grande"))
-		bol.resize(bol.size_multiplier + 0.01)
-		return

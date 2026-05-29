@@ -2,7 +2,6 @@
 /mob/living/simple_mob/slime/promethean
 	name = "Promethean Blob"
 	desc = "A promethean expressing their true form."
-	//ai_holder_type = null
 	color = null // Uses a special icon_state.
 	slime_color = "rainbow"
 	unity = TRUE
@@ -335,8 +334,8 @@
 	if(!stored_blob)
 		blob = new(creation_spot,src)
 		blob.mood = ":3"
-		qdel(blob.ai_holder)
-		blob.ai_holder = null
+		qdel(blob.ai_brain)
+		blob.ai_brain = null
 	else
 		blob = stored_blob
 		blob.forceMove(creation_spot)

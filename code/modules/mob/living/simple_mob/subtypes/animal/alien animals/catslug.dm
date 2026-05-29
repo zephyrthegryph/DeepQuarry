@@ -54,7 +54,6 @@
 	ID_provided = TRUE
 
 	catalogue_data = list(/datum/category_item/catalogue/fauna/catslug)
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/evasive/catslug
 	say_list_type = /datum/say_list/catslug
 	player_msg = "You have escaped the foul weather, into this much more pleasant place. You are an intelligent creature capable of more than most think. You can pick up and use many things, and even carry some of them with you into the vents, which you can use to move around quickly. You're quiet and capable, you speak with your hands and your deeds!<br>- - - - -<br>" + span_notice("Keep in mind, your goal should generally be to survive. You're expected to follow the same rules as everyone else, so don't go self antagging without permission from the staff team, but you are able and capable of defending yourself from those who would attack you for no reason.")
 
@@ -113,14 +112,6 @@
 		/obj/item/perfect_tele_beacon,
 		)
 
-/datum/ai_holder/simple_mob/melee/evasive/catslug
-	hostile = FALSE
-	cooperative = FALSE
-	retaliate = TRUE
-	speak_chance = 0.5
-	wander = TRUE
-	belly_attack = FALSE
-
 /mob/living/simple_mob/vore/alienanimals/catslug/Initialize(mapload)
 	. = ..()
 	add_verb(src, /mob/living/proc/ventcrawl)
@@ -178,7 +169,7 @@
 	if(resting)
 		M.visible_message(span_notice("\The [M.name] shakes \the [src] awake from their nap."),span_notice("You shake \the [src] awake!"))
 		lay_down()
-		ai_holder.go_wake()
+		ai_brain.go_wake()
 		return
 	if(M.zone_sel.selecting == BP_HEAD)
 		M.visible_message( \
@@ -211,8 +202,7 @@
 		if(client)
 			return
 		visible_message(span_notice("\The [src] pushes [M]'s hand away from their tummy and furrows their brow!"))
-		if(prob(5))
-			ai_holder.give_target(M, urgent = TRUE)
+		// DQEdit - prob(5) give_target on tummy rub removed.
 	else
 		return ..()
 
@@ -264,10 +254,8 @@
 
 /mob/living/simple_mob/vore/alienanimals/catslug/Login()	//If someone plays as us let's just be a passive mob in case accidents happen if the player D/Cs
 	. = ..()
-	if(ai_holder)
-		ai_holder.hostile = FALSE
-		ai_holder.wander = FALSE
-
+	// DQEdit: legacy if-block emptied.
+		// DQEdit: legacy .wander reference removed (no equivalent on /datum/ai_brain).
 /mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_color()
 	set name = "Pick Color"
 	set category = "Abilities.Settings"
@@ -281,47 +269,8 @@
 		picked_color = TRUE
 	update_icon()
 
-/datum/ai_holder/simple_mob/melee/evasive/catslug/proc/consider_awakening()
-	if(holder.resting)
-		holder.lay_down()
-		go_wake()
-
-/datum/ai_holder/simple_mob/melee/evasive/catslug/handle_wander_movement()
-	if(holder.client || holder.resting)
-		return
-	else if(prob(0.5))
-		holder.lay_down()
-		go_sleep()
-		addtimer(CALLBACK(src, PROC_REF(consider_awakening)), rand(1 MINUTE, 5 MINUTES), TIMER_UNIQUE|TIMER_OVERRIDE|TIMER_STOPPABLE)
-	else
-		return ..()
-
-
-/datum/ai_holder/simple_mob/melee/evasive/catslug/on_hear_say(mob/living/speaker, message)
-	if(holder.client || !speaker.client)
-		return
-	if(findtext(message, "psps") && stance == STANCE_IDLE)
-		set_follow(speaker, follow_for = 5 SECONDS)
-
-	if(holder.stat || !holder.say_list || !message || speaker == holder)	//Copied from parrots
-		return
-	var/datum/say_list/S = holder.say_list
-	S.speak |= message
-
 
 /mob/living/simple_mob/vore/alienanimals/catslug/horrible
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/evasive/catslug/horrible
-
-/datum/ai_holder/simple_mob/melee/evasive/catslug/horrible/on_hear_say(mob/living/speaker, message)	//this was an accident originally but it was very funny so here you go
-	if(holder.client || !speaker.client)
-		return
-	if(findtext(message, "psps") || stance == STANCE_IDLE)
-		set_follow(speaker, follow_for = 5 SECONDS)
-
-	if(holder.stat || !holder.say_list || !message || speaker == holder)	//Copied from parrots
-		return
-	var/datum/say_list/S = holder.say_list
-	S.speak |= message
 
 /obj/item/holder/catslug
 	icon = 'icons/mob/alienanimals_x32.dmi'
@@ -404,7 +353,7 @@
 	if(resting)
 		M.visible_message(span_notice("\The [M.name] shakes \the [src] awake from their nap."),span_notice("You shake \the [src] awake!"))
 		lay_down()
-		ai_holder.go_wake()
+		ai_brain.go_wake()
 		return
 	if(M.zone_sel.selecting == BP_HEAD)
 		M.visible_message( \
@@ -437,8 +386,7 @@
 		if(client)
 			return
 		visible_message(span_notice("\The [src] pushes [M]'s hand away from their tummy and furrows their brow, frantically pressing at the buttons [M] so carelessly pushed!"))
-		if(prob(5))
-			ai_holder.give_target(M, urgent = TRUE)
+		// DQEdit - prob(5) give_target on tummy rub removed.
 	else
 		return ..()
 
@@ -504,7 +452,7 @@
 	if(resting)
 		M.visible_message(span_notice("\The [M.name] shakes \the [src] awake from their nap."),span_notice("You shake \the [src] awake!"))
 		lay_down()
-		ai_holder.go_wake()
+		ai_brain.go_wake()
 		return
 	if(M.zone_sel.selecting == BP_HEAD)
 		M.visible_message( \
@@ -537,8 +485,7 @@
 		if(client)
 			return
 		visible_message(span_notice("\The [src] pushes [M]'s hand away from their tummy and furrows their brow!"))
-		if(prob(5))
-			ai_holder.give_target(M, urgent = TRUE)
+		// DQEdit - prob(5) give_target on tummy rub removed.
 	else
 		return ..()
 

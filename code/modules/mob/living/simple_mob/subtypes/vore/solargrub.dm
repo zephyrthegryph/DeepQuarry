@@ -49,7 +49,6 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 	response_disarm = "pushes"
 	response_harm = "roughly pushes"
 
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate/solargrub
 	say_list_type = /datum/say_list/solargrub
 
 	var/poison_per_bite = 5 //grubs cause a shock when they bite someone
@@ -76,12 +75,12 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 	. = ..()
 	if(!.) return
 
-	if(!ai_holder.target)
+	if(!ai_brain.primary_threat)
 			//first, check for potential cables nearby to powersink
 		var/turf/S = loc
 		attached = locate(/obj/structure/cable) in S
 		if(attached)
-			set_AI_busy(TRUE)
+			if(ai_brain) ai_brain.busy = TRUE
 			if(prob(2))
 				src.visible_message(span_infoplain(span_bold("\The [src]") + " begins to sink power from the net."))
 			if(prob(5))
@@ -200,8 +199,3 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 		"With how incredibly charged the solargrub is, its constant internal vibrating adds an additional layer of processing to its stomach's slow, steady churning, helping break you down faster!",
 		"The solargrub chitters in irritation at your continued solidity, followed by a string of crushingly tight stomach clenches that grind its caustic stomach ooze into your body!",
 		"The deceptively severe heat trapped within the solargrub works in tandem with its inner muscles and your tingling, prickling stomach juice bath to weaken you!")
-
-/datum/ai_holder/simple_mob/retaliate/solargrub/react_to_attack(atom/movable/attacker, ignore_timers)
-	holder.anchored = FALSE
-	holder.set_AI_busy(FALSE)
-	..()

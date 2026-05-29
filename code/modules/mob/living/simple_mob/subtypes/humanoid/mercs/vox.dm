@@ -52,7 +52,6 @@
 					/obj/item/ammo_magazine/clip/c762 = 30
 					)
 
-	ai_holder_type = /datum/ai_holder/simple_mob/merc
 	say_list_type = /datum/say_list/merc/voxpirate
 
 /mob/living/simple_mob/humanoid/merc/voxpirate/pirate
@@ -82,13 +81,16 @@
 	attack_sharp = 1
 	attack_edge = 1
 
+	corpse = /obj/effect/landmark/mobcorpse/vox/boarder_m
+	loot_list = list(/obj/item/melee/energy/sword = 100)
+
 // They're good with the swords? I dunno. I like the idea they can deflect.
 /mob/living/simple_mob/humanoid/merc/voxpirate/boarder/attackby(obj/item/O, mob/user)
 	if(O.force)
 		if(prob(20))
 			visible_message(span_danger("\The [src] blocks \the [O] with its sword!"))
 			if(user)
-				ai_holder.react_to_attack(user)
+				ai_brain.react_to_attack(user)
 			return
 		else
 			..()
@@ -101,7 +103,7 @@
 	if(prob(35))
 		visible_message(span_warning("[src] blocks [Proj] with its sword!"))
 		if(Proj.firer)
-			ai_holder.react_to_attack(Proj.firer)
+			ai_brain.react_to_attack(Proj.firer)
 		return
 	else
 		..()
@@ -121,7 +123,6 @@
 	projectiletype = /obj/item/projectile/bullet/pellet/shotgun
 	projectilesound = 'sound/weapons/Gunshot_shotgun.ogg'
 
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/aggressive
 	corpse = /obj/effect/landmark/mobcorpse/vox/boarder_r
 	loot_list = list(/obj/item/gun/projectile/shotgun/pump/combat = 100,
 					/obj/item/ammo_magazine/m12gdrum = 30
@@ -151,7 +152,6 @@
 	projectiletype = /obj/item/projectile/ion
 	projectilesound = 'sound/weapons/Laser.ogg'
 
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/kiting
 	corpse = /obj/effect/landmark/mobcorpse/vox/boarder_t
 	loot_list = list(/obj/item/gun/energy/ionrifle)
 
@@ -183,7 +183,6 @@
 	projectiletype = /obj/item/projectile/sonic/weak
 	projectilesound = 'sound/effects/basscannon.ogg'
 
-	ai_holder_type = /datum/ai_holder/simple_mob/destructive
 	corpse = /obj/effect/landmark/mobcorpse/vox/suppressor
 	loot_list = list(/obj/item/gun/energy/sonic = 100)
 
@@ -215,7 +214,6 @@
 	projectiletype = /obj/item/projectile/beam/darkmatter
 	projectilesound = 'sound/weapons/eLuger.ogg'
 
-	ai_holder_type = /datum/ai_holder/simple_mob/destructive
 	corpse = /obj/effect/landmark/mobcorpse/vox/captain
 	loot_list = list(/obj/item/gun/energy/darkmatter = 100)
 

@@ -27,7 +27,6 @@
 	meat_type = /obj/item/reagent_containers/food/snacks/meat/fox
 
 	say_list_type = /datum/say_list/fox
-	ai_holder_type = /datum/ai_holder/simple_mob/fox
 	holder_type = /obj/item/holder/fox
 
 	var/turns_since_scan = 0
@@ -39,16 +38,6 @@
 	emote_see = list("shakes its head", "shivers", "geckers")
 	say_maybe_target = list("Yip?","Yap?")
 	say_got_target = list("YAP!","YIP!")
-
-/datum/ai_holder/simple_mob/fox
-	hostile = FALSE
-	cooperative = TRUE
-	returns_home = FALSE
-	retaliate = TRUE
-	can_flee = TRUE
-	speak_chance = 1 // If the mob's saylist is empty, nothing will happen.
-	wander = TRUE
-	base_wander_delay = 4
 
 /mob/living/simple_mob/animal/passive/fox/load_default_bellies()
 	. = ..()
@@ -128,8 +117,8 @@
 	to_chat(L, span_notice("\The [src] is now your friend!"))
 	visible_emote(pick("nips [friend].", "brushes against [friend].", "tugs on [friend].", "chrrrrs."))
 
-	if(has_AI())
-		var/datum/ai_holder/AI = ai_holder
+	if((ai_brain != null))
+		var/datum/ai_brain/AI = ai_brain
 		AI.set_follow(friend)
 
 /* Old fox friend AI, I'm not sure how to add the fancy "friend is dead" stuff so I'm commenting it out for someone else to figure it out, this is just baseline stuff.
@@ -193,7 +182,6 @@
 	//befriend_job = "Site Manager" Sebbe edit: couldn't make this work, commenting out for now.
 
 	var/mob/living/friend = null // Our best pal, who we'll follow. awoo.
-	ai_holder_type = /datum/ai_holder/simple_mob/passive
 	makes_dirt = FALSE	// No more dirt
 
 /mob/living/simple_mob/animal/passive/fox/renault/load_default_bellies()

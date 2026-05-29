@@ -32,7 +32,6 @@
 	friendly = list("hugs")
 
 	catalogue_data = list(/datum/category_item/catalogue/fauna/succlet)
-	ai_holder_type = null
 	say_list_type = /datum/say_list/succlet
 	player_msg = "You can move with ALT+click. You can only move when no one will see you, unless you are targetting someone. If no one else will see you move, and you can eat the target, then you will be able to move to them. Use your power to responsibly, and move confusingly right to left as if to distract them."
 	has_langs = list(LANGUAGE_ANIMAL)

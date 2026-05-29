@@ -38,7 +38,6 @@
 	melee_damage_lower = 5
 	melee_damage_upper = 12
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee
 
 	special_attack_min_range = 1
 	special_attack_max_range = 5
@@ -55,20 +54,19 @@
 		desc = "You found a rare Pepe. Screenshot for good luck."
 
 /mob/living/simple_mob/vore/aggressive/frog/do_special_attack(atom/A)
-	set_AI_busy(TRUE)
+	if(ai_brain) ai_brain.busy = TRUE
 	do_windup_animation(A, 20)
 	addtimer(CALLBACK(src, PROC_REF(chargeend), A), 20)
 
 /mob/living/simple_mob/vore/aggressive/frog/proc/chargeend(atom/A)
 	if(stat) //you are dead
-		set_AI_busy(FALSE)
+		if(ai_brain) ai_brain.busy = FALSE
 		return
 	playsound(src, 'sound/vore/sunesound/pred/schlorp.ogg', 25)
 	var/obj/item/projectile/beam/appendage/appendage_attack = new /obj/item/projectile/beam/appendage(get_turf(loc))
 	appendage_attack.old_style_target(A, src)
 	appendage_attack.launch_projectile(A, BP_TORSO, src)
-	set_AI_busy(FALSE)
-
+	if(ai_brain) ai_brain.busy = FALSE
 // Activate Noms!
 /mob/living/simple_mob/vore/aggressive/frog
 	vore_active = 1

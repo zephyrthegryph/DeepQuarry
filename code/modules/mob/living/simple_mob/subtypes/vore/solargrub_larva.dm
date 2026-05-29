@@ -49,7 +49,6 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 
 	var/tracked = FALSE
 
-	ai_holder_type = /datum/ai_holder/simple_mob/solargrub_larva
 
 	glow_override = TRUE
 
@@ -119,7 +118,7 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 /mob/living/simple_mob/animal/solargrub_larva/proc/enter_machine(obj/machinery/M)
 	if(!istype(M))
 		return
-	set_AI_busy(TRUE)
+	if(ai_brain) ai_brain.busy = TRUE
 	forceMove(M)
 	powermachine.draining = 2
 	visible_message(span_warning("\The [src] finds an opening and crawls inside \the [M]."))
@@ -145,11 +144,10 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 	sparks.start()
 	if(machine_effect)
 		QDEL_NULL(machine_effect)
-	ai_holder.remove_target()
+	ai_brain?.lose_target()
 	powermachine.draining = 1
 	spawn(30)
-		set_AI_busy(FALSE)
-
+		if(ai_brain) ai_brain.busy = FALSE
 /mob/living/simple_mob/animal/solargrub_larva/proc/do_ventcrawl(obj/machinery/atmospherics/unary/vent_pump/vent)
 	if(!vent)
 		return
@@ -200,57 +198,6 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 	var/draining = 1
 	var/mob/living/simple_mob/animal/solargrub_larva/grub
 
-
-/datum/ai_holder/simple_mob/solargrub_larva
-	//var/fleeing
-	var/static/list/ignored_machine_types = list(
-		/obj/machinery/atmospherics/unary/vent_scrubber,
-		/obj/machinery/door/firedoor,
-		/obj/machinery/button/windowtint
-		)
-	var/list/ignored_targets = list()
-
-/datum/ai_holder/simple_mob/solargrub_larva/list_targets()
-	var/static/potential_targets = typecacheof(list(/obj/machinery))
-	var/list/actual_targets = list()
-
-	for(var/obj/machinery/M as anything in typecache_filter_list(range(vision_range, holder), potential_targets))
-		if(istype(M, /obj/machinery/atmospherics/unary/vent_pump))
-			var/obj/machinery/atmospherics/unary/vent_pump/V = M
-			if(!V.welded && prob(50))
-				actual_targets += M
-			continue
-		if(is_type_in_list(M, ignored_machine_types))
-			continue
-		if(!M.idle_power_usage && !M.active_power_usage && !(istype(M, /obj/machinery/power/apc) || istype(M, /obj/machinery/power/smes)))
-			continue
-		if(locate(/mob/living/simple_mob/animal/solargrub_larva) in M)
-			continue
-		if(M in ignored_targets)
-			continue
-		actual_targets += M
-	return actual_targets
-
-/datum/ai_holder/simple_mob/solargrub_larva/can_attack(atom/movable/the_target, vision_required = TRUE)
-	.=..()
-	var/obj/machinery/M = the_target
-	if(!istype(M))
-		return FALSE
-	if(is_type_in_list(M, ignored_machine_types))
-		return FALSE
-	if(!M.idle_power_usage && !M.active_power_usage && !(istype(M, /obj/machinery/power/apc) || istype(M, /obj/machinery/power/smes)))
-		return FALSE
-	if(locate(/mob/living/simple_mob/animal/solargrub_larva) in M)
-		return FALSE
-	if(M in ignored_targets)
-		return FALSE
-	return
-
-/datum/ai_holder/simple_mob/solargrub_larva/post_melee_attack(atom/A)
-	if(istype(A, /obj/machinery) && !istype(A, /obj/machinery/atmospherics/unary/vent_pump))
-		if(ignored_targets.len > 3)
-			ignored_targets.Cut(1,1)
-		ignored_targets += A
 
 
 /obj/machinery/abstract_grub_machine/Initialize(mapload)

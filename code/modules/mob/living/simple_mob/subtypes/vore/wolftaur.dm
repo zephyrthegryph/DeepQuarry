@@ -16,7 +16,6 @@
 	attacktext = list("kicked","bit")
 
 	say_list_type = /datum/say_list/wolftaur
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate/wolftaur
 
 	var/random_skin = 1
 	var/list/skins = list(
@@ -63,10 +62,6 @@
 	speak = list("Grrr.","Huff","What do you want?","Hmm.","One thing after another.","Where's the food?")
 	emote_hear = list("grumbles","barks","sighs")
 	emote_see = list("shakes her head","stomps","stretches","rolls her eyes")
-
-/datum/ai_holder/simple_mob/retaliate/wolftaur
-	base_wander_delay = 8
-	belly_attack = FALSE
 
 /mob/living/simple_mob/vore/wolftaur/load_default_bellies()
 	. = ..()

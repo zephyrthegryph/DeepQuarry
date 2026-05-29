@@ -8,7 +8,6 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 /mob/living/simple_mob/metroid/jellybrig //Security's pet
 	name = "Jellybrig"
 	desc = "This one scree's happily at you."
-	ai_holder_type = /datum/ai_holder/simple_mob/jellybrig //Instead of normal metroid code, this guy is basically a retaliatory punching bag.
 	say_list_type = /datum/say_list/metroid
 	faction = "notmetroid"
 	maxHealth = 400
@@ -35,15 +34,6 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	vore_digest_chance = 1		//Chance to switch to digest mode if resisted
 	vore_absorb_chance = 0
 	vore_escape_chance = 2		//Chance to escape if resisted.
-
-/datum/ai_holder/simple_mob/jellybrig
-	hostile = FALSE // The majority of simplemobs are hostile, jellybrig is nice.
-	cooperative = FALSE
-	retaliate = TRUE //so the monster can attack back
-	returns_home = FALSE
-	can_flee = FALSE
-	wander = TRUE
-	base_wander_delay = 9
 
 
 /mob/living/simple_mob/metroid/mine
@@ -90,7 +80,6 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	icon_dead = "baby_dead"
 	icon_living = "baby"
 	icon_state = "baby"
-	ai_holder_type = /datum/ai_holder/simple_mob/juvenile_metroid
 	say_list_type = /datum/say_list/metroid
 	health = 200
 	maxHealth = 200
@@ -152,7 +141,6 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	icon_dead = "metroid_dead"
 	icon_living = "metroid"
 	icon_state = "metroid"
-	ai_holder_type = /datum/ai_holder/simple_mob/juvenile_metroid
 	say_list_type = /datum/say_list/metroid
 	health = 250
 	maxHealth = 250
@@ -222,7 +210,6 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	icon_dead = "alpha_dead"
 	icon_living = "alpha"
 	icon_state = "alpha"
-	ai_holder_type = /datum/ai_holder/simple_mob/juvenile_metroid
 	say_list_type = /datum/say_list/metroid
 	health = 300
 	maxHealth = 300
@@ -294,7 +281,6 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	icon_dead = "gamma_dead"
 	icon_living = "gamma"
 	icon_state = "gamma"
-	ai_holder_type = /datum/ai_holder/simple_mob/juvenile_metroid
 	say_list_type = /datum/say_list/metroid
 	movement_cooldown = 2
 	health = 400
@@ -384,7 +370,6 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	icon_dead = "zeta_dead"
 	icon_living = "zeta"
 	icon_state = "zeta"
-	ai_holder_type = /datum/ai_holder/simple_mob/juvenile_metroid
 	say_list_type = /datum/say_list/metroid/zeta
 	movement_cooldown = 2
 	health = 500
@@ -481,7 +466,6 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	icon_dead = "omega_dead"
 	icon_living = "omega"
 	icon_state = "omega"
-	ai_holder_type = /datum/ai_holder/simple_mob/juvenile_metroid
 	say_list_type = /datum/say_list/metroid/omega
 	movement_cooldown = 2.5
 	health = 600
@@ -580,7 +564,6 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	icon_dead = "queen_dead"
 	icon_living = "queen"
 	icon_state = "queen"
-	ai_holder_type = /datum/ai_holder/simple_mob/juvenile_metroid
 	say_list_type = /datum/say_list/metroid/queen
 	movement_cooldown = 3
 	health = 1000

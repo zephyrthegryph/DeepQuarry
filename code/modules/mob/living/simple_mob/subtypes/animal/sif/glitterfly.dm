@@ -61,7 +61,6 @@
 	)
 
 	say_list_type = /datum/say_list/glitterfly
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/evasive/glitterfly
 
 /mob/living/simple_mob/animal/sif/glitterfly/Initialize(mapload)
 	. = ..()
@@ -106,27 +105,6 @@
 	speak = list("Pi..","Po...", "Pa...")
 	emote_see = list("vibrates","flutters", "twirls")
 	emote_hear = list("pips", "clicks", "chirps")
-
-/datum/ai_holder/simple_mob/melee/evasive/glitterfly
-	hostile = FALSE
-	can_flee = TRUE
-	flee_when_outmatched = TRUE
-	outmatched_threshold = 100
-	max_home_distance = 5
-
-/datum/ai_holder/simple_mob/melee/evasive/glitterfly/handle_special_strategical()
-	if(prob(1))
-		var/friendly_animal_corpse = FALSE
-		for(var/mob/living/simple_mob/animal/A in view(vision_range,holder))
-			if(holder.IIsAlly(A) && A.stat == DEAD)
-				friendly_animal_corpse = TRUE
-				break
-
-		if(friendly_animal_corpse)
-			hostile = TRUE
-			return
-	else if(prob(1))
-		hostile = initial(hostile)
 
 /datum/decl/mob_organ_names/smallflying
 	hit_zones = list("body", "left wing", "right wing") //For flying things too tiny to be granular

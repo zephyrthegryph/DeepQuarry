@@ -36,7 +36,6 @@
 	attack_sharp = FALSE
 	attacktext = list("nipped", "squeaked at", "hopped on", "kicked")
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/evasive/dustjumper
 
 	min_oxy = 0
 	max_oxy = 0
@@ -90,11 +89,3 @@
 /mob/living/simple_mob/vore/alienanimals/dustjumper/begin_instant_nom(mob/living/user, mob/living/prey, mob/living/pred, obj/belly/belly)
 	. = ..()
 	movement_cooldown = 10
-
-/datum/ai_holder/simple_mob/melee/evasive/dustjumper
-	hostile = FALSE
-	retaliate = TRUE
-	destructive = FALSE
-	violent_breakthrough = FALSE
-	can_flee = TRUE
-	flee_when_dying = TRUE

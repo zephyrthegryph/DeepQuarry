@@ -68,7 +68,6 @@
 	var/life_since_foodscan = 0
 
 	say_list_type = /datum/say_list/rat
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/rat
 
 	can_be_drop_prey = FALSE
 	allow_mind_transfer = TRUE
@@ -255,7 +254,6 @@
 
 /mob/living/simple_mob/vore/aggressive/rat/pet
 	name = "Giant Rat Siblings"
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate
 	devourable = 0
 	digestable = 0
 
@@ -292,9 +290,6 @@
 	say_maybe_target = list("Squeek?")
 	say_got_target = list("SQUEEK!")
 
-/datum/ai_holder/simple_mob/melee/rat
-	speak_chance = 2
-
 /mob/living/simple_mob/vore/aggressive/rat/event
 	maxHealth = 50
 	health = 50
@@ -315,7 +310,6 @@
 /mob/living/simple_mob/vore/aggressive/rat/labrat/genetics
 	name = "Nibbles"
 	desc = "A giant rat that made it's nest in an abandoned genetics lab. This one seems fairly docile."
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate
 
 	vore_active = 1
 	vore_capacity = 1

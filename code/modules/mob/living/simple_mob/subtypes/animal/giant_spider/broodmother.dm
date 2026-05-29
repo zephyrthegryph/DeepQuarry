@@ -57,7 +57,6 @@
 	special_attack_min_range = 0
 	special_attack_max_range = 10
 	special_attack_cooldown = 6 SECONDS
-	ai_holder_type = /datum/ai_holder/simple_mob/intentional/giant_spider_broodmother
 	poison_per_bite = 2
 	poison_type = REAGENT_ID_CYANIDE
 
@@ -133,35 +132,6 @@
 			spawn_brood(A)
 		if(I_HURT)
 			launch_brood(A)
-
-/datum/ai_holder/simple_mob/intentional/giant_spider_broodmother
-	wander = TRUE
-	intelligence_level = AI_SMART
-	pointblank = FALSE
-	firing_lanes = TRUE
-	vision_range = 8
-
-/datum/ai_holder/simple_mob/intentional/giant_spider_broodmother/pre_special_attack(atom/A)
-	if(isliving(A))
-		var/mob/living/target = A
-
-		var/tally = 0
-		var/list/potential_targets = list_targets() // Returns list of mobs and certain objects like mechs and turrets.
-		for(var/atom/movable/AM in potential_targets)
-			if(get_dist(holder, AM) > 4)
-				continue
-			if(!can_attack(AM))
-				continue
-			tally++
-		if(tally > 1)
-			holder.a_intent = I_DISARM
-		else if(get_dist(holder, target) > 4)
-			holder.a_intent = I_HURT
-		else
-			holder.a_intent = I_DISARM
-
-	else
-		holder.a_intent = I_DISARM
 
 
 /obj/item/royal_spider_egg

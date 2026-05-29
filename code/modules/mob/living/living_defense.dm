@@ -85,8 +85,8 @@
 /mob/living/attack_hand(mob/living/L)
 	..()
 	if(istype(L) && L.a_intent != I_HELP)
-		if(ai_holder) // Using disarm, grab, or harm intent is considered a hostile action to the mob's AI.
-			ai_holder.react_to_attack(L)
+		if(ai_brain) // Using disarm, grab, or harm intent is considered a hostile action to the mob's AI.
+			ai_brain.react_to_attack(L)
 	if(touch_reaction_flags & SPECIES_TRAIT_THORNS)
 		if(src != L)
 			L.apply_damage(3, BRUTE)
@@ -104,8 +104,8 @@
 			signaler.signal()
 	// end
 
-	if(ai_holder && P.firer)
-		ai_holder.react_to_attack(P.firer)
+	if(ai_brain && P.firer)
+		ai_brain.react_to_attack(P.firer)
 
 	//Armor
 	var/absorb = run_armor_check(def_zone, P.check_armour, P.armor_penetration)
@@ -208,8 +208,8 @@
 	//Armor
 	var/absorb = run_armor_check(def_zone, armor_check, armor_pen)
 
-	if(ai_holder)
-		ai_holder.react_to_attack(B)
+	if(ai_brain)
+		ai_brain.react_to_attack(B)
 
 	apply_damage(damage, damage_type, def_zone, absorb)
 
@@ -220,8 +220,8 @@
 /mob/living/proc/hit_with_weapon(obj/item/I, mob/living/user, effective_force, hit_zone)
 	visible_message(span_danger("[src] has been [LAZYLEN(I.attack_verb) ? pick(I.attack_verb) : "attacked"] with [I.name] by [user]!"))
 
-	if(ai_holder)
-		ai_holder.react_to_attack(user)
+	if(ai_brain)
+		ai_brain.react_to_attack(user)
 
 	var/blocked = run_armor_check(hit_zone, "melee")
 
@@ -284,8 +284,8 @@
 			var/client/assailant = thrower.client
 			if(assailant)
 				add_attack_logs(thrower, src, "Hit by thrown [O.name]")
-			if(ai_holder)
-				ai_holder.react_to_attack(thrower)
+			if(ai_brain)
+				ai_brain.react_to_attack(thrower)
 
 		// Begin BS12 momentum-transfer code.
 		var/mass = O.w_class/THROWNOBJ_KNOCKBACK_DIVISOR
@@ -360,8 +360,8 @@
 
 	adjustBruteLoss(damage)
 	add_attack_logs(user,src,"Generic attack (probably animal)", admin_notify = FALSE) //Usually due to simple_mob attacks
-	if(ai_holder)
-		ai_holder.react_to_attack(user)
+	if(ai_brain)
+		ai_brain.react_to_attack(user)
 	src.visible_message(span_danger("[user] has [attack_message] [src]!"))
 	user.do_attack_animation(src)
 	spawn(1) updatehealth()

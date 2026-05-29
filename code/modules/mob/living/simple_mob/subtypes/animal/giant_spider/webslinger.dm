@@ -36,7 +36,6 @@
 	poison_per_bite = 2
 	poison_type = REAGENT_ID_PSILOCYBIN
 	player_msg = "You can fire a ranged attack by clicking on an enemy or tile at a distance."
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged
 
 // Check if we should bola, or just shoot the pain ball
 /mob/living/simple_mob/animal/giant_spider/webslinger/should_special_attack(atom/A)
@@ -50,11 +49,11 @@
 // Now we've got a running human in sight, time to throw the bola
 /mob/living/simple_mob/animal/giant_spider/webslinger/do_special_attack(atom/A)
 	set waitfor = FALSE
-	set_AI_busy(TRUE)
+	if(ai_brain) ai_brain.busy = TRUE
 	var/obj/item/projectile/bola/B = new /obj/item/projectile/bola(src.loc)
 	playsound(src, 'sound/weapons/thudswoosh.ogg', 100, 1)
 	if(!B)
 		return
 	B.old_style_target(A, src)
 	B.fire()
-	set_AI_busy(FALSE)
+	if(ai_brain) ai_brain.busy = FALSE

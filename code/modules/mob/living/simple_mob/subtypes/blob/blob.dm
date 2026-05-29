@@ -28,7 +28,6 @@
 	var/datum/blob_type/blob_type = null	// Used for the blob core items, as they have no overmind mob.
 
 	mob_class = MOB_CLASS_SLIME
-	ai_holder_type = /datum/ai_holder/simple_mob/melee
 
 	can_be_drop_prey = FALSE
 	can_pain_emote = FALSE

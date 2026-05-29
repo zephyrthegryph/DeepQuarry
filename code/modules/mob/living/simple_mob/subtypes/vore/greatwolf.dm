@@ -32,7 +32,6 @@
 	attacktext = list("chomped")
 	see_in_dark = 8
 	minbodytemp = 0
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate
 	max_buckled_mobs = 1
 	mount_offset_y = 32
 	mount_offset_x = -16
@@ -107,7 +106,7 @@
 	if(istype(O, /obj/item/reagent_containers/food))
 		qdel(O)
 		playsound(src,'sound/vore/gulp.ogg', rand(10,50), 1)
-		if(!has_AI())//No autobarf on player control.
+		if(!(ai_brain != null))//No autobarf on player control.
 			return
 		if(istype(O, /obj/item/reagent_containers/food/snacks/donut) && istype(src, /mob/living/simple_mob/vore/greatwolf/black))
 			to_chat(user,span_notice("The huge wolf begrudgingly accepts your offer in exchange for it's catch."))

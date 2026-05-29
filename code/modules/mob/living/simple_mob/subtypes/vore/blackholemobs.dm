@@ -39,7 +39,6 @@
 	buckle_movable = TRUE
 	buckle_lying = FALSE
 	mount_offset_y = 10
-	ai_holder_type = /datum/ai_holder/simple_mob/melee
 	say_list_type = /datum/say_list/otie
 	tame_chance = 0
 	has_eye_glow = TRUE
@@ -81,7 +80,7 @@
 	if(!L.devourable || !L.allowmobvore || L.unacidable)
 		return FALSE
 
-	set_AI_busy(TRUE)
+	if(ai_brain) ai_brain.busy = TRUE
 	visible_message(span_warning("\The [src] suddenly crouches and wiggles its backside...!"))
 	to_chat(L, span_danger("\The [src] focuses on you!"))
 
@@ -94,7 +93,7 @@
 	if(!L)
 		return FALSE
 	if(L.z != z)
-		set_AI_busy(FALSE)
+		if(ai_brain) ai_brain.busy = FALSE
 		return FALSE
 
 	status_flags |= LEAPING
@@ -108,7 +107,7 @@
 	if(status_flags & LEAPING)
 		status_flags &= ~LEAPING
 
-	set_AI_busy(FALSE)
+	if(ai_brain) ai_brain.busy = FALSE
 	if(!L)
 		return FALSE
 	if(Adjacent(L))
@@ -165,7 +164,6 @@
 	var/explosion_delay_lower	= 1 SECOND	// Lower bound for explosion delay.
 	var/explosion_delay_upper	= 3 SECONDS	// Upper bound.
 
-	ai_holder_type = /datum/ai_holder/simple_mob/merc/blackhole
 
 	say_list_type = /datum/say_list/merc/blackhole
 
@@ -226,7 +224,6 @@
 	melee_damage_lower = 10
 	melee_damage_upper = 15
 	say_list_type = /datum/say_list/merc/blackhole/grotesque
-	ai_holder_type = /datum/ai_holder/simple_mob/melee
 	attack_sound = 'sound/weapons/slice.ogg'
 
 /mob/living/simple_mob/vore/blackhole/grotesque/death()
@@ -250,7 +247,6 @@
 	projectile_accuracy = -15
 	base_attack_cooldown = 8 DECISECONDS
 	reload_max = 12
-	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged/blackhole
 
 /mob/living/simple_mob/vore/blackhole/ranged/smg
 	name = "Black Hole gunner"
@@ -268,7 +264,6 @@
 	projectile_accuracy = -15
 	base_attack_cooldown = 2
 	reload_max = 25
-	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged/blackhole
 
 /mob/living/simple_mob/vore/blackhole/ranged/rifle
 	name = "Black Hole rifleman"
@@ -286,7 +281,6 @@
 	projectile_accuracy = -15
 	base_attack_cooldown = 8
 	reload_max = 30
-	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged/blackhole
 
 /mob/living/simple_mob/vore/blackhole/ranged/lmg
 	name = "Black Hole machinegunner"
@@ -304,7 +298,6 @@
 	projectile_accuracy = -25
 	base_attack_cooldown = 0.1
 	reload_max = 50
-	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged/blackhole/lmg
 
 ///-------------------------------------------------------------------------------------------------------------------------------------------------------------///
 ///taur specific variations!///
@@ -345,7 +338,6 @@
 	max_n2 = 0
 	minbodytemp = 0
 
-	ai_holder_type = /datum/ai_holder/simple_mob/merc/blackhole
 
 	say_list_type = /datum/say_list/merc/blackhole
 
@@ -399,7 +391,6 @@
 	projectile_accuracy = -25
 	base_attack_cooldown = 0.1
 	reload_max = 50
-	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged/blackhole/lmg
 
 /mob/living/simple_mob/vore/blackhole/taur/ranged/hmg
 	name = "Black Hole heavy machinegunner"
@@ -415,7 +406,6 @@
 	projectile_accuracy = -25
 	base_attack_cooldown = 0.5
 	reload_max = 100
-	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged/blackhole/lmg
 
 /mob/living/simple_mob/humanoid/merc/ranged/sniper/blackhole
 	name = "Black Hole sniper"
@@ -479,7 +469,6 @@
 	reload_max = 5
 	reload_time = 5 SECONDS
 
-	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged/sniper/blackhole
 
 	ranged_attack_delay = 1.5 SECONDS
 
@@ -569,7 +558,6 @@
 	projectile_accuracy = -40
 	base_attack_cooldown = 4
 	reload_max = 30
-	ai_holder_type = /datum/ai_holder/simple_mob/intentional/adv_dark_gygax
 
 ///-------------------------------------------------------------------------------------------------------------------------------------------------------------///
 ///mechs!///
@@ -642,7 +630,6 @@
 	projectile_dispersion = 12
 	projectile_accuracy = -25
 	base_attack_cooldown = 12
-	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged/blackhole/lmg
 
 /obj/structure/loot_pile/mecha/durand/blackhole
 	name = "vulture wreckage"
@@ -680,7 +667,6 @@ GLOBAL_LIST_INIT(obelisk_lure_messages, list(
 	anchored = 1
 	maxHealth = 400
 	health = 400
-	ai_holder_type = /datum/ai_holder/simple_mob/passive/pitcher
 	response_help = "touches"
 	response_disarm = "pushes against"
 	response_harm = "slams their fists against"
@@ -950,40 +936,6 @@ GLOBAL_LIST_INIT(obelisk_lure_messages, list(
 ///ai holder stuff!///
 ///-------------------------------------------------------------------------------------------------------------------------------------------------------------///
 
-
-/datum/ai_holder/simple_mob/merc/blackhole
-	threaten = TRUE
-	returns_home = TRUE
-	wander = TRUE
-	intelligence_level = AI_SMART
-	threaten_delay = 2 SECONDS
-	use_astar = TRUE
-
-/datum/ai_holder/simple_mob/merc/ranged/blackhole
-	threaten = TRUE
-	returns_home = TRUE
-	wander = TRUE
-	intelligence_level = AI_SMART
-	threaten_delay = 2 SECONDS
-	use_astar = TRUE
-
-/datum/ai_holder/simple_mob/merc/ranged/blackhole/lmg
-	threaten = TRUE
-	returns_home = TRUE
-	wander = TRUE
-	intelligence_level = AI_SMART
-	threaten_delay = 2 SECONDS
-	use_astar = TRUE
-	conserve_ammo = FALSE
-
-/datum/ai_holder/simple_mob/merc/ranged/sniper/blackhole
-	vision_range = 20
-	threaten = TRUE
-	returns_home = TRUE
-	wander = TRUE
-	intelligence_level = AI_SMART
-	threaten_delay = 2 SECONDS
-	use_astar = TRUE
 
 ///-------------------------------------------------------------------------------------------------------------------------------------------------------------///
 ///special bullets, because the 'projectilesound' var does not work!///

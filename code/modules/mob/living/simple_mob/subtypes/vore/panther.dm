@@ -40,7 +40,6 @@
 	mount_offset_y = 12
 
 	say_list_type = /datum/say_list/panther
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/evasive
 
 	allow_mind_transfer = TRUE
 	can_be_drop_prey = FALSE

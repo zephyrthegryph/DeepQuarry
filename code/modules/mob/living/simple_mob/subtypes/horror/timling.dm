@@ -28,7 +28,6 @@
 
 
 	say_list_type = /datum/say_list/TinyTim
-	ai_holder_type = /datum/ai_holder/simple_mob/horror
 
 /mob/living/simple_mob/horror/TinyTim/death()
 	playsound(src, 'sound/h_sounds/shitty_tim.ogg', 50, 1)

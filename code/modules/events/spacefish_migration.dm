@@ -79,8 +79,7 @@
 				if(!T.is_space())
 					break;
 				target = T
-			if(target)
-				M.ai_holder?.give_destination(target) // Ask fish to swim towards the middle of the map
+			M.ai_brain?.give_destination(target)
 		i++
 
 // Spawn a single fish at given location.

@@ -10,7 +10,6 @@
 	icon_dead = "raccoon_dead"
 	icon_rest = "raccoon_rest"
 
-	ai_holder_type = /datum/ai_holder/simple_mob/passive/raccoon
 	say_list_type = /datum/say_list/raccoon
 
 	see_in_dark = 6
@@ -51,8 +50,3 @@
 	speak = list("HSSSSS")
 	emote_see = list("shakes their head", "shivers","grooms self", "nibbles on some trash")
 	emote_hear = list("purrs")
-
-/datum/ai_holder/simple_mob/passive/raccoon
-	flee_when_dying = TRUE
-	dying_threshold = 0.9
-	speak_chance = 1

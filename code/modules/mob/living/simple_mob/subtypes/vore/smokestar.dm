@@ -7,7 +7,6 @@
 	icon_dead = "drone0"
 
 	mob_class = MOB_CLASS_ABERRATION
-	ai_holder_type = /datum/ai_holder/simple_mob/melee
 
 	faction = "smokestar"
 
@@ -50,4 +49,3 @@
 	light_color = "#1F000F"
 	glow_range = 5
 	glow_intensity = -1
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/hit_and_run

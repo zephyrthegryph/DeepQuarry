@@ -27,7 +27,6 @@
 
 
 	say_list_type = /datum/say_list/Willy
-	ai_holder_type = /datum/ai_holder/simple_mob/horror
 
 /mob/living/simple_mob/horror/Willy/death()
 	playsound(src, 'sound/h_sounds/sampler.ogg', 50, 1)

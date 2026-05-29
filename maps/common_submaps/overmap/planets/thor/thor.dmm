@@ -308,7 +308,6 @@
 /area/surface/outside/thor/jungle)
 "ba" = (
 /mob/living/simple_mob/vore/retaliate/corrupthound/janihound/medihound{
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/evasive/guard_limit
 	},
 /turf/simulated/floor/plating/external/thor{
 	icon_state = "dmg2"
@@ -385,7 +384,6 @@
 /area/surface/thor/commstower)
 "bp" = (
 /mob/living/simple_mob/vore/stalker{
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/evasive/guard_limit
 	},
 /turf/simulated/mineral/floor/cave/thor,
 /area/surface/thor/caves)

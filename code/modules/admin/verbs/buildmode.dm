@@ -564,9 +564,9 @@ GLOBAL_LIST_EMPTY(active_buildmode_holders)
 
 					// Pause/unpause AI
 					if(pa.Find("shift"))
-						var/stance = L.get_AI_stance()
+						var/stance = (L.ai_brain ? (L.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE)
 						if(!isnull(stance)) // Null means there's no AI datum or it has one but is player controlled w/o autopilot on.
-							var/datum/ai_holder/AI = L.ai_holder
+							var/datum/ai_brain/AI = L.ai_brain
 							if(stance == STANCE_SLEEP)
 								AI.go_wake()
 								L.datum_flags |= DF_VAR_EDITED //we'll consider messing with AI as varediting it.
@@ -584,11 +584,11 @@ GLOBAL_LIST_EMPTY(active_buildmode_holders)
 
 					// Toggle hostility
 					if(pa.Find("alt"))
-						if(!isnull(L.get_AI_stance()))
-							var/datum/ai_holder/AI = L.ai_holder
-							AI.hostile = !AI.hostile
+						if(L.ai_brain)
+							var/datum/ai_brain/AI = L.ai_brain
+							AI.set_hostile(!AI.get_hostile())
 							L.datum_flags |= DF_VAR_EDITED
-							to_chat(user, span_notice("\The [L] is now [AI.hostile ? "hostile" : "passive"]."))
+							to_chat(user, span_notice("\The [L] is now [AI.get_hostile() ? "hostile" : "passive"]."))
 							log_admin("[key_name(usr)] made [L]'s AI hostile.")
 						else
 							to_chat(user, span_warning("\The [L] is not AI controlled."))
@@ -601,7 +601,7 @@ GLOBAL_LIST_EMPTY(active_buildmode_holders)
 						return
 
 					// Select/Deselect
-					if(!isnull(L.get_AI_stance()))
+					if(!isnull((L.ai_brain ? (L.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE)))
 						if(L in holder.selected_mobs)
 							holder.deselect_AI_mob(user.client, L)
 							to_chat(user, span_notice("Deselected \the [L]."))
@@ -621,15 +621,17 @@ GLOBAL_LIST_EMPTY(active_buildmode_holders)
 					to_chat(user, span_notice("All selected mobs set to wander"))
 					log_admin("[key_name(usr)] told selected mobs to wander.")
 					for(var/mob/living/unit in holder.selected_mobs)
-						var/datum/ai_holder/AI = unit.ai_holder
-						AI.wander = TRUE
+						var/datum/ai_brain/AI = unit.ai_brain
+						if(AI)
+							AI.wander = TRUE
 						unit.datum_flags |= DF_VAR_EDITED
 				if(pa.Find("ctrl"))
 					to_chat(user, span_notice("Setting mobs set to NOT wander"))
 					log_admin("[key_name(usr)] told selected mobs to not wander.")
 					for(var/mob/living/unit in holder.selected_mobs)
-						var/datum/ai_holder/AI = unit.ai_holder
-						AI.wander = FALSE
+						var/datum/ai_brain/AI = unit.ai_brain
+						if(AI)
+							AI.wander = FALSE
 						unit.datum_flags |= DF_VAR_EDITED
 				if(pa.Find("alt") && isatom(object))
 					to_chat(user, span_notice("Adding [object] to Entity Narrate List!"))
@@ -657,7 +659,7 @@ GLOBAL_LIST_EMPTY(active_buildmode_holders)
 					if(pa.Find("alt"))
 						var/i = 0
 						for(var/mob/living/unit in holder.selected_mobs)
-							var/datum/ai_holder/AI = unit.ai_holder
+							var/datum/ai_brain/AI = unit.ai_brain
 							AI.give_target(A)
 							i++
 						to_chat(user, span_notice("Commanded [i] mob\s to attack \the [A]."))
@@ -672,7 +674,7 @@ GLOBAL_LIST_EMPTY(active_buildmode_holders)
 					var/i = 0 // Attacking mobs.
 					var/j = 0 // Following mobs.
 					for(var/mob/living/unit in holder.selected_mobs)
-						var/datum/ai_holder/AI = unit.ai_holder
+						var/datum/ai_brain/AI = unit.ai_brain
 						if(L.IIsAlly(unit) || !AI.hostile || pa.Find("shift"))
 							AI.set_follow(L)
 							j++
@@ -700,13 +702,17 @@ GLOBAL_LIST_EMPTY(active_buildmode_holders)
 					var/forced = 0
 					var/told = 0
 					for(var/mob/living/unit in holder.selected_mobs)
-						var/datum/ai_holder/AI = unit.ai_holder
+						var/datum/ai_brain/AI = unit.ai_brain
+						if(!AI)
+							unit.forceMove(T)
+							forced++
+							continue
 						AI.home_turf = T
-						if(unit.get_AI_stance() == STANCE_SLEEP)
+						if(AI.process_flags == 0)
 							unit.forceMove(T)
 							forced++
 						else
-							AI.give_destination(T, 1, pa.Find("shift")) // If shift is held, the mobs will not stop moving to attack a visible enemy.
+							AI.give_destination(T)
 							told++
 					to_chat(user, span_notice("Commanded [told] mob\s to move to \the [T], and manually placed [forced] of them."))
 					log_admin("[key_name(usr)] told selected mobs to move to [T].")

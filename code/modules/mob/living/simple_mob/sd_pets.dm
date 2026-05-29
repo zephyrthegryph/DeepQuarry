@@ -107,11 +107,4 @@
 	digestable = 0
 	faction = FACTION_BAR
 	mob_bump_flag = 32
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/evasive/otie/cocoa
 	catalogue_data = list(/datum/category_item/catalogue/fauna/otie/cocoa)
-
-
-/datum/ai_holder/simple_mob/melee/evasive/otie/cocoa
-	hostile = 0
-	retaliate = 0
-	violent_breakthrough = 0

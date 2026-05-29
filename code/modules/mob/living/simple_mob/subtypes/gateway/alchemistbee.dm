@@ -22,7 +22,6 @@
 	unsuitable_atoms_damage = 0
 	projectiletype = /obj/item/projectile/energy/homing_bolt/wizard/boss
 	melee_attack_delay = 1 SECOND
-	ai_holder_type = /datum/ai_holder/simple_mob/intentional/alchemistbee
 
 	melee_damage_lower = 20
 	melee_damage_upper = 20
@@ -95,78 +94,6 @@
 	incoming_oxy_damage_percent = 2		// Only affects oxyloss.
 
 //Trying to learn from the AADG's ai and make my own
-/datum/ai_holder/simple_mob/intentional/alchemistbee
-	conserve_ammo = FALSE
-	vision_range = 16
-	var/closest_desired_distance = 3		// Otherwise run up to them to be able to potentially shock or punch them.
-
-	var/chemblast_radius = 4			// How big to assume electric defense's area is.
-	var/dangerbolt_radius = 2				// Same but for microsingulo pull.
-	var/homingcluster_radius = 2			// Explosion radius for the rockets.
-
-	var/chemblast_threshold = 3		// How many non-targeted people are needed in close proximity before electric defense is viable.
-	var/dangerbolt_threshold = 1			// Similar to above, but uses an area around the target.
-
-
-/datum/ai_holder/simple_mob/intentional/alchemistbee/on_engagement(atom/A)
-	// Make the AI backpeddle if using an AoE special attack.
-	var/list/risky_intents = list(I_GRAB, I_HURT) // Mini-singulo and missiles.
-	if(holder.a_intent in risky_intents)
-		var/closest_distance = 3
-		switch(holder.a_intent) // Plus one just in case.
-			if(I_HURT)
-				closest_distance = homingcluster_radius + 3
-			if(I_GRAB)
-				closest_distance = dangerbolt_radius + 3
-
-		if(get_dist(holder, A) <= closest_distance)
-			holder.IMove(get_step_away(holder, A, closest_distance))
-
-	// Otherwise get up close and personal.
-	else if(get_dist(holder, A) > closest_desired_distance)
-		holder.IMove(get_step_towards(holder, A))
-
-/datum/ai_holder/simple_mob/intentional/alchemistbee/pre_special_attack(atom/A)
-	if(isliving(A))
-		var/mob/living/target = A
-
-		// If we're surrounded, Electric Defense will quickly fix that.
-		var/tally = 0
-		var/list/potential_targets = list_targets() // Returns list of mobs and certain objects like mechs and turrets.
-		for(var/atom/movable/AM in potential_targets)
-			if(get_dist(holder, AM) > chemblast_radius)
-				continue
-			if(!can_attack(AM))
-				continue
-			tally++
-
-		// Should we shock them?
-		if(tally >= chemblast_threshold || get_dist(target, holder) <= chemblast_radius)
-			holder.a_intent = I_DISARM
-			return
-
-		for(var/atom/movable/AM in potential_targets)
-			if(get_dist(target, AM) > dangerbolt_radius)
-				continue
-			if(!can_attack(AM))
-				continue
-			if(AM.anchored)
-				tally--
-			else
-				tally++
-
-
-		if(tally >= dangerbolt_threshold)
-			holder.a_intent = I_GRAB
-		else
-			holder.a_intent = I_HURT
-
-	else
-		if(get_dist(holder, A) >= homingcluster_radius + 1)
-			holder.a_intent = I_HURT
-		else
-			holder.a_intent = I_DISARM
-
 
 /mob/living/simple_mob/vr/alchemistbee/do_special_attack(atom/A)
 	. = TRUE

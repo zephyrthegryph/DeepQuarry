@@ -33,7 +33,6 @@
 	buckle_lying = FALSE
 	mount_offset_y = 10
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/evasive/zorgoia
 	var/mob/living/carbon/human/friend
 	var/tamed = 0
 	var/tame_chance = 50 //It's a fiddy-fiddy default you may get a buddy pal or you may get mauled and ate. Win-win!
@@ -421,12 +420,11 @@
 					if(M.vore_bellyrub(src))
 						return
 				M.visible_message(span_notice("[M] [response_help] \the [src]."))
-				if(has_AI())
-					var/datum/ai_holder/AI = ai_holder
-					AI.set_stance(STANCE_IDLE)
+				if(ai_brain)
+					var/datum/ai_brain/AI = ai_brain
+					AI.lose_target()  // sleep-style state — drop current target
 					if(prob(tame_chance))
-						AI.violent_breakthrough = FALSE
-						AI.hostile = FALSE
+						AI.set_hostile(FALSE)
 						friend = M
 						AI.set_follow(friend)
 						if(tamed != 1)
@@ -436,8 +434,8 @@
 
 		if(I_GRAB)
 			if(health > 0)
-				if(has_AI())
-					var/datum/ai_holder/AI = ai_holder
+				if((ai_brain != null))
+					var/datum/ai_brain/AI = ai_brain
 					audible_emote("growls disapprovingly at [M].")
 					if(M == friend)
 						AI.lose_follow()
@@ -464,13 +462,6 @@
 
 /mob/living/simple_mob/vore/zorgoia/tamed
 	tamed = TRUE
-
-/datum/ai_holder/simple_mob/melee/evasive/zorgoia
-
-/datum/ai_holder/simple_mob/melee/evasive/zorgoia/New(mob/living/simple_mob/vore/zorgoia/new_holder)
-	.=..()
-	if(new_holder.tamed)
-		hostile = FALSE
 
 /mob/living/simple_mob/vore/zorgoia/proc/export_style()
 	set name = "Export style string"

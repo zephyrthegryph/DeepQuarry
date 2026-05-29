@@ -62,7 +62,6 @@
 	var/datum/effect/effect/system/smoke_spread/mothspore/smoke_spore
 
 	say_list_type = /datum/say_list/tymisian
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/kiting/threatening/frostfly //Uses frostfly AI, since so similar mechanically
 
 /datum/say_list/tymisian
 	speak = list("Zzzz.", "Rrr...", "Zzt?")

@@ -3,7 +3,6 @@
 /mob/living/simple_mob/slime/xenobio
 	desc = "The most basic of slimes.  The grey slime has no remarkable qualities, however it remains one of the most useful colors for scientists."
 	layer = MOB_LAYER + 1 // Need them on top of other mobs or it looks weird when consuming something.
-	ai_holder_type = /datum/ai_holder/simple_mob/xenobio_slime // This should never be changed for xenobio slimes.
 	max_nutrition = 1000
 	var/is_adult = FALSE // Slimes turn into adults when fed enough. Adult slimes are somewhat stronger, and can reproduce if fed enough.
 	var/maxHealth_adult = 200
@@ -25,11 +24,12 @@
 	var/harmless = FALSE // Set to true when pacified. Makes the slime harmless, not get hungry, and not be able to grow/reproduce.
 
 /mob/living/simple_mob/slime/xenobio/Initialize(mapload, mob/living/simple_mob/slime/xenobio/my_predecessor)
-	ASSERT(ispath(ai_holder_type, /datum/ai_holder/simple_mob/xenobio_slime))
+	// DQEdit - legacy ASSERT against ai_holder_type removed; slimes now use the
+	// brain framework and /datum/slime_state for discipline.
 	number = rand(1, 1000)
 	update_name()
 
-	. = ..() // This will make the AI and do the other mob constructor things. It will also return the default hint at the end.
+	. = ..()
 
 	if(my_predecessor)
 		inherit_information(my_predecessor)
@@ -40,23 +40,11 @@
 		stop_consumption() // Unbuckle us from our victim.
 	return ..()
 
-// Called when a slime makes another slime by splitting. The predecessor slime will be deleted shortly afterwards.
+// DQEdit - body moved to modular_dq/.../ports/slime_mob_overrides.dm where it
+// uses /datum/slime_state instead of the deleted ai_brain. Empty stub here so
+// any direct caller still finds the proc.
 /mob/living/simple_mob/slime/xenobio/proc/inherit_information(mob/living/simple_mob/slime/xenobio/predecessor)
-	if(!predecessor)
-		return
-
-	var/datum/ai_holder/simple_mob/xenobio_slime/AI = ai_holder
-	var/datum/ai_holder/simple_mob/xenobio_slime/previous_AI = predecessor.ai_holder
-	ASSERT(istype(AI))
-	ASSERT(istype(previous_AI))
-
-	// Now to transfer the information.
-	// Newly made slimes are bit more rebellious than their predecessors, but they also somewhat forget the atrocities the xenobiologist may have done.
-	AI.discipline = max(previous_AI.discipline - 1, 0)
-	AI.obedience = max(previous_AI.obedience - 1, 0)
-	AI.resentment = max(previous_AI.resentment - 1, 0)
-	AI.rabid = previous_AI.rabid
-
+	return
 /mob/living/simple_mob/slime/xenobio/update_icon()
 	icon_living = "[icon_state_override ? "[icon_state_override] slime" : "slime"] [is_adult ? "adult" : "baby"][victim ? " eating" : ""]"
 	icon_dead = "[icon_state_override ? "[icon_state_override] slime" : "slime"] [is_adult ? "adult" : "baby"] dead"
@@ -86,15 +74,9 @@
 		. += "It appears to be incapacitated."
 	else if(harmless)
 		. += "It appears to have been pacified."
-	else
-		if(has_AI())
-			var/datum/ai_holder/simple_mob/xenobio_slime/AI = ai_holder
-			if(AI.rabid)
-				. += "It seems very, very angry and upset."
-			else if(AI.obedience >= 5)
-				. += "It looks rather obedient."
-			else if(AI.discipline)
-				. += "It has been subjugated by force, at least for now."
+	// DQEdit - discipline/obedience/rabid mood lines moved into the modular
+	// /mob/living/simple_mob/slime/xenobio/examine override which reads
+	// /datum/slime_state instead of the deleted ai_holder.
 
 /mob/living/simple_mob/slime/xenobio/proc/make_adult()
 	if(is_adult)
@@ -130,45 +112,10 @@
 	name = "[slime_color] [is_adult ? "adult" : "baby"] [initial(name)] ([number])"
 	real_name = name
 
+// DQEdit - body moved to modular_dq/.../ports/slime_mob_overrides.dm where it
+// reads /datum/slime_state instead of the deleted ai_holder.
 /mob/living/simple_mob/slime/xenobio/update_mood()
-	var/old_mood = mood
-	var/pacified = FALSE //Tracks if we are currently pacified (and if we can be drop prey or not)
-	var/obedient = 0
-	if(incapacitated(INCAPACITATION_DISABLED))
-		mood = "sad"
-		pacified = TRUE
-	else if(harmless)
-		mood = ":33"
-		pacified = TRUE
-	else if(has_AI())
-		var/datum/ai_holder/simple_mob/xenobio_slime/AI = ai_holder
-		if(AI.rabid)
-			mood = "angry"
-		else if(AI.target)
-			mood = "mischevous"
-		else if(AI.discipline)
-			mood = "pout"
-			pacified = TRUE
-		else
-			mood = ":3"
-			pacified = TRUE
-		obedient = AI.obedience
-	else
-		mood = ":3"
-		pacified = TRUE
-	if(obedient < 5)
-		pacified = FALSE //We are not obedient enough to be considered pacified.
-
-	if(!client) //Only update if we don't have a client.
-		if(faction != FACTION_SLIME) //We have had a loyalty potion used on us.
-			update_allowed_vore_types(TRUE)
-		else if(old_mood == "angry") //We were recently angry, so we're still upset and won't let you eat us no matter what! (Unless we had a docility potion put on us, making us harmless)
-			update_allowed_vore_types(FALSE, harmless)
-		else
-			update_allowed_vore_types(pacified, harmless)
-
-	if(old_mood != mood)
-		update_icon()
+	return
 
 /mob/living/simple_mob/slime/proc/update_allowed_vore_types(allowed, harmless)
 	if(harmless) // If we're harmless, we should always be able to be eaten.
@@ -179,33 +126,16 @@
 	drop_vore = allowed
 	throw_vore = allowed
 
+// DQEdit - enrage / relax / pacify bodies moved to
+// modular_dq/.../ports/slime_mob_overrides.dm; they now drive slime_state.
 /mob/living/simple_mob/slime/xenobio/proc/enrage()
-	if(harmless)
-		return
-	if(has_AI())
-		var/datum/ai_holder/simple_mob/xenobio_slime/AI = ai_holder
-		AI.enrage()
+	return
 
 /mob/living/simple_mob/slime/xenobio/proc/relax()
-	if(harmless)
-		return
-	if(has_AI())
-		var/datum/ai_holder/simple_mob/xenobio_slime/AI = ai_holder
-		AI.relax()
+	return
 
 /mob/living/simple_mob/slime/xenobio/proc/pacify()
-	harmless = TRUE
-	if(has_AI())
-		var/datum/ai_holder/simple_mob/xenobio_slime/AI = ai_holder
-		AI.pacify()
-
-	faction = FACTION_NEUTRAL
-
-	// If for whatever reason the mob AI (or player) decides to try to attack something anyways.
-	melee_damage_upper = 0
-	melee_damage_lower = 0
-
-	update_mood()
+	return
 
 
 // These are verbs so that player slimes can evolve/split.

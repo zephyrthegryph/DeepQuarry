@@ -49,7 +49,6 @@
 	)
 
 	say_list_type = /datum/say_list/duck
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate/cooperative
 
 /datum/say_list/duck
 	speak = list("Wack!", "Wock?", "Wack.")

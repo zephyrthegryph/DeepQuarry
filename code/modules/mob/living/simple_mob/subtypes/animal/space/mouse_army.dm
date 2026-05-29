@@ -59,7 +59,6 @@
 
 	say_list_type = /datum/say_list/mouse
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/evasive
 
 	var/rank //pyro, operative, ammo, stealth. more to come. Do not leave blank.
 
@@ -164,7 +163,6 @@
 	projectiletype = /obj/item/projectile/bullet/incendiary/flamethrower
 	base_attack_cooldown = 10
 
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged
 	var/ruptured = 0
 
 /mob/living/simple_mob/animal/space/mouse_army/pyro/death()
@@ -223,7 +221,6 @@
 	var/explosion_delay_lower	= 1 SECOND	// Lower bound for explosion delay.
 	var/explosion_delay_upper	= 3 SECONDS	// Upper bound.
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/evasive
 
 /mob/living/simple_mob/animal/space/mouse_army/ammo/death()
 	visible_message(span_critical("\The [src]'s body begins to rupture!"))
@@ -272,7 +269,6 @@
 	you will do bonus damage, stun the target, and unstealth for a period of time.<br>\
 	Getting attacked will also break your stealth."
 
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/hit_and_run
 
 	var/cloaked_alpha = 45
 	var/cloaked_bonus_damage = 20
@@ -384,7 +380,6 @@
 	movement_cooldown = 2
 	base_attack_cooldown = 8
 
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/kiting
 
 /mob/living/simple_mob/mechanical/mecha/mouse_tank/manned
 	pilot_type = /mob/living/simple_mob/animal/space/mouse_army/operative
@@ -423,7 +418,6 @@
 	movement_cooldown = 3
 	base_attack_cooldown = 15
 
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/kiting
 
 /mob/living/simple_mob/mechanical/mecha/mouse_tank/livewire/manned
 	pilot_type = /mob/living/simple_mob/animal/space/mouse_army/pyro
@@ -461,7 +455,6 @@
 	movement_cooldown = 5
 	base_attack_cooldown = 15
 
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/kiting
 
 /mob/living/simple_mob/mechanical/mecha/mouse_tank/eraticator/manned
 	pilot_type = /mob/living/simple_mob/animal/space/mouse_army/ammo

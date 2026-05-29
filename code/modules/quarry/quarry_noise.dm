@@ -52,19 +52,12 @@
 			continue
 		if(get_dist(M, origin) > loudness)
 			continue
-		if(!M.ai_holder)
+		if(!M.ai_brain)
 			continue
-		// Already fighting / approaching something — don't redirect.
-		// Idle, sleeping, alert, and follow-state mobs can re-task.
-		var/stance = M.ai_holder.stance
-		if(stance == STANCE_APPROACH || stance == STANCE_FIGHT \
-			|| stance == STANCE_BLINDFIGHT || stance == STANCE_ATTACK \
-			|| stance == STANCE_ATTACKING)
+		// Already fighting something — don't redirect.
+		if(M.ai_brain.primary_threat)
 			continue
-		// give_destination just sets the AI's wander target; the
-		// mob's own AI tick handles actually moving. Stays alert
-		// behavior + acquire_target will fire if it walks within
-		// line of sight of a player en route.
-		if(M.ai_holder.stance == STANCE_SLEEP)
-			M.ai_holder.set_stance(STANCE_IDLE)
-		M.ai_holder.give_destination(origin, 1)
+		// Wake sleeping mobs and walk them toward the noise.
+		if(M.ai_brain.process_flags == 0)
+			M.ai_brain.go_wake()
+		M.ai_brain.give_destination(origin)

@@ -22,7 +22,6 @@
 
 	size_multiplier = 2.50
 
-	ai_holder_type = /datum/ai_holder/simple_mob/intentional/adv_dark_gygax
 
 	ranged_attack_delay = 1.5 SECONDS
 
@@ -85,7 +84,6 @@
 	melee_attack_delay = 4 SECOND
 	ranged_attack_delay = 2.5 SECONDS
 
-	ai_holder_type = /datum/ai_holder/simple_mob/intentional/adv_dark_gygax
 
 	size_multiplier = 2.50
 
@@ -134,7 +132,6 @@
 	melee_attack_delay = 4 SECOND
 	alpha = 215
 
-	ai_holder_type = /datum/ai_holder/simple_mob/intentional/adv_dark_gygax
 	size_multiplier = 2.25
 
 	wreckage = null
@@ -167,7 +164,6 @@
 	projectiletype = null
 	melee_attack_delay = 2 SECOND
 
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged/aggressive/meleeimperion
 	size_multiplier = 2.00
 
 	wreckage = null
@@ -220,21 +216,12 @@
 	target_turf.visible_message(span_warning("\The [src] appears!"))
 	s2.start()
 
-/datum/ai_holder/simple_mob/ranged/aggressive/meleeimperion
-	home_low_priority = TRUE
-	vision_range = 28 //cheesy Ai for absurdly aggressive phase
-
-/datum/ai_holder/simple_mob/ranged/aggressive/meleeimperion/react_to_attack()
-	var/obj/item/projectile/P = new /obj/item/projectile/forcebolt(get_turf(src))
-	P.launch_projectile(target, BP_TORSO, src)
-
 //Phase four, fusion time.
 /mob/living/simple_mob/mechanical/mecha/imperion/phase4 //Starts to slow down
 	movement_cooldown = 0
 	projectiletype = /obj/item/projectile/energy/homing_bolt
 	melee_attack_delay = 4 SECOND
 
-	ai_holder_type = /datum/ai_holder/simple_mob/intentional/adv_dark_gygax
 
 	size_multiplier = 1.75
 
@@ -338,7 +325,6 @@
 
 	size_multiplier = 1.50
 
-	ai_holder_type = /datum/ai_holder/simple_mob/intentional/adv_dark_gygax
 
 	wreckage = null
 	pilot_type = null

@@ -17,7 +17,6 @@
 	attacktext = list("swatted","bapped")
 
 	say_list_type = /datum/say_list/catgirl
-	ai_holder_type = /datum/ai_holder/simple_mob/passive/catgirl
 
 	var/random_skin = 1
 	var/list/skins = list(
@@ -62,6 +61,3 @@
 	speak = list("Meow!","Esp!","Purr!","HSSSSS","Mew?","Nya~")
 	emote_hear = list("meows","mews","purrs")
 	emote_see = list("shakes her head","shivers","stretches","grooms herself")
-
-/datum/ai_holder/simple_mob/passive/catgirl
-	base_wander_delay = 8

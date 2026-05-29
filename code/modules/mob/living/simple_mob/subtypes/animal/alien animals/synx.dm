@@ -71,7 +71,6 @@
 	faction = "Synx"
 
 	//intelligence_level = SA_ANIMAL
-	ai_holder_type = null //added for player controlled variant only.
 
 	maxHealth = 75 //Lowered from 150. 150 is wayyy too high for a noodly stealth predator. - Lo
 	health = 75
@@ -146,7 +145,6 @@
 
 /mob/living/simple_mob/animal/synx/ai //AI controlled variant
 
-	ai_holder_type = /datum/ai_holder/simple_mob/retaliate
 
 /mob/living/simple_mob/animal/synx/load_default_bellies()
 	. = ..()
@@ -387,10 +385,10 @@
 /*		if(prob(forcefeedchance) && !ckey)//Forcefeeding code //Only triggers if not player-controlled //This does not currently work
 			L.Weaken(2)
 			update_icon()
-			set_AI_busy(TRUE)
+			if(ai_brain) ai_brain.busy = TRUE
 			src.feed_self_to_grabbed(src,L)
 			update_icon()
-			set_AI_busy(FALSE)
+			if(ai_brain) ai_brain.busy = FALSE
 */
 		if(L.reagents) //Seemingly broken. Would probably be really annoying anyways, so probably for the best that it doesn't work. -Azel
 			var/target_zone = pick(BP_TORSO,BP_TORSO,BP_TORSO,BP_L_LEG,BP_R_LEG,BP_L_ARM,BP_R_ARM,BP_HEAD)
@@ -983,32 +981,12 @@ This includes the sprites of the below Mob which are based upon SCP 939.
 */
 //SCP-939
 //sprites to be made.
-/datum/ai_holder/simple_mob/scp
-	hostile = TRUE // The majority of simplemobs are hostile.
-	retaliate = TRUE	// The majority of simplemobs will fight back.
-	cooperative = TRUE
-	returns_home = FALSE
-	can_flee = TRUE
-	speak_chance = 0 // If the mob's saylist is empty, nothing will happen.
-	wander = TRUE
-	base_wander_delay = 3
-	autopilot = TRUE //As the ghost in this shell you only control the voices.
-	wander_when_pulled = TRUE
-	outmatched_threshold = 100 //pussy
-	flee_when_outmatched = TRUE
-	call_distance = 100
-	mauling = FALSE
-	vision_range = 10 //no kiting, they have ears.
-	use_astar = TRUE //Clever boy!
-	threaten = TRUE
-
 /mob/living/simple_mob/animal/synx/scp
 	name = "Unknown"
 	desc = "It's a red canine looking creature."
 	tt_desc = "Unknown Alien Lifeform"
 
 	poison_chance = 0 //no poison,
-	ai_holder_type = /datum/ai_holder/simple_mob/scp
 	say_list_type = /datum/say_list/malf_drone
 
 	icon = 'icons/mob/synxmanyvoices.dmi'

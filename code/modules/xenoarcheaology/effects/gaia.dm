@@ -41,7 +41,7 @@
 
 			my_glitterflies |= G
 
-			G.ai_holder.returns_home = TRUE
+			G.ai_brain.returns_home = TRUE
 
 	for(var/obj/effect/plant/P in view(world.view,get_turf(holder)))
 		age_plantlife(P)
@@ -55,7 +55,7 @@
 
 			my_glitterflies |= G
 
-			G.ai_holder.returns_home = TRUE
+			G.ai_brain.returns_home = TRUE
 
 	for(var/obj/effect/plant/P in view(effectrange,get_turf(holder)))
 		age_plantlife(P)
@@ -69,7 +69,7 @@
 
 			my_glitterflies |= G
 
-			G.ai_holder.returns_home = TRUE
+			G.ai_brain.returns_home = TRUE
 
 	for(var/obj/effect/plant/P in view(effectrange,get_turf(holder)))
 		age_plantlife(P)
@@ -84,4 +84,4 @@
 		if(L.stat == DEAD)
 			my_glitterflies -= L
 
-		L.ai_holder.home_turf = get_turf(holder)
+		L.ai_brain.home_turf = get_turf(holder)

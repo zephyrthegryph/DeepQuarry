@@ -407,8 +407,8 @@
 		if(owner.previewing_belly == src)
 			vore_fx(owner)
 		//Stop AI processing in bellies
-		if(living_mob.ai_holder)
-			living_mob.ai_holder.go_sleep()
+		if(living_mob.ai_brain)
+			living_mob.ai_brain.go_sleep()
 		if(reagents.total_volume >= 5)
 			if(digest_mode == DM_DIGEST && living_mob.digestable)
 				reagents.splash_mob(living_mob, reagents.total_volume * 0.1, FALSE)
@@ -446,8 +446,8 @@
 			if(L.hud_used)
 				if(!L.hud_used.hud_shown)
 					L.toggle_hud_vis()
-			if((L.stat != DEAD) && L.ai_holder)
-				L.ai_holder.go_wake()
+			if((L.stat != DEAD) && L.ai_brain)
+				L.ai_brain.go_wake()
 			L.stop_sound_channel(CHANNEL_PREYLOOP) // This was on release_specific_contents proc, why is it not here on belly exit?
 	// End of indirect vorefx changes
 	if(isitem(thing) && !isbelly(thing.loc)) // Digest stage effects. Don't bother adding overlays to stuff that won't make it back out.

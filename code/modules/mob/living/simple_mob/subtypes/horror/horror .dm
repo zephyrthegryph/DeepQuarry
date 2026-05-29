@@ -6,16 +6,6 @@
 
 	can_pain_emote = FALSE
 
-/datum/ai_holder/simple_mob/horror
-	hostile = TRUE // The majority of simplemobs are hostile, gaslamps are nice.
-	cooperative = FALSE
-	retaliate = TRUE //so the monster can attack back
-	returns_home = FALSE
-	can_flee = FALSE
-	speak_chance = 3
-	wander = TRUE
-	base_wander_delay = 9
-
 /mob/living/simple_mob/horror
 	min_oxy = 0
 	max_oxy = 0

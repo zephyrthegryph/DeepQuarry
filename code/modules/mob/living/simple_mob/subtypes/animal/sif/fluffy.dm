@@ -33,7 +33,6 @@
 	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
 	say_list_type = /datum/say_list/fluffy_vr
-	ai_holder_type = /datum/ai_holder/simple_mob/passive
 
 /datum/say_list/fluffy_vr
 	speak = list("Squee","Arf arf","Awoo","Squeak")
