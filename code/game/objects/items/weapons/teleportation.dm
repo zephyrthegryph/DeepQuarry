@@ -12,7 +12,6 @@
 	desc = "Used to track those with locater implants."
 	icon = 'icons/obj/device.dmi'
 	icon_state = "locator"
-	var/temp = null
 	var/frequency = TRACK_IMP_FREQ
 	var/broadcasting = null
 	var/listening = 1.0
@@ -23,98 +22,102 @@
 	matter = list(MAT_STEEL = 400)
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
+	// DQEdit Start — last scan results for TGUI. Replaces the legacy `temp`
+	// HTML blob with structured data.
+	var/list/last_beacons = null
+	var/list/last_implants = null
+	var/last_location = null
+	// DQEdit End
 
+// DQEdit Start — TGUI migration. attack_self opens Locator.tsx; Topic
+// frequency/refresh/clear actions move to tgui_act.
 /obj/item/locator/attack_self(mob/user)
 	. = ..(user)
 	if(.)
 		return TRUE
-	user.set_machine(src)
-	var/dat
-	if (src.temp)
-		dat = "[src.temp]<BR><BR><A href='byond://?src=\ref[src];temp=1'>Clear</A>"
-	else
-		dat = {"
-<B>Persistent Signal Locator</B><HR>
-Frequency:
-<A href='byond://?src=\ref[src];freq=-10'>-</A>
-<A href='byond://?src=\ref[src];freq=-2'>-</A> [format_frequency(src.frequency)]
-<A href='byond://?src=\ref[src];freq=2'>+</A>
-<A href='byond://?src=\ref[src];freq=10'>+</A><BR>
+	tgui_interact(user)
 
-<A href='byond://?src=\ref[src];refresh=1'>Refresh</A>"}
-	user << browse("<html>[dat]</html>", "window=radio")
-	onclose(user, "radio")
-	return
+/obj/item/locator/tgui_interact(mob/user, datum/tgui/ui)
+	ui = SStgui.try_update_ui(user, src, ui)
+	if(!ui)
+		ui = new(user, src, "Locator", "Persistent Signal Locator")
+		ui.open()
 
-/obj/item/locator/Topic(href, href_list)
-	..()
-	if (usr.stat || usr.restrained())
+/obj/item/locator/tgui_data(mob/user)
+	var/list/data = list()
+	data["frequency"] = format_frequency(frequency)
+	data["has_scan"] = !!last_location
+	data["location"] = last_location || ""
+	data["beacons"] = last_beacons || list()
+	data["implants"] = last_implants || list()
+	return data
+
+/obj/item/locator/proc/strength_label(distance)
+	if(distance < 5)
+		return "very strong"
+	if(distance < 10)
+		return "strong"
+	if(distance < 20)
+		return "weak"
+	return "very weak"
+
+/obj/item/locator/tgui_act(action, list/params)
+	. = ..()
+	if(.)
 		return
-	var/turf/current_location = get_turf(usr)//What turf is the user on?
-	if(!current_location||current_location.z==3)//If turf was not found or they're on z level 2.
+	if(usr.stat || usr.restrained())
+		return TRUE
+	var/turf/current_location = get_turf(usr)
+	if(!current_location || current_location.z == 3)
 		to_chat(usr, "The [src] is malfunctioning.")
-		return
-	if ((usr.contents.Find(src) || (in_range(src, usr) && istype(src.loc, /turf))))
-		usr.set_machine(src)
-		if (href_list["refresh"])
-			src.temp = span_bold("Persistent Signal Locator") + "<HR>"
+		return TRUE
+	switch(action)
+		if("freq")
+			frequency += text2num(params["delta"])
+			frequency = sanitize_frequency(frequency)
+			return TRUE
+		if("clear")
+			last_beacons = null
+			last_implants = null
+			last_location = null
+			return TRUE
+		if("refresh")
 			var/turf/sr = get_turf(src)
-
-			if (sr)
-				src.temp += span_bold("Located Beacons:") + "<BR>"
-
-				for(var/obj/item/radio/beacon/W in GLOB.all_beacons)
-					if (W.frequency == src.frequency)
-						var/turf/tr = get_turf(W)
-						if (tr.z == sr.z && tr)
-							var/direct = max(abs(tr.x - sr.x), abs(tr.y - sr.y))
-							if (direct < 5)
-								direct = "very strong"
-							else
-								if (direct < 10)
-									direct = "strong"
-								else
-									if (direct < 20)
-										direct = "weak"
-									else
-										direct = "very weak"
-							src.temp += "[W.code]-[dir2text(get_dir(sr, tr))]-[direct]<BR>"
-
-				src.temp += span_bold("Extraneous Signals:") + "<BR>"
-				for (var/obj/item/implant/tracking/W in GLOB.all_tracking_implants)
-					if (!W.implanted || !(istype(W.loc,/obj/item/organ/external) || ismob(W.loc) || W.malfunction) || is_vore_jammed(W))
-						continue
-
-					var/turf/tr = get_turf(W)
-					if (tr.z == sr.z && tr)
-						var/direct = max(abs(tr.x - sr.x), abs(tr.y - sr.y))
-						if (direct < 20)
-							if (direct < 5)
-								direct = "very strong"
-							else
-								if (direct < 10)
-									direct = "strong"
-								else
-									direct = "weak"
-							src.temp += "[W.id]-[dir2text(get_dir(sr, tr))]-[direct]<BR>"
-
-				src.temp += span_bold("You are at \[[sr.x],[sr.y],[sr.z]\]") + " in orbital coordinates.<BR><BR><A href='byond://?src=\ref[src];refresh=1'>Refresh</A><BR>"
-			else
-				src.temp += span_bold(span_red("Processing Error:")) + " Unable to locate orbital position.<BR>"
-		else
-			if (href_list["freq"])
-				src.frequency += text2num(href_list["freq"])
-				src.frequency = sanitize_frequency(src.frequency)
-			else
-				if (href_list["temp"])
-					src.temp = null
-		if (istype(src.loc, /mob))
-			attack_self(src.loc)
-		else
-			for(var/mob/M in viewers(1, src))
-				if (M.client)
-					src.attack_self(M)
-	return
+			if(!sr)
+				return TRUE
+			var/list/b = list()
+			for(var/obj/item/radio/beacon/W in GLOB.all_beacons)
+				if(W.frequency != frequency)
+					continue
+				var/turf/tr = get_turf(W)
+				if(!tr || tr.z != sr.z)
+					continue
+				var/distance = max(abs(tr.x - sr.x), abs(tr.y - sr.y))
+				b += list(list(
+					"id" = W.code,
+					"direction" = dir2text(get_dir(sr, tr)),
+					"strength" = strength_label(distance),
+				))
+			var/list/i = list()
+			for(var/obj/item/implant/tracking/W in GLOB.all_tracking_implants)
+				if(!W.implanted || !(istype(W.loc, /obj/item/organ/external) || ismob(W.loc) || W.malfunction) || is_vore_jammed(W))
+					continue
+				var/turf/tr = get_turf(W)
+				if(!tr || tr.z != sr.z)
+					continue
+				var/distance = max(abs(tr.x - sr.x), abs(tr.y - sr.y))
+				if(distance >= 20)
+					continue
+				i += list(list(
+					"id" = W.id,
+					"direction" = dir2text(get_dir(sr, tr)),
+					"strength" = strength_label(distance),
+				))
+			last_beacons = b
+			last_implants = i
+			last_location = "[sr.x], [sr.y], [sr.z]"
+			return TRUE
+// DQEdit End
 
 
 /*

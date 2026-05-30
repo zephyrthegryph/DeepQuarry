@@ -99,8 +99,6 @@
 	if(target)
 		user.loc = get_turf(target)
 
-// DQEdit — gateway machinery procs removed; gateway feature deleted with awaymissions.
-
 // -------------------------------------------
 // This was supposed to be used by adminghosts
 // I think it is a *terrible* idea

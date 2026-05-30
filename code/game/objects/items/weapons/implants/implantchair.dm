@@ -25,27 +25,8 @@
 	add_implants()
 
 
-/obj/machinery/implantchair/attack_hand(mob/user)
-	user.set_machine(src)
-	var/health_text = ""
-	if(src.occupant)
-		if(src.occupant.health <= -100)
-			health_text = span_red("Dead")
-		else if(src.occupant.health < 0)
-			health_text = span_red("[round(src.occupant.health,0.1)]")
-		else
-			health_text = "[round(src.occupant.health,0.1)]"
-
-	var/dat = span_bold("Implanter Status") + "<BR>"
-
-	dat += span_bold("Current occupant:") + " [src.occupant ? "<BR>Name: [src.occupant]<BR>Health: [health_text]<BR>" : span_red("None")]<BR>"
-	dat += span_bold("Implants:") + " [src.implant_list.len ? "[implant_list.len]" : "<A href='byond://?src=\ref[src];replenish=1'>Replenish</A>"]<BR>"
-	if(src.occupant)
-		dat += "[src.ready ? "<A href='byond://?src=\ref[src];implant=1'>Implant</A>" : "Recharging"]<BR>"
-
-	var/datum/browser/popup = new(user, "implant", "Implant")
-	popup.set_content(dat)
-	popup.open()
+// DQEdit — structured TGUI ImplantChair (see
+// modular_dq/code/modules/admin/implant_chair_panel.dm).
 
 /obj/machinery/implantchair/Topic(href, href_list)
 	if((get_dist(src, usr) <= 1) || isAI(usr))

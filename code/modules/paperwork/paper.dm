@@ -44,6 +44,12 @@
 	var/const/deffont = "Verdana"
 	var/const/signfont = "Times New Roman"
 	var/const/crayonfont = "Comic Sans MS"
+	// DQEdit — TGUI: "read" or "write" view. attack_self/show_content sets
+	// to "read"; attackby pen sets to "write".
+	var/tgui_view = "read"
+	// DQEdit — TGUI: TRUE = caller is allowed to read clear text (humans,
+	// silicons, observers, universal_understand). FALSE = stars(info).
+	var/tmp/can_read_view = TRUE
 	resistance_flags = FLAMMABLE
 
 /obj/item/paper/card
@@ -151,13 +157,129 @@
 	else
 		. += span_notice("You have to go closer if you want to read it.")
 
+// DQEdit Start — TGUI migration. show_content opens Paper.tsx in "read"
+// view; attackby pen sets the view to "write" before opening so the
+// info_links HTML (with editable field hrefs) is rendered. The Topic
+// handler is unchanged — byond:// hrefs embedded in info_links still
+// route back to it from inside the TGUI window's HTML container.
 /obj/item/paper/proc/show_content(mob/user, forceshow=0)
-	if(!(forceshow || (ishuman(user) || isobserver(user) || issilicon(user) || (istype(user) && user.universal_understand))))
-		user << browse("<HTML><HEAD><TITLE>[name]</TITLE></HEAD><BODY>[stars(info)][stamps]</BODY></HTML>", "window=[name]")
-		onclose(user, "[name]")
+	can_read_view = (forceshow || ishuman(user) || isobserver(user) || issilicon(user) || (istype(user) && user.universal_understand))
+	tgui_view = "read"
+	tgui_interact(user)
+
+/obj/item/paper/tgui_interact(mob/user, datum/tgui/ui)
+	ui = SStgui.try_update_ui(user, src, ui)
+	if(!ui)
+		ui = new(user, src, "Paper", name)
+		ui.open()
+
+/obj/item/paper/tgui_data(mob/user)
+	var/list/data = list()
+	data["title"] = name
+	data["view"] = tgui_view
+	data["segments"] = get_segments()
+	data["stamps"] = stamps || ""
+	data["garbled"] = !can_read_view
+	return data
+
+// Parse `info` into an ordered list of text/field segments. Field segments
+// preserve their 1-based id (matching the legacy field count and the
+// id used by addtofield/Topic write=N).
+/obj/item/paper/proc/get_segments()
+	var/list/segs = list()
+	if(!info)
+		return segs
+	var/marker = "<span class=\"paper_field\">"
+	var/marker_len = length(marker)
+	var/close = "</span>"
+	var/close_len = length(close)
+	var/cursor = 1
+	var/field_id = 0
+	var/total = length(info)
+	while(cursor <= total)
+		var/istart = findtext(info, marker, cursor)
+		if(!istart)
+			segs += list(list("type" = "text", "text" = copytext(info, cursor)))
+			break
+		if(istart > cursor)
+			segs += list(list("type" = "text", "text" = copytext(info, cursor, istart)))
+		var/iend = findtext(info, close, istart)
+		if(!iend)
+			// Malformed; treat the rest as text.
+			segs += list(list("type" = "text", "text" = copytext(info, cursor)))
+			break
+		field_id++
+		var/content_start = istart + marker_len
+		var/field_text = copytext(info, content_start, iend)
+		segs += list(list("type" = "field", "id" = field_id, "text" = field_text))
+		cursor = iend + close_len
+	return segs
+
+/obj/item/paper/tgui_act(action, list/params)
+	. = ..()
+	if(.)
+		return
+	switch(action)
+		if("write_field")
+			do_write_action("[params["id"]]", usr)
+			return TRUE
+		if("write_end")
+			do_write_action("end", usr)
+			return TRUE
+
+// Shared write-prompt + pencode-parse + commit. Same checks the legacy
+// Topic write branch had — pen-in-hand, RIG fallback, range/loc, fields
+// cap — and the same writes via addtofield or info-append.
+/obj/item/paper/proc/do_write_action(id, mob/user)
+	if(!user || user.stat || user.restrained())
+		return
+	if(free_space <= 0)
+		to_chat(user, span_info("There isn't enough space left on \the [src] to write anything."))
+		return
+	var/t = tgui_input_text(user, "Enter what you want to write:", "Write", "", MAX_PAPER_MESSAGE_LEN, TRUE, prevent_enter = TRUE)
+	if(!t)
+		return
+	var/obj/item/i = user.get_active_hand()
+	var/iscrayon = 0
+	if(!istype(i, /obj/item/pen))
+		tgui_alert(user, "You aren't holding a pen anymore! If you want to keep your work, grab one.", "No Pen!")
+		i = user.get_active_hand()
+	if(!istype(i, /obj/item/pen))
+		var/mob/living/M = user
+		if(istype(M) && M.back && istype(M.back, /obj/item/rig))
+			var/obj/item/rig/r = M.back
+			var/obj/item/rig_module/device/pen/m = locate(/obj/item/rig_module/device/pen) in r.installed_modules
+			if(!r.offline && m)
+				i = m.device
+			else
+				return
+		else
+			return
+	if(istype(i, /obj/item/pen/crayon))
+		iscrayon = 1
+	if(istype(loc, /obj/item/clipboard) || istype(loc, /obj/structure/noticeboard) || istype(loc, /obj/item/folder))
+		if(loc.loc != user && !in_range(loc, user))
+			return
+	else if(loc != user && !Adjacent(user))
+		return
+	var/last_fields_value = fields
+	t = replacetext(t, "\n", "<BR>")
+	t = parsepencode(t, i, user, iscrayon)
+	was_maploaded = FALSE
+	if(fields > 50)
+		to_chat(user, span_warning("Too many fields. Sorry, you can't do this."))
+		fields = last_fields_value
+		return
+	if(id != "end")
+		addtofield(text2num(id), t)
 	else
-		user << browse("<HTML><HEAD><TITLE>[name]</TITLE></HEAD><BODY>[info][stamps]</BODY></HTML>", "window=[name]")
-		onclose(user, "[name]")
+		info += t
+		updateinfolinks()
+	last_modified_ckey = user.ckey
+	update_space(t)
+	playsound(src, pick('sound/bureaucracy/pen1.ogg', 'sound/bureaucracy/pen2.ogg'), 10)
+	update_icon()
+// DQEdit End
 
 /obj/item/paper/verb/rename()
 	set name = "Rename paper"
@@ -203,18 +325,16 @@
 				spam_flag = 0
 	return
 
+// DQEdit — AI/cyborg viewer routes through the same TGUI paper window.
 /obj/item/paper/attack_ai(mob/living/silicon/ai/user)
 	var/dist
-	if(istype(user) && user.camera) //is AI
+	if(istype(user) && user.camera)
 		dist = get_dist(src, user.camera)
-	else //cyborg or AI not seeing through a camera
-		dist = get_dist(src, user)
-	if(dist < 2)
-		user << browse("<HTML><HEAD><TITLE>[name]</TITLE></HEAD><BODY>[info][stamps]</BODY></HTML>", "window=[name]")
-		onclose(user, "[name]")
 	else
-		user << browse("<HTML><HEAD><TITLE>[name]</TITLE></HEAD><BODY>[stars(info)][stamps]</BODY></HTML>", "window=[name]")
-		onclose(user, "[name]")
+		dist = get_dist(src, user)
+	can_read_view = (dist < 2)
+	tgui_view = "read"
+	tgui_interact(user)
 	return
 
 /obj/item/paper/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
@@ -420,93 +540,6 @@
 				to_chat(user, span_red("You must hold \the [P] steady to burn \the [src]."))
 
 
-/obj/item/paper/Topic(href, href_list)
-	..()
-	if(!usr || (usr.stat || usr.restrained()))
-		return
-
-	if(href_list["write"])
-		var/id = href_list["write"]
-		//var/t = strip_html_simple(tgui_input_text(usr, "What text do you wish to add to " + (id=="end" ? "the end of the paper" : "field "+id) + "?", "[name]", null, multiline=TRUE),8192)
-
-		if(free_space <= 0)
-			to_chat(usr, span_info("There isn't enough space left on \the [src] to write anything."))
-			return
-
-		var/t = tgui_input_text(usr, "Enter what you want to write:", "Write", "", MAX_PAPER_MESSAGE_LEN, TRUE, prevent_enter = TRUE)
-		if(!t)
-			return
-
-		var/obj/item/i = usr.get_active_hand() // Check to see if he still got that darn pen, also check if he's using a crayon or pen.
-		var/iscrayon = 0
-		if(!istype(i, /obj/item/pen))
-			tgui_alert(usr, "You aren't holding a pen anymore! If you want to keep your work, grab one.", "No Pen!") // Should remain tgui_alert() (blocking)
-			i = usr.get_active_hand()
-
-		if(!istype(i, /obj/item/pen))
-			var/mob/living/M = usr
-			if(istype(M) && M.back && istype(M.back,/obj/item/rig))
-				var/obj/item/rig/r = M.back
-				var/obj/item/rig_module/device/pen/m = locate(/obj/item/rig_module/device/pen) in r.installed_modules
-				if(!r.offline && m)
-					i = m.device
-				else
-					return
-			else
-				return
-
-		if(istype(i, /obj/item/pen/crayon))
-			iscrayon = 1
-
-
-		// if paper is not in usr, then it must be near them, or in a clipboard or folder, which must be in or near usr
-		if(istype(loc, /obj/item/clipboard) || istype(loc, /obj/structure/noticeboard) || istype(loc, /obj/item/folder))
-			if(loc.loc != usr && !in_range(loc, usr))
-				return
-		else if(loc != usr && !Adjacent(usr))
-			return
-
-/*
-		t = checkhtml(t)
-
-		// check for exploits
-		for(var/bad in paper_blacklist)
-			if(findtext(t,bad))
-				to_chat(usr, span_blue("You think to yourself, \"Hm.. this is only paper...\""))
-				log_admin("PAPER: [usr] ([usr.ckey]) tried to use forbidden word in [src]: [bad].")
-				message_admins("PAPER: [usr] ([usr.ckey]) tried to use forbidden word in [src]: [bad].")
-				return
-*/
-
-		var last_fields_value = fields
-
-		//t = html_encode(t)
-		t = replacetext(t, "\n", "<BR>")
-		t = parsepencode(t, i, usr, iscrayon) // Encode everything from pencode to html
-		was_maploaded = FALSE // Set this to FALSE because a user has written on us. This is for persistence purposes.
-
-
-		if(fields > 50)//large amount of fields creates a heavy load on the server, see updateinfolinks() and addtofield()
-			to_chat(usr, span_warning("Too many fields. Sorry, you can't do this."))
-			fields = last_fields_value
-			return
-
-		if(id!="end")
-			addtofield(text2num(id), t) // He wants to edit a field, let him.
-		else
-			info += t // Oh, he wants to edit to the end of the file, let him.
-			updateinfolinks()
-
-		last_modified_ckey = usr.ckey
-
-		update_space(t)
-
-		usr << browse("<HTML><HEAD><TITLE>[name]</TITLE></HEAD><BODY>[info_links][stamps]</BODY></HTML>", "window=[name]") // Update the window
-
-		playsound(src, pick('sound/bureaucracy/pen1.ogg','sound/bureaucracy/pen2.ogg'), 10)
-
-		update_icon()
-
 /obj/item/paper/get_worn_icon_state(slot_name)
 	if(slot_name == slot_head_str)
 		return "paper" //Gross, but required for now.
@@ -589,10 +622,15 @@
 			return
 
 		var/obj/item/pen/robopen/RP = P
-		if ( istype(RP) && RP.mode == 2 )
-			RP.RenamePaper(user,src)
+		if(istype(RP) && RP.mode == 2)
+			RP.RenamePaper(user, src)
 		else
-			user << browse("<HTML><HEAD><TITLE>[name]</TITLE></HEAD><BODY>[info_links][stamps]</BODY></HTML>", "window=[name]")
+			// DQEdit — pen interact opens Paper.tsx in "write" view; the
+			// info_links HTML rendered there still carries the field hrefs
+			// that route back to Topic for the actual write action.
+			can_read_view = TRUE
+			tgui_view = "write"
+			tgui_interact(user)
 		return
 
 	else if(istype(P, /obj/item/stamp) || istype(P, /obj/item/clothing/accessory/ring/seal))

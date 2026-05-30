@@ -1113,9 +1113,8 @@
 					<br>
 					"}
 
-		var/datum/browser/popup = new(src, "chemicalrefresher", "Chemical Refresher")
-		popup.set_content(output)
-		popup.open()
+		// DQEdit — structured TGUI AdminReport.
+		dq_admin_report_html(src, "Chemical Refresher", output)
 		return
 	else
 		var/list/targets = list() //IF IT IS NOT BROKEN. DO NOT FIX IT. AND KEEP COPYPASTING IT  (Pointing Rick Dalton: "That's my code!" ~CL)

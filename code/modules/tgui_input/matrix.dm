@@ -33,9 +33,12 @@
 	if(length(default) < 12)
 		default.len = 12
 
-	// Client does NOT have tgui_input on and we only want a matrix, or we haven't passed a preview path or object: Returns regular input
-	if(!user.read_preference(/datum/preference/toggle/tgui_input_mode) && matrix_only || (!ispath(target) && !isatom(target)))
-		return color_matrix_picker(user, message, title, "Ok", "Erase", "Cancel", TRUE, timeout, default)
+	// DQEdit — legacy browser-modal color_matrix_picker fallback removed.
+	// Without a valid target (atom or path) there's nothing to preview, so
+	// abort. The tgui_input_mode preference is ignored here — TGUI is the
+	// only matrix-input UI.
+	if(!ispath(target) && !isatom(target))
+		return null
 	var/was_path = ispath(target)
 	var/atom/movable/real_target = was_path ? new target : target
 	var/datum/tgui_input_colormatrix/matrix_input = new(user, message, title, real_target, default, matrix_only, timeout, ui_state, was_path)

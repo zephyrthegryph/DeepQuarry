@@ -64,6 +64,5 @@ SUBSYSTEM_DEF(persistence)
 		if(P.has_admin_data)
 			dat += P.GetAdminSummary(user, can_modify)
 	dat += "</table>"
-	var/datum/browser/popup = new(user, "admin_persistence", "Persistence Data")
-	popup.set_content(jointext(dat, null))
-	popup.open()
+	// DQEdit — structured TGUI AdminReport with topic forwarding.
+	dq_admin_report_html(user, "Persistence Data", jointext(dat, null), src)

@@ -74,6 +74,8 @@
 	if(stat &NOPOWER)
 		icon_state = "auth_off"
 
+// DQEdit Start — TGUI migration. attack_hand opens KeycardAuth.tsx;
+// Topic event/reset actions move to tgui_act.
 /obj/machinery/keycard_auth/attack_hand(mob/user as mob)
 	if(user.stat || stat & (NOPOWER|BROKEN))
 		to_chat(user, "This device is not powered.")
@@ -83,48 +85,42 @@
 	if(busy)
 		to_chat(user, "This device is busy.")
 		return
+	tgui_interact(user)
 
-	user.set_machine(src)
+/obj/machinery/keycard_auth/tgui_interact(mob/user, datum/tgui/ui)
+	ui = SStgui.try_update_ui(user, src, ui)
+	if(!ui)
+		ui = new(user, src, "KeycardAuth", "Keycard Authentication")
+		ui.open()
 
-	var/dat = "<h1>Keycard Authentication Device</h1>"
+/obj/machinery/keycard_auth/tgui_data(mob/user)
+	var/list/data = list()
+	data["screen"] = screen
+	data["event"] = event
+	data["ert_admin_only"] = CONFIG_GET(flag/ert_admin_call_only) ? 1 : 0
+	return data
 
-	dat += "This device is used to trigger some high security events. It requires the simultaneous swipe of two high-level ID cards."
-	dat += "<br><hr><br>"
-
-	if(screen == 1)
-		dat += "Select an event to trigger:<ul>"
-		dat += "<li><A href='byond://?src=\ref[src];triggerevent=Red alert'>Red alert</A></li>"
-		if(!CONFIG_GET(flag/ert_admin_call_only))
-			dat += "<li><A href='byond://?src=\ref[src];triggerevent=Emergency Response Team'>Emergency Response Team</A></li>"
-
-		dat += "<li><A href='byond://?src=\ref[src];triggerevent=Grant Emergency Maintenance Access'>Grant Emergency Maintenance Access</A></li>"
-		dat += "<li><A href='byond://?src=\ref[src];triggerevent=Revoke Emergency Maintenance Access'>Revoke Emergency Maintenance Access</A></li>"
-		dat += "</ul>"
-		user << browse("<html>[dat]</html>", "window=keycard_auth;size=500x250")
-	if(screen == 2)
-		dat += "Please swipe your card to authorize the following event: <b>[event]</b>"
-		dat += "<p><A href='byond://?src=\ref[src];reset=1'>Back</A>"
-		user << browse("<html>[dat]</html>", "window=keycard_auth;size=500x250")
-	return
-
-
-/obj/machinery/keycard_auth/Topic(href, href_list)
-	..()
+/obj/machinery/keycard_auth/tgui_act(action, list/params)
+	. = ..()
+	if(.)
+		return
 	if(busy)
 		to_chat(usr, "This device is busy.")
-		return
+		return TRUE
 	if(usr.stat || stat & (BROKEN|NOPOWER))
 		to_chat(usr, "This device is without power.")
-		return
-	if(href_list["triggerevent"])
-		event = href_list["triggerevent"]
-		screen = 2
-	if(href_list["reset"])
-		reset()
-
-	updateUsrDialog(usr)
-	add_fingerprint(usr)
-	return
+		return TRUE
+	switch(action)
+		if("triggerevent")
+			event = params["event"]
+			screen = 2
+			add_fingerprint(usr)
+			return TRUE
+		if("reset")
+			reset()
+			add_fingerprint(usr)
+			return TRUE
+// DQEdit End
 
 /obj/machinery/keycard_auth/proc/reset()
 	active = 0

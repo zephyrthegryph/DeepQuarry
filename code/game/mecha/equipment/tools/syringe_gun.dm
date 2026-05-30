@@ -126,8 +126,10 @@
 			occupant_message("Reagent processing started.")
 			src.mecha_log_message("Reagent processing started.")
 		return
+	// DQEdit — TGUI: structured reagent management UI (MechaSyringeGun.tsx).
 	if(top_filter.get("show_reagents"))
-		chassis.occupant << browse(get_reagents_page(),"window=msyringegun")
+		if(chassis?.occupant)
+			tgui_interact(chassis.occupant)
 	if(top_filter.get("purge_reagent"))
 		var/reagent = top_filter.get("purge_reagent")
 		if(reagent)
@@ -137,6 +139,66 @@
 		reagents.clear_reagents()
 		return
 	return
+
+// DQEdit Start — structured TGUI for syringe-gun reagent management.
+/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/tgui_interact(mob/user, datum/tgui/ui)
+	ui = SStgui.try_update_ui(user, src, ui)
+	if(!ui)
+		ui = new(user, src, "MechaSyringeGun", "[name] Reagents")
+		ui.open()
+
+/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/tgui_data(mob/user)
+	var/list/data = list()
+	data["total_volume"] = round(reagents?.total_volume || 0, 0.001)
+	data["max_volume"] = reagents?.maximum_volume || 0
+	data["synth_speed"] = synth_speed
+	var/list/known = list()
+	for(var/reagent_id in known_reagents)
+		known += list(list(
+			"id" = reagent_id,
+			"name" = known_reagents[reagent_id],
+			"selected" = (reagent_id in processed_reagents),
+		))
+	data["known_reagents"] = known
+	var/list/current = list()
+	if(reagents)
+		for(var/datum/reagent/R in reagents.reagent_list)
+			if(R.volume > 0)
+				current += list(list(
+					"id" = R.id,
+					"name" = "[R]",
+					"volume" = round(R.volume, 0.001),
+				))
+	data["current_reagents"] = current
+	return data
+
+/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/tgui_act(action, list/params)
+	. = ..()
+	if(.)
+		return
+	switch(action)
+		if("select_reagents")
+			var/list/picks = params["reagents"]
+			processed_reagents.Cut()
+			var/m = 0
+			for(var/reagent_id in picks)
+				if(m >= synth_speed)
+					break
+				if(reagent_id in known_reagents)
+					processed_reagents += reagent_id
+					m++
+			if(processed_reagents.len)
+				START_PROCESSING(SSfastprocess, src)
+				occupant_message("Reagent processing started.")
+				src.mecha_log_message("Reagent processing started.")
+			return TRUE
+		if("purge_reagent")
+			if(params["id"])
+				reagents.del_reagent(params["id"])
+			return TRUE
+		if("purge_all")
+			reagents.clear_reagents()
+			return TRUE
 
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/get_reagents_page()
 	var/output = {"<html>

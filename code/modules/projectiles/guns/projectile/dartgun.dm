@@ -136,37 +136,10 @@
 	. = ..(user)
 	if(.)
 		return TRUE
+	// DQEdit — structured TGUI Dartgun (see
+	// modular_dq/code/modules/admin/dartgun_panel.dm).
 	user.set_machine(src)
-	var/dat = span_bold("[src] mixing control:") + "<br><br>"
-
-	if (beakers.len)
-		var/i = 1
-		for(var/obj/item/reagent_containers/glass/beaker/B in beakers)
-			dat += "Beaker [i] contains: "
-			if(B.reagents && B.reagents.reagent_list.len)
-				for(var/datum/reagent/R in B.reagents.reagent_list)
-					dat += "<br>    [R.volume] units of [R.name], "
-				if (check_beaker_mixing(B))
-					dat += "<A href='byond://?src=\ref[src];stop_mix=[i]'>" + span_green("Mixing") + "</A> "
-				else
-					dat += "<A href='byond://?src=\ref[src];mix=[i]'>" + span_red("Not mixing") + "</A> "
-			else
-				dat += "nothing."
-			dat += " \[<A href='byond://?src=\ref[src];eject=[i]'>Eject</A>\]<br>"
-			i++
-	else
-		dat += "There are no beakers inserted!<br><br>"
-
-	if(ammo_magazine)
-		if(ammo_magazine.stored_ammo && ammo_magazine.stored_ammo.len)
-			dat += "The dart cartridge has [ammo_magazine.stored_ammo.len] shots remaining."
-		else
-			dat += span_red("The dart cartridge is empty!")
-		dat += " \[<A href='byond://?src=\ref[src];eject_cart=1'>Eject</A>\]"
-
-	var/datum/browser/popup = new(user, "dartgun", "Dartgun")
-	popup.set_content(dat)
-	popup.open()
+	tgui_interact(user)
 
 /obj/item/gun/projectile/dartgun/proc/check_beaker_mixing(obj/item/B)
 	if(!mixing || !beakers)

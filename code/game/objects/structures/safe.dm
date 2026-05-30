@@ -74,77 +74,79 @@ FLOOR SAFES
 		icon_state = initial(icon_state)
 
 
+// DQEdit Start — TGUI migration. attack_hand opens Safe.tsx; the Topic
+// dial/open/retrieve actions move to tgui_act below.
 /obj/structure/safe/attack_hand(mob/user)
 	user.set_machine(src)
-	var/dat = "<center>"
-	dat += "<a href='byond://?src=\ref[src];open=1'>[open ? "Close" : "Open"] [src]</a> | <a href='byond://?src=\ref[src];decrement=1'>-</a> [dial * 5] <a href='byond://?src=\ref[src];increment=1'>+</a>"
-	if(open)
-		dat += "<table>"
-		for(var/i = contents.len, i>=1, i--)
-			var/obj/item/P = contents[i]
-			dat += "<tr><td><a href='byond://?src=\ref[src];retrieve=\ref[P]'>[P.name]</a></td></tr>"
-		dat += "</table></center>"
-	user << browse("<html><head><title>[name]</title></head><body>[dat]</body></html>", "window=safe;size=350x300")
+	tgui_interact(user)
 
+/obj/structure/safe/tgui_interact(mob/user, datum/tgui/ui)
+	ui = SStgui.try_update_ui(user, src, ui)
+	if(!ui)
+		ui = new(user, src, "Safe", name)
+		ui.open()
 
-/obj/structure/safe/Topic(href, href_list)
-	if(!ishuman(usr))	return
+/obj/structure/safe/tgui_data(mob/user)
+	var/list/data = list()
+	data["open"] = !!open
+	data["dial"] = dial
+	var/list/c = list()
+	for(var/obj/item/P in contents)
+		c += list(list("ref" = "\ref[P]", "name" = P.name))
+	data["contents"] = c
+	return data
+
+/obj/structure/safe/tgui_act(action, list/params)
+	. = ..()
+	if(.)
+		return
+	if(!ishuman(usr))
+		return
 	var/mob/living/carbon/human/user = usr
-
 	var/canhear = 0
 	if(user.get_type_in_hands(/obj/item/clothing/accessory/stethoscope))
 		canhear = 1
-
-	if(href_list["open"])
-		if(check_unlocked())
-			to_chat(user, span_notice("You [open ? "close" : "open"] [src]."))
-			open = !open
-			update_icon()
-			updateUsrDialog(usr)
-			return
-		else
-			to_chat(user, span_notice("You can't [open ? "close" : "open"] [src], the lock is engaged!"))
-			return
-
-	if(href_list["decrement"])
-		dial = decrement(dial)
-		if(dial == tumbler_1_pos + 1 || dial == tumbler_1_pos - 71)
-			tumbler_1_pos = decrement(tumbler_1_pos)
-			if(canhear)
-				to_chat(user, span_notice("You hear a [pick("clack", "scrape", "clank")] from \the [src]."))
-			if(tumbler_1_pos == tumbler_2_pos + 37 || tumbler_1_pos == tumbler_2_pos - 35)
-				tumbler_2_pos = decrement(tumbler_2_pos)
+	switch(action)
+		if("open")
+			if(check_unlocked())
+				to_chat(user, span_notice("You [open ? "close" : "open"] [src]."))
+				open = !open
+				update_icon()
+			else
+				to_chat(user, span_notice("You can't [open ? "close" : "open"] [src], the lock is engaged!"))
+			return TRUE
+		if("decrement")
+			dial = decrement(dial)
+			if(dial == tumbler_1_pos + 1 || dial == tumbler_1_pos - 71)
+				tumbler_1_pos = decrement(tumbler_1_pos)
 				if(canhear)
-					to_chat(user, span_notice("You hear a [pick("click", "chink", "clink")] from \the [src]."))
-					playsound(src, 'sound/machines/click.ogg', 20, 1)
-			check_unlocked(user, canhear)
-
-		updateUsrDialog(usr)
-		return
-
-	if(href_list["increment"])
-		dial = increment(dial)
-		if(dial == tumbler_1_pos - 1 || dial == tumbler_1_pos + 71)
-			tumbler_1_pos = increment(tumbler_1_pos)
-			if(canhear)
-				to_chat(user, span_notice("You hear a [pick("clack", "scrape", "clank")] from \the [src]."))
-			if(tumbler_1_pos == tumbler_2_pos - 37 || tumbler_1_pos == tumbler_2_pos + 35)
-				tumbler_2_pos = increment(tumbler_2_pos)
+					to_chat(user, span_notice("You hear a [pick("clack", "scrape", "clank")] from \the [src]."))
+				if(tumbler_1_pos == tumbler_2_pos + 37 || tumbler_1_pos == tumbler_2_pos - 35)
+					tumbler_2_pos = decrement(tumbler_2_pos)
+					if(canhear)
+						to_chat(user, span_notice("You hear a [pick("click", "chink", "clink")] from \the [src]."))
+						playsound(src, 'sound/machines/click.ogg', 20, 1)
+				check_unlocked(user, canhear)
+			return TRUE
+		if("increment")
+			dial = increment(dial)
+			if(dial == tumbler_1_pos - 1 || dial == tumbler_1_pos + 71)
+				tumbler_1_pos = increment(tumbler_1_pos)
 				if(canhear)
-					to_chat(user, span_notice("You hear a [pick("click", "chink", "clink")] from \the [src]."))
-					playsound(src, 'sound/machines/click.ogg', 20, 1)
-			check_unlocked(user, canhear)
-		updateUsrDialog(usr)
-		return
-
-	if(href_list["retrieve"])
-		user << browse(null, "window=safe") // Close the menu
-
-		var/obj/item/P = locate(href_list["retrieve"]) in src
-		if(open)
-			if(P && in_range(src, user))
+					to_chat(user, span_notice("You hear a [pick("clack", "scrape", "clank")] from \the [src]."))
+				if(tumbler_1_pos == tumbler_2_pos - 37 || tumbler_1_pos == tumbler_2_pos + 35)
+					tumbler_2_pos = increment(tumbler_2_pos)
+					if(canhear)
+						to_chat(user, span_notice("You hear a [pick("click", "chink", "clink")] from \the [src]."))
+						playsound(src, 'sound/machines/click.ogg', 20, 1)
+				check_unlocked(user, canhear)
+			return TRUE
+		if("retrieve")
+			var/obj/item/P = locate(params["ref"]) in src
+			if(open && P && in_range(src, user))
 				user.put_in_hands(P)
-				updateUsrDialog(usr)
+			return TRUE
+// DQEdit End
 
 
 /obj/structure/safe/attackby(obj/item/I, mob/user)

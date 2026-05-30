@@ -1,11 +1,10 @@
 // New-player guide ("wiki") for Deep Quarry, surfaced from the lobby's
-// "Guide" button. The guide is a browse() popup with an index page that
-// links to per-topic pages. All content lives in this file as one
-// associative list — easy to edit.
+// "Guide" button.
 //
-// Navigation works via the standard BYOND browser Topic() roundtrip:
-// links use href="?src=\ref[user];guide_topic=KEY" and Topic() on
-// /mob/new_player routes guide_topic back here.
+// The guide is a read-only TGUI window. All topic content lives in this
+// file as one associative list. Topic selection is handled client-side
+// in React, so the DM side ships the full topic list once via tgui_data
+// and never sees navigation roundtrips.
 
 GLOBAL_LIST_INIT(quarry_guide_topics, list(
 	"welcome" = list(
@@ -149,56 +148,36 @@ GLOBAL_LIST_INIT(quarry_guide_topics, list(
 ))
 
 
-// Returns a sorted list of (key, title) tuples for the index page. Sort
-// is just the canonical reading order; defined here so adding a topic to
-// the global list is enough — no manual menu update needed elsewhere.
-/proc/quarry_guide_order()
-	return list(
-		"welcome", "layout", "mining", "elevator",
-		"descending", "coop", "dangers",
-	)
+// Singleton datum that hosts the TGUI window. Content is fully static —
+// it just exposes GLOB.quarry_guide_topics as the tgui_data payload.
+/datum/quarry_guide
 
+/datum/quarry_guide/tgui_state(mob/user)
+	return GLOB.tgui_always_state
 
-// Renders the index page HTML for a user. Topic links route back via
-// the user's Topic() — the new_player handler reads guide_topic and
-// shows that page.
-/proc/quarry_guide_render_index(mob/user)
-	var/dat = "<html><head><title>Deep Quarry Guide</title>"
-	dat += "<style>body{font-family:Verdana,sans-serif;font-size:11px;padding:8px;color:#222;background:#f4f1e8}h1{margin-top:0;color:#553}h2{color:#553;border-bottom:1px solid #bba;padding-bottom:2px}a{color:#a44;text-decoration:none}a:hover{text-decoration:underline}.topic{padding:4px 0}.back{margin-top:18px;font-size:10px}</style></head><body>"
-	dat += "<h1>Deep Quarry — Field Guide</h1>"
-	dat += "<p>Pick a topic to read about it.</p>"
-	for(var/key in quarry_guide_order())
+/datum/quarry_guide/tgui_data(mob/user)
+	var/list/topics = list()
+	for(var/key in GLOB.quarry_guide_topics)
 		var/list/entry = GLOB.quarry_guide_topics[key]
-		if(!entry)
-			continue
-		dat += "<div class='topic'>&bull; <a href='?src=\ref[user];guide_topic=[key]'>[entry["title"]]</a></div>"
-	dat += "</body></html>"
-	return dat
+		topics += list(list(
+			"key" = key,
+			"title" = entry["title"],
+			"body" = entry["body"],
+		))
+	return list("topics" = topics)
+
+/datum/quarry_guide/tgui_interact(mob/user, datum/tgui/ui)
+	ui = SStgui.try_update_ui(user, src, ui)
+	if(!ui)
+		ui = new(user, src, "QuarryGuide", "Deep Quarry — Field Guide")
+		ui.open()
+
+GLOBAL_DATUM_INIT(quarry_guide, /datum/quarry_guide, new)
 
 
-// Renders a specific topic page with a back-link to the index.
-/proc/quarry_guide_render_topic(mob/user, key)
-	var/list/entry = GLOB.quarry_guide_topics[key]
-	if(!entry)
-		return quarry_guide_render_index(user)
-	var/dat = "<html><head><title>Deep Quarry Guide — [entry["title"]]</title>"
-	dat += "<style>body{font-family:Verdana,sans-serif;font-size:11px;padding:8px;color:#222;background:#f4f1e8}h2{margin-top:0;color:#553}p{line-height:1.4}a{color:#a44;text-decoration:none}a:hover{text-decoration:underline}.back{margin-top:18px;font-size:10px}</style></head><body>"
-	dat += "<h2>[entry["title"]]</h2>"
-	dat += entry["body"]
-	dat += "<div class='back'>&larr; <a href='?src=\ref[user];guide_topic=__index'>Back to topics</a></div>"
-	dat += "</body></html>"
-	return dat
-
-
-// Open the guide for a user, optionally pre-pointed at a key.
-/proc/quarry_guide_open(mob/user, key = "__index")
+// Open the guide for a user. Public entry point; called from the lobby
+// browser's "open_guide" action.
+/proc/quarry_guide_open(mob/user)
 	if(!user?.client)
 		return
-	var/dat
-	if(key == "__index")
-		dat = quarry_guide_render_index(user)
-	else
-		dat = quarry_guide_render_topic(user, key)
-	var/datum/browser/popup = new(user, "quarry_guide", "Deep Quarry Guide", 520, 520, user)
-	popup.set_content(dat)
-	popup.open()
+	GLOB.quarry_guide?.tgui_interact(user)

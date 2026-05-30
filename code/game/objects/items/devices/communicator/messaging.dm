@@ -170,16 +170,5 @@
 
 
 
-// Verb: show_text_messages()
-// Parameters: None
-// Description: Lets ghosts review messages they've sent or received.
-/mob/observer/dead/verb/show_text_messages()
-	set category = "Ghost.Settings"
-	set name = "Show Text Messages"
-	set desc = "Allows you to see exonet text messages you've sent and received."
-
-	var/HTML = "<html><head><title>Exonet Message Log</title></head><body>"
-	for(var/line in exonet_messages)
-		HTML += line + "<br>"
-	HTML +="</body></html>"
-	usr << browse(HTML, "window=log;size=400x444;border=1;can_resize=1;can_close=1;can_minimize=0")
+// DQEdit Start — Show Text Messages verb body relocated to modular_dq/code/modules/communicator/exonet_log_panel.dm (structured TGUI).
+// DQEdit End

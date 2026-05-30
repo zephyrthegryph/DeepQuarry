@@ -76,9 +76,8 @@ GLOBAL_DATUM_INIT(book_mgr, /datum/book_manager, new)
 			dat += "</table>"
 			qdel(query)
 
-	var/datum/browser/popup = new(usr, "library", "Library")
-	popup.set_content(dat)
-	popup.open()
+	// DQEdit — structured TGUI AdminReport; byond:// links forwarded to host.
+	dq_admin_report_html(usr, "Library", dat, our_comp)
 //VOREStation Edit End
 
 // delete a book

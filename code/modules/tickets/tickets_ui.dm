@@ -306,7 +306,8 @@
 	for(var/I in _interactions)
 		dat += "[I]<br>"
 	dat += "</html>"
-	user << browse(dat.Join(), "window=ahelp[id];size=620x480")
+	// DQEdit — structured TGUI AdminReport (fallback path).
+	dq_admin_report_html(user, "Ticket #[id]", dat.Join(), src)
 
 /datum/tickets/proc/TicketListLegacy(mob/user, state)
 	var/list/dat = list("<html><head><title>[state] Tickets</title></head>")
@@ -334,4 +335,5 @@
 	if(tickets_found == 0)
 		dat += "No [state] tickets found."
 	dat += "</html>"
-	user << browse(dat.Join(), "window=ahelp-list;size=250x350")
+	// DQEdit — structured TGUI AdminReport (fallback path).
+	dq_admin_report_html(user, "[state] Tickets", dat.Join(), src)

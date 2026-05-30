@@ -69,54 +69,8 @@
 	else
 		icon_state = "holowarrant"
 
-/obj/item/holowarrant/proc/show_content(mob/user, forceshow)
-	if(!active)
-		return
-	if(active.fields["arrestsearch"] == "arrest")
-		var/output = {"
-		<HTML><HEAD><TITLE>[active.fields["namewarrant"]]</TITLE></HEAD>
-		<BODY bgcolor='#FFFFFF'><center><large><b>Sol Central Government Colonial Marshal Bureau</b></large></br>
-		in the jurisdiction of the</br>
-		[using_map.boss_name] in [using_map.station_name]</br>
-		</br>
-		<b>ARREST WARRANT</b></center></br>
-		</br>
-		This document serves as authorization and notice for the arrest of _<u>[active.fields["namewarrant"]]</u>____ for the crime(s) of:</br>[active.fields["charges"]]</br>
-		</br>
-		Vessel or habitat: _<u>[using_map.station_name]</u>____</br>
-		</br>_<u>[active.fields["auth"]]</u>____</br>
-		<small>Person authorizing arrest</small></br>
-		</BODY></HTML>
-		"}
-
-		show_browser(user, output, "window=Warrant for the arrest of [active.fields["namewarrant"]]")
-	if(active.fields["arrestsearch"] ==  "search")
-		var/output= {"
-		<HTML><HEAD><TITLE>Search Warrant: [active.fields["namewarrant"]]</TITLE></HEAD>
-		<BODY bgcolor='#FFFFFF'><center>in the jurisdiction of the</br>
-		[using_map.boss_name] in [using_map.station_name]</br>
-		</br>
-		<b>SEARCH WARRANT</b></center></br>
-		</br>
-		<small><i>The Security Officer(s) bearing this Warrant are hereby authorized by the Issuer </br>
-		to conduct a one time lawful search of the Suspect's person/belongings/premises and/or Department </br>
-		for any items and materials that could be connected to the suspected criminal act described below, </br>
-		pending an investigation in progress. The Security Officer(s) are obligated to remove any and all</br>
-		such items from the Suspect's possession and/or Department and file it as evidence. The Suspect/Department </br>
-		staff is expected to offer full co-operation. In the event of the Suspect/Department staff attempting </br>
-		to resist/impede this search or flee, they must be taken into custody immediately! </br>
-		All confiscated items must be filed and taken to Evidence!</small></i></br>
-		</br>
-		<b>Suspect's/location name: </b>[active.fields["namewarrant"]]</br>
-		</br>
-		<b>For the following reasons: </b> [active.fields["charges"]]</br>
-		</br>
-		<b>Warrant issued by: </b> [active.fields ["auth"]]</br>
-		</br>
-		Vessel or habitat: _<u>[using_map.station_name]</u>____</br>
-		</BODY></HTML>
-		"}
-		show_browser(user, output, "window=Search warrant for [active.fields["namewarrant"]]")
+// DQEdit Start — show_content moved to modular_dq/code/modules/holowarrant_panel.dm (structured TGUI).
+// DQEdit End
 
 /obj/item/storage/box/holowarrants // VOREStation addition starts
 	name = "holowarrant devices"

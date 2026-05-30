@@ -67,47 +67,69 @@
 		update_icon()
 		to_chat(user, span_notice("You clip the [P] onto \the [src]."))
 
+// DQEdit Start — TGUI migration. attack_self opens Clipboard.tsx; the
+// Topic pen/write/remove/rename/read/look actions move to tgui_act.
+// Reading a paper/photo chains to that item's TGUI viewer
+// (Paper.tsx / Photo.tsx).
 /obj/item/clipboard/attack_self(mob/user)
 	. = ..(user)
 	if(.)
 		return TRUE
-	var/dat = "<title>Clipboard</title>"
-	if(haspen)
-		dat += "<A href='byond://?src=\ref[src];pen=1'>Remove Pen</A><BR><HR>"
-	else
-		dat += "<A href='byond://?src=\ref[src];addpen=1'>Add Pen</A><BR><HR>"
-
-	//The topmost paper. I don't think there's any way to organise contents in byond, so this is what we're stuck with.	-Pete
-	if(toppaper)
-		var/obj/item/paper/P = toppaper
-		dat += "<A href='byond://?src=\ref[src];write=\ref[P]'>Write</A> <A href='byond://?src=\ref[src];remove=\ref[P]'>Remove</A> <A href='byond://?src=\ref[src];rename=\ref[P]'>Rename</A> - <A href='byond://?src=\ref[src];read=\ref[P]'>[P.name]</A><BR><HR>"
-
-	for(var/obj/item/paper/P in src)
-		if(P==toppaper)
-			continue
-		dat += "<A href='byond://?src=\ref[src];remove=\ref[P]'>Remove</A> <A href='byond://?src=\ref[src];rename=\ref[P]'>Rename</A> - <A href='byond://?src=\ref[src];read=\ref[P]'>[P.name]</A><BR>"
-	for(var/obj/item/photo/Ph in src)
-		dat += "<A href='byond://?src=\ref[src];remove=\ref[Ph]'>Remove</A> <A href='byond://?src=\ref[src];rename=\ref[Ph]'>Rename</A> - <A href='byond://?src=\ref[src];look=\ref[Ph]'>[Ph.name]</A><BR>"
-
-	user << browse("<html>[dat]</html>", "window=clipboard")
-	onclose(user, "clipboard")
 	add_fingerprint(user)
-	return
+	tgui_interact(user)
 
-/obj/item/clipboard/Topic(href, href_list)
-	..()
-	if((usr.stat || usr.restrained()))
+/obj/item/clipboard/tgui_interact(mob/user, datum/tgui/ui)
+	ui = SStgui.try_update_ui(user, src, ui)
+	if(!ui)
+		ui = new(user, src, "Clipboard", "Clipboard")
+		ui.open()
+
+/obj/item/clipboard/tgui_data(mob/user)
+	var/list/data = list()
+	data["has_pen"] = !!haspen
+	var/list/items = list()
+	// Top paper first so React can render it at the head of the list.
+	if(toppaper)
+		items += list(list(
+			"ref" = "\ref[toppaper]",
+			"name" = toppaper.name,
+			"kind" = "paper",
+			"is_top" = TRUE,
+		))
+	for(var/obj/item/paper/P in src)
+		if(P == toppaper)
+			continue
+		items += list(list(
+			"ref" = "\ref[P]",
+			"name" = P.name,
+			"kind" = "paper",
+			"is_top" = FALSE,
+		))
+	for(var/obj/item/photo/Ph in src)
+		items += list(list(
+			"ref" = "\ref[Ph]",
+			"name" = Ph.name,
+			"kind" = "photo",
+			"is_top" = FALSE,
+		))
+	data["items"] = items
+	return data
+
+/obj/item/clipboard/tgui_act(action, list/params)
+	. = ..()
+	if(.)
 		return
-
-	if(src.loc == usr)
-
-		if(href_list["pen"])
-			if(istype(haspen) && (haspen.loc == src))
+	if(usr.stat || usr.restrained() || loc != usr)
+		return TRUE
+	switch(action)
+		if("remove_pen")
+			if(haspen && haspen.loc == src)
 				haspen.loc = usr.loc
 				usr.put_in_hands(haspen)
 				haspen = null
-
-		else if(href_list["addpen"])
+				update_icon()
+			return TRUE
+		if("add_pen")
 			if(!haspen)
 				var/obj/item/pen/W = usr.get_active_hand()
 				if(istype(W, /obj/item/pen))
@@ -115,69 +137,41 @@
 					W.loc = src
 					haspen = W
 					to_chat(usr, span_notice("You slot the pen into \the [src]."))
-
-		else if(href_list["write"])
-			var/obj/item/P = locate(href_list["write"])
-
-			if(P && (P.loc == src) && istype(P, /obj/item/paper) && (P == toppaper) )
-
+					update_icon()
+			return TRUE
+	var/obj/item/O = locate(params["ref"])
+	if(!O || O.loc != src)
+		return TRUE
+	switch(action)
+		if("write")
+			if(O == toppaper && istype(O, /obj/item/paper))
 				var/obj/item/I = usr.get_active_hand()
-
 				if(istype(I, /obj/item/pen))
-
-					P.attackby(I, usr)
-
-		else if(href_list["remove"])
-			var/obj/item/P = locate(href_list["remove"])
-
-			if(P && (P.loc == src) && (istype(P, /obj/item/paper) || istype(P, /obj/item/photo)) )
-
-				P.loc = usr.loc
-				usr.put_in_hands(P)
-				if(P == toppaper)
-					toppaper = null
-					var/obj/item/paper/newtop = locate(/obj/item/paper) in src
-					if(newtop && (newtop != P))
-						toppaper = newtop
-					else
-						toppaper = null
-
-		else if(href_list["rename"])
-			var/obj/item/O = locate(href_list["rename"])
-
-			if(O && (O.loc == src))
-				if(istype(O, /obj/item/paper))
-					var/obj/item/paper/to_rename = O
-					to_rename.rename()
-
-				else if(istype(O, /obj/item/photo))
-					var/obj/item/photo/to_rename = O
-					to_rename.rename()
-
-		else if(href_list["read"])
-			var/obj/item/paper/P = locate(href_list["read"])
-
-			if(P && (P.loc == src) && istype(P, /obj/item/paper) )
-
-				if(!(ishuman(usr) || isobserver(usr) || issilicon(usr)))
-					usr << browse("<HTML><HEAD><TITLE>[P.name]</TITLE></HEAD><BODY>[stars(P.info)][P.stamps]</BODY></HTML>", "window=[P.name]")
-					onclose(usr, "[P.name]")
-				else
-					usr << browse("<HTML><HEAD><TITLE>[P.name]</TITLE></HEAD><BODY>[P.info][P.stamps]</BODY></HTML>", "window=[P.name]")
-					onclose(usr, "[P.name]")
-
-		else if(href_list["look"])
-			var/obj/item/photo/P = locate(href_list["look"])
-			if(P && (P.loc == src) && istype(P, /obj/item/photo) )
-				P.show(usr)
-
-		else if(href_list["top"]) // currently unused
-			var/obj/item/P = locate(href_list["top"])
-			if(P && (P.loc == src) && istype(P, /obj/item/paper) )
-				toppaper = P
-				to_chat(usr, span_notice("You move [P.name] to the top."))
-
-		//Update everything
-		attack_self(usr)
-		update_icon()
-	return
+					O.attackby(I, usr)
+			return TRUE
+		if("remove")
+			if(istype(O, /obj/item/paper) || istype(O, /obj/item/photo))
+				O.loc = usr.loc
+				usr.put_in_hands(O)
+				if(O == toppaper)
+					toppaper = locate(/obj/item/paper) in src
+				update_icon()
+			return TRUE
+		if("rename")
+			if(istype(O, /obj/item/paper))
+				var/obj/item/paper/p = O
+				p.rename()
+			else if(istype(O, /obj/item/photo))
+				var/obj/item/photo/ph = O
+				ph.rename()
+			return TRUE
+		if("open")
+			switch(params["kind"])
+				if("paper")
+					var/obj/item/paper/p = O
+					p.show_content(usr)
+				if("photo")
+					var/obj/item/photo/ph = O
+					ph.show(usr)
+			return TRUE
+// DQEdit End

@@ -260,9 +260,39 @@ GLOBAL_LIST_EMPTY(_quarry_biome_cache)
 /proc/_quarry_build_biome_map(seed, list/roster, x_min, y_min, x_max, y_max)
 	var/list/map = list()
 	var/list/biome_counts = list()
+
+	// Pre-compute the coarse-cell hash grid once: every tile's noise
+	// sample only needs 4 corner values, and the same corner serves
+	// QUARRY_NOISE_CELL_SIZE^2 tiles. Avoids 4*65k = 260k proc calls.
+	var/cx_min = round(x_min / QUARRY_NOISE_CELL_SIZE)
+	var/cy_min = round(y_min / QUARRY_NOISE_CELL_SIZE)
+	var/cx_max = round(x_max / QUARRY_NOISE_CELL_SIZE) + 1
+	var/cy_max = round(y_max / QUARRY_NOISE_CELL_SIZE) + 1
+	var/hash_w = (cx_max - cx_min) + 1
+	var/list/hash_grid = new(hash_w * ((cy_max - cy_min) + 1))
+	for(var/cx in cx_min to cx_max)
+		for(var/cy in cy_min to cy_max)
+			hash_grid[(cx - cx_min) * hash_w + (cy - cy_min) + 1] = _quarry_noise_hash(seed, cx, cy)
+
 	for(var/x in x_min to x_max)
+		var/cx = round(x / QUARRY_NOISE_CELL_SIZE)
+		var/fx = (x - cx * QUARRY_NOISE_CELL_SIZE) / QUARRY_NOISE_CELL_SIZE
+		// Smoothstep once per column.
+		fx = fx * fx * (3 - 2 * fx)
+		var/cxi = (cx - cx_min) * hash_w
+		var/cxi_next = cxi + hash_w
 		for(var/y in y_min to y_max)
-			var/v = _quarry_noise_sample(seed, x, y)
+			var/cy = round(y / QUARRY_NOISE_CELL_SIZE)
+			var/fy = (y - cy * QUARRY_NOISE_CELL_SIZE) / QUARRY_NOISE_CELL_SIZE
+			fy = fy * fy * (3 - 2 * fy)
+			var/yi = cy - cy_min + 1
+			var/v00 = hash_grid[cxi + yi]
+			var/v10 = hash_grid[cxi_next + yi]
+			var/v01 = hash_grid[cxi + yi + 1]
+			var/v11 = hash_grid[cxi_next + yi + 1]
+			var/top = v00 * (1 - fx) + v10 * fx
+			var/bot = v01 * (1 - fx) + v11 * fx
+			var/v = top * (1 - fy) + bot * fy
 			var/datum/quarry_biome/B = _quarry_pick_biome_for_value(roster, v)
 			if(B)
 				map["[x]|[y]"] = B

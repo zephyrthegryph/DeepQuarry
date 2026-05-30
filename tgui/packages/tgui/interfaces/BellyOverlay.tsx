@@ -49,8 +49,7 @@ const layerStyle = (L: Layer): React.CSSProperties => {
     maskRepeat: 'no-repeat',
     WebkitMaskSize: '100% 100%',
     maskSize: '100% 100%',
-    // DQEdit — WebkitMaskMode isn't a recognized React CSSProperty. Vendor extensions go through
-    // a string-cast for non-typed Webkit-prefixed mask vars; use the standardized maskMode only.
+    // DQEdit — WebkitMaskMode isn't typed on React.CSSProperties; use only the standardized maskMode.
     maskMode: 'alpha',
     opacity: L.alpha / 255,
     transform: pct ? `translateY(${-pct}%)` : undefined,

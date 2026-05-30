@@ -289,14 +289,8 @@
 			else
 				. += span_bold("[L.name] ([get_language_prefix()][L.key][lang_key ? " [get_language_prefix()][lang_key]" : ""])") + " <a href='byond://?src=\ref[src];set_lang_key=\ref[L]'>Edit Custom Key</a> - cannot speak!<br/>[L.desc]<br/><br/>"
 
-/mob/verb/check_languages()
-	set name = "Check Known Languages"
-	set category = "IC.Game"
-	set src = usr
-
-	var/datum/browser/popup = new(src, "checklanguage", "Known Languages", 420, 470)
-	popup.set_content(check_lang_data())
-	popup.open()
+// DQEdit Start — check_languages verb body relocated to modular_dq/code/modules/mob/language/language_panel.dm (structured TGUI).
+// DQEdit End
 
 /mob/living/Topic(href, href_list)
 	if(href_list["default_lang"])

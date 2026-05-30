@@ -37,12 +37,18 @@ ADMIN_VERB(investigate_show, R_ADMIN|R_MOD|R_SERVER, "Investigate", "Check hrefs
 			if(!F)
 				to_chat(user, span_filter_adminlog(span_warning("Error: admin_investigate: [INVESTIGATE_DIR][subject] is an invalid path or cannot be accessed.")))
 				return
-			user << browse("<html>[F]</html>","window=investigate[subject];size=800x300")
+			// DQEdit Start — log viewer now opens a structured TGUI panel.
+			var/datum/dq_investigate_panel/panel = new(subject, "[F]")
+			panel.tgui_interact(user.mob)
+			// DQEdit End
 
 		if("hrefs")				//persistant logs and stuff
 			if(config && CONFIG_GET(flag/log_hrefs))
 				if(GLOB.href_logfile)
-					user << browse("<html>[GLOB.href_logfile]</html>","window=investigate[subject];size=800x300")
+					// DQEdit Start — log viewer now opens a structured TGUI panel.
+					var/datum/dq_investigate_panel/panel = new("hrefs", "[GLOB.href_logfile]")
+					panel.tgui_interact(user.mob)
+					// DQEdit End
 				else
 					to_chat(user, span_filter_adminlog(span_warning("Error: admin_investigate: No href logfile found.")))
 					return

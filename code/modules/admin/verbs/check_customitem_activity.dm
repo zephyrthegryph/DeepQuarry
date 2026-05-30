@@ -18,9 +18,9 @@ ADMIN_VERB(check_customitem_activity, R_ADMIN|R_MOD|R_SERVER, "Check activity of
 	else
 		dat += "<a href='byond://?src=\ref[user];_src_=holder;[HrefToken()];populate_inactive_customitems=1'>Populate list (requires an active database connection)</a><br>"
 
-	var/datum/browser/popup = new(user, "inactive_customitems", "Inactive Custom Items", 600, 480)
-	popup.set_content(dat)
-	popup.open()
+	// DQEdit — structured TGUI AdminReport; populate_inactive link forwards
+	// through dispatch_forwarded_topic to the admin holder Topic.
+	dq_admin_report_html(user.mob, "Inactive Custom Items", dat, user.holder)
 
 /proc/populate_inactive_customitems_list(client/C)
 	set background = 1

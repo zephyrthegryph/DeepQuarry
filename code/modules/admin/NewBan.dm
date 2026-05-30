@@ -168,34 +168,10 @@ GLOBAL_DATUM(banlist, /savefile)
 			timeleftstring = "[exp] Minutes"
 		return timeleftstring
 
+// DQEdit Start — unbanpanel body relocated to modular_dq/code/modules/admin/misc_admin_panels.dm (structured TGUI).
 /datum/admins/proc/unbanpanel()
-	var/count = 0
-	var/dat
-	//var/dat = "<HR>" + span_bold("Unban Player:") + " " + span_blue("(U) = Unban") + " , (E) = Edit Ban " + span_green("(Total<HR><table border=1 rules=all frame=void cellspacing=0 cellpadding=3 >")
-	GLOB.banlist.cd = "/base"
-	for (var/A in GLOB.banlist.dir)
-		count++
-		GLOB.banlist.cd = "/base/[A]"
-		var/ref		= "\ref[src]"
-		var/key		= GLOB.banlist["key"]
-		var/id		= GLOB.banlist["id"]
-		var/ip		= GLOB.banlist["ip"]
-		var/reason	= GLOB.banlist["reason"]
-		var/by		= GLOB.banlist["bannedby"]
-		var/expiry
-		if(GLOB.banlist["temp"])
-			expiry = GetExp(GLOB.banlist["minutes"])
-			if(!expiry)		expiry = "Removal Pending"
-		else				expiry = "Permaban"
-
-		dat += text("<tr><td><A href='byond://?src=[ref];[HrefToken()];unbanf=[key][id]'>(U)</A><A href='byond://?src=[ref];[HrefToken()];unbane=[key][id]'>(E)</A> Key: <B>[key]</B></td><td>ComputerID: <B>[id]</B></td><td>IP: <B>[ip]</B></td><td> [expiry]</td><td>(By: [by])</td><td>(Reason: [reason])</td></tr>")
-
-	dat += "</table>"
-	dat = "<HR>" + span_bold("Bans:") + " " + span_blue("(U) = Unban , (E) = Edit Ban") + " - " + span_green("([count] Bans)") + "<HR><table border=1 rules=all frame=void cellspacing=0 cellpadding=3 >[dat]"
-
-	var/datum/browser/popup = new(owner, "unbanp", "Unban", 875, 400)
-	popup.set_content(dat)
-	popup.open()
+	dq_open_unban_panel(owner)
+// DQEdit End
 
 //////////////////////////////////// DEBUG ////////////////////////////////////
 

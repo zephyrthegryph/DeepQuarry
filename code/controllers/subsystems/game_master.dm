@@ -309,9 +309,8 @@ ADMIN_VERB(show_gm_status, R_ADMIN|R_EVENT|R_DEBUG, "Show GM Status", "Shows you
 
 	dat += "</body></html>"
 
-	var/datum/browser/popup = new(user, "game_master_debug", "Automated Game Master Event System", 800, 500, src)
-	popup.set_content(dat.Join())
-	popup.open()
+	// DQEdit — structured TGUI AdminReport with topic forwarding to SS.
+	dq_admin_report_html(user, "Automated Game Master Event System", dat.Join(), src)
 
 
 /datum/controller/subsystem/game_master/Topic(href, href_list)

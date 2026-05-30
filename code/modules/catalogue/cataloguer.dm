@@ -245,55 +245,21 @@ GLOBAL_LIST_EMPTY(all_cataloguers)
 	interact(user)
 
 /obj/item/cataloguer/interact(mob/user)
-	var/list/dat = list()
-	var/title = "Cataloguer Data Display"
-
-	// Important buttons go on top since the scrollbar will default to the top of the window.
-	dat += "Contains <b>[points_stored]</b> Exploration Points."
-	dat += "<a href='byond://?src=\ref[src];pulse_scan=1'>\[Highlight Scannables\]</a><a href='byond://?src=\ref[src];refresh=1'>\[Refresh\]</a><a href='byond://?src=\ref[src];close=1'>\[Close\]</a>"
-
-	// If displayed_data exists, we show that, otherwise we show a list of all data in the mysterious global list.
-	if(displayed_data)
-		title = uppertext(displayed_data.name)
-
-		dat += "<a href='byond://?src=\ref[src];show_data=null'>\[Back to List\]</a>"
-		if(debug && !displayed_data.visible)
-			dat += "<a href='byond://?src=\ref[src];debug_unlock=\ref[displayed_data]'>\[(DEBUG) Force Discovery\]</a>"
-		dat += "<hr>"
-
-		dat += span_italics("[displayed_data.desc]")
-		if(LAZYLEN(displayed_data.cataloguers))
-			dat += "Cataloguers : <b>[english_list(displayed_data.cataloguers)]</b>."
-		else
-			dat += "Catalogued by nobody."
-		dat += "Worth <b>[displayed_data.value]</b> exploration points."
-
-	else
-		dat += "<hr>"
-		for(var/datum/category_group/group as anything in GLOB.catalogue_data.categories)
-			var/list/group_dat = list()
-			var/show_group = FALSE
-
-			group_dat += span_bold("[group.name]")
-			for(var/datum/category_item/catalogue/item as anything in group.items)
-				if(item.visible || debug)
-					group_dat += "<a href='byond://?src=\ref[src];show_data=\ref[item]'>[item.name]</a>"
-					show_group = TRUE
-
-			if(show_group || debug) // Avoid showing 'empty' groups on regular cataloguers.
-				dat += group_dat
-
-	var/datum/browser/popup = new(user, "cataloguer_display_\ref[src]", title, 500, 600, src)
-	popup.set_content(dat.Join("<br>"))
-	popup.open()
+	// DQEdit — structured TGUI Cataloguer panel (see
+	// modular_dq/code/modules/admin/cataloguer_panel.dm).
+	tgui_interact(user)
 	add_fingerprint(user)
 
 /obj/item/cataloguer/Topic(href, href_list)
 	if(..())
-		usr << browse(null, "window=cataloguer_display")
+		// DQEdit Start — close TGUI viewer (legacy browse(null) close)
+		SStgui.close_uis(src)
+		// DQEdit End
 		return 0
 	if(href_list["close"] )
-		usr << browse(null, "window=cataloguer_display")
+		// DQEdit Start — close TGUI viewer (legacy browse(null) close)
+		SStgui.close_uis(src)
+		// DQEdit End
 		return 0
 
 	if(href_list["show_data"])

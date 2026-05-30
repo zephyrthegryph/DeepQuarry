@@ -38,51 +38,47 @@
 
 ///////////////////Options for using captured souls///////////////////////////////////////
 
+// DQEdit Start — TGUI migration. attack_self opens Soulstone.tsx; Topic
+// "Summon" handler moves to tgui_act.
 /obj/item/soulstone/attack_self(mob/user)
 	. = ..(user)
 	if(.)
 		return TRUE
-	if (!in_range(src, user))
+	if(!in_range(src, user))
 		return
-	user.set_machine(src)
-	var/dat = "<html><TT><B>Soul Stone</B><BR>"
-	for(var/mob/living/simple_mob/construct/shade/A in src)
-		dat += "Captured Soul: [A.name]<br>"
-		dat += {"<A href='byond://?src=\ref[src];choice=Summon'>Summon Shade</A>"}
-		dat += "<br>"
-		dat += {"<a href='byond://?src=\ref[src];choice=Close'> Close</a></html>"}
-	user << browse(dat, "window=aicard")
-	onclose(user, "aicard")
-	return
+	tgui_interact(user)
 
+/obj/item/soulstone/tgui_interact(mob/user, datum/tgui/ui)
+	ui = SStgui.try_update_ui(user, src, ui)
+	if(!ui)
+		ui = new(user, src, "Soulstone", "Soul Stone")
+		ui.open()
 
+/obj/item/soulstone/tgui_data(mob/user)
+	var/list/data = list()
+	var/mob/living/simple_mob/construct/shade/A = locate() in src
+	data["has_shade"] = !!A
+	data["shade_name"] = A ? A.name : ""
+	return data
 
-
-/obj/item/soulstone/Topic(href, href_list)
-	var/mob/U = usr
-	if (!in_range(src, U) || !U.check_current_machine(src))
-		U << browse(null, "window=aicard")
-		U.unset_machine()
+/obj/item/soulstone/tgui_act(action, list/params)
+	. = ..()
+	if(.)
 		return
-
-	add_fingerprint(U)
-	U.set_machine(src)
-
-	switch(href_list["choice"])//Now we switch based on choice.
-		if ("Close")
-			U << browse(null, "window=aicard")
-			U.unset_machine()
-			return
-
-		if ("Summon")
+	if(!in_range(src, usr))
+		return TRUE
+	add_fingerprint(usr)
+	switch(action)
+		if("summon")
 			for(var/mob/living/simple_mob/construct/shade/A in src)
 				A.RemoveElement(/datum/element/godmode)
 				A.canmove = 1
-				to_chat(A, span_infoplain(span_bold("You have been released from your prison, but you are still bound to [U.name]'s will. Help them suceed in their goals at all costs.")))
-				A.forceMove(U.loc)
+				to_chat(A, span_infoplain(span_bold("You have been released from your prison, but you are still bound to [usr.name]'s will. Help them suceed in their goals at all costs.")))
+				A.forceMove(usr.loc)
 				A.cancel_camera()
-				src.icon_state = "soulstone"
-	attack_self(U)
+				icon_state = "soulstone"
+			return TRUE
+// DQEdit End
 
 ///////////////////////////Transferring to constructs/////////////////////////////////////////////////////
 /obj/structure/constructshell

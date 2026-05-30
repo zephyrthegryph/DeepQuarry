@@ -269,7 +269,6 @@
 		do_teleport(ROI, destination, asoundin = 'sound/weapons/emitter2.ogg', asoundout = 'sound/weapons/emitter2.ogg') // CHOMPEdit - Noisy
 
 /obj/machinery/power/quantumpad/proc/can_traverse_gateway()
-	// DQEdit — gateway feature removed; always allow traversal
 	return TRUE
 
 /obj/machinery/power/quantumpad/proc/gateway_scatter(mob/user)

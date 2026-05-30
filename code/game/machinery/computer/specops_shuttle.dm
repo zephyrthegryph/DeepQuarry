@@ -252,27 +252,8 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 /obj/machinery/computer/specops_shuttle/emag_act(remaining_charges, mob/user)
 	to_chat(user, span_notice("The electronic systems in this console are far too advanced for your primitive hacking peripherals."))
 
-/obj/machinery/computer/specops_shuttle/attack_hand(mob/user as mob)
-	if(!allowed(user))
-		to_chat(user, span_warning("Access Denied."))
-		return
-
-	if(..())
-		return
-
-	user.set_machine(src)
-	var/dat
-	if (temp)
-		dat = temp
-	else
-		dat += {"<BR><B>Special Operations Shuttle</B><HR>
-		\nLocation: [GLOB.specops_shuttle_moving_to_station || GLOB.specops_shuttle_moving_to_centcom ? "Departing for [station_name()] in ([GLOB.specops_shuttle_timeleft] seconds.)":GLOB.specops_shuttle_at_station ? "Station":"Dock"]<BR>
-		[GLOB.specops_shuttle_moving_to_station || GLOB.specops_shuttle_moving_to_centcom ? "\n*The Special Ops. shuttle is already leaving.*<BR>\n<BR>":GLOB.specops_shuttle_at_station ? "\n<A href='byond://?src=\ref[src];sendtodock=1'>Shuttle standing by...</A><BR>\n<BR>":"\n<A href='byond://?src=\ref[src];sendtostation=1'>Depart to [station_name()]</A><BR>\n<BR>"]
-		\n<A href='byond://?src=\ref[user];mach_close=computer'>Close</A>"}
-
-	var/datum/browser/popup = new(usr, "computer", "Computer", 575, 450)
-	popup.set_content(dat)
-	popup.open()
+// DQEdit — structured TGUI Specops Shuttle (see
+// modular_dq/code/modules/admin/specops_shuttle_panel.dm).
 
 /obj/machinery/computer/specops_shuttle/Topic(href, href_list)
 	if(..())

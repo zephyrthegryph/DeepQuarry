@@ -389,74 +389,18 @@
 	spaceport_freebie = 0
 	last_spaceport_action = ""
 
-/obj/machinery/computer/arcade/orion_trail/attack_hand(mob/living/user)
-	if(..())
-		return
-	if(fuel <= 0 || food <=0 || settlers.len == 0)
-		gameStatus = ORION_STATUS_GAMEOVER
-		event = null
-	user.set_machine(src)
-	var/dat = ""
-	if(gameStatus == ORION_STATUS_GAMEOVER)
-		playsound(src, 'sound/arcade/ori_fail.ogg', 50, 1, extrarange = -3, falloff = 0.1, ignore_walls = FALSE)
-		dat = "<center><h1>Game Over</h1></center>"
-		dat += "Like many before you, your crew never made it to Orion, lost to space... <br><b>forever</b>."
-		if(settlers.len == 0)
-			dat += "<br>Your entire crew died, and your ship joins the fleet of ghost-ships littering the galaxy."
-		else
-			if(food <= 0)
-				dat += "<br>You ran out of food and starved."
-				if(emagged)
-					user.nutrition = 0 //yeah you pretty hongry
-					to_chat(user, span_danger(span_large("Your body instantly contracts to that of one who has not eaten in months. Agonizing cramps seize you as you fall to the floor.")))
-			if(fuel <= 0)
-				dat += "<br>You ran out of fuel, and drift, slowly, into a star."
-				if(emagged)
-					var/mob/living/M = user
-					M.adjust_fire_stacks(5)
-					M.ignite_mob() //flew into a star, so you're on fire
-					to_chat(user,span_danger(span_large("You feel an immense wave of heat emanate from \the [src]. Your skin bursts into flames.")))
-		dat += "<br><P ALIGN=Right><a href='byond://?src=\ref[src];menu=1'>OK...</a></P>"
-
-		if(emagged)
-			to_chat(user, span_danger(span_large("You're never going to make it to Orion...")))
-			user.death()
-			emagged = 0 //removes the emagged status after you lose
-			gameStatus = ORION_STATUS_START
-			name = "The Orion Trail"
-			desc = "Learn how our ancestors got to Orion, and have fun in the process!"
-
-	else if(event)
-		dat = eventdat
-	else if(gameStatus == ORION_STATUS_NORMAL)
-		var/title = stops[turns]
-		var/subtext = stopblurbs[turns]
-		dat = "<center><h1>[title]</h1></center>"
-		dat += "[subtext]"
-		dat += "<h3><b>Crew:</b></h3>"
-		dat += english_list(settlers)
-		dat += "<br><b>Food: </b>[food] | <b>Fuel: </b>[fuel]"
-		dat += "<br><b>Engine Parts: </b>[engine] | <b>Hull Panels: </b>[hull] | <b>Electronics: </b>[electronics]"
-		if(turns == 7)
-			dat += "<P ALIGN=Right><a href='byond://?src=\ref[src];pastblack=1'>Go Around</a> <a href='byond://?src=\ref[src];blackhole=1'>Continue</a></P>"
-		else
-			dat += "<P ALIGN=Right><a href='byond://?src=\ref[src];continue=1'>Continue</a></P>"
-		dat += "<P ALIGN=Right><a href='byond://?src=\ref[src];killcrew=1'>Kill a crewmember</a></P>"
-		dat += "<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"
-	else
-		dat = "<center><h2>The Orion Trail</h2></center>"
-		dat += "<br><center><h3>Experience the journey of your ancestors!</h3></center><br><br>"
-		dat += "<center><b><a href='byond://?src=\ref[src];newgame=1'>New Game</a></b></center>"
-		dat += "<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"
-	user << browse("<html>[dat]</html>","window=arcade")
-	return
+// DQEdit — structured TGUI Orion Trail panel; the attack_hand override
+// lives in modular_dq/code/modules/admin/orion_trail_panel.dm and
+// re-runs the upstream game-over side effects before opening the panel.
 
 /obj/machinery/computer/arcade/orion_trail/Topic(href, href_list)
 	if(..())
 		return
 	if(href_list["close"])
 		usr.unset_machine()
-		usr << browse(null, "window=arcade")
+		// DQEdit Start — close the TGUI panel instead of a browse() window.
+		SStgui.close_uis(src)
+		// DQEdit End
 
 	if(busy)
 		return

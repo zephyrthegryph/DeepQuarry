@@ -304,7 +304,7 @@
 		return 1
 	return 0
 
+// DQEdit Start — displayValues body relocated to modular_dq/code/modules/admin/admin_report_panel.dm (structured StockChart TGUI).
 /datum/stock/proc/displayValues(mob/user)
-	var/datum/browser/popup = new(user, "stock_[name]", "Share Value", 450, 450)
-	popup.set_content(plotBarGraph(values, "[name] share value per share"))
-	popup.open()
+	return  // body provided by modular override
+// DQEdit End

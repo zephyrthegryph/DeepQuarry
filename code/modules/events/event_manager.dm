@@ -10,12 +10,15 @@
 	var/datum/event_container/selected_event_container = null
 
 /datum/controller/subsystem/events/proc/Interact(mob/living/user)
-
-	var/html = GetInteractWindow()
-
-	var/datum/browser/popup = new(user, "event_manager", "Event Manager", window_x, window_y)
-	popup.set_content(html)
-	popup.open()
+	// DQEdit — structured TGUI Event Manager panel (see
+	// modular_dq/code/modules/admin/event_manager_panel.dm). Re-uses
+	// the per-subsystem panel datum so the Topic-handler fall-through
+	// refresh (`Interact(usr)`) just updates the open window via
+	// SStgui.update_uis instead of opening a duplicate.
+	if(!tgui_event_manager_panel)
+		tgui_event_manager_panel = new
+	tgui_event_manager_panel.tgui_interact(user)
+	SStgui.update_uis(tgui_event_manager_panel)
 
 /datum/controller/subsystem/events/proc/GetInteractWindow()
 	var/html = "<A align='right' href='byond://?src=\ref[src];refresh=1'>Refresh</A>"

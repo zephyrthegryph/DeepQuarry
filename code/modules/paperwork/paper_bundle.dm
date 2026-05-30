@@ -49,7 +49,9 @@
 		if(istype(W, /obj/item/tape_roll))
 			return 0
 		if(istype(W, /obj/item/pen))
-			user << browse(null, "window=[name]") //Closes the dialog
+			// DQEdit Start — legacy close (TGUI handles paper_bundle now)
+			SStgui.close_uis(src)
+			// DQEdit End
 		var/obj/P = pages[page]
 		P.attackby(W, user)
 
@@ -102,94 +104,96 @@
 	else
 		. += span_notice("It is too far away.")
 
+// DQEdit Start — TGUI migration. attack_self opens PaperBundle.tsx;
+// Topic page-flip and remove move to tgui_act. Photo image embedding via
+// browse_rsc is not yet wired through TGUI assets; photo pages show name
+// + scribble only.
 /obj/item/paper_bundle/proc/show_content(mob/user)
-	var/dat
-	var/obj/item/W = pages[page]
-
-	// first
-	if(page == 1)
-		dat+= "<DIV STYLE='float:left; text-align:left; width:33.33333%'><A href='byond://?src=\ref[src];prev_page=1'>Front</A></DIV>"
-		dat+= "<DIV STYLE='float:left; text-align:center; width:33.33333%'><A href='byond://?src=\ref[src];remove=1'>Remove [(istype(W, /obj/item/paper)) ? "paper" : "photo"]</A></DIV>"
-		dat+= "<DIV STYLE='float:left; text-align:right; width:33.33333%'><A href='byond://?src=\ref[src];next_page=1'>Next Page</A></DIV><BR><HR>"
-	// last
-	else if(page == pages.len)
-		dat+= "<DIV STYLE='float:left; text-align:left; width:33.33333%'><A href='byond://?src=\ref[src];prev_page=1'>Previous Page</A></DIV>"
-		dat+= "<DIV STYLE='float:left; text-align:center; width:33.33333%'><A href='byond://?src=\ref[src];remove=1'>Remove [(istype(W, /obj/item/paper)) ? "paper" : "photo"]</A></DIV>"
-		dat+= "<DIV STYLE='float;left; text-align:right; with:33.33333%'><A href='byond://?src=\ref[src];next_page=1'>Back</A></DIV><BR><HR>"
-	// middle pages
-	else
-		dat+= "<DIV STYLE='float:left; text-align:left; width:33.33333%'><A href='byond://?src=\ref[src];prev_page=1'>Previous Page</A></DIV>"
-		dat+= "<DIV STYLE='float:left; text-align:center; width:33.33333%'><A href='byond://?src=\ref[src];remove=1'>Remove [(istype(W, /obj/item/paper)) ? "paper" : "photo"]</A></DIV>"
-		dat+= "<DIV STYLE='float:left; text-align:right; width:33.33333%'><A href='byond://?src=\ref[src];next_page=1'>Next Page</A></DIV><BR><HR>"
-
-	if(istype(pages[page], /obj/item/paper))
-		var/obj/item/paper/P = W
-		if(!(ishuman(user) || isobserver(user) || issilicon(user)))
-			dat+= "<HTML><HEAD><TITLE>[P.name]</TITLE></HEAD><BODY>[stars(P.info)][P.stamps]</BODY></HTML>"
-		else
-			dat+= "<HTML><HEAD><TITLE>[P.name]</TITLE></HEAD><BODY>[P.info][P.stamps]</BODY></HTML>"
-		user << browse(dat, "window=[name]")
-	else if(istype(pages[page], /obj/item/photo))
-		var/obj/item/photo/P = W
-		user << browse_rsc(P.img, "tmp_photo.png")
-		user << browse("<html>" + dat + "<head><title>[P.name]</title></head>" \
-		+ "<body style='overflow:hidden'>" \
-		+ "<div> <img src='tmp_photo.png' width = '180'" \
-		+ "[P.scribble ? "<div> Written on the back:<br><i>[P.scribble]</i>" : null]"\
-		+ "</body></html>", "window=[name]")
+	tgui_interact(user)
 
 /obj/item/paper_bundle/attack_self(mob/user)
 	. = ..(user)
 	if(.)
 		return TRUE
-	src.show_content(user)
 	add_fingerprint(user)
 	update_icon()
-	return
+	tgui_interact(user)
 
-/obj/item/paper_bundle/Topic(href, href_list)
-	..()
-	if((src in usr.contents) || (istype(src.loc, /obj/item/folder) && (src.loc in usr.contents)))
-		usr.set_machine(src)
-		var/obj/item/in_hand = usr.get_active_hand()
-		if(href_list["next_page"])
+/obj/item/paper_bundle/tgui_interact(mob/user, datum/tgui/ui)
+	ui = SStgui.try_update_ui(user, src, ui)
+	if(!ui)
+		ui = new(user, src, "PaperBundle", name)
+		ui.open()
+
+/obj/item/paper_bundle/tgui_data(mob/user)
+	var/list/data = list()
+	data["page"] = page
+	data["total_pages"] = pages.len
+	data["scribble"] = ""
+	if(pages.len)
+		var/obj/item/W = pages[page]
+		data["page_name"] = W.name
+		if(istype(W, /obj/item/paper))
+			var/obj/item/paper/P = W
+			data["page_kind"] = "paper"
+			var/info = (ishuman(user) || isobserver(user) || issilicon(user)) ? P.info : stars(P.info)
+			data["page_info"] = "[info][P.stamps]"
+		else if(istype(W, /obj/item/photo))
+			var/obj/item/photo/P = W
+			data["page_kind"] = "photo"
+			data["page_info"] = ""
+			data["scribble"] = P.scribble || ""
+		else
+			data["page_kind"] = "paper"
+			data["page_info"] = ""
+	else
+		data["page_name"] = name
+		data["page_kind"] = "paper"
+		data["page_info"] = ""
+	return data
+
+/obj/item/paper_bundle/tgui_act(action, list/params)
+	. = ..()
+	if(.)
+		return
+	if(!((src in usr.contents) || (istype(src.loc, /obj/item/folder) && (src.loc in usr.contents))))
+		to_chat(usr, span_notice("You need to hold it in hands!"))
+		return TRUE
+	usr.set_machine(src)
+	var/obj/item/in_hand = usr.get_active_hand()
+	switch(action)
+		if("next_page")
 			if(in_hand && (istype(in_hand, /obj/item/paper) || istype(in_hand, /obj/item/photo)))
-				insert_sheet_at(usr, page+1, in_hand)
+				insert_sheet_at(usr, page + 1, in_hand)
 			else if(page != pages.len)
 				page++
 				playsound(src, "pageturn", 50, 1)
-		if(href_list["prev_page"])
+			return TRUE
+		if("prev_page")
 			if(in_hand && (istype(in_hand, /obj/item/paper) || istype(in_hand, /obj/item/photo)))
 				insert_sheet_at(usr, page, in_hand)
 			else if(page > 1)
 				page--
 				playsound(src, "pageturn", 50, 1)
-		if(href_list["remove"])
+			return TRUE
+		if("remove")
 			if(!pages.len)
-				return
+				return TRUE
 			var/obj/item/W = pages[page]
 			usr.put_in_hands(W)
 			pages.Remove(pages[page])
-
 			to_chat(usr, span_notice("You remove the [W.name] from the bundle."))
-
 			if(pages.len <= 1)
 				var/obj/item/paper/P = pages[1]
 				usr.drop_from_inventory(src)
 				usr.put_in_hands(P)
 				qdel(src)
-
-				return
-
+				return TRUE
 			if(page > pages.len)
 				page = pages.len
-
 			update_icon()
-
-		src.attack_self(usr)
-		updateUsrDialog(usr)
-	else
-		to_chat(usr, span_notice("You need to hold it in hands!"))
+			return TRUE
+// DQEdit End
 
 /obj/item/paper_bundle/verb/rename()
 	set name = "Rename bundle"

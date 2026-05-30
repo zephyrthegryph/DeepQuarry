@@ -27,6 +27,12 @@
 		QDEL_NULL(manifest_dialog)
 	if(late_choices_dialog)
 		QDEL_NULL(late_choices_dialog)
+	// DQEdit Start — clean up poll dialogs (privacy + player poll browser) migrated to TGUI
+	if(privacy_poll_dialog)
+		QDEL_NULL(privacy_poll_dialog)
+	if(poll_browser_dialog)
+		QDEL_NULL(poll_browser_dialog)
+	// DQEdit End
 	. = ..()
 
 /mob/new_player/get_status_tab_items()
@@ -64,99 +70,12 @@
 			if(player.ready)totalPlayersReady++
 
 /mob/new_player/Topic(href, href_list[])
-	if(!client)	return 0
-
-	if(href_list["privacy_poll"])
-		if(!SSdbcore.IsConnected())
-			return
-		var/voted = 0
-
-		//First check if the person has not voted yet.
-		var/datum/db_query/query = SSdbcore.NewQuery("SELECT * FROM erro_privacy WHERE ckey='[src.ckey]'")
-		query.Execute()
-		while(query.NextRow())
-			voted = 1
-			break
-		qdel(query)
-		//This is a safety switch, so only valid options pass through
-		var/option = "UNKNOWN"
-		switch(href_list["privacy_poll"])
-			if("signed")
-				option = "SIGNED"
-			if("anonymous")
-				option = "ANONYMOUS"
-			if("nostats")
-				option = "NOSTATS"
-			if("later")
-				usr << browse(null,"window=privacypoll")
-				return
-			if("abstain")
-				option = "ABSTAIN"
-
-		if(option == "UNKNOWN")
-			return
-
-		if(!voted)
-			var/sql = "INSERT INTO erro_privacy VALUES (null, Now(), '[src.ckey]', '[option]')"
-			var/datum/db_query/query_insert = SSdbcore.NewQuery(sql)
-			query_insert.Execute()
-			to_chat(usr, span_bold("Thank you for your vote!"))
-			qdel(query_insert)
-			usr << browse(null,"window=privacypoll")
-
+	if(!client)
+		return 0
 	if(!ready && href_list["preference"])
-		if(client)
-			client.prefs.process_link(src, href_list)
-
-	if(href_list["pollid"])
-
-		var/pollid = href_list["pollid"]
-		if(istext(pollid))
-			pollid = text2num(pollid)
-		if(isnum(pollid))
-			src.poll_player(pollid)
-		return
-
-	if(href_list["votepollid"] && href_list["votetype"])
-		var/pollid = text2num(href_list["votepollid"])
-		var/votetype = href_list["votetype"]
-		switch(votetype)
-			if("OPTION")
-				var/optionid = text2num(href_list["voteoptionid"])
-				vote_on_poll(pollid, optionid)
-			if("TEXT")
-				var/replytext = href_list["replytext"]
-				log_text_poll_reply(pollid, replytext)
-			if("NUMVAL")
-				var/id_min = text2num(href_list["minid"])
-				var/id_max = text2num(href_list["maxid"])
-
-				if( (id_max - id_min) > 100 )	//Basic exploit prevention
-					to_chat(usr, "The option ID difference is too big. Please contact administration or the database admin.")
-					return
-
-				for(var/optionid = id_min; optionid <= id_max; optionid++)
-					if(!isnull(href_list["o[optionid]"]))	//Test if this optionid was replied to
-						var/rating
-						if(href_list["o[optionid]"] == "abstain")
-							rating = null
-						else
-							rating = text2num(href_list["o[optionid]"])
-							if(!isnum(rating))
-								return
-
-						vote_on_numval_poll(pollid, optionid, rating)
-			if("MULTICHOICE")
-				var/id_min = text2num(href_list["minoptionid"])
-				var/id_max = text2num(href_list["maxoptionid"])
-
-				if( (id_max - id_min) > 100 )	//Basic exploit prevention
-					to_chat(usr, "The option ID difference is too big. Please contact administration or the database admin.")
-					return
-
-				for(var/optionid = id_min; optionid <= id_max; optionid++)
-					if(!isnull(href_list["option_[optionid]"]))	//Test if this optionid was selected
-						vote_on_poll(pollid, optionid, 1)
+		client.prefs.process_link(src, href_list)
+	if(href_list["open_station_news"])
+		show_latest_news(GLOB.news_data.station_newspaper)
 
 
 /mob/new_player/proc/handle_server_news()
@@ -181,9 +100,8 @@
 		dat += "<br>"
 		dat += span_normal(span_italics("Last written by [F["author"]], on [F["timestamp"]]."))
 		dat += "</center></body></html>"
-		var/datum/browser/popup = new(src, "Server News", "Server News", 450, 300, src)
-		popup.set_content(dat)
-		popup.open()
+		// DQEdit — structured TGUI AdminReport.
+		dq_admin_report_html(src, "Server News", dat)
 
 /mob/proc/time_till_respawn()
 	if(!ckey)
@@ -486,10 +404,9 @@
 /mob/new_player/proc/close_spawn_windows()
 	manifest_dialog?.close_ui()
 	late_choices_dialog?.close_ui()
-
-	src << browse(null, "window=latechoices") //closes late choices window
-	src << browse(null, "window=preferences_window") //VOREStation Edit?
-	src << browse(null, "window=News") //closes news window
+	// DQEdit Start — legacy browse() cleanup for latechoices/preferences/News;
+	// those windows are all TGUI now, so the close calls target nothing.
+	// DQEdit End
 
 /mob/new_player/get_species()
 	var/datum/species/chosen_species

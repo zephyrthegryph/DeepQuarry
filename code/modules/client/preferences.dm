@@ -54,8 +54,9 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 
 	// DQEdit — communicator_visibility/ringtone migrated to /datum/preference subtypes.
 
-	// DQEdit — Bay player_setup chain deleted; per-pref sanitize/save/load handles everything.
-	var/datum/browser/panel
+	// DQEdit — Bay player_setup chain deleted; per-pref sanitize/save/load handles
+	// everything. /datum/browser/panel also removed (tgui-migration replaces all
+	// browse()/datum/browser usage).
 
 	var/lastnews // Hash of last seen lobby news content.
 	var/lastlorenews //ID of last seen lore news article.

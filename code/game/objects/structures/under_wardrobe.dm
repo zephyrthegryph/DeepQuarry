@@ -15,20 +15,42 @@
 		return
 	interact(user)
 
+// DQEdit Start — TGUI migration. interact opens UndiesWardrobe.tsx; Topic
+// handlers move to tgui_act below.
 /obj/structure/undies_wardrobe/interact(mob/living/carbon/human/H)
-	var/dat = list()
-	dat += span_bold("Underwear:") + "<br>"
+	tgui_interact(H)
+
+/obj/structure/undies_wardrobe/tgui_interact(mob/user, datum/tgui/ui)
+	ui = SStgui.try_update_ui(user, src, ui)
+	if(!ui)
+		ui = new(user, src, "UndiesWardrobe", "Underwear Dresser")
+		ui.open()
+
+/obj/structure/undies_wardrobe/tgui_data(mob/user)
+	var/list/data = list()
+	var/list/cats = list()
+	if(!ishuman(user))
+		data["categories"] = cats
+		return data
+	var/mob/living/carbon/human/H = user
 	for(var/datum/category_group/underwear/UWC in GLOB.global_underwear.categories)
 		var/datum/category_item/underwear/UWI = H.all_underwear[UWC.name]
-		var/item_name = UWI ? UWI.name : "None"
-		dat += "[UWC.name]: <a href='byond://?src=\ref[src];change_underwear=[UWC.name]'>[item_name]</a>"
+		var/list/tweaks = list()
 		if(UWI)
 			for(var/datum/gear_tweak/gt in UWI.tweaks)
-				dat += " <a href='byond://?src=\ref[src];underwear=[UWC.name];tweak=\ref[gt]'>[gt.get_contents(get_metadata(H, UWC.name, gt))]</a>"
-		dat += " <a href='byond://?src=\ref[src];remove_underwear=[UWC.name]'>(Remove)</a><br>"
-
-	dat = jointext(dat,null)
-	H << browse("<html>[dat]</html>", "window=wardrobe;size=400x200")
+				tweaks += list(list(
+					"ref" = "\ref[gt]",
+					"label" = gt.get_contents(get_metadata(H, UWC.name, gt)),
+				))
+		cats += list(list(
+			"name" = UWC.name,
+			"item_name" = UWI ? UWI.name : "None",
+			"has_item" = !!UWI,
+			"tweaks" = tweaks,
+		))
+	data["categories"] = cats
+	return data
+// DQEdit End
 
 /obj/structure/undies_wardrobe/proc/get_metadata(mob/living/carbon/human/H, underwear_category, datum/gear_tweak/gt)
 	var/metadata = H.all_underwear_metadata[underwear_category]
@@ -57,37 +79,42 @@
 
 	return ..()
 
-/obj/structure/undies_wardrobe/Topic(href, href_list, state)
-	if(..())
-		return TRUE
-
-	var/mob/living/carbon/human/H = usr
-	if(href_list["remove_underwear"])
-		if(href_list["remove_underwear"] in H.all_underwear)
-			H.all_underwear -= href_list["remove_underwear"]
-			. = TRUE
-	else if(href_list["change_underwear"])
-		var/datum/category_group/underwear/UWC = GLOB.global_underwear.categories_by_name[href_list["change_underwear"]]
-		if(!UWC)
-			return
-		var/datum/category_item/underwear/selected_underwear = tgui_input_list(H, "Choose underwear:", "Choose underwear", UWC.items, H.all_underwear[UWC.name])
-		if(selected_underwear && CanUseTopic(H, GLOB.tgui_default_state))
-			H.all_underwear[UWC.name] = selected_underwear
-			H.hide_underwear[UWC.name] = FALSE
-			. = TRUE
-	else if(href_list["underwear"] && href_list["tweak"])
-		var/underwear = href_list["underwear"]
-		if(!(underwear in H.all_underwear))
-			return
-		var/datum/gear_tweak/gt = locate(href_list["tweak"])
-		if(!gt)
-			return
-		var/new_metadata = gt.get_metadata(usr, get_metadata(H, underwear, gt), "Wardrobe Underwear Selection")
-		if(!isnull(new_metadata))
-			set_metadata(H, underwear, gt, new_metadata)
-			H.hide_underwear[underwear] = FALSE
-			. = TRUE
-
+// DQEdit Start — Topic switch lifted into tgui_act with stable action names.
+/obj/structure/undies_wardrobe/tgui_act(action, list/params)
+	. = ..()
 	if(.)
+		return
+	if(!ishuman(usr))
+		return
+	var/mob/living/carbon/human/H = usr
+	var/changed = FALSE
+	switch(action)
+		if("remove_underwear")
+			if(params["category"] in H.all_underwear)
+				H.all_underwear -= params["category"]
+				changed = TRUE
+		if("change_underwear")
+			var/datum/category_group/underwear/UWC = GLOB.global_underwear.categories_by_name[params["category"]]
+			if(!UWC)
+				return TRUE
+			var/datum/category_item/underwear/selected_underwear = tgui_input_list(H, "Choose underwear:", "Choose underwear", UWC.items, H.all_underwear[UWC.name])
+			if(selected_underwear && CanUseTopic(H, GLOB.tgui_default_state))
+				H.all_underwear[UWC.name] = selected_underwear
+				H.hide_underwear[UWC.name] = FALSE
+				changed = TRUE
+		if("tweak")
+			var/underwear = params["category"]
+			if(!(underwear in H.all_underwear))
+				return TRUE
+			var/datum/gear_tweak/gt = locate(params["tweak"])
+			if(!gt)
+				return TRUE
+			var/new_metadata = gt.get_metadata(usr, get_metadata(H, underwear, gt), "Wardrobe Underwear Selection")
+			if(!isnull(new_metadata))
+				set_metadata(H, underwear, gt, new_metadata)
+				H.hide_underwear[underwear] = FALSE
+				changed = TRUE
+	if(changed)
 		H.update_underwear()
-		interact(H)
+	return TRUE
+// DQEdit End

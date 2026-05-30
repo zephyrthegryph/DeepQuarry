@@ -68,9 +68,8 @@ ADMIN_VERB(cmd_check_new_players, R_HOLDER, "Check new Players", "Check the acco
 		to_chat(user, "Some accounts did not have proper ages set in their clients. This function requires database to be present.")
 
 	if(msg != "")
-		var/datum/browser/popup = new(user, "Player_age_check", "Player Age Check")
-		popup.set_content(msg)
-		popup.open()
+		// DQEdit — structured TGUI AdminReport.
+		dq_admin_report_html(user, "Player Age Check", msg)
 		return
 	to_chat(user, "No matches for that age range found.")
 

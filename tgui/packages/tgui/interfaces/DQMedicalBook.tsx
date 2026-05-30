@@ -49,31 +49,30 @@ type Band = {
 };
 
 const FREQUENCY_BANDS: Band[] = [
-  { match: 'almost always present', short: 'Always',    color: 'bad' },
-  { match: 'often present',         short: 'Often',     color: 'average' },
-  { match: 'sometimes present',     short: 'Sometimes', color: 'label' },
-  { match: 'rarely present',        short: 'Rarely',    color: 'grey' },
+  { match: 'almost always present', short: 'Always', color: 'bad' },
+  { match: 'often present', short: 'Often', color: 'average' },
+  { match: 'sometimes present', short: 'Sometimes', color: 'label' },
+  { match: 'rarely present', short: 'Rarely', color: 'grey' },
 ];
 
 const CURE_BANDS: Band[] = [
-  { match: 'strong',   short: 'Strong',   color: 'good' },
+  { match: 'strong', short: 'Strong', color: 'good' },
   { match: 'moderate', short: 'Moderate', color: 'average' },
-  { match: 'mild',     short: 'Mild',     color: 'label' },
+  { match: 'mild', short: 'Mild', color: 'label' },
 ];
 
 const WORSEN_BANDS: Band[] = [
-  { match: 'severe aggravation',   short: 'Severe',   color: 'bad' },
+  { match: 'severe aggravation', short: 'Severe', color: 'bad' },
   { match: 'moderate aggravation', short: 'Moderate', color: 'average' },
-  { match: 'mild aggravation',     short: 'Mild',     color: 'label' },
+  { match: 'mild aggravation', short: 'Mild', color: 'label' },
 ];
 
 const CASCADE_BANDS: Band[] = [
   { match: 'very likely', short: 'Very Likely', color: 'bad' },
-  { match: 'likely',      short: 'Likely',      color: 'average' },
-  { match: 'uncommon',    short: 'Uncommon',    color: 'label' },
-  { match: 'rare',        short: 'Rare',        color: 'grey' },
+  { match: 'likely', short: 'Likely', color: 'average' },
+  { match: 'uncommon', short: 'Uncommon', color: 'label' },
+  { match: 'rare', short: 'Rare', color: 'grey' },
 ];
-
 
 // --- Data types ----------------------------------------------------------
 
@@ -447,7 +446,6 @@ const CategorizedIndex = <T extends IndexEntry>(props: {
   );
 };
 
-
 // --- Main ---------------------------------------------------------------
 
 export const DQMedicalBook = () => {
@@ -457,8 +455,14 @@ export const DQMedicalBook = () => {
   const [condSel, setCondSel] = useSharedState<string | null>('cond-sel', null);
   const [symSel, setSymSel] = useSharedState<string | null>('sym-sel', null);
   const [regSel, setRegSel] = useSharedState<string | null>('reg-sel', null);
-  const [causeSel, setCauseSel] = useSharedState<string | null>('cause-sel', null);
-  const [surgerySel, setSurgerySel] = useSharedState<string | null>('surgery-sel', null);
+  const [causeSel, setCauseSel] = useSharedState<string | null>(
+    'cause-sel',
+    null,
+  );
+  const [surgerySel, setSurgerySel] = useSharedState<string | null>(
+    'surgery-sel',
+    null,
+  );
 
   // Switching tabs (whether by tab click or by following a cross-link)
   // clears the active search query so the destination tab isn't
@@ -667,7 +671,7 @@ const ConditionDetail = (props: {
         <LabeledList.Item label="Progression">{c.progression}</LabeledList.Item>
       </LabeledList>
 
-      {(c.causes?.length || c.caused_by_reagents?.length) ? (
+      {c.causes?.length || c.caused_by_reagents?.length ? (
         <Section title="Causes" mt={1}>
           {c.caused_by_reagents?.length
             ? c.caused_by_reagents.map((row, ri) => (
@@ -679,10 +683,7 @@ const ConditionDetail = (props: {
                           +
                         </Box>
                       ) : null}
-                      <Button
-                        compact
-                        onClick={() => props.goToReagent(r.id)}
-                      >
+                      <Button compact onClick={() => props.goToReagent(r.id)}>
                         {r.name}
                       </Button>
                     </Box>
@@ -710,44 +711,42 @@ const ConditionDetail = (props: {
         </Section>
       ) : null}
 
-      {c.stages.length > 1
-        ? c.stages.map((stage) =>
-            stage.symptoms.length ? (
-              <Section
-                key={stage.id ?? 'stage'}
-                title={`Stage: ${stage.id}`}
-                mt={1}
-              >
-                {stage.description ? <Box mb={1}>{stage.description}</Box> : null}
-                <BandedList
-                  entries={stage.symptoms.map((s) => ({
-                    id: s.id,
-                    name: s.name,
-                    bandValue: s.frequency,
-                  }))}
-                  bands={FREQUENCY_BANDS}
-                  onClick={props.goToSymptom}
-                  emptyMessage=""
-                />
-              </Section>
-            ) : null,
-          )
-        : (c.stages[0]?.symptoms ?? c.symptoms).length
-          ? (
-              <Section title="Symptoms" mt={1}>
-                <BandedList
-                  entries={(c.stages[0]?.symptoms ?? c.symptoms).map((s) => ({
-                    id: s.id,
-                    name: s.name,
-                    bandValue: s.frequency,
-                  }))}
-                  bands={FREQUENCY_BANDS}
-                  onClick={props.goToSymptom}
-                  emptyMessage=""
-                />
-              </Section>
-            )
-          : null}
+      {c.stages.length > 1 ? (
+        c.stages.map((stage) =>
+          stage.symptoms.length ? (
+            <Section
+              key={stage.id ?? 'stage'}
+              title={`Stage: ${stage.id}`}
+              mt={1}
+            >
+              {stage.description ? <Box mb={1}>{stage.description}</Box> : null}
+              <BandedList
+                entries={stage.symptoms.map((s) => ({
+                  id: s.id,
+                  name: s.name,
+                  bandValue: s.frequency,
+                }))}
+                bands={FREQUENCY_BANDS}
+                onClick={props.goToSymptom}
+                emptyMessage=""
+              />
+            </Section>
+          ) : null,
+        )
+      ) : (c.stages[0]?.symptoms ?? c.symptoms).length ? (
+        <Section title="Symptoms" mt={1}>
+          <BandedList
+            entries={(c.stages[0]?.symptoms ?? c.symptoms).map((s) => ({
+              id: s.id,
+              name: s.name,
+              bandValue: s.frequency,
+            }))}
+            bands={FREQUENCY_BANDS}
+            onClick={props.goToSymptom}
+            emptyMessage=""
+          />
+        </Section>
+      ) : null}
 
       {c.cures.length || c.od_cures?.length ? (
         <Section
@@ -820,7 +819,12 @@ const ConditionDetail = (props: {
 
       {c.complications.length ? (
         <Section title="Complications" mt={1}>
-          <Box style={{ display: 'grid', gridTemplateColumns: 'max-content max-content 1fr' }}>
+          <Box
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'max-content max-content 1fr',
+            }}
+          >
             {[...c.complications]
               .sort((a, b) => a.cause_name.localeCompare(b.cause_name))
               .flatMap((g, idx) => {
@@ -857,7 +861,10 @@ const ConditionDetail = (props: {
                   >
                     —
                   </Box>,
-                  <Box key={`${groupKey}-items`} style={{ marginBottom: '2px' }}>
+                  <Box
+                    key={`${groupKey}-items`}
+                    style={{ marginBottom: '2px' }}
+                  >
                     {[...g.conditions]
                       .sort((a, b) => a.name.localeCompare(b.name))
                       .map((cond) => (
@@ -933,7 +940,9 @@ const SymptomDetail = (props: {
   const { s } = props;
   return (
     <Section title={s.name} fill scrollable>
-      {s.clinical_description ? <Box mb={1}>{s.clinical_description}</Box> : null}
+      {s.clinical_description ? (
+        <Box mb={1}>{s.clinical_description}</Box>
+      ) : null}
 
       <Section title="Causes" mt={1}>
         <BandedList
@@ -1002,8 +1011,7 @@ const ReagentTab = (props: {
         ) : props.selectedId ? (
           <Section fill>
             <Box color="bad">
-              No data for "{props.selectedId}". Pick a reagent from the
-              index.
+              No data for "{props.selectedId}". Pick a reagent from the index.
             </Box>
           </Section>
         ) : (
@@ -1063,10 +1071,7 @@ const ReagentDetail = (props: {
               <Box color="average" bold inline mr={1}>
                 ≥ {s.threshold}u →
               </Box>
-              <Button
-                compact
-                onClick={() => props.goToCondition(s.id)}
-              >
+              <Button compact onClick={() => props.goToCondition(s.id)}>
                 {s.name}
               </Button>
             </Box>
@@ -1090,10 +1095,7 @@ const ReagentDetail = (props: {
               <Box color="label" inline mx={1}>
                 →
               </Box>
-              <Button
-                compact
-                onClick={() => props.goToCondition(x.id)}
-              >
+              <Button compact onClick={() => props.goToCondition(x.id)}>
                 {x.name}
               </Button>
             </Box>
@@ -1110,9 +1112,7 @@ const ReagentDetail = (props: {
             {r.overdose.condition_id && r.overdose.condition_name ? (
               <Button
                 compact
-                onClick={() =>
-                  props.goToCondition(r.overdose!.condition_id!)
-                }
+                onClick={() => props.goToCondition(r.overdose!.condition_id!)}
               >
                 {r.overdose.condition_name}
               </Button>
@@ -1170,10 +1170,7 @@ const ReagentDetail = (props: {
                     {ing.amount}u
                   </Box>
                   <Box inline ml="2px">
-                    <Button
-                      compact
-                      onClick={() => props.goToReagent(ing.id)}
-                    >
+                    <Button compact onClick={() => props.goToReagent(ing.id)}>
                       {ing.name}
                     </Button>
                   </Box>
@@ -1188,9 +1185,7 @@ const ReagentDetail = (props: {
               {rcp.distilling ? (
                 <Box color="grey" fontSize="0.85em" ml={1}>
                   Distilled
-                  {rcp.temp_min
-                    ? ` at ${rcp.temp_min}-${rcp.temp_max} K`
-                    : ''}
+                  {rcp.temp_min ? ` at ${rcp.temp_min}-${rcp.temp_max} K` : ''}
                 </Box>
               ) : null}
               {rcp.catalysts.length ? (
@@ -1313,13 +1308,25 @@ const TIER_COLORS: Record<string, string> = {
 
 const outcomeBandFor = (o: CauseOutcome): OutcomeBand => {
   if (o.requires_present) {
-    return { match: `present:${o.requires_present}`, short: `Always (${o.requires_present})`, color: 'bad' };
+    return {
+      match: `present:${o.requires_present}`,
+      short: `Always (${o.requires_present})`,
+      color: 'bad',
+    };
   }
   if (o.requires_absent) {
-    return { match: `absent:${o.requires_absent}`, short: `Always (No ${o.requires_absent})`, color: 'bad' };
+    return {
+      match: `absent:${o.requires_absent}`,
+      short: `Always (No ${o.requires_absent})`,
+      color: 'bad',
+    };
   }
   if (o.tier) {
-    return { match: `tier:${o.tier}`, short: o.tier, color: TIER_COLORS[o.tier] || 'label' };
+    return {
+      match: `tier:${o.tier}`,
+      short: o.tier,
+      color: TIER_COLORS[o.tier] || 'label',
+    };
   }
   const fallback = CASCADE_BANDS.find((b) => b.match === o.band);
   if (fallback) return fallback;
@@ -1359,7 +1366,10 @@ const CauseDetail = (props: {
     orderedBands.push(b);
   }
   for (const d of decorated) {
-    if ((d.o.requires_present || d.o.requires_absent) && !seenMatch.has(d.band.match)) {
+    if (
+      (d.o.requires_present || d.o.requires_absent) &&
+      !seenMatch.has(d.band.match)
+    ) {
       seenMatch.add(d.band.match);
       orderedBands.push(d.band);
     }
@@ -1397,7 +1407,10 @@ const CauseDetail = (props: {
                 >
                   {band.short}
                 </Box>,
-                <Box key={`${band.match}-items`} style={{ marginBottom: '2px' }}>
+                <Box
+                  key={`${band.match}-items`}
+                  style={{ marginBottom: '2px' }}
+                >
                   {inBand.map((d) => (
                     <Button
                       key={`${d.o.id}-${d.band.match}`}
@@ -1412,7 +1425,12 @@ const CauseDetail = (props: {
               );
             }
             return (
-              <Box style={{ display: 'grid', gridTemplateColumns: 'max-content 1fr' }}>
+              <Box
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'max-content 1fr',
+                }}
+              >
                 {cells}
               </Box>
             );
@@ -1484,7 +1502,9 @@ const SurgeryDetail = (props: {
       {s.description ? <Box mb={1}>{s.description}</Box> : null}
       {s.body_region ? (
         <LabeledList>
-          <LabeledList.Item label="Body region">{s.body_region}</LabeledList.Item>
+          <LabeledList.Item label="Body region">
+            {s.body_region}
+          </LabeledList.Item>
         </LabeledList>
       ) : null}
 

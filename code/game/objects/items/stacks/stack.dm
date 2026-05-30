@@ -52,7 +52,9 @@
 
 /obj/item/stack/Destroy()
 	if (src && usr && usr.check_current_machine(src))
-		usr << browse(null, "window=stack")
+		// DQEdit Start — stack window is TGUI now; close via SStgui
+		SStgui.close_uis(src)
+		// DQEdit End
 	if(islist(synths))
 		synths.Cut()
 	return ..()

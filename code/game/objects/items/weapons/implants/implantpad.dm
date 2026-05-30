@@ -47,51 +47,48 @@
 	return
 
 
+// DQEdit Start — TGUI migration. attack_self opens ImplantPad.tsx; the
+// Topic tracking_id stepper moves to tgui_act.
 /obj/item/implantpad/attack_self(mob/user)
 	. = ..(user)
 	if(.)
 		return TRUE
-	user.set_machine(src)
-	var/dat = span_bold("Implant Mini-Computer:") + "<HR>"
-	if (src.case)
-		if(src.case.imp)
-			if(istype(src.case.imp, /obj/item/implant))
-				dat += src.case.imp.get_data()
-				if(istype(src.case.imp, /obj/item/implant/tracking))
-					dat += {"ID (1-100):
-					<A href='byond://?src=\ref[src];tracking_id=-10'>-</A>
-					<A href='byond://?src=\ref[src];tracking_id=-1'>-</A> [case.imp:id]
-					<A href='byond://?src=\ref[src];tracking_id=1'>+</A>
-					<A href='byond://?src=\ref[src];tracking_id=10'>+</A><BR>"}
-		else
-			dat += "The implant casing is empty."
-	else
-		dat += "Please insert an implant casing!"
-	user << browse("<html>[dat]</html>", "window=implantpad")
-	onclose(user, "implantpad")
-	return
+	tgui_interact(user)
 
+/obj/item/implantpad/tgui_interact(mob/user, datum/tgui/ui)
+	ui = SStgui.try_update_ui(user, src, ui)
+	if(!ui)
+		ui = new(user, src, "ImplantPad", "Implant Mini-Computer")
+		ui.open()
 
-/obj/item/implantpad/Topic(href, href_list)
-	..()
-	if (usr.stat)
+/obj/item/implantpad/tgui_data(mob/user)
+	var/list/data = list()
+	data["has_case"] = !!case
+	data["has_implant"] = !!(case?.imp)
+	data["implant_info"] = ""
+	data["is_tracking"] = FALSE
+	data["tracking_id"] = 0
+	if(case?.imp && istype(case.imp, /obj/item/implant))
+		data["implant_info"] = case.imp.get_data()
+		if(istype(case.imp, /obj/item/implant/tracking))
+			var/obj/item/implant/tracking/T = case.imp
+			data["is_tracking"] = TRUE
+			data["tracking_id"] = T.id
+	return data
+
+/obj/item/implantpad/tgui_act(action, list/params)
+	. = ..()
+	if(.)
 		return
-	if ((usr.contents.Find(src)) || ((in_range(src, usr) && istype(src.loc, /turf))))
-		usr.set_machine(src)
-		if (href_list["tracking_id"])
-			var/obj/item/implant/tracking/T = src.case.imp
-			T.id += text2num(href_list["tracking_id"])
-			T.id = min(1000, T.id)
-			T.id = max(1, T.id)
-
-		if (istype(src.loc, /mob))
-			attack_self(src.loc)
-		else
-			for(var/mob/M in viewers(1, src))
-				if (M.client)
-					src.attack_self(M)
-		src.add_fingerprint(usr)
-	else
-		usr << browse(null, "window=implantpad")
-		return
-	return
+	if(usr.stat)
+		return TRUE
+	add_fingerprint(usr)
+	switch(action)
+		if("tracking_id")
+			if(!istype(case?.imp, /obj/item/implant/tracking))
+				return TRUE
+			var/obj/item/implant/tracking/T = case.imp
+			T.id += text2num(params["delta"])
+			T.id = clamp(T.id, 1, 1000)
+			return TRUE
+// DQEdit End

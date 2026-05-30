@@ -168,7 +168,11 @@ ADMIN_VERB(recipe_dump, R_SERVER, "Generate Recipe Dump", "Dumps food and drink 
 		if(icon_to_give)
 			var/image_path = "recipe-[ckey(food_recipes[Rp]["Result"])].png"
 			html += "<td><img src='imgrecipes/[image_path]' /></td>"
-			user << browse(icon_to_give, "window=picture;file=[image_path];display=0")
+			// DQEdit Start — push image to client cache via browse_rsc (the
+			// correct resource primitive); the legacy browse(...; display=0)
+			// here was using the browse channel just to write a cache file.
+			user << browse_rsc(icon_to_give, image_path)
+			// DQEdit End
 		else
 			html += "<td>No<br>Image</td>"
 
@@ -237,7 +241,10 @@ ADMIN_VERB(recipe_dump, R_SERVER, "Generate Recipe Dump", "Dumps food and drink 
 		html += "</tr>"
 
 	html += "</table></body></html>"
-	user << browse(html, "window=recipes;file=recipes_food.html;display=0")
+	// DQEdit Start — write HTML to a cache file via browse_rsc + a temp file.
+	text2file(html, "recipes_food.html")
+	user << browse_rsc(file("recipes_food.html"), "recipes_food.html")
+	// DQEdit End
 
 	//Drink Output
 	html = "<head>\
@@ -286,6 +293,9 @@ ADMIN_VERB(recipe_dump, R_SERVER, "Generate Recipe Dump", "Dumps food and drink 
 		html += "</tr>"
 
 	html += "</table></body></html>"
-	user << browse(html, "window=recipes;file=recipes_drinks.html;display=0")
+	// DQEdit Start — write HTML to a cache file via browse_rsc + a temp file.
+	text2file(html, "recipes_drinks.html")
+	user << browse_rsc(file("recipes_drinks.html"), "recipes_drinks.html")
+	// DQEdit End
 
 	to_chat(user, span_notice("In your byond cache, recipe-xxx.png files and recipes_drinks.html and recipes_food.html now exist. Place recipe-xxx.png files in a subfolder named 'imgrecipes' wherever you put them. The file will take a food.css or drinks.css file if in the same path."))

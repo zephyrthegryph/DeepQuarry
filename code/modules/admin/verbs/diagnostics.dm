@@ -36,9 +36,8 @@ ADMIN_VERB(air_report, R_DEBUG, "Show Air Report", "Displays the current atmos s
 	Tile Update: [length(SSair.tiles_to_update)]<BR>
 "}
 
-	var/datum/browser/popup = new(user, "airreport", "Airreport")
-	popup.set_content(output)
-	popup.open()
+	// DQEdit — structured TGUI AdminReport.
+	dq_admin_report_html(user, "Airreport", output)
 
 ADMIN_VERB(radio_report, R_DEBUG, "Radio report", "Displays a radio report.", ADMIN_CATEGORY_DEBUG_INVESTIGATE)
 	var/output = "<b>Radio Report</b><hr>"
@@ -60,9 +59,8 @@ ADMIN_VERB(radio_report, R_DEBUG, "Radio report", "Displays a radio report.", AD
 					continue
 				output += "&nbsp;&nbsp;&nbsp;&nbsp;[device]<br>"
 
-	var/datum/browser/popup = new(user, "radioreport", "Radioreport")
-	popup.set_content(output)
-	popup.open()
+	// DQEdit — structured TGUI AdminReport.
+	dq_admin_report_html(user, "Radioreport", output)
 	feedback_add_details("admin_verb","RR") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(reload_admins, R_SERVER, "Reload Admins", "Reloads admins from the file or database.", ADMIN_CATEGORY_DEBUG_SERVER)

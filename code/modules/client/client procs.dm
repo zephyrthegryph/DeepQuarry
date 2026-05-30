@@ -716,9 +716,16 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		return TRUE
 
 /client/proc/disconnect_with_message(message = "You have been intentionally disconnected by the server.<br>This may be for security or administrative reasons.")
-	message = "<head><title>You Have Been Disconnected</title></head><body><hr><center>" + span_bold("[message]") + "</center><hr><br>If you feel this is in error, you can contact an administrator out-of-game (for example, on Discord).</body>"
+	// DQEdit Start — disconnect overlay via to_chat + window_flash (no browse).
+	// Pre-disconnect popup windows can't reliably use TGUI: the qdel(src)
+	// below tears down the client before any TGUI window has time to
+	// render, and TGUI windows are owned by the client that's about to
+	// die. Plain chat survives, and the window_flash grabs attention.
 	window_flash(src)
-	src << browse("<html>[message]</html>","window=dropmessage;size=480x360;can_close=1")
+	to_chat(src, span_userdanger("You have been disconnected from the server."))
+	to_chat(src, span_warning(message))
+	to_chat(src, span_warning("If you feel this is in error, you can contact an administrator out-of-game (for example, on Discord)."))
+	// DQEdit End
 	qdel(src)
 
 /client/verb/toggle_fullscreen()

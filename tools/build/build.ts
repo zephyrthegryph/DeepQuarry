@@ -243,14 +243,23 @@ export const DmTestTarget = new Juke.Target({
       dmbFile: `${DME_NAME}.test.dmb`,
       namedDmVersion: get(DmVersionParameter),
     };
-    await DreamDaemon(
-      options,
-      '-close',
-      '-trusted',
-      '-verbose',
-      '-params',
-      'log-directory=ci',
-    );
+    // DreamDaemon on Windows exits non-zero even on a clean test run
+    // (the world qdels itself which BYOND reports as abnormal exit).
+    // The authoritative success signal is data/logs/ci/clean_run.lk
+    // written by world.dm:488, so swallow the exit code and check
+    // that file instead.
+    try {
+      await DreamDaemon(
+        options,
+        '-close',
+        '-trusted',
+        '-verbose',
+        '-params',
+        'log-directory=ci',
+      );
+    } catch (err) {
+      // Swallow — clean_run.lk check below is the real verdict.
+    }
     Juke.rm('*.test.*');
     try {
       const cleanRun = fs.readFileSync('data/logs/ci/clean_run.lk', 'utf-8');

@@ -195,10 +195,12 @@ ADMIN_VERB(cmd_display_del_log, R_DEBUG, "Display del() Log", "Display del's log
 
 	dellog += "</ol>"
 
-	user << browse("<html>[dellog.Join()]</html>", "window=dellog")
+	// DQEdit — structured TGUI AdminReport.
+	dq_admin_report_html(user, "qdel() Log", dellog.Join())
 
 ADMIN_VERB(cmd_display_init_log, R_DEBUG, "Display Initialize() Log", "Displays a list of things that didn't handle Initialize() properly.", ADMIN_CATEGORY_DEBUG_INVESTIGATE)
-	user << browse("<html>[replacetext(SSatoms.InitLog(), "\n", "<br>")]</html>", "window=initlog")
+	// DQEdit — structured TGUI AdminReport.
+	dq_admin_report_html(user, "Initialize() Log", replacetext(SSatoms.InitLog(), "\n", "<br>"))
 
 ADMIN_VERB(cmd_display_overlay_log, R_DEBUG, "Display overlay Log", "Display SSoverlays log of everything that's passed through it.", ADMIN_CATEGORY_DEBUG_INVESTIGATE)
 	render_stats(SSoverlays.stats, user)
@@ -213,7 +215,8 @@ ADMIN_VERB(cmd_display_overlay_log, R_DEBUG, "Display overlay Log", "Display SSo
 		lines += "[entry] => [num2text(data[STAT_ENTRY_TIME], 10)]ms ([data[STAT_ENTRY_COUNT]]) (avg:[num2text(data[STAT_ENTRY_TIME]/(data[STAT_ENTRY_COUNT] || 1), 99)])"
 
 	if (user)
-		user << browse("<html><ol><li>[lines.Join("</li><li>")]</li></ol></html>", "window=[url_encode("stats:\ref[stats]")]")
+		// DQEdit — structured TGUI AdminReport.
+		dq_admin_report_lines(user, "Stats", lines)
 	else
 		. = lines.Join("\n")
 

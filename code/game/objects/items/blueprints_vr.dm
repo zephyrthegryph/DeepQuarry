@@ -193,10 +193,8 @@
 		. += "<a href='byond://?src=[REF(src)];view_legend=1'><< Back</a>"
 		. += view_station_wire_set(user, legend)
 
-	var/datum/browser/popup = new(user, "blueprints", "[src]", 700, 500)
-	popup.set_content(.)
-	popup.open()
-	onclose(user, "blueprints")
+	// DQEdit — structured TGUI AdminReport; byond:// links forwarded to host.
+	dq_admin_report_html(user, "[src]", ., src)
 
 /obj/item/wire_reader/Topic(href, href_list)
 	if(..())
@@ -271,10 +269,8 @@
 			//legend is a wireset
 			. += "<a href='byond://?src=[REF(src)];view_legend=1'><< Back</a>"
 			. += view_wire_set(user, legend)
-	var/datum/browser/popup = new(user, "blueprints", "[src]", 700, 500)
-	popup.set_content(.)
-	popup.open()
-	onclose(user, "blueprints")
+	// DQEdit — structured TGUI AdminReport; byond:// links forwarded to host.
+	dq_admin_report_html(user, "[src]", ., src)
 
 
 /obj/item/areaeditor/blueprints/Topic(href, href_list)

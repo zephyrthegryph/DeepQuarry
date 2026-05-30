@@ -104,8 +104,9 @@
 		hazard_pickup_chance = initial(hazard_pickup_chance)
 		hazard_drop_chance = initial(hazard_drop_chance)
 		movement_cooldown = initial(movement_cooldown)
-		ai_holder.base_wander_delay = initial(ai_holder.base_wander_delay)
-		ai_holder.wander = FALSE
+		if(ai_holder)
+			ai_holder.base_wander_delay = initial(ai_holder.base_wander_delay)
+			ai_holder.wander = FALSE
 		post_restless_tired = 250
 		update_icon()
 	else
@@ -113,14 +114,15 @@
 		hazard_pickup_chance *= 1.5
 		hazard_drop_chance *= 1.5
 		movement_cooldown = -1
-		ai_holder.base_wander_delay = 2
-		ai_holder.wander_delay = 2
-		ai_holder.wander = TRUE
+		if(ai_holder)
+			ai_holder.base_wander_delay = 2
+			ai_holder.wander_delay = 2
+			ai_holder.wander = TRUE
 		update_icon()
 
 /mob/living/simple_mob/vore/overmap/spacewhale/update_icon()
 	. = ..()
-	if(child_om_marker.known == TRUE)
+	if(child_om_marker?.known == TRUE)
 		if(restless)
 			child_om_marker.icon_state = "space_whale_restless"
 			visible_message(span_notice("\The [child_om_marker.name] ripples excitedly."))

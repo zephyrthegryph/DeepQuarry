@@ -64,22 +64,32 @@
 		qdel(src)
 		return
 
-	var/dat = span_bold("There are [src.uses] bloody runes on the parchment.") + "<BR>"
-	dat += "Please choose the chant to be imbued into the fabric of reality.<BR>"
-	dat += "<HR>"
-	dat += "<A href='byond://?src=\ref[src];rune=newtome'>N'ath reth sh'yro eth d'raggathnor!</A> - Allows you to summon a new arcane tome.<BR>"
-	dat += "<A href='byond://?src=\ref[src];rune=teleport'>Sas'so c'arta forbici!</A> - Allows you to move to a rune with the same last word.<BR>"
-	dat += "<A href='byond://?src=\ref[src];rune=emp'>Ta'gh fara'qha fel d'amar det!</A> - Allows you to destroy technology in a short range.<BR>"
-	dat += "<A href='byond://?src=\ref[src];rune=conceal'>Kla'atu barada nikt'o!</A> - Allows you to conceal the runes you placed on the floor.<BR>"
-	dat += "<A href='byond://?src=\ref[src];rune=communicate'>O bidai nabora se'sma!</A> - Allows you to coordinate with others of your cult.<BR>"
-	dat += "<A href='byond://?src=\ref[src];rune=runestun'>Fuu ma'jin</A> - Allows you to stun a person by attacking them with the talisman.<BR>"
-	dat += "<A href='byond://?src=\ref[src];rune=armor'>Sa tatha najin</A> - Allows you to summon armoured robes and an unholy blade<BR>"
-	dat += "<A href='byond://?src=\ref[src];rune=soulstone'>Kal om neth</A> - Summons a soul stone<BR>"
-	dat += "<A href='byond://?src=\ref[src];rune=construct'>Da A'ig Osk</A> - Summons a construct shell for use with captured souls. It is too large to carry on your person.<BR>"
-
-	var/datum/browser/popup = new(usr, "id_com", "Talisman", 350, 200)
-	popup.set_content(dat)
-	popup.open()
+	// DQEdit — Talisman rune picker is just a labelled list-of-actions,
+	// which is exactly what tgui_input_list is for. Routes the user's
+	// pick straight to Topic(rune=<choice>) so the existing handler
+	// runs unchanged.
+	var/static/list/rune_options = list(
+		"N'ath reth sh'yro eth d'raggathnor! — summon a new arcane tome" = "newtome",
+		"Sas'so c'arta forbici! — move to a rune with the same last word" = "teleport",
+		"Ta'gh fara'qha fel d'amar det! — destroy technology in a short range" = "emp",
+		"Kla'atu barada nikt'o! — conceal the runes you placed on the floor" = "conceal",
+		"O bidai nabora se'sma! — coordinate with others of your cult" = "communicate",
+		"Fuu ma'jin — stun a person by attacking them with the talisman" = "runestun",
+		"Sa tatha najin — summon armoured robes and an unholy blade" = "armor",
+		"Kal om neth — summon a soul stone" = "soulstone",
+		"Da A'ig Osk — summon a construct shell" = "construct",
+	)
+	var/picked_label = tgui_input_list(
+		usr,
+		"There are [uses] bloody runes on the parchment. Choose the chant to imbue into the fabric of reality.",
+		"Talisman",
+		rune_options,
+	)
+	if(!picked_label)
+		return
+	var/rune = rune_options[picked_label]
+	if(rune)
+		Topic("rune=[rune]", list("rune" = rune))
 
 
 /obj/item/paper/talisman/Topic(href, href_list)

@@ -109,12 +109,9 @@ ADMIN_VERB(view_feedback, R_ADMIN|R_DEBUG|R_EVENT, "View Feedback", "Open the Fe
 
 // Used to show the full version of feedback in a seperate window.
 /datum/managed_browser/feedback_viewer/proc/display_big_feedback(author, text)
-	var/list/dat = list("<html><body>")
-	dat += replacetext(text, "\n", "<br>")
-
-	var/datum/browser/popup = new(my_client.mob, "feedback_big", "[author]'s Feedback", 480, 520, src)
-	popup.set_content(dat.Join())
-	popup.open()
+	var/dat = replacetext(text, "\n", "<br>")
+	// DQEdit — structured TGUI AdminReport.
+	dq_admin_report_html(my_client.mob, "[author]'s Feedback", dat, src)
 
 
 /datum/managed_browser/feedback_viewer/Topic(href, href_list[])

@@ -13,9 +13,13 @@
 /datum/unit_test/dq_quarry_tile_is_safe_plain_floor/Run()
 	var/turf/T = _dq_quarry_test_turf()
 	TEST_ASSERT_NOTNULL(T, "no test turf available on z=1")
-	// Force to a generic floor (no area-APC by default in test maps).
+	// Force to a generic floor and relocate to a fresh empty area so
+	// the area truly has no APC (the entry area carries a hand-placed
+	// APC for the map-test machinery requirement).
 	T = T.ChangeTurf(/turf/simulated/floor)
 	TEST_ASSERT_NOTNULL(T, "couldn't ChangeTurf to /turf/simulated/floor")
+	var/area/empty_area = new /area/space()
+	ChangeArea(T, empty_area)
 	var/safe = _quarry_tile_is_safe(T)
 	TEST_ASSERT(!safe, "expected plain floor in non-APC area to be unsafe (spawnable), got safe=[safe]; area=[get_area(T)?.type] apc=[get_area(T)?.apc]")
 
@@ -40,9 +44,11 @@
 /datum/unit_test/dq_quarry_spawn_pass_places_mobs
 
 /datum/unit_test/dq_quarry_spawn_pass_places_mobs/Run()
-	// Prepare an 8x8 patch of floor.
+	// Prepare an 8x8 patch of floor. Relocate to a fresh empty area
+	// so _quarry_tile_is_safe doesn't see the entry area's APC.
 	var/turf/anchor = _dq_quarry_test_turf()
 	TEST_ASSERT_NOTNULL(anchor, "no test turf available on z=1")
+	var/area/empty_area = new /area/space()
 	var/x0 = max(2, anchor.x - 3)
 	var/y0 = max(2, anchor.y - 3)
 	var/list/floors = list()
@@ -59,6 +65,7 @@
 				qdel(AM)
 			T = T.ChangeTurf(/turf/simulated/floor)
 			if(isturf(T))
+				ChangeArea(T, empty_area)
 				floors += T
 	TEST_ASSERT(length(floors) >= 16, "couldn't prepare patch; got [length(floors)] floors")
 

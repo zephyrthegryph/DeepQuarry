@@ -72,50 +72,8 @@
 
 
 
-/obj/machinery/computer/telecomms/traffic/attack_hand(mob/user as mob)
-	if(stat & (BROKEN|NOPOWER))
-		return
-	user.set_machine(src)
-	var/dat = "<TITLE>Telecommunication Traffic Control</TITLE><center><b>Telecommunications Traffic Control</b></center>"
-
-	switch(screen)
-
-
-		// --- Main Menu ---
-
-		if(0)
-			dat += "<br>[temp]<br>"
-			dat += "<br>Current Network: <a href='byond://?src=\ref[src];network=1'>[network]</a><br>"
-			if(servers.len)
-				dat += "<br>Detected Telecommunication Servers:<ul>"
-				for(var/obj/machinery/telecomms/T in servers)
-					dat += "<li><a href='byond://?src=\ref[src];viewserver=[T.id]'>\ref[T] [T.name]</a> ([T.id])</li>"
-				dat += "</ul>"
-				dat += "<br><a href='byond://?src=\ref[src];operation=release'>\[Flush Buffer\]</a>"
-
-			else
-				dat += "<br>No servers detected. Scan for servers: <a href='byond://?src=\ref[src];operation=scan'>\[Scan\]</a>"
-
-
-		// --- Viewing Server ---
-
-		if(1)
-			dat += "<br>[temp]<br>"
-			dat += "<center><a href='byond://?src=\ref[src];operation=mainmenu'>\[Main Menu\]</a>     <a href='byond://?src=\ref[src];operation=refresh'>\[Refresh\]</a></center>"
-			dat += "<br>Current Network: [network]"
-			dat += "<br>Selected Server: [SelectedServer.id]<br><br>"
-			dat += "<br><a href='byond://?src=\ref[src];operation=editcode'>\[Edit Code\]</a>"
-			dat += "<br>Signal Execution: "
-			if(SelectedServer.autoruncode)
-				dat += "<a href='byond://?src=\ref[src];operation=togglerun'>ALWAYS</a>"
-			else
-				dat += "<a href='byond://?src=\ref[src];operation=togglerun'>NEVER</a>"
-
-	var/datum/browser/popup = new(user, "traffic_control", "Traffic Control", 575, 400)
-	popup.set_content(dat)
-	popup.open()
-
-	temp = ""
+// DQEdit — structured TGUI Traffic Control (see
+// modular_dq/code/modules/admin/traffic_control_panel.dm).
 
 /obj/machinery/computer/telecomms/traffic/Topic(href, href_list)
 	if(..())

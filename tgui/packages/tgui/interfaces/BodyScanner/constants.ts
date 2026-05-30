@@ -77,11 +77,11 @@ export type DamageBand =
   | 'critical';
 
 export const BAND_INFO: Record<DamageBand, { label: string; color: string }> = {
-  uninjured: { label: 'Normal',   color: 'good' },
-  minor:     { label: 'Mild',     color: 'good' },
-  moderate:  { label: 'Moderate', color: 'average' },
-  severe:    { label: 'Severe',   color: 'bad' },
-  critical:  { label: 'Critical', color: 'bad' },
+  uninjured: { label: 'Normal', color: 'good' },
+  minor: { label: 'Mild', color: 'good' },
+  moderate: { label: 'Moderate', color: 'average' },
+  severe: { label: 'Severe', color: 'bad' },
+  critical: { label: 'Critical', color: 'bad' },
 };
 
 // Severity rank — higher = worse. Used by the occupant card to pick the
@@ -89,8 +89,8 @@ export const BAND_INFO: Record<DamageBand, { label: string; color: string }> = {
 // Condition row. Mirrors the DM-side _dq_band_rank helper.
 export const BAND_RANK: Record<DamageBand, number> = {
   uninjured: 0,
-  minor:     1,
-  moderate:  2,
-  severe:    3,
-  critical:  4,
+  minor: 1,
+  moderate: 2,
+  severe: 3,
+  critical: 4,
 };

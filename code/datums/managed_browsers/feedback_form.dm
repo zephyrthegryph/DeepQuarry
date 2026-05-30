@@ -16,6 +16,7 @@ GENERAL_PROTECT_DATUM(/datum/managed_browser/feedback_form)
 	title = "Server Feedback"
 	size_x = 480
 	size_y = 520
+	display_when_created = FALSE
 	var/feedback_topic = null
 	var/feedback_body = null
 	var/feedback_hide_author = FALSE
@@ -23,115 +24,89 @@ GENERAL_PROTECT_DATUM(/datum/managed_browser/feedback_form)
 /datum/managed_browser/feedback_form/New(client/new_client)
 	feedback_topic = CONFIG_GET(str_list/sqlite_feedback_topics)[1]
 	..(new_client)
+	display()
 
 /datum/managed_browser/feedback_form/Destroy()
 	if(my_client)
 		my_client.feedback_form = null
+	SStgui.close_uis(src)
 	return ..()
 
 // Privacy option is allowed if both the config allows it, and the pepper file exists and isn't blank.
 /datum/managed_browser/feedback_form/proc/can_be_private()
 	return CONFIG_GET(flag/sqlite_feedback_privacy) && SSsqlite.get_feedback_pepper()
 
+// DQEdit Start — TGUI migration. Replaces the legacy /datum/browser
+// renderer with a structured TGUI feedback form. The Topic() href
+// dispatch and get_html() are gone; everything flows through tgui_act.
 /datum/managed_browser/feedback_form/display()
 	if(!my_client)
 		return
 	if(!SSsqlite.can_submit_feedback(my_client))
 		return
-	..()
+	tgui_interact(my_client.mob)
 
-// Builds the window for players to review their feedback.
-/datum/managed_browser/feedback_form/get_html()
-	var/list/dat = list("<html><body>")
-	dat += "<center>"
-	var/dat_text = "Here, you can write some feedback for the server.<br>"
-	dat_text += "Note that HTML is NOT supported!<br>"
-	dat_text += "Click the edit button to begin writing.<br>"
+/datum/managed_browser/feedback_form/tgui_state(mob/user)
+	return GLOB.tgui_always_state
 
-	dat_text += "Your feedback is currently [length(feedback_body)]/[MAX_FEEDBACK_LENGTH] letters long."
-	dat += span_normal(dat_text)
-	dat += "<hr>"
+/datum/managed_browser/feedback_form/tgui_interact(mob/user, datum/tgui/ui)
+	ui = SStgui.try_update_ui(user, src, ui)
+	if(!ui)
+		ui = new(user, src, "FeedbackForm", title)
+		ui.open()
 
-	dat += "<h2>Preview</h2></center>"
+/datum/managed_browser/feedback_form/tgui_data(mob/user)
+	var/list/data = list()
+	data["topic"] = feedback_topic
+	data["body"] = feedback_body || ""
+	data["hide_author"] = feedback_hide_author
+	data["author_ckey"] = my_client?.ckey
+	data["author_hashed"] = my_client ? md5(ckey(lowertext(my_client.ckey + (SSsqlite.get_feedback_pepper() || "")))) : ""
+	data["can_be_private"] = can_be_private() ? TRUE : FALSE
+	data["topics"] = CONFIG_GET(str_list/sqlite_feedback_topics)
+	data["max_length"] = MAX_FEEDBACK_LENGTH
+	data["cooldown_days"] = CONFIG_GET(number/sqlite_feedback_cooldown)
+	return data
 
-	dat += "Author: "
-
-	if(can_be_private())
-		if(!feedback_hide_author)
-			dat += "[my_client.ckey] "
-			dat += span_linkOn(span_bold("Visible"))
-			dat += " | "
-			dat += href(src, list("feedback_hide_author" = 1), "Hashed")
-		else
-			dat += "[md5(ckey(lowertext(my_client.ckey + SSsqlite.get_feedback_pepper())))] "
-			dat += href(src, list("feedback_hide_author" = 0), "Visible")
-			dat += " | "
-			dat += span_linkOn(span_bold("Hashed"))
-	else
-		dat += my_client.ckey
-	dat += "<br>"
-
-	var/list/sqlite_feedback_topics = CONFIG_GET(str_list/sqlite_feedback_topics)
-	if(sqlite_feedback_topics.len > 1)
-		dat += "Topic: [href(src, list("feedback_choose_topic" = 1), feedback_topic)]<br>"
-	else
-		dat += "Topic: [sqlite_feedback_topics[1]]<br>"
-
-	dat += "<br>"
-	if(feedback_body)
-		dat += replacetext(feedback_body, "\n", "<br>") // So newlines will look like they work in the preview.
-	else
-		dat += span_italics("\[Feedback goes here...\]")
-	dat += "<br>"
-	dat += href(src, list("feedback_edit_body" = 1), "Edit")
-	dat += "<hr>"
-
-	if(CONFIG_GET(number/sqlite_feedback_cooldown))
-		dat += "<i>Please note that you will have to wait [CONFIG_GET(number/sqlite_feedback_cooldown)] day\s before \
-		being able to write more feedback after submitting.</i><br>"
-
-	dat += href(src, list("feedback_submit" = 1), "Submit")
-	dat += "</body></html>"
-	return dat.Join()
-
-/datum/managed_browser/feedback_form/Topic(href, href_list[])
+/datum/managed_browser/feedback_form/tgui_act(action, list/params, datum/tgui/ui)
+	. = ..()
+	if(.)
+		return
 	if(!my_client)
-		return FALSE
-
-	if(href_list["feedback_edit_body"])
-		// This is deliberately not sanitized here, and is instead checked when hitting the submission button,
-		// as we want to give the user a chance to fix it without needing to rewrite the whole thing.
-		feedback_body = tgui_input_text(my_client, "Please write your feedback here.", "Feedback Body", feedback_body, multiline = TRUE, prevent_enter = TRUE)
-		display() // Refresh the window with new information.
 		return
 
-	if(href_list["feedback_hide_author"])
-		if(!can_be_private())
-			feedback_hide_author = FALSE
-		else
-			feedback_hide_author = text2num(href_list["feedback_hide_author"])
-		display()
-		return
+	switch(action)
+		if("edit_body")
+			feedback_body = tgui_input_text(my_client, "Please write your feedback here.", "Feedback Body", feedback_body, multiline = TRUE, prevent_enter = TRUE)
+			return TRUE
 
-	if(href_list["feedback_choose_topic"])
-		feedback_topic = tgui_input_list(my_client, "Choose the topic you want to submit your feedback under.", "Feedback Topic", CONFIG_GET(str_list/sqlite_feedback_topics))
-		display()
-		return
+		if("set_hide_author")
+			if(!can_be_private())
+				feedback_hide_author = FALSE
+			else
+				feedback_hide_author = !!params["hide"]
+			return TRUE
 
-	if(href_list["feedback_submit"])
-		// Do some last minute validation, and tell the user if something goes wrong,
-		// so we don't wipe out their ten thousand page essay due to having a few too many characters.
-		if(length(feedback_body) > MAX_FEEDBACK_LENGTH)
-			to_chat(my_client, span_warning("Your feedback is too long, at [length(feedback_body)] characters, where as the \
-			limit is [MAX_FEEDBACK_LENGTH]. Please shorten it and try again."))
-			return
+		if("choose_topic")
+			var/picked = tgui_input_list(my_client, "Choose the topic you want to submit your feedback under.", "Feedback Topic", CONFIG_GET(str_list/sqlite_feedback_topics))
+			if(picked)
+				feedback_topic = picked
+			return TRUE
 
-		var/text = sanitize(feedback_body, max_length = 0, encode = TRUE, trim = FALSE, extra = FALSE)
-		if(!text) // No text, or it was super invalid.
-			to_chat(my_client, span_warning("It appears you didn't write anything, or it was invalid."))
-			return
+		if("submit")
+			if(length(feedback_body) > MAX_FEEDBACK_LENGTH)
+				to_chat(my_client, span_warning("Your feedback is too long, at [length(feedback_body)] characters, where as the \
+				limit is [MAX_FEEDBACK_LENGTH]. Please shorten it and try again."))
+				return TRUE
 
-		if(tgui_alert(my_client, "Are you sure you want to submit your feedback?", "Confirm Submission", list("No", "Yes")) == "Yes")
+			var/text = sanitize(feedback_body, max_length = 0, encode = TRUE, trim = FALSE, extra = FALSE)
+			if(!text)
+				to_chat(my_client, span_warning("It appears you didn't write anything, or it was invalid."))
+				return TRUE
+
+			if(tgui_alert(my_client, "Are you sure you want to submit your feedback?", "Confirm Submission", list("No", "Yes")) != "Yes")
+				return TRUE
+
 			var/author_text = my_client.ckey
 			if(can_be_private() && feedback_hide_author)
 				author_text = md5(my_client.ckey + SSsqlite.get_feedback_pepper())
@@ -140,7 +115,9 @@ GENERAL_PROTECT_DATUM(/datum/managed_browser/feedback_form)
 			if(!success)
 				to_chat(my_client, span_warning("Something went wrong while inserting your feedback into the database. Please try again. \
 				If this happens again, you should contact a developer."))
-				return
+				return TRUE
 
-			my_client.mob << browse(null, "window=[browser_id]") // Closes the window.
+			SStgui.close_uis(src)
 			qdel(src)
+			return TRUE
+// DQEdit End

@@ -111,32 +111,67 @@
 	var/volume = 0.5			// Client's volume modifier. Actual volume = "volume * source_volume"
 	var/client/owner			// Client this is actually running in
 	var/forced=0				// If true, current url overrides area media sources
-	var/playerstyle				// Choice of which player plugin to use
-	var/const/WINDOW_ID = "rpane.mediapanel"	// Which elem in skin.dmf to use
+	// DQEdit Start — media playback via TGUI MediaPlayer hosted in the
+	// hidden rpane.mediapanel skin element. The skin element stays
+	// invisible (is-visible=false); the TGUI's React bundle loads into
+	// it anyway and the HTML5 <audio> element plays audio regardless
+	// of CSS visibility. Replaces the legacy browse(player_html) +
+	// output("...:SetMusic") JS interop.
+	var/datum/tgui_window/media_window
+	var/const/WINDOW_ID = "rpane.mediapanel"
+	// DQEdit End
 
 /datum/media_manager/New(client/C)
 	ASSERT(istype(C))
 	src.owner = C
 
+/datum/media_manager/Destroy()
+	if(media_window)
+		media_window.close()
+		media_window = null
+	owner = null
+	return ..()
+
+/datum/media_manager/tgui_state(mob/user)
+	return GLOB.tgui_always_state
+
+/datum/media_manager/tgui_data(mob/user)
+	var/should_play = TRUE
+	if(owner?.prefs)
+		should_play = owner.prefs.read_preference(/datum/preference/toggle/play_jukebox) || url == ""
+	return list(
+		"url" = should_play ? url : "",
+		"start_time" = (world.time - start_time) / 10,
+		"volume" = volume * source_volume,
+	)
+
 // Actually pop open the player in the background.
 /datum/media_manager/proc/open()
-	if(!owner.prefs)
+	if(!owner)
 		return
-	if(isnum(owner.prefs.read_preference(/datum/preference/numeric/living/jukebox_volume)))
+	if(owner.prefs && isnum(owner.prefs.read_preference(/datum/preference/numeric/living/jukebox_volume)))
 		volume = owner.prefs.read_preference(/datum/preference/numeric/living/jukebox_volume) / 100
-	playerstyle = PLAYER_HTML5_HTML // we're in the 516 era baby
-	owner << browse(null, "window=[WINDOW_ID]")
-	owner << browse(playerstyle, "window=[WINDOW_ID]")
-	send_update()
 
-// Tell the player to play something via JS.
+	// Enable the hidden skin element so its BROWSER actually loads our
+	// assets — the 1x1 size keeps it invisible regardless of is-visible.
+	winset(owner, WINDOW_ID, "is-disabled=false;is-visible=true")
+	media_window = new(owner, WINDOW_ID)
+	media_window.initialize(
+		assets = list(get_asset_datum(/datum/asset/simple/tgui)),
+	)
+
+	var/datum/tgui/ui = SStgui.try_update_ui(owner.mob, src, null)
+	if(!ui)
+		ui = new(owner.mob, src, "MediaPlayer", window = media_window)
+		ui.closeable = FALSE
+		ui.open(preinitialized = TRUE)
+
+// Push a fresh state to the React side; it'll re-sync audio src/volume/time.
 /datum/media_manager/proc/send_update()
-	if(!owner.prefs)
+	if(!owner)
 		return
-	if(!owner.prefs.read_preference(/datum/preference/toggle/play_jukebox) && url != "")
-		return // Don't send anything other than a cancel to people with SOUND_STREAMING pref disabled
 	MP_DEBUG(span_green("Sending update to mediapanel ([url], [(world.time - start_time) / 10], [volume * source_volume])..."))
-	owner << output(list2params(list(url, (world.time - start_time) / 10, volume * source_volume)), "[WINDOW_ID]:SetMusic")
+	SStgui.update_uis(src)
 
 /datum/media_manager/proc/push_music(targetURL, targetStartTime, targetVolume)
 	if (url != targetURL || abs(targetStartTime - start_time) > 1 || abs(targetVolume - source_volume) > 0.1 /* 10% */)
