@@ -45,6 +45,8 @@
 			"id" = T.id,
 			"name" = T.display_name,
 			"description" = T.description,
+			"color" = T.color,
+			"icon" = T.icon_name,
 			"perks" = perk_paths,
 		)
 

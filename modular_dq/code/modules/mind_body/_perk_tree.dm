@@ -23,13 +23,24 @@ GLOBAL_LIST_INIT(all_perks, init_perks())
 	/// Short blurb shown beneath the tree name.
 	var/description = ""
 
+	/// Accent color for this tree's UI (hex). Used by the React panel for tab chip
+	/// backgrounds, perk-card borders, etc. Chosen for legibility against a dark TGUI
+	/// background, broadly themed off the department palette but de-conflicted (no two
+	/// trees share a color).
+	var/color = "#888888"
+
+	/// FontAwesome icon name for the tree's tab chip. Optional.
+	var/icon_name = null
+
 	/// Perks bucketed into this tree at init. Path → /datum/perk singleton.
 	var/list/perks
 
 /datum/perk_tree/body
 	id = PERK_TREE_BODY
 	display_name = "Body"
-	description = "Physical conditioning. Linear stat tweaks plus threshold perks at 3/6/9 spent points."
+	description = "Physical conditioning. Linear stat tweaks plus threshold perks at 3 / 6 / 9 spent points."
+	color = "#C0392B"
+	icon_name = "dumbbell"
 
 /datum/perk_tree/mind
 	abstract_type = /datum/perk_tree/mind
@@ -38,41 +49,57 @@ GLOBAL_LIST_INIT(all_perks, init_perks())
 	id = PERK_TREE_MIND_COMMAND
 	display_name = "Command"
 	description = "Leadership, presence, decisive judgement."
+	color = "#4A90E2"
+	icon_name = "star"
 
 /datum/perk_tree/mind/security
 	id = PERK_TREE_MIND_SECURITY
 	display_name = "Security"
 	description = "Threat reading, restraint training, situational reflexes."
+	color = "#E74C3C"
+	icon_name = "shield-halved"
 
 /datum/perk_tree/mind/engineering
 	id = PERK_TREE_MIND_ENGINEERING
 	display_name = "Engineering"
 	description = "Tooling, wiring, atmospherics, salvage."
+	color = "#E67E22"
+	icon_name = "screwdriver-wrench"
 
 /datum/perk_tree/mind/medical
 	id = PERK_TREE_MIND_MEDICAL
 	display_name = "Medical"
 	description = "Diagnosis, treatment, surgery, pharmacology."
+	color = "#27AE60"
+	icon_name = "stethoscope"
 
 /datum/perk_tree/mind/research
 	id = PERK_TREE_MIND_RESEARCH
 	display_name = "Research"
 	description = "Investigation, anomaly analysis, materials."
+	color = "#9B59B6"
+	icon_name = "flask"
 
 /datum/perk_tree/mind/cargo
 	id = PERK_TREE_MIND_CARGO
 	display_name = "Cargo"
 	description = "Logistics, requisitions, market knowledge."
+	color = "#D4A017"
+	icon_name = "box"
 
 /datum/perk_tree/mind/civilian
 	id = PERK_TREE_MIND_CIVILIAN
 	display_name = "Civilian"
 	description = "Social craft, service, hands-on trades."
+	color = "#1ABC9C"
+	icon_name = "users"
 
 /datum/perk_tree/mind/synthetic
 	id = PERK_TREE_MIND_SYNTHETIC
 	display_name = "Synthetic"
 	description = "Subsystem knowledge, network protocols, low-level diagnostics."
+	color = "#5D6D7E"
+	icon_name = "microchip"
 
 /proc/init_perk_trees()
 	. = list()
