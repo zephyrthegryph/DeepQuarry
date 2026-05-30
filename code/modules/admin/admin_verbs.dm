@@ -556,33 +556,25 @@ ADMIN_VERB(delbook, R_ADMIN, "Delete Book", "Permamently deletes a book from the
 		to_chat(user, span_warning("Unable to locate a library computer to use for book deleting."))
 		return
 
-	var/dat = "<HEAD><TITLE>Book Inventory Management</TITLE></HEAD><BODY>\n"
-	dat += "<h3>ADMINISTRATIVE MANAGEMENT</h3>"
-
+	// DQEdit Start — Delete Book panel now opens a structured TGUI panel.
+	var/list/book_rows = list()
+	var/error_msg = ""
 	if(!SSdbcore.IsConnected())
-		dat += span_red(span_bold("ERROR") + ": Unable to contact External Archive. Please contact your system administrator for assistance.")
+		error_msg = "Unable to contact External Archive. Please contact your system administrator for assistance."
 	else
-		dat += {"<A href='byond://?our_comp=\ref[our_comp];[HrefToken()];orderbyid=1'>(Order book by SS<sup>13</sup>BN)</A><BR><BR>
-		<table>
-		<tr><td><A href='byond://?our_comp=\ref[our_comp];[HrefToken()];sort=author>AUTHOR</A></td><td><A href='byond://?our_comp=\ref[our_comp];[HrefToken()];sort=title>TITLE</A></td><td><A href='byond://?our_comp=\ref[our_comp];[HrefToken()];sort=category>CATEGORY</A></td><td></td></tr>"}
 		var/datum/db_query/query = SSdbcore.NewQuery("SELECT id, author, title, category FROM library ORDER BY [our_comp.sortby]")
 		query.Execute()
-
 		while(query.NextRow())
-			var/id = query.item[1]
-			var/author = query.item[2]
-			var/title = query.item[3]
-			var/category = query.item[4]
-			dat += "<tr><td>[author]</td><td>[title]</td><td>[category]</td><td>"
-			dat += "<A href='byond://?our_comp=\ref[our_comp];[HrefToken()];delid=[id]'>\[Del\]</A>"
-			dat += "</td></tr>"
-		dat += "</table>"
-
+			book_rows += list(list(
+				"id" = "[query.item[1]]",
+				"author" = "[query.item[2]]",
+				"title" = "[query.item[3]]",
+				"category" = "[query.item[4]]",
+			))
 		qdel(query)
-
-	var/datum/browser/popup = new(user, "library", "Delete Book")
-	popup.set_content(dat)
-	popup.open()
+	var/datum/dq_delete_book_panel/panel = new(our_comp, book_rows, error_msg)
+	panel.tgui_interact(user.mob)
+	// DQEdit End
 
 ADMIN_VERB(toggle_spawning_with_recolour, R_ADMIN|R_EVENT|R_FUN, "Toggle Simple/Robot recolour verb", "Makes it so new robots/simple_mobs spawn with a verb to recolour themselves for this round. You must set them separately.", ADMIN_CATEGORY_SERVER_GAME)
 	var/which = tgui_alert(user, "Which do you want to toggle?", "Choose Recolour Toggle", list("Robot", "Simple Mob"))

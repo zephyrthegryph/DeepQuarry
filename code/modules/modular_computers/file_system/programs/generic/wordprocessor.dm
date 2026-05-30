@@ -74,7 +74,8 @@
 
 	switch(action)
 		if("PRG_txtrpeview")
-			show_browser(ui.user,"<HTML><HEAD><TITLE>[open_file]</TITLE></HEAD>[pencode2html(loaded_data)]</BODY></HTML>", "window=[open_file]")
+			// DQEdit — structured TGUI AdminReport.
+			dq_admin_report_html(ui.user, open_file, "[pencode2html(loaded_data)]")
 			return TRUE
 
 		if("PRG_taghelp")

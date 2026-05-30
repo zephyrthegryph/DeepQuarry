@@ -91,9 +91,8 @@ ADMIN_VERB(sec_camera_report, R_DEBUG, "Camera Report", "Gives a report of the c
 
 	output += "</ul>"
 
-	var/datum/browser/popup = new(user, "airreport", "Airreport", 1000, 500)
-	popup.set_content(output)
-	popup.open()
+	// DQEdit — structured TGUI AdminReport.
+	dq_admin_report_html(user, "Camera Report", output)
 	feedback_add_details("admin_verb","mCRP") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB_VISIBILITY(intercom_view, ADMIN_VERB_VISIBLITY_FLAG_LOCALHOST)

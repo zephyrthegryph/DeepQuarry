@@ -1123,9 +1123,8 @@
 	dat += span_bold("Global Vore Privacy is:") + " [eating_privacy_global ? span_green("Subtle") : span_red("Loud")]<br>"
 	dat += span_bold("Current active belly:") + " [vore_selected ? vore_selected.get_belly_name(TRUE) : "None"]<br>"
 	dat += span_bold("Belly rub target:") + " [belly_rub_target ? belly_rub_target : (vore_selected ? vore_selected.get_belly_name(TRUE) : "None")]<br>"
-	var/datum/browser/popup = new(user, "[name]mvp", "Vore Prefs: [src]", 300, 700, src)
-	popup.set_content(dat)
-	popup.open()
+	// DQEdit — structured TGUI AdminReport.
+	dq_admin_report_html(user, "Vore Prefs: [src]", dat, src)
 
 // Full screen belly overlays!
 /atom/movable/screen/fullscreen/belly

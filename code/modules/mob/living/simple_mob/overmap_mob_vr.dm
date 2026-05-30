@@ -133,6 +133,12 @@
 	if(!om_child_type)
 		log_and_message_admins("An improperly configured OM mob tried to spawn, and was deleted.")
 		return INITIALIZE_HINT_QDEL
+	// Maps with no overmap can still spawn overmap mobs (e.g. admin
+	// summon, unit tests). Skip the marker — there's nothing for it
+	// to render against, and creating one will QDEL through and take
+	// us with it via the marker's Destroy() QDEL_NULL(parent).
+	if(!using_map?.use_overmap)
+		return
 	if(!child_om_marker)
 		var/obj/effect/overmap/visitable/simplemob/C = new om_child_type(loc, src)
 		child_om_marker = C

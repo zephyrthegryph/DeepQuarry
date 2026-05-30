@@ -67,7 +67,9 @@ export const BodyScannerMainOrgansExternal = (props: {
                     !!o.status.dead && <Box color="bad">DEAD</Box>,
                   ])}
                   {reduceOrganStatus(
-                    o.implants.map((s) => (s.known ? s.name : 'Unknown object')),
+                    o.implants.map((s) =>
+                      s.known ? s.name : 'Unknown object',
+                    ),
                   )}
                 </Box>
               </Table.Cell>

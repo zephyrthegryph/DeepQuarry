@@ -95,67 +95,59 @@
 				new_frame.icon_state = "box_1"
 				qdel(src)
 
+	// DQEdit Start — TGUI migration. attack_hand opens Pacman2.tsx; Topic
+	// action handlers move to tgui_act.
 	attack_hand(mob/user as mob)
 		..()
-		if (!anchored)
+		if(!anchored)
 			return
-
-		interact(user)
+		tgui_interact(user)
 
 	attack_ai(mob/user as mob)
-		interact(user)
+		tgui_interact(user)
 
-	proc
-		interact(mob/user)
-			if (get_dist(src, user) > 1 )
-				if (!isAI(user))
-					user.machine = null
-					user << browse(null, "window=port_gen")
-					return
+	tgui_interact(mob/user, datum/tgui/ui)
+		ui = SStgui.try_update_ui(user, src, ui)
+		if(!ui)
+			ui = new(user, src, "Pacman2", name)
+			ui.open()
 
-			user.machine = src
+	tgui_data(mob/user)
+		var/list/data = list()
+		data["active"] = !!active
+		data["has_fuel"] = !!P
+		data["fuel"] = P ? P.air_contents.phoron : 0
+		data["power_output"] = power_output
+		data["power_gen"] = power_gen
+		data["heat"] = heat
+		data["emagged"] = !!emagged
+		return data
 
-			var/dat = text(span_bold("[name]") + "<br>")
-			if (active)
-				dat += text("Generator: <A href='byond://?src=\ref[src];action=disable'>On</A><br>")
-			else
-				dat += text("Generator: <A href='byond://?src=\ref[src];action=enable'>Off</A><br>")
-			if(P)
-				dat += text("Currently loaded phoron tank: [P.air_contents.phoron]<br>")
-			else
-				dat += text("No phoron tank currently loaded.<br>")
-			dat += text("Power output: <A href='byond://?src=\ref[src];action=lower_power'>-</A> [power_gen * power_output] <A href='byond://?src=\ref[src];action=higher_power'>+</A><br>")
-			dat += text("Heat: [heat]<br>")
-			dat += "<br><A href='byond://?src=\ref[src];action=close'>Close</A>"
-			user << browse("<html>[dat]</html>", "window=port_gen")
-
-	Topic(href, href_list)
-		if(..())
+	tgui_act(action, list/params)
+		. = ..()
+		if(.)
 			return
-
-		src.add_fingerprint(usr)
-		if(href_list["action"])
-			if(href_list["action"] == "enable")
+		add_fingerprint(usr)
+		switch(action)
+			if("enable")
 				if(!active && HasFuel())
 					active = 1
 					icon_state = "portgen1"
-					src.updateUsrDialog(usr)
-			if(href_list["action"] == "disable")
-				if (active)
+				return TRUE
+			if("disable")
+				if(active)
 					active = 0
 					icon_state = "portgen0"
-					src.updateUsrDialog(usr)
-			if(href_list["action"] == "lower_power")
-				if (power_output > 1)
+				return TRUE
+			if("lower_power")
+				if(power_output > 1)
 					power_output--
-					src.updateUsrDialog(usr)
-			if (href_list["action"] == "higher_power")
-				if (power_output < 4 || emagged)
+				return TRUE
+			if("higher_power")
+				if(power_output < 4 || emagged)
 					power_output++
-					src.updateUsrDialog(usr)
-			if (href_list["action"] == "close")
-				usr << browse(null, "window=port_gen")
-				usr.machine = null
+				return TRUE
+	// DQEdit End
 
 /obj/machinery/power/port_gen/pacman2/emag_act(remaining_uses, mob/user)
 	emagged = 1

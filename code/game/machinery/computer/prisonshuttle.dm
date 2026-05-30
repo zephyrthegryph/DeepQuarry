@@ -18,7 +18,6 @@ GLOBAL_VAR_INIT(prison_shuttle_timeleft, 0)
 	light_color = "#00ffff"
 	req_access = list(ACCESS_SECURITY)
 	circuit = /obj/item/circuitboard/prison_shuttle
-	var/temp = null
 	var/hacked = 0
 	var/allowedtocall = 0
 	var/prison_break = 0
@@ -26,6 +25,9 @@ GLOBAL_VAR_INIT(prison_shuttle_timeleft, 0)
 /obj/machinery/computer/prison_shuttle/attack_ai(mob/user as mob)
 	return src.attack_hand(user)
 
+// DQEdit Start — TGUI migration. Replaces the browse() + Topic dispatch
+// UI with PrisonShuttleConsole.tsx. Drops the `temp` "Shuttle sent"
+// notification state — the to_chat() notice already covers that flow.
 /obj/machinery/computer/prison_shuttle/attack_hand(mob/user as mob)
 	if(!src.allowed(user) && (!hacked))
 		to_chat(user, span_warning("Access Denied."))
@@ -37,61 +39,56 @@ GLOBAL_VAR_INIT(prison_shuttle_timeleft, 0)
 		return
 	user.set_machine(src)
 	post_signal("prison")
-	var/dat
-	if (src.temp)
-		dat = src.temp
-	else
-		dat += {"<BR><B>Prison Shuttle</B><HR>
-		\nLocation: [GLOB.prison_shuttle_moving_to_station || GLOB.prison_shuttle_moving_to_prison ? "Moving to station ([GLOB.prison_shuttle_timeleft] Secs.)":GLOB.prison_shuttle_at_station ? "Station":"Dock"]<BR>
-		[GLOB.prison_shuttle_moving_to_station || GLOB.prison_shuttle_moving_to_prison ? "\n*Shuttle already called*<BR>\n<BR>":GLOB.prison_shuttle_at_station ? "\n<A href='byond://?src=\ref[src];sendtodock=1'>Send to Dock</A><BR>\n<BR>":"\n<A href='byond://?src=\ref[src];sendtostation=1'>Send to station</A><BR>\n<BR>"]
-		\n<A href='byond://?src=\ref[user];mach_close=computer'>Close</A>"}
+	tgui_interact(user)
 
-	user << browse("<html>[dat]</html>", "window=computer;size=575x450")
-	onclose(user, "computer")
-	return
+/obj/machinery/computer/prison_shuttle/tgui_interact(mob/user, datum/tgui/ui)
+	ui = SStgui.try_update_ui(user, src, ui)
+	if(!ui)
+		ui = new(user, src, "PrisonShuttleConsole", "Prison Shuttle")
+		ui.open()
 
+/obj/machinery/computer/prison_shuttle/tgui_data(mob/user)
+	var/list/data = list()
+	data["moving"] = GLOB.prison_shuttle_moving_to_station || GLOB.prison_shuttle_moving_to_prison
+	data["at_station"] = !!GLOB.prison_shuttle_at_station
+	data["time_left"] = GLOB.prison_shuttle_timeleft
+	data["can_move"] = prison_can_move() && !prison_break
+	return data
 
-/obj/machinery/computer/prison_shuttle/Topic(href, href_list)
-	if(..())
+/obj/machinery/computer/prison_shuttle/tgui_act(action, list/params)
+	. = ..()
+	if(.)
 		return
-
-	if ((usr.contents.Find(src) || (in_range(src, usr) && istype(src.loc, /turf))) || (istype(usr, /mob/living/silicon)))
-		usr.set_machine(src)
-
-	if (href_list["sendtodock"])
-		if (!prison_can_move())
-			to_chat(usr, span_warning("The prison shuttle is unable to leave."))
-			return
-		if(!GLOB.prison_shuttle_at_station|| GLOB.prison_shuttle_moving_to_station || GLOB.prison_shuttle_moving_to_prison) return
-		post_signal("prison")
-		to_chat(usr, span_notice("The prison shuttle has been called and will arrive in [(PRISON_MOVETIME/10)] seconds."))
-		src.temp += "Shuttle sent.<BR><BR><A href='byond://?src=\ref[src];mainmenu=1'>OK</A>"
-		src.updateUsrDialog(usr)
-		GLOB.prison_shuttle_moving_to_prison = 1
-		GLOB.prison_shuttle_time = world.timeofday + PRISON_MOVETIME
-		spawn(0)
-			prison_process()
-
-	else if (href_list["sendtostation"])
-		if (!prison_can_move())
-			to_chat(usr, span_warning("The prison shuttle is unable to leave."))
-			return
-		if(GLOB.prison_shuttle_at_station || GLOB.prison_shuttle_moving_to_station || GLOB.prison_shuttle_moving_to_prison) return
-		post_signal("prison")
-		to_chat(usr, span_notice("The prison shuttle has been called and will arrive in [(PRISON_MOVETIME/10)] seconds."))
-		src.temp += "Shuttle sent.<BR><BR><A href='byond://?src=\ref[src];mainmenu=1'>OK</A>"
-		src.updateUsrDialog(usr)
-		GLOB.prison_shuttle_moving_to_station = 1
-		GLOB.prison_shuttle_time = world.timeofday + PRISON_MOVETIME
-		spawn(0)
-			prison_process()
-
-	else if (href_list["mainmenu"])
-		src.temp = null
-
-	src.add_fingerprint(usr)
-	src.updateUsrDialog(usr)
-	return
+	switch(action)
+		if("send_to_dock")
+			if(!prison_can_move())
+				to_chat(usr, span_warning("The prison shuttle is unable to leave."))
+				return TRUE
+			if(!GLOB.prison_shuttle_at_station || GLOB.prison_shuttle_moving_to_station || GLOB.prison_shuttle_moving_to_prison)
+				return TRUE
+			post_signal("prison")
+			to_chat(usr, span_notice("The prison shuttle has been called and will arrive in [(PRISON_MOVETIME/10)] seconds."))
+			GLOB.prison_shuttle_moving_to_prison = 1
+			GLOB.prison_shuttle_time = world.timeofday + PRISON_MOVETIME
+			spawn(0)
+				prison_process()
+			add_fingerprint(usr)
+			return TRUE
+		if("send_to_station")
+			if(!prison_can_move())
+				to_chat(usr, span_warning("The prison shuttle is unable to leave."))
+				return TRUE
+			if(GLOB.prison_shuttle_at_station || GLOB.prison_shuttle_moving_to_station || GLOB.prison_shuttle_moving_to_prison)
+				return TRUE
+			post_signal("prison")
+			to_chat(usr, span_notice("The prison shuttle has been called and will arrive in [(PRISON_MOVETIME/10)] seconds."))
+			GLOB.prison_shuttle_moving_to_station = 1
+			GLOB.prison_shuttle_time = world.timeofday + PRISON_MOVETIME
+			spawn(0)
+				prison_process()
+			add_fingerprint(usr)
+			return TRUE
+// DQEdit End
 
 
 /obj/machinery/computer/prison_shuttle/proc/prison_can_move()

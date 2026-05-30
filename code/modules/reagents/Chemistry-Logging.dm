@@ -19,6 +19,5 @@ ADMIN_VERB(view_chemical_reaction_logs, R_ADMIN|R_MOD, "Show Chemical Reactions"
 	for(var/entry in GLOB.chemical_reaction_logs)
 		html += "[entry]<br>"
 
-	var/datum/browser/popup = new(user, "chemlogs", "Chemlogs")
-	popup.set_content(html)
-	popup.open()
+	// DQEdit — structured TGUI AdminReport.
+	dq_admin_report_html(user, "Chemlogs", html)

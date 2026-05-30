@@ -73,36 +73,34 @@
 	D.wrapped = R
 	D.name = "small parcel - 'EFTPOS access code'"
 
+// DQEdit Start — TGUI migration. attack_self opens Eftpos.tsx; the
+// Topic switch is converted to tgui_act below.
 /obj/item/eftpos/attack_self(mob/user)
 	. = ..(user)
 	if(.)
 		return TRUE
-	if(get_dist(src,user) <= 1)
-		var/dat = span_bold("[eftpos_name]") + "<br>"
-		dat += "<i>This terminal is</i> [machine_id]. <i>Report this code when contacting IT Support</i><br>"
-		if(transaction_locked)
-			dat += "<a href='byond://?src=\ref[src];choice=toggle_lock'>Back[transaction_paid ? "" : " (authentication required)"]</a><br><br>"
+	if(get_dist(src, user) > 1)
+		SStgui.close_uis(src)
+		return
+	tgui_interact(user)
 
-			dat += "Transaction purpose: <b>[transaction_purpose]</b><br>"
-			dat += "Value: <b>$[transaction_amount]</b><br>"
-			dat += "Linked account: <b>[linked_account ? linked_account.owner_name : "None"]</b><hr>"
-			if(transaction_paid)
-				dat += "<i>This transaction has been processed successfully.</i><hr>"
-			else
-				dat += "<i>Swipe your card below the line to finish this transaction.</i><hr>"
-				dat += "<a href='byond://?src=\ref[src];choice=scan_card'>\[------\]</a>"
-		else
-			dat += "<a href='byond://?src=\ref[src];choice=toggle_lock'>Lock in new transaction</a><br><br>"
+/obj/item/eftpos/tgui_interact(mob/user, datum/tgui/ui)
+	ui = SStgui.try_update_ui(user, src, ui)
+	if(!ui)
+		ui = new(user, src, "Eftpos", "EFTPOS scanner")
+		ui.open()
 
-			dat += "<a href='byond://?src=\ref[src];choice=trans_purpose'>Transaction purpose: [transaction_purpose]</a><br>"
-			dat += "Value: <a href='byond://?src=\ref[src];choice=trans_value'>$[transaction_amount]</a><br>"
-			dat += "Linked account: <a href='byond://?src=\ref[src];choice=link_account'>[linked_account ? linked_account.owner_name : "None"]</a><hr>"
-			dat += "<a href='byond://?src=\ref[src];choice=change_code'>Change access code</a><br>"
-			dat += "<a href='byond://?src=\ref[src];choice=change_id'>Change EFTPOS ID</a><br>"
-			dat += "Scan card to reset access code <a href='byond://?src=\ref[src];choice=reset'>\[------\]</a>"
-		user << browse("<html>[dat]</html>","window=eftpos")
-	else
-		user << browse(null,"window=eftpos")
+/obj/item/eftpos/tgui_data(mob/user)
+	var/list/data = list()
+	data["eftpos_name"] = eftpos_name
+	data["machine_id"] = machine_id
+	data["transaction_locked"] = !!transaction_locked
+	data["transaction_paid"] = !!transaction_paid
+	data["transaction_purpose"] = transaction_purpose
+	data["transaction_amount"] = transaction_amount
+	data["linked_account_name"] = linked_account ? linked_account.owner_name : ""
+	return data
+// DQEdit End
 
 /obj/item/eftpos/attackby(obj/item/O, mob/user)
 
@@ -146,81 +144,90 @@
 	else
 		..()
 
-/obj/item/eftpos/Topic(href, href_list)
-	if(href_list["choice"])
-		switch(href_list["choice"])
-			if("change_code")
-				var/attempt_code = tgui_input_number(usr, "Re-enter the current EFTPOS access code", "Confirm old EFTPOS code")
-				if(attempt_code == access_code)
-					var/trycode = tgui_input_number(usr, "Enter a new access code for this device (4-6 digits, numbers only)", "Enter new EFTPOS code", null, 999999, 1000)
-					if(trycode >= 1000 && trycode <= 999999)
-						access_code = trycode
-					else
-						tgui_alert_async(usr, "That is not a valid code!")
-					print_reference()
+// DQEdit Start — Topic switch lifted into tgui_act with stable action names.
+/obj/item/eftpos/tgui_act(action, list/params)
+	. = ..()
+	if(.)
+		return
+	switch(action)
+		if("change_code")
+			var/attempt_code = tgui_input_number(usr, "Re-enter the current EFTPOS access code", "Confirm old EFTPOS code")
+			if(attempt_code == access_code)
+				var/trycode = tgui_input_number(usr, "Enter a new access code for this device (4-6 digits, numbers only)", "Enter new EFTPOS code", null, 999999, 1000)
+				if(trycode >= 1000 && trycode <= 999999)
+					access_code = trycode
 				else
-					to_chat(usr, "[icon2html(src, usr.client)]" + span_warning("Incorrect code entered."))
-			if("change_id")
-				var/attempt_code = tgui_input_number(usr, "Re-enter the current EFTPOS access code", "Confirm EFTPOS code")
-				if(attempt_code == access_code)
-					eftpos_name = tgui_input_text(usr, "Enter a new terminal ID for this device", "Enter new EFTPOS ID",max_length=MAX_NAME_LEN) + " EFTPOS scanner"
-					print_reference()
+					tgui_alert_async(usr, "That is not a valid code!")
+				print_reference()
+			else
+				to_chat(usr, "[icon2html(src, usr.client)]" + span_warning("Incorrect code entered."))
+			return TRUE
+		if("change_id")
+			var/attempt_code = tgui_input_number(usr, "Re-enter the current EFTPOS access code", "Confirm EFTPOS code")
+			if(attempt_code == access_code)
+				eftpos_name = tgui_input_text(usr, "Enter a new terminal ID for this device", "Enter new EFTPOS ID", max_length = MAX_NAME_LEN) + " EFTPOS scanner"
+				print_reference()
+			else
+				to_chat(usr, "[icon2html(src, usr.client)]" + span_warning("Incorrect code entered."))
+			return TRUE
+		if("link_account")
+			var/attempt_account_num = tgui_input_number(usr, "Enter account number to pay EFTPOS charges into", "New account number")
+			var/attempt_pin = tgui_input_number(usr, "Enter pin code", "Account pin")
+			linked_account = attempt_account_access(attempt_account_num, attempt_pin, 1)
+			if(linked_account)
+				if(linked_account.suspended)
+					linked_account = null
+					to_chat(usr, "[icon2html(src, usr.client)]" + span_warning("Account has been suspended."))
+			else
+				to_chat(usr, "[icon2html(src, usr.client)]" + span_warning("Account not found."))
+			return TRUE
+		if("trans_purpose")
+			var/choice = tgui_input_text(usr, "Enter reason for EFTPOS transaction", "Transaction purpose", MAX_MESSAGE_LEN)
+			if(choice)
+				transaction_purpose = choice
+			return TRUE
+		if("trans_value")
+			var/try_num = tgui_input_number(usr, "Enter amount for EFTPOS transaction", "Transaction amount")
+			if(try_num < 0)
+				tgui_alert_async(usr, "That is not a valid amount!")
+			else
+				transaction_amount = try_num
+			return TRUE
+		if("toggle_lock")
+			if(transaction_locked)
+				if(transaction_paid)
+					transaction_locked = 0
+					transaction_paid = 0
 				else
-					to_chat(usr, "[icon2html(src, usr.client)]" + span_warning("Incorrect code entered."))
-			if("link_account")
-				var/attempt_account_num = tgui_input_number(usr, "Enter account number to pay EFTPOS charges into", "New account number")
-				var/attempt_pin = tgui_input_number(usr, "Enter pin code", "Account pin")
-				linked_account = attempt_account_access(attempt_account_num, attempt_pin, 1)
-				if(linked_account)
-					if(linked_account.suspended)
-						linked_account = null
-						to_chat(usr, "[icon2html(src, usr.client)]" + span_warning("Account has been suspended."))
-				else
-					to_chat(usr, "[icon2html(src, usr.client)]" + span_warning("Account not found."))
-			if("trans_purpose")
-				var/choice = tgui_input_text(usr, "Enter reason for EFTPOS transaction", "Transaction purpose", MAX_MESSAGE_LEN)
-				if(choice)
-					transaction_purpose = choice
-			if("trans_value")
-				var/try_num = tgui_input_number(usr, "Enter amount for EFTPOS transaction", "Transaction amount")
-				if(try_num < 0)
-					tgui_alert_async(usr, "That is not a valid amount!")
-				else
-					transaction_amount = try_num
-			if("toggle_lock")
-				if(transaction_locked)
-					if (transaction_paid)
+					var/attempt_code = tgui_input_number(usr, "Enter EFTPOS access code", "Reset Transaction")
+					if(attempt_code == access_code)
 						transaction_locked = 0
 						transaction_paid = 0
-					else
-						var/attempt_code = tgui_input_number(usr, "Enter EFTPOS access code", "Reset Transaction")
-						if(attempt_code == access_code)
-							transaction_locked = 0
-							transaction_paid = 0
-				else if(linked_account)
-					transaction_locked = 1
-				else
-					to_chat(usr, "[icon2html(src, usr.client)]" + span_warning("No account connected to send transactions to."))
-			if("scan_card")
-				if(linked_account)
-					var/obj/item/I = usr.get_active_hand()
-					if (istype(I, /obj/item/card))
-						scan_card(I)
-				else
-					to_chat(usr, "[icon2html(src, usr.client)]" + span_warning("Unable to link accounts."))
-			if("reset")
-				//reset the access code - requires HoP/captain access
+			else if(linked_account)
+				transaction_locked = 1
+			else
+				to_chat(usr, "[icon2html(src, usr.client)]" + span_warning("No account connected to send transactions to."))
+			return TRUE
+		if("scan_card")
+			if(linked_account)
 				var/obj/item/I = usr.get_active_hand()
-				if (istype(I, /obj/item/card))
-					var/obj/item/card/id/C = I
-					if((ACCESS_CENT_CAPTAIN in C.access) || (ACCESS_HOP in C.access) || (ACCESS_CAPTAIN in C.access))
-						access_code = 0
-						to_chat(usr, "[icon2html(src, usr.client)]" + span_info("Access code reset to 0."))
-				else if (istype(I, /obj/item/card/emag))
+				if(istype(I, /obj/item/card))
+					scan_card(I)
+			else
+				to_chat(usr, "[icon2html(src, usr.client)]" + span_warning("Unable to link accounts."))
+			return TRUE
+		if("reset")
+			var/obj/item/I = usr.get_active_hand()
+			if(istype(I, /obj/item/card))
+				var/obj/item/card/id/C = I
+				if((ACCESS_CENT_CAPTAIN in C.access) || (ACCESS_HOP in C.access) || (ACCESS_CAPTAIN in C.access))
 					access_code = 0
 					to_chat(usr, "[icon2html(src, usr.client)]" + span_info("Access code reset to 0."))
-
-	src.attack_self(usr)
+			else if(istype(I, /obj/item/card/emag))
+				access_code = 0
+				to_chat(usr, "[icon2html(src, usr.client)]" + span_info("Access code reset to 0."))
+			return TRUE
+// DQEdit End
 
 /obj/item/eftpos/proc/scan_card(obj/item/card/I, obj/item/ID_container)
 	if (istype(I, /obj/item/card/id))

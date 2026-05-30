@@ -219,10 +219,8 @@
 			else
 				to_chat(O, span_infoplain(span_bold("<a href='byond://?src=\ref[O];track2=\ref[O];track=\ref[U];trackname=[U.name]'>[U]</a>") + " holds \a [itemname] up to one of your cameras ..."))
 
-			var/datum/browser/popup = new(O, itemname, itemname)
-			popup.add_head_content("<TITLE>[itemname]</TITLE>")
-			popup.set_content("<TT>[info]</TT>")
-			popup.open()
+			// DQEdit — structured TGUI AdminReport.
+			dq_admin_report_html(O, itemname, "<TT>[info]</TT>")
 
 	else if (istype(W, /obj/item/camera_bug))
 		if (!src.can_use())

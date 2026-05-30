@@ -158,12 +158,11 @@ mob
 	verb
 		Browse_Icon()
 			set name = "1. Browse Icon"
-			// Give it a name for the cache
+			// DQEdit — structured TGUI AdminReport; browse_rsc still seeds
+			// the client cache so the <img> tag resolves inside HtmlRenderer.
 			var/iconName = "[ckey(src.name)]_flattened.dmi"
-			// Send the icon to src's local cache
 			src<<browse_rsc(get_flat_icon(src), iconName)
-			// Display the icon in their browser
-			src<<browse("<html><body bgcolor='#000000'><p><img src='[iconName]'></p></body></html>")
+			dq_admin_report_html(src, "Icon", "<div style='background:#000000;padding:8px'><img src='[iconName]'></div>")
 
 		Output_Icon()
 			set name = "2. Output Icon"

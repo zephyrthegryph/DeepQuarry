@@ -68,9 +68,8 @@
 	if(!help)
 		help = "Error loading help (file /html/malf_ai.html is probably missing). Please report this to server administration staff."
 
-	var/datum/browser/popup = new(user, "malf_ai_help", "Malf AI Help", 600, 500)
-	popup.set_content(help)
-	popup.open()
+	// DQEdit — structured TGUI AdminReport.
+	dq_admin_report_html(user, "Malf AI Help", help)
 
 
 // Verb: ai_select_research()

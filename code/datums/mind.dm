@@ -112,62 +112,20 @@
 /datum/mind/proc/store_memory(new_text)
 	memory += "[new_text]<BR>"
 
+// DQEdit Start — show_memory body relocated to modular_dq/code/modules/admin/misc_admin_panels.dm (structured TGUI). Stub here keeps the proc declaration parseable.
 /datum/mind/proc/show_memory(mob/recipient)
-	var/output = span_bold("[current.real_name]'s Memory") + "<HR>"
-	output += memory
-
-	if(objectives.len>0)
-		output += "<HR><B>Objectives:</B>"
-
-		var/obj_count = 1
-		for(var/datum/objective/objective in objectives)
-			output += span_bold("Objective #[obj_count]") + ": [objective.explanation_text]"
-			obj_count++
-
-	if(ambitions)
-		output += "<HR><B>Ambitions:</B> [ambitions]<br>"
-
-	var/datum/browser/popup = new(recipient, "memory", "Memory")
-	popup.set_content(output)
-	popup.open()
+	return  // body provided by modular override
+// DQEdit End
 
 /datum/mind/proc/edit_memory(mob/user)
 	if(!SSticker || !SSticker.mode)
 		tgui_alert_async(user, "Not before round-start!", "Alert")
 		return
-
-	var/out = span_bold("[name]") + "[(current&&(current.real_name!=name))?" (as [current.real_name])":""]<br>"
-	out += "Mind currently owned by key: [key] [active?"(synced)":"(not synced)"]<br>"
-	out += "Assigned role: [assigned_role]. <a href='byond://?src=\ref[src];[HrefToken()];role_edit=1'>Edit</a><br>"
-	out += "<hr>"
-	out += "Factions and special roles:<br><table>"
-	for(var/antag_type in SSantag_job.all_antag_types)
-		var/datum/antagonist/antag = SSantag_job.all_antag_types[antag_type]
-		out += "[antag.get_panel_entry(src)]"
-	out += "</table><hr>"
-	out += span_bold("Objectives") + "</br>"
-
-	if(objectives && objectives.len)
-		var/num = 1
-		for(var/datum/objective/O in objectives)
-			out += span_bold("Objective #[num]:") + " [O.explanation_text] "
-			if(O.completed)
-				out += "([span_green("complete")])"
-			else
-				out += "([span_red("incomplete")])"
-			out += " <a href='byond://?src=\ref[src];[HrefToken()];obj_completed=\ref[O]'>\[toggle\]</a>"
-			out += " <a href='byond://?src=\ref[src];[HrefToken()];obj_delete=\ref[O]'>\[remove\]</a><br>"
-			num++
-		out += "<br><a href='byond://?src=\ref[src];[HrefToken()];obj_announce=1'>\[announce objectives\]</a>"
-
-	else
-		out += "None."
-	out += "<br><a href='byond://?src=\ref[src];[HrefToken()];obj_add=1'>\[add\]</a><br><br>"
-	out += span_bold("Ambitions:") + " [ambitions ? ambitions : "None"] <a href='byond://?src=\ref[src];[HrefToken()];amb_edit=\ref[src]'>\[edit\]</a></br>"
-
-	var/datum/browser/popup = new(user, "edit_memory[src]", "Edit Memory")
-	popup.set_content(out)
-	popup.open()
+	// DQEdit — fully structured TGUI panel; see
+	// modular_dq/code/modules/admin/edit_memory_panel.dm.
+	if(!tgui_edit_memory_panel)
+		tgui_edit_memory_panel = new(src, user)
+	tgui_edit_memory_panel.tgui_interact(user)
 
 /datum/mind/Topic(href, href_list)
 	if(!check_rights(R_ADMIN|R_FUN|R_EVENT))

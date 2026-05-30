@@ -72,90 +72,99 @@
 	footer = text
 
 
+// DQEdit Start — full TGUI migration. AdminPaper.tsx renders the
+// segment-based body + structured admin controls; tgui_act handles
+// the admin actions. No more byond:// hrefs, no more interactions HTML.
 /obj/item/paper/admin/proc/adminbrowse()
-	updateinfolinks()
 	generateHeader()
 	generateFooter()
-	updateDisplay()
+	tgui_view = "write"
+	tgui_interact(usr)
+
+/obj/item/paper/admin/tgui_interact(mob/user, datum/tgui/ui)
+	ui = SStgui.try_update_ui(user, src, ui)
+	if(!ui)
+		ui = new(user, src, "AdminPaper", name)
+		ui.open()
+
+/obj/item/paper/admin/tgui_data(mob/user)
+	var/list/data = list()
+	data["title"] = name
+	data["segments"] = get_segments()
+	data["stamps"] = stamps || ""
+	data["header_html"] = header || ""
+	data["footer_html"] = footer || ""
+	data["header_on"] = !!headerOn
+	data["footer_on"] = !!footerOn
+	data["is_crayon"] = !!isCrayon
+	return data
+
+/obj/item/paper/admin/tgui_act(action, list/params)
+	. = ..()
+	if(.)
+		return
+	switch(action)
+		if("write_field")
+			admin_write("[params["id"]]", usr)
+			return TRUE
+		if("write_end")
+			admin_write("end", usr)
+			return TRUE
+		if("confirm")
+			switch(tgui_alert(usr, "Are you sure you want to send the fax as is?", "Send Fax", list("Yes", "No")))
+				if("Yes")
+					if(headerOn)
+						info = header + info
+					if(footerOn)
+						info += footer
+					updateinfolinks()
+					SStgui.close_uis(src)
+					admindatum.faxCallback(src, destination)
+			return TRUE
+		if("penmode")
+			isCrayon = !isCrayon
+			return TRUE
+		if("cancel")
+			SStgui.close_uis(src)
+			qdel(src)
+			return TRUE
+		if("clear")
+			clearpaper()
+			return TRUE
+		if("toggleheader")
+			headerOn = !headerOn
+			return TRUE
+		if("togglefooter")
+			footerOn = !footerOn
+			return TRUE
+
+// Admin variant uses no pen/range checks (admins fax from anywhere) and
+// always pencode-parses with the chosen crayon flag.
+/obj/item/paper/admin/proc/admin_write(id, mob/user)
+	if(free_space <= 0)
+		to_chat(user, span_info("There isn't enough space left on \the [src] to write anything."))
+		return
+	var/t = tgui_input_text(user, "Enter what you want to write:", "Write", "", free_space, TRUE, prevent_enter = TRUE)
+	if(!t)
+		return
+	var/last_fields_value = fields
+	t = replacetext(t, "\n", "<BR>")
+	t = parsepencode(t, null, null, isCrayon)
+	if(fields > 50)
+		to_chat(user, span_warning("Too many fields. Sorry, you can't do this."))
+		fields = last_fields_value
+		return
+	if(id != "end")
+		addtofield(text2num(id), t)
+	else
+		info += t
+		updateinfolinks()
+	update_space(t)
+	update_icon()
 
 /obj/item/paper/admin/proc/updateDisplay()
-	usr << browse("<HTML><HEAD><TITLE>[name]</TITLE></HEAD><BODY>[headerOn ? header : ""][info_links][stamps][footerOn ? footer : ""][interactions]</BODY></HTML>", "window=[name];can_close=0")
-
-
-
-/obj/item/paper/admin/Topic(href, href_list)
-	if(href_list["write"])
-		var/id = href_list["write"]
-		if(free_space <= 0)
-			to_chat(usr, span_info("There isn't enough space left on \the [src] to write anything."))
-			return
-
-		var/t = tgui_input_text(usr, "Enter what you want to write:", "Write", "", free_space, TRUE, prevent_enter = TRUE)
-		if(!t)
-			return
-
-		var last_fields_value = fields
-
-		//t = html_encode(t)
-		t = replacetext(t, "\n", "<BR>")
-		t = parsepencode(t,,, isCrayon) // Encode everything from pencode to html
-
-
-		if(fields > 50)//large amount of fields creates a heavy load on the server, see updateinfolinks() and addtofield()
-			to_chat(usr, span_warning("Too many fields. Sorry, you can't do this."))
-			fields = last_fields_value
-			return
-
-		if(id!="end")
-			addtofield(text2num(id), t) // He wants to edit a field, let him.
-		else
-			info += t // Oh, he wants to edit to the end of the file, let him.
-			updateinfolinks()
-
-		update_space(t)
-
-		updateDisplay()
-
-		update_icon()
-		return
-
-	if(href_list["confirm"])
-		switch(tgui_alert(usr, "Are you sure you want to send the fax as is?","Send Fax", list("Yes", "No")))
-			if("Yes")
-				if(headerOn)
-					info = header + info
-				if(footerOn)
-					info += footer
-				updateinfolinks()
-				usr << browse(null, "window=[name]")
-				admindatum.faxCallback(src, destination)
-		return
-
-	if(href_list["penmode"])
-		isCrayon = !isCrayon
-		generateInteractions()
-		updateDisplay()
-		return
-
-	if(href_list["cancel"])
-		usr << browse(null, "window=[name]")
-		qdel(src)
-		return
-
-	if(href_list["clear"])
-		clearpaper()
-		updateDisplay()
-		return
-
-	if(href_list["toggleheader"])
-		headerOn = !headerOn
-		updateDisplay()
-		return
-
-	if(href_list["togglefooter"])
-		footerOn = !footerOn
-		updateDisplay()
-		return
+	SStgui.update_uis(src)
+// DQEdit End
 
 /obj/item/paper/admin/get_signature()
 	return tgui_input_text(usr, "Enter the name you wish to sign the paper with (will prompt for multiple entries, in order of entry)", "Signature")

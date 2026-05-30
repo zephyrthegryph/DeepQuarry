@@ -33,25 +33,23 @@
 	uses = uses
 	power_change()
 
+// DQEdit Start — TGUI migration. attack_hand opens AiSlipper.tsx; the
+// Topic-driven toggle/fire actions move to tgui_act. attackby keeps the
+// ID-swipe lock/unlock behavior and just closes the UI on lock.
 /obj/machinery/ai_slipper/attackby(obj/item/W, mob/user)
 	if(stat & (NOPOWER|BROKEN))
 		return
 	if(istype(user, /mob/living/silicon))
 		return attack_hand(user)
-	else // trying to unlock the interface
-		if(allowed(user))
-			locked = !locked
-			to_chat(user, "You [ locked ? "lock" : "unlock"] the device.")
-			if(locked)
-				if(user.check_current_machine(src))
-					user.unset_machine()
-					user << browse(null, "window=ai_slipper")
-			else
-				if(user.check_current_machine(src))
-					attack_hand(user)
-		else
-			to_chat(user, span_warning("Access denied."))
-			return
+	if(allowed(user))
+		locked = !locked
+		to_chat(user, "You [ locked ? "lock" : "unlock"] the device.")
+		if(locked)
+			SStgui.close_uis(src)
+		else if(user.check_current_machine(src))
+			attack_hand(user)
+	else
+		to_chat(user, span_warning("Access denied."))
 	return
 
 /obj/machinery/ai_slipper/attack_ai(mob/user as mob)
@@ -60,55 +58,53 @@
 /obj/machinery/ai_slipper/attack_hand(mob/user as mob)
 	if(stat & (NOPOWER|BROKEN))
 		return
-	if((get_dist(src, user) > 1))
-		if(!istype(user, /mob/living/silicon))
-			to_chat(user, "Too far away.")
-			user.unset_machine()
-			user << browse(null, "window=ai_slipper")
-			return
-
-	user.set_machine(src)
-	var/loc = src.loc
-	if(istype(loc, /turf))
-		loc = loc:loc
-	if(!istype(loc, /area))
-		to_chat(user, "Turret badly positioned - loc.loc is [loc].")
+	if(get_dist(src, user) > 1 && !istype(user, /mob/living/silicon))
+		to_chat(user, "Too far away.")
+		user.unset_machine()
+		SStgui.close_uis(src)
 		return
-	var/area/area = loc
-	var/t = "<TT><B>AI Liquid Dispenser</B> ([area.name])<HR>"
+	tgui_interact(user)
 
-	if(locked && (!istype(user, /mob/living/silicon)))
-		t += "<I>(Swipe ID card to unlock control panel.)</I><BR>"
-	else
-		t += text("Dispenser [] - <A href='byond://?src=\ref[];toggleOn=1'>[]?</a><br>\n", disabled?"deactivated":"activated", src, disabled?"Enable":"Disable")
-		t += text("Uses Left: [uses]. <A href='byond://?src=\ref[src];toggleUse=1'>Activate the dispenser?</A><br>\n")
+/obj/machinery/ai_slipper/tgui_interact(mob/user, datum/tgui/ui)
+	ui = SStgui.try_update_ui(user, src, ui)
+	if(!ui)
+		ui = new(user, src, "AiSlipper", "AI Liquid Dispenser")
+		ui.open()
 
-	user << browse("<html>[t]</html>", "window=ai_slipper;size=575x450")
-	onclose(user, "ai_slipper")
-	return
+/obj/machinery/ai_slipper/tgui_data(mob/user)
+	var/list/data = list()
+	var/area/A = get_area(src)
+	data["area_name"] = A?.name || "Unknown"
+	data["locked"] = !!locked
+	data["is_silicon"] = istype(user, /mob/living/silicon)
+	data["disabled"] = !!disabled
+	data["uses"] = uses
+	data["cooldown_on"] = !!cooldown_on
+	data["cooldown_timeleft"] = cooldown_timeleft
+	return data
 
-/obj/machinery/ai_slipper/Topic(href, href_list)
-	..()
-	if(locked)
-		if(!istype(usr, /mob/living/silicon))
-			to_chat(usr, "Control panel is locked!")
-			return
-	if(href_list["toggleOn"])
-		disabled = !disabled
-		update_icon()
-	if(href_list["toggleUse"])
-		if(cooldown_on || disabled)
-			return
-		else
+/obj/machinery/ai_slipper/tgui_act(action, list/params)
+	. = ..()
+	if(.)
+		return
+	if(locked && !istype(usr, /mob/living/silicon))
+		to_chat(usr, "Control panel is locked!")
+		return TRUE
+	switch(action)
+		if("toggle_on")
+			disabled = !disabled
+			update_icon()
+			return TRUE
+		if("toggle_use")
+			if(cooldown_on || disabled || uses <= 0)
+				return TRUE
 			new /obj/effect/effect/foam(src.loc)
 			uses--
 			cooldown_on = 1
 			cooldown_time = world.timeofday + 100
 			slip_process()
-			return
-
-	attack_hand(usr)
-	return
+			return TRUE
+// DQEdit End
 
 /obj/machinery/ai_slipper/proc/slip_process()
 	while(cooldown_time - world.timeofday > 0)

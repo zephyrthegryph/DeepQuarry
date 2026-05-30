@@ -57,18 +57,15 @@ ADMIN_VERB(ToRban, R_ADMIN|R_SERVER, "ToRban", "Modifies the TorBan settings.", 
 					CONFIG_SET(flag/ToRban, TRUE)
 					message_admins(span_green("ToR banning enabled."))
 		if("show")
+			// DQEdit Start — Torban list now uses a structured TGUI panel.
 			var/savefile/F = new(TORFILE)
-			var/dat
+			var/list/addresses = list()
 			if(length(F.dir))
 				for(var/i=1, i<=length(F.dir), i++)
-					dat += "<tr><td>#[i]</td><td> [F.dir[i]]</td></tr>"
-				dat = "<table width='100%'>[dat]</table>"
-			else
-				dat = "No addresses in list."
-
-			var/datum/browser/popup = new(user, "ToRban_show", "Torban")
-			popup.set_content(dat)
-			popup.open()
+					addresses += F.dir[i]
+			var/datum/dq_torban_panel/panel = new(addresses)
+			panel.tgui_interact(user.mob)
+			// DQEdit End
 
 		if("remove")
 			var/savefile/F = new(TORFILE)

@@ -7,25 +7,10 @@
 /datum/integrated_io/list/ask_for_pin_data(mob/user)
 	interact(user)
 
+// DQEdit Start — interact() body moved to modular_dq/code/modules/integrated_electronics/list_pin_panel.dm (structured TGUI).
 /datum/integrated_io/list/proc/interact(mob/user)
-	var/list/my_list = data
-	var/t = "<h2>[src]</h2><br>"
-	t += "List length: [my_list.len]<br>"
-	t += "<a href='byond://?src=\ref[src]'>\[Refresh\]</a>  |  "
-	t += "<a href='byond://?src=\ref[src];add=1'>\[Add\]</a>  |  "
-	t += "<a href='byond://?src=\ref[src];swap=1'>\[Swap\]</a>  |  "
-	t += "<a href='byond://?src=\ref[src];clear=1'>\[Clear\]</a><br>"
-	t += "<hr>"
-	var/i = 0
-	for(var/line in my_list)
-		i++
-		t += "#[i] | [display_data(line)]  |  "
-		t += "<a href='byond://?src=\ref[src];edit=1;pos=[i]'>\[Edit\]</a>  |  "
-		t += "<a href='byond://?src=\ref[src];remove=1;pos=[i]'>\[Remove\]</a><br>"
-
-	var/datum/browser/popup = new(user, "list_pin_\ref[src]", null, 500, 400)
-	popup.set_content(t)
-	popup.open()
+	return  // body provided by modular override
+// DQEdit End
 
 /datum/integrated_io/list/proc/add_to_list(mob/user, new_entry)
 	if(!new_entry && user)

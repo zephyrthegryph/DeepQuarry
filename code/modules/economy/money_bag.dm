@@ -9,44 +9,33 @@
 	w_class = ITEMSIZE_LARGE
 
 /obj/item/moneybag/attack_hand(user as mob)
-	var/amt_gold = 0
-	var/amt_silver = 0
-	var/amt_diamond = 0
-	var/amt_iron = 0
-	var/amt_phoron = 0
-	var/amt_uranium = 0
+	// DQEdit — structured TGUI Moneybag (see
+	// modular_dq/code/modules/admin/moneybag_panel.dm).
+	tgui_interact(user)
 
-	for (var/obj/item/coin/C in contents)
-		if (istype(C,/obj/item/coin/diamond))
-			amt_diamond++;
-		if (istype(C,/obj/item/coin/phoron))
-			amt_phoron++;
-		if (istype(C,/obj/item/coin/iron))
-			amt_iron++;
-		if (istype(C,/obj/item/coin/silver))
-			amt_silver++;
-		if (istype(C,/obj/item/coin/gold))
-			amt_gold++;
-		if (istype(C,/obj/item/coin/uranium))
-			amt_uranium++;
-
-	var/dat = span_bold("The contents of the moneybag reveal...") + "<br>"
-	if (amt_gold)
-		dat += text("Gold coins: [amt_gold] <A href='byond://?src=\ref[src];remove=gold'>Remove one</A><br>")
-	if (amt_silver)
-		dat += text("Silver coins: [amt_silver] <A href='byond://?src=\ref[src];remove=silver'>Remove one</A><br>")
-	if (amt_iron)
-		dat += text("Metal coins: [amt_iron] <A href='byond://?src=\ref[src];remove=iron'>Remove one</A><br>")
-	if (amt_diamond)
-		dat += text("Diamond coins: [amt_diamond] <A href='byond://?src=\ref[src];remove=diamond'>Remove one</A><br>")
-	if (amt_phoron)
-		dat += text("Phoron coins: [amt_phoron] <A href='byond://?src=\ref[src];remove=phoron'>Remove one</A><br>")
-	if (amt_uranium)
-		dat += text("Uranium coins: [amt_uranium] <A href='byond://?src=\ref[src];remove=uranium'>Remove one</A><br>")
-
-	var/datum/browser/popup = new(user, "moneybag", "Moneybag")
-	popup.set_content(dat)
-	popup.open()
+/obj/item/moneybag/proc/count_coins()
+	var/list/counts = list(
+		"gold" = 0,
+		"silver" = 0,
+		"iron" = 0,
+		"diamond" = 0,
+		"phoron" = 0,
+		"uranium" = 0,
+	)
+	for(var/obj/item/coin/C in contents)
+		if(istype(C, /obj/item/coin/diamond))
+			counts["diamond"]++
+		else if(istype(C, /obj/item/coin/phoron))
+			counts["phoron"]++
+		else if(istype(C, /obj/item/coin/iron))
+			counts["iron"]++
+		else if(istype(C, /obj/item/coin/silver))
+			counts["silver"]++
+		else if(istype(C, /obj/item/coin/gold))
+			counts["gold"]++
+		else if(istype(C, /obj/item/coin/uranium))
+			counts["uranium"]++
+	return counts
 
 /obj/item/moneybag/attackby(obj/item/W, mob/user)
 	..()

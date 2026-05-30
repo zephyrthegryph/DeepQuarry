@@ -342,7 +342,8 @@ ADMIN_VERB(check_words, R_ADMIN|R_EVENT, "Check Rune Words", "Check the rune-wor
 				if("Read it")
 					if(user.get_active_hand() != src)
 						return
-					user << browse("[tomedat]", "window=Arcane Tome")
+					// DQEdit — structured TGUI AdminReport.
+					dq_admin_report_html(user, "Arcane Tome", "[tomedat]")
 					return
 		if(user.get_active_hand() != src)
 			return

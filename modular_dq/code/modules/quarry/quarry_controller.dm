@@ -355,22 +355,20 @@ SUBSYSTEM_DEF(quarry)
 	var/list/biome_map = null
 	if(length(cfg.biome_roster))
 		biome_map = _quarry_build_biome_map(depth, cfg.biome_roster, 1, 1, QUARRY_LAYER_SIZE, QUARRY_LAYER_SIZE)
-		// Repaint walls with per-biome wall_turf. Floors stay as their
-		// (sand) appearance because make_floor toggles density on the
-		// same mineral type; the visual change is per-biome wall variant.
-		for(var/turf/simulated/mineral/T in block(locate(1, 1, new_z), locate(QUARRY_LAYER_SIZE, QUARRY_LAYER_SIZE, new_z)))
-			if(!T.density)
-				continue
-			var/datum/quarry_biome/B = _quarry_biome_at(biome_map, T)
-			if(!B?.wall_turf || T.type == B.wall_turf)
-				continue
-			T.ChangeTurf(B.wall_turf)
 
-	// Bucket tiles for the placement passes that follow.
+	// Single block pass: repaint walls with the per-biome wall_turf
+	// (when a biome map exists) AND bucket walls/floors at the same
+	// time, instead of walking 65k tiles twice. ChangeTurf swaps the
+	// reference in place, so reading `T` after the call still works
+	// for the bucket assignment.
 	var/list/floor_candidates = list()
 	var/list/wall_candidates = list()
 	for(var/turf/simulated/mineral/T in block(locate(1, 1, new_z), locate(QUARRY_LAYER_SIZE, QUARRY_LAYER_SIZE, new_z)))
 		if(T.density)
+			if(biome_map)
+				var/datum/quarry_biome/B = _quarry_biome_at(biome_map, T)
+				if(B?.wall_turf && T.type != B.wall_turf)
+					T = T.ChangeTurf(B.wall_turf)
 			wall_candidates += T
 		else
 			floor_candidates += T

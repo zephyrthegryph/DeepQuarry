@@ -527,25 +527,8 @@
 
 	return TRUE
 
-/mob/living/carbon/human/verb/check_attacks()
-	set name = "Check Attacks"
-	set category = "IC.Game"
-	set src = usr
-
-	var/dat = span_bold(span_giant("Known Attacks")) + "<br/><br/>"
-
-	if(default_attack)
-		dat += "Current default attack: [default_attack.attack_name] - <a href='byond://?src=\ref[src];default_attk=reset_attk'>reset</a><br/><br/>"
-
-	for(var/datum/unarmed_attack/u_attack in species.unarmed_attacks)
-		if(u_attack == default_attack)
-			dat += span_bold("Primarily [u_attack.attack_name]") + " - default - <a href='byond://?src=\ref[src];default_attk=reset_attk'>reset</a><br/><br/><br/>"
-		else
-			dat += span_bold("Primarily [u_attack.attack_name]") + " - <a href='byond://?src=\ref[src];default_attk=\ref[u_attack]'>set default</a><br/><br/><br/>"
-
-	var/datum/browser/popup = new(src, "checkattack")
-	popup.set_content(dat)
-	popup.open()
+// DQEdit Start — check_attacks verb body relocated to modular_dq/code/modules/mob/living/carbon/human/attacks_panel.dm (structured TGUI).
+// DQEdit End
 
 /mob/living/carbon/human/Topic(href, href_list)
 	if(href_list["default_attk"])

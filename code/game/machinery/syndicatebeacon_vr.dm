@@ -1,25 +1,7 @@
 //  Virgo modified syndie beacon, does not give objectives
 
-/obj/machinery/syndicate_beacon/virgo/attack_hand(mob/user)
-	user.set_machine(src)
-	var/dat = span_darkgreen(span_italics("Scanning [pick("retina pattern", "voice print", "fingerprints", "dna sequence")]...<br>Identity confirmed,<br>"))
-	if(ishuman(user) || isAI(user))
-		if(is_special_character(user))
-			dat += span_darkgreen(span_italics("Operative record found. Greetings, Agent [user.name].<br>"))
-		else if(charges < 1)
-			dat += "<TT>Connection severed.</TT><BR>"
-		else
-			var/honorific = "Mr."
-			if(user.gender == FEMALE)
-				honorific = "Ms."
-			dat += span_red(span_italics("Identity not found in operative database. What can the Black Market do for you today, [honorific] [user.name]?<br>"))
-			if(!selfdestructing)
-				dat += "<br><br><A href='byond://?src=\ref[src];betraitor=1;traitormob=\ref[user]'>\"[pick("Send me some supplies!", "Transfer supplies.")]\"</A><BR>"
-	dat += temptext
-
-	var/datum/browser/popup = new(user, "syndbeacon", "Ominous Beacon")
-	popup.set_content(dat)
-	popup.open()
+// DQEdit Start — attack_hand body relocated to modular_dq/code/modules/admin/misc_admin_panels.dm (structured TGUI).
+// DQEdit End
 
 /obj/machinery/syndicate_beacon/virgo/Topic(href, href_list)
 	if(href_list["betraitor"])

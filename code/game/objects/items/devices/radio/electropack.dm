@@ -44,43 +44,19 @@
 		user.put_in_hands(A)
 		A.add_fingerprint(user)
 
-/obj/item/radio/electropack/Topic(href, href_list)
-	//..()
-	if(usr.stat || usr.restrained())
-		return
-	if(((ishuman(usr) && ((!( SSticker ) || (SSticker && SSticker.mode != "monkey")) && usr.contents.Find(src))) || (usr.contents.Find(master) || (in_range(src, usr) && istype(loc, /turf)))))
-		usr.set_machine(src)
-		if(href_list["freq"])
-			var/new_frequency = sanitize_frequency(frequency + text2num(href_list["freq"]))
-			set_frequency(new_frequency)
-		else
-			if(href_list["code"])
-				code += text2num(href_list["code"])
-				code = round(code)
-				code = min(100, code)
-				code = max(1, code)
-			else
-				if(href_list["power"])
-					on = !( on )
-					icon_state = "electropack[on]"
-		if(!( master ))
-			if(istype(loc, /mob))
-				attack_self(loc)
-			else
-				for(var/mob/M in viewers(1, src))
-					if(M.client)
-						attack_self(M)
-		else
-			if(istype(master.loc, /mob))
-				attack_self(master.loc)
-			else
-				for(var/mob/M in viewers(1, master))
-					if(M.client)
-						attack_self(M)
-	else
-		usr << browse(null, "window=radio")
-		return
-	return
+// DQEdit Start — TGUI migration. The electropack's panel had three
+// controls (power, frequency, code); they all flow through tgui_act now.
+/obj/item/radio/electropack/proc/can_use(mob/user)
+	if(!user || user.stat || user.restrained())
+		return FALSE
+	if(ishuman(user) && (!SSticker || SSticker.mode != "monkey") && user.contents.Find(src))
+		return TRUE
+	if(user.contents.Find(master))
+		return TRUE
+	if(in_range(src, user) && isturf(loc))
+		return TRUE
+	return FALSE
+// DQEdit End
 
 /obj/item/radio/electropack/receive_signal(datum/signal/signal)
 	if(!signal || signal.encryption != code)
@@ -105,28 +81,48 @@
 		master.receive_signal()
 	return
 
+// DQEdit Start — TGUI Electropack window; no more browse() panel.
 /obj/item/radio/electropack/attack_self(mob/user, flag1)
-	. = ..(user)
-	if(.)
-		return TRUE
 	if(!ishuman(user))
 		return
 	user.set_machine(src)
-	var/dat = {"<html><TT>
-<A href='byond://?src=\ref[src];power=1'>Turn [on ? "Off" : "On"]</A><BR>
-<B>Frequency/Code</B> for electropack:<BR>
-Frequency:
-<A href='byond://?src=\ref[src];freq=-10'>-</A>
-<A href='byond://?src=\ref[src];freq=-2'>-</A> [format_frequency(frequency)]
-<A href='byond://?src=\ref[src];freq=2'>+</A>
-<A href='byond://?src=\ref[src];freq=10'>+</A><BR>
+	tgui_interact(user)
+	return TRUE
 
-Code:
-<A href='byond://?src=\ref[src];code=-5'>-</A>
-<A href='byond://?src=\ref[src];code=-1'>-</A> [code]
-<A href='byond://?src=\ref[src];code=1'>+</A>
-<A href='byond://?src=\ref[src];code=5'>+</A><BR>
-</TT></html>"}
-	user << browse(dat, "window=radio")
-	onclose(user, "radio")
-	return
+/obj/item/radio/electropack/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui)
+	ui = SStgui.try_update_ui(user, src, ui)
+	if(!ui)
+		ui = new(user, src, "Electropack", name, parent_ui)
+		ui.open()
+
+/obj/item/radio/electropack/tgui_data(mob/user)
+	return list(
+		"on" = on,
+		"frequency" = frequency,
+		"freq_display" = format_frequency(frequency),
+		"code" = code,
+	)
+
+/obj/item/radio/electropack/tgui_act(action, list/params, datum/tgui/ui)
+	. = ..()
+	if(.)
+		return
+	if(!can_use(usr))
+		return
+	usr.set_machine(src)
+	switch(action)
+		if("power")
+			on = !on
+			icon_state = "electropack[on]"
+			return TRUE
+		if("freq")
+			var/delta = text2num("[params["delta"]]")
+			if(isnum(delta))
+				set_frequency(sanitize_frequency(frequency + delta))
+			return TRUE
+		if("code")
+			var/delta = text2num("[params["delta"]]")
+			if(isnum(delta))
+				code = clamp(round(code + delta), 1, 100)
+			return TRUE
+// DQEdit End

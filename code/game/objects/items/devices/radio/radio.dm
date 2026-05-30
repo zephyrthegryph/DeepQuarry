@@ -247,7 +247,9 @@
 			set_frequency(new_frequency)
 			if(hidden_uplink)
 				if(hidden_uplink.check_trigger(ui.user, frequency, traitor_frequency))
-					ui.user << browse(null, "window=radio")
+					// DQEdit Start — close the TGUI Radio when the uplink trips (was browse(null)).
+					SStgui.close_uis(src)
+					// DQEdit End
 			. = TRUE
 		if("broadcast")
 			ToggleBroadcast()

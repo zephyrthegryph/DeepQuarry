@@ -632,16 +632,10 @@ GLOBAL_LIST_EMPTY(vending_products)
 	if(user.GetIdCard())
 		var/obj/item/card/id/tempid = user.GetIdCard()
 		if(req_log_access in tempid.GetAccess())
-			var/datum/browser/popup = new(user, "vending_log", "Vending Log", 700, 500)
-			var/dat = ""
-			dat += "<center><span style='font-size:24pt'><b>[name] Vending Log</b></span></center>"
-			dat += "<center><span style='font-size:16pt'>Welcome [user.name]!</span></center><br>"
-			dat += "<span style='font-size:8pt'>Below are the recent vending logs for your vending machine.</span><br>"
-			for(var/i in log)
-				dat += json_encode(i)
-				dat += ";<br>"
-			popup.set_content(dat)
-			popup.open()
+			// DQEdit Start — Vending Log now opens a structured TGUI panel.
+			var/datum/dq_vending_log_panel/panel = new(name, user.name, log)
+			panel.tgui_interact(user)
+			// DQEdit End
 	else
 		to_chat(user,span_warning("You do not have the required access to view the vending logs for this machine."))
 

@@ -55,75 +55,57 @@
 /obj/machinery/computer/gravity_control_computer/attack_ai(mob/user as mob)
 	return attack_hand(user)
 
+// DQEdit Start — TGUI migration. attack_hand opens GravityGeneratorControl;
+// Topic toggle moves to tgui_act.
 /obj/machinery/computer/gravity_control_computer/attack_hand(mob/user as mob)
 	user.set_machine(src)
 	add_fingerprint(user)
-
 	if(stat & (BROKEN|NOPOWER))
 		return
-
 	updatemodules()
+	tgui_interact(user)
 
-	var/dat = "<h3>Generator Control System</h3>"
-	//dat += span_small("<a href='byond://?src=\ref[src];refresh=1'>Refresh</a>")
+/obj/machinery/computer/gravity_control_computer/tgui_interact(mob/user, datum/tgui/ui)
+	ui = SStgui.try_update_ui(user, src, ui)
+	if(!ui)
+		ui = new(user, src, "GravityGeneratorControl", "Gravity Generator Control")
+		ui.open()
+
+/obj/machinery/computer/gravity_control_computer/tgui_data(mob/user)
+	var/list/data = list()
+	data["has_generator"] = !!gravity_generator
+	data["generator_on"] = gravity_generator ? !!gravity_generator:on : FALSE
+	var/list/areas = list()
 	if(gravity_generator)
-		if(gravity_generator:on)
-			dat += span_green("<br><tt>Gravity Status: ON</tt>") + "<br>"
-		else
-			dat += span_red("<br><tt>Gravity Status: OFF</tt>") + "<br>"
-
-		dat += "<br><tt>Currently Supplying Gravitons To:</tt><br>"
-
 		for(var/area/A in gravity_generator:localareas)
-			if(A.has_gravity && gravity_generator:on)
-				dat += "<tt>" + span_green("[A]</tt>") + "<br>"
+			areas += list(list(
+				"name" = "[A]",
+				"has_gravity" = !!A.has_gravity,
+				"fed_by_us" = (A.has_gravity && gravity_generator:on),
+			))
+	data["areas"] = areas
+	return data
 
-			else if (A.has_gravity)
-				dat += "<tt>" + span_yellow("[A]</tt>") + "<br>"
-
-			else
-				dat += "<tt>" + span_red("[A]</tt>") + "<br>"
-
-		dat += "<br><tt>Maintenance Functions:</tt><br>"
-		if(gravity_generator:on)
-			dat += "<a href='byond://?src=\ref[src];gentoggle=1'>" + span_red(" TURN GRAVITY GENERATOR OFF. ") + "</a>"
-		else
-			dat += "<a href='byond://?src=\ref[src];gentoggle=1'>" + span_green(" TURN GRAVITY GENERATOR ON. ") + "</a>"
-
-	else
-		dat += "No local gravity generator detected!"
-
-	user << browse("<html>[dat]</html>", "window=gravgen")
-	onclose(user, "gravgen")
-
-
-/obj/machinery/computer/gravity_control_computer/Topic(href, href_list)
-	set background = 1
-	..()
-
-	if ( (get_dist(src, usr) > 1 ))
-		if (!istype(usr, /mob/living/silicon))
-			usr.unset_machine()
-			usr << browse(null, "window=air_alarm")
-			return
-
-	if(href_list["gentoggle"])
-		if(gravity_generator:on)
-			gravity_generator:on = 0
-
-			for(var/area/A in gravity_generator:localareas)
-				var/obj/machinery/gravity_generator/G
-				for(G in GLOB.machines)
-					if((A in G.localareas) && (G.on))
-						break
-				if(!G)
-					A.gravitychange(0)
-
-
-		else
-			for(var/area/A in gravity_generator:localareas)
-				gravity_generator:on = 1
-				A.gravitychange(1)
-
-		src.updateUsrDialog(usr)
+/obj/machinery/computer/gravity_control_computer/tgui_act(action, list/params)
+	. = ..()
+	if(.)
 		return
+	switch(action)
+		if("toggle")
+			if(!gravity_generator)
+				return TRUE
+			if(gravity_generator:on)
+				gravity_generator:on = 0
+				for(var/area/A in gravity_generator:localareas)
+					var/obj/machinery/gravity_generator/G
+					for(G in GLOB.machines)
+						if((A in G.localareas) && (G.on))
+							break
+					if(!G)
+						A.gravitychange(0)
+			else
+				for(var/area/A in gravity_generator:localareas)
+					gravity_generator:on = 1
+					A.gravitychange(1)
+			return TRUE
+// DQEdit End

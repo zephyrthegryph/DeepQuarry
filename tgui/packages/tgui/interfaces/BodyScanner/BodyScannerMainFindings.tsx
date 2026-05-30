@@ -11,10 +11,22 @@ const TREND_DISPLAY: Record<
   ScannerFinding['trend'],
   { symbol: string; color: string; tooltip: string }
 > = {
-  new:       { symbol: '*', color: 'label',   tooltip: 'New finding — no prior scan to compare against.' },
-  worsening: { symbol: '↑', color: 'bad',     tooltip: 'Worsening since last scan.' },
-  improving: { symbol: '↓', color: 'good',    tooltip: 'Improving since last scan.' },
-  stable:    { symbol: '=', color: 'label',   tooltip: 'Stable since last scan.' },
+  new: {
+    symbol: '*',
+    color: 'label',
+    tooltip: 'New finding — no prior scan to compare against.',
+  },
+  worsening: {
+    symbol: '↑',
+    color: 'bad',
+    tooltip: 'Worsening since last scan.',
+  },
+  improving: {
+    symbol: '↓',
+    color: 'good',
+    tooltip: 'Improving since last scan.',
+  },
+  stable: { symbol: '=', color: 'label', tooltip: 'Stable since last scan.' },
 };
 
 // Scanner-detected findings — phrases produced by SYMPTOM_AUDIENCE_SCANNER
@@ -53,7 +65,14 @@ export const BodyScannerMainFindings = (props: { occupant: occupant }) => {
                 const trend = TREND_DISPLAY[f.trend] || TREND_DISPLAY.new;
                 return (
                   <Box key={i} mb="2px">
-                    <Box color={info.color} bold inline mr={1} fontSize="0.85em" style={{ textTransform: 'uppercase' }}>
+                    <Box
+                      color={info.color}
+                      bold
+                      inline
+                      mr={1}
+                      fontSize="0.85em"
+                      style={{ textTransform: 'uppercase' }}
+                    >
                       {info.label}
                     </Box>
                     <Tooltip content={trend.tooltip} position="top">

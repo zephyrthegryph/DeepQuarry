@@ -4,8 +4,10 @@
 		return
 
 	if(user.incapacitated()  || !user.Adjacent(src))
-		user << browse(null, text("window=mob[src.name]"))
+		// DQEdit Start — strip menu is TGUI now; close via SStgui.
+		SStgui.close_uis(src)
 		return
+		// DQEdit End
 
 	var/obj/item/target_slot = get_equipped_item(text2num(slot_to_strip))
 

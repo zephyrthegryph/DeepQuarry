@@ -4,70 +4,66 @@
 	if(!SSticker.HasRoundStarted())
 		tgui_alert(usr, "The game hasn't started yet!")
 		return
-	var/data = "<b>Bombing List</b><hr>"
+	// DQEdit — structured TGUI AdminReport.
+	var/list/lines = list()
 	for(var/entry in GLOB.bombers)
-		data += "[entry]<br>"
-	usr << browse(data, "window=bombers;size=800x500")
+		lines += "[entry]"
+	dq_admin_report_lines(usr, "Bombers", lines, "<b>Bombing List</b>")
 
 /datum/admins/proc/list_signalers()
 	if(!SSticker.HasRoundStarted())
 		tgui_alert(usr, "The game hasn't started yet!")
 		return
-	var/data = "<b>Showing last [length(GLOB.lastsignalers)] signalers.</b><hr>"
+	// DQEdit — structured TGUI AdminReport.
+	var/list/lines = list()
 	for(var/entry in GLOB.lastsignalers)
-		data += "[entry]<BR>"
-	usr << browse(data, "window=lastsignalers;size=800x500")
+		lines += "[entry]"
+	dq_admin_report_lines(usr, "Last Signalers", lines, "<b>Showing last [length(GLOB.lastsignalers)] signalers.</b>")
 
 /datum/admins/proc/list_law_changes()
 	if(!SSticker.HasRoundStarted())
 		tgui_alert(usr, "The game hasn't started yet!")
 		return
-	var/data = "<b>Showing last [length(GLOB.lawchanges)] law changes.</b><hr>"
+	// DQEdit — structured TGUI AdminReport.
+	var/list/lines = list()
 	for(var/entry in GLOB.lawchanges)
-		data += "[entry]<BR>"
-
-	var/datum/browser/browser = new(usr, "lawchanges", "Law Changes", 800, 500)
-	browser.set_content(data)
-	browser.open()
+		lines += "[entry]"
+	dq_admin_report_lines(usr, "Law Changes", lines, "<b>Showing last [length(GLOB.lawchanges)] law changes.</b>")
 
 /datum/admins/proc/list_dna()
-	var/data = "<b>Showing DNA from blood.</b><hr>"
-	data += "<table cellspacing=5 border=1><tr><th>Name</th><th>DNA</th><th>Blood Type</th></tr>"
+	// DQEdit — structured TGUI AdminReport with typed table.
+	var/list/rows = list()
 	for(var/entry in GLOB.mob_list)
 		var/mob/living/carbon/human/subject = entry
-		if(subject.ckey)
-			data += "<tr><td>[subject]</td><td>[subject.dna?.unique_enzymes]</td><td>[subject.dna ? subject.dna.b_type : DEFAULT_BLOOD_TYPE]</td></tr>"
-	data += "</table>"
-
-	var/datum/browser/browser = new(usr, "DNA", "DNA Log", 440, 410)
-	browser.set_content(data)
-	browser.open()
+		if(!subject.ckey)
+			continue
+		rows += list(list(
+			"[subject]",
+			"[subject.dna?.unique_enzymes]",
+			"[subject.dna ? subject.dna.b_type : DEFAULT_BLOOD_TYPE]",
+		))
+	dq_admin_report_table(usr, "DNA Log", list("Name", "DNA", "Blood Type"), rows, "<b>Showing DNA from blood.</b>")
 
 /datum/admins/proc/list_fingerprints() //kid named fingerprints
-	var/data = "<b>Showing Fingerprints.</b><hr>"
-	data += "<table cellspacing=5 border=1><tr><th>Name</th><th>Fingerprints</th></tr>"
+	// DQEdit — structured TGUI AdminReport with typed table.
+	var/list/rows = list()
 	for(var/entry in GLOB.mob_list)
 		var/mob/living/carbon/human/subject = entry
-		if(subject.ckey)
-			data += "<tr><td>[subject]</td><td>[md5(subject.dna?.uni_identity)]</td></tr>"
-	data += "</table>"
-
-	var/datum/browser/browser = new(usr, "fingerprints", "Fingerprint Log", 440, 410)
-	browser.set_content(data)
-	browser.open()
+		if(!subject.ckey)
+			continue
+		rows += list(list(
+			"[subject]",
+			"[md5(subject.dna?.uni_identity)]",
+		))
+	dq_admin_report_table(usr, "Fingerprint Log", list("Name", "Fingerprints"), rows, "<b>Showing Fingerprints.</b>")
 
 /datum/admins/proc/show_manifest()
 	if(!SSticker.HasRoundStarted())
 		tgui_alert(usr, "The game hasn't started yet!")
 		return
-	//GLOB.manifest.ui_interact(usr)
-	var/dat
-	dat += "<h4>Crew Manifest</h4>"
-	dat += GLOB.data_core.get_manifest()
-
-	var/datum/browser/popup = new(usr, "manifest", "Manifest", 370, 420)
-	popup.set_content(dat)
-	popup.open()
+	// DQEdit — structured TGUI AdminReport; manifest body stays as
+	// pre-formatted HTML (per-department tables formatted by data_core).
+	dq_admin_report_html(usr, "Manifest", "<h4>Crew Manifest</h4>[GLOB.data_core.get_manifest()]")
 
 /datum/admins/proc/output_ai_laws()
 	var/ai_number = 0

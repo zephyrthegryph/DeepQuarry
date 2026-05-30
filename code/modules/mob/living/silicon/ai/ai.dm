@@ -462,9 +462,8 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	if (href_list["mach_close"])
 		if (href_list["mach_close"] == "aialerts")
 			viewalerts = 0
-		var/t1 = text("window=[]", href_list["mach_close"])
+		// DQEdit — legacy browse(null) close removed; see /mob/Topic.
 		unset_machine()
-		src << browse(null, t1)
 	if (href_list["switchcamera"])
 		switchCamera(locate(href_list["switchcamera"])) in GLOB.cameranet.cameras
 	if (href_list["showalerts"])

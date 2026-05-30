@@ -64,15 +64,31 @@ GLOBAL_VAR_INIT(photo_count, 0)
 	else
 		return list(span_notice("It is too far away to examine."))
 
+// DQEdit Start — TGUI migration. show() opens Photo.tsx; the image is
+// embedded via icon2html (inline base64 data URL) instead of the legacy
+// browse_rsc + img-tag dance.
 /obj/item/photo/proc/show(mob/user as mob)
-	user << browse_rsc(img, "tmp_photo_[id].png")
-	user << browse("<html><head><title>[name]</title></head>" \
-		+ "<body style='overflow:hidden;margin:0;text-align:center'>" \
-		+ "<img src='tmp_photo_[id].png' width='[64*photo_size]' style='-ms-interpolation-mode:nearest-neighbor' />" \
-		+ "[scribble ? "<br>Written on the back:<br><i>[scribble]</i>" : ""]"\
-		+ "</body></html>", "window=book;size=[64*photo_size]x[scribble ? 400 : 64*photo_size]")
-	onclose(user, "[name]")
-	return
+	tgui_interact(user)
+
+/obj/item/photo/tgui_interact(mob/user, datum/tgui/ui)
+	ui = SStgui.try_update_ui(user, src, ui)
+	if(!ui)
+		ui = new(user, src, "Photo", name)
+		ui.open()
+
+/obj/item/photo/tgui_data(mob/user)
+	var/list/data = list()
+	data["title"] = name
+	data["scribble"] = scribble || ""
+	data["size"] = photo_size
+	if(img)
+		var/icon/scaled = icon(img)
+		scaled.Scale(64 * photo_size, 64 * photo_size)
+		data["image_html"] = icon2html(scaled, user, sourceonly = FALSE)
+	else
+		data["image_html"] = ""
+	return data
+// DQEdit End
 
 /obj/item/photo/verb/rename()
 	set name = "Rename photo"

@@ -21,16 +21,16 @@
 	density = FALSE
 
 /obj/machinery/artillerycontrol/attack_hand(mob/user as mob)
+	// DQEdit — single-action panel; tgui_alert is the right primitive.
 	user.set_machine(src)
-	var/dat = span_bold("Bluespace Artillery Control:") + "<BR>"
-	dat += "Locked on<BR>"
-	dat += span_bold("Charge progress: [reload]/180:") + "<BR>"
-	dat += "<A href='byond://?src=\ref[src];fire=1'>Open Fire</A><BR>"
-	dat += "Deployment of weapon authorized by <br>[using_map.company_name] Naval Command<br><br>Remember, friendly fire is grounds for termination of your contract and life.<HR>"
-
-	var/datum/browser/popup = new(user, "artillery", "Artillery")
-	popup.set_content(dat)
-	popup.open()
+	var/choice = tgui_alert(
+		user,
+		"Locked on. Charge progress: [reload]/180.\n\nDeployment authorized by [using_map.company_name] Naval Command. Remember, friendly fire is grounds for termination of your contract and life.",
+		"Bluespace Artillery Control",
+		list("Open Fire", "Cancel"),
+	)
+	if(choice == "Open Fire")
+		Topic("fire=1", list("fire" = "1"))
 
 /obj/machinery/artillerycontrol/Topic(href, href_list)
 	..()

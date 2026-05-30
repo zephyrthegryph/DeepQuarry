@@ -16,8 +16,10 @@
 
 	nuke_chat()
 
-	// Failed to fix, using tgalert as fallback
-	action = tg_alert(src, "Did that work?", "", "Yes", "No, switch to old ui")
+	// DQEdit — BYOND's native alert() instead of tg_alert (which used a
+	// browser-rendered modal). Native alert is safe here even when the
+	// TGUI panel is broken (the whole point of this verb).
+	action = alert(src.mob, "Did that work?", "", "Yes", "No, switch to old ui")
 	if (action == "No, switch to old ui")
 		winset(src, "outputwindow.legacy_output_selector", "left=output_legacy")
 		log_tgui(src, "Failed to fix.", context = "verb/fix_tgui_panel")

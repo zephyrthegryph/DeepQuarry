@@ -89,83 +89,81 @@
 	"}
 	return html
 
+// DQEdit Start — TGUI migration. display() now opens CodexTree.tsx; Topic
+// dispatch moves to tgui_act. Page/history state stays per-user as before.
 /datum/codex_tree/proc/display(mob/user)
-//	icon_state = "[initial(icon_state)]-open"
 	if(!home)
 		generate_pages()
 	if(!user)
 		return
 	var/datum/lore/codex/D = current_page["[user]"]
-	if(!istype(D)) // Initialize current_page and history
+	if(!istype(D))
 		current_page["[user]"] = home
 		D = current_page["[user]"]
 		if(!istype(D))
-			log_runtime("Codex_tree failed to failed to load for [user].")
+			log_runtime("Codex_tree failed to load for [user].")
 			return
 		var/list/H_init = list()
 		H_init.Add(home)
 		history["[user]"] = H_init
-	//if(!current_page)
-		//generate_pages()
+	tgui_interact(user)
 
-	user << browse_rsc('html/browser/codex.css', "codex.css")
+/datum/codex_tree/tgui_state(mob/user)
+	return GLOB.tgui_always_state
 
-	var/dat
-	dat =  "<head>"
-	dat += "<title>[holder.name] ([D.name])</title>"
-	dat += "<link rel='stylesheet' href='codex.css' />"
-	dat += "</head>"
+/datum/codex_tree/tgui_interact(mob/user, datum/tgui/ui)
+	ui = SStgui.try_update_ui(user, src, ui)
+	if(!ui)
+		ui = new(user, src, "CodexTree", holder?.name || "Codex")
+		ui.open()
 
-	dat += "<body>"
-	dat += "[get_tree_position(user)]<br>"
-	dat += "[make_search_bar()]<br>"
-	dat += "<center>"
-	dat += "<h2>[D.name]</h2>"
-	dat += "<br>"
-	if(D.data)
-		dat += "[D.data]<br>"
-	dat += "<br>"
-	if(istype(D, /datum/lore/codex/category))
-		dat += "<div class='button-group'>"
+/datum/codex_tree/tgui_data(mob/user)
+	var/list/data = list()
+	data["holder_name"] = holder?.name || ""
+	var/datum/lore/codex/D = current_page["[user]"]
+	if(!istype(D))
+		D = home
+	data["page_name"] = D ? D.name : ""
+	data["page_data"] = D?.data || ""
+	var/list/crumbs = list()
+	var/datum/lore/codex/walker = D
+	while(walker)
+		crumbs.Insert(1, null)
+		crumbs[1] = list("ref" = "\ref[walker]", "name" = walker.name)
+		walker = walker.parent
+	data["crumbs"] = crumbs
+	var/list/kids = list()
+	data["is_category"] = istype(D, /datum/lore/codex/category)
+	if(data["is_category"])
 		var/datum/lore/codex/category/C = D
 		for(var/datum/lore/codex/child in C.children)
-			dat += "<a href='byond://?src=\ref[src];target=\ref[child]' class='button'>[child.name]</a>"
-		dat += "</div>"
-	dat += "<hr>"
+			kids += list(list("ref" = "\ref[child]", "name" = child.name))
+	data["children"] = kids
 	var/list/H = history["[user]"]
-	if(LAZYLEN(H))
-		dat += "<br><a href='byond://?src=\ref[src];go_back=1'>\[Go Back\]</a>"
-	if(D.parent)
-		dat += "<br><a href='byond://?src=\ref[src];go_to_parent=1'>\[Go Up\]</a>"
-	if(D != home)
-		dat += "<br><a href='byond://?src=\ref[src];go_to_home=1'>\[Go To Home\]</a>"
-	dat += "</center></body>"
-	user << browse("<html>[dat]</html>", "window=the_empress_protects;size=600x550")
-	onclose(user, "the_empress_protects", src)
+	data["can_go_back"] = LAZYLEN(H) > 0
+	data["can_go_up"] = !!(D?.parent)
+	data["can_go_home"] = D != home
+	return data
 
-/datum/codex_tree/Topic(href, href_list)
+/datum/codex_tree/tgui_act(action, list/params)
 	. = ..()
 	if(.)
 		return
-
-
-	if(href_list["target"]) // Direct link, using a ref
-		var/datum/lore/codex/new_page = locate(href_list["target"])
-		go_to_page(new_page, FALSE, usr)
-	else if(href_list["search_query"])
-		quick_link(href_list["search_query"], usr)
-	else if(href_list["go_to_parent"])
-		go_to_parent(usr)
-	else if(href_list["go_back"])
-		go_back(usr)
-	else if(href_list["go_to_home"])
-		go_to_page(home, FALSE, usr)
-	else if(href_list["quick_link"]) // Indirect link, using a (hopefully) indexed word.
-		quick_link(href_list["quick_link"], usr)
-	else if(href_list["close"])
-		// Close the book, if our holder is actually a book.
-		//if(istype(holder, /obj/item/book/codex))
-			//holder.icon_state = initial(holder.icon_state)
-		usr << browse(null, "window=the_empress_protects")
-		return
-	display(usr)
+	switch(action)
+		if("target")
+			var/datum/lore/codex/new_page = locate(params["ref"])
+			go_to_page(new_page, FALSE, usr)
+			return TRUE
+		if("search")
+			quick_link(params["query"], usr)
+			return TRUE
+		if("go_up")
+			go_to_parent(usr)
+			return TRUE
+		if("go_back")
+			go_back(usr)
+			return TRUE
+		if("go_home")
+			go_to_page(home, FALSE, usr)
+			return TRUE
+// DQEdit End

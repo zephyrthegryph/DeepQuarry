@@ -106,9 +106,8 @@ GLOBAL_LIST_INIT(all_technomancer_assistance, subtypesof(/datum/technomancer/ass
 		else
 			return span_bold("[category]")
 
-// Proc: attack_self()
-// Parameters: 1 (user - the mob clicking on the catalog)
-// Description: Shows an HTML window, to buy equipment and spells, if the user is the legitimate owner.  Otherwise it cannot be used.
+// DQEdit Start — TGUI migration: full structured data, no embedded
+// byond:// hrefs. All actions dispatched via tgui_act.
 /obj/item/technomancer_catalog/attack_self(mob/user)
 	. = ..(user)
 	if(.)
@@ -120,231 +119,110 @@ GLOBAL_LIST_INIT(all_technomancer_assistance, subtypesof(/datum/technomancer/ass
 		return
 	else if(!owner)
 		bind_to_owner(user)
+	user.set_machine(src)
+	tgui_interact(user)
 
-	switch(tab)
-		if(0) //Functions
-			var/dat = ""
-			user.set_machine(src)
-			dat += "<align='center'>" + span_bold("Functions") + " | "
-			dat += "<a href='byond://?src=\ref[src];tab_choice=1'>Equipment</a> | "
-			dat += "<a href='byond://?src=\ref[src];tab_choice=2'>Consumables</a> | "
-			dat += "<a href='byond://?src=\ref[src];tab_choice=3'>Assistance</a> | "
-			dat += "<a href='byond://?src=\ref[src];tab_choice=4'>Info</a></align><br>"
-			dat += "You currently have a budget of " + span_bold("[budget]/[max_budget]") + ".<br><br>"
-			dat += "<a href='byond://?src=\ref[src];refund_functions=1'>Refund Functions</a><br><br>"
+/obj/item/technomancer_catalog/tgui_interact(mob/user, datum/tgui/ui)
+	ui = SStgui.try_update_ui(user, src, ui)
+	if(!ui)
+		ui = new(user, src, "TechnomancerCatalog", "Catalog")
+		ui.open()
 
-			dat += "[show_categories(ALL_SPELLS)] | [show_categories(OFFENSIVE_SPELLS)] | [show_categories(DEFENSIVE_SPELLS)] | \
-			[show_categories(UTILITY_SPELLS)] | [show_categories(SUPPORT_SPELLS)]<br>"
-			for(var/datum/technomancer/spell/spell in spell_instances)
-				if(spell.hidden)
-					continue
-				if(spell_tab != ALL_SPELLS && spell.category != spell_tab)
-					continue
-				dat += span_bold("[spell.name]") + "<br>"
-				dat += span_italics("[spell.desc]") + "<br>"
-				if(spell.spell_power_desc)
-					dat += span_purple("Spell Power: [spell.spell_power_desc]") + "<br>"
-				if(spell.enhancement_desc)
-					dat += span_blue("Scepter Effect: [spell.enhancement_desc]") + "<br>"
-				if(spell.cost <= budget)
-					dat += "<a href='byond://?src=\ref[src];spell_choice=[spell.name]'>Purchase</a> ([spell.cost])<br><br>"
-				else
-					dat += span_red(span_bold("Cannot afford!")) + "<br><br>"
-			user << browse("<html>[dat]</html>", "window=radio")
-			onclose(user, "radio")
-		if(1) //Equipment
-			var/dat = ""
-			user.set_machine(src)
-			dat += "<align='center'><a href='byond://?src=\ref[src];tab_choice=0'>Functions</a> | "
-			dat += span_bold("Equipment") + " | "
-			dat += "<a href='byond://?src=\ref[src];tab_choice=2'>Consumables</a> | "
-			dat += "<a href='byond://?src=\ref[src];tab_choice=3'>Assistance</a> | "
-			dat += "<a href='byond://?src=\ref[src];tab_choice=4'>Info</a></align><br>"
-			dat += "You currently have a budget of " + span_bold("[budget]/[max_budget]") + ".<br><br>"
-			for(var/datum/technomancer/equipment/E in equipment_instances)
-				dat += span_bold("[E.name]") + "<br>"
-				dat += span_italics("[E.desc]") + "<br>"
-				if(E.cost <= budget)
-					dat += "<a href='byond://?src=\ref[src];item_choice=[E.name]'>Purchase</a> ([E.cost])<br><br>"
-				else
-					dat += span_red(span_bold("Cannot afford!")) + "<br><br>"
-			user << browse("<html>[dat]</html>", "window=radio")
-			onclose(user, "radio")
-		if(2) //Consumables
-			var/dat = ""
-			user.set_machine(src)
-			dat += "<align='center'><a href='byond://?src=\ref[src];tab_choice=0'>Functions</a> | "
-			dat += "<a href='byond://?src=\ref[src];tab_choice=1'>Equipment</a> | "
-			dat += span_bold("Consumables") + " | "
-			dat += "<a href='byond://?src=\ref[src];tab_choice=3'>Assistance</a> | "
-			dat += "<a href='byond://?src=\ref[src];tab_choice=4'>Info</a></align><br>"
-			dat += "You currently have a budget of " + span_bold("[budget]/[max_budget]") + ".<br><br>"
-			for(var/datum/technomancer/consumable/C in consumable_instances)
-				dat += span_bold("[C.name]") + "<br>"
-				dat += span_italics("[C.desc]") + "<br>"
-				if(C.cost <= budget)
-					dat += "<a href='byond://?src=\ref[src];item_choice=[C.name]'>Purchase</a> ([C.cost])<br><br>"
-				else
-					dat += span_red(span_bold("Cannot afford!")) + "<br><br>"
-			user << browse("<html>[dat]</html>", "window=radio")
-			onclose(user, "radio")
-		if(3) //Assistance
-			var/dat = ""
-			user.set_machine(src)
-			dat += "<align='center'><a href='byond://?src=\ref[src];tab_choice=0'>Functions</a> | "
-			dat += "<a href='byond://?src=\ref[src];tab_choice=1'>Equipment</a> | "
-			dat += "<a href='byond://?src=\ref[src];tab_choice=2'>Consumables</a> | "
-			dat += span_bold("Assistance") + " | "
-			dat += "<a href='byond://?src=\ref[src];tab_choice=4'>Info</a></align><br>"
-			dat += "You currently have a budget of " + span_bold("[budget]/[max_budget]") + ".<br><br>"
-			for(var/datum/technomancer/assistance/A in assistance_instances)
-				dat += span_bold("[A.name]") + "<br>"
-				dat += span_italics("[A.desc]") + "<br>"
-				if(A.cost <= budget)
-					dat += "<a href='byond://?src=\ref[src];item_choice=[A.name]'>Purchase</a> ([A.cost])<br><br>"
-				else
-					dat += span_red(span_bold("Cannot afford!")) + "<br><br>"
-			user << browse("<html>[dat]</html>", "window=radio")
-			onclose(user, "radio")
-		if(4) //Info
-			var/dat = ""
-			user.set_machine(src)
-			dat += "<align='center'><a href='byond://?src=\ref[src];tab_choice=0'>Functions</a> | "
-			dat += "<a href='byond://?src=\ref[src];tab_choice=1'>Equipment</a> | "
-			dat += "<a href='byond://?src=\ref[src];tab_choice=2'>Consumables</a> | "
-			dat += "<a href='byond://?src=\ref[src];tab_choice=3'>Assistance</a> | "
-			dat += span_bold("Info") + "</align><br>"
-			dat += "You currently have a budget of " + span_bold("[budget]/[max_budget]") + ".<br><br>"
-			dat += "<br>"
-			dat += "<h1>Manipulation Core Owner's Manual</h1><br>"
-			dat += "This brief entry in your catalog will try to explain what everything does.  For starters, the thing you're \
-			probably wearing on your back is known as a " + span_bold("Manipulation Core") + ", or just a 'Core'.  It allows you to do amazing \
-			things with almost no effort, depending on what " + span_bold("functions") + " you've purchased for it.  Don't lose your core!<br>"
-			dat += "<br>"
-			dat += "There are a few things you need to keep in mind as you use your Core to manipulate the universe.  The core \
-			requires a special type of " + span_bold("energy") + ", that is referred to as just 'Energy' in the catalog.  All cores generate \
-			their own energy, some more than others.  Most functions require energy be spent in order to work, so make sure not \
-			to run out in a critical moment.  Besides waiting for your Core to recharge, you can buy certain functions which \
-			do something to generate energy.<br>"
-			dat += "<br>"
-			dat += "The second thing you need to know is that awesome power over the physical world has consequences, in the form \
-			of " + span_bold("Instability") + ".  Instability is the result of your Core's energy being used to fuel it, and so little is \
-			understood about it, even among fellow Core owners, however it is almost always a bad thing to have.  Instability will \
-			'cling' to you as you use functions, with powerful functions creating lots of instability.  The effects of holding onto \
-			instability are generally harmless or mildly annoying at low levels, with effects such as sparks in the air or forced \
-			blinking.  Accumulating more and more instability will lead to worse things happening, which can easily be fatal, if not \
-			managed properly.<br>"
-			dat += "<br>"
-			dat += "Fortunately, all Cores come with a meter to tell you how much instability you currently hold.  \
-			Instability will go away on its own as time goes on.  You can tell if you have instability by the characteristic \
-			purple colored lightning that appears around something with instability lingering on it.  High amounts of instability \
-			may cause the object afflicted with it to glow a dark purple, which is often known simply as " + span_bold("Glow") + ", which spreads \
-			the instability.  You should stay far away from anyone afflicted by Glow, as they will be a danger to both themselves and \
-			anything nearby.  Multiple sources of Glow can perpetuate the glow for a very long time if they are not separated.<br>"
-			dat += "<br>"
-			dat += "You should strive to keep you and your apprentices' cores secure.  To help with this, each core comes with a \
-			locking mechanism, which should make attempts at forceful removal by third parties (or you) futile, until it is \
-			unlocked again.  Do note that there is a safety mechanism, which will automatically unlock the core if the wearer \
-			suffers death.  There exists a secondary safety mechanism (safety for the core, not you) that is triggered when \
-			the core detects itself being carried, with the carrier not being authorized.  It will respond by giving a \
-			massive amount of Instability to them, so be careful, or perhaps make use of that.<br>"
-			dat += "<br>"
-			dat += span_bold("You can refund functions, equipment items, and assistance items, so long as you are in your base.") + "  \
-			Once you leave, you can't refund anything, however you can still buy things if you still have points remaining.  \
-			To refund functions, just click the 'Refund Functions' button on the top, when in the functions tabs.  \
-			For equipment items, you need to hit it against the catalog.<br>"
-			dat += "<br>"
-			dat += "Your blue robes and hat are both stylish, and somewhat protective against hostile energies, which includes \
-			EXTERNAL instability sources (like Glow), and mundane electricity.  If you're looking for protection against other \
-			things, it's suggested you purchase or otherwise obtain armor.<br>"
-			dat += "<br>"
-			dat += "There are a few terms you may not understand in the catalog, so this will try to explain them.<br>"
-			dat += "A function can be thought of as a 'spell', that you use by holding in your hands and trying to use it on \
-			a target of your choice.<br>"
-			dat += "Some functions can have their abilities enhanced by a special rod called the Scepter of Enhancement.  \
-			If a function is able to be boosted with it, it will be shown underneath the description of the function as \
-			" + span_blue(span_italics("'Scepter Effect:'")) + ".  Note that you must hold the scepter for it to work, so try to avoid losing it.<br>"
-			dat += "Functions can also be boosted with the core itself.  A function that is able to benefit \
-			from this will have " + span_purple(span_italics("'Spell Power:'")) + " underneath.  Different Cores have different \
-			amounts of spell power.<br>"
-			dat += "When a function refers to 'allies', it means you, your apprentices, currently controlled entities (with the \
-			Control function), and friendly simple-minded entities that you've summoned with the Scepter of Enhancement.<br>"
-			dat += "A meter is equal to one 'tile'.<br>"
-			user << browse("<html>[dat]</html>", "window=radio")
-			onclose(user, "radio")
+/obj/item/technomancer_catalog/tgui_data(mob/user)
+	var/list/data = list()
+	data["tab"] = tab
+	data["spell_tab"] = spell_tab
+	data["budget"] = budget
+	data["max_budget"] = max_budget
+	data["spell_categories"] = list(ALL_SPELLS, OFFENSIVE_SPELLS, DEFENSIVE_SPELLS, UTILITY_SPELLS, SUPPORT_SPELLS)
+	var/list/spells = list()
+	for(var/datum/technomancer/spell/s in spell_instances)
+		spells += list(list(
+			"name" = s.name,
+			"desc" = s.desc,
+			"cost" = s.cost,
+			"spell_power_desc" = s.spell_power_desc || "",
+			"enhancement_desc" = s.enhancement_desc || "",
+			"category" = s.category,
+			"hidden" = !!s.hidden,
+		))
+	data["spells"] = spells
+	var/list/equipment = list()
+	for(var/datum/technomancer/equipment/e in equipment_instances)
+		equipment += list(list("name" = e.name, "desc" = e.desc, "cost" = e.cost))
+	data["equipment"] = equipment
+	var/list/consumables = list()
+	for(var/datum/technomancer/consumable/c in consumable_instances)
+		consumables += list(list("name" = c.name, "desc" = c.desc, "cost" = c.cost))
+	data["consumables"] = consumables
+	var/list/assistance = list()
+	for(var/datum/technomancer/assistance/a in assistance_instances)
+		assistance += list(list("name" = a.name, "desc" = a.desc, "cost" = a.cost))
+	data["assistance"] = assistance
+	return data
 
-// Proc: Topic()
-// Parameters: 2 (href - don't know, href_list - the choice that the person using the interface above clicked on.)
-// Description: Acts upon clicks on links for the catalog, if they are the rightful owner.
-/obj/item/technomancer_catalog/Topic(href, href_list)
-	..()
-	var/mob/living/carbon/human/H = usr
-
-	if(H.stat || H.restrained())
+/obj/item/technomancer_catalog/tgui_act(action, list/params)
+	. = ..()
+	if(.)
 		return
+	var/mob/living/carbon/human/H = usr
+	if(H.stat || H.restrained())
+		return TRUE
 	if(!ishuman(H))
-		return 1 //why does this return 1?
-
+		return TRUE
 	if(H != owner)
 		to_chat(H, "\The [src] won't allow you to do that, as you don't own \the [src]!")
-		return
-
-	if(loc == H || (in_range(src, H) && istype(loc, /turf)))
-		H.set_machine(src)
-		if(href_list["tab_choice"])
-			tab = text2num(href_list["tab_choice"])
-		if(href_list["spell_category"])
-			spell_tab = href_list["spell_category"]
-		if(href_list["spell_choice"])
+		return TRUE
+	if(loc != H && !(in_range(src, H) && istype(loc, /turf)))
+		return TRUE
+	H.set_machine(src)
+	switch(action)
+		if("tab_choice")
+			tab = text2num(params["tab"])
+			return TRUE
+		if("spell_category")
+			spell_tab = params["category"]
+			return TRUE
+		if("spell_choice")
 			var/datum/technomancer/new_spell = null
-			//Locate the spell.
-			for(var/datum/technomancer/spell/spell in spell_instances)
-				if(spell.name == href_list["spell_choice"])
-					new_spell = spell
+			for(var/datum/technomancer/spell/s in spell_instances)
+				if(s.name == params["name"])
+					new_spell = s
 					break
-
 			var/obj/item/technomancer_core/core = null
 			if(istype(H.back, /obj/item/technomancer_core))
 				core = H.back
-
 			if(new_spell && core)
 				if(new_spell.cost <= budget)
 					if(!core.has_spell(new_spell))
 						budget -= new_spell.cost
 						to_chat(H, span_notice("You have just bought [new_spell.name]."))
 						core.add_spell(new_spell.obj_path, new_spell.name, new_spell.ability_icon_state)
-					else //We already own it.
+					else
 						to_chat(H, span_danger("You already have [new_spell.name]!"))
-						return
-				else //Can't afford.
+				else
 					to_chat(H, span_danger("You can't afford that!"))
-					return
-
-		// This needs less copypasta.
-		if(href_list["item_choice"])
-			var/datum/technomancer/desired_object = null
-			for(var/datum/technomancer/O in equipment_instances + consumable_instances + assistance_instances)
-				if(O.name == href_list["item_choice"])
-					desired_object = O
+			return TRUE
+		if("item_choice")
+			var/datum/technomancer/desired = null
+			for(var/datum/technomancer/o in equipment_instances + consumable_instances + assistance_instances)
+				if(o.name == params["name"])
+					desired = o
 					break
-
-			if(desired_object)
-				if(desired_object.cost <= budget)
-					budget -= desired_object.cost
-					to_chat(H, span_notice("You have just bought \a [desired_object.name]."))
-					var/obj/O = new desired_object.obj_path(get_turf(H))
-					GLOB.technomancer_belongings.Add(O) // Used for the Track spell.
-
-				else //Can't afford.
+			if(desired)
+				if(desired.cost <= budget)
+					budget -= desired.cost
+					to_chat(H, span_notice("You have just bought \a [desired.name]."))
+					var/obj/O = new desired.obj_path(get_turf(H))
+					GLOB.technomancer_belongings.Add(O)
+				else
 					to_chat(H, span_danger("You can't afford that!"))
-					return
-
-
-		if(href_list["refund_functions"])
+			return TRUE
+		if("refund_functions")
 			var/turf/T = get_turf(H)
 			if(T.z in using_map.player_levels)
 				to_chat(H, span_danger("You can only refund at your base, it's too late now!"))
-				return
+				return TRUE
 			var/obj/item/technomancer_core/core = null
 			if(istype(H.back, /obj/item/technomancer_core))
 				core = H.back
@@ -355,7 +233,8 @@ GLOBAL_LIST_INIT(all_technomancer_assistance, subtypesof(/datum/technomancer/ass
 							budget += spell_datum.cost
 							core.remove_spell(spell)
 							break
-		attack_self(H)
+			return TRUE
+// DQEdit End
 
 /obj/item/technomancer_catalog/attackby(atom/movable/AM, mob/user)
 	var/turf/T = get_turf(user)

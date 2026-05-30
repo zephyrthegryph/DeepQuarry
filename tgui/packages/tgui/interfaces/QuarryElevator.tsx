@@ -162,9 +162,7 @@ const DepthCard = (props: {
       title={`Depth ${d.depth}`}
       buttons={
         <Button
-          color={
-            props.isCallPanel ? 'good' : stable ? 'good' : 'average'
-          }
+          color={props.isCallPanel ? 'good' : stable ? 'good' : 'average'}
           disabled={props.traveling}
           onClick={props.onAction}
         >
@@ -296,8 +294,8 @@ const FrontierCard = (props: {
         Locked
       </Box>
       <Box color="label" mt="4px" fontSize="0.9em">
-        Stabilise depth {props.deepestVisited} (complete enough of its
-        goals) to unlock the next descent.
+        Stabilise depth {props.deepestVisited} (complete enough of its goals) to
+        unlock the next descent.
       </Box>
     </Section>
   );

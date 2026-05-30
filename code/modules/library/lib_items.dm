@@ -210,16 +210,31 @@ Book Cart End
 		display_content(user)
 		user.visible_message("[user] opens a book titled \"[src.title]\" and begins reading intently.")
 		playsound(src, 'sound/bureaucracy/bookopen.ogg', 50, 1)
-		onclose(user, "book")
+		// DQEdit — onclose() was for the legacy "book" browse() window
+		// that no longer exists (books are TGUI now).
 		playsound(src, 'sound/bureaucracy/bookclose.ogg', 50, 1)
 	else
 		to_chat(user, "This book is completely blank!")
 
-/// Proc that handles sending the book information to the user, as well as some housekeeping stuff.
+// DQEdit Start — TGUI migration. display_content now opens Book.tsx,
+// which renders the book's HTML content with a "Penned by [author]"
+// preamble.
 /obj/item/book/proc/display_content(mob/living/user)
-	if(!findtext(dat, regex("^<html")))
-		dat = "<html>[dat]</html>"
-	user << browse(replacetext(dat, "<html>", "<html><TT><I>Penned by [author].</I></TT> <BR>"), "window=book")
+	tgui_interact(user)
+
+/obj/item/book/tgui_interact(mob/user, datum/tgui/ui)
+	ui = SStgui.try_update_ui(user, src, ui)
+	if(!ui)
+		ui = new(user, src, "Book", title || name)
+		ui.open()
+
+/obj/item/book/tgui_data(mob/user)
+	var/list/data = list()
+	data["title"] = title || name
+	data["author"] = author || ""
+	data["content"] = dat || ""
+	return data
+// DQEdit End
 
 /obj/item/book/attackby(obj/item/W, mob/user)
 	if(carved)
@@ -325,71 +340,80 @@ Book Cart End
 	var/list/pages = list() //the contents of each page
 	special_handling = TRUE
 
+// DQEdit Start — TGUI migration. show_content now opens BookBundle.tsx;
+// Topic page-flip moves to tgui_act. Photo image embedding via
+// browse_rsc is not yet wired through TGUI assets.
 /obj/item/book/bundle/proc/show_content(mob/user)
-	if(!pages.len)
-		return
-	var/dat
-	var/obj/item/W = pages[page]
-	// first
-	if(page == 1)
-		dat+= "<DIV STYLE='float:left; text-align:left; width:33.33333%'><A href='byond://?src=\ref[src];prev_page=1'>Front</A></DIV>"
-		dat+= "<DIV STYLE='float:right; text-align:right; width:33.33333%'><A href='byond://?src=\ref[src];next_page=1'>Next Page</A></DIV><BR><HR>"
-	// last
-	else if(page == pages.len)
-		dat+= "<DIV STYLE='float:left; text-align:left; width:33.33333%'><A href='byond://?src=\ref[src];prev_page=1'>Previous Page</A></DIV>"
-		dat+= "<DIV STYLE='float:right; text-align:right; with:33.33333%'><A href='byond://?src=\ref[src];next_page=1'>Back</A></DIV><BR><HR>"
-	// middle pages
-	else
-		dat+= "<DIV STYLE='float:left; text-align:left; width:33.33333%'><A href='byond://?src=\ref[src];prev_page=1'>Previous Page</A></DIV>"
-		dat+= "<DIV STYLE='float:right; text-align:right; width:33.33333%'><A href='byond://?src=\ref[src];next_page=1'>Next Page</A></DIV><BR><HR>"
-	if(istype(pages[page], /obj/item/paper))
-		var/obj/item/paper/P = W
-		if(!(ishuman(user) || isobserver(user) || issilicon(user)))
-			dat += "<HTML><HEAD><TITLE>[P.name]</TITLE></HEAD><BODY>[stars(P.info)][P.stamps]</BODY></HTML>"
-		else
-			dat += "<HTML><HEAD><TITLE>[P.name]</TITLE></HEAD><BODY>[P.info][P.stamps]</BODY></HTML>"
-		user << browse(dat, "window=[name]")
-	else if(istype(pages[page], /obj/item/photo))
-		var/obj/item/photo/P = W
-		user << browse_rsc(P.img, "tmp_photo.png")
-		user << browse("<html>" + dat + "<head><title>[P.name]</title></head>" \
-		+ "<body style='overflow:hidden'>" \
-		+ "<div> <img src='tmp_photo.png' width = '180'" \
-		+ "[P.scribble ? "<div> Written on the back:<br><i>[P.scribble]</i>" : null]"\
-		+ "</body></html>", "window=[name]")
-	else if(!isnull(pages[page]))
-		if(!(ishuman(user) || isobserver(user) || issilicon(user)))
-			dat += "<HTML><HEAD><TITLE>Page [page]</TITLE></HEAD><BODY>[stars(pages[page])]</BODY></HTML>"
-		else
-			dat += "<HTML><HEAD><TITLE>Page [page]</TITLE></HEAD><BODY>[pages[page]]</BODY></HTML>"
-		user << browse(dat, "window=[name]")
+	tgui_interact(user)
 
 /obj/item/book/bundle/attack_self(mob/user)
 	. = ..(user)
 	if(.)
 		return TRUE
-	src.show_content(user)
 	add_fingerprint(user)
 	update_icon()
-	return
+	tgui_interact(user)
 
-/obj/item/book/bundle/Topic(href, href_list)
-	if(..())
-		return 1
-	if((src in usr.contents) || (istype(src.loc, /obj/item/folder) && (src.loc in usr.contents)))
-		usr.set_machine(src)
-		if(href_list["next_page"])
+/obj/item/book/bundle/tgui_interact(mob/user, datum/tgui/ui)
+	ui = SStgui.try_update_ui(user, src, ui)
+	if(!ui)
+		ui = new(user, src, "BookBundle", name)
+		ui.open()
+
+/obj/item/book/bundle/tgui_data(mob/user)
+	var/list/data = list()
+	data["page"] = page
+	data["total_pages"] = pages.len
+	data["scribble"] = ""
+	if(pages.len)
+		var/obj/item/W = pages[page]
+		if(istype(W, /obj/item/paper))
+			var/obj/item/paper/P = W
+			data["page_name"] = P.name
+			data["page_kind"] = "paper"
+			var/info = (ishuman(user) || isobserver(user) || issilicon(user)) ? P.info : stars(P.info)
+			data["page_info"] = "[info][P.stamps]"
+		else if(istype(W, /obj/item/photo))
+			var/obj/item/photo/P = W
+			data["page_name"] = P.name
+			data["page_kind"] = "photo"
+			data["page_info"] = ""
+			data["scribble"] = P.scribble || ""
+		else if(!isnull(pages[page]))
+			data["page_name"] = "Page [page]"
+			data["page_kind"] = "text"
+			var/text = pages[page]
+			data["page_info"] = (ishuman(user) || isobserver(user) || issilicon(user)) ? "[text]" : stars("[text]")
+		else
+			data["page_name"] = "Page [page]"
+			data["page_kind"] = "text"
+			data["page_info"] = ""
+	else
+		data["page_name"] = name
+		data["page_kind"] = "text"
+		data["page_info"] = ""
+	return data
+
+/obj/item/book/bundle/tgui_act(action, list/params)
+	. = ..()
+	if(.)
+		return
+	if(!((src in usr.contents) || (istype(src.loc, /obj/item/folder) && (src.loc in usr.contents))))
+		to_chat(usr, span_notice("You need to hold it in your hands!"))
+		return TRUE
+	usr.set_machine(src)
+	switch(action)
+		if("next_page")
 			if(page != pages.len)
 				page++
 				playsound(src, "pageturn", 50, 1)
-		if(href_list["prev_page"])
+			return TRUE
+		if("prev_page")
 			if(page > 1)
 				page--
 				playsound(src, "pageturn", 50, 1)
-		src.attack_self(usr)
-		updateUsrDialog(usr)
-	else
-		to_chat(usr, span_notice("You need to hold it in your hands!"))
+			return TRUE
+// DQEdit End
 
 /*
  * Barcode Scanner

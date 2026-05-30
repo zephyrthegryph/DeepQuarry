@@ -21,17 +21,17 @@
 		to_chat(user, span_warning("You stare at the scroll but cannot make sense of the markings!"))
 		return
 
+	// DQEdit — single-action panel; tgui_alert with the existing
+	// uses count is the right primitive.
 	user.set_machine(src)
-	var/dat = span_bold("Teleportation Scroll:") + "<BR>"
-	dat += "Number of uses: [src.uses]<BR>"
-	dat += "<HR>"
-	dat += span_bold("Four uses use them wisely:") + "<BR>"
-	dat += "<A href='byond://?src=\ref[src];spell_teleport=1'>Teleport</A><BR>"
-	dat += "Kind regards,<br>Wizards Federation<br><br>P.S. Don't forget to bring your gear, you'll need it to cast most spells.<HR>"
-
-	var/datum/browser/popup = new(user, "scroll", "Scroll")
-	popup.set_content(dat)
-	popup.open()
+	var/choice = tgui_alert(
+		user,
+		"You have [uses] uses left.\n\nKind regards, the Wizards Federation.\nP.S. Don't forget to bring your gear, you'll need it to cast most spells.",
+		"Teleportation Scroll",
+		list("Teleport", "Cancel"),
+	)
+	if(choice == "Teleport")
+		Topic("spell_teleport=1", list("spell_teleport" = "1"))
 
 /obj/item/teleportation_scroll/Topic(href, href_list)
 	..()

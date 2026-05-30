@@ -11,7 +11,7 @@
 	icon_state = "railing0"
 	var/broken = FALSE
 	var/health = 70
-	var/interactable = FALSE // DQEdit — was declared on a parent in removed map content
+	var/interactable = FALSE
 	var/maxhealth = 70
 	var/check = 0
 	var/icon_modifier = ""

@@ -442,49 +442,13 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 	cut_overlay(pose_indicator)
 	pose_indicator = null
 
+// DQEdit Start — set_flavor verb body relocated to modular_dq/code/modules/mob/living/carbon/human/flavor_panel.dm (structured TGUI).
 /mob/living/carbon/human/verb/set_flavor()
 	set name = "Set Flavour Text"
 	set desc = "Sets an extended description of your character's features."
 	set category = "IC.Settings"
-
-	var/HTML = "<html><body>"
-	HTML += "<tt><center>"
-	HTML += span_bold("Update Flavour Text") + " <hr />"
-	HTML += "<br></center>"
-	HTML += "<a href='byond://?src=\ref[src];flavor_change=general'>General:</a> "
-	HTML += TextPreview(flavor_texts["general"])
-	HTML += "<br>"
-	HTML += "<a href='byond://?src=\ref[src];flavor_change=head'>Head:</a> "
-	HTML += TextPreview(flavor_texts["head"])
-	HTML += "<br>"
-	HTML += "<a href='byond://?src=\ref[src];flavor_change=face'>Face:</a> "
-	HTML += TextPreview(flavor_texts["face"])
-	HTML += "<br>"
-	HTML += "<a href='byond://?src=\ref[src];flavor_change=eyes'>Eyes:</a> "
-	HTML += TextPreview(flavor_texts["eyes"])
-	HTML += "<br>"
-	HTML += "<a href='byond://?src=\ref[src];flavor_change=torso'>Body:</a> "
-	HTML += TextPreview(flavor_texts["torso"])
-	HTML += "<br>"
-	HTML += "<a href='byond://?src=\ref[src];flavor_change=arms'>Arms:</a> "
-	HTML += TextPreview(flavor_texts["arms"])
-	HTML += "<br>"
-	HTML += "<a href='byond://?src=\ref[src];flavor_change=hands'>Hands:</a> "
-	HTML += TextPreview(flavor_texts["hands"])
-	HTML += "<br>"
-	HTML += "<a href='byond://?src=\ref[src];flavor_change=legs'>Legs:</a> "
-	HTML += TextPreview(flavor_texts["legs"])
-	HTML += "<br>"
-	HTML += "<a href='byond://?src=\ref[src];flavor_change=feet'>Feet:</a> "
-	HTML += TextPreview(flavor_texts["feet"])
-	HTML += "<br>"
-	HTML += "<hr />"
-	HTML +="<a href='byond://?src=\ref[src];flavor_change=done'>\[Done\]</a>"
-	HTML += "<tt></body></html>"
-
-	var/datum/browser/popup = new(src, "flavor_changes", "Change Flavortexts", 430, 300)
-	popup.set_content(HTML)
-	popup.open()
+	dq_open_flavor_panel(src)
+// DQEdit End
 
 /mob/living/carbon/human/proc/toggle_tail(setting,message = 0)
 	if(!tail_style || !tail_style.ani_state)

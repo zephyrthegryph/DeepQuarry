@@ -594,7 +594,9 @@
 			src.mecha_log_message("Toggled lights [lights?"on":"off"].")
 			playsound(src, 'sound/mecha/heavylightswitch.ogg', 50, 1)
 		if("View Stats")
-			occupant << browse(src.get_stats_html(), "window=exosuit")
+			// DQEdit — TGUI: open MechaInterface.tsx instead of browse().
+			tgui_subview = "main"
+			tgui_interact(occupant)
 
 
 ////////////////////////////
@@ -1643,7 +1645,10 @@
 	var/output = {"<b>Assume direct control over [src]?</b>
 						<a href='byond://?src=\ref[src];ai_take_control=\ref[user];duration=3000'>Yes</a><br>
 						"}
-	user << browse("<html>[output]</html>", "window=mecha_attack_ai")
+	// DQEdit — TGUI sub-view: AI attack interface.
+	tgui_subview = "attack_ai"
+	tgui_subview_html = output
+	tgui_interact(user)
 	return
 */
 
@@ -2061,10 +2066,11 @@
 	set category = "Exosuit Interface"
 	set src = usr.loc
 	set popup_menu = 0
-	if(usr!=src.occupant)
+	if(usr != src.occupant)
 		return
-	//pr_update_stats.start()
-	src.occupant << browse(src.get_stats_html(), "window=exosuit")
+	// DQEdit — TGUI: replaces legacy browse(get_stats_html()).
+	tgui_subview = "main"
+	tgui_interact(src.occupant)
 	return
 
 /*
@@ -2102,7 +2108,8 @@
 		return
 	if(mob_container.forceMove(src.loc))//ejecting mob container
 		src.mecha_log_message("[mob_container] moved out.")
-		occupant << browse(null, "window=exosuit")
+		// DQEdit — TGUI: close the exosuit interface on eject.
+		SStgui.close_uis(src)
 		if(occupant.client && dq_get_cloaked_selfimage(src))
 			occupant.client.images -= dq_get_cloaked_selfimage(src)
 		if(istype(mob_container, /obj/item/mmi))
@@ -2178,36 +2185,11 @@
 ////////////////////////////////////
 
 /obj/mecha/proc/get_stats_html()
-	var/output = {"<html>
-						<head><title>[src.name] data</title>
-						<style>
-						body {color: #00ff00; background: #000000; font-family:"Lucida Console",monospace; font-size: 12px;}
-						hr {border: 1px solid #0f0; color: #0f0; background-color: #0f0;}
-						a {padding:2px 5px;;color:#0f0;}
-						.wr {margin-bottom: 5px;}
-						.header {cursor:pointer;}
-						.open, .closed {background: #32CD32; color:#000; padding:1px 2px;}
-						.links a {margin-bottom: 2px;padding-top:3px;}
-						.visible {display: block;}
-						.hidden {display: none;}
-						</style>
-						<script language='javascript' type='text/javascript'>
-						[JS_BYJAX]
-						[JS_DROPDOWN]
-						function ticker() {
-							setInterval(function(){
-								window.location='byond://?src=\ref[src]&update_content=1';
-							}, 1000);
-						}
-
-						window.onload = function() {
-							dropdowns();
-							ticker();
-						}
-						</script>
-						</head>
-						<body>
-						<div id='content'>
+	// DQEdit — Bare stats body for TGUI consumption. The legacy <html>/
+	// <script>/<style> wrapper and the JS-driven 1s ticker are gone:
+	// TGUI's autoupdate handles refresh, and styling is set in
+	// MechaInterface.tsx's outer Box.
+	var/output = {"<div id='content'>
 						[src.get_stats_part()]
 						</div>
 						<div id='eq_list'>
@@ -2217,10 +2199,259 @@
 						<div id='commands'>
 						[src.get_commands()]
 						</div>
-						</body>
-						</html>
 					"}
 	return output
+
+// DQEdit Start — fully-structured TGUI for all five views (main + log +
+// attack_ai + access + maint). One MechaInterface.tsx renders all five
+// via the `view` data field; the legacy four browse() sub-UIs are gone.
+/obj/mecha
+	var/tgui_subview = "main"
+	// Refs kept alive across sub-view interactions so tgui_data can
+	// re-render structured data on update without losing the caller/card.
+	var/datum/weakref/active_id_card_ref
+	var/datum/weakref/active_caller_ref
+	var/active_attack_target_name = ""
+
+/obj/mecha/tgui_interact(mob/user, datum/tgui/ui)
+	ui = SStgui.try_update_ui(user, src, ui)
+	if(!ui)
+		ui = new(user, src, "MechaInterface", "[name]")
+		ui.autoupdate = TRUE
+		ui.open()
+
+/obj/mecha/tgui_data(mob/user)
+	var/list/data = list()
+	data["view"] = tgui_subview
+	data["title"] = "[name]"
+	switch(tgui_subview)
+		if("log")
+			data["log_entries"] = get_log_tgui()
+			return data
+		if("attack_ai")
+			data["ai_target_name"] = active_attack_target_name || ""
+			var/list/targets = list()
+			for(var/obj/item/mecha_parts/mecha_equipment/W in equipment)
+				targets += list(list(
+					"ref" = "\ref[W]",
+					"name" = W.name,
+					"kind" = "",
+					"info_lines" = list(),
+				))
+			data["ai_targets"] = targets
+			return data
+		if("access")
+			var/obj/item/card/id/id_card = active_id_card_ref?.resolve()
+			var/list/cur = list()
+			for(var/a in operation_req_access)
+				cur += list(list("id" = a, "name" = SSaccess.get_access_desc(a)))
+			data["access_current"] = cur
+			var/list/avail = list()
+			if(id_card)
+				for(var/a in id_card.GetAccess())
+					if(a in operation_req_access)
+						continue
+					var/aname = SSaccess.get_access_desc(a)
+					if(!aname)
+						continue
+					avail += list(list("id" = a, "name" = aname))
+			data["access_available"] = avail
+			return data
+		if("maint")
+			data["maint_can_req_access"] = !!add_req_access
+			data["maint_can_maint_access"] = !!maint_access
+			data["maint_can_set_air"] = (state > 0)
+			data["maint_can_remove_passenger"] = (state > 0) && (locate(/obj/item/mecha_parts/mecha_equipment/tool/passenger) in contents)
+			return data
+	// Damage banner.
+	var/list/dam = list()
+	var/static/list/damage_keys = list(
+		"[MECHA_INT_FIRE]" = list("INTERNAL FIRE", FALSE),
+		"[MECHA_INT_TEMP_CONTROL]" = list("LIFE SUPPORT SYSTEM MALFUNCTION", FALSE),
+		"[MECHA_INT_TANK_BREACH]" = list("GAS TANK BREACH", FALSE),
+		"[MECHA_INT_CONTROL_LOST]" = list("COORDINATION SYSTEM CALIBRATION FAILURE", TRUE),
+		"[MECHA_INT_SHORT_CIRCUIT]" = list("SHORT CIRCUIT", FALSE),
+	)
+	for(var/flag_text in damage_keys)
+		var/intdamflag = text2num(flag_text)
+		if(hasInternalDamage(intdamflag))
+			var/list/info = damage_keys[flag_text]
+			var/repair_action = ""
+			if(info[2])
+				repair_action = "repair_int_control_lost"
+			dam += list(list(
+				"key" = repair_action || "damage_[intdamflag]",
+				"label" = info[1],
+				"has_repair" = !!repair_action,
+			))
+	data["damage_reports"] = dam
+	data["high_pressure"] = return_pressure() > WARNING_HIGH_PRESSURE
+	// Integrity.
+	var/obj/item/mecha_parts/component/hull/HC = internal_components[MECH_HULL]
+	var/obj/item/mecha_parts/component/armor/AC = internal_components[MECH_ARMOR]
+	data["has_armor"] = !!AC
+	data["armor_percent"] = AC ? round(AC.integrity / AC.max_integrity * 100, 0.1) : 0
+	data["has_hull"] = !!HC
+	data["hull_percent"] = HC ? round(HC.integrity / HC.max_integrity * 100, 0.1) : 0
+	data["integrity_percent"] = round(health / initial(health) * 100, 0.1)
+	// Power.
+	var/cell_charge = get_charge()
+	data["cell_percent"] = isnull(cell_charge) ? null : cell.percent()
+	// Atmos.
+	data["use_internal_tank"] = !!use_internal_tank
+	data["tank_pressure"] = internal_tank ? round(internal_tank.return_pressure(), 0.01) : "None"
+	var/tt = internal_tank ? internal_tank.return_temperature() : null
+	data["tank_temp_k"] = tt == null ? "Unknown" : round(tt, 0.1)
+	data["tank_temp_c"] = tt == null ? "Unknown" : round(tt - T0C, 0.1)
+	data["cabin_pressure"] = round(return_pressure(), 0.01)
+	data["cabin_temp_k"] = round(return_temperature(), 0.1)
+	data["cabin_temp_c"] = round(return_temperature() - T0C, 0.1)
+	data["lights"] = !!lights
+	data["dna_lock"] = dna || ""
+	data["defence_mode_possible"] = !!defence_mode_possible
+	data["defence_mode"] = !!defence_mode
+	data["overload_possible"] = !!overload_possible
+	data["overload"] = !!overload
+	data["smoke_possible"] = !!smoke_possible
+	data["smoke_reserve"] = smoke_reserve
+	data["thrusters_possible"] = !!thrusters_possible
+	data["thrusters"] = !!thrusters
+	// Cargo.
+	var/list/cargo_list = list()
+	for(var/obj/O in cargo)
+		cargo_list += list(list("ref" = "\ref[O]", "name" = "[O]"))
+	data["cargo"] = cargo_list
+	// Radio / airtank.
+	data["radio_mic"] = !!radio.broadcasting
+	data["radio_spk"] = !!radio.listening
+	data["radio_freq"] = format_frequency(radio.frequency)
+	data["airtank_disconnect"] = (/obj/mecha/verb/disconnect_from_port in verbs)
+	data["airtank_connect"] = (/obj/mecha/verb/connect_to_port in verbs)
+	// Permissions.
+	data["id_upload_locked"] = !!add_req_access
+	data["maint_access"] = !!maint_access
+	// Equipment.
+	var/list/equip = list()
+	var/static/list/equip_kinds = list(
+		list("hull_equipment", "Hull"),
+		list("weapon_equipment", "Weapon"),
+		list("utility_equipment", "Utility"),
+		list("universal_equipment", "Universal"),
+		list("special_equipment", "Special"),
+		list("micro_utility_equipment", "Micro Utility"),
+		list("micro_weapon_equipment", "Micro Weapon"),
+	)
+	for(var/list/k in equip_kinds)
+		var/list/L = vars[k[1]]
+		for(var/obj/item/mecha_parts/mecha_equipment/W as anything in L)
+			equip += list(list(
+				"ref" = "\ref[W]",
+				"name" = W.name,
+				"kind" = k[2],
+				"info_lines" = list(),
+			))
+	data["equipment"] = equip
+	// Slot capacity.
+	data["slots"] = list(
+		list("label" = "Hull",          "used" = hull_equipment.len,          "max" = max_hull_equip),
+		list("label" = "Weapon",        "used" = weapon_equipment.len,        "max" = max_weapon_equip),
+		list("label" = "Micro Weapon",  "used" = micro_weapon_equipment.len,  "max" = max_micro_weapon_equip),
+		list("label" = "Utility",       "used" = utility_equipment.len,       "max" = max_utility_equip),
+		list("label" = "Micro Utility", "used" = micro_utility_equipment.len, "max" = max_micro_utility_equip),
+		list("label" = "Universal",     "used" = universal_equipment.len,     "max" = max_universal_equip),
+		list("label" = "Special",       "used" = special_equipment.len,       "max" = max_special_equip),
+	)
+	data["can_eject"] = (/obj/mecha/verb/eject in verbs)
+	return data
+
+/obj/mecha/tgui_act(action, list/params)
+	. = ..()
+	if(.)
+		return
+	// Dispatch each TGUI action by synthesising the legacy href_list that
+	// the mecha's Topic handler already understands.
+	var/static/list/static_routes = list(
+		"toggle_lights" = "toggle_lights",
+		"rmictoggle" = "rmictoggle",
+		"rspktoggle" = "rspktoggle",
+		"toggle_airtank" = "toggle_airtank",
+		"port_disconnect" = "port_disconnect",
+		"port_connect" = "port_connect",
+		"toggle_id_upload" = "toggle_id_upload",
+		"toggle_maint_access" = "toggle_maint_access",
+		"dna_lock" = "dna_lock",
+		"view_log" = "view_log",
+		"change_name" = "change_name",
+		"reset_dna" = "reset_dna",
+		"repair_int_control_lost" = "repair_int_control_lost",
+		"eject" = "eject",
+	)
+	if(action in static_routes)
+		Topic(null, list("[static_routes[action]]" = "1"))
+		return TRUE
+	switch(action)
+		if("rfreq")
+			Topic(null, list("rfreq" = params["delta"]))
+			return TRUE
+		if("drop_from_cargo")
+			Topic(null, list("drop_from_cargo" = params["ref"]))
+			return TRUE
+		if("detach_equipment")
+			var/obj/item/mecha_parts/mecha_equipment/W = locate(params["ref"])
+			if(W in equipment)
+				W.detach()
+			return TRUE
+		if("equip_interact")
+			var/obj/item/mecha_parts/mecha_equipment/W = locate(params["ref"])
+			if(W && (W in equipment))
+				if(istype(W, /obj/item/mecha_parts/mecha_equipment/tool/sleeper))
+					W.Topic(null, list("view_stats" = "1"))
+				else if(istype(W, /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun))
+					W.Topic(null, list("show_reagents" = "1"))
+			return TRUE
+		if("view_main")
+			tgui_subview = "main"
+			return TRUE
+		// Attack-AI sub-view
+		if("ai_use_equipment")
+			var/obj/item/mecha_parts/mecha_equipment/W = locate(params["ref"])
+			var/atom/target = active_caller_ref?.resolve()
+			if(W && (W in equipment))
+				W.action(target)
+			tgui_subview = "main"
+			return TRUE
+		// Access sub-view
+		if("access_add")
+			var/a = text2num(params["id"])
+			var/obj/item/card/id/id_card = active_id_card_ref?.resolve()
+			if(id_card && (a in id_card.GetAccess()) && !(a in operation_req_access))
+				operation_req_access += a
+			return TRUE
+		if("access_del")
+			var/a = text2num(params["id"])
+			if(a in operation_req_access)
+				operation_req_access -= a
+			return TRUE
+		if("access_finish")
+			add_req_access = 0
+			tgui_subview = "main"
+			return TRUE
+		// Maint sub-view
+		if("maint_req_access")
+			var/obj/item/card/id/id_card = active_id_card_ref?.resolve()
+			if(id_card)
+				tgui_subview = "access"
+			return TRUE
+		if("maint_protocol")
+			Topic(null, list("maint_access" = "1"))
+			return TRUE
+		if("maint_set_air")
+			Topic(null, list("set_internal_tank_valve" = "1", "user" = "\ref[usr]"))
+			return TRUE
+		if("maint_remove_passenger")
+			Topic(null, list("remove_passenger" = "1", "user" = "\ref[usr]"))
+			return TRUE
+// DQEdit End
 
 
 /obj/mecha/proc/report_internal_damage()
@@ -2388,53 +2619,25 @@
 	return data
 
 
+// DQEdit — fully-structured TGUI access dialog. The id_card is cached
+// as a weakref so tgui_data can rebuild the available-keycode list each
+// refresh.
 /obj/mecha/proc/output_access_dialog(obj/item/card/id/id_card, mob/user)
-	if(!id_card || !user) return
-	var/output = {"<html>
-						<head><style>
-						h1 {font-size:15px;margin-bottom:4px;}
-						body {color: #00ff00; background: #000000; font-family:"Courier New", Courier, monospace; font-size: 12px;}
-						a {color:#0f0;}
-						</style>
-						</head>
-						<body>
-						<h1>Following keycodes are present in this system:</h1>"}
-	for(var/a in operation_req_access)
-		output += "[SSaccess.get_access_desc(a)] - <a href='byond://?src=\ref[src];del_req_access=[a];user=\ref[user];id_card=\ref[id_card]'>Delete</a><br>"
-	output += "<hr><h1>Following keycodes were detected on portable device:</h1>"
-	for(var/a in id_card.GetAccess())
-		if(a in operation_req_access) continue
-		var/a_name = SSaccess.get_access_desc(a)
-		if(!a_name) continue //there's some strange access without a name
-		output += "[a_name] - <a href='byond://?src=\ref[src];add_req_access=[a];user=\ref[user];id_card=\ref[id_card]'>Add</a><br>"
-	output += "<hr><a href='byond://?src=\ref[src];finish_req_access=1;user=\ref[user]'>Finish</a> " + span_red("(Warning! The ID upload panel will be locked. It can be unlocked only through Exosuit Interface.)")
-	output += "</body></html>"
-	user << browse(output, "window=exosuit_add_access")
-	onclose(user, "exosuit_add_access")
+	if(!id_card || !user)
+		return
+	active_id_card_ref = WEAKREF(id_card)
+	tgui_subview = "access"
+	tgui_interact(user)
 	return
 
-/obj/mecha/proc/output_maintenance_dialog(obj/item/card/id/id_card,mob/user)
-	if(!id_card || !user) return
-
-	var/maint_options = "<a href='byond://?src=\ref[src];set_internal_tank_valve=1;user=\ref[user]'>Set Cabin Air Pressure</a>"
-	if (locate(/obj/item/mecha_parts/mecha_equipment/tool/passenger) in contents)
-		maint_options += "<a href='byond://?src=\ref[src];remove_passenger=1;user=\ref[user]'>Remove Passenger</a>"
-
-	var/output = {"<html>
-						<head>
-						<style>
-						body {color: #00ff00; background: #000000; font-family:"Courier New", Courier, monospace; font-size: 12px;}
-						a {padding:2px 5px; background:#32CD32;color:#000;display:block;margin:2px;text-align:center;text-decoration:none;}
-						</style>
-						</head>
-						<body>
-						[add_req_access?"<a href='byond://?src=\ref[src];req_access=1;id_card=\ref[id_card];user=\ref[user]'>Edit operation keycodes</a>":null]
-						[maint_access?"<a href='byond://?src=\ref[src];maint_access=1;id_card=\ref[id_card];user=\ref[user]'>Initiate maintenance protocol</a>":null]
-						[(state>0) ? maint_options : ""]
-						</body>
-						</html>"}
-	user << browse(output, "window=exosuit_maint_console")
-	onclose(user, "exosuit_maint_console")
+// DQEdit — fully-structured TGUI maintenance console. Action availability
+// is computed in tgui_data from current state.
+/obj/mecha/proc/output_maintenance_dialog(obj/item/card/id/id_card, mob/user)
+	if(!id_card || !user)
+		return
+	active_id_card_ref = WEAKREF(id_card)
+	tgui_subview = "maint"
+	tgui_interact(user)
 	return
 
 
@@ -2544,10 +2747,12 @@
 		if(usr != src.occupant)	return
 		src.connect_to_port()
 		return
-	if (href_list["view_log"])
-		if(usr != src.occupant)	return
-		src.occupant << browse(src.get_log_html(), "window=exosuit_log")
-		onclose(occupant, "exosuit_log")
+	if(href_list["view_log"])
+		if(usr != src.occupant)
+			return
+		// DQEdit — fully-structured TGUI log sub-view.
+		tgui_subview = "log"
+		tgui_interact(src.occupant)
 		return
 	if (href_list["change_name"])
 		if(usr != src.occupant)	return
@@ -2634,8 +2839,9 @@
 	if(href_list["finish_req_access"])
 		if(!in_range(src, usr))	return
 		add_req_access = 0
-		var/mob/user = top_filter.getMob("user")
-		user << browse(null,"window=exosuit_add_access")
+		// DQEdit Start — close TGUI panel (legacy browse(null))
+		SStgui.close_uis(src)
+		// DQEdit End
 		return
 	if(href_list["dna_lock"])
 		if(usr != src.occupant)	return
@@ -2847,40 +3053,6 @@
 	return ..()
 
 
-//debug
-/*
-/obj/mecha/verb/test_int_damage()
-	set name = "Test internal damage"
-	set category = "Exosuit Interface"
-	set src in view(0)
-	if(!occupant) return
-	if(usr!=occupant)
-		return
-	var/output = {"<html>
-						<head>
-						</head>
-						<body>
-						<h3>Set:</h3>
-						<a href='byond://?src=\ref[src];debug=1;set_i_dam=[MECHA_INT_FIRE]'>MECHA_INT_FIRE</a><br />
-						<a href='byond://?src=\ref[src];debug=1;set_i_dam=[MECHA_INT_TEMP_CONTROL]'>MECHA_INT_TEMP_CONTROL</a><br />
-						<a href='byond://?src=\ref[src];debug=1;set_i_dam=[MECHA_INT_SHORT_CIRCUIT]'>MECHA_INT_SHORT_CIRCUIT</a><br />
-						<a href='byond://?src=\ref[src];debug=1;set_i_dam=[MECHA_INT_TANK_BREACH]'>MECHA_INT_TANK_BREACH</a><br />
-						<a href='byond://?src=\ref[src];debug=1;set_i_dam=[MECHA_INT_CONTROL_LOST]'>MECHA_INT_CONTROL_LOST</a><br />
-						<hr />
-						<h3>Clear:</h3>
-						<a href='byond://?src=\ref[src];debug=1;clear_i_dam=[MECHA_INT_FIRE]'>MECHA_INT_FIRE</a><br />
-						<a href='byond://?src=\ref[src];debug=1;clear_i_dam=[MECHA_INT_TEMP_CONTROL]'>MECHA_INT_TEMP_CONTROL</a><br />
-						<a href='byond://?src=\ref[src];debug=1;clear_i_dam=[MECHA_INT_SHORT_CIRCUIT]'>MECHA_INT_SHORT_CIRCUIT</a><br />
-						<a href='byond://?src=\ref[src];debug=1;clear_i_dam=[MECHA_INT_TANK_BREACH]'>MECHA_INT_TANK_BREACH</a><br />
-						<a href='byond://?src=\ref[src];debug=1;clear_i_dam=[MECHA_INT_CONTROL_LOST]'>MECHA_INT_CONTROL_LOST</a><br />
-						</body>
-					</html>"}
-
-	occupant << browse(output, "window=ex_debug")
-	//src.health = initial(src.health)/2.2
-	//src.check_for_internal_damage(list(MECHA_INT_FIRE,MECHA_INT_TEMP_CONTROL,MECHA_INT_TANK_BREACH,MECHA_INT_CONTROL_LOST))
-	return
-*/
 
 /obj/mecha/proc/update_cell_alerts()
 	if(occupant && cell)

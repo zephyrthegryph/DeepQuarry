@@ -485,8 +485,8 @@ GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null
 			SDQL query took [DisplayTimeText(end_time - start_time)] to complete."))
 			if(length(select_text))
 				var/text = islist(select_text)? select_text.Join() : select_text
-				var/static/result_offset = 0
-				showmob << browse("<html>[text]</html>", "window=SDQL-result-[result_offset++]")
+				// DQEdit — structured TGUI AdminReport.
+				dq_admin_report_html(showmob, "SDQL Result", text)
 		show_next_to_key = null
 	if(qdel_on_finish)
 		qdel(src)

@@ -21,35 +21,10 @@ GLOBAL_LIST_EMPTY(map_reports)
 	return ..()
 
 
-/// Show a rendered version of this report to a client.
+// DQEdit Start — show_to body relocated to modular_dq/code/modules/maps/map_report_panel.dm (structured TGUI).
 /datum/map_report/proc/show_to(client/C)
-	var/list/html = list()
-	if(crashed)
-		html += "<p><b>Validation crashed</b>: check the runtime logs.</p>"
-	if(!loadable)
-		html += "<p><b>Not loadable</b>: some tiles are missing their turfs or areas.</p>"
-
-	if(bad_paths.len)
-		html += "<p>Bad paths: <ol>"
-		for(var/path in bad_paths)
-			var/list/keys = bad_paths[path]
-			html += "<li><tt>[path]</tt>: used in ([keys.len]): <tt>[keys.Join("</tt>, <tt>")]</tt>"
-		html += "</ol></p>"
-
-	if(bad_keys.len)
-		html += "<p>Bad keys: <ul>"
-		for(var/key in bad_keys)
-			var/list/messages = bad_keys[key]
-			html += "<li><tt>[key]</tt>"
-			if(messages.len == 1)
-				html += ": [bad_keys[key][1]]"
-			else
-				html += "<ul><li>[messages.Join("</li><li>")]</li></ul>"
-			html += "</li>"
-		html += "</ul></p>"
-	var/datum/browser/browser = new(C.mob, "[tag]", "Report for map file [original_path]", 600, 400)
-	browser.set_content(html.Join())
-	browser.open()
+	return  // body provided by modular override
+// DQEdit End
 
 /datum/map_report/Topic(href, href_list)
 	. = ..()

@@ -328,17 +328,6 @@
 
 	return
 
-/*
-/mob/verb/dump_source()
-
-	var/master = "<PRE>"
-	for(var/t in typesof(/area))
-		master += text("[]\n", t)
-		//Foreach goto(26)
-	src << browse("<html>[master]</html>")
-	return
-*/
-
 /mob/verb/memory()
 	set name = "Notes"
 	set desc = "View notes stored for this round only."
@@ -395,13 +384,6 @@
 			return span_notice("[msg]")
 		else
 			return span_notice("[copytext_preserve_html(msg, 1, 37)]... <a href='byond://?src=\ref[src];flavor_more=1'>More...</a>")
-
-/*
-/mob/verb/help()
-	set name = "Help"
-	src << browse('html/help.html', "window=help")
-	return
-*/
 
 /mob/proc/set_respawn_timer(time)
 	// Try to figure out what time to use
@@ -582,9 +564,10 @@
 
 /mob/Topic(href, href_list)
 	if(href_list["mach_close"])
-		var/t1 = text("window=[href_list["mach_close"]]")
+		// DQEdit — legacy browse(null) close removed; the machinery's
+		// TGUI window owns its own close lifecycle. We still unset the
+		// machine binding so the mob isn't held to the now-closed device.
 		unset_machine()
-		src << browse(null, t1)
 
 	if(href_list["flavor_more"])
 		var/examine_text = splittext(flavor_text, "||")
@@ -597,9 +580,8 @@
 				rendered_text += "[part]"
 			index++
 		examine_text = replacetext(rendered_text, "\n", "<BR>")
-		var/datum/browser/popup = new(usr, "[name]", "[name]", 500, 300, src)
-		popup.set_content(examine_text)
-		popup.open()
+		// DQEdit — structured TGUI AdminReport.
+		dq_admin_report_html(usr, "[name]", examine_text)
 	if(href_list["flavor_change"])
 		update_flavor_text()
 	return ..()

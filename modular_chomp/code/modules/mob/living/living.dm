@@ -1,5 +1,11 @@
 /mob/living/Initialize(mapload)
 	. = ..()
+	// Without this the legacy ai_holder is never wired up for any mob, because
+	// this override silently replaces the upstream /mob/living/Initialize in
+	// code/modules/ai/ai_holder.dm. Mobs that touch ai_holder during their own
+	// Initialize (e.g. /spacewhale/Initialize -> handle_restless) NRE.
+	if(!ai_holder)
+		initialize_ai_holder()
 
 	deaf_loop = new(list(src), FALSE)
 	firesoundloop = new(list(src), FALSE)

@@ -405,17 +405,18 @@ rborosilicate = 12
 
 	t1 += "<p><a href='byond://?src=[REF(src)];close=1'>Close</a></p>\n"
 
-	var/datum/browser/popup = new(user, "rcd_access", "Access Control", 900, 500, src)
-	popup.set_content(t1)
-	popup.open()
+	// DQEdit — structured TGUI AdminReport; byond:// links forwarded to host.
+	dq_admin_report_html(user, "Access Control", t1, src)
 
 /obj/item/rcd/Topic(href, href_list)
 	..()
 	if (usr.stat || usr.restrained())
 		return
 	if (href_list["close"])
-		usr << browse(null, "window=rcd_access")
+		// DQEdit Start — close TGUI window
+		SStgui.close_uis(src)
 		return
+		// DQEdit End
 
 	if (href_list["access"])
 		toggle_access(href_list["access"])

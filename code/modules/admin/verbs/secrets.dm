@@ -48,25 +48,21 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 	switch(action)
 		//Generic Buttons anyone can use.
 		if("admin_log")
-			var/dat
-			for(var/l in GLOB.admin_log)
-				dat += "<li>[l]</li>"
+			// DQEdit — structured TGUI AdminReport.
 			if(!GLOB.admin_log.len)
-				dat += "No-one has done anything this round!"
-			var/datum/browser/browser = new(holder, "admin_log", "Admin Logs", 600, 500)
-			browser.set_content(dat)
-			browser.open()
+				dq_admin_report_html(holder, "Admin Logs", "No-one has done anything this round!")
+			else
+				dq_admin_report_lines(holder, "Admin Logs", GLOB.admin_log)
 		if("dialog_log")
 			SSadmin_verbs.dynamic_invoke_verb(ui.user, /datum/admin_verb/persistent_client_logs)
 		if("show_admins")
-			var/dat
+			// DQEdit — structured TGUI AdminReport with typed table.
 			if(GLOB.admin_datums)
+				var/list/rows = list()
 				for(var/ckey in GLOB.admin_datums)
 					var/datum/admins/D = GLOB.admin_datums[ckey]
-					dat += "[ckey] - [D.rank_names()]<br>"
-				var/datum/browser/browser = new(holder, "showadmins", "Current admins", 600, 500)
-				browser.set_content(dat)
-				browser.open()
+					rows += list(list("[ckey]", D.rank_names()))
+				dq_admin_report_table(holder, "Current admins", list("Ckey", "Rank"), rows)
 		if("show_traitors_and_objectives") // Not implemented in the UI
 			holder.holder.check_antagonists(ui.user.client)
 		if("show_game_mode")

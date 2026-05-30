@@ -239,33 +239,12 @@
 	return attack_hand(user)
 
 /obj/machinery/magnetic_controller/attack_hand(mob/user as mob)
+	// DQEdit — structured TGUI MagneticConsole (see
+	// modular_dq/code/modules/admin/magnetic_console_panel.dm).
 	if(stat & (BROKEN|NOPOWER))
 		return
 	user.set_machine(src)
-	var/dat = ""
-	if(!autolink)
-		dat += {"
-		Frequency: <a href='byond://?src=\ref[src];operation=setfreq'>[frequency]</a><br>
-		Code: <a href='byond://?src=\ref[src];operation=setfreq'>[code]</a><br>
-		<a href='byond://?src=\ref[src];operation=probe'>Probe Generators</a><br>
-		"}
-
-	if(magnets.len >= 1)
-
-		dat += "Magnets confirmed: <br>"
-		var/i = 0
-		for(var/obj/machinery/magnetic_module/M in magnets)
-			i++
-			dat += "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;< \[[i]\] (<a href='byond://?src=\ref[src];radio-op=togglepower'>[M.on ? "On":"Off"]</a>) | Electricity level: <a href='byond://?src=\ref[src];radio-op=minuselec'>-</a> [M.electricity_level] <a href='byond://?src=\ref[src];radio-op=pluselec'>+</a>; Magnetic field: <a href='byond://?src=\ref[src];radio-op=minusmag'>-</a> [M.magnetic_field] <a href='byond://?src=\ref[src];radio-op=plusmag'>+</a><br>"
-
-	dat += "<br>Speed: <a href='byond://?src=\ref[src];operation=minusspeed'>-</a> [speed] <a href='byond://?src=\ref[src];operation=plusspeed'>+</a><br>"
-	dat += "Path: {<a href='byond://?src=\ref[src];operation=setpath'>[path]</a>}<br>"
-	dat += "Moving: <a href='byond://?src=\ref[src];operation=togglemoving'>[moving ? "Enabled":"Disabled"]</a>"
-
-
-	var/datum/browser/popup = new(user, "magnet", "Magnetic Control Console", 400, 500)
-	popup.set_content(dat)
-	popup.open()
+	tgui_interact(user)
 
 /obj/machinery/magnetic_controller/Topic(href, href_list)
 	if(stat & (BROKEN|NOPOWER))

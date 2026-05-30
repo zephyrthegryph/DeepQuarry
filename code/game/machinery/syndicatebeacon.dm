@@ -17,25 +17,29 @@
 	var/charges = 1
 
 /obj/machinery/syndicate_beacon/attack_hand(mob/user as mob)
+	// DQEdit — single-conversation device; tgui_alert is the right
+	// primitive. The dynamic "you can switch teams" branch becomes a
+	// labelled button on the alert.
 	user.set_machine(src)
-	var/dat = span_darkgreen(span_italics("Scanning [pick("retina pattern", "voice print", "fingerprints", "dna sequence")]...<br>Identity confirmed,<br>"))
+	var/message = "Scanning [pick("retina pattern", "voice print", "fingerprints", "dna sequence")]... Identity confirmed.\n"
+	var/can_traitor = FALSE
 	if(ishuman(user) || isAI(user))
 		if(is_special_character(user))
-			dat += span_darkgreen(span_italics("Operative record found. Greetings, Agent [user.name].<br>"))
+			message += "Operative record found. Greetings, Agent [user.name]."
 		else if(charges < 1)
-			dat += "<TT>Connection severed.</TT><BR>"
+			message += "Connection severed."
 		else
-			var/honorific = "Mr."
-			if(user.gender == FEMALE)
-				honorific = "Ms."
-			dat += span_red(span_italics("Identity not found in operative database. What can the Syndicate do for you today, [honorific] [user.name]?<br>"))
-			if(!selfdestructing)
-				dat += "<br><br><A href='byond://?src=\ref[src];betraitor=1;traitormob=\ref[user]'>\"[pick("I want to switch teams.", "I want to work for you.", "Let me join you.", "I can be of use to you.", "You want me working for you, and here's why...", "Give me an objective.", "How's the 401k over at the Syndicate?")]\"</A><BR>"
-	dat += temptext
-
-	var/datum/browser/popup = new(user, "syndbeacon", "Ominous Beacon")
-	popup.set_content(dat)
-	popup.open()
+			var/honorific = (user.gender == FEMALE) ? "Ms." : "Mr."
+			message += "Identity not found in operative database. What can the Syndicate do for you today, [honorific] [user.name]?"
+			can_traitor = !selfdestructing
+	if(length(temptext))
+		message += "\n\n[temptext]"
+	if(can_traitor)
+		var/offer = pick("I want to switch teams.", "I want to work for you.", "Let me join you.", "I can be of use to you.", "You want me working for you, and here's why...", "Give me an objective.", "How's the 401k over at the Syndicate?")
+		if(tgui_alert(user, message, "Ominous Beacon", list(offer, "Hang up")) == offer)
+			Topic("betraitor=1;traitormob=\ref[user]", list("betraitor" = "1", "traitormob" = "\ref[user]"))
+	else
+		tgui_alert(user, message, "Ominous Beacon", list("Hang up"))
 
 /obj/machinery/syndicate_beacon/Topic(href, href_list)
 	if(..())

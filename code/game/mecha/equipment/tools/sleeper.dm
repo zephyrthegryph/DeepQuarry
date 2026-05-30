@@ -83,18 +83,95 @@
 		return "[output] [temp]"
 	return
 
-/obj/item/mecha_parts/mecha_equipment/tool/sleeper/Topic(href,href_list)
+// DQEdit Start — TGUI migration. The view_stats sub-window (formerly
+// browse()) now opens MechaSleeper.tsx; inject/eject move to tgui_act.
+/obj/item/mecha_parts/mecha_equipment/tool/sleeper/Topic(href, href_list)
 	..()
-	var/datum/topic_input/top_filter = new /datum/topic_input(href,href_list)
+	var/datum/topic_input/top_filter = new /datum/topic_input(href, href_list)
 	if(top_filter.get("eject"))
 		go_out()
+		return
 	if(top_filter.get("view_stats"))
-		chassis.occupant << browse(get_occupant_stats(),"window=msleeper")
-		onclose(chassis.occupant, "msleeper")
+		if(chassis?.occupant)
+			tgui_interact(chassis.occupant)
 		return
 	if(top_filter.get("inject"))
-		inject_reagent(top_filter.getType("inject",/datum/reagent),top_filter.getObj("source"))
+		inject_reagent(top_filter.getType("inject", /datum/reagent), top_filter.getObj("source"))
 	return
+
+/obj/item/mecha_parts/mecha_equipment/tool/sleeper/tgui_interact(mob/user, datum/tgui/ui)
+	ui = SStgui.try_update_ui(user, src, ui)
+	if(!ui)
+		ui = new(user, src, "MechaSleeper", "Mounted Sleeper")
+		ui.open()
+
+/obj/item/mecha_parts/mecha_equipment/tool/sleeper/tgui_data(mob/user)
+	var/list/data = list()
+	data["has_occupant"] = occupant ? 1 : 0
+	if(!occupant)
+		data["occupant_name"] = ""
+		data["status"] = ""
+		data["health_percent"] = 0
+		data["brute"] = 0
+		data["oxy"] = 0
+		data["tox"] = 0
+		data["fire"] = 0
+		data["body_temp_c"] = 0
+		data["body_temp_f"] = 0
+		data["reagents"] = list()
+		data["injectables"] = list()
+		return data
+	data["occupant_name"] = occupant.name
+	switch(occupant.stat)
+		if(0)
+			data["status"] = "Conscious"
+		if(1)
+			data["status"] = "Unconscious"
+		if(2)
+			data["status"] = "*dead*"
+		else
+			data["status"] = "Unknown"
+	data["health_percent"] = occupant.health
+	data["brute"] = occupant.getBruteLoss()
+	data["oxy"] = occupant.getOxyLoss()
+	data["tox"] = occupant.getToxLoss()
+	data["fire"] = occupant.getFireLoss()
+	data["body_temp_c"] = round(occupant.bodytemperature - T0C, 0.1)
+	data["body_temp_f"] = round(occupant.bodytemperature * 1.8 - 459.67, 0.1)
+	var/list/rlist = list()
+	if(occupant.reagents)
+		for(var/datum/reagent/R in occupant.reagents.reagent_list)
+			if(R.volume > 0)
+				rlist += list(list("name" = "[R]", "volume" = round(R.volume, 0.01)))
+	data["reagents"] = rlist
+	var/list/inj = list()
+	var/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/SG = locate(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun) in chassis
+	if(SG?.reagents && islist(SG.reagents.reagent_list))
+		for(var/datum/reagent/R in SG.reagents.reagent_list)
+			if(R.volume > 0)
+				inj += list(list(
+					"ref" = "\ref[R]",
+					"source_ref" = "\ref[SG]",
+					"name" = R.name,
+				))
+	data["injectables"] = inj
+	return data
+
+/obj/item/mecha_parts/mecha_equipment/tool/sleeper/tgui_act(action, list/params)
+	. = ..()
+	if(.)
+		return
+	switch(action)
+		if("eject")
+			go_out()
+			return TRUE
+		if("inject")
+			var/datum/reagent/R = locate(params["ref"])
+			var/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/SG = locate(params["source"])
+			if(R && SG)
+				inject_reagent(R, SG)
+			return TRUE
+// DQEdit End
 
 /obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/get_occupant_stats()
 	if(!occupant)

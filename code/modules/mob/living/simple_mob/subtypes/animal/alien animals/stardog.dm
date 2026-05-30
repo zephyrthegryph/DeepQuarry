@@ -148,7 +148,7 @@
 
 /mob/living/simple_mob/vore/overmap/stardog/Initialize(mapload)
 	. = ..()
-	child_om_marker.set_light(5, 1, "#ff8df5")
+	child_om_marker?.set_light(5, 1, "#ff8df5")
 
 /mob/living/simple_mob/vore/overmap/stardog/Destroy()
 	if(control_node)

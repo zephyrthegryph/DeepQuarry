@@ -21,9 +21,7 @@ export const BodyScannerMainOccupant = (props: { occupant: occupant }) => {
   const healthBand = (occupant.healthBand as DamageBand) ?? 'uninjured';
   const worstFinding = (occupant.worstFinding as DamageBand) ?? 'uninjured';
   const band: DamageBand =
-    BAND_RANK[worstFinding] > BAND_RANK[healthBand]
-      ? worstFinding
-      : healthBand;
+    BAND_RANK[worstFinding] > BAND_RANK[healthBand] ? worstFinding : healthBand;
   const info = BAND_INFO[band];
   // Customise the wording for the overall-health row so it doesn't read
   // as "moderate injury" generically — the damage panel + per-organ

@@ -82,71 +82,73 @@
 		update_icon()
 		to_chat(user, span_notice("You tuck the [P] into \the [src]."))
 
+// DQEdit Start — TGUI migration. attack_self opens Folder.tsx; the Topic
+// remove/rename/read/look/browse actions move to tgui_act. Reading a
+// paper/photo chains to that item's TGUI viewer (Paper.tsx / Photo.tsx).
 /obj/item/folder/attack_self(mob/user)
 	. = ..(user)
 	if(.)
 		return TRUE
-	var/dat = "<title>[name]</title>"
-
-	for(var/obj/item/paper/P in src)
-		dat += "<A href='byond://?src=\ref[src];remove=\ref[P]'>Remove</A> <A href='byond://?src=\ref[src];rename=\ref[P]'>Rename</A> - <A href='byond://?src=\ref[src];read=\ref[P]'>[P.name]</A><BR>"
-	for(var/obj/item/photo/Ph in src)
-		dat += "<A href='byond://?src=\ref[src];remove=\ref[Ph]'>Remove</A> <A href='byond://?src=\ref[src];rename=\ref[Ph]'>Rename</A> - <A href='byond://?src=\ref[src];look=\ref[Ph]'>[Ph.name]</A><BR>"
-	for(var/obj/item/paper_bundle/Pb in src)
-		dat += "<A href='byond://?src=\ref[src];remove=\ref[Pb]'>Remove</A> <A href='byond://?src=\ref[src];rename=\ref[Pb]'>Rename</A> - <A href='byond://?src=\ref[src];browse=\ref[Pb]'>[Pb.name]</A><BR>"
-	user << browse("<html>[dat]</html>", "window=folder")
-	onclose(user, "folder")
 	add_fingerprint(user)
-	return
+	tgui_interact(user)
 
-/obj/item/folder/Topic(href, href_list)
-	..()
-	if((usr.stat || usr.restrained()))
+/obj/item/folder/tgui_interact(mob/user, datum/tgui/ui)
+	ui = SStgui.try_update_ui(user, src, ui)
+	if(!ui)
+		ui = new(user, src, "Folder", name)
+		ui.open()
+
+/obj/item/folder/tgui_data(mob/user)
+	var/list/data = list()
+	data["folder_name"] = name
+	var/list/items = list()
+	for(var/obj/item/paper/P in src)
+		items += list(list("ref" = "\ref[P]", "name" = P.name, "kind" = "paper"))
+	for(var/obj/item/photo/Ph in src)
+		items += list(list("ref" = "\ref[Ph]", "name" = Ph.name, "kind" = "photo"))
+	for(var/obj/item/paper_bundle/Pb in src)
+		items += list(list("ref" = "\ref[Pb]", "name" = Pb.name, "kind" = "bundle"))
+	data["items"] = items
+	return data
+
+/obj/item/folder/tgui_act(action, list/params)
+	. = ..()
+	if(.)
 		return
-
-	if(src.loc == usr)
-
-		if(href_list["remove"])
-			var/obj/item/P = locate(href_list["remove"])
-			if(P && (P.loc == src) && istype(P))
-				P.loc = usr.loc
-				usr.put_in_hands(P)
-
-		else if(href_list["read"])
-			var/obj/item/paper/P = locate(href_list["read"])
-			if(P && (P.loc == src) && istype(P))
-				if(!(ishuman(usr) || isobserver(usr) || issilicon(usr)))
-					usr << browse("<HTML><HEAD><TITLE>[P.name]</TITLE></HEAD><BODY>[stars(P.info)][P.stamps]</BODY></HTML>", "window=[P.name]")
-					onclose(usr, "[P.name]")
-				else
-					usr << browse("<HTML><HEAD><TITLE>[P.name]</TITLE></HEAD><BODY>[P.info][P.stamps]</BODY></HTML>", "window=[P.name]")
-					onclose(usr, "[P.name]")
-		else if(href_list["look"])
-			var/obj/item/photo/P = locate(href_list["look"])
-			if(P && (P.loc == src) && istype(P))
-				P.show(usr)
-		else if(href_list["browse"])
-			var/obj/item/paper_bundle/P = locate(href_list["browse"])
-			if(P && (P.loc == src) && istype(P))
-				P.attack_self(usr)
-				onclose(usr, "[P.name]")
-		else if(href_list["rename"])
-			var/obj/item/O = locate(href_list["rename"])
-
-			if(O && (O.loc == src))
-				if(istype(O, /obj/item/paper))
-					var/obj/item/paper/to_rename = O
-					to_rename.rename()
-
-				else if(istype(O, /obj/item/photo))
-					var/obj/item/photo/to_rename = O
-					to_rename.rename()
-
-				else if(istype(O, /obj/item/paper_bundle))
-					var/obj/item/paper_bundle/to_rename = O
-					to_rename.rename()
-
-		//Update everything
-		attack_self(usr)
-		update_icon()
-	return
+	if(usr.stat || usr.restrained())
+		return TRUE
+	if(loc != usr)
+		return TRUE
+	var/obj/item/O = locate(params["ref"])
+	if(!O || O.loc != src)
+		return TRUE
+	switch(action)
+		if("remove")
+			O.loc = usr.loc
+			usr.put_in_hands(O)
+			update_icon()
+			return TRUE
+		if("rename")
+			if(istype(O, /obj/item/paper))
+				var/obj/item/paper/p = O
+				p.rename()
+			else if(istype(O, /obj/item/photo))
+				var/obj/item/photo/ph = O
+				ph.rename()
+			else if(istype(O, /obj/item/paper_bundle))
+				var/obj/item/paper_bundle/pb = O
+				pb.rename()
+			return TRUE
+		if("open")
+			switch(params["kind"])
+				if("paper")
+					var/obj/item/paper/p = O
+					p.show_content(usr)
+				if("photo")
+					var/obj/item/photo/ph = O
+					ph.show(usr)
+				if("bundle")
+					var/obj/item/paper_bundle/pb = O
+					pb.attack_self(usr)
+			return TRUE
+// DQEdit End

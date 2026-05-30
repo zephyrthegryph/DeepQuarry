@@ -273,45 +273,29 @@ Just a object used in constructing fire alarms
 	idle_power_usage = 2
 	active_power_usage = 6
 
+// DQEdit Start — TGUI migration. PartyAlarm.tsx handles both clear-text
+// (humans/AI) and scrambled (everyone else) display via a data flag.
 /obj/machinery/partyalarm/attack_hand(mob/user as mob)
 	if(user.stat || stat & (NOPOWER|BROKEN))
 		return
-
 	user.set_machine(src)
-	var/area/A = get_area(src)
-	ASSERT(isarea(A))
-	var/d1
-	var/d2
-	if(ishuman(user) || isAI(user))
+	tgui_interact(user)
 
-		if(A.party)
-			d1 = text("<A href='byond://?src=\ref[];reset=1'>No Party :(</A>", src)
-		else
-			d1 = text("<A href='byond://?src=\ref[];alarm=1'>PARTY!!!</A>", src)
-		if(timing)
-			d2 = text("<A href='byond://?src=\ref[];time=0'>Stop Time Lock</A>", src)
-		else
-			d2 = text("<A href='byond://?src=\ref[];time=1'>Initiate Time Lock</A>", src)
-		var/second = time % 60
-		var/minute = (time - second) / 60
-		var/dat = text("<HTML><HEAD></HEAD><BODY><TT><B>Party Button</B> []\n<HR>\nTimer System: []<BR>\nTime Left: [][] <A href='byond://?src=\ref[];tp=-30'>-</A> <A href='byond://?src=\ref[];tp=-1'>-</A> <A href='byond://?src=\ref[];tp=1'>+</A> <A href='byond://?src=\ref[];tp=30'>+</A>\n</TT></BODY></HTML>", d1, d2, (minute ? text("[]:", minute) : null), second, src, src, src, src)
-		user << browse(dat, "window=partyalarm")
-		onclose(user, "partyalarm")
-	else
-		if(A.fire)
-			d1 = text("<A href='byond://?src=\ref[];reset=1'>[]</A>", src, stars("No Party :("))
-		else
-			d1 = text("<A href='byond://?src=\ref[];alarm=1'>[]</A>", src, stars("PARTY!!!"))
-		if(timing)
-			d2 = text("<A href='byond://?src=\ref[];time=0'>[]</A>", src, stars("Stop Time Lock"))
-		else
-			d2 = text("<A href='byond://?src=\ref[];time=1'>[]</A>", src, stars("Initiate Time Lock"))
-		var/second = time % 60
-		var/minute = (time - second) / 60
-		var/dat = text("<HTML><HEAD></HEAD><BODY><TT><B>[]</B> []\n<HR>\nTimer System: []<BR>\nTime Left: [][] <A href='byond://?src=\ref[];tp=-30'>-</A> <A href='byond://?src=\ref[];tp=-1'>-</A> <A href='byond://?src=\ref[];tp=1'>+</A> <A href='byond://?src=\ref[];tp=30'>+</A>\n</TT></BODY></HTML>", stars("Party Button"), d1, d2, (minute ? text("[]:", minute) : null), second, src, src, src, src)
-		user << browse(dat, "window=partyalarm")
-		onclose(user, "partyalarm")
-	return
+/obj/machinery/partyalarm/tgui_interact(mob/user, datum/tgui/ui)
+	ui = SStgui.try_update_ui(user, src, ui)
+	if(!ui)
+		ui = new(user, src, "PartyAlarm", "Party Button")
+		ui.open()
+
+/obj/machinery/partyalarm/tgui_data(mob/user)
+	var/list/data = list()
+	var/area/A = get_area(src)
+	data["party_on"] = !!A?.party
+	data["timing"] = !!timing
+	data["time"] = time
+	data["scrambled"] = !(ishuman(user) || isAI(user))
+	return data
+// DQEdit End
 
 /obj/machinery/partyalarm/proc/reset()
 	if(!(working))
@@ -329,26 +313,26 @@ Just a object used in constructing fire alarms
 	A.partyalert()
 	return
 
-/obj/machinery/partyalarm/Topic(href, href_list)
-	..()
-	if(usr.stat || stat & (BROKEN|NOPOWER))
+// DQEdit Start — Topic dispatch lifted into tgui_act.
+/obj/machinery/partyalarm/tgui_act(action, list/params)
+	. = ..()
+	if(.)
 		return
-	if((usr.contents.Find(src) || ((get_dist(src, usr) <= 1) && istype(loc, /turf))) || (isAI(usr)))
-		usr.set_machine(src)
-		if(href_list["reset"])
+	if(usr.stat || stat & (BROKEN|NOPOWER))
+		return TRUE
+	switch(action)
+		if("reset")
 			reset()
-		else if(href_list["alarm"])
+			return TRUE
+		if("alarm")
 			alarm()
-		else if(href_list["time"])
-			timing = text2num(href_list["time"])
-		else if(href_list["tp"])
-			var/tp = text2num(href_list["tp"])
+			return TRUE
+		if("time")
+			timing = text2num(params["value"])
+			return TRUE
+		if("tp")
+			var/tp = text2num(params["value"])
 			time += tp
 			time = min(max(round(time), 0), 120)
-		updateUsrDialog(usr)
-
-		add_fingerprint(usr)
-	else
-		usr << browse(null, "window=partyalarm")
-		return
-	return
+			return TRUE
+// DQEdit End

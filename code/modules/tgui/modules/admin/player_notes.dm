@@ -245,9 +245,8 @@
 			if(index == page)
 				dat = span_bold(dat)
 
-	var/datum/browser/popup = new(usr, "player_notes", "Admin Playernotes", 480, 480)
-	popup.set_content(dat)
-	popup.open()
+	// DQEdit — structured TGUI AdminReport.
+	dq_admin_report_html(usr, "Admin Playernotes", dat, src)
 
 /datum/admins/proc/player_has_info_legacy(key as text)
 	var/savefile/info = new("data/player_saves/[copytext(key, 1, 2)]/[key]/info.sav")
@@ -291,10 +290,8 @@
 	dat += "<br>"
 	dat += "<A href='byond://?src=\ref[src];[HrefToken()];add_player_info_legacy=[key]'>Add Comment</A><br>"
 
-	var/datum/browser/popup = new(usr, "adminplayerinfo", "Admin Playerinfo", 480, 480)
-	popup.add_head_content("<title>Info on [key]</title>")
-	popup.set_content(dat)
-	popup.open()
+	// DQEdit — structured TGUI AdminReport.
+	dq_admin_report_html(usr, "Info on [key]", dat, src)
 
 /datum/admins/Topic(href, href_list)
 	..()

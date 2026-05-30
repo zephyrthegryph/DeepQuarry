@@ -140,8 +140,8 @@
 	if(D != home)
 		dat += "<br><a href='byond://?src=\ref[src];go_to_home=1'>\[Go To Home\]</a>"
 	dat += "</center></body>"
-	user << browse("<html>[dat]</html>", "window=the_empress_protects;size=600x550")
-	onclose(user, "the_empress_protects", src)
+	// DQEdit — structured TGUI AdminReport; byond:// links forwarded to host.
+	dq_admin_report_html(user, "The Empress Protects", dat, src)
 
 /datum/codex_tree/Topic(href, href_list)
 	. = ..()
@@ -163,9 +163,8 @@
 	else if(href_list["quick_link"]) // Indirect link, using a (hopefully) indexed word.
 		quick_link(href_list["quick_link"], usr)
 	else if(href_list["close"])
-		// Close the book, if our holder is actually a book.
-		//if(istype(holder, /obj/item/book/codex))
-			//holder.icon_state = initial(holder.icon_state)
-		usr << browse(null, "window=the_empress_protects")
+		// DQEdit Start — close TGUI codex viewer
+		SStgui.close_uis(src)
 		return
+		// DQEdit End
 	display(usr)
