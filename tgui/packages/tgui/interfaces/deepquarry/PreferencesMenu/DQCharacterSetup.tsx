@@ -49,10 +49,13 @@ const PreviewMap = () => {
 const CATEGORY_LABELS: Record<string, string> = {
   identity: 'Identity',
   appearance: 'Looks',
-  size_voice: 'Body',
+  // Renamed from "Body" so the new Mind & Body specialty tab can own that word; the
+  // size_voice category is really size sliders + voice prefs, "Size" is closer anyway.
+  size_voice: 'Size',
   loadout: 'Loadout',
   occupation: 'Jobs',
   traits: 'Traits',
+  mind_body: 'Mind & Body',
   antag: 'Antag',
   vore: 'Vore',
   game: 'Game',

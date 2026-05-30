@@ -9,6 +9,7 @@ import { BodyMarkingsEditor } from './BodyMarkingsEditor';
 import { FlavorTextEditor } from './FlavorTextEditor';
 import { LanguagePicker } from './LanguagePicker';
 import { LoadoutBuilder } from './LoadoutBuilder';
+import { MindBodyEditor } from './MindBodyEditor';
 import { NifStatusPanel } from './NifStatusPanel';
 import { OccupationEditor } from './OccupationEditor';
 import { OrgansEditor } from './OrgansEditor';
@@ -29,6 +30,7 @@ export const PREF_EDITORS: Record<string, ComponentType<EditorProps>> = {
   flavor: FlavorTextEditor,
   language: LanguagePicker,
   loadout: LoadoutBuilder,
+  mind_body: MindBodyEditor,
   nif_status: NifStatusPanel,
   occupation: OccupationEditor,
   organs: OrgansEditor,
