@@ -576,12 +576,15 @@ const CategoryTabRow = ({
   spent: Record<string, number>;
   picksByCat: Record<string, number>;
 }) => (
-  <Stack wrap mb={1}>
+  // No wrap: with 7 chips the row must stay in a single line. Stack divides
+  // available space equally between chips via grow=1 + basis=0, so each chip
+  // gets the same flex slot regardless of label length.
+  <Stack mb={0.5} style={{ width: '100%' }}>
     {categoryIds.map((id) => {
       const cat = categories[id];
       if (!cat) return null;
       return (
-        <Stack.Item key={id}>
+        <Stack.Item grow basis={0} key={id} style={{ minWidth: 0 }}>
           <CategoryChip
             cat={cat}
             isActive={id === activeCategoryId}
@@ -639,38 +642,52 @@ const CategoryChip = ({
       }
     >
       <Box
-        mr={0.5}
-        mb={0.5}
+        mr={0.25}
         onClick={onClick}
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
         style={{
           cursor: 'pointer',
-          padding: '4px 10px',
-          borderRadius: '14px',
+          padding: '3px 6px',
+          borderRadius: '12px',
           backgroundColor: bg,
           border: `1px solid ${border}`,
           color: fg,
           fontWeight: isActive || picks > 0 ? 'bold' : 'normal',
-          fontSize: '0.85em',
+          fontSize: '0.78em',
           transition: 'all 120ms',
-          display: 'inline-flex',
+          display: 'flex',
           alignItems: 'center',
-          gap: '6px',
+          justifyContent: 'center',
+          gap: '4px',
           boxShadow: isActive ? `0 0 6px ${cat.color}66` : 'none',
+          width: '100%',
+          minWidth: 0,
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
         }}
       >
         {cat.icon && <Icon name={cat.icon} />}
-        {cat.name}
+        <Box
+          style={{
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {cat.name}
+        </Box>
         <Box
           style={{
             backgroundColor: isActive
               ? 'rgba(255,255,255,0.25)'
               : `${cat.color}44`,
-            borderRadius: '8px',
-            padding: '0 6px',
-            fontSize: '0.85em',
+            borderRadius: '7px',
+            padding: '0 4px',
+            fontSize: '0.8em',
             fontWeight: 'bold',
+            flexShrink: 0,
           }}
         >
           {spent}/{pool}
@@ -922,12 +939,15 @@ type TreeDims = {
 };
 
 // Default dimensions for Body trees, which use the entire ~700px left pane.
+// Vertical sizes tightened (NODE_H 68 → 60, ROW_GAP 22 → 16, SUBTREE_ROW_GAP
+// 16 → 12) so a Body tree with two wrapped subtree rows × 3 tiers each fits
+// the available pane height without triggering the section's vertical scroll.
 const FULL_DIMS: TreeDims = {
   NODE_W: 78,
-  NODE_H: 68,
+  NODE_H: 60,
   COL_GAP: 8,
-  ROW_GAP: 22,
-  SUBTREE_ROW_GAP: 16,
+  ROW_GAP: 16,
+  SUBTREE_ROW_GAP: 12,
   paneWidth: 660,
 };
 
@@ -1152,6 +1172,25 @@ const computeTreeLayout = (
     rowYOffset += rowHeight + SUBTREE_ROW_GAP;
   }
 
+  // 6b. Multi-parent shift: a perk with N parents from different subtrees has its
+  //     primary parent's column slot, but visually wants to sit BETWEEN its parents
+  //     so every connector is short and clean. Capstone perks (Titan, Sealed Case,
+  //     etc.) are always leaves, so shifting them post-layout doesn't ripple. Only
+  //     skip the shift if the resulting x would collide with the parent itself
+  //     (i.e. all parents share the same column, in which case the original
+  //     position is already correct).
+  for (const path of allPaths) {
+    const meta = byPath[path];
+    const visibleParents = meta.requires.filter((r) => r in byPath);
+    if (visibleParents.length < 2) continue;
+    const parentXs = visibleParents.map((r) => xByPath[r]);
+    const avgX = parentXs.reduce((a, b) => a + b, 0) / parentXs.length;
+    // Only shift if it materially changes the position (>=1 col away).
+    if (Math.abs(avgX - xByPath[path]) > (NODE_W + COL_GAP) / 2) {
+      xByPath[path] = avgX;
+    }
+  }
+
   const nodes: LayoutNode[] = allPaths.map((path) => ({
     path,
     meta: byPath[path],
@@ -1211,7 +1250,7 @@ const PerkTree = ({
   act: Act;
   dims?: TreeDims;
 }) => {
-  const { NODE_W, NODE_H } = dims;
+  const { NODE_W, NODE_H, ROW_GAP } = dims;
   const accent = tree.color ?? categoryColor;
   const { nodes, connections, totalWidth, totalHeight, xByPath, yByPath } =
     useMemo(
@@ -1249,13 +1288,17 @@ const PerkTree = ({
           const childSelected = selectedPaths.includes(c.toPath);
           const bothSelected = parentSelected && childSelected;
           let d: string;
-          if (c.intraSubtree && Math.abs(x1 - x2) < 1) {
+          if (Math.abs(x1 - x2) < 1) {
             // Straight vertical line — child is exactly under parent.
             d = `M ${x1} ${y1} L ${x2} ${y2}`;
           } else {
-            // Right-angle path: down halfway, across to child's column, then
-            // down again. Clean orthogonal routing for cross-column links.
-            const midY = (y1 + y2) / 2;
+            // Right-angle path: down to the row-gap immediately above the child,
+            // across to the child's column, then down into the child. Routing
+            // through the gap (rather than midway between parent and child) keeps
+            // the horizontal segment in whitespace instead of cutting across
+            // intermediate-tier nodes. Cross-subtree links of more than one tier
+            // depth visually finish their horizontal travel just above the target.
+            const midY = y2 - ROW_GAP / 2;
             d = `M ${x1} ${y1} L ${x1} ${midY} L ${x2} ${midY} L ${x2} ${y2}`;
           }
           return (
