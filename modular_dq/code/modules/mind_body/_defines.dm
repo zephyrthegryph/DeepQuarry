@@ -16,9 +16,9 @@
 // At age 100 : body = 2 per cat × 4 cats =  8 total; mind = 6 per cat × 7 cats = 42 total (caps)
 
 #define MIND_BODY_AGE_STEP            10
-#define MIND_BODY_MIN_PER_CAT         2
-#define MIND_BODY_BASE_BODY_PER_CAT   6
-#define MIND_BODY_MAX_MIND_PER_CAT    6
+#define MIND_BODY_MIN_PER_CAT         3
+#define MIND_BODY_BASE_BODY_PER_CAT   8
+#define MIND_BODY_MAX_MIND_PER_CAT    8
 
 // Top-level category type ids — used by /datum/perk.category lookup and the UI to
 // split the view into Body vs Mind panes.
