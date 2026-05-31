@@ -8,12 +8,17 @@
 // STRENGTH
 // ═══════════════════════════════════════════════════════════════════════════════
 
+// Sort priorities: chain-head perks claim tens (10 / 20 / 30 …) so they land
+// in a logical left-to-right reading order; standalone perks claim the 100s.
+// Children inherit their parent's slot via the subtree algorithm.
+
 /datum/perk/body/str_toughness
 	name = "Toughness"
 	desc = "Years of physical conditioning. Reduces incoming brute damage by 10%."
 	icon_name = "shield"
 	cost = 1
 	tree = PERK_TREE_BODY_STRENGTH
+	sort_priority = 10
 	var_changes = list("brute_mod" = 0.9)
 
 /datum/perk/body/str_iron_skin
@@ -40,6 +45,7 @@
 	icon_name = "hand-fist"
 	cost = 1
 	tree = PERK_TREE_BODY_STRENGTH
+	sort_priority = 20
 
 /datum/perk/body/str_bone_density
 	name = "Bone Density"
@@ -47,6 +53,7 @@
 	icon_name = "bone"
 	cost = 1
 	tree = PERK_TREE_BODY_STRENGTH
+	sort_priority = 100
 
 /datum/perk/body/str_brawler
 	name = "Brawler"
@@ -54,6 +61,7 @@
 	icon_name = "hand-back-fist"
 	cost = 2
 	tree = PERK_TREE_BODY_STRENGTH
+	sort_priority = 30
 
 /datum/perk/body/str_heavy_lifter
 	name = "Heavy Lifter"
@@ -61,6 +69,7 @@
 	icon_name = "weight-hanging"
 	cost = 1
 	tree = PERK_TREE_BODY_STRENGTH
+	sort_priority = 50
 
 /datum/perk/body/str_strongman
 	name = "Strongman"
@@ -76,6 +85,7 @@
 	icon_name = "hand"
 	cost = 1
 	tree = PERK_TREE_BODY_STRENGTH
+	sort_priority = 40
 
 /datum/perk/body/str_vise_hands
 	name = "Vise Hands"
@@ -99,6 +109,7 @@
 	icon_name = "baseball"
 	cost = 1
 	tree = PERK_TREE_BODY_STRENGTH
+	sort_priority = 60
 
 /datum/perk/body/str_hammer_throw
 	name = "Hammer Throw"
@@ -122,6 +133,7 @@
 	icon_name = "screwdriver-wrench"
 	cost = 2
 	tree = PERK_TREE_BODY_STRENGTH
+	sort_priority = 110
 
 /datum/perk/body/str_force
 	name = "Force of Will"
@@ -137,6 +149,7 @@
 	icon_name = "skull"
 	cost = 2
 	tree = PERK_TREE_BODY_STRENGTH
+	sort_priority = 120
 
 /datum/perk/body/str_bulwark
 	name = "Bulwark"
@@ -144,6 +157,7 @@
 	icon_name = "shield-blank"
 	cost = 1
 	tree = PERK_TREE_BODY_STRENGTH
+	sort_priority = 130
 
 /datum/perk/body/str_wall
 	name = "Wall of Meat"
@@ -151,6 +165,7 @@
 	icon_name = "anchor"
 	cost = 2
 	tree = PERK_TREE_BODY_STRENGTH
+	sort_priority = 140
 
 /datum/perk/body/str_titan
 	name = "Titan"
@@ -175,6 +190,7 @@
 	icon_name = "shield-cat"
 	cost = 2
 	tree = PERK_TREE_BODY_STRENGTH
+	sort_priority = 150
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // VIGOR

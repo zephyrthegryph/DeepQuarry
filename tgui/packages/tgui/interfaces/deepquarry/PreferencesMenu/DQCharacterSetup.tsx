@@ -48,8 +48,8 @@ const PreviewMap = () => {
         params={{
           id: 'character_preview_map',
           type: 'map',
-          view: '3x8',
-          'icon-size': '96',
+          view: '3x4',
+          'icon-size': '120',
         }}
         style={{ width: '100%', height: '100%' }}
       />

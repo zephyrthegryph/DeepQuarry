@@ -41,6 +41,23 @@
 	/// Optional component to attach on grant / detach on revoke.
 	var/added_component_path = null
 
+	/// Sort priority used by the React tree layout to order perks within a tier.
+	/// Lower comes first (top-most or left-most). Default 0; perks within the same
+	/// tier with equal sort_priority fall back to name-based ordering. Useful for
+	/// putting chain-head perks before standalones or stamping "this perk should
+	/// be the first thing players see in this tree".
+	var/sort_priority = 0
+
+	/// Explicit column position in the tree layout (in column units). null means
+	/// "auto-layout decides". When set, the React side places the perk at exactly
+	/// this column instead of computing one from the subtree algorithm.
+	var/tree_x = null
+
+	/// Explicit row position (tier) in the tree layout. null means auto-derive
+	/// from the requires DAG. Allows the author to lift a perk to a specific tier
+	/// regardless of its requires chain depth.
+	var/tree_y = null
+
 /datum/perk/proc/grant(mob/living/carbon/human/target, datum/preferences/preferences)
 	if(added_component_path && !target.GetComponent(added_component_path))
 		target.AddComponent(added_component_path)

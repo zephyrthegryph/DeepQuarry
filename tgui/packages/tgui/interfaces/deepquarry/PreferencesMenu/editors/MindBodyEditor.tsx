@@ -58,6 +58,15 @@ type PerkMeta = {
   category: string;
   tree: string;
   requires: string[];
+  /// Lower comes first. Used to sort perks within a tier — chain-head perks can
+  /// claim position 10/20/30 to land left-to-right ahead of standalones.
+  sort_priority: number;
+  /// Optional explicit column position. When set, the React layout places the
+  /// perk at exactly this column instead of computing one from the subtree
+  /// algorithm. Null means "auto".
+  tree_x: number | null;
+  /// Optional explicit tier (row) position. Null means "auto-derive from requires".
+  tree_y: number | null;
 };
 
 type MindBodyData = {
@@ -302,31 +311,47 @@ const SidePill = ({
   );
 };
 
+// Horizontal pill matching the perk-card / category-chip aesthetic. Small hourglass
+// icon, uppercase "AGE" label in light-grey, prominent number alongside.
 const AgeBadge = ({ age }: { age: number }) => (
   <Box
     style={{
-      width: '52px',
-      height: '52px',
-      borderRadius: '50%',
+      padding: '4px 10px',
+      borderRadius: '8px',
+      border: '1px solid rgba(255,255,255,0.12)',
       background:
-        'radial-gradient(circle at 35% 30%, rgba(255,255,255,0.12), rgba(0,0,0,0.25))',
-      border: '2px solid rgba(255,255,255,0.18)',
-      display: 'flex',
-      flexDirection: 'column',
+        'linear-gradient(180deg, rgba(255,255,255,0.06), rgba(0,0,0,0.18))',
+      display: 'inline-flex',
       alignItems: 'center',
-      justifyContent: 'center',
-      boxShadow: 'inset 0 0 8px rgba(0,0,0,0.3)',
+      gap: '8px',
     }}
   >
-    <Box fontSize="1.25em" bold style={{ lineHeight: '1em' }}>
-      <AnimatedNumber value={age} />
-    </Box>
-    <Box
-      fontSize="0.62em"
-      color="label"
-      style={{ letterSpacing: '0.1em', marginTop: '2px' }}
-    >
-      YEARS
+    <Icon
+      name="hourglass-half"
+      style={{ color: 'rgba(255,255,255,0.45)', fontSize: '1.1em' }}
+    />
+    <Box style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
+      <Box
+        style={{
+          fontSize: '0.6em',
+          color: 'rgba(255,255,255,0.5)',
+          letterSpacing: '0.14em',
+          textTransform: 'uppercase',
+          fontWeight: 'bold',
+        }}
+      >
+        Age
+      </Box>
+      <Box
+        style={{
+          fontSize: '1.35em',
+          fontWeight: 'bold',
+          lineHeight: '1',
+          marginTop: '1px',
+        }}
+      >
+        <AnimatedNumber value={age} />
+      </Box>
     </Box>
   </Box>
 );
@@ -1041,12 +1066,21 @@ const computeTreeLayout = (
 
   // 2. Compute tier (max-depth of the requires DAG) — using *all* parents, not
   //    just the primary. This guarantees a child is always placed below every
-  //    one of its parents, so connector lines only ever go downward.
+  //    one of its parents, so connector lines only ever go downward. An author
+  //    can override the auto-derived tier per perk by setting tree_y in DM.
   const tierCache: Record<string, number> = {};
   const tierOf = (path: string, visiting = new Set<string>()): number => {
     if (path in tierCache) return tierCache[path];
     const meta = byPath[path];
-    if (!meta || meta.requires.length === 0) {
+    if (!meta) {
+      tierCache[path] = 0;
+      return 0;
+    }
+    if (meta.tree_y !== null && meta.tree_y !== undefined) {
+      tierCache[path] = meta.tree_y;
+      return meta.tree_y;
+    }
+    if (meta.requires.length === 0) {
       tierCache[path] = 0;
       return 0;
     }
@@ -1090,15 +1124,22 @@ const computeTreeLayout = (
       childrenOf[parent].push(path);
     }
   }
+  // Sort children of each parent by sort_priority (lower first) → name. The
+  // author can stamp a perk with a low sort_priority to anchor it on the left
+  // of its tier; ties fall back to alphabetical so the layout stays stable.
+  const cmpSort = (a: string, b: string) => {
+    const pa = byPath[a].sort_priority ?? 0;
+    const pb = byPath[b].sort_priority ?? 0;
+    if (pa !== pb) return pa - pb;
+    return byPath[a].name.localeCompare(byPath[b].name);
+  };
   for (const parent in childrenOf) {
-    childrenOf[parent].sort((a, b) =>
-      byPath[a].name.localeCompare(byPath[b].name),
-    );
+    childrenOf[parent].sort(cmpSort);
   }
 
   // 4. Identify roots (tier 0) and compute each subtree's column width.
   const roots = allPaths.filter((p) => primaryParent[p] === null);
-  roots.sort((a, b) => byPath[a].name.localeCompare(byPath[b].name));
+  roots.sort(cmpSort);
   const widthCache: Record<string, number> = {};
   for (const r of roots) subtreeWidth(r, childrenOf, widthCache);
 
@@ -1172,20 +1213,29 @@ const computeTreeLayout = (
     rowYOffset += rowHeight + SUBTREE_ROW_GAP;
   }
 
-  // 6b. Multi-parent shift: a perk with N parents from different subtrees has its
+  // 6b. Explicit position overrides — author can stamp a perk with tree_x in DM
+  //     to pin it to a specific column. Applied before the multi-parent shift so
+  //     parents with explicit positions are used by the shift calculation.
+  for (const path of allPaths) {
+    const meta = byPath[path];
+    if (meta.tree_x !== null && meta.tree_x !== undefined) {
+      xByPath[path] = meta.tree_x * (NODE_W + COL_GAP);
+    }
+  }
+
+  // 6c. Multi-parent shift: a perk with N parents from different subtrees has its
   //     primary parent's column slot, but visually wants to sit BETWEEN its parents
   //     so every connector is short and clean. Capstone perks (Titan, Sealed Case,
   //     etc.) are always leaves, so shifting them post-layout doesn't ripple. Only
-  //     skip the shift if the resulting x would collide with the parent itself
-  //     (i.e. all parents share the same column, in which case the original
-  //     position is already correct).
+  //     applies when the perk doesn't have an explicit tree_x — the explicit
+  //     position is authoritative when set.
   for (const path of allPaths) {
     const meta = byPath[path];
+    if (meta.tree_x !== null && meta.tree_x !== undefined) continue;
     const visibleParents = meta.requires.filter((r) => r in byPath);
     if (visibleParents.length < 2) continue;
     const parentXs = visibleParents.map((r) => xByPath[r]);
     const avgX = parentXs.reduce((a, b) => a + b, 0) / parentXs.length;
-    // Only shift if it materially changes the position (>=1 col away).
     if (Math.abs(avgX - xByPath[path]) > (NODE_W + COL_GAP) / 2) {
       xByPath[path] = avgX;
     }

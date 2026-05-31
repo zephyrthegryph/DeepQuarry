@@ -26,14 +26,18 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 
 		//Mob preview
 	var/list/char_render_holders		//Should only be a key-value list of north/south/east/west = atom/movable/screen.
+	// DQEdit — compressed from 3x8 to 3x4 so the React preview can use a 3x4 view
+	// with icon-size up to ~120, making the character substantially larger inside
+	// the right pane. Directions still occupy distinct rows; BG spans the full
+	// visible area.
 	var/static/list/preview_screen_locs = list(
-		"1" = "character_preview_map:2,7",
-		"2" = "character_preview_map:2,5",
-		"4"  = "character_preview_map:2,3",
+		"1" = "character_preview_map:2,4",
+		"2" = "character_preview_map:2,3",
+		"4"  = "character_preview_map:2,2",
 		"8"  = "character_preview_map:2,1",
-		"BG" = "character_preview_map:1,1 to 3,8",
-		"PMH" = "character_preview_map:2,7",
-		"PMHjiggle" = "character_preview_map:102,7:107",
+		"BG" = "character_preview_map:1,1 to 3,4",
+		"PMH" = "character_preview_map:2,3",
+		"PMHjiggle" = "character_preview_map:102,3:107",
 	)
 
 	//character preferences
