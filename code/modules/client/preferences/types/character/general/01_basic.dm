@@ -18,7 +18,7 @@
 
 	step = 1
 	minimum = 18
-	maximum = 250
+	maximum = 100 // DQEdit — was 250; capped so the Mind/Body pool curve reaches its plateau at a realistic upper bound.
 
 /datum/preference/numeric/human/age/apply_to_human(mob/living/carbon/human/target, value)
 	target.age = value

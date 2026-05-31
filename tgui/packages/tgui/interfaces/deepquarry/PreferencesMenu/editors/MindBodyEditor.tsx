@@ -87,6 +87,19 @@ type Act = ReturnType<typeof useBackend>['act'];
 const send = (act: Act, action: string, params: Record<string, unknown>) =>
   act('dq_editor_action', { editor: 'mind_body', action, params });
 
+// Reverse-lookup: given a perks dict and a meta object, find the path key. Used in
+// a few places where we've already iterated meta objects but need the original
+// string path to send to the server.
+const perkPathToEntry = (
+  perksDict: Record<string, PerkMeta>,
+  perk: PerkMeta,
+): string | null => {
+  for (const k in perksDict) {
+    if (perksDict[k] === perk) return k;
+  }
+  return null;
+};
+
 // ─── Root ──────────────────────────────────────────────────────────────────────────
 
 export const MindBodyEditor = ({ data, staticData }: EditorProps) => {
@@ -161,10 +174,7 @@ export const MindBodyEditor = ({ data, staticData }: EditorProps) => {
         style={{ flex: 1, minHeight: 0, display: 'flex' }}
       >
         {activeKind === 'body' ? (
-          <SidePane
-            paneLabel="Body"
-            paneIcon="dumbbell"
-            paneAccent={BODY_ACCENT}
+          <BodyPane
             categoryIds={bodyCats}
             activeCategoryId={activeBodyCat}
             setActiveCategoryId={setActiveBodyCat}
@@ -175,16 +185,10 @@ export const MindBodyEditor = ({ data, staticData }: EditorProps) => {
             act={act}
           />
         ) : (
-          <SidePane
-            paneLabel="Mind"
-            paneIcon="brain"
-            paneAccent={MIND_ACCENT}
+          <MindPane
             categoryIds={mindCats}
-            activeCategoryId={activeMindCat}
-            setActiveCategoryId={setActiveMindCat}
             data={d}
             staticData={s}
-            picksByCat={picksByCat}
             selectedPaths={d.mind_perks ?? []}
             act={act}
           />
@@ -337,12 +341,13 @@ const AgeBadge = ({ age }: { age: number }) => (
   </Box>
 );
 
-// ─── Side pane (Body or Mind) ─────────────────────────────────────────────────────
+// ─── Body pane (tabbed — one category at a time) ──────────────────────────────────
+//
+// The duplicate pane title that used to sit on the Section was removed: the
+// Body/Mind toggle in the top header already tells the user which side is active,
+// so a "Body" title repeated on every render was visual noise.
 
-const SidePane = ({
-  paneLabel,
-  paneIcon,
-  paneAccent,
+const BodyPane = ({
   categoryIds,
   activeCategoryId,
   setActiveCategoryId,
@@ -352,9 +357,6 @@ const SidePane = ({
   selectedPaths,
   act,
 }: {
-  paneLabel: string;
-  paneIcon: string;
-  paneAccent: string;
   categoryIds: string[];
   activeCategoryId: string;
   setActiveCategoryId: (id: string) => void;
@@ -366,12 +368,7 @@ const SidePane = ({
 }) => {
   const activeCat = s.categories[activeCategoryId];
   return (
-    <Section
-      fill
-      scrollable
-      style={{ flex: 1, display: 'flex' }}
-      title={<PaneTitle icon={paneIcon} color={paneAccent} label={paneLabel} />}
-    >
+    <Section fill scrollable style={{ flex: 1, display: 'flex' }}>
       <CategoryTabRow
         categoryIds={categoryIds}
         activeCategoryId={activeCategoryId}
@@ -395,26 +392,172 @@ const SidePane = ({
   );
 };
 
-const PaneTitle = ({
-  icon,
-  color,
-  label,
+// ─── Mind pane (all departments at once, in one row) ──────────────────────────────
+//
+// Every Mind department renders simultaneously across a single row of columns.
+// Each column has a transparent department label at the top, a compact pool
+// indicator, then a vertically-stacked subtree-style perk grid using small icon
+// nodes. Dotted vertical dividers separate departments visually so the categories
+// read as distinct columns rather than a sea of icons.
+
+const MindPane = ({
+  categoryIds,
+  data: d,
+  staticData: s,
+  selectedPaths,
+  act,
 }: {
-  icon: string;
-  color: string;
-  label: string;
-}) => (
-  <Stack align="center">
-    <Stack.Item>
-      <Icon name={icon} style={{ color }} />
-    </Stack.Item>
-    <Stack.Item>
-      <Box ml={0.5} style={{ color }} bold>
-        {label}
+  categoryIds: string[];
+  data: MindBodyData;
+  staticData: MindBodyStatic;
+  selectedPaths: string[];
+  act: Act;
+}) => {
+  return (
+    <Section fill scrollable style={{ flex: 1, display: 'flex' }}>
+      <Stack style={{ width: '100%' }}>
+        {categoryIds.map((catId, idx) => {
+          const cat = s.categories[catId];
+          if (!cat) return null;
+          return (
+            <Stack.Item
+              grow
+              basis={0}
+              key={catId}
+              style={{
+                minWidth: 0,
+                position: 'relative',
+                // Dotted divider on each column's right edge except the last.
+                // Using border-right on the column itself rather than a separate
+                // <Box> dodges extra width math.
+                borderRight:
+                  idx < categoryIds.length - 1
+                    ? '1px dotted rgba(255,255,255,0.18)'
+                    : 'none',
+                paddingLeft: idx === 0 ? 0 : '6px',
+                paddingRight: idx === categoryIds.length - 1 ? 0 : '6px',
+              }}
+            >
+              <MindColumn
+                category={cat}
+                staticData={s}
+                pool={d.pools[cat.id] ?? 0}
+                spent={d.spent[cat.id] ?? 0}
+                selectedPaths={selectedPaths}
+                act={act}
+              />
+            </Stack.Item>
+          );
+        })}
+      </Stack>
+    </Section>
+  );
+};
+
+const MindColumn = ({
+  category,
+  staticData: s,
+  pool,
+  spent,
+  selectedPaths,
+  act,
+}: {
+  category: CategoryMeta;
+  staticData: MindBodyStatic;
+  pool: number;
+  spent: number;
+  selectedPaths: string[];
+  act: Act;
+}) => {
+  // Collect every perk in every tree that belongs to this department, building
+  // a single virtual "tree" the small-icon layout can render against.
+  const perksInCategory = useMemo(() => {
+    const out: string[] = [];
+    for (const treeId in s.trees) {
+      const t = s.trees[treeId];
+      if (t.category === category.id) {
+        for (const p of t.perks) out.push(p);
+      }
+    }
+    return out;
+  }, [s.trees, s.perks, category.id]);
+
+  const remaining = pool - spent;
+
+  return (
+    <Box style={{ width: '100%' }}>
+      {/* Transparent department label — sits ABOVE the perks at low opacity so
+          the category reads as a watermark on its column instead of competing
+          with the perk icons for attention. */}
+      <Box
+        style={{
+          textAlign: 'center',
+          color: category.color,
+          fontWeight: 'bold',
+          letterSpacing: '0.08em',
+          fontSize: '0.85em',
+          opacity: 0.55,
+          textTransform: 'uppercase',
+          marginBottom: '4px',
+          textShadow: `0 0 4px ${category.color}33`,
+        }}
+      >
+        {category.icon && <Icon name={category.icon} mr={0.25} />}
+        {category.name}
       </Box>
-    </Stack.Item>
-  </Stack>
-);
+      {/* Compact pool indicator — fits inside the narrow column. */}
+      <Box
+        style={{
+          height: '4px',
+          borderRadius: '2px',
+          backgroundColor: 'rgba(0,0,0,0.4)',
+          marginBottom: '4px',
+          overflow: 'hidden',
+        }}
+      >
+        <Box
+          style={{
+            width: `${Math.min(100, (spent / Math.max(pool, 1)) * 100)}%`,
+            height: '100%',
+            backgroundColor: category.color,
+            transition: 'width 200ms',
+          }}
+        />
+      </Box>
+      <Box
+        style={{
+          fontSize: '0.7em',
+          textAlign: 'center',
+          color: 'rgba(255,255,255,0.65)',
+          marginBottom: '6px',
+        }}
+      >
+        <Box inline bold style={{ color: category.color }}>
+          {spent}
+        </Box>
+        <Box inline color="label">
+          {' '}
+          / {pool} ·{' '}
+        </Box>
+        <Box inline bold style={{ color: '#fff' }}>
+          {remaining}
+        </Box>
+        <Box inline color="label">
+          {' '}
+          left
+        </Box>
+      </Box>
+      <CompactCategoryTree
+        perkPaths={perksInCategory}
+        perks={s.perks}
+        accent={category.color}
+        selectedPaths={selectedPaths}
+        remaining={remaining}
+        act={act}
+      />
+    </Box>
+  );
+};
 
 // ─── Category tab row ─────────────────────────────────────────────────────────────
 
@@ -617,6 +760,270 @@ const CategoryPane = ({
         </Box>
       )}
     </Box>
+  );
+};
+
+// ─── Compact category tree (small icon nodes for the all-departments mind view) ───
+//
+// Groups the category's perks by sub-role tree, with a tiny tree header showing the
+// sub-role name. Within each sub-role, perks are tiered top-down by their requires
+// chain. Each perk renders as a 28-px icon with a 1-line cost pill underneath; full
+// description sits in a hover Tooltip so the dense 7-column layout stays scannable.
+
+const COMPACT_NODE = 30;
+const COMPACT_GAP = 4;
+const COMPACT_ROW_GAP = 6;
+
+const CompactCategoryTree = ({
+  perkPaths,
+  perks,
+  accent,
+  selectedPaths,
+  remaining,
+  act,
+}: {
+  perkPaths: string[];
+  perks: Record<string, PerkMeta>;
+  accent: string;
+  selectedPaths: string[];
+  remaining: number;
+  act: Act;
+}) => {
+  // Group perks by their tree (sub-role), then within each tree compute tiers
+  // exactly like the wider PerkTree does so the layout reads top-down by
+  // dependency depth.
+  const groupedByTree = useMemo(() => {
+    const out: Record<string, PerkMeta[]> = {};
+    for (const path of perkPaths) {
+      const meta = perks[path];
+      if (!meta) continue;
+      if (!out[meta.tree]) out[meta.tree] = [];
+      out[meta.tree].push(meta);
+    }
+    return out;
+  }, [perkPaths, perks]);
+
+  // Walk requires-DAG to compute tier for each perk (max of all parents).
+  const tierByPath = useMemo(() => {
+    const cache: Record<string, number> = {};
+    const tierOf = (path: string, visiting = new Set<string>()): number => {
+      if (path in cache) return cache[path];
+      const meta = perks[path];
+      if (!meta || meta.requires.length === 0) {
+        cache[path] = 0;
+        return 0;
+      }
+      if (visiting.has(path)) return 0;
+      visiting.add(path);
+      let maxParent = -1;
+      for (const req of meta.requires) {
+        if (req in perks) maxParent = Math.max(maxParent, tierOf(req, visiting));
+      }
+      visiting.delete(path);
+      const t = 1 + (maxParent >= 0 ? maxParent : 0);
+      cache[path] = t;
+      return t;
+    };
+    for (const p of perkPaths) tierOf(p);
+    return cache;
+  }, [perkPaths, perks]);
+
+  return (
+    <Box>
+      {Object.entries(groupedByTree).map(([treeId, perksInTree]) => {
+        // Bucket by tier within this sub-role. perksInTree already carries the
+        // path string alongside the meta since we built it from path lookups.
+        type Entry = { path: string; meta: PerkMeta };
+        const entries: Entry[] = perksInTree
+          .map((meta) => {
+            const path = perkPathToEntry(perks, meta);
+            return path ? { path, meta } : null;
+          })
+          .filter((e): e is Entry => e !== null);
+        const tiers: Entry[][] = [];
+        for (const e of entries) {
+          const t = tierByPath[e.path] ?? 0;
+          if (!tiers[t]) tiers[t] = [];
+          tiers[t].push(e);
+        }
+        for (const row of tiers) {
+          if (row) row.sort((a, b) => a.meta.cost - b.meta.cost);
+        }
+        return (
+          <Box key={treeId} mb={0.5}>
+            {tiers.map(
+              (row, tierIdx) =>
+                row && (
+                  <Box
+                    key={`${treeId}-${tierIdx}`}
+                    style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      justifyContent: 'center',
+                      gap: `${COMPACT_GAP}px`,
+                      marginBottom: `${COMPACT_ROW_GAP}px`,
+                    }}
+                  >
+                    {row.map(({ path, meta }) => {
+                      const selected = selectedPaths.includes(path);
+                      const requiresOk = meta.requires.every((r) =>
+                        selectedPaths.includes(r),
+                      );
+                      const affordable = selected || remaining >= meta.cost;
+                      const disabled =
+                        !selected && (!requiresOk || !affordable);
+                      return (
+                        <CompactPerk
+                          key={path}
+                          perk={meta}
+                          accent={accent}
+                          selected={selected}
+                          disabled={disabled}
+                          gateHint={
+                            !selected && !requiresOk
+                              ? `Requires ${meta.requires
+                                  .map((r) => perks[r]?.name ?? r)
+                                  .join(', ')}`
+                              : !selected && !affordable
+                                ? 'Not enough points'
+                                : null
+                          }
+                          onClick={() =>
+                            send(
+                              act,
+                              selected ? 'remove_perk' : 'add_perk',
+                              { perk_path: path },
+                            )
+                          }
+                        />
+                      );
+                    })}
+                  </Box>
+                ),
+            )}
+          </Box>
+        );
+      })}
+    </Box>
+  );
+};
+
+const CompactPerk = ({
+  perk,
+  accent,
+  selected,
+  disabled,
+  gateHint,
+  onClick,
+}: {
+  perk: PerkMeta;
+  accent: string;
+  selected: boolean;
+  disabled: boolean;
+  gateHint: string | null;
+  onClick: () => void;
+}) => {
+  const [hover, setHover] = useState(false);
+  const clickable = selected || !disabled;
+  return (
+    <Tooltip
+      content={
+        <Box style={{ maxWidth: '260px' }}>
+          <Box bold style={{ color: accent }} mb={0.25}>
+            <Icon name={perk.icon} mr={0.5} />
+            {perk.name}
+            <Box
+              inline
+              ml={1}
+              style={{
+                fontSize: '0.72em',
+                padding: '0 5px',
+                borderRadius: '7px',
+                backgroundColor: `${accent}44`,
+                color: '#fff',
+                fontWeight: 'bold',
+                verticalAlign: 'middle',
+              }}
+            >
+              {perk.cost}
+            </Box>
+          </Box>
+          <Box fontSize="0.85em">{perk.desc}</Box>
+          {gateHint && (
+            <Box fontSize="0.8em" italic style={{ color: BAD }} mt={0.5}>
+              <Icon name="triangle-exclamation" mr={0.5} />
+              {gateHint}
+            </Box>
+          )}
+        </Box>
+      }
+    >
+      <Box
+        onClick={clickable ? onClick : undefined}
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
+        style={{
+          width: `${COMPACT_NODE}px`,
+          height: `${COMPACT_NODE}px`,
+          borderRadius: '6px',
+          background: selected
+            ? `linear-gradient(180deg, ${accent}66, ${accent}22)`
+            : disabled
+              ? 'rgba(255,255,255,0.02)'
+              : hover
+                ? `${accent}33`
+                : 'rgba(255,255,255,0.05)',
+          border: selected
+            ? `1px solid ${accent}`
+            : disabled
+              ? '1px solid rgba(255,255,255,0.06)'
+              : hover
+                ? `1px solid ${accent}`
+                : `1px solid ${accent}44`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: clickable ? 'pointer' : 'default',
+          opacity: disabled ? 0.45 : 1,
+          transition: 'all 120ms',
+          boxShadow: selected ? `0 0 5px ${accent}88` : 'none',
+          position: 'relative',
+        }}
+      >
+        <Icon
+          name={perk.icon}
+          size={1.0}
+          style={{
+            color: selected
+              ? '#fff'
+              : disabled
+                ? 'rgba(255,255,255,0.35)'
+                : accent,
+          }}
+        />
+        {selected && (
+          <Box
+            style={{
+              position: 'absolute',
+              top: -3,
+              right: -3,
+              background: accent,
+              borderRadius: '50%',
+              width: '11px',
+              height: '11px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '0.55em',
+              color: '#fff',
+              boxShadow: '0 0 3px rgba(0,0,0,0.7)',
+            }}
+          >
+            <Icon name="check" />
+          </Box>
+        )}
+      </Box>
+    </Tooltip>
   );
 };
 
