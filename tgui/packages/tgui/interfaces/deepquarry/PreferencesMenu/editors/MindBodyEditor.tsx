@@ -80,6 +80,8 @@ const BODY_ACCENT = '#C0392B';
 const MIND_ACCENT = '#3498DB';
 const BAD = '#E74C3C';
 
+type SideKind = 'body' | 'mind';
+
 type Act = ReturnType<typeof useBackend>['act'];
 
 const send = (act: Act, action: string, params: Record<string, unknown>) =>
@@ -117,7 +119,11 @@ export const MindBodyEditor = ({ data, staticData }: EditorProps) => {
     return out;
   }, [d.body_perks, d.mind_perks, s.perks]);
 
-  // Active category per pane. Land on an invested category if any, else first.
+  // Top-level Body vs Mind toggle. Only one side renders at a time so the tree
+  // can use the entire left-pane width (~700px) without horizontal scrolling.
+  const [activeKind, setActiveKind] = useState<SideKind>('body');
+
+  // Active category per side. Land on an invested category if any, else first.
   const [activeBodyCat, setActiveBodyCat] = useState<string>('');
   const [activeMindCat, setActiveMindCat] = useState<string>('');
   useEffect(() => {
@@ -139,17 +145,16 @@ export const MindBodyEditor = ({ data, staticData }: EditorProps) => {
     <Box
       style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
     >
-      <TopHeader age={d.age} />
+      <TopHeader
+        age={d.age}
+        activeKind={activeKind}
+        setActiveKind={setActiveKind}
+      />
       <Box
         mt={0.5}
-        style={{
-          flex: 1,
-          minHeight: 0,
-          display: 'flex',
-          flexDirection: 'row',
-        }}
+        style={{ flex: 1, minHeight: 0, display: 'flex' }}
       >
-        <Box style={{ flex: 1, minWidth: 0, display: 'flex' }}>
+        {activeKind === 'body' ? (
           <SidePane
             paneLabel="Body"
             paneIcon="dumbbell"
@@ -163,8 +168,7 @@ export const MindBodyEditor = ({ data, staticData }: EditorProps) => {
             selectedPaths={d.body_perks}
             act={act}
           />
-        </Box>
-        <Box ml={0.5} style={{ flex: 1, minWidth: 0, display: 'flex' }}>
+        ) : (
           <SidePane
             paneLabel="Mind"
             paneIcon="brain"
@@ -178,15 +182,23 @@ export const MindBodyEditor = ({ data, staticData }: EditorProps) => {
             selectedPaths={d.mind_perks}
             act={act}
           />
-        </Box>
+        )}
       </Box>
     </Box>
   );
 };
 
-// ─── Top header (age + grand totals) ──────────────────────────────────────────────
+// ─── Top header (age + side toggle) ───────────────────────────────────────────────
 
-const TopHeader = ({ age }: { age: number }) => (
+const TopHeader = ({
+  age,
+  activeKind,
+  setActiveKind,
+}: {
+  age: number;
+  activeKind: SideKind;
+  setActiveKind: (k: SideKind) => void;
+}) => (
   <Box
     px={1}
     py={0.5}
@@ -202,17 +214,93 @@ const TopHeader = ({ age }: { age: number }) => (
         <AgeBadge age={age} />
       </Stack.Item>
       <Stack.Item grow>
-        <Box ml={1} fontSize="0.85em" color="label">
-          Each <Box inline bold style={{ color: BODY_ACCENT }}>Body</Box>{' '}
-          and <Box inline bold style={{ color: MIND_ACCENT }}>Mind</Box>{' '}
-          category has its own point pool. Younger characters get more Body
-          per category; older characters get more Mind. Spending in one
-          category does not draw from another.
+        <Box ml={1}>
+          <SideToggle activeKind={activeKind} setActiveKind={setActiveKind} />
         </Box>
       </Stack.Item>
     </Stack>
   </Box>
 );
+
+const SideToggle = ({
+  activeKind,
+  setActiveKind,
+}: {
+  activeKind: SideKind;
+  setActiveKind: (k: SideKind) => void;
+}) => (
+  <Stack>
+    <Stack.Item grow>
+      <SidePill
+        kind="body"
+        label="Body"
+        icon="dumbbell"
+        accent={BODY_ACCENT}
+        active={activeKind === 'body'}
+        onClick={() => setActiveKind('body')}
+      />
+    </Stack.Item>
+    <Stack.Item grow>
+      <SidePill
+        kind="mind"
+        label="Mind"
+        icon="brain"
+        accent={MIND_ACCENT}
+        active={activeKind === 'mind'}
+        onClick={() => setActiveKind('mind')}
+      />
+    </Stack.Item>
+  </Stack>
+);
+
+const SidePill = ({
+  label,
+  icon,
+  accent,
+  active,
+  onClick,
+}: {
+  kind: SideKind;
+  label: string;
+  icon: string;
+  accent: string;
+  active: boolean;
+  onClick: () => void;
+}) => {
+  const [hover, setHover] = useState(false);
+  return (
+    <Box
+      onClick={onClick}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        cursor: 'pointer',
+        padding: '8px 16px',
+        borderRadius: '8px',
+        backgroundColor: active
+          ? accent
+          : hover
+            ? `${accent}33`
+            : 'rgba(255,255,255,0.05)',
+        border: `1px solid ${active || hover ? accent : 'rgba(255,255,255,0.12)'}`,
+        color: active ? '#fff' : accent,
+        fontWeight: 'bold',
+        fontSize: '1em',
+        textAlign: 'center',
+        letterSpacing: '0.05em',
+        transition: 'all 120ms',
+        boxShadow: active ? `0 0 8px ${accent}88` : 'none',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '8px',
+      }}
+    >
+      <Icon name={icon} size={1.2} />
+      {label}
+    </Box>
+  );
+};
 
 const AgeBadge = ({ age }: { age: number }) => (
   <Box
@@ -671,15 +759,15 @@ const SubTreeChip = ({
 // route via a right-angle path: down from the parent's bottom edge, across to the
 // child's column, then down into the child's top edge.
 
-const NODE_W = 80;
-const NODE_H = 72;
+const NODE_W = 78;
+const NODE_H = 68;
 const COL_GAP = 8;
-const ROW_GAP = 24;
-const SUBTREE_GAP = 16;
-const SUBTREE_ROW_GAP = 20;
-// Available pane width is ~520-540px at 1100x760 full-window. Allow a few px of
-// margin so the rightmost subtree doesn't kiss the scrollbar gutter.
-const PANE_WIDTH = 500;
+const ROW_GAP = 22;
+const SUBTREE_ROW_GAP = 16;
+// Single-pane layout sits in the left ~2/3 of the 1100×760 window. The Section
+// frame and side padding leave roughly 680px usable; cap at 660 so the rightmost
+// subtree doesn't kiss the scrollbar gutter.
+const PANE_WIDTH = 660;
 
 type LayoutNode = {
   path: string;
@@ -731,13 +819,48 @@ const computeTreeLayout = (
   }
   const allPaths = Object.keys(byPath);
 
-  // 2. For routing each perk into a subtree, every non-root perk follows its
-  //    primary parent (first entry in `requires`). Secondary requires turn into
-  //    cross-subtree connections handled by the SVG layer.
+  // 2. Compute tier (max-depth of the requires DAG) — using *all* parents, not
+  //    just the primary. This guarantees a child is always placed below every
+  //    one of its parents, so connector lines only ever go downward.
+  const tierCache: Record<string, number> = {};
+  const tierOf = (path: string, visiting = new Set<string>()): number => {
+    if (path in tierCache) return tierCache[path];
+    const meta = byPath[path];
+    if (!meta || meta.requires.length === 0) {
+      tierCache[path] = 0;
+      return 0;
+    }
+    if (visiting.has(path)) return 0;
+    visiting.add(path);
+    let maxParent = -1;
+    for (const req of meta.requires) {
+      if (req in byPath) {
+        maxParent = Math.max(maxParent, tierOf(req, visiting));
+      }
+    }
+    visiting.delete(path);
+    const t = 1 + (maxParent >= 0 ? maxParent : 0);
+    tierCache[path] = t;
+    return t;
+  };
+  for (const p of allPaths) tierOf(p);
+
+  // 3. Choose the *primary* parent for subtree routing. Picking the parent with
+  //    the highest tier means the child gets routed into the deepest subtree —
+  //    the one whose chain it logically extends. That subtree is also the one
+  //    the orthogonal connector layout will already direct lines toward.
   const primaryParent: Record<string, string | null> = {};
   for (const path of allPaths) {
     const reqs = byPath[path].requires;
-    primaryParent[path] = reqs.length > 0 && reqs[0] in byPath ? reqs[0] : null;
+    let chosen: string | null = null;
+    let chosenTier = -1;
+    for (const req of reqs) {
+      if (req in byPath && tierCache[req] > chosenTier) {
+        chosen = req;
+        chosenTier = tierCache[req];
+      }
+    }
+    primaryParent[path] = chosen;
   }
   const childrenOf: Record<string, string[]> = {};
   for (const path of allPaths) {
@@ -747,30 +870,11 @@ const computeTreeLayout = (
       childrenOf[parent].push(path);
     }
   }
-  // Sort children deterministically — by name keeps layout stable across renders.
   for (const parent in childrenOf) {
     childrenOf[parent].sort((a, b) =>
       byPath[a].name.localeCompare(byPath[b].name),
     );
   }
-
-  // 3. Tier (depth from root). Used for the y axis inside a subtree.
-  const tierCache: Record<string, number> = {};
-  const tierOf = (path: string, visiting = new Set<string>()): number => {
-    if (path in tierCache) return tierCache[path];
-    const parent = primaryParent[path];
-    if (!parent) {
-      tierCache[path] = 0;
-      return 0;
-    }
-    if (visiting.has(path)) return 0;
-    visiting.add(path);
-    const t = 1 + tierOf(parent, visiting);
-    visiting.delete(path);
-    tierCache[path] = t;
-    return t;
-  };
-  for (const p of allPaths) tierOf(p);
 
   // 4. Identify roots (tier 0) and compute each subtree's column width.
   const roots = allPaths.filter((p) => primaryParent[p] === null);
