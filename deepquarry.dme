@@ -5741,6 +5741,7 @@
 // DQAdd — Mind/Body specialty data model. Must load before composite_mind_body.dm and
 // the mind_body apply hook + constraint, which reference these defines and procs.
 #include "modular_dq\code\modules\mind_body\_defines.dm"
+#include "modular_dq\code\modules\mind_body\_perk_category.dm"
 #include "modular_dq\code\modules\mind_body\_perk.dm"
 #include "modular_dq\code\modules\mind_body\_perk_tree.dm"
 #include "modular_dq\code\modules\mind_body\_formulas.dm"

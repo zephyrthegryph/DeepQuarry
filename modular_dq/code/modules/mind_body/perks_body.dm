@@ -1,122 +1,177 @@
-// DQAdd — Body perks, split across four thematic trees. Linear Conditioning still
-// applies per-point HP/slowdown via the apply hook; these perks layer on top once
-// the player has invested enough Conditioning to unlock each tier.
+// DQAdd — Body perks, one tree per category. Each category has its own pool, so
+// "spending in Strength" doesn't reduce what's available for Vigor / Speed / Endurance.
+// All perks declare `tree` (which sets `category` automatically via init_perks).
 
 // ─── Strength ────────────────────────────────────────────────────────────────────
-// Force, brute mitigation, carry capacity.
 
-/datum/perk/body/toughness
+/datum/perk/body/strength_toughness
 	name = "Toughness"
 	desc = "Years of physical conditioning. Reduces incoming brute damage by 10%."
+	icon_name = "hand-fist"
 	cost = 1
 	tree = PERK_TREE_BODY_STRENGTH
-	body_tier_threshold = BODY_TIER_LOW
 	var_changes = list("brute_mod" = 0.9)
 
-/datum/perk/body/iron_skin
+/datum/perk/body/strength_iron_skin
 	name = "Iron Skin"
 	desc = "Dense bone and scar tissue blunt heavy hits. Brute damage reduced a further 10%."
+	icon_name = "shield"
 	cost = 2
 	tree = PERK_TREE_BODY_STRENGTH
-	body_tier_threshold = BODY_TIER_MID
-	requires = list(/datum/perk/body/toughness)
+	requires = list(/datum/perk/body/strength_toughness)
 	var_changes = list("brute_mod" = 0.8)
 
-/datum/perk/body/heavy_lifter
+/datum/perk/body/strength_heavy_lifter
 	name = "Heavy Lifter"
-	desc = "Practiced load-bearing. You shrug off the slowdown from carrying bulky items."
+	desc = "Practiced load-bearing. You shrug off slowdown from carrying bulky items."
+	icon_name = "weight-hanging"
+	cost = 1
+	tree = PERK_TREE_BODY_STRENGTH
+
+/datum/perk/body/strength_brawler
+	name = "Brawler"
+	desc = "Years of unarmed throwdowns. Your unarmed strikes deal 20% more damage."
+	icon_name = "hand-back-fist"
 	cost = 2
 	tree = PERK_TREE_BODY_STRENGTH
-	body_tier_threshold = BODY_TIER_MID
+
+/datum/perk/body/strength_crusher
+	name = "Crusher"
+	desc = "Master physical leverage. Brute resistance another 10% AND your shoves stagger their target."
+	icon_name = "fist-raised"
+	cost = 3
+	tree = PERK_TREE_BODY_STRENGTH
+	requires = list(/datum/perk/body/strength_iron_skin)
+	var_changes = list("brute_mod" = 0.7)
 
 // ─── Vigor ──────────────────────────────────────────────────────────────────────
-// Health pool, recovery, raw vitality.
 
-/datum/perk/body/vigor
-	name = "Vigor"
+/datum/perk/body/vigor_robust
+	name = "Robust"
 	desc = "An unusually large frame and lung capacity. +25 max health."
+	icon_name = "heart"
 	cost = 1
 	tree = PERK_TREE_BODY_VIGOR
-	body_tier_threshold = BODY_TIER_LOW
 	var_changes = list("total_health" = 125)
 
-/datum/perk/body/hearty
+/datum/perk/body/vigor_hearty
 	name = "Hearty"
-	desc = "Quick natural recovery. Out-of-combat regeneration speed is 25% faster."
+	desc = "Quick natural recovery. Out-of-combat regen speed is 25% faster."
+	icon_name = "house-medical"
+	cost = 1
+	tree = PERK_TREE_BODY_VIGOR
+
+/datum/perk/body/vigor_iron_constitution
+	name = "Iron Constitution"
+	desc = "A second wind. +35 additional max health and 10% burn resistance."
+	icon_name = "shield-heart"
 	cost = 2
 	tree = PERK_TREE_BODY_VIGOR
-	body_tier_threshold = BODY_TIER_MID
-	requires = list(/datum/perk/body/vigor)
-
-/datum/perk/body/iron_constitution
-	name = "Iron Constitution"
-	desc = "A second wind. +35 additional max health and burn resistance up 10%."
-	cost = 3
-	tree = PERK_TREE_BODY_VIGOR
-	body_tier_threshold = BODY_TIER_HIGH
-	requires = list(/datum/perk/body/vigor)
+	requires = list(/datum/perk/body/vigor_robust)
 	var_changes = list(
 		"total_health" = 160,
 		"burn_mod" = 0.9,
 	)
 
-// ─── Speed ──────────────────────────────────────────────────────────────────────
-// Movement speed, reflexes, agility.
+/datum/perk/body/vigor_pain_tolerance
+	name = "Pain Tolerance"
+	desc = "You're hard to put down. Threshold for crit halflowering by 15 HP."
+	icon_name = "user-injured"
+	cost = 2
+	tree = PERK_TREE_BODY_VIGOR
 
-/datum/perk/body/quick_step
+/datum/perk/body/vigor_unkillable
+	name = "Unkillable"
+	desc = "Sheer bull-headed will to live. Halve all damage taken when in crit until you stabilise."
+	icon_name = "skull-crossbones"
+	cost = 3
+	tree = PERK_TREE_BODY_VIGOR
+	requires = list(/datum/perk/body/vigor_iron_constitution)
+
+// ─── Speed ──────────────────────────────────────────────────────────────────────
+
+/datum/perk/body/speed_quick_step
 	name = "Quick Step"
-	desc = "Light on your feet. Slowdown penalties take effect 25% less harshly."
+	desc = "Light on your feet. Slowdown penalties hit you 25% less harshly."
+	icon_name = "shoe-prints"
 	cost = 1
 	tree = PERK_TREE_BODY_SPEED
-	body_tier_threshold = BODY_TIER_LOW
 	var_changes = list("slowdown" = -0.5)
 
-/datum/perk/body/sprinter
+/datum/perk/body/speed_sprinter
 	name = "Sprinter"
-	desc = "Trained for short bursts. Your base movement speed is permanently increased."
+	desc = "Trained for short bursts. Base movement speed permanently increased."
+	icon_name = "person-running"
 	cost = 2
 	tree = PERK_TREE_BODY_SPEED
-	body_tier_threshold = BODY_TIER_MID
-	requires = list(/datum/perk/body/quick_step)
+	requires = list(/datum/perk/body/speed_quick_step)
 	var_changes = list("slowdown" = -1)
 
-/datum/perk/body/sure_footed
+/datum/perk/body/speed_sure_footed
 	name = "Sure-Footed"
-	desc = "Practiced balance. Slipping on wet floors and similar terrain hazards no longer knocks you down."
+	desc = "Practiced balance. Slipping on wet floors or banana peels no longer knocks you down."
+	icon_name = "shoe"
+	cost = 1
+	tree = PERK_TREE_BODY_SPEED
+
+/datum/perk/body/speed_reflexes
+	name = "Reflexes"
+	desc = "Cat-fast reactions. 20% chance to evade thrown items and stray projectiles."
+	icon_name = "bolt"
 	cost = 2
 	tree = PERK_TREE_BODY_SPEED
-	body_tier_threshold = BODY_TIER_MID
+
+/datum/perk/body/speed_blinkstep
+	name = "Blink Step"
+	desc = "Trained for the killbox. Once a minute, dash one tile in any direction."
+	icon_name = "wind"
+	cost = 3
+	tree = PERK_TREE_BODY_SPEED
+	requires = list(/datum/perk/body/speed_sprinter)
 
 // ─── Endurance ──────────────────────────────────────────────────────────────────
-// Stamina, resistance, hazard tolerance.
 
-/datum/perk/body/endurance
-	name = "Endurance"
-	desc = "Hard-trained stamina. Reduces oxy and toxin damage taken by 15%."
+/datum/perk/body/endurance_steady
+	name = "Steady"
+	desc = "Hard-trained stamina. Reduces oxygen and toxin damage taken by 15%."
+	icon_name = "lungs"
 	cost = 1
 	tree = PERK_TREE_BODY_ENDURANCE
-	body_tier_threshold = BODY_TIER_LOW
 	var_changes = list(
 		"oxy_mod" = 0.85,
 		"toxins_mod" = 0.85,
 	)
 
-/datum/perk/body/iron_lungs
+/datum/perk/body/endurance_iron_lungs
 	name = "Iron Lungs"
-	desc = "You hold your breath for noticeably longer. Asphyxiation damage from low-pressure environments is halved."
+	desc = "Hold your breath for noticeably longer. Asphyxiation damage halved."
+	icon_name = "wind"
 	cost = 2
 	tree = PERK_TREE_BODY_ENDURANCE
-	body_tier_threshold = BODY_TIER_MID
-	requires = list(/datum/perk/body/endurance)
+	requires = list(/datum/perk/body/endurance_steady)
 	var_changes = list("oxy_mod" = 0.5)
 
-/datum/perk/body/unflinching
+/datum/perk/body/endurance_unflinching
 	name = "Unflinching"
 	desc = "Battle-tested nerves. Reduces stun and weaken effect duration by 20%."
-	cost = 3
+	icon_name = "shield-alt"
+	cost = 2
 	tree = PERK_TREE_BODY_ENDURANCE
-	body_tier_threshold = BODY_TIER_HIGH
 	var_changes = list(
 		"stun_mod" = 0.8,
 		"weaken_mod" = 0.8,
 	)
+
+/datum/perk/body/endurance_heat_acclimated
+	name = "Heat Acclimated"
+	desc = "Your body shrugs off high-pressure and high-temperature environments."
+	icon_name = "fire"
+	cost = 1
+	tree = PERK_TREE_BODY_ENDURANCE
+
+/datum/perk/body/endurance_cold_acclimated
+	name = "Cold Acclimated"
+	desc = "Cryogenic environments and EVA work tire you out slower."
+	icon_name = "snowflake"
+	cost = 1
+	tree = PERK_TREE_BODY_ENDURANCE

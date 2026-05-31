@@ -168,7 +168,6 @@ GLOBAL_LIST_INIT(pref_metadata_table, init_pref_metadata_table())
 	tag_pref(., /datum/preference/numeric/human/traits_cheating, "traits", null, PREF_WIDGET_HIDDEN)
 
 	//// MIND/BODY ////
-	tag_pref(., /datum/preference/numeric/body_points_spent, "mind_body", null, PREF_WIDGET_HIDDEN)
 	tag_pref(., /datum/preference/typed_list/body_perks, "mind_body", null, PREF_WIDGET_HIDDEN)
 	tag_pref(., /datum/preference/typed_list/mind_perks, "mind_body", null, PREF_WIDGET_HIDDEN)
 

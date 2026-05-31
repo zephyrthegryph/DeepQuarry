@@ -1,12 +1,9 @@
-// DQAdd — /datum/perk_tree base + global registry.
+// DQAdd — /datum/perk_tree + global registry.
 //
-// Trees are presentation: they group perks by theme so the React panel can render one
-// section per tree without each perk having to know about UI groupings. A perk's `tree`
-// var (a PERK_TREE_* string id) decides which tree it slots into.
-//
-// One singleton per /datum/perk_tree subtype, instantiated into GLOB.perk_trees keyed by
-// the tree id. Perks are auto-bucketed into the right tree at world init by walking
-// GLOB.all_perks.
+// Trees are pure presentation: each one groups perks (visually within the active
+// category tab). A tree belongs to a category — its perks draw down that category's
+// pool. Body categories have a single same-id tree; Mind categories (departments)
+// have several sub-role trees that share the department pool.
 
 GLOBAL_LIST_INIT(perk_trees, init_perk_trees())
 GLOBAL_LIST_INIT(all_perks, init_perks())
@@ -14,108 +11,189 @@ GLOBAL_LIST_INIT(all_perks, init_perks())
 /datum/perk_tree
 	abstract_type = /datum/perk_tree
 
-	/// One of the PERK_TREE_* ids. Required.
 	var/id = null
 
-	/// Human-readable name shown in the UI tab/dropdown.
+	/// Sub-role name shown on the sub-tab (e.g. "Atmos Tech").
 	var/display_name = "Unnamed Tree"
 
-	/// Short blurb shown beneath the tree name.
+	/// Optional short blurb beneath the tab title.
 	var/description = ""
 
-	/// Accent color for this tree's UI (hex). Used by the React panel for tab chip
-	/// backgrounds, perk-card borders, etc. Chosen for legibility against a dark TGUI
-	/// background, broadly themed off the department palette but de-conflicted (no two
-	/// trees share a color).
-	var/color = "#888888"
+	/// Override accent — usually inherited from the parent category. Set on the tree
+	/// only when a sub-role wants its own tint.
+	var/color = null
 
-	/// FontAwesome icon name for the tree's tab chip. Optional.
+	/// FontAwesome icon on the sub-tab.
 	var/icon_name = null
 
-	/// Perks bucketed into this tree at init. Path → /datum/perk singleton.
+	/// PERK_CATEGORY_* id of the parent category.
+	var/category = null
+
+	/// Path → /datum/perk singleton. Populated at init.
 	var/list/perks
 
-// ─── Body sub-trees ────────────────────────────────────────────────────────────────
-// All four share the Body pool; the React panel groups them under one Body pane.
+// ─── Body trees (one per category, named the same as the category) ──────────────────
+
 /datum/perk_tree/body
 	abstract_type = /datum/perk_tree/body
 
 /datum/perk_tree/body/strength
 	id = PERK_TREE_BODY_STRENGTH
 	display_name = "Strength"
-	color = "#C0392B"
-	icon_name = "dumbbell"
+	category = PERK_CATEGORY_BODY_STRENGTH
 
 /datum/perk_tree/body/vigor
 	id = PERK_TREE_BODY_VIGOR
 	display_name = "Vigor"
-	color = "#E67E22"
-	icon_name = "heart-pulse"
+	category = PERK_CATEGORY_BODY_VIGOR
 
 /datum/perk_tree/body/speed
 	id = PERK_TREE_BODY_SPEED
 	display_name = "Speed"
-	color = "#F1C40F"
-	icon_name = "person-running"
+	category = PERK_CATEGORY_BODY_SPEED
 
 /datum/perk_tree/body/endurance
 	id = PERK_TREE_BODY_ENDURANCE
 	display_name = "Endurance"
-	color = "#8E44AD"
-	icon_name = "shield-heart"
+	category = PERK_CATEGORY_BODY_ENDURANCE
 
-// ─── Mind trees ────────────────────────────────────────────────────────────────────
+// ─── Mind trees (sub-roles inside each department) ──────────────────────────────────
+
 /datum/perk_tree/mind
 	abstract_type = /datum/perk_tree/mind
 
-/datum/perk_tree/mind/command
-	id = PERK_TREE_MIND_COMMAND
-	display_name = "Command"
-	description = "Leadership, presence, decisive judgement."
-	color = "#4A90E2"
-	icon_name = "star"
+// Command
+/datum/perk_tree/mind/command_captain
+	id = PERK_TREE_MIND_CMD_CAPTAIN
+	display_name = "Captain"
+	category = PERK_CATEGORY_MIND_COMMAND
+	icon_name = "crown"
 
-/datum/perk_tree/mind/security
-	id = PERK_TREE_MIND_SECURITY
-	display_name = "Security"
-	description = "Threat reading, restraint training, situational reflexes."
-	color = "#E74C3C"
-	icon_name = "shield-halved"
+/datum/perk_tree/mind/command_hop
+	id = PERK_TREE_MIND_CMD_HOP
+	display_name = "Head of Personnel"
+	category = PERK_CATEGORY_MIND_COMMAND
+	icon_name = "user-tie"
 
-/datum/perk_tree/mind/engineering
-	id = PERK_TREE_MIND_ENGINEERING
-	display_name = "Engineering"
-	description = "Tooling, wiring, atmospherics, salvage."
-	color = "#E67E22"
-	icon_name = "screwdriver-wrench"
+// Security
+/datum/perk_tree/mind/security_officer
+	id = PERK_TREE_MIND_SEC_OFFICER
+	display_name = "Officer"
+	category = PERK_CATEGORY_MIND_SECURITY
+	icon_name = "user-shield"
 
-/datum/perk_tree/mind/medical
-	id = PERK_TREE_MIND_MEDICAL
-	display_name = "Medical"
-	description = "Diagnosis, treatment, surgery, pharmacology."
-	color = "#27AE60"
-	icon_name = "stethoscope"
+/datum/perk_tree/mind/security_detective
+	id = PERK_TREE_MIND_SEC_DETECTIVE
+	display_name = "Detective"
+	category = PERK_CATEGORY_MIND_SECURITY
+	icon_name = "magnifying-glass"
 
-/datum/perk_tree/mind/research
-	id = PERK_TREE_MIND_RESEARCH
-	display_name = "Research"
-	description = "Investigation, anomaly analysis, materials."
-	color = "#9B59B6"
-	icon_name = "flask"
+/datum/perk_tree/mind/security_warden
+	id = PERK_TREE_MIND_SEC_WARDEN
+	display_name = "Warden"
+	category = PERK_CATEGORY_MIND_SECURITY
+	icon_name = "key"
 
-/datum/perk_tree/mind/cargo
-	id = PERK_TREE_MIND_CARGO
-	display_name = "Cargo"
-	description = "Logistics, requisitions, market knowledge."
-	color = "#D4A017"
-	icon_name = "box"
+// Engineering
+/datum/perk_tree/mind/engineering_atmos
+	id = PERK_TREE_MIND_ENG_ATMOS
+	display_name = "Atmos Tech"
+	category = PERK_CATEGORY_MIND_ENGINEERING
+	icon_name = "wind"
 
-/datum/perk_tree/mind/civilian
-	id = PERK_TREE_MIND_CIVILIAN
-	display_name = "Civilian"
-	description = "Social craft, service, hands-on trades."
-	color = "#1ABC9C"
-	icon_name = "users"
+/datum/perk_tree/mind/engineering_engine
+	id = PERK_TREE_MIND_ENG_ENGINE
+	display_name = "Engine Tech"
+	category = PERK_CATEGORY_MIND_ENGINEERING
+	icon_name = "bolt"
+
+/datum/perk_tree/mind/engineering_salvage
+	id = PERK_TREE_MIND_ENG_SALVAGE
+	display_name = "Salvage"
+	category = PERK_CATEGORY_MIND_ENGINEERING
+	icon_name = "screwdriver"
+
+// Medical
+/datum/perk_tree/mind/medical_doctor
+	id = PERK_TREE_MIND_MED_DOCTOR
+	display_name = "Doctor"
+	category = PERK_CATEGORY_MIND_MEDICAL
+	icon_name = "user-doctor"
+
+/datum/perk_tree/mind/medical_surgeon
+	id = PERK_TREE_MIND_MED_SURGEON
+	display_name = "Surgeon"
+	category = PERK_CATEGORY_MIND_MEDICAL
+	icon_name = "scissors"
+
+/datum/perk_tree/mind/medical_chemist
+	id = PERK_TREE_MIND_MED_CHEMIST
+	display_name = "Chemist"
+	category = PERK_CATEGORY_MIND_MEDICAL
+	icon_name = "vial"
+
+// Research
+/datum/perk_tree/mind/research_scientist
+	id = PERK_TREE_MIND_RES_SCIENTIST
+	display_name = "Scientist"
+	category = PERK_CATEGORY_MIND_RESEARCH
+	icon_name = "atom"
+
+/datum/perk_tree/mind/research_roboticist
+	id = PERK_TREE_MIND_RES_ROBOTICIST
+	display_name = "Roboticist"
+	category = PERK_CATEGORY_MIND_RESEARCH
+	icon_name = "robot"
+
+/datum/perk_tree/mind/research_xenoarch
+	id = PERK_TREE_MIND_RES_XENOARCH
+	display_name = "Xeno-Archaeology"
+	category = PERK_CATEGORY_MIND_RESEARCH
+	icon_name = "brush"
+
+// Cargo
+/datum/perk_tree/mind/cargo_qm
+	id = PERK_TREE_MIND_CARGO_QM
+	display_name = "Quartermaster"
+	category = PERK_CATEGORY_MIND_CARGO
+	icon_name = "clipboard-list"
+
+/datum/perk_tree/mind/cargo_tech
+	id = PERK_TREE_MIND_CARGO_TECH
+	display_name = "Cargo Tech"
+	category = PERK_CATEGORY_MIND_CARGO
+	icon_name = "boxes-stacked"
+
+/datum/perk_tree/mind/cargo_miner
+	id = PERK_TREE_MIND_CARGO_MINER
+	display_name = "Miner"
+	category = PERK_CATEGORY_MIND_CARGO
+	icon_name = "gem"
+
+// Civilian
+/datum/perk_tree/mind/civilian_bartender
+	id = PERK_TREE_MIND_CIV_BARTENDER
+	display_name = "Bartender"
+	category = PERK_CATEGORY_MIND_CIVILIAN
+	icon_name = "martini-glass"
+
+/datum/perk_tree/mind/civilian_chef
+	id = PERK_TREE_MIND_CIV_CHEF
+	display_name = "Chef"
+	category = PERK_CATEGORY_MIND_CIVILIAN
+	icon_name = "utensils"
+
+/datum/perk_tree/mind/civilian_botanist
+	id = PERK_TREE_MIND_CIV_BOTANIST
+	display_name = "Botanist"
+	category = PERK_CATEGORY_MIND_CIVILIAN
+	icon_name = "seedling"
+
+/datum/perk_tree/mind/civilian_janitor
+	id = PERK_TREE_MIND_CIV_JANITOR
+	display_name = "Janitor"
+	category = PERK_CATEGORY_MIND_CIVILIAN
+	icon_name = "broom"
 
 /proc/init_perk_trees()
 	. = list()
@@ -131,12 +209,14 @@ GLOBAL_LIST_INIT(all_perks, init_perks())
 		GLOB.perk_trees = init_perk_trees()
 	for(var/path in valid_subtypesof(/datum/perk))
 		var/datum/perk/P = new path
-		// Skip intermediate path nodes (/datum/perk/mind/medical and friends) — they're
-		// concrete from DM's POV but have no tree set and shouldn't show up in any
-		// catalog. Real perks always declare both tree and a non-default name.
 		if(!P.tree)
 			continue
-		.[path] = P
 		var/datum/perk_tree/T = GLOB.perk_trees[P.tree]
-		if(T)
-			LAZYSET(T.perks, path, P)
+		if(!T)
+			continue
+		// Derive the perk's pool category from its tree if not explicitly set, so
+		// authors only have to set `tree` and the pool linkage follows automatically.
+		if(!P.category)
+			P.category = T.category
+		.[path] = P
+		LAZYSET(T.perks, path, P)
