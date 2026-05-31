@@ -14,18 +14,23 @@ import type { PrefCategory, PrefGroup, PrefGroupItem, PrefWidgetItem } from './t
 type Props = {
   page: PrefCategory;
   staticData?: Record<string, Record<string, unknown>>;
+  /// When true, this page hosts a full-height editor (e.g. loadout). Skip the default
+  /// `mb` spacing and propagate `height: 100%` so the editor can use the entire
+  /// available column.
+  fillHeight?: boolean;
 };
 
 const titleCase = (s: string) =>
   s.replace(/(^|[_\s])([a-z])/g, (_, sep, ch) => (sep ? ' ' : '') + ch.toUpperCase());
 
-export const CategoryPage = ({ page, staticData }: Props) => (
-  <Box>
+export const CategoryPage = ({ page, staticData, fillHeight }: Props) => (
+  <Box style={fillHeight ? { height: '100%' } : undefined}>
     {page.groups.map((group, gi) => (
       <GroupBlock
         key={`${gi}-${group.group}`}
         group={group}
         staticData={staticData}
+        fillHeight={fillHeight}
       />
     ))}
   </Box>
@@ -34,9 +39,11 @@ export const CategoryPage = ({ page, staticData }: Props) => (
 const GroupBlock = ({
   group,
   staticData,
+  fillHeight,
 }: {
   group: PrefGroup;
   staticData?: Record<string, Record<string, unknown>>;
+  fillHeight?: boolean;
 }) => {
   const widgets = group.items.filter(
     (i): i is PrefWidgetItem => i.type === 'widget',
@@ -55,7 +62,10 @@ const GroupBlock = ({
   // Bare-frame mode: no group title and no widgets — just render the editors directly.
   if (!hasTitle && widgets.length === 0) {
     return (
-      <Box mb={1}>
+      <Box
+        mb={fillHeight ? 0 : 1}
+        style={fillHeight ? { height: '100%' } : undefined}
+      >
         {editors.map((item, idx) => (
           <EditorBlock
             key={`editor:${item.key}-${idx}`}

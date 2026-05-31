@@ -67,6 +67,12 @@ const titleCase = (s: string) =>
 
 const labelForCategory = (key: string) => CATEGORY_LABELS[key] ?? titleCase(key);
 
+// Editors that fill their container and manage their own internal scrolling. When the
+// active page hosts one of these, the wrapping Section drops `scrollable` so we don't
+// get a redundant outer scrollbar on top of the editor's own (and the editor gets to
+// use the full available height instead of a measured-content height).
+const FULL_HEIGHT_EDITORS = new Set<string>(['loadout', 'mind_body']);
+
 export const DQCharacterSetup = () => {
   const { act, data } = useBackend<CharacterSetupData>();
   const categories = data.dq_categories ?? [];
@@ -83,6 +89,13 @@ export const DQCharacterSetup = () => {
 
   const selectedPage =
     categories.find((p) => p.category === selected) ?? categories[0];
+
+  const pageIsFullHeight =
+    selectedPage?.groups.some((g) =>
+      g.items.some(
+        (i) => i.type === 'editor' && FULL_HEIGHT_EDITORS.has(i.key),
+      ),
+    ) ?? false;
 
   return (
     <Window
@@ -151,11 +164,12 @@ export const DQCharacterSetup = () => {
                 </Tabs>
               </Stack.Item>
               <Stack.Item grow>
-                <Section fill scrollable>
+                <Section fill scrollable={!pageIsFullHeight}>
                   {selectedPage && (
                     <CategoryPage
                       page={selectedPage}
                       staticData={data.dq_editor_static}
+                      fillHeight={pageIsFullHeight}
                     />
                   )}
                 </Section>

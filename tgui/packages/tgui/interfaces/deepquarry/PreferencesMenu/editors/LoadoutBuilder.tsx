@@ -351,8 +351,17 @@ export const LoadoutBuilder = ({ data, staticData }: EditorProps) => {
   return (
     // position: relative anchors the FullWindowDatumPicker (which uses position:
     // absolute + inset: 0) to the loadout panel instead of escaping to the entire
-    // tgui window.
-    <Box style={{ position: 'relative' }}>
+    // tgui window. height: 100% + flex column so the two-column body below can
+    // claim all remaining vertical space and the catalog scrolls internally rather
+    // than triggering the wrapping Section's scrollbar.
+    <Box
+      style={{
+        position: 'relative',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
       {/* Per-job loadout picker — switches which list is being edited. */}
       <Stack mb={0.5} align="center">
         <Stack.Item color="label" fontSize="0.85em">
@@ -414,8 +423,11 @@ export const LoadoutBuilder = ({ data, staticData }: EditorProps) => {
         </Box>
       )}
 
-      {/* Two-column body */}
-      <Stack>
+      {/* Two-column body. flex: 1 + minHeight: 0 lets the catalog Stack.Item below
+          shrink to fit the available vertical space (and its inner div get a real
+          100% height to scroll inside of), instead of expanding to natural content
+          height and bleeding past the panel. */}
+      <Stack style={{ flex: 1, minHeight: 0 }}>
         {/* LEFT: doll grid — body slots PLUS the multi-allowed buckets (Accessories /
             Other / Underwear). Compact 56×64 cells in a 5-row layout so the whole panel
             fits within the default window height without a page scrollbar. */}
@@ -513,8 +525,10 @@ export const LoadoutBuilder = ({ data, staticData }: EditorProps) => {
           </Box>
         </Stack.Item>
 
-        {/* RIGHT: catalog (independent scroll, fixed height) */}
-        <Stack.Item grow>
+        {/* RIGHT: catalog (independent scroll). minHeight: 0 + the parent Stack's
+            flex:1+minHeight:0 above let the inner scrollable div claim a real
+            percentage height instead of expanding to its natural content height. */}
+        <Stack.Item grow style={{ minHeight: 0, display: 'flex', flexDirection: 'column' }}>
           <Box
             mb={0.5}
             px={1}
@@ -556,14 +570,25 @@ export const LoadoutBuilder = ({ data, staticData }: EditorProps) => {
             </Stack>
           )}
           {filterSlot === '_uw' ? (
-            <UnderwearCatalog
-              uws={uws}
-              uw={uw}
-              onPickCategory={(cat) => setPickerCategory(cat)}
-              onClear={(cat) =>
-                sendTo(act, 'underwear', 'clear', { category: cat })
-              }
-            />
+            // Wrap the underwear category list in the same flex-fill scroll container
+            // so it gets the same available-space treatment as the gear catalog.
+            <div
+              style={{
+                flex: 1,
+                minHeight: 0,
+                overflowY: 'auto',
+                paddingRight: '4px',
+              }}
+            >
+              <UnderwearCatalog
+                uws={uws}
+                uw={uw}
+                onPickCategory={(cat) => setPickerCategory(cat)}
+                onClear={(cat) =>
+                  sendTo(act, 'underwear', 'clear', { category: cat })
+                }
+              />
+            </div>
           ) : (
             <CatalogScrollList
               visibleItems={visibleItems}
@@ -1366,7 +1391,8 @@ const CatalogScrollList = ({
     <div
       ref={listRef}
       style={{
-        maxHeight: '520px',
+        flex: 1,
+        minHeight: 0,
         overflowY: 'auto',
         paddingRight: '4px',
       }}
