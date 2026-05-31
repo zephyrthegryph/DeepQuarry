@@ -71,8 +71,15 @@ type PerkMeta = {
 
 type MindBodyData = {
   age: number;
-  pools: Record<string, number>;
-  spent: Record<string, number>;
+  /// Global Body pool — covers Strength + Vigor + Speed + Endurance combined.
+  body_pool: number;
+  body_spent: number;
+  /// Global Mind pool — covers all 7 departments combined.
+  mind_pool: number;
+  mind_spent: number;
+  /// Per-category spent count, for the informational chip badges. Map of
+  /// category id → number of points spent in that category.
+  spent_by_cat: Record<string, number>;
   body_perks: string[];
   mind_perks: string[];
 };
@@ -176,7 +183,6 @@ export const MindBodyEditor = ({ data, staticData }: EditorProps) => {
             setActiveCategoryId={setActiveBodyCat}
             data={d}
             staticData={s}
-            picksByCat={picksByCat}
             selectedPaths={d.body_perks ?? []}
             act={act}
           />
@@ -187,7 +193,6 @@ export const MindBodyEditor = ({ data, staticData }: EditorProps) => {
             setActiveCategoryId={setActiveMindCat}
             data={d}
             staticData={s}
-            picksByCat={picksByCat}
             selectedPaths={d.mind_perks ?? []}
             act={act}
           />
@@ -368,7 +373,6 @@ const BodyPane = ({
   setActiveCategoryId,
   data: d,
   staticData: s,
-  picksByCat,
   selectedPaths,
   act,
 }: {
@@ -377,28 +381,33 @@ const BodyPane = ({
   setActiveCategoryId: (id: string) => void;
   data: MindBodyData;
   staticData: MindBodyStatic;
-  picksByCat: Record<string, number>;
   selectedPaths: string[];
   act: Act;
 }) => {
   const activeCat = s.categories[activeCategoryId];
+  const remaining = d.body_pool - d.body_spent;
   return (
     <Section fill scrollable style={{ flex: 1, display: 'flex' }}>
-      <CategoryTabRow
-        categoryIds={categoryIds}
-        activeCategoryId={activeCategoryId}
-        setActiveCategoryId={setActiveCategoryId}
-        categories={s.categories}
-        pools={d.pools}
-        spent={d.spent}
-        picksByCat={picksByCat}
+      <PoolFillBar
+        spent={d.body_spent}
+        pool={d.body_pool}
+        accent={BODY_ACCENT}
+        label="Body pool"
       />
+      <Box mt={0.5}>
+        <CategoryTabRow
+          categoryIds={categoryIds}
+          activeCategoryId={activeCategoryId}
+          setActiveCategoryId={setActiveCategoryId}
+          categories={s.categories}
+          spentByCat={d.spent_by_cat ?? {}}
+        />
+      </Box>
       {activeCat && (
         <CategoryPane
           category={activeCat}
           staticData={s}
-          pool={d.pools[activeCat.id] ?? 0}
-          spent={d.spent[activeCat.id] ?? 0}
+          remaining={remaining}
           selectedPaths={selectedPaths}
           act={act}
         />
@@ -422,7 +431,6 @@ const MindPane = ({
   setActiveCategoryId,
   data: d,
   staticData: s,
-  picksByCat,
   selectedPaths,
   act,
 }: {
@@ -431,28 +439,33 @@ const MindPane = ({
   setActiveCategoryId: (id: string) => void;
   data: MindBodyData;
   staticData: MindBodyStatic;
-  picksByCat: Record<string, number>;
   selectedPaths: string[];
   act: Act;
 }) => {
   const activeCat = s.categories[activeCategoryId];
+  const remaining = d.mind_pool - d.mind_spent;
   return (
     <Section fill scrollable style={{ flex: 1, display: 'flex' }}>
-      <CategoryTabRow
-        categoryIds={categoryIds}
-        activeCategoryId={activeCategoryId}
-        setActiveCategoryId={setActiveCategoryId}
-        categories={s.categories}
-        pools={d.pools}
-        spent={d.spent}
-        picksByCat={picksByCat}
+      <PoolFillBar
+        spent={d.mind_spent}
+        pool={d.mind_pool}
+        accent={MIND_ACCENT}
+        label="Mind pool"
       />
+      <Box mt={0.5}>
+        <CategoryTabRow
+          categoryIds={categoryIds}
+          activeCategoryId={activeCategoryId}
+          setActiveCategoryId={setActiveCategoryId}
+          categories={s.categories}
+          spentByCat={d.spent_by_cat ?? {}}
+        />
+      </Box>
       {activeCat && (
         <MindActiveDepartment
           category={activeCat}
           staticData={s}
-          pool={d.pools[activeCat.id] ?? 0}
-          spent={d.spent[activeCat.id] ?? 0}
+          remaining={remaining}
           selectedPaths={selectedPaths}
           act={act}
         />
@@ -467,15 +480,13 @@ const MindPane = ({
 const MindActiveDepartment = ({
   category,
   staticData: s,
-  pool,
-  spent,
+  remaining,
   selectedPaths,
   act,
 }: {
   category: CategoryMeta;
   staticData: MindBodyStatic;
-  pool: number;
-  spent: number;
+  remaining: number;
   selectedPaths: string[];
   act: Act;
 }) => {
@@ -485,17 +496,9 @@ const MindActiveDepartment = ({
     [s.trees, category.id],
   );
 
-  const remaining = pool - spent;
-
   return (
-    <Box mt={1}>
-      <PoolFillBar
-        spent={spent}
-        pool={pool}
-        accent={category.color}
-        label={`${category.name} pool`}
-      />
-      <Stack mt={1} style={{ width: '100%' }}>
+    <Box mt={0.5}>
+      <Stack style={{ width: '100%' }}>
         {subTrees.map((tree, idx) => (
           <Stack.Item
             grow
@@ -589,21 +592,14 @@ const CategoryTabRow = ({
   activeCategoryId,
   setActiveCategoryId,
   categories,
-  pools,
-  spent,
-  picksByCat,
+  spentByCat,
 }: {
   categoryIds: string[];
   activeCategoryId: string;
   setActiveCategoryId: (id: string) => void;
   categories: Record<string, CategoryMeta>;
-  pools: Record<string, number>;
-  spent: Record<string, number>;
-  picksByCat: Record<string, number>;
+  spentByCat: Record<string, number>;
 }) => (
-  // No wrap: with 7 chips the row must stay in a single line. Stack divides
-  // available space equally between chips via grow=1 + basis=0, so each chip
-  // gets the same flex slot regardless of label length.
   <Stack mb={0.5} style={{ width: '100%' }}>
     {categoryIds.map((id) => {
       const cat = categories[id];
@@ -613,9 +609,7 @@ const CategoryTabRow = ({
           <CategoryChip
             cat={cat}
             isActive={id === activeCategoryId}
-            pool={pools[id] ?? 0}
-            spent={spent[id] ?? 0}
-            picks={picksByCat[id] ?? 0}
+            spentHere={spentByCat[id] ?? 0}
             onClick={() => setActiveCategoryId(id)}
           />
         </Stack.Item>
@@ -627,20 +621,15 @@ const CategoryTabRow = ({
 const CategoryChip = ({
   cat,
   isActive,
-  pool,
-  spent,
-  picks,
+  spentHere,
   onClick,
 }: {
   cat: CategoryMeta;
   isActive: boolean;
-  pool: number;
-  spent: number;
-  picks: number;
+  spentHere: number;
   onClick: () => void;
 }) => {
   const [hover, setHover] = useState(false);
-  const remaining = pool - spent;
   const bg = isActive
     ? cat.color
     : hover
@@ -661,7 +650,7 @@ const CategoryChip = ({
           </Box>
           <Box fontSize="0.85em">{cat.description}</Box>
           <Box fontSize="0.85em" color="label" mt={0.5}>
-            Pool: {spent} / {pool} ({remaining} left)
+            {spentHere} pt{spentHere === 1 ? '' : 's'} spent here
           </Box>
         </Box>
       }
@@ -678,7 +667,7 @@ const CategoryChip = ({
           backgroundColor: bg,
           border: `1px solid ${border}`,
           color: fg,
-          fontWeight: isActive || picks > 0 ? 'bold' : 'normal',
+          fontWeight: isActive || spentHere > 0 ? 'bold' : 'normal',
           fontSize: '0.78em',
           transition: 'all 120ms',
           display: 'flex',
@@ -703,20 +692,22 @@ const CategoryChip = ({
         >
           {cat.name}
         </Box>
-        <Box
-          style={{
-            backgroundColor: isActive
-              ? 'rgba(255,255,255,0.25)'
-              : `${cat.color}44`,
-            borderRadius: '7px',
-            padding: '0 4px',
-            fontSize: '0.8em',
-            fontWeight: 'bold',
-            flexShrink: 0,
-          }}
-        >
-          {spent}/{pool}
-        </Box>
+        {spentHere > 0 && (
+          <Box
+            style={{
+              backgroundColor: isActive
+                ? 'rgba(255,255,255,0.25)'
+                : `${cat.color}44`,
+              borderRadius: '7px',
+              padding: '0 4px',
+              fontSize: '0.8em',
+              fontWeight: 'bold',
+              flexShrink: 0,
+            }}
+          >
+            {spentHere}
+          </Box>
+        )}
       </Box>
     </Tooltip>
   );
@@ -727,15 +718,13 @@ const CategoryChip = ({
 const CategoryPane = ({
   category,
   staticData: s,
-  pool,
-  spent,
+  remaining,
   selectedPaths,
   act,
 }: {
   category: CategoryMeta;
   staticData: MindBodyStatic;
-  pool: number;
-  spent: number;
+  remaining: number;
   selectedPaths: string[];
   act: Act;
 }) => {
@@ -755,18 +744,10 @@ const CategoryPane = ({
     if (!valid) setActiveTreeId(treesInCat[0].id);
   }, [treesInCat, activeTreeId]);
 
-  const remaining = pool - spent;
   const activeTree = treesInCat.find((t) => t.id === activeTreeId);
 
   return (
-    <Box>
-      <PoolFillBar
-        spent={spent}
-        pool={pool}
-        accent={category.color}
-        label={`${category.name} pool`}
-      />
-
+    <Box mt={0.5}>
       {/* Only render the sub-tree tab strip when there's more than one — Body
           categories collapse the strip to save vertical space. */}
       {treesInCat.length > 1 && (

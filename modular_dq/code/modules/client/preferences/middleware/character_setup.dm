@@ -58,6 +58,15 @@ GLOBAL_LIST_INIT(dq_collapsed_groups, list(
 		var/cat = pref.get_category(preferences)
 		if(!cat)
 			cat = "misc"
+		// DQEdit — categories the user shouldn't see as a tab. Manually rendered
+		// prefs are handled by a specific editor (markings, traits, mind/body…)
+		// and either get tag_pref'd to a real category OR should just not surface.
+		// Non-contextual prefs (max_traits, starting_trait_points, etc.) are
+		// managed-state — never user-editable. Skipping them at the iteration
+		// level avoids "Manually Rendered Features" and "Non Contextual" tabs
+		// eating column space in the strip.
+		if(cat == PREFERENCE_CATEGORY_MANUALLY_RENDERED || cat == PREFERENCE_CATEGORY_NON_CONTEXTUAL)
+			continue
 		var/grp = pref.get_group(preferences) || ""
 
 		var/list/category_entry = categories_by_name[cat]

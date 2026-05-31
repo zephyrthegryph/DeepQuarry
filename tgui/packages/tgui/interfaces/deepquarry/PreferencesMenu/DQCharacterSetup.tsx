@@ -49,7 +49,7 @@ const PreviewMap = () => {
           id: 'character_preview_map',
           type: 'map',
           view: '3x4',
-          'icon-size': '120',
+          'icon-size': '140',
         }}
         style={{ width: '100%', height: '100%' }}
       />
@@ -133,8 +133,9 @@ export const DQCharacterSetup = () => {
     >
       <Window.Content>
         <Stack fill>
-          {/* LEFT: toolbar + tabs + active page */}
-          <Stack.Item grow={2} basis={0}>
+          {/* LEFT: toolbar + tabs + active page. grow=3 (vs right grow=2) puts
+              the editor at ~60% of the window. */}
+          <Stack.Item grow={3} basis={0}>
             <Stack fill vertical>
               <Stack.Item>
                 <Section>
@@ -190,8 +191,10 @@ export const DQCharacterSetup = () => {
               </Stack.Item>
             </Stack>
           </Stack.Item>
-          {/* RIGHT: preview map + cycle background. */}
-          <Stack.Item grow={1} basis={0}>
+          {/* RIGHT: preview map + cycle background. grow=2 (vs left grow=3)
+              gives the preview ~40% of the window so the character renders at
+              a comfortable size. */}
+          <Stack.Item grow={2} basis={0}>
             <Stack fill vertical>
               <Stack.Item grow>
                 <Section fill>

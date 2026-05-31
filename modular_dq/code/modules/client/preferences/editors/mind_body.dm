@@ -19,17 +19,14 @@
 	var/list/body_perks = preferences.read_preference(/datum/preference/typed_list/body_perks) || list()
 	var/list/mind_perks = preferences.read_preference(/datum/preference/typed_list/mind_perks) || list()
 
-	// Pool / spend per category so React can render the per-tab indicator.
-	var/list/pools = list()
-	var/list/spent = list()
-	for(var/cat_id in GLOB.perk_categories)
-		pools[cat_id] = dq_pool_for_category_and_age(cat_id, age)
-		spent[cat_id] = dq_spent_in_category(preferences, cat_id)
-
 	return list(
 		"age" = age,
-		"pools" = pools,
-		"spent" = spent,
+		"body_pool" = dq_body_pool_for_age(age),
+		"body_spent" = dq_body_total_spent(preferences),
+		"mind_pool" = dq_mind_pool_for_age(age),
+		"mind_spent" = dq_mind_total_spent(preferences),
+		// Informational per-category spend for the chip badges.
+		"spent_by_cat" = dq_spent_by_category(preferences),
 		"body_perks" = paths_as_text(body_perks),
 		"mind_perks" = paths_as_text(mind_perks),
 	)
@@ -89,8 +86,6 @@
 		"categories" = categories,
 		"trees" = trees,
 		"perks" = perks,
-		"base_per_cat" = MIND_BODY_BASE_BODY_PER_CAT,
-		"max_mind_per_cat" = MIND_BODY_MAX_MIND_PER_CAT,
 	)
 
 /datum/preference_editor/mind_body/handle_action(datum/preferences/preferences, action, list/params, mob/user)

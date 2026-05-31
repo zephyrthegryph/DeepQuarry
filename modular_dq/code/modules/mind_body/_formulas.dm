@@ -1,64 +1,89 @@
-// DQAdd — Per-category pool formulas + the pickability gate.
+// DQAdd — Pool formulas + the pickability gate.
 //
-// Each category has its own pool drawn from the player's age. Body categories shrink
-// with age, Mind categories grow. All Body categories share the same shrink curve;
-// all Mind categories share the same growth curve. Tune the constants in _defines.dm.
+// Single shared pool per side: one Body pool covering Strength + Vigor + Speed
+// + Endurance, one Mind pool covering all 7 departments. Categories on the UI
+// side are organisational only; the actual budget is global.
 
-/// Pool size for the given category at the given age. Body and Mind categories diverge
-/// on the linear coefficient — Body decays, Mind grows.
-/proc/dq_pool_for_category_and_age(category_id, age)
+/// Total Body pool for the given age. Younger → bigger.
+/proc/dq_body_pool_for_age(age)
 	if(!isnum(age))
 		age = 18
-	var/datum/perk_category/C = GLOB.perk_categories?[category_id]
-	if(!C)
-		return 0
-	var/delta = max(0, round((age - 18) / MIND_BODY_AGE_STEP))
-	if(C.category_type == PERK_CATEGORY_TYPE_BODY)
-		return clamp(
-			MIND_BODY_BASE_BODY_PER_CAT - delta,
-			MIND_BODY_MIN_PER_CAT,
-			MIND_BODY_BASE_BODY_PER_CAT,
-		)
+	var/decay = max(0, round((age - 18) / MIND_BODY_AGE_STEP))
 	return clamp(
-		MIND_BODY_MIN_PER_CAT + delta,
-		MIND_BODY_MIN_PER_CAT,
-		MIND_BODY_MAX_MIND_PER_CAT,
+		MIND_BODY_BODY_POOL_AT_18 - decay,
+		MIND_BODY_BODY_POOL_MIN,
+		MIND_BODY_BODY_POOL_AT_18,
 	)
 
-/// Total points the player currently has spent in a given category. Sums the cost of
-/// every selected perk whose category id matches.
-/proc/dq_spent_in_category(datum/preferences/preferences, category_id)
-	if(!preferences || !category_id)
+/// Total Mind pool for the given age. Older → bigger.
+/proc/dq_mind_pool_for_age(age)
+	if(!isnum(age))
+		age = 18
+	var/growth = max(0, round((age - 18) / MIND_BODY_AGE_STEP))
+	return clamp(
+		MIND_BODY_MIND_POOL_AT_18 + growth,
+		MIND_BODY_MIND_POOL_AT_18,
+		MIND_BODY_MIND_POOL_MAX,
+	)
+
+/// Sum of costs across all selected Body perks.
+/proc/dq_body_total_spent(datum/preferences/preferences)
+	if(!preferences)
 		return 0
-	var/datum/perk_category/C = GLOB.perk_categories?[category_id]
-	if(!C)
-		return 0
-	var/list/selected = (C.category_type == PERK_CATEGORY_TYPE_BODY) \
-		? (preferences.read_preference(/datum/preference/typed_list/body_perks) || list()) \
-		: (preferences.read_preference(/datum/preference/typed_list/mind_perks) || list())
-	var/total = 0
+	var/list/selected = preferences.read_preference(/datum/preference/typed_list/body_perks) || list()
+	. = 0
 	for(var/path in selected)
 		var/datum/perk/P = GLOB.all_perks?[path]
-		if(P && P.category == category_id)
-			total += P.cost
-	return total
+		if(P && P.perk_kind == PERK_KIND_BODY)
+			. += P.cost
+
+/// Sum of costs across all selected Mind perks.
+/proc/dq_mind_total_spent(datum/preferences/preferences)
+	if(!preferences)
+		return 0
+	var/list/selected = preferences.read_preference(/datum/preference/typed_list/mind_perks) || list()
+	. = 0
+	for(var/path in selected)
+		var/datum/perk/P = GLOB.all_perks?[path]
+		if(P && P.perk_kind == PERK_KIND_MIND)
+			. += P.cost
+
+/// Helper: which category contains how many cost-units. Used by the React UI
+/// for the informational "X spent in Strength" chip badges.
+/proc/dq_spent_by_category(datum/preferences/preferences)
+	. = list()
+	var/list/body_sel = preferences.read_preference(/datum/preference/typed_list/body_perks) || list()
+	for(var/path in body_sel)
+		var/datum/perk/P = GLOB.all_perks?[path]
+		if(P && P.category)
+			.[P.category] = (.[P.category] || 0) + P.cost
+	var/list/mind_sel = preferences.read_preference(/datum/preference/typed_list/mind_perks) || list()
+	for(var/path in mind_sel)
+		var/datum/perk/P = GLOB.all_perks?[path]
+		if(P && P.category)
+			.[P.category] = (.[P.category] || 0) + P.cost
 
 /// Single rule for "can this perk be picked right now?" Used by the typed_list
-/// validators on write AND by the refit constraint on cascade.
+/// validators on write AND by the refit constraint on cascade. Checks against
+/// the *side-wide* pool (Body or Mind), not per-category.
 /proc/dq_perk_is_pickable_by(path, datum/preferences/preferences)
 	if(istext(path))
 		path = text2path(path)
 	var/datum/perk/P = GLOB.all_perks?[path]
-	if(!P || !P.category)
+	if(!P || !P.perk_kind)
 		return FALSE
 	var/age = preferences.read_preference(/datum/preference/numeric/human/age) || 18
-	var/pool = dq_pool_for_category_and_age(P.category, age)
-	var/spent = dq_spent_in_category(preferences, P.category)
-	// If the perk is already selected, its cost is already in `spent` — checking the
-	// pool against `spent` alone is correct; for an unselected perk we add its cost.
-	var/list/list_sel = (P.perk_kind == PERK_KIND_BODY) \
-		? (preferences.read_preference(/datum/preference/typed_list/body_perks) || list()) \
-		: (preferences.read_preference(/datum/preference/typed_list/mind_perks) || list())
+	var/pool
+	var/spent
+	var/list/list_sel
+	if(P.perk_kind == PERK_KIND_BODY)
+		pool = dq_body_pool_for_age(age)
+		spent = dq_body_total_spent(preferences)
+		list_sel = preferences.read_preference(/datum/preference/typed_list/body_perks) || list()
+	else
+		pool = dq_mind_pool_for_age(age)
+		spent = dq_mind_total_spent(preferences)
+		list_sel = preferences.read_preference(/datum/preference/typed_list/mind_perks) || list()
 	var/extra = (path in list_sel) ? 0 : P.cost
 	if(spent + extra > pool)
 		return FALSE

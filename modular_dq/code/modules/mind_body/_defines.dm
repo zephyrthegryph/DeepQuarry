@@ -15,10 +15,14 @@
 // At age 58  : body = 2 per cat × 4 cats =  8 total; mind = 6 per cat × 7 cats = 42 total
 // At age 100 : body = 2 per cat × 4 cats =  8 total; mind = 6 per cat × 7 cats = 42 total (caps)
 
+// Pool sizes — single shared pool per side (Body, Mind). Each side's pool
+// covers ALL of that side's categories; spending Speed points reduces what's
+// available for Strength / Vigor / Endurance.
 #define MIND_BODY_AGE_STEP            10
-#define MIND_BODY_MIN_PER_CAT         6
-#define MIND_BODY_BASE_BODY_PER_CAT   16
-#define MIND_BODY_MAX_MIND_PER_CAT    16
+#define MIND_BODY_BODY_POOL_AT_18     20
+#define MIND_BODY_BODY_POOL_MIN       8
+#define MIND_BODY_MIND_POOL_AT_18     8
+#define MIND_BODY_MIND_POOL_MAX       20
 
 // Top-level category type ids — used by /datum/perk.category lookup and the UI to
 // split the view into Body vs Mind panes.
