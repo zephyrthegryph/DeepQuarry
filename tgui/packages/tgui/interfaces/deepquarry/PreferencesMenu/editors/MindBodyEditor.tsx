@@ -655,7 +655,171 @@ const SubTreeChip = ({
   );
 };
 
-// ─── Perk tree (tier rows of icon cards) ──────────────────────────────────────────
+// ─── Perk tree (skill-tree layout with SVG connectors) ────────────────────────────
+//
+// Layout algorithm:
+//   1. Compute tier (max-depth of the requires chain) for every perk.
+//   2. Tier 0 perks sit at the top, spread evenly along x.
+//   3. Each subsequent tier's perks are positioned near their primary parent.
+//      Siblings sharing a parent fan out around that parent's x slot.
+//   4. After all positions are assigned, normalize so the leftmost perk sits at
+//      x=0 and compute the total grid width.
+//   5. Connections (parent → child) are rendered as curved SVG paths underneath
+//      the perk nodes, colored with the tree accent so the dependency reads at
+//      a glance.
+//
+// Sizing: NODE_W × NODE_H is the card footprint; ROW_GAP and COL_GAP are the
+// gaps between tiers and siblings respectively. Tuned to be comfortably tappable
+// without making four-tier trees overflow the pane.
+
+const NODE_W = 92;
+const NODE_H = 84;
+const COL_GAP = 16;
+const ROW_GAP = 36;
+
+type LayoutNode = {
+  path: string;
+  meta: PerkMeta;
+  tier: number;
+  x: number;
+  y: number;
+};
+
+type Connection = {
+  fromPath: string;
+  toPath: string;
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+};
+
+const computeTreeLayout = (
+  treePerks: string[],
+  perks: Record<string, PerkMeta>,
+) => {
+  // 1. Reduce to just the perks that live in this tree AND have meta entries.
+  const byPath: Record<string, PerkMeta> = {};
+  for (const p of treePerks) {
+    const meta = perks[p];
+    if (meta) byPath[p] = meta;
+  }
+
+  const allPaths = Object.keys(byPath);
+
+  // 2. Tier (depth in the requires DAG).
+  const tierCache: Record<string, number> = {};
+  const tierOf = (path: string, visiting = new Set<string>()): number => {
+    if (path in tierCache) return tierCache[path];
+    const meta = byPath[path];
+    if (!meta || meta.requires.length === 0) {
+      tierCache[path] = 0;
+      return 0;
+    }
+    if (visiting.has(path)) return 0; // cycle guard
+    visiting.add(path);
+    const t =
+      1 +
+      Math.max(
+        ...meta.requires.map((r) =>
+          byPath[r] ? tierOf(r, visiting) : -1,
+        ),
+      );
+    visiting.delete(path);
+    tierCache[path] = t;
+    return t;
+  };
+
+  for (const p of allPaths) tierOf(p);
+
+  // 3. Group by tier and sort tier-0 by name for stability.
+  const tiers: string[][] = [];
+  for (const p of allPaths) {
+    const t = tierCache[p];
+    if (!tiers[t]) tiers[t] = [];
+    tiers[t].push(p);
+  }
+  for (let t = 0; t < tiers.length; t++) {
+    if (!tiers[t]) tiers[t] = [];
+  }
+  tiers[0]?.sort((a, b) => byPath[a].name.localeCompare(byPath[b].name));
+
+  // 4. Assign x positions. Tier 0 spaced evenly; later tiers cluster around
+  //    their first parent's slot.
+  const xByPath: Record<string, number> = {};
+  // Tier 0 → evenly spaced columns.
+  tiers[0]?.forEach((path, idx) => {
+    xByPath[path] = idx * (NODE_W + COL_GAP);
+  });
+  for (let t = 1; t < tiers.length; t++) {
+    const tierList = tiers[t];
+    if (!tierList) continue;
+    // Group by primary parent so siblings sharing a parent fan out together.
+    const byParent: Record<string, string[]> = {};
+    for (const path of tierList) {
+      const primary = byPath[path].requires[0] ?? '__rootless__';
+      if (!byParent[primary]) byParent[primary] = [];
+      byParent[primary].push(path);
+    }
+    // For each parent group, position children spread around parent's x.
+    // Sort the parents by their x so iteration order matches visual order
+    // (left → right), which prevents overlapping when two adjacent parents
+    // have many children.
+    const parentEntries = Object.entries(byParent).sort(([a], [b]) => {
+      const ax = xByPath[a] ?? 0;
+      const bx = xByPath[b] ?? 0;
+      return ax - bx;
+    });
+    let runningX = 0;
+    for (const [parent, children] of parentEntries) {
+      const parentX = xByPath[parent] ?? 0;
+      const groupWidth =
+        children.length * NODE_W + (children.length - 1) * COL_GAP;
+      // Center this group on the parent's x, but never overlap the previous
+      // group (running cursor).
+      const startX = Math.max(runningX, parentX - groupWidth / 2);
+      children.forEach((path, idx) => {
+        xByPath[path] = startX + idx * (NODE_W + COL_GAP);
+      });
+      runningX = startX + groupWidth + COL_GAP;
+    }
+  }
+
+  // 5. Normalize x so minimum is 0; compute total grid extents.
+  const xs = Object.values(xByPath);
+  const minX = xs.length > 0 ? Math.min(...xs) : 0;
+  for (const p of allPaths) xByPath[p] -= minX;
+  const maxX = Math.max(0, ...Object.values(xByPath));
+
+  // 6. Build node + connection arrays.
+  const nodes: LayoutNode[] = allPaths.map((path) => ({
+    path,
+    meta: byPath[path],
+    tier: tierCache[path],
+    x: xByPath[path],
+    y: tierCache[path] * (NODE_H + ROW_GAP),
+  }));
+  const connections: Connection[] = [];
+  for (const path of allPaths) {
+    const meta = byPath[path];
+    for (const req of meta.requires) {
+      if (!(req in xByPath)) continue;
+      connections.push({
+        fromPath: req,
+        toPath: path,
+        x1: xByPath[req] + NODE_W / 2,
+        y1: tierCache[req] * (NODE_H + ROW_GAP) + NODE_H,
+        x2: xByPath[path] + NODE_W / 2,
+        y2: tierCache[path] * (NODE_H + ROW_GAP),
+      });
+    }
+  }
+
+  const totalWidth = maxX + NODE_W;
+  const totalHeight =
+    (tiers.length > 0 ? tiers.length - 1 : 0) * (NODE_H + ROW_GAP) + NODE_H;
+  return { nodes, connections, totalWidth, totalHeight };
+};
 
 const PerkTree = ({
   tree,
@@ -672,90 +836,110 @@ const PerkTree = ({
   remaining: number;
   act: Act;
 }) => {
-  // Tier = depth of the requires chain.
-  const tiers = useMemo(() => {
-    const byPath: Record<string, PerkMeta> = {};
-    for (const p of tree.perks) {
-      const meta = perks[p];
-      if (meta) byPath[p] = meta;
-    }
-    const tierFor = (path: string, visiting = new Set<string>()): number => {
-      const meta = byPath[path];
-      if (!meta) return 0;
-      if (!meta.requires.length) return 0;
-      if (visiting.has(path)) return 0;
-      visiting.add(path);
-      return 1 + Math.max(...meta.requires.map((r) => tierFor(r, visiting)));
-    };
-    const out: { path: string; meta: PerkMeta }[][] = [];
-    for (const path of Object.keys(byPath)) {
-      const t = tierFor(path);
-      if (!out[t]) out[t] = [];
-      out[t].push({ path, meta: byPath[path] });
-    }
-    for (const row of out) {
-      if (row) row.sort((a, b) => a.meta.cost - b.meta.cost);
-    }
-    return out;
-  }, [tree, perks]);
-
   const accent = tree.color ?? categoryColor;
+  const { nodes, connections, totalWidth, totalHeight } = useMemo(
+    () => computeTreeLayout(tree.perks, perks),
+    [tree.perks, perks],
+  );
+
   return (
-    <Box>
-      {tiers.map(
-        (row, tierIdx) =>
-          row && (
-            <Box key={`tier-${tierIdx}`} mb={0.5}>
-              {tierIdx > 0 && (
-                <Box
-                  style={{
-                    height: '8px',
-                    marginLeft: '24px',
-                    borderLeft: `2px dashed ${accent}`,
-                    opacity: 0.5,
-                  }}
-                />
-              )}
-              <Stack wrap>
-                {row.map(({ path, meta }) => {
-                  const selected = selectedPaths.includes(path);
-                  const requiresOk = meta.requires.every((r) =>
-                    selectedPaths.includes(r),
-                  );
-                  const affordable = selected || remaining >= meta.cost;
-                  const disabled =
-                    !selected && (!requiresOk || !affordable);
-                  return (
-                    <Stack.Item key={path}>
-                      <PerkNode
-                        perk={meta}
-                        accent={accent}
-                        selected={selected}
-                        disabled={disabled}
-                        gateHint={
-                          !selected && !requiresOk
-                            ? `Requires ${meta.requires
-                                .map((r) => perks[r]?.name ?? r)
-                                .join(', ')}`
-                            : !selected && !affordable
-                              ? 'Not enough points in this category'
-                              : null
-                        }
-                        onClick={() =>
-                          send(
-                            act,
-                            selected ? 'remove_perk' : 'add_perk',
-                            { perk_path: path },
-                          )
-                        }
-                      />
-                    </Stack.Item>
-                  );
-                })}
-              </Stack>
+    // Outer scroll container so wide trees pan horizontally inside the pane
+    // instead of overflowing the page.
+    <Box
+      style={{
+        overflowX: 'auto',
+        overflowY: 'hidden',
+        paddingBottom: '6px',
+      }}
+    >
+      <Box
+        style={{
+          position: 'relative',
+          width: `${totalWidth}px`,
+          minWidth: '100%',
+          height: `${totalHeight}px`,
+        }}
+      >
+        {/* SVG layer for parent → child connectors. pointer-events: none so the
+            lines never intercept clicks meant for a node sitting on top. */}
+        <svg
+          width={totalWidth}
+          height={totalHeight}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            pointerEvents: 'none',
+          }}
+        >
+          {connections.map((c) => {
+            const parentSelected = selectedPaths.includes(c.fromPath);
+            const childSelected = selectedPaths.includes(c.toPath);
+            const bothSelected = parentSelected && childSelected;
+            // Smooth cubic-bezier from parent's bottom to child's top so the
+            // path obviously originates from the parent rather than a generic
+            // mid-tier divider.
+            const midY = (c.y1 + c.y2) / 2;
+            const d = `M ${c.x1} ${c.y1} C ${c.x1} ${midY}, ${c.x2} ${midY}, ${c.x2} ${c.y2}`;
+            return (
+              <path
+                key={`${c.fromPath}-${c.toPath}`}
+                d={d}
+                stroke={accent}
+                strokeWidth={bothSelected ? 2.5 : 1.5}
+                strokeOpacity={
+                  bothSelected ? 0.85 : parentSelected ? 0.65 : 0.35
+                }
+                strokeDasharray={bothSelected ? undefined : '5 3'}
+                fill="none"
+              />
+            );
+          })}
+        </svg>
+
+        {/* Perk nodes — absolutely positioned. */}
+        {nodes.map(({ path, meta, x, y }) => {
+          const selected = selectedPaths.includes(path);
+          const requiresOk = meta.requires.every((r) =>
+            selectedPaths.includes(r),
+          );
+          const affordable = selected || remaining >= meta.cost;
+          const disabled = !selected && (!requiresOk || !affordable);
+          return (
+            <Box
+              key={path}
+              style={{
+                position: 'absolute',
+                left: `${x}px`,
+                top: `${y}px`,
+                width: `${NODE_W}px`,
+                height: `${NODE_H}px`,
+              }}
+            >
+              <PerkNode
+                perk={meta}
+                accent={accent}
+                selected={selected}
+                disabled={disabled}
+                gateHint={
+                  !selected && !requiresOk
+                    ? `Requires ${meta.requires
+                        .map((r) => perks[r]?.name ?? r)
+                        .join(', ')}`
+                    : !selected && !affordable
+                      ? 'Not enough points in this category'
+                      : null
+                }
+                onClick={() =>
+                  send(act, selected ? 'remove_perk' : 'add_perk', {
+                    perk_path: path,
+                  })
+                }
+              />
             </Box>
-          ),
-      )}
+          );
+        })}
+      </Box>
     </Box>
   );
 };
@@ -827,53 +1011,71 @@ const PerkNode = ({
       }
     >
       <Box
-        mr={0.5}
-        mb={0.25}
         onClick={clickable ? onClick : undefined}
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
         style={{
           cursor: clickable ? 'pointer' : 'default',
-          width: '74px',
-          padding: '4px',
-          borderRadius: '6px',
+          width: '100%',
+          height: '100%',
+          padding: '5px 4px',
+          borderRadius: '8px',
           background: bg,
           border,
           opacity: disabled ? 0.55 : 1,
           transition: 'all 120ms',
           boxShadow: selected
-            ? `0 0 6px ${accent}66`
+            ? `0 0 8px ${accent}88`
             : hover && !disabled
-              ? `0 0 4px ${accent}44`
+              ? `0 0 6px ${accent}55`
               : 'none',
           textAlign: 'center',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'space-between',
         }}
       >
-        <Box style={{ position: 'relative', height: '32px' }}>
-          <Icon
-            name={perk.icon}
-            size={1.7}
+        <Box style={{ position: 'relative', width: '100%', height: '40px' }}>
+          <Box
             style={{
-              color: selected ? accent : disabled ? 'rgba(255,255,255,0.3)' : accent,
-              lineHeight: '32px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '40px',
             }}
-          />
+          >
+            <Icon
+              name={perk.icon}
+              size={2.0}
+              style={{
+                color: selected
+                  ? '#fff'
+                  : disabled
+                    ? 'rgba(255,255,255,0.3)'
+                    : accent,
+                filter: selected
+                  ? `drop-shadow(0 0 4px ${accent})`
+                  : undefined,
+              }}
+            />
+          </Box>
           {selected && (
             <Box
               style={{
                 position: 'absolute',
-                top: 0,
-                right: 0,
+                top: -2,
+                right: -2,
                 background: accent,
                 borderRadius: '50%',
-                width: '14px',
-                height: '14px',
+                width: '16px',
+                height: '16px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '0.65em',
+                fontSize: '0.7em',
                 color: '#fff',
-                boxShadow: '0 0 4px rgba(0,0,0,0.6)',
+                boxShadow: '0 0 4px rgba(0,0,0,0.7)',
               }}
             >
               <Icon name="check" />
@@ -883,16 +1085,16 @@ const PerkNode = ({
             <Box
               style={{
                 position: 'absolute',
-                top: 0,
-                right: 0,
-                background: 'rgba(0,0,0,0.6)',
+                top: -2,
+                right: -2,
+                background: 'rgba(0,0,0,0.7)',
                 borderRadius: '50%',
-                width: '14px',
-                height: '14px',
+                width: '16px',
+                height: '16px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '0.65em',
+                fontSize: '0.7em',
                 color: 'rgba(255,255,255,0.7)',
               }}
             >
@@ -901,28 +1103,30 @@ const PerkNode = ({
           )}
         </Box>
         <Box
-          fontSize="0.7em"
-          mt={0.25}
+          fontSize="0.74em"
           style={{
-            color: selected ? '#fff' : 'rgba(255,255,255,0.85)',
+            color: selected ? '#fff' : 'rgba(255,255,255,0.92)',
             fontWeight: selected ? 'bold' : 'normal',
             lineHeight: '1.1',
             whiteSpace: 'nowrap',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
+            width: '100%',
           }}
         >
           {perk.name}
         </Box>
         <Box
-          fontSize="0.65em"
+          fontSize="0.68em"
           style={{
             color: accent,
             fontWeight: 'bold',
-            opacity: 0.8,
+            background: `${accent}22`,
+            padding: '0 6px',
+            borderRadius: '6px',
           }}
         >
-          {perk.cost} pt{perk.cost === 1 ? '' : 's'}
+          {perk.cost}
         </Box>
       </Box>
     </Tooltip>

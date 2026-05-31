@@ -15,17 +15,26 @@ import {
 import { CategoryPage } from './CategoryPage';
 import type { CharacterSetupData } from './types';
 
-/// Wraps ByondUi for the character preview map. tgui-core's ByondUi only re-measures
-/// its container on window.resize, which means the initial mount often captures a
-/// pre-layout size and the BYOND map underrenders until the user manually resizes the
-/// window. Hooking a ResizeObserver to the container and dispatching a window resize
-/// event whenever the container changes size forces ByondUi to re-measure.
+/// Wraps ByondUi for the character preview map.
 ///
-/// `view=3x8` matches the layout of the preview screen objects (PMH at 2,7; BG spans
-/// 1,1 to 3,8). With this set the BYOND map control crops to exactly the area the
-/// preview occupies instead of showing tile (0,0) of an unfocused world, which was the
-/// "tiny preview in a sea of empty" rendering. `icon-size=64` doubles the on-screen
-/// scale of each tile so the character is comfortably visible even on a narrow pane.
+/// The element `character_preview_map` is pre-declared in interface/skin.dmf with
+/// `icon-size = 64` and a baseline size of 240x520, so the moment ByondUi flips it
+/// to visible the per-tile resolution is already correct. Passing `view = 3x8` at
+/// mount time crops the map to the area the preview screen objects span (BG covers
+/// 1,1 to 3,8; PMH sits at 2,7 — see code/modules/client/preferences.dm). Without
+/// that, BYOND showed tile (0,0) of an unfocused world surrounded by emptiness.
+///
+/// Container is fixed at 240x520px and centered: this matches the skin's reserved
+/// size exactly so BYOND doesn't have to rescale, and 240 across × 520 down lines up
+/// at 64 px per tile × 3 wide / 8 tall (192x512 — fits with a couple px of breathing
+/// room). On a narrow window the surrounding flex container scrolls instead of
+/// trying to fit a smaller preview into too little space.
+///
+/// The ResizeObserver is still here so ByondUi re-measures if the WHOLE window
+/// resizes; the BYOND embed listens to global resize events specifically.
+const PREVIEW_WIDTH = 240;
+const PREVIEW_HEIGHT = 520;
+
 const PreviewMap = () => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
@@ -46,6 +55,7 @@ const PreviewMap = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
+        overflow: 'auto',
       }}
     >
       <ByondUi
@@ -54,9 +64,11 @@ const PreviewMap = () => {
           type: 'map',
           view: '3x8',
           'icon-size': '64',
-          'zoom-mode': 'distort',
         }}
-        style={{ width: '100%', height: '100%' }}
+        style={{
+          width: `${PREVIEW_WIDTH}px`,
+          height: `${PREVIEW_HEIGHT}px`,
+        }}
       />
     </div>
   );
