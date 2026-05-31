@@ -2,13 +2,25 @@
 	COOLDOWN_DECLARE(ui_refresh_cooldown)
 
 /datum/preferences/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui, custom_state)
-	// DQEdit — open the UI immediately, then build the preview asynchronously. On first
-	// open update_preview_icon() is the longest call in this path (mannequin construction
-	// + dress + species/trait synthesis), and running it synchronously here adds 1-3s of
-	// blank-window time before tgui paints. Async lets the window pop instantly and the
-	// preview populate a beat later.
-	if(char_render_holders)
-		show_character_previews()
+	// DQEdit — build the preview SYNCHRONOUSLY before opening the UI. An earlier
+	// pass moved this to INVOKE_ASYNC after ui.open() to make the window pop faster,
+	// but that introduced a "first open shows white / restart fixes it" symptom: the
+	// React tree was rendering with char_render_holders still null, and the right
+	// preview pane never got populated until a subsequent close/reopen kicked
+	// show_character_previews() through the populated-holders branch. The trade-off
+	// (~1s open delay first time) is worth a consistent open.
+	//
+	// try/catch around the build is paranoia: a runtime mid-mannequin would have
+	// left updating_preview_icon stranded TRUE before that flag's own try/catch
+	// landed. The wrapping guard here means we still call show_character_previews()
+	// and open the UI even if the build itself faulted, so the user gets a working
+	// menu instead of a stuck verb.
+	if(!char_render_holders)
+		try
+			update_preview_icon()
+		catch(var/exception/e)
+			stack_trace("preview_icon build at tgui_interact: [e.name] at [e.file]:[e.line]")
+	show_character_previews()
 
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
@@ -16,9 +28,6 @@
 		ui.set_autoupdate(FALSE)
 		ui.open()
 		CallAsync(src, PROC_REF(jiggle_map))
-
-	if(!char_render_holders)
-		INVOKE_ASYNC(src, PROC_REF(_initial_preview_build))
 
 /datum/preferences/tgui_state(mob/user)
 	return GLOB.tgui_always_state
@@ -213,13 +222,6 @@
 			if(BG)
 				BG.icon_state = choices[idx]
 			. = TRUE
-
-/// DQAdd — first-open preview build wrapper. Runs update_preview_icon() then ensures
-/// the resulting screen holders are attached to the client. Fired via INVOKE_ASYNC from
-/// tgui_interact so the UI window doesn't block on it.
-/datum/preferences/proc/_initial_preview_build()
-	update_preview_icon()
-	show_character_previews()
 
 /datum/preferences/proc/jiggle_map()
 	// Fix for weird byond bug, jiggles the map around a little

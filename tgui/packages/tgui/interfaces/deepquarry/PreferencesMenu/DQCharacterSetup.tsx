@@ -15,26 +15,16 @@ import {
 import { CategoryPage } from './CategoryPage';
 import type { CharacterSetupData } from './types';
 
-/// Wraps ByondUi for the character preview map.
+/// Wraps ByondUi for the character preview map. ByondUi creates the map control
+/// dynamically when this component mounts (no skin.dmf pre-declaration — a previous
+/// attempt to pre-declare with `is-visible = false` and tight anchors triggered a
+/// BYOND client crash on click). The map's logical view is set to 3x8 to match the
+/// preview screen-loc geometry (BG spans 1,1 to 3,8; PMH at 2,7 — see
+/// code/modules/client/preferences.dm); icon-size=48 keeps per-tile rendering at a
+/// readable scale without making the map taller than the right pane can hold.
 ///
-/// The element `character_preview_map` is pre-declared in interface/skin.dmf with
-/// `icon-size = 64` and a baseline size of 240x520, so the moment ByondUi flips it
-/// to visible the per-tile resolution is already correct. Passing `view = 3x8` at
-/// mount time crops the map to the area the preview screen objects span (BG covers
-/// 1,1 to 3,8; PMH sits at 2,7 — see code/modules/client/preferences.dm). Without
-/// that, BYOND showed tile (0,0) of an unfocused world surrounded by emptiness.
-///
-/// Container is fixed at 240x520px and centered: this matches the skin's reserved
-/// size exactly so BYOND doesn't have to rescale, and 240 across × 520 down lines up
-/// at 64 px per tile × 3 wide / 8 tall (192x512 — fits with a couple px of breathing
-/// room). On a narrow window the surrounding flex container scrolls instead of
-/// trying to fit a smaller preview into too little space.
-///
-/// The ResizeObserver is still here so ByondUi re-measures if the WHOLE window
-/// resizes; the BYOND embed listens to global resize events specifically.
-const PREVIEW_WIDTH = 240;
-const PREVIEW_HEIGHT = 520;
-
+/// The ResizeObserver dispatches a global resize event whenever the container
+/// changes size — BYOND's embed only re-measures on the window-level event.
 const PreviewMap = () => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
@@ -52,10 +42,6 @@ const PreviewMap = () => {
       style={{
         width: '100%',
         height: '100%',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        overflow: 'auto',
       }}
     >
       <ByondUi
@@ -63,12 +49,9 @@ const PreviewMap = () => {
           id: 'character_preview_map',
           type: 'map',
           view: '3x8',
-          'icon-size': '64',
+          'icon-size': '48',
         }}
-        style={{
-          width: `${PREVIEW_WIDTH}px`,
-          height: `${PREVIEW_HEIGHT}px`,
-        }}
+        style={{ width: '100%', height: '100%' }}
       />
     </div>
   );

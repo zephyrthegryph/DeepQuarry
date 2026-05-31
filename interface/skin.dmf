@@ -1326,20 +1326,6 @@ window "mapwindow"
 		is-visible = false
 		inner-background-color = #00000000
 	// DQAdd End
-	// DQAdd Start - character_preview_map. Pre-declared so explicit
-	// icon-size + view + zoom-mode hold from world start. ByondUi later
-	// positions and resizes it via React. view=3x8 matches preview_screen_locs
-	// (BG spans 1,1 to 3,8; PMH at 2,7). icon-size=64 doubles the per-tile
-	// pixel resolution so the rendered character is comfortably visible.
-	elem "character_preview_map"
-		type = MAP
-		pos = 0,0
-		size = 240x520
-		anchor1 = 0,0
-		anchor2 = 0,0
-		is-visible = false
-		icon-size = 64
-	// DQAdd End
 
 window "outputwindow"
 	elem "outputwindow"

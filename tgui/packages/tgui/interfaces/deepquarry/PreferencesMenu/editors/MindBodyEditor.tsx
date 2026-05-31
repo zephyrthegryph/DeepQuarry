@@ -91,7 +91,11 @@ const send = (act: Act, action: string, params: Record<string, unknown>) =>
 
 export const MindBodyEditor = ({ data, staticData }: EditorProps) => {
   const { act } = useBackend();
-  const d = data as MindBodyData;
+  // Defensive default: if the first poll lands before the server has assembled
+  // the editor's data slice, treat both data and staticData as empty objects
+  // rather than crashing on `d.age` / `s.categories[…]` of undefined. The
+  // early-return below catches the static-data-missing case explicitly.
+  const d = (data ?? {}) as MindBodyData;
   const s = (staticData ?? {}) as MindBodyStatic;
 
   const bodyCats = useMemo(
@@ -110,9 +114,11 @@ export const MindBodyEditor = ({ data, staticData }: EditorProps) => {
   );
 
   // Pick-tally per category, used for tab badges + default-active selection.
+  // The `?? []` guards are again for the initial-poll race; once data lands,
+  // both perk arrays are populated.
   const picksByCat = useMemo(() => {
     const out: Record<string, number> = {};
-    for (const path of [...d.body_perks, ...d.mind_perks]) {
+    for (const path of [...(d.body_perks ?? []), ...(d.mind_perks ?? [])]) {
       const p = s.perks?.[path];
       if (p) out[p.category] = (out[p.category] ?? 0) + 1;
     }
@@ -165,7 +171,7 @@ export const MindBodyEditor = ({ data, staticData }: EditorProps) => {
             data={d}
             staticData={s}
             picksByCat={picksByCat}
-            selectedPaths={d.body_perks}
+            selectedPaths={d.body_perks ?? []}
             act={act}
           />
         ) : (
@@ -179,7 +185,7 @@ export const MindBodyEditor = ({ data, staticData }: EditorProps) => {
             data={d}
             staticData={s}
             picksByCat={picksByCat}
-            selectedPaths={d.mind_perks}
+            selectedPaths={d.mind_perks ?? []}
             act={act}
           />
         )}
