@@ -104,6 +104,11 @@ const labelForCategory = (key: string) => CATEGORY_LABELS[key] ?? titleCase(key)
 // use the full available height instead of a measured-content height).
 const FULL_HEIGHT_EDITORS = new Set<string>(['loadout', 'mind_body']);
 
+// Editors that need the entire window width — the preview pane is hidden while one of
+// these is active so the editor can claim left + right column. The preview is only
+// stashed (not destroyed), so switching to another tab brings it back instantly.
+const FULL_WIDTH_EDITORS = new Set<string>(['mind_body']);
+
 export const DQCharacterSetup = () => {
   const { act, data } = useBackend<CharacterSetupData>();
   const categories = data.dq_categories ?? [];
@@ -125,6 +130,13 @@ export const DQCharacterSetup = () => {
     selectedPage?.groups.some((g) =>
       g.items.some(
         (i) => i.type === 'editor' && FULL_HEIGHT_EDITORS.has(i.key),
+      ),
+    ) ?? false;
+
+  const pageIsFullWidth =
+    selectedPage?.groups.some((g) =>
+      g.items.some(
+        (i) => i.type === 'editor' && FULL_WIDTH_EDITORS.has(i.key),
       ),
     ) ?? false;
 
@@ -207,25 +219,29 @@ export const DQCharacterSetup = () => {
               </Stack.Item>
             </Stack>
           </Stack.Item>
-          {/* RIGHT: preview map + cycle background */}
-          <Stack.Item grow={1} basis={0}>
-            <Stack fill vertical>
-              <Stack.Item grow>
-                <Section fill>
-                  <PreviewMap />
-                </Section>
-              </Stack.Item>
-              <Stack.Item>
-                <Button
-                  fluid
-                  icon="arrows-rotate"
-                  onClick={() => act('cycle_background')}
-                >
-                  Cycle Background
-                </Button>
-              </Stack.Item>
-            </Stack>
-          </Stack.Item>
+          {/* RIGHT: preview map + cycle background — hidden while a full-width
+              editor (currently mind_body) owns the page so the editor can claim
+              the entire window. */}
+          {!pageIsFullWidth && (
+            <Stack.Item grow={1} basis={0}>
+              <Stack fill vertical>
+                <Stack.Item grow>
+                  <Section fill>
+                    <PreviewMap />
+                  </Section>
+                </Stack.Item>
+                <Stack.Item>
+                  <Button
+                    fluid
+                    icon="arrows-rotate"
+                    onClick={() => act('cycle_background')}
+                  >
+                    Cycle Background
+                  </Button>
+                </Stack.Item>
+              </Stack>
+            </Stack.Item>
+          )}
         </Stack>
       </Window.Content>
     </Window>

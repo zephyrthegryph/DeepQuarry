@@ -655,27 +655,31 @@ const SubTreeChip = ({
   );
 };
 
-// ─── Perk tree (skill-tree layout with SVG connectors) ────────────────────────────
+// ─── Perk tree (subtree-packed layout with straight + right-angle connectors) ─────
 //
-// Layout algorithm:
-//   1. Compute tier (max-depth of the requires chain) for every perk.
-//   2. Tier 0 perks sit at the top, spread evenly along x.
-//   3. Each subsequent tier's perks are positioned near their primary parent.
-//      Siblings sharing a parent fan out around that parent's x slot.
-//   4. After all positions are assigned, normalize so the leftmost perk sits at
-//      x=0 and compute the total grid width.
-//   5. Connections (parent → child) are rendered as curved SVG paths underneath
-//      the perk nodes, colored with the tree accent so the dependency reads at
-//      a glance.
+// Layout strategy: a tree of perks is laid out as a row of "subtrees". Each subtree
+// is rooted at a tier-0 perk and contains all of its descendants. Subtrees that
+// don't fit in the available width wrap to a new row so the whole tree fits without
+// horizontal scrolling. Inside a subtree:
+//   - A perk with one child puts that child directly below it (straight vertical
+//     line, no bezier).
+//   - A perk with N children spreads them horizontally below it; the subtree's
+//     width grows accordingly.
+//   - The subtree's total width = max(1, sum(width of each child subtree)).
 //
-// Sizing: NODE_W × NODE_H is the card footprint; ROW_GAP and COL_GAP are the
-// gaps between tiers and siblings respectively. Tuned to be comfortably tappable
-// without making four-tier trees overflow the pane.
+// Cross-subtree dependencies (a perk that requires perks from multiple subtrees)
+// route via a right-angle path: down from the parent's bottom edge, across to the
+// child's column, then down into the child's top edge.
 
-const NODE_W = 92;
-const NODE_H = 84;
-const COL_GAP = 16;
-const ROW_GAP = 36;
+const NODE_W = 80;
+const NODE_H = 72;
+const COL_GAP = 8;
+const ROW_GAP = 24;
+const SUBTREE_GAP = 16;
+const SUBTREE_ROW_GAP = 20;
+// Available pane width is ~520-540px at 1100x760 full-window. Allow a few px of
+// margin so the rightmost subtree doesn't kiss the scrollbar gutter.
+const PANE_WIDTH = 500;
 
 type LayoutNode = {
   path: string;
@@ -683,142 +687,206 @@ type LayoutNode = {
   tier: number;
   x: number;
   y: number;
+  // The subtree this perk belongs to (root path). Used so the connector layer
+  // can distinguish intra-subtree links (straight) from cross-subtree links
+  // (right-angle paths).
+  rootPath: string;
 };
 
 type Connection = {
   fromPath: string;
   toPath: string;
-  x1: number;
-  y1: number;
-  x2: number;
-  y2: number;
+  /// True when both endpoints share the same root (same column block) — render
+  /// as a straight vertical line.
+  intraSubtree: boolean;
+};
+
+/// Recursively compute the column width a subtree occupies. Memoised by path.
+const subtreeWidth = (
+  path: string,
+  childrenOf: Record<string, string[]>,
+  cache: Record<string, number>,
+): number => {
+  if (path in cache) return cache[path];
+  const children = childrenOf[path] ?? [];
+  if (children.length === 0) {
+    cache[path] = 1;
+    return 1;
+  }
+  let total = 0;
+  for (const child of children) total += subtreeWidth(child, childrenOf, cache);
+  cache[path] = Math.max(1, total);
+  return cache[path];
 };
 
 const computeTreeLayout = (
   treePerks: string[],
   perks: Record<string, PerkMeta>,
 ) => {
-  // 1. Reduce to just the perks that live in this tree AND have meta entries.
+  // 1. Reduce to just this tree's perks.
   const byPath: Record<string, PerkMeta> = {};
   for (const p of treePerks) {
     const meta = perks[p];
     if (meta) byPath[p] = meta;
   }
-
   const allPaths = Object.keys(byPath);
 
-  // 2. Tier (depth in the requires DAG).
+  // 2. For routing each perk into a subtree, every non-root perk follows its
+  //    primary parent (first entry in `requires`). Secondary requires turn into
+  //    cross-subtree connections handled by the SVG layer.
+  const primaryParent: Record<string, string | null> = {};
+  for (const path of allPaths) {
+    const reqs = byPath[path].requires;
+    primaryParent[path] = reqs.length > 0 && reqs[0] in byPath ? reqs[0] : null;
+  }
+  const childrenOf: Record<string, string[]> = {};
+  for (const path of allPaths) {
+    const parent = primaryParent[path];
+    if (parent) {
+      if (!childrenOf[parent]) childrenOf[parent] = [];
+      childrenOf[parent].push(path);
+    }
+  }
+  // Sort children deterministically — by name keeps layout stable across renders.
+  for (const parent in childrenOf) {
+    childrenOf[parent].sort((a, b) =>
+      byPath[a].name.localeCompare(byPath[b].name),
+    );
+  }
+
+  // 3. Tier (depth from root). Used for the y axis inside a subtree.
   const tierCache: Record<string, number> = {};
   const tierOf = (path: string, visiting = new Set<string>()): number => {
     if (path in tierCache) return tierCache[path];
-    const meta = byPath[path];
-    if (!meta || meta.requires.length === 0) {
+    const parent = primaryParent[path];
+    if (!parent) {
       tierCache[path] = 0;
       return 0;
     }
-    if (visiting.has(path)) return 0; // cycle guard
+    if (visiting.has(path)) return 0;
     visiting.add(path);
-    const t =
-      1 +
-      Math.max(
-        ...meta.requires.map((r) =>
-          byPath[r] ? tierOf(r, visiting) : -1,
-        ),
-      );
+    const t = 1 + tierOf(parent, visiting);
     visiting.delete(path);
     tierCache[path] = t;
     return t;
   };
-
   for (const p of allPaths) tierOf(p);
 
-  // 3. Group by tier and sort tier-0 by name for stability.
-  const tiers: string[][] = [];
-  for (const p of allPaths) {
-    const t = tierCache[p];
-    if (!tiers[t]) tiers[t] = [];
-    tiers[t].push(p);
-  }
-  for (let t = 0; t < tiers.length; t++) {
-    if (!tiers[t]) tiers[t] = [];
-  }
-  tiers[0]?.sort((a, b) => byPath[a].name.localeCompare(byPath[b].name));
+  // 4. Identify roots (tier 0) and compute each subtree's column width.
+  const roots = allPaths.filter((p) => primaryParent[p] === null);
+  roots.sort((a, b) => byPath[a].name.localeCompare(byPath[b].name));
+  const widthCache: Record<string, number> = {};
+  for (const r of roots) subtreeWidth(r, childrenOf, widthCache);
 
-  // 4. Assign x positions. Tier 0 spaced evenly; later tiers cluster around
-  //    their first parent's slot.
+  // 5. Position subtree roots into rows that fit PANE_WIDTH. Each subtree
+  //    occupies (width × (NODE_W + COL_GAP)) horizontal space; subtrees are
+  //    separated by SUBTREE_GAP.
+  type Row = { roots: string[]; totalCols: number; maxTier: number };
+  const rows: Row[] = [];
+  let cur: Row = { roots: [], totalCols: 0, maxTier: 0 };
+  const colsThatFit = Math.floor(
+    (PANE_WIDTH + COL_GAP) / (NODE_W + COL_GAP),
+  );
+  for (const r of roots) {
+    const w = widthCache[r];
+    if (cur.totalCols + w > colsThatFit && cur.roots.length > 0) {
+      rows.push(cur);
+      cur = { roots: [], totalCols: 0, maxTier: 0 };
+    }
+    cur.roots.push(r);
+    cur.totalCols += w;
+    cur.maxTier = Math.max(
+      cur.maxTier,
+      ...allPathsInSubtree(r, childrenOf).map((p) => tierCache[p]),
+    );
+  }
+  if (cur.roots.length > 0) rows.push(cur);
+
+  // 6. Assign (x, y) positions. For each row: walk subtrees left to right,
+  //    assigning columns to each leaf via a depth-first pre-order. Internal
+  //    nodes center over their children's column span.
   const xByPath: Record<string, number> = {};
-  // Tier 0 → evenly spaced columns.
-  tiers[0]?.forEach((path, idx) => {
-    xByPath[path] = idx * (NODE_W + COL_GAP);
-  });
-  for (let t = 1; t < tiers.length; t++) {
-    const tierList = tiers[t];
-    if (!tierList) continue;
-    // Group by primary parent so siblings sharing a parent fan out together.
-    const byParent: Record<string, string[]> = {};
-    for (const path of tierList) {
-      const primary = byPath[path].requires[0] ?? '__rootless__';
-      if (!byParent[primary]) byParent[primary] = [];
-      byParent[primary].push(path);
+  const yByPath: Record<string, number> = {};
+  const rootOf: Record<string, string> = {};
+  let rowYOffset = 0;
+
+  const assignSubtreePositions = (
+    path: string,
+    rowYStart: number,
+    leftCol: number,
+    rootForPath: string,
+  ): number => {
+    rootOf[path] = rootForPath;
+    const children = childrenOf[path] ?? [];
+    if (children.length === 0) {
+      xByPath[path] = leftCol * (NODE_W + COL_GAP);
+      yByPath[path] = rowYStart + tierCache[path] * (NODE_H + ROW_GAP);
+      return leftCol + 1;
     }
-    // For each parent group, position children spread around parent's x.
-    // Sort the parents by their x so iteration order matches visual order
-    // (left → right), which prevents overlapping when two adjacent parents
-    // have many children.
-    const parentEntries = Object.entries(byParent).sort(([a], [b]) => {
-      const ax = xByPath[a] ?? 0;
-      const bx = xByPath[b] ?? 0;
-      return ax - bx;
-    });
-    let runningX = 0;
-    for (const [parent, children] of parentEntries) {
-      const parentX = xByPath[parent] ?? 0;
-      const groupWidth =
-        children.length * NODE_W + (children.length - 1) * COL_GAP;
-      // Center this group on the parent's x, but never overlap the previous
-      // group (running cursor).
-      const startX = Math.max(runningX, parentX - groupWidth / 2);
-      children.forEach((path, idx) => {
-        xByPath[path] = startX + idx * (NODE_W + COL_GAP);
-      });
-      runningX = startX + groupWidth + COL_GAP;
+    let cursor = leftCol;
+    const childCols: number[] = [];
+    for (const child of children) {
+      const start = cursor;
+      cursor = assignSubtreePositions(child, rowYStart, cursor, rootForPath);
+      childCols.push((start + cursor - 1) / 2);
     }
+    // Center this node over the span of its children's columns.
+    const centerCol = (childCols[0] + childCols[childCols.length - 1]) / 2;
+    xByPath[path] = centerCol * (NODE_W + COL_GAP);
+    yByPath[path] = rowYStart + tierCache[path] * (NODE_H + ROW_GAP);
+    return cursor;
+  };
+
+  for (const row of rows) {
+    let colCursor = 0;
+    const rowHeight = (row.maxTier + 1) * (NODE_H + ROW_GAP) - ROW_GAP;
+    for (const r of row.roots) {
+      assignSubtreePositions(r, rowYOffset, colCursor, r);
+      colCursor += widthCache[r];
+    }
+    rowYOffset += rowHeight + SUBTREE_ROW_GAP;
   }
 
-  // 5. Normalize x so minimum is 0; compute total grid extents.
-  const xs = Object.values(xByPath);
-  const minX = xs.length > 0 ? Math.min(...xs) : 0;
-  for (const p of allPaths) xByPath[p] -= minX;
-  const maxX = Math.max(0, ...Object.values(xByPath));
-
-  // 6. Build node + connection arrays.
   const nodes: LayoutNode[] = allPaths.map((path) => ({
     path,
     meta: byPath[path],
     tier: tierCache[path],
     x: xByPath[path],
-    y: tierCache[path] * (NODE_H + ROW_GAP),
+    y: yByPath[path],
+    rootPath: rootOf[path] ?? path,
   }));
+
+  // 7. Build connections. Primary-parent links are intra-subtree (straight); any
+  //    additional requires (multi-parent perks) cross subtrees.
   const connections: Connection[] = [];
   for (const path of allPaths) {
     const meta = byPath[path];
-    for (const req of meta.requires) {
-      if (!(req in xByPath)) continue;
+    for (let i = 0; i < meta.requires.length; i++) {
+      const req = meta.requires[i];
+      if (!(req in byPath)) continue;
       connections.push({
         fromPath: req,
         toPath: path,
-        x1: xByPath[req] + NODE_W / 2,
-        y1: tierCache[req] * (NODE_H + ROW_GAP) + NODE_H,
-        x2: xByPath[path] + NODE_W / 2,
-        y2: tierCache[path] * (NODE_H + ROW_GAP),
+        intraSubtree: rootOf[req] === rootOf[path],
       });
     }
   }
 
-  const totalWidth = maxX + NODE_W;
-  const totalHeight =
-    (tiers.length > 0 ? tiers.length - 1 : 0) * (NODE_H + ROW_GAP) + NODE_H;
-  return { nodes, connections, totalWidth, totalHeight };
+  const totalWidth = Math.max(
+    PANE_WIDTH,
+    ...Object.values(xByPath).map((x) => x + NODE_W),
+  );
+  const totalHeight = rowYOffset - SUBTREE_ROW_GAP;
+  return { nodes, connections, totalWidth, totalHeight, xByPath, yByPath };
+};
+
+const allPathsInSubtree = (
+  root: string,
+  childrenOf: Record<string, string[]>,
+): string[] => {
+  const out = [root];
+  for (const c of childrenOf[root] ?? []) out.push(...allPathsInSubtree(c, childrenOf));
+  return out;
 };
 
 const PerkTree = ({
@@ -837,109 +905,107 @@ const PerkTree = ({
   act: Act;
 }) => {
   const accent = tree.color ?? categoryColor;
-  const { nodes, connections, totalWidth, totalHeight } = useMemo(
-    () => computeTreeLayout(tree.perks, perks),
-    [tree.perks, perks],
-  );
+  const { nodes, connections, totalWidth, totalHeight, xByPath, yByPath } =
+    useMemo(() => computeTreeLayout(tree.perks, perks), [tree.perks, perks]);
 
   return (
-    // Outer scroll container so wide trees pan horizontally inside the pane
-    // instead of overflowing the page.
     <Box
       style={{
-        overflowX: 'auto',
-        overflowY: 'hidden',
-        paddingBottom: '6px',
+        position: 'relative',
+        width: `${totalWidth}px`,
+        minWidth: '100%',
+        height: `${totalHeight}px`,
+        maxWidth: '100%',
       }}
     >
-      <Box
+      {/* Connector layer underneath the nodes. pointer-events: none so clicks pass
+          through to the perks. */}
+      <svg
+        width={totalWidth}
+        height={totalHeight}
         style={{
-          position: 'relative',
-          width: `${totalWidth}px`,
-          minWidth: '100%',
-          height: `${totalHeight}px`,
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          pointerEvents: 'none',
         }}
       >
-        {/* SVG layer for parent → child connectors. pointer-events: none so the
-            lines never intercept clicks meant for a node sitting on top. */}
-        <svg
-          width={totalWidth}
-          height={totalHeight}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            pointerEvents: 'none',
-          }}
-        >
-          {connections.map((c) => {
-            const parentSelected = selectedPaths.includes(c.fromPath);
-            const childSelected = selectedPaths.includes(c.toPath);
-            const bothSelected = parentSelected && childSelected;
-            // Smooth cubic-bezier from parent's bottom to child's top so the
-            // path obviously originates from the parent rather than a generic
-            // mid-tier divider.
-            const midY = (c.y1 + c.y2) / 2;
-            const d = `M ${c.x1} ${c.y1} C ${c.x1} ${midY}, ${c.x2} ${midY}, ${c.x2} ${c.y2}`;
-            return (
-              <path
-                key={`${c.fromPath}-${c.toPath}`}
-                d={d}
-                stroke={accent}
-                strokeWidth={bothSelected ? 2.5 : 1.5}
-                strokeOpacity={
-                  bothSelected ? 0.85 : parentSelected ? 0.65 : 0.35
-                }
-                strokeDasharray={bothSelected ? undefined : '5 3'}
-                fill="none"
-              />
-            );
-          })}
-        </svg>
-
-        {/* Perk nodes — absolutely positioned. */}
-        {nodes.map(({ path, meta, x, y }) => {
-          const selected = selectedPaths.includes(path);
-          const requiresOk = meta.requires.every((r) =>
-            selectedPaths.includes(r),
-          );
-          const affordable = selected || remaining >= meta.cost;
-          const disabled = !selected && (!requiresOk || !affordable);
+        {connections.map((c) => {
+          const x1 = (xByPath[c.fromPath] ?? 0) + NODE_W / 2;
+          const y1 = (yByPath[c.fromPath] ?? 0) + NODE_H;
+          const x2 = (xByPath[c.toPath] ?? 0) + NODE_W / 2;
+          const y2 = yByPath[c.toPath] ?? 0;
+          const parentSelected = selectedPaths.includes(c.fromPath);
+          const childSelected = selectedPaths.includes(c.toPath);
+          const bothSelected = parentSelected && childSelected;
+          let d: string;
+          if (c.intraSubtree && Math.abs(x1 - x2) < 1) {
+            // Straight vertical line — child is exactly under parent.
+            d = `M ${x1} ${y1} L ${x2} ${y2}`;
+          } else {
+            // Right-angle path: down halfway, across to child's column, then
+            // down again. Clean orthogonal routing for cross-column links.
+            const midY = (y1 + y2) / 2;
+            d = `M ${x1} ${y1} L ${x1} ${midY} L ${x2} ${midY} L ${x2} ${y2}`;
+          }
           return (
-            <Box
-              key={path}
-              style={{
-                position: 'absolute',
-                left: `${x}px`,
-                top: `${y}px`,
-                width: `${NODE_W}px`,
-                height: `${NODE_H}px`,
-              }}
-            >
-              <PerkNode
-                perk={meta}
-                accent={accent}
-                selected={selected}
-                disabled={disabled}
-                gateHint={
-                  !selected && !requiresOk
-                    ? `Requires ${meta.requires
-                        .map((r) => perks[r]?.name ?? r)
-                        .join(', ')}`
-                    : !selected && !affordable
-                      ? 'Not enough points in this category'
-                      : null
-                }
-                onClick={() =>
-                  send(act, selected ? 'remove_perk' : 'add_perk', {
-                    perk_path: path,
-                  })
-                }
-              />
-            </Box>
+            <path
+              key={`${c.fromPath}-${c.toPath}`}
+              d={d}
+              stroke={accent}
+              strokeWidth={bothSelected ? 2.5 : 1.5}
+              strokeOpacity={
+                bothSelected ? 0.9 : parentSelected ? 0.65 : 0.35
+              }
+              strokeDasharray={bothSelected ? undefined : '4 3'}
+              fill="none"
+              strokeLinejoin="round"
+            />
           );
         })}
-      </Box>
+      </svg>
+
+      {nodes.map(({ path, meta, x, y }) => {
+        const selected = selectedPaths.includes(path);
+        const requiresOk = meta.requires.every((r) =>
+          selectedPaths.includes(r),
+        );
+        const affordable = selected || remaining >= meta.cost;
+        const disabled = !selected && (!requiresOk || !affordable);
+        return (
+          <Box
+            key={path}
+            style={{
+              position: 'absolute',
+              left: `${x}px`,
+              top: `${y}px`,
+              width: `${NODE_W}px`,
+              height: `${NODE_H}px`,
+            }}
+          >
+            <PerkNode
+              perk={meta}
+              accent={accent}
+              selected={selected}
+              disabled={disabled}
+              gateHint={
+                !selected && !requiresOk
+                  ? `Requires ${meta.requires
+                      .map((r) => perks[r]?.name ?? r)
+                      .join(', ')}`
+                  : !selected && !affordable
+                    ? 'Not enough points in this category'
+                    : null
+              }
+              onClick={() =>
+                send(act, selected ? 'remove_perk' : 'add_perk', {
+                  perk_path: path,
+                })
+              }
+            />
+          </Box>
+        );
+      })}
     </Box>
   );
 };
@@ -1018,7 +1084,7 @@ const PerkNode = ({
           cursor: clickable ? 'pointer' : 'default',
           width: '100%',
           height: '100%',
-          padding: '5px 4px',
+          padding: '4px 3px',
           borderRadius: '8px',
           background: bg,
           border,
@@ -1036,18 +1102,18 @@ const PerkNode = ({
           justifyContent: 'space-between',
         }}
       >
-        <Box style={{ position: 'relative', width: '100%', height: '40px' }}>
+        <Box style={{ position: 'relative', width: '100%', height: '32px' }}>
           <Box
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              height: '40px',
+              height: '32px',
             }}
           >
             <Icon
               name={perk.icon}
-              size={2.0}
+              size={1.6}
               style={{
                 color: selected
                   ? '#fff'
@@ -1107,23 +1173,25 @@ const PerkNode = ({
           style={{
             color: selected ? '#fff' : 'rgba(255,255,255,0.92)',
             fontWeight: selected ? 'bold' : 'normal',
-            lineHeight: '1.1',
+            lineHeight: '1.05',
             whiteSpace: 'nowrap',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             width: '100%',
+            fontSize: '0.68em',
           }}
         >
           {perk.name}
         </Box>
         <Box
-          fontSize="0.68em"
+          fontSize="0.62em"
           style={{
             color: accent,
             fontWeight: 'bold',
             background: `${accent}22`,
-            padding: '0 6px',
-            borderRadius: '6px',
+            padding: '0 5px',
+            borderRadius: '5px',
+            lineHeight: '1.2',
           }}
         >
           {perk.cost}
