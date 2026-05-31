@@ -2,9 +2,13 @@
 	COOLDOWN_DECLARE(ui_refresh_cooldown)
 
 /datum/preferences/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui, custom_state)
-	if(!char_render_holders)
-		update_preview_icon()
-	show_character_previews()
+	// DQEdit — open the UI immediately, then build the preview asynchronously. On first
+	// open update_preview_icon() is the longest call in this path (mannequin construction
+	// + dress + species/trait synthesis), and running it synchronously here adds 1-3s of
+	// blank-window time before tgui paints. Async lets the window pop instantly and the
+	// preview populate a beat later.
+	if(char_render_holders)
+		show_character_previews()
 
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
@@ -12,6 +16,9 @@
 		ui.set_autoupdate(FALSE)
 		ui.open()
 		CallAsync(src, PROC_REF(jiggle_map))
+
+	if(!char_render_holders)
+		INVOKE_ASYNC(src, PROC_REF(_initial_preview_build))
 
 /datum/preferences/tgui_state(mob/user)
 	return GLOB.tgui_always_state
@@ -185,7 +192,10 @@
 			CallAsync(src, PROC_REF(jiggle_map))
 			. = TRUE
 		// DQAdd — cycle through bgstate_choices. Wired from the Cycle Background button on
-		// the preview pane. Updates the bgstate pref which the preview HUD reads on refresh.
+		// the preview pane. Updates the bgstate pref AND writes BG.icon_state directly so
+		// the change is visible immediately — without this second write, the pref changes
+		// but the screen object keeps its stale icon_state until the next full preview
+		// rebuild (and there's nothing in the regular flow that triggers a rebuild here).
 		if("cycle_background")
 			var/datum/preference/text/human/bgstate/bg = GLOB.preference_entries[/datum/preference/text/human/bgstate]
 			if(!bg)
@@ -199,7 +209,17 @@
 			var/idx = choices.Find(current)
 			idx = (idx % choices.len) + 1
 			update_preference_by_type(/datum/preference/text/human/bgstate, choices[idx])
+			var/atom/movable/screen/setup_preview/bg/BG = LAZYACCESS(char_render_holders, "BG")
+			if(BG)
+				BG.icon_state = choices[idx]
 			. = TRUE
+
+/// DQAdd — first-open preview build wrapper. Runs update_preview_icon() then ensures
+/// the resulting screen holders are attached to the client. Fired via INVOKE_ASYNC from
+/// tgui_interact so the UI window doesn't block on it.
+/datum/preferences/proc/_initial_preview_build()
+	update_preview_icon()
+	show_character_previews()
 
 /datum/preferences/proc/jiggle_map()
 	// Fix for weird byond bug, jiggles the map around a little

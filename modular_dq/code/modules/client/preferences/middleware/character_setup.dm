@@ -18,6 +18,7 @@ GLOBAL_LIST_INIT(dq_category_order, list(
 	"loadout",
 	"occupation",
 	"traits",
+	"mind_body",
 	"antag",
 	"vore",
 	"game",

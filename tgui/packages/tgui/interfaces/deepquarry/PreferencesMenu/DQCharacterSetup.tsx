@@ -20,24 +20,43 @@ import type { CharacterSetupData } from './types';
 /// pre-layout size and the BYOND map underrenders until the user manually resizes the
 /// window. Hooking a ResizeObserver to the container and dispatching a window resize
 /// event whenever the container changes size forces ByondUi to re-measure.
+///
+/// `view=3x8` matches the layout of the preview screen objects (PMH at 2,7; BG spans
+/// 1,1 to 3,8). With this set the BYOND map control crops to exactly the area the
+/// preview occupies instead of showing tile (0,0) of an unfocused world, which was the
+/// "tiny preview in a sea of empty" rendering. `icon-size=64` doubles the on-screen
+/// scale of each tile so the character is comfortably visible even on a narrow pane.
 const PreviewMap = () => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     const el = containerRef.current;
     if (!el || typeof ResizeObserver === 'undefined') return;
     const observer = new ResizeObserver(() => {
-      // ByondUi listens on the global resize event — piggyback off that instead of
-      // duplicating its measure logic. The debounce inside ByondUi handles bursts.
       window.dispatchEvent(new Event('resize'));
     });
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
   return (
-    <div ref={containerRef} style={{ width: '100%', height: '100%' }}>
+    <div
+      ref={containerRef}
+      style={{
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
       <ByondUi
-        params={{ id: 'character_preview_map', type: 'map' }}
-        height="100%"
+        params={{
+          id: 'character_preview_map',
+          type: 'map',
+          view: '3x8',
+          'icon-size': '64',
+          'zoom-mode': 'distort',
+        }}
+        style={{ width: '100%', height: '100%' }}
       />
     </div>
   );

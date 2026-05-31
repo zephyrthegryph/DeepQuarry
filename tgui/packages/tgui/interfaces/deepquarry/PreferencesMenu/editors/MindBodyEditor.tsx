@@ -360,6 +360,11 @@ const BodyPane = ({
     Math.min(d.body_pool - (d.body_spent - d.body_linear), s.body_max),
   );
 
+  // perks_spent = body_spent minus the current linear allocation. We render this as
+  // a "reserved" slice on the pool fill bar so the player can see "linear 5 + perks 3
+  // of pool 14" at a glance instead of having to read three numbers and add them up.
+  const perksSpent = Math.max(0, d.body_spent - d.body_linear);
+
   return (
     <Section
       fill
@@ -369,6 +374,12 @@ const BodyPane = ({
         <PaneTitle icon="dumbbell" color={BODY_ACCENT} label="Body" />
       }
     >
+      <PoolFillBar
+        linear={d.body_linear}
+        perks={perksSpent}
+        pool={d.body_pool}
+        accent={BODY_ACCENT}
+      />
       <ConditioningBar
         value={d.body_linear}
         cap={linearCap}
@@ -402,6 +413,92 @@ const BodyPane = ({
         </Box>
       )}
     </Section>
+  );
+};
+
+// Stacked "Body pool" fill bar — explicit visual of where every Body point is going:
+//   ┃▓▓▓▓▓▓▓▓░░░░░░┃   linear 5 · perks 3 · pool 14
+// Bright fill = linear conditioning, dim fill = perks reservation, gutter = available.
+// Sits above the Conditioning slider so the player can see the relationship between
+// the slider's narrower 0..linearCap range and the pool's full 0..pool range.
+const PoolFillBar = ({
+  linear,
+  perks,
+  pool,
+  accent,
+}: {
+  linear: number;
+  perks: number;
+  pool: number;
+  accent: string;
+}) => {
+  const safePool = Math.max(pool, 1);
+  const linearPct = (linear / safePool) * 100;
+  const perksPct = (perks / safePool) * 100;
+  const available = Math.max(0, pool - linear - perks);
+  return (
+    <Box mb={0.5}>
+      <Stack align="center" mb={0.25}>
+        <Stack.Item grow>
+          <Box fontSize="0.78em" color="label">
+            <Icon name="circle-dot" mr={0.25} style={{ color: accent }} />
+            Body pool
+          </Box>
+        </Stack.Item>
+        <Stack.Item>
+          <Box fontSize="0.78em" style={{ color: 'rgba(255,255,255,0.7)' }}>
+            <Box inline bold style={{ color: accent }}>
+              {linear}
+            </Box>
+            <Box inline color="label">
+              {' '}
+              linear ·{' '}
+            </Box>
+            <Box inline bold style={{ color: `${accent}cc` }}>
+              {perks}
+            </Box>
+            <Box inline color="label">
+              {' '}
+              perks ·{' '}
+            </Box>
+            <Box inline bold style={{ color: '#fff' }}>
+              {available}
+            </Box>
+            <Box inline color="label">
+              {' '}
+              free
+            </Box>
+          </Box>
+        </Stack.Item>
+      </Stack>
+      <Box
+        style={{
+          display: 'flex',
+          height: '8px',
+          borderRadius: '4px',
+          overflow: 'hidden',
+          backgroundColor: 'rgba(0,0,0,0.4)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          boxShadow: 'inset 0 0 4px rgba(0,0,0,0.4)',
+        }}
+      >
+        <Box
+          style={{
+            width: `${linearPct}%`,
+            background: `linear-gradient(180deg, ${accent}, ${accent}cc)`,
+            transition: 'width 200ms',
+            boxShadow: `0 0 4px ${accent}`,
+          }}
+        />
+        <Box
+          style={{
+            width: `${perksPct}%`,
+            background: `repeating-linear-gradient(45deg, ${accent}66, ${accent}66 4px, ${accent}33 4px, ${accent}33 8px)`,
+            transition: 'width 200ms',
+          }}
+        />
+      </Box>
+    </Box>
   );
 };
 
