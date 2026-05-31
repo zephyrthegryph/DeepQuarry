@@ -49,7 +49,7 @@ const PreviewMap = () => {
           id: 'character_preview_map',
           type: 'map',
           view: '3x8',
-          'icon-size': '48',
+          'icon-size': '80',
         }}
         style={{ width: '100%', height: '100%' }}
       />

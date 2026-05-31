@@ -478,12 +478,13 @@ const MindActiveDepartment = ({
             key={tree.id}
             style={{
               minWidth: 0,
+              overflow: 'hidden',
               borderRight:
                 idx < subTrees.length - 1
                   ? '1px dotted rgba(255,255,255,0.22)'
                   : 'none',
-              paddingLeft: idx === 0 ? 0 : '8px',
-              paddingRight: idx === subTrees.length - 1 ? 0 : '8px',
+              paddingLeft: idx === 0 ? 0 : '6px',
+              paddingRight: idx === subTrees.length - 1 ? 0 : '6px',
             }}
           >
             <SubRoleColumn
@@ -493,6 +494,7 @@ const MindActiveDepartment = ({
               selectedPaths={selectedPaths}
               remaining={remaining}
               act={act}
+              dims={dimsForSubRoleCount(subTrees.length)}
             />
           </Stack.Item>
         ))}
@@ -508,6 +510,7 @@ const SubRoleColumn = ({
   selectedPaths,
   remaining,
   act,
+  dims,
 }: {
   tree: TreeMeta;
   categoryColor: string;
@@ -515,10 +518,11 @@ const SubRoleColumn = ({
   selectedPaths: string[];
   remaining: number;
   act: Act;
+  dims: TreeDims;
 }) => {
   const accent = tree.color ?? categoryColor;
   return (
-    <Box style={{ width: '100%' }}>
+    <Box style={{ width: '100%', overflow: 'hidden' }}>
       {/* Transparent sub-role label sits at the top of the column at low opacity
           so it reads as a watermark rather than competing with the perks. */}
       <Box
@@ -526,12 +530,15 @@ const SubRoleColumn = ({
           textAlign: 'center',
           color: accent,
           fontWeight: 'bold',
-          letterSpacing: '0.08em',
-          fontSize: '0.78em',
+          letterSpacing: '0.06em',
+          fontSize: '0.75em',
           opacity: 0.6,
           textTransform: 'uppercase',
-          marginBottom: '6px',
+          marginBottom: '4px',
           textShadow: `0 0 4px ${accent}33`,
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
         }}
       >
         {tree.icon && <Icon name={tree.icon} mr={0.25} />}
@@ -544,6 +551,7 @@ const SubRoleColumn = ({
         selectedPaths={selectedPaths}
         remaining={remaining}
         act={act}
+        dims={dims}
       />
     </Box>
   );
@@ -899,15 +907,65 @@ const SubTreeChip = ({
 // route via a right-angle path: down from the parent's bottom edge, across to the
 // child's column, then down into the child's top edge.
 
-const NODE_W = 78;
-const NODE_H = 68;
-const COL_GAP = 8;
-const ROW_GAP = 22;
-const SUBTREE_ROW_GAP = 16;
-// Single-pane layout sits in the left ~2/3 of the 1100×760 window. The Section
-// frame and side padding leave roughly 680px usable; cap at 660 so the rightmost
-// subtree doesn't kiss the scrollbar gutter.
-const PANE_WIDTH = 660;
+// Tree dimensions are now passed as props so the same component renders correctly
+// in both contexts: the full-pane Body trees and the much narrower sub-role columns
+// inside an active Mind department.
+type TreeDims = {
+  NODE_W: number;
+  NODE_H: number;
+  COL_GAP: number;
+  ROW_GAP: number;
+  SUBTREE_ROW_GAP: number;
+  /// Width budget for packing subtrees into rows. Subtrees wrap to the next row
+  /// when adding the next subtree would overflow this width.
+  paneWidth: number;
+};
+
+// Default dimensions for Body trees, which use the entire ~700px left pane.
+const FULL_DIMS: TreeDims = {
+  NODE_W: 78,
+  NODE_H: 68,
+  COL_GAP: 8,
+  ROW_GAP: 22,
+  SUBTREE_ROW_GAP: 16,
+  paneWidth: 660,
+};
+
+// Pick a tighter set of dims for a Mind sub-role column based on how many
+// sub-roles the department has, so the tree fits in its column width without
+// horizontal overflow. Tuned against the column widths the mind layout produces
+// (1100 → 700 left pane → minus padding → divided by sub-role count).
+const dimsForSubRoleCount = (count: number): TreeDims => {
+  if (count <= 2) {
+    return {
+      NODE_W: 72,
+      NODE_H: 64,
+      COL_GAP: 6,
+      ROW_GAP: 18,
+      SUBTREE_ROW_GAP: 12,
+      paneWidth: 320,
+    };
+  }
+  if (count === 3) {
+    return {
+      NODE_W: 56,
+      NODE_H: 56,
+      COL_GAP: 4,
+      ROW_GAP: 14,
+      SUBTREE_ROW_GAP: 10,
+      paneWidth: 210,
+    };
+  }
+  // 4+ sub-roles → narrowest column. Civilian (Bartender/Chef/Botanist/Janitor).
+  return {
+    NODE_W: 46,
+    NODE_H: 48,
+    COL_GAP: 3,
+    ROW_GAP: 12,
+    SUBTREE_ROW_GAP: 8,
+    paneWidth: 155,
+  };
+};
 
 type LayoutNode = {
   path: string;
@@ -950,7 +1008,9 @@ const subtreeWidth = (
 const computeTreeLayout = (
   treePerks: string[],
   perks: Record<string, PerkMeta>,
+  dims: TreeDims,
 ) => {
+  const { NODE_W, NODE_H, COL_GAP, ROW_GAP, SUBTREE_ROW_GAP, paneWidth } = dims;
   // 1. Reduce to just this tree's perks.
   const byPath: Record<string, PerkMeta> = {};
   for (const p of treePerks) {
@@ -1022,14 +1082,15 @@ const computeTreeLayout = (
   const widthCache: Record<string, number> = {};
   for (const r of roots) subtreeWidth(r, childrenOf, widthCache);
 
-  // 5. Position subtree roots into rows that fit PANE_WIDTH. Each subtree
+  // 5. Position subtree roots into rows that fit paneWidth. Each subtree
   //    occupies (width × (NODE_W + COL_GAP)) horizontal space; subtrees are
   //    separated by SUBTREE_GAP.
   type Row = { roots: string[]; totalCols: number; maxTier: number };
   const rows: Row[] = [];
   let cur: Row = { roots: [], totalCols: 0, maxTier: 0 };
-  const colsThatFit = Math.floor(
-    (PANE_WIDTH + COL_GAP) / (NODE_W + COL_GAP),
+  const colsThatFit = Math.max(
+    1,
+    Math.floor((paneWidth + COL_GAP) / (NODE_W + COL_GAP)),
   );
   for (const r of roots) {
     const w = widthCache[r];
@@ -1117,7 +1178,7 @@ const computeTreeLayout = (
   }
 
   const totalWidth = Math.max(
-    PANE_WIDTH,
+    paneWidth,
     ...Object.values(xByPath).map((x) => x + NODE_W),
   );
   const totalHeight = rowYOffset - SUBTREE_ROW_GAP;
@@ -1140,6 +1201,7 @@ const PerkTree = ({
   selectedPaths,
   remaining,
   act,
+  dims = FULL_DIMS,
 }: {
   tree: TreeMeta;
   categoryColor: string;
@@ -1147,17 +1209,21 @@ const PerkTree = ({
   selectedPaths: string[];
   remaining: number;
   act: Act;
+  dims?: TreeDims;
 }) => {
+  const { NODE_W, NODE_H } = dims;
   const accent = tree.color ?? categoryColor;
   const { nodes, connections, totalWidth, totalHeight, xByPath, yByPath } =
-    useMemo(() => computeTreeLayout(tree.perks, perks), [tree.perks, perks]);
+    useMemo(
+      () => computeTreeLayout(tree.perks, perks, dims),
+      [tree.perks, perks, dims],
+    );
 
   return (
     <Box
       style={{
         position: 'relative',
         width: `${totalWidth}px`,
-        minWidth: '100%',
         height: `${totalHeight}px`,
         maxWidth: '100%',
       }}
@@ -1232,6 +1298,7 @@ const PerkTree = ({
               accent={accent}
               selected={selected}
               disabled={disabled}
+              nodeWidth={NODE_W}
               gateHint={
                 !selected && !requiresOk
                   ? `Requires ${meta.requires
@@ -1263,6 +1330,7 @@ const PerkNode = ({
   disabled,
   gateHint,
   onClick,
+  nodeWidth,
 }: {
   perk: PerkMeta;
   accent: string;
@@ -1270,9 +1338,16 @@ const PerkNode = ({
   disabled: boolean;
   gateHint: string | null;
   onClick: () => void;
+  nodeWidth: number;
 }) => {
   const [hover, setHover] = useState(false);
   const clickable = selected || !disabled;
+  // Compact mode for narrow sub-role columns: hide the perk name + cost pill,
+  // show only the icon. Description still lives in the Tooltip on hover, so the
+  // info is still reachable; the icon-only render just doesn't try to cram
+  // 8-char names into a 46-px node.
+  const compact = nodeWidth < 60;
+  const iconSize = nodeWidth < 50 ? 1.1 : nodeWidth < 65 ? 1.35 : 1.6;
   const bg = selected
     ? `linear-gradient(180deg, ${accent}44, ${accent}11)`
     : disabled
@@ -1346,30 +1421,30 @@ const PerkNode = ({
           justifyContent: 'space-between',
         }}
       >
-        <Box style={{ position: 'relative', width: '100%', height: '32px' }}>
-          <Box
+        <Box
+          style={{
+            position: 'relative',
+            width: '100%',
+            flex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Icon
+            name={perk.icon}
+            size={iconSize}
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              height: '32px',
+              color: selected
+                ? '#fff'
+                : disabled
+                  ? 'rgba(255,255,255,0.3)'
+                  : accent,
+              filter: selected
+                ? `drop-shadow(0 0 4px ${accent})`
+                : undefined,
             }}
-          >
-            <Icon
-              name={perk.icon}
-              size={1.6}
-              style={{
-                color: selected
-                  ? '#fff'
-                  : disabled
-                    ? 'rgba(255,255,255,0.3)'
-                    : accent,
-                filter: selected
-                  ? `drop-shadow(0 0 4px ${accent})`
-                  : undefined,
-              }}
-            />
-          </Box>
+          />
           {selected && (
             <Box
               style={{
@@ -1378,12 +1453,12 @@ const PerkNode = ({
                 right: -2,
                 background: accent,
                 borderRadius: '50%',
-                width: '16px',
-                height: '16px',
+                width: compact ? '12px' : '16px',
+                height: compact ? '12px' : '16px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '0.7em',
+                fontSize: compact ? '0.6em' : '0.7em',
                 color: '#fff',
                 boxShadow: '0 0 4px rgba(0,0,0,0.7)',
               }}
@@ -1399,12 +1474,12 @@ const PerkNode = ({
                 right: -2,
                 background: 'rgba(0,0,0,0.7)',
                 borderRadius: '50%',
-                width: '16px',
-                height: '16px',
+                width: compact ? '12px' : '16px',
+                height: compact ? '12px' : '16px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '0.7em',
+                fontSize: compact ? '0.55em' : '0.7em',
                 color: 'rgba(255,255,255,0.7)',
               }}
             >
@@ -1412,34 +1487,39 @@ const PerkNode = ({
             </Box>
           )}
         </Box>
-        <Box
-          fontSize="0.74em"
-          style={{
-            color: selected ? '#fff' : 'rgba(255,255,255,0.92)',
-            fontWeight: selected ? 'bold' : 'normal',
-            lineHeight: '1.05',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            width: '100%',
-            fontSize: '0.68em',
-          }}
-        >
-          {perk.name}
-        </Box>
-        <Box
-          fontSize="0.62em"
-          style={{
-            color: accent,
-            fontWeight: 'bold',
-            background: `${accent}22`,
-            padding: '0 5px',
-            borderRadius: '5px',
-            lineHeight: '1.2',
-          }}
-        >
-          {perk.cost}
-        </Box>
+        {/* Name + cost row hidden on tight columns — the Tooltip carries that
+            info on hover instead. */}
+        {!compact && (
+          <>
+            <Box
+              style={{
+                color: selected ? '#fff' : 'rgba(255,255,255,0.92)',
+                fontWeight: selected ? 'bold' : 'normal',
+                lineHeight: '1.05',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                width: '100%',
+                fontSize: '0.68em',
+              }}
+            >
+              {perk.name}
+            </Box>
+            <Box
+              style={{
+                color: accent,
+                fontWeight: 'bold',
+                background: `${accent}22`,
+                padding: '0 5px',
+                borderRadius: '5px',
+                lineHeight: '1.2',
+                fontSize: '0.62em',
+              }}
+            >
+              {perk.cost}
+            </Box>
+          </>
+        )}
       </Box>
     </Tooltip>
   );
