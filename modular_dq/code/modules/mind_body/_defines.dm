@@ -27,8 +27,13 @@
 #define BODY_TIER_MID              6
 #define BODY_TIER_HIGH             9
 
-// Tree identifiers. The Body tree is one shared catalog; Mind has one tree per department.
-#define PERK_TREE_BODY             "body"
+// Tree identifiers. Body has four thematic sub-catalogs (Strength/Vigor/Speed/Endurance);
+// Mind has one tree per department. All Body trees share the Body pool; all Mind trees
+// share the Mind pool.
+#define PERK_TREE_BODY_STRENGTH    "body_strength"
+#define PERK_TREE_BODY_VIGOR       "body_vigor"
+#define PERK_TREE_BODY_SPEED       "body_speed"
+#define PERK_TREE_BODY_ENDURANCE   "body_endurance"
 #define PERK_TREE_MIND_COMMAND     "mind_command"
 #define PERK_TREE_MIND_SECURITY    "mind_security"
 #define PERK_TREE_MIND_ENGINEERING "mind_engineering"
@@ -36,7 +41,6 @@
 #define PERK_TREE_MIND_RESEARCH    "mind_research"
 #define PERK_TREE_MIND_CARGO       "mind_cargo"
 #define PERK_TREE_MIND_CIVILIAN    "mind_civilian"
-#define PERK_TREE_MIND_SYNTHETIC   "mind_synthetic"
 
 // Perk categories (which pool the cost is drawn from).
 #define PERK_CATEGORY_BODY         "body"

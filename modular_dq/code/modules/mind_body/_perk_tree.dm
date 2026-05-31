@@ -35,13 +35,36 @@ GLOBAL_LIST_INIT(all_perks, init_perks())
 	/// Perks bucketed into this tree at init. Path → /datum/perk singleton.
 	var/list/perks
 
+// ─── Body sub-trees ────────────────────────────────────────────────────────────────
+// All four share the Body pool; the React panel groups them under one Body pane.
 /datum/perk_tree/body
-	id = PERK_TREE_BODY
-	display_name = "Body"
-	description = "Physical conditioning. Linear stat tweaks plus threshold perks at 3 / 6 / 9 spent points."
+	abstract_type = /datum/perk_tree/body
+
+/datum/perk_tree/body/strength
+	id = PERK_TREE_BODY_STRENGTH
+	display_name = "Strength"
 	color = "#C0392B"
 	icon_name = "dumbbell"
 
+/datum/perk_tree/body/vigor
+	id = PERK_TREE_BODY_VIGOR
+	display_name = "Vigor"
+	color = "#E67E22"
+	icon_name = "heart-pulse"
+
+/datum/perk_tree/body/speed
+	id = PERK_TREE_BODY_SPEED
+	display_name = "Speed"
+	color = "#F1C40F"
+	icon_name = "person-running"
+
+/datum/perk_tree/body/endurance
+	id = PERK_TREE_BODY_ENDURANCE
+	display_name = "Endurance"
+	color = "#8E44AD"
+	icon_name = "shield-heart"
+
+// ─── Mind trees ────────────────────────────────────────────────────────────────────
 /datum/perk_tree/mind
 	abstract_type = /datum/perk_tree/mind
 
@@ -93,13 +116,6 @@ GLOBAL_LIST_INIT(all_perks, init_perks())
 	description = "Social craft, service, hands-on trades."
 	color = "#1ABC9C"
 	icon_name = "users"
-
-/datum/perk_tree/mind/synthetic
-	id = PERK_TREE_MIND_SYNTHETIC
-	display_name = "Synthetic"
-	description = "Subsystem knowledge, network protocols, low-level diagnostics."
-	color = "#5D6D7E"
-	icon_name = "microchip"
 
 /proc/init_perk_trees()
 	. = list()

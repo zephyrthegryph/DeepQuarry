@@ -2,31 +2,31 @@
 //
 // Layout claims its container's full height (registered in DQCharacterSetup's
 // FULL_HEIGHT_EDITORS) so we can manage our own pane scrolling: header on top
-// (fixed), then two side-by-side panes that each scroll independently. Without
-// this, the outer page scrollbar fights the mind-pane perk list scrollbar.
+// (fixed), then two side-by-side panes each with their own internal scroll.
 //
 // Visual language:
-//   - Body theme: warm vermilion (#C0392B), dumbbell motif.
-//   - Mind: each department tree carries its own accent + icon (from DM
-//     /datum/perk_tree.color / .icon_name).
-//   - Perk states: LOCKED (dim, gate hint shown), AVAILABLE (vibrant, "Take"),
-//     TAKEN (accented border + soft glow, "Remove").
-//   - Card body is a single-line summary; the full description lives in a Tooltip
-//     so card heights stay uniform and the panel stays compact.
+//   - Body pane: four themed sub-trees (Strength, Vigor, Speed, Endurance) all
+//     drawing from the same Body pool. A Conditioning slider sits above the
+//     tabs and provides the per-point linear stat tweak + the threshold gate
+//     that unlocks tier perks.
+//   - Mind pane: per-department perk trees, also tab-switched.
+//   - Tree chips: color-themed, animated hover, pick-count badge.
+//   - Perk cards: whole card is the click target (no inner button). Card body
+//     always wraps cleanly; full text inline (no tooltip wrapper that ate clicks
+//     on a previous iteration).
+//   - State icons: circle / circle-check / lock — picked / available / locked.
 
 import { useEffect, useMemo, useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import {
   AnimatedNumber,
   Box,
-  Button,
   Divider,
   Icon,
   ProgressBar,
   Section,
   Slider,
   Stack,
-  Tooltip,
 } from 'tgui-core/components';
 import type { EditorProps } from './index';
 
@@ -65,7 +65,7 @@ type MindBodyData = {
 type MindBodyStatic = {
   trees: Record<string, TreeMeta>;
   perks: Record<string, PerkMeta>;
-  body_tree_id: string;
+  body_tree_ids: string[];
   body_max: number;
   hp_per_point: number;
   slowdown_per_point: number;
@@ -81,8 +81,6 @@ type Act = ReturnType<typeof useBackend>['act'];
 const send = (act: Act, action: string, params: Record<string, unknown>) =>
   act('dq_editor_action', { editor: 'mind_body', action, params });
 
-// Reverse-index from PerkMeta back to its path. Used in a few render paths where
-// we have the meta object but need to call add_perk / remove_perk by path.
 const pathFor = (
   perksDict: Record<string, PerkMeta>,
   perk: PerkMeta,
@@ -100,40 +98,50 @@ export const MindBodyEditor = ({ data, staticData }: EditorProps) => {
   const d = data as MindBodyData;
   const s = (staticData ?? {}) as MindBodyStatic;
 
-  const mindTreeIds = useMemo(
-    () =>
-      Object.keys(s.trees ?? {})
-        .filter((id) => id !== s.body_tree_id)
-        .sort(
-          (a, b) =>
-            (s.trees[a]?.name ?? a).localeCompare(s.trees[b]?.name ?? b),
-        ),
-    [s.trees, s.body_tree_id],
+  const bodyTreeIds = useMemo(
+    () => (s.body_tree_ids ?? []).filter((id) => s.trees?.[id]),
+    [s.body_tree_ids, s.trees],
   );
+
+  const mindTreeIds = useMemo(() => {
+    if (!s.trees) return [];
+    const bodySet = new Set(bodyTreeIds);
+    return Object.keys(s.trees)
+      .filter((id) => !bodySet.has(id))
+      .sort((a, b) =>
+        (s.trees[a]?.name ?? a).localeCompare(s.trees[b]?.name ?? b),
+      );
+  }, [s.trees, bodyTreeIds]);
+
+  // Default-active tabs. Prefer a tree the player has invested in; otherwise
+  // first-in-list. The picksByTree memo is shared so both panes can compute
+  // independently from the same source of truth.
+  const picksByTree = useMemo(() => {
+    const out: Record<string, number> = {};
+    for (const path of [...d.body_perks, ...d.mind_perks]) {
+      const meta = s.perks?.[path];
+      if (meta) out[meta.tree] = (out[meta.tree] ?? 0) + 1;
+    }
+    return out;
+  }, [d.body_perks, d.mind_perks, s.perks]);
+
+  const [activeBodyTree, setActiveBodyTree] = useState<string>('');
+  useEffect(() => {
+    if (!activeBodyTree && bodyTreeIds.length > 0) {
+      const invested = bodyTreeIds.find((id) => (picksByTree[id] ?? 0) > 0);
+      setActiveBodyTree(invested ?? bodyTreeIds[0]);
+    }
+  }, [activeBodyTree, bodyTreeIds, picksByTree]);
 
   const [activeMindTree, setActiveMindTree] = useState<string>('');
   useEffect(() => {
     if (!activeMindTree && mindTreeIds.length > 0) {
-      // Prefer a tree the player has already invested in.
-      const invested = mindTreeIds.find((id) =>
-        (s.trees[id]?.perks ?? []).some((p) => d.mind_perks.includes(p)),
-      );
+      const invested = mindTreeIds.find((id) => (picksByTree[id] ?? 0) > 0);
       setActiveMindTree(invested ?? mindTreeIds[0]);
     }
-  }, [activeMindTree, mindTreeIds, s.trees, d.mind_perks]);
+  }, [activeMindTree, mindTreeIds, picksByTree]);
 
   if (!s.trees || !s.perks) return null;
-
-  // Map "how many perks does the player have in each tree" once per render so the
-  // tab chips can show a tally badge without recomputing on every chip.
-  const picksByTree = useMemo(() => {
-    const out: Record<string, number> = {};
-    for (const path of d.mind_perks) {
-      const meta = s.perks[path];
-      if (meta) out[meta.tree] = (out[meta.tree] ?? 0) + 1;
-    }
-    return out;
-  }, [d.mind_perks, s.perks]);
 
   return (
     <Box
@@ -146,10 +154,23 @@ export const MindBodyEditor = ({ data, staticData }: EditorProps) => {
       <Header data={d} />
       <Box
         mt={0.5}
-        style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'row' }}
+        style={{
+          flex: 1,
+          minHeight: 0,
+          display: 'flex',
+          flexDirection: 'row',
+        }}
       >
         <Box style={{ flex: 1, minWidth: 0, display: 'flex' }}>
-          <BodyPane data={d} staticData={s} act={act} />
+          <BodyPane
+            data={d}
+            staticData={s}
+            treeIds={bodyTreeIds}
+            activeTreeId={activeBodyTree}
+            setActiveTreeId={setActiveBodyTree}
+            picksByTree={picksByTree}
+            act={act}
+          />
         </Box>
         <Box ml={0.5} style={{ flex: 1, minWidth: 0, display: 'flex' }}>
           <MindPane
@@ -275,7 +296,7 @@ const PoolRow = ({
       <Stack.Item grow>
         <ProgressBar
           value={pool > 0 ? spent / pool : 0}
-          color={isOver ? 'bad' : undefined}
+          color={isOver ? 'bad' : color}
           style={{
             backgroundColor: 'rgba(0,0,0,0.35)',
           }}
@@ -317,13 +338,21 @@ const PoolRow = ({
 const BodyPane = ({
   data: d,
   staticData: s,
+  treeIds,
+  activeTreeId,
+  setActiveTreeId,
+  picksByTree,
   act,
 }: {
   data: MindBodyData;
   staticData: MindBodyStatic;
+  treeIds: string[];
+  activeTreeId: string;
+  setActiveTreeId: (id: string) => void;
+  picksByTree: Record<string, number>;
   act: Act;
 }) => {
-  const tree = s.trees[s.body_tree_id];
+  const tree = s.trees[activeTreeId];
   const remaining = d.body_pool - d.body_spent;
   // Linear cap = pool minus perks-spent. Perks-spent = body_spent − current linear.
   const linearCap = Math.max(
@@ -331,28 +360,15 @@ const BodyPane = ({
     Math.min(d.body_pool - (d.body_spent - d.body_linear), s.body_max),
   );
 
-  const sortedPerks = (tree?.perks ?? [])
-    .map((path) => ({ path, meta: s.perks[path] }))
-    .filter((x): x is { path: string; meta: PerkMeta } => Boolean(x.meta))
-    .sort((a, b) => a.meta.threshold - b.meta.threshold);
-
   return (
     <Section
       fill
       scrollable
       style={{ flex: 1, display: 'flex' }}
       title={
-        <PaneTitle
-          icon="dumbbell"
-          color={BODY_ACCENT}
-          label={tree?.name ?? 'Body'}
-        />
+        <PaneTitle icon="dumbbell" color={BODY_ACCENT} label="Body" />
       }
     >
-      <Box color="label" mb={1} fontSize="0.85em">
-        {tree?.description}
-      </Box>
-
       <ConditioningBar
         value={d.body_linear}
         cap={linearCap}
@@ -365,48 +381,26 @@ const BodyPane = ({
 
       <Divider />
 
-      <Box color="label" fontSize="0.82em" mb={0.5}>
-        <Icon name="layer-group" mr={0.5} />
-        Threshold perks
-      </Box>
-      <Stack vertical>
-        {sortedPerks.map(({ path, meta }) => {
-          const selected = d.body_perks.includes(path);
-          const unlocked = d.body_linear >= meta.threshold;
-          const affordable = selected || remaining >= meta.cost;
-          const disabled = !selected && (!unlocked || !affordable);
-          return (
-            <Stack.Item key={path}>
-              <PerkCard
-                perk={meta}
-                accent={BODY_ACCENT}
-                selected={selected}
-                disabled={disabled}
-                badge={
-                  meta.threshold > 0
-                    ? {
-                        icon: unlocked ? 'lock-open' : 'lock',
-                        text: `${meta.threshold}`,
-                      }
-                    : null
-                }
-                gateHint={
-                  !selected && !unlocked
-                    ? `Reach ${meta.threshold} conditioning to unlock`
-                    : !selected && !affordable
-                      ? 'Not enough Body points remaining'
-                      : null
-                }
-                onClick={() =>
-                  send(act, selected ? 'remove_perk' : 'add_perk', {
-                    perk_path: path,
-                  })
-                }
-              />
-            </Stack.Item>
-          );
-        })}
-      </Stack>
+      <TreeTabRow
+        trees={s.trees}
+        treeIds={treeIds}
+        activeTreeId={activeTreeId}
+        setActiveTreeId={setActiveTreeId}
+        picksByTree={picksByTree}
+      />
+
+      {tree && (
+        <Box mt={1}>
+          <PerkList
+            tree={tree}
+            perksDict={s.perks}
+            selectedPaths={d.body_perks}
+            remaining={remaining}
+            linear={d.body_linear}
+            act={act}
+          />
+        </Box>
+      )}
     </Section>
   );
 };
@@ -429,6 +423,13 @@ const ConditioningBar = ({
   act: Act;
 }) => {
   const denom = Math.max(cap, value, 1);
+  // Local draft so the slider visually tracks the cursor even before the server
+  // round-trip lands; we still write through to the server on each onChange tick.
+  // External updates (constraint refits, age change) clobber the draft via the
+  // useEffect sync below.
+  const [draft, setDraft] = useState(value);
+  useEffect(() => setDraft(value), [value]);
+
   return (
     <Box mb={1}>
       <Stack align="center" mb={0.25}>
@@ -439,7 +440,7 @@ const ConditioningBar = ({
               Conditioning
             </Box>{' '}
             <Box inline bold style={{ color: accent }}>
-              {value}
+              <AnimatedNumber value={draft} />
             </Box>
             <Box inline color="label">
               {' '}
@@ -450,35 +451,42 @@ const ConditioningBar = ({
         <Stack.Item>
           <Box fontSize="0.82em" color="label">
             <Icon name="heart-pulse" mr={0.25} style={{ color: accent }} />
-            +{value * hpPerPoint} HP
+            +{draft * hpPerPoint} HP
             <Box inline mx={0.5} color="label">
               ·
             </Box>
             <Icon name="person-running" mr={0.25} style={{ color: accent }} />
-            −{(value * slowdownPerPoint).toFixed(2)} slowdown
+            −{(draft * slowdownPerPoint).toFixed(2)} slowdown
           </Box>
         </Stack.Item>
       </Stack>
-      <Box style={{ position: 'relative', paddingBottom: '14px' }}>
+      <Box style={{ position: 'relative', paddingBottom: '16px' }}>
         <Slider
-          value={value}
+          value={draft}
           minValue={0}
           maxValue={Math.max(cap, value, 1)}
           step={1}
+          // stepPixelSize controls how many pixels of cursor drag = one step.
+          // Default (1) makes a 14-step slider span only 14 pixels of cursor
+          // travel — the cursor and thumb "don't match up". 22 ≈ a 300-ish-px
+          // wide slider divided across 14 steps, which is close to what the
+          // Body pane gives us at the default window size. tickWhileDragging
+          // intentionally off — it would fire a server roundtrip per intermediate
+          // step and the visible "lag" of those roundtrips reads as drag lag.
+          // Slider's own internal drag preview keeps the thumb on the cursor.
+          stepPixelSize={22}
           color={accent}
-          onChange={(_e: Event, newValue: number) =>
-            send(act, 'set_body_points', { value: newValue })
-          }
+          onChange={(_e: Event, newValue: number) => {
+            setDraft(newValue);
+            send(act, 'set_body_points', { value: newValue });
+          }}
         >
           <Box style={{ color: '#fff', textShadow: '0 0 3px rgba(0,0,0,0.8)' }}>
-            {value}
+            {draft}
           </Box>
         </Slider>
-        {/* Tier markers: absolute-positioned dots + labels, anchored to the
-            slider's logical 0-to-cap range. Reading the active state from `value`
-            so a marker visibly flips when the slider crosses it. */}
         {thresholds.map((t) => {
-          const active = value >= t;
+          const active = draft >= t;
           const pct = (t / denom) * 100;
           return (
             <Box
@@ -527,33 +535,6 @@ const MindPane = ({
   const tree = s.trees[activeTreeId];
   const remaining = d.mind_pool - d.mind_spent;
 
-  // Group the active tree's perks by their dependency depth. Perks with no
-  // `requires` sit at tier 0; everything else is `1 + max(tier of each prereq)`.
-  // Output is sorted top-down so the visual flow matches what you'd build first.
-  const tiers = useMemo(() => {
-    if (!tree) return [] as PerkMeta[][];
-    const byPath: Record<string, PerkMeta> = {};
-    for (const path of tree.perks) {
-      const meta = s.perks[path];
-      if (meta) byPath[path] = meta;
-    }
-    const tierFor = (path: string, visiting = new Set<string>()): number => {
-      const meta = byPath[path];
-      if (!meta) return 0;
-      if (!meta.requires.length) return 0;
-      if (visiting.has(path)) return 0; // cycle guard
-      visiting.add(path);
-      return 1 + Math.max(...meta.requires.map((r) => tierFor(r, visiting)));
-    };
-    const out: PerkMeta[][] = [];
-    for (const path of Object.keys(byPath)) {
-      const t = tierFor(path);
-      if (!out[t]) out[t] = [];
-      out[t].push(byPath[path]);
-    }
-    return out;
-  }, [tree, s.perks]);
-
   return (
     <Section
       fill
@@ -573,64 +554,14 @@ const MindPane = ({
         <Box mt={1}>
           <TreeBlurb tree={tree} pickedHere={picksByTree[tree.id] ?? 0} />
           <Box mt={1}>
-            <Stack vertical>
-              {tiers.map((perksAtTier, tier) => (
-                <Stack.Item key={`tier-${tier}`}>
-                  {tier > 0 && (
-                    <Box
-                      ml={2}
-                      mb={0.25}
-                      style={{
-                        height: '10px',
-                        borderLeft: `2px dashed ${tree.color}`,
-                        opacity: 0.5,
-                      }}
-                    />
-                  )}
-                  {perksAtTier
-                    .sort((a, b) => a.cost - b.cost)
-                    .map((perk) => {
-                      const path = pathFor(s.perks, perk);
-                      if (!path) return null;
-                      const selected = d.mind_perks.includes(path);
-                      const requiresOk = perk.requires.every((r) =>
-                        d.mind_perks.includes(r),
-                      );
-                      const affordable =
-                        selected || remaining >= perk.cost;
-                      const disabled =
-                        !selected && (!requiresOk || !affordable);
-                      return (
-                        <Box key={path} mb={0.5}>
-                          <PerkCard
-                            perk={perk}
-                            accent={tree.color}
-                            selected={selected}
-                            disabled={disabled}
-                            badge={null}
-                            gateHint={
-                              !selected && !requiresOk
-                                ? `Requires ${perk.requires
-                                    .map((r) => s.perks[r]?.name ?? r)
-                                    .join(', ')}`
-                                : !selected && !affordable
-                                  ? 'Not enough Mind points remaining'
-                                  : null
-                            }
-                            onClick={() =>
-                              send(
-                                act,
-                                selected ? 'remove_perk' : 'add_perk',
-                                { perk_path: path },
-                              )
-                            }
-                          />
-                        </Box>
-                      );
-                    })}
-                </Stack.Item>
-              ))}
-            </Stack>
+            <PerkList
+              tree={tree}
+              perksDict={s.perks}
+              selectedPaths={d.mind_perks}
+              remaining={remaining}
+              linear={null}
+              act={act}
+            />
           </Box>
         </Box>
       )}
@@ -644,49 +575,169 @@ const TreeBlurb = ({
 }: {
   tree: TreeMeta;
   pickedHere: number;
-}) => (
-  <Box
-    px={1}
-    py={0.5}
-    style={{
-      borderLeft: `3px solid ${tree.color}`,
-      backgroundColor: 'rgba(255,255,255,0.03)',
-      borderRadius: '0 3px 3px 0',
-    }}
-  >
-    <Stack align="center">
-      <Stack.Item grow>
-        <Box bold style={{ color: tree.color }}>
-          {tree.icon && (
-            <Icon name={tree.icon} mr={0.5} style={{ color: tree.color }} />
-          )}
-          {tree.name}
-        </Box>
-        <Box fontSize="0.82em" color="label">
-          {tree.description}
-        </Box>
-      </Stack.Item>
-      {pickedHere > 0 && (
-        <Stack.Item>
-          <Box
-            style={{
-              padding: '2px 8px',
-              borderRadius: '10px',
-              backgroundColor: `${tree.color}33`,
-              color: tree.color,
-              fontWeight: 'bold',
-              fontSize: '0.78em',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            <Icon name="check" mr={0.25} />
-            {pickedHere} taken
+}) => {
+  if (!tree.description) return null;
+  return (
+    <Box
+      px={1}
+      py={0.5}
+      style={{
+        borderLeft: `3px solid ${tree.color}`,
+        backgroundColor: 'rgba(255,255,255,0.03)',
+        borderRadius: '0 3px 3px 0',
+      }}
+    >
+      <Stack align="center">
+        <Stack.Item grow>
+          <Box bold style={{ color: tree.color }}>
+            {tree.icon && (
+              <Icon name={tree.icon} mr={0.5} style={{ color: tree.color }} />
+            )}
+            {tree.name}
+          </Box>
+          <Box fontSize="0.82em" color="label">
+            {tree.description}
           </Box>
         </Stack.Item>
-      )}
+        {pickedHere > 0 && (
+          <Stack.Item>
+            <Box
+              style={{
+                padding: '2px 8px',
+                borderRadius: '10px',
+                backgroundColor: `${tree.color}33`,
+                color: tree.color,
+                fontWeight: 'bold',
+                fontSize: '0.78em',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <Icon name="check" mr={0.25} />
+              {pickedHere} taken
+            </Box>
+          </Stack.Item>
+        )}
+      </Stack>
+    </Box>
+  );
+};
+
+// ─── Shared perk list (grouped by tier within a single tree) ──────────────────────────
+
+const PerkList = ({
+  tree,
+  perksDict,
+  selectedPaths,
+  remaining,
+  linear,
+  act,
+}: {
+  tree: TreeMeta;
+  perksDict: Record<string, PerkMeta>;
+  selectedPaths: string[];
+  remaining: number;
+  /// For Body trees: current linear Conditioning value, used to evaluate per-perk
+  /// threshold gates. Pass null for Mind trees (no threshold concept).
+  linear: number | null;
+  act: Act;
+}) => {
+  // Group the tree's perks by dependency depth.
+  const tiers = useMemo(() => {
+    const byPath: Record<string, PerkMeta> = {};
+    for (const path of tree.perks) {
+      const meta = perksDict[path];
+      if (meta) byPath[path] = meta;
+    }
+    const tierFor = (path: string, visiting = new Set<string>()): number => {
+      const meta = byPath[path];
+      if (!meta) return 0;
+      if (!meta.requires.length) return 0;
+      if (visiting.has(path)) return 0;
+      visiting.add(path);
+      return 1 + Math.max(...meta.requires.map((r) => tierFor(r, visiting)));
+    };
+    const out: PerkMeta[][] = [];
+    for (const path of Object.keys(byPath)) {
+      const t = tierFor(path);
+      if (!out[t]) out[t] = [];
+      out[t].push(byPath[path]);
+    }
+    return out;
+  }, [tree, perksDict]);
+
+  return (
+    <Stack vertical>
+      {tiers.map((perksAtTier, tier) => (
+        <Stack.Item key={`tier-${tier}`}>
+          {tier > 0 && (
+            <Box
+              ml={2}
+              mb={0.25}
+              style={{
+                height: '8px',
+                borderLeft: `2px dashed ${tree.color}`,
+                opacity: 0.5,
+              }}
+            />
+          )}
+          {perksAtTier
+            .sort((a, b) => a.cost - b.cost)
+            .map((perk) => {
+              const path = pathFor(perksDict, perk);
+              if (!path) return null;
+              const selected = selectedPaths.includes(path);
+              const requiresOk = perk.requires.every((r) =>
+                selectedPaths.includes(r),
+              );
+              const unlocked =
+                linear === null || perk.threshold === 0 || linear >= perk.threshold;
+              const affordable = selected || remaining >= perk.cost;
+              const disabled =
+                !selected && (!requiresOk || !unlocked || !affordable);
+              return (
+                <Box key={path} mb={0.5}>
+                  <PerkCard
+                    perk={perk}
+                    accent={tree.color}
+                    selected={selected}
+                    disabled={disabled}
+                    badge={
+                      perk.threshold > 0
+                        ? {
+                            icon: unlocked ? 'lock-open' : 'lock',
+                            text: `${perk.threshold}`,
+                          }
+                        : null
+                    }
+                    gateHint={
+                      !selected && !unlocked
+                        ? `Needs ${perk.threshold} Conditioning`
+                        : !selected && !requiresOk
+                          ? `Requires ${perk.requires
+                              .map((r) => perksDict[r]?.name ?? r)
+                              .join(', ')}`
+                          : !selected && !affordable
+                            ? 'Not enough points'
+                            : null
+                    }
+                    onClick={() =>
+                      send(
+                        act,
+                        selected ? 'remove_perk' : 'add_perk',
+                        { perk_path: path },
+                      )
+                    }
+                  />
+                </Box>
+              );
+            })}
+        </Stack.Item>
+      ))}
     </Stack>
-  </Box>
-);
+  );
+};
+
+// ─── Tree tabs ────────────────────────────────────────────────────────────────────────
 
 const TreeTabRow = ({
   trees,
@@ -788,7 +839,7 @@ const TreeChip = ({
   );
 };
 
-// ─── Pane title (icon + colored label) ────────────────────────────────────────────────
+// ─── Pane title ──────────────────────────────────────────────────────────────────────
 
 const PaneTitle = ({
   icon,
@@ -811,7 +862,7 @@ const PaneTitle = ({
   </Stack>
 );
 
-// ─── Shared perk card ─────────────────────────────────────────────────────────────────
+// ─── Perk card ────────────────────────────────────────────────────────────────────────
 
 type PerkCardBadge = {
   icon: string;
@@ -835,134 +886,146 @@ const PerkCard = ({
   gateHint: string | null;
   onClick: () => void;
 }) => {
+  const [hover, setHover] = useState(false);
+  const clickable = selected || !disabled;
   const background = selected
-    ? `linear-gradient(90deg, ${accent}33, ${accent}11)`
+    ? `linear-gradient(90deg, ${accent}44, ${accent}11)`
     : disabled
       ? 'rgba(255,255,255,0.02)'
-      : 'rgba(255,255,255,0.04)';
+      : hover
+        ? `linear-gradient(90deg, ${accent}22, transparent)`
+        : 'rgba(255,255,255,0.04)';
   const border = selected
     ? `1px solid ${accent}`
     : disabled
       ? '1px solid rgba(255,255,255,0.06)'
-      : `1px solid ${accent}55`;
+      : hover
+        ? `1px solid ${accent}`
+        : `1px solid ${accent}55`;
   return (
-    <Tooltip
-      content={
-        // Tooltip is the single source of truth for the full description so the
-        // card stays compact / uniform height. Gate hint is duplicated here only
-        // when it isn't already visible on the card body (i.e. for non-locked
-        // states the tooltip is just the description).
-        <Box style={{ maxWidth: '300px' }}>
-          <Box bold style={{ color: accent }} mb={0.25}>
-            {perk.name}
-          </Box>
-          <Box fontSize="0.9em">{perk.desc}</Box>
-        </Box>
-      }
+    <Box
+      onClick={clickable ? onClick : undefined}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      px={1}
+      py={0.5}
+      style={{
+        background,
+        border,
+        borderRadius: '4px',
+        opacity: disabled ? 0.55 : 1,
+        transition: 'all 120ms',
+        boxShadow:
+          selected
+            ? `0 0 6px ${accent}66`
+            : hover && !disabled
+              ? `0 0 6px ${accent}44`
+              : 'none',
+        cursor: clickable ? 'pointer' : 'default',
+      }}
     >
-      <Box
-        px={1}
-        py={0.5}
-        style={{
-          background,
-          border,
-          borderRadius: '4px',
-          opacity: disabled ? 0.55 : 1,
-          transition: 'all 120ms',
-          boxShadow: selected ? `0 0 6px ${accent}55` : 'none',
-        }}
-      >
-        <Stack align="center">
-          <Stack.Item grow>
-            <Box>
-              {selected ? (
-                <Icon
-                  name="circle-check"
-                  mr={0.5}
-                  style={{ color: accent }}
-                />
-              ) : disabled ? (
-                <Icon
-                  name="lock"
-                  mr={0.5}
-                  style={{ color: 'rgba(255,255,255,0.35)' }}
-                />
-              ) : (
-                <Icon
-                  name="circle"
-                  mr={0.5}
-                  style={{ color: `${accent}aa` }}
-                />
-              )}
-              <Box inline bold>
-                {perk.name}
-              </Box>
+      <Stack align="center">
+        <Stack.Item>
+          <Box
+            style={{
+              width: '22px',
+              textAlign: 'center',
+              fontSize: '1.05em',
+            }}
+          >
+            {selected ? (
+              <Icon name="circle-check" style={{ color: accent }} />
+            ) : disabled ? (
+              <Icon name="lock" style={{ color: 'rgba(255,255,255,0.35)' }} />
+            ) : (
+              <Icon name="circle" style={{ color: `${accent}aa` }} />
+            )}
+          </Box>
+        </Stack.Item>
+        <Stack.Item grow style={{ minWidth: 0 }}>
+          <Box>
+            <Box inline bold>
+              {perk.name}
+            </Box>
+            <Box
+              inline
+              ml={1}
+              style={{
+                fontSize: '0.72em',
+                padding: '1px 6px',
+                borderRadius: '8px',
+                backgroundColor: `${accent}33`,
+                color: accent,
+                fontWeight: 'bold',
+                verticalAlign: 'middle',
+              }}
+            >
+              {perk.cost} pt{perk.cost === 1 ? '' : 's'}
+            </Box>
+            {badge && (
               <Box
                 inline
-                ml={1}
+                ml={0.5}
                 style={{
-                  fontSize: '0.72em',
-                  padding: '1px 6px',
+                  fontSize: '0.7em',
+                  padding: '1px 5px',
                   borderRadius: '8px',
-                  backgroundColor: `${accent}33`,
-                  color: accent,
-                  fontWeight: 'bold',
+                  backgroundColor: 'rgba(255,255,255,0.06)',
+                  color: 'rgba(255,255,255,0.7)',
                   verticalAlign: 'middle',
                 }}
               >
-                {perk.cost} pt{perk.cost === 1 ? '' : 's'}
-              </Box>
-              {badge && (
-                <Box
-                  inline
-                  ml={0.5}
-                  style={{
-                    fontSize: '0.7em',
-                    padding: '1px 5px',
-                    borderRadius: '8px',
-                    backgroundColor: 'rgba(255,255,255,0.06)',
-                    color: 'rgba(255,255,255,0.7)',
-                    verticalAlign: 'middle',
-                  }}
-                >
-                  <Icon name={badge.icon} mr={0.25} />
-                  {badge.text}
-                </Box>
-              )}
-            </Box>
-            {gateHint ? (
-              <Box fontSize="0.78em" italic style={{ color: BAD }} mt={0.25}>
-                <Icon name="triangle-exclamation" mr={0.5} />
-                {gateHint}
-              </Box>
-            ) : (
-              // One-line summary so cards keep a uniform two-line height.
-              <Box
-                fontSize="0.78em"
-                color="label"
-                mt={0.25}
-                style={{
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}
-              >
-                {perk.desc}
+                <Icon name={badge.icon} mr={0.25} />
+                {badge.text}
               </Box>
             )}
-          </Stack.Item>
-          <Stack.Item>
-            <Button
-              icon={selected ? 'xmark' : 'plus'}
-              color={selected ? 'bad' : disabled ? undefined : 'good'}
-              disabled={disabled}
-              onClick={onClick}
-            >
-              {selected ? 'Remove' : 'Take'}
-            </Button>
-          </Stack.Item>
-        </Stack>
-      </Box>
-    </Tooltip>
+          </Box>
+          {/* Full description always shown inline — no tooltip wrapper (the
+              previous Tooltip wrapping confused the click target). word-wrap
+              keeps long descriptions inside the card width. */}
+          <Box
+            fontSize="0.8em"
+            color="label"
+            mt={0.25}
+            style={{
+              whiteSpace: 'normal',
+              wordBreak: 'break-word',
+              lineHeight: '1.3',
+            }}
+          >
+            {perk.desc}
+          </Box>
+          {gateHint && (
+            <Box fontSize="0.78em" italic style={{ color: BAD }} mt={0.25}>
+              <Icon name="triangle-exclamation" mr={0.5} />
+              {gateHint}
+            </Box>
+          )}
+        </Stack.Item>
+        {/* Right-side action icon — kept icon-only per UX spec. Click handler
+            is on the outer Box so any tap on the card toggles the perk. */}
+        <Stack.Item>
+          <Box
+            style={{
+              width: '24px',
+              height: '24px',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: selected
+                ? `${BAD}22`
+                : disabled
+                  ? 'transparent'
+                  : `${accent}33`,
+              color: selected ? BAD : disabled ? 'rgba(255,255,255,0.3)' : accent,
+              transition: 'all 120ms',
+            }}
+          >
+            <Icon name={selected ? 'xmark' : disabled ? 'lock' : 'plus'} />
+          </Box>
+        </Stack.Item>
+      </Stack>
+    </Box>
   );
 };

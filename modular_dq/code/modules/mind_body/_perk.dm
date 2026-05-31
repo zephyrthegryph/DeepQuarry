@@ -69,11 +69,12 @@
 		else
 			S.vars[V] = var_changes[V]
 
-/// Body-perk subtype: category is locked to body, default tree is the body catalog.
+/// Body-perk subtype: category is locked to body. Subtypes MUST set `tree` to one of
+/// the PERK_TREE_BODY_* ids (Strength / Vigor / Speed / Endurance); intermediate
+/// /datum/perk/body subtypes without `tree` get filtered out at init.
 /datum/perk/body
 	abstract_type = /datum/perk/body
 	category = PERK_CATEGORY_BODY
-	tree = PERK_TREE_BODY
 
 /// Mind-perk subtype: category is locked to mind. Subtypes set `tree` per department.
 /datum/perk/mind

@@ -129,10 +129,3 @@
 	cost = 1
 	tree = PERK_TREE_MIND_CARGO
 
-// ─── Synthetic (stub) ───────────────────────────────────────────────────────────────────
-
-/datum/perk/mind/synthetic/subsystem_intuition
-	name = "Subsystem Intuition"
-	desc = "Familiarity with the lower layers of station automation. Diagnostic scans on machinery reveal their wire-fault state."
-	cost = 1
-	tree = PERK_TREE_MIND_SYNTHETIC

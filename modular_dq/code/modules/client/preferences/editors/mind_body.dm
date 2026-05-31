@@ -70,7 +70,15 @@
 	return list(
 		"trees" = trees,
 		"perks" = perks,
-		"body_tree_id" = PERK_TREE_BODY,
+		// Body now spans multiple sub-trees (Strength / Vigor / Speed / Endurance), all
+		// drawing from the same Body pool. React groups them under the Body pane and
+		// uses the rest as Mind trees.
+		"body_tree_ids" = list(
+			PERK_TREE_BODY_STRENGTH,
+			PERK_TREE_BODY_VIGOR,
+			PERK_TREE_BODY_SPEED,
+			PERK_TREE_BODY_ENDURANCE,
+		),
 		"body_max" = MIND_BODY_BASE_BODY_AT_18,
 		"hp_per_point" = BODY_POINT_HP_PER,
 		"slowdown_per_point" = BODY_POINT_SLOWDOWN_PER,
