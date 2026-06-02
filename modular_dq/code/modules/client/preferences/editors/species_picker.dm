@@ -65,10 +65,13 @@
 		return text
 	return copytext_char(text, 1, 138) + "…"
 
-/// Pre-warms the species preview cache at world init so the first species
-/// picker open is instant. Without this, the deferred catalog build pays the
-/// 11 × mannequin spawns + getFlatIcons cost on first open and the modal can
-/// flash empty for ~1 second before filling in.
+/// Per-species base64 thumbnail cache. Built once at world init from the
+/// species icobase "preview" state — pure icon() + icon2base64, no mannequin
+/// spawn, no apply pipeline, no subsystem dependencies. The whole warm-up
+/// is millisecond-scale per species and runs synchronously at world init so
+/// the cache is ready before any prefs window can open.
+GLOBAL_LIST_EMPTY(dq_species_preview_cache)
+
 GLOBAL_PROTECT(dq_species_preview_cache_warm_init)
 GLOBAL_LIST_INIT(dq_species_preview_cache_warm_init, dq_warm_species_preview_cache())
 
@@ -79,17 +82,12 @@ GLOBAL_LIST_INIT(dq_species_preview_cache_warm_init, dq_warm_species_preview_cac
 		if(!S || species_name == SPECIES_CUSTOM)
 			continue
 		dq_species_preview_b64(S)
-
-/// Build a full-body preview icon for a species, base64-encoded for direct
-/// embedding in static_data. Cached per-species so build_ui_static_data only
-/// pays the flatten cost once per world.
-///
-/// Strategy: use the species's icobase "preview" state if it exists (that's
-/// what /mob/living/carbon/human/dummy/mannequin/autoequip uses for live
-/// preview windows and is purpose-built for that role). For species whose
-/// icobase doesn't include "preview", spawn a temporary mannequin with the
-/// species set and getFlatIcon() it — same path the in-game preview uses.
-GLOBAL_LIST_EMPTY(dq_species_preview_cache)
+	// Synthetic Robot / pAI entries share the same cache so the picker can
+	// render them through the same <img data:...> path as real species.
+	var/icon/r = icon('icons/mob/robot/default.dmi', "default", dir = SOUTH, frame = 1, moving = FALSE)
+	GLOB.dq_species_preview_cache["__robot__"] = icon2base64(r)
+	var/icon/p = icon('icons/mob/pai.dmi', "pai-repairbot", dir = SOUTH, frame = 1, moving = FALSE)
+	GLOB.dq_species_preview_cache["__pai__"] = icon2base64(p)
 
 /proc/dq_species_preview_b64(datum/species/S)
 	if(!istype(S))
@@ -97,18 +95,25 @@ GLOBAL_LIST_EMPTY(dq_species_preview_cache)
 	if(GLOB.dq_species_preview_cache[S.name])
 		return GLOB.dq_species_preview_cache[S.name]
 	var/icon/result_icon
+	// Fast path: species's icobase has a "preview" state. Pure icon flatten.
 	if(icon_exists(S.icobase, "preview"))
 		result_icon = icon(S.icobase, "preview", dir = SOUTH, frame = 1, moving = FALSE)
 	else
-		// Spawn a throwaway mannequin in null-space, set its species, flatten.
-		// More expensive than icon_state lookup but always produces a correct
-		// full-body composite. The mannequin is deleted right after.
-		var/mob/living/carbon/human/dummy/mannequin/M = new(null)
-		M.dna = new /datum/dna(null)
-		M.set_species(S.name)
-		M.update_icons_body()
-		result_icon = getFlatIcon(M, defdir = SOUTH, no_anim = TRUE)
-		qdel(M)
+		// Slow path for species without a "preview" state (Human, Alrune,
+		// etc.): spawn a throwaway mannequin in null-space, set its species,
+		// flatten to PNG, qdel. ~1s per species, only runs once per world,
+		// wrapped in try/catch so a single bad species can't hang the
+		// init loop. Pre-warmed at world startup via dq_warm_species_preview_cache.
+		try
+			var/mob/living/carbon/human/dummy/mannequin/M = new(null)
+			M.dna = new /datum/dna(null)
+			M.set_species(S.name)
+			M.update_icons_body()
+			result_icon = getFlatIcon(M, defdir = SOUTH, no_anim = TRUE)
+			qdel(M)
+		catch(var/exception/e)
+			stack_trace("dq_species_preview_b64 slow path failed for [S.name]: [e.name] at [e.file]:[e.line]")
+			return null
 	if(!result_icon)
 		return null
 	var/result = icon2base64(result_icon)
@@ -138,21 +143,12 @@ GLOBAL_LIST_EMPTY(dq_species_preview_cache)
 			"name" = S.name,
 			"pitch" = dq_species_pitch(S.blurb),
 			"blurb" = S.blurb,
-			// Direct base64 preview — composited head+torso+limbs at world
-			// startup, cached. React renders these as <img> tags with the
-			// data: URI, bypassing the ColorizedImage/asset round-trip.
 			"thumb_b64" = dq_species_preview_b64(S),
 		)
 	// Synthetic entries — not in GLOB.playable_species. Pin them so the
 	// player can flip the character setup UI into cyborg / pAI mode through
 	// the same picker. Keys are leading-underscore so they can't collide
 	// with a real species name.
-	if(!GLOB.dq_species_preview_cache["__robot__"])
-		var/icon/r = icon('icons/mob/robot/default.dmi', "default", dir = SOUTH, frame = 1, moving = FALSE)
-		GLOB.dq_species_preview_cache["__robot__"] = icon2base64(r)
-	if(!GLOB.dq_species_preview_cache["__pai__"])
-		var/icon/p = icon('icons/mob/pai.dmi', "pai-repairbot", dir = SOUTH, frame = 1, moving = FALSE)
-		GLOB.dq_species_preview_cache["__pai__"] = icon2base64(p)
 	all_species[DQ_PLAY_MODE_ROBOT_KEY] = list(
 		"name" = "Robot",
 		"pitch" = "A cyborg chassis with a positronic mind.",

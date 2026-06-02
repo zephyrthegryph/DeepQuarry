@@ -85,3 +85,14 @@
 :root {
   --scaling-amount: 1;
 }
+
+// DQEdit — disable tgui-core's Button transition on background-color/color/opacity.
+// On BYOND's embedded Chromium the transition triggers a compositor-layer promotion
+// for the button every time the cursor enters/exits. With ~30 buttons per prefs
+// window the compositor thrash makes the system cursor flicker between pointer and
+// default on every mousemove (visible on every tgui window including the lobby).
+// Buttons just change color instantly on hover now; a 200ms tween isn't worth the
+// rendering glitch in this environment.
+.Button {
+  transition: none !important;
+}

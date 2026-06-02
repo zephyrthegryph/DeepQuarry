@@ -444,14 +444,14 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 		if(preference.savefile_identifier == PREFERENCE_PLAYER)
 			preference.apply_to_client_updated(client, read_preference(preference.type))
 		else if(constraint_cascade_depth == 0)
-			// DQEdit — only rebuild the preview at the OUTERMOST update_preference
-			// call. Constraint-triggered inner calls (species_resets_hair,
-			// species_resets_tail, species_resets_eyes, etc.) used to each
-			// trigger their own full preview rebuild — a species change with
-			// 6 cascading constraints fired 6 rebuilds (~6 seconds for the
-			// full apply pipeline × 4 directions × getFlatIcon). One rebuild
-			// at the end captures the cumulative new state.
-			update_preview_icon()
+			// DQEdit — outermost call only. Constraint-triggered inner calls
+			// (species_resets_hair, etc.) skip the preview; one rebuild at the
+			// end captures the cumulative new state. update_preview_icon_lazy
+			// renders the south frame synchronously and defers north/east/west
+			// to next tick via addtimer — so user-perceived latency on a
+			// species change is the south-only cost (~250 ms) instead of the
+			// full 4-direction cost (~1 s).
+			update_preview_icon_lazy()
 	catch(var/exception/e)
 		stack_trace("update_preference runtimed: [e.name] at [e.file]:[e.line] (key=[preference.savefile_key])")
 		// Reset the cascade depth so subsequent unrelated writes work; the batch counter

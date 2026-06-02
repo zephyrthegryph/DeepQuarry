@@ -292,8 +292,6 @@
 	addtimer(CALLBACK(src, TYPE_PROC_REF(/datum/preferences, update_preview_icon)), 1, TIMER_UNIQUE | TIMER_OVERRIDE)
 
 /datum/preferences/proc/update_preview_icon(south_only = FALSE)
-	// Re-entry guard. apply_hooks shouldn't write prefs via update_preference,
-	// but if they do, the second call sees the guard set and bails.
 	if(updating_preview_icon)
 		return
 	updating_preview_icon = TRUE
@@ -302,12 +300,6 @@
 	catch(var/exception/e)
 		stack_trace("update_preview_icon runtimed: [e.name] at [e.file]:[e.line]")
 	updating_preview_icon = FALSE
-	// Push the ui_data update so React picks up the new preview assets.
-	// send_update sends ONLY ui_data (no static_data, no editor catalogs),
-	// which keeps the React reconciliation surface small — the heavy
-	// CategoryPage subtree skips re-render when its props haven't changed.
-	// Deferred via addtimer so we run on a fresh stack after the apply
-	// pipeline unwinds, and coalesce rapid drags via TIMER_UNIQUE.
 	dq_schedule_data_push()
 
 /datum/preferences/proc/dq_schedule_data_push()
