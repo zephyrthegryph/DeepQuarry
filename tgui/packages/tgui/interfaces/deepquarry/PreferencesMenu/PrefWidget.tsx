@@ -1,17 +1,15 @@
 // DQAdd — Auto-renders a single /datum/preference widget. The DM side picks the widget
 // type via /datum/preference.get_widget(); this component dispatches to the right control.
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import {
   Box,
   Button,
   ColorBox,
-  Dimmer,
   Dropdown,
   Input,
   NumberInput,
-  Section,
   Slider,
   Stack,
   TextArea,
@@ -67,11 +65,112 @@ const BufferedTextArea = ({
   return (
     <TextArea
       fluid
-      height="6em"
+      height="5em"
       value={draft}
       onChange={(v) => setDraft(v)}
       onBlur={() => {
         if (draft !== value) onCommit(draft);
+      }}
+    />
+  );
+};
+
+/// Slider that buffers server value vs. local drag state. tgui-core's Slider
+/// fires onChange only on release. We track local value via tickWhileDragging
+/// → keep our useState in sync with the user's drag position, and commit
+/// only when the user releases (delta vs. last-committed serverValue).
+/// Server-side value updates during drag are ignored so the thumb doesn't
+/// snap mid-drag.
+const BufferedSlider = ({
+  serverValue,
+  min,
+  max,
+  step,
+  onCommit,
+}: {
+  serverValue: number;
+  min: number;
+  max: number;
+  step: number;
+  onCommit: (v: number) => void;
+}) => {
+  const decimals = decimalsForStep(step);
+  const format = (v: number) => v.toFixed(decimals);
+  const [local, setLocal] = useState(serverValue);
+  const interacting = useRef(false);
+  // Sync to server value only when the user isn't currently interacting.
+  // Without this guard, a poll-time push of the previous value would yank
+  // the thumb back mid-drag and cause the cursor/thumb mismatch.
+  useEffect(() => {
+    if (!interacting.current) setLocal(serverValue);
+  }, [serverValue]);
+  // tickWhileDragging makes onChange fire as the user drags. We use that to
+  // update local state and mark interacting=true. We can't tell drag-end from
+  // a normal commit just from event types; instead we mark not-interacting on
+  // a short timeout after the last tick, which is when the user has released.
+  const interactionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  return (
+    <Slider
+      minValue={min}
+      maxValue={max}
+      step={step}
+      value={local}
+      format={format}
+      animated={false}
+      tickWhileDragging
+      onChange={(_, v) => {
+        interacting.current = true;
+        const rounded = roundTo(v, decimals);
+        setLocal(rounded);
+        if (interactionTimer.current) clearTimeout(interactionTimer.current);
+        interactionTimer.current = setTimeout(() => {
+          interacting.current = false;
+          if (rounded !== serverValue) onCommit(rounded);
+        }, 120);
+      }}
+    />
+  );
+};
+
+const BufferedNumberInput = ({
+  serverValue,
+  min,
+  max,
+  step,
+  onCommit,
+}: {
+  serverValue: number;
+  min: number;
+  max: number;
+  step: number;
+  onCommit: (v: number) => void;
+}) => {
+  const decimals = decimalsForStep(step);
+  const format = (v: number) => v.toFixed(decimals);
+  const [local, setLocal] = useState(serverValue);
+  const interacting = useRef(false);
+  useEffect(() => {
+    if (!interacting.current) setLocal(serverValue);
+  }, [serverValue]);
+  const interactionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  return (
+    <NumberInput
+      fluid
+      value={local}
+      minValue={min}
+      maxValue={max}
+      step={step}
+      format={format}
+      animated={false}
+      onChange={(v) => {
+        interacting.current = true;
+        const rounded = roundTo(v, decimals);
+        setLocal(rounded);
+        if (interactionTimer.current) clearTimeout(interactionTimer.current);
+        interactionTimer.current = setTimeout(() => {
+          interacting.current = false;
+          if (rounded !== serverValue) onCommit(rounded);
+        }, 120);
       }}
     />
   );
@@ -85,23 +184,22 @@ export const PrefWidget = ({ item }: Props) => {
       // BufferedInput: buffers locally and flushes on blur/Enter. Without buffering, the
       // ~1Hz tgui poll lands between keystrokes and yanks the caret position; the user
       // ends up retyping. Same pattern VoreMessagesEditor uses for its own draft.
+      //
+      // Width is unconstrained so the input fills its grid cell — the WidgetGrid in
+      // CategoryPage caps each cell at the column width.
       return (
-        <Box width="280px">
-          <BufferedTextInput
-            value={String(item.value ?? '')}
-            onCommit={(v) => sendUpdate(act, item.key, v)}
-          />
-        </Box>
+        <BufferedTextInput
+          value={String(item.value ?? '')}
+          onCommit={(v) => sendUpdate(act, item.key, v)}
+        />
       );
 
     case 'longtext':
       return (
-        <Box width="100%" maxWidth="540px">
-          <BufferedTextArea
-            value={String(item.value ?? '')}
-            onCommit={(v) => sendUpdate(act, item.key, v)}
-          />
-        </Box>
+        <BufferedTextArea
+          value={String(item.value ?? '')}
+          onCommit={(v) => sendUpdate(act, item.key, v)}
+        />
       );
 
     case 'number': {
@@ -109,13 +207,12 @@ export const PrefWidget = ({ item }: Props) => {
       const max = Number((item.props.max as number | undefined) ?? 100);
       const step = Number((item.props.step as number | undefined) ?? 1);
       return (
-        <NumberInput
-          width="120px"
-          value={Number(item.value ?? min)}
-          minValue={min}
-          maxValue={max}
+        <BufferedNumberInput
+          serverValue={Number(item.value ?? min)}
+          min={min}
+          max={max}
           step={step}
-          onChange={(v) => sendUpdate(act, item.key, v)}
+          onCommit={(v) => sendUpdate(act, item.key, v)}
         />
       );
     }
@@ -124,15 +221,13 @@ export const PrefWidget = ({ item }: Props) => {
       const max = Number((item.props.max as number | undefined) ?? 100);
       const step = Number((item.props.step as number | undefined) ?? 1);
       return (
-        <Box width="280px">
-          <Slider
-            minValue={min}
-            maxValue={max}
-            step={step}
-            value={Number(item.value ?? min)}
-            onChange={(_, v) => sendUpdate(act, item.key, v)}
-          />
-        </Box>
+        <BufferedSlider
+          serverValue={Number(item.value ?? min)}
+          min={min}
+          max={max}
+          step={step}
+          onCommit={(v) => sendUpdate(act, item.key, v)}
+        />
       );
     }
 
@@ -176,10 +271,11 @@ export const PrefWidget = ({ item }: Props) => {
       // if `selected` is a string it just renders that string. Override with displayText.
       const currentLabel =
         options.find((o) => o.value === currentVal)?.displayText ?? currentVal;
+      // `fluid` is the supported way to make Dropdown fill its container width;
+      // `width="100%"` is documented as deprecated/layout-breaking in tgui-core.
       return (
         <Dropdown
-          width="240px"
-          menuWidth={300}
+          fluid
           selected={currentVal}
           displayText={currentLabel}
           options={options}
@@ -266,6 +362,27 @@ function normalizeChoices(
   return Object.entries(choices);
 }
 
+/// Step 0.1 → 1 decimal; 0.01 → 2; 1 → 0. JS floats can produce 0.7000000000000001
+/// during slider arithmetic; we use toFixed(decimals) for display + roundTo for the
+/// wire value so the savefile doesn't get a bunch of phantom decimals.
+function decimalsForStep(step: number): number {
+  if (!Number.isFinite(step) || step <= 0) return 0;
+  if (step >= 1) return 0;
+  const s = step.toString();
+  const dotIdx = s.indexOf('.');
+  if (dotIdx < 0) return 0;
+  return s.length - dotIdx - 1;
+}
+
+function roundTo(value: number, decimals: number): number {
+  const factor = 10 ** decimals;
+  return Math.round(value * factor) / factor;
+}
+
+/// Inline thumbnail picker. The Change button toggles a panel that expands
+/// inline below the trigger row, scoped to the widget's grid cell — no
+/// full-window Dimmer overlay. The panel has its own scroll for long lists
+/// of thumbnails (hair/marking catalogs run into the hundreds of entries).
 const ThumbgridPicker = ({
   item,
   onPick,
@@ -279,6 +396,10 @@ const ThumbgridPicker = ({
   const [search, setSearch] = useState('');
   const currentVal = String(item.value ?? '');
   const currentThumb = thumbs[currentVal];
+  // Display the user-facing label for the current selection, not the raw value
+  // (which is the asset key — e.g. "marking_arrow_chest" instead of "Chest Arrow").
+  const currentLabel =
+    choices.find(([val]) => val === currentVal)?.[1] ?? currentVal;
 
   const lcSearch = search.trim().toLowerCase();
   const filtered = choices.filter(
@@ -289,8 +410,8 @@ const ThumbgridPicker = ({
   );
 
   return (
-    <>
-      <Stack align="center" inline>
+    <Box style={{ width: '100%' }}>
+      <Stack align="center">
         {currentThumb ? (
           <Stack.Item>
             <ColorizedImage
@@ -301,46 +422,52 @@ const ThumbgridPicker = ({
             />
           </Stack.Item>
         ) : null}
-        <Stack.Item>{currentVal || '—'}</Stack.Item>
+        <Stack.Item grow style={{ minWidth: 0 }}>
+          <Box
+            style={{
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {currentLabel || '—'}
+          </Box>
+        </Stack.Item>
         <Stack.Item>
-          <Button icon="grip" onClick={() => setOpen(true)}>
-            Change
+          <Button
+            icon={open ? 'xmark' : 'grip'}
+            color={open ? 'bad' : undefined}
+            onClick={() => setOpen((v) => !v)}
+          >
+            {open ? 'Close' : 'Change'}
           </Button>
         </Stack.Item>
       </Stack>
       {open && (
-        <Dimmer
+        <Box
+          mt={0.5}
+          p={0.5}
           style={{
-            display: 'block',
-            overflowY: 'auto',
-            textAlign: 'center',
-            zIndex: 100,
+            borderRadius: '4px',
+            border: '1px solid rgba(255,255,255,0.1)',
+            background: 'rgba(0,0,0,0.2)',
           }}
-          height="100%"
-          p={1}
         >
-          <Section
-            title="Pick a style"
-            buttons={
-              <Button icon="xmark" color="bad" onClick={() => setOpen(false)}>
-                Close
-              </Button>
-            }
-          >
-            <Box mb={1}>
-              <Input
-                fluid
-                expensive
-                placeholder="Search…"
-                value={search}
-                onChange={(v) => setSearch(v)}
-              />
-            </Box>
-            <Stack wrap justify="center">
+          <Box mb={0.5}>
+            <Input
+              fluid
+              expensive
+              placeholder="Search…"
+              value={search}
+              onChange={(v) => setSearch(v)}
+            />
+          </Box>
+          <Box style={{ maxHeight: '260px', overflowY: 'auto' }}>
+            <Stack wrap>
               {filtered.map(([val, label]) => {
                 const t = thumbs[val];
                 return (
-                  <Stack.Item key={val} m={0.5}>
+                  <Stack.Item key={val} m={0.25}>
                     {t ? (
                       <ColorizedImageButton
                         iconRef={t.icon}
@@ -370,9 +497,9 @@ const ThumbgridPicker = ({
                 );
               })}
             </Stack>
-          </Section>
-        </Dimmer>
+          </Box>
+        </Box>
       )}
-    </>
+    </Box>
   );
 };

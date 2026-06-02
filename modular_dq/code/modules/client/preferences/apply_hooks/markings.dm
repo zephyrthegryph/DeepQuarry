@@ -12,8 +12,13 @@
 
 	// Clear any stale markings from organs (apply_to_human on body_markings cleared character.markings_len's
 	// concept of "owns the list," but the organ overlay list is rebuilt fresh here).
+	// DQEdit — organs_by_name can include internal organs (e.g. posibrain in
+	// FBP/protean torsos) that don't have a `markings` var. Filter to external
+	// limbs only before touching .markings.
 	for(var/N in target.organs_by_name)
 		var/obj/item/organ/external/O = target.organs_by_name[N]
+		if(!istype(O))
+			continue
 		O.markings.Cut()
 
 	var/priority = 0
@@ -25,7 +30,9 @@
 			continue
 		for(var/BP in mark_datum.body_parts)
 			var/obj/item/organ/external/O = target.organs_by_name[BP]
-			if(O && islist(O.markings) && islist(body_markings[M]) && islist(body_markings[M][BP]))
+			if(!istype(O))
+				continue
+			if(islist(O.markings) && islist(body_markings[M]) && islist(body_markings[M][BP]))
 				O.markings[M] = list(
 					"color" = body_markings[M][BP]["color"],
 					"datum" = mark_datum,

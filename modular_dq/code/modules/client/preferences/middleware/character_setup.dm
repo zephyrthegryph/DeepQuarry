@@ -20,21 +20,134 @@ GLOBAL_LIST_INIT(dq_category_order, list(
 	"traits",
 	"mind_body",
 	"antag",
-	"vore",
 	"game",
 	"misc",
 ))
 
-// DQAdd — Groups in this set start collapsed on the React side. Use for niche / long-form
-// content where the default-expanded state would dominate the page visually.
-GLOBAL_LIST_INIT(dq_collapsed_groups, list(
-	"records"      = TRUE,
-	"ooc_notes"    = TRUE,
-	"flavor"       = TRUE,
-	"speech_verbs" = TRUE,
-	"pai"          = TRUE,
-	"nif"          = TRUE,
-	"persistence"  = TRUE,
+// DQAdd — play-mode filter lists.
+//
+// /datum/preference/text/human/play_mode is one of "human" (default), "robot",
+// or "pai" — set by the SpeciesPicker editor when the player selects the
+// synthetic "Robot" / "pAI" entries. The middleware filters out groups/keys
+// that don't apply to the selected mode:
+//   - robot: drop organic-body customization (hair, eyes, skin, tail, wings,
+//            blood, markings, organs), drop mind/body/vore/loadout/traits.
+//   - pai:   drop everything physical — pAI is a holopad, no body customization
+//            at all. Pref names + a slim flavor block is all that matters.
+//   - human: drop the chassis group (cyborg-only).
+
+GLOBAL_LIST_INIT(dq_robot_mode_hidden_categories, list(
+	"mind_body",
+	"loadout",
+	"traits",
+	"occupation",  // Cyborg job is auto-set when picking Robot species; no need to surface the job priority editor.
+))
+
+GLOBAL_LIST_INIT(dq_robot_mode_hidden_groups, list(
+	"hair",
+	"ears",
+	"tail",
+	"wings",
+	"blood",
+	"markings",
+	"organs",
+	"body",     // All body-group prefs (s_tone, skin_color, eyes_color, digitigrade, synth_color/markings) are organic-only.
+	"preview",  // Animations toggle / preview_loadout / preview_job don't apply to chassis-sprite previews.
+	"nif",      // Cyborgs don't have NIFs (those are neural interfaces for organic brains).
+	"pai",      // Cyborgs aren't pAIs.
+	"demographics",  // Age / bday is meaningless for cyborgs.
+	"background",    // Birthplace, citizenship, religion etc. don't apply to a cyborg in chargen.
+	"records",       // Medical/security records are for organic chars.
+	"directory",     // Vore directory ad / sexuality tags — out-of-character for a chassis pick.
+	"roleplay",      // Egg type / hot-cold messages / borg petting — RP flavor that doesn't apply to a fresh cyborg.
+	// flavor group stays visible — FlavorTextEditor switches to robot flavor inputs in robot mode.
+))
+
+GLOBAL_LIST_INIT(dq_robot_mode_hidden_pref_keys, list(
+	"s_tone"         = TRUE,
+	"skin_color"     = TRUE,
+	"eyes_color"     = TRUE,
+	"digitigrade"    = TRUE,
+	// synth_color / synth_markings live on /mob/living/carbon/human (they
+	// color synth limbs on organic bodies or synth species like Protean).
+	// Cyborgs are /mob/living/silicon/robot — these vars don't exist there.
+	"synth_color"    = TRUE,
+	"synth_markings" = TRUE,
+))
+
+// pAI: holopad with no body. Strip everything physical and most stat configuration.
+GLOBAL_LIST_INIT(dq_pai_mode_hidden_categories, list(
+	"appearance",
+	"size_voice",
+	"mind_body",
+	"loadout",
+	"traits",
+	"antag",
+	"occupation",
+))
+
+GLOBAL_LIST_INIT(dq_pai_mode_hidden_groups, list(
+	"chassis",
+	"hair",
+	"ears",
+	"tail",
+	"wings",
+	"blood",
+	"markings",
+	"organs",
+	"body",
+	"demographics",
+	"background",
+	"speech_verbs",
+	"spawn",
+	"records",       // Medical/security records — pAIs aren't on the station roster.
+	"persistence",   // Body resleeve / mind scan — pAIs don't have bodies.
+	"nif",           // pAIs don't have neural interfaces.
+	"directory",     // Vore directory — pAIs aren't on it.
+	"roleplay",      // RP flavor tied to physical bodies.
+))
+
+GLOBAL_LIST_INIT(dq_pai_mode_hidden_pref_keys, list(
+	"s_tone"         = TRUE,
+	"skin_color"     = TRUE,
+	"eyes_color"     = TRUE,
+	"digitigrade"    = TRUE,
+	"synth_color"    = TRUE,
+	"synth_markings" = TRUE,
+))
+
+GLOBAL_LIST_INIT(dq_human_mode_hidden_groups, list(
+	"chassis",  // Cyborg chassis editor — humans don't have one.
+	"pai",      // pAI card config — humans aren't pAIs.
+))
+
+// Nothing pref-level is hidden in human mode at the moment — the chassis
+// group filter (above) already takes care of the cyborg-only editor.
+GLOBAL_LIST_INIT(dq_human_mode_hidden_pref_keys, list(
+))
+
+// DQAdd — pref savefile_keys whose change forces a rebuild of the editor
+// static_data cache. Catalogs (loadout, markings, organs) species-gate their
+// entries and the chassis editor play_mode-gates its entire payload, so
+// flipping any of these requires re-running the gates.
+GLOBAL_LIST_INIT(dq_editor_static_invalidator_keys, list(
+	"species"        = TRUE,
+	"custom_base"    = TRUE,
+	"play_mode"      = TRUE,
+	"tail_style"     = TRUE,
+))
+
+// DQAdd — Explicit per-category group order. Groups within a category render in
+// this order in the React grid; groups not listed fall to the end alphabetically.
+// Without this, group order followed first-encounter of GLOB.preference_entries
+// which is type-registration order (not file order), so "Name" wasn't reliably
+// first in Identity even though the metadata file lists it first.
+GLOBAL_LIST_INIT(dq_group_order, list(
+	"identity"    = list("name", "gender", "demographics", "species", "spawn", "language", "background", "speech_verbs", "flavor", "directory", "records", "ooc_notes"),
+	"appearance"  = list("chassis", "body", "hair", "ears", "tail", "wings", "blood", "markings", "organs", "preview"),
+	"size_voice"  = list("size", "voice"),
+	"antag"       = list("antag", "be_special"),
+	"game"        = list("input", "view", "sound", "ui", "chat", "persistence", "roleplay", "nif", "pai"),
 ))
 
 /datum/preference_middleware/character_setup/get_ui_data(mob/user)
@@ -47,6 +160,15 @@ GLOBAL_LIST_INIT(dq_collapsed_groups, list(
 	// widget items (auto-rendered) and editor items (delegated to a registered editor).
 	var/list/categories_data = list()
 	var/list/categories_by_name = list() // name -> categories_data entry, for ordering
+
+	// DQEdit — play-mode gating. "robot" collapses organic-only categories /
+	// groups / keys; "pai" collapses everything physical; "human" collapses
+	// synth-only entries. The species_picker editor (which drives play_mode)
+	// is always allowed through so the player has an escape hatch back to
+	// human mode.
+	var/play_mode = preferences.read_preference(/datum/preference/text/human/play_mode) || "human"
+	var/playing_as_robot = (play_mode == "robot")
+	var/playing_as_pai = (play_mode == "pai")
 
 	for(var/pref_type in GLOB.preference_entries)
 		var/datum/preference/pref = GLOB.preference_entries[pref_type]
@@ -69,6 +191,29 @@ GLOBAL_LIST_INIT(dq_collapsed_groups, list(
 			continue
 		var/grp = pref.get_group(preferences) || ""
 
+		// DQEdit — play-mode gating. play_mode is itself a hidden pref so
+		// no escape hatch needed here; the species_picker editor below is
+		// always allowed through.
+		if(playing_as_pai)
+			if(cat in GLOB.dq_pai_mode_hidden_categories)
+				continue
+			if(grp in GLOB.dq_pai_mode_hidden_groups)
+				continue
+			if(GLOB.dq_pai_mode_hidden_pref_keys[pref.savefile_key])
+				continue
+		else if(playing_as_robot)
+			if(cat in GLOB.dq_robot_mode_hidden_categories)
+				continue
+			if(grp in GLOB.dq_robot_mode_hidden_groups)
+				continue
+			if(GLOB.dq_robot_mode_hidden_pref_keys[pref.savefile_key])
+				continue
+		else
+			if(grp in GLOB.dq_human_mode_hidden_groups)
+				continue
+			if(GLOB.dq_human_mode_hidden_pref_keys[pref.savefile_key])
+				continue
+
 		var/list/category_entry = categories_by_name[cat]
 		if(!category_entry)
 			category_entry = list("category" = cat, "groups" = list())
@@ -82,7 +227,7 @@ GLOBAL_LIST_INIT(dq_collapsed_groups, list(
 				group_entry = g
 				break
 		if(!group_entry)
-			group_entry = list("group" = grp, "items" = list(), "collapsed" = LAZYACCESS(GLOB.dq_collapsed_groups, grp) ? TRUE : FALSE)
+			group_entry = list("group" = grp, "items" = list())
 			groups += list(group_entry)
 
 		var/list/widget_payload = list(
@@ -106,6 +251,22 @@ GLOBAL_LIST_INIT(dq_collapsed_groups, list(
 	for(var/datum/preference_editor/editor as anything in GLOB.preference_editors)
 		if(editor.hidden)
 			continue
+		// DQEdit — same play-mode gating as for prefs. SpeciesPicker is the
+		// always-visible escape hatch (player needs a way to switch modes).
+		if(editor.key != "species_picker")
+			if(playing_as_pai)
+				if(editor.category in GLOB.dq_pai_mode_hidden_categories)
+					continue
+				if(editor.group && (editor.group in GLOB.dq_pai_mode_hidden_groups))
+					continue
+			else if(playing_as_robot)
+				if(editor.category in GLOB.dq_robot_mode_hidden_categories)
+					continue
+				if(editor.group && (editor.group in GLOB.dq_robot_mode_hidden_groups))
+					continue
+			else
+				if(editor.group && (editor.group in GLOB.dq_human_mode_hidden_groups))
+					continue
 		var/list/category_entry = categories_by_name[editor.category]
 		if(!category_entry)
 			category_entry = list("category" = editor.category, "groups" = list())
@@ -149,6 +310,20 @@ GLOBAL_LIST_INIT(dq_collapsed_groups, list(
 	// preference_entries, which let new entries shove existing tabs around).
 	sortTim(categories_data, GLOBAL_PROC_REF(dq_cmp_category_entries))
 
+	// DQEdit — sort groups WITHIN each category by GLOB.dq_group_order. Without
+	// this, "Identity" would render whichever group was hit first by the
+	// preference_entries iteration, which made "name" fall below "gender" or
+	// "species" depending on registration order. sortTim's comparator can't
+	// capture state, so we pre-stamp each group with a sort_priority based on
+	// its position in dq_group_order and sort by that.
+	for(var/list/cat as anything in categories_data)
+		var/list/category_order = GLOB.dq_group_order[cat["category"]]
+		if(islist(category_order) && length(cat["groups"]) > 1)
+			for(var/list/group as anything in cat["groups"])
+				var/idx = category_order.Find(group["group"])
+				group["sort_priority"] = idx ? idx : 999
+			sortTim(cat["groups"], GLOBAL_PROC_REF(dq_cmp_group_by_sort_priority))
+
 	data["dq_categories"] = categories_data
 	return data
 
@@ -163,20 +338,49 @@ GLOBAL_LIST_INIT(dq_collapsed_groups, list(
 		return 1
 	return cmptext(a["category"], b["category"])
 
+/proc/dq_cmp_group_by_sort_priority(list/a, list/b)
+	return a["sort_priority"] - b["sort_priority"]
+
+// DQAdd — Build the editor static cache and push a static_data update so
+// the React side picks up the newly-populated catalogs. Called via addtimer
+// from get_ui_static_data when the cache was empty, deferring the heavy
+// catalog construction off the tgui_interact open path.
+/datum/preferences/proc/dq_build_editor_static_cache()
+	dq_editor_static_cache = list()
+	for(var/datum/preference_editor/editor as anything in GLOB.preference_editors)
+		var/list/static_payload = editor.build_ui_static_data(src)
+		if(static_payload && static_payload.len)
+			dq_editor_static_cache[editor.key] = static_payload
+	dq_static_pending = FALSE
+	update_static_data_for_all_viewers()
+
 /datum/preference_middleware/character_setup/get_ui_static_data(mob/user)
 	var/list/data = ..()
 
 	if(preferences.current_window != PREFERENCE_TAB_CHARACTER_PREFERENCES)
 		return data
 
-	var/list/static_editors = list()
-	for(var/datum/preference_editor/editor as anything in GLOB.preference_editors)
-		var/list/static_payload = editor.build_ui_static_data(preferences)
-		if(static_payload && static_payload.len)
-			static_editors[editor.key] = static_payload
-	if(static_editors.len)
-		data["dq_editor_static"] = static_editors
+	// DQEdit — editor static_data is cached per-preferences-datum. Catalogs
+	// (markings, loadout, hair) don't change between opens; rebuilding them
+	// on every send_full_update is wasted CPU + JSON serialization.
+	// Invalidation is keyed on the structural prefs that gate catalog
+	// filtering: species (for loadout/marking/organ species gates),
+	// custom_base (same), play_mode (for chassis), tail_style (for taur
+	// gear). update_preference clears the cache for those keys; everything
+	// else reuses the cached payload.
+	if(islist(preferences.dq_editor_static_cache) && length(preferences.dq_editor_static_cache))
+		data["dq_editor_static"] = preferences.dq_editor_static_cache
+		return data
 
+	// Slow path: cache empty. Defer the actual build so tgui_interact can
+	// return immediately with the window painting. The deferred build then
+	// pushes a full static_data update once it's done. Editors gracefully
+	// handle missing static (show loading placeholders); the catalogs land
+	// within ~1 tick.
+	if(!preferences.dq_static_pending)
+		preferences.dq_static_pending = TRUE
+		addtimer(CALLBACK(preferences, TYPE_PROC_REF(/datum/preferences, dq_build_editor_static_cache)), 1, TIMER_UNIQUE | TIMER_OVERRIDE)
+	data["dq_editor_static"] = list()
 	return data
 
 /datum/preference_middleware/character_setup/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)

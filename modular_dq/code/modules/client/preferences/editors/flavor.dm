@@ -16,9 +16,16 @@
 	pref_keys = list("flavor_texts", "flavour_texts_robot")
 
 /datum/preference_editor/flavor/build_ui_data(datum/preferences/preferences)
+	// DQEdit — play_mode-derived is_robot flag is passed through so React
+	// shows only the body flavor block for humans and only the robot flavor
+	// block for cyborgs (avoid having both visible at once when only one
+	// applies). pAI mode renders neither (configured via the dedicated
+	// pAI fields in the Game tab).
+	var/play_mode = preferences.read_preference(/datum/preference/text/human/play_mode) || "human"
 	return list(
 		"flavor_texts" = preferences.read_preference(/datum/preference/flavor_texts) || list(),
 		"flavour_texts_robot" = preferences.read_preference(/datum/preference/flavour_texts_robot) || list(),
+		"play_mode" = play_mode,
 	)
 
 /datum/preference_editor/flavor/build_ui_static_data(datum/preferences/preferences)

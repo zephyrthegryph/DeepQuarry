@@ -175,46 +175,59 @@ const TraitColumn = ({
   const color = COLUMN_COLOR[categoryKey];
 
   return (
-    <Section title={label}>
-      <Box mb={0.5} bold color={color}>
-        Selected
-      </Box>
-      {selected.length === 0 && <Box italic mb={1}>None</Box>}
-      {selected.map((path) => {
-        const meta = allTraits[path];
-        if (!meta) return null;
-        return (
-          <TraitRow
-            key={path}
-            meta={meta}
-            action="remove_trait"
-            categoryKey={categoryKey}
-            path={path}
-            icon="times"
-            iconColor="bad"
-          />
-        );
-      })}
-      <Box mt={1} mb={0.5} bold color={color}>
-        Available
-      </Box>
-      {available
-        .filter((path) => !selectedSet.has(path) && matches(path))
-        .map((path) => {
+    <Section
+      title={label}
+      style={{
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      <Box style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+        <Box mb={0.25} bold color={color} fontSize="0.85em">
+          Selected
+        </Box>
+        {selected.length === 0 && (
+          <Box italic mb={0.5} fontSize="0.85em" color="label">
+            None
+          </Box>
+        )}
+        {selected.map((path) => {
           const meta = allTraits[path];
           if (!meta) return null;
           return (
             <TraitRow
               key={path}
               meta={meta}
-              action="add_trait"
+              action="remove_trait"
               categoryKey={categoryKey}
               path={path}
-              icon="plus"
-              iconColor={color}
+              icon="times"
+              iconColor="bad"
             />
           );
         })}
+        <Box mt={0.5} mb={0.25} bold color={color} fontSize="0.85em">
+          Available
+        </Box>
+        {available
+          .filter((path) => !selectedSet.has(path) && matches(path))
+          .map((path) => {
+            const meta = allTraits[path];
+            if (!meta) return null;
+            return (
+              <TraitRow
+                key={path}
+                meta={meta}
+                action="add_trait"
+                categoryKey={categoryKey}
+                path={path}
+                icon="plus"
+                iconColor={color}
+              />
+            );
+          })}
+      </Box>
     </Section>
   );
 };
@@ -238,38 +251,52 @@ const TraitRow = ({
   const [open, setOpen] = useState(false);
   const costStr = meta.cost === 0 ? '0' : meta.cost > 0 ? `+${meta.cost}` : `${meta.cost}`;
   return (
-    <Box mb={0.25}>
-      <Stack align="center">
-        <Stack.Item>
-          <Button
-            icon={icon}
-            color={iconColor}
-            onClick={() =>
-              send(act, action, {
-                category: categoryKey,
-                trait_path: path,
-              })
-            }
-          />
-        </Stack.Item>
-        <Stack.Item grow>
+    <Box mb={0.1} fontSize="0.85em">
+      <Box style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <Button
+          compact
+          icon={icon}
+          color={iconColor}
+          onClick={() =>
+            send(act, action, {
+              category: categoryKey,
+              trait_path: path,
+            })
+          }
+        />
+        <Box
+          style={{
+            cursor: 'pointer',
+            flex: 1,
+            minWidth: 0,
+            display: 'flex',
+            alignItems: 'baseline',
+            gap: '4px',
+          }}
+          onClick={() => setOpen((v) => !v)}
+        >
           <Box
-            as="div"
-            style={{ cursor: 'pointer' }}
-            onClick={() => setOpen((v) => !v)}
+            bold
+            style={{
+              flex: 1,
+              minWidth: 0,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
           >
-            <b>{meta.name}</b>{' '}
-            <Box inline color="label">
-              ({costStr})
-            </Box>
+            {meta.name}
           </Box>
-          {open && (
-            <Box color="label" fontSize="0.9em" pl={1}>
-              {meta.desc}
-            </Box>
-          )}
-        </Stack.Item>
-      </Stack>
+          <Box color="label" style={{ flex: '0 0 auto' }}>
+            ({costStr})
+          </Box>
+        </Box>
+      </Box>
+      {open && (
+        <Box color="label" fontSize="0.85em" pl={3} pr={1}>
+          {meta.desc}
+        </Box>
+      )}
     </Box>
   );
 };

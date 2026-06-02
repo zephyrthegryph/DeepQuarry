@@ -12,28 +12,61 @@ import {
 } from 'react';
 import { Button, ColorBox, ImageButton, Stack } from 'tgui-core/components';
 
-export const getImage = async (url: string): Promise<HTMLImageElement> => {
-  return new Promise((resolve, reject) => {
+// In-memory cache of fetched HTMLImageElement promises, keyed by URL. Without
+// this, every render of a thumbnail picker re-fires the network fetch — the
+// hair/marking picker re-runs ColorizedImage on every poll. Sharing the promise
+// also de-duplicates concurrent fetches for the same URL.
+const imageCache = new Map<string, Promise<HTMLImageElement>>();
+
+export const getImage = (url: string): Promise<HTMLImageElement> => {
+  const cached = imageCache.get(url);
+  if (cached) return cached;
+  const promise = new Promise<HTMLImageElement>((resolve, reject) => {
     const image = new Image();
     image.onload = () => resolve(image);
-    image.onerror = (event) => reject(event);
+    image.onerror = (event) => {
+      imageCache.delete(url);
+      reject(event);
+    };
     image.src = url;
   });
+  imageCache.set(url, promise);
+  return promise;
 };
+
+/// Preload an image (e.g. on hover) so the click-to-open path renders instantly.
+export const preloadImage = (url: string): void => {
+  void getImage(url);
+};
+
+/// Cache of finished CanvasBackedImage data: URLs by render key. Lets the
+/// picker re-mount without re-running the OffscreenCanvas pipeline for sprites
+/// we've already drawn this session.
+const bitmapCache = new Map<string, string>();
 
 /// Renders the output of a user-supplied OffscreenCanvas draw callback into an <img>.
 /// Re-renders when the render prop reference changes; caller should memoize via useCallback.
+/// Pass `cacheKey` to reuse the rendered data: URL across remounts (much cheaper
+/// than re-running the canvas pipeline). Without `cacheKey`, every mount runs the
+/// render afresh.
 export const CanvasBackedImage = (props: {
   render: (
     canvas: OffscreenCanvas,
     ctx: OffscreenCanvasRenderingContext2D,
   ) => Promise<void>;
   size?: number;
+  cacheKey?: string;
 }) => {
-  const [bitmap, setBitmap] = useState<string>('');
+  const cached = props.cacheKey ? bitmapCache.get(props.cacheKey) : undefined;
+  const [bitmap, setBitmap] = useState<string>(cached ?? '');
   const size = props.size ?? 64;
 
   useEffect(() => {
+    // Fast path: cached value already populated, no need to re-render.
+    if (props.cacheKey && bitmapCache.has(props.cacheKey)) {
+      setBitmap(bitmapCache.get(props.cacheKey) ?? '');
+      return;
+    }
     const offscreenCanvas = new OffscreenCanvas(size, size);
     const ctx = offscreenCanvas.getContext('2d');
     if (!ctx) return;
@@ -45,15 +78,22 @@ export const CanvasBackedImage = (props: {
       await props.render(offscreenCanvas, ctx);
       const blob = await offscreenCanvas.convertToBlob();
       if (!active) return;
-      url = URL.createObjectURL(blob);
-      setBitmap(url);
+      // Use FileReader to get a data: URL — survives unmount/remount where
+      // ObjectURL would be revoked. Slightly larger but cacheable.
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (!active) return;
+        url = reader.result as string;
+        if (props.cacheKey) bitmapCache.set(props.cacheKey, url);
+        setBitmap(url);
+      };
+      reader.readAsDataURL(blob);
     })();
 
     return () => {
       active = false;
-      if (url) URL.revokeObjectURL(url);
     };
-  }, [props.render, size]);
+  }, [props.render, size, props.cacheKey]);
 
   // imageRendering: 'pixelated' — the OffscreenCanvas draws at 1 px = 1 source-px, but at
   // HiDPI scaling the <img> picks bilinear by default and DMI sprites end up blurry.
@@ -121,7 +161,10 @@ export const ColorizedImage = (props: {
     [iconRef, iconState, color, preRender, postRender, dir],
   );
 
-  return <CanvasBackedImage render={render} size={size} />;
+  // Stable cache key so repeated renders + remounts (e.g. switching tabs back
+  // to the hair picker) reuse the previously-drawn data URL.
+  const cacheKey = `${iconRef}|${iconState}|${color ?? ''}|${dir ?? ''}|${size ?? 64}`;
+  return <CanvasBackedImage render={render} size={size} cacheKey={cacheKey} />;
 };
 
 /// ImageButton wrapper that takes an arbitrary ReactNode as the image. Useful with

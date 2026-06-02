@@ -412,6 +412,12 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 		value_cache[preference.type] = new_value
 		save_batch_dirty = TRUE
 
+		// DQEdit — invalidate the editor static_data cache when a structural
+		// pref changes (species/play_mode/etc.). Catalogs are species-gated /
+		// taur-gated; the cache must rebuild so those gates re-evaluate.
+		if(GLOB.dq_editor_static_invalidator_keys?[preference.savefile_key])
+			dq_editor_static_cache = null
+
 		// Fan out constraints triggered by this key.
 		// DQEdit — guard against constraint cycles. If A's `affects` overlaps B's `triggers` and
 		// vice versa, the cascade would recurse forever. We refuse to recurse past a fixed depth

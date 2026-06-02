@@ -1,59 +1,115 @@
 // DQAdd — Character Setup window. Three vertical regions in the left pane (toolbar /
-// tabs / scrollable page); right pane is the preview map + cycle background.
+// tabs / scrollable page); right pane is the character preview + cycle background.
+//
+// The preview renders as plain <img> tags from base64 PNGs the server flattens
+// out of the mannequin (one per cardinal direction) and the background icon.
+// No BYOND map control, no ByondUi, no icon-size race — CSS scales the source
+// pixels with image-rendering: pixelated. See /datum/preferences/proc/update_character_previews
+// in code/modules/client/preferences.dm.
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
-import {
-  Box,
-  Button,
-  ByondUi,
-  Section,
-  Stack,
-  Tabs,
-} from 'tgui-core/components';
+import { Box, Button, Section, Stack, Tabs } from 'tgui-core/components';
 import { CategoryPage } from './CategoryPage';
-import type { CharacterSetupData } from './types';
+import type { CharacterPreviewAssets, CharacterSetupData } from './types';
 
-/// Wraps ByondUi for the character preview map. ByondUi creates the map control
-/// dynamically when this component mounts (no skin.dmf pre-declaration — a previous
-/// attempt to pre-declare with `is-visible = false` and tight anchors triggered a
-/// BYOND client crash on click). The map's logical view is set to 3x8 to match the
-/// preview screen-loc geometry (BG spans 1,1 to 3,8; PMH at 2,7 — see
-/// code/modules/client/preferences.dm); icon-size=48 keeps per-tile rendering at a
-/// readable scale without making the map taller than the right pane can hold.
-///
-/// The ResizeObserver dispatches a global resize event whenever the container
-/// changes size — BYOND's embed only re-measures on the window-level event.
-const PreviewMap = () => {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el || typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(() => {
-      window.dispatchEvent(new Event('resize'));
-    });
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
+/// Renders the BG image at the back and stacks the four direction sprites
+/// (SOUTH top, NORTH, EAST, WEST bottom) in the center column at 1/3 of the
+/// container width. Image-rendering: pixelated keeps the 32-px source crisp
+/// when CSS scales it up.
+const PreviewPane = ({ assets }: { assets: CharacterPreviewAssets }) => {
+  const directions: Array<keyof Pick<
+    CharacterPreviewAssets,
+    'south' | 'north' | 'east' | 'west'
+  >> = ['south', 'north', 'east', 'west'];
   return (
-    <div
-      ref={containerRef}
+    <Box
       style={{
         width: '100%',
         height: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
       }}
     >
-      <ByondUi
-        params={{
-          id: 'character_preview_map',
-          type: 'map',
-          view: '3x4',
-          'icon-size': '140',
+      <Box
+        style={{
+          position: 'relative',
+          aspectRatio: '3 / 4',
+          maxWidth: '100%',
+          maxHeight: '100%',
+          height: '100%',
+          // Wider sprites (dogborgs) render at the same pixel scale as a
+          // human, which means a 64x32 chassis overflows the 32-wide center
+          // column. Clip at the preview pane edge so the bleed never reaches
+          // the main prefs content next door.
+          overflow: 'hidden',
         }}
-        style={{ width: '100%', height: '100%' }}
-      />
-    </div>
+      >
+        {assets.bg && (
+          // Tiled background (3 cols × 4 rows of the 32-px source icon),
+          // matching the original BYOND screen_loc "1,1 to 3,4" fill_rect.
+          // A stretched single tile was the previous look; this restores the
+          // 12-tile grid the BG was designed for.
+          <Box
+            style={{
+              position: 'absolute',
+              inset: 0,
+              backgroundImage: `url('data:image/png;base64,${assets.bg}')`,
+              backgroundRepeat: 'repeat',
+              backgroundSize: '33.33% 25%',
+              imageRendering: 'pixelated',
+            }}
+          />
+        )}
+        <Box
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: '33.33%',
+            width: '33.33%',
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          {directions.map((dir) => (
+            <Box
+              key={dir}
+              style={{
+                flex: 1,
+                minHeight: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                // Wider sprites (dogborgs) overflow horizontally rather than
+                // shrink vertically — without this they'd render at half the
+                // visual height of an organic mannequin.
+                overflow: 'visible',
+              }}
+            >
+              {assets[dir] && (
+                <img
+                  src={`data:image/png;base64,${assets[dir]}`}
+                  alt=""
+                  style={{
+                    // Match the slot height; width auto preserves aspect ratio.
+                    // For 32x32 humans this fills the square slot exactly. For
+                    // wider sprites (64x32 dogborgs) the image overflows to the
+                    // sides at the same pixel scale — matches the user's
+                    // expectation of "same scale as a character".
+                    height: '100%',
+                    width: 'auto',
+                    imageRendering: 'pixelated',
+                  }}
+                />
+              )}
+            </Box>
+          ))}
+        </Box>
+      </Box>
+    </Box>
   );
 };
 
@@ -90,6 +146,7 @@ const FULL_HEIGHT_EDITORS = new Set<string>(['loadout', 'mind_body']);
 export const DQCharacterSetup = () => {
   const { act, data } = useBackend<CharacterSetupData>();
   const categories = data.dq_categories ?? [];
+  const previewAssets = data.character_preview_assets ?? {};
   const [selected, setSelected] = useState<string | null>(null);
 
   // Land on the first available category once data arrives. Without this, the initial
@@ -113,8 +170,8 @@ export const DQCharacterSetup = () => {
 
   return (
     <Window
-      width={1100}
-      height={760}
+      width={1500}
+      height={900}
       buttons={
         <Button
           icon="expand"
@@ -133,37 +190,34 @@ export const DQCharacterSetup = () => {
     >
       <Window.Content>
         <Stack fill>
-          {/* LEFT: toolbar + tabs + active page. grow=3 (vs right grow=2) puts
-              the editor at ~60% of the window. */}
+          {/* LEFT: toolbar + tabs + active page. grow=3 (vs right grow=1)
+              gives the editor ~75% of the window width. */}
           <Stack.Item grow={3} basis={0}>
             <Stack fill vertical>
               <Stack.Item>
-                <Section>
-                  <Stack align="center">
-                    <Stack.Item>
-                      <Button icon="folder-open" onClick={() => act('load')}>
-                        Load
-                      </Button>
-                    </Stack.Item>
-                    <Stack.Item>
-                      <Button icon="copy" onClick={() => act('copy')}>
-                        Copy
-                      </Button>
-                    </Stack.Item>
-                    <Stack.Item grow>
-                      <Box />
-                    </Stack.Item>
-                    <Stack.Item>
-                      <Button
-                        icon="sliders"
-                        onClick={() => act('game_prefs')}
-                        tooltip="Switches to Game Options."
-                      >
-                        Game Options
-                      </Button>
-                    </Stack.Item>
-                  </Stack>
-                </Section>
+                <Box
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: '2px 0',
+                  }}
+                >
+                  <Button icon="folder-open" onClick={() => act('load')}>
+                    Load
+                  </Button>
+                  <Button icon="copy" onClick={() => act('copy')}>
+                    Copy
+                  </Button>
+                  <Box style={{ flex: 1 }} />
+                  <Button
+                    icon="sliders"
+                    onClick={() => act('game_prefs')}
+                    tooltip="Switches to Game Options."
+                  >
+                    Game Options
+                  </Button>
+                </Box>
               </Stack.Item>
               <Stack.Item>
                 <Tabs fluid>
@@ -179,26 +233,26 @@ export const DQCharacterSetup = () => {
                 </Tabs>
               </Stack.Item>
               <Stack.Item grow>
-                <Section fill scrollable={!pageIsFullHeight}>
+                <Section fill fitted scrollable={!pageIsFullHeight}>
                   {selectedPage && (
-                    <CategoryPage
-                      page={selectedPage}
-                      staticData={data.dq_editor_static}
-                      fillHeight={pageIsFullHeight}
-                    />
+                    <Box p={0.5} style={{ height: pageIsFullHeight ? '100%' : 'auto' }}>
+                      <CategoryPage
+                        page={selectedPage}
+                        staticData={data.dq_editor_static}
+                        fillHeight={pageIsFullHeight}
+                      />
+                    </Box>
                   )}
                 </Section>
               </Stack.Item>
             </Stack>
           </Stack.Item>
-          {/* RIGHT: preview map + cycle background. grow=2 (vs left grow=3)
-              gives the preview ~40% of the window so the character renders at
-              a comfortable size. */}
-          <Stack.Item grow={2} basis={0}>
+          {/* RIGHT: preview + cycle background. */}
+          <Stack.Item grow={1} basis={0}>
             <Stack fill vertical>
               <Stack.Item grow>
-                <Section fill>
-                  <PreviewMap />
+                <Section fill fitted>
+                  <PreviewPane assets={previewAssets} />
                 </Section>
               </Stack.Item>
               <Stack.Item>

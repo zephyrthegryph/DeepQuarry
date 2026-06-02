@@ -4,8 +4,8 @@
 
 /datum/preference_editor/vore_messages
 	key = "vore_messages"
-	category = "vore"
-	group = "thermal"
+	category = "game"
+	group = "roleplay"
 	sort_order = 50
 	display_name = "Hot & Cold Messages"
 	pref_keys = list("custom_heat", "custom_cold")

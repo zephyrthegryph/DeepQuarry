@@ -2,32 +2,20 @@
 	COOLDOWN_DECLARE(ui_refresh_cooldown)
 
 /datum/preferences/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui, custom_state)
-	// DQEdit — build the preview SYNCHRONOUSLY before opening the UI. An earlier
-	// pass moved this to INVOKE_ASYNC after ui.open() to make the window pop faster,
-	// but that introduced a "first open shows white / restart fixes it" symptom: the
-	// React tree was rendering with char_render_holders still null, and the right
-	// preview pane never got populated until a subsequent close/reopen kicked
-	// show_character_previews() through the populated-holders branch. The trade-off
-	// (~1s open delay first time) is worth a consistent open.
-	//
-	// try/catch around the build is paranoia: a runtime mid-mannequin would have
-	// left updating_preview_icon stranded TRUE before that flag's own try/catch
-	// landed. The wrapping guard here means we still call show_character_previews()
-	// and open the UI even if the build itself faulted, so the user gets a working
-	// menu instead of a stuck verb.
-	if(!char_render_holders)
+	// DQEdit — build the base64 preview assets before tgui opens so the
+	// initial static_data includes them. update_preview_icon → update_character_previews
+	// flattens the mannequin into 4 direction PNGs + BG PNG via icon2base64.
+	if(!character_preview_b64)
 		try
 			update_preview_icon()
 		catch(var/exception/e)
 			stack_trace("preview_icon build at tgui_interact: [e.name] at [e.file]:[e.line]")
-	show_character_previews()
 
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
 		ui = new(user, src, "PreferencesMenu", "Preferences")
 		ui.set_autoupdate(FALSE)
 		ui.open()
-		CallAsync(src, PROC_REF(jiggle_map))
 
 /datum/preferences/tgui_state(mob/user)
 	return GLOB.tgui_always_state
@@ -72,7 +60,14 @@
 
 	data["character_profiles"] = create_character_profiles()
 
-	// data["character_preview_view"] = character_preview_view.assigned_map
+	// DQEdit — preview assets ship in static_data. update_preview_icon pushes
+	// a fresh static_data update after each rebuild via
+	// update_static_data_for_all_viewers, which is now cheap because the
+	// editor catalogs are themselves cached (dq_editor_static_cache). Putting
+	// them in ui_data caused the heavy base64 strings to re-serialize on
+	// every polling tick, which contributed to UI render churn (cursor flicker).
+	if(character_preview_b64)
+		data["character_preview_assets"] = character_preview_b64
 	// data["overflow_role"] = SSjob.get_jobType(SSjob.overflow_role).title
 
 	data["window"] = current_window
@@ -197,39 +192,27 @@
 			if(!COOLDOWN_FINISHED(src, ui_refresh_cooldown))
 				return
 			update_preview_icon()
+			update_tgui_static_data(ui.user)
 			COOLDOWN_START(src, ui_refresh_cooldown, 5 SECONDS)
-			CallAsync(src, PROC_REF(jiggle_map))
 			. = TRUE
-		// DQAdd — cycle through bgstate_choices. Wired from the Cycle Background button on
-		// the preview pane. Updates the bgstate pref AND writes BG.icon_state directly so
-		// the change is visible immediately — without this second write, the pref changes
-		// but the screen object keeps its stale icon_state until the next full preview
-		// rebuild (and there's nothing in the regular flow that triggers a rebuild here).
+		// DQEdit — Cycle Background flips bgstate to the next choice and
+		// re-renders the preview assets so the new BG shows up immediately
+		// via the next static_data push.
 		if("cycle_background")
 			var/datum/preference/text/human/bgstate/bg = GLOB.preference_entries[/datum/preference/text/human/bgstate]
-			if(!bg)
-				. = TRUE
-				return
-			var/list/choices = bg.bgstate_choices
-			if(!length(choices))
-				. = TRUE
-				return
-			var/current = read_preference(/datum/preference/text/human/bgstate) || choices[1]
-			var/idx = choices.Find(current)
-			idx = (idx % choices.len) + 1
-			update_preference_by_type(/datum/preference/text/human/bgstate, choices[idx])
-			var/atom/movable/screen/setup_preview/bg/BG = LAZYACCESS(char_render_holders, "BG")
-			if(BG)
-				BG.icon_state = choices[idx]
+			if(bg && length(bg.bgstate_choices))
+				var/current = read_preference(/datum/preference/text/human/bgstate) || bg.bgstate_choices[1]
+				var/idx = bg.bgstate_choices.Find(current)
+				idx = (idx % bg.bgstate_choices.len) + 1
+				update_preference_by_type(/datum/preference/text/human/bgstate, bg.bgstate_choices[idx])
+				update_preview_icon()
+				update_tgui_static_data(ui.user)
 			. = TRUE
 
-/datum/preferences/proc/jiggle_map()
-	// Fix for weird byond bug, jiggles the map around a little
-	var/atom/movable/screen/setup_preview/pm_helper/PMH = LAZYACCESS(char_render_holders, "PMH")
-	sleep(0.1 SECONDS)
-	PMH.screen_loc = LAZYACCESS(preview_screen_locs, "PMHjiggle")
-	sleep(0.1 SECONDS)
-	PMH.screen_loc = LAZYACCESS(preview_screen_locs, "PMH")
+// DQEdit — jiggle_map / dq_force_pref_window_visible removed. The asset-
+// based preview renders <img> tags from base64; nothing depends on
+// BYOND map control timing, the tgui_window visible signal, or the React
+// Window's visibility flicker. Normal pool tgui windows work as-is.
 
 /datum/preferences/tgui_close(mob/user)
 	load_character()

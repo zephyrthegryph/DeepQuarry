@@ -66,13 +66,16 @@ export const LanguagePicker = ({ data, staticData }: EditorProps) => {
   }
 
   // Display order: selected languages first (so the player's working set sits
-  // at the top), then unselected alphabetically.
-  const sortedLanguageEntries = Object.entries(all).sort((a, b) => {
-    const aSel = selected.has(a[0]) ? 0 : 1;
-    const bSel = selected.has(b[0]) ? 0 : 1;
-    if (aSel !== bSel) return aSel - bSel;
-    return a[1].name.localeCompare(b[1].name);
-  });
+  // at the top), then unselected alphabetically. Restricted entries are
+  // filtered out entirely — the user can't pick them anyway.
+  const sortedLanguageEntries = Object.entries(all)
+    .filter(([, meta]) => !meta.restricted)
+    .sort((a, b) => {
+      const aSel = selected.has(a[0]) ? 0 : 1;
+      const bSel = selected.has(b[0]) ? 0 : 1;
+      if (aSel !== bSel) return aSel - bSel;
+      return a[1].name.localeCompare(b[1].name);
+    });
 
   return (
     <Stack vertical>
@@ -293,7 +296,14 @@ const LanguageRow = ({
   customKey?: string;
   act: Act;
 }) => {
-  const disabled = meta.restricted || (!selected && roomLeft === 0);
+  // tgui sends BooleanLike (0/1) for booleans. `meta.restricted && (…)` with a
+  // 0 would render literal "0" next to the language name. Coerce to a real
+  // boolean before the conditional. (Restricted entries are filtered upstream
+  // in sortedLanguageEntries, but keep the guard so a future caller can render
+  // a single LanguageRow without surprises.)
+  const isRestricted = !!meta.restricted;
+  const hasDesc = !!meta.desc;
+  const disabled = isRestricted || (!selected && roomLeft === 0);
   return (
     <Box
       mb={0.5}
@@ -307,14 +317,14 @@ const LanguageRow = ({
         border: selected
           ? '1px solid rgba(52,152,219,0.45)'
           : '1px solid rgba(255,255,255,0.06)',
-        opacity: meta.restricted ? 0.55 : 1,
+        opacity: isRestricted ? 0.55 : 1,
       }}
     >
       <Stack align="center">
         <Stack.Item grow>
           <Box bold>
             {meta.name}
-            {meta.restricted && (
+            {isRestricted && (
               <Tooltip content="This language is restricted — only certain characters or roles can speak it.">
                 <Box
                   inline
@@ -333,7 +343,7 @@ const LanguageRow = ({
               </Tooltip>
             )}
           </Box>
-          {meta.desc && (
+          {hasDesc && (
             <Box fontSize="0.82em" color="label" mt={0.25}>
               {meta.desc}
             </Box>

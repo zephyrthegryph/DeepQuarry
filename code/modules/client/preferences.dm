@@ -25,20 +25,19 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	// subtypes. species_preview was unused; deleted.
 
 		//Mob preview
-	var/list/char_render_holders		//Should only be a key-value list of north/south/east/west = atom/movable/screen.
-	// DQEdit — compressed from 3x8 to 3x4 so the React preview can use a 3x4 view
-	// with icon-size up to ~120, making the character substantially larger inside
-	// the right pane. Directions still occupy distinct rows; BG spans the full
-	// visible area.
-	var/static/list/preview_screen_locs = list(
-		"1" = "character_preview_map:2,4",
-		"2" = "character_preview_map:2,3",
-		"4"  = "character_preview_map:2,2",
-		"8"  = "character_preview_map:2,1",
-		"BG" = "character_preview_map:1,1 to 3,4",
-		"PMH" = "character_preview_map:2,3",
-		"PMHjiggle" = "character_preview_map:102,3:107",
-	)
+	// DQEdit — replaced the BYOND map control approach entirely. Instead of
+	// rendering the mannequin onto a map element via screen objects, we
+	// flatten the mannequin (4 directions) and the BG into base-64 PNGs
+	// via getFlatIcon + icon2base64 and ship them in tgui_data. React
+	// displays them as scaled <img> tags. This sidesteps the unreliable
+	// BYOND dynamic-map-element creation path (icon-size honoring race,
+	// the "sometimes tiny" symptom) and gives us deterministic sizing.
+	//
+	// character_preview_b64 is an assoc list: "south"/"north"/"east"/"west"
+	// → base-64 string for the mannequin facing that direction; "bg" → the
+	// background icon's base-64 string. Rebuilt by update_character_previews
+	// every time update_preview_icon runs (every pref change).
+	var/list/character_preview_b64
 
 	//character preferences
 	var/slot_randomized //keeps track of round-to-round randomization of the character slot, prevents overwriting
@@ -82,6 +81,18 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	/// Re-entry guard for update_preview_icon(). apply_hooks that write prefs as a side
 	/// effect would otherwise re-trigger preview generation and infinite-recurse.
 	var/updating_preview_icon = FALSE
+	/// DQAdd — Guard for the deferred static_data push triggered by
+	/// update_preview_icon. Multiple rapid pref changes coalesce into one
+	/// send_full_update fan-out via TIMER_UNIQUE + this flag.
+	var/dq_preview_pending = FALSE
+	/// DQAdd — Cache of editor static_data payloads ({editor_key → list}).
+	/// Built lazily by the character_setup middleware's get_ui_static_data.
+	/// Invalidated by update_preference when a structural pref changes (see
+	/// GLOB.dq_editor_static_invalidator_keys). null means "not built yet".
+	var/list/dq_editor_static_cache = null
+	/// DQAdd — Guard against scheduling multiple deferred cache builds when
+	/// get_ui_static_data is called repeatedly before the first build lands.
+	var/dq_static_pending = FALSE
 
 /datum/preferences/New(client/C)
 	client = C
@@ -118,7 +129,9 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	save_character() // Save random character
 
 /datum/preferences/Destroy()
-	QDEL_LIST_ASSOC_VAL(char_render_holders)
+	// DQEdit — character_preview_b64 is just a list of base64 strings, no
+	// atoms to qdel.
+	character_preview_b64 = null
 	// DQEdit — `middleware` is a list of /datum/preference_middleware; QDEL_NULL would
 	// pass the list itself to qdel and trip the "lists should not be qdel'd" runtime.
 	// QDEL_LIST iterates and qdels each entry then clears the list.
@@ -151,62 +164,55 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 		to_chat(user, span_danger("No mob exists for the given client!"))
 		return
 
-	if(!char_render_holders)
-		update_preview_icon()
-	show_character_previews()
-
+	// DQEdit — refresh the body appearance + base64 assets before tgui opens.
+	// Preview build is the dominant cost of opening the window
+	// (~500-1500ms for a fully-dressed mannequin × 4 directions). Defer the
+	// north/east/west renders to a spawn() so the window paints with the
+	// south frame immediately; the remaining directions stream in via the
+	// next ui_data poll (preview_assets live in ui_data, see preferences_tgui.dm).
 	current_window = PREFERENCE_TAB_CHARACTER_PREFERENCES
-	update_tgui_static_data(user)
+	if(!character_preview_b64)
+		update_preview_icon_lazy()
 	tgui_interact(user)
 
-/datum/preferences/proc/update_character_previews(mob/living/carbon/human/mannequin)
-	if(!client)
+// DQEdit Start — asset-based character preview. update_character_previews
+// flattens the mannequin (one frame per cardinal direction) plus the BG
+// into base-64 PNG strings via getFlatIcon + icon2base64 and stashes them
+// on character_preview_b64. React displays them with <img> tags scaled by
+// CSS — no BYOND map control involved, no icon-size race, deterministic
+// sizing.
+/datum/preferences/proc/update_character_previews(mob/living/carbon/human/mannequin, south_only = FALSE)
+	if(!mannequin)
 		return
-
-	var/atom/movable/screen/setup_preview/pm_helper/PMH = LAZYACCESS(char_render_holders, "PMH")
-	if(!PMH)
-		PMH = new
-		LAZYSET(char_render_holders, "PMH", PMH)
-		client.screen |= PMH
-	PMH.screen_loc = preview_screen_locs["PMH"]
-
-	var/atom/movable/screen/setup_preview/bg/BG = LAZYACCESS(char_render_holders, "BG")
-	if(!BG)
-		BG = new
-		BG.plane = TURF_PLANE
-		BG.icon = 'icons/effects/setup_backgrounds_vr.dmi'
-		BG.pref = src
-		LAZYSET(char_render_holders, "BG", BG)
-		client.screen |= BG
-	BG.icon_state = read_preference(/datum/preference/text/human/bgstate) // DQEdit — migrated
-	BG.screen_loc = preview_screen_locs["BG"]
-
-	for(var/D in GLOB.cardinal)
-		var/atom/movable/screen/setup_preview/O = LAZYACCESS(char_render_holders, "[D]")
-		if(!O)
-			O = new
-			O.pref = src
-			LAZYSET(char_render_holders, "[D]", O)
-			client.screen |= O
-		mannequin.set_dir(D)
+	LAZYINITLIST(character_preview_b64)
+	// DQEdit — bake size_multiplier + species icon scale into the flattened
+	// PNG. getFlatIcon ignores the mannequin's matrix transform (that's how
+	// in-world rendering applies size), so without this Scale() step the
+	// preview ignores the size slider entirely.
+	var/size_multiplier = read_preference(/datum/preference/numeric/human/size_multiplier) || 1
+	var/scale_x = size_multiplier * (mannequin.species?.icon_scale_x || 1)
+	var/scale_y = size_multiplier * (mannequin.species?.icon_scale_y || 1)
+	var/list/dirs = south_only ? list("south" = SOUTH) : list("south" = SOUTH, "north" = NORTH, "east" = EAST, "west" = WEST)
+	for(var/dir_key in dirs)
+		var/dir = dirs[dir_key]
+		mannequin.set_dir(dir)
 		mannequin.update_tail_showing()
 		mannequin.ImmediateOverlayUpdate()
-		var/mutable_appearance/MA = new(mannequin)
-		O.appearance = MA
-		O.screen_loc = preview_screen_locs["[D]"]
+		var/icon/flat = getFlatIcon(mannequin, defdir = dir, no_anim = TRUE)
+		if(scale_x != 1 || scale_y != 1)
+			flat.Scale(max(1, round(flat.Width() * scale_x)), max(1, round(flat.Height() * scale_y)))
+		character_preview_b64[dir_key] = icon2base64(flat)
+	var/bgstate = read_preference(/datum/preference/text/human/bgstate)
+	if(bgstate)
+		var/icon/bg_icon = icon('icons/effects/setup_backgrounds_vr.dmi', bgstate)
+		character_preview_b64["bg"] = icon2base64(bg_icon)
 
 /datum/preferences/proc/show_character_previews()
-	if(!client || !char_render_holders)
-		return
-	for(var/render_holder in char_render_holders)
-		client.screen |= char_render_holders[render_holder]
+	return
 
 /datum/preferences/proc/clear_character_previews()
-	for(var/index in char_render_holders)
-		var/atom/movable/screen/S = char_render_holders[index]
-		client?.screen -= S
-		qdel(S)
-	char_render_holders = null
+	character_preview_b64 = null
+// DQEdit End
 
 /datum/preferences/proc/process_link(mob/user, list/href_list)
 	if(!user)	return

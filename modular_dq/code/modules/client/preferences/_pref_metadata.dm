@@ -25,20 +25,31 @@ GLOBAL_LIST_INIT(pref_metadata_table, init_pref_metadata_table())
 	. = list()
 
 	//// IDENTITY ////
-	// Name + flags
+	// Name + flags. name_is_always_random removed (force-random naming is a
+	// UX pothole — random names belong in the Randomize button, not a quiet
+	// background toggle). play_mode is hidden — it's driven by the
+	// SpeciesPicker editor (Robot / pAI entries set it).
 	tag_pref(., /datum/preference/name/real_name, "identity", "name")
 	tag_pref(., /datum/preference/name/nickname, "identity", "name")
-	tag_pref(., /datum/preference/toggle/human/name_is_always_random, "identity", "name")
+	tag_pref(., /datum/preference/toggle/human/name_is_always_random, "identity", "name", PREF_WIDGET_HIDDEN)
+	tag_pref(., /datum/preference/text/human/play_mode, "identity", "species", PREF_WIDGET_HIDDEN)
 	// Gender
+	// Gender. identifying gender is merged into biological — see
+	// /datum/preference/choiced/gender/identifying/pref_deserialize, which now
+	// always returns the biological value. The separate pref slot remains for
+	// savefile compat but is hidden from the UI.
 	tag_pref(., /datum/preference/choiced/gender/biological, "identity", "gender")
-	tag_pref(., /datum/preference/choiced/gender/identifying, "identity", "gender")
+	tag_pref(., /datum/preference/choiced/gender/identifying, "identity", "gender", PREF_WIDGET_HIDDEN)
 	// Demographics (age + bday_announce). bday_month/day live in the Birthday editor.
-	tag_pref(., /datum/preference/numeric/human/age, "identity", "demographics")
+	// Age is a NumberInput (not a slider) — easier to type a specific number,
+	// matches how weight is rendered.
+	tag_pref(., /datum/preference/numeric/human/age, "identity", "demographics", PREF_WIDGET_NUMBER)
 	tag_pref(., /datum/preference/toggle/human/bday_announce, "identity", "demographics")
-	// Species
-	tag_pref(., /datum/preference/choiced/species, "identity", "species")
-	tag_pref(., /datum/preference/text/human/custom_species, "identity", "species")
-	tag_pref(., /datum/preference/text/human/custom_base, "identity", "species")
+	// Species — owned by the species_picker editor; underlying prefs hidden
+	// from the auto-renderer so the popup is the only entry point.
+	tag_pref(., /datum/preference/choiced/species, "identity", "species", PREF_WIDGET_HIDDEN)
+	tag_pref(., /datum/preference/text/human/custom_species, "identity", "species", PREF_WIDGET_HIDDEN)
+	tag_pref(., /datum/preference/text/human/custom_base, "identity", "species", PREF_WIDGET_HIDDEN)
 	// Spawn point
 	tag_pref(., /datum/preference/choiced/living/spawnpoint, "identity", "spawn")
 	// Background (formerly its own tab)
@@ -53,8 +64,9 @@ GLOBAL_LIST_INIT(pref_metadata_table, init_pref_metadata_table())
 	tag_pref(., /datum/preference/text/human/custom_whisper, "identity", "speech_verbs")
 	tag_pref(., /datum/preference/text/human/custom_ask, "identity", "speech_verbs")
 	tag_pref(., /datum/preference/text/human/custom_exclaim, "identity", "speech_verbs")
-	// Language (formerly its own tab)
-	tag_pref(., /datum/preference/numeric/human/extra_languages, "identity", "language")
+	// Language (formerly its own tab). extra_languages is a derived stat
+	// (computed from traits, NIF, etc.) — not a player-editable preference.
+	tag_pref(., /datum/preference/numeric/human/extra_languages, "identity", "language", PREF_WIDGET_HIDDEN)
 	tag_pref(., /datum/preference/text/human/preferred_language, "identity", "language")
 	tag_pref(., /datum/preference/color/human/runechat_color, "identity", "language")
 	tag_pref(., /datum/preference/alternate_languages, "identity", "language", PREF_WIDGET_HIDDEN)
@@ -86,6 +98,10 @@ GLOBAL_LIST_INIT(pref_metadata_table, init_pref_metadata_table())
 	tag_pref(., /datum/preference/toggle/human/synth_markings, "appearance", "body")
 	tag_pref(., /datum/preference/color/human/synth_color, "appearance", "body")
 	tag_pref(., /datum/preference/toggle/human/digitigrade, "appearance", "body")
+	// Cyborg chassis — driven by the RobotChassisPicker editor (appearance/chassis).
+	// The two underlying text prefs are hidden from the auto-renderer.
+	tag_pref(., /datum/preference/text/human/robot_module, "appearance", "chassis", PREF_WIDGET_HIDDEN)
+	tag_pref(., /datum/preference/text/human/robot_chassis, "appearance", "chassis", PREF_WIDGET_HIDDEN)
 	// Blood
 	tag_pref(., /datum/preference/text/human/b_type, "appearance", "blood")
 	tag_pref(., /datum/preference/text/human/blood_reagents, "appearance", "blood")
@@ -180,25 +196,28 @@ GLOBAL_LIST_INIT(pref_metadata_table, init_pref_metadata_table())
 	tag_pref(., /datum/preference/choiced/human/vantag_preference, "antag")
 	tag_pref(., /datum/preference/choiced/uplinklocation, "antag")
 
-	//// VORE ////
-	tag_pref(., /datum/preference/text/human/vore_egg_type, "vore", "basics")
-	tag_pref(., /datum/preference/text/human/autohiss, "vore", "basics")
-	tag_pref(., /datum/preference/numeric/human/sensorpref, "vore", "basics")
-	tag_pref(., /datum/preference/toggle/human/ignore_shoes, "vore", "basics")
-	// Crystal / backup
-	tag_pref(., /datum/preference/toggle/human/capture_crystal, "vore", "backup")
-	tag_pref(., /datum/preference/toggle/human/auto_backup_implant, "vore", "backup")
-	tag_pref(., /datum/preference/toggle/human/borg_petting, "vore", "backup")
-	// Directory subgroup
-	tag_pref(., /datum/preference/toggle/human/show_in_directory, "vore", "directory")
-	tag_pref(., /datum/preference/choiced/human/directory_tag, "vore", "directory")
-	tag_pref(., /datum/preference/choiced/human/directory_gendertag, "vore", "directory")
-	tag_pref(., /datum/preference/choiced/human/directory_sexualitytag, "vore", "directory")
-	tag_pref(., /datum/preference/choiced/human/directory_erptag, "vore", "directory")
-	tag_pref(., /datum/preference/text/human/directory_ad, "vore", "directory")
-	// Thermal composite (editor)
-	tag_pref(., /datum/preference/custom_heat, "vore", "thermal", PREF_WIDGET_HIDDEN)
-	tag_pref(., /datum/preference/custom_cold, "vore", "thermal", PREF_WIDGET_HIDDEN)
+	// VORE TAB REMOVED — prefs moved into Game / Identity. Backup/resleeve
+	// prefs go to Game/Persistence (they're save-state). Vore directory
+	// (player-facing ad copy) goes to Identity/Directory. Thermal messages
+	// and personal kink prefs go to Game/Roleplay.
+	tag_pref(., /datum/preference/text/human/vore_egg_type, "game", "roleplay")
+	tag_pref(., /datum/preference/text/human/autohiss, "identity", "speech_verbs")
+	tag_pref(., /datum/preference/numeric/human/sensorpref, "game", "input")
+	tag_pref(., /datum/preference/toggle/human/ignore_shoes, "game", "roleplay")
+	// Backup / persistence
+	tag_pref(., /datum/preference/toggle/human/capture_crystal, "game", "persistence")
+	tag_pref(., /datum/preference/toggle/human/auto_backup_implant, "game", "persistence")
+	tag_pref(., /datum/preference/toggle/human/borg_petting, "game", "roleplay")
+	// Directory subgroup (player ad copy / OOC tags) — lives under Identity.
+	tag_pref(., /datum/preference/toggle/human/show_in_directory, "identity", "directory")
+	tag_pref(., /datum/preference/choiced/human/directory_tag, "identity", "directory")
+	tag_pref(., /datum/preference/choiced/human/directory_gendertag, "identity", "directory")
+	tag_pref(., /datum/preference/choiced/human/directory_sexualitytag, "identity", "directory")
+	tag_pref(., /datum/preference/choiced/human/directory_erptag, "identity", "directory")
+	tag_pref(., /datum/preference/text/human/directory_ad, "identity", "directory")
+	// Thermal composite (editor) — under Game/Roleplay.
+	tag_pref(., /datum/preference/custom_heat, "game", "roleplay", PREF_WIDGET_HIDDEN)
+	tag_pref(., /datum/preference/custom_cold, "game", "roleplay", PREF_WIDGET_HIDDEN)
 
 	//// GAME (formerly: persistence + nif + pai + misc) ////
 	// Persistence

@@ -219,6 +219,19 @@
 		return 0
 	if(!job.player_has_enough_pto(src.client))
 		return 0
+	// DQEdit — play_mode gating: cyborgs are the only option when chargen has
+	// play_mode == "robot", and not an option for any other mode. Without this
+	// a player who picked "Robot" in the species picker could still late-join
+	// as a human; conversely, a human could late-join into the Cyborg slot.
+	if(client?.prefs)
+		var/play_mode = client.prefs.read_preference(/datum/preference/text/human/play_mode) || "human"
+		var/is_cyborg_job = (rank == JOB_CYBORG || rank == JOB_ALT_ROBOT || rank == JOB_ALT_DRONE)
+		if(play_mode == "robot" && !is_cyborg_job)
+			return 0
+		if(play_mode == "human" && is_cyborg_job)
+			return 0
+		if(play_mode == "pai")
+			return 0
 	return 1
 
 

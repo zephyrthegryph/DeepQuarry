@@ -267,33 +267,74 @@
 							equipped_slots += G.slot
 	// DQEdit End
 
-/datum/preferences/proc/update_preview_icon()
-	// DQEdit — re-entry guard. apply_hooks may write prefs as a side effect; if they call
-	// update_preference_by_type that would invoke us again, infinite-recursing. The fix in
-	// the offending hook is to use write_preference_by_type, but the guard is cheap insurance.
+// DQAdd — Preview rebuild runs synchronously so pref changes feel instant; only
+// the static_data PUSH to tgui viewers is deferred. The push is what was hitting
+// BYOND's recursion limit on size_multiplier — send_full_update + tgui_static_data
+// + middleware.get_ui_static_data walks every editor catalog AND every pref via
+// compile_character_preferences. Combined with the apply pipeline depth from
+// /mob/living/carbon/human/update_transform on a size change, it tipped over.
+//
+// Splitting the work:
+//   1. update_preview_icon() — synchronous rebuild of character_preview_b64
+//      (apply pipeline + getFlatIcon × 4). Stays inside update_preference's
+//      call stack, but isn't itself recursive.
+//   2. After the rebuild, mark "push pending" and addtimer the actual
+//      send_full_update fan-out. The push runs on a fresh stack one tick later.
+//
+// Multiple rapid pref changes coalesce because both the addtimer call uses
+// TIMER_UNIQUE | TIMER_OVERRIDE and the dq_push_pending guard skips re-queuing
+// if a push is already on its way.
+
+/datum/preferences/proc/update_preview_icon_lazy()
+	if(updating_preview_icon)
+		return
+	update_preview_icon(south_only = TRUE)
+	addtimer(CALLBACK(src, TYPE_PROC_REF(/datum/preferences, update_preview_icon)), 1, TIMER_UNIQUE | TIMER_OVERRIDE)
+
+/datum/preferences/proc/update_preview_icon(south_only = FALSE)
+	// Re-entry guard. apply_hooks shouldn't write prefs via update_preference,
+	// but if they do, the second call sees the guard set and bails.
 	if(updating_preview_icon)
 		return
 	updating_preview_icon = TRUE
-	// try/catch resets the guard even if any of the dress/transform/toggle calls runtimes.
-	// Without this a runtime mid-rebuild strands updating_preview_icon = TRUE for the rest
-	// of the session — every subsequent editor change silently no-ops because the guard
-	// blocks the rebuild it should have triggered.
 	try
-		var/mob/living/carbon/human/dummy/mannequin/mannequin = get_mannequin(client_ckey)
-		if(!mannequin.dna) // Special handling for preview icons before SSAtoms has initailized.
-			mannequin.dna = new /datum/dna(null)
-		mannequin.delete_inventory(TRUE)
-		dress_preview_mob(mannequin)
-		mannequin.update_transform()
-		// DQEdit — migrated animations_toggle
-		var/_animations_toggle = read_preference(/datum/preference/toggle/human/animations_toggle)
-		mannequin.toggle_tail(setting = _animations_toggle)
-		mannequin.toggle_wing(setting = _animations_toggle)
-
-		update_character_previews(mannequin)
+		dq_render_preview(south_only)
 	catch(var/exception/e)
 		stack_trace("update_preview_icon runtimed: [e.name] at [e.file]:[e.line]")
 	updating_preview_icon = FALSE
+	// Schedule the static_data push. Coalesces rapid calls via TIMER_UNIQUE +
+	// the dq_push_pending guard. Always runs on a fresh stack so the heavy
+	// send_full_update path can't add to the apply pipeline's depth.
+	dq_schedule_static_push()
+
+/datum/preferences/proc/dq_schedule_static_push()
+	if(dq_preview_pending)
+		return
+	dq_preview_pending = TRUE
+	addtimer(CALLBACK(src, TYPE_PROC_REF(/datum/preferences, dq_flush_static_push)), 0, TIMER_UNIQUE | TIMER_OVERRIDE)
+
+/datum/preferences/proc/dq_flush_static_push()
+	dq_preview_pending = FALSE
+	update_static_data_for_all_viewers()
+
+/datum/preferences/proc/dq_render_preview(south_only = FALSE)
+	var/play_mode = read_preference(/datum/preference/text/human/play_mode) || "human"
+	if(play_mode == "robot")
+		dq_update_robot_preview(south_only)
+		return
+	if(play_mode == "pai")
+		dq_update_pai_preview(south_only)
+		return
+	var/mob/living/carbon/human/dummy/mannequin/mannequin = get_mannequin(client_ckey)
+	if(!mannequin.dna)
+		mannequin.dna = new /datum/dna(null)
+	mannequin.delete_inventory(TRUE)
+	dress_preview_mob(mannequin)
+	mannequin.update_transform()
+	var/_animations_toggle = read_preference(/datum/preference/toggle/human/animations_toggle)
+	mannequin.toggle_tail(setting = _animations_toggle)
+	mannequin.toggle_wing(setting = _animations_toggle)
+	update_character_previews(mannequin, south_only)
 
 // DQEdit — get_highest_job() moved to
 // modular_dq/code/modules/client/preferences/types/character/job_priorities.dm. It now

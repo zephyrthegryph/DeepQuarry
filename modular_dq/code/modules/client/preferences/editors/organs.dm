@@ -6,7 +6,7 @@
 /datum/preference_editor/organs
 	key = "organs"
 	category = "appearance"
-	group = "body"
+	group = "organs"
 	sort_order = 80
 	display_name = "Organs & Cybernetics"
 	pref_keys = list("organ_data", "rlimb_data")

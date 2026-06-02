@@ -12,7 +12,11 @@
 
 	repick_laws()
 
+	// DQEdit Start — Replaced upstream pick_module() with chargen-driven
+	// apply. The popup is gone for good; see
+	// modular_dq/code/modules/mob/living/silicon/robot/cyborg_spawn.dm.
 	// Forces synths to select an icon relevant to their module
-	pick_module()
+	apply_cyborg_chargen_prefs_or_default()
+	// DQEdit End
 
 	plane_holder.set_vis(VIS_AUGMENTED, TRUE)

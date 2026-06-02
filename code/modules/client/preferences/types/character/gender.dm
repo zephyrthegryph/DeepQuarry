@@ -67,9 +67,9 @@
 	return MALE
 
 /datum/preference/choiced/gender/identifying/pref_deserialize(input, datum/preferences/preferences)
-	if(input in all_genders_define_list)
-		return input
+	// DQEdit — id_gender is merged into biological gender. We always return the
+	// biological value here so any reader of /datum/preference/choiced/gender/
+	// identifying sees the same value as biological. The savefile slot still
+	// exists for back-compat; old saves with a distinct id_gender are ignored.
 	var/bio_gender = preferences?.read_preference(/datum/preference/choiced/gender/biological)
-	if(bio_gender)
-		return bio_gender
-	return MALE
+	return bio_gender || MALE

@@ -121,7 +121,14 @@ const MessageList = ({
 export const VoreMessagesEditor = ({ data }: EditorProps) => {
   const d = data as Data;
   return (
-    <Box>
+    <Box
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
+        gap: '12px',
+        alignItems: 'start',
+      }}
+    >
       <MessageList which="heat" messages={d.heat ?? []} />
       <MessageList which="cold" messages={d.cold ?? []} />
     </Box>
