@@ -50,6 +50,18 @@
 	data["active_slot"] = default_slot
 	data["saved_notification"] = saved_notification
 
+	// DQEdit — preview assets ship in ui_data so they reach React via the
+	// normal polling channel (send_update — ui_data only) instead of via
+	// send_full_update (ui_data + static_data + heavy editor catalogs).
+	// Posting preview rebuilds through send_full_update was reconciling the
+	// entire React tree on every pref edit, which caused interactable
+	// elements under the pointer to briefly unmount and the cursor to
+	// flicker between pointer / default. Catalogs stay in static_data;
+	// preview lives here. The bytes round-trip every poll tick (~50 KB
+	// when populated) but only re-render PreviewPane in React.
+	if(character_preview_b64)
+		data["character_preview_assets"] = character_preview_b64
+
 	for(var/datum/preference_middleware/preference_middleware as anything in middleware)
 		data += preference_middleware.get_ui_data(user)
 
@@ -60,14 +72,7 @@
 
 	data["character_profiles"] = create_character_profiles()
 
-	// DQEdit — preview assets ship in static_data. update_preview_icon pushes
-	// a fresh static_data update after each rebuild via
-	// update_static_data_for_all_viewers, which is now cheap because the
-	// editor catalogs are themselves cached (dq_editor_static_cache). Putting
-	// them in ui_data caused the heavy base64 strings to re-serialize on
-	// every polling tick, which contributed to UI render churn (cursor flicker).
-	if(character_preview_b64)
-		data["character_preview_assets"] = character_preview_b64
+	// DQEdit — preview assets now ship in ui_data (see /datum/preferences/tgui_data).
 	// data["overflow_role"] = SSjob.get_jobType(SSjob.overflow_role).title
 
 	data["window"] = current_window

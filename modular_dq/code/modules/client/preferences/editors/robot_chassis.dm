@@ -14,6 +14,8 @@
 	sort_order = 5
 	display_name = "Cyborg Chassis"
 	pref_keys = list("robot_module", "robot_chassis")
+	// Catalog payload gates on play_mode (returns an empty stub for humans/pAIs).
+	static_invalidator_keys = list("play_mode")
 
 /datum/preference_editor/robot_chassis/build_ui_data(datum/preferences/preferences)
 	return list(

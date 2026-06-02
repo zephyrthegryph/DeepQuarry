@@ -81,10 +81,15 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	/// Re-entry guard for update_preview_icon(). apply_hooks that write prefs as a side
 	/// effect would otherwise re-trigger preview generation and infinite-recurse.
 	var/updating_preview_icon = FALSE
-	/// DQAdd — Guard for the deferred static_data push triggered by
-	/// update_preview_icon. Multiple rapid pref changes coalesce into one
-	/// send_full_update fan-out via TIMER_UNIQUE + this flag.
+	/// DQAdd — Guard for the deferred static_data push (full update — used
+	/// when an editor cache entry was invalidated, e.g. species change drops
+	/// loadout's catalog). Coalesces multiple invalidations in one tick.
 	var/dq_preview_pending = FALSE
+	/// DQAdd — Guard for the deferred ui_data push (data-only update — used
+	/// for routine pref edits, slider drags, etc. that only need to refresh
+	/// the preview assets / pref values). Avoids the heavy reconciliation
+	/// that send_full_update would trigger.
+	var/dq_data_push_pending = FALSE
 	/// DQAdd — Cache of editor static_data payloads ({editor_key → list}).
 	/// Built lazily by the character_setup middleware's get_ui_static_data.
 	/// Invalidated by update_preference when a structural pref changes (see

@@ -412,11 +412,20 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 		value_cache[preference.type] = new_value
 		save_batch_dirty = TRUE
 
-		// DQEdit — invalidate the editor static_data cache when a structural
-		// pref changes (species/play_mode/etc.). Catalogs are species-gated /
-		// taur-gated; the cache must rebuild so those gates re-evaluate.
-		if(GLOB.dq_editor_static_invalidator_keys?[preference.savefile_key])
-			dq_editor_static_cache = null
+		// DQEdit — invalidate ONLY the editor static_data cache entries that
+		// declared a dependency on this pref key. Most editors have a constant
+		// catalog and stay cached; species changes only drop loadout's entry,
+		// play_mode changes only drop robot_chassis's, etc. The next
+		// get_ui_static_data call rebuilds the missing entries inline.
+		var/list/affected_editors = GLOB.dq_editor_static_invalidators_by_key?[preference.savefile_key]
+		if(islist(affected_editors) && islist(dq_editor_static_cache))
+			for(var/datum/preference_editor/editor as anything in affected_editors)
+				dq_editor_static_cache -= editor.key
+			// We dropped at least one entry; schedule a static_data push so
+			// the React side picks up the rebuild. Push is deferred so it
+			// runs out of update_preference's call stack and coalesces
+			// multiple invalidations in the same tick.
+			dq_schedule_static_push()
 
 		// Fan out constraints triggered by this key.
 		// DQEdit — guard against constraint cycles. If A's `affects` overlaps B's `triggers` and
@@ -434,7 +443,14 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 
 		if(preference.savefile_identifier == PREFERENCE_PLAYER)
 			preference.apply_to_client_updated(client, read_preference(preference.type))
-		else
+		else if(constraint_cascade_depth == 0)
+			// DQEdit — only rebuild the preview at the OUTERMOST update_preference
+			// call. Constraint-triggered inner calls (species_resets_hair,
+			// species_resets_tail, species_resets_eyes, etc.) used to each
+			// trigger their own full preview rebuild — a species change with
+			// 6 cascading constraints fired 6 rebuilds (~6 seconds for the
+			// full apply pipeline × 4 directions × getFlatIcon). One rebuild
+			// at the end captures the cumulative new state.
 			update_preview_icon()
 	catch(var/exception/e)
 		stack_trace("update_preference runtimed: [e.name] at [e.file]:[e.line] (key=[preference.savefile_key])")

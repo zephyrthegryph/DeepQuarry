@@ -102,6 +102,9 @@
 	sort_order = 50
 	display_name = "Gear Loadout"
 	pref_keys = list("gear_list", "gear_slot")
+	// gear catalog is filtered by species/custom_base (whitelist gating) and
+	// tail_style (taur gear gating). Only these prefs require a rebuild.
+	static_invalidator_keys = list("species", "custom_base", "tail_style")
 
 /// Body slot display table. Keep in head-down order; `multi` controls whether the slot can
 /// hold more than one item (only slot_tie should). slot_legs is generally fluff layer.

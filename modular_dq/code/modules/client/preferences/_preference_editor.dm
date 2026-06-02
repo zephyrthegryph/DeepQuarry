@@ -60,6 +60,13 @@ GLOBAL_LIST_INIT(preference_editors_by_key, init_preference_editors_by_key())
 	/// — the smaller editors keep their action handlers but don't render on their own.
 	var/hidden = FALSE
 
+	/// DQAdd — Pref savefile_keys whose change forces this editor's static_data
+	/// cache entry to rebuild. Most editors have a constant catalog (markings,
+	/// hair, traits, etc.) and don't need invalidation at all; loadout filters
+	/// by species/tail, robot_chassis filters by play_mode, etc.
+	/// Empty list (default) means "never invalidate after first build".
+	var/list/static_invalidator_keys
+
 /// Produce the editor-specific UI payload. Free-form list; the matching React component
 /// owns the schema on the other side. Called every time the UI refreshes.
 /datum/preference_editor/proc/build_ui_data(datum/preferences/preferences)

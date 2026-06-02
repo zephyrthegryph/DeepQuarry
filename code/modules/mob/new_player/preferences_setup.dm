@@ -302,12 +302,30 @@
 	catch(var/exception/e)
 		stack_trace("update_preview_icon runtimed: [e.name] at [e.file]:[e.line]")
 	updating_preview_icon = FALSE
-	// Schedule the static_data push. Coalesces rapid calls via TIMER_UNIQUE +
-	// the dq_push_pending guard. Always runs on a fresh stack so the heavy
-	// send_full_update path can't add to the apply pipeline's depth.
-	dq_schedule_static_push()
+	// Push the ui_data update so React picks up the new preview assets.
+	// send_update sends ONLY ui_data (no static_data, no editor catalogs),
+	// which keeps the React reconciliation surface small — the heavy
+	// CategoryPage subtree skips re-render when its props haven't changed.
+	// Deferred via addtimer so we run on a fresh stack after the apply
+	// pipeline unwinds, and coalesce rapid drags via TIMER_UNIQUE.
+	dq_schedule_data_push()
+
+/datum/preferences/proc/dq_schedule_data_push()
+	if(dq_data_push_pending)
+		return
+	dq_data_push_pending = TRUE
+	addtimer(CALLBACK(src, TYPE_PROC_REF(/datum/preferences, dq_flush_data_push)), 0, TIMER_UNIQUE | TIMER_OVERRIDE)
+
+/datum/preferences/proc/dq_flush_data_push()
+	dq_data_push_pending = FALSE
+	for(var/datum/tgui/window as anything in open_tguis)
+		window.send_update()
 
 /datum/preferences/proc/dq_schedule_static_push()
+	// Coalesce multiple static_data invalidations in the same tick into a
+	// single send_full_update. Used by update_preference when it drops
+	// editor cache entries (species/play_mode/etc. changes) and by
+	// dq_build_editor_static_cache after the cold-start build.
 	if(dq_preview_pending)
 		return
 	dq_preview_pending = TRUE

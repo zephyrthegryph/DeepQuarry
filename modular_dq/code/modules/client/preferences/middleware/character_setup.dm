@@ -126,16 +126,23 @@ GLOBAL_LIST_INIT(dq_human_mode_hidden_groups, list(
 GLOBAL_LIST_INIT(dq_human_mode_hidden_pref_keys, list(
 ))
 
-// DQAdd — pref savefile_keys whose change forces a rebuild of the editor
-// static_data cache. Catalogs (loadout, markings, organs) species-gate their
-// entries and the chassis editor play_mode-gates its entire payload, so
-// flipping any of these requires re-running the gates.
-GLOBAL_LIST_INIT(dq_editor_static_invalidator_keys, list(
-	"species"        = TRUE,
-	"custom_base"    = TRUE,
-	"play_mode"      = TRUE,
-	"tail_style"     = TRUE,
-))
+// DQAdd — Reverse-index of editor.static_invalidator_keys: maps a pref
+// savefile_key → list(/datum/preference_editor) that should be rebuilt when
+// that key changes. Built once at world init from the editors' declarations
+// (see /datum/preference_editor.static_invalidator_keys). update_preference
+// uses this to do PER-EDITOR cache invalidation instead of nuking the entire
+// cache when a structural pref flips — species changes used to invalidate
+// every catalog (markings + hair + trait + mind_body + loadout, ~2s rebuild
+// total) when only loadout actually depended on species.
+GLOBAL_LIST_INIT(dq_editor_static_invalidators_by_key, dq_build_editor_static_invalidator_index())
+
+/proc/dq_build_editor_static_invalidator_index()
+	. = list()
+	for(var/datum/preference_editor/editor as anything in GLOB.preference_editors)
+		if(!islist(editor.static_invalidator_keys))
+			continue
+		for(var/k in editor.static_invalidator_keys)
+			LAZYADD(.[k], editor)
 
 // DQAdd — Explicit per-category group order. Groups within a category render in
 // this order in the React grid; groups not listed fall to the end alphabetically.
@@ -341,18 +348,35 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 /proc/dq_cmp_group_by_sort_priority(list/a, list/b)
 	return a["sort_priority"] - b["sort_priority"]
 
-// DQAdd — Build the editor static cache and push a static_data update so
-// the React side picks up the newly-populated catalogs. Called via addtimer
-// from get_ui_static_data when the cache was empty, deferring the heavy
-// catalog construction off the tgui_interact open path.
-/datum/preferences/proc/dq_build_editor_static_cache()
-	dq_editor_static_cache = list()
+// DQAdd — Rebuild a single editor's cache entry on demand. Called from
+// dq_ensure_editor_static_cache when an entry is missing (initial build, or
+// invalidation by update_preference's static_invalidator_keys map).
+/datum/preferences/proc/dq_rebuild_editor_static_entry(datum/preference_editor/editor)
+	if(!editor)
+		return
+	if(!islist(dq_editor_static_cache))
+		dq_editor_static_cache = list()
+	var/list/static_payload = editor.build_ui_static_data(src)
+	if(static_payload && static_payload.len)
+		dq_editor_static_cache[editor.key] = static_payload
+	else
+		dq_editor_static_cache -= editor.key
+
+// Build any cache entries the editor list expects but the cache is missing.
+/datum/preferences/proc/dq_ensure_editor_static_cache()
+	if(!islist(dq_editor_static_cache))
+		dq_editor_static_cache = list()
 	for(var/datum/preference_editor/editor as anything in GLOB.preference_editors)
-		var/list/static_payload = editor.build_ui_static_data(src)
-		if(static_payload && static_payload.len)
-			dq_editor_static_cache[editor.key] = static_payload
+		if(editor.key in dq_editor_static_cache)
+			continue
+		dq_rebuild_editor_static_entry(editor)
+
+// Initial-build entry point for the deferred timer scheduled by
+// get_ui_static_data when the prefs window first opens.
+/datum/preferences/proc/dq_build_editor_static_cache()
+	dq_ensure_editor_static_cache()
 	dq_static_pending = FALSE
-	update_static_data_for_all_viewers()
+	dq_schedule_static_push()
 
 /datum/preference_middleware/character_setup/get_ui_static_data(mob/user)
 	var/list/data = ..()
@@ -363,20 +387,19 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 	// DQEdit — editor static_data is cached per-preferences-datum. Catalogs
 	// (markings, loadout, hair) don't change between opens; rebuilding them
 	// on every send_full_update is wasted CPU + JSON serialization.
-	// Invalidation is keyed on the structural prefs that gate catalog
-	// filtering: species (for loadout/marking/organ species gates),
-	// custom_base (same), play_mode (for chassis), tail_style (for taur
-	// gear). update_preference clears the cache for those keys; everything
-	// else reuses the cached payload.
+	// Per-editor invalidation: update_preference removes only the entries
+	// whose editor declared a dependency on the changed key (see
+	// /datum/preference_editor.static_invalidator_keys). Missing entries
+	// are rebuilt inline here; the rest of the cache stays warm.
 	if(islist(preferences.dq_editor_static_cache) && length(preferences.dq_editor_static_cache))
+		preferences.dq_ensure_editor_static_cache()
 		data["dq_editor_static"] = preferences.dq_editor_static_cache
 		return data
 
-	// Slow path: cache empty. Defer the actual build so tgui_interact can
-	// return immediately with the window painting. The deferred build then
-	// pushes a full static_data update once it's done. Editors gracefully
-	// handle missing static (show loading placeholders); the catalogs land
-	// within ~1 tick.
+	// Cold path: cache empty (first open after world start, before the
+	// preference_editors registry has populated, or after an explicit reset).
+	// Defer the initial build so tgui_interact paints the window immediately
+	// and we don't pay the full ~30-editor cost on the open click.
 	if(!preferences.dq_static_pending)
 		preferences.dq_static_pending = TRUE
 		addtimer(CALLBACK(preferences, TYPE_PROC_REF(/datum/preferences, dq_build_editor_static_cache)), 1, TIMER_UNIQUE | TIMER_OVERRIDE)
