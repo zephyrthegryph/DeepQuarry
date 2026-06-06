@@ -174,9 +174,16 @@
 		return !opacity
 	return !density
 
+// DQEdit — CanZASPass was a ZAS zone-graph hook that controlled whether the door
+// allowed adjacent zones to merge. LINDA tracks adjacency via /turf flags and
+// SSair.add_to_active, not through this hook. The override is dead under LINDA;
+// stub returns the old block-zones semantics so any callers from CHOMP machinery
+// still get a meaningful answer (matters until they're migrated to LINDA APIs).
+// DQEdit — was `proc/CanZASPass` declaration; the parent proc lives on /atom in
+// modular_dq/code/atmospherics/tg_infra_stubs.dm. This is the door override.
 /obj/machinery/door/CanZASPass(turf/T, is_zone)
 	if(is_zone)
-		return !block_air_zones // Block merging unless block_air_zones = 0
+		return !block_air_zones
 	return !density // Block airflow unless density = FALSE
 
 /obj/machinery/door/proc/bumpopen(mob/user)
@@ -184,8 +191,11 @@
 		return
 	if(operating)
 		return
-	if(user.last_airflow > world.time - GLOB.vsc.airflow_delay) //Fakkit
-		return
+	// DQEdit — ZAS airflow was deleted with the atmos migration; the old guard
+	// suppressed bumpopen briefly after a mob got shoved by an airflow pulse so
+	// they didn't open the door they were tumbling through. LINDA has no airflow
+	// pulses, so the guard is unconditionally pass-through.
+	// if(user.last_airflow > world.time - GLOB.vsc.airflow_delay) return
 	if(SEND_SIGNAL(user, COMSIG_MOB_BUMPED_DOOR_OPEN, src) & DOOR_STOP_BUMP)
 		return
 	add_fingerprint(user)
@@ -557,10 +567,13 @@
 		set_opacity(1)	//caaaaarn!
 	operating = 0
 
-	//I shall not add a check every x ticks if a door has closed over some fire.
-	var/obj/fire/fire = locate() in loc
-	if(fire)
-		qdel(fire)
+	// DQEdit — /obj/fire was a ZAS hotspot type, deleted with the LINDA migration.
+	// LINDA tracks hotspots via /obj/effect/hotspot (vendored under
+	// modular_dq/code/atmospherics/environmental/LINDA_fire.dm). Switch to the
+	// LINDA type so doors still extinguish fire underneath when they close.
+	var/obj/effect/hotspot/hotspot = locate() in loc
+	if(hotspot)
+		qdel(hotspot)
 
 	/*
 	var/obj/effect/step_trigger/claymore_laser/las = locate() in loc

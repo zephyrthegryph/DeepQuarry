@@ -384,41 +384,41 @@
 								if(istype(tankcheck[i], /obj/item/tank))
 									var/obj/item/tank/t = tankcheck[i]
 									if (!isnull(t.manipulated_by) && t.manipulated_by != C.real_name && findtext(t.desc,breathes))
-										contents.Add(t.air_contents.total_moles)	//Someone messed with the tank and put unknown gasses
+										contents.Add(t.air_contents.total_moles())	//Someone messed with the tank and put unknown gasses
 										continue					//in it, so we're going to believe the tank is what it says it is
 									switch(breathes)
 																		//These tanks we're sure of their contents
 										if(GAS_N2) 							//So we're a bit more picky about them.
 
-											if(t.air_contents.gas[GAS_N2] && !t.air_contents.gas[GAS_O2])
-												contents.Add(t.air_contents.gas[GAS_N2])
+											if(LINDA_GAS_AMT(t.air_contents, GAS_N2) && !LINDA_GAS_AMT(t.air_contents, GAS_O2))
+												contents.Add(LINDA_GAS_AMT(t.air_contents, GAS_N2))
 											else
 												contents.Add(0)
 
 										if (GAS_O2)
-											if(t.air_contents.gas[GAS_O2] && !t.air_contents.gas[GAS_PHORON])
-												contents.Add(t.air_contents.gas[GAS_O2])
+											if(LINDA_GAS_AMT(t.air_contents, GAS_O2) && !LINDA_GAS_AMT(t.air_contents, GAS_PHORON))
+												contents.Add(LINDA_GAS_AMT(t.air_contents, GAS_O2))
 											else
 												contents.Add(0)
 
 										// No races breath this, but never know about downstream servers.
 										if (GAS_CO2)
-											if(t.air_contents.gas[GAS_CO2] && !t.air_contents.gas[GAS_PHORON])
-												contents.Add(t.air_contents.gas[GAS_CO2])
+											if(LINDA_GAS_AMT(t.air_contents, GAS_CO2) && !LINDA_GAS_AMT(t.air_contents, GAS_PHORON))
+												contents.Add(LINDA_GAS_AMT(t.air_contents, GAS_CO2))
 											else
 												contents.Add(0)
 
 										// And here's for the Vox
 										if (GAS_PHORON)
-											if(t.air_contents.gas[GAS_PHORON] && !t.air_contents.gas[GAS_O2])
-												contents.Add(t.air_contents.gas[GAS_PHORON])
+											if(LINDA_GAS_AMT(t.air_contents, GAS_PHORON) && !LINDA_GAS_AMT(t.air_contents, GAS_O2))
+												contents.Add(LINDA_GAS_AMT(t.air_contents, GAS_PHORON))
 											else
 												contents.Add(0)
 
 										// Grunts rejoice!
 										if (GAS_CH4)
-											if(t.air_contents.gas[GAS_CH4] && !t.air_contents.gas[GAS_O2])
-												contents.Add(t.air_contents.gas[GAS_CH4])
+											if(LINDA_GAS_AMT(t.air_contents, GAS_CH4) && !LINDA_GAS_AMT(t.air_contents, GAS_O2))
+												contents.Add(LINDA_GAS_AMT(t.air_contents, GAS_CH4))
 											else
 												contents.Add(0)
 

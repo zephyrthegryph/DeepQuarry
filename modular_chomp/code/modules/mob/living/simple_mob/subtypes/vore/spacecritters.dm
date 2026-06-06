@@ -92,9 +92,9 @@
 	. = ..()
 	if(icon_state != icon_dead) //I mean on death() Life() should disable but i guess doesnt hurt to make sure -shark
 		var/turf/moth_loc = get_turf(src)
-		if(isturf(moth_loc) && moth_loc.air)
+		if(isturf(moth_loc) && moth_loc.return_air()) // DQEdit — XGM turf.air → LINDA return_air()
 			var/datum/gas_mixture/env = moth_loc.return_air() //Gets all the information on the local air.
-			var/transfer_moles = 0.25 * env.total_moles //The bigger the room, the harder it is to heat the room.
+			var/transfer_moles = 0.25 * env.total_moles() //The bigger the room, the harder it is to heat the room.
 			var/datum/gas_mixture/removed = env.remove(transfer_moles)
 			if(removed)
 				var/heat_transfer = removed.get_thermal_energy_change(set_temperature)

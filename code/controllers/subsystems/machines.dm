@@ -1,10 +1,11 @@
-#define SSMACHINES_PIPENETS      1
+// DQEdit — SSMACHINES_PIPENETS step removed; LINDA's SSair owns pipenets.
 #define SSMACHINES_MACHINERY     2
 #define SSMACHINES_POWERNETS     3
 #define SSMACHINES_POWER_OBJECTS 4
 
 //
-// SSmachines subsystem - Processing machines, pipenets, and powernets!
+// SSmachines subsystem - Processing machines and powernets.
+// (Pipenets moved to SSair under the LINDA migration.)
 //
 
 SUBSYSTEM_DEF(machines)
@@ -16,9 +17,9 @@ SUBSYSTEM_DEF(machines)
 	flags = SS_KEEP_TIMING
 	runlevels = RUNLEVEL_GAME|RUNLEVEL_POSTGAME
 
-	var/current_step = SSMACHINES_PIPENETS
+	var/current_step = SSMACHINES_MACHINERY
 
-	var/cost_pipenets      = 0
+	// DQEdit — cost_pipenets removed; SSair tracks its own pipenet cost.
 	var/cost_machinery     = 0
 	var/cost_powernets     = 0
 	var/cost_power_objects = 0
@@ -28,7 +29,7 @@ SUBSYSTEM_DEF(machines)
 	var/list/all_machines = list()
 	var/list/hibernating_vents = list()
 
-	var/list/networks = list()
+	// DQEdit — networks list removed; SSair.networks is the single source.
 	var/list/processing_machines = list()
 	var/list/powernets = list()
 	var/list/powerobjs = list()
@@ -38,16 +39,15 @@ SUBSYSTEM_DEF(machines)
 
 /datum/controller/subsystem/machines/Initialize()
 	makepowernets()
-	admin_notice(span_danger("Initializing atmos machinery."), R_DEBUG)
-	setup_atmos_machinery(all_machines)
+	// DQEdit — atmos machinery init moved to SSair (LINDA owns atmos init).
 	fire()
 	return SS_INIT_SUCCESS
 
 /datum/controller/subsystem/machines/fire(resumed = 0)
 	var/timer = TICK_USAGE
 
-	INTERNAL_PROCESS_STEP(SSMACHINES_POWER_OBJECTS,FALSE,process_power_objects,cost_power_objects,SSMACHINES_PIPENETS) // Higher priority, damnit
-	INTERNAL_PROCESS_STEP(SSMACHINES_PIPENETS,TRUE,process_pipenets,cost_pipenets,SSMACHINES_MACHINERY)
+	// DQEdit — SSMACHINES_PIPENETS step removed; pipenets dispatch via SSair.
+	INTERNAL_PROCESS_STEP(SSMACHINES_POWER_OBJECTS,FALSE,process_power_objects,cost_power_objects,SSMACHINES_MACHINERY) // Higher priority, damnit
 	INTERNAL_PROCESS_STEP(SSMACHINES_MACHINERY,FALSE,process_machinery,cost_machinery,SSMACHINES_POWERNETS)
 	INTERNAL_PROCESS_STEP(SSMACHINES_POWERNETS,FALSE,process_powernets,cost_powernets,SSMACHINES_POWER_OBJECTS)
 
@@ -86,58 +86,22 @@ SUBSYSTEM_DEF(machines)
 			NewPN.add_cable(PC)
 			propagate_network(PC,PC.powernet)
 
-/datum/controller/subsystem/machines/proc/setup_atmos_machinery(list/atmos_machines)
-	var/list/actual_atmos_machines = list()
-
-	for(var/obj/machinery/atmospherics/machine in atmos_machines)
-		machine.atmos_init()
-		actual_atmos_machines += machine
-		CHECK_TICK
-
-	for(var/obj/machinery/atmospherics/machine as anything in actual_atmos_machines)
-		machine.build_network()
-		CHECK_TICK
-
-	for(var/obj/machinery/atmospherics/unary/U as anything in actual_atmos_machines)
-		if(istype(U, /obj/machinery/atmospherics/unary/vent_pump))
-			var/obj/machinery/atmospherics/unary/vent_pump/T = U
-			T.broadcast_status()
-		else if(istype(U, /obj/machinery/atmospherics/unary/vent_scrubber))
-			var/obj/machinery/atmospherics/unary/vent_scrubber/T = U
-			T.broadcast_status()
-		CHECK_TICK
+// DQEdit — setup_atmos_machinery removed; SSair owns atmos init.
+// (Submap loads call /obj/machinery/atmospherics/atmos_init() directly,
+//  main-map load runs through SSair.Initialize → setup_atmos_machinery.)
 
 /datum/controller/subsystem/machines/stat_entry(msg)
 	msg = "C:{"
-	msg += "PI:[round(cost_pipenets,1)]|"
 	msg += "MC:[round(cost_machinery,1)]|"
 	msg += "PN:[round(cost_powernets,1)]|"
 	msg += "PO:[round(cost_power_objects,1)]"
 	msg += "} "
-	msg += "PI:[length(SSmachines.networks)]|"
 	msg += "MC:[length(SSmachines.processing_machines)]|"
 	msg += "PN:[length(SSmachines.powernets)][defering_powernets ? " - !!DEFER!!" : ""]|"
 	msg += "PO:[length(SSmachines.powerobjs)]|"
 	msg += "HV:[length(SSmachines.hibernating_vents)]|"
 	msg += "MC/MS:[round((cost ? length(SSmachines.processing_machines)/cost_machinery : 0),0.1)]"
 	return ..()
-
-/datum/controller/subsystem/machines/proc/process_pipenets(resumed = 0)
-	if (!resumed)
-		src.current_run = networks.Copy()
-	//cache for sanic speed (lists are references anyways)
-	var/wait = src.wait
-	var/list/current_run = src.current_run
-	while(length(current_run))
-		var/datum/pipe_network/PN = current_run[length(current_run)]
-		current_run.len--
-		if(!PN || QDELETED(PN))
-			networks.Remove(PN)
-			DISABLE_BITFIELD(PN?.datum_flags, DF_ISPROCESSING)
-		else
-			PN.process(wait)
-		if(MC_TICK_CHECK)
-			return
 
 /datum/controller/subsystem/machines/proc/process_machinery(resumed = 0)
 	if (!resumed)
@@ -190,10 +154,7 @@ SUBSYSTEM_DEF(machines)
 			return
 
 /datum/controller/subsystem/machines/Recover()
-	for(var/datum/D as anything in SSmachines.networks)
-		if(!istype(D, /datum/pipe_network))
-			log_world("## ERROR Found wrong type during SSmachinery recovery: list=SSmachines.networks, item=[D], type=[D?.type]")
-			SSmachines.networks -= D
+	// DQEdit — pipenets recovered by SSair, not here.
 	for(var/datum/D as anything in SSmachines.processing_machines)
 		if(!istype(D, /obj/machinery))
 			log_world("## ERROR Found wrong type during SSmachinery recovery: list=SSmachines.machines, item=[D], type=[D?.type]")
@@ -208,7 +169,6 @@ SUBSYSTEM_DEF(machines)
 			SSmachines.powerobjs -= D
 
 	all_machines = SSmachines.all_machines
-	networks = SSmachines.networks
 	processing_machines = SSmachines.processing_machines
 	powernets = SSmachines.powernets
 	powerobjs = SSmachines.powerobjs
@@ -247,7 +207,7 @@ SUBSYSTEM_DEF(machines)
 		hibernating_vents[WR.reference] = null
 		hibernating_vents.Remove(WR.reference)
 
-#undef SSMACHINES_PIPENETS
+// DQEdit — SSMACHINES_PIPENETS removed (LINDA SSair owns pipenets).
 #undef SSMACHINES_MACHINERY
 #undef SSMACHINES_POWERNETS
 #undef SSMACHINES_POWER_OBJECTS

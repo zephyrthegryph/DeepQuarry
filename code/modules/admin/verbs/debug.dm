@@ -75,8 +75,10 @@ ADMIN_VERB(Cell, R_DEBUG, "Cell", "Display the atmos information of the current 
 	var/t = span_blue("Coordinates: [T.x],[T.y],[T.z]\n")
 	t += span_red("Temperature: [env.temperature]\n")
 	t += span_red("Pressure: [env.return_pressure()]kPa\n")
-	for(var/g in env.gas)
-		t += span_blue("[g]: [env.gas[g]] / [env.gas[g] * R_IDEAL_GAS_EQUATION * env.temperature / env.volume]kPa\n")
+	// DQEdit — was env.gas[g] (XGM); under LINDA env.gases[gas_type][MOLES].
+	for(var/datum/gas/g as anything in env.gases)
+		var/moles = env.gases[g][MOLES]
+		t += span_blue("[g]: [moles] / [moles * R_IDEAL_GAS_EQUATION * env.temperature / env.volume]kPa\n")
 
 	user.mob.show_message(t, 1)
 	feedback_add_details("admin_verb","ASL") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
@@ -405,18 +407,8 @@ ADMIN_VERB(startSinglo, R_DEBUG|R_ADMIN, "Start Singularity", "Sets up the singu
 		PA.construction_state = 3
 		PA.update_icon()
 
-	for(var/obj/machinery/power/rad_collector/Rad in GLOB.machines)
-		if(Rad.anchored)
-			if(!Rad.P)
-				var/obj/item/tank/phoron/Phoron = new/obj/item/tank/phoron(Rad)
-				Phoron.air_contents.gas[GAS_PHORON] = 70
-				Rad.drainratio = 0
-				Rad.P = Phoron
-				Phoron.loc = Rad
-
-			if(!Rad.active)
-				Rad.toggle_power()
-
+	// DQEdit — /obj/machinery/power/rad_collector was deleted with the ZAS power
+	// machinery; this loop is a no-op until LINDA's equivalent is wired.
 	log_admin("[key_name(user)] setup the singulo engine")
 	message_admins(span_blue("[key_name_admin(user)] setup the singulo engine"))
 
@@ -438,34 +430,8 @@ ADMIN_VERB(setup_supermatter_engine, R_DEBUG|R_ADMIN, "Setup supermatter", "Sets
 			continue
 
 		if(istype(M.loc.loc,/area/engineering/engine_room))
-			if(istype(M,/obj/machinery/power/rad_collector))
-				var/obj/machinery/power/rad_collector/Rad = M
-				Rad.anchored = TRUE
-				Rad.connect_to_network()
-
-				var/obj/item/tank/phoron/Phoron = new/obj/item/tank/phoron(Rad)
-
-				Phoron.air_contents.gas[GAS_PHORON] = 29.1154	//This is a full tank if you filled it from a canister
-				Rad.P = Phoron
-
-				Phoron.loc = Rad
-
-				if(!Rad.active)
-					Rad.toggle_power()
-				Rad.update_icon()
-
-			else if(istype(M,/obj/machinery/atmospherics/binary/pump))	//Turning on every pump.
-				var/obj/machinery/atmospherics/binary/pump/Pump = M
-				if(Pump.name == "Engine Feed" && response == "Setup Completely")
-					found_the_pump = 1
-					Pump.air2.gas[GAS_N2] = 3750	//The contents of 2 canisters.
-					Pump.air2.temperature = 50
-					Pump.air2.update_values()
-				Pump.update_use_power(USE_POWER_IDLE)
-				Pump.target_pressure = 4500
-				Pump.update_icon()
-
-			else if(istype(M,/obj/machinery/power/supermatter))
+			// DQEdit — rad_collector and ZAS binary/pump removed; supermatter only.
+			if(istype(M,/obj/machinery/power/supermatter))
 				SM = M
 				spawn(50)
 					SM.power = 320
@@ -486,9 +452,12 @@ ADMIN_VERB(setup_supermatter_engine, R_DEBUG|R_ADMIN, "Setup supermatter", "Sets
 	if(!found_the_pump && response == "Setup Completely")
 		to_chat(src, span_red("Unable to locate air supply to fill up with coolant, adding some coolant around the supermatter"))
 		var/turf/simulated/T = SM.loc
-		T.zone.air.gas[GAS_N2] += 450
-		T.zone.air.temperature = 50
-		T.zone.air.update_values()
+		// DQEdit — was XGM `T.zone.air`; LINDA stores gases on the turf itself.
+		// Use the turf's own air mixture via return_air().
+		var/datum/gas_mixture/_air = T.return_air()
+		if(_air)
+			LINDA_GAS_ADJUST(_air, GAS_N2, 450)
+			_air.temperature = 50
 
 
 	log_admin("[key_name(user)] setup the supermatter engine [response == "Setup except coolant" ? "without coolant" : ""]")

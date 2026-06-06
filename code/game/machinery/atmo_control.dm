@@ -50,18 +50,18 @@
 			signal.data["temperature"] = round(air_sample.temperature,0.1)
 
 		if(output>4)
-			var/total_moles = air_sample.total_moles
+			var/total_moles = air_sample.total_moles()
 			if(total_moles > 0)
 				if(output&4)
-					signal.data[GAS_O2] = round(100*air_sample.gas[GAS_O2]/total_moles,0.1)
+					signal.data[GAS_O2] = round(100*LINDA_GAS_AMT(air_sample, GAS_O2)/total_moles,0.1)
 				if(output&8)
-					signal.data[GAS_PHORON] = round(100*air_sample.gas[GAS_PHORON]/total_moles,0.1)
+					signal.data[GAS_PHORON] = round(100*LINDA_GAS_AMT(air_sample, GAS_PHORON)/total_moles,0.1)
 				if(output&16)
-					signal.data[GAS_N2] = round(100*air_sample.gas[GAS_N2]/total_moles,0.1)
+					signal.data[GAS_N2] = round(100*LINDA_GAS_AMT(air_sample, GAS_N2)/total_moles,0.1)
 				if(output&32)
-					signal.data[GAS_CO2] = round(100*air_sample.gas[GAS_CO2]/total_moles,0.1)
+					signal.data[GAS_CO2] = round(100*LINDA_GAS_AMT(air_sample, GAS_CO2)/total_moles,0.1)
 				if(output&64)
-					signal.data[GAS_CH4] = round(100*air_sample.gas[GAS_CH4]/total_moles,0.1)
+					signal.data[GAS_CH4] = round(100*LINDA_GAS_AMT(air_sample, GAS_CH4)/total_moles,0.1)
 			else
 				signal.data[GAS_O2] = 0
 				signal.data[GAS_PHORON] = 0

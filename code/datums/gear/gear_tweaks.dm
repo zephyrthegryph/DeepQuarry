@@ -627,6 +627,12 @@ GLOBAL_DATUM_INIT(gear_tweak_free_digestable, /datum/gear_tweak/toggle_digestabl
 		BP_RIGHT_LEG =  "right leg"
 	)
 
+// DQEdit — getter so the loadout editor can access this without tripping
+// DreamChecker's spurious unused_var on the cast var (static-var reads
+// don't count as "uses" of the instance).
+/datum/gear_tweak/implant_location/proc/get_bodypart_names_to_tokens()
+	return bodypart_names_to_tokens
+
 /datum/gear_tweak/implant_location/get_default()
 	return bodypart_names_to_tokens[1]
 

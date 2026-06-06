@@ -183,7 +183,7 @@ GLOBAL_LIST_EMPTY(runechat_image_cache)
 	text = encode_html_emphasis(text)
 
 	// We dim italicized text to make it more distinguishable from regular text
-	var/tgt_color = extra_classes.Find("italics") ? dq_get_chat_color_darkened(target) : dq_get_chat_color(target) // DQEdit
+	var/tgt_color = extra_classes.Find("italics") ? dq_get_chat_color_darkened(target) : dq_get_chat_color(target) // DQEdit — route through DQ chat-color cache so runechat colours match the per-mob runechat_color pref
 
 	// Approximate text height
 	var/complete_text = "<span class='center maptext [extra_classes != null ? extra_classes.Join(" ") : ""]' style='color: [tgt_color];'>[text]</span>"

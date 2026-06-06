@@ -185,7 +185,7 @@
 		return TRUE
 
 	var/datum/gas_mixture/air = owner.loc.return_air()
-	if(air.gas[GAS_O2] < 1)
+	if(LINDA_GAS_AMT(air, GAS_O2) < 1)
 		qdel(src)
 		return TRUE
 

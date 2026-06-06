@@ -15,12 +15,8 @@
 
 /turf/simulated/Destroy()
 	updateVisibility(src)
-	if(zone)
-		if(can_safely_remove_from_zone())
-			c_copy_air()
-			zone.remove(src)
-		else
-			zone.rebuild()
+	// DQEdit — ZAS zone cleanup removed; LINDA tracks active turfs in SSair.active_turfs,
+	// which automatically prunes destroyed turfs without explicit cleanup.
 	return ..()
 
 /turf/simulated/Initialize(mapload)

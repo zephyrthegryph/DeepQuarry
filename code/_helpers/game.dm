@@ -583,18 +583,21 @@
 * Gets the highest and lowest pressures from the tiles in GLOB.cardinal directions
 * around us, then checks the difference.
 */
+// DQEdit — was gated on T.zone (ZAS). Under LINDA, return_air() returning a
+// non-null mixture is the equivalent "this turf has air to sample" signal.
+// Walls (blocks_air=1) have air=null and we treat them as "no pressure" so the
+// open/closed boundary still shows as a non-zero differential.
 /proc/getOPressureDifferential(turf/loc)
 	var/minp=16777216;
 	var/maxp=0;
 	for(var/dir in GLOB.cardinal)
 		var/turf/simulated/T=get_turf(get_step(loc,dir))
 		var/cp=0
-		if(T && istype(T) && T.zone)
-			var/datum/gas_mixture/environment = T.return_air()
+		var/datum/gas_mixture/environment = T?.return_air()
+		if(environment)
 			cp = environment.return_pressure()
-		else
-			if(istype(T,/turf/simulated))
-				continue
+		else if(istype(T, /turf/simulated))
+			continue
 		if(cp<minp)minp=cp
 		if(cp>maxp)maxp=cp
 	return abs(minp-maxp)
@@ -618,25 +621,19 @@
 				direction = 3
 			if(WEST)
 				direction = 4
+		// DQEdit — zone-check replaced with return_air() non-null check; walls
+		// (blocks_air=1) have air=null and are excluded as "no readings".
 		var/turf/simulated/T=get_turf(get_step(loc,dir))
 		var/list/rstats = new /list(stats.len)
-		if(T && istype(T) && T.zone)
-			var/datum/gas_mixture/environment = T.return_air()
+		var/datum/gas_mixture/environment = T?.return_air()
+		if(environment)
 			for(var/i=1;i<=stats.len;i++)
 				if(stats[i] == "pressure")
 					rstats[i] = environment.return_pressure()
 				else
 					rstats[i] = environment.vars[stats[i]]
 		else if(istype(T, /turf/simulated))
-			rstats = null // Exclude zone (wall, door, etc).
-		else if(istype(T, /turf))
-			// Should still work.  (/turf/return_air())
-			var/datum/gas_mixture/environment = T.return_air()
-			for(var/i=1;i<=stats.len;i++)
-				if(stats[i] == "pressure")
-					rstats[i] = environment.return_pressure()
-				else
-					rstats[i] = environment.vars[stats[i]]
+			rstats = null // Exclude wall/door/etc — no air to sample.
 		temps[direction] = rstats
 	return temps
 

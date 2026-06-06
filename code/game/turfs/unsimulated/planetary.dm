@@ -30,10 +30,11 @@
 	if(new_temperature == temperature)
 		return
 	temperature = new_temperature
-	// Force ZAS to reconsider our connections because our temperature has changed
-	if(connections)
-		connections.erase_all()
-	SSair.mark_for_update(src)
+	// DQEdit — was: ZAS connections.erase_all() + SSair.mark_for_update.
+	// LINDA equivalent: rebuild this turf's adjacency (so superconductivity
+	// re-evaluates with the new temperature) and queue it for the next SSair
+	// pass.
+	air_update_turf(TRUE, FALSE)
 
 // Normal station/earth air.
 /turf/unsimulated/wall/planetary/normal

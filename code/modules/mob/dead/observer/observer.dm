@@ -634,7 +634,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	var/datum/gas_mixture/environment = src.loc.return_air()
 
 	var/pressure = environment.return_pressure()
-	var/total_moles = environment.total_moles
+	var/total_moles = environment.total_moles()
 	var/list/gas_analyzing = list()
 	gas_analyzing += span_bold("Results:")
 	if(abs(pressure - ONE_ATMOSPHERE) < 10)
@@ -642,8 +642,10 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	else
 		gas_analyzing += span_red("Pressure: [round(pressure,0.1)] kPa")
 	if(total_moles)
-		for(var/g in environment.gas)
-			gas_analyzing += "[GLOB.gas_data.name[g]]: [round((environment.gas[g] / total_moles) * 100)]% ([round(environment.gas[g], 0.01)] moles)"
+		// DQEdit — XGM env.gas[g] iteration → LINDA env.gases[/datum/gas/X][MOLES].
+		for(var/datum/gas/g as anything in environment.gases)
+			var/_moles = environment.gases[g][MOLES]
+			gas_analyzing += "[initial(g.name)]: [round((_moles / total_moles) * 100)]% ([round(_moles, 0.01)] moles)"
 		gas_analyzing += "Temperature: [round(environment.temperature-T0C,0.1)]&deg;C ([round(environment.temperature,0.1)]K)"
 		gas_analyzing += "Heat Capacity: [round(environment.heat_capacity(),0.1)]"
 	to_chat(src, span_notice("[jointext(gas_analyzing, "<br>")]"))

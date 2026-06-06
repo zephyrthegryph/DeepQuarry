@@ -84,5 +84,48 @@
 	for(var/datum/gas_mixture/air in gases)
 		volume += air.volume
 
+// DQEdit — pipenet gas equalization. The original /proc/equalize_gases pooled
+// every member mixture's gases + thermal energy, then redistributed to each
+// mixture proportionally to its volume share, with all mixtures ending at the
+// pool average temperature.
+//
+// Implementation: build a per-gas-type pool by summing moles across every
+// member mix, then for each member mix overwrite its gases dict to
+// (pooled_moles * volume / total_volume). This redistributes gas from full
+// pipes to empty pipes — a per-pipe `multiply()` won't because it scales
+// existing content only and can't push gas into an empty mixture.
 /datum/pipe_network/proc/reconcile_air()
-	equalize_gases(gases)
+	if(!length(gases))
+		return
+	var/list/pooled = list()         // /datum/gas type → total moles in network
+	var/total_thermal = 0
+	var/total_moles = 0
+	var/total_volume = 0
+	for(var/datum/gas_mixture/mix in gases)
+		var/m = mix.total_moles()
+		total_moles += m
+		total_thermal += m * mix.temperature
+		total_volume += mix.volume
+		if(mix.gases)
+			for(var/datum/gas/g as anything in mix.gases)
+				pooled[g] = (pooled[g] || 0) + mix.gases[g][MOLES]
+	if(total_volume <= 0)
+		return
+	var/avg_temp = total_moles > 0 ? total_thermal / total_moles : T20C
+	for(var/datum/gas_mixture/mix in gases)
+		var/share = mix.volume / total_volume
+		// Zero out current gases first so removed gas types disappear.
+		for(var/datum/gas/g as anything in mix.gases)
+			mix.gases[g][MOLES] = 0
+		// Now redistribute pooled moles into this mixture by volume share.
+		for(var/datum/gas/g as anything in pooled)
+			var/redist = pooled[g] * share
+			if(redist <= 0)
+				continue
+			ASSERT_GAS(g, mix)
+			mix.gases[g][MOLES] = redist
+		// Drop any zero entries to keep gases dict clean.
+		for(var/datum/gas/g as anything in mix.gases)
+			if(mix.gases[g][MOLES] <= 0)
+				mix.gases -= g
+		mix.set_temperature(avg_temp)

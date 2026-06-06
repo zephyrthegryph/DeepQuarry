@@ -20,7 +20,7 @@
 	var/datum/gas_mixture/environment = user.loc.return_air()
 
 	var/pressure = environment.return_pressure()
-	var/total_moles = environment.total_moles
+	var/total_moles = environment.total_moles()
 
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	user.visible_message(span_notice("[user] scans the air."), span_notice("You scan the air..."))
@@ -31,8 +31,11 @@
 	else
 		to_chat(user, span_warning("Pressure: [round(pressure,0.1)] kPa"))
 	if(total_moles)
-		for(var/g in environment.gas)
-			to_chat(user, span_notice("[GLOB.gas_data.name[g]]: [round((environment.gas[g] / total_moles) * 100)]%"))
+		// DQEdit — was XGM env.gas[g] iteration; under LINDA, env.gases keys are
+		// /datum/gas type paths and the moles live at gases[g][MOLES].
+		for(var/datum/gas/g as anything in environment.gases)
+			var/moles = environment.gases[g][MOLES]
+			to_chat(user, span_notice("[initial(g.name)]: [round((moles / total_moles) * 100)]%"))
 		to_chat(user, span_notice("Temperature: [round(environment.temperature-T0C,0.1)]&deg;C ([round(environment.temperature,0.1)]K)"))
 
 /obj/item/boop_module/afterattack(obj/O, mob/user as mob, proximity)
@@ -356,31 +359,13 @@
 	if(!proximity)
 		return
 
-	if (istype(A, /obj/machinery/atmospherics/pipe/simple))
-		if(busy)
-			return
-		var/C = locate(/obj/machinery/clamp) in get_turf(A)
-		if(!C)
-			if(length(clamps) >= max_clamps)
-				to_chat(user, span_warning("You've already placed the maximum amount of [max_clamps] [src]s. Find and remove some before placing new ones."))
-				return
-			busy = TRUE
-			to_chat(user, span_notice("You begin to attach \the [C] to \the [A]..."))
-			if(do_after(user, 3 SECONDS, target = src))
-				to_chat(user, span_notice("You have attached \the [src] to \the [A]."))
-				var/obj/machinery/clamp/clamp = new/obj/machinery/clamp(A.loc, A)
-				clamps.Add(clamp)
-				if(isrobot(user))
-					var/mob/living/silicon/robot/R = user
-					R.use_direct_power(1000, 1500)
-		else
-			busy = TRUE
-			to_chat(user, span_notice("You begin to remove \the [C] from \the [A]..."))
-			if(do_after(user, 3 SECONDS, target = src))
-				to_chat(user, span_notice("You have removed \the [src] from \the [A]."))
-				clamps.Remove(C)
-				qdel(C)
-		busy = FALSE
+	// DQEdit — /obj/machinery/clamp was a ZAS pipe-clamp tool (clamp.dm in atmoalter),
+	// deleted with ZAS atmos machinery. Stasis-clamp tool reduced to a polite
+	// no-op until LINDA's atmos machinery is wired in.
+	if (istype(A, /obj/machinery/atmospherics/pipe))
+		to_chat(user, span_warning("Pipe clamping is unavailable until LINDA's atmos machinery is wired in."))
+		return
+	busy = FALSE
 
 /obj/item/dogborg/stasis_clamp/Destroy()
 	clamps.Cut()

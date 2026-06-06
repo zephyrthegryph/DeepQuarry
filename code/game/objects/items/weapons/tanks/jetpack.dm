@@ -30,7 +30,7 @@
 
 /obj/item/tank/jetpack/examine(mob/user)
 	. = ..()
-	if(air_contents.total_moles < 5)
+	if(air_contents.total_moles() < 5)
 		. += span_danger("The meter on \the [src] indicates you are almost out of gas!")
 		playsound(src, 'sound/effects/alert.ogg', 50, 1)
 
@@ -67,7 +67,7 @@
 		return 0
 
 	var/datum/gas_mixture/fuel = get_gas_supply()
-	if(num < 0.005 || !fuel || fuel.total_moles < num)
+	if(num < 0.005 || !fuel || fuel.total_moles() < num)
 		ion_trail.stop()
 		return 0
 

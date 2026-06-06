@@ -502,7 +502,7 @@
 			'sound/vore/digest12.ogg')
 		playsound(src, churnsound, vol = 100, vary = 1, falloff = 0.1, ignore_walls = TRUE, preference = /datum/preference/toggle/digestion_noises)
 	//If the timing is right, and there are items to be touched
-	if(SSair.current_cycle%3==1 && length(touchable_items))
+	if(SSair.times_fired%3==1 && length(touchable_items)) // DQEdit — LINDA renamed current_cycle → times_fired
 
 		//Burn all the mobs or add them to the exclusion list
 		var/volume = 0

@@ -13,7 +13,7 @@
 	// Special case to prevent us from being part of a zone during the first air master tick.
 	// We must merge ourselves into a zone on next tick.  This will cause a bit of lag on
 	// startup, but it can't really be helped you know?
-	if(SSair && SSair.current_cycle == 0)
+	if(SSair && SSair.times_fired == 0) // DQEdit — LINDA renamed current_cycle → times_fired
 		spawn(1)
 			SSair.mark_for_update(get_turf(src))
 		return FALSE

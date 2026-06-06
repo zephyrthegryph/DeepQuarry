@@ -36,6 +36,11 @@ jobs:
           key: ${{ runner.os }}-rust-${{ hashFiles('tools/ci/ci_dependencies.sh')}}
           restore-keys: |
             ${{ runner.os }}-rust-
+      - name: Restore verdigris build cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: verdigris -> target
+          shared-key: verdigris-lint
       - name: Restore Cutter cache
         uses: actions/cache@v5.0.5
         with:
@@ -106,6 +111,26 @@ jobs:
       - name: Run TGUI Checks
         if: steps.linter-setup.conclusion == 'success' && !cancelled()
         run: tools/build/build.sh --ci lint tgui-test
+
+      - name: Setup Rust toolchain for verdigris
+        if: steps.linter-setup.conclusion == 'success' && !cancelled()
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      # Linting is scoped to verdigris-the-crate (not the whole workspace) so vendored
+      # auxmos stays on upstream's lint level. See verdigris/atmos/UPSTREAM.md.
+      - name: Verdigris cargo fmt
+        if: steps.linter-setup.conclusion == 'success' && !cancelled()
+        working-directory: verdigris
+        run: cargo fmt --package verdigris --check
+      - name: Verdigris cargo clippy
+        if: steps.linter-setup.conclusion == 'success' && !cancelled()
+        working-directory: verdigris
+        run: cargo clippy --package verdigris --all-targets -- -D warnings
+      - name: Verdigris cargo test
+        if: steps.linter-setup.conclusion == 'success' && !cancelled()
+        working-directory: verdigris
+        run: cargo test --package verdigris
 
       - name: Run Nanomap Checks
         run: tools/github-actions/nanomap-renderer-invoker.sh --testing

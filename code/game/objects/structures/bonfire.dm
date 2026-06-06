@@ -162,7 +162,7 @@
 
 /obj/structure/bonfire/proc/check_oxygen()
 	var/datum/gas_mixture/G = loc.return_air()
-	if(G.gas[GAS_O2] < 1)
+	if(LINDA_GAS_AMT(G, GAS_O2) < 1)
 		return FALSE
 	return TRUE
 
@@ -244,7 +244,7 @@
 		if(W >= 5)
 			var/datum/gas_mixture/env = loc.return_air()
 			if(env && abs(env.temperature - set_temperature) > 0.1)
-				var/transfer_moles = 0.25 * env.total_moles
+				var/transfer_moles = 0.25 * env.total_moles()
 				var/datum/gas_mixture/removed = env.remove(transfer_moles)
 
 				if(removed)
@@ -359,7 +359,7 @@
 
 /obj/structure/fireplace/proc/check_oxygen()
 	var/datum/gas_mixture/G = loc.return_air()
-	if(G.gas[GAS_O2] < 1)
+	if(LINDA_GAS_AMT(G, GAS_O2) < 1)
 		return FALSE
 	return TRUE
 
@@ -427,7 +427,7 @@
 		if(W >= 5)
 			var/datum/gas_mixture/env = loc.return_air()
 			if(env && abs(env.temperature - set_temperature) > 0.1)
-				var/transfer_moles = 0.25 * env.total_moles
+				var/transfer_moles = 0.25 * env.total_moles()
 				var/datum/gas_mixture/removed = env.remove(transfer_moles)
 
 				if(removed)

@@ -1744,14 +1744,11 @@
 		if(check_rights(R_ADMIN|R_SERVER))
 			populate_inactive_customitems_list(src.owner)
 
+	// DQEdit — GLOB.vsc was a ZAS atmos-tuning settings holder; removed in LINDA
+	// migration since LINDA tuning is compile-time in auxmos. Stub admin response.
 	else if(href_list["vsc"])
 		if(check_rights(R_ADMIN|R_SERVER|R_EVENT))
-			if(href_list["vsc"] == "airflow")
-				GLOB.vsc.ChangeSettingsDialog(usr,GLOB.vsc.settings)
-			if(href_list["vsc"] == GAS_PHORON)
-				GLOB.vsc.ChangeSettingsDialog(usr,GLOB.vsc.plc.settings)
-			if(href_list["vsc"] == "default")
-				GLOB.vsc.SetDefault(usr)
+			to_chat(usr, span_warning("Atmos config (GLOB.vsc) is a ZAS feature; under LINDA, tuning lives at the auxmos crate level."))
 
 	else if(href_list["toglang"])
 		if(check_rights(R_SPAWN))

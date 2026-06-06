@@ -315,28 +315,26 @@
 		/obj/item/ammo_casing/a145 = 4
 	)
 
+// DQEdit — gasthrower (gun/magnetic/gasthrower) was a ZAS-tied weapon that fired
+// canister contents; deleted with ZAS atmos machinery. Flamer briefcase now ships
+// just the support gear.
 /obj/item/storage/secure/briefcase/flamer
 	name = "secure briefcase"
 	starts_with = list(
-		/obj/item/gun/magnetic/gasthrower,
 		/obj/item/cell/super,
 		/obj/item/stock_parts/capacitor,
 		/obj/item/tank/phoron/pressurized = 2
 	)
 
+// DQEdit — /obj/item/fuel_assembly and /obj/item/gun/magnetic/fuelrod were part
+// of the fusion subsystem (deleted with core_field.dm). Fuelrod briefcase
+// remains as a placeholder shell so the uplink listing still resolves but the
+// case spawns empty until fusion content is replaced.
 /obj/item/storage/secure/briefcase/fuelrod
 	name = "heavy briefcase"
-	desc = "A heavy, locked briefcase."
-	description_fluff = "The container, upon opening, looks to have a few oddly shaped indentations in its packing."
-	description_antag = "This case will likely contain a charged fuel rod gun, and a few fuel rods to go with it. It can only hold the fuel rod gun, fuel rods, batteries, a screwdriver, and stock machine parts."
+	desc = "A heavy, locked briefcase. (Fusion content deprecated under LINDA migration.)"
 	force = 12 //Anti-rad lined i.e. Lead, probably gonna hurt a bit if you get bashed with it.
-	can_hold = list(/obj/item/gun/magnetic/fuelrod, /obj/item/fuel_assembly, /obj/item/cell, /obj/item/stock_parts, /obj/item/tool/screwdriver)
+	can_hold = list(/obj/item/cell, /obj/item/stock_parts, /obj/item/tool/screwdriver)
 	starts_with = list(
-		/obj/item/gun/magnetic/fuelrod,
-		/obj/item/fuel_assembly/deuterium,
-		/obj/item/fuel_assembly/deuterium,
-		/obj/item/fuel_assembly/tritium,
-		/obj/item/fuel_assembly/tritium,
-		/obj/item/fuel_assembly/phoron,
 		/obj/item/tool/screwdriver
 	)

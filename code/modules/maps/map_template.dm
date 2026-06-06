@@ -69,7 +69,12 @@
 	SSatoms.InitializeAtoms(areas + turfs + atoms)
 
 	admin_notice(span_danger("Initializing atmos pipenets and machinery in submap."), R_DEBUG)
-	SSmachines.setup_atmos_machinery(atmos_machines)
+	// DQEdit — SSmachines.setup_atmos_machinery was stubbed by the LINDA
+	// migration. SSair now owns atmos-machine init; for submap loads (which
+	// run after SSair.Initialize) wire just the freshly-loaded devices
+	// instead of re-scanning the whole all_machines list.
+	for(var/obj/machinery/atmospherics/AM as anything in atmos_machines)
+		AM.atmos_init()
 
 	admin_notice(span_danger("Rebuilding powernets due to submap creation."), R_DEBUG)
 	SSmachines.setup_powernets_for_cables(cables)

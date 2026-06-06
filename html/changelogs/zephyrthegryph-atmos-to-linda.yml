@@ -1,0 +1,10 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Atmospherics engine swapped from ZAS/XGM to /tg/'s LINDA + a Rust auxmos FFI (verdigris). Gas mixtures, hotspots, fire, and per-turf air now run on LINDA; CHOMP's vents, scrubbers, canisters, pipes, fusion, and supermatter machinery are kept and bridged."
+  - code_imp: "Added a CHOMP↔LINDA gas-id bridge (xgm_compat_shim) so machinery and reactions written against XGM string IDs continue to work against LINDA's typed gas dict. GLOB.gas_data lazy-populates from /datum/gas subtypes so atmos analyzer, supply-demand, hydroponics, and bomb-tester UI labels stay correct."
+  - code_imp: "Added a persistent /turf/simulated air mixture and full hotspot bridge so CHOMP fire callers (igniters, candles, cigs, mines, flames, runes, spells, anomalies) ignite on simulated turfs the same way they ignited on ZAS turfs."
+  - bugfix: "/obj/fire_act() now guards take_damage() with uses_integrity, so LINDA hotspots no longer runtime-error when their iteration hits landmarks or other atoms that opt out of the integrity system."
+  - bugfix: "Alraune N2O detection now uses the LINDA gas id (\"n2o\") instead of the dead XGM string \"sleeping_agent\", restoring N2O sensitivity for the species."
+  - bugfix: "Removed a duplicate methane-removal line in human respiration that was double-deducting CH4 from the breath mixture each tick."
+  - rscadd: "17 new atmos unit tests covering Rust roundtrips, turf-air persistence, canister presets, gas-data population, gas-id iteration, plasmafire reaction, scrubber gas removal, canister release, hotspot ignition, human breath cycle, atmos analyzer labels, gas mixture merge/remove conservation, and the lingering-fire bridge."

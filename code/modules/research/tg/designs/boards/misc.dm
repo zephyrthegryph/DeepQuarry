@@ -280,6 +280,19 @@
 	)
 	departmental_flags = DEPARTMENT_BITFLAG_ENGINEERING | DEPARTMENT_BITFLAG_SCIENCE
 
+// DQAdd — partslathe design entry. The circuitboard + machine live in
+// code/game/objects/items/weapons/circuitboards/circuitboards_vr.dm and
+// code/game/machinery/partslathe_vr.dm respectively. Referenced from
+// engi_nodes.dm "construction" techweb node.
+/datum/design_techweb/board/partslathe
+	SET_CIRCUIT_DESIGN_NAMEDESC("parts lathe")
+	id = "partslathe"
+	build_path = /obj/item/circuitboard/partslathe
+	category = list(
+		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_ENGINEERING
+	)
+	departmental_flags = DEPARTMENT_BITFLAG_ENGINEERING | DEPARTMENT_BITFLAG_SCIENCE
+
 /datum/design_techweb/board/stationalert_engineering
 	SET_CIRCUIT_DESIGN_NAMEDESC("station alert console (engineering)")
 	id = "stationalert_engineering"
@@ -319,7 +332,7 @@
 /datum/design_techweb/board/space_heater
 	SET_CIRCUIT_DESIGN_NAMEDESC("space heater")
 	id = "space_heater"
-	build_type = AUTOLATHE | IMPRINTER // Simple circuit
+	build_type = AUTOLATHE | IMPRINTER
 	build_path = /obj/item/circuitboard/space_heater
 	category = list(
 		RND_CATEGORY_COMPUTER + RND_SUBCATEGORY_MACHINE_SERVICE

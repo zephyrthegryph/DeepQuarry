@@ -108,21 +108,14 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 	return cameras
 
 /area/proc/atmosalert(danger_level, alarm_source)
+	// DQEdit — original used /obj/machinery/alarm (ZAS air alarm). LINDA's
+	// air alarm is /tg/-vendored in modular_dq/code/atmospherics/machinery/air_alarm/
+	// but not yet wired into the build. Until that lands, the proc behaves as a
+	// pure-danger-level tracker without per-machine alarm-source aggregation.
 	if (danger_level == 0)
 		GLOB.atmosphere_alarm.clearAlarm(src, alarm_source)
 	else
-		var/obj/machinery/alarm/atmosalarm = alarm_source //maybe other things can trigger these, who knows
-		if(istype(atmosalarm))
-			GLOB.atmosphere_alarm.triggerAlarm(src, alarm_source, severity = danger_level, hidden = atmosalarm.alarms_hidden)
-		else
-			GLOB.atmosphere_alarm.triggerAlarm(src, alarm_source, severity = danger_level)
-
-	//Check all the alarms before lowering atmosalm. Raising is perfectly fine.
-	var/obj/machinery/alarm/AM = main_air_alarm?.resolve()
-	if(!(AM && AM.shorted))
-		for(var/obj/machinery/alarm/AA in src)
-			if(!(AA.stat & (NOPOWER|BROKEN)) && !AA.shorted && AA.report_danger_level)
-				danger_level = max(danger_level, AA.danger_level)
+		GLOB.atmosphere_alarm.triggerAlarm(src, alarm_source, severity = danger_level)
 
 	if(danger_level != atmosalm)
 		atmosalm = danger_level
@@ -181,25 +174,15 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 					spawn(0)
 						E.open()
 
-// Activate all retention fields!
+// DQEdit — atmospheric_field_generator (atm_ret_field.dm) was a ZAS-only machine.
+// Without LINDA replacement these procs neutered; the area-level toggle still
+// runs but with no machinery to drive. Re-implement against LINDA's air alarm
+// system once that's wired.
 /area/proc/arfgs_activate()
-	if(!arfgs_active)
-		arfgs_active = TRUE
-		if(!all_arfgs)
-			return
-		for(var/obj/machinery/atmospheric_field_generator/E in all_arfgs)
-			E.generate_field() //don't need to check powered state like doors, the arfgs handles it on its end
-			E.wasactive = TRUE
+	arfgs_active = TRUE
 
-// Deactivate retention fields!
 /area/proc/arfgs_deactivate()
-	if(arfgs_active)
-		arfgs_active = FALSE
-		if(!all_arfgs)
-			return
-		for(var/obj/machinery/atmospheric_field_generator/E in all_arfgs)
-			E.disable_field()
-			E.wasactive = FALSE
+	arfgs_active = FALSE
 
 /area/proc/fire_alert()
 	if(!fire)

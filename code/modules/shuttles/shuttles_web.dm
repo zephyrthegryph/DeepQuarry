@@ -456,14 +456,14 @@
 	var/list/aircontents
 	var/datum/gas_mixture/environment = T.return_air()
 	var/pressure = environment.return_pressure()
-	var/total_moles = environment.total_moles
+	var/total_moles = environment.total_moles()
 
 	if(total_moles)
-		var/o2_level = environment.gas[GAS_O2]/total_moles
-		var/n2_level = environment.gas[GAS_N2]/total_moles
-		var/co2_level = environment.gas[GAS_CO2]/total_moles
-		var/phoron_level = environment.gas[GAS_PHORON]/total_moles
-		var/methane_level = environment.gas[GAS_CH4]/total_moles
+		var/o2_level = LINDA_GAS_AMT(environment, GAS_O2)/total_moles
+		var/n2_level = LINDA_GAS_AMT(environment, GAS_N2)/total_moles
+		var/co2_level = LINDA_GAS_AMT(environment, GAS_CO2)/total_moles
+		var/phoron_level = LINDA_GAS_AMT(environment, GAS_PHORON)/total_moles
+		var/methane_level = LINDA_GAS_AMT(environment, GAS_CH4)/total_moles
 		var/unknown_level =  1-(o2_level+n2_level+co2_level+phoron_level+methane_level)
 		aircontents = list(\
 			"pressure" = "[round(pressure, 0.1)]",\

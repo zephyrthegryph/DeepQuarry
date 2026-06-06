@@ -68,12 +68,19 @@
 	var/datum/gas_mixture/environment = loc.return_air()
 
 	if(environment && air_contents.temperature > 0)
-		var/transfer_moles = (volume_rate/air_contents.volume)*air_contents.total_moles //apply flow rate limit
+		var/transfer_moles = (volume_rate/air_contents.volume)*air_contents.total_moles() //apply flow rate limit
 		power_draw = pump_gas(src, air_contents, environment, transfer_moles, power_rating)
 
 	if (power_draw >= 0)
 		last_power_draw = power_draw
 		use_power(power_draw)
+		// DQEdit — pump_gas writes to loc's air via the gas_mixture ref; turf
+		// needs to be re-enrolled in active_turfs and visuals re-evaluated.
+		if(isturf(loc))
+			var/turf/open/T = loc
+			if(istype(T))
+				T.update_visuals()
+				T.air_update_turf(FALSE, FALSE)
 
 		if(network)
 			network.update = 1
@@ -91,8 +98,14 @@
 	injecting = 1
 
 	if(air_contents.temperature > 0)
-		var/power_used = pump_gas(src, air_contents, environment, air_contents.total_moles, power_rating)
+		var/power_used = pump_gas(src, air_contents, environment, air_contents.total_moles(), power_rating)
 		use_power(power_used)
+		// DQEdit — same enroll-turf reason as in process().
+		if(isturf(loc))
+			var/turf/open/T = loc
+			if(istype(T))
+				T.update_visuals()
+				T.air_update_turf(FALSE, FALSE)
 
 		if(network)
 			network.update = 1

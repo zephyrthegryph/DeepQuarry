@@ -3,7 +3,10 @@
 	if(HAS_TRAIT(src, TRAIT_UNDERFLOOR))
 		return
 	var/potential_damage = 0.02 * exposed_temperature
-	if(exposed_temperature && !(resistance_flags & FIRE_PROOF) && (potential_damage > damage_deflection))
+	// DQEdit — guard take_damage with uses_integrity; LINDA hotspots iterate
+	// every atom on a turf, including landmarks/effects that opt out of the
+	// damage system. Without this guard, fires runtime-error in CI maps.
+	if(exposed_temperature && uses_integrity && !(resistance_flags & FIRE_PROOF) && (potential_damage > damage_deflection))
 		take_damage(clamp(potential_damage, 0, 20), BURN, FIRE, 0)
 	if(QDELETED(src)) // take_damage() can send our obj to an early grave, let's stop here if that happens
 		return

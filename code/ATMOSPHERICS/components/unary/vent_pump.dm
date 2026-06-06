@@ -222,7 +222,7 @@
 			var/transfer_moles = calculate_transfer_moles(environment, air_contents, pressure_delta, (network)? network.volume : 0)
 
 			//limit flow rate from turfs
-			transfer_moles = min(transfer_moles, environment.total_moles*air_contents.volume/environment.volume)	//group_multiplier gets divided out here
+			transfer_moles = min(transfer_moles, environment.total_moles()*air_contents.volume/environment.volume)	//group_multiplier gets divided out here
 			power_draw = pump_gas(src, environment, air_contents, transfer_moles, power_rating)
 
 	else
@@ -236,6 +236,15 @@
 	if (power_draw >= 0)
 		last_power_draw = power_draw
 		use_power(power_draw)
+		// DQEdit — pump_gas mutates loc's air mix directly via gas_mixture ref;
+		// it can't tell that the sink is a turf, so it doesn't enroll the turf
+		// in active_turfs or call update_visuals. Without this, the turf never
+		// gets processed by SSair and the gas overlay never updates.
+		if(isturf(loc))
+			var/turf/open/T = loc
+			if(istype(T))
+				T.update_visuals()
+				T.air_update_turf(FALSE, FALSE)
 		if(network)
 			network.update = 1
 

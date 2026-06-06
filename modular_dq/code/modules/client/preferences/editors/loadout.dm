@@ -85,11 +85,10 @@
 		var/datum/gear_tweak/reagents/r = gt
 		return (r.valid_reagents ? assoc_to_keys(r.valid_reagents) : list()) + list("Random", "None")
 	if(istype(gt, /datum/gear_tweak/implant_location))
-		// /datum/gear_tweak/implant_location stores its names map as a static list — use
-		// that directly. (BYOND emits a spurious unused_var on the cast because the field
-		// it reads is static; it's a noise warning, not a real bug.)
+		// DQEdit — use the getter proc to dodge DreamChecker's spurious
+		// unused_var on the cast var when reading a static field.
 		var/datum/gear_tweak/implant_location/il = gt
-		var/list/names = il.bodypart_names_to_tokens
+		var/list/names = il.get_bodypart_names_to_tokens()
 		return names ? assoc_to_keys(names) : list()
 	if(istype(gt, /datum/gear_tweak/pda_ringtone))
 		return GLOB.device_ringtones ? assoc_to_keys(GLOB.device_ringtones) : list()
@@ -722,7 +721,7 @@
 					return PREF_UPDATE_REJECTED
 			else if(istype(gt, /datum/gear_tweak/implant_location))
 				var/datum/gear_tweak/implant_location/il = gt
-				if(!(value in il.bodypart_names_to_tokens))
+				if(!(value in il.get_bodypart_names_to_tokens()))
 					return PREF_UPDATE_REJECTED
 			else if(istype(gt, /datum/gear_tweak/pda_ringtone))
 				if(!(value in GLOB.device_ringtones))

@@ -15,7 +15,13 @@
 		broken = 0
 	update_icon()
 
-/turf/simulated/floor/proc/burn_tile(exposed_temperature)
+// DQEdit — promoted from /turf/simulated/floor to /turf/simulated so LINDA's
+// turf-level fire spread (LINDA_turf_tile.dm + LINDA_fire.dm) can call it
+// uniformly. Non-floor simulated turfs no-op by returning early.
+/turf/simulated/proc/burn_tile(exposed_temperature)
+	return // base no-op
+
+/turf/simulated/floor/burn_tile(exposed_temperature)
 	if(!flooring || !(flooring.flags & TURF_CAN_BURN) || !isnull(burnt))
 		return
 	if(flooring.has_burn_range)

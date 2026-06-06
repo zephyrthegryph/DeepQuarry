@@ -60,17 +60,17 @@ ADMIN_VERB(spawn_tanktransferbomb, R_SPAWN, "Instant TTV", "Spawn a tank transfe
 	OT.master = V
 
 	PT.valve_welded = 1
-	PT.air_contents.gas[GAS_PHORON] = phoron_amt
-	PT.air_contents.gas[GAS_CO2] = carbon_amt
-	PT.air_contents.total_moles = phoron_amt + carbon_amt
+	// DQEdit — XGM exposed total_moles as a writable var; LINDA exposes it only
+	// as a computed proc. The total is implied by the adjust_gas calls above —
+	// dropping the assignment is correct, and update_values() is a no-op under
+	// auxmos archiving.
+	PT.air_contents.adjust_gas(GAS_PHORON, (phoron_amt) - LINDA_GAS_AMT(PT.air_contents, GAS_PHORON))
+	PT.air_contents.adjust_gas(GAS_CO2, (carbon_amt) - LINDA_GAS_AMT(PT.air_contents, GAS_CO2))
 	PT.air_contents.temperature = PHORON_MINIMUM_BURN_TEMPERATURE+1
-	PT.air_contents.update_values()
 
 	OT.valve_welded = 1
-	OT.air_contents.gas[GAS_O2] = oxygen_amt
-	OT.air_contents.total_moles = oxygen_amt
+	OT.air_contents.adjust_gas(GAS_O2, (oxygen_amt) - LINDA_GAS_AMT(OT.air_contents, GAS_O2))
 	OT.air_contents.temperature = PHORON_MINIMUM_BURN_TEMPERATURE+1
-	OT.air_contents.update_values()
 
 	var/obj/item/assembly/S = new assembly_type(V)
 	V.attached_device = S

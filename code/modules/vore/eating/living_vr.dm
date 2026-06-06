@@ -717,66 +717,56 @@
 	return ..()
 
 // This is about 0.896m^3 of atmosphere
+// DQEdit — was XGM (total_moles var, gas list). Under LINDA, set initial moles
+// via adjust_gas() in New(); total_moles is computed on demand.
 /datum/gas_mixture/belly_air
 	volume = 2500
 	temperature = 293.150
-	total_moles = 104
 
 /datum/gas_mixture/belly_air/New()
 	. = ..()
-	gas = list(
-		GAS_O2 = 21,
-		GAS_N2 = 79)
+	adjust_gas(GAS_O2, 21)
+	adjust_gas(GAS_N2, 79)
 
 /datum/gas_mixture/belly_air/vox
 	volume = 2500
 	temperature = 293.150
-	total_moles = 104
 
 /datum/gas_mixture/belly_air/vox/New()
 	. = ..()
-	gas = list(
-		GAS_N2 = 100) // CHOMPEdit
+	adjust_gas(GAS_N2, 100) // CHOMPEdit
 
 /datum/gas_mixture/belly_air/zaddat
 	volume = 2500
 	temperature = 293.150
-	total_moles = 300
 
 /datum/gas_mixture/belly_air/zaddat/New()
 	. = ..()
-	gas = list(
-		GAS_O2 = 100)
+	adjust_gas(GAS_O2, 100)
 
 /datum/gas_mixture/belly_air/nitrogen_breather
 	volume = 2500
 	temperature = 293.150
-	total_moles = 104
 
 /datum/gas_mixture/belly_air/nitrogen_breather/New()
 	. = ..()
-	gas = list(
-		GAS_N2 = 100)
+	adjust_gas(GAS_N2, 100)
 
 /datum/gas_mixture/belly_air/carbon_dioxide_breather
 	volume = 2500
 	temperature = 293.150
-	total_moles = 104
 
 /datum/gas_mixture/carbon_dioxide_breather/New()
 	. = ..()
-	gas = list(
-		GAS_CO2 = 100)
+	adjust_gas(GAS_CO2, 100)
 
 /datum/gas_mixture/belly_air/methane_breather
 	volume = 2500
 	temperature = 293.150
-	total_moles = 104
 
 /datum/gas_mixture/belly_air/methane_breather/New()
 	. = ..()
-	gas = list(
-		GAS_CH4 = 100)
+	adjust_gas(GAS_CH4, 100)
 
 /mob/living/proc/feed_grabbed_to_self_falling_nom(mob/living/user, mob/living/prey)
 	if(user.is_incorporeal())

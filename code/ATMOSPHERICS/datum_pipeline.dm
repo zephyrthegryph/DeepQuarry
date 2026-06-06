@@ -125,32 +125,25 @@
 
 	return network
 
-/datum/pipeline/proc/mingle_with_turf(turf/simulated/target, mingle_volume)
-	var/datum/gas_mixture/air_sample = air.remove_ratio(mingle_volume/air.volume)
+// DQEdit — rewrote off ZAS zones. ZAS branch was `if(target.zone) … modify
+// zone.air …`. Under LINDA, /turf.zone is always null, so we always take the
+// non-zone path: pull a sample from the pipe air, share it with the turf's
+// LINDA mixture (mutual exchange via share()), then merge the sample back
+// into the pipe.
+/datum/pipeline/proc/mingle_with_turf(turf/target, mingle_volume)
+	var/datum/gas_mixture/turf_air = target.return_air()
+	if(!turf_air)
+		return
+	var/datum/gas_mixture/air_sample = air.remove_ratio(mingle_volume / air.volume)
 	air_sample.volume = mingle_volume
 
-	if(istype(target) && target.zone)
-		//Have to consider preservation of group statuses
-		var/datum/gas_mixture/turf_copy = new
-		var/datum/gas_mixture/turf_original = new
+	// share() does symmetric exchange weighted by volume; both mixes converge.
+	air_sample.share(turf_air, 4, 4)
+	air.merge(air_sample)
 
-		turf_copy.copy_from(target.zone.air)
-		turf_copy.volume = target.zone.air.volume //Copy a good representation of the turf from parent group
-		turf_original.copy_from(turf_copy)
-
-		equalize_gases(list(air_sample, turf_copy))
-		air.merge(air_sample)
-
-
-		target.zone.air.remove(turf_original.total_moles)
-		target.zone.air.merge(turf_copy)
-
-	else
-		var/datum/gas_mixture/turf_air = target.return_air()
-
-		equalize_gases(list(air_sample, turf_air))
-		air.merge(air_sample)
-		//turf_air already modified by equalize_gases()
+	// Mark the turf so SSair re-equalises it with its neighbours next tick.
+	if(SSair?.initialized)
+		SSair.add_to_active(target)
 
 	if(network)
 		network.update = 1
@@ -181,15 +174,15 @@
 				modeled_location.temperature += heat/modeled_location.heat_capacity
 
 		else
-			var/delta_temperature = 0
-			var/sharer_heat_capacity = 0
-
-			if(modeled_location.zone)
-				delta_temperature = (air.temperature - modeled_location.zone.air.temperature)
-				sharer_heat_capacity = modeled_location.zone.air.heat_capacity()
-			else
-				delta_temperature = (air.temperature - modeled_location.air.temperature)
-				sharer_heat_capacity = modeled_location.air.heat_capacity()
+			// DQEdit — collapsed ZAS zone branch. zone is always null under LINDA;
+			// the air-bearing turf exposes its mixture directly via .air (set in
+			// /turf/open/Initialize). Heat exchanges between the pipe and the turf
+			// air using LINDA's heat_capacity() proc.
+			var/datum/gas_mixture/sharer_air = modeled_location.air
+			if(!sharer_air)
+				return 1
+			var/delta_temperature = air.temperature - sharer_air.temperature
+			var/sharer_heat_capacity = sharer_air.heat_capacity()
 
 			var/self_temperature_delta = 0
 			var/sharer_temperature_delta = 0
@@ -204,11 +197,7 @@
 				return 1
 
 			air.temperature += self_temperature_delta
-
-			if(modeled_location.zone)
-				modeled_location.zone.air.temperature += sharer_temperature_delta/modeled_location.zone.air.group_multiplier
-			else
-				modeled_location.air.temperature += sharer_temperature_delta
+			sharer_air.temperature += sharer_temperature_delta
 
 
 	else
@@ -224,7 +213,7 @@
 
 //surface must be the surface area in m^2
 /datum/pipeline/proc/radiate_heat_to_space(surface, thermal_conductivity)
-	var/gas_density = air.total_moles/air.volume
+	var/gas_density = air.total_moles()/air.volume
 	thermal_conductivity *= min(gas_density / ( RADIATOR_OPTIMUM_PRESSURE/(R_IDEAL_GAS_EQUATION*GAS_CRITICAL_TEMPERATURE) ), 1) //mult by density ratio
 
 	// We only get heat from the star on the exposed surface area.

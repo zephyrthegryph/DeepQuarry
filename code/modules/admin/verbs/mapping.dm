@@ -114,86 +114,13 @@ ADMIN_VERB(intercom_view, R_DEBUG, "Intercom Range Display", "Displays the inter
 					qdel(F)
 	feedback_add_details("admin_verb","mIRD") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-/client/var/list/testZAScolors_turfs = list()
-/client/var/list/testZAScolors_zones = list()
-/client/var/usedZAScolors = 0
-/client/var/list/image/ZAScolors = list()
-
-/client/proc/recurse_zone(datum/zone/Z, recurse_level =1)
-	testZAScolors_zones += Z
-	if(recurse_level > 10)
-		return
-	var/icon/yellow = new('icons/misc/debug_group.dmi', "yellow")
-
-	for(var/turf/T in Z.contents)
-		images += image(yellow, T, "zasdebug", PLANE_ADMIN2) // CHOMPEDIT
-		testZAScolors_turfs += T
-	for(var/datum/connection_edge/zone/edge in Z.edges)
-		var/datum/zone/connected = edge.get_connected_zone(Z)
-		if(connected in testZAScolors_zones)
-			continue
-		recurse_zone(connected,recurse_level+1)
-
-ADMIN_VERB_VISIBILITY(testZAScolors, ADMIN_VERB_VISIBLITY_FLAG_LOCALHOST)
-ADMIN_VERB(testZAScolors, R_DEBUG, "Check ZAS connections", "Displays ZAS connections as effects (Only use on a test server).", ADMIN_CATEGORY_MAPPING_ZAS)
-	SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/testZAScolors_remove)
-
-	var/turf/simulated/location = get_turf(user.mob)
-
-	if(!istype(location, /turf/simulated)) // We're in space, let's not cause runtimes.
-		to_chat(user, span_red("this debug tool cannot be used from space"))
-		return
-
-	var/icon/red = new('icons/misc/debug_group.dmi', "red")		//created here so we don't have to make thousands of these.
-	var/icon/green = new('icons/misc/debug_group.dmi', "green")
-	var/icon/blue = new('icons/misc/debug_group.dmi', "blue")
-
-	if(!user.usedZAScolors)
-		to_chat(user, "ZAS Test Colors")
-		to_chat(user, "[span_green("Green")] = Zone you are standing in")
-		to_chat(user, "[span_blue("Blue")] = Connected zone to the zone you are standing in")
-		to_chat(user, "[span_yellow("Yellow")] = A zone that is connected but not one adjacent to your connected zone")
-		to_chat(user, "[span_red("Red")] = Not connected")
-		user.usedZAScolors = 1
-
-	user.testZAScolors_zones += location.zone
-	for(var/turf/T in location.zone.contents)
-		user.images += image(green, T,"zasdebug", PLANE_ADMIN2) // CHOMPEDIT
-		user.testZAScolors_turfs += T
-	for(var/datum/connection_edge/zone/edge in location.zone.edges)
-		var/datum/zone/Z = edge.get_connected_zone(location.zone)
-		user.testZAScolors_zones += Z
-		for(var/turf/T in Z.contents)
-			user.images += image(blue, T,"zasdebug",PLANE_ADMIN2) // CHOMPEDIT
-			user.testZAScolors_turfs += T
-		for(var/datum/connection_edge/zone/z_edge in Z.edges)
-			var/datum/zone/connected = z_edge.get_connected_zone(Z)
-			if(connected in user.testZAScolors_zones)
-				continue
-			user.recurse_zone(connected,1)
-
-	for(var/turf/T in range(25,location))
-		if(!istype(T))
-			continue
-		if(T in user.testZAScolors_turfs)
-			continue
-		user.images += image(red, T, "zasdebug", PLANE_ADMIN2) // CHOMPEDIT
-		user.testZAScolors_turfs += T
-
-ADMIN_VERB_VISIBILITY(testZAScolors_remove, ADMIN_VERB_VISIBLITY_FLAG_LOCALHOST)
-ADMIN_VERB(testZAScolors_remove, R_DEBUG, "Remove ZAS connection colors", "Clears displayed ZAS connections (Only use on a test server).", ADMIN_CATEGORY_MAPPING_ZAS)
-	user.testZAScolors_turfs.Cut()
-	user.testZAScolors_zones.Cut()
-
-	if(length(user.images))
-		for(var/image/i in user.images)
-			if(i.icon_state == "zasdebug")
-				user.images.Remove(i)
-
-ADMIN_VERB_VISIBILITY(rebootAirMaster, ADMIN_VERB_VISIBLITY_FLAG_LOCALHOST)
-ADMIN_VERB(rebootAirMaster, R_DEBUG, "Reboot ZAS", "Rstarts ZAS (Only use on a test server).", ADMIN_CATEGORY_MAPPING_ZAS)
-	if(tgui_alert(user, "This will destroy and remake all zone geometry on the whole map.","Reboot ZAS",list("Reboot ZAS","Nevermind")) == "Reboot ZAS")
-		SSair.RebootZAS()
+// DQEdit — deleted ZAS-only admin debug verbs (testZAScolors / testZAScolors_remove /
+// rebootAirMaster) and their /client scratch state. ZAS zones don't exist
+// under LINDA; the visualization concepts (zone-adjacency colours, reboot ZAS)
+// don't map onto LINDA's excited_groups model. The Air Report verb
+// (diagnostics.dm) now reports the LINDA-native stats instead. Port real
+// excited-group visualizers here if desired (see /datum/excited_group/proc/
+// display_turfs in LINDA_turf_tile.dm — already wired to SSair.display_all_groups).
 
 ADMIN_VERB_VISIBILITY(count_objects_on_z_level, ADMIN_VERB_VISIBLITY_FLAG_LOCALHOST)
 ADMIN_VERB(count_objects_on_z_level, R_DEBUG, "Count Objects On Level", "Counts all objects on a Z level (Only use on a test server).", ADMIN_CATEGORY_MAPPING)

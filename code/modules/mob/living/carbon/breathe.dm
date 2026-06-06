@@ -2,7 +2,7 @@
 
 //Start of a breath chain, calls breathe()
 /mob/living/carbon/handle_breathing()
-	if(SSair.current_cycle%4==2 || failed_last_breath || (health < get_crit_point())) 	//First, resolve location and get a breath
+	if(SSair.times_fired%4==2 || failed_last_breath || (health < get_crit_point())) 	//First, resolve location and get a breath  // DQEdit — LINDA renamed current_cycle → times_fired
 		breathe()
 
 /mob/living/carbon/proc/breathe()

@@ -1217,7 +1217,6 @@ GLOBAL_LIST_INIT(area_or_turf_fail_types, typecacheof(list(
 	/obj/item/tank, \
 	/obj/item/circuitboard, \
 	/obj/item/smes_coil, \
-	/obj/item/fuel_assembly, \
 	/obj/item/stack/tile, \
 	/obj/item/stack/hose, \
 	/obj/item/stack/animalhide, \

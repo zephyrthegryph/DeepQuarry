@@ -1,0 +1,193 @@
+     18  /obj/item/pipe_painter: undefined type path
+      9  /obj/item/pipe_dispenser: undefined type path
+      5  atmos_control: undefined type
+      4  T.zone: undefined var
+      4  SSair.current_cycle: undefined var
+      4  GM.gas: undefined var
+      4  CanZASPass: undefined proc
+      4  /obj/fire: undefined type path
+      3  ventcrawl_get_item_whitelist: undefined proc
+      3  T.apply_fire_protection: undefined proc
+      3  removed.get_thermal_energy_change: undefined proc
+      3  monitor: undefined type
+      3  get_gas_mixture_default_scan_data: undefined proc
+      3  environment.gas: undefined var
+      3  contaminated: undefined var
+      3  /obj/machinery/portable_atmospherics/powered/reagent_distillery: undefined type path
+      3  /obj/item/stack/material/algae: undefined type path
+      3  /datum/event/supply_demand: undefined type path
+      2  Z: undefined type
+      2  Z.contents: undefined type
+      2  T:air
+      2  T.lingering_fire: undefined proc
+      2  T.feed_lingering_fire: undefined proc
+      2  T.create_fire: undefined proc
+      2  soft_assert: undefined proc
+      2  returncc.air_contents.temperature: undefined var
+      2  R: undefined type
+      2  owner.get_pressure_weakness: undefined proc
+      2  M.pl_effects: undefined proc
+      2  in_stasis: undefined var
+      2  'icons/effects/atmospherics.dmi': cannot find file
+      2  H.get_pressure_weakness: undefined proc
+      2  GLOB.vsc.ChangeSettingsDialog: undefined var
+      2  GLOB.contamination_overlay: undefined var
+      2  environment.get_thermal_energy_change: undefined proc
+      2  connections: undefined var
+      2  connections.erase_all: undefined var
+      2  C.healthcheck: undefined proc
+      2  C.health: undefined var
+      2  C.destroyed: undefined var
+      2  atmosanalyze: undefined proc
+      2  atmos_to_reenable.being_loaded: undefined var
+      2  atmos_control.tgui_interact: undefined type
+      2  analyze_gases: undefined proc
+      2  /obj/machinery/clamp: undefined type path
+      2  /obj/item/fuel_assembly: undefined type path
+      2  /obj/item/fuel_assembly/supermatter: undefined type path
+      2  /obj/item/clamp: undefined type path
+      2  /obj/item/circuitboard/timeclock: undefined type path
+      2  /obj/item/circuitboard/security/xenobio: undefined type path
+      2  /obj/item/circuitboard/machine/rdserver: undefined type path
+      2  /obj/item/circuitboard/id_restorer: undefined type path
+      2  /obj/item/circuitboard/honey_extractor: undefined type path
+      1  zone: undefined var
+      1  zone.remove: undefined var
+      1  zone.rebuild: undefined var
+      1  vent.update_area: undefined proc
+      1  user.last_airflow: undefined var
+      1  update_connected_network: undefined proc
+      1  update_air_properties: undefined proc
+      1  U.handle_hud_list: undefined proc
+      1  turn_off: undefined proc
+      1  TURF_WET_PERMAFROST: undefined var
+      1  total_moles: undefined var
+      1  TMS: undefined type
+      1  TMS.get_status: undefined type
+      1  thermal_efficiency: undefined var
+      1  targethuman.pl_suit_protected: undefined proc
+      1  targethuman.pl_head_protected: undefined proc
+      1  Tar.in_stasis: undefined var
+      1  T.zone.air.update_values: undefined var
+      1  T.zone.air.temperature: undefined var
+      1  T.zone.air.adjust_gas: undefined var
+      1  T.update_air_properties: undefined proc
+      1  T.air.total_moles: undefined var
+      1  suger_high.0: undefined var
+      1  state: undefined var
+      1  start_ventcrawl: undefined proc
+      1  src.air_contents.adjust_multi: undefined proc
+      1  source.is_ventcrawling: undefined var
+      1  shiny.0: undefined var
+      1  setup.Initalize_Atmos: undefined proc
+      1  setup.init_air: undefined var
+      1  set_smoothed_icon_state: undefined proc
+      1  SET_PLANE_W_SCALAR: undefined proc
+      1  scrubber.update_area: undefined proc
+      1  rod.fuel_type: undefined type
+      1  returnmix.gas_string: undefined var
+      1  returnin_stasis: undefined var
+      1  returncryo.air_contents.temperature: undefined var
+      1  R.receive_pulse: undefined type
+      1  put_mob: undefined proc
+      1  pump_gas: undefined proc
+      1  PT.air_contents.total_moles: undefined var
+      1  pda.analyze_gases: undefined proc
+      1  P.pipe_color: undefined var
+      1  our_user.has_virus: undefined proc
+      1  our_pipe.blowout: undefined proc
+      1  OT.air_contents.total_moles: undefined var
+      1  on: undefined var
+      1  occupant: undefined var
+      1  O.contaminated: undefined var
+      1  node: undefined var
+      1  my_pump.id_tag: undefined var
+      1  my_pump.frequency: undefined var
+      1  moth_loc.air: undefined var
+      1  monitor.tgui_interact: undefined type
+      1  Mecha.internal_tank.return_temperature: undefined proc
+      1  Mecha.internal_tank.return_pressure: undefined proc
+      1  max_power: undefined var
+      1  location.burn_tile: undefined proc
+      1  level.traits: undefined type
+      1  L.can_ventcrawl: undefined proc
+      1  is_ventcrawling: undefined var
+      1  icon_manager: undefined type
+      1  I:air_contents
+      1  human_being_pumped.handle_heartbeat: undefined proc
+      1  host.add_ventcrawl: undefined proc
+      1  healthcheck: undefined proc
+      1  health: undefined var
+      1  handle_ventcrawl: undefined proc
+      1  H.pl_suit_protected: undefined proc
+      1  H.pl_head_protected: undefined proc
+      1  H.in_stasis: undefined var
+      1  GM.adjust_multi: undefined proc
+      1  GLOB.vsc.settings: undefined var
+      1  GLOB.vsc.SetDefault: undefined var
+      1  GLOB.vsc.plc.settings: undefined var
+      1  GLOB.vsc.airflow_delay: undefined var
+      1  gas: undefined var
+      1  GAME_PLANE: undefined var
+      1  foam: unknown variable type
+      1  foam: undefined type
+      1  feed_lingering_fire: undefined proc
+      1  FA.set_security_level: undefined proc
+      1  FA.detecting: undefined var
+      1  FA.alarm: undefined proc
+      1  extra_range: previous definition
+      1  extra_range: duplicate definition
+      1  external_pressure_bound: undefined var
+      1  end.CanZASPass: undefined proc
+      1  current_reaction.reaction_check: undefined type
+      1  current_reaction.react: undefined type
+      1  clamp: undefined type
+      1  candidate_alarm.engwarn: undefined var
+      1  candidate_alarm.engalarm.start: undefined var
+      1  candidate_alarm.critwarn: undefined var
+      1  candidate_alarm.critalarm.start: undefined var
+      1  candidate_alarm.causalitywarn: undefined var
+      1  candidate_alarm.causality.start: undefined var
+      1  can_safely_remove_from_zone: undefined proc
+      1  c_copy_air: undefined proc
+      1  burn_tile: undefined proc
+      1  atmosanalyzer_scan: undefined proc
+      1  atmos_control.emagged: undefined type
+      1  airpanel.update_area: undefined proc
+      1  airflow_speed: undefined var
+      1  airflow_hit: undefined proc
+      1  airflow_dest: undefined var
+      1  air_contents.share_ratio: undefined proc
+      1  air_contents.remove_by_flag: undefined proc
+      1  air_contents.adjust_multi: undefined proc
+      1  air_alarm.atmos_reset: undefined proc
+      1  adjust_moles_temp: undefined proc
+      1  adjust_moles: undefined proc
+      1  adjust_gas: previous definition
+      1  adjust_gas: duplicate definition
+      1  activate.requires_activation: undefined var
+      1  activate.flags_1: undefined var
+      1  ABOVE_GAME_PLANE: undefined var
+      1  ?: bad variable
+      1  /obj/machinery/reagent_refinery/reactor: undefined type path
+      1  /obj/machinery/power/hydromagnetic_trap: undefined type path
+      1  /obj/machinery/portable_atmospherics/powered/reagent_distillery/industrial: undefined type path
+      1  /obj/machinery/pipelayer: undefined type path
+      1  /obj/machinery/pipedispenser/disposal: undefined type path
+      1  /obj/machinery/computer/turbine_computer: undefined type path
+      1  /obj/machinery/computer/area_atmos: undefined type path
+      1  /obj/machinery/atmospherics/portables_connector/: undefined type path
+      1  /obj/machinery/atmospheric_field_generator: undefined type path
+      1  /obj/item/stack/material/algae/ten: undefined type path
+      1  /obj/item/fuel_assembly/deuterium: undefined type path
+      1  /obj/item/circuitboard/unary_atmos/heater: undefined type path
+      1  /obj/item/circuitboard/unary_atmos/cooler: undefined type path
+      1  /obj/item/circuitboard/partslathe: undefined type path
+      1  /obj/item/circuitboard/bomb_tester: undefined type path
+      1  /obj/item/circuitboard/air_management: undefined type path
+      1  /obj/item/circuitboard/air_management/tank_control: undefined type path
+      1  /obj/item/circuitboard/air_management/supermatter_core: undefined type path
+      1  /obj/item/circuitboard/air_management/injector_control: undefined type path
+      1  /datum/tgui_module/supermatter_monitor/ntos: undefined type path
+      1  /datum/tgui_module/shutoff_monitor/ntos: undefined type path
+      1  /datum/tgui_module/atmos_control/ntos: undefined type path

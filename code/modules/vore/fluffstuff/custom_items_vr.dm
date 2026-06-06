@@ -64,7 +64,8 @@
 		if(LAZYLEN(SS.breaches))
 			to_chat(user, span_warning("You should probably repair that before you start tinkering with it."))
 			return
-	if(O.forensic_data?.has_blooddna() || O.contaminated) //check if we're bloody or gooey or whatever, so modkits can't be used to hide crimes easily.
+	// DQEdit — `|| O.contaminated` dropped alongside ZAS contamination removal.
+	if(O.forensic_data?.has_blooddna()) //check if we're bloody or gooey or whatever, so modkits can't be used to hide crimes easily.
 		to_chat(user, span_warning("You should probably clean that up before you start tinkering with it."))
 		return
 	//we have to check that it's not the original type first, because otherwise it might convert wrong based on pathing; the subtype can still count as the basetype

@@ -169,8 +169,12 @@ if (!(DATUM.datum_flags & DF_ISPROCESSING)) {\
 #define START_MACHINE_PROCESSING(Datum) START_PROCESSING_IN_LIST(Datum, SSmachines.processing_machines)
 #define STOP_MACHINE_PROCESSING(Datum) STOP_PROCESSING_IN_LIST(Datum, SSmachines.processing_machines)
 
-#define START_PROCESSING_PIPENET(Datum) START_PROCESSING_IN_LIST(Datum, SSmachines.networks)
-#define STOP_PROCESSING_PIPENET(Datum) STOP_PROCESSING_IN_LIST(Datum, SSmachines.networks)
+// DQEdit — LINDA owns pipenets via SSair, not SSmachines.
+// SSmachines.process_pipenets is a stub; SSair.process_pipenets is the live
+// dispatcher. Without this redirect, /datum/pipe_network/process never runs
+// and reconcile_air is silent — multi-pipeline networks don't equalize.
+#define START_PROCESSING_PIPENET(Datum) START_PROCESSING_IN_LIST(Datum, SSair.networks)
+#define STOP_PROCESSING_PIPENET(Datum) STOP_PROCESSING_IN_LIST(Datum, SSair.networks)
 
 #define START_PROCESSING_POWERNET(Datum) START_PROCESSING_IN_LIST(Datum, SSmachines.powernets)
 #define STOP_PROCESSING_POWERNET(Datum) STOP_PROCESSING_IN_LIST(Datum, SSmachines.powernets)

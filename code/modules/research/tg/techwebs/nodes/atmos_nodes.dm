@@ -4,25 +4,15 @@
 	starting_node = TRUE
 	display_name = "Atmospherics"
 	description = "Maintaining station air and related life support systems."
+	// DQRestore — CHOMP atmos machinery is back; design IDs reactivated.
 	design_ids = list(
 		"atmosanalyzer",
 		"atmosalerts",
 		"air_management",
 		"tank_management",
 		"shutoff_monitor",
-		// "thermomachine",
 		"space_heater",
-		// "scrubber",
-		// "generic_tank",
-		// "oxygen_tank",
-		// "plasma_tank",
-		// "plasmaman_tank_belt",
-		// "plasmarefiller",
 		"fire_extinguisher",
-		// "pocketfireextinguisher",
-		// "gas_filter",
-		// "plasmaman_gas_filter",
-		// "pipe_painter",
 		"atmoscontrol",
 		"area_atmos",
 	)
@@ -32,24 +22,12 @@
 	display_name = "Gas Compression"
 	description = "Highly pressurized gases hold potential for unlocking immense energy capabilities."
 	prereq_ids = list(TECHWEB_NODE_ATMOS)
+	// DQRestore — CHOMP atmos machinery is back.
 	design_ids = list(
 		"gasheater",
 		"gascooler",
 		"algae_farm",
 		"thermoregulator",
-		// "tank_compressor",
-		// "pump",
-		// "emergency_oxygen",
-		// "emergency_oxygen_engi",
-		// "power_turbine_console",
-		// "turbine_part_compressor",
-		// "turbine_part_rotor",
-		// "turbine_part_stator",
-		// "turbine_compressor",
-		// "turbine_rotor",
-		// "turbine_stator",
-		// "atmos_thermal",
-		// "pneumatic_seal",
 		"large_welding_tool",
 	)
 	research_costs = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_1_POINTS)
@@ -77,6 +55,7 @@
 	display_name = "Fusion"
 	description = "Investigating fusion reactor technology to achieve sustainable and efficient energy production through controlled plasma reactions involving noble gases."
 	prereq_ids = list(TECHWEB_NODE_PLASMA_CONTROL)
+	// DQRestore — R-UST fusion engine is back.
 	design_ids = list(
 		"adv_rtg",
 		"fusion_core_control",
@@ -85,10 +64,6 @@
 		"gyrotron_control",
 		"fusion_core",
 		"fusion_injector",
-		// "adv_fire_extinguisher",
-		// "bolter_wrench",
-		// "engine_goggles",
-		// "crystallizer",
 	)
 	research_costs = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_3_POINTS)
 	// discount_experiments = list(/datum/experiment/ordnance/gaseous/nitrous_oxide = TECHWEB_TIER_3_POINTS)

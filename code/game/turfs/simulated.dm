@@ -1,6 +1,15 @@
+// DQEdit Start — reparent /turf/simulated → /turf/open so it inherits LINDA's
+// full gas-spread + visuals + adjacency + spacewind machinery. The atmos
+// migration plan (modular_dq/doc/atmos_migration.md §"map turf types") always
+// targeted this shape; without it, /turf/simulated tiles never enter LINDA's
+// turf graph so gases stay where vents push them and never render. Floors
+// get air via /turf/open/Initialize (because blocks_air defaults FALSE);
+// walls keep their existing blocks_air=1 and remain inert.
 /turf/simulated
+	parent_type = /turf/open
 	name = "station"
 	var/wet = TURFSLIP_DRY
+// DQEdit End
 	var/image/wet_overlay = null
 
 	//Mining resources (for the large drills).

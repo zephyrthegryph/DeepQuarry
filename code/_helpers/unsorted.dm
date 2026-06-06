@@ -769,14 +769,12 @@ Turf and target are seperate in case you want to teleport some distance from a t
 						X.underlays = old_underlays
 						X.decals = old_decals
 
-					//Move the air from source to dest
-					var/turf/simulated/ST = T
-					if(istype(ST) && ST.zone)
-						var/turf/simulated/SX = X
-						if(!SX.air)
-							SX.make_air()
-						SX.air.copy_from(ST.zone.air)
-						ST.zone.remove(ST)
+					// DQEdit — air-transfer used ZAS zone.air; LINDA uses per-turf return_air().
+					var/datum/gas_mixture/source_air = T.return_air()
+					if(source_air)
+						var/datum/gas_mixture/dest_air = X.return_air()
+						if(dest_air)
+							dest_air.copy_from(source_air)
 
 					var/z_level_change = FALSE
 					if(T.z != X.z)

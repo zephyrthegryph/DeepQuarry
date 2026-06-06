@@ -13,6 +13,9 @@ export MACRO_COUNT=7
 #rust_g git tag
 export RUST_G_VERSION=6.1.0
 
+# verdigris is the in-tree rust extension (built from source); toolchain is pinned in verdigris/rust-toolchain.toml
+# Targets: i686-unknown-linux-gnu (libverdigris.so) and i686-pc-windows-msvc (verdigris.dll)
+
 # node version
 export NODE_VERSION_LTS=22.14.0
 

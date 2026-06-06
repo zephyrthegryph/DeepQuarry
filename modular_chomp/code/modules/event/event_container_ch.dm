@@ -37,7 +37,7 @@
 		new /datum/event_meta(EVENT_LEVEL_MUNDANE, "Space Dust",			/datum/event/dust,	 						0, 		list(DEPARTMENT_ENGINEERING = 20), FALSE, 0, 50),
 		new /datum/event_meta(EVENT_LEVEL_MUNDANE, "Trivial News",			/datum/event/trivial_news, 					400),
 		new /datum/event_meta(EVENT_LEVEL_MUNDANE, "Lore News",				/datum/event/lore_news, 					400),
-		new /datum/event_meta(EVENT_LEVEL_MUNDANE, "Supply Demand",			/datum/event/supply_demand,					0,		list(DEPARTMENT_ANY = 5, DEPARTMENT_RESEARCH = 15, JOB_BOTANIST = 10, DEPARTMENT_ENGINEERING = 10, DEPARTMENT_MEDICAL = 15), TRUE, min_jobs = list(DEPARTMENT_CARGO = 1)),
+		// DQEdit — /datum/event/supply_demand was in supply_demand_vr.dm (deleted with ZAS).
 		// Spawns mice, lizards, or dud spiderlings
 		new /datum/event_meta(EVENT_LEVEL_MUNDANE, "Vermin Infestation",	/datum/event/infestation, 					100,	list(DEPARTMENT_ANY = 5, JOB_JANITOR = 100), TRUE),
 		// Rot only weakens walls, not destroy them
@@ -104,7 +104,7 @@
 		new /datum/event_meta(EVENT_LEVEL_MODERATE, "Prison Break",				/datum/event/prison_break,				-10,	list(DEPARTMENT_SECURITY = 30, DEPARTMENT_ENGINEERING = 20), TRUE, min_jobs = list(DEPARTMENT_SECURITY = 2)),
 		new /datum/event_meta(EVENT_LEVEL_MODERATE, "Random Antagonist",		/datum/event/random_antag,		 		2.5,	list(DEPARTMENT_SECURITY = 1), TRUE, 0, 5),
 		new /datum/event_meta(EVENT_LEVEL_MODERATE, "Carp School",				/datum/event/carp_migration,			-20, 	list(DEPARTMENT_ENGINEERING = 10, DEPARTMENT_SECURITY = 30, JOB_HEAD_OF_SECURITY = 10, JOB_WARDEN = 5), TRUE, min_jobs = list(DEPARTMENT_SECURITY = 2)),
-		new /datum/event_meta(EVENT_LEVEL_MODERATE, "Supply Demand",			/datum/event/supply_demand,				0,		list(DEPARTMENT_ANY = 5, DEPARTMENT_RESEARCH = 15, JOB_BOTANIST = 10, DEPARTMENT_ENGINEERING = 10, DEPARTMENT_MEDICAL = 15), TRUE),
+		// DQEdit — /datum/event/supply_demand deleted with supply_demand_vr.dm.
 		new /datum/event_meta(EVENT_LEVEL_MODERATE, "Space Dust",				/datum/event/dust,	 					0,		list(DEPARTMENT_ENGINEERING = 20), TRUE, 0, 50),
 		new /datum/event_meta(EVENT_LEVEL_MODERATE, "Disease Outbreak",			/datum/event/disease_outbreak,			-30,	list(DEPARTMENT_MEDICAL = 30, DEPARTMENT_ANY = 1), TRUE, min_jobs = list(DEPARTMENT_MEDICAL = 2)),
 		new /datum/event_meta(EVENT_LEVEL_MODERATE, "Virology Breach",			/datum/event/prison_break/virology,		0,		list(DEPARTMENT_MEDICAL = 100), TRUE, min_jobs = list(DEPARTMENT_MEDICAL = 1)),
@@ -144,5 +144,5 @@
 		//Needs Xenobio containment breach fixed
 		//new /datum/event_meta(EVENT_LEVEL_MAJOR, "Xenobiology Breach",		/datum/event/prison_break/xenobiology,	-10,	list(DEPARTMENT_RESEARCH = 30, DEPARTMENT_ENGINEERING = 20), 1),
 		//new /datum/event_meta(EVENT_LEVEL_MAJOR, "Meteor Strike",				/datum/event/meteor_strike,		10,		list(DEPARTMENT_ENGINEERING = 15), 1),
-		new /datum/event_meta(EVENT_LEVEL_MAJOR, "Supply Demand",				/datum/event/supply_demand,				0,		list(DEPARTMENT_ANY = 5, DEPARTMENT_RESEARCH = 15, JOB_BOTANIST = 10, DEPARTMENT_ENGINEERING = 10, DEPARTMENT_MEDICAL = 15), TRUE, min_jobs = list(DEPARTMENT_CARGO = 1)),
+		// DQEdit — /datum/event/supply_demand deleted with supply_demand_vr.dm.
 	))

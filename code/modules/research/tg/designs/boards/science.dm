@@ -172,7 +172,6 @@
 /datum/design_techweb/board/bomb_tester
 	SET_CIRCUIT_DESIGN_NAMEDESC("Explosive Effect Simulator")
 	id = "bomb_tester"
-	// req_tech = list(TECH_PHORON = 3, TECH_DATA = 2, TECH_MAGNET = 2)
 	build_path = /obj/item/circuitboard/bomb_tester
 	category = list(
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_RESEARCH

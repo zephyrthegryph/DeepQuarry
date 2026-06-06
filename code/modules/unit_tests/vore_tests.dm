@@ -1,9 +1,12 @@
 /datum/unit_test/proc/create_test_human(turf/loc = null)
 	if(!loc)
+		// DQEdit — was T.zone.air.return_pressure() under ZAS; LINDA exposes
+		// per-turf air directly via return_air().
 		for(var/turf/simulated/floor/tiled/T in world)
-			if(!T.zone)
+			var/datum/gas_mixture/air = T.return_air()
+			if(!air)
 				continue
-			var/pressure = T.zone.air.return_pressure()
+			var/pressure = air.return_pressure()
 			if(90 < pressure && pressure < 120) // Find a turf between 90 and 120
 				loc = T
 				break

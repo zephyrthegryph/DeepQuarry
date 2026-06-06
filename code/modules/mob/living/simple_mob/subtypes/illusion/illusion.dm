@@ -36,7 +36,7 @@
 	copying = thing_to_copy
 	density = thing_to_copy.density // So you can't bump into objects that aren't supposed to be dense.
 	catalogue_data = thing_to_copy.get_catalogue_data()
-	dq_set_catalogue_delay(src, thing_to_copy.get_catalogue_delay()) // DQEdit
+	dq_set_catalogue_delay(src, thing_to_copy.get_catalogue_delay()) // DQEdit — copy DQ catalogue scan-delay so illusions don't reveal themselves via faster scan time
 	return TRUE
 
 // Because we can't perfectly duplicate some examine() output, we directly examine the AM it is copying.  It's messy but

@@ -131,8 +131,8 @@
 		stack_trace("Improper turf qdel. Do not qdel turfs directly.")
 	changing_turf = FALSE
 	GLOB.cleanbot_reserved_turfs -= src
-	if(connections)
-		connections.erase_all()
+	// DQEdit — ZAS connections.erase_all() removed. LINDA tracks turf-to-turf
+	// links via atmos_adjacent_turfs (cleared in /turf/open/Destroy already).
 	..()
 	return QDEL_HINT_IWILLGC
 

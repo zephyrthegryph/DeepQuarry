@@ -57,9 +57,13 @@
 	//inner atmos
 	var/use_internal_tank = 0
 	var/internal_tank_valve = ONE_ATMOSPHERE
-	var/obj/machinery/portable_atmospherics/canister/internal_tank
+	// DQEdit — was ZAS portable canister; now a regular oxygen tank since the
+	// ZAS portable machinery was deleted.
+	var/obj/item/tank/internal_tank
 	var/datum/gas_mixture/cabin_air
-	var/obj/machinery/atmospherics/portables_connector/connected_port = null
+	// DQEdit — connected_port was an /obj/machinery/atmospherics/portables_connector
+	// (ZAS). Untyped while LINDA portables_connector is wired in.
+	var/obj/connected_port = null
 
 	var/obj/item/radio/radio = null
 
@@ -414,10 +418,13 @@
 		if(!hasInternalDamage(MECHA_INT_TEMP_CONTROL) && prob(5))
 			clearInternalDamage(MECHA_INT_FIRE)
 		if(internal_tank)
-			if(internal_tank.return_pressure()>internal_tank.maximum_pressure && !(hasInternalDamage(MECHA_INT_TANK_BREACH)))
-				setInternalDamage(MECHA_INT_TANK_BREACH)
+			// DQEdit — internal_tank's pressure-check uses the mixture's own pressure,
+			// not the (deleted ZAS canister's) maximum_pressure var. Use TANK_LEAK_PRESSURE
+			// as the trip threshold instead, matching /tg/'s tank breach logic.
 			var/datum/gas_mixture/int_tank_air = internal_tank.return_air()
-			if(int_tank_air && int_tank_air.volume>0) //heat the air_contents
+			if(int_tank_air && int_tank_air.return_pressure() > TANK_LEAK_PRESSURE && !(hasInternalDamage(MECHA_INT_TANK_BREACH)))
+				setInternalDamage(MECHA_INT_TANK_BREACH)
+			if(int_tank_air && int_tank_air.volume > 0) //heat the air_contents
 				int_tank_air.temperature = min(6000+T0C, int_tank_air.temperature+rand(10,15))
 		if(cabin_air && cabin_air.volume>0)
 			cabin_air.temperature = min(6000+T0C, cabin_air.temperature+rand(10,15))
@@ -454,7 +461,10 @@
 	src.verbs += verb_path
 
 /obj/mecha/proc/add_airtank()
-	internal_tank = new /obj/machinery/portable_atmospherics/canister/air(src)
+	// DQEdit — the ZAS portable canister type was deleted in the LINDA migration.
+	// Mech internal tank now uses /obj/item/tank/air (regular oxygen tank) which
+	// has return_air() and persists in the mech's contents.
+	internal_tank = new /obj/item/tank/air(src)
 	return internal_tank
 
 /obj/mecha/proc/add_cell(obj/item/cell/C=null)
@@ -471,7 +481,11 @@
 	cabin_air = new
 	cabin_air.temperature = T20C
 	cabin_air.volume = 200
-	cabin_air.adjust_multi(GAS_O2, O2STANDARD*cabin_air.volume/(R_IDEAL_GAS_EQUATION*cabin_air.temperature), GAS_N2, N2STANDARD*cabin_air.volume/(R_IDEAL_GAS_EQUATION*cabin_air.temperature))
+	// DQEdit — adjust_multi was XGM; LINDA's gas_mixture has adjust_gas per-call.
+	var/moles_o2 = O2STANDARD * cabin_air.volume / (R_IDEAL_GAS_EQUATION * cabin_air.temperature)
+	var/moles_n2 = N2STANDARD * cabin_air.volume / (R_IDEAL_GAS_EQUATION * cabin_air.temperature)
+	cabin_air.adjust_gas(GAS_O2, moles_o2)
+	cabin_air.adjust_gas(GAS_N2, moles_n2)
 	return cabin_air
 
 /obj/mecha/proc/add_radio()
@@ -1755,38 +1769,15 @@
 			. = t_air.temperature
 	return
 
-/obj/mecha/proc/connect(obj/machinery/atmospherics/portables_connector/new_port)
-	//Make sure not already connected to something else
-	if(connected_port || !new_port || new_port.connected_device)
-		return 0
-
-	//Make sure are close enough for a valid connection
-	if(!(new_port.loc in locs))
-		return 0
-
-	//Perform the connection
-	connected_port = new_port
-	connected_port.connected_device = src
-
-	//Actually enforce the air sharing
-	var/datum/pipe_network/network = connected_port.return_network(src)
-	if(network && !(internal_tank.return_air() in network.gases))
-		network.gases += internal_tank.return_air()
-		network.update = 1
-	playsound(src, 'sound/mecha/gasconnected.ogg', 50, 1)
-	src.mecha_log_message("Connected to gas port.")
-	return 1
+// DQEdit — connect/disconnect plumbed a mecha into a ZAS portables_connector +
+// pipe_network. Both types deleted in the LINDA migration. Stub returns 0 (not
+// connected) until the LINDA equivalent (vendored under modular_dq/code/atmospherics/
+// machinery/components/unary_devices/portables_connector.dm) is wired into the build.
+/obj/mecha/proc/connect(obj/new_port)
+	return 0
 
 /obj/mecha/proc/disconnect()
-	if(!connected_port)
-		return 0
-
-	var/datum/pipe_network/network = connected_port.return_network(src)
-	if(network)
-		network.gases -= internal_tank.return_air()
-
-	connected_port.connected_device = null
-	connected_port = null
+	return 0
 	playsound(src, 'sound/mecha/gasdisconnected.ogg', 50, 1)
 	src.mecha_log_message("Disconnected from gas port.")
 	return 1
@@ -1813,8 +1804,10 @@
 	if(!GC)
 		return
 
+	// DQEdit — portables_connector type deleted; loop is a no-op until LINDA
+	// portables_connector is wired in.
 	for(var/turf/T in locs)
-		var/obj/machinery/atmospherics/portables_connector/possible_port = locate(/obj/machinery/atmospherics/portables_connector) in T
+		var/obj/possible_port = null
 		if(possible_port)
 			if(connect(possible_port))
 				occupant_message(span_notice("\The [name] connects to the port."))
@@ -2245,8 +2238,11 @@
 /obj/mecha/proc/get_stats_part()
 	var/integrity = health/initial(health)*100
 	var/cell_charge = get_charge()
-	var/tank_pressure = internal_tank ? round(internal_tank.return_pressure(),0.01) : "None"
-	var/tank_temperature = internal_tank ? internal_tank.return_temperature() : "Unknown"
+	// DQEdit — internal_tank is now /obj/item/tank, no return_pressure/return_temperature
+	// procs on it; read through air_contents (a /datum/gas_mixture).
+	var/datum/gas_mixture/tank_air = internal_tank?.return_air()
+	var/tank_pressure = tank_air ? round(tank_air.return_pressure(), 0.01) : "None"
+	var/tank_temperature = tank_air ? tank_air.temperature : "Unknown"
 	var/cabin_pressure = round(return_pressure(),0.01)
 
 	var/obj/item/mecha_parts/component/hull/HC = internal_components[MECH_HULL]

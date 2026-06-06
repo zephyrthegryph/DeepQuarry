@@ -88,7 +88,7 @@
 		last_power_draw += power_draw
 
 	// STEP 3 - Convert CO2 to O2  (Note: We know our internal group multipier is 1, so just be cool)
-	var/co2_moles = internal.gas[input_gas]
+	var/co2_moles = LINDA_GAS_AMT(internal, input_gas)
 	if(co2_moles < MINIMUM_MOLES_TO_FILTER)
 		ui_error = "Insufficient [GLOB.gas_data.name[input_gas]] to process."
 		update_icon()
@@ -194,14 +194,14 @@
 		data["input"] = list(
 			"pressure" = air1.return_pressure(),
 			"name" = GLOB.gas_data.name[input_gas],
-			"percent" = air1.total_moles > 0 ? round((air1.gas[input_gas] / air1.total_moles) * 100) : 0,
-			"moles" = round(air1.gas[input_gas], 0.01))
+			"percent" = air1.total_moles() > 0 ? round((LINDA_GAS_AMT(air1, input_gas) / air1.total_moles()) * 100) : 0,
+			"moles" = round(LINDA_GAS_AMT(air1, input_gas), 0.01))
 	if(air2 && network2 && node2)
 		data["output"] = list(
 			"pressure" = air2.return_pressure(),
 			"name" = GLOB.gas_data.name[output_gas],
-			"percent" = air2.total_moles ? round((air2.gas[output_gas] / air2.total_moles) * 100) : 0,
-			"moles" = round(air2.gas[output_gas], 0.01))
+			"percent" = air2.total_moles() ? round((LINDA_GAS_AMT(air2, output_gas) / air2.total_moles()) * 100) : 0,
+			"moles" = round(LINDA_GAS_AMT(air2, output_gas), 0.01))
 
 	return data
 

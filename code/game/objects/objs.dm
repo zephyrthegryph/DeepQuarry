@@ -180,9 +180,9 @@
 	if(gurgled && clean_types & CLEAN_WASH)
 		gurgled = FALSE
 		cut_overlay(GLOB.gurgled_overlays[gurgled_color])
-	if(contaminated && clean_types & CLEAN_RAD) // Phoron and stuff, washing machine needed
-		contaminated = FALSE
-		cut_overlay(GLOB.contamination_overlay)
+	// DQEdit — phoron contamination wash branch removed; .contaminated +
+	// GLOB.contamination_overlay are gone (ZAS contamination machinery wasn't
+	// ported under LINDA). Restore if contamination gameplay returns.
 
 /obj/vv_get_dropdown()
 	. = ..()
