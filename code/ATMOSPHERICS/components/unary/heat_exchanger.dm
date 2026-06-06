@@ -40,11 +40,11 @@
 	if(!partner)
 		return 0
 
-	if(!SSair || SSair.current_cycle <= update_cycle)
+	if(!SSair || SSair.times_fired <= update_cycle)
 		return 0
 
-	update_cycle = SSair.current_cycle
-	partner.update_cycle = SSair.current_cycle
+	update_cycle = SSair.times_fired
+	partner.update_cycle = SSair.times_fired
 
 	var/air_heat_capacity = air_contents.heat_capacity()
 	var/other_air_heat_capacity = partner.air_contents.heat_capacity()

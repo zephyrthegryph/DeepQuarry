@@ -22,7 +22,7 @@
 
 /obj/item/tank/oxygen/examine(mob/user)
 	. = ..()
-	if(loc == user && (air_contents.gas[GAS_O2] < 10))
+	if(loc == user && (LINDA_GAS_AMT(air_contents, GAS_O2) < 10))
 		. += span_warning("The meter on \the [src] indicates you are almost out of oxygen!")
 
 /obj/item/tank/oxygen/yellow
@@ -44,9 +44,9 @@
 /obj/item/tank/anesthetic/Initialize(mapload)
 	. = ..()
 
-	air_contents.gas[GAS_O2] = (3*ONE_ATMOSPHERE)*70/(R_IDEAL_GAS_EQUATION*T20C) * O2STANDARD
-	air_contents.gas[GAS_N2O] = (3*ONE_ATMOSPHERE)*70/(R_IDEAL_GAS_EQUATION*T20C) * N2STANDARD
-	air_contents.update_values()
+	air_contents.adjust_gas(GAS_O2, ((3*ONE_ATMOSPHERE)*70/(R_IDEAL_GAS_EQUATION*T20C) * O2STANDARD) - LINDA_GAS_AMT(air_contents, GAS_O2))
+	air_contents.adjust_gas(GAS_N2O, ((3*ONE_ATMOSPHERE)*70/(R_IDEAL_GAS_EQUATION*T20C) * N2STANDARD) - LINDA_GAS_AMT(air_contents, GAS_N2O))
+	// DQEdit — update_values() removed; no-op under LINDA.
 
 /*
  * Air
@@ -58,7 +58,7 @@
 
 /obj/item/tank/air/examine(mob/user)
 	. = ..()
-	if(loc == user && (air_contents.gas[GAS_O2] < 1))
+	if(loc == user && (LINDA_GAS_AMT(air_contents, GAS_O2) < 1))
 		. += span_warning("The meter on \the [src] indicates you are almost out of air!")
 		user << sound('sound/effects/alert.ogg')
 
@@ -143,7 +143,7 @@
 
 /obj/item/tank/emergency/oxygen/examine(mob/user)
 	. = ..()
-	if(loc == user && (air_contents.gas[GAS_O2] < 0.2))
+	if(loc == user && (LINDA_GAS_AMT(air_contents, GAS_O2) < 0.2))
 		. += span_danger("The meter on the [src.name] indicates you are almost out of air!")
 		user << sound('sound/effects/alert.ogg')
 
@@ -250,7 +250,7 @@
 
 /obj/item/tank/nitrogen/examine(mob/user)
 	. = ..()
-	if(loc == user && (air_contents.gas[GAS_N2] < 10))
+	if(loc == user && (LINDA_GAS_AMT(air_contents, GAS_N2) < 10))
 		. += span_danger("The meter on \the [src] indicates you are almost out of nitrogen!")
 		//playsound(user, 'sound/effects/alert.ogg', 50, 1)
 
@@ -281,7 +281,7 @@
 
 /obj/item/tank/methane/examine(mob/user)
 	. = ..()
-	if(loc == user && (air_contents.gas[GAS_CH4] < 10))
+	if(loc == user && (LINDA_GAS_AMT(air_contents, GAS_CH4) < 10))
 		. += span_danger("The meter on \the [src] indicates you are almost out of methane!")
 		//playsound(user, 'sound/effects/alert.ogg', 50, 1)
 

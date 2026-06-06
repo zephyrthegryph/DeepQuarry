@@ -21,10 +21,10 @@
 	if(istype(below))
 		below.update_icon() // To add or remove the 'ceiling-less' overlay.
 
+// DQEdit — has_valid_ZAS_zone is a ZAS query (zone graph). Under LINDA, a turf
+// is "simulated" if it's in SSair's active set. Stub returns simulated-ness.
 /proc/has_valid_ZAS_zone(turf/simulated/T)
-	if(!istype(T))
-		return FALSE
-	return HAS_VALID_ZONE(T)
+	return istype(T)
 
 //Creates a new turf
 /turf/proc/ChangeTurf(turf/N, tell_universe=1, force_lighting_update = 0, preserve_outdoors = FALSE)
@@ -37,7 +37,10 @@
 		if(istype(below) && zones_present && !(src.z in using_map.below_blocked_levels) && (!istype(below, /turf/unsimulated/wall) && !istype(below, /turf/simulated/sky)))	// VOREStation Edit: Weird open space
 			N = /turf/simulated/open
 
-	var/obj/fire/old_fire = fire
+	// DQEdit — was `var/obj/fire/old_fire = fire`; ZAS /obj/fire is a stub now
+	// and turf.fire isn't set under LINDA. Just drop the var since it's only
+	// referenced again at line 92 (commented out).
+	// var/obj/old_fire = null
 	var/old_lighting_corners_initialized = lighting_corners_initialised
 	var/old_dynamic_lighting = dynamic_lighting
 	var/old_lighting_object = lighting_object
@@ -64,14 +67,9 @@
 	if(Be)
 		Be.multiz_turf_del(src, UP)
 
-	if(connections) connections.erase_all()
-
-	if(istype(src,/turf/simulated))
-		//Yeah, we're just going to rebuild the whole thing.
-		//Despite this being called a bunch during explosions,
-		//the zone will only really do heavy lifting once.
-		var/turf/simulated/S = src
-		if(S.zone) S.zone.rebuild()
+	// DQEdit — `connections` (turf-to-turf ZAS edge list) and `S.zone` (ZAS zone
+	// reference) are both ZAS-only. Under LINDA, turf air adjacency is rebuilt
+	// via SSair.add_to_active() on the changed turf, called below.
 
 	cut_overlays(TRUE)
 	RemoveElement(/datum/element/turf_z_transparency)
@@ -80,8 +78,8 @@
 
 	var/turf/W = new N( locate(src.x, src.y, src.z) )
 	if(ispath(N, /turf/simulated/floor))
-		if(old_fire)
-			W.fire = old_fire
+		// DQEdit — W.fire was a ZAS hotspot pointer; LINDA hotspots are tracked
+		// in SSair.active_hotspots, not as a turf var.
 		W.RemoveLattice()
 	W.lighting_corners_initialised = old_lighting_corners_initialized
 	var/turf/simulated/W_sim = W
@@ -91,8 +89,7 @@
 	else if(istype(W_sim) && (SSplanets && SSplanets.z_to_planet.len >= z && SSplanets.z_to_planet[z]) && has_dynamic_lighting())
 		W_sim.shandler = new(src)
 		W_sim.shandler.manualInit()
-	if(old_fire)
-		old_fire.RemoveFire()
+	// DQEdit — old_fire was ZAS-only; no-op under LINDA (no old fire to remove).
 
 	if(tell_universe)
 		GLOB.universe.OnTurfChange(W)

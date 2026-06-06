@@ -69,7 +69,7 @@
 	if(!instances)
 		init_products()
 	for(var/i = 1 to refill_amount)
-		// DQEdit
+		// DQEdit — refill via spawn_with_variant so re-stocked items inherit the same variant as the original (DQ vending variants)
 		var/new_product = spawn_with_variant(item_path, stored, variant)
 		instances += new_product
 

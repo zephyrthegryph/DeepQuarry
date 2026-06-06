@@ -206,7 +206,11 @@
 /datum/supply_pack/eng/engine/collector
 	name = "Collector crate"
 	desc = "Three radiation collectors, for use with a singularity or supermatter core."
-	contains = list(/obj/machinery/power/rad_collector = 3)
+	contains = list(
+		/obj/machinery/power/rad_collector,
+		/obj/machinery/power/rad_collector,
+		/obj/machinery/power/rad_collector,
+	)
 	containertype = /obj/structure/closet/crate/secure/einstein
 	containername = "Collector crate"
 
@@ -427,9 +431,9 @@
 	containername = "dosimeter crate"
 
 /datum/supply_pack/eng/algae
-	contains = list(/obj/item/stack/material/algae/ten)
+	contains = list(/obj/item/stack/material/algae/ten = 5)
 	name = "Algae Sheets (10)"
-	desc = "Ten sheets of algae, for carbon dioxide recycling."
+	desc = "Five stacks of 10 algae sheets, for the algae oxygen generator."
 	cost = 20
 	containertype = /obj/structure/closet/crate
 	containername = "algae sheets crate"

@@ -12,14 +12,11 @@
 	reusable = TRUE
 	event_type = /datum/event2/event/grid_check
 
-// Having the turbines be way over their rated limit makes grid checks more likely.
+// DQEdit — /obj/machinery/power/generator (turbine) was deleted with the ZAS
+// power machinery cleanup; GLOB.all_turbines no longer exists. Without
+// turbines, overpower is always 0 — grid checks fall back to weight-only.
 /datum/event2/meta/grid_check/proc/get_overpower()
-	var/highest_overpower = 0
-	for(var/obj/machinery/power/generator/turbine as anything in GLOB.all_turbines)
-		var/overpower = max((turbine.effective_gen / turbine.max_power) - 1, 0)
-		if(overpower > highest_overpower)
-			highest_overpower = overpower
-	return highest_overpower
+	return 0
 
 /datum/event2/meta/grid_check/get_weight()
 	var/population_factor = GLOB.metric.count_people_in_department(DEPARTMENT_ENGINEERING) * 10
@@ -32,14 +29,9 @@
 	var/obj/machinery/power/generator/engine // The turbine that will send a power spike.
 
 /datum/event2/event/grid_check/set_up()
-	// Find the turbine being pushed the most.
-	var/obj/machinery/power/generator/most_stressed_turbine = null
-	for(var/obj/machinery/power/generator/turbine as anything in GLOB.all_turbines)
-		if(!most_stressed_turbine)
-			most_stressed_turbine = turbine
-		else if(turbine.effective_gen > most_stressed_turbine.effective_gen)
-			most_stressed_turbine = turbine
-	engine = most_stressed_turbine
+	// DQEdit — no turbines under LINDA (see get_overpower); engine stays null
+	// and start() will no-op the power_spike branch.
+	engine = null
 
 /datum/event2/event/grid_check/start()
 	// This sets off a chain of events that lead to the actual grid check (or perhaps worse).

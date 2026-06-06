@@ -59,7 +59,7 @@
 				my_mob.minbodytemp = env.temperature * 0.8
 				my_mob.maxbodytemp = env.temperature * 1.2
 
-				var/list/gaslist = env.gas
+				var/list/gaslist = env.gases
 				my_mob.min_oxy = gaslist[GAS_O2] * 0.8
 				my_mob.min_tox = gaslist[GAS_PHORON] * 0.8
 				my_mob.min_n2 = gaslist[GAS_N2] * 0.8

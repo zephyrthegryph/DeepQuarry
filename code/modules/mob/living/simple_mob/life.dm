@@ -112,46 +112,46 @@
 		bodytemperature += ((environment.temperature - bodytemperature) / 5)
 
 	var/atmos_unsuitable = 0
-	if(min_oxy && environment.gas[GAS_O2] < min_oxy)
+	if(min_oxy && LINDA_GAS_AMT(environment, GAS_O2) < min_oxy)
 		atmos_unsuitable = 1
 		throw_alert("oxy", /atom/movable/screen/alert/not_enough_oxy)
-	else if(max_oxy && environment.gas[GAS_O2] > max_oxy)
+	else if(max_oxy && LINDA_GAS_AMT(environment, GAS_O2) > max_oxy)
 		atmos_unsuitable = 1
 		throw_alert("oxy", /atom/movable/screen/alert/too_much_oxy)
 	else
 		clear_alert("oxy")
 
-	if(min_tox && environment.gas[GAS_PHORON] < min_tox)
+	if(min_tox && LINDA_GAS_AMT(environment, GAS_PHORON) < min_tox)
 		atmos_unsuitable = 2
 		throw_alert("tox_in_air", /atom/movable/screen/alert/not_enough_tox)
-	else if(max_tox && environment.gas[GAS_PHORON] > max_tox)
+	else if(max_tox && LINDA_GAS_AMT(environment, GAS_PHORON) > max_tox)
 		atmos_unsuitable = 2
 		throw_alert("tox_in_air", /atom/movable/screen/alert/tox_in_air)
 	else
 		clear_alert("tox_in_air")
 
-	if(min_n2 && environment.gas[GAS_N2] < min_n2)
+	if(min_n2 && LINDA_GAS_AMT(environment, GAS_N2) < min_n2)
 		atmos_unsuitable = 1
 		throw_alert("n2o", /atom/movable/screen/alert/not_enough_nitro)
-	else if(max_n2 && environment.gas[GAS_N2] > max_n2)
+	else if(max_n2 && LINDA_GAS_AMT(environment, GAS_N2) > max_n2)
 		atmos_unsuitable = 1
 		throw_alert("n2o", /atom/movable/screen/alert/too_much_nitro)
 	else
 		clear_alert("n2o")
 
-	if(min_co2 && environment.gas[GAS_CO2] < min_co2)
+	if(min_co2 && LINDA_GAS_AMT(environment, GAS_CO2) < min_co2)
 		atmos_unsuitable = 1
 		throw_alert("co2", /atom/movable/screen/alert/not_enough_co2)
-	else if(max_co2 && environment.gas[GAS_CO2] > max_co2)
+	else if(max_co2 && LINDA_GAS_AMT(environment, GAS_CO2) > max_co2)
 		atmos_unsuitable = 1
 		throw_alert("co2", /atom/movable/screen/alert/too_much_co2)
 	else
 		clear_alert("co2")
 
-	if(min_ch4 && environment.gas[GAS_CH4] < min_ch4)
+	if(min_ch4 && LINDA_GAS_AMT(environment, GAS_CH4) < min_ch4)
 		atmos_unsuitable = 2
 		throw_alert("methane_in_air", /atom/movable/screen/alert/not_enough_methane)
-	else if(max_tox && environment.gas[GAS_CH4] > max_ch4)
+	else if(max_tox && LINDA_GAS_AMT(environment, GAS_CH4) > max_ch4)
 		atmos_unsuitable = 2
 		throw_alert("methane_in_air", /atom/movable/screen/alert/methane_in_air)
 	else

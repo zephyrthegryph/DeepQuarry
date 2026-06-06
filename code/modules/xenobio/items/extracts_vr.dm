@@ -359,16 +359,15 @@
 
 /datum/decl/chemical_reaction/instant/slime/orange_heatwave/on_reaction(datum/reagents/holder)
 	var/turf/simulated/T = get_turf(holder.my_atom)
-	if(!T) // Nullspace lacks zones.
+	if(!T)
 		return
 
 	if(!istype(T))
 		return
 
-	var/datum/zone/Z = T.zone
-	if(!Z) // Paranoid.
-		return
-
+	// DQEdit — was filtering by ZAS zone membership; under LINDA there are no
+	// zones. Fall back to view-radius proximity (visually meaningful and matches
+	// "you're in the same room" 95% of the time on stations without windowed walls).
 	log_and_message_admins("Orange extract reaction (heat wave) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
 
 	var/list/nearby_things = view(T)
@@ -377,9 +376,6 @@
 	for(var/mob/living/L in nearby_things)
 		var/turf/simulated/their_turf = get_turf(L)
 		if(!istype(their_turf)) // Not simulated.
-			continue
-
-		if(!(their_turf in Z.contents)) // Not in the same zone.
 			continue
 
 		if(ishuman(L))
@@ -719,10 +715,7 @@
 	if(!istype(T))
 		return
 
-	var/datum/zone/Z = T.zone
-	if(!Z) // Paranoid.
-		return
-
+	// DQEdit — was ZAS-zone filter; under LINDA fall back to view-radius.
 	log_and_message_admins("Dark Blue extract reaction (cold snap) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
 
 	var/list/nearby_things = view(T)
@@ -731,9 +724,6 @@
 	for(var/mob/living/L in nearby_things)
 		var/turf/simulated/their_turf = get_turf(L)
 		if(!istype(their_turf)) // Not simulated.
-			continue
-
-		if(!(their_turf in Z.contents)) // Not in the same zone.
 			continue
 
 		if(istype(L, /mob/living/simple_mob/slime))

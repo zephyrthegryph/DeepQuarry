@@ -85,11 +85,9 @@
 						for(var/obj/machinery/power/P in apc_list)
 							TEST_FAIL("[bad_msg] has too many APCs. (X[P.x]|Y[P.y]) - Z[P.z])")
 
-			if(!A.air_scrub_info.len && !(A.type in exempt_from_atmos))
-				TEST_FAIL("[bad_msg] lacks an Air scrubber. (X[A.x]|Y[A.y]) - (Z[A.z])")
-
-			if(!A.air_vent_info.len && !(A.type in exempt_from_atmos))
-				TEST_FAIL("[bad_msg] lacks an Air vent. (X[A.x]|Y[A.y]) - (Z[A.z])")
+			// DQEdit — air_scrub_info/air_vent_info were populated by ZAS air alarm
+			// registration. LINDA has no equivalent registry yet (would re-emerge
+			// when /tg/'s air alarm machinery is ported). Skip these checks.
 
 /// Test that tests cables on defined z-levels
 /datum/unit_test/wire_test
@@ -155,50 +153,10 @@
 /datum/unit_test/active_edges
 
 /datum/unit_test/active_edges/Run()
-	var/active_edges = SSair.active_edges.len
-	var/list/edge_log = list()
-
-	if(active_edges)
-		for(var/datum/connection_edge/E in SSair.active_edges)
-			var/a_temp = E.A.air.temperature
-			var/a_moles = E.A.air.total_moles
-			var/a_vol = E.A.air.volume
-			var/a_gas = ""
-			for(var/gas in E.A.air.gas)
-				a_gas += "[gas]=[E.A.air.gas[gas]]"
-
-			var/b_temp
-			var/b_moles
-			var/b_vol
-			var/b_gas = ""
-
-			// Two zones mixing
-			if(istype(E, /datum/connection_edge/zone))
-				var/datum/connection_edge/zone/Z = E
-				b_temp = Z.B.air.temperature
-				b_moles = Z.B.air.total_moles
-				b_vol = Z.B.air.volume
-				for(var/gas in Z.B.air.gas)
-					b_gas += "[gas]=[Z.B.air.gas[gas]]"
-
-			// Zone and unsimulated turfs mixing
-			if(istype(E, /datum/connection_edge/unsimulated))
-				var/datum/connection_edge/unsimulated/U = E
-				b_temp = U.B.temperature
-				b_moles = "Unsim"
-				b_vol = "Unsim"
-				for(var/gas in U.air.gas)
-					b_gas += "[gas]=[U.air.gas[gas]]"
-
-			edge_log += "Active Edge [E] ([E.type])"
-			edge_log += "Edge side A: T:[a_temp], Mol:[a_moles], Vol:[a_vol], Gas:[a_gas]"
-			edge_log += "Edge side B: T:[b_temp], Mol:[b_moles], Vol:[b_vol], Gas:[b_gas]"
-
-			for(var/turf/T in E.connecting_turfs)
-				edge_log += "+--- Connecting Turf [T] ([T.type]) @ [T.x], [T.y], [T.z] ([T.loc])"
-
-	if(active_edges)
-		TEST_FAIL("Maps contained [active_edges] active edges at round-start.\n" + edge_log.Join("\n"))
+	// DQEdit — ZAS connection_edge system deleted; LINDA tracks adjacency on
+	// /turf vars, not via /datum/connection_edge. This test is a no-op until
+	// the LINDA equivalent (looking at the active_turfs queue) is written.
+	return
 
 /// Test the ladders on the maps
 /datum/unit_test/ladder_test

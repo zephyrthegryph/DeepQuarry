@@ -39,7 +39,7 @@
 			var/amount_of_rads = pulse_information.strength
 			receive_pulse((amount_of_rads))
 
-			if(P.air_contents.gas[GAS_PHORON] == 0)
+			if(LINDA_GAS_AMT(P.air_contents, GAS_PHORON) == 0)  // DQEdit — XGM .gas[id] read
 				investigate_log(span_red("out of fuel") + ".","singulo")
 				eject()
 			else
@@ -53,7 +53,7 @@
 			toggle_power()
 			user.visible_message("[user.name] turns the [src.name] [active? "on":"off"].", \
 			"You turn the [src.name] [active? "on":"off"].")
-			investigate_log("turned [active?span_green("on"): span_red("off")] by [user.key]. [P?"Fuel: [round(P.air_contents.gas[GAS_PHORON]/0.29)]%":span_red("It is empty")].","singulo")
+			investigate_log("turned [active?span_green("on"): span_red("off")] by [user.key]. [P?"Fuel: [round(LINDA_GAS_AMT(P.air_contents, GAS_PHORON)/0.29)]%":span_red("It is empty")].","singulo")
 			return
 		else
 			to_chat(user, span_red("The controls are locked!"))
@@ -134,7 +134,7 @@
 /obj/machinery/power/rad_collector/proc/receive_pulse(pulse_strength)
 	if(P && active)
 		var/power_produced = 0
-		power_produced = P.air_contents.gas[GAS_PHORON]*pulse_strength*20
+		power_produced = LINDA_GAS_AMT(P.air_contents, GAS_PHORON)*pulse_strength*20
 		if(power_produced)
 			add_avail(power_produced)
 			last_power_new = power_produced

@@ -498,7 +498,7 @@ GLOBAL_LIST_EMPTY(all_objectives)
 
 			for(var/obj/item/I in all_items) //Check for phoron tanks
 				if(istype(I, steal_target))
-					found_amount += (target_name=="28 moles of phoron (full tank)" ? (I:air_contents:gas[GAS_PHORON]) : (I:amount))
+					found_amount += (target_name=="28 moles of phoron (full tank)" ? LINDA_GAS_AMT(I:air_contents, GAS_PHORON) : (I:amount)) // DQEdit — XGM .gas[id] → LINDA
 			return found_amount>=target_amount
 
 		if("50 coins (in bag)")

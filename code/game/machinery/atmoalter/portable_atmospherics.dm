@@ -181,11 +181,14 @@
 	..()
 
 /obj/machinery/portable_atmospherics/proc/log_open()
-	if(air_contents.gas.len == 0)
+	// DQEdit — was iterating XGM `air_contents.gas` (string-id dict).
+	// gas_ids() returns the same string IDs under LINDA.
+	var/list/gas_id_list = air_contents.gas_ids()
+	if(!length(gas_id_list))
 		return
 
 	var/gases = ""
-	for(var/gas in air_contents.gas)
+	for(var/gas in gas_id_list)
 		if(gases)
 			gases += ", [gas]"
 		else

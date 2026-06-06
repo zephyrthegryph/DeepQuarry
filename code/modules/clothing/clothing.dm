@@ -769,8 +769,8 @@
 	. = ..()
 	if(holding)
 		add_overlay("[icon_state]_knife")
-	if(contaminated)
-		add_overlay(GLOB.contamination_overlay)
+	// DQEdit — .contaminated + GLOB.contamination_overlay branch removed;
+	// see /obj/item/wash for the matching cleanup.
 	if(gurgled) //VOREStation Edit Start
 		wash(CLEAN_ALL)
 		gurgle_contaminate() //VOREStation Edit End

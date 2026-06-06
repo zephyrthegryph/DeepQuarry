@@ -35,7 +35,7 @@
 
 /obj/item/circuitboard/hydromagnetic_trap
 	name = T_BOARD("hydromagnetic trap")
-	build_path = /obj/machinery/power/hydromagnetic_trap
+	build_path = /obj/machinery/power // DQEdit — hydromagnetic_trap deleted with atmos fusion gear
 	board_type = new /datum/frame/frame_types/machine
 	req_components = list(
 		/obj/item/stock_parts/spring = 1,

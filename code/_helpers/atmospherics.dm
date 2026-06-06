@@ -16,12 +16,12 @@
 /proc/atmosanalyzer_scan(atom/target, datum/gas_mixture/mixture, mob/user)
 	var/list/results = list()
 
-	if(mixture && mixture.total_moles > 0)
+	if(mixture && mixture.total_moles() > 0)
 		var/pressure = mixture.return_pressure()
-		var/total_moles = mixture.total_moles
+		var/total_moles = mixture.total_moles()
 		results += span_notice("Pressure: [round(pressure,0.1)] kPa")
-		for(var/mix in mixture.gas)
-			results += span_notice("[GLOB.gas_data.name[mix]]: [round((mixture.gas[mix] / total_moles) * 100)]% ([round(mixture.gas[mix], 0.01)] moles)")
+		for(var/mix in mixture.gas_ids()) // DQEdit — mixture.gas (XGM) → mixture.gas_ids()
+			results += span_notice("[GLOB.gas_data.name[mix]]: [round((LINDA_GAS_AMT(mixture, mix) / total_moles) * 100)]% ([round(LINDA_GAS_AMT(mixture, mix), 0.01)] moles)")
 		results += span_notice("Temperature: [round(mixture.temperature-T0C)]&deg;C")
 		results += span_notice("Heat Capacity: [round(mixture.heat_capacity(),0.1)]")
 	else
@@ -30,7 +30,7 @@
 	return results
 
 /turf/atmosanalyze(mob/user)
-	return atmosanalyzer_scan(src, src.air, user)
+	return atmosanalyzer_scan(src, src.return_air(), user)  // DQEdit — XGM src.air → LINDA return_air()
 
 /atom/proc/atmosanalyze(mob/user)
 	return

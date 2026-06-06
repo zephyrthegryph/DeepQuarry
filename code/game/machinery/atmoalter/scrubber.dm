@@ -63,7 +63,7 @@
 		else
 			environment = loc.return_air()
 
-		var/transfer_moles = min(1, volume_rate/environment.volume)*environment.total_moles
+		var/transfer_moles = min(1, volume_rate/environment.volume)*environment.total_moles()
 
 		power_draw = scrub_gas(src, scrubbing_gas, environment, air_contents, transfer_moles, power_rating)
 
@@ -76,6 +76,13 @@
 		last_power_draw = power_draw
 
 		update_connected_network()
+		// DQEdit — scrub_gas pulled from loc.return_air() directly when not
+		// piped to a holding tank. Enroll the turf so SSair re-processes it.
+		if(!holding && isturf(loc))
+			var/turf/open/T = loc
+			if(istype(T))
+				T.update_visuals()
+				T.air_update_turf(FALSE, FALSE)
 
 		//ran out of charge
 		if (!cell.charge)
@@ -205,7 +212,7 @@
 
 	var/datum/gas_mixture/environment = loc.return_air()
 
-	var/transfer_moles = min(1, volume_rate/environment.volume)*environment.total_moles
+	var/transfer_moles = min(1, volume_rate/environment.volume)*environment.total_moles()
 
 	power_draw = scrub_gas(src, scrubbing_gas, environment, air_contents, transfer_moles, active_power_usage)
 

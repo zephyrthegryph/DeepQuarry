@@ -48,6 +48,20 @@
 /datum/preference/numeric/nif_durability/create_default_value()
 	return null
 
+// Bypass /datum/preference/numeric/pref_(de)serialize which round-trips through
+// sanitize_float and silently coerces null → 0 — that 0 then fails is_valid below,
+// which makes write_preference return FALSE and CRASHes the whole read_preference
+// chain (every prefs read/write blew up on character load and on render).
+/datum/preference/numeric/nif_durability/pref_deserialize(input, datum/preferences/preferences)
+	if(isnull(input))
+		return null
+	return ..()
+
+/datum/preference/numeric/nif_durability/pref_serialize(input)
+	if(isnull(input))
+		return null
+	return ..()
+
 /datum/preference/numeric/nif_durability/is_valid(value)
 	// Tighter than the default isnum check: durability seeded with `null` means "no NIF
 	// installed" and the nif_durability_hydration constraint relies on isnull(...) to

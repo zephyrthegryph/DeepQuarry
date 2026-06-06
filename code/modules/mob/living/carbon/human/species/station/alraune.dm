@@ -141,7 +141,7 @@
 		H.adjustOxyLoss(-5)
 		return ..()// if somehow they don't breathe, abort breathing.
 
-	if(!breath || (breath.total_moles == 0))
+	if(!breath || (xgm_total_moles(breath) == 0)) // DQEdit — xgm_total_moles bridges XGM-var/LINDA-proc gap
 		H.failed_last_breath = 1
 		if(H.health > H.get_crit_point())
 			H.adjustOxyLoss(ALRAUNE_MAX_OXYLOSS)
@@ -165,7 +165,8 @@
 	var/SA_sleep_min = 5
 	var/inhaled_gas_used = 0
 
-	var/breath_pressure = (breath.total_moles*R_IDEAL_GAS_EQUATION*breath.temperature)/BREATH_VOLUME
+	var/breath_total = xgm_total_moles(breath) // DQEdit — cache total_moles for repeated use
+	var/breath_pressure = (breath_total*R_IDEAL_GAS_EQUATION*breath.temperature)/BREATH_VOLUME
 
 	var/inhaling
 	var/poison
@@ -174,13 +175,13 @@
 	var/failed_inhale = 0
 	var/failed_exhale = 0
 
-	inhaling = breath.gas[GAS_CO2]
-	poison = breath.gas[poison_type]
-	exhaling = breath.gas[exhale_type]
+	inhaling = LINDA_GAS_AMT(breath, GAS_CO2)
+	poison = LINDA_GAS_AMT(breath, poison_type)
+	exhaling = LINDA_GAS_AMT(breath, exhale_type)
 
-	var/inhale_pp = (inhaling/breath.total_moles)*breath_pressure
-	var/toxins_pp = (poison/breath.total_moles)*breath_pressure
-	var/exhaled_pp = (exhaling/breath.total_moles)*breath_pressure
+	var/inhale_pp = (inhaling/breath_total)*breath_pressure // DQEdit — was breath.total_moles
+	var/toxins_pp = (poison/breath_total)*breath_pressure
+	var/exhaled_pp = (exhaling/breath_total)*breath_pressure
 
 	// Not enough to breathe
 	if((inhale_pp + exhaled_pp) < minimum_breath_pressure) //they can breathe either oxygen OR CO2
@@ -233,8 +234,8 @@
 		H.clear_alert("tox_in_air")
 
 	// If there's some other shit in the air lets deal with it here.
-	if(breath.gas["sleeping_agent"])
-		var/SA_pp = (breath.gas["sleeping_agent"] / breath.total_moles) * breath_pressure
+	if(LINDA_GAS_AMT(breath, GAS_N2O)) // DQEdit — string "sleeping_agent" doesn't exist as a LINDA gas id; GAS_N2O = "n2o" is the real id
+		var/SA_pp = (LINDA_GAS_AMT(breath, GAS_N2O) / breath_total) * breath_pressure
 
 		// Enough to make us paralysed for a bit
 		if(SA_pp > SA_para_min)
@@ -250,7 +251,7 @@
 		else if(SA_pp > 0.15)
 			if(prob(20))
 				spawn(0) H.emote(pick("giggle", "laugh"))
-		breath.adjust_gas("sleeping_agent", -breath.gas["sleeping_agent"]/6, update = 0) //update after
+		breath.adjust_gas(GAS_N2O, -LINDA_GAS_AMT(breath, GAS_N2O)/6, update = 0) //update after // DQEdit — was "sleeping_agent" string (XGM); LINDA uses GAS_N2O = "n2o"
 
 	// Were we able to breathe?
 	if (failed_inhale || failed_exhale)
@@ -295,7 +296,7 @@
 		else
 			temp_adj /= (BODYTEMP_HEAT_DIVISOR * 5)	//don't raise temperature as much as if we were directly exposed
 
-		var/relative_density = breath.total_moles / (MOLES_CELLSTANDARD * BREATH_PERCENTAGE)
+		var/relative_density = xgm_total_moles(breath) / (MOLES_CELLSTANDARD * BREATH_PERCENTAGE) // DQEdit — total_moles is a proc in LINDA, use xgm_total_moles helper
 		temp_adj *= relative_density
 
 		if (temp_adj > BODYTEMP_HEATING_MAX) temp_adj = BODYTEMP_HEATING_MAX
@@ -308,7 +309,7 @@
 	else if(breath.temperature <= cold_discomfort_level)
 		get_environment_discomfort(src,"cold")
 
-	breath.update_values()
+	// DQEdit — breath.update_values() removed; no-op under LINDA.
 	..()
 
 /obj/item/organ/internal/brain/alraune

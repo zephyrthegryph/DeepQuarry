@@ -1,0 +1,29 @@
+[package]
+name = "verdigris"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+const_format = "0.2.33"
+eyre = "0.6.12"
+meowtonin = "0.3.1"
+rand = "0.10.1"
+rand_distr = "0.6"
+rayon = "1.10.0"
+
+# Auxmos (vendored, rlib) is linked into libverdigris.so. See verdigris/atmos/UPSTREAM.md
+# and modular_dq/doc/atmos_migration.md decision §1, §5, §6 for feature selection.
+#
+# Gated on target_arch = "x86" because byondapi-sys is 32-bit-only by design.
+# Host-arch `cargo check` / `cargo test` skip auxmos; the i686 release build
+# (verdigris/build-linux.sh / build-windows.sh, and CI integration tests) is
+# the real validation.
+[target.'cfg(target_arch = "x86")'.dependencies]
+auxmos = { path = "../atmos", default-features = false, features = ["turf_processing", "katmos", "katmos_slow_decompression"] }
+
+[build-dependencies]
+bosion = "2.0.0"

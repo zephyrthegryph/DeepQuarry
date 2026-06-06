@@ -37,12 +37,31 @@ jobs:
         with:
           major: ${{ inputs.major }}
           minor: ${{ inputs.minor }}
-      - name: Install RUST_G Dependencies
+      - name: Install 32-bit toolchain deps
         run: |
           sudo dpkg --add-architecture i386
           sudo apt update || true
-          sudo apt install zlib1g-dev:i386
-          ldd libverdigris.so
+          sudo apt install -y gcc-multilib zlib1g-dev:i386
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: i686-unknown-linux-gnu
+      - name: Restore Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: verdigris -> target
+          shared-key: verdigris-i686-linux
+      - name: Build verdigris
+        run: bash verdigris/build-linux.sh
+      - name: Verify libverdigris.so
+        run: ldd libverdigris.so
+      - name: Regenerate auxmos DM bindings (drift check)
+        run: |
+          bash tools/verdigris/generate_atmos_bindings.sh
+          if ! git diff --exit-code modular_dq/code/atmospherics/auxmos_bindings.dm; then
+            echo "::error::auxmos_bindings.dm is out of date. Run tools/verdigris/generate_atmos_bindings.sh and commit." >&2
+            exit 1
+          fi
       - name: Install rust-g
         run: |
           sudo dpkg --add-architecture i386

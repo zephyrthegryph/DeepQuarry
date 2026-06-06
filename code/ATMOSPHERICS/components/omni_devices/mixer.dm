@@ -106,7 +106,7 @@
 	//Figure out the amount of moles to transfer
 	var/transfer_moles = 0
 	for (var/datum/omni_port/P in inputs)
-		transfer_moles += (set_flow_rate*P.concentration/P.air.volume)*P.air.total_moles
+		transfer_moles += (set_flow_rate*P.concentration/P.air.volume)*P.air.total_moles()
 
 	var/power_draw = -1
 	if (transfer_moles > MINIMUM_MOLES_TO_FILTER)

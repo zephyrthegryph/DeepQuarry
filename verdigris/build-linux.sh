@@ -1,6 +1,8 @@
 #!/bin/bash
+set -euo pipefail
 
-DIR="$(dirname "$0")"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR"
 
 cargo build --release --target i686-unknown-linux-gnu
-cp "target/i686-unknown-linux-gnu/release/libverdigris.so" "$DIR/../libverdigris.so"
+cp "target/i686-unknown-linux-gnu/release/libverdigris.so" "../libverdigris.so"

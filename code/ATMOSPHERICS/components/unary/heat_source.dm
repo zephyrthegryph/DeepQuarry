@@ -72,7 +72,7 @@
 		update_icon()
 		return
 
-	if(network && air_contents.total_moles && air_contents.temperature < set_temperature)
+	if(network && air_contents.total_moles() && air_contents.temperature < set_temperature)
 		air_contents.add_thermal_energy(power_rating * CLAMP(reagent_cooling,REAGENT_COOLING_MINMOD,REAGENT_COOLING_MAXMOD) * HEATER_PERF_MULT * heating_efficiency)
 		use_power(power_rating)
 

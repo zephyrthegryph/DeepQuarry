@@ -166,7 +166,7 @@
 							/obj/item/reagent_containers/glass/beaker/large = 1)
 
 /obj/item/circuitboard/distiller
-	build_path = /obj/machinery/portable_atmospherics/powered/reagent_distillery
+	build_path = /obj/machinery // DQEdit — reagent_distillery deleted with ZAS
 	board_type = new /datum/frame/frame_types/reagent_distillery
 	req_components = list(
 							/obj/item/stock_parts/capacitor = 1,
@@ -255,7 +255,7 @@
 
 /obj/item/circuitboard/arf_generator
 	name = T_BOARD("atmospheric field generator")
-	build_path = /obj/machinery/atmospheric_field_generator
+	build_path = /obj/machinery // DQEdit — atmospheric_field_generator deleted with ZAS
 	board_type = new /datum/frame/frame_types/arfgs
 	req_components = list(
 							/obj/item/stock_parts/micro_laser = 2,	//field emitters
@@ -357,7 +357,7 @@
 
 /obj/item/circuitboard/industrial_reagent_reactor
 	name = T_BOARD("industrial chemical reactor")
-	build_path = /obj/machinery/reagent_refinery/reactor
+	build_path = /obj/machinery // DQEdit — reagent_refinery/reactor deleted with refinery
 	board_type = new /datum/frame/frame_types/industrial_reagent_reactor
 	req_components = list(
 							/obj/item/stock_parts/motor = 1,

@@ -192,13 +192,9 @@
 	return 0
 
 /mob/living/zMove(direction)
-	//Sort of a lame hack to allow ztravel through zpipes. Should be improved.
-	if(is_ventcrawling && istype(loc,/obj/machinery/atmospherics/pipe/zpipe))
-		var/obj/machinery/atmospherics/pipe/zpipe/currentpipe = loc
-		if(istype(currentpipe.node1,/obj/machinery/atmospherics/pipe/zpipe))
-			currentpipe.ventcrawl_to(src, currentpipe.node1, direction)
-		else if(istype(currentpipe.node2,/obj/machinery/atmospherics/pipe/zpipe))
-			currentpipe.ventcrawl_to(src, currentpipe.node2, direction)
+	// DQEdit — ZAS zpipes and ventcrawling deleted with the LINDA migration.
+	// LINDA's vent equivalents (vendored under modular_dq/code/atmospherics/
+	// machinery/) need their own multiz traversal hook wired in.
 	return ..()
 
 /mob/observer/can_ztravel()
@@ -376,7 +372,8 @@
 		return FALSE
 
 	var/turf/below = GetBelow(src)
-	if((locate(/obj/structure/disposalpipe/up) in below) || locate(/obj/machinery/atmospherics/pipe/zpipe/up) in below)
+	// DQEdit — zpipe type deleted; only check disposal pipes for now.
+	if(locate(/obj/structure/disposalpipe/up) in below)
 		return FALSE
 
 /mob/living/can_fall()

@@ -151,12 +151,12 @@
 	var/power_draw = -1
 	if(scrubbing)
 		//limit flow rate from turfs
-		var/transfer_moles = min(environment.total_moles, environment.total_moles*MAX_SCRUBBER_FLOWRATE/environment.volume)	//group_multiplier gets divided out here
+		var/transfer_moles = min(environment.total_moles(), environment.total_moles()*MAX_SCRUBBER_FLOWRATE/environment.volume)	//group_multiplier gets divided out here
 
 		power_draw = scrub_gas(src, scrubbing_gas, environment, air_contents, transfer_moles, power_rating)
 	else //Just siphon all air
 		//limit flow rate from turfs
-		var/transfer_moles = min(environment.total_moles, environment.total_moles*MAX_SIPHON_FLOWRATE/environment.volume)	//group_multiplier gets divided out here
+		var/transfer_moles = min(environment.total_moles(), environment.total_moles()*MAX_SIPHON_FLOWRATE/environment.volume)	//group_multiplier gets divided out here
 
 		power_draw = pump_gas(src, environment, air_contents, transfer_moles, power_rating)
 
@@ -167,6 +167,15 @@
 	if (power_draw >= 0)
 		last_power_draw = power_draw
 		use_power(power_draw)
+		// DQEdit — scrub_gas / pump_gas mutate the turf's air mix directly via
+		// the gas_mixture reference. They don't enroll the turf in active_turfs
+		// or call update_visuals, so under LINDA the turf's gas state goes stale
+		// (overlay never re-evaluates) and adjacent turfs never see the change.
+		if(isturf(loc))
+			var/turf/open/T = loc
+			if(istype(T))
+				T.update_visuals()
+				T.air_update_turf(FALSE, FALSE)
 
 	if(network)
 		network.update = 1

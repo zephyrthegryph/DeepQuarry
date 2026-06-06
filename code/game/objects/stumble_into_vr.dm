@@ -96,15 +96,7 @@
 	M.emote("scream")
 	M.stop_flying()
 
-/obj/machinery/atmospherics/unary/cryo_cell/stumble_into(mob/living/M)
-	if((stat & (NOPOWER|BROKEN)) || !istype(M, /mob/living/carbon) || occupant || M.abiotic() || !node)
-		return ..()
-	playsound(src, 'sound/effects/Glasshit.ogg', 25, 1, -1)
-	visible_message(span_warning("[M] [pick("tripped", "stumbled")] into \the [src]!"))
-	M.apply_damage(5, BRUTE)
-	M.Weaken(2)
-	put_mob(M)
-	M.stop_flying()
+// DQEdit — cryo_cell deleted with ZAS unary atmos machinery; stumble override removed.
 
 /obj/machinery/porta_turret/stumble_into(mob/living/M)
 	..()
@@ -112,11 +104,8 @@
 		attacked = TRUE
 		VARSET_IN(src, attacked, FALSE, 6 SECONDS)
 
-/obj/machinery/space_heater/stumble_into(mob/living/M)
-	..()
-	if(state)
-		M.apply_damage(10, BURN)
-		M.emote("scream")
+// DQEdit — space_heater (spaceheater.dm) deleted with ZAS atmos machinery;
+// stumble override removed.
 
 /obj/machinery/suit_storage_unit/stumble_into(mob/living/M)
 	if(!ishuman(M) || !isopen || !ispowered || isbroken || OCCUPANT || HELMET || SUIT)

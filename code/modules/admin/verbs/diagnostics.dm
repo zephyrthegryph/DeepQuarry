@@ -1,39 +1,37 @@
+// DQEdit — rewrote off ZAS zones. SSair.zones / SSair.tiles_to_update /
+// /datum/zone don't exist under LINDA. Report LINDA's real stats instead:
+// active_turfs (turfs SSair is currently sharing), excited_groups (groups of
+// turfs converging on equilibrium), hotspot count from SSair.hotspots, and
+// the high-pressure delta queue (spacewind).
 ADMIN_VERB(air_report, R_DEBUG, "Show Air Report", "Displays the current atmos stats.", ADMIN_CATEGORY_DEBUG_INVESTIGATE)
 	if(!SSair.initialized)
 		tgui_alert_async(user, "SSair not ready.", "Air Report")
 		return
 
-	var/active_groups = SSair.active_zones
-	var/inactive_groups = SSair.zones.len - active_groups
+	var/active_turfs_total = length(SSair.active_turfs)
+	var/active_on_main_station = 0
+	for(var/turf/T as anything in SSair.active_turfs)
+		if(T.z in using_map.station_levels)
+			active_on_main_station++
 
 	var/hotspots = 0
-	for(var/obj/fire/hotspot in world)
-		hotspots++
-
-	var/active_on_main_station = 0
-	var/inactive_on_main_station = 0
-	for(var/datum/zone/zone as anything in SSair.zones)
-		var/turf/simulated/turf = locate() in zone.contents
-		if(turf?.z in using_map.station_levels)
-			if(zone.needs_update)
-				active_on_main_station++
-				continue
-			inactive_on_main_station++
+	for(var/obj/effect/hotspot/H in world)
+		if(!QDELETED(H))
+			hotspots++
 
 	var/output = {"<B>AIR SYSTEMS REPORT</B><HR>
 <B>General Processing Data</B><BR>
-	Cycle: [SSair.current_cycle]<br>
-	Groups: [length(SSair.zones)]<BR>
----- <I>Active:</I> [active_groups]<BR>
----- <I>Inactive:</I> [inactive_groups]<BR><br>
----- <I>Active on station:</i> [active_on_main_station]<br>
----- <i>Inactive on station:</i> [inactive_on_main_station]<br>
+	Cycle: [SSair.times_fired]<BR>
+	Active turfs: [active_turfs_total]<BR>
+	&nbsp;&nbsp;on station: [active_on_main_station]<BR>
+	Excited groups: [length(SSair.excited_groups)]<BR>
 <BR>
 <B>Special Processing Data</B><BR>
-	Hotspot Processing: [hotspots]<BR>
-<br>
-<B>Geometry Processing Data</B><BR>
-	Tile Update: [length(SSair.tiles_to_update)]<BR>
+	Hotspots (active fires): [hotspots]<BR>
+	High-pressure delta queue: [length(SSair.high_pressure_delta)]<BR>
+<BR>
+<B>Pipenets</B><BR>
+	Networks: [length(SSair.networks)]<BR>
 "}
 
 	// DQEdit — structured TGUI AdminReport.

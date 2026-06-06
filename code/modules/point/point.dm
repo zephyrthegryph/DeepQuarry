@@ -46,11 +46,11 @@
 	thought_bubble.overlays += point_visual
 
 	add_overlay(thought_bubble)
-	dq_add_z_update_image(src, thought_bubble) // DQEdit
+	dq_add_z_update_image(src, thought_bubble) // DQEdit — register with DQ z-image tracker so the point bubble follows z-moves
 	addtimer(CALLBACK(src, PROC_REF(clear_point_bubble), thought_bubble), POINT_TIME)
 
 /atom/movable/proc/clear_point_bubble(mutable_appearance/thought_bubble)
-	dq_remove_z_update_image(src, thought_bubble) // DQEdit
+	dq_remove_z_update_image(src, thought_bubble) // DQEdit — paired teardown for dq_add_z_update_image above
 	cut_overlay(thought_bubble)
 
 /obj/effect/temp_visual/point

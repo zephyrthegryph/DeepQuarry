@@ -105,7 +105,7 @@
 	return throw_amount / THROWER_MAX
 
 /obj/item/flamethrower/proc/check_fuel()
-	return ptank != null && ptank.air_contents.total_moles > 5 // minimum fuel usage is five moles, for EXTREMELY hot mix or super low pressure
+	return ptank != null && ptank.air_contents.total_moles() > 5 // minimum fuel usage is five moles, for EXTREMELY hot mix or super low pressure
 
 /obj/item/flamethrower/attackby(obj/item/W as obj, mob/user as mob)
 	if(user.stat || user.restrained() || user.lying)
@@ -188,7 +188,7 @@
 
 	switch(action)
 		if("light")
-			if(!check_fuel() || ptank.air_contents.gas[GAS_PHORON] < 1 || !status)
+			if(!check_fuel() || LINDA_GAS_AMT(ptank.air_contents, GAS_PHORON) < 1 || !status)
 				return FALSE
 			lit = !lit
 			if(lit)

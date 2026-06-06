@@ -10,9 +10,12 @@ GLOBAL_LIST_EMPTY(map_templates_loaded)
 
 /datum/map_template/proc/on_map_loaded(z)
 	//We missed air init!
+	// DQEdit — was T.update_air_properties() (ZAS zone-graph refresh). LINDA
+	// equivalent: rebuild adjacency + add to active so SSair processes the
+	// newly-loaded turfs next tick.
 	if(SSair.initialized)
 		for(var/turf/simulated/T in block(locate(1,1,z), locate(world.maxx, world.maxy, z)))
-			T.update_air_properties()
+			T.air_update_turf(TRUE, FALSE)
 	//We missed sslighting init!
 	if(SSlighting.initialized)
 		for(var/Trf in block(locate(1,1,z), locate(world.maxx, world.maxy, z)))

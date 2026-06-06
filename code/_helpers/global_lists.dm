@@ -1607,8 +1607,12 @@ GLOBAL_LIST_INIT(global_ammo_types, list(
 	/obj/item/ammo_casing/a545              = "5.45mm"
 	))
 
-//Rad collectors in the world
+//Rad collectors in the world (kept for fusion engine compatibility; under the
+//LINDA migration the collectors are stub-only — see modular_dq/code/
+//atmospherics/deleted_engine_stubs.dm).
 GLOBAL_LIST_EMPTY(rad_collectors)
+// algae/ten stack stub — used by hydroponics; algae generator was deleted with
+// ZAS but the stack subtype is still referenced.
 
 //NIF
 GLOBAL_LIST_INIT(nif_look_messages, list(

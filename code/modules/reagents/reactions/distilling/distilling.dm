@@ -41,9 +41,10 @@
 	if(require_xgm_gas || rejects_xgm_gas || minimum_xgm_pressure || maximum_xgm_pressure)
 		if(!GM)
 			return
-		if(require_xgm_gas && GM.gas[require_xgm_gas] <= 10) // If have required gas to react
+		// DQEdit — XGM string-id .gas[id] → LINDA macro that translates to .gases lookup.
+		if(require_xgm_gas && LINDA_GAS_AMT(GM, require_xgm_gas) <= 10)
 			return
-		if(rejects_xgm_gas && GM.gas[rejects_xgm_gas] >= 1) // If blocked by a gas it doesn't like
+		if(rejects_xgm_gas && LINDA_GAS_AMT(GM, rejects_xgm_gas) >= 1)
 			return
 		if(minimum_xgm_pressure && GM.return_pressure() < minimum_xgm_pressure)
 			return
@@ -56,15 +57,10 @@
 		var/obj/distilling_tester/distillery_tester = holder.my_atom
 		if(distillery_tester.current_temp < temp_range[1] || distillery_tester.current_temp > temp_range[2])
 			return FALSE
-	else if(istype(holder.my_atom,/obj/machinery/portable_atmospherics/powered/reagent_distillery))
-		// Super special temperature check.
-		var/obj/machinery/portable_atmospherics/powered/reagent_distillery/reagent_distillery = holder.my_atom
-		if(reagent_distillery.current_temp < temp_range[1] || reagent_distillery.current_temp > temp_range[2])
-			return FALSE
-	else if(istype(holder.my_atom, /obj/machinery/reagent_refinery/reactor))
-		// Check gas temp for refinery
-		if(!GM || GM.temperature < temp_range[1] || GM.temperature > temp_range[2])
-			return FALSE
+	// DQEdit — /obj/machinery/portable_atmospherics/powered/reagent_distillery and
+	// /obj/machinery/reagent_refinery/reactor were deleted with the ZAS atmos
+	// machinery cleanup. Without those specific machines, the temperature checks
+	// degrade to "use ambient gas temperature" which is already the fallback below.
 
 	return ..()
 
@@ -78,11 +74,8 @@
 	if(temp_shift != 0)
 		if(istype(holder.my_atom,/obj/distilling_tester))
 			return
-		// Special handling for this
-		if(istype(holder.my_atom,/obj/machinery/portable_atmospherics/powered/reagent_distillery))
-			var/obj/machinery/portable_atmospherics/powered/reagent_distillery/reagent_distillery = holder.my_atom
-			reagent_distillery.current_temp += temp_shift
-			return
+		// DQEdit — reagent_distillery (ZAS-tied) deleted; fall through to ambient
+		// gas temp shift below for any distilling done in the open.
 		// Change gas temps
 		if(!GM)
 			return

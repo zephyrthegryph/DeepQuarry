@@ -117,8 +117,8 @@
 
 /datum/reagent/toxin/hydrophoron/affect_touch(mob/living/carbon/M, alien, removed)
 	M.take_organ_damage(0, removed * 0.1) //being splashed directly with hydrophoron causes minor chemical burns
-	if(prob(10 * fire_mult))
-		M.pl_effects()
+	// DQEdit — ZAS pl_effects() (phoron contamination side-effect) removed; the
+	// burn damage above is the meaningful remainder under LINDA.
 	..()
 
 /datum/reagent/toxin/hydrophoron/touch_turf(turf/simulated/T)
@@ -199,8 +199,7 @@
 	if(alien == IS_VOX)
 		return
 	M.take_organ_damage(0, removed * 0.1) //being splashed directly with phoron causes minor chemical burns
-	if(prob(50))
-		M.pl_effects()
+	// DQEdit — ZAS pl_effects() removed (see hydrophoron/affect_touch).
 
 /datum/reagent/toxin/phoron/affect_blood(mob/living/carbon/M, alien, removed)
 	if(alien == IS_VOX)

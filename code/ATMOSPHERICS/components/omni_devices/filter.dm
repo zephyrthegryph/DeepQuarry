@@ -72,7 +72,7 @@
 	var/datum/gas_mixture/input_air = input.air		// it's completely happy with them if they're in a loop though i.e. "P.air.return_pressure()"... *shrug*
 
 	//Figure out the amount of moles to transfer
-	var/transfer_moles = (set_flow_rate/input_air.volume)*input_air.total_moles
+	var/transfer_moles = (set_flow_rate/input_air.volume)*input_air.total_moles()
 
 	var/power_draw = -1
 	if (transfer_moles > MINIMUM_MOLES_TO_FILTER)

@@ -428,7 +428,7 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 	pose_icon.plane = PLANE_STATUS
 	pose_icon.layer = HUD_LAYER
 	pose_icon.appearance_flags = PIXEL_SCALE|TILE_BOUND|RESET_ALPHA|RESET_TRANSFORM
-	pose_icon.color = dq_get_chat_color(src) // DQEdit
+	pose_icon.color = dq_get_chat_color(src) // DQEdit — tint pose icon with the user's DQ chat colour to match their runechat
 	pose_icon.pixel_y = y_offset
 	pose_icon.pixel_x = x_offset
 

@@ -158,7 +158,7 @@
 		"powermonitor",
 		"circuit_imprinter",
 		"airlock_cycling",
-		"partslathe",
+		"partslathe", // DQRestore — partslathe machinery + circuitboard exist again (circuitboards_vr.dm restored)
 		"securedoor",
 		// "circuit_imprinter_offstation",
 		"solarcontrol",

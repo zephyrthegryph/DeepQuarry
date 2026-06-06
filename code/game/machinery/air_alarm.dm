@@ -266,7 +266,7 @@
 			target_temperature = T0C + MIN_TEMPERATURE
 
 		var/datum/gas_mixture/gas
-		gas = environment.remove(0.25 * environment.total_moles)
+		gas = environment.remove(0.25 * environment.total_moles())
 		if(gas)
 
 			if(gas.temperature <= target_temperature)	//gas heating
@@ -296,18 +296,18 @@
 
 	var/other_moles = 0
 	for(var/g in trace_gas)
-		other_moles += environment.gas[g] //this is only going to be used in a partial pressure calc, so we don't need to worry about group_multiplier here.
+		other_moles += LINDA_GAS_AMT(environment, g) //this is only going to be used in a partial pressure calc, so we don't need to worry about group_multiplier here.
 
 	DECLARE_TLV_VALUES
 	LOAD_TLV_VALUES(TLV["pressure"], environment_pressure)
 	pressure_dangerlevel = TEST_TLV_VALUES // not local because it's used in process()
-	LOAD_TLV_VALUES(TLV[GAS_O2], environment.gas[GAS_O2]*partial_pressure)
+	LOAD_TLV_VALUES(TLV[GAS_O2], LINDA_GAS_AMT(environment, GAS_O2)*partial_pressure)
 	var/oxygen_dangerlevel = TEST_TLV_VALUES
-	LOAD_TLV_VALUES(TLV[GAS_CO2], environment.gas[GAS_CO2]*partial_pressure)
+	LOAD_TLV_VALUES(TLV[GAS_CO2], LINDA_GAS_AMT(environment, GAS_CO2)*partial_pressure)
 	var/co2_dangerlevel = TEST_TLV_VALUES
-	LOAD_TLV_VALUES(TLV[GAS_PHORON], environment.gas[GAS_PHORON]*partial_pressure)
+	LOAD_TLV_VALUES(TLV[GAS_PHORON], LINDA_GAS_AMT(environment, GAS_PHORON)*partial_pressure)
 	var/phoron_dangerlevel = TEST_TLV_VALUES
-	LOAD_TLV_VALUES(TLV[GAS_CH4], environment.gas[GAS_CH4]*partial_pressure)
+	LOAD_TLV_VALUES(TLV[GAS_CH4], LINDA_GAS_AMT(environment, GAS_CH4)*partial_pressure)
 	var/methane_dangerlevel = TEST_TLV_VALUES
 	LOAD_TLV_VALUES(TLV["temperature"], environment.temperature)
 	var/temperature_dangerlevel = TEST_TLV_VALUES
@@ -605,15 +605,15 @@
 		"danger_level" = TEST_TLV_VALUES
 	)))
 
-	var/total_moles = environment.total_moles
+	var/total_moles = environment.total_moles()
 	var/partial_pressure = R_IDEAL_GAS_EQUATION * environment.temperature / environment.volume
-	for(var/gas_id in environment.gas)
+	for(var/gas_id in environment.gas_ids()) // DQEdit — environment.gas (XGM) → environment.gas_ids()
 		if(!(gas_id in TLV))
 			continue
-		LOAD_TLV_VALUES(TLV[gas_id], environment.gas[gas_id] * partial_pressure)
+		LOAD_TLV_VALUES(TLV[gas_id], LINDA_GAS_AMT(environment, gas_id) * partial_pressure)
 		environment_data.Add(list(list(
 			"name" = gas_id,
-			"value" = environment.gas[gas_id] / total_moles * 100,
+			"value" = LINDA_GAS_AMT(environment, gas_id) / total_moles * 100,
 			"unit" = "%",
 			"danger_level" = TEST_TLV_VALUES
 		)))

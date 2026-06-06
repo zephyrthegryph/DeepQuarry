@@ -1,27 +1,32 @@
-[package]
-name = "verdigris"
-version = "0.1.0"
-edition = "2024"
+[workspace]
+resolver = "2"
+members = [
+    "verdigris",
+    "atmos",
+    "atmos/crates/auxcallback",
+    "atmos/crates/auxmacros",
+]
+# `cargo check` / `test` without --package will only operate on verdigris by default —
+# auxmos's byondapi-sys transitively requires a 32-bit target. The release build via
+# verdigris/build-{linux,windows}.sh uses --target i686-* and builds the full workspace.
+default-members = ["verdigris"]
 
-[lib]
-crate-type = ["cdylib"]
+# Inherited by atmos and its sub-crates (which were originally their own workspace).
+# See verdigris/atmos/UPSTREAM.md for context.
+[workspace.dependencies]
+byondapi = "0.4.11"
+coarsetime = "0.1.35"
+flume = "0.11.1"
+eyre = "0.6.12"
+tracing = "0.1.41"
 
 [profile.release]
 debug = "full"
 lto = "thin"
 split-debuginfo = "packed"
+# Must be "unwind" (the default) so panic_safe! in verdigris can catch panics
+# across the FFI boundary. Auxmos's original "abort" was removed when vendoring.
 
 [profile.dev]
 debug = "full"
 opt-level = 0
-
-[dependencies]
-const_format = "0.2.33"
-eyre = "0.6.12"
-meowtonin = "0.3.1"
-rand = "0.10.1"
-rand_distr = "0.6"
-rayon = "1.10.0"
-
-[build-dependencies]
-bosion = "2.0.0"

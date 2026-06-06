@@ -107,7 +107,7 @@ Thus, the two variables affect pump operation are set in New():
 	if((stat & (NOPOWER|BROKEN)) || !use_power)
 		return
 
-	var/input_starting_moles = air1.total_moles
+	var/input_starting_moles = air1.total_moles()
 	var/output_starting_pressure = air2.return_pressure()
 
 	// The pump will refuse to do anything if the pressure is too high or low, unless it is overclocked.
@@ -119,7 +119,7 @@ Thus, the two variables affect pump operation are set in New():
 		return
 
 	var/datum/gas_mixture/removed = air1.remove_ratio(transfer_ratio)
-	var/transfer_moles = removed.total_moles
+	var/transfer_moles = removed.total_moles()
 	last_flow_rate = (transfer_moles/input_starting_moles)*air1.volume
 
 	// Some gases will leak if overclocked. Trade off for no pump limits.
@@ -127,6 +127,13 @@ Thus, the two variables affect pump operation are set in New():
 		var/datum/gas_mixture/environment = loc.return_air()
 		var/datum/gas_mixture/leaked = removed.remove_ratio(VOLUME_PUMP_LEAK_AMOUNT)
 		environment.merge(leaked)
+		// DQEdit — leaked gas just mutated the turf's air mix; enroll the turf
+		// so SSair sees the change and the overlay updates.
+		if(isturf(loc))
+			var/turf/open/T = loc
+			if(istype(T))
+				T.update_visuals()
+				T.air_update_turf(FALSE, FALSE)
 
 	air2.merge(removed)
 
