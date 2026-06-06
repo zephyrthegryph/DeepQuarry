@@ -6,32 +6,17 @@
 #include "code\genesis_call.dme"
 // Again, DO NOT MOVE IT OR ALLOW ANY OTHER #include TO PRECEDE THE ONE ABOVE.
 
-// DQAdd Start — hoist quarry defines outside the BEGIN_INCLUDE auto-
-// managed block so DreamMaker can't re-sort them to a late position.
-// quarry_defines.dm provides QUARRY_LAYER_SIZE / QUARRY_DANGER_* /
-// QUARRY_NOISE_* / QUARRY_STABILITY_THRESHOLD as #defines; these are
-// referenced by code/modules/unit_tests/_unit_tests.dm (very early),
-// by upstream code/modules/projectiles/gun.dm (early), and by the
-// quarry sources themselves. Because DM macros are preprocessor-order-
-// dependent, the defines must be parsed before any consumer. The
-// auto-sort moves modular_dq/* near the end of the include list, so
-// the file's natural inclusion is far too late. The genesis_call.dme
-// hoist above demonstrates DreamMaker leaves lines outside BEGIN_/END_
-// markers alone — we use the same trick here.
-#include "modular_dq\code\modules\quarry\quarry_defines.dm"
-// DQAdd End
-
 // BEGIN_INTERNALS
 // END_INTERNALS
 
-// DQAdd Start — FILE_DIR overrides outside the BEGIN_FILE_DIR auto-
-// managed block so DreamMaker can't strip them on rewrite. BYOND
-// searches FILE_DIR declarations in order; the icons/gen tree (built
-// from PNG + .dmi.toml sources by tools/dq_icons/build_step.py) takes
-// precedence over the committed upstream tree so edits to source
-// PNG+TOML pairs shadow the upstream .dmi at runtime. The explicit
-// per-tree paths after that avoid DreamMaker's full-project recursive
-// resource scan, which costs seconds per build at ~5,600 files.
+// BEGIN_FILE_DIR
+// DQEdit Start — was `#define FILE_DIR .`, which makes DreamMaker
+// recursively scan every subdirectory for resource references. With
+// ~5,600 files spread across hundreds of dirs that wastes seconds
+// per build. Replaced with explicit per-tree resource paths. The
+// icons/gen tree (built from PNG + .dmi.toml sources by
+// tools/dq_icons/build_step.py) comes first so generated DMIs shadow
+// the committed upstream .dmi tree at runtime.
 #define FILE_DIR icons/gen
 #define FILE_DIR icons
 #define FILE_DIR sound
@@ -47,10 +32,7 @@
 #define FILE_DIR modular_chomp/sound
 #define FILE_DIR modular_dq/icons
 #define FILE_DIR modular_dq/maps
-// DQAdd End
-
-// BEGIN_FILE_DIR
-#define FILE_DIR .
+// DQEdit End
 // END_FILE_DIR
 
 // BEGIN_PREFERENCES

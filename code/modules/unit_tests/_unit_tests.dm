@@ -97,7 +97,6 @@
 #include "dcs_get_id_from_elements.dm"
 #include "decl_tests.dm"
 #include "disease_tests.dm"
-#include "dq_preferences_tests.dm" // DQAdd — preference-migration regression tests
 #include "focus_only_tests.dm"
 #include "font_awesome_icons.dm"
 #include "genetics_tests.dm"
@@ -131,6 +130,7 @@
 #include "../../../modular_dq/code/unit_tests/dq_audit_tests.dm"
 #include "../../../modular_dq/code/unit_tests/dq_bodyscanner_tests.dm"
 #include "../../../modular_dq/code/unit_tests/dq_medical_tests.dm"
+#include "../../../modular_dq/code/unit_tests/dq_preferences_tests.dm"
 #include "../../../modular_dq/code/unit_tests/dq_quarry_persistence_tests.dm"
 #include "../../../modular_dq/code/unit_tests/dq_quarry_spawn_tests.dm"
 #include "../../../modular_dq/code/unit_tests/dq_surgery_tests.dm"
