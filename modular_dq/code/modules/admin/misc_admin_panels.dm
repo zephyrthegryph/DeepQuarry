@@ -515,66 +515,10 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 		"entries" = entries,
 	)
 
-// ---- ZAS Variable Settings -----------------------------------------------
-
-/datum/vs_control
-	var/list/dq_displayed_list = null  // currently-displayed settings list (main or plc)
-
-/datum/vs_control/tgui_state(mob/user)
-	return ADMIN_STATE(R_ADMIN)
-
-/datum/vs_control/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "VsSettings", "Variable Settings")
-		ui.open()
-
-/datum/vs_control/tgui_data(mob/user)
-	var/list/data = list()
-	var/list/source = dq_displayed_list || settings
-	if(!source)
-		return data
-	var/list/rows = list()
-	for(var/ch in source)
-		if(findtextEx(ch, "_RANDOM") || findtextEx(ch, "_DESC") || findtextEx(ch, "_METHOD") || findtextEx(ch, "_NAME"))
-			continue
-		var/vw
-		var/vw_desc = "No Description."
-		var/vw_name = ch
-		if(ch in plc.settings)
-			vw = plc.vars[ch]
-			if("[ch]_DESC" in plc.vars)
-				vw_desc = plc.vars["[ch]_DESC"]
-			if("[ch]_NAME" in plc.vars)
-				vw_name = plc.vars["[ch]_NAME"]
-		else
-			vw = vars[ch]
-			if("[ch]_DESC" in vars)
-				vw_desc = vars["[ch]_DESC"]
-			if("[ch]_NAME" in vars)
-				vw_name = vars["[ch]_NAME"]
-		rows += list(list(
-			"key" = ch,
-			"name" = vw_name,
-			"value" = "[vw]",
-			"description" = vw_desc,
-		))
-	data["entries"] = rows
-	return data
-
-/datum/vs_control/tgui_act(action, list/params, datum/tgui/ui)
-	. = ..()
-	if(.)
-		return
-	if(action == "change")
-		var/key = "[params["key"]]"
-		ChangeSetting(ui.user, key)
-		SStgui.update_uis(src)
-		return TRUE
-
-/datum/vs_control/ChangeSettingsDialog(mob/user, list/L)
-	dq_displayed_list = L
-	tgui_interact(user)
+// ZAS Variable Settings panel (/datum/vs_control + VsSettings.tsx) was the
+// admin UI for the ZAS atmos engine's tunable knobs. The atmos engine moved
+// from ZAS to LINDA, those knobs no longer exist, and the panel's data
+// source (settings, plc.settings, plc.vars) is gone. Block removed.
 
 // ---- admin_verbs Delete Book (library admin) -----------------------------
 
