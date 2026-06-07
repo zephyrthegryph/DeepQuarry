@@ -167,3 +167,15 @@
 	. = ..()
 	imp = new /obj/item/implant/restrainingbolt(src)
 	update()
+
+
+// === merged from implanter_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+//Vorestation universal translator implant.
+
+/obj/item/implanter/vrlanguage
+	name = "implanter-language"
+
+/obj/item/implanter/vrlanguage/Initialize(mapload)
+	. = ..()
+	imp = new /obj/item/implant/vrlanguage( src )
+	update()

@@ -55,3 +55,24 @@
 		uniform = /obj/item/clothing/under/suit_jacket/female/skirt
 	else
 		uniform = /obj/item/clothing/under/suit_jacket/charcoal
+
+
+// === merged from command_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/datum/decl/hierarchy/outfit/job/hop
+	id_type = /obj/item/card/id/silver/hop
+
+/datum/decl/hierarchy/outfit/job/secretary
+	id_type = /obj/item/card/id/silver/secretary
+
+
+// === merged from command_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
+/datum/decl/hierarchy/outfit/job/bridge_officer
+	name = OUTFIT_JOB_NAME("Bridge Officer")
+	uniform = /obj/item/clothing/under/utility
+	shoes = /obj/item/clothing/shoes/boots/winter/explorer
+	id_type = /obj/item/card/id/silver/secretary
+	pda_type = /obj/item/pda/heads
+
+	headset = /obj/item/radio/headset/headset_com
+	headset_alt = /obj/item/radio/headset/headset_com
+	headset_earbud = /obj/item/radio/headset/headset_com

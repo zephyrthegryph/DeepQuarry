@@ -817,3 +817,56 @@
 	name = "Allergy: " + REAGENT_KELOTANE
 	desc = "You're highly allergic to " + REAGENT_KELOTANE + ", " + REAGENT_DERMALINE + " and " + REAGENT_DERMALAZE + ", be sure to write that in your medical record! NB: By taking this trait, you acknowledge there is a significant risk your character may suffer a fatal reaction if exposed to this substance."
 	medallergen = MEDALLERGEN_KELOTANE
+
+
+// === merged from negative_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
+
+/datum/trait/negative/breathes
+	custom_only = FALSE
+	banned_species = list(SPECIES_VOX, SPECIES_SHADEKIN)
+
+/datum/trait/negative/schizophrenia
+	can_take = ORGANICS|SYNTHETICS //synths can't medicate for this, but it stands to reason a lifelike synth could experience hallucination-like bugs
+
+//edits below open certain traits to custom species, based on whether a human(which is not custom) could have that trait
+/datum/trait/negative/less_blood
+	custom_only = FALSE
+	banned_species = list(SPECIES_PROMETHEAN, SPECIES_SHADEKIN, SPECIES_ALRAUNE, SPECIES_TESHARI)
+
+/datum/trait/negative/less_blood_extreme
+	custom_only = FALSE
+	banned_species = list(SPECIES_PROMETHEAN, SPECIES_SHADEKIN, SPECIES_ALRAUNE, SPECIES_TESHARI)
+
+/datum/trait/negative/low_blood_sugar
+	custom_only = FALSE
+
+/datum/trait/negative/agoraphobia
+	custom_only = FALSE
+
+/datum/trait/negative/lonely
+	custom_only = FALSE
+
+/datum/trait/negative/endurance_glass
+	custom_only = FALSE
+	banned_species = list(SPECIES_TESHARI)
+
+/datum/trait/negative/light_sensitivity
+	custom_only = FALSE
+	banned_species = (SPECIES_ZADDAT)
+
+/datum/trait/negative/haemophilia_plus
+	custom_only = FALSE
+	banned_species = list(SPECIES_PROMETHEAN, SPECIES_SHADEKIN, SPECIES_ALRAUNE)
+
+/datum/trait/negative/pain_intolerance_basic
+	custom_only = FALSE
+	can_take = ORGANICS
+	banned_species = list(SPECIES_PROTEAN, SPECIES_DIONA)
+
+/datum/trait/negative/pain_intolerance_advanced
+	custom_only = FALSE
+	can_take = ORGANICS
+	banned_species = list(SPECIES_PROTEAN, SPECIES_DIONA)
+
+/datum/trait/negative/scrawny
+	custom_only = FALSE

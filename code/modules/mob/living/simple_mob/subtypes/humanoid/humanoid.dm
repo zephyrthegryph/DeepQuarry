@@ -37,3 +37,17 @@
 
 /datum/decl/mob_organ_names/humanoid
 	hit_zones = list("head", "torso", "left leg", "right leg", "left arm", "right arm", "left hand", "right hand", "left foot", "right foot") //Same as real people!
+
+
+// === merged from humanoid_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/mob/living/simple_mob/humanoid/pirate
+	ai_holder_type = /datum/ai_holder/simple_mob/melee
+
+/mob/living/simple_mob/humanoid/pirate/ranged
+	ai_holder_type = /datum/ai_holder/simple_mob/ranged
+
+/mob/living/simple_mob/humanoid/russian
+	ai_holder_type = /datum/ai_holder/simple_mob/melee
+
+/mob/living/simple_mob/humanoid/russian/ranged
+	ai_holder_type = /datum/ai_holder/simple_mob/ranged

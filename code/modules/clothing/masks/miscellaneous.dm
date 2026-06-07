@@ -424,3 +424,24 @@
 	icon_state = "mouthwheat"
 	w_class = ITEMSIZE_SMALL
 	body_parts_covered = 0
+
+
+// === merged from miscellaneous_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/item/clothing/mask/lacemask
+	name = "lace mask"
+	desc = "A sheer lace mask that rests above the nose and trails down below the chin."
+	icon_state = "lace_mask"
+	item_flags = FLEXIBLEMATERIAL
+	w_class = ITEMSIZE_SMALL
+
+
+// === merged from miscellaneous_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/item/clothing/mask/costume/ghost
+	name = "ghostly blanket"
+	desc = "Boo!"
+	icon = 'icons/inventory/face/item.dmi'
+	icon_override = 'icons/inventory/face/mob.dmi'
+	icon_state = "ghost"
+	body_parts_covered = HEAD|FACE
+	item_flags = FLEXIBLEMATERIAL
+	flags_inv = HIDEFACE|BLOCKHAIR

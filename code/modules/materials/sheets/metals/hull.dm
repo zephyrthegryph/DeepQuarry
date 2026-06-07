@@ -32,3 +32,21 @@
 
 /obj/item/stack/material/morphium/hull/reagents_per_sheet()
 	return REAGENTS_PER_HULL
+
+
+// === merged from hull_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/item/stack/material/plastitanium/hull
+	name = "plastitanium hull sheets"
+	icon = 'icons/obj/stacks_vr.dmi'
+	icon_state = "sheet-plastitanium"
+	item_state = "sheet-silver"
+	no_variants = FALSE
+	default_type = MAT_PLASTITANIUMHULL
+
+/obj/item/stack/material/gold/hull
+	name = "gold hull sheets"
+	icon = 'icons/obj/stacks_vr.dmi'
+	icon_state = "sheet-plastitanium"
+	item_state = "sheet-silver"
+	no_variants = FALSE
+	default_type = MAT_GOLDHULL

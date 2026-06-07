@@ -539,3 +539,40 @@
 #undef FIREDOOR_ALERT_HOT
 #undef FIREDOOR_ALERT_COLD
 // Not used #undef FIREDOOR_ALERT_LOWPRESS
+
+
+// === merged from firedoor_ch.dm during hard-fork de-suffix (verified no override-order change) ===
+//Glass variation of the 2x1 firedoor
+/obj/machinery/door/firedoor/multi_tile/glass
+	icon = 'icons/obj/doors/DoorHazardGlass2x1.dmi'
+	width = 2
+	glass = 1
+	open_sound = 'sound/machines/firewide1o.ogg'
+	close_sound = 'sound/machines/firewide1c.ogg'
+
+/obj/machinery/door/firedoor/border_only/can_pathfinding_exit(atom/movable/actor, dir, datum/pathfinding/search)
+	return (src.dir != dir) || ..()
+
+/obj/machinery/door/firedoor/border_only/can_pathfinding_enter(atom/movable/actor, dir, datum/pathfinding/search)
+	return (src.dir != dir) || ..()
+
+
+// === merged from firedoor_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/machinery/door/firedoor/glass/hidden
+	name = "\improper Emergency Shutter System"
+	desc = "Emergency air-tight shutter, capable of sealing off breached areas. This model fits flush with the walls, and has a panel in the floor for maintenance."
+	icon = 'icons/obj/doors/DoorHazardHidden.dmi'
+	plane = TURF_PLANE
+
+/obj/machinery/door/firedoor/glass/hidden/open()
+	. = ..()
+	plane = TURF_PLANE
+
+/obj/machinery/door/firedoor/glass/hidden/close()
+	. = ..()
+	plane = OBJ_PLANE
+
+/obj/machinery/door/firedoor/glass/hidden/steel
+	name = "\improper Emergency Shutter System"
+	desc = "Emergency air-tight shutter, capable of sealing off breached areas. This model fits flush with the walls, and has a panel in the floor for maintenance."
+	icon = 'icons/obj/doors/DoorHazardHidden_steel.dmi'

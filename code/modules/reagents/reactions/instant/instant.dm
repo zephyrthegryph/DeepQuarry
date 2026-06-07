@@ -1514,3 +1514,520 @@
 	result = REAGENT_ID_TERCOZOLAM
 	required_reagents = list(REAGENT_ID_ANTITOXIN = 1, REAGENT_ID_ETHANOL = 1, REAGENT_ID_LITHIUM = 1)
 	result_amount = 3
+
+
+// === merged from instant_ch.dm during hard-fork de-suffix (verified no override-order change) ===
+/datum/decl/chemical_reaction/instant/claridyl
+	name = REAGENT_CLARIDYL
+	id = REAGENT_ID_CLARIDYL
+	result = REAGENT_ID_CLARIDYL
+	required_reagents = list(REAGENT_ID_LITHIUM = 1, REAGENT_ID_RADIUM = 1, REAGENT_ID_SUGAR = 1)
+	result_amount = 1
+
+/datum/decl/chemical_reaction/instant/dyloteane
+	name = REAGENT_DYLOTEANE
+	id = REAGENT_ID_DYLOTEANE
+	result = REAGENT_ID_DYLOTEANE
+	required_reagents = list(REAGENT_ID_ANTITOXIN = 1, REAGENT_ID_TEA = 1)
+	result_amount = 1
+
+/datum/decl/chemical_reaction/instant/dyloteane/super
+	name = "dyloteanesuper"
+	id = "dyloteanesuper"
+	result = REAGENT_ID_DYLOTEANE
+	required_reagents = list(REAGENT_ID_ANTITOXIN = 1, REAGENT_ID_TEA = 1,REAGENT_ID_SUGAR = 1)
+	result_amount = 10 //by the powers of england for sugaring your tea you gain *10 result
+
+/datum/decl/chemical_reaction/instant/eden
+	name = REAGENT_EDEN
+	id = REAGENT_ID_EDEN
+	result = REAGENT_ID_EDEN
+	required_reagents = list(REAGENT_ID_ANTITOXIN = 60, REAGENT_ID_PHORON = 60)
+	result_amount = 1
+
+/datum/decl/chemical_reaction/instant/eden/snake
+	id = REAGENT_ID_EDENSNAKE
+	result = REAGENT_ID_EDENSNAKE
+	required_reagents = list(REAGENT_ID_EDEN = 1, REAGENT_ID_ETHANOL = 1)
+
+/datum/decl/chemical_reaction/instant/tercozolam
+	id = REAGENT_ID_TERCOZOLAM
+	result = REAGENT_ID_TERCOZOLAM
+	required_reagents = list(REAGENT_ID_ANTITOXIN = 1, REAGENT_ID_ETHANOL = 1, REAGENT_ID_LITHIUM = 1)
+	result_amount = 3
+
+/datum/decl/chemical_reaction/instant/peridaxon_ch
+	name = REAGENT_PERIDAXON
+	id = "peridaxon_ch"
+	result = REAGENT_ID_PERIDAXON
+	required_reagents = list(REAGENT_ID_CORDRADAXON = 1,REAGENT_ID_GASTIRODAXON = 1, REAGENT_ID_HEPANEPHRODAXON = 1, REAGENT_ID_RESPIRODAXON = 1)
+	result_amount = 12 //More phoron-efficient alternative recipe.
+
+/datum/decl/chemical_reaction/instant/sorbitol
+	name = REAGENT_SORBITOL
+	id = REAGENT_ID_SORBITOL
+	result = REAGENT_ID_SORBITOL
+	required_reagents = list(REAGENT_ID_UNSORBITOL = 1, REAGENT_ID_PHORON = 1)
+	result_amount = 2
+
+/datum/decl/chemical_reaction/instant/glucose
+	name = REAGENT_GLUCOSE
+	id = REAGENT_ID_GLUCOSE
+	result = REAGENT_ID_GLUCOSE
+	required_reagents = list(REAGENT_ID_SODIUMCHLORIDE = 1, REAGENT_ID_WATER = 1, REAGENT_ID_SUGAR = 1)
+	result_amount = 1
+///SAP RECIPES//////
+
+/datum/decl/chemical_reaction/instant/myelamine_sap //This is the clotting agent used by clotting packs.
+	name = REAGENT_MYELAMINE
+	id = REAGENT_ID_MYELAMINE + "sap"
+	result = REAGENT_ID_MYELAMINE
+	required_reagents = list(REAGENT_ID_BICARIDINE = 1, REAGENT_ID_IRON = 2, REAGENT_ID_KELOTANE = 1, REAGENT_ID_BLUESAP = 1)
+	result_amount = 1
+
+/datum/decl/chemical_reaction/instant/hannoa
+	name = REAGENT_HANNOA
+	id = REAGENT_ID_HANNOA
+	result = REAGENT_ID_HANNOA
+	required_reagents = list(REAGENT_PURPLESAP = 1, REAGENT_ID_IRON = 2, REAGENT_ID_KELOTANE = 1, REAGENT_ID_CARBON = 1)
+	result_amount = 1
+
+/datum/decl/chemical_reaction/instant/bullvalene
+	name = REAGENT_BULLVALENE
+	id = REAGENT_ID_BULLVALENE
+	result = REAGENT_ID_BULLVALENE
+	required_reagents = list(REAGENT_ID_DERMALINE = 1, REAGENT_ID_ORANGESAP = 1, REAGENT_ID_COPPER = 1)
+	result_amount = 1
+
+/datum/decl/chemical_reaction/instant/nutrient
+	name = REAGENT_NUTRIMENT
+	id = REAGENT_ID_NUTRIMENT
+	result = REAGENT_ID_NUTRIMENT
+	required_reagents = list(REAGENT_PURPLESAP = 1, REAGENT_ID_ORANGESAP = 1, REAGENT_ID_BLUESAP = 1)
+	catalysts = list(REAGENT_ID_WATER = 5) //CHOMPedit: Catalyst added to prevent conflict with reagents reacting and nixxing each other in black sapbeans
+	result_amount = 3
+
+/////SERAZINE RECIPES//////
+
+/datum/decl/chemical_reaction/instant/alizene
+	name = REAGENT_ALIZENE
+	id = REAGENT_ID_ALIZENE
+	result = REAGENT_ID_ALIZENE
+	required_reagents = list(REAGENT_ID_BICARIDINE = 1, REAGENT_ID_SERAZINE = 1, REAGENT_ID_TUNGSTEN = 1)
+	result_amount = 3
+
+// Frost oil reactions for material sheets
+/datum/decl/chemical_reaction/instant/solidification/aluminium
+	name = "Solid Aluminium"
+	id = "solidaluminium"
+	required_reagents = list(REAGENT_ID_FROSTOIL = 5, REAGENT_ID_ALUMINIUM = REAGENTS_PER_SHEET)
+	sheet_to_give = /obj/item/stack/material/aluminium
+
+/datum/decl/chemical_reaction/instant/solidification/copper
+	name = "Solid Copper"
+	id = "solidcopper"
+	required_reagents = list(REAGENT_ID_FROSTOIL = 5, REAGENT_ID_COPPER = REAGENTS_PER_SHEET)
+	sheet_to_give = /obj/item/stack/material/copper
+
+//YW stuff
+/datum/decl/chemical_reaction/instant/benzilate
+	name = "Benzilate"
+	id = REAGENT_ID_BENZILATE
+	result = REAGENT_ID_BENZILATE
+	required_reagents = list(REAGENT_ID_PARACETAMOL = 1, REAGENT_ID_MINDBREAKER = 1)
+	result_amount = 2
+
+/datum/decl/chemical_reaction/instant/phenethylamine
+	name = REAGENT_PHENETHYLAMINE
+	id = REAGENT_ID_PHENETHYLAMINE
+	result = REAGENT_ID_PHENETHYLAMINE
+	required_reagents = list(REAGENT_ID_PAROXETINE = 1, REAGENT_ID_BENZILATE = 1)
+	result_amount = 2
+
+// Xenochem stuff
+/datum/decl/chemical_reaction/instant/xenolazarus // Moved here because upstream axed it and this file cannot conflict
+	name = "Discount Lazarus"
+	id = "discountlazarus"
+	result = null
+	required_reagents = list(REAGENT_ID_MONSTERTAMER = 5, REAGENT_ID_CLONEXADONE = 5)
+
+/datum/decl/chemical_reaction/instant/xenolazarus/on_reaction(datum/reagents/holder, created_volume) //literally all this does is mash the regenerate button
+	if(ishuman(holder.my_atom))
+		var/mob/living/carbon/human/H = holder.my_atom
+		var/datum/component/xenochimera/comp = H.GetComponent(/datum/component/xenochimera)
+		if(!comp)
+			return
+		else
+			if(H.stat == DEAD)
+				if(H.hasnutriment()) // make sure it actually has the conditions to revive
+					if(comp.revive_ready >= 1) // if it's not reviving, start doing so
+						comp.revive_ready = REVIVING_READY // overrides the normal cooldown
+						H.visible_message(span_info("[H] shudders briefly, then relaxes, faint movements stirring within."))
+						comp.chimera_regenerate()
+					else if(comp.revive_ready == REVIVING_DONE)// already reviving, check if they're ready to hatch
+						comp.chimera_hatch()
+						H.visible_message(span_danger(span_huge("[H] violently convulses and then bursts open, revealing a new, intact copy in the pool of viscera."))) // Hope you were wearing waterproofs, doc...
+						H.adjustBrainLoss(10) // they're reviving from dead, so take 10 brainloss
+					else //they're already reviving but haven't hatched. Give a little message to tell them to wait.
+						H.visible_message(span_info("[H] stirs faintly, but doesn't appear to be ready to wake up yet."))
+				else
+					H.visible_message(span_info("[H] twitches for a moment, but remains still.")) // no nutriment
+
+
+// === merged from instant_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+///////////////////////////////////////////////////////////////////////////////////
+/// Micro/Macro chemicals
+
+/datum/decl/chemical_reaction/instant/sizeoxadone
+	name = REAGENT_SIZEOXADONE
+	id = REAGENT_ID_SIZEOXADONE
+	result = REAGENT_ID_SIZEOXADONE
+	required_reagents = list(REAGENT_ID_SODIUM = 1, REAGENT_ID_TRAMADOL = 1)
+	catalysts = list(REAGENT_ID_PHORON = 5)
+	result_amount = 2
+
+/datum/decl/chemical_reaction/instant/macrocillin
+	name = REAGENT_MACROCILLIN
+	id = REAGENT_ID_MACROCILLIN
+	result = REAGENT_ID_MACROCILLIN
+	// POLARISTODO requires_heating = 1
+	required_reagents = list(REAGENT_ID_SIZEOXADONE = 20, REAGENT_ID_DIETHYLAMINE = 20)
+	result_amount = 1
+
+/datum/decl/chemical_reaction/instant/microcillin
+	name = REAGENT_MICROCILLIN
+	id = REAGENT_ID_MICROCILLIN
+	result = REAGENT_ID_MICROCILLIN
+	// POLARISTODO requires_heating = 1
+	required_reagents = list(REAGENT_ID_SIZEOXADONE = 20, REAGENT_ID_SODIUMCHLORIDE = 20)
+	result_amount = 1
+
+/datum/decl/chemical_reaction/instant/normalcillin
+	name = REAGENT_NORMALCILLIN
+	id = REAGENT_ID_NORMALCILLIN
+	result = REAGENT_ID_NORMALCILLIN
+	// POLARISTODO requires_heating = 1
+	required_reagents = list(REAGENT_ID_SIZEOXADONE = 20, REAGENT_ID_LEPORAZINE = 20)
+	result_amount = 1
+
+/datum/decl/chemical_reaction/instant/dontcrossthebeams
+	name = "Don't Cross The Beams"
+	id = "dontcrossthebeams"
+	result = null
+	required_reagents = list(REAGENT_ID_MICROCILLIN = 1, REAGENT_ID_MACROCILLIN = 1)
+
+/datum/decl/chemical_reaction/instant/dontcrossthebeams/on_reaction(datum/reagents/holder, created_volume)
+	var/location = get_turf(holder.my_atom)
+	playsound(location, 'sound/weapons/gauss_shoot.ogg', 50, 1)
+	var/datum/effect/effect/system/grav_pull/s = new /datum/effect/effect/system/grav_pull
+	s.set_up(3, 3, location)
+	s.start()
+	holder.clear_reagents()
+
+///////////////////////////////////////////////////////////////////////////////////
+/// TF chemicals
+/datum/decl/chemical_reaction/instant/amorphorovir
+	name = REAGENT_AMORPHOROVIR
+	id = REAGENT_ID_AMORPHOROVIR
+	result = REAGENT_ID_AMORPHOROVIR
+	required_reagents = list(REAGENT_ID_CRYPTOBIOLIN = 30, REAGENT_ID_BIOMASS = 30, REAGENT_ID_HYPERZINE = 20)
+	catalysts = list(REAGENT_ID_PHORON = 5)
+	result_amount = 1
+
+/datum/decl/chemical_reaction/instant/androrovir
+	name = REAGENT_ANDROROVIR
+	id = REAGENT_ID_ANDROROVIR
+	result = REAGENT_ID_ANDROROVIR
+	required_reagents = list(REAGENT_ID_AMORPHOROVIR = 1, REAGENT_ID_BICARIDINE = 20, REAGENT_ID_IRON = 20, REAGENT_ID_ETHANOL = 20)
+	result_amount = 1
+
+/datum/decl/chemical_reaction/instant/gynorovir
+	name = REAGENT_GYNOROVIR
+	id = REAGENT_ID_GYNOROVIR
+	result = REAGENT_ID_GYNOROVIR
+	required_reagents = list(REAGENT_ID_AMORPHOROVIR = 1, REAGENT_ID_INAPROVALINE = 20, REAGENT_ID_SILICON = 20, REAGENT_ID_SUGAR = 20)
+	result_amount = 1
+
+/datum/decl/chemical_reaction/instant/androgynorovir
+	name = REAGENT_ANDROGYNOROVIR
+	id = REAGENT_ID_ANDROGYNOROVIR
+	result = REAGENT_ID_ANDROGYNOROVIR
+	required_reagents = list(REAGENT_ID_AMORPHOROVIR = 1, REAGENT_ID_ANTITOXIN = 20, REAGENT_ID_FLUORINE = 20, REAGENT_ID_TUNGSTEN = 20)
+	result_amount = 1
+
+/datum/decl/chemical_reaction/instant/androrovir_bootleg
+	name = "Bootleg Androrovir"
+	id = "androrovir_bootleg"
+	result = REAGENT_ID_ANDROROVIR
+	required_reagents = list(REAGENT_ID_AMORPHOROVIR = 1, REAGENT_ID_PROTEIN = 10, REAGENT_ID_CAPSAICIN = 10)
+	result_amount = 1
+
+/datum/decl/chemical_reaction/instant/gynorovir_bootleg
+	name = "Bootleg Gynorovir"
+	id = "gynorovir_bootleg"
+	result = REAGENT_ID_GYNOROVIR
+	required_reagents = list(REAGENT_ID_AMORPHOROVIR = 1, REAGENT_ID_SOYMILK = 10, REAGENT_ID_SUGAR = 10)
+	result_amount = 1
+
+/datum/decl/chemical_reaction/instant/androgynorovir_bootleg
+	name = "Bootleg Androgynorovir"
+	id = "androgynorovir_bootleg"
+	result = REAGENT_ID_ANDROGYNOROVIR
+	required_reagents = list(REAGENT_ID_AMORPHOROVIR = 1, REAGENT_ID_COLA = 10, REAGENT_ID_BERRYJUICE = 10)
+	result_amount = 1
+
+///////////////////////////////////////////////////////////////////////////////////
+/// Miscellaneous Reactions
+
+/datum/decl/chemical_reaction/instant/foam/softdrink
+	name = "Decarbonated Drink"
+	id = "soda_fizz"
+	required_reagents = list(REAGENT_ID_COLA = 1, REAGENT_ID_MINT = 1)
+
+/datum/decl/chemical_reaction/instant/firefightingfoam //TODO: Make it so we can add this to the foam tanks to refill them
+	name = REAGENT_FIREFOAM
+	id = "firefighting foam"
+	result = REAGENT_ID_FIREFOAM
+	required_reagents = list(REAGENT_ID_WATER = 1)
+	catalysts = list(REAGENT_ID_FLUORINE = 10)
+	result_amount = 1
+
+/datum/decl/chemical_reaction/instant/firefightingfoamqol //Please don't abuse this and make us remove it. Seriously.
+	name = "Firefighting Foam EZ"
+	id = "firefighting foam ez"
+	result = REAGENT_ID_FIREFOAM
+	required_reagents = list(REAGENT_ID_WATER = 1)
+	catalysts = list(REAGENT_ID_FIREFOAM = 5)
+	inhibitors = list(REAGENT_ID_FLUORINE = 0.01)
+	result_amount = 1
+
+///////////////////////////////////////////////////////////////////////////////////
+/// Vore Drugs
+
+/datum/decl/chemical_reaction/instant/ickypak
+	name = REAGENT_ICKYPAK
+	id = REAGENT_ID_ICKYPAK
+	result = REAGENT_ID_ICKYPAK
+	required_reagents = list(REAGENT_ID_HYPERZINE = 4, REAGENT_ID_FLUOROSURFACTANT = 1)
+	result_amount = 5
+
+/datum/decl/chemical_reaction/instant/unsorbitol
+	name = REAGENT_UNSORBITOL
+	id = REAGENT_ID_UNSORBITOL
+	result = REAGENT_ID_UNSORBITOL
+	required_reagents = list(REAGENT_ID_MUTAGEN = 3, REAGENT_ID_LIPOZINE = 2)
+	result_amount = 5
+
+///////////////////////////////////////////////////////////////////////////////////
+/// Other Drugs
+/datum/decl/chemical_reaction/instant/adranol
+	name = REAGENT_ADRANOL
+	id = REAGENT_ID_ADRANOL
+	result = REAGENT_ID_ADRANOL
+	required_reagents = list(REAGENT_ID_MILK = 2, REAGENT_ID_HYDROGEN = 1, REAGENT_ID_POTASSIUM = 1)
+	result_amount = 3
+
+/datum/decl/chemical_reaction/instant/vermicetol
+	name = REAGENT_VERMICETOL
+	id = REAGENT_ID_VERMICETOL
+	result = REAGENT_ID_VERMICETOL
+	required_reagents = list(REAGENT_ID_KELOTANE = 1, REAGENT_ID_DERMALINE = 1, REAGENT_ID_SHOCKCHEM = 1, REAGENT_ID_PHORON = 0.1) // CHOMPEdit
+	catalysts = list(REAGENT_ID_PHORON = 5)
+	result_amount = 3
+
+/datum/decl/chemical_reaction/instant/prussian_blue
+	name = REAGENT_PRUSSIANBLUE
+	id = REAGENT_ID_PRUSSIANBLUE
+	result = REAGENT_ID_PRUSSIANBLUE
+	required_reagents = list(REAGENT_ID_CARBON = 3, REAGENT_ID_IRON = 1, REAGENT_ID_NITROGEN = 3)
+	result_amount = 7
+
+/datum/decl/chemical_reaction/instant/lipozilase
+	name = REAGENT_LIPOZILASE
+	id = REAGENT_ID_LIPOZILASE
+	result = REAGENT_ID_LIPOZILASE
+	required_reagents = list(REAGENT_ID_LIPOZINE = 1, REAGENT_ID_DIETHYLAMINE = 1)
+	result_amount = 2
+
+/datum/decl/chemical_reaction/instant/lipostipo
+	name = REAGENT_LIPOSTIPO
+	id = REAGENT_ID_LIPOSTIPO
+	result = REAGENT_ID_LIPOSTIPO
+	required_reagents = list(REAGENT_ID_LIPOZINE = 1, REAGENT_ID_NUTRIMENT = 1, REAGENT_ID_FLUORINE = 1)
+	result_amount = 3
+
+///////////////////////////////////////////////////////////////////////////////////
+/// Reagent colonies.
+/datum/decl/chemical_reaction/instant/meatcolony
+	name = REAGENT_ID_PROTEIN
+	id = REAGENT_ID_MEATCOLONY
+	result = REAGENT_ID_PROTEIN
+	required_reagents = list(REAGENT_ID_MEATCOLONY = 5, REAGENT_ID_VIRUSFOOD = 5)
+	result_amount = 60
+
+/datum/decl/chemical_reaction/instant/plantcolony
+	name = REAGENT_ID_NUTRIMENT
+	id = REAGENT_ID_PLANTCOLONY
+	result = REAGENT_ID_NUTRIMENT
+	required_reagents = list(REAGENT_ID_PLANTCOLONY = 5, REAGENT_ID_VIRUSFOOD = 5)
+	result_amount = 60
+
+///////////////////////////////////////////////////////////////////////////////////
+/// Upstream Adjustments
+/datum/decl/chemical_reaction/instant/biomass
+	result_amount = 6	// Roughly 120u per phoron sheet
+
+///////////////////////////////
+//SLIME-RELATED BELOW HERE///////
+///////////////////////////////
+/datum/decl/chemical_reaction/instant/slimeify
+	name = REAGENT_ADVMUTATIONTOXIN
+	id = "advmutationtoxin2"
+	result = REAGENT_ID_ADVMUTATIONTOXIN
+	required_reagents = list(REAGENT_ID_PHORON = 15, REAGENT_ID_SLIMEJELLY = 15, REAGENT_ID_MUTATIONTOXIN = 15) //In case a xenobiologist wants to become a fully fledged slime person.
+	result_amount = 1
+
+
+// === merged from instant_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
+//Chemist update
+/datum/decl/chemical_reaction/instant/livingagent
+	name = REAGENT_LIVINGAGENT
+	id = REAGENT_ID_LIVINGAGENT
+	result = REAGENT_ID_LIVINGAGENT
+	required_reagents = list(REAGENT_ID_TRICORDRAZINE = 1, REAGENT_ID_LIQUIDLIFE = 1, REAGENT_ID_SUGAR = 1)
+	result_amount = 2
+
+/datum/decl/chemical_reaction/instant/performancepeaker
+	name = REAGENT_PERFORMANCEPEAKER
+	id = REAGENT_ID_PERFORMANCEPEAKER
+	result = REAGENT_ID_PERFORMANCEPEAKER
+	required_reagents = list(REAGENT_ID_HYPERZINE = 1, REAGENT_ID_LIQUIDLIFE = 1, REAGENT_ID_INAPROVALINE = 1)
+	result_amount = 2
+
+/datum/decl/chemical_reaction/instant/burncard
+	name = "Burning Bicard"
+	id = REAGENT_ID_BURNCARD
+	result = REAGENT_ID_BURNCARD
+	required_reagents = list(REAGENT_ID_LIQUIDFIRE = 1, REAGENT_ID_BICARIDINE = 1, REAGENT_ID_OXYGEN = 1)
+	result_amount = 2
+
+/datum/decl/chemical_reaction/instant/flamecure
+	name = REAGENT_FLAMECURE
+	id = REAGENT_ID_FLAMECURE
+	result = REAGENT_ID_FLAMECURE
+	required_reagents = list(REAGENT_ID_LIQUIDFIRE = 1, REAGENT_ID_MYELAMINE = 1, REAGENT_ID_KELOTANE = 1)
+	result_amount = 2
+
+/datum/decl/chemical_reaction/instant/neotane
+	name = REAGENT_NEOTANE
+	id = REAGENT_ID_NEOTANE
+	result = REAGENT_ID_NEOTANE
+	required_reagents = list(REAGENT_ID_LIQUIDFIRE = 1, REAGENT_ID_KELOTANE = 1, REAGENT_ID_IRON = 1)
+	result_amount = 2
+
+/datum/decl/chemical_reaction/instant/bloodsealer
+	name = REAGENT_BLOODSEALER
+	id = REAGENT_ID_BLOODSEALER
+	result = REAGENT_ID_BLOODSEALER
+	required_reagents = list(REAGENT_ID_NEOLIQUIDFIRE = 1, REAGENT_ID_GLUCOSE = 1, REAGENT_ID_HYDROGEN = 1)
+	result_amount = 2
+
+/datum/decl/chemical_reaction/instant/purifyingagent
+	name = REAGENT_PURIFYINGAGENT
+	id = REAGENT_ID_PURIFYINGAGENT
+	result = REAGENT_ID_PURIFYINGAGENT
+	required_reagents = list(REAGENT_ID_DEATHBLOOD = 1, REAGENT_ID_CARTHATOLINE = 1, REAGENT_ID_HYRONALIN = 1)
+	result_amount = 2
+
+/datum/decl/chemical_reaction/instant/cleansingagent
+	name = REAGENT_CLEANSINGAGENT
+	id = REAGENT_ID_CLEANSINGAGENT
+	result = REAGENT_ID_CLEANSINGAGENT
+	required_reagents = list(REAGENT_ID_DEATHBLOOD = 1, REAGENT_ID_HYRONALIN = 1, REAGENT_ID_ANTITOXIN = 1)
+	result_amount = 2
+
+//tier 1
+/datum/decl/chemical_reaction/instant/souldew
+	name = REAGENT_ID_SOULDEW
+	id = REAGENT_ID_SOULDEW
+	result = REAGENT_ID_SOULDEW
+	required_reagents = list(REAGENT_ID_ALKYSINE = 1, REAGENT_ID_TRICORDRAZINE = 1, REAGENT_ID_SULFUR = 1)
+	result_amount = 3
+
+/datum/decl/chemical_reaction/instant/quadcord
+	name = REAGENT_QUADCORD
+	id = REAGENT_ID_QUADCORD
+	result = REAGENT_ID_QUADCORD
+	required_reagents = list(REAGENT_ID_TRICORDRAZINE = 1, REAGENT_ID_PHORON = 1, REAGENT_ID_SACID = 1)
+	result_amount = 3
+
+//tier 2
+/*
+/datum/decl/chemical_reaction/instant/juggernog
+	name = REAGENT_JUGGERNOG
+	id = REAGENT_ID_JUGGERNOG
+	result = REAGENT_ID_JUGGERNOG
+	required_reagents = list(REAGENT_ID_PARACETAMOL = 1, REAGENT_ID_TRAMADOL = 1, REAGENT_ID_SYNAPTIZINE = 1, REAGENT_ID_MERCURY = 1)
+	result_amount = 4
+*/
+
+/datum/decl/chemical_reaction/instant/curea
+	name = REAGENT_CUREA
+	id = REAGENT_ID_CUREA
+	result = REAGENT_ID_CUREA
+	required_reagents = list(REAGENT_ID_SPACEACILLIN = 1, REAGENT_ID_ADRANOL = 1, REAGENT_ID_INAPROVALINE = 1, REAGENT_ID_IRON = 1)
+	result_amount = 4
+
+//tier 3
+/datum/decl/chemical_reaction/instant/liquidhealer
+	name = REAGENT_LIQUIDHEALER
+	id = REAGENT_ID_LIQUIDHEALER
+	result = REAGENT_ID_LIQUIDHEALER
+	required_reagents = list(REAGENT_ID_BICARIDINE = 1, REAGENT_ID_KELOTANE = 1, REAGENT_ID_LIQUIDLIFE = 1, REAGENT_ID_CARPOTOXIN = 1, REAGENT_ID_QUADCORD = 1, REAGENT_ID_CRYPTOBIOLIN = 1)
+	result_amount = 6
+/*
+/datum/decl/chemical_reaction/instant/phoenixbreath
+	name = REAGENT_PHOENIXBREATH
+	id = REAGENT_ID_PHOENIXBREATH
+	result = REAGENT_ID_PHOENIXBREATH
+	required_reagents = list(REAGENT_ID_VERMICETOL = 1, REAGENT_ID_LIQUIDLIFE = 1, REAGENT_ID_NEOLIQUIDFIRE = 1, REAGENT_ID_SOULDEW = 1, REAGENT_ID_PHORON = 1, REAGENT_ID_DERMALINE = 1)
+	result_amount = 6
+*/
+/datum/decl/chemical_reaction/instant/dryagent
+	name = REAGENT_DRYAGENT
+	id = REAGENT_ID_DRYAGENT
+	result = REAGENT_ID_DRYAGENT
+	required_reagents = list(REAGENT_ID_ETHANOL = 2, REAGENT_ID_SODIUM = 2, REAGENT_ID_PHORON = 0.1)
+	catalysts = list(REAGENT_ID_PHORON = 5)
+	result_amount = 4
+
+//Xenobotany update
+/datum/decl/chemical_reaction/instant/neoliquidfire
+	name = REAGENT_ID_NEOLIQUIDFIRE //distil phoron dragon blood from basic dragon blood
+	id = REAGENT_ID_NEOLIQUIDFIRE
+	result = REAGENT_ID_NEOLIQUIDFIRE
+	required_reagents = list(REAGENT_ID_LIQUIDFIRE = 1, REAGENT_ID_SULFUR = 1, REAGENT_ID_PHORON = 0.1)
+	catalysts = list(REAGENT_ID_PHORON = 5)
+	result_amount = 1
+
+//Some extra metal solidification reactions
+/datum/decl/chemical_reaction/instant/solidification/deuterium
+	name = "Solid Deuterium"
+	id = "soliddeuterium"
+	required_reagents = list(REAGENT_ID_FROSTOIL = 5, REAGENT_ID_DEUTERIUM = REAGENTS_PER_SHEET)
+	sheet_to_give = /obj/item/stack/material/deuterium
+
+//Injectable toxin reactions
+/datum/decl/chemical_reaction/instant/succubi_paralize
+	name = "paralyzingfluid"
+	id = "paralyzingfluid"
+	result = "succubi_paralize"
+	required_reagents = list(REAGENT_ID_BENZILATE = 1, REAGENT_ID_CRYPTOBIOLIN = 1)
+	result_amount = 2
+
+/datum/decl/chemical_reaction/instant/numbingenzyme
+	name = "numbingenzyme"
+	id = "numbingenzyme"
+	result = REAGENT_ID_NUMBENZYME
+	required_reagents = list(REAGENT_ID_TRAMADOL = 1, REAGENT_ID_PROTEIN = 2, REAGENT_ID_ADRANOL = 1)
+	result_amount = 4

@@ -31,3 +31,23 @@
 	default_type = MAT_RPGLASS
 	no_variants = FALSE
 	apply_colour = TRUE
+
+
+// === merged from glass_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/item/stack/material/glass/titanium
+	name = "ti-glass sheets"
+	icon = 'icons/obj/stacks_vr.dmi'
+	icon_state = "sheet-titaniumglass"
+	item_state = "sheet-silver"
+	no_variants = FALSE
+	drop_sound = 'sound/items/drop/glass.ogg'
+	default_type = MAT_TITANIUMGLASS
+
+/obj/item/stack/material/glass/plastitanium
+	name = "plastitanium glass sheets"
+	icon = 'icons/obj/stacks_vr.dmi'
+	icon_state = "sheet-plastitaniumglass"
+	item_state = "sheet-silver"
+	no_variants = FALSE
+	drop_sound = 'sound/items/drop/glass.ogg'
+	default_type = MAT_PLASTITANIUMGLASS

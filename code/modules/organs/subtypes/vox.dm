@@ -32,3 +32,8 @@
 
 /obj/item/organ/external/groin/vox //vox have an extended ribcage for extra protection.
 	encased = "lower ribcage"
+
+
+// === merged from vox_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/item/organ/external/head/vox //Enables old vox eyes.
+	eye_icon = "vox_eyes_s_old"

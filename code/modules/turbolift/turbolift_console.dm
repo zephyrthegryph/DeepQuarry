@@ -208,3 +208,11 @@
 		icon_state = initial(icon_state)
 
 // End panel.
+
+
+// === merged from turbolift_console_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/structure/lift/button/ex_act()
+	return
+
+/obj/structure/lift/panel/ex_act()
+	return

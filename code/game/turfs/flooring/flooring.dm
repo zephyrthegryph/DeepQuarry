@@ -881,3 +881,157 @@ GLOBAL_LIST_INIT(flooring_types, populate_flooring_types())
 /datum/decl/flooring/grass/seasonal_grass/dark
 	name = "grass"
 	icon_base = "darkgrass"
+
+
+// === merged from flooring_ch.dm during hard-fork de-suffix (verified no override-order change) ===
+/datum/decl/flooring
+	/* var/list/vorefootstep_sounds = list() // key=species name, value = list of sounds, used for reagent sloshing in vore belly
+
+	vorefootstep_sounds = list("human" = list(
+		'sound/vore/walkslosh1.ogg',
+		'sound/vore/walkslosh2.ogg',
+		'sound/vore/walkslosh3.ogg',
+		'sound/vore/walkslosh4.ogg',
+		'sound/vore/walkslosh5.ogg',
+		'sound/vore/walkslosh6.ogg',
+		'sound/vore/walkslosh7.ogg',
+		'sound/vore/walkslosh8.ogg',
+		'sound/vore/walkslosh9.ogg',
+		'sound/vore/walkslosh10.ogg'))
+		*/
+
+/turf/simulated/floor/boxing
+	name = "boxing mat"
+	icon = 'icons/turf/gym_ch.dmi'
+	icon_state = "boxing"
+
+/turf/simulated/floor/boxing/gym
+	name = "gym mat"
+	icon_state = "gym_mat"
+
+/turf/simulated/floor/grass2/sif
+	name = "light sif grass patch"
+	desc = "You can't tell if this is real grass or just cheap plastic imitation."
+	icon = 'icons/turf/outdoors.dmi'
+	icon_state = "grass_sif0"
+
+/turf/simulated/floor/grass2/sif/forest
+	name = "dark sif grass patch"
+	desc = "You can't tell if this is real grass or just cheap plastic imitation."
+	icon = 'icons/turf/outdoors.dmi'
+	icon_state = "grass_sif_dark0"
+
+
+// === merged from flooring_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/turf/simulated/floor/flesh
+	name = "flesh"
+	desc = "This slick flesh ripples and squishes under your touch"
+	icon = 'icons/turf/stomach_vr.dmi'
+	icon_state = "flesh_floor"
+	initial_flooring = /datum/decl/flooring/flesh
+
+/turf/simulated/floor/flesh/colour
+	icon_state = "c_flesh_floor"
+	initial_flooring = /datum/decl/flooring/flesh
+
+/turf/simulated/floor/flesh/attackby()
+	return
+
+/datum/decl/flooring/flesh
+	name = "flesh"
+	desc = "This slick flesh ripples and squishes under your touch"
+	icon = 'icons/turf/stomach_vr.dmi'
+	icon_base = "flesh_floor"
+
+/datum/decl/flooring/grass/outdoors
+	flags = NONE
+	build_type = null
+
+/datum/decl/flooring/grass/outdoors/forest
+	icon = 'icons/turf/outdoors.dmi'
+	icon_base = "grass-dark"
+
+/turf/simulated/floor/tiled/freezer/cold
+	temperature = T0C - 5
+
+/turf/simulated/floor/redgrid
+	name = "processing strata"
+	icon = 'icons/turf/flooring/circuit_vr.dmi'
+	icon_state = "rcircuit"
+	initial_flooring = /datum/decl/flooring/reinforced/circuit/red
+
+/datum/decl/flooring/reinforced/circuit/red
+	name = "processing strata"
+	icon = 'icons/turf/flooring/circuit_vr.dmi'
+	icon_base = "rcircuit"
+
+/turf/simulated/floor/redgrid/animated
+	name = "pulsing pattern"
+	icon = 'icons/turf/flooring/circuit_vr.dmi'
+	icon_state = "rcircuitanim"
+	initial_flooring = /datum/decl/flooring/reinforced/circuit/red/animated
+
+/datum/decl/flooring/reinforced/circuit/red/animated
+	name = "pulsing pattern"
+	icon = 'icons/turf/flooring/circuit_vr.dmi'
+	icon_base = "rcircuitanim"
+
+/turf/simulated/floor/redgrid/off
+	name = "dark pattern"
+	icon = 'icons/turf/flooring/circuit_vr.dmi'
+	icon_state = "rcircuitanim_broken"
+	initial_flooring = /datum/decl/flooring/reinforced/circuit/red/off
+
+/datum/decl/flooring/reinforced/circuit/red/off
+	name = "dark pattern"
+	icon = 'icons/turf/flooring/circuit_vr.dmi'
+	icon_base = "rcircuitanim_broken"
+
+/datum/decl/flooring/tiling/milspec
+	name = "milspec floor"
+	desc = "Scuffed from the passage of countless ground pounders."
+	icon = 'icons/turf/flooring/tiles_vr.dmi'
+	icon_base = "milspec"
+	has_damage_range = 2
+	damage_temperature = T0C+1400
+	flags = TURF_REMOVE_CROWBAR | TURF_CAN_BREAK | TURF_CAN_BURN
+	build_type = /obj/item/stack/tile/floor/milspec
+	plating_type = /datum/decl/flooring/eris_plating/under
+	can_paint = 1
+	can_engrave = TRUE
+
+/turf/simulated/floor/tiled/milspec
+	name = "milspec floor"
+	desc = "Scuffed from the passage of countless ground pounders."
+	icon = 'icons/turf/flooring/tiles_vr.dmi'
+	icon_state = "milspec"
+	initial_flooring = /datum/decl/flooring/tiling/milspec
+
+/obj/item/stack/tile/floor/milspec
+	name = "milspec floor tile"
+
+/datum/decl/flooring/tiling/milspec/sterile
+	name = "sterile milspec floor"
+	icon_base = "dark_sterile"
+	build_type = /obj/item/stack/tile/floor/milspec/sterile
+
+/turf/simulated/floor/tiled/milspec/sterile
+	name = "sterile milspec floor"
+	icon_state = "dark_sterile"
+	initial_flooring = /datum/decl/flooring/tiling/milspec/sterile
+
+/obj/item/stack/tile/floor/milspec/sterile
+	name = "sterile milspec floor tile"
+
+/datum/decl/flooring/tiling/milspec/raised
+	name = "raised milspec floor"
+	icon_base = "milspec_tcomms"
+	build_type = /obj/item/stack/tile/floor/milspec/raised
+
+/turf/simulated/floor/tiled/milspec/raised
+	name = "raised milspec floor"
+	icon_state = "milspec_tcomms"
+	initial_flooring = /datum/decl/flooring/tiling/milspec/raised
+
+/obj/item/stack/tile/floor/milspec/raised
+	name = "raised milspec floor tile"

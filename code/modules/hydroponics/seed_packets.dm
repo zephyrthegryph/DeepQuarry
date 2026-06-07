@@ -372,3 +372,8 @@ GLOBAL_LIST_BOILERPLATE(all_seed_packs, /obj/item/seeds)
 
 /obj/item/seeds/mustardseed
 	seed_type = PLANT_MUSTARD
+
+
+// === merged from seed_packets_ch.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/item/seeds/cinnamon
+	seed_type = PLANT_CINNAMON

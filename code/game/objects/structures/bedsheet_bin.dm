@@ -285,3 +285,21 @@ LINEN BINS
 
 
 	add_fingerprint(user)
+
+
+// === merged from bedsheet_bin_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/item/bedsheet/cosmos
+	icon = 'icons/obj/items.dmi'
+	icon_state = "sheetcosmos"
+
+/obj/item/bedsheet/cosmosdouble
+	icon = 'icons/obj/items.dmi'
+	icon_state = "doublesheetcosmos"
+
+/obj/item/bedsheet/pirate
+	icon = 'icons/obj/items.dmi'
+	icon_state = "sheetpirate"
+
+/obj/item/bedsheet/piratedouble
+	icon = 'icons/obj/items.dmi'
+	icon_state = "doublesheetpirate"

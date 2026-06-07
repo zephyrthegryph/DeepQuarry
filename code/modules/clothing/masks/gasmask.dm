@@ -192,3 +192,26 @@
 	desc = "Twoooo!"
 	icon_state = "owl"
 	body_parts_covered = HEAD|FACE|EYES
+
+
+// === merged from gasmask_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/* ChompRemoval: Oops that's a glogged implementation (intentional). Im going to properly implement obj/clothing/mask/gas/clear instead.
+// Our clear gas masks don't hide faces, but changing the var on mask/gas would require un-chaging it on all children. This is nicer.
+/obj/item/clothing/mask/gas/Initialize(mapload)
+	. = ..()
+	if(type == /obj/item/clothing/mask/gas)
+		flags_inv &= ~HIDEFACE
+*/// CHOMPRemove End
+
+// Since we changed the gas mask sprite, if we want the old one for some reason use this.
+/obj/item/clothing/mask/gas/wwii
+	icon = 'icons/inventory/face/item.dmi'
+	icon_override = 'icons/inventory/face/mob.dmi'
+	flags_inv = HIDEEARS|HIDEEYES|HIDEFACE
+
+/obj/item/clothing/mask/gas/imperial
+	name = "imperial soldier facemask"
+	desc = "A close-fitting tactical mask that can be connected to an air supply."
+	icon_state = "ge_visor"
+	body_parts_covered = FACE|EYES
+	flags_inv = HIDEEARS|HIDEEYES|HIDEFACE

@@ -926,3 +926,340 @@
 	reagent_state = LIQUID
 	nutriment_factor = 60
 	color = "#a839a2"
+
+
+// === merged from other_ch.dm during hard-fork de-suffix (verified no override-order change) ===
+//Misc stuff.
+
+//LIQUID EGG
+/datum/reagent/liquidspideregg
+	name = REAGENT_SPIDEREGG
+	id = REAGENT_ID_SPIDEREGG
+	description = "These are eggs, spiders crawl out of these.. probably not healthy inside of a person."
+	taste_description = "SO MANY LEGS"
+	reagent_state = LIQUID
+	color = "#FFFFFF"
+	overdose = REAGENTS_OVERDOSE * 100
+	metabolism = REM * 0.1
+	scannable = 1
+	var/amount_grown = 0
+	var/min_growth = 0
+	var/max_growth = 2
+	var/spiders_min = 6
+	var/spiders_max = 24
+	var/spider_type = /obj/effect/spider/spiderling
+	supply_conversion_value = REFINERYEXPORT_VALUE_NO
+	industrial_use = REFINERYEXPORT_REASON_BIOHAZARD
+
+/datum/reagent/liquidspideregg/affect_blood(mob/living/carbon/M, alien, removed)
+	if(prob(1))
+		M.custom_pain("You can feel movement within your body!",45)
+	amount_grown += rand(min_growth,max_growth)
+	if(amount_grown >= 100)
+		min_growth++
+		max_growth++
+		amount_grown = 0
+		var/num = rand(spiders_min, spiders_max)
+		var/obj/item/organ/external/O = null
+		if(istype(M.loc, /obj/item/organ/external))
+			O = M.loc
+
+		for(var/i=0, i<num, i++)
+			var/spiderling = new spider_type(M.loc, M)
+			if(O)
+				O.implants += spiderling
+
+//New reagent definitions/overrides. If some of these get added upstream and cause a conflict later they might need deleting.
+/datum/reagent/toxin/plantbgone/touch_mob(mob/living/L, amount) //Plantbgone override to damage plant mobs. Part of pitcher plants, touch_mob doesn't exist for plantbgone at the time of writing.
+	if(istype(L) && L.faction)
+		if(L.faction == "plants") //This would be better with a variable but I'm not adding that because upstream conflicts. If you send this upstream please do this.
+			L.adjustToxLoss(15 * amount)
+			L.visible_message(span_warning("[L] withers rapidly!"), span_danger("The chemical burns you!"))
+
+//////SAP IN UNREFINED FORM////
+
+/datum/reagent/toxin/bluesap //This is the first sap. Blue one.
+	name = REAGENT_BLUESAP
+	id = REAGENT_ID_BLUESAP
+	description = "Glowing blue liquid."
+	reagent_state = LIQUID
+	color = "#91f9ff" // rgb(145, 249, 255)
+	metabolism = 0.01
+	strength = 10//Don't drink it
+	mrate_static = TRUE
+	supply_conversion_value = REFINERYEXPORT_VALUE_COMMON
+	industrial_use = REFINERYEXPORT_REASON_RAW
+
+/datum/reagent/purplesap
+	name = REAGENT_ID_PURPLESAP
+	id = REAGENT_PURPLESAP
+	description = "Purple liquid. It is very sticky and smells of ammonia."
+	color = "#7a48a0"
+	taste_description = "Ammonia"
+	supply_conversion_value = REFINERYEXPORT_VALUE_COMMON
+	industrial_use = REFINERYEXPORT_REASON_RAW
+
+/datum/reagent/orangesap
+	name = REAGENT_ORANGESAP
+	id = REAGENT_ID_ORANGESAP
+	description = "Orange liquid. It wobbles around a bit like jelly."
+	color = "#e0962f"
+	taste_description = "Ammonia"
+	supply_conversion_value = REFINERYEXPORT_VALUE_COMMON
+	industrial_use = REFINERYEXPORT_REASON_RAW
+
+//YW stuff
+
+/datum/reagent/benzilate
+	name = REAGENT_BENZILATE
+	id = REAGENT_ID_BENZILATE
+	description = "Grey... goo? This smells like hot acid. Consuming this likely wouldn't be good for your health."
+	taste_description = "raw iron"
+	taste_mult = 0.4
+	metabolism = REM * 2.5
+	color = "#929292"
+	supply_conversion_value = REFINERYEXPORT_VALUE_COMMON
+	industrial_use = REFINERYEXPORT_REASON_RAW
+
+/datum/reagent/phenethylamine
+	name = REAGENT_PHENETHYLAMINE
+	id = REAGENT_ID_PHENETHYLAMINE
+	description = "Just looking at this makes you feel odd. Whether or not this would be good to consume is likely a gamble."
+	color = "#463667"
+	data = list("count"=1)
+	supply_conversion_value = REFINERYEXPORT_VALUE_COMMON
+	industrial_use = REFINERYEXPORT_REASON_RECDRUG
+/datum/reagent/phenethylamine/on_mob_life(mob/living/M as mob)
+	if(!M) M = holder.my_atom
+	if(data)
+		switch(data["count"])
+			if(1 to 30)
+				if(prob(9)) M.visible_emote("blushes")
+				if(prob(9)) to_chat(M, span_warning("You feel so needy.."))
+			if (30 to INFINITY)
+				if(prob(3)) M.visible_emote("blushes")
+				if(prob(5)) M.audible_emote("moans out lewdly!")
+				if(prob(9)) to_chat(M, span_warning("You can't help but want to touch yourself then and now!"))
+		data["count"]++
+	holder.remove_reagent(src.id, 0.2)
+	//..()
+	return
+
+/datum/reagent/benzilate/affect_blood(mob/living/carbon/M, alien, removed)
+	if(alien == IS_DIONA)
+		return
+	var/drug_strength = 12
+	if(alien == IS_SKRELL)
+		drug_strength = drug_strength * 0.6
+	M.make_dizzy(drug_strength)
+	M.Confuse(drug_strength * 14)
+
+/obj/item/reagent_containers/pill/benzilate
+	name = "Benzilate pill"
+	desc = "You probably shouldn't swallow this."
+	icon_state = "pill2"
+
+/obj/item/reagent_containers/pill/benzilate/Initialize(mapload)
+	. = ..()
+	reagents.add_reagent(REAGENT_ID_BENZILATE, 50)
+	color = reagents.get_color()
+
+
+/obj/item/reagent_containers/pill/phenethylamine
+	name = "Phenethylamine pill"
+	desc = "Smells like... lilacs?"
+	icon_state = "pill5"
+
+/obj/item/reagent_containers/pill/phenethylamine/Initialize(mapload)
+	. = ..()
+	reagents.add_reagent(REAGENT_ID_PHENETHYLAMINE, 50)
+	color = reagents.get_color()
+
+
+// PILLS THAT WE PROBABLY SHOULDN'T HAVE AAAAAAAAAA. The below is only so they can be included through mapping or "spawn " command. -Carl
+
+/obj/item/storage/pill_bottle/benzilate
+	name = "bottle of Benzilate pills"
+	desc = "This just hurts to look at with how many words of caution are scrawled on the lable. Better eat all of 'em!"
+
+/obj/item/storage/pill_bottle/benzilate/Initialize(mapload)
+	. = ..()
+	new /obj/item/reagent_containers/pill/benzilate( src )
+	new /obj/item/reagent_containers/pill/benzilate( src )
+	new /obj/item/reagent_containers/pill/benzilate( src )
+	new /obj/item/reagent_containers/pill/benzilate( src )
+	new /obj/item/reagent_containers/pill/benzilate( src )
+	new /obj/item/reagent_containers/pill/benzilate( src )
+	new /obj/item/reagent_containers/pill/benzilate( src )
+
+/obj/item/storage/pill_bottle/phenethylamine
+	name = "bottle of Phenethylamine pills"
+	desc = "Looks like someone drew a happy face on the label, replacing whatever was previously present."
+
+/obj/item/storage/pill_bottle/phenethylamine/Initialize(mapload)
+	. = ..()
+	new /obj/item/reagent_containers/pill/phenethylamine( src )
+	new /obj/item/reagent_containers/pill/phenethylamine( src )
+	new /obj/item/reagent_containers/pill/phenethylamine( src )
+	new /obj/item/reagent_containers/pill/phenethylamine( src )
+	new /obj/item/reagent_containers/pill/phenethylamine( src )
+	new /obj/item/reagent_containers/pill/phenethylamine( src )
+	new /obj/item/reagent_containers/pill/phenethylamine( src )
+
+
+// === merged from other_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/datum/reagent/advmutationtoxin
+	name = REAGENT_ADVMUTATIONTOXIN
+	id = REAGENT_ID_ADVMUTATIONTOXIN
+	description = "A corruptive toxin produced by slimes. Turns the subject of the chemical into a Promethean."
+	reagent_state = LIQUID
+	dermal_absorption = 0 //Injection only.
+	color = "#13BC5E"
+	scannable = SCANNABLE_ADVANCED
+	supply_conversion_value = REFINERYEXPORT_VALUE_MASSINDUSTRY
+	industrial_use = REFINERYEXPORT_REASON_MATSCI
+
+/datum/reagent/advmutationtoxin/affect_blood(mob/living/carbon/M, alien, removed)
+	if(!(M.allow_spontaneous_tf))
+		return
+	if(ishuman(M))
+		var/mob/living/carbon/human/H = M
+		if(H.species.name != "Promethean")
+			to_chat(M, span_danger("Your flesh rapidly mutates!"))
+
+			var/list/backup_implants = list()
+			for(var/obj/item/organ/I in H.organs)
+				for(var/obj/item/implant/backup/BI in I.contents)
+					backup_implants += BI
+			if(backup_implants.len)
+				for(var/obj/item/implant/backup/BI in backup_implants)
+					BI.forceMove(src)
+
+			H.set_species("Promethean")
+			H.shapeshifter_set_colour("#05FF9B") //They can still change their color.
+
+			if(backup_implants.len)
+				var/obj/item/organ/external/torso = H.get_organ(BP_TORSO)
+				for(var/obj/item/implant/backup/BI in backup_implants)
+					BI.forceMove(torso)
+					torso.implants += BI
+
+/datum/reagent/nif_repair_nanites
+	name = REAGENT_NIFREPAIRNANITES
+	id = REAGENT_ID_NIFREPAIRNANITES
+	description = "A thick grey slurry of NIF repair nanomachines."
+	taste_description = "metallic"
+	reagent_state = LIQUID
+	color = "#333333"
+	scannable = SCANNABLE_BENEFICIAL
+	affects_robots = TRUE
+	wiki_flag = WIKI_SPOILER
+
+	supply_conversion_value = REFINERYEXPORT_VALUE_RARE
+	industrial_use = REFINERYEXPORT_REASON_MATSCI
+
+/datum/reagent/nif_repair_nanites/affect_blood(mob/living/carbon/M, alien, removed)
+	if(ishuman(M))
+		var/mob/living/carbon/human/H = M
+		if(H.nif)
+			var/obj/item/nif/nif = H.nif //L o c a l
+			if(nif.stat == NIF_TEMPFAIL)
+				nif.stat = NIF_INSTALLING
+			nif.repair(removed)
+
+/datum/reagent/firefighting_foam
+	name = REAGENT_FIREFOAM
+	id = REAGENT_ID_FIREFOAM
+	description = "A historical fire suppressant. Originally believed to simply displace oxygen to starve fires, it actually interferes with the combustion reaction itself. Vastly superior to the cheap water-based extinguishers found on most NT vessels."
+	reagent_state = LIQUID
+	dermal_absorption = 0 //Custom touch handling. As funny as PFAS poisoning is.
+	color = "#A6FAFF"
+	scannable = SCANNABLE_ADVANCED
+	taste_description = "the inside of a fire extinguisher"
+	supply_conversion_value = REFINERYEXPORT_VALUE_UNWANTED
+	industrial_use = REFINERYEXPORT_REASON_INDUSTRY
+
+/datum/reagent/firefighting_foam/touch_turf(turf/T, reac_volume)
+	if(reac_volume >= 1)
+		var/obj/effect/effect/foam/firefighting/F = (locate(/obj/effect/effect/foam/firefighting) in T)
+		if(!F)
+			F = new(T)
+		else if(istype(F))
+			F.lifetime = initial(F.lifetime) //reduce object churn a little bit when using smoke by keeping existing foam alive a bit longer
+
+	var/datum/gas_mixture/environment = T.return_air()
+	var/min_temperature = T0C + 100 // 100C, the boiling point of water
+
+	var/hotspot = (locate(/obj/fire) in T)
+	if(hotspot && !isspace(T))
+		var/datum/gas_mixture/lowertemp = T.remove_air(xgm_total_moles(T.return_air())) // DQEdit — XGM T.air → LINDA helper
+		lowertemp.temperature = max(min(lowertemp.temperature-2000, lowertemp.temperature / 2), 0)
+		lowertemp.react()
+		T.assume_air(lowertemp)
+		qdel(hotspot)
+
+	if (environment && environment.temperature > min_temperature) // Abstracted as steam or something
+		var/removed_heat = between(0, volume * 19000, -environment.get_thermal_energy_change(min_temperature))
+		environment.add_thermal_energy(-removed_heat)
+		if(prob(5))
+			T.visible_message(span_warning("The foam sizzles as it lands on \the [T]!"))
+
+	T.apply_fire_protection() // CHOMPEdit - Apply fire protection to the turf
+
+/datum/reagent/firefighting_foam/touch_obj(obj/O, reac_volume)
+	O.water_act(reac_volume / 5)
+
+/datum/reagent/firefighting_foam/touch_mob(mob/living/M, reac_volume)
+	if(istype(M, /mob/living/simple_mob/slime)) //I'm sure foam is water-based!
+		var/mob/living/simple_mob/slime/S = M
+		S.adjustToxLoss(15 * reac_volume)
+		S.visible_message(span_warning("[S]'s flesh sizzles where the foam touches it!"), span_danger("Your flesh burns in the foam!"))
+	if(istype(M))
+		M.adjust_fire_stacks(-reac_volume)
+		M.extinguish_mob()
+
+/datum/reagent/liquid_protean
+	name = REAGENT_LIQUIDPROTEAN
+	id = REAGENT_ID_LIQUIDPROTEAN
+	description = "This seems to be a small portion of a Protean creature, still slightly wiggling."
+	taste_description = "wiggly peanutbutter"
+	reagent_state = LIQUID
+	color = "#1d1d1d"
+	scannable = SCANNABLE_BENEFICIAL
+	metabolism = REM * 0.5
+	affects_robots = TRUE
+	supply_conversion_value = REFINERYEXPORT_VALUE_UNWANTED
+	industrial_use = REFINERYEXPORT_REASON_PRECURSOR
+
+/datum/reagent/liquid_protean/affect_blood(mob/living/carbon/M, alien, removed)
+	if(alien != IS_DIONA)
+		var/chem_effective = 1
+		if(alien == IS_SLIME)
+			chem_effective = 0.5
+		M.adjustOxyLoss(-1 * removed * chem_effective)
+		M.heal_organ_damage(0.5 * removed, 0.5 * removed * chem_effective)
+		M.adjustToxLoss(-0.5 * removed * chem_effective)
+
+	if(ishuman(M))
+		var/mob/living/carbon/human/H = M
+		if(H.nif)
+			var/obj/item/nif/nif = H.nif //L o c a l
+			if(nif.stat == NIF_TEMPFAIL)
+				nif.stat = NIF_INSTALLING
+			nif.repair(removed*0.1)
+
+//Special toxins for solargrubs
+/datum/reagent/grubshock
+	name = REAGENT_SHOCKCHEM //in other words a painful shock
+	id = REAGENT_ID_SHOCKCHEM
+	description = "A liquid that quickly dissapates to deliver a painful shock."
+	reagent_state = LIQUID
+	color = "#E4EC2F"
+	metabolism = 2.50
+	scannable = SCANNABLE_ADVANCED
+	var/power = 9
+	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
+	industrial_use = REFINERYEXPORT_REASON_PRECURSOR
+
+/datum/reagent/grubshock/affect_blood(mob/living/carbon/M, alien, removed)
+	M.take_organ_damage(0, removed * power * 0.2)

@@ -87,3 +87,8 @@
 		icon_state = "ano[icon_num]1"
 	else
 		icon_state = "ano[icon_num]0"
+
+
+// === merged from artifact_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/machinery/artifact
+	icon = 'icons/obj/xenoarchaeology.dmi'

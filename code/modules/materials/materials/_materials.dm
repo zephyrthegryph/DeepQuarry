@@ -449,3 +449,15 @@ GLOBAL_LIST_INIT(name_to_material, populate_material_list())
 
 /datum/material/proc/get_wall_texture()
 	return
+
+
+// === merged from _materials_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/item/stack/material/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
+	if(M.handle_eat_minerals(src, user))
+		return ITEM_INTERACT_SUCCESS
+	..()
+
+/obj/item/stack/material/attack_generic(mob/living/user) //Allow adminbussed mobs to eat ore if they click it while NOT on help intent.
+	if(user.handle_eat_minerals(src))
+		return ITEM_INTERACT_SUCCESS
+	..()

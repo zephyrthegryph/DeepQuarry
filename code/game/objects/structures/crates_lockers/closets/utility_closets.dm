@@ -234,3 +234,13 @@
 	density = FALSE
 	wall_mounted = 1
 	store_mobs = 0
+
+
+// === merged from utility_closets_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/structure/closet/firecloset/Initialize(mapload)
+	starts_with += /obj/item/storage/toolbox/emergency
+	return ..()
+
+/obj/structure/closet/hydrant/Initialize(mapload)
+	starts_with += /obj/item/storage/toolbox/emergency
+	return ..()

@@ -129,3 +129,11 @@
 	default_material = MAT_PLASTIC
 
 	toolspeed = 0.9
+
+
+// === merged from fishing_rod_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/item/material/fishing_rod/modern/strong
+	desc = "A extremely refined rod for catching fish."
+	default_material = MAT_DURASTEEL
+
+	toolspeed = 0.5

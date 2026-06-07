@@ -314,3 +314,18 @@
 				W.set_up(my_target)
 
 		return
+
+
+// === merged from spray_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/item/reagent_containers/spray/windowsealant
+	name = "Krak-b-gone"
+	desc = "A spray bottle of silicate sealant for rapid window repair."
+	icon = 'icons/obj/items.dmi'
+	icon_state = "windowsealant"
+	item_state = "spraycan"
+	max_transfer_amount = null
+	volume = 80
+
+/obj/item/reagent_containers/spray/windowsealant/Initialize(mapload)
+	. = ..()
+	reagents.add_reagent(REAGENT_ID_SILICATE, 80)

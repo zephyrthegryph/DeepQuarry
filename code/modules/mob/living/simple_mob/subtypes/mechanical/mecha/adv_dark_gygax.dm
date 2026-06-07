@@ -347,3 +347,14 @@
 			holder.a_intent = I_HURT // Fire rockets if it's an obj/turf.
 		else
 			holder.a_intent = I_DISARM // Electricity might not work but it's safe up close.
+
+
+// === merged from adv_dark_gygax_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/datum/ai_holder/simple_mob/intentional/adv_dark_gygax
+	intelligence_level = AI_SMART // Also knows not to walk while confused if it risks death.
+
+/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced/recursive
+	name = "recursive dark gygax"
+	desc = "Whoever pilots this cursed mecha has been stuck in eternal loop of death and rebirth forever. Their maddened rampage cannot be stopped."
+	wreckage = /obj/item/ectoplasm
+	pilot_type = /mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced/recursive

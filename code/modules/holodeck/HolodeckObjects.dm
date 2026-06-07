@@ -533,3 +533,13 @@
 /mob/living/simple_mob/animal/space/carp/holodeck/proc/derez()
 	visible_message(span_infoplain(span_bold("\The [src]") + " fades away!"))
 	qdel(src)
+
+
+// === merged from HolodeckObjects_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/turf/simulated/floor/holofloor/flesh
+	name = "flesh"
+	desc = "This slick flesh ripples and squishes under your touch"
+	icon = 'icons/turf/stomach_vr.dmi'
+	icon_state = "flesh_floor"
+	base_icon_state = "flesh_floor"
+	initial_flooring = null

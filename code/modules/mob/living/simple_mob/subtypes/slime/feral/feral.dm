@@ -93,3 +93,8 @@
 
 	if(L.has_AI()) // Other AIs should react to hostile auras.
 		L.ai_holder.react_to_attack(src)
+
+
+// === merged from feral_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/mob/living/simple_mob/slime/feral/dark_blue
+	base_attack_cooldown = 3 SECONDS

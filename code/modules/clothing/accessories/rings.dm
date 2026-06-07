@@ -216,3 +216,19 @@
 
 /obj/item/clothing/accessory/ring/material/void_opal/Initialize(mapload)
 	. = ..(mapload, MAT_VOPAL)
+
+
+// === merged from rings_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/item/clothing/accessory/ring/ringworld1
+	name = "world gem ring"
+	desc = "A ring that has a tiny world inside its glassy gem. You can even see clouds moving."
+	icon = 'icons/inventory/hands/item_ch.dmi'
+	icon_state = "ringworld1"
+	drop_sound = 'sound/items/drop/ring.ogg'
+
+/obj/item/clothing/accessory/ring/ringworld2
+	name = "world ring"
+	desc = "A ring that has a tiny landscape all around its exterior. You can even see clouds moving."
+	icon = 'icons/inventory/hands/item_ch.dmi'
+	icon_state = "ringworld2"
+	drop_sound = 'sound/items/drop/ring.ogg'

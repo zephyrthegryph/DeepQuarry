@@ -46,3 +46,9 @@
 /obj/machinery/door/airlock/multi_tile/metal/mait
 	icon = 'icons/obj/doors/Door2x1_Maint.dmi'
 	//req_one_access = list(ACCESS_MAINT_TUNNELS) //VOREStaiton Edit - Maintenance is open access
+
+
+// === merged from multi_tile_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/machinery/door/airlock/multi_tile/glass/polarized
+	name = "Electrochromic Glass Airlock"
+	icon_tinted = 'icons/obj/doors/Door2x1tinted_vr.dmi'

@@ -49,3 +49,12 @@
 	name = "drone identification card"
 	desc = "A card issued by the EIO, indicating that the owner is a Drone Intelligence. Drones are mandated to carry this card within SolGov space, by law."
 	icon_state = "permit-drone"
+
+
+// === merged from permits_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/item/clothing/accessory/permit/drone
+	desc = "A card issued by the EIO, indicating that the owner is a Drone Intelligence. Drones are mandated to carry this card within SolGov space, by law." //YW EDIT: SolGov
+
+/obj/item/clothing/accessory/permit/gun/planetside
+	name = "explorer gun permit" //CHOMP keep explo
+	desc = "A card indicating that the owner is allowed to carry a firearm during active exploration missions." //CHOMP keep explo

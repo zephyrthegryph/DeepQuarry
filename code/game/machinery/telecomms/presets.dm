@@ -222,3 +222,26 @@
 	network = "tcommsat"
 	produces_heat = 0
 	autolinkers = list("broadcasterCent")
+
+
+// === merged from presets_ch.dm during hard-fork de-suffix (verified no override-order change) ===
+// ### CHOMP Preset machines  ###
+
+//Relay
+
+/obj/machinery/telecomms/relay/preset/casino
+	id = "Casino Relay"
+	autolinkers = list("casino_relay")
+	produces_heat = 0
+
+
+// === merged from presets_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/machinery/telecomms/relay/preset/houseboat
+	id = "Nearby Ship Relay"
+	hide = 1
+	produces_heat = 0
+	autolinkers = list("hb_relay")
+
+/obj/machinery/telecomms/relay/onTransitZ(oldz, newz)
+	. = ..()
+	listening_level = newz

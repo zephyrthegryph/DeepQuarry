@@ -128,3 +128,9 @@
 	else
 		starts_with += /obj/item/storage/backpack/satchel/eng
 	return ..()
+
+
+// === merged from cargo_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/structure/closet/secure_closet/miner/Initialize(mapload)
+	starts_with += /obj/item/gps/mining
+	return ..()

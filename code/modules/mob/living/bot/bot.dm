@@ -615,3 +615,11 @@
 	can_be_drop_pred = FALSE
 
 	return ..()
+
+
+// === merged from bot_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/mob/living/bot
+	no_vore = TRUE
+	devourable = FALSE
+	feeding = FALSE
+	can_be_drop_pred = FALSE

@@ -245,3 +245,18 @@
 	desc = "It's a fashionable jumpskirt worn by those few with the dedication to achieve the position of \"" + JOB_HEAD_OF_SECURITY + "\". It has additional armor to protect the wearer."
 	name = "head of security's jumpskirt"
 	icon_state = "hosf"
+
+
+// === merged from shorts_ch.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/item/clothing/under/shorts/cshorts
+	name = "cargo shorts"
+	desc = "When you just don't have enough pockets."
+	icon = 'icons/inventory/uniform/item_ch.dmi'
+	icon_override = 'icons/inventory/uniform/mob_ch.dmi'
+	icon_state = "cshorts_olive"
+
+/obj/item/clothing/under/shorts/cshorts/olive
+	icon_state = "cshorts_olive"
+
+/obj/item/clothing/under/shorts/cshorts/khaki
+	icon_state = "cshorts_khaki"

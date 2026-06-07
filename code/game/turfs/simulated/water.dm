@@ -294,3 +294,11 @@ GLOBAL_LIST_EMPTY(shoreline_icon_cache)
 	water_state = "water"
 	under_state = "glamour"
 	reagent_type = REAGENT_ID_WATER
+
+
+// === merged from water_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/turf/simulated/floor/water/indoors //because it's nice to be able to use these indoors without having a blizzard ignore walls and areas.
+	outdoors = OUTDOORS_NO
+
+/turf/simulated/floor/water/deep/indoors
+	outdoors = OUTDOORS_NO

@@ -136,3 +136,8 @@
 		icon_state = "broke"
 	else
 		..()
+
+
+// === merged from shield_capacitor_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/machinery/shield_capacitor
+	icon = 'icons/obj/machines/shielding.dmi'

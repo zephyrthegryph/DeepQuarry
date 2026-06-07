@@ -148,3 +148,11 @@
 
 /obj/item/material/shard/phoron/Initialize(mapload)
 	. = ..(mapload, MAT_PGLASS)
+
+
+// === merged from shards_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/item/material/shard/titaniumglass/Initialize(mapload)
+	. = ..(mapload, MAT_TITANIUMGLASS)
+
+/obj/item/material/shard/plastitaniumglass/Initialize(mapload)
+	. = ..(mapload, MAT_PLASTITANIUMGLASS)

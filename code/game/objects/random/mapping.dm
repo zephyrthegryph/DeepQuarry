@@ -2011,3 +2011,307 @@
 				prob(67);list(/obj/item/assembly/mousetrap/armed),
 				prob(33);list(/obj/item/beartrap/start_active),
 				)
+
+
+// === merged from mapping_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/random/empty_or_lootable_crate
+	name = "random crate"
+	desc = "Spawns a random crate which may or may not have contents. Sometimes spawns nothing."
+	icon = 'icons/obj/storage.dmi'
+	icon_state = "moneybag"
+	spawn_nothing_percentage = 20
+
+/obj/random/empty_or_lootable_crate/item_to_spawn()
+	return pick(/obj/random/crate,
+			/obj/random/multiple/corp_crate)
+
+/obj/random/forgotten_tram
+	name = "random forgotten tram item"
+	desc = "Spawns a random item that someone might accidentally leave on a tram. Sometimes spawns nothing."
+	spawn_nothing_percentage = 30
+
+/obj/random/forgotten_tram/item_to_spawn()
+	return pick(
+			prob(2);/obj/item/flashlight,
+			prob(2);/obj/item/flashlight/color,
+			prob(2);/obj/item/flashlight/color/green,
+			prob(2);/obj/item/flashlight/color/purple,
+			prob(2);/obj/item/flashlight/color/red,
+			prob(2);/obj/item/flashlight/color/orange,
+			prob(2);/obj/item/flashlight/color/yellow,
+			prob(2);/obj/item/flashlight/glowstick,
+			prob(2);/obj/item/flashlight/glowstick/blue,
+			prob(1);/obj/item/flashlight/glowstick/orange,
+			prob(1);/obj/item/flashlight/glowstick/red,
+			prob(1);/obj/item/flashlight/glowstick/yellow,
+			prob(1);/obj/item/flashlight/pen,
+			prob(2);/obj/item/flashlight/maglight,
+			prob(5);/obj/random/cigarettes,
+			prob(5);/obj/random/soap,
+			prob(5);/obj/random/drinksoft,
+			prob(5);/obj/random/snack,
+			prob(5);/obj/random/plushie,
+			prob(2);/obj/item/storage/secure/briefcase,
+			prob(4);/obj/item/storage/briefcase,
+			prob(5);/obj/item/storage/backpack,
+			prob(5);/obj/item/storage/backpack/medic,
+			prob(5);/obj/item/storage/backpack/industrial,
+			prob(5);/obj/item/storage/backpack/toxins,
+			prob(3);/obj/item/storage/backpack/dufflebag,
+			prob(3);/obj/item/storage/backpack/dufflebag/med,
+			prob(3);/obj/item/storage/backpack/dufflebag/eng,
+			prob(1);/obj/item/storage/backpack/dufflebag/syndie,
+			prob(1);/obj/item/storage/backpack/dufflebag/syndie/med,
+			prob(1);/obj/item/storage/backpack/dufflebag/syndie/ammo,
+			prob(4);/obj/item/storage/backpack/satchel,
+			prob(5);/obj/item/storage/backpack/satchel/norm,
+			prob(5);/obj/item/storage/backpack/satchel/med,
+			prob(5);/obj/item/storage/backpack/satchel/eng,
+			prob(5);/obj/item/storage/backpack/satchel/tox,
+			prob(5);/obj/item/storage/backpack/messenger/med,
+			prob(5);/obj/item/storage/backpack/messenger/engi,
+			prob(5);/obj/item/storage/backpack/messenger/tox,
+			prob(3);/obj/item/storage/wallet,
+			prob(1);/obj/item/clothing/gloves/black,
+			prob(1);/obj/item/clothing/gloves/blue,
+			prob(1);/obj/item/clothing/gloves/brown,
+			prob(1);/obj/item/clothing/gloves/duty,
+			prob(1);/obj/item/clothing/gloves/fingerless,
+			prob(1);/obj/item/clothing/gloves/green,
+			prob(1);/obj/item/clothing/gloves/grey,
+			prob(1);/obj/item/clothing/gloves/orange,
+			prob(1);/obj/item/clothing/gloves/yellow,
+			prob(3);/obj/item/clothing/gloves/botanic_leather,
+			prob(2);/obj/item/clothing/gloves/sterile/latex,
+			prob(5);/obj/item/clothing/gloves/white,
+			prob(5);/obj/item/clothing/gloves/rainbow,
+			prob(2);/obj/item/clothing/gloves/fyellow,
+			prob(1);/obj/item/clothing/glasses/rimless,
+			prob(1);/obj/item/clothing/glasses/thin,
+			prob(1);/obj/item/clothing/glasses/regular,
+			prob(1);/obj/item/clothing/glasses/regular/rimless,
+			prob(1);/obj/item/clothing/glasses/regular/thin,
+			prob(1);/obj/item/clothing/glasses/fakesunglasses,
+			prob(1);/obj/item/clothing/glasses/fakesunglasses/aviator,
+			prob(1);/obj/item/clothing/glasses/omnihud,
+			prob(4);/obj/item/clothing/head/hardhat,
+			prob(3);/obj/item/clothing/head/hardhat/red,
+			prob(2);/obj/item/clothing/head/hardhat/dblue,
+			prob(2);/obj/item/clothing/head/hardhat/orange,
+			prob(4);/obj/item/clothing/head/soft/,
+			prob(4);/obj/item/clothing/head/soft/black,
+			prob(4);/obj/item/clothing/head/soft/blue,
+			prob(4);/obj/item/clothing/head/soft/green,
+			prob(4);/obj/item/clothing/head/soft/grey,
+			prob(4);/obj/item/clothing/head/soft/med,
+			prob(4);/obj/item/clothing/head/soft/nanotrasen,
+			prob(4);/obj/item/clothing/head/soft/red,
+			prob(4);/obj/item/clothing/head/soft/orange,
+			prob(4);/obj/item/clothing/head/soft/sec,
+			prob(4);/obj/item/clothing/head/soft/sec/corp,
+			prob(3);/obj/item/clothing/head/soft/yellow,
+			prob(1);/obj/item/clothing/head/ushanka,
+			prob(3);/obj/item/clothing/head/beret,
+			prob(3);/obj/item/clothing/head/beret/engineering,
+			prob(1);/obj/item/clothing/head/beret/purple,
+			prob(3);/obj/item/clothing/head/beret/sec,
+			prob(3);/obj/item/clothing/head/beret/sec/corporate/officer,
+			prob(3);/obj/item/clothing/head/beret/sec/navy/officer,
+			prob(3);/obj/item/clothing/head/soft/yellow,
+			prob(2);/obj/item/clothing/head/orangebandana,
+			prob(3);/obj/item/clothing/suit/storage/toggle/bomber,
+			prob(3);/obj/item/clothing/suit/storage/toggle/hoodie/black,
+			prob(3);/obj/item/clothing/suit/storage/toggle/hoodie/blue,
+			prob(3);/obj/item/clothing/suit/storage/toggle/hoodie/red,
+			prob(3);/obj/item/clothing/suit/storage/toggle/hoodie/yellow,
+			prob(3);/obj/item/clothing/suit/storage/toggle/brown_jacket,
+			prob(3);/obj/item/clothing/suit/storage/toggle/leather_jacket,
+			prob(4);/obj/item/clothing/suit/storage/toggle/labcoat,
+			prob(4);/obj/item/clothing/suit/storage/toggle/labcoat/science,
+			prob(4);/obj/item/clothing/suit/storage/miljacket,
+			prob(4);/obj/item/clothing/suit/storage/miljacket/alt,
+			prob(4);/obj/item/clothing/suit/storage/miljacket/black,
+			prob(4);/obj/item/clothing/suit/storage/miljacket/green,
+			prob(4);/obj/item/clothing/suit/storage/miljacket/grey,
+			prob(4);/obj/item/clothing/suit/storage/miljacket/navy,
+			prob(4);/obj/item/clothing/suit/storage/miljacket/tan,
+			prob(4);/obj/item/clothing/suit/storage/miljacket/white,
+			prob(4);/obj/item/clothing/suit/storage/trench,
+			prob(3);/obj/item/clothing/suit/varsity,
+			prob(3);/obj/item/clothing/suit/varsity/blue,
+			prob(3);/obj/item/clothing/suit/varsity/brown,
+			prob(3);/obj/item/clothing/suit/varsity/green,
+			prob(3);/obj/item/clothing/suit/varsity/purple,
+			prob(3);/obj/item/clothing/suit/varsity/red,
+			prob(3);/obj/item/clothing/accessory/poncho,
+			prob(3);/obj/item/clothing/accessory/poncho/blue,
+			prob(3);/obj/item/clothing/accessory/poncho/green,
+			prob(3);/obj/item/clothing/accessory/poncho/purple,
+			prob(3);/obj/item/clothing/accessory/poncho/red,
+			prob(3);/obj/item/clothing/accessory/poncho/roles/cargo,
+			prob(3);/obj/item/clothing/accessory/poncho/roles/engineering,
+			prob(3);/obj/item/clothing/accessory/poncho/roles/medical,
+			prob(3);/obj/item/clothing/accessory/poncho/roles/science,
+			prob(3);/obj/item/clothing/accessory/poncho/roles/security,
+			prob(3);/obj/item/clothing/accessory/poncho/roles/cloak/atmos,
+			prob(3);/obj/item/clothing/accessory/poncho/roles/cloak/cargo,
+			prob(3);/obj/item/clothing/accessory/poncho/roles/cloak/engineer,
+			prob(3);/obj/item/clothing/accessory/poncho/roles/cloak/medical,
+			prob(3);/obj/item/clothing/accessory/poncho/roles/cloak/mining,
+			prob(3);/obj/item/clothing/accessory/poncho/roles/cloak/research,
+			prob(3);/obj/item/clothing/accessory/poncho/roles/cloak/security,
+			prob(2);/obj/item/clothing/accessory/stethoscope,
+			prob(2);/obj/item/camera,
+			prob(3);/obj/item/pda,
+			prob(3);/obj/item/radio/headset,
+			prob(2);/obj/item/toy/tennis,
+			prob(2);/obj/item/toy/tennis/red,
+			prob(2);/obj/item/toy/tennis/yellow,
+			prob(2);/obj/item/toy/tennis/green,
+			prob(2);/obj/item/toy/tennis/cyan,
+			prob(2);/obj/item/toy/tennis/blue,
+			prob(2);/obj/item/toy/tennis/purple,
+			prob(2);/obj/item/clothing/ears/earmuffs,
+			prob(2);/obj/item/clothing/ears/earmuffs/headphones,
+			prob(2);/obj/item/toy/baseball
+			)
+
+
+// === merged from mapping_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
+//Buncha mapping helpers to make some map work easier
+
+/obj/effect/map_helper
+	icon = 'icons/misc/map_helpers.dmi'
+
+/obj/effect/map_helper/Initialize(mapload)
+	. = ..()
+	return INITIALIZE_HINT_LATELOAD
+
+/obj/effect/map_helper/LateInitialize()
+	qdel(src)
+
+/obj/effect/map_helper/base_turf
+	name = "z-wide baseturf editor"
+	desc = "I set the provided 'baseturf' to the whole z-level I'm in!"
+	var/baseturf
+
+/obj/effect/map_helper/base_turf/LateInitialize()
+	if(baseturf)
+		using_map.base_turf_by_z["[z]"] = baseturf
+	qdel(src)
+
+/obj/effect/map_helper/base_turf/area
+	name = "area-wide baseturf editor"
+	desc = "I set the provided 'baseturf' var to the whole /area I'm in!"
+
+/obj/effect/map_helper/base_turf/area/LateInitialize()
+	var/area/our_area = get_area(src)
+	if(our_area)
+		our_area.base_turf = baseturf
+	qdel(src)
+
+/obj/effect/map_helper/no_tele
+	name = "z-wide teleport block"
+	desc = "I disable the use of all hand tele's/translocators/bluespace harpoons/telescience in my z-level!"
+
+/obj/effect/map_helper/no_tele/LateInitialize()
+	/* Wait this doesn't work. Why did I write this.
+	Until I can figure out a way to get all areas in a z-level I'm just gonna let block_tele handle it instead.
+
+	for(var/area/A in world)
+		if(A.z) //find some way to filter by z-level here, which is stupid since areas can exist in multiple z-levels at once
+			A.flags += BLUE_SHIELDED
+	*/
+	for(var/turf/T in Z_TURFS(z))
+		T.block_tele = 1
+	qdel(src)
+
+/obj/effect/map_helper/no_tele/area
+	name = "area-wide teleport block"
+	desc = "I disable the use of all hand tele's/translocators/bluespace harpoons/telescience in my area!"
+
+/obj/effect/map_helper/no_tele/area/LateInitialize()
+	var/area/A = get_area(src)
+	if(A)
+		A.flags |= BLUE_SHIELDED
+		for(var/turf/T in A.contents)
+			T.block_tele = 1
+	qdel(src)
+
+/obj/effect/map_helper/make_indoors
+	name = "z-wide indoors maker"
+	desc = "I forcibly call make_indoors on every turf on this z-level. Useful for admin late loading maps to fix lighting!"
+
+/obj/effect/map_helper/make_indoors/LateInitialize()
+	for(var/turf/simulated/T in Z_TURFS(z))
+		T.make_indoors()
+	qdel(src)
+
+/obj/effect/map_helper/make_indoors/area
+	name = "Area indoors maker"
+	desc = "I forcibly call make_indoors on every turf in this area."
+
+/obj/effect/map_helper/make_indoors/area/LateInitialize()
+	var/area/A = get_area(src)
+	if(A)
+		for(var/turf/simulated/T in A.contents)
+			T.make_indoors()
+	qdel(src)
+
+/obj/effect/map_helper/make_outdoors
+	name = "z-wide outdoors maker"
+	desc = "I forcibly call make_outdoors on every turf on this z-level."
+
+/obj/effect/map_helper/make_outdoors/LateInitialize()
+	for(var/turf/simulated/T in Z_TURFS(z))
+		T.make_outdoors()
+	qdel(src)
+
+/obj/effect/map_helper/make_outdoors/area
+	name = "Area outdoors maker"
+	desc = "I forcibly call make_outdoors on every turf in this area."
+
+/obj/effect/map_helper/make_outdoors/area/LateInitialize()
+	var/area/A = get_area(src)
+	if(A)
+		for(var/turf/simulated/T in A.contents)
+			T.make_outdoors()
+	qdel(src)
+
+/*
+Make this if you can figure out a way to do it for every area in that z level exclusively
+/obj/effect/map_helper/no_phaseshift
+	name = "area-wide teleport block"
+	desc = "I disable the use of all hand tele's/translocators/bluespace harpoons/telescience in my area!"
+
+/obj/effect/map_helper/no_phaseshift/LateInitialize()
+	var/area/A = get_area(src)
+	if(A)
+		A.flags += BLUE_SHIELDED
+		for(var/turf/T in A.contents)
+			T.block_tele = 1
+	qdel(src)
+*/
+
+/obj/effect/map_helper/no_phaseshift/area
+	name = "area-wide phaseshift blocker"
+	desc = "I disable the use of both shadekin and redspace phasing!"
+
+/obj/effect/map_helper/no_phaseshift/area/LateInitialize()
+	var/area/A = get_area(src)
+	if(A)
+		A.flags |= PHASE_SHIELDED
+	qdel(src)
+
+//For active edges in Sif POIs
+/obj/random/turf/lava/sif
+	name = "random Lava spawn sif"
+	desc = "This is a random lava spawn. Programmed to spawn lava with sif temps"
+
+	override_outdoors = TRUE
+	turf_outdoors = OUTDOORS_NO
+
+/obj/random/turf/lava/sif/item_to_spawn()
+	return pick(prob(5);/turf/simulated/floor/lava/external,
+				prob(3);/turf/simulated/floor/outdoors/rocks/caves,
+				prob(1);/turf/simulated/mineral/ignore_mapgen/cave)

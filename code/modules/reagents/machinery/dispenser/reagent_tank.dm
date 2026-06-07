@@ -523,3 +523,17 @@
 	. = ..()
 	reagents.add_reagent(REAGENT_ID_BLOOD, 1000, list("donor"=null,"viruses"=null,"blood_DNA"=null,"blood_type"="O-","resistances"=null,"trace_chem"=null,"changeling"=FALSE))
 	AddElement(/datum/element/climbable)
+
+
+// === merged from reagent_tank_ch.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/structure/reagent_dispensers/space_cleaner
+	name = "Space Cleaner Dispenser"
+	desc = "A dispenser of space cleaner, every janitor's dream!"
+	icon = 'icons/obj/objects.dmi'
+	icon_state = "virusfoodtank"
+	amount_per_transfer_from_this = 60
+	anchored = 1
+
+/obj/structure/reagent_dispensers/space_cleaner/Initialize(mapload)
+	. = ..()
+	reagents.add_reagent(REAGENT_ID_CLEANER, 1000)

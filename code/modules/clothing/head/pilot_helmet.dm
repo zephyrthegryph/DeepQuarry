@@ -201,3 +201,54 @@
 		src.icon_state = initial(icon_state)
 		to_chat(user, "You lower the visor on the pilot helmet.")
 	update_clothing_icon() //so our mob-overlays update
+
+
+// === merged from pilot_helmet_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+//Pilot helmets
+/obj/item/clothing/head/pilot_vr
+	name = "standard pilot helmet"
+	desc = "Standard pilot gear. Protects the head from impacts. This one has a retractable visor"
+	icon_state = "pilot1"
+	armor = list(melee = 20, bullet = 10, laser = 10, energy = 5, bomb = 10, bio = 0, rad = 0)
+	flags_inv = HIDEEARS
+	min_cold_protection_temperature = HELMET_MIN_COLD_PROTECTION_TEMPERATURE
+	max_heat_protection_temperature = HELMET_MAX_HEAT_PROTECTION_TEMPERATURE
+	w_class = ITEMSIZE_NORMAL
+	actions_types = list(/datum/action/item_action/toggle_visor)
+	special_handling = TRUE
+	resistance_flags = FIRE_PROOF
+
+/obj/item/clothing/head/pilot_vr/attack_self(mob/user)
+	. = ..(user)
+	if(.)
+		return TRUE
+	if(src.icon_state == initial(icon_state))
+		src.icon_state = "[icon_state]up"
+		to_chat(user, "You raise the visor on the pilot helmet.")
+	else
+		src.icon_state = initial(icon_state)
+		to_chat(user, "You lower the visor on the pilot helmet.")
+	update_clothing_icon() //so our mob-overlays update
+
+/obj/item/clothing/head/pilot_vr/alt
+	name = "colored pilot helmet"
+	desc = "A colored version of the standard pilot helmet. Protects the head from impacts. This one has a retractable visor"
+	icon_state = "pilot2"
+	actions_types = list(/datum/action/item_action/toggle_visor)
+
+//////////Talon Pilot Headgear//////////
+
+/obj/item/clothing/head/pilot_vr/talon
+	name = "Talon pilot helmet"
+	desc = "An ITV Talon version of the standard pilot helmet. Protects the head from impacts. This one has a retractable visor"
+	icon_state = "pilot3"
+	actions_types = list(/datum/action/item_action/toggle_visor)
+
+//////////Major Bill's Pilot Headgear//////////
+
+/obj/item/clothing/head/pilot_vr/mbill
+	name = "\improper Major Bill's pilot helmet"
+	desc = "An Major Bill's Transportation version of the standard pilot helmet. Protects the head from impacts. This one has a retractable visor"
+	icon_state = "pilot3"
+	catalogue_data = list(/datum/category_item/catalogue/information/organization/major_bills)
+	actions_types = list(/datum/action/item_action/toggle_visor)

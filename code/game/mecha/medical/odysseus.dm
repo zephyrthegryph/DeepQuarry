@@ -119,3 +119,8 @@
 	health = 25
 	maxhealth = 50	//Just slightly worse.
 	cell.charge = rand(0, (cell.charge/2))
+
+
+// === merged from odysseus_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/mecha/medical/odysseus/
+	minimum_penetration = 0

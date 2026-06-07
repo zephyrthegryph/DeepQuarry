@@ -63,3 +63,21 @@
 				user.balloon_alert_visible("\the [user] applies some nanite paste on [user != M ? "[M]'s [S.name]" : "[S]"] with [src].",\
 				"you apply some nanite paste on [user == M ? "your" : "[M]'s"] [S.name].")
 				return ITEM_INTERACT_SUCCESS
+
+
+// === merged from nanopaste_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/item/stack/nanopaste
+	var/restoration_external = 5
+	var/restoration_internal = 20
+	var/repair_external = FALSE
+	var/mech_repair = 10
+
+/obj/item/stack/nanopaste/advanced
+	name = "advanced nanopaste"
+	singular_name = "advanced nanite swarm"
+	desc = "A tube of paste containing swarms of repair nanites. Very effective in repairing robotic machinery. These ones are capable of restoring condition even of most thrashed robotic parts"
+	icon = 'icons/obj/stacks_vr.dmi'
+	icon_state = "adv_nanopaste"
+	restoration_external = 10
+	repair_external = TRUE
+	mech_repair = 20

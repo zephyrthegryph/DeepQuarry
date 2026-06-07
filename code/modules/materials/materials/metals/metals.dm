@@ -230,3 +230,12 @@
 	sheet_plural_name = "ingots"
 	supply_conversion_value = 1
 	density = 10
+
+
+// === merged from metals_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/datum/material/durasteel/generate_recipes()
+	. = ..()
+	recipes += list(
+		new /datum/stack_recipe("durasteel fishing rod", /obj/item/material/fishing_rod/modern/strong, 2),
+		new /datum/stack_recipe("whetstone", /obj/item/whetstone, 2, time = 30),
+	)

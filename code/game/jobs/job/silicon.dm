@@ -86,3 +86,16 @@
 	H.equip_to_slot_or_del(new /obj/item/clothing/suit/cardborg(H), slot_wear_suit)
 	H.equip_to_slot_or_del(new /obj/item/clothing/head/cardborg(H), slot_head)
 	return 1
+
+
+// === merged from silicon_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
+/datum/job/ai
+	camp_protection = TRUE
+
+/datum/job/ai/is_species_banned(species_name, brain_type)
+	// Any species can join as AI, including shadekin.
+	return FALSE
+
+/datum/job/cyborg/is_species_banned(species_name, brain_type)
+	// Any species can join as cyborgs, including shadekin.
+	return FALSE

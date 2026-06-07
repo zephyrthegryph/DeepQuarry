@@ -261,3 +261,172 @@
 	desc = "These shoes feature long lace straps and flattened off toes. Great for the most elegant of dances!"
 	icon_state = "ballet"
 	item_state = "ballet"
+
+
+// === merged from miscellaneous_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/item/clothing/shoes/griffin
+	name = "griffon boots"
+	desc = "A pair of costume boots fashioned after bird talons."
+	icon_state = "griffinboots"
+	item_state = "griffinboots"
+
+/obj/item/clothing/shoes/bhop
+	name = "jump boots"
+	desc = "A specialized pair of combat boots with a built-in propulsion system for rapid foward movement."
+	icon_state = "jetboots"
+	item_state = "jetboots"
+	// resistance_flags = FIRE_PROOF
+	actions_types = list(/datum/action/item_action/activate_jump_boots)
+	permeability_coefficient = 0.05
+	var/jumpdistance = 5 //-1 from to see the actual distance, e.g 4 goes over 3 tiles
+	var/jumpspeed = 3
+	var/recharging_rate = 60 //default 6 seconds between each dash
+	var/recharging_time = 0 //time until next dash
+	// var/jumping = FALSE //are we mid-jump? We have no throw_at callback, so we have to check user.throwing.
+	resistance_flags = FIRE_PROOF
+
+/obj/item/clothing/shoes/bhop/ui_action_click(mob/unused_user, actiontype)
+	var/mob/living/user = loc
+	if(!isliving(user))
+		return
+
+	if(user.throwing)
+		return // User is already being thrown
+
+	if(recharging_time > world.time)
+		to_chat(user, span_warning("The boot's internal propulsion needs to recharge still!"))
+		return
+
+	var/atom/target = get_edge_target_turf(user, user.dir) //gets the user's direction
+
+	playsound(src, 'sound/effects/stealthoff.ogg', 50, 1, 1)
+	user.visible_message(span_warning("[user] dashes forward into the air!"))
+	user.throw_at(target, jumpdistance, jumpspeed)
+	recharging_time = world.time + recharging_rate
+
+/obj/item/clothing/shoes/magboots/adv
+	name = "advanced magboots"
+	desc = "Advanced magnetic boots for a trained user. They have a lower magnetic force, allowing the user to move more quickly."
+
+	icon_state = "advmag0"
+	item_flags = PHORONGUARD
+	item_state_slots = list(slot_r_hand_str = "magboots", slot_l_hand_str = "magboots")
+	icon_base = "advmag"
+
+/obj/item/clothing/shoes/magboots/adv/set_slowdown()
+	if(magpulse)
+		slowdown = shoes ? max(SHOES_SLOWDOWN, shoes.slowdown) : SHOES_SLOWDOWN	//So you can't put on magboots to make you walk faster.
+	else if(shoes)
+		slowdown = shoes.slowdown
+	else
+		slowdown = SHOES_SLOWDOWN
+
+// Armor Versions Here
+/obj/item/clothing/shoes/knight
+	name = "knight boots"
+	desc = "A pair of olde knight boots."
+	icon_state = "knight_boots1"
+	item_state = "knight_boots1"
+	armor = list(melee = 80, bullet = 50, laser = 10, energy = 0, bomb = 0, bio = 0, rad = 0)
+
+/obj/item/clothing/shoes/knight/black
+	name = "knight boots"
+	desc = "A pair of olde knight boots."
+	icon_state = "knight_boots2"
+	item_state = "knight_boots2"
+
+// Costume Versions Here
+/obj/item/clothing/shoes/knight_costume
+	name = "knight boots"
+	desc = "A pair of olde knight boots."
+	icon_state = "knight_boots1"
+	item_state = "knight_boots1"
+
+/obj/item/clothing/shoes/knight_costume/black
+	name = "knight boots"
+	desc = "A pair of olde knight boots."
+	icon_state = "knight_boots2"
+	item_state = "knight_boots2"
+
+//Antediluvian legwraps
+/obj/item/clothing/shoes/antediluvian
+	name = "antediluvian legwraps"
+	desc = "A pair of wraps with gold inlay that cut off around the ankle."
+	icon_state = "antediluvian"
+	item_state = "antediluvian"
+
+//Alternative flats
+/obj/item/clothing/shoes/flats/white/color/alt
+	icon_state = "flatsalt"
+	item_state = "flatsalt"
+
+/obj/item/clothing/shoes/sandals_elegant
+	name = "elegant sandals"
+	desc = "A pair of sandals with thin straps. It emphasizes the ankles!"
+	icon_state = "sandals_elegant"
+	item_state = "sandals_elegant"
+	addblends = "sandals_elegant_a"
+
+
+// === merged from miscellaneous_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/item/clothing/shoes/mech_shoes
+	name = "mech shoes"
+	desc = "Thud thud."
+	icon = 'icons/effects/effects.dmi' //This is to make the unit test happy. These are invisible which are... Less than ideal. This should probably be moved to a trait or sound selector, but I digress. Outside scope of this PR.
+	icon_state = "nothing" // Horribly illegal and shouldn't be a thing, but whatever.
+	armor = list(melee = 30, bullet = 10, laser = 10, energy = 15, bomb = 20, bio = 0, rad = 0) // Same as loadout jackboots.
+	siemens_coefficient = 0.7 // Same as loadout jackboots.
+	can_hold_knife = 1
+	force = 2
+	species_restricted = null
+	var/list/squeak_sound = list("mechstep"=1)	//Squeak sound list. Necessary so our subtypes can have different sounds loaded into their component
+
+/obj/item/clothing/shoes/mech_shoes/Initialize(mapload)
+	.=..()
+	LoadComponent(/datum/component/squeak, squeak_sound, 15*step_volume_mod)
+
+/obj/item/clothing/shoes/mech_shoes/light
+	name = "light mech shoes"
+	desc = "Thud thud, but quieter."
+	squeak_sound = list("powerloaderstep"=1)
+
+/obj/item/clothing/shoes/mech_shoes/heavy
+	name = "heavy mech shoes"
+	desc = "Thud thud, but heavy."
+	squeak_sound = list('sound/mob/footstep_large.ogg'=1,'sound/mob/footstep_large2.ogg'=1)
+	step_volume_mod = 4
+
+/obj/item/clothing/shoes/mech_shoes/mister_x
+	name = "concealed extra large jackboots"
+	desc = "Lets hope there's no evil in this residence."
+	squeak_sound = list('sound/mob/heavy_boots.ogg'=1)
+	step_volume_mod = 5
+
+/obj/item/clothing/shoes/mech_shoes/mister_x/visible
+	name = "visible extra large jackboots"
+	icon = 'icons/inventory/feet/item.dmi'
+	icon_state = "jackboots"
+
+/obj/item/clothing/shoes/clown_shoes
+	var/list/squeak_sound = list("clownstep"=1)
+
+/obj/item/clothing/shoes/clown_shoes/Initialize(mapload)
+	.=..()
+	LoadComponent(/datum/component/squeak, squeak_sound, 20*step_volume_mod)
+
+/obj/item/clothing/shoes/dry_galoshes
+	desc = "A pair of purple rubber boots, designed to prevent slipping on wet surfaces while also drying them."
+	name = "absorbent galoshes"
+	icon = 'icons/inventory/feet/item.dmi'
+	icon_state = "galoshes_dry"
+	permeability_coefficient = 0.05
+	siemens_coefficient = 0
+	item_flags = NOSLIP
+	slowdown = SHOES_SLOWDOWN+0.5
+	species_restricted = null
+	drop_sound = 'sound/items/drop/rubber.ogg'
+	pickup_sound = 'sound/items/pickup/rubber.ogg'
+
+/obj/item/clothing/shoes/dry_galoshes/Initialize(mapload)
+	.=..()
+	LoadComponent(/datum/component/dry)

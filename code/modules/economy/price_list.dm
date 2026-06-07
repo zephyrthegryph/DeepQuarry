@@ -1024,3 +1024,8 @@
 
 /datum/reagent/ethanol/euphoria
 	price_tag = 30
+
+
+// === merged from price_list_ch.dm during hard-fork de-suffix (verified no override-order change) ===
+/datum/reagent/ethanol/snaps
+	price_tag = 5

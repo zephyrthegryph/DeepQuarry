@@ -200,3 +200,29 @@
 /obj/item/pickaxe/excavationdrill/examine(mob/user)
 	. = ..()
 	. += span_info("It is currently set at [excavation_amount]cms.")
+
+
+// === merged from tools_pickaxe_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/item/pickaxe/brush
+	icon = 'icons/obj/xenoarchaeology.dmi'
+
+/obj/item/pickaxe/one_pick
+	icon = 'icons/obj/xenoarchaeology.dmi'
+
+/obj/item/pickaxe/two_pick
+	icon = 'icons/obj/xenoarchaeology.dmi'
+
+/obj/item/pickaxe/three_pick
+	icon = 'icons/obj/xenoarchaeology.dmi'
+
+/obj/item/pickaxe/four_pick
+	icon = 'icons/obj/xenoarchaeology.dmi'
+
+/obj/item/pickaxe/five_pick
+	icon = 'icons/obj/xenoarchaeology.dmi'
+
+/obj/item/pickaxe/six_pick
+	icon = 'icons/obj/xenoarchaeology.dmi'
+
+/obj/item/pickaxe/hand
+	icon = 'icons/obj/xenoarchaeology.dmi'

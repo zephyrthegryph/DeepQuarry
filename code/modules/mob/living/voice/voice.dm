@@ -150,3 +150,9 @@
 /mob/living/voice/get_available_emotes()
 	LAZYOR(., GLOB.simple_mob_default_emotes)
 //CHOMPEdit End
+
+
+// === merged from voice_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/mob/living/voice
+	no_vore = TRUE
+	can_pain_emote = FALSE

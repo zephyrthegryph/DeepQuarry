@@ -581,3 +581,198 @@ GLOBAL_DATUM(basic_robolimb, /datum/robolimb)
 
 /obj/item/disk/limb/cenilimicybernetics
 	company = "Cenilimi Cybernetics"
+
+
+// === merged from robolimbs_ch.dm during hard-fork de-suffix (verified no override-order change) ===
+/datum/robolimb
+	var/no_icon = FALSE //specifically for DSI things, makes it so it doesn't override the species icons
+	var/can_be_digitigrade = FALSE //used for skipping the icon if it can be digitigrade - maybe turn this into more of a 'use this icon/iconstate' instead later, when actual prosthetic digi icons get made
+
+/datum/robolimb/valehoundhead
+	company = "VALE Hound- Head"
+	desc = "A VALE hound head meant for synthetics."
+	icon = 'icons/mob/human_races/cyberlimbs/vale/vale_head.dmi' //Sprited by: Skits
+	skin_tone = 1
+	parts = list(BP_HEAD)
+
+/datum/robolimb/dsi_tajaran
+	can_be_digitigrade = TRUE
+
+/datum/robolimb/dsi_lizard
+	can_be_digitigrade = TRUE
+
+/datum/robolimb/dsi_sergal
+	can_be_digitigrade = TRUE
+
+/datum/robolimb/dsi_nevrean
+	can_be_digitigrade = TRUE
+
+/datum/robolimb/dsi_vulpkanin
+	can_be_digitigrade = TRUE
+
+/datum/robolimb/dsi_akula
+	can_be_digitigrade = TRUE
+
+/datum/robolimb/dsi_spider
+	can_be_digitigrade = TRUE
+
+/datum/robolimb/dsi_zorren
+	can_be_digitigrade = TRUE
+
+/datum/robolimb/dsi_fennec
+	can_be_digitigrade = TRUE
+
+/datum/robolimb/dsi_teshari/New()
+	. = ..()
+	species_cannot_use -= SPECIES_PROTEAN
+
+
+/datum/robolimb/dsi_other
+	company = "DSI - Adaptive"
+	desc = "This limb has a  realistic design and squish. By Darkside Incorperated."
+	blood_color = "#ffe2ff"
+	lifelike = 1
+	unavailable_to_build = 1
+	skin_tone = 1
+	no_icon = TRUE
+
+/datum/robolimb/hellscout
+	company = "Erebus - Hellscout"
+	desc = "Sleek and lightweight aluminum casings, accented with dark silicone."
+	icon = 'icons/mob/human_races/cyberlimbs/erebus/hellscout.dmi'
+	unavailable_to_build = 0
+
+//ported from citRP
+
+/datum/robolimb/spectre
+	company = "Hoffman Tech - RACS Spectre "
+	desc = "A simple robotic limb design used for the Hoffman Tech RASC Spectre. A lightweight robotic chassis ideal for exploration and security duties."
+	icon = 'icons/mob/human_races/cyberlimbs/cit/hoffman_tech/spectre.dmi'
+	unavailable_to_build = TRUE
+
+/datum/robolimb/braincase
+	company = "cortexCases - MMI"
+	desc = "A solid, transparent case to hold your important bits in with style."
+	icon = 'icons/mob/human_races/cyberlimbs/cit/cortex/braincase.dmi'
+	unavailable_to_build = TRUE
+	parts = list(BP_HEAD)
+
+///obj/item/disk/limb/braincase
+//	company = "cortexCases - MMI"
+
+/datum/robolimb/posicase
+	company = "cortexCases - Posi"
+	desc = "A solid, transparent case to hold your important bits in with style."
+	icon = 'icons/mob/human_races/cyberlimbs/cit/cortex/posicase.dmi'
+	unavailable_to_build = TRUE
+	parts = list(BP_HEAD)
+
+///obj/item/disk/limb/posicase
+//	company = "cortexCases - Posi"
+
+/datum/robolimb/antares
+	company = "Antares Robotics"
+	desc = "Mustard-yellow industrial limb. Heavyset and thick."
+	icon = 'icons/mob/human_races/cyberlimbs/cit/antares/antares_main.dmi'
+	unavailable_to_build = TRUE
+	monitor_styles = STANDARD_MONITOR_STYLES
+
+///obj/item/disk/limb/antares
+//	company = "Antares Robotics"
+
+/datum/robolimb/replika
+	company = "Replikant"
+	desc = "An advanced biomechanical prosthetic with pegs for feet."
+	icon = 'icons/mob/human_races/cyberlimbs/cit/replikant/replikant.dmi'
+	lifelike = 1
+	modular_bodyparts = MODULAR_BODYPART_PROSTHETIC
+	parts = list(BP_L_LEG, BP_R_LEG, BP_L_FOOT, BP_R_FOOT)
+
+
+// === merged from robolimbs_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+GLOBAL_LIST_INIT(dsi_to_species, list(SPECIES_TAJARAN = "DSI - Tajaran", SPECIES_UNATHI = "DSI - Lizard", SPECIES_SERGAL = "DSI - Sergal", SPECIES_NEVREAN = "DSI - Nevrean", \
+									SPECIES_VULPKANIN = "DSI - Vulpkanin", SPECIES_AKULA = "DSI - Akula", SPECIES_VASILISSAN = "DSI - Vasilissan", SPECIES_ZORREN = "DSI - Zorren",\
+									SPECIES_TESHARI = "DSI - Teshari", SPECIES_FENNEC = "DSI - Fennec"))
+
+
+// Placeholder for protean limbs during character spawning, before they have a properly set model
+/datum/robolimb/protean
+	company = "protean"
+	desc = "Nano-y!"
+	lifelike = 1
+	unavailable_to_build = 1
+	unavailable_at_chargen = 1
+
+//////////////// For-specific-character fluff ones /////////////////
+// arokha : Aronai Sieyes
+/datum/robolimb/kitsuhana
+	company = "Kitsuhana"
+	desc = "This limb seems rather vulpine and fuzzy, with realistic-feeling flesh."
+	icon = 'icons/mob/human_races/cyberlimbs/_fluff/aronai.dmi'
+	blood_color = "#5dd4fc"
+	includes_tail = 1
+	includes_ears = 1
+	lifelike = 1
+	unavailable_to_build = 1
+	suggested_species = SPECIES_VULPKANIN
+	whitelisted_to = list("arokha")
+
+/obj/item/disk/limb/kitsuhana
+	company = "Kitsuhana"
+
+// silencedmp5a5 : Serdykov Antoz
+/datum/robolimb/white_kryten
+	company = "White Kryten Cybernetics"
+	desc = "This limb feels realistic to the touch, with soft fur. Were it not for the bright orange lights embedded in it, you might have trouble telling it from a non synthetic limb!"
+	icon = 'icons/mob/human_races/cyberlimbs/_fluff/serdykov.dmi'
+	blood_color = "#ff6a00"
+	unavailable_to_build = 1
+	includes_tail = 1
+	whitelisted_to = list("silencedmp5a5")
+
+/obj/item/disk/limb/white_kryten
+	company = "White Kryten Cybernetics"
+
+// tucker0666 : Frost
+/datum/robolimb/zenghu_frost
+	company = "Zeng-Hu (Custom)"
+	desc = "This limb has realistic synthetic flesh covering with 'blue accents'."
+	icon = 'icons/mob/human_races/cyberlimbs/_fluff/Frosty.dmi'
+	blood_color = "#45ccff"
+	lifelike = 1
+	skin_tone = 1
+	unavailable_to_build = 1
+	whitelisted_to = list("tucker0666")
+
+/obj/item/disk/limb/zenghu_frost
+	company = "Zeng-Hu (Modified)"
+	catalogue_data = list(/datum/category_item/catalogue/information/organization/zeng_hu)
+
+//Ported from CitRP
+/datum/robolimb/cyber_beast
+	company = "Cyber Tech"
+	desc = "Adjusted for deep space, the material is durable and heavy."
+	icon = 'icons/mob/human_races/cyberlimbs/c-tech/c_beast.dmi'
+	unavailable_to_build = 1
+	parts = list(BP_HEAD)
+	monitor_icon = 'icons/mob/monitor_icons_vr.dmi'
+	monitor_styles = CYBERBEAST_MONITOR_STYLES
+
+/obj/item/disk/limb/cyber_beast
+	company = "Cyber Tech"
+
+/datum/robolimb/zenghu_glacier
+	company = "Zeng-Hu Glacier"
+	desc = "This limb has a rubbery white covering with visible seams."
+	icon = 'icons/mob/human_races/cyberlimbs/zenghu/zenghu_glacier_main.dmi'
+	species_alternates = list(SPECIES_TAJARAN = "Zeng-Hu - Tajaran")
+	unavailable_to_build = 1
+	skin_tone = 1
+	modular_bodyparts = MODULAR_BODYPART_PROSTHETIC
+
+/datum/robolimb/zenghu_taj_glacier
+	company = "Zeng-Hu Glacier - Tajaran"
+	desc = "This limb has a rubbery white covering with visible seams."
+	icon = 'icons/mob/human_races/cyberlimbs/zenghu/zenghu_glacier_taj.dmi'
+	unavailable_to_build = 1
+	parts = list(BP_HEAD)

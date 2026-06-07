@@ -1227,3 +1227,19 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 #undef LIGHT_BULB_TEMPERATURE
 #undef LIGHTING_POWER_FACTOR
 #undef LIGHT_EMERGENCY_POWER_USE
+
+
+// === merged from lighting_ch.dm during hard-fork de-suffix (verified no override-order change) ===
+
+
+/obj/machinery/light/attackby(obj/item/W, mob/user)
+
+	//Light painter code
+	if(istype(W, /obj/item/lightpainter))
+		var/obj/item/lightpainter/LP = W
+		if(isliving(user))
+			var/mob/living/U = user
+			LP.ColorLight(src, U)
+			return
+
+	. = ..()

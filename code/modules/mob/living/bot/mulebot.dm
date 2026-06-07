@@ -339,3 +339,11 @@
 #undef MULE_CALC_MIN
 #undef MULE_CALC_MAX
 #undef MULE_PATH_DONE
+
+
+// === merged from mulebot_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/mob/living/bot/mulebot/handle_micro_bump_helping() // Can't drive over micros or macros regardless of intent.
+	return 0
+
+/mob/living/bot/mulebot/handle_micro_bump_other() // Can't drive over micros or macros regardless of intent.
+	return 0

@@ -556,3 +556,13 @@
 /obj/item/storage/fancy/heartbox/update_icon(itemremoved = 0)
 	if (contents.len == 0)
 		icon_state = "heartbox_empty"
+
+
+// === merged from fancy_ch.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/item/storage/fancy/cigar/cohiba
+	name = "cohiban cigar case"
+	starts_with = list(/obj/item/clothing/mask/smokable/cigarette/cigar/cohiba = 5)
+
+/obj/item/storage/fancy/cigar/havana
+	name = "havanian cigar case"
+	starts_with = list(/obj/item/clothing/mask/smokable/cigarette/cigar/havana = 5)

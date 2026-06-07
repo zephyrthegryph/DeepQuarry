@@ -39,3 +39,39 @@
 	sheet_singular_name = "rod"
 	sheet_plural_name = "rods"
 	composite_material = list(MAT_PLASTEEL = SHEET_MATERIAL_AMOUNT)
+
+
+// === merged from plasteel_ch.dm during hard-fork de-suffix (verified no override-order change) ===
+/datum/material/plasteel/generate_recipes()
+	. = ..()
+//	recipes += new /datum/stack_recipe("Hammer Head", /obj/item/hammer_head, 2) //CHOMPEdit - Disabled because I had to disable code/game/objects/items/weapons/material/sledgehammer_construction_ch.dm due to lots of errors
+	recipes += new /datum/stack_recipe_list("sofas", list( \
+		new /datum/stack_recipe("sofa middle", /obj/structure/bed/chair/sofa, 1, one_per_turf = 1, on_floor = 1), \
+		new /datum/stack_recipe("sofa left", /obj/structure/bed/chair/sofa/left, 1, one_per_turf = 1, on_floor = 1), \
+		new /datum/stack_recipe("sofa right", /obj/structure/bed/chair/sofa/right, 1, one_per_turf = 1, on_floor = 1), \
+		new /datum/stack_recipe("sofa corner", /obj/structure/bed/chair/sofa/corner, 1, one_per_turf = 1, on_floor = 1), \
+		))
+
+
+// === merged from plasteel_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/datum/material/plastitanium
+	name = MAT_PLASTITANIUM
+	stack_type = /obj/item/stack/material/plastitanium
+	material_class = MATCLASS_METAL
+	integrity = 600
+	melting_point = 9000
+	icon_base = "solid"
+	icon_reinf = "reinf_over"
+	icon_colour = "#585658"
+	explosion_resistance = 35
+	hardness = 90
+	density = 40
+	protectiveness = 30
+	conductivity = 7
+	supply_conversion_value = 8
+
+/datum/material/plastitanium/generate_recipes()
+	..()
+	recipes += list(
+		new /datum/stack_recipe("whetstone", /obj/item/whetstone, 2, time = 20),
+	)

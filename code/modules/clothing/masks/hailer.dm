@@ -162,3 +162,9 @@
 		usr.visible_message(span_infoplain("[usr]'s Compli-o-Nator: " + span_red(span_huge(span_bold("[message]")))))
 		playsound(src, "sound/voice/complionator/[key].ogg", 50, 0, 4) //future sound channel = something like SFX
 		cooldown = world.time
+
+
+// === merged from hailer_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/item/clothing/mask/gas/sechailer/swat/officer //Just a little nicer to begin with. Can always up the anger with a screwdriver!
+	aggressiveness = 1
+	phrase = 1

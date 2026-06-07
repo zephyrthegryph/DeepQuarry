@@ -97,3 +97,15 @@
 
 /mob/living/simple_mob/animal/passive/bird/azure_tit/beastmode
 	movement_cooldown = 1
+
+
+// === merged from bird_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/mob/living/simple_mob/animal/passive/bird/azure_tit/tweeter
+	name = "Tweeter"
+	desc = "A beautiful little blue and white bird, if only excessively loud for no reason sometimes."
+	makes_dirt = FALSE
+
+/mob/living/simple_mob/animal/passive/bird/azure_tit/great
+	name = "Great Tit"
+	desc = "A species of bird, colored blue and white. Isn't it great?"
+	size_multiplier = 2

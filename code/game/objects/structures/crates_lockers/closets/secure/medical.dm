@@ -271,3 +271,9 @@
 	starts_with = list(
 		/obj/item/tank/anesthetic = 3,
 		/obj/item/clothing/mask/breath/medical = 3)
+
+
+// === merged from medical_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/structure/closet/secure_closet/paramedic/Initialize(mapload)
+	starts_with += /obj/item/gps/medical
+	return ..()

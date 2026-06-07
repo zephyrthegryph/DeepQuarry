@@ -217,3 +217,14 @@
 	desc = "It's a hand-held telescope, useful for star-gazing, peeping, and recon."
 	icon_state = "spyglass"
 	slot_flags = SLOT_BELT
+
+
+// === merged from equipment_ch.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/item/clothing/glasses/monocoole
+	name = "The Monocoole"
+	desc = "One heck of a stylish monocle. This one lets you see a little farther..."
+	icon_state = "monocle"
+	actions_types = list(/datum/action/item_action/toggle_goggles)
+	toggleable = 1
+	vision_flags = SEE_TURFS|SEE_MOBS|SEE_OBJS
+	prescription = 1 // So two versions of these aren't needed.

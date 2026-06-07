@@ -302,3 +302,9 @@
 #undef REGULATE_NONE
 #undef REGULATE_INPUT
 #undef REGULATE_OUTPUT
+
+
+// === merged from passive_gate_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/machinery/atmospherics/binary/passive_gate/on
+	unlocked = 1
+	icon_state = "on"

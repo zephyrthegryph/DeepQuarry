@@ -288,3 +288,11 @@
 	results += ..()
 
 	return results
+
+
+// === merged from shock_maul_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/item/melee/shock_maul/harmless
+	name = "rubber concussion maul"
+	desc = "A variant of the concussion maul that staggers and weakens victims. Despite their screams, does no real damage."
+	damtype = HALLOSS
+	launch_force = 0

@@ -174,3 +174,29 @@
 	for(var/obj/item/mop_deploy/blade in M.contents)
 		M.drop_from_inventory(blade)
 		qdel(blade)
+
+
+// === merged from mounted_gun_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/item/rig_module/mounted/sizegun
+	icon = 'icons/obj/rig_modules_vr.dmi'
+	icon_state = "sizegun"
+	name = "mounted size gun"
+	desc = "A size gun to be mounted on a rig suit. Features interface-based target size adjustment for hands-free size-altering shenanigans."
+
+	engage_string = "Select Size"
+
+	interface_name = "mounted sizegun"
+	interface_desc = "A wrist-mounted, hardsuit cell-powered, size gun. Features interface-based target size adjustment for hands-free size-altering shenanigans."
+
+	gun_type = /obj/item/gun/energy/sizegun/mounted
+
+
+// === merged from mounted_gun_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/item/rig_module/mounted/phase
+	name = "mounted phase rifle"
+	desc = "A forearm-mounted phase rifle."
+	icon_state = "taser"
+	usable = 0
+	interface_name = "mounted phase rifle"
+	interface_desc = "A forearm-mounted suit-powered phase rifle."
+	gun_type = /obj/item/gun/energy/locked/phasegun/rifle/unlocked/mounted

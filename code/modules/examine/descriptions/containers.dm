@@ -96,3 +96,8 @@
 
 /obj/item/reagent_containers/food/drinks/bottle/sake
 	description_fluff = "An export from New Kyoto, Mono-no-Aware promises to show to the drinker the beautiful transience of all life. Mostly it just tastes like dry booze."
+
+
+// === merged from containers_ch.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/item/reagent_containers/food/drinks/bottle/snaps
+	description_fluff = "Its a wonder how such an ancient and obscure drink from Earth made it all the way out here."

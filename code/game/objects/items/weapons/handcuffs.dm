@@ -347,3 +347,11 @@
 	name = "rope bindings"
 	desc = "A length of rope fashioned to hold someone's hands together."
 	color = "#7e6442"
+
+
+// === merged from handcuffs_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/item/handcuffs/legcuffs/fuzzy
+	name = "fuzzy legcuffs"
+	desc = "Use this to keep... 'prisoners' in line."
+	icon = 'icons/obj/items.dmi'
+	icon_state = "fuzzylegcuff"

@@ -65,3 +65,10 @@
 	armor = list(melee = 40, bullet = 40, laser = 60, energy = 35, bomb = 30, bio = 0, rad = 0)
 	min_cold_protection_temperature = T0C - 20
 	cold_protection = LEGS
+
+
+// === merged from leg_guards_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/item/clothing/shoes/leg_guard/combat/imperial
+	name = "imperial leg guards"
+	desc = "Good for Roman around."
+	icon_state = "ge_boots"

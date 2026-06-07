@@ -198,3 +198,8 @@
 	update_icon()
 	handle_leaking()
 	return
+
+
+// === merged from he_pipes_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/machinery/atmospherics/pipe/simple/heat_exchanging/set_leaking(new_leaking)
+	return	//Nope

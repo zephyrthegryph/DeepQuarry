@@ -353,3 +353,10 @@
 	body_parts_covered = HEAD
 	attack_verb = list("warned", "cautioned", "smashed")
 	armor = list("melee" = 5, "bullet" = 0, "laser" = 0,"energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0, "fire" = 0, "acid" = 0)
+
+
+// === merged from misc_special_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/item/clothing/head/cone
+	sprite_sheets = list(
+		SPECIES_TESHARI = 'icons/inventory/head/mob_teshari.dmi'
+		)

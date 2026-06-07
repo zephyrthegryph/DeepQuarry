@@ -337,3 +337,217 @@
 		power_cycle = FALSE
 	else
 		to_chat(user, span_notice("\The [src] is already powering up!"))
+
+
+// === merged from special_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/item/gun/energy/ionrifle/pistol
+	projectile_type = /obj/item/projectile/ion/pistol // still packs a punch but no AoE
+	w_class = ITEMSIZE_NORMAL //CHOMP Edit.
+	move_delay = 0 // CHOMPEdit: Pistols have move_delay of 0
+
+/obj/item/gun/energy/ionrifle/weak
+	projectile_type = /obj/item/projectile/ion/small
+
+/obj/item/gun/energy/medigun //Adminspawn/ERT etc // CH edit - Changes ML3M  to NERD
+	name = "directed restoration system"
+	desc = "The BL-3 'Phoenix' is an adaptation on the NERD 'Medbeam' design that channels the power of the beam into a single healing laser. It is highly energy-inefficient, but its medical power cannot be denied."
+	force = 5
+	icon_state = "medbeam"
+	item_state = "medbeam"
+	item_icons = list(
+		slot_l_hand_str = 'icons/mob/items/lefthand_guns_vr.dmi',
+		slot_r_hand_str = 'icons/mob/items/righthand_guns_vr.dmi',
+		)
+	slot_flags = SLOT_BELT
+	accuracy = 100
+	fire_delay = 12
+	fire_sound = 'sound/weapons/eluger.ogg'
+
+	projectile_type = /obj/item/projectile/beam/medigun
+
+	accept_cell_type = /obj/item/cell
+	cell_type = /obj/item/cell/high
+	charge_cost = 2500
+
+/obj/item/gun/energy/bfgtaser
+	name = "9000-series Ball Lightning Taser"
+	desc = "The brainchild of Hephaestus Industries Civil Pacification Division, the BLT-9000 was intended for riot control but despite enthusiastic interest from law-enforcement agencies across the Commonwealth and beyond, its indiscriminate nature led to it being banned from civilian use in virtually all jurisdictions. As a result, most pieces are found in the hands of collectors."
+	icon_state = "BFG"
+	fire_sound = 'sound/effects/phasein.ogg'
+	item_state = "mhdhowitzer"
+	wielded_item_state = "mhdhowitzer-wielded" //Placeholder
+	slot_flags = SLOT_BELT|SLOT_BACK
+	projectile_type = /obj/item/projectile/bullet/BFGtaser
+	fire_delay = 20
+	w_class = ITEMSIZE_LARGE
+	one_handed_penalty = 90 // The thing's heavy and huge.
+	accuracy = 45
+	charge_cost = 2400 //yes, this bad boy empties an entire weapon cell in one shot. What of it?
+	var/spinning_up = FALSE
+
+/obj/item/gun/energy/bfgtaser/Fire(atom/target, mob/living/user, clickparams, pointblank=0, reflex=0)
+	if(spinning_up)
+		return
+	if(!power_supply || !power_supply.check_charge(charge_cost))
+		handle_click_empty(user)
+		return
+
+	playsound(src, 'sound/weapons/chargeup.ogg', 100, 1)
+	spinning_up = TRUE
+	update_icon()
+	user.visible_message(span_notice("[user] starts charging the [src]!"), \
+						span_notice("You start charging the [src]!"))
+	if(do_after(user, 8, target = src))
+		spinning_up = FALSE
+		..()
+	else
+		spinning_up = FALSE
+
+/obj/item/projectile/beam/stun/weak/BFG
+	fire_sound = 'sound/effects/sparks6.ogg'
+	hitsound = 'sound/effects/sparks4.ogg'
+	hitsound_wall = 'sound/effects/sparks7.ogg'
+
+/obj/item/projectile/bullet/BFGtaser
+	name = "lightning ball"
+	icon = 'icons/obj/projectiles_vr.dmi'
+	icon_state = "minitesla"
+	speed=5
+	damage = 100
+	damage_type = AGONY
+	check_armour = "energy"
+	embed_chance = 0
+	hitsound = 'sound/weapons/zapbang.ogg'
+	hitsound_wall = 'sound/weapons/effects/searwall.ogg'
+	var/zaptype = /obj/item/projectile/beam/stun/weak/BFG
+
+/obj/item/projectile/bullet/BFGtaser/process()
+	var/list/victims = list()
+	for(var/mob/living/M in living_mobs(world.view))
+		if(M != firer)
+			victims += M
+	if(LAZYLEN(victims))
+		var/target = pick(victims)
+		var/obj/item/projectile/P = new zaptype(src.loc)
+		P.launch_projectile_from_turf(target = target, target_zone = null, user = firer, params = null, angle_override = null, forced_spread = 0)
+	..()
+
+/obj/item/projectile/bullet/BFGtaser/on_hit()
+	var/list/victims = list()
+	for(var/mob/living/M in living_mobs(world.view))
+		if(M != firer)
+			victims += M
+	if(LAZYLEN(victims))
+		for(var/target in victims)
+			var/obj/item/projectile/P = new zaptype(src.loc)
+			P.launch_projectile_from_turf(target = target, target_zone = null, user = firer, params = null, angle_override = null, forced_spread = 0)
+	..()
+
+
+// === merged from special_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/item/gun/energy/medigun/mounted
+	name = "mounted directed restoration system"
+	self_recharge = 1
+	use_external_power = 1
+
+/obj/item/gun/energy/taser/disabler/slow
+	name = "plasma snare device"
+	desc = "A modified disabler adjusted to impulse a target with a restrictive slowdown."
+	icon_state = "disabler"
+	projectile_type = /obj/item/projectile/energy/plasmastun/slow
+	charge_cost = 480
+	self_recharge = 1
+	recharge_time = 3
+
+/obj/item/projectile/energy/plasmastun/slow
+	name = "plasma pulse"
+	icon_state = "plasma_stun"
+	fire_sound = 'sound/weapons/weaponsounds_laserstrong.ogg'
+	armor_penetration = 10
+	range = 9
+	damage = 0
+	agony = 0
+	vacuum_traversal = 1
+	hud_state = "plasma_rifle_blast"
+
+/obj/item/projectile/energy/plasmastun/slow/on_hit(atom/target)
+	if(isliving(target))
+		var/mob/living/L = target
+		L.add_modifier(/datum/modifier/entangled, 10 SECONDS)
+
+
+/obj/item/gun/energy/rednetgun
+	name = "experimental capture gun"
+	desc = "An experimental gun, in efforts to expand net gun technology. Utilizing eletronic interferance and a \
+	heat aura it in theory stops the subject from fighting back."
+	icon_state = "goldstunrevolver"
+	item_state = null
+	projectile_type = /obj/item/projectile/energy/rednet
+	charge_cost = 1440 //so a taser has 15 shots at 480 and I want five but this feels goofy
+
+
+/obj/item/projectile/energy/rednet
+	name = "expirmental energy net"
+	icon_state = "toxin"
+	damage = 0
+	check_armour = "energy"
+	hud_state = "pistol_tranq"
+	fire_sound = 'sound/weapons/Taser.ogg'
+	nodamage = 1
+	modifier_type_to_apply = /datum/modifier/rednet
+	modifier_duration = 0.5 MINUTE
+	speed = 1.5
+
+/datum/modifier/rednet
+	mob_overlay_state = "red_electricity_constant"
+	slowdown = 1
+
+/obj/item/projectile/bullet/magnetic/supercannon
+	name = "railcannon slug"
+	icon_state = "fuel-supermatter"
+	damage = 1500 //You are not being defibbed from this.
+	weaken = 2
+	armor_penetration = 100
+	penetrating = 1500 //Theoretically, this shouldn't stop flying for a while, unless someoneI t lines it up with a wall or fires it into a mountain.
+	range = 200
+	hud_state = "rocket_thermobaric"
+	speed = 0.2
+
+/obj/item/projectile/bullet/magnetic/supercannon/on_hit(atom/target, blocked = 0, def_zone = null)
+	if(istype(target,/turf/simulated/wall) || istype(target,/mob/living))
+		target.visible_message(span_danger("The [src] burns a perfect hole through \the [target] with a blinding flash!"))
+		playsound(target, 'sound/effects/teleport.ogg', 40, 0)
+	return ..(target, blocked, def_zone)
+
+/obj/item/projectile/bullet/magnetic/supercannon/Bump(atom/target) //On hit doesnt work on turfs, gotta snowflake it. Why is on_hit() called by the target, NOT the proj?????
+	..()
+	if(istype(target,/turf/simulated/wall))
+		var/turf/simulated/wall/B = target
+		B.dismantle_wall(1,1,0)
+
+/obj/item/projectile/bullet/magnetic/supercannon/check_penetrate()
+	return 1
+
+
+/obj/item/gun/energy/supercannon
+	name = "Super-Rail Cannon"
+	desc = "This weapon seems to be vibrating with a barely containable energy, with no charging ports or battery ports in sight, you only have a singlular shot of this. Ever"
+	icon = 'icons/obj/guns/supercannon/supercannon.dmi'
+	icon_state = "supercannon"
+	item_state = "supercannon"
+	wielded_item_state = "supercannon-wielded"
+	w_class = ITEMSIZE_HUGE
+	fire_sound = 'sound/weapons/Gunshot_cannon.ogg'
+	slot_flags = SLOT_BELT|SLOT_BACK
+	charge_cost = 2400 //You got 1 shot...
+	self_recharge = TRUE
+	recharge_time = 6 HOURS //This is how to get around rechargers being able to recharge it, I dont wanna rewrite base level code
+	projectile_type = /obj/item/projectile/bullet/magnetic/supercannon //Fuck you.
+	cell_type = /obj/item/cell/device/weapon
+	battery_lock = 1
+	force = 15 //pretty robust
+	one_handed_penalty = 90
+	item_icons = list(
+		slot_l_hand_str = 'icons/obj/guns/supercannon/lefthand_guns.dmi',
+		slot_r_hand_str = 'icons/obj/guns/supercannon/righthand_guns.dmi',
+		)

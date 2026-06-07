@@ -90,3 +90,19 @@ somewhere on that shuttle. Subtypes of these can be then used to perform ship ov
 /obj/machinery/computer/ship/sensors/Destroy()
 	sensors = null
 	. = ..()
+
+
+// === merged from ship_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/*
+Ships can now be hijacked!
+*/
+/obj/machinery/computer/ship
+	var/hacked = 0   // Has been emagged, no access restrictions.
+
+/obj/machinery/computer/ship/emag_act(remaining_charges, mob/user)
+	if (!hacked)
+		req_access = list()
+		req_one_access = list()
+		hacked = 1
+		to_chat(user, "You short out the console's ID checking system. It's now available to everyone!")
+		return 1

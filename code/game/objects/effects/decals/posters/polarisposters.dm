@@ -332,3 +332,11 @@
 	name = "Regulations and You"
 	desc = "This SifGov poster showcases an NT security guard reading from her PDA. The blurb advocates for the reader to keep corporate regulations in mind at all times, as an emergency can occur at any time."
 	listing_name = "Safety - Corporate Regulations"
+
+
+// === merged from polarisposters_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/datum/decl/poster/nanotrasen/nt_7 //YW EDIT: SolGov, USDF
+	name = "SolGov"
+	desc = "This poster showcases an USDF emblem. The outer ring reads,\
+	\"<font face='times new roman ms'>NIL MORTALIBUS ARDUI EST</font>\".\
+	Commonwealth of Sol-Procyon."

@@ -103,3 +103,11 @@
 
 	new /obj/item/material/knife/machete/hatchet/unathiknife(hold)
 	new /obj/item/material/knife/machete/hatchet/unathiknife(hold)
+
+
+// === merged from storage_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/item/clothing/accessory/storage/bluespace
+	name = "bluespace badge"
+	desc = "A small, shielded device capable of holding a number of items in it. Used for carrying items discreetly."
+	icon_state = "solbadge"
+	item_state = "badge"

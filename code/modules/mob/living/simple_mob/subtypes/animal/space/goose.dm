@@ -82,3 +82,13 @@
 	harm_intent_damage = 10
 	melee_damage_lower = 10
 	melee_damage_upper = 10
+
+
+// === merged from goose_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/datum/category_item/catalogue/fauna/geese
+	name = "Planetary Fauna - Geese"
+	desc = "A goose. HONK. Not much to catalogue, they're exactly the same as their earth counterparts."
+	value = CATALOGUER_REWARD_EASY
+
+/mob/living/simple_mob/animal/space/goose/virgo3b
+	faction = FACTION_VIRGO3B

@@ -872,3 +872,14 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 /obj/item/radio/bluespacehandset/linked/talon_prelinked
 	bs_tx_preload_id = "talon_aio" //Transmit to a receiver
 	bs_rx_preload_id = "talon_aio" //Recveive from a transmitter
+
+
+// === merged from radio_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
+//* Bluespace Radio *//
+/obj/item/bluespaceradio/relicbase_prelinked
+	name = "bluespace radio (forbearance)"
+	handset_path = /obj/item/radio/bluespacehandset/linked/relicbase_prelinked
+
+/obj/item/radio/bluespacehandset/linked/relicbase_prelinked // Same as Southern Cross. We use their tcomms setup after all
+	bs_tx_preload_id = "Receiver A" //Transmit to a receiver
+	bs_rx_preload_id = "Broadcaster A" //Recveive from a transmitter

@@ -140,3 +140,38 @@
 /obj/item/organ/internal/regennetwork/tox
 	name = "toxoregenesis network"
 	organ_tag = O_REGTOX
+
+
+// === merged from slime_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/item/organ/external/chest/unbreakable/slime
+	transparent = 1
+
+/obj/item/organ/external/groin/unbreakable/slime
+	transparent = 1
+
+/obj/item/organ/external/arm/unbreakable/slime
+	transparent = 1
+
+/obj/item/organ/external/arm/right/unbreakable/slime
+	transparent = 1
+
+/obj/item/organ/external/leg/unbreakable/slime
+	transparent = 1
+
+/obj/item/organ/external/leg/right/unbreakable/slime
+	transparent = 1
+
+/obj/item/organ/external/foot/unbreakable/slime
+	transparent = 1
+
+/obj/item/organ/external/foot/right/unbreakable/slime
+	transparent = 1
+
+/obj/item/organ/external/hand/unbreakable/slime
+	transparent = 1
+
+/obj/item/organ/external/hand/right/unbreakable/slime
+	transparent = 1
+
+/obj/item/organ/external/head/unbreakable/slime
+	transparent = 1

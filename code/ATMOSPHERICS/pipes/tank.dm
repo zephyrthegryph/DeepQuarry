@@ -172,3 +172,11 @@
 
 	air_temporary.adjust_gas(GAS_CH4, (start_pressure)*(air_temporary.volume)/(R_IDEAL_GAS_EQUATION*air_temporary.temperature))
 	icon_state = "ch4"
+
+
+// === merged from tank_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/machinery/atmospherics/pipe/tank/phoron/full
+	start_pressure = 15000
+
+/obj/machinery/atmospherics/pipe/tank/air/full
+	start_pressure = 15000

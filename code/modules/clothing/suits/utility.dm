@@ -130,3 +130,35 @@
 	icon_override = 'icons/inventory/head/mob_teshari.dmi'
 	icon_state = "rad_fitted"
 	species_restricted = list(SPECIES_TESHARI)
+
+
+// === merged from utility_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/item/clothing/head/bomb_hood/security
+	icon_state = "bombsuitsec"
+	body_parts_covered = HEAD
+
+/obj/item/clothing/suit/storage/toggle/paramedic
+	name = "paramedic vest"
+	desc = "A vest that protects against minor chemical spills."
+	icon_state = "paramedic-vest"
+	item_state = "paramedic-vest"
+	item_state_slots = list(slot_r_hand_str = "blue_labcoat", slot_l_hand_str = "blue_labcoat")
+	blood_overlay_type = "coat"
+	body_parts_covered = UPPER_TORSO
+	flags_inv = HIDEHOLSTER
+	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_MEDICAL)
+	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 50, rad = 0)
+
+/obj/item/clothing/head/radiation
+	sprite_sheets = list(
+		SPECIES_TESHARI = 'icons/inventory/head/mob_teshari.dmi',
+		SPECIES_VOX = 'icons/inventory/head/mob_vox.dmi',
+		SPECIES_WEREBEAST = 'icons/inventory/head/mob_werebeast.dmi'
+		)
+
+/obj/item/clothing/suit/radiation
+	sprite_sheets = list(
+		SPECIES_TESHARI = 'icons/inventory/suit/mob_teshari.dmi',
+		SPECIES_VOX = 'icons/inventory/suit/mob_vox.dmi',
+		SPECIES_WEREBEAST = 'icons/inventory/suit/mob_werebeast.dmi'
+		)

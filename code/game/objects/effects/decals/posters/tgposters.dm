@@ -48,3 +48,11 @@
 	name = "Hacking Guide"
 	desc = "This poster details the internal workings of the common NanoTrasen airlock."
 	icon_state="poster10"
+
+
+// === merged from tgposters_ch.dm during hard-fork de-suffix (verified no override-order change) ===
+/datum/decl/poster/tg_11 //CHOMPedit
+	name = "Post This Ratvar"
+	desc = "This poster seems to have an animated image on it. Truly an advancement in the wonders of technology."
+	icon_override = 'icons/obj/contraband_ch.dmi'
+	icon_state = "postvar"

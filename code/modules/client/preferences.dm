@@ -535,3 +535,9 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	character.regenerate_icons()
 
 	PREF_TRANSACTION_END(src)
+
+
+// === merged from preferences_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
+// DQEdit — metadata_maybes/metadata_favs/matadata_ooc_style were dead declarations
+// (never referenced anywhere); equivalent functionality is on /datum/preference/text/living/ooc_notes_{maybes,favs} and /datum/preference/toggle/living/ooc_notes_style. Deleted.
+// DQEdit — job_other_low/med/high migrated to /datum/preference/numeric/human/job_other_* subtypes; declarations deleted.

@@ -263,3 +263,13 @@
 	sheet_plural_name = "gems"
 	icon_base = "resin"
 	table_icon_base = "resin"
+
+
+// === merged from gems_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
+/datum/material/valhollide //buffed protection and reflectivity
+	protectiveness = 70
+	reflectivity = 0.75
+
+
+/datum/material/morphium //buffed protection
+	protectiveness = 65

@@ -784,3 +784,41 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 	nitrogen = 17
 	carbon_dioxide = 75
 	ignore_cavegen = TRUE
+
+
+// === merged from mine_turfs_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/turf/simulated/mineral
+	var/ignore_oregen = FALSE
+	var/ignore_cavegen = FALSE
+
+/turf/simulated/mineral/ignore_oregen
+	ignore_oregen = TRUE
+
+/turf/simulated/mineral/floor/ignore_oregen
+	ignore_oregen = TRUE
+
+/turf/simulated/mineral/ignore_cavegen
+	ignore_cavegen = TRUE
+
+/turf/simulated/mineral/floor/ignore_cavegen
+	ignore_cavegen = TRUE
+
+/turf/simulated/mineral/ignore_cavegen/cave
+	oxygen = MOLES_O2STANDARD
+	nitrogen = MOLES_N2STANDARD
+	temperature	= T20C
+
+/turf/simulated/mineral/floor/ignore_cavegen/cave
+	oxygen = MOLES_O2STANDARD
+	nitrogen = MOLES_N2STANDARD
+	temperature	= T20C
+
+/turf/simulated/mineral/vacuum
+	oxygen = 0
+	nitrogen = 0
+	temperature	= TCMB
+
+/turf/simulated/mineral/floor/vacuum
+	oxygen = 0
+	nitrogen = 0
+	temperature	= TCMB

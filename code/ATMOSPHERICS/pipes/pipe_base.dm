@@ -195,3 +195,8 @@
 		..()
 	else
 		. = PROCESS_KILL
+
+
+// === merged from pipe_base_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/machinery/atmospherics/pipe/set_leaking(new_leaking)
+	return // N O P E

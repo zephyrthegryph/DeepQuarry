@@ -43,3 +43,8 @@
 	icon_state = "banner-virgov"
 	desc = "A banner with the symbol of the local government, the Vir Governmental Authority, also known as VirGov."
 //	catalogue_data = list(/datum/category_item/catalogue/information/organization/virgov) //CHOMP Removal. We need to add our own code/game/busy_space/organizations.dm for lore
+
+
+// === merged from banners_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/item/banner/solgov
+	name = "\improper SolGov banner" //YW EDIT: SolGov

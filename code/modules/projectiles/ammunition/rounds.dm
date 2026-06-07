@@ -495,3 +495,13 @@
 	icon_state = "s-casing-spent"
 	BB = null
 	projectile_type = null
+
+
+// === merged from rounds_ch.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/item/ammo_casing/a12g/silver
+	name = " Silver shotgun shell"
+	desc = "A 12 gauge slug. Bless and Sancitfied to banish otherworlds entities."
+	icon_state = "agshell"
+	caliber = "12g"
+	projectile_type = /obj/item/projectile/bullet/pellet/shotgun/silver
+	matter = list(DEFAULT_WALL_MATERIAL = 360, "silver" = 240)

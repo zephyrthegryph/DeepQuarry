@@ -340,3 +340,40 @@
 
 /obj/item/gun/projectile/revolver/consul/update_icon()
 	update_charge()
+
+
+// === merged from revolver_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+//Dunno why .380 ammo was in here but Im not touching it. Rest was moved to other files.
+
+//.380
+/obj/item/ammo_casing/a380
+	desc = "A .380 bullet casing."
+	caliber = ".380"
+	projectile_type = /obj/item/projectile/bullet/pistol
+
+/obj/item/ammo_magazine/m380
+	name = "magazine (.380)"
+	icon_state = "m92"
+	mag_type = MAGAZINE
+	matter = list(MAT_STEEL = 480)
+	caliber = ".380"
+	ammo_type = /obj/item/ammo_casing/a380
+	max_ammo = 8
+	multiple_sprites = 1
+
+
+// === merged from revolver_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/item/gun/projectile/revolver/slab
+	name = "slab revolver"
+	desc = "No coins. Cope."
+	caliber = "14.5mm" //This will ultrakill anything in front of it
+	ammo_type = /obj/item/ammo_casing/a145
+	projectile_type = /obj/item/projectile/bullet/rifle/a145
+	icon_state = "ukr"
+	item_state = "ukr"
+	icon = 'icons/obj/guns/altmarksman/altmarksman.dmi'
+	fire_sound = 'sound/weapons/marksmanalt.ogg'
+	item_icons = list(
+		slot_l_hand_str = 'icons/obj/guns/altmarksman/lefthand_guns.dmi',
+		slot_r_hand_str = 'icons/obj/guns/altmarksman/righthand_guns.dmi',
+		)
