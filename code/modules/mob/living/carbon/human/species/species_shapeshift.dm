@@ -668,3 +668,37 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 		if(character.client)	//Make sure we didn't d/c
 			transform_into_other_human(victim, FALSE, flavour, FALSE, FALSE)
 			character.visible_message(span_notify("[character] adopts the form of [victim]!"), span_danger("You have reassembled into [victim]."))
+
+
+// === merged from species_shapeshift_ch.dm during hard-fork de-suffix (manually verified) ===
+/mob/living/carbon/human/proc/shapeshifter_reassemble()
+
+	set name = "Complete Reform"
+	set category = "Abilities.Shapeshift"
+
+	if(stat || world.time < last_special)
+		return
+
+	last_special = world.time + 50
+
+	if (tgui_alert(src, "Are you sure you want to reform yourself? This will reset you to what you look like in your current preferences slot.", "Reform", list("Yes","Cancel")) != "Yes")
+		return
+
+	var/input = tgui_alert(src,{"Include Flavourtext?"},"Reformation",list("Yes","No","Cancel"))
+	if(input == "Cancel" || !input)
+		return
+	var/flavour = 0
+	if(input == "Yes")
+		flavour = 1
+	input = tgui_alert(src,{"Include OOC notes?"},"Reformation",list("Yes","No","Cancel"))
+	if(input == "Cancel" || !input)
+		return
+	var/oocnotes = 0
+	if(input == "Yes")
+		oocnotes = 1
+	to_chat(src, span_notify("You begin to reform. You will need to remain still."))
+	visible_message(span_notify("[src] rapidly contorts and shifts!"), span_danger("You begin to reform."))
+	if (do_after(src, 4 SECONDS, src))
+		if (client?.prefs)
+			client.prefs.vanity_copy_to(src, FALSE, flavour, oocnotes, FALSE)
+			visible_message(span_notify("[src] adopts a new form!"), span_danger("You have reformed."))
