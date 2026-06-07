@@ -1,9 +1,0 @@
-# Generated from 96x96_ch.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
-width = 96
-height = 96
-cols = 1
-
-[[state]]
-name = "landing"
-dirs = 1
-frames = 1
