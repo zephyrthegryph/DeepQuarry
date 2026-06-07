@@ -1,7 +1,7 @@
 GLOBAL_VAR_INIT(Recycled_Items, 0)
 
 /obj/machinery/v_garbosystem
-	icon = 'modular_chomp/icons/obj/machines/other.dmi'
+	icon = 'icons/chomp/obj/machines/other.dmi'
 	icon_state = "cronchy_off"
 	name = "garbage grinder"
 	desc = "Mind your fingers. Filter access hatch can be opened with crowbar to release trapped contents within."

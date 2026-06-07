@@ -3,7 +3,7 @@
 /obj/item/clothing/accessory/armband/casino
 	name = "casino crew armband"
 	desc = "A gorgeous casino crew armband made of luxurious silky and golden threads interwoven with a luminous display. Show off that Golden Goose with pride!"
-	icon = 'modular_chomp/icons/inventory/accessory/item.dmi'
+	icon = 'icons/chomp/inventory/accessory/item.dmi'
 	icon_state = "casino_armband"
-	icon_override = 'modular_chomp/icons/inventory/accessory/mob.dmi'
-	sprite_sheets = list(SPECIES_TESHARI = 'modular_chomp/icons/inventory/accessory/mob_teshari.dmi')
+	icon_override = 'icons/chomp/inventory/accessory/mob.dmi'
+	sprite_sheets = list(SPECIES_TESHARI = 'icons/chomp/inventory/accessory/mob_teshari.dmi')

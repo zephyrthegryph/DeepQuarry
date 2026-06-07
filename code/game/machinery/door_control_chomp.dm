@@ -16,7 +16,7 @@
 
 /obj/machinery/button/remote/blast_door/single_use/slab
 	name = "Button Slab Parent"
-	icon = 'modular_chomp/icons/obj/stationobjs.dmi'
+	icon = 'icons/chomp/obj/stationobjs.dmi'
 	icon_state = "slab1-off"
 	use_power = USE_POWER_OFF
 

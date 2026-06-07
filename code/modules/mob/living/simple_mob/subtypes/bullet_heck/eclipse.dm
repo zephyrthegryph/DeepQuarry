@@ -70,7 +70,7 @@
 	icon_living = "UPshield_mecha"
 	desc = "A metallic flying saucer, a reflective barrier around it."
 	faction = FACTION_ECLIPSE
-	icon = 'modular_chomp/icons/mob/eclipse.dmi'
+	icon = 'icons/chomp/mob/eclipse.dmi'
 	health = 1500
 	maxHealth = 1500
 	specialattackprojectile = /obj/item/projectile/energy/eclipse_boss/metalsphere

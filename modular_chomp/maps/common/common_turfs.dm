@@ -33,20 +33,20 @@
 	name = "basalt"
 	desc = "Loose, rocky basalt. It crumbles to sand under the slightest bit of force."
 	icon_state = "basalt0"
-	icon = 'modular_chomp/icons/turf/thor.dmi'
+	icon = 'icons/chomp/turf/thor.dmi'
 
 /turf/simulated/mineral/thor/mines
 	name = "dark rock"
 	desc = "Dark black basalt. Rich in exotic minerals."
 	icon_state = "deeprock"
-	icon = 'modular_chomp/icons/turf/thor.dmi'
+	icon = 'icons/chomp/turf/thor.dmi'
 	temperature = 393.15
 
 /turf/unsimulated/mineral/thor/mines
 	name = "impassable dark rock"
 	desc = "Dark black basalt. Packed impossibly tightly, no way to get past this."
 	icon_state = "deeprock-solid"
-	icon = 'modular_chomp/icons/turf/thor.dmi'
+	icon = 'icons/chomp/turf/thor.dmi'
 	temperature = 393.15
 
 /turf/simulated/mineral/thor/floor/ignore_mapgen/cave
@@ -148,14 +148,14 @@
 /turf/simulated/floor/carpet/graycarpet
 	name = "gray carpet"
 	desc = "A dusty, gray carpeted floor."
-	icon = 'modular_chomp/icons/turf/flooring/carpet.dmi'
+	icon = 'icons/chomp/turf/flooring/carpet.dmi'
 	icon_state = "gcarpet"
 	initial_flooring = /datum/decl/flooring/carpet/gray
 
 /datum/decl/flooring/carpet/gray
 	name = "gray carpet"
 	desc = "A dusty, gray carpeted floor."
-	icon = 'modular_chomp/icons/turf/flooring/carpet.dmi'
+	icon = 'icons/chomp/turf/flooring/carpet.dmi'
 	icon_base = "gcarpet"
 	build_type = /obj/item/stack/tile/carpet/gray
 	flags = TURF_REMOVE_CROWBAR | TURF_CAN_BURN

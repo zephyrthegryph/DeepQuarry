@@ -49,13 +49,13 @@
 	lcolor = null
 	colorable = FALSE
 
-	icon = 'modular_chomp/icons/mob/tribal_gear.dmi'
+	icon = 'icons/chomp/mob/tribal_gear.dmi'
 	icon_state = "sabre"
 	item_state = "sabre"
 
 	item_icons = list(
-		slot_l_hand_str = 'modular_chomp/icons/obj/guns/precursor/lefthand.dmi',
-		slot_r_hand_str = 'modular_chomp/icons/obj/guns/precursor/righthand.dmi',
+		slot_l_hand_str = 'icons/chomp/obj/guns/precursor/lefthand.dmi',
+		slot_r_hand_str = 'icons/chomp/obj/guns/precursor/righthand.dmi',
 		)
 
 /obj/item/melee/energy/tyr_sabre/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
@@ -107,7 +107,7 @@
 /obj/item/prop/deconstructable
 	name = "strange device"
 	desc = "An advanced bit of technolgy, potentially useable by science."
-	icon = 'modular_chomp/icons/obj/weather_ruins.dmi'
+	icon = 'icons/chomp/obj/weather_ruins.dmi'
 	icon_state = "gigapower_core"
 	w_class = ITEMSIZE_SMALL
 

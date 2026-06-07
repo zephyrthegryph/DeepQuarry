@@ -17,7 +17,7 @@
 	taser_kill = FALSE
 	poison_resist = 1.0
 	shock_resist = -0.2
-	icon = 'modular_chomp/icons/mob/tyr.dmi'
+	icon = 'icons/chomp/mob/tyr.dmi'
 	special_attack_min_range = 1
 	special_attack_max_range = 20 //The special attacks are more meant to pin you down or provide a healing to this tank.
 	special_attack_cooldown = 8 SECONDS //1 fire ticks a second
@@ -103,7 +103,7 @@
 	health = 600
 	maxHealth = 600
 	armor = list(melee = 30, bullet = 30, laser = 30, energy = 30, bomb = 50, bio = 100, rad = 100) //So, it's made of jelly. Bullets and melee bounces off of it. The 20 laser and energy are for a smidge extra tankny because I savour endurance fights
-	icon = 'modular_chomp/icons/mob/tyr.dmi'
+	icon = 'icons/chomp/mob/tyr.dmi'
 	icon_state = "jellyfish"
 	icon_living = "jellyfish"
 	icon_dead = "jellyfish_dead"

@@ -15,18 +15,18 @@
 	floor_name = "deeprock"
 	sand_icon_state = "basalt"
 	rock_icon_state = "deeprock"
-	sand_icon_path = 'modular_chomp/icons/turf/thor.dmi'
-	rock_icon_path = 'modular_chomp/icons/turf/thor.dmi'
+	sand_icon_path = 'icons/chomp/turf/thor.dmi'
+	rock_icon_path = 'icons/chomp/turf/thor.dmi'
 	rock_side_icon_state = "deeprock_side"
 	desc = "Dark black basalt. Rich in exotic minerals."
-	icon = 'modular_chomp/icons/turf/thor.dmi'
+	icon = 'icons/chomp/turf/thor.dmi'
 	icon_state = "deeprock"
 
 /turf/simulated/mineral/thor/floor
 	name = "basalt"
 	floor_name = "basalt"
 	desc = "Loose, rocky basalt. It crumbles to sand under the slightest bit of force."
-	icon = 'modular_chomp/icons/turf/thor.dmi'
+	icon = 'icons/chomp/turf/thor.dmi'
 	icon_state = "basalt0"
 	temperature = 393.15
 	density = FALSE

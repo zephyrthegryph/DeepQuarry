@@ -1,7 +1,7 @@
 /obj/item/clothing/suit/storage/vest/officer
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/suit/mob_teshari.dmi',
-		SPECIES_VOX = 'modular_chomp/icons/inventory/suit/mob_vox.dmi'
+		SPECIES_VOX = 'icons/chomp/inventory/suit/mob_vox.dmi'
 		)
 /obj/item/clothing/suit/armor/pcarrier/primative
 	name = "makeshift suit"
@@ -19,8 +19,8 @@
 	name = "viper combat suit"
 	desc = "A suit of armor designed for naga-appearing creatures. Offers modest protection for its light weight."
 	slowdown = 0.2
-	icon = 'modular_chomp/icons/mob/viper_suit_ch.dmi'
-	icon_override = 'modular_chomp/icons/mob/viper_suit_ch.dmi'
+	icon = 'icons/chomp/mob/viper_suit_ch.dmi'
+	icon_override = 'icons/chomp/mob/viper_suit_ch.dmi'
 	icon_state = "viper_suit"
 	armor = list(melee = 35, bullet = 35, laser = 35, energy = 35, bomb = 25, bio = 20, rad = 20)
 	body_parts_covered = HEAD|UPPER_TORSO|LOWER_TORSO|LEGS|FEET|ARMS|HANDS

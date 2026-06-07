@@ -15,7 +15,7 @@
 /obj/item/clothing/accessory/holster/case
 	name = "instrument case"
 	desc = "A case for keeping your instrument safe."
-	icon = 'modular_chomp/icons/inventory/accessory/item.dmi'
+	icon = 'icons/chomp/inventory/accessory/item.dmi'
 	icon_state = "instrument"
 	concealed_holster = 0
 	can_hold = list(/obj/item/instrument)

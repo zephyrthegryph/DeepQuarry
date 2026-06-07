@@ -1,6 +1,6 @@
 /obj/effect/meteor/dust/meatyore
 	name = "space blood"
-	icon = 'modular_chomp/icons/obj/meteor.dmi'
+	icon = 'icons/chomp/obj/meteor.dmi'
 	icon_state = "meaty_dust"
 	meteordrop = /obj/item/reagent_containers/food/snacks/bacon
 
@@ -10,7 +10,7 @@
 
 /obj/effect/meteor/medium/meatyore
 	name = "meatyore"
-	icon = 'modular_chomp/icons/obj/meteor.dmi'
+	icon = 'icons/chomp/obj/meteor.dmi'
 	icon_state = "meaty_medium"
 	meteordrop = /obj/random/organ
 
@@ -25,7 +25,7 @@
 
 /obj/effect/meteor/big/meatyore
 	name = "large meatyore"
-	icon = 'modular_chomp/icons/obj/meteor.dmi'
+	icon = 'icons/chomp/obj/meteor.dmi'
 	icon_state = "meaty_big"
 	meteordrop = /obj/random/organ
 
@@ -40,7 +40,7 @@
 
 /obj/effect/meteor/flaming/
 	name = "flaming meatyore"
-	icon = 'modular_chomp/icons/obj/meteor.dmi'
+	icon = 'icons/chomp/obj/meteor.dmi'
 	icon_state = "meaty_flaming"
 	meteordrop = /obj/item/reagent_containers/food/snacks/meatsteak
 
@@ -70,7 +70,7 @@
 
 /obj/effect/meteor/emp/meatyore
 	name = "conducting meaty ore"
-	icon = 'modular_chomp/icons/obj/meteor.dmi'
+	icon = 'icons/chomp/obj/meteor.dmi'
 	icon_state = "meaty_glowing"
 	meteordrop = /obj/item/reagent_containers/food/snacks/meat/grubmeat
 
@@ -85,7 +85,7 @@
 
 /obj/effect/meteor/tunguska/meatyore
 	name = "tunguska meatyore"
-	icon = 'modular_chomp/icons/obj/meteor.dmi'
+	icon = 'icons/chomp/obj/meteor.dmi'
 	icon_state = "meaty_flaming"
 	meteordrop = /obj/item/reagent_containers/food/snacks/phorondragonmeat
 

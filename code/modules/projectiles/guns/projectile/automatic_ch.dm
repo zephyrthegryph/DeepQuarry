@@ -57,8 +57,8 @@
 	icon = 'icons/obj/64x32guns_ch.dmi'
 	icon_expected_width = 64
 	item_icons = list(
-		slot_l_hand_str = 'modular_chomp/icons/mob/items/lefthand_guns_ch.dmi',
-		slot_r_hand_str = 'modular_chomp/icons/mob/items/righthand_guns_ch.dmi',
+		slot_l_hand_str = 'icons/chomp/mob/items/lefthand_guns_ch.dmi',
+		slot_r_hand_str = 'icons/chomp/mob/items/righthand_guns_ch.dmi',
 		)
 	icon_state = "c20r"
 	item_state = "c20rnew"

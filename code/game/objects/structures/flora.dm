@@ -4,7 +4,7 @@
 /obj/structure/flora/tree/weepingcherry1
 	name = "Weeping Cherry"
 	desc = "A tall brown tree with long hanging branches filled with pink leaves, beautiful and aromatic. A specialized manufactured tree for space enviroments, some say this tree can survive in the void of space"
-	icon = 'modular_chomp/icons/obj/flora/weepingcherry1.dmi'
+	icon = 'icons/chomp/obj/flora/weepingcherry1.dmi'
 	icon_state = "tree"
 	base_state = "tree"
 	product = /obj/item/stack/material/log
@@ -18,7 +18,7 @@
 /obj/structure/flora/tree/weepingcherry2
 	name = "Weeping Cherry"
 	desc = "A tall brown tree with long hanging branches filled with pink leaves, beautiful and aromatic. A specialized manufactured tree for space environments, some say this tree can survive in the void of space!"
-	icon = 'modular_chomp/icons/obj/flora/weepingcherry2.dmi'
+	icon = 'icons/chomp/obj/flora/weepingcherry2.dmi'
 	icon_state = "tree"
 	base_state = "tree"
 	product = /obj/item/stack/material/log

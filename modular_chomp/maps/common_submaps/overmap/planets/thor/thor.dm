@@ -1,4 +1,4 @@
-//MOVED TO modular_chomp/icons/turf/flooring/flooring_premade.dm
+//MOVED TO icons/chomp/turf/flooring/flooring_premade.dm
 // //Atmosphere properties //CHOMP Comment: I guess this THOR planetary information should go here. THOR is a gas giant, it ain't gonna be getting very many other maps.
 // #define THOR_ONE_ATMOSPHERE	101.5 //kPa
 // #define THOR_AVG_TEMP			313 //kelvin

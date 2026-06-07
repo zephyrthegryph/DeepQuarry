@@ -3,7 +3,7 @@
 	name = "Multi-Floor Wire"
 	desc = "A thick industrial cable connecting power between all of the floors of the building."
 	power_gen = 150000
-	icon = 'modular_chomp/icons/obj/power.dmi'
+	icon = 'icons/chomp/obj/power.dmi'
 	icon_state = "rtgfakez"
 
 //The fake shuttle
@@ -156,5 +156,5 @@
 
 /obj/structure/sign/warning/secure_area/slabs
 	name = "Mysterious Slab"
-	icon = 'modular_chomp/icons/obj/stationobjs.dmi'
+	icon = 'icons/chomp/obj/stationobjs.dmi'
 	icon_state = "slab1-off"

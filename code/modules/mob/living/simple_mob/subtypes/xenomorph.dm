@@ -6,7 +6,7 @@
 	name = "badly spawned xenomorph"
 	desc = "A chitin-covered bipedal creature with an eerie skittery nature. this one was spawned in wrong."
 
-	icon = 'modular_chomp/icons/mob/xenos_32.dmi'
+	icon = 'icons/chomp/mob/xenos_32.dmi'
 	vis_height = 32
 
 	faction = "xeno"
@@ -84,7 +84,7 @@
 	icon_state = "alienh"
 
 	icon_state_prepounce = "alienh_pounce"
-	icon_pounce = 'modular_chomp/icons/mob/xenoleap_96.dmi'
+	icon_pounce = 'icons/chomp/mob/xenoleap_96.dmi'
 	icon_state_pounce = "alienh_leap"
 	icon_overlay_spit = "alienspit"
 	icon_overlay_spit_pounce = "alienspit_leap"
@@ -111,7 +111,7 @@
 	icon_state = "aliens"
 
 	icon_state_prepounce = "aliens_pounce"
-	icon_pounce = 'modular_chomp/icons/mob/xenoleap_96.dmi'
+	icon_pounce = 'icons/chomp/mob/xenoleap_96.dmi'
 	icon_state_pounce = "aliens_leap"
 	icon_overlay_spit = "alienspit"
 	icon_overlay_spit_pounce = "alienspit_leap"
@@ -141,7 +141,7 @@
 	icon_living = "alienq"
 	icon_rest = "alienq_sleep"
 	icon_state = "alienq"
-	icon = 'modular_chomp/icons/mob/xenoqueen_64.dmi'
+	icon = 'icons/chomp/mob/xenoqueen_64.dmi'
 	vis_height = 64
 	pixel_x = -16
 	default_pixel_x = -16

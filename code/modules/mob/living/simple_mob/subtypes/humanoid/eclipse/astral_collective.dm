@@ -2,7 +2,7 @@
 	name = "Astral Collective Unit"
 	tt_desc = "E Homo sapiens"
 	desc = "An armored hostile."
-	icon = 'modular_chomp/icons/mob/eclipse.dmi'
+	icon = 'icons/chomp/mob/eclipse.dmi'
 	icon_state = "medi"
 	icon_living = "medi"
 	icon_dead = "medi"

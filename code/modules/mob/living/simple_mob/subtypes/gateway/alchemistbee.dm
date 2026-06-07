@@ -8,7 +8,7 @@
 /mob/living/simple_mob/vr/alchemistbee
 	name = "large hardlight creature"
 	desc = "A digital creature"
-	icon = 'modular_chomp/icons/mob/alchemistbee.dmi'
+	icon = 'icons/chomp/mob/alchemistbee.dmi'
 	icon_state = "beeliving"
 	icon_living = "beeliving"
 	icon_dead = "beedead"
@@ -230,7 +230,7 @@
 //I desire arcing projectiles with smoke. Wish this was a general proc for projectiles
 /obj/item/projectile/arc/vial
 	name = "vial"
-	icon = 'modular_chomp/icons/obj/vialprojectile.dmi'
+	icon = 'icons/chomp/obj/vialprojectile.dmi'
 	icon_state = "blue_vial"
 	var/splatter = FALSE			// Will this make a cloud of reagents?
 	var/splatter_volume = 5			// The volume of its chemical container, for said cloud of reagents.

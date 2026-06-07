@@ -1,5 +1,5 @@
 /mob/living/simple_mob/vore/spacecritter
-	icon = 'modular_chomp/icons/mob/spaceinvader.dmi'
+	icon = 'icons/chomp/mob/spaceinvader.dmi'
 	health = 30
 	maxHealth = 30
 	movement_cooldown = 3
@@ -68,7 +68,7 @@
 /mob/living/simple_mob/vore/spacecritter/solarray //solar moth lite, dies to water
 	name = "solar ray"
 	desc = "A sting ray of fire, drifting around"
-	icon = 'modular_chomp/icons/mob/spaceinvader.dmi'
+	icon = 'icons/chomp/mob/spaceinvader.dmi'
 	icon_state = "solarray"
 	icon_living = "solarray"
 	icon_dead = "solarray-dead"
@@ -130,7 +130,7 @@
 /mob/living/simple_mob/vore/spacecritter/livingice //dark blue slime but more chilly. Dies to lasers or slighly toasty rooms
 	name = "living icicle"
 	desc = "A strange creature, a crab like creature seemingly made of ice"
-	icon = 'modular_chomp/icons/mob/spaceinvader.dmi'
+	icon = 'icons/chomp/mob/spaceinvader.dmi'
 	icon_state = "livingice"
 	icon_living = "livingice"
 	icon_dead = "livingice-dead"
@@ -169,7 +169,7 @@
 /mob/living/simple_mob/vore/spacecritter/radcrab //bullets, melee, and cold all crack the poor thing's shell
 	name = "crystaline crab"
 	desc = "A largeish hermit crab glowing green, irradting the nearby area"
-	icon = 'modular_chomp/icons/mob/spaceinvader.dmi'
+	icon = 'icons/chomp/mob/spaceinvader.dmi'
 	icon_state = "hermitcrab"
 	icon_living = "hermitcrab"
 	icon_dead = "hermitcrab-dead"
@@ -215,7 +215,7 @@
 /mob/living/simple_mob/vore/spacecritter/dreameel
 	name = "dream eel"
 	desc = "A eel floating through it's own thick cloud"
-	icon = 'modular_chomp/icons/mob/spaceinvader.dmi'
+	icon = 'icons/chomp/mob/spaceinvader.dmi'
 	icon_state = "dreameel"
 	icon_living = "dreameel"
 	icon_dead = "dreameel-dead"
@@ -235,7 +235,7 @@
 /mob/living/simple_mob/vore/spacecritter/dreameel/nightmare
 	name = "dream eel"
 	desc = "A eel floating through it's own thick cloud"
-	icon = 'modular_chomp/icons/mob/spaceinvader.dmi'
+	icon = 'icons/chomp/mob/spaceinvader.dmi'
 	icon_state = "dreameel"
 	icon_living = "dreameel"
 	movement_cooldown = -5
@@ -251,7 +251,7 @@
 /mob/living/simple_mob/vore/spacecritter/gravityshell
 	name = "Gravity Shell"
 	desc = "A metallic turtle"
-	icon = 'modular_chomp/icons/mob/spaceinvader.dmi'
+	icon = 'icons/chomp/mob/spaceinvader.dmi'
 	icon_state = "gravityshell"
 	icon_living = "gravityshell"
 	icon_dead = "gravityshell-dead"

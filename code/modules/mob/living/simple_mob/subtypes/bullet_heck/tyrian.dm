@@ -1,6 +1,6 @@
 /mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses
 	faction = FACTION_TYR
-	icon = 'modular_chomp/icons/mob/tyr.dmi'
+	icon = 'icons/chomp/mob/tyr.dmi'
 	size_multiplier = 2
 	swallowTime = 2 SECONDS
 	vore_active = 1
@@ -283,7 +283,7 @@
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/tankyboss/crystal_boss //immune to projectiles
 	name = "crystalized expirment"
-	icon = 'modular_chomp/icons/mob/tyr.dmi'
+	icon = 'icons/chomp/mob/tyr.dmi'
 	icon_state = "crystalized"
 	icon_living = "crystalized"
 	health = 400

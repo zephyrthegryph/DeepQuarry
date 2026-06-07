@@ -18,7 +18,7 @@
 /obj/item/stack/material/wisp
 	name = "Strange Wisp"
 	desc = "The by-product of mob grinding."
-	icon = 'modular_chomp/icons/obj/crafting.dmi'
+	icon = 'icons/chomp/obj/crafting.dmi'
 	icon_state = "wisp"
 	default_type = MAT_WISP
 	no_variants = FALSE
@@ -46,7 +46,7 @@
 /obj/item/stack/material/frostscale
 	name = "Frost Scale"
 	desc = "The by-product of mob grinding."
-	icon = 'modular_chomp/icons/obj/crafting.dmi'
+	icon = 'icons/chomp/obj/crafting.dmi'
 	icon_state = "scale"
 	color = "#0000CC"
 	default_type = MAT_FROSCALE
@@ -73,7 +73,7 @@
 /obj/item/stack/material/crystalscale
 	name = "Crystak Scale"
 	desc = "The by-product of mob grinding."
-	icon = 'modular_chomp/icons/obj/crafting.dmi'
+	icon = 'icons/chomp/obj/crafting.dmi'
 	icon_state = "scale"
 	color = "#006633"
 	default_type = MAT_CRYSCALE
@@ -99,7 +99,7 @@
 /obj/item/stack/material/dreamscale
 	name = "Dream Scale"
 	desc = "The by-product of mob grinding."
-	icon = 'modular_chomp/icons/obj/crafting.dmi'
+	icon = 'icons/chomp/obj/crafting.dmi'
 	icon_state = "scale"
 	default_type = MAT_DREAMSCALE
 	no_variants = FALSE
@@ -124,7 +124,7 @@
 /obj/item/stack/material/shellchitin
 	name = "Shell Chitin"
 	desc = "The by-product of mob grinding."
-	icon = 'modular_chomp/icons/obj/crafting.dmi'
+	icon = 'icons/chomp/obj/crafting.dmi'
 	icon_state = "shell"
 	default_type = MAT_SHELLCHITIN
 	no_variants = FALSE

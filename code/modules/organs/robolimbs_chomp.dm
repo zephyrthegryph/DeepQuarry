@@ -42,8 +42,8 @@
 /datum/robolimb/enviroshell
 	company = "YR3 Enviroshell"
 	desc = "A limb with oddly high internal pressure tolerance."
-	icon = 'modular_chomp/icons/mob/human_races/cyberlimbs/YR3/YR3_enviroshell.dmi'
-	monitor_icon = 'modular_chomp/icons/mob/monitor_icons.dmi'
+	icon = 'icons/chomp/mob/human_races/cyberlimbs/YR3/YR3_enviroshell.dmi'
+	monitor_icon = 'icons/chomp/mob/monitor_icons.dmi'
 	monitor_styles = YR3_MONITOR_STYLES
 
 /datum/robolimb/enviroshell/original
@@ -55,13 +55,13 @@
 
 /datum/robolimb/enviroshell/colorable
 	company = "YR3 Enviroshell-Colorable"
-	icon = 'modular_chomp/icons/mob/human_races/cyberlimbs/YR3/YR3_enviroshell_colorable.dmi'
+	icon = 'icons/chomp/mob/human_races/cyberlimbs/YR3/YR3_enviroshell_colorable.dmi'
 	lifelike = 1
 	skin_tone = 1
 
 /datum/robolimb/enviroshell/original/colorable
 	company = "YR3 Enviroshell- Colorable Xenochimera Model"
-	icon = 'modular_chomp/icons/mob/human_races/cyberlimbs/YR3/YR3_enviroshell_colorable.dmi'
+	icon = 'icons/chomp/mob/human_races/cyberlimbs/YR3/YR3_enviroshell_colorable.dmi'
 	lifelike = 1
 	skin_tone = 1
 
@@ -70,7 +70,7 @@
 	desc = "A limb which sacrifices the YR3 Enviroshell's containment capabilities, replacing the intended occupant with a mesh of deceptively simple nanite pseudomuscle"
 	blood_name = "motor nanites"
 	blood_color = "#0e1213"
-	icon = 'modular_chomp/icons/mob/human_races/cyberlimbs/YR3/YR3_sleek.dmi'
+	icon = 'icons/chomp/mob/human_races/cyberlimbs/YR3/YR3_sleek.dmi'
 	lifelike = TRUE
 
 #undef YR3_MONITOR_STYLES

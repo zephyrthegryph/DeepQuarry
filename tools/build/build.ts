@@ -170,7 +170,7 @@ export const IconRepackTarget = new Juke.Target({
     await Juke.exec('python3', [
       '-m', 'tools.dq_icons.build_step',
       '--output', 'icons/gen',
-      'icons', 'modular_chomp/icons', 'modular_dq/icons', 'maps',
+      'icons', 'maps',
     ]);
   },
 });

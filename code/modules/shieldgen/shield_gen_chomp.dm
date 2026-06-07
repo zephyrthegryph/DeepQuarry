@@ -1,2 +1,2 @@
 /obj/machinery/shield_gen
-	icon = 'modular_chomp/icons/obj/machines/shielding.dmi'
+	icon = 'icons/chomp/obj/machines/shielding.dmi'

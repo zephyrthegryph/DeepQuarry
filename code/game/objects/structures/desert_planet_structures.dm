@@ -1,6 +1,6 @@
 // Props
 /obj/structure/prop/desert_rock
-	icon = 'modular_chomp/icons/obj/desert_planet/desert_rocks.dmi'
+	icon = 'icons/chomp/obj/desert_planet/desert_rocks.dmi'
 	desc = "Sandy and smooth from erosion."
 	density = TRUE
 	anchored = TRUE
@@ -41,7 +41,7 @@
 /obj/structure/prop/desert_rock/anthill
 	name = "ant hill"
 	desc = "See how many ants you can spot."
-	icon = 'modular_chomp/icons/obj/desert_planet/desert_plants.dmi'
+	icon = 'icons/chomp/obj/desert_planet/desert_plants.dmi'
 	icon_state = "anthill0"
 
 /obj/structure/prop/desert_rock/anthill/Initialize(mapload)
@@ -51,7 +51,7 @@
 /obj/structure/prop/desert_planet64x64
 	name = "large rock"
 	desc = "Sandy and smooth from erosion."
-	icon = 'modular_chomp/icons/obj/desert_planet/desert_props_64x64.dmi'
+	icon = 'icons/chomp/obj/desert_planet/desert_props_64x64.dmi'
 	density = TRUE
 	anchored = TRUE
 	can_buckle = FALSE
@@ -106,7 +106,7 @@
 /obj/structure/prop/desert_planet160x160
 	name = "desert large boulder"
 	desc = "Sandy and smooth from erosion."
-	icon = 'modular_chomp/icons/obj/desert_planet/desert_planet_160x160.dmi'
+	icon = 'icons/chomp/obj/desert_planet/desert_planet_160x160.dmi'
 	density = TRUE
 	anchored = TRUE
 	can_buckle = FALSE
@@ -144,7 +144,7 @@
 /obj/structure/flora/desert_planet
 	name = "desert plant"
 	desc = "Probably a succulent."
-	icon = 'modular_chomp/icons/obj/desert_planet/desert_plants.dmi'
+	icon = 'icons/chomp/obj/desert_planet/desert_plants.dmi'
 
 /obj/structure/flora/desert_planet/potted_plant
 	name = "potted plant"
@@ -222,7 +222,7 @@
 /obj/structure/flora/tree/desert_planet
 	name = "palm tree"
 	desc = "Tall palm tree, makes for a good shade."
-	icon = 'modular_chomp/icons/obj/desert_planet/desert_planet_160x160.dmi'
+	icon = 'icons/chomp/obj/desert_planet/desert_planet_160x160.dmi'
 	density = FALSE
 	anchored = TRUE
 	can_buckle = FALSE

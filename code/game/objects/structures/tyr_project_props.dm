@@ -3,7 +3,7 @@
 	name = "odd elevator"
 	desc = "A strange metal cylandir, a partially functioning elevator it seems. However the doors need to be pried open."
 	description_info = "Utlize a weapon or tool to get warped somewhere else."
-	icon = 'modular_chomp/icons/obj/tribal_gear.dmi'
+	icon = 'icons/chomp/obj/tribal_gear.dmi'
 	icon_state = "elevator"
 	anchored = TRUE
 	var/descendx
@@ -15,11 +15,11 @@
 
 /obj/machinery/door/blast/puzzle/tyrdoor
 	name = "strange door"
-	icon = 'modular_chomp/icons/obj/weather_ruins.dmi'
+	icon = 'icons/chomp/obj/weather_ruins.dmi'
 
 /obj/machinery/door/blast/puzzle/tyrdoor
 	name = "strange door"
-	icon = 'modular_chomp/icons/obj/weather_ruins.dmi'
+	icon = 'icons/chomp/obj/weather_ruins.dmi'
 	icon_state_open = "open_door"
 	icon_state_closed = "star_door"
 	icon_state = "star_door"
@@ -90,7 +90,7 @@
 /obj/machinery/door/blast/tyremittercheck //Desire is for them to set up an emitter, and break the door that way.
 	name = "strange door"
 	desc = "A strange door, but seems weaker then others. May break under extreme firepower.."
-	icon = 'modular_chomp/icons/obj/weather_ruins.dmi'
+	icon = 'icons/chomp/obj/weather_ruins.dmi'
 	icon_state_closed = "ultra_blast_door"
 	health = 4500
 
@@ -99,7 +99,7 @@
 /obj/machinery/restoration_cell
 	name = "restoration cell"
 	desc = "A precusor device that generators a healing fluid"
-	icon = 'modular_chomp/icons/obj/weather_ruins.dmi'
+	icon = 'icons/chomp/obj/weather_ruins.dmi'
 	icon_state = "pod_preview"
 	density = TRUE
 	anchored = TRUE
@@ -258,7 +258,7 @@
 /obj/structure/outcrop/hydrogen
 	name = "spiky outcrop"
 	desc = "A spiky rocky outcrop."
-	icon = 'modular_chomp/icons/obj/tribal_gear.dmi'
+	icon = 'icons/chomp/obj/tribal_gear.dmi'
 	icon_state = "outcrop-hydrogen"
 	mindrop = 4
 	upperdrop = 8
@@ -267,7 +267,7 @@
 /obj/structure/outcrop/verdantium
 	name = "spiky outcrop"
 	desc = "A spiky rocky outcrop."
-	icon = 'modular_chomp/icons/obj/tribal_gear.dmi'
+	icon = 'icons/chomp/obj/tribal_gear.dmi'
 	icon_state = "outcrop-verdantium"
 	mindrop = 4
 	upperdrop = 8
@@ -296,7 +296,7 @@
 /obj/item/prop/tyrlore
 	name = "alien disk"
 	desc = "A disc for storing data."
-	icon = 'modular_chomp/icons/obj/weather_ruins.dmi'
+	icon = 'icons/chomp/obj/weather_ruins.dmi'
 	icon_state = "disc_alter"
 	w_class = ITEMSIZE_SMALL
 

@@ -2,7 +2,7 @@
 	health = 600
 	maxHealth = 600
 	faction = FACTION_ECLIPSE
-	icon = 'modular_chomp/icons/mob/eclipse.dmi'
+	icon = 'icons/chomp/mob/eclipse.dmi'
 	has_repair_droid = TRUE
 	ai_holder_type = /datum/ai_holder/simple_mob/intentional/three_phases
 	armor = list(melee = 50, bullet = 50, laser = 50, energy = 50, bomb = 50, bio = 100, rad = 100)

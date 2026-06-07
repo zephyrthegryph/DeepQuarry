@@ -427,7 +427,7 @@ ANT STRUCTURES
 /obj/structure/mob_spawner/ant_hill
 	name = "ant hole"
 	desc = "An entrance to the nest of metallic ants."
-	icon = 'modular_chomp/icons/obj/tribal_gear.dmi'
+	icon = 'icons/chomp/obj/tribal_gear.dmi'
 	icon_state = "hole"
 	anchored = TRUE
 
@@ -460,7 +460,7 @@ ANT STRUCTURES
 /obj/effect/ant_structure
 	name = "organic structure"
 	desc = "A creation of metal ants."
-	icon = 'modular_chomp/icons/obj/tribal_gear.dmi'
+	icon = 'icons/chomp/obj/tribal_gear.dmi'
 	icon_state = "hole"
 	anchored = TRUE
 	density = FALSE
@@ -580,7 +580,7 @@ ANT STRUCTURES
 /obj/effect/spider/spiderling/antling
 	name = "antling"
 	desc = "A tiny ant."
-	icon = 'modular_chomp/icons/obj/tribal_gear.dmi'
+	icon = 'icons/chomp/obj/tribal_gear.dmi'
 	icon_state = "antling"
 	anchored = FALSE
 	layer = HIDING_LAYER

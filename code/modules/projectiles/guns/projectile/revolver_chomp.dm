@@ -6,9 +6,9 @@
 	projectile_type = /obj/item/projectile/bullet/rifle/a145
 	icon_state = "ukr"
 	item_state = "ukr"
-	icon = 'modular_chomp/icons/obj/guns/altmarksman/altmarksman.dmi'
+	icon = 'icons/chomp/obj/guns/altmarksman/altmarksman.dmi'
 	fire_sound = 'sound/weapons/marksmanalt.ogg'
 	item_icons = list(
-		slot_l_hand_str = 'modular_chomp/icons/obj/guns/altmarksman/lefthand_guns.dmi',
-		slot_r_hand_str = 'modular_chomp/icons/obj/guns/altmarksman/righthand_guns.dmi',
+		slot_l_hand_str = 'icons/chomp/obj/guns/altmarksman/lefthand_guns.dmi',
+		slot_r_hand_str = 'icons/chomp/obj/guns/altmarksman/righthand_guns.dmi',
 		)

@@ -1,7 +1,7 @@
 /obj/item/holosign_creator/forcewand
 	name = "wand of force"
 	desc = "A strange wand with odd bits of wires and circuits poking out."
-	icon = 'modular_chomp/icons/obj/guns/fakemagic.dmi'
+	icon = 'icons/chomp/obj/guns/fakemagic.dmi'
 	icon_state = "forcewand"
 	holosign_type = /obj/structure/holosign/barrier/forcebarrier
 	creation_time = 5
@@ -10,7 +10,7 @@
 /obj/item/holosign_creator/smokewand
 	name = "wand of smoke"
 	desc = "A strange wand with odd bits of wires and circuits poking out."
-	icon = 'modular_chomp/icons/obj/guns/fakemagic.dmi'
+	icon = 'icons/chomp/obj/guns/fakemagic.dmi'
 	icon_state = "smokewand"
 	holosign_type = /obj/structure/holosign/barrier/smokewall
 	creation_time = 0
@@ -19,7 +19,7 @@
 /obj/structure/holosign/barrier/forcebarrier
 	name = "force barrier"
 	desc = "A strange nigh invisible wall."
-	icon = 'modular_chomp/icons/obj/guns/fakemagic.dmi'
+	icon = 'icons/chomp/obj/guns/fakemagic.dmi'
 	icon_state = "forcewall"
 	anchored = TRUE
 	density = TRUE
@@ -29,7 +29,7 @@
 /obj/structure/holosign/barrier/smokewall
 	name = "force barrier"
 	desc = "A wall of smoke."
-	icon = 'modular_chomp/icons/obj/guns/fakemagic.dmi'
+	icon = 'icons/chomp/obj/guns/fakemagic.dmi'
 	icon_state = "smokewall"
 	anchored = TRUE
 	density = FALSE
@@ -40,7 +40,7 @@
 /obj/item/gun/magic/firestaff/cultstaff
 	name = "cultist staff"
 	desc = "A strange staff, bits of lose wires and circuit poking out from the wooden handle."
-	icon = 'modular_chomp/icons/obj/guns/fakemagic.dmi'
+	icon = 'icons/chomp/obj/guns/fakemagic.dmi'
 	icon_state = "cultstaff"
 	w_class = ITEMSIZE_NORMAL
 	checks_antimagic = FALSE

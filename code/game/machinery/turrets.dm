@@ -37,7 +37,7 @@
 	icon_color = "obelisk_blue"
 	lethal_icon_color = "oblisk_blue"
 
-	icon = 'modular_chomp/icons/obj/machines/defense.dmi'
+	icon = 'icons/chomp/obj/machines/defense.dmi'
 	icon_state = "obelisk"
 
 	density = TRUE

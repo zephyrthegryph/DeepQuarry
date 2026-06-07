@@ -2,7 +2,7 @@
 
 /mob/living/simple_mob/mechanical/hivebot/precusor
 	name = "Precursor Hivebot"
-	icon = 'modular_chomp/icons/mob/hivebot.dmi'
+	icon = 'icons/chomp/mob/hivebot.dmi'
 	icon_state = "precursorhive"
 	icon_living = "precursorhive"
 	attacktext = list("prodded")

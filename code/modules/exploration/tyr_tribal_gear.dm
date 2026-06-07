@@ -4,7 +4,7 @@
 /obj/item/reagent_containers/food/snacks/weatherlily
 	name = "strange leaves"
 	desc = "A strange flower producing an odd substance."
-	icon = 'modular_chomp/icons/obj/tribal_gear.dmi'
+	icon = 'icons/chomp/obj/tribal_gear.dmi'
 	icon_state = "leaves"
 	bitesize = 1
 
@@ -18,7 +18,7 @@
 /obj/structure/outcrop/weathered_gate
 	name = "outcrop"
 	desc = "A boring rocky outcrop."
-	icon = 'modular_chomp/icons/obj/tribal_gear.dmi'
+	icon = 'icons/chomp/obj/tribal_gear.dmi'
 	density = TRUE
 	throwpass = 1
 	anchored = TRUE
@@ -30,7 +30,7 @@
 /obj/structure/flora/tyr
 	name = "flora"
 	desc = "A strange plant."
-	icon = 'modular_chomp/icons/obj/tribal_gear.dmi'
+	icon = 'icons/chomp/obj/tribal_gear.dmi'
 
 	randomize_size = TRUE
 
@@ -81,7 +81,7 @@
 /obj/item/prop/alien/prototype
 	name = "alien prototype"
 	desc = "You have no idea what this thing does."
-	icon = 'modular_chomp/icons/obj/tribal_gear.dmi'
+	icon = 'icons/chomp/obj/tribal_gear.dmi'
 	icon_state = "crystal"
 	w_class = ITEMSIZE_SMALL
 
@@ -115,34 +115,34 @@
 /obj/item/melee/agate_spear
 	name = "makeshift spear"
 	desc = "A spear made from strange wood and gemstones"
-	icon = 'modular_chomp/icons/obj/tribal_gear.dmi'
+	icon = 'icons/chomp/obj/tribal_gear.dmi'
 	icon_state = "agate_spear"
 	force = 12
 	reach = 2
 /*	item_icons = list(
-		slot_l_hand_str = 'modular_chomp/icons/mob/items/lefthand_melee.dmi',
-		slot_r_hand_str = 'modular_chomp/icons/mob/items/righthand_melee.dmi',
+		slot_l_hand_str = 'icons/chomp/mob/items/lefthand_melee.dmi',
+		slot_r_hand_str = 'icons/chomp/mob/items/righthand_melee.dmi',
 		)*/
 
 /obj/item/melee/agate_sword
 	name = "makeshift sword"
 	desc = "A sword made from strange wood and gemstones"
-	icon = 'modular_chomp/icons/obj/tribal_gear.dmi'
+	icon = 'icons/chomp/obj/tribal_gear.dmi'
 	icon_state = "agate_sword"
 /*	item_icons = list(
-		slot_l_hand_str = 'modular_chomp/icons/mob/items/lefthand_melee.dmi',
-		slot_r_hand_str = 'modular_chomp/icons/mob/items/righthand_melee.dmi',
+		slot_l_hand_str = 'icons/chomp/mob/items/lefthand_melee.dmi',
+		slot_r_hand_str = 'icons/chomp/mob/items/righthand_melee.dmi',
 		)*/
 	force = 15
 
 /obj/item/melee/agate_hammer
 	name = "makeshift hammer"
 	desc = "A hammer made from strange wood and gemstones"
-	icon = 'modular_chomp/icons/obj/tribal_gear.dmi'
+	icon = 'icons/chomp/obj/tribal_gear.dmi'
 	icon_state = "agate_hammer"
 /*	item_icons = list(
-		slot_l_hand_str = 'modular_chomp/icons/mob/items/lefthand_melee.dmi',
-		slot_r_hand_str = 'modular_chomp/icons/mob/items/righthand_melee.dmi',
+		slot_l_hand_str = 'icons/chomp/mob/items/lefthand_melee.dmi',
+		slot_r_hand_str = 'icons/chomp/mob/items/righthand_melee.dmi',
 		)*/
 	force = 40
 	attackspeed = 24 //Base attack speed is 8. So this is three times slower. 1 second equals 10.
@@ -151,8 +151,8 @@
 	name = "leaf cloak"
 	desc = "A strange cloak made of leaves and fiber. A strange residue resides upon the equipment"
 	slowdown = 0.2
-	icon = 'modular_chomp/icons/mob/tribal_gear.dmi'
-	icon_override = 'modular_chomp/icons/mob/tribal_gear.dmi'
+	icon = 'icons/chomp/mob/tribal_gear.dmi'
+	icon_override = 'icons/chomp/mob/tribal_gear.dmi'
 	icon_state = "lilly_cloak"
 	armor = list(melee = 20, bullet = 20, laser = 20, energy = 20, bomb = 0, bio = 60, rad = 60) //Seemingly medicore, but tack on the 20% chance to completly negate something and you get something that is average.
 	body_parts_covered = UPPER_TORSO|LOWER_TORSO|LEGS|FEET|ARMS|HANDS //Head be vunerable but cloak covers the other bits.
@@ -232,7 +232,7 @@
 /obj/item/melee/energy/sword/top_shield
 	name = "energy spike shield"
 	desc = "A makeshift shield."
-	icon = 'modular_chomp/icons/mob/tribal_gear.dmi'
+	icon = 'icons/chomp/mob/tribal_gear.dmi'
 	icon_state = "topshield"
 	item_state = "topshield"
 	active_force = 10
@@ -246,8 +246,8 @@
 	active_w_class = ITEMSIZE_HUGE
 	w_class = ITEMSIZE_HUGE
 	item_icons = list(
-		slot_l_hand_str = 'modular_chomp/icons/obj/guns/precursor/lefthand.dmi',
-		slot_r_hand_str = 'modular_chomp/icons/obj/guns/precursor/righthand.dmi',
+		slot_l_hand_str = 'icons/chomp/obj/guns/precursor/lefthand.dmi',
+		slot_r_hand_str = 'icons/chomp/obj/guns/precursor/righthand.dmi',
 		)
 
 //E sword has 30 damage, 50 AP, and 65% projectile block
@@ -270,13 +270,13 @@
 	w_class = ITEMSIZE_SMALL
 	active_w_class = ITEMSIZE_HUGE
 
-	icon = 'modular_chomp/icons/mob/tribal_gear.dmi'
+	icon = 'icons/chomp/mob/tribal_gear.dmi'
 	icon_state = "katar"
 	item_state = "katar"
 
 	item_icons = list(
-		slot_l_hand_str = 'modular_chomp/icons/obj/guns/precursor/lefthand.dmi',
-		slot_r_hand_str = 'modular_chomp/icons/obj/guns/precursor/righthand.dmi',
+		slot_l_hand_str = 'icons/chomp/obj/guns/precursor/lefthand.dmi',
+		slot_r_hand_str = 'icons/chomp/obj/guns/precursor/righthand.dmi',
 		)
 
 /obj/item/melee/energy/tyr_katar/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
@@ -319,13 +319,13 @@
 	active_w_class = ITEMSIZE_HUGE
 	can_cleave = TRUE
 
-	icon = 'modular_chomp/icons/mob/tribal_gear.dmi'
+	icon = 'icons/chomp/mob/tribal_gear.dmi'
 	icon_state = "hammer"
 	item_state = "hammer"
 
 	item_icons = list(
-		slot_l_hand_str = 'modular_chomp/icons/obj/guns/precursor/lefthand.dmi',
-		slot_r_hand_str = 'modular_chomp/icons/obj/guns/precursor/righthand.dmi',
+		slot_l_hand_str = 'icons/chomp/obj/guns/precursor/lefthand.dmi',
+		slot_r_hand_str = 'icons/chomp/obj/guns/precursor/righthand.dmi',
 		)
 
 /obj/item/melee/energy/tyr_hammer/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
@@ -363,13 +363,13 @@
 	hitcost = 320
 	use_cell = TRUE
 
-	icon = 'modular_chomp/icons/mob/tribal_gear.dmi'
+	icon = 'icons/chomp/mob/tribal_gear.dmi'
 	icon_state = "chainsaw"
 	item_state = "chainsaw"
 
 	item_icons = list(
-		slot_l_hand_str = 'modular_chomp/icons/obj/guns/precursor/lefthand.dmi',
-		slot_r_hand_str = 'modular_chomp/icons/obj/guns/precursor/righthand.dmi',
+		slot_l_hand_str = 'icons/chomp/obj/guns/precursor/lefthand.dmi',
+		slot_r_hand_str = 'icons/chomp/obj/guns/precursor/righthand.dmi',
 		)
 
 /obj/item/melee/energy/tyr_chainsaw/Initialize(mapload)
@@ -379,7 +379,7 @@
 /obj/item/shield/tyr_shield
 	name = "tyrian portable energy barrier"
 	desc = "A shield with a strange property of reducing the damage of projectiles instead of being effective at blocking them."
-	icon = 'modular_chomp/icons/mob/tribal_gear.dmi'
+	icon = 'icons/chomp/mob/tribal_gear.dmi'
 	icon_state = "barrier"
 	item_state = "barrier"
 

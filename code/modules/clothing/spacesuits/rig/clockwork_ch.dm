@@ -2,7 +2,7 @@
 	name = "brass box"
 	suit_type = "clockwork"
 	desc = "A subtly vibrating box made out of brass. It has some buttons and switches on one side, and what looks like vents on another."
-	icon = 'modular_chomp/icons/obj/rig_modules_ch.dmi'
+	icon = 'icons/chomp/obj/rig_modules_ch.dmi'
 	icon_state = "clockwork_rig"
 	slot_flags = SLOT_BELT
 	armor = list(melee = 70, bullet = 55, laser = 65, energy = 65, bomb = 65, bio = 0, rad = 100)
@@ -62,7 +62,7 @@
 /obj/item/cell/clockwork //using the stats of a precursor void cell until someone's motivated to port and make the suit use clockcult global power
 	name = "hierophant ansible"
 	desc = "A curiously cold brass doodad. It seems as though it really doesn't appreciate being held. Due to it's size and the apparent electrical arc, it might be useful as a battery?"
-	icon = 'modular_chomp/icons/obj/clockwork_objects.dmi'
+	icon = 'icons/chomp/obj/clockwork_objects.dmi'
 	icon_state = "hierophant_ansible"
 	maxcharge = 4800 //same stats as a void cell, but slower at recharging itself
 	charge_amount = 120

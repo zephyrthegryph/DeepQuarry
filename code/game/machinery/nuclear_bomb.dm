@@ -3,7 +3,7 @@ GLOBAL_VAR(bomb_set)
 /obj/machinery/nuclearbomb
 	name = "\improper Nuclear Fission Explosive"
 	desc = "Uh oh. RUN!!!!"
-	icon = 'modular_chomp/icons/obj/stationobjs.dmi' //chompedit, use the better one
+	icon = 'icons/chomp/obj/stationobjs.dmi' //chompedit, use the better one
 	icon_state = "nuclearbomb0"
 	density = TRUE
 	var/deployable = 0.0

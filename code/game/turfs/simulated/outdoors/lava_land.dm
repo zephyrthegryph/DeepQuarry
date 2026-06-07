@@ -1,7 +1,7 @@
 
 /turf/simulated/floor/outdoors/lavaland
-	icon = 'modular_chomp/icons/turf/lava_land.dmi'
-	icon_edge = 'modular_chomp/icons/turf/lava_land_edge.dmi'
+	icon = 'icons/chomp/turf/lava_land.dmi'
+	icon_edge = 'icons/chomp/turf/lava_land_edge.dmi'
 	name = "lavaland base turf"
 	desc = "This should not exist"
 
@@ -53,7 +53,7 @@
 	name = "ash covered stone"
 	desc = "Stone that's covered in a thin layer of ash."
 	icon_base = "ashrock"
-	icon = 'modular_chomp/icons/turf/lava_land.dmi'
+	icon = 'icons/chomp/turf/lava_land.dmi'
 
 /turf/simulated/floor/outdoors/lavaland/basalt
 	icon_state = "basalt0"
@@ -67,6 +67,6 @@
 /datum/decl/flooring/basalt
 	name = "basalt"
 	desc = "A hard cracked black rock formed from rapidly cooling lava."
-	icon = 'modular_chomp/icons/turf/lava_land.dmi'
+	icon = 'icons/chomp/turf/lava_land.dmi'
 	icon_base = "basalt"
 	has_base_range = 12

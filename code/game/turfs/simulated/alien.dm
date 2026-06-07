@@ -1,5 +1,5 @@
 /turf/simulated/shuttle/wall/alien/orange
-	icon = 'modular_chomp/icons/turf/alien.dmi'
+	icon = 'icons/chomp/turf/alien.dmi'
 	icon_state = "alien"
 	base_state = "alien"
 	light_range = 3

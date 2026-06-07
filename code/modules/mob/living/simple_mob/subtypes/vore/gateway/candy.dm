@@ -12,7 +12,7 @@
 /mob/living/simple_mob/vore/candy
 	name = "candy critter"
 	desc = "A creature made of candy"
-	icon = 'modular_chomp/icons/mob/candy.dmi'
+	icon = 'icons/chomp/mob/candy.dmi'
 	icon_state = "drone0"
 	icon_living = "drone0"
 	icon_dead = "drone0"
@@ -405,7 +405,7 @@
 /mob/living/simple_mob/vore/candy/ouroboros
 	name = "candy critter"
 	desc = "A creature made of candy"
-	icon = 'modular_chomp/icons/mob/candy.dmi'
+	icon = 'icons/chomp/mob/candy.dmi'
 	icon_state = "ouroboros"
 	icon_living = "ouroboros"
 	icon_dead = "slainouroboros"
@@ -574,7 +574,7 @@
 
 /obj/item/projectile/energy/chocosphere
 	name = "choclate sphere"
-	icon = 'modular_chomp/icons/mob/candy.dmi'
+	icon = 'icons/chomp/mob/candy.dmi'
 	icon_state = "choclate_sphere"
 	damage = 20
 	armor_penetration = 30
@@ -587,7 +587,7 @@
 
 /obj/item/projectile/energy/canearrow
 	name = "candy cane arrow"
-	icon = 'modular_chomp/icons/mob/candy.dmi'
+	icon = 'icons/chomp/mob/candy.dmi'
 	icon_state = "choclate_sphere"
 	damage = 15
 	armor_penetration = 40
@@ -600,7 +600,7 @@
 
 /obj/item/projectile/arc/fragmentation/cherrybomb
 	name = "cherry bomb"
-	icon = 'modular_chomp/icons/mob/candy.dmi'
+	icon = 'icons/chomp/mob/candy.dmi'
 	icon_state = "cherry_bomb"
 	fragment_amount = 3
 	spread_range = 7
@@ -611,7 +611,7 @@
 
 /obj/item/projectile/bullet/cherrypit
 	name = "cherry bomb"
-	icon = 'modular_chomp/icons/mob/candy.dmi'
+	icon = 'icons/chomp/mob/candy.dmi'
 	icon_state = "cherry_pit"
 	damage = 25
 	armor_penetration = 30
@@ -622,7 +622,7 @@
 /mob/living/simple_mob/vore/candy/peppermint
 	name = "peppermint turtle"
 	desc = "A creature made of candy, it's peppermint looking shell seeming diffcult to get a good hit on, but fragile if well struck."
-	icon = 'modular_chomp/icons/mob/candy.dmi'
+	icon = 'icons/chomp/mob/candy.dmi'
 	icon_state = "peppermint"
 	icon_living = "peppermint"
 	icon_dead = "peppermint_dead"
@@ -649,7 +649,7 @@
 /mob/living/simple_mob/vore/candy/worm
 	name = "hardcandy worm"
 	desc = "A creature made of candy."
-	icon = 'modular_chomp/icons/mob/candy.dmi'
+	icon = 'icons/chomp/mob/candy.dmi'
 	icon_state = "worm"
 	icon_living = "worm"
 	icon_dead = "worm_dead"

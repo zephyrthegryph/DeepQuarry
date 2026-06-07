@@ -25,7 +25,6 @@
 #define FILE_DIR html
 #define FILE_DIR strings
 #define FILE_DIR config
-#define FILE_DIR modular_chomp/icons
 #define FILE_DIR modular_chomp/maps
 // DQEdit End
 // END_FILE_DIR
@@ -5431,7 +5430,7 @@
 #include "code\modules\weapons\staves.dm"
 #include "code\modules\xenobio\machinery\monkey_processor.dm"
 // DQEdit End
-#include "modular_chomp\icons\turf\flooring\flooring_premade.dm"
+#include "icons\chomp\turf\flooring\flooring_premade.dm"
 #include "modular_chomp\maps\common\common_defines.dm"
 #include "modular_chomp\maps\common\common_elevators.dm"
 #include "modular_chomp\maps\common\common_events.dm"

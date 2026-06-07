@@ -2,7 +2,7 @@
 	name = "Paradoxical Rift Generator"
 	idle_power_usage = 2500000
 	use_power = USE_POWER_OFF
-	icon = 'modular_chomp/icons/obj/machines/defense.dmi'
+	icon = 'icons/chomp/obj/machines/defense.dmi'
 	icon_state = "paradox"
 	circuit = /obj/item/circuitboard/paradoxrift
 	var/build_eff = 1

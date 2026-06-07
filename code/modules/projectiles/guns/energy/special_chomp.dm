@@ -85,7 +85,7 @@
 /obj/item/gun/energy/supercannon
 	name = "Super-Rail Cannon"
 	desc = "This weapon seems to be vibrating with a barely containable energy, with no charging ports or battery ports in sight, you only have a singlular shot of this. Ever"
-	icon = 'modular_chomp/icons/obj/guns/supercannon/supercannon.dmi'
+	icon = 'icons/chomp/obj/guns/supercannon/supercannon.dmi'
 	icon_state = "supercannon"
 	item_state = "supercannon"
 	wielded_item_state = "supercannon-wielded"
@@ -101,6 +101,6 @@
 	force = 15 //pretty robust
 	one_handed_penalty = 90
 	item_icons = list(
-		slot_l_hand_str = 'modular_chomp/icons/obj/guns/supercannon/lefthand_guns.dmi',
-		slot_r_hand_str = 'modular_chomp/icons/obj/guns/supercannon/righthand_guns.dmi',
+		slot_l_hand_str = 'icons/chomp/obj/guns/supercannon/lefthand_guns.dmi',
+		slot_r_hand_str = 'icons/chomp/obj/guns/supercannon/righthand_guns.dmi',
 		)

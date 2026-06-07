@@ -8,7 +8,7 @@
 	health = 150
 	maxHealth = 150
 
-	icon = 'modular_chomp/icons/mob/eclipse.dmi'
+	icon = 'icons/chomp/mob/eclipse.dmi'
 	icon_state = "crystal"
 	icon_dead = "crystal_dead"
 
