@@ -113,7 +113,7 @@
 	shelter_id = "shelter_epsilon"
 	description = "(10x5) An escape pod, with a mediocre amount of supplies \
 		for escaping a dying ship as soon as possible."
-	mappath = "maps/offmap_vr/om_ships/shelter_5.dmm"
+	mappath = "maps/offmap/om_ships/shelter_5.dmm"
 	door_locations = list(list(10,3))
 
 /datum/map_template/shelter/cabin

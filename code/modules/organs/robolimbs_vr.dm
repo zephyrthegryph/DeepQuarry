@@ -16,7 +16,7 @@ GLOBAL_LIST_INIT(dsi_to_species, list(SPECIES_TAJARAN = "DSI - Tajaran", SPECIES
 /datum/robolimb/kitsuhana
 	company = "Kitsuhana"
 	desc = "This limb seems rather vulpine and fuzzy, with realistic-feeling flesh."
-	icon = 'icons/mob/human_races/cyberlimbs/_fluff_vr/aronai.dmi'
+	icon = 'icons/mob/human_races/cyberlimbs/_fluff/aronai.dmi'
 	blood_color = "#5dd4fc"
 	includes_tail = 1
 	includes_ears = 1
@@ -32,7 +32,7 @@ GLOBAL_LIST_INIT(dsi_to_species, list(SPECIES_TAJARAN = "DSI - Tajaran", SPECIES
 /datum/robolimb/white_kryten
 	company = "White Kryten Cybernetics"
 	desc = "This limb feels realistic to the touch, with soft fur. Were it not for the bright orange lights embedded in it, you might have trouble telling it from a non synthetic limb!"
-	icon = 'icons/mob/human_races/cyberlimbs/_fluff_vr/serdykov.dmi'
+	icon = 'icons/mob/human_races/cyberlimbs/_fluff/serdykov.dmi'
 	blood_color = "#ff6a00"
 	unavailable_to_build = 1
 	includes_tail = 1
@@ -45,7 +45,7 @@ GLOBAL_LIST_INIT(dsi_to_species, list(SPECIES_TAJARAN = "DSI - Tajaran", SPECIES
 /datum/robolimb/zenghu_frost
 	company = "Zeng-Hu (Custom)"
 	desc = "This limb has realistic synthetic flesh covering with 'blue accents'."
-	icon = 'icons/mob/human_races/cyberlimbs/_fluff_vr/Frosty.dmi'
+	icon = 'icons/mob/human_races/cyberlimbs/_fluff/Frosty.dmi'
 	blood_color = "#45ccff"
 	lifelike = 1
 	skin_tone = 1

@@ -58,7 +58,7 @@
 // as a stub avoids deleting consumer code blocks.
 /obj/machinery/gateway
 
-// Tether away spawner — was defined in maps/offmap_vr/common_offmaps.dm.
+// Tether away spawner — was defined in maps/offmap/common_offmaps.dm.
 // Subtypes in maps/common/common_things.dm reference its vars.
 /obj/tether_away_spawner
 	name = "RENAME ME, JERK"

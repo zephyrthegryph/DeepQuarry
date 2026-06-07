@@ -341,7 +341,7 @@
 /datum/map_template/common_lateload/away_aerostat
 	name = Z_NAME_AEROSTAT
 	desc = "The Virgo 2 Aerostat away mission."
-	mappath = "maps/expedition_vr/aerostat/aerostat_science_outpost.dmm"
+	mappath = "maps/expedition/aerostat/aerostat_science_outpost.dmm"
 	associated_map_datum = /datum/map_z_level/common_lateload/away_aerostat
 
 /////FOR CENTCOMM (at least)/////
