@@ -1,3 +1,0 @@
-#define NON_LISTENING_ATOM		0
-#define LISTENING_ATOM			1
-#define LISTENING_PLAYER		2
