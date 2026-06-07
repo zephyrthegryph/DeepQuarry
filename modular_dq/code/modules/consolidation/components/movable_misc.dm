@@ -203,16 +203,33 @@ GLOBAL_LIST_INIT(dq_parachuting_by_type, list(
 	if(!c) c = am.AddComponent(/datum/component/movable_state)
 	c.parachute = v
 
+// Per-type-default resolver: walk the type hierarchy once per concrete
+// type encountered, cache the result. Per-call type2parent walks are
+// otherwise hot — these helpers run on every step / falling / hovering
+// check. The cache is sized by concrete-type-count, not per-instance.
+/proc/_dq_resolve_typed_default(t, list/by_type, list/resolved_cache, default_value)
+	if(!t)
+		return default_value
+	if(t in resolved_cache)
+		return resolved_cache[t]
+	var/probe = t
+	while(probe)
+		if(probe in by_type)
+			resolved_cache[t] = by_type[probe]
+			return by_type[probe]
+		probe = type2parent(probe)
+	resolved_cache[t] = default_value
+	return default_value
+
+GLOBAL_LIST_EMPTY(_dq_parachuting_resolved)
+GLOBAL_LIST_EMPTY(_dq_softfall_resolved)
+GLOBAL_LIST_EMPTY(_dq_hovering_resolved)
+
 /proc/dq_get_parachuting(atom/movable/am)
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
 	if(c && c.parachuting != FALSE) return c.parachuting
-	// Type-default lookup
-	var/t = am.type
-	while(t)
-		if(t in GLOB.dq_parachuting_by_type)
-			return GLOB.dq_parachuting_by_type[t]
-		t = type2parent(t)
-	return FALSE
+	return _dq_resolve_typed_default(am.type, GLOB.dq_parachuting_by_type, GLOB._dq_parachuting_resolved, FALSE)
+
 /proc/dq_set_parachuting(atom/movable/am, v)
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
 	if(!c) c = am.AddComponent(/datum/component/movable_state)
@@ -221,12 +238,8 @@ GLOBAL_LIST_INIT(dq_parachuting_by_type, list(
 /proc/dq_get_softfall(atom/movable/am)
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
 	if(c && c.softfall_set) return c.softfall_value
-	var/t = am.type
-	while(t)
-		if(t in GLOB.dq_softfall_by_type)
-			return GLOB.dq_softfall_by_type[t]
-		t = type2parent(t)
-	return FALSE
+	return _dq_resolve_typed_default(am.type, GLOB.dq_softfall_by_type, GLOB._dq_softfall_resolved, FALSE)
+
 /proc/dq_set_softfall(atom/movable/am, v)
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
 	if(!c) c = am.AddComponent(/datum/component/movable_state)
@@ -236,12 +249,8 @@ GLOBAL_LIST_INIT(dq_parachuting_by_type, list(
 /proc/dq_get_hovering(atom/movable/am)
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
 	if(c && c.hovering_set) return c.hovering_value
-	var/t = am.type
-	while(t)
-		if(t in GLOB.dq_hovering_by_type)
-			return GLOB.dq_hovering_by_type[t]
-		t = type2parent(t)
-	return FALSE
+	return _dq_resolve_typed_default(am.type, GLOB.dq_hovering_by_type, GLOB._dq_hovering_resolved, FALSE)
+
 /proc/dq_set_hovering(atom/movable/am, v)
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
 	if(!c) c = am.AddComponent(/datum/component/movable_state)

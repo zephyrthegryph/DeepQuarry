@@ -96,9 +96,16 @@
 
 // Branch mechanical effects on the affected limb. Arms drop items
 // (the affected hand can't hold anything); legs heavily slow movement.
+//
+// `mechanical_effects` only depends on which limb is affected, which is
+// stable for the lifetime of the condition. Build the dict once when
+// `affectedorgan` is first observed and reuse — the prior version
+// reallocated the list literal on every Life tick.
 /datum/medical_issue/condition/tendon_severed/tick_condition()
 	. = ..()
 	if(!affectedorgan)
+		return
+	if(mechanical_effects)
 		return
 	switch(affectedorgan.organ_tag)
 		if(BP_L_ARM, BP_R_ARM, BP_L_HAND, BP_R_HAND)

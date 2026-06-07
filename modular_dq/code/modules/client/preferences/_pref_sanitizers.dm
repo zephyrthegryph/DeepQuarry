@@ -31,8 +31,10 @@
 	var/cap = S.num_alternate_languages + extra
 	if(value.len > cap)
 		value.len = cap
-	// Strip illegal languages (not in species secondary list AND not whitelisted)
-	for(var/language in value)
+	// Strip illegal languages (not in species secondary list AND not whitelisted).
+	// Iterate over a Copy() — DM's `for(var/x in list)` over an assoc list
+	// whose entries are being removed underneath produces undefined skips.
+	for(var/language in value.Copy())
 		var/datum/language/L = GLOB.all_languages[language]
 		if(!istype(L) || (L.flags & RESTRICTED))
 			value -= language
@@ -46,7 +48,7 @@
 		var/list/defaults = CONFIG_GET(str_list/language_prefixes)
 		return defaults.Copy()
 	var/static/list/forbidden_prefixes = list(";", ":", ".", "!", "*", "^", "-")
-	for(var/prefix in value)
+	for(var/prefix in value.Copy()) // iterate copy; mutating `value` mid-loop skips entries
 		if(prefix in forbidden_prefixes)
 			value -= prefix
 	return value
@@ -56,7 +58,7 @@
 		return list()
 	var/datum/species/S = GLOB.all_species[preferences.read_preference(/datum/preference/choiced/species)]
 	var/list/alt = preferences.read_preference(/datum/preference/alternate_languages) || list()
-	for(var/key in value)
+	for(var/key in value.Copy()) // iterate copy; .Remove() mid-loop skips entries
 		var/lang = value[key]
 		if(!lang)
 			value.Remove(key)
@@ -183,7 +185,7 @@
 				if(WRI.is_default(id_gender ? id_gender : MALE))
 					value[WRC.name] = WRI.name
 					break
-	for(var/category_name in value)
+	for(var/category_name in value.Copy()) // iterate copy; -= mid-loop skips entries
 		var/datum/category_group/underwear/UWC = GLOB.global_underwear.categories_by_name[category_name]
 		if(!UWC || !UWC.items_by_name[value[category_name]])
 			value -= category_name
@@ -193,7 +195,7 @@
 	if(!islist(value))
 		return list()
 	var/list/all_underwear = preferences.read_preference(/datum/preference/all_underwear) || list()
-	for(var/key in value)
+	for(var/key in value.Copy()) // iterate copy; -= mid-loop skips entries
 		if(!(key in all_underwear))
 			value -= key
 	return value

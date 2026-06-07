@@ -109,21 +109,26 @@ GLOBAL_LIST_EMPTY(dq_material_synergies)
 
 
 /// "Every part has a material whose material_class equals `target_class`."
+/// The previous version mutated `target_class` on the requirement instance,
+/// but GLOB.dq_material_synergies holds one shared instance reused across
+/// every machine — so the second machine inherited the first machine's
+/// class and rejected legitimate matches. The class is now computed
+/// locally per call.
 /datum/material_synergy_req/all_same_class
-	var/target_class
 
 /datum/material_synergy_req/all_same_class/matched_by(obj/machinery/M)
 	if(!M?.component_parts)
 		return FALSE
+	var/seen_class = null
 	for(var/obj/item/stock_parts/P in M.component_parts)
 		var/datum/material/mat = P.dq_get_material()
 		if(!mat)
 			return FALSE
-		if(target_class && mat.material_class != target_class)
+		if(isnull(seen_class))
+			seen_class = mat.material_class
+		else if(mat.material_class != seen_class)
 			return FALSE
-		if(!target_class)
-			target_class = mat.material_class
-	return target_class != null
+	return seen_class != null
 
 
 // --- Application hook -------------------------------------------------------

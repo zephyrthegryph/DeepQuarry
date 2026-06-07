@@ -28,9 +28,10 @@
 	// At generation a smooth noise field is bucketed by these weights;
 	// each tile's biome controls its wall_turf, ore/mob/decoration
 	// tables, and ambient color. Higher weight = more of the layer.
-	// If empty, the layer falls back to the monolithic wall_turf +
-	// feature pool behavior.
-	var/list/biome_roster = list()
+	// If null/empty, the layer falls back to the monolithic wall_turf +
+	// feature pool behavior. Base default null per §6a — subtypes
+	// override with concrete rosters.
+	var/list/biome_roster
 
 	// Baseline ore density (percent of wall tiles that carry ore).
 	// Feature-pool rolls populate the ore_table at generation time.
@@ -44,7 +45,8 @@
 	// Baseline mob spawn table used when no mob feature rolls — keeps
 	// the layer from feeling sterile if the random feature picks
 	// happen to skip all mob features. Form: list(typepath = weight).
-	var/list/default_mob_table = list()
+	// Subtypes override per §6a; default null.
+	var/list/default_mob_table
 
 	// Depth weights. Keys are range strings, values are pickweight values.
 	// Range syntax:
@@ -53,14 +55,15 @@
 	//   "7+"   open-ended downward (7, 8, 9, ...)
 	// At selection time SSquarry queries each config for its weight at the
 	// target depth, and pickweights across all non-zero-weight configs.
-	var/list/depth_weights = list()
+	// Subtypes override; default null per §6a.
+	var/list/depth_weights
 
 	// Pool of /datum/quarry_feature typepaths this biome can roll. At
 	// layer generation time the generator picks `feature_count_min` to
 	// `feature_count_max` distinct features from this pool. Each feature
 	// contributes ores, mobs, decorations, and goals (see
-	// /datum/quarry_feature).
-	var/list/feature_pool = list()
+	// /datum/quarry_feature). Subtypes override; default null per §6a.
+	var/list/feature_pool
 	// Min/max features to roll per layer. Inclusive on both ends. Default
 	// 5-10 — enough variety per layer to feel different per visit.
 	var/feature_count_min = 5

@@ -28,7 +28,8 @@
 
 
 /// Resolve the rating from the assigned material via the part-type
-/// formula. Unimbued parts return the upstream `rating` baseline.
+/// formula. Unimbued parts chain to upstream so any future upstream
+/// get_rating() override stays wired through us.
 /obj/item/stock_parts/get_rating()
 	if(material_id)
 		var/datum/material/M = dq_get_material()
@@ -36,7 +37,7 @@
 			var/derived = dq_part_rating_for(src, M)
 			if(derived > 0)
 				return derived
-	return rating
+	return ..()
 
 
 /// Per-part-type formula. Each part type returns a rating in roughly
@@ -58,7 +59,12 @@
 		return _dq_part_rating_value((dq_material_luminescence(M) + M.conductivity) / 50)
 	if(istype(P, /obj/item/stock_parts/matter_bin))
 		// Matter bin holds compressed matter — density + integrity.
-		return _dq_part_rating_value((M.density + M.integrity / 50) / 30)
+		// Operator precedence fix: the prior formula was
+		// `(M.density + M.integrity / 50) / 30` which DM parses as
+		// `(M.density + (M.integrity / 50)) / 30`. Every sibling
+		// formula uses `(a + b) / 50`, the parens belong around the
+		// add.
+		return _dq_part_rating_value((M.density + M.integrity) / 50)
 	return 0
 
 
@@ -100,7 +106,7 @@
 			// glow etc.) from the imbued material.
 			M.dq_apply_material_behaviors(src)
 			to_chat(user, span_notice("You imbue \the [initial(name)] with \the [M.display_name]. Effective rating: [rating]."))
-		return
+		return ..() // Chain so upstream attackby side-effects (sound, fingerprint, etc.) still run
 	return ..()
 
 

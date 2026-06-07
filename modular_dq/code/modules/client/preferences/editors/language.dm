@@ -71,6 +71,9 @@
 			var/typed = tgui_input_text(user, "Prefix character for slot [idx] (single character)", "Language Prefix", current, 1)
 			if(!typed)
 				return PREF_UPDATE_UNCHANGED
+			// tgui_input_text sleeps — re-verify prefs ownership.
+			if(!user?.client?.prefs || user.client.prefs != preferences)
+				return PREF_UPDATE_UNCHANGED
 			if(length(typed) != 1)
 				return PREF_UPDATE_REJECTED
 			prefixes.len = max(prefixes.len, 3)
@@ -88,10 +91,13 @@
 			var/typed = tgui_input_text(user, "Bind language '[lang]' to which single character?", "Language Key", null, 1)
 			if(!typed)
 				return PREF_UPDATE_UNCHANGED
+			// tgui_input_text sleeps — re-verify prefs ownership.
+			if(!user?.client?.prefs || user.client.prefs != preferences)
+				return PREF_UPDATE_UNCHANGED
 			if(length(typed) != 1)
 				return PREF_UPDATE_REJECTED
 			// Strip any previous binding for the same language (one key per language).
-			for(var/k in keys)
+			for(var/k in keys.Copy()) // mutation during iteration → iterate copy
 				if(keys[k] == lang)
 					keys -= k
 			keys[typed] = lang

@@ -47,12 +47,29 @@ GLOBAL_LIST_INIT(dq_mechanical_caps, list(
 	"drop_held_prob"    = 25,
 ))
 
+// Per-Life-tick cache of the conditions list. Each of the five public
+// mechanical_effects helpers below previously walked
+// get_all_conditions() (which itself iterates every organ) independently,
+// so a mob with multiple polytrauma conditions paid 5× the walk every
+// Life tick. Now they all read the cached list rebuilt at most once per
+// world.time stamp.
+/mob/living/carbon/human
+	var/list/_dq_mechanical_conditions_cache
+	var/_dq_mechanical_conditions_cache_time = -1
+
+/mob/living/carbon/human/proc/_dq_mechanical_conditions()
+	if(_dq_mechanical_conditions_cache_time == world.time)
+		return _dq_mechanical_conditions_cache
+	_dq_mechanical_conditions_cache = get_all_conditions()
+	_dq_mechanical_conditions_cache_time = world.time
+	return _dq_mechanical_conditions_cache
+
 /// Sum a single mechanical-effects key across the mob's active
 /// conditions, capped at the per-key ceiling in `dq_mechanical_caps`.
 /// Numeric effects sum; lists merge.
 /mob/living/carbon/human/proc/dq_mechanical_value(key)
 	. = 0
-	for(var/datum/medical_issue/condition/C in get_all_conditions())
+	for(var/datum/medical_issue/condition/C in _dq_mechanical_conditions())
 		if(C.mechanical_effects && !isnull(C.mechanical_effects[key]))
 			. += C.mechanical_effects[key]
 	var/cap = GLOB.dq_mechanical_caps[key]
@@ -60,21 +77,21 @@ GLOBAL_LIST_INIT(dq_mechanical_caps, list(
 		. = cap
 
 /mob/living/carbon/human/proc/dq_mechanical_flag(key)
-	for(var/datum/medical_issue/condition/C in get_all_conditions())
+	for(var/datum/medical_issue/condition/C in _dq_mechanical_conditions())
 		if(C.mechanical_effects && C.mechanical_effects[key])
 			return TRUE
 	return FALSE
 
 /mob/living/carbon/human/proc/dq_mechanical_list(key)
 	. = list()
-	for(var/datum/medical_issue/condition/C in get_all_conditions())
+	for(var/datum/medical_issue/condition/C in _dq_mechanical_conditions())
 		if(C.mechanical_effects && islist(C.mechanical_effects[key]))
 			for(var/v in C.mechanical_effects[key])
 				. |= v
 
 /// Returns TRUE if any active condition blocks this verb name.
 /mob/living/carbon/human/proc/dq_verb_blocked(verb_name)
-	for(var/datum/medical_issue/condition/C in get_all_conditions())
+	for(var/datum/medical_issue/condition/C in _dq_mechanical_conditions())
 		if(C.mechanical_effects)
 			var/list/blocked = C.mechanical_effects["blocked_verbs"]
 			if(islist(blocked) && (verb_name in blocked))
@@ -85,7 +102,7 @@ GLOBAL_LIST_INIT(dq_mechanical_caps, list(
 /// BP_R_ARM) must be dropped because of a condition. Used by the
 /// per-tick drop check.
 /mob/living/carbon/human/proc/dq_arm_disabled(zone)
-	for(var/datum/medical_issue/condition/C in get_all_conditions())
+	for(var/datum/medical_issue/condition/C in _dq_mechanical_conditions())
 		if(C.mechanical_effects)
 			var/disabled_arm = C.mechanical_effects["block_hold_arm"]
 			if(disabled_arm == zone)

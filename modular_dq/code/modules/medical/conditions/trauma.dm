@@ -135,33 +135,50 @@
 // just starting to fail), the patient feels weak. At high severity
 // they're collapsing. This keeps the condition palpable in the early
 // stages rather than waiting for organ damage to start at sev 60.
+//
+// Effects only change when the severity BAND crosses (<30, 30-60, 60+),
+// so cache the current band and reallocate the dict only on band
+// transition — was allocating fresh on every Life tick.
+/datum/medical_issue/condition/hypovolemic_shock
+	var/_last_effect_band = -1
+
 /datum/medical_issue/condition/hypovolemic_shock/tick_condition()
 	. = ..()
 	if(severity <= 0)
 		return
-	// Bands: <30 mild, 30-60 moderate, 60+ severe.
+	var/band
 	if(severity >= 60)
-		mechanical_effects = list(
-			"slowdown" = 1.5,
-			"accuracy_penalty" = 25,
-			"drop_held_prob" = 4,
-			"spontaneous_emotes" = list("stagger", "collapse", "groan"),
-			"spontaneous_emote_prob" = 6,
-		)
+		band = 2
 	else if(severity >= 30)
-		mechanical_effects = list(
-			"slowdown" = 0.8,
-			"accuracy_penalty" = 12,
-			"drop_held_prob" = 1,
-			"spontaneous_emotes" = list("wobble", "shake"),
-			"spontaneous_emote_prob" = 3,
-		)
+		band = 1
 	else
-		mechanical_effects = list(
-			"slowdown" = 0.3,
-			"spontaneous_emotes" = list("sigh"),
-			"spontaneous_emote_prob" = 2,
-		)
+		band = 0
+	if(band == _last_effect_band)
+		return
+	_last_effect_band = band
+	switch(band)
+		if(2)
+			mechanical_effects = list(
+				"slowdown" = 1.5,
+				"accuracy_penalty" = 25,
+				"drop_held_prob" = 4,
+				"spontaneous_emotes" = list("stagger", "collapse", "groan"),
+				"spontaneous_emote_prob" = 6,
+			)
+		if(1)
+			mechanical_effects = list(
+				"slowdown" = 0.8,
+				"accuracy_penalty" = 12,
+				"drop_held_prob" = 1,
+				"spontaneous_emotes" = list("wobble", "shake"),
+				"spontaneous_emote_prob" = 3,
+			)
+		else
+			mechanical_effects = list(
+				"slowdown" = 0.3,
+				"spontaneous_emotes" = list("sigh"),
+				"spontaneous_emote_prob" = 2,
+			)
 
 // Driven entirely by how much blood the patient has left. Topping the
 // patient back up via saline / blood-pack stops the runaway.

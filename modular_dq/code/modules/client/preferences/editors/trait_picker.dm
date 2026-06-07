@@ -85,6 +85,9 @@
 			var/picked = tgui_color_picker(user, "Blood color", "Color picker", current)
 			if(!picked)
 				return PREF_UPDATE_UNCHANGED
+			// tgui_color_picker sleeps — re-verify prefs ownership before writing.
+			if(!user?.client?.prefs || user.client.prefs != preferences)
+				return PREF_UPDATE_UNCHANGED
 			preferences.update_preference_by_type(/datum/preference/color/human/blood_color, sanitize_hexcolor(picked, default="#A10808"))
 			return PREF_UPDATE_ACCEPTED
 	return PREF_UPDATE_UNCHANGED

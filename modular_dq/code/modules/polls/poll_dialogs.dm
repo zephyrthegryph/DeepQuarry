@@ -85,7 +85,10 @@
 			return
 
 	var/voted = FALSE
-	var/datum/db_query/check = SSdbcore.NewQuery("SELECT 1 FROM erro_privacy WHERE ckey='[owner.ckey]'")
+	var/datum/db_query/check = SSdbcore.NewQuery(
+		"SELECT 1 FROM erro_privacy WHERE ckey = :t_ckey",
+		list("t_ckey" = owner.ckey),
+	)
 	check.Execute()
 	while(check.NextRow())
 		voted = TRUE
@@ -93,7 +96,10 @@
 	qdel(check)
 
 	if(!voted)
-		var/datum/db_query/ins = SSdbcore.NewQuery("INSERT INTO erro_privacy VALUES (null, Now(), '[owner.ckey]', '[option]')")
+		var/datum/db_query/ins = SSdbcore.NewQuery(
+			"INSERT INTO erro_privacy VALUES (null, Now(), :t_ckey, :t_option)",
+			list("t_ckey" = owner.ckey, "t_option" = option),
+		)
 		ins.Execute()
 		qdel(ins)
 		to_chat(owner, span_bold("Thank you for your vote!"))
@@ -149,7 +155,12 @@
 	if(!SSdbcore.IsConnected() || !owner?.client)
 		return
 	var/isadmin = check_rights_for(owner.client, R_HOLDER) ? 1 : 0
-	var/datum/db_query/q = SSdbcore.NewQuery("SELECT id, question FROM erro_poll_question WHERE [(isadmin ? "" : "adminonly = false AND")] Now() BETWEEN starttime AND endtime")
+	// Adminonly clause is a static fragment of the query selected at
+	// build-time — not user input. The Now() BETWEEN comparison takes no
+	// parameters. Parameterised queries below for any user-derived value.
+	var/datum/db_query/q = SSdbcore.NewQuery(
+		"SELECT id, question FROM erro_poll_question WHERE [(isadmin ? "" : "adminonly = false AND")] Now() BETWEEN starttime AND endtime",
+	)
 	q.Execute()
 	while(q.NextRow())
 		var/id_str = "[q.item[1]]"
@@ -177,7 +188,10 @@
 		.["error"] = "Database unavailable."
 		return
 
-	var/datum/db_query/q = SSdbcore.NewQuery("SELECT starttime, endtime, question, polltype, multiplechoiceoptions FROM erro_poll_question WHERE id = [pollid]")
+	var/datum/db_query/q = SSdbcore.NewQuery(
+		"SELECT starttime, endtime, question, polltype, multiplechoiceoptions FROM erro_poll_question WHERE id = :t_pollid",
+		list("t_pollid" = pollid),
+	)
 	q.Execute()
 	var/found = FALSE
 	var/start_time = ""
@@ -209,7 +223,10 @@
 			.["voted_option_id"] = null
 			.["options"] = build_option_list(pollid)
 
-			var/datum/db_query/v = SSdbcore.NewQuery("SELECT optionid FROM erro_poll_vote WHERE pollid = [pollid] AND ckey = '[owner.ckey]'")
+			var/datum/db_query/v = SSdbcore.NewQuery(
+				"SELECT optionid FROM erro_poll_vote WHERE pollid = :t_pollid AND ckey = :t_ckey",
+				list("t_pollid" = pollid, "t_ckey" = owner.ckey),
+			)
 			v.Execute()
 			while(v.NextRow())
 				.["voted"] = TRUE
@@ -221,7 +238,10 @@
 			.["options"] = build_option_list(pollid)
 
 			var/list/voted_for = list()
-			var/datum/db_query/v = SSdbcore.NewQuery("SELECT optionid FROM erro_poll_vote WHERE pollid = [pollid] AND ckey = '[owner.ckey]'")
+			var/datum/db_query/v = SSdbcore.NewQuery(
+				"SELECT optionid FROM erro_poll_vote WHERE pollid = :t_pollid AND ckey = :t_ckey",
+				list("t_pollid" = pollid, "t_ckey" = owner.ckey),
+			)
 			v.Execute()
 			while(v.NextRow())
 				voted_for += text2num("[v.item[1]]")
@@ -231,7 +251,10 @@
 			.["voted_options"] = voted_for
 
 		if("TEXT")
-			var/datum/db_query/v = SSdbcore.NewQuery("SELECT replytext FROM erro_poll_textreply WHERE pollid = [pollid] AND ckey = '[owner.ckey]'")
+			var/datum/db_query/v = SSdbcore.NewQuery(
+				"SELECT replytext FROM erro_poll_textreply WHERE pollid = :t_pollid AND ckey = :t_ckey",
+				list("t_pollid" = pollid, "t_ckey" = owner.ckey),
+			)
 			v.Execute()
 			while(v.NextRow())
 				.["voted"] = TRUE
@@ -242,7 +265,10 @@
 		if("NUMVAL")
 			.["options"] = build_numval_options(pollid)
 			.["voted_ratings"] = list()
-			var/datum/db_query/v = SSdbcore.NewQuery("SELECT o.text, v.rating FROM erro_poll_option o, erro_poll_vote v WHERE o.pollid = [pollid] AND v.ckey = '[owner.ckey]' AND o.id = v.optionid")
+			var/datum/db_query/v = SSdbcore.NewQuery(
+				"SELECT o.text, v.rating FROM erro_poll_option o, erro_poll_vote v WHERE o.pollid = :t_pollid AND v.ckey = :t_ckey AND o.id = v.optionid",
+				list("t_pollid" = pollid, "t_ckey" = owner.ckey),
+			)
 			v.Execute()
 			while(v.NextRow())
 				.["voted"] = TRUE
@@ -251,7 +277,10 @@
 
 /datum/poll_browser_dialog/proc/build_option_list(pollid)
 	var/list/out = list()
-	var/datum/db_query/q = SSdbcore.NewQuery("SELECT id, text FROM erro_poll_option WHERE pollid = [pollid]")
+	var/datum/db_query/q = SSdbcore.NewQuery(
+		"SELECT id, text FROM erro_poll_option WHERE pollid = :t_pollid",
+		list("t_pollid" = pollid),
+	)
 	q.Execute()
 	while(q.NextRow())
 		out += list(list("id" = text2num("[q.item[1]]"), "text" = "[q.item[2]]"))
@@ -260,7 +289,10 @@
 
 /datum/poll_browser_dialog/proc/build_numval_options(pollid)
 	var/list/out = list()
-	var/datum/db_query/q = SSdbcore.NewQuery("SELECT id, text, minval, maxval, descmin, descmid, descmax FROM erro_poll_option WHERE pollid = [pollid]")
+	var/datum/db_query/q = SSdbcore.NewQuery(
+		"SELECT id, text, minval, maxval, descmin, descmid, descmax FROM erro_poll_option WHERE pollid = :t_pollid",
+		list("t_pollid" = pollid),
+	)
 	q.Execute()
 	while(q.NextRow())
 		var/optionid = text2num("[q.item[1]]")

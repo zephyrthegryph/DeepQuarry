@@ -19,17 +19,13 @@ GLOBAL_LIST_INIT(dq_catalogue_delay_by_type, list(
 
 // The original proc lived on /atom and is called extensively. Keep it as
 // an /atom/proc (it's not a *new* proc-table entry — it already existed).
+GLOBAL_LIST_EMPTY(_dq_catalogue_delay_resolved)
+
 /atom/proc/get_catalogue_delay()
 	var/datum/component/catalogue_delay_override/c = GetComponent(/datum/component/catalogue_delay_override)
 	if(c)
 		return c.delay
-	var/t = type
-	while(t)
-		var/v = GLOB.dq_catalogue_delay_by_type[t]
-		if(v != null)
-			return v
-		t = type2parent(t)
-	return 5 SECONDS
+	return _dq_resolve_typed_default(type, GLOB.dq_catalogue_delay_by_type, GLOB._dq_catalogue_delay_resolved, 5 SECONDS)
 
 /proc/dq_set_catalogue_delay(atom/a, delay)
 	var/datum/component/catalogue_delay_override/c = a.GetComponent(/datum/component/catalogue_delay_override)

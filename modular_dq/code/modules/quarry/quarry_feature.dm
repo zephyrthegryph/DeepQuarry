@@ -26,15 +26,17 @@
 	/// Ores this feature contributes to the layer's ore_table.
 	/// Form: list(ORE_DEFINE = weight). The generator merges all
 	/// selected features' ore contributions and picks from the union.
-	var/list/ore_contributions = list()
+	/// Subtypes override with concrete tables; default null so abstract
+	/// features don't pay the empty-list-allocation cost per §6a.
+	var/list/ore_contributions
 
 	/// Hostile mob types this feature contributes to the layer's
 	/// mob_table. Form: list(typepath = weight).
-	var/list/mob_contributions = list()
+	var/list/mob_contributions
 
 	/// Decorations this feature contributes to the layer's
 	/// decoration_table. Form: list(typepath = weight).
-	var/list/decoration_contributions = list()
+	var/list/decoration_contributions
 
 	/// Optional flat additions to the layer's counts. These stack
 	/// across features. So picking three "rat nest" features that each

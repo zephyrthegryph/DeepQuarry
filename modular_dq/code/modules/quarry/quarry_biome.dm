@@ -24,16 +24,18 @@
 
 	/// Per-biome ore weights. When a wall tile in this biome is
 	/// chosen to become ore-bearing, the mineral is drawn from this
-	/// table. Form: list(ORE_X = weight).
-	var/list/ore_contributions = list()
+	/// table. Form: list(ORE_X = weight). Subtypes override with
+	/// concrete tables; base default is null so the empty `= list()`
+	/// allocation on the abstract type doesn't fire per §6a.
+	var/list/ore_contributions
 
 	/// Per-biome decoration weights for floor scatter.
-	var/list/decoration_contributions = list()
+	var/list/decoration_contributions
 
 	/// Per-biome mob weights for baseline mob spawn. The layer's
 	/// default mob spawn pass picks tiles, then consults the biome
 	/// at the tile and pulls from this table.
-	var/list/mob_contributions = list()
+	var/list/mob_contributions
 
 	/// Optional tint applied as a layer overlay so players can see
 	/// "I'm in the crystal area now" at a glance. Hex string or null.

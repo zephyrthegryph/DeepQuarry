@@ -94,6 +94,11 @@
 			var/picked = tgui_color_picker(user, "Marking color", "Color picker", seed)
 			if(!picked)
 				return PREF_UPDATE_UNCHANGED
+			// tgui_color_picker sleeps — re-verify the prefs are still owned
+			// by the same player after it returns. Without this, a char swap
+			// mid-pick writes to the wrong /datum/preferences.
+			if(!user?.client?.prefs || user.client.prefs != preferences)
+				return PREF_UPDATE_UNCHANGED
 			var/color = sanitize_hexcolor(picked)
 			markings[M] = preferences.mass_edit_marking_list(M, FALSE, TRUE, markings[M], color = color)
 			preferences.update_preference_by_type(/datum/preference/body_markings, markings)
@@ -106,6 +111,9 @@
 			var/seed = markings[M][zone]["color"] || "#FFFFFF"
 			var/picked = tgui_color_picker(user, "Zone color: [zone]", "Color picker", seed)
 			if(!picked)
+				return PREF_UPDATE_UNCHANGED
+			// Same post-sleep re-validation as above.
+			if(!user?.client?.prefs || user.client.prefs != preferences)
 				return PREF_UPDATE_UNCHANGED
 			var/color = sanitize_hexcolor(picked)
 			markings[M][zone]["color"] = color

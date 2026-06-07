@@ -172,7 +172,16 @@
 	// dispatcher so the effect fires every Life tick reliably, not
 	// dependent on the OD condition's host organ ticking. Scales by
 	// the OD condition's own severity so mild ODs drain mildly.
-	for(var/datum/medical_issue/condition/C as anything in get_all_conditions())
+	//
+	// Snapshot get_all_conditions() ONCE per tick and index by type —
+	// the previous version was O(N²) (outer condition walk × inner
+	// condition walk per target type). Polytrauma patients made this
+	// hot.
+	var/list/all_conditions = get_all_conditions()
+	var/list/conditions_by_type = list()
+	for(var/datum/medical_issue/condition/IC as anything in all_conditions)
+		LAZYADDASSOCLIST(conditions_by_type, IC.type, IC)
+	for(var/datum/medical_issue/condition/C as anything in all_conditions)
 		if(!length(C.od_cures_externally))
 			continue
 		var/sev_scale = C.severity / 100
@@ -182,9 +191,11 @@
 			var/drop_per_tick = C.od_cures_externally[target_type] * sev_scale
 			if(drop_per_tick <= 0)
 				continue
-			for(var/datum/medical_issue/condition/target as anything in get_all_conditions())
-				if(target.type == target_type)
-					target.severity = max(0, target.severity - drop_per_tick)
+			var/list/targets = conditions_by_type[target_type]
+			if(!targets)
+				continue
+			for(var/datum/medical_issue/condition/target as anything in targets)
+				target.severity = max(0, target.severity - drop_per_tick)
 
 
 /// Binary (presence-gated) chem condition: spawn at severity 50 when

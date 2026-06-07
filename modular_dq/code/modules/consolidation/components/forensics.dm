@@ -41,17 +41,13 @@ GLOBAL_LIST_INIT(dq_blood_color_by_type, list(
 		c = a.AddComponent(/datum/component/forensics_state)
 	c.was_bloodied = v
 
+GLOBAL_LIST_EMPTY(_dq_blood_color_resolved)
+
 /proc/dq_get_blood_color(atom/a)
 	var/datum/component/forensics_state/c = a.GetComponent(/datum/component/forensics_state)
 	if(c && c.blood_color != null)
 		return c.blood_color
-	// Walk type chain for per-type default
-	var/t = a.type
-	while(t)
-		if(t in GLOB.dq_blood_color_by_type)
-			return GLOB.dq_blood_color_by_type[t]
-		t = type2parent(t)
-	return null
+	return _dq_resolve_typed_default(a.type, GLOB.dq_blood_color_by_type, GLOB._dq_blood_color_resolved, null)
 
 /proc/dq_set_blood_color(atom/a, color)
 	var/datum/component/forensics_state/c = a.GetComponent(/datum/component/forensics_state)

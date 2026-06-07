@@ -741,6 +741,9 @@
 			var/picked = tgui_color_picker(user, "Pick a color", "[G.display_name]", cur)
 			if(!picked)
 				return PREF_UPDATE_UNCHANGED
+			// tgui_color_picker sleeps — re-verify prefs ownership before writing.
+			if(!user?.client?.prefs || user.client.prefs != preferences)
+				return PREF_UPDATE_UNCHANGED
 			item_meta["[tweak_idx]"] = sanitize_hexcolor(picked, default = cur)
 			active[gear_name] = item_meta
 			gear_list[loadout_key] = active
@@ -770,6 +773,8 @@
 			var/cur = (islist(cur_meta) && cur_meta["mode"] == "tint") ? cur_meta["value"] : "#ffffff"
 			var/picked = tgui_color_picker(user, "Tint color", "[G.display_name]", cur)
 			if(!picked)
+				return PREF_UPDATE_UNCHANGED
+			if(!user?.client?.prefs || user.client.prefs != preferences)
 				return PREF_UPDATE_UNCHANGED
 			item_meta["[tweak_idx]"] = list("mode" = "tint", "value" = sanitize_hexcolor(picked, default = cur))
 			active[gear_name] = item_meta
@@ -805,6 +810,8 @@
 			var/cur_value = swaps[original] || original
 			var/picked = tgui_color_picker(user, "Recolor source [original]", "[G.display_name]", cur_value)
 			if(!picked)
+				return PREF_UPDATE_UNCHANGED
+			if(!user?.client?.prefs || user.client.prefs != preferences)
 				return PREF_UPDATE_UNCHANGED
 			var/sanitized = sanitize_hexcolor(picked, default = original)
 			if(sanitized == original)
@@ -851,6 +858,9 @@
 				return PREF_UPDATE_REJECTED
 			dq_log("recolor_pick_matrix: tgui_input_colormatrix returned [islist(new_matrix) ? "list len=[length(new_matrix)]" : "[new_matrix]"]")
 			if(!islist(new_matrix) || length(new_matrix) < 12)
+				return PREF_UPDATE_UNCHANGED
+			// tgui_input_colormatrix sleeps — re-verify prefs ownership.
+			if(!user?.client?.prefs || user.client.prefs != preferences)
 				return PREF_UPDATE_UNCHANGED
 			item_meta["[tweak_idx]"] = list("mode" = "matrix", "value" = new_matrix)
 			active[gear_name] = item_meta
