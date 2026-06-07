@@ -5,13 +5,12 @@
 /* FOR LIVE SERVER   */
 /*********************/
 
-// DQEdit Start — booting into Deep Quarry instead of Southern Cross for the new fork.
-// #define USE_MAP_SOUTHERN_CROSS
+// DQEdit Start — the fork boots Deep Quarry. The legacy CHOMP station maps
+// (Southern Cross, Cetus, Soluna Nexus, Relic Base) were removed during the
+// hard-fork merge: they referenced surface map_template types that no longer
+// exist in-repo and had been dead since the fork switched to Deep Quarry.
 #define USE_MAP_DEEP_QUARRY
 // DQEdit End
-// #define USE_MAP_CETUS
-// #define USE_MAP_SOLUNA_NEXUS
-// #define USE_MAP_RELIC_BASE
 
 // Debug
 //#define USE_MAP_MINITEST
@@ -20,26 +19,6 @@
 /* End Map Selection */
 /*********************/
 
-#endif
-
-// Southern Cross
-#ifdef USE_MAP_SOUTHERN_CROSS
-#include "../southern_cross/southern_cross.dm"
-#endif
-
-// Soluna Nexus
-#ifdef USE_MAP_SOLUNA_NEXUS
-#include "../soluna_nexus/soluna_nexus.dm"
-#endif
-
-// Cetus
-#ifdef USE_MAP_CETUS
-#include "../cetus/cetus.dm"
-#endif
-
-// Relic Base
-#ifdef USE_MAP_RELIC_BASE
-#include "../relic_base/relicbase.dm"
 #endif
 
 #ifdef USE_MAP_MINITEST

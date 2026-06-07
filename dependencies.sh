@@ -33,9 +33,3 @@ export DREAMLUAU_REPO="tgstation/dreamluau"
 
 #dreamluau git tag
 export DREAMLUAU_VERSION=0.1.4
-
-#hypnagogic repo
-export CUTTER_REPO=spacestation13/hypnagogic
-
-#hypnagogic git tag
-export CUTTER_VERSION=v5.0.0

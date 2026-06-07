@@ -8,12 +8,9 @@
  */
 
 import fs from 'node:fs';
-import Bun from 'bun';
 import Juke from './juke/index.js';
 import { bun, bunRoot } from './lib/bun';
 import { DreamDaemon, DreamMaker, NamedVersionFile } from './lib/byond';
-import { downloadFile } from './lib/download';
-import { formatDeps } from './lib/helpers';
 import { prependDefines } from './lib/tgs';
 
 export const TGS_MODE = process.env.CBT_BUILD_MODE === 'TGS';
@@ -22,28 +19,6 @@ export const TGS_MODE = process.env.CBT_BUILD_MODE === 'TGS';
 export const DME_NAME = 'deepquarry';
 
 Juke.chdir('../..', import.meta.url);
-
-const dependencies: Record<string, string> = await Bun.file('dependencies.sh')
-  .text()
-  .then(formatDeps)
-  .catch((err) => {
-    Juke.logger.error(
-      'Failed to read dependencies.sh, please ensure it exists and is formatted correctly.',
-    );
-    Juke.logger.error(err);
-    throw new Juke.ExitCode(1);
-  });
-
-// Canonical path for the cutter exe at this moment
-function getCutterPath() {
-  const ver = dependencies.CUTTER_VERSION;
-  const suffix = process.platform === 'win32' ? '.exe' : '';
-  const file_ver = ver.split('.').join('-');
-
-  return `tools/icon_cutter/cache/hypnagogic${file_ver}${suffix}`;
-}
-
-const cutter_path = getCutterPath();
 
 export const DefineParameter = new Juke.Parameter({
   type: 'string[]',
@@ -61,16 +36,6 @@ export const DmVersionParameter = new Juke.Parameter({
 
 export const CiParameter = new Juke.Parameter({ type: 'boolean' });
 
-export const ForceRecutParameter = new Juke.Parameter({
-  type: 'boolean',
-  name: 'force-recut',
-});
-
-export const SkipIconCutter = new Juke.Parameter({
-  type: 'boolean',
-  name: 'skip-icon-cutter',
-});
-
 export const WarningParameter = new Juke.Parameter({
   type: 'string[]',
   alias: 'W',
@@ -79,64 +44,6 @@ export const WarningParameter = new Juke.Parameter({
 export const NoWarningParameter = new Juke.Parameter({
   type: 'string[]',
   alias: 'I',
-});
-
-export const CutterTarget = new Juke.Target({
-  onlyWhen: () => {
-    const files = Juke.glob(cutter_path);
-    return files.length === 0;
-  },
-  executes: async () => {
-    const repo = dependencies.CUTTER_REPO;
-    const ver = dependencies.CUTTER_VERSION;
-    const suffix = process.platform === 'win32' ? '.exe' : '';
-    const download_from = `https://github.com/${repo}/releases/download/${ver}/hypnagogic${suffix}`;
-    await downloadFile(download_from, cutter_path);
-    if (process.platform !== 'win32') {
-      await Juke.exec('chmod', ['+x', cutter_path]);
-    }
-  },
-});
-
-export const IconCutterTarget = new Juke.Target({
-  parameters: [ForceRecutParameter],
-  dependsOn: () => [CutterTarget],
-  inputs: () => {
-    const standard_inputs = [
-      `icons/**/*.png.toml`,
-      `icons/**/*.dmi.toml`,
-      `cutter_templates/**/*.toml`,
-      cutter_path,
-    ];
-    // Alright we're gonna search out any existing toml files and convert
-    // them to their matching .dmi or .png file
-    const existing_configs = [
-      ...Juke.glob(`icons/**/*.png.toml`),
-      ...Juke.glob(`icons/**/*.dmi.toml`),
-    ];
-    return [
-      ...standard_inputs,
-      ...existing_configs.map((file) => file.replace('.toml', '')),
-    ];
-  },
-  outputs: ({ get }) => {
-    if (get(ForceRecutParameter)) return [];
-    const folders = [
-      ...Juke.glob(`icons/**/*.png.toml`),
-      ...Juke.glob(`icons/**/*.dmi.toml`),
-    ];
-    return folders
-      .map((file) => file.replace(`.png.toml`, '.dmi'))
-      .map((file) => file.replace(`.dmi.toml`, '.png'));
-  },
-  executes: async () => {
-    await Juke.exec(cutter_path, [
-      '--dont-wait',
-      '--templates',
-      'cutter_templates',
-      'icons',
-    ]);
-  },
 });
 
 export const DmMapsIncludeTarget = new Juke.Target({
@@ -182,11 +89,9 @@ export const DmTarget = new Juke.Target({
     DmVersionParameter,
     WarningParameter,
     NoWarningParameter,
-    SkipIconCutter,
   ],
   dependsOn: ({ get }) => [
     get(DefineParameter).includes('ALL_MAPS') && DmMapsIncludeTarget,
-    !get(SkipIconCutter) && IconCutterTarget,
     IconRepackTarget, // DQAdd — regenerate .dmi from PNG+TOML before DM compile
   ],
   inputs: [
@@ -198,8 +103,6 @@ export const DmTarget = new Juke.Target({
     'interface/**',
     'sound/**',
     'tgui/public/tgui.html',
-    'modular_chomp/**', // CHOMPAdd
-    'modular_dq/**', // DQAdd — without this, edits to fork code don't invalidate the DM build cache
     `${DME_NAME}.dme`,
     NamedVersionFile,
   ],
@@ -228,7 +131,7 @@ export const DmTestTarget = new Juke.Target({
   ],
   dependsOn: ({ get }) => [
     get(DefineParameter).includes('ALL_MAPS') && DmMapsIncludeTarget,
-    IconCutterTarget,
+    IconRepackTarget,
   ],
   executes: async ({ get }) => {
     fs.copyFileSync(`${DME_NAME}.dme`, `${DME_NAME}.test.dme`);
@@ -280,7 +183,7 @@ export const AutowikiTarget = new Juke.Target({
   ],
   dependsOn: ({ get }) => [
     get(DefineParameter).includes('ALL_MAPS') && DmMapsIncludeTarget,
-    IconCutterTarget,
+    IconRepackTarget,
   ],
   outputs: ['data/autowiki_edits.txt'],
   executes: async ({ get }) => {

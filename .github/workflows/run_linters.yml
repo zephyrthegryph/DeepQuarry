@@ -41,11 +41,6 @@ jobs:
         with:
           workspaces: verdigris -> target
           shared-key: verdigris-lint
-      - name: Restore Cutter cache
-        uses: actions/cache@v5.0.5
-        with:
-          path: tools/icon_cutter/cache
-          key: ${{ runner.os }}-cutter-${{ hashFiles('dependencies.sh') }}
       # End Caches
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v5.2.0
@@ -93,9 +88,6 @@ jobs:
         run: |
           tools/bootstrap/python -m mapmerge2.dmm_test
           tools/bootstrap/python -m tools.maplint.source
-      - name: Check Cutter
-        if: steps.linter-setup.conclusion == 'success' && !cancelled()
-        run: tools/bootstrap/python -m tools.icon_cutter.check
       - name: Run DMI Tests
         if: steps.linter-setup.conclusion == 'success' && !cancelled()
         run: tools/bootstrap/python -m dmi.test
