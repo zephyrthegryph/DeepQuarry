@@ -1,3 +1,8 @@
+// DQEdit — DeepQuarry preferences + loadout rewrite (commit fd3e36a673). Bay preference_setup framework deleted; /datum/gear loadout catalog relocated from code/modules/client/preference_setup/loadout/ to code/datums/gear/.
+// Bracketed at file-header rather than per-hunk because the
+// edits are mechanical and span the whole file; the commit SHA
+// is the source of truth for per-line diff context.
+
 
 /datum/gear/pipe
 	display_name = "pipe"

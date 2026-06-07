@@ -1,3 +1,8 @@
+// DQEdit — DeepQuarry preferences + loadout rewrite (commit fd3e36a673). Bay preference_setup framework deleted; /datum/gear loadout catalog relocated from code/modules/client/preference_setup/loadout/ to code/datums/gear/.
+// Bracketed at file-header rather than per-hunk because the
+// edits are mechanical and span the whole file; the commit SHA
+// is the source of truth for per-line diff context.
+
 // Stuff worn on the ears. Items here go in the "ears" sort_category but they must not use
 // the slot_r_ear or slot_l_ear as the slot, or else players will spawn with no headset.
 /datum/gear/ears

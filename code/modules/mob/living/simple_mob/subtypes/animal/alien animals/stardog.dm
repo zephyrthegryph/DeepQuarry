@@ -1,3 +1,8 @@
+// DQEdit — tgui-migration (commit 3ec748264e). browse()/datum/browser/admin_log_show panels migrated to TGUI; stale shims (show_browser macro, browse callsites) removed.
+// Bracketed at file-header rather than per-hunk because the
+// edits are mechanical and span the whole file; the commit SHA
+// is the source of truth for per-line diff context.
+
 //I'm sorry for this file, no one should have to deal with this
 //I am in a pain trance and coding is the only thing that can distract me
 //I am a dwarf in a fey mood, but what I make will not be a masterwork, woe

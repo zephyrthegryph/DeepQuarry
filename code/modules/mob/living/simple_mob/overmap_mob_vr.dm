@@ -1,3 +1,8 @@
+// DQEdit — tgui-migration (commit 3ec748264e). browse()/datum/browser/admin_log_show panels migrated to TGUI; stale shims (show_browser macro, browse callsites) removed.
+// Bracketed at file-header rather than per-hunk because the
+// edits are mechanical and span the whole file; the commit SHA
+// is the source of truth for per-line diff context.
+
 //So this is a bit weird, but I tried to make this as adaptable as I could
 //There are two working parts of an overmap mob, but I made it look like there is only one as far as the players are concerned.
 //The /obj/effect/overmap/visitable/simplemob is the part people will actually see. It follows the mob around and changes dir to look as mob-ish as it can.

@@ -1,3 +1,9 @@
+// DQEdit — file modified by multiple recent fork commits:
+//   - fd3e36a673 (DeepQuarry preferences + loadout rewrite): Bay preference_setup framework deleted; /datum/gear loadout catalog relocated from code/modules/client/preference_setup/loadout/ to code/datums/gear/.
+//   - cc0126f33e (polymorphic gear_tweak inline dispatch): /datum/gear_tweak gained get_inline_choices() + validate_inline_value() virtual procs; subtypes override them instead of the loadout editor doing istype chains.
+// Per-line archaeology lives in those commits; this header marker
+// is here so an upstream merge knows to investigate.
+
 GLOBAL_DATUM_INIT(gear_tweak_item_tf_spawn, /datum/gear_tweak/item_tf_spawn, new())
 
 /datum/gear_tweak/item_tf_spawn

@@ -1,3 +1,8 @@
+// DQEdit — LINDA atmospherics rewrite (commit 6fdac16ef1). gas_mixture var accesses (e.g. mix.total_moles) converted to proc calls (mix.total_moles()) for the LINDA engine API. Bulk rewrite by tools/verdigris/linda_rewrite_chomp_atmos.py.
+// Bracketed at file-header rather than per-hunk because the
+// edits are mechanical and span the whole file; the commit SHA
+// is the source of truth for per-line diff context.
+
 //Stand-in until this is made more lore-friendly.
 /datum/species/xenos
 	name = SPECIES_XENO
