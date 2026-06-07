@@ -9,6 +9,7 @@
 	var/datum/admins/owner_admin
 
 /datum/game_panel/New(datum/admins/owner_admin)
+	..()
 	src.owner_admin = owner_admin
 
 /datum/game_panel/Destroy()

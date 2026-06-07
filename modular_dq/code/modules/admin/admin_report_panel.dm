@@ -28,6 +28,7 @@
 	var/datum/forward_host
 
 /datum/admin_report/New(report_title, mob/viewer, datum/host)
+	..()
 	title = report_title
 	forward_host = host
 
@@ -103,6 +104,7 @@
 	var/list/points
 
 /datum/dq_stock_chart_panel/New(name, list/series)
+	..()
 	stock_name = name
 	points = series ? series.Copy() : list()
 

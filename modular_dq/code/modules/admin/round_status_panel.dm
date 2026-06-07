@@ -21,6 +21,7 @@
 	var/list/cached_antag_blocks
 
 /datum/round_status_panel/New(datum/admins/owner_admin)
+	..()
 	src.owner_admin = owner_admin
 
 /datum/round_status_panel/Destroy()

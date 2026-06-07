@@ -25,6 +25,7 @@
 	var/datum/admins/holder
 
 /datum/newscaster_panel/New(datum/admins/owner_holder)
+	..()
 	holder = owner_holder
 
 /datum/newscaster_panel/Destroy(force, ...)

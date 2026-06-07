@@ -9,6 +9,7 @@
 	var/list/cached_players
 
 /datum/player_panel/New(datum/admins/owner_admin)
+	..()
 	src.owner_admin = owner_admin
 
 /datum/player_panel/Destroy()

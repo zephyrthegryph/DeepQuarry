@@ -17,6 +17,7 @@
 	var/mob/recipient
 
 /datum/mind_memory_panel/New(datum/mind/src_mind, mob/recipient_mob)
+	..()
 	source = src_mind
 	recipient = recipient_mob
 
@@ -64,6 +65,7 @@
 	var/datum/admins/holder
 
 /datum/tag_menu_panel/New(datum/admins/owner_holder)
+	..()
 	holder = owner_holder
 
 /datum/tag_menu_panel/Destroy(force, ...)
@@ -145,6 +147,7 @@
 	var/list/addresses
 
 /datum/dq_torban_panel/New(list/addr)
+	..()
 	addresses = addr || list()
 
 /datum/dq_torban_panel/Destroy(force, ...)
@@ -170,6 +173,7 @@
 	var/log_text = ""
 
 /datum/dq_investigate_panel/New(subj, text)
+	..()
 	subject = subj
 	log_text = text
 
@@ -206,6 +210,7 @@
 	var/list/cached_rows
 
 /datum/unban_panel/New(datum/admins/owner_holder)
+	..()
 	holder = owner_holder
 
 /datum/unban_panel/Destroy(force, ...)
@@ -227,6 +232,10 @@
 	cached_rows = list()
 	if(!GLOB.banlist)
 		return
+	// GLOB.banlist is a shared savefile cursor — record the prior cd
+	// and restore it after the snapshot so concurrent ban operations
+	// don't see a drifted current-directory.
+	var/prior_cd = GLOB.banlist.cd
 	GLOB.banlist.cd = "/base"
 	for(var/A in GLOB.banlist.dir)
 		GLOB.banlist.cd = "/base/[A]"
@@ -255,6 +264,7 @@
 			"by" = "[by]",
 			"expiry" = "[expiry]",
 		))
+	GLOB.banlist.cd = prior_cd
 
 /datum/unban_panel/tgui_data(mob/user)
 	var/list/data = list()
@@ -306,6 +316,7 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 	var/mob/target
 
 /datum/jobban_panel/New(datum/admins/owner_holder, mob/target_mob)
+	..()
 	holder = owner_holder
 	target = target_mob
 
@@ -471,12 +482,13 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 	switch(action)
 		if("toggle_job")
 			var/title = "[params["title"]]"
-			holder.Topic("jobban3=[title];jobban4=\ref[target]", list("_src_" = "holder", "jobban3" = title, "jobban4" = "\ref[target]"))
+			// DQEdit — use REF() macro (canonical form) instead of legacy \ref[target] interpolation.
+			holder.Topic("jobban3=[title];jobban4=[REF(target)]", list("_src_" = "holder", "jobban3" = title, "jobban4" = REF(target)))
 			SStgui.update_uis(src)
 			return TRUE
 		if("toggle_dept")
 			var/bantype = "[params["bantype"]]"
-			holder.Topic("jobban3=[bantype];jobban4=\ref[target]", list("_src_" = "holder", "jobban3" = bantype, "jobban4" = "\ref[target]"))
+			holder.Topic("jobban3=[bantype];jobban4=[REF(target)]", list("_src_" = "holder", "jobban3" = bantype, "jobban4" = REF(target)))
 			SStgui.update_uis(src)
 			return TRUE
 		if("refresh")
@@ -491,6 +503,7 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 	var/list/entries
 
 /datum/dq_vending_log_panel/New(mach_name, viewer_name, list/log_entries)
+	..()
 	machine_name = mach_name
 	user_name = viewer_name
 	entries = log_entries || list()
@@ -528,6 +541,7 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 	var/error_msg = ""
 
 /datum/dq_delete_book_panel/New(obj/machinery/librarycomp/comp, list/book_rows, error)
+	..()
 	our_comp = comp
 	books = book_rows || list()
 	error_msg = error || ""

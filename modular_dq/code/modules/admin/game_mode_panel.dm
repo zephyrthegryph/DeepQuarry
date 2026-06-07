@@ -8,6 +8,7 @@
 	var/datum/game_mode/target_mode
 
 /datum/game_mode_panel/New(datum/game_mode/target_mode)
+	..()
 	src.target_mode = target_mode
 
 /datum/game_mode_panel/Destroy()

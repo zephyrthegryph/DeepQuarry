@@ -25,6 +25,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(debug_variables, (R_DEBUG|R_SERVER|R_ADMIN|R_SPAWN|R
 	var/refid
 
 /datum/view_variables_panel/New(client/owner_client)
+	..()
 	owner = owner_client
 
 /datum/view_variables_panel/Destroy(force, ...)

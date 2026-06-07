@@ -59,6 +59,7 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 	var/datum/admins/holder
 
 /datum/permissions_panel/New(datum/admins/owner_holder)
+	..()
 	holder = owner_holder
 
 /datum/permissions_panel/Destroy(force, ...)

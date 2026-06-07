@@ -15,6 +15,7 @@
 	var/list/cached_antag_blocks
 
 /datum/edit_memory_panel/New(datum/mind/target_mind, mob/admin_user)
+	..()
 	src.target_mind = target_mind
 	src.admin_user = admin_user
 

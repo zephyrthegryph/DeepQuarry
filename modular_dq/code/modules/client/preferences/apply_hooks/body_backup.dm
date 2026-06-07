@@ -27,18 +27,22 @@
 	var/want_mind_save = preferences.read_preference(/datum/preference/toggle/human/mind_scan)
 	var/resleeve_lock_pref = preferences.read_preference(/datum/preference/toggle/human/resleeve_lock)
 
-	spawn(5 SECONDS)
-		if(QDELETED(target) || QDELETED(preferences))
-			return
-		// Janky fix to prevent resleeving VR avatars but beats refactoring transcore
-		if(!target.virtual_reality_mob && !(/mob/living/carbon/human/proc/perform_exit_vr in target.verbs))
-			if(want_body_save && !(target.species.flags & NO_SLEEVE))
-				var/datum/transhuman/body_record/BR = new()
-				BR.init_from_mob(target, TRUE, resleeve_lock_pref)
-			if(want_mind_save)
-				var/datum/transcore_db/our_db = SStranscore.db_by_key(null)
-				if(our_db)
-					our_db.m_backup(target.mind, target.nif, one_time = TRUE)
-		if(resleeve_lock_pref)
-			target.resleeve_lock = target.ckey
-		target.original_player = target.ckey
+	// addtimer instead of spawn(5 SECONDS) — addtimer participates in the
+	// SS scheduler (cancellable, profilable, survives MC stalls correctly).
+	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(_dq_body_backup_after_spawn), target, preferences, want_body_save, want_mind_save, resleeve_lock_pref), 5 SECONDS)
+
+/proc/_dq_body_backup_after_spawn(mob/living/carbon/human/target, datum/preferences/preferences, want_body_save, want_mind_save, resleeve_lock_pref)
+	if(QDELETED(target) || QDELETED(preferences))
+		return
+	// Janky fix to prevent resleeving VR avatars but beats refactoring transcore
+	if(!target.virtual_reality_mob && !(/mob/living/carbon/human/proc/perform_exit_vr in target.verbs))
+		if(want_body_save && !(target.species.flags & NO_SLEEVE))
+			var/datum/transhuman/body_record/BR = new()
+			BR.init_from_mob(target, TRUE, resleeve_lock_pref)
+		if(want_mind_save)
+			var/datum/transcore_db/our_db = SStranscore.db_by_key(null)
+			if(our_db)
+				our_db.m_backup(target.mind, target.nif, one_time = TRUE)
+	if(resleeve_lock_pref)
+		target.resleeve_lock = target.ckey
+	target.original_player = target.ckey

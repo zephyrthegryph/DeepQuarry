@@ -22,6 +22,7 @@ GLOBAL_LIST_EMPTY(dq_edit_player_panels)
 	var/mob/target
 
 /datum/edit_player_panel/New(datum/admins/owner_holder, mob/target_mob)
+	..()
 	holder = owner_holder
 	target = target_mob
 
