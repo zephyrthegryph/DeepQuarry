@@ -119,3 +119,17 @@
 	if(GLOB.global_vantag_hud)
 		vantag_hud = TRUE
 		recalculate_vis()
+
+
+// === merged from login_vr.dm during hard-fork de-suffix (chain-verified: prior definer is this file, nothing between) ===
+/mob/Login()
+	. = ..()
+
+	// DQEdit — viewing_alternate_appearances moved to /datum/component/alt_appearances_viewer
+	var/list/viewing = dq_get_viewing_alt_appearances(src)
+	if(viewing && viewing.len)
+		for(var/datum/alternate_appearance/AA in viewing)
+			AA.display_to(list(src))
+
+	var/atom/movable/screen/plane_master/augmented/aug = plane_holder.plane_masters[VIS_AUGMENTED]
+	aug.apply()

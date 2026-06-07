@@ -689,3 +689,19 @@
 		if(clothing.max_heat_protection_temperature >= BURNING_ITEM_MINIMUM_TEMPERATURE && (clothing.heat_protection & HANDS) && (clothing.body_parts_covered & HANDS))
 			return TRUE
 	return FALSE
+
+
+// === merged from carbon_chomp.dm during hard-fork de-suffix (chain-verified: prior definer is this file, nothing between) ===
+/mob/living/carbon
+	var/datum/looping_sound/mob/cozyloop/cozyloop
+	var/slip_reflex = FALSE
+	var/synth_reag_processing = TRUE
+
+/mob/living/carbon/Initialize(mapload)
+	. = ..()
+
+	cozyloop = new(list(src), FALSE)
+
+/mob/living/carbon/Destroy()
+	. = ..()
+	QDEL_NULL(cozyloop)
