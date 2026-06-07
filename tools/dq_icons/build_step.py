@@ -137,6 +137,47 @@ def _gather_tomls(roots: list[Path], output_root: Path) -> list[Path]:
     return tomls
 
 
+def _sweep_stale(output_root: Path, live_dmis: set[Path]) -> int:
+    """Delete every .dmi (and .hash sidecar) under output_root whose
+    source was removed.
+
+    When a PNG/TOML source pair gets deleted from the committed source
+    tree the corresponding icons/gen/.../foo.dmi lingers indefinitely
+    because nothing tracks back-references. This sweep walks the output
+    tree once after the repack pass and prunes anything not in the live
+    set (a few MB and ~250 files in the typical post-deletion state).
+
+    Also removes empty parent directories left behind by the sweep so
+    icons/gen stays tidy.
+    """
+    if not output_root.exists():
+        return 0
+    removed = 0
+    for f in output_root.rglob("*.dmi"):
+        if f not in live_dmis:
+            sidecar = _hash_sidecar_path(f)
+            try:
+                f.unlink()
+                if sidecar.exists():
+                    sidecar.unlink()
+                removed += 1
+            except OSError:
+                pass
+    # Sweep empty dirs bottom-up. rglob gives us depth-first when we
+    # reverse-sort by path length.
+    if removed:
+        dirs = sorted(
+            (p for p in output_root.rglob("*") if p.is_dir()),
+            key=lambda p: -len(p.parts),
+        )
+        for d in dirs:
+            try:
+                d.rmdir()  # only succeeds if empty
+            except OSError:
+                pass
+    return removed
+
+
 def run(roots: list[Path], output_root: Path) -> int:
     tomls = _gather_tomls(roots, output_root)
     if not tomls:
@@ -187,10 +228,16 @@ def run(roots: list[Path], output_root: Path) -> int:
                     else:
                         repacked += 1
 
+    # Pass 3: sweep stale outputs whose source has been deleted. Cheap
+    # bookkeeping — runs after every build, no-ops when nothing's stale.
+    live_dmis = {out_dmi.resolve() for _, out_dmi in check_inputs}
+    pruned = _sweep_stale(output_root, live_dmis)
+
     dt = time.monotonic() - t0
     print(
         f"icon-repack: {repacked} regenerated into {output_root}, "
-        f"{skipped} up-to-date, {len(failures)} failed in {dt:.1f}s "
+        f"{skipped} up-to-date, {pruned} stale pruned, "
+        f"{len(failures)} failed in {dt:.1f}s "
         f"(dirty-check {check_dt:.1f}s)"
     )
     for p, msg in failures[:20]:
