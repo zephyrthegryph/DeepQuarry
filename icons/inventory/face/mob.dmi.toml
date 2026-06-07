@@ -840,3 +840,8 @@ frames = 1
 name = "masquerade_twotonefeather"
 dirs = 4
 frames = 1
+
+[[state]]
+name = "ghost"
+dirs = 4
+frames = 1

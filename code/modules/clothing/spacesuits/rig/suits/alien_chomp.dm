@@ -1,29 +1,29 @@
 /obj/item/clothing/head/helmet/space/rig/vox/ch
 	icon_state = "vox_engineer_rig" //The name is seen by players, but rigs do some funny things like overwriting the icon_state. The unit test will screech if a rig doesn't have an icon_state, so we set one here.
-	icon = 'icons/chomp/inventory/head/item.dmi'
+	icon = 'icons/inventory/head/item.dmi'
 	sprite_sheets = list(
-		SPECIES_VOX = 'icons/chomp/inventory/head/mob_vox.dmi'
+		SPECIES_VOX = 'icons/inventory/head/mob_vox.dmi'
 		)
 
 /obj/item/clothing/shoes/magboots/rig/vox/ch
 	icon_state = "vox_engineer_rig" //The name is seen by players, but rigs do some funny things like overwriting the icon_state. The unit test will screech if a rig doesn't have an icon_state, so we set one here.
-	icon = 'icons/chomp/inventory/feet/item.dmi'
+	icon = 'icons/inventory/feet/item.dmi'
 	sprite_sheets = list(
-		SPECIES_VOX = 'icons/chomp/inventory/feet/mob_vox.dmi'
+		SPECIES_VOX = 'icons/inventory/feet/mob_vox.dmi'
 		)
 
 /obj/item/clothing/suit/space/rig/vox/ch
 	icon_state = "vox_engineer_rig" //The name is seen by players, but rigs do some funny things like overwriting the icon_state. The unit test will screech if a rig doesn't have an icon_state, so we set one here.
-	icon = 'icons/chomp/inventory/suit/item.dmi'
+	icon = 'icons/inventory/suit/item.dmi'
 	sprite_sheets = list(
-		SPECIES_VOX = 'icons/chomp/inventory/suit/mob_vox.dmi'
+		SPECIES_VOX = 'icons/inventory/suit/mob_vox.dmi'
 		)
 
 /obj/item/clothing/gloves/gauntlets/rig/vox/ch
 	icon_state = "vox_engineer_rig" //The name is seen by players, but rigs do some funny things like overwriting the icon_state. The unit test will screech if a rig doesn't have an icon_state, so we set one here.
-	icon = 'icons/chomp/inventory/hands/item.dmi'
+	icon = 'icons/inventory/hands/item.dmi'
 	sprite_sheets = list(
-		SPECIES_VOX = 'icons/chomp/inventory/hands/mob_vox.dmi'
+		SPECIES_VOX = 'icons/inventory/hands/mob_vox.dmi'
 		)
 
 /obj/item/rig/vox/engineering

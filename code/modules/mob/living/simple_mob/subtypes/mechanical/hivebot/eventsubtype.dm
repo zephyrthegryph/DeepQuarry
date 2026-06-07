@@ -2,7 +2,7 @@
 	name = "strange hivebot"
 	maxHealth = 0.5 LASERS_TO_KILL // 20 hp
 	health = 0.5 LASERS_TO_KILL
-	icon = 'icons/chomp/mob/hivebot.dmi'
+	icon = 'icons/mob/hivebot.dmi'
 	desc = "A familiar looking robot, trading out it's defense for offense."
 	icon_state = "precursorhive"
 	icon_living = "precursorhive"
@@ -126,7 +126,7 @@
 	..()
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/hivebot
-	icon = 'icons/chomp/mob/hivebot.dmi'
+	icon = 'icons/mob/hivebot.dmi'
 	armor = list(melee = 20, bullet = 20, laser = 20, energy = 20, bomb = 20, bio = 100, rad = 100)
 	size_multiplier = 2
 	faction = FACTION_HIVEBOT
@@ -332,7 +332,7 @@
 /obj/item/prop/nanoweave
 	name = "alien disc"
 	desc = "A disc for storing data."
-	icon = 'icons/chomp/mob/hivebot.dmi'
+	icon = 'icons/mob/hivebot.dmi'
 	w_class = ITEMSIZE_SMALL
 
 /obj/item/prop/nanoweave/lime

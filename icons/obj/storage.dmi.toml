@@ -1032,3 +1032,8 @@ name = "portafreezer_red"
 dirs = 1
 frames = 4
 delays = [1.5]
+
+[[state]]
+name = "expirmentalaid"
+dirs = 1
+frames = 1

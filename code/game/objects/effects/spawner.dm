@@ -2,7 +2,7 @@ GLOBAL_LIST_EMPTY(button_mob_spawner_landmark)
 
 /obj/effect/landmark/button_mob_spawner_landmark
 	name = "Mob Spawner"
-	icon = 'icons/chomp/obj/storage.dmi'
+	icon = 'icons/obj/storage.dmi'
 	icon_state = "expirmentalaid"
 	var/link = "MOBSPAWN"
 

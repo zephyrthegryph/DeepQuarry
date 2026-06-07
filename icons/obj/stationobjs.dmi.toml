@@ -1289,3 +1289,43 @@ frames = 1
 name = "stuffedbear"
 dirs = 4
 frames = 1
+
+[[state]]
+name = "slab1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slab1-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slab2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slab2-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slab3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slab3-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slab4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slab4-off"
+dirs = 1
+frames = 1

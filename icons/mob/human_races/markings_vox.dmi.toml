@@ -232,3 +232,8 @@ frames = 1
 name = "vox_muzzle-head"
 dirs = 4
 frames = 1
+
+[[state]]
+name = "vox_underbeak-head"
+dirs = 4
+frames = 1

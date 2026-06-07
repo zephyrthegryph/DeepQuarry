@@ -1095,3 +1095,28 @@ frames = 1
 name = "sandals_elegant"
 dirs = 1
 frames = 1
+
+[[state]]
+name = "vox_engineer_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox_engineer_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox_sec_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox_sec_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "galoshes_dry"
+dirs = 1
+frames = 1

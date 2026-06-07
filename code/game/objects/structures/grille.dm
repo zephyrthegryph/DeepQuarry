@@ -1,7 +1,7 @@
 /obj/structure/grille
 	name = "grille"
 	desc = "A flimsy lattice of metal rods, with screws to secure it to the floor."
-	icon = 'icons/chomp/obj/structures.dmi' //CHOMPEdit
+	icon = 'icons/obj/structures.dmi' //CHOMPEdit
 	icon_state = "grille"
 	density = TRUE
 	anchored = TRUE

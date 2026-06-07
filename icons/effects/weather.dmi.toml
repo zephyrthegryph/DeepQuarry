@@ -188,7 +188,7 @@ delays = [0.2]
 name = "downpourfatal"
 dirs = 1
 frames = 10
-delays = [0.15]
+delays = [0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.2]
 
 [[state]]
 name = "acidfog"
@@ -214,3 +214,8 @@ name = "anom_rain_fast"
 dirs = 1
 frames = 32
 delays = [0.15]
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1

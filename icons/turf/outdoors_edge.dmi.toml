@@ -1,7 +1,7 @@
 # Generated from outdoors_edge.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
 width = 32
 height = 32
-cols = 18
+cols = 20
 
 [[state]]
 name = ""
@@ -125,7 +125,7 @@ frames = 1
 
 [[state]]
 name = "sand-edge"
-dirs = 4
+dirs = 8
 frames = 1
 
 [[state]]
@@ -351,4 +351,39 @@ frames = 1
 [[state]]
 name = "slab10-edge"
 dirs = 4
+frames = 1
+
+[[state]]
+name = "gravel-edge"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "mud-edge"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "deep_grass-edge"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "grass-edge"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "deep_water-edge"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "water-edge"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "stonewall-edge"
+dirs = 8
 frames = 1

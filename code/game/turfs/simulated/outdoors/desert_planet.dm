@@ -3,7 +3,7 @@
 	name = "sand"
 	desc = "Salty and gritty."
 	icon = 'icons/turf/desert_tiles.dmi'
-	icon_edge = 'icons/chomp/turf/outdoors_edge.dmi'
+	icon_edge = 'icons/turf/outdoors_edge.dmi'
 
 /turf/simulated/floor/outdoors/desert_planet/sand
 	name = "sand"

@@ -120,8 +120,8 @@
 	force = 12
 	reach = 2
 /*	item_icons = list(
-		slot_l_hand_str = 'icons/chomp/mob/items/lefthand_melee.dmi',
-		slot_r_hand_str = 'icons/chomp/mob/items/righthand_melee.dmi',
+		slot_l_hand_str = 'icons/mob/items/lefthand_melee.dmi',
+		slot_r_hand_str = 'icons/mob/items/righthand_melee.dmi',
 		)*/
 
 /obj/item/melee/agate_sword
@@ -130,8 +130,8 @@
 	icon = 'icons/obj/tribal_gear.dmi'
 	icon_state = "agate_sword"
 /*	item_icons = list(
-		slot_l_hand_str = 'icons/chomp/mob/items/lefthand_melee.dmi',
-		slot_r_hand_str = 'icons/chomp/mob/items/righthand_melee.dmi',
+		slot_l_hand_str = 'icons/mob/items/lefthand_melee.dmi',
+		slot_r_hand_str = 'icons/mob/items/righthand_melee.dmi',
 		)*/
 	force = 15
 
@@ -141,8 +141,8 @@
 	icon = 'icons/obj/tribal_gear.dmi'
 	icon_state = "agate_hammer"
 /*	item_icons = list(
-		slot_l_hand_str = 'icons/chomp/mob/items/lefthand_melee.dmi',
-		slot_r_hand_str = 'icons/chomp/mob/items/righthand_melee.dmi',
+		slot_l_hand_str = 'icons/mob/items/lefthand_melee.dmi',
+		slot_r_hand_str = 'icons/mob/items/righthand_melee.dmi',
 		)*/
 	force = 40
 	attackspeed = 24 //Base attack speed is 8. So this is three times slower. 1 second equals 10.

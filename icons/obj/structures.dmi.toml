@@ -1,7 +1,7 @@
 # Generated from structures.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
 width = 32
 height = 32
-cols = 21
+cols = 22
 
 [[state]]
 name = "girder"
@@ -248,12 +248,12 @@ frames = 1
 
 [[state]]
 name = "phoronrwindow"
-dirs = 8
+dirs = 4
 frames = 1
 
 [[state]]
 name = "phoronwindow"
-dirs = 8
+dirs = 4
 frames = 1
 
 [[state]]
@@ -308,7 +308,7 @@ frames = 1
 
 [[state]]
 name = "phoronwindow0"
-dirs = 1
+dirs = 4
 frames = 1
 
 [[state]]
@@ -686,5 +686,51 @@ frames = 1
 
 [[state]]
 name = "barricade_planks"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "thickgrille-b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brokenthickgrille"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "thickgrille"
+dirs = 1
+frames = 1
+movement = true
+
+[[state]]
+name = "ladder00"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ladder10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ladder01"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ladder11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ladderdown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ladderup"
 dirs = 1
 frames = 1

@@ -2211,3 +2211,15 @@ frames = 1
 name = "helmcover_ntblack_tie"
 dirs = 1
 frames = 1
+
+[[state]]
+name = "casino_armband"
+dirs = 4
+frames = 6
+delays = [5]
+
+[[state]]
+name = "casino_armband2"
+dirs = 1
+frames = 6
+delays = [5]

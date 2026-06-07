@@ -16,7 +16,7 @@
 	projectiletype = /obj/item/projectile/arc //Polaris, don't make the same mob twice.
 
 /mob/living/simple_mob/mechanical/hivebot/tyr //not a hivebot but stealing the 'oil puddle on death' thing
-	icon = 'icons/chomp/mob/hivebot.dmi'
+	icon = 'icons/mob/hivebot.dmi'
 	pass_flags = PASSTABLE
 	// DQEdit — dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 	movement_cooldown = 1
@@ -66,7 +66,7 @@
 	name = "repurposed hivebot"
 	maxHealth = 1.5 LASERS_TO_KILL // 60 hp
 	health = 1.5 LASERS_TO_KILL
-	icon = 'icons/chomp/mob/hivebot.dmi'
+	icon = 'icons/mob/hivebot.dmi'
 	desc = "A repurposed hivebot."
 	faction = FACTION_ECLIPSE
 	pass_flags = PASSTABLE

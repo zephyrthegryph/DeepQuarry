@@ -121,7 +121,7 @@ delays = [5]
 name = "ccharger-o4"
 dirs = 1
 frames = 2
-delays = [2, 3.25, 1]
+delays = [2, 3.25]
 
 [[state]]
 name = "teg-unassembled"
@@ -723,5 +723,10 @@ frames = 1
 
 [[state]]
 name = "portgen0on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rtgfakez"
 dirs = 1
 frames = 1

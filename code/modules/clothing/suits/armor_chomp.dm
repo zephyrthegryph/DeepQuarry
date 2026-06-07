@@ -1,7 +1,7 @@
 /obj/item/clothing/suit/storage/vest/officer
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/suit/mob_teshari.dmi',
-		SPECIES_VOX = 'icons/chomp/inventory/suit/mob_vox.dmi'
+		SPECIES_VOX = 'icons/inventory/suit/mob_vox.dmi'
 		)
 /obj/item/clothing/suit/armor/pcarrier/primative
 	name = "makeshift suit"

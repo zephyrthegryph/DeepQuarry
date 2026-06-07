@@ -43,7 +43,7 @@
 	company = "YR3 Enviroshell"
 	desc = "A limb with oddly high internal pressure tolerance."
 	icon = 'icons/mob/human_races/cyberlimbs/YR3/YR3_enviroshell.dmi'
-	monitor_icon = 'icons/chomp/mob/monitor_icons.dmi'
+	monitor_icon = 'icons/mob/monitor_icons.dmi'
 	monitor_styles = YR3_MONITOR_STYLES
 
 /datum/robolimb/enviroshell/original

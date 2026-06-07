@@ -46,7 +46,7 @@
 /obj/item/clothing/shoes/dry_galoshes
 	desc = "A pair of purple rubber boots, designed to prevent slipping on wet surfaces while also drying them."
 	name = "absorbent galoshes"
-	icon = 'icons/chomp/inventory/feet/item.dmi'
+	icon = 'icons/inventory/feet/item.dmi'
 	icon_state = "galoshes_dry"
 	permeability_coefficient = 0.05
 	siemens_coefficient = 0

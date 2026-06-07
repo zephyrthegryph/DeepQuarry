@@ -379,14 +379,14 @@ VIRGO2_TURF_CREATE(/turf/simulated/floor/hull)
 /turf/simulated/floor/carpet/graycarpet
 	name = "gray carpet"
 	desc = "A dusty, gray carpeted floor."
-	icon = 'icons/chomp/turf/flooring/carpet.dmi'
+	icon = 'icons/turf/flooring/carpet.dmi'
 	icon_state = "gcarpet"
 	initial_flooring = /datum/decl/flooring/carpet/gray
 
 /datum/decl/flooring/carpet/gray
 	name = "gray carpet"
 	desc = "A dusty, gray carpeted floor."
-	icon = 'icons/chomp/turf/flooring/carpet.dmi'
+	icon = 'icons/turf/flooring/carpet.dmi'
 	icon_base = "gcarpet"
 	build_type = /obj/item/stack/tile/carpet/gray
 	flags = TURF_REMOVE_CROWBAR | TURF_CAN_BURN

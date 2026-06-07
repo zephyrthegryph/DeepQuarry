@@ -6,7 +6,7 @@
 	icon_state = "cent_headset_alt"
 	item_state = "headset"
 	var/mob/living/carbon/human/wearer
-	var/effect_icon = 'icons/chomp/effects/effects.dmi'	//Cosmetic Effect that will be applied to the mob as an overlay
+	var/effect_icon = 'icons/effects/effects.dmi'	//Cosmetic Effect that will be applied to the mob as an overlay
 	var/effect_icon_state = "arrow2"
 	var/image/effect_overlay = null	//Reference to an overlay so we can remove it on unequip
 	var/overlay_offset_y = 32

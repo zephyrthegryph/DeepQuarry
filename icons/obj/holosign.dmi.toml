@@ -35,3 +35,24 @@ delays = [5, 5, 1, 1, 1, 1, 5]
 name = "barclosed"
 dirs = 1
 frames = 1
+
+[[state]]
+name = "chemon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chemoff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "roboton"
+dirs = 1
+frames = 2
+delays = [10]
+
+[[state]]
+name = "robotoff"
+dirs = 1
+frames = 1

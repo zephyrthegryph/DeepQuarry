@@ -1,6 +1,6 @@
 /obj/item/storage/firstaid/experimental
 	name = "experimental firstaid kit"
-	icon = 'icons/chomp/obj/storage.dmi'
+	icon = 'icons/obj/storage.dmi'
 	icon_state = "expirmentalaid"
 	starts_with = list(
 		/obj/item/storage/pill_bottle/neotane,

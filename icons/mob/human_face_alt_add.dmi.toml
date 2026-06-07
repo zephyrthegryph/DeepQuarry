@@ -1,7 +1,7 @@
 # Generated from human_face_alt_add.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
 width = 32
 height = 32
-cols = 19
+cols = 20
 
 [[state]]
 name = "none"
@@ -445,5 +445,20 @@ frames = 1
 
 [[state]]
 name = "feather_halfmoon_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "soghun_dubhorns_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cxeno_sentinel_s_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeno_sentinelmask_alt"
 dirs = 4
 frames = 1

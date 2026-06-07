@@ -1678,3 +1678,8 @@ frames = 1
 name = "officervest_nobadge"
 dirs = 4
 frames = 1
+
+[[state]]
+name = "apronchef"
+dirs = 4
+frames = 1

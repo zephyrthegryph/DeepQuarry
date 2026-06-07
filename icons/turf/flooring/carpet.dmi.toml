@@ -292,3 +292,13 @@ frames = 1
 name = "purple_edges"
 dirs = 8
 frames = 1
+
+[[state]]
+name = "gcarpet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gcarpet_broken"
+dirs = 1
+frames = 1

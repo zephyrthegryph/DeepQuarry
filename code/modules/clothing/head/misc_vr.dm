@@ -192,7 +192,7 @@
 /obj/item/clothing/head/halo
 	name = "holographic demonic halo"
 	desc = "A hologram displaying a demonic halo."
-	icon = 'icons/chomp/inventory/head/item.dmi'
+	icon = 'icons/inventory/head/item.dmi'
 	default_worn_icon = 'icons/inventory/head/mob_halo.dmi'
 	icon_state = "halo"
 

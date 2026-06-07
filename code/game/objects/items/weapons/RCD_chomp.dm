@@ -12,14 +12,14 @@
 	window_type = "rglass"
 	var/turret_faction = null
 	modes = list(RCD_FLOORWALL, RCD_AIRLOCK, RCD_WINDOWGRILLE, RCD_DECONSTRUCT, RCD_WINDOOR, RCD_FIRELOCK, RCD_FRAME, RCD_WALLFRAME, RCD_CONVEYOR, RCD_TURRET)
-	var/static/image/radial_image_firelock = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = "firelock")
-	var/static/image/radial_image_windoor = image(icon= 'icons/chomp/mob/radial.dmi', icon_state = "windoor")
+	var/static/image/radial_image_firelock = image(icon = 'icons/mob/radial.dmi', icon_state = "firelock")
+	var/static/image/radial_image_windoor = image(icon= 'icons/mob/radial.dmi', icon_state = "windoor")
 	var/static/image/radial_image_frame = image(icon = 'icons/mob/radial.dmi', icon_state = "machine")
-	var/static/image/radial_image_wallframe = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = "wallframe")
+	var/static/image/radial_image_wallframe = image(icon = 'icons/mob/radial.dmi', icon_state = "wallframe")
 	var/static/image/radial_image_access = image(icon = 'icons/mob/radial.dmi', icon_state = "access")
 	var/static/image/radial_image_airlock_type = image(icon = 'icons/mob/radial.dmi', icon_state = "airlocktype")
-	var/static/image/radial_image_conveyor = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = "conveyor")
-	var/static/image/radial_image_turret = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = "turret")
+	var/static/image/radial_image_conveyor = image(icon = 'icons/mob/radial.dmi', icon_state = "conveyor")
+	var/static/image/radial_image_turret = image(icon = 'icons/mob/radial.dmi', icon_state = "turret")
 
 /obj/item/rcd/advanced
 	can_remove_rwalls = 1
@@ -115,9 +115,9 @@ rborosilicate = 12
 	switch(choice)
 		if("Floors & Walls")
 			var/list/wall_types = list(
-			"DEFAULT" = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = "default"),
-			"BAY" = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = "bay"),
-			"ERIS" = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = "eris")
+			"DEFAULT" = image(icon = 'icons/mob/radial.dmi', icon_state = "default"),
+			"BAY" = image(icon = 'icons/mob/radial.dmi', icon_state = "bay"),
+			"ERIS" = image(icon = 'icons/mob/radial.dmi', icon_state = "eris")
 			)
 			var/selected_girder_type = show_radial_menu(user, src, wall_types, custom_check = CALLBACK(src, PROC_REF(check_menu), user), require_near = TRUE, tooltips = TRUE)
 			if(!check_menu(user))
@@ -144,28 +144,28 @@ rborosilicate = 12
 			mode_index = modes.Find(RCD_FRAME)
 		if("WallFrames")
 			var/list/wall_frame_types = list(
-			"Air Alarm" = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = "wallframe"),
-			"Light Bulb" = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = "lightbulb"),
-			"Light Tube" = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = "lighttube"),
-			"Doorbell Chime" = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = "doorbell"),
-			"Doorbell Button" = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = "doorbellbutton"),
-			"Status Display" = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = "status"),
-			"Supply Requests Console" = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = "supply"),
-			"ATM" = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = "atm"),
-			"Newscaster" = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = "newscaster"),
-			"Wall Charger" = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = "wallcharger"),
-			"Fire Alarm" = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = "firealarm"),
-			"Guest Pass Terminal" = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = "guestpass"),
-			"Intercom" = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = "intercom"),
-			"Keycard Authenticator" = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = "keycardauth"),
-			"Geiger Counter" = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = "geiger"),
-			"Electrochromic Window Button" = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = "windowtint"),
-			"ID Restoration Terminal" = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = "idrestore"),
-			"Timeclock Terminal" = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = "timeclock"),
-			"Station Map" = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = "stationmap"),
-			"AI Status Display" = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = "status"),
-			"Light Switch" = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = "lightswitch"),
-			"Entertainment Monitor" = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = "entertainment")
+			"Air Alarm" = image(icon = 'icons/mob/radial.dmi', icon_state = "wallframe"),
+			"Light Bulb" = image(icon = 'icons/mob/radial.dmi', icon_state = "lightbulb"),
+			"Light Tube" = image(icon = 'icons/mob/radial.dmi', icon_state = "lighttube"),
+			"Doorbell Chime" = image(icon = 'icons/mob/radial.dmi', icon_state = "doorbell"),
+			"Doorbell Button" = image(icon = 'icons/mob/radial.dmi', icon_state = "doorbellbutton"),
+			"Status Display" = image(icon = 'icons/mob/radial.dmi', icon_state = "status"),
+			"Supply Requests Console" = image(icon = 'icons/mob/radial.dmi', icon_state = "supply"),
+			"ATM" = image(icon = 'icons/mob/radial.dmi', icon_state = "atm"),
+			"Newscaster" = image(icon = 'icons/mob/radial.dmi', icon_state = "newscaster"),
+			"Wall Charger" = image(icon = 'icons/mob/radial.dmi', icon_state = "wallcharger"),
+			"Fire Alarm" = image(icon = 'icons/mob/radial.dmi', icon_state = "firealarm"),
+			"Guest Pass Terminal" = image(icon = 'icons/mob/radial.dmi', icon_state = "guestpass"),
+			"Intercom" = image(icon = 'icons/mob/radial.dmi', icon_state = "intercom"),
+			"Keycard Authenticator" = image(icon = 'icons/mob/radial.dmi', icon_state = "keycardauth"),
+			"Geiger Counter" = image(icon = 'icons/mob/radial.dmi', icon_state = "geiger"),
+			"Electrochromic Window Button" = image(icon = 'icons/mob/radial.dmi', icon_state = "windowtint"),
+			"ID Restoration Terminal" = image(icon = 'icons/mob/radial.dmi', icon_state = "idrestore"),
+			"Timeclock Terminal" = image(icon = 'icons/mob/radial.dmi', icon_state = "timeclock"),
+			"Station Map" = image(icon = 'icons/mob/radial.dmi', icon_state = "stationmap"),
+			"AI Status Display" = image(icon = 'icons/mob/radial.dmi', icon_state = "status"),
+			"Light Switch" = image(icon = 'icons/mob/radial.dmi', icon_state = "lightswitch"),
+			"Entertainment Monitor" = image(icon = 'icons/mob/radial.dmi', icon_state = "entertainment")
 			)
 			var/selected_wall_frame_type = show_radial_menu(user, src, wall_frame_types, custom_check = CALLBACK(src, PROC_REF(check_menu), user), require_near = TRUE, tooltips = TRUE)
 			if(!check_menu(user))
@@ -227,8 +227,8 @@ rborosilicate = 12
 			mode_index = modes.Find(RCD_CONVEYOR)
 		if("Turrets")
 			var/list/turret_factions = list(
-			"HOSTILE TO ALL" = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = "turret1"),
-			"HOSTILE TO ENEMIES" = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = "turret2")
+			"HOSTILE TO ALL" = image(icon = 'icons/mob/radial.dmi', icon_state = "turret1"),
+			"HOSTILE TO ENEMIES" = image(icon = 'icons/mob/radial.dmi', icon_state = "turret2")
 			)
 			var/selected_turret_faction = show_radial_menu(user, src, turret_factions, custom_check = CALLBACK(src, PROC_REF(check_menu), user), require_near = ranged?FALSE:TRUE, tooltips = TRUE)
 			if(!check_menu(user))
@@ -569,24 +569,24 @@ rborosilicate = 12
 			return TRUE
 		if(RCD_WINDOOR)
 			var/list/windoor_types = list(
-			"default" = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = "windoor"),
-			"secure" = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = "swindoor")
+			"default" = image(icon = 'icons/mob/radial.dmi', icon_state = "windoor"),
+			"secure" = image(icon = 'icons/mob/radial.dmi', icon_state = "swindoor")
 			)
 			var/selected_windoor_type = show_radial_menu(user, src, windoor_types, require_near = the_rcd.ranged?FALSE:TRUE, tooltips = TRUE)
 			if(!the_rcd.check_menu(user) || !selected_windoor_type)
 				return FALSE
 			var/list/windoor_dirs = list(
-			"NORTH" = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = (selected_windoor_type=="default"?"windoorn":"swindoorn")),
-			"EAST" = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = (selected_windoor_type=="default"?"windoore":"swindoore")),
-			"SOUTH" = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = (selected_windoor_type=="default"?"windoors":"swindoors")),
-			"WEST" = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = (selected_windoor_type=="default"?"windoorw":"swindoorw"))
+			"NORTH" = image(icon = 'icons/mob/radial.dmi', icon_state = (selected_windoor_type=="default"?"windoorn":"swindoorn")),
+			"EAST" = image(icon = 'icons/mob/radial.dmi', icon_state = (selected_windoor_type=="default"?"windoore":"swindoore")),
+			"SOUTH" = image(icon = 'icons/mob/radial.dmi', icon_state = (selected_windoor_type=="default"?"windoors":"swindoors")),
+			"WEST" = image(icon = 'icons/mob/radial.dmi', icon_state = (selected_windoor_type=="default"?"windoorw":"swindoorw"))
 			)
 			var/selected_windoor_dir = show_radial_menu(user, src, windoor_dirs, require_near = the_rcd.ranged?FALSE:TRUE, tooltips = TRUE)
 			if(!the_rcd.check_menu(user) || !selected_windoor_dir)
 				return FALSE
 			var/list/windoor_open_dirs = list(
-			"left" = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = (selected_windoor_type=="default"?"left":"leftsecure")),
-			"right" = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = (selected_windoor_type=="default"?"right":"rightsecure"))
+			"left" = image(icon = 'icons/mob/radial.dmi', icon_state = (selected_windoor_type=="default"?"left":"leftsecure")),
+			"right" = image(icon = 'icons/mob/radial.dmi', icon_state = (selected_windoor_type=="default"?"right":"rightsecure"))
 			)
 			var/selected_windoor_open_dir = show_radial_menu(user, src, windoor_open_dirs, require_near = the_rcd.ranged?FALSE:TRUE, tooltips = TRUE)
 			if(!the_rcd.check_menu(user) || !selected_windoor_open_dir)
@@ -675,10 +675,10 @@ rborosilicate = 12
 			return TRUE
 		if(RCD_CONVEYOR)
 			var/list/conveyor_dirs = list(
-			"NORTH" = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = "conveyorn"),
-			"EAST" = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = "conveyore"),
-			"SOUTH" = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = "conveyors"),
-			"WEST" = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = "conveyorw")
+			"NORTH" = image(icon = 'icons/mob/radial.dmi', icon_state = "conveyorn"),
+			"EAST" = image(icon = 'icons/mob/radial.dmi', icon_state = "conveyore"),
+			"SOUTH" = image(icon = 'icons/mob/radial.dmi', icon_state = "conveyors"),
+			"WEST" = image(icon = 'icons/mob/radial.dmi', icon_state = "conveyorw")
 			)
 			var/selected_conveyor_dir = show_radial_menu(user, src, conveyor_dirs, require_near = the_rcd.ranged?FALSE:TRUE, tooltips = TRUE)
 			if(!the_rcd.check_menu(user) || !selected_conveyor_dir)
@@ -869,11 +869,11 @@ rborosilicate = 12
 				construct_cost = 1
 			else
 				var/list/window_dirs = list(
-				"NORTH" = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = "wnorth"),
-				"EAST" = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = "weast"),
-				"SOUTH" = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = "wsouth"),
-				"WEST" = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = "wwest"),
-				"FULL" = image(icon = 'icons/chomp/mob/radial.dmi', icon_state = "wfull"),
+				"NORTH" = image(icon = 'icons/mob/radial.dmi', icon_state = "wnorth"),
+				"EAST" = image(icon = 'icons/mob/radial.dmi', icon_state = "weast"),
+				"SOUTH" = image(icon = 'icons/mob/radial.dmi', icon_state = "wsouth"),
+				"WEST" = image(icon = 'icons/mob/radial.dmi', icon_state = "wwest"),
+				"FULL" = image(icon = 'icons/mob/radial.dmi', icon_state = "wfull"),
 				)
 				var/selected_window_dir = show_radial_menu(user, src, window_dirs, require_near = the_rcd.ranged?FALSE:TRUE, tooltips = TRUE)
 				if(!the_rcd.check_menu(user) || !selected_window_dir)

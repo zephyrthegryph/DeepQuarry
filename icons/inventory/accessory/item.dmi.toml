@@ -1,7 +1,7 @@
 # Generated from item.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
 width = 32
 height = 32
-cols = 23
+cols = 24
 
 [[state]]
 name = "bluetie"
@@ -2116,3 +2116,14 @@ frames = 1
 name = "neo_pcloak"
 dirs = 1
 frames = 1
+
+[[state]]
+name = "instrument"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "casino_armband"
+dirs = 1
+frames = 6
+delays = [5]

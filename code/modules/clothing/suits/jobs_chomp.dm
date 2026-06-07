@@ -1,5 +1,5 @@
 /obj/item/clothing/suit/chef/classic
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/suit/mob_teshari.dmi',
-		SPECIES_VOX = 'icons/chomp/inventory/suit/mob_vox.dmi'
+		SPECIES_VOX = 'icons/inventory/suit/mob_vox.dmi'
 		)

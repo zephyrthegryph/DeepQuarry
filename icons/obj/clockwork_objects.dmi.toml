@@ -533,3 +533,34 @@ frames = 1
 name = "grass"
 dirs = 1
 frames = 1
+
+[[state]]
+name = "clockwork_slab"
+dirs = 1
+frames = 15
+delays = [1]
+
+[[state]]
+name = "electric_trap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reflector"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reflector_unwrenched"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "brass_claw"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ratvarian_sword"
+dirs = 1
+frames = 1

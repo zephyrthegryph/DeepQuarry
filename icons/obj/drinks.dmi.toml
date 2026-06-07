@@ -1,7 +1,7 @@
 # Generated from drinks.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
 width = 32
 height = 32
-cols = 26
+cols = 29
 
 [[state]]
 name = "carafe"
@@ -69,14 +69,14 @@ frames = 1
 [[state]]
 name = "proj_manhattanglass"
 dirs = 1
-frames = 6
-delays = [2]
+frames = 4
+delays = [10, 2]
 
 [[state]]
 name = "doctorsdelightglass"
 dirs = 1
-frames = 14
-delays = [2]
+frames = 10
+delays = [10, 2, 2, 2, 2, 1, 2, 2, 1]
 
 [[state]]
 name = "whiterussianglass"
@@ -175,8 +175,8 @@ delays = [2]
 [[state]]
 name = "devilskiss"
 dirs = 1
-frames = 4
-delays = [1.5]
+frames = 11
+delays = [6, 6, 5, 2, 2, 1]
 
 [[state]]
 name = "lovepotionglass"
@@ -677,7 +677,8 @@ delays = [2]
 [[state]]
 name = "manlydorfglass"
 dirs = 1
-frames = 1
+frames = 6
+delays = [15, 2, 1]
 
 [[state]]
 name = "martiniglass"
@@ -692,7 +693,8 @@ frames = 1
 [[state]]
 name = "bravebullglass"
 dirs = 1
-frames = 1
+frames = 2
+delays = [10]
 
 [[state]]
 name = "aleglass"
@@ -748,7 +750,7 @@ frames = 1
 [[state]]
 name = "threemileislandglass"
 dirs = 1
-frames = 4
+frames = 5
 delays = [1]
 
 [[state]]
@@ -790,7 +792,8 @@ frames = 1
 [[state]]
 name = "Space_mountain_wind_glass"
 dirs = 1
-frames = 1
+frames = 7
+delays = [1.2]
 
 [[state]]
 name = "emeraldglass"
@@ -826,7 +829,8 @@ frames = 1
 [[state]]
 name = "space-up_glass"
 dirs = 1
-frames = 1
+frames = 7
+delays = [1.2]
 
 [[state]]
 name = "mojito"
@@ -951,7 +955,7 @@ frames = 1
 name = "singulo"
 dirs = 1
 frames = 12
-delays = [1]
+delays = [1, 1, 0.1, 1]
 
 [[state]]
 name = "chocolateglass"
@@ -2072,3 +2076,177 @@ frames = 1
 name = "carafe100"
 dirs = 1
 frames = 1
+
+[[state]]
+name = "glassofspiders"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "eggnogglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snapsbottle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bubbleteabananaglass"
+dirs = 1
+frames = 3
+delays = [15]
+
+[[state]]
+name = "bubbleteacherryglass"
+dirs = 1
+frames = 3
+delays = [15]
+
+[[state]]
+name = "bubbleteacoffeeglass"
+dirs = 1
+frames = 3
+delays = [15]
+
+[[state]]
+name = "bubbleteastrawberryglass"
+dirs = 1
+frames = 3
+delays = [15]
+
+[[state]]
+name = "bubbleteawatermelonglass"
+dirs = 1
+frames = 3
+delays = [15]
+
+[[state]]
+name = "bluetrain"
+dirs = 1
+frames = 7
+delays = [5]
+
+[[state]]
+name = "horchata"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lovepotion"
+dirs = 1
+frames = 8
+delays = [2.5]
+
+[[state]]
+name = "jackbrew"
+dirs = 1
+frames = 21
+delays = [0.5]
+
+[[state]]
+name = "lowpower"
+dirs = 1
+frames = 4
+delays = [10, 2]
+
+[[state]]
+name = "bookwyrm"
+dirs = 1
+frames = 8
+delays = [2.5]
+
+[[state]]
+name = "highpower"
+dirs = 1
+frames = 26
+delays = [6, 2.5, 2.5, 2.5, 7.5, 0.5, 0.5, 0.5, 0.5, 2, 2.5, 2.5, 7.5, 2.5, 2.5, 2.5, 7.5, 2.5, 2, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 1.5]
+
+[[state]]
+name = "oilslide"
+dirs = 1
+frames = 4
+delays = [2.2]
+
+[[state]]
+name = "flapper"
+dirs = 1
+frames = 4
+delays = [2.5]
+
+[[state]]
+name = "sitonmyface"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slimedrink"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cogchamp"
+dirs = 1
+frames = 4
+delays = [6, 3]
+
+[[state]]
+name = "narsour"
+dirs = 1
+frames = 4
+delays = [5, 0.5, 1]
+
+[[state]]
+name = "arachnidslammer"
+dirs = 1
+frames = 7
+delays = [2]
+
+[[state]]
+name = "tequilasunriseglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fetching_fizz"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hearty_punch"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "squirt_cider"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fringe_weaver"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crevice_spike"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "duplex"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mauna_loa"
+dirs = 1
+frames = 3
+delays = [3]
+
+[[state]]
+name = "hiveminderaser"
+dirs = 1
+frames = 4
+delays = [2]

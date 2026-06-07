@@ -1,7 +1,7 @@
 # Generated from mob_teshari.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
 width = 32
 height = 32
-cols = 25
+cols = 26
 
 [[state]]
 name = "pilot_webbing1"
@@ -320,3 +320,9 @@ dirs = 4
 frames = 26
 delays = [2.5]
 hotspots = [{ frame = 1, x = 13, y = 9 }, { frame = 4, x = 0, y = 0 }]
+
+[[state]]
+name = "casino_armband"
+dirs = 4
+frames = 6
+delays = [5]

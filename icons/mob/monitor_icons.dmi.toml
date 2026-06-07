@@ -1,7 +1,7 @@
 # Generated from monitor_icons.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
 width = 32
 height = 32
-cols = 27
+cols = 37
 
 [[state]]
 name = "ipc_blank-colored"
@@ -282,3 +282,236 @@ delays = [2]
 name = "athena_off-colored"
 dirs = 4
 frames = 1
+
+[[state]]
+name = "YR3_blank"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "YR3_foureyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "YR3_evileyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "YR3_bigeyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "YR3_sliteyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "YR3_eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "YR3_talleyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "YR3_hypno"
+dirs = 4
+frames = 3
+delays = [1]
+
+[[state]]
+name = "YR3_loading"
+dirs = 4
+frames = 8
+delays = [3]
+
+[[state]]
+name = "YR3_monoeye"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "YR3_blindeye"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cyber_default"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cyber_happ"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cyber_unhapp"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cyber_idle"
+dirs = 4
+frames = 7
+delays = [1]
+
+[[state]]
+name = "cyber_sad"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cyber_nwn"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3cyber_owo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cyber_uwu"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cyber_flat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cyber_heart"
+dirs = 4
+frames = 7
+delays = [1]
+loop = 1
+
+[[state]]
+name = "cyber_cross"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "cyber_question"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "yr3cyber_static"
+dirs = 4
+frames = 8
+delays = [0.75]
+
+[[state]]
+name = "cyber_alert"
+dirs = 4
+frames = 8
+delays = [2.5]
+
+[[state]]
+name = "cyber_lowpower"
+dirs = 4
+frames = 4
+delays = [10, 10, 10, 12000]
+loop = 1
+
+[[state]]
+name = "YR3_bsod-colored"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "YR3_interrogative-colored"
+dirs = 4
+frames = 2
+delays = [5]
+
+[[state]]
+name = "YR3_danger-colored"
+dirs = 4
+frames = 2
+delays = [5]
+
+[[state]]
+name = "YR3_safe-colored"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "YR3_surprise-colored"
+dirs = 4
+frames = 2
+delays = [4]
+
+[[state]]
+name = "YR3_query-colored"
+dirs = 4
+frames = 2
+delays = [4]
+
+[[state]]
+name = "YR3_safebar-colored"
+dirs = 4
+frames = 12
+delays = [1]
+
+[[state]]
+name = "YR3_processing-colored"
+dirs = 4
+frames = 8
+delays = [8]
+
+[[state]]
+name = "YR3_assimilating-colored"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "YR3_processed-colored"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "YR3_cracked-colored"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "YR3_broken-colored"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "YR3_crackedopen-colored"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "YR3_crackedopenbloody-colored"
+dirs = 4
+frames = 20
+delays = [1]
+
+[[state]]
+name = "template"
+dirs = 4
+frames = 1
+
+[[state]]
+name = ""
+dirs = 4
+frames = 7
+delays = [1]
+loop = 1

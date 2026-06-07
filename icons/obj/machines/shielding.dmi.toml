@@ -1,7 +1,7 @@
 # Generated from shielding.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
 width = 32
 height = 32
-cols = 8
+cols = 9
 
 [[state]]
 name = "shieldsparkles"
@@ -68,7 +68,8 @@ frames = 1
 [[state]]
 name = "generator1"
 dirs = 1
-frames = 1
+frames = 10
+delays = [1]
 
 [[state]]
 name = "capacitor"

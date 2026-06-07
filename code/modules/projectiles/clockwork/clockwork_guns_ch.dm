@@ -8,7 +8,7 @@
 	item_state = "clockrifle"
 	wielded_item_state = "clockrifle-wielded"
 	slot_flags = SLOT_BACK
-	item_icons = list(slot_l_hand_str = 'icons/chomp/mob/items/lefthand_guns_ch.dmi', slot_r_hand_str = 'icons/chomp/mob/items/righthand_guns_ch.dmi', "slot_back" = 'icons/mob/guns_back_ch.dmi')
+	item_icons = list(slot_l_hand_str = 'icons/mob/items/lefthand_guns_ch.dmi', slot_r_hand_str = 'icons/mob/items/righthand_guns_ch.dmi', "slot_back" = 'icons/mob/guns_back_ch.dmi')
 	projectile_type = /obj/item/projectile/bullet/rifle/clockwork
 	w_class = ITEMSIZE_HUGE
 	one_handed_penalty = 90

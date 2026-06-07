@@ -718,8 +718,8 @@
 /datum/species/sergal
 	name = SPECIES_SERGAL
 	name_plural = "Sergals"
-	icobase = 'icons/chomp/mob/human_races/r_sergal.dmi' //ChompEDIT - our icons
-	deform = 'icons/chomp/mob/human_races/r_def_sergal.dmi' //ChompEDIT - our icons
+	icobase = 'icons/mob/human_races/r_sergal.dmi' //ChompEDIT - our icons
+	deform = 'icons/mob/human_races/r_def_sergal.dmi' //ChompEDIT - our icons
 	tail = "tail"
 	icobase_tail = 1
 	unarmed_types = list(/datum/unarmed_attack/stomp, /datum/unarmed_attack/kick, /datum/unarmed_attack/claws, /datum/unarmed_attack/bite/sharp)

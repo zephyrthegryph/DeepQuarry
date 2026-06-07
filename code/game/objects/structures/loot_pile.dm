@@ -30,7 +30,7 @@
 /obj/structure/loot_pile/christmas_tree
 	name = "festive tree"
 	desc = "Happy Holidays!"
-	icon = 'icons/chomp/obj/loot_piles.dmi'
+	icon = 'icons/obj/loot_pile.dmi'
 	icon_state = "festivetree"
 	plane = ABOVE_MOB_PLANE
 	pixel_x = -32

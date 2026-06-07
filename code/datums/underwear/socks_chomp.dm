@@ -2,7 +2,7 @@
 	if(!icon_state)
 		return
 
-	var/image/I = image(icon = digitigrade ? 'icons/chomp/mob/human.dmi' : icon, icon_state = icon_state, layer = layer) //CHOMPEdit
+	var/image/I = image(icon = digitigrade ? 'icons/mob/human.dmi' : icon, icon_state = icon_state, layer = layer) //CHOMPEdit
 	for(var/datum/gear_tweak/gt in tweaks)
 		gt.tweak_item(I, metadata && metadata["[gt]"] ? metadata["[gt]"] : gt.get_default())
 	return I

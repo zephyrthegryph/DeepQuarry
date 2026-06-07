@@ -356,3 +356,18 @@ frames = 1
 name = "tagknifered"
 dirs = 4
 frames = 1
+
+[[state]]
+name = "agate_sword"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "agate_hammer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "agate_spear"
+dirs = 4
+frames = 1
