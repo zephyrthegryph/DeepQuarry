@@ -33,7 +33,7 @@
 	puddleitem = /obj/item/grenade/shooter/auto_explode/blade_boss_short
 
 /obj/item/grenade/shooter/auto_explode
-	icon ='icons/chomp/obj/guns/precursor/tyr.dmi'
+	icon ='icons/obj/guns/precursor/tyr.dmi'
 	icon_state = "explosion_marker"
 	mouse_opacity = 0 //no touching the attack
 	spread_range = 3

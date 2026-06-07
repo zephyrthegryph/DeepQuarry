@@ -1,7 +1,7 @@
 /obj/item/gun/energy/freezegun
 	name = "Pulse Froster Prototype"
 	desc = "A strange gun pulsing with energy, it's touch chilling you to the core."
-	icon = 'icons/chomp/obj/guns/precursor/eclipse.dmi'
+	icon = 'icons/obj/guns/precursor/eclipse.dmi'
 	icon_state = "cryogun"
 	item_state = "cryogun"
 	wielded_item_state = "cryogun-wielded"
@@ -74,7 +74,7 @@
 
 /obj/item/projectile/energy/mechahack
 	name = "remote hack"
-	icon = 'icons/chomp/obj/guns/precursor/eclipse.dmi'
+	icon = 'icons/obj/guns/precursor/eclipse.dmi'
 	icon_state = "databreach"
 	nodamage = 1
 	irradiate = 3
@@ -110,7 +110,7 @@
 
 /obj/item/projectile/energy/eclipse_boss
 	name = "experimental laser"
-	icon = 'icons/chomp/obj/guns/precursor/eclipse.dmi'
+	icon = 'icons/obj/guns/precursor/eclipse.dmi'
 	icon_state = "laser"
 	check_armour = "laser"
 	speed = 10
@@ -146,7 +146,7 @@
 	speed = 3
 	damage = 28
 	damage_type = BURN
-	icon = 'icons/chomp/obj/guns/precursor/eclipse.dmi'
+	icon = 'icons/obj/guns/precursor/eclipse.dmi'
 	icon_state = "laser"
 	check_armour = "laser"
 

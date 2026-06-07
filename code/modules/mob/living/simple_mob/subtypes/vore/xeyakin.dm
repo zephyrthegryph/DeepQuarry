@@ -5,7 +5,7 @@
 	meat_amount = 30
 	meat_type = /obj/item/reagent_containers/food/snacks/meat/xeyakin
 
-	icon = 'icons/chomp/mob/vore64x32_ch.dmi'
+	icon = 'icons/mob/vore64x32_ch.dmi'
 	icon_state = "xeyakin" //horrid coder sprite, yay
 	icon_living = "xeyakin"
 	icon_dead = "xeyakin-dead"

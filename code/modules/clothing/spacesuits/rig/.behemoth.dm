@@ -2,7 +2,7 @@
 	name = "aegis control module"
 	desc = "A hefty armor formed from fallen redspace construct."
 	suit_type = "aegis hardsuit"
-	icon = 'icons/chomp/obj/rig_modules_ch.dmi'
+	icon = 'icons/obj/rig_modules_ch.dmi'
 	icon_state = "aegis_rig"
 	armor = list(melee = 60, bullet = 60, laser = 60, energy = 30, bomb = 10, bio = 100, rad = 100)
 

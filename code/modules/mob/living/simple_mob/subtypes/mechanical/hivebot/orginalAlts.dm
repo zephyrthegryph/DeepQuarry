@@ -35,7 +35,7 @@
 
 /mob/living/simple_mob/mechanical/hivebot/tyr/meteor
 	name = "repair drone"
-	icon = 'icons/chomp/mob/tyr.dmi'
+	icon = 'icons/mob/tyr.dmi'
 	maxHealth = 6 LASERS_TO_KILL // 240 hp
 	health = 6 LASERS_TO_KILL // 240 hp
 	icon_state = "guardian"

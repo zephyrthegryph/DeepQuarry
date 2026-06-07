@@ -1,6 +1,6 @@
 /obj/item/storage/bag/plasticbag/halloween
 	name = "halloween bag"
-	icon = 'icons/chomp/obj/halloween/trash.dmi'
+	icon = 'icons/obj/halloween/trash.dmi'
 	icon_state = "halloween_bag"
 	can_hold = list(
 		/obj/item/reagent_containers/food/snacks/candy,
@@ -41,7 +41,7 @@
 	desc = "It's a bowl, with candy! Take only one, please."
 	anchored = FALSE
 	density = FALSE
-	icon = 'icons/chomp/obj/halloween/bowls.dmi'
+	icon = 'icons/obj/halloween/bowls.dmi'
 	icon_state = "fullcandy"
 
 	var/searching = FALSE
@@ -200,7 +200,7 @@
 /obj/structure/boxpile
 	name = "box pile"
 	desc = "It's a bunch of costume boxes! Maybe one could fit you..."
-	icon = 'icons/chomp/obj/halloween/trash64x64.dmi'
+	icon = 'icons/obj/halloween/trash64x64.dmi'
 	icon_state = "bigboxes"
 
 	anchored = TRUE

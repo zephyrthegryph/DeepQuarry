@@ -5,7 +5,7 @@
 
 	var/list/options = list("Resin Door","Resin Membrane","Nest","Resin Wall","Weed Node")
 	for(var/option in options)
-		LAZYSET(options, option, image('icons/chomp/mob/xeno_screen.dmi', option))
+		LAZYSET(options, option, image('icons/mob/xeno_screen.dmi', option))
 	var/choice = show_radial_menu(src, src, options, radius = 60)
 	if(!choice || QDELETED(src) || src.incapacitated())
 		return FALSE
@@ -52,7 +52,7 @@
 
 /datum/action/innate/xeno_ch
 	check_flags = AB_CHECK_RESTRAINED | AB_CHECK_STUNNED | AB_CHECK_CONSCIOUS
-	button_icon = 'icons/chomp/mob/xeno_screen.dmi'
+	button_icon = 'icons/mob/xeno_screen.dmi'
 	var/mob/living/simple_mob/xeno_ch/parent_xeno
 
 

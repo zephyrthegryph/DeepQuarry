@@ -2,7 +2,7 @@
 	name = "brass box"
 	suit_type = "clockwork"
 	desc = "A subtly vibrating box made out of brass. It has some buttons and switches on one side, and what looks like vents on another."
-	icon = 'icons/chomp/obj/rig_modules_ch.dmi'
+	icon = 'icons/obj/rig_modules_ch.dmi'
 	icon_state = "clockwork_rig"
 	slot_flags = SLOT_BELT
 	armor = list(melee = 70, bullet = 55, laser = 65, energy = 65, bomb = 65, bio = 0, rad = 100)

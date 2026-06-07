@@ -1,7 +1,7 @@
 /mob/living/simple_mob/vore/smokestar
 	name = "strange creature"
 	desc = "What is that?"
-	icon = 'icons/chomp/mob/smokestar.dmi'
+	icon = 'icons/mob/smokestar.dmi'
 	icon_state = "drone0"
 	icon_living = "drone0"
 	icon_dead = "drone0"

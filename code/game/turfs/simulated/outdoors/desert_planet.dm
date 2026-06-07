@@ -2,7 +2,7 @@
 /turf/simulated/floor/outdoors/desert_planet
 	name = "sand"
 	desc = "Salty and gritty."
-	icon = 'icons/chomp/turf/desert_tiles.dmi'
+	icon = 'icons/turf/desert_tiles.dmi'
 	icon_edge = 'icons/chomp/turf/outdoors_edge.dmi'
 
 /turf/simulated/floor/outdoors/desert_planet/sand
@@ -124,7 +124,7 @@
 /datum/decl/flooring/desert_planet // Yeah don't use this one, it's a parent just for setting icon.
 	name = "desert stuff"
 	desc = "If you see this, this turf is using the wrong decl."
-	icon = 'icons/chomp/turf/desert_tiles.dmi'
+	icon = 'icons/turf/desert_tiles.dmi'
 	icon_base = null
 
 /datum/decl/flooring/desert_planet/sand

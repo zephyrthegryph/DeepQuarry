@@ -16,7 +16,7 @@
 
 /obj/item/projectile/energy/tyr_rifle
 	name = "laser blast"
-	icon = 'icons/chomp/obj/guns/precursor/tyr.dmi'
+	icon = 'icons/obj/guns/precursor/tyr.dmi'
 	icon_state = "blaster_blast"
 	damage = 35
 	armor_penetration = 15
@@ -50,7 +50,7 @@
 /obj/item/gun/energy/tyr_rifle
 	name = "tyrian longarm"
 	desc = "A strange alien weapon from tyr. Has a button to swap fire modes."
-	icon = 'icons/chomp/obj/guns/precursor/tyr.dmi'
+	icon = 'icons/obj/guns/precursor/tyr.dmi'
 	icon_state = "shotgun"
 	item_state = "shotgun"
 	wielded_item_state = "placeholder"
@@ -109,7 +109,7 @@
 /obj/item/projectile/bullet/astral_blade
 	name = "bluespace slash"
 	icon_state = "astral_sea_blade"
-	icon = 'icons/chomp/obj/guns/precursor/tyr.dmi'
+	icon = 'icons/obj/guns/precursor/tyr.dmi'
 	damage = 25 //15
 	damage_type = BRUTE
 	check_armour = "melee"

@@ -1,5 +1,5 @@
 /obj/machinery/traptile
-	icon = 'icons/chomp/obj/machines/defense.dmi'
+	icon = 'icons/obj/machines/defense.dmi'
 	icon_state = "traptile"
 	anchored = 1
 	use_power = USE_POWER_IDLE

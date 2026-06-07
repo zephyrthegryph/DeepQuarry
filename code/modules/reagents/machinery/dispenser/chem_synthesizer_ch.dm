@@ -8,7 +8,7 @@
 /obj/machinery/chemical_synthesizer
 	name = "chemical synthesizer"
 	desc = "A programmable machine capable of automatically synthesizing medicine."
-	icon = 'icons/chomp/obj/chemical_ch.dmi'
+	icon = 'icons/obj/chemical_ch.dmi'
 	icon_state = "synth_idle_bottle"
 
 	use_power = USE_POWER_IDLE

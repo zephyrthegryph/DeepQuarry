@@ -4,9 +4,9 @@
 	name = "modular plate carrier"
 	desc = "A lightweight, modular plate carrier vest made from armor grade UHMWPE. It can be equipped with armor plates, but provides very little protection of its own."
 	armor = list(melee = 5, bullet = 5, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 0)
-	icon = 'icons/chomp/obj/modular_armor.dmi'
-	icon_override = 'icons/chomp/obj/modular_armor.dmi'
-	item_icons = 'icons/chomp/obj/modular_armor.dmi'
+	icon = 'icons/obj/modular_armor.dmi'
+	icon_override = 'icons/obj/modular_armor.dmi'
+	item_icons = 'icons/obj/modular_armor.dmi'
 	item_state = "pcarrier"
 	valid_accessory_slots = (\
 		ACCESSORY_SLOT_INSIGNIA\
@@ -66,8 +66,8 @@
 /obj/item/clothing/gloves/handguards_modarm
 	name = "reinforced gauntlets"
 	desc = "These armored gauntlets will protect your hands and forearms. Meant to be used with a plate carrier."
-	icon = 'icons/chomp/obj/modular_armor.dmi'
-	icon_override = 'icons/chomp/obj/modular_armor.dmi'
+	icon = 'icons/obj/modular_armor.dmi'
+	icon_override = 'icons/obj/modular_armor.dmi'
 	icon_state = "handguards_item"
 	item_state = "handguards"
 	default_worn_icon = "handguards"
@@ -87,8 +87,8 @@
 /obj/item/clothing/shoes/footguards_modarm
 	name = "reinforced boots"
 	desc = "These armored boots will protect your ankles and feet."
-	icon = 'icons/chomp/obj/modular_armor.dmi'
-	icon_override = 'icons/chomp/obj/modular_armor.dmi'
+	icon = 'icons/obj/modular_armor.dmi'
+	icon_override = 'icons/obj/modular_armor.dmi'
 	icon_state = "footguards_item"
 	item_state = "footguards"
 	default_worn_icon = "footguards"
@@ -104,15 +104,15 @@
 	can_hold_knife = TRUE
 	drop_sound = 'sound/items/drop/boots.ogg'
 	pickup_sound = 'sound/items/pickup/boots.ogg'
-	update_icon_define_digi = 'icons/chomp/obj/modular_armor_digi.dmi' ///this doesn't work, not sure why
+	update_icon_define_digi = 'icons/obj/modular_armor_digi.dmi' ///this doesn't work, not sure why
 
 ///snowflake leg guards
 
 /obj/item/clothing/accessory/armor/legguards/modarm
 	name = "modular leg guards"
 	desc = "A pair of armored leg pads. Attaches to a plate carrier."
-	icon = 'icons/chomp/obj/modular_armor.dmi'
-	icon_override = 'icons/chomp/obj/modular_armor.dmi'
+	icon = 'icons/obj/modular_armor.dmi'
+	icon_override = 'icons/obj/modular_armor.dmi'
 	icon_state = "legguards"
 	item_state = "legguards"
 	default_worn_icon = "legguards"
@@ -122,7 +122,7 @@
 	cold_protection = LEGS
 	armor = list(melee = 40, bullet = 40, laser = 40, energy = 25, bomb = 30, bio = 0, rad = 0)
 	slot = ACCESSORY_SLOT_ARMOR_L
-	update_icon_define_digi = 'icons/chomp/obj/modular_armor_digi.dmi' ///this doesn't work, not sure why
+	update_icon_define_digi = 'icons/obj/modular_armor_digi.dmi' ///this doesn't work, not sure why
 
 /obj/item/clothing/accessory/armor/legguards/modarm/green
 	icon_state = "legguardsG"
@@ -149,8 +149,8 @@
 /obj/item/clothing/accessory/armor/armguards/modarm
 	name = "modular arm guards"
 	desc = "A pair of arm pads reinforced with armor plating. Attaches to a plate carrier."
-	icon = 'icons/chomp/obj/modular_armor.dmi'
-	icon_override = 'icons/chomp/obj/modular_armor.dmi'
+	icon = 'icons/obj/modular_armor.dmi'
+	icon_override = 'icons/obj/modular_armor.dmi'
 	icon_state = "armguards"
 	item_state = "armguards"
 	default_worn_icon = "armguards"
@@ -187,8 +187,8 @@
 /obj/item/clothing/accessory/armor/groinpad
 	name = "modular groin pad"
 	desc = "A thick kevlar pad, that protects the groin and the buttocks."
-	icon_override = 'icons/chomp/obj/modular_armor.dmi'
-	icon = 'icons/chomp/obj/modular_armor.dmi'
+	icon_override = 'icons/obj/modular_armor.dmi'
+	icon = 'icons/obj/modular_armor.dmi'
 	icon_state = "groinpad"
 	item_state = "groinpad"
 	default_worn_icon = "groinpad"

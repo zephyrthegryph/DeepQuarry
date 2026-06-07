@@ -1,7 +1,7 @@
 /obj/mecha/combat/hades
 	name = "The Hades Prototype"
 	desc = "An exosuit which you aren't sure you understand despite building"
-	icon = 'icons/chomp/mecha/mechas.dmi'
+	icon = 'icons/mecha/mechas.dmi'
 	icon_state = "hades" //to change
 	initial_icon = "hades_broken"
 	step_in = 1
@@ -26,5 +26,5 @@
 
 /obj/effect/decal/mecha_wreckage/hades
 	name = "Hades Wreckage"
-	icon = 'icons/chomp/mecha/mechas.dmi'
+	icon = 'icons/mecha/mechas.dmi'
 	icon_state = "hades_broken" //to change

@@ -88,7 +88,7 @@
 	icon_living = "muffinmonster"
 	icon_dead = "muffinmonster-dead"
 	icon_rest = "muffinmonster_rest"
-	icon = 'icons/chomp/mob/vore64x32_ch.dmi'
+	icon = 'icons/mob/vore64x32_ch.dmi'
 	has_eye_glow = FALSE
 	vore_default_item_mode = IM_DIGEST
 

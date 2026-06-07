@@ -1,6 +1,6 @@
 /obj/machinery/food_replicator
 	name = "Food Replicator"
-	icon = 'icons/chomp/obj/machines/food_replicator.dmi'
+	icon = 'icons/obj/machines/food_replicator.dmi'
 	icon_state = "food_replicator"
 
 	anchored = TRUE

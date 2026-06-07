@@ -71,7 +71,7 @@
 	anchored = TRUE
 	density = FALSE
 	mouse_opacity = 0
-	icon ='icons/chomp/obj/guns/precursor/tyr.dmi'
+	icon ='icons/obj/guns/precursor/tyr.dmi'
 
 /obj/effect/callstrike/Initialize(mapload)
 	.=..()

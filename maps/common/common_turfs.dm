@@ -264,20 +264,20 @@ VIRGO2_TURF_CREATE(/turf/simulated/floor/hull)
 	name = "basalt"
 	desc = "Loose, rocky basalt. It crumbles to sand under the slightest bit of force."
 	icon_state = "basalt0"
-	icon = 'icons/chomp/turf/thor.dmi'
+	icon = 'icons/turf/thor.dmi'
 
 /turf/simulated/mineral/thor/mines
 	name = "dark rock"
 	desc = "Dark black basalt. Rich in exotic minerals."
 	icon_state = "deeprock"
-	icon = 'icons/chomp/turf/thor.dmi'
+	icon = 'icons/turf/thor.dmi'
 	temperature = 393.15
 
 /turf/unsimulated/mineral/thor/mines
 	name = "impassable dark rock"
 	desc = "Dark black basalt. Packed impossibly tightly, no way to get past this."
 	icon_state = "deeprock-solid"
-	icon = 'icons/chomp/turf/thor.dmi'
+	icon = 'icons/turf/thor.dmi'
 	temperature = 393.15
 
 /turf/simulated/mineral/thor/floor/ignore_mapgen/cave

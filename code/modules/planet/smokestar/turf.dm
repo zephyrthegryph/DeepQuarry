@@ -1,6 +1,6 @@
 /turf/simulated/floor/outdoors/grass/smokestar
 	name = "strange moss"
-	icon = 'icons/chomp/turf/falseplanets.dmi'
+	icon = 'icons/turf/falseplanets.dmi'
 	icon_state = "moss"
 	flags = TURF_CAN_DIG_SHOVEL
 /*unsure how needed this variable will need to be changed
@@ -20,7 +20,7 @@
 
 /obj/structure/flora/opalflowers
 	name = "opal flower"
-	icon = 'icons/chomp/obj/strangeflora.dmi'
+	icon = 'icons/obj/strangeflora.dmi'
 	icon_state = "opal"
 
 	destroy_on_harvest = TRUE
@@ -30,7 +30,7 @@
 
 /obj/structure/flora/weepinggrass
 	name = "strange grass"
-	icon = 'icons/chomp/obj/strangeflora.dmi'
+	icon = 'icons/obj/strangeflora.dmi'
 	icon_state = "weep"
 
 	destroy_on_harvest = TRUE

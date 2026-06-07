@@ -1498,37 +1498,37 @@
 //xeno stuffs
 /datum/sprite_accessory/hair/xeno_head_drone_color
 	name = "Drone dome"
-	icon = 'icons/chomp/mob/human_face_ch.dmi' //chompstation edit
-	icon_add = 'icons/chomp/mob/human_face_ch_add.dmi' //chompstation edit
+	icon = 'icons/mob/human_face_ch.dmi' //chompstation edit
+	icon_add = 'icons/mob/human_face_ch_add.dmi' //chompstation edit
 	icon_state = "cxeno_drone"
 	gender = NEUTER
 
 // figure this one out for better coloring
 /datum/sprite_accessory/hair/xeno_head_sentinel_color
 	name = "Sentinal dome"
-	icon = 'icons/chomp/mob/human_face_ch.dmi'//chompstation edit
-	icon_add = 'icons/chomp/mob/human_face_ch_add.dmi'//chompstation edit
+	icon = 'icons/mob/human_face_ch.dmi'//chompstation edit
+	icon_add = 'icons/mob/human_face_ch_add.dmi'//chompstation edit
 	icon_state = "cxeno_sentinel"
 	gender = NEUTER
 
 /datum/sprite_accessory/hair/xeno_head_queen_color
 	name = "Queen dome"
-	icon = 'icons/chomp/mob/human_face_ch.dmi'//chompstation edit
-	icon_add = 'icons/chomp/mob/human_face_ch_add.dmi'//chompstation edit
+	icon = 'icons/mob/human_face_ch.dmi'//chompstation edit
+	icon_add = 'icons/mob/human_face_ch_add.dmi'//chompstation edit
 	icon_state = "cxeno_queen"
 	gender = NEUTER
 
 /datum/sprite_accessory/hair/xeno_head_hunter_color
 	name = "Hunter dome"
-	icon = 'icons/chomp/mob/human_face_ch.dmi'//chompstation edit
-	icon_add = 'icons/chomp/mob/human_face_ch_add.dmi'//chompstation edit
+	icon = 'icons/mob/human_face_ch.dmi'//chompstation edit
+	icon_add = 'icons/mob/human_face_ch_add.dmi'//chompstation edit
 	icon_state = "cxeno_hunter"
 	gender = NEUTER
 
 /datum/sprite_accessory/hair/xeno_head_praetorian_color
 	name = "Praetorian dome"
-	icon = 'icons/chomp/mob/human_face_ch.dmi'//chompstation edit
-	icon_add = 'icons/chomp/mob/human_face_ch_add.dmi'//chompstation edit
+	icon = 'icons/mob/human_face_ch.dmi'//chompstation edit
+	icon_add = 'icons/mob/human_face_ch_add.dmi'//chompstation edit
 	icon_state = "cxeno_praetorian"
 	gender = NEUTER
 

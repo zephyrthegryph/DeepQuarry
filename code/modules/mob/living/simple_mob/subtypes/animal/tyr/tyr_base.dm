@@ -6,7 +6,7 @@
 
 	see_in_dark = 3 //stealth time?
 
-	icon = 'icons/chomp/mob/tyr.dmi'
+	icon = 'icons/mob/tyr.dmi'
 
 	faction = FACTION_TYR
 

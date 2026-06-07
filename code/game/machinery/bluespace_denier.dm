@@ -1,7 +1,7 @@
 /obj/machinery/bluespace_denier
 	name = "bluespace desyncronizer"
 	desc = "A portable device that causes small disruptions to bluespace when its sensors detect activity within it nearby. Wrench to activate and deactivate."
-	icon = 'icons/chomp/obj/machines/bs_disruptor.dmi'
+	icon = 'icons/obj/machines/bs_disruptor.dmi'
 	icon_state = "pflash1"
 	layer = ABOVE_WINDOW_LAYER
 	var/range = 4

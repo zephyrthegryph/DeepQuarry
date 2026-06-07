@@ -11,7 +11,7 @@
 //Eclipse mecha
 /obj/structure/loot_pile/mecha/odd_gygax
 	name = "\improper mecha wreckage"
-	icon = 'icons/chomp/mob/eclipse.dmi'
+	icon = 'icons/mob/eclipse.dmi'
 	icon_state = "orb-broken"
 	density = TRUE
 	anchored = FALSE
@@ -20,7 +20,7 @@
 
 /obj/structure/loot_pile/mecha/odd_ripley
 	name = "\improper mecha wreckage"
-	icon = 'icons/chomp/mob/eclipse.dmi'
+	icon = 'icons/mob/eclipse.dmi'
 	icon_state = "mine-broken"
 	density = TRUE
 	anchored = FALSE

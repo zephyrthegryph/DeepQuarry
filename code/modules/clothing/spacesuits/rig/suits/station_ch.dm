@@ -2,7 +2,7 @@
 /obj/item/rig/ch //Some blank bs
 	name = DEVELOPER_WARNING_NAME
 	desc = DEVELOPER_WARNING_NAME
-	default_mob_icon = 'icons/chomp/mob/rig_back_ch.dmi'
+	default_mob_icon = 'icons/mob/rig_back_ch.dmi'
 	chest_type = /obj/item/clothing/suit/space/rig/ch
 	helm_type = /obj/item/clothing/head/helmet/space/rig/ch
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/ch
@@ -32,7 +32,7 @@
 //A second security suit. Comes with a grenade launcher that only accepts flashbangs and adds a new sprinter and flash modules.
 /obj/item/rig/ch/pursuit
 	name = "pursuit hardsuit control module"
-	icon = 'icons/chomp/obj/rig_modules_ch.dmi'
+	icon = 'icons/obj/rig_modules_ch.dmi'
 	icon_state = "pursuit_rig"
 	suit_type = "pursuit hardsuit"
 	desc = "A Security hardsuit designed for chasing down the grey tide."
@@ -116,19 +116,19 @@
 /obj/item/clothing/suit/space/rig/ch
 	sprite_sheets = list(
 		SPECIES_HUMAN			= 'icons/mob/spacesuit.dmi',
-		SPECIES_TAJARAN 			= 'icons/chomp/mob/species/tajaran/suit_ch.dmi',
-		SPECIES_SKRELL 			= 'icons/chomp/mob/species/skrell/suit_ch.dmi',
-		SPECIES_UNATHI 			= 'icons/chomp/mob/species/unathi/suit_ch.dmi',
-		SPECIES_XENOHYBRID		= 'icons/chomp/mob/species/unathi/suit_ch.dmi',
-		SPECIES_AKULA 			= 'icons/chomp/mob/species/akula/suit_ch.dmi',
-		SPECIES_SERGAL			= 'icons/chomp/mob/species/sergal/suit_ch.dmi',
-		SPECIES_NEVREAN			= 'icons/chomp/mob/species/sergal/suit_ch.dmi',
-		SPECIES_VULPKANIN		= 'icons/chomp/mob/species/vulpkanin/suit_ch.dmi',
-		SPECIES_ZORREN_HIGH 	= 'icons/chomp/mob/species/fox/suit_ch.dmi',
-		SPECIES_FENNEC			= 'icons/chomp/mob/species/vulpkanin/suit_ch.dmi',
-		SPECIES_PROMETHEAN		= 'icons/chomp/mob/species/skrell/suit_ch.dmi',
+		SPECIES_TAJARAN 			= 'icons/mob/species/tajaran/suit_ch.dmi',
+		SPECIES_SKRELL 			= 'icons/mob/species/skrell/suit_ch.dmi',
+		SPECIES_UNATHI 			= 'icons/mob/species/unathi/suit_ch.dmi',
+		SPECIES_XENOHYBRID		= 'icons/mob/species/unathi/suit_ch.dmi',
+		SPECIES_AKULA 			= 'icons/mob/species/akula/suit_ch.dmi',
+		SPECIES_SERGAL			= 'icons/mob/species/sergal/suit_ch.dmi',
+		SPECIES_NEVREAN			= 'icons/mob/species/sergal/suit_ch.dmi',
+		SPECIES_VULPKANIN		= 'icons/mob/species/vulpkanin/suit_ch.dmi',
+		SPECIES_ZORREN_HIGH 	= 'icons/mob/species/fox/suit_ch.dmi',
+		SPECIES_FENNEC			= 'icons/mob/species/vulpkanin/suit_ch.dmi',
+		SPECIES_PROMETHEAN		= 'icons/mob/species/skrell/suit_ch.dmi',
 		SPECIES_TESHARI 		= 'icons/mob/species/teshari/suit.dmi',
-		SPECIES_VASILISSAN		= 'icons/chomp/mob/species/skrell/suit_ch.dmi',
+		SPECIES_VASILISSAN		= 'icons/mob/species/skrell/suit_ch.dmi',
 		SPECIES_VOX				= 'icons/mob/species/vox/suit.dmi'
 		)
 

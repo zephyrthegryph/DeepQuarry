@@ -3,12 +3,12 @@
 /obj/item/gun/energy/clockwork
 	name = "clockwork rifle"
 	desc = "A rifle that looks to be made entirely out of brass. It has a charging handle on the side, but doesn't seem to have a way to eject the magazine underneath."
-	icon = 'icons/chomp/obj/guns/clockwork/guns_ch.dmi'
+	icon = 'icons/obj/guns/clockwork/guns_ch.dmi'
 	icon_state = "clockrifle"
 	item_state = "clockrifle"
 	wielded_item_state = "clockrifle-wielded"
 	slot_flags = SLOT_BACK
-	item_icons = list(slot_l_hand_str = 'icons/chomp/mob/items/lefthand_guns_ch.dmi', slot_r_hand_str = 'icons/chomp/mob/items/righthand_guns_ch.dmi', "slot_back" = 'icons/chomp/mob/guns_back_ch.dmi')
+	item_icons = list(slot_l_hand_str = 'icons/chomp/mob/items/lefthand_guns_ch.dmi', slot_r_hand_str = 'icons/chomp/mob/items/righthand_guns_ch.dmi', "slot_back" = 'icons/mob/guns_back_ch.dmi')
 	projectile_type = /obj/item/projectile/bullet/rifle/clockwork
 	w_class = ITEMSIZE_HUGE
 	one_handed_penalty = 90
@@ -69,21 +69,21 @@
 	hud_state = "taser"
 
 /obj/effect/projectile/muzzle/voltbeam
-	icon = 'icons/chomp/obj/guns/clockwork/projectiles_tracer_ch.dmi'
+	icon = 'icons/obj/guns/clockwork/projectiles_tracer_ch.dmi'
 	icon_state = "muzzle_volt_ray"
 	light_range = 2
 	light_power = 1
 	light_color = "#DAAA18"
 
 /obj/effect/projectile/tracer/voltbeam
-	icon = 'icons/chomp/obj/guns/clockwork/projectiles_tracer_ch.dmi'
+	icon = 'icons/obj/guns/clockwork/projectiles_tracer_ch.dmi'
 	icon_state = "volt_ray"
 	light_range = 2
 	light_power = 1
 	light_color = "#DAAA18"
 
 /obj/effect/projectile/impact/voltbeam
-	icon = 'icons/chomp/obj/guns/clockwork/projectiles_tracer_ch.dmi'
+	icon = 'icons/obj/guns/clockwork/projectiles_tracer_ch.dmi'
 	icon_state = "impact_volt_ray"
 	light_range = 2
 	light_power = 1
