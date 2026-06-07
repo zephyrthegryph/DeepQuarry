@@ -1137,3 +1137,8 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 		return
 
 	forceMove(L)
+
+
+// === merged from observer_chomp.dm during hard-fork de-suffix (manually verified: no middle override of the affected member) ===
+/mob/observer
+	low_priority = TRUE

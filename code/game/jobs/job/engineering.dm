@@ -187,3 +187,8 @@
 /datum/alt_title/disposals_tech
 	title = JOB_ALT_DISPOSALS_TECHNICIAN
 	title_blurb = "A " + JOB_ALT_DISPOSALS_TECHNICIAN + " is an " + JOB_ATMOSPHERIC_TECHNICIAN + " still and can fulfill all the same duties, although specializes more in disposals delivery system's operations and configurations."
+
+
+// === merged from engineering_chomp.dm during hard-fork de-suffix (manually verified: no middle override of the affected member) ===
+/datum/job/chief_engineer
+	camp_protection = TRUE

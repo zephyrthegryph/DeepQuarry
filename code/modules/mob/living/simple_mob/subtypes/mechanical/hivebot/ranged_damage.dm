@@ -187,3 +187,10 @@
 	ballistic weapon. The weapon seems to fire larger projectiles, and it has heavier armor. Other than that, it has similar yellowish color \
 	to regular hivebots."
 	value = CATALOGUER_REWARD_HARD
+
+
+// === merged from hivebot_chomp.dm during hard-fork de-suffix (manually verified: no middle override of the affected member) ===
+/mob/living/simple_mob/mechanical/hivebot/ranged_damage/laser
+	name = "laser hivebot"
+	desc = "A robot with a photonic weapon integrated into itself."
+	projectiletype = /obj/item/projectile/energy/mob/drone

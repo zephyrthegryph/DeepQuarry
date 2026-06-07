@@ -921,3 +921,12 @@
 			allergies.Add(REAGENT_KELOTANE)
 		return allergies
 	return null
+
+
+// === merged from species_chomp.dm during hard-fork de-suffix (manually verified: no middle override of the affected member) ===
+/datum/species/can_shred(mob/living/carbon/human/H, ignore_intent)
+	if(!ignore_intent && H.a_intent != I_HURT)
+		return FALSE
+	if(H.get_feralness())
+		return TRUE
+	return ..()

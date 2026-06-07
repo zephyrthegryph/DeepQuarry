@@ -61,3 +61,12 @@
 #define MAX_UNITS_PER_PATCH 60 // Max amount of units in a patch
 #define MAX_UNITS_PER_BOTTLE 60 // Max amount of units in a bottle (it's volume)
 #define MAX_CUSTOM_NAME_LEN 64 // Max length of a custom pill/condiment/whatever
+
+
+// === merged from chemistry_vr.dm during hard-fork de-suffix (manually verified) ===
+// More for our custom races
+#define IS_CHIMERA 12
+#define IS_SHADEKIN 13
+#define IS_ALRAUNE 14
+#define IS_LLEILL 15
+#define IS_GREY 16 //ywedit

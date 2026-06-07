@@ -442,3 +442,11 @@
 	flags_inv = HIDEEARS|BLOCKHAIR //removed HIDEFACE/MASK/EYES flags so sunglasses or facemasks don't disappear. still gotta have BLOCKHAIR or it'll clip out tho.
 	sprite_sheets = ALL_VR_SPRITE_SHEETS_HEAD_MOB
 	sprite_sheets_obj = null
+
+
+// === merged from void_chomp.dm during hard-fork de-suffix (manually verified: no middle override of the affected member) ===
+/obj/item/clothing/head/helmet/space/void
+	species_restricted = list(SPECIES_HUMAN, SPECIES_RAPALA, SPECIES_VASILISSAN, SPECIES_ALRAUNE, SPECIES_PROMETHEAN, SPECIES_XENOCHIMERA, SPECIES_XENOMORPH_HYBRID)
+
+/obj/item/clothing/suit/space/void
+	species_restricted = list(SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_RAPALA, SPECIES_VASILISSAN, SPECIES_ALRAUNE, SPECIES_PROMETHEAN, SPECIES_XENOCHIMERA, SPECIES_XENOMORPH_HYBRID)

@@ -240,3 +240,12 @@
 	if(holder.Adjacent(A))
 		holder.IMove(get_step(holder, pick(GLOB.alldirs)))
 		holder.face_atom(A)
+
+
+// === merged from simple_mob_ai_vr.dm during hard-fork de-suffix (manually verified: no middle override of the affected member) ===
+#define VIRGO_AI_NORETURN_CREATE(x)	x/returnhome/returns_home=1;x/returnhome/max_home_distance=8
+
+VIRGO_AI_NORETURN_CREATE(/datum/ai_holder/simple_mob/melee/evasive)
+VIRGO_AI_NORETURN_CREATE(/datum/ai_holder/simple_mob/ranged/kiting/threatening)
+
+#undef VIRGO_AI_NORETURN_CREATE

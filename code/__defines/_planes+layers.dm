@@ -225,3 +225,7 @@ What is the naming convention for planes or layers?
 
 // Check if a mob can "logically" see an atom plane
 #define MOB_CAN_SEE_PLANE(M, P) (P <= PLANE_WORLD || (P in M.planes_visible))
+
+
+// === merged from _planes+layers_chomp.dm during hard-fork de-suffix (manually verified: no middle override of the affected member) ===
+#define BALLOON_CHAT_PLANE 251

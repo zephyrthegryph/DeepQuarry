@@ -673,3 +673,14 @@ ADMIN_VERB(reload_configuration, R_DEBUG, "Reload Configuration", "Reloads the c
 
 	log_and_message_admins("[key_name(src)] Quick Authentic NIF'd [H.real_name].")
 	feedback_add_details("admin_verb","QANIF") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
+
+
+// === merged from debug_chomp.dm during hard-fork de-suffix (manually verified) ===
+/client/proc/reload_configuration()
+	set category = "Debug.Server"
+	set name = "Reload Configuration"
+	set desc = "Force config reload to world default"
+	if(!check_rights(R_DEBUG))
+		return
+	if(tgui_alert(usr, "Are you absolutely sure you want to reload the configuration from the default path on the disk, wiping any in-round modifications?", "Really reset?", list("No", "Yes")) == "Yes")
+		config.admin_reload()

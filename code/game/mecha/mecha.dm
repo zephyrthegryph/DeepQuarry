@@ -3095,3 +3095,9 @@
 #undef MECHA_PANEL_LOOSE
 #undef MECHA_CELL_OPEN
 #undef MECHA_CELL_OUT
+
+
+// === merged from mecha_vr.dm during hard-fork de-suffix (manually verified: no middle override of the affected member) ===
+/obj/mecha
+	damage_minimum = 5				//Incoming damage lower than this won't actually deal damage. Scrapes shouldn't be a real thing.
+	minimum_penetration = 10		//Incoming damage won't be fully applied if you don't have at least 20. Almost all AP clears this.

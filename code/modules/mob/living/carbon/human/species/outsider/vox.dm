@@ -108,3 +108,14 @@
 	H.internal = locate(/obj/item/tank) in H.contents
 	if(istype(H.internal,/obj/item/tank) && H.internals)
 		H.internals.icon_state = "internal1"
+
+
+// === merged from vox_chomp.dm during hard-fork de-suffix (manually verified) ===
+/datum/species/vox
+	icobase = 'icons/mob/human_races/r_vox_ch.dmi'
+	tail = "voxtail"
+	tail_animation = 'icons/mob/species/vox/tail.dmi'
+	speech_chance = 50 // As long as we're making the option to disable it, might as well bump up the chances when it is enabled
+	inherent_verbs = list(
+		/mob/living/carbon/human/proc/toggle_speech_sounds
+	)

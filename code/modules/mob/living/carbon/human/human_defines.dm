@@ -185,3 +185,13 @@
 	tail_layering = TAIL_UPPER_LAYER // not a toggle for humans but a pointer for what layer the tail should be when facing North/East/West
 
 	var/list/body_writing // assoc list by BP_ key
+
+
+// === merged from human_defines_chomp.dm during hard-fork de-suffix (manually verified) ===
+/mob/living/carbon/human
+	var/gender_change_cooldown = 0 // A cooldown for gender and gender indentify changing procs to make it easy to avoid spam of gender change
+	var/speech_sound_enabled = TRUE
+	var/nutrition_hidden = FALSE
+
+/mob/living/carbon/human/ai_controlled
+	low_priority = TRUE

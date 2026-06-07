@@ -140,3 +140,11 @@
 
 /// A value for /datum/admins/cached_feedback_link to indicate empty, rather than unobtained
 #define NO_FEEDBACK_LINK "no_feedback_link"
+
+
+// === merged from admin_ch.dm during hard-fork de-suffix (manually verified) ===
+#define SMITE_PIE				"Pie Splat"
+#define SMITE_SPICE				"Spicy Air"
+#define SMITE_HOTDOG			"Hot Dog"
+
+#define NEWSFILE 				"data/news.sav"
