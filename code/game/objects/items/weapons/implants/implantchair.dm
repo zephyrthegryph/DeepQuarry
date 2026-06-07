@@ -26,7 +26,7 @@
 
 
 // DQEdit — structured TGUI ImplantChair (see
-// modular_dq/code/modules/admin/implant_chair_panel.dm).
+// code/modules/admin/implant_chair_panel.dm).
 
 /obj/machinery/implantchair/Topic(href, href_list)
 	if((get_dist(src, usr) <= 1) || isAI(usr))

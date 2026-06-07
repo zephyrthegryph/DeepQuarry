@@ -170,5 +170,5 @@
 
 
 
-// DQEdit Start — Show Text Messages verb body relocated to modular_dq/code/modules/communicator/exonet_log_panel.dm (structured TGUI).
+// DQEdit Start — Show Text Messages verb body relocated to code/modules/communicator/exonet_log_panel.dm (structured TGUI).
 // DQEdit End

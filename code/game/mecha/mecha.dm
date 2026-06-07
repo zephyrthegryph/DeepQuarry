@@ -1776,7 +1776,7 @@
 
 // DQEdit — connect/disconnect plumbed a mecha into a ZAS portables_connector +
 // pipe_network. Both types deleted in the LINDA migration. Stub returns 0 (not
-// connected) until the LINDA equivalent (vendored under modular_dq/code/atmospherics/
+// connected) until the LINDA equivalent (vendored under code/atmospherics/
 // machinery/components/unary_devices/portables_connector.dm) is wired into the build.
 /obj/mecha/proc/connect(obj/new_port)
 	return 0

@@ -46,8 +46,8 @@
 #include "../virgo_minitest/virgo_minitest.dm"
 #endif
 
-// DQAdd Start — Deep Quarry boot wrapper lives outside modular_chomp.
+// DQAdd Start — Deep Quarry boot wrapper now lives in the base maps/ tree.
 #ifdef USE_MAP_DEEP_QUARRY
-#include "../../../modular_dq/maps/deep_quarry/deep_quarry.dm"
+#include "../../../maps/deep_quarry/deep_quarry.dm"
 #endif
 // DQAdd End

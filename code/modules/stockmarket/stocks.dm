@@ -304,7 +304,7 @@
 		return 1
 	return 0
 
-// DQEdit Start — displayValues body relocated to modular_dq/code/modules/admin/admin_report_panel.dm (structured StockChart TGUI).
+// DQEdit Start — displayValues body relocated to code/modules/admin/admin_report_panel.dm (structured StockChart TGUI).
 /datum/stock/proc/displayValues(mob/user)
 	return  // body provided by modular override
 // DQEdit End

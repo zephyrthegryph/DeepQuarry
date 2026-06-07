@@ -4,7 +4,7 @@
 
 	DQEdit — alternate_appearances and viewing_alternate_appearances vars previously
 	on /atom have been moved to /datum/component/alt_appearances_owner and
-	/datum/component/alt_appearances_viewer in modular_dq/.../components/.
+	/datum/component/alt_appearances_viewer in .../components/.
 	Helpers (dq_get_alt_appearances, etc.) are global procs so we don't bloat
 	/atom's proc-table with new instance methods.
 */

@@ -3,7 +3,7 @@
 // and a GetJobDepartment() helper that read them by department_flag. The whole bucket
 // model is gone in DQ. Job priorities now live in
 // /datum/preference/job_priorities (sparse assoc {title: "high"|"med"|"low"}) —
-// see modular_dq/code/modules/client/preferences/types/character/job_priorities.dm.
+// see code/modules/client/preferences/types/character/job_priorities.dm.
 //
 // What's left in this file: just the two upstream prefs and helper that didn't change
 // (alternate_option enum and player_alt_titles assoc). They're kept here so upstream

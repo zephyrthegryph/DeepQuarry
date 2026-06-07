@@ -193,7 +193,7 @@
 
 /mob/living/zMove(direction)
 	// DQEdit — ZAS zpipes and ventcrawling deleted with the LINDA migration.
-	// LINDA's vent equivalents (vendored under modular_dq/code/atmospherics/
+	// LINDA's vent equivalents (vendored under code/atmospherics/
 	// machinery/) need their own multiz traversal hook wired in.
 	return ..()
 

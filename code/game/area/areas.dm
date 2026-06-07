@@ -109,7 +109,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 
 /area/proc/atmosalert(danger_level, alarm_source)
 	// DQEdit — original used /obj/machinery/alarm (ZAS air alarm). LINDA's
-	// air alarm is /tg/-vendored in modular_dq/code/atmospherics/machinery/air_alarm/
+	// air alarm is /tg/-vendored in code/atmospherics/machinery/air_alarm/
 	// but not yet wired into the build. Until that lands, the proc behaves as a
 	// pure-danger-level tracker without per-machine alarm-source aggregation.
 	if (danger_level == 0)

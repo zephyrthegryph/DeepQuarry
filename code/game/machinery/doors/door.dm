@@ -180,7 +180,7 @@
 // stub returns the old block-zones semantics so any callers from CHOMP machinery
 // still get a meaningful answer (matters until they're migrated to LINDA APIs).
 // DQEdit — was `proc/CanZASPass` declaration; the parent proc lives on /atom in
-// modular_dq/code/atmospherics/tg_infra_stubs.dm. This is the door override.
+// code/atmospherics/tg_infra_stubs.dm. This is the door override.
 /obj/machinery/door/CanZASPass(turf/T, is_zone)
 	if(is_zone)
 		return !block_air_zones
@@ -569,7 +569,7 @@
 
 	// DQEdit — /obj/fire was a ZAS hotspot type, deleted with the LINDA migration.
 	// LINDA tracks hotspots via /obj/effect/hotspot (vendored under
-	// modular_dq/code/atmospherics/environmental/LINDA_fire.dm). Switch to the
+	// code/atmospherics/environmental/LINDA_fire.dm). Switch to the
 	// LINDA type so doors still extinguish fire underneath when they close.
 	var/obj/effect/hotspot/hotspot = locate() in loc
 	if(hotspot)

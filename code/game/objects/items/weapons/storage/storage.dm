@@ -100,7 +100,7 @@
 	orient2hud()
 
 	if(LAZYLEN(starts_with) && !empty)
-		// DQEdit — starts_with values are now list(count, variant). See modular_dq/code/modules/consolidation/spawn_with_variant.dm.
+		// DQEdit — starts_with values are now list(count, variant). See code/modules/consolidation/spawn_with_variant.dm.
 		for(var/newtype in starts_with)
 			var/list/spec = dq_resolve_spawn_value(starts_with[newtype])
 			var/count = spec["count"]

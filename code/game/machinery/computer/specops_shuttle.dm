@@ -253,7 +253,7 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 	to_chat(user, span_notice("The electronic systems in this console are far too advanced for your primitive hacking peripherals."))
 
 // DQEdit — structured TGUI Specops Shuttle (see
-// modular_dq/code/modules/admin/specops_shuttle_panel.dm).
+// code/modules/admin/specops_shuttle_panel.dm).
 
 /obj/machinery/computer/specops_shuttle/Topic(href, href_list)
 	if(..())

@@ -1608,7 +1608,7 @@ GLOBAL_LIST_INIT(global_ammo_types, list(
 	))
 
 //Rad collectors in the world (kept for fusion engine compatibility; under the
-//LINDA migration the collectors are stub-only — see modular_dq/code/
+//LINDA migration the collectors are stub-only — see code/
 //atmospherics/deleted_engine_stubs.dm).
 GLOBAL_LIST_EMPTY(rad_collectors)
 // algae/ten stack stub — used by hydroponics; algae generator was deleted with

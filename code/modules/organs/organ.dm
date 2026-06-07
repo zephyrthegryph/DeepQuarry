@@ -258,7 +258,7 @@
 	var/antibiotics = iscarbon(owner) ? owner.chem_effects[CE_ANTIBIOTIC] || 0 : 0
 
 	// DQEdit Start — the germ_level toxin-damage path is replaced by the
-	// wound_infection condition (modular_dq/code/modules/medical/...).
+	// wound_infection condition (code/modules/medical/...).
 	// We keep germ_level itself for surgery sanitation, antibiotic
 	// progression, and necrosis-by-germs (still ticks below), but the
 	// damage-doing side is now a condition that presents with symptoms,

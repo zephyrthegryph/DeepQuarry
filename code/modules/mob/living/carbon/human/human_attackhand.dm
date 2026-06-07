@@ -527,7 +527,7 @@
 
 	return TRUE
 
-// DQEdit Start — check_attacks verb body relocated to modular_dq/code/modules/mob/living/carbon/human/attacks_panel.dm (structured TGUI).
+// DQEdit Start — check_attacks verb body relocated to code/modules/mob/living/carbon/human/attacks_panel.dm (structured TGUI).
 // DQEdit End
 
 /mob/living/carbon/human/Topic(href, href_list)

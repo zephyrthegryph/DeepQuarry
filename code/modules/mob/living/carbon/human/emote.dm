@@ -442,7 +442,7 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 	cut_overlay(pose_indicator)
 	pose_indicator = null
 
-// DQEdit Start — set_flavor verb body relocated to modular_dq/code/modules/mob/living/carbon/human/flavor_panel.dm (structured TGUI).
+// DQEdit Start — set_flavor verb body relocated to code/modules/mob/living/carbon/human/flavor_panel.dm (structured TGUI).
 /mob/living/carbon/human/verb/set_flavor()
 	set name = "Set Flavour Text"
 	set desc = "Sets an extended description of your character's features."

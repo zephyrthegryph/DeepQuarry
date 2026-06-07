@@ -14,7 +14,7 @@
 	///Var for attack_self chain
 	var/special_handling = FALSE
 
-// DQEdit Start — attack_self moved to modular_dq/code/modules/spells/spellbook_panel.dm so it opens via structured TGUI.
+// DQEdit Start — attack_self moved to code/modules/spells/spellbook_panel.dm so it opens via structured TGUI.
 // DQEdit End
 
 /obj/item/spellbook/Topic(href, href_list)

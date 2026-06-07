@@ -73,7 +73,7 @@
 
 
 // DQEdit — structured TGUI Traffic Control (see
-// modular_dq/code/modules/admin/traffic_control_panel.dm).
+// code/modules/admin/traffic_control_panel.dm).
 
 /obj/machinery/computer/telecomms/traffic/Topic(href, href_list)
 	if(..())

@@ -390,7 +390,7 @@
 	last_spaceport_action = ""
 
 // DQEdit — structured TGUI Orion Trail panel; the attack_hand override
-// lives in modular_dq/code/modules/admin/orion_trail_panel.dm and
+// lives in code/modules/admin/orion_trail_panel.dm and
 // re-runs the upstream game-over side effects before opening the panel.
 
 /obj/machinery/computer/arcade/orion_trail/Topic(href, href_list)

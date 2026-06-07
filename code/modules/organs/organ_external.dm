@@ -709,7 +709,7 @@ This function completely restores a damaged organ to perfect condition.
 	// DQEdit — every damage path that affects this organ funnels through
 	// createwound (take_damage, surgery failures, custom event damage,
 	// reaction damage). One hook here covers them all. See
-	// modular_dq/code/modules/medical/cascades.dm.
+	// code/modules/medical/cascades.dm.
 	if(owner)
 		dq_check_damage_cascades(type, damage)
 
@@ -1441,7 +1441,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 	// tendons). We do unhook them from `owner` so the now-detached
 	// patient stops processing them and their effects (slowdown,
 	// emotes, vital_effects) drop off until the limb is reattached.
-	// dq_reseat_owner() in the modular_dq lifecycle file handles the
+	// dq_reseat_owner() in the organ lifecycle file handles the
 	// reverse on reattach.
 	if(medical_issues)
 		for(var/datum/medical_issue/condition/C in medical_issues)

@@ -289,7 +289,7 @@
 			else
 				. += span_bold("[L.name] ([get_language_prefix()][L.key][lang_key ? " [get_language_prefix()][lang_key]" : ""])") + " <a href='byond://?src=\ref[src];set_lang_key=\ref[L]'>Edit Custom Key</a> - cannot speak!<br/>[L.desc]<br/><br/>"
 
-// DQEdit Start — check_languages verb body relocated to modular_dq/code/modules/mob/language/language_panel.dm (structured TGUI).
+// DQEdit Start — check_languages verb body relocated to code/modules/mob/language/language_panel.dm (structured TGUI).
 // DQEdit End
 
 /mob/living/Topic(href, href_list)

@@ -7,7 +7,7 @@
 /datum/integrated_io/list/ask_for_pin_data(mob/user)
 	interact(user)
 
-// DQEdit Start — interact() body moved to modular_dq/code/modules/integrated_electronics/list_pin_panel.dm (structured TGUI).
+// DQEdit Start — interact() body moved to code/modules/integrated_electronics/list_pin_panel.dm (structured TGUI).
 /datum/integrated_io/list/proc/interact(mob/user)
 	return  // body provided by modular override
 // DQEdit End

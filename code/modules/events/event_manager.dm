@@ -11,7 +11,7 @@
 
 /datum/controller/subsystem/events/proc/Interact(mob/living/user)
 	// DQEdit — structured TGUI Event Manager panel (see
-	// modular_dq/code/modules/admin/event_manager_panel.dm). Re-uses
+	// code/modules/admin/event_manager_panel.dm). Re-uses
 	// the per-subsystem panel datum so the Topic-handler fall-through
 	// refresh (`Interact(usr)`) just updates the open window via
 	// SStgui.update_uis instead of opening a duplicate.

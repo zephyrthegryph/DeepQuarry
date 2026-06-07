@@ -240,7 +240,7 @@
 
 /obj/machinery/magnetic_controller/attack_hand(mob/user as mob)
 	// DQEdit — structured TGUI MagneticConsole (see
-	// modular_dq/code/modules/admin/magnetic_console_panel.dm).
+	// code/modules/admin/magnetic_console_panel.dm).
 	if(stat & (BROKEN|NOPOWER))
 		return
 	user.set_machine(src)

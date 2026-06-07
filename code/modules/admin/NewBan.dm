@@ -168,7 +168,7 @@ GLOBAL_DATUM(banlist, /savefile)
 			timeleftstring = "[exp] Minutes"
 		return timeleftstring
 
-// DQEdit Start — unbanpanel body relocated to modular_dq/code/modules/admin/misc_admin_panels.dm (structured TGUI).
+// DQEdit Start — unbanpanel body relocated to code/modules/admin/misc_admin_panels.dm (structured TGUI).
 /datum/admins/proc/unbanpanel()
 	dq_open_unban_panel(owner)
 // DQEdit End

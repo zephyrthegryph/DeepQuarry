@@ -69,7 +69,7 @@
 	else
 		icon_state = "holowarrant"
 
-// DQEdit Start — show_content moved to modular_dq/code/modules/holowarrant_panel.dm (structured TGUI).
+// DQEdit Start — show_content moved to code/modules/holowarrant_panel.dm (structured TGUI).
 // DQEdit End
 
 /obj/item/storage/box/holowarrants // VOREStation addition starts

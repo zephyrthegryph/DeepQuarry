@@ -3,7 +3,7 @@
 	// DQEdit Start — fully structured TGUI PlayerPanel. Replaces the
 	// 320-line HTML+JS table with a React panel that has native
 	// filtering / sorting and structured action dispatch (see
-	// modular_dq/code/modules/admin/player_panel_tgui.dm).
+	// code/modules/admin/player_panel_tgui.dm).
 	open_player_panel_tgui(user)
 	return
 	// DQEdit End
@@ -22,5 +22,5 @@
 
 /datum/admins/proc/check_antagonists(client/user)
 	// DQEdit — structured TGUI RoundStatusPanel (see
-	// modular_dq/code/modules/admin/round_status_panel.dm).
+	// code/modules/admin/round_status_panel.dm).
 	open_round_status_panel(user.mob)

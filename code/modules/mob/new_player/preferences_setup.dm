@@ -347,7 +347,7 @@
 	update_character_previews(mannequin, south_only)
 
 // DQEdit — get_highest_job() moved to
-// modular_dq/code/modules/client/preferences/types/character/job_priorities.dm. It now
+// code/modules/client/preferences/types/character/job_priorities.dm. It now
 // reads from /datum/preference/job_priorities (one sparse assoc) and respects
 // prefer_visitor_role, replacing the bucket-by-department_flag switch that lived here.
 

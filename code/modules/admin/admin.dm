@@ -111,7 +111,7 @@ ADMIN_VERB(access_news_network, R_ADMIN|R_EVENT, "Access Newscaster Network", "A
 /datum/admins/proc/Game()
 	if(!check_rights(0))	return
 	// DQEdit — structured TGUI Game Panel (see
-	// modular_dq/code/modules/admin/game_panel_panel.dm).
+	// code/modules/admin/game_panel_panel.dm).
 	open_game_panel(owner)
 
 /////////////////////////////////////////////////////////////////////////////////////////////////admins2.dm merge
@@ -599,7 +599,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(show_traitor_panel, R_ADMIN|R_FUN|R_EVENT, "Show Tra
 
 ADMIN_VERB(show_game_mode, R_ADMIN|R_EVENT, "Show Game Mode", "Show the current round configuration.", ADMIN_CATEGORY_GAME)
 	// DQEdit — structured TGUI GameModePanel (see
-	// modular_dq/code/modules/admin/game_mode_panel.dm).
+	// code/modules/admin/game_mode_panel.dm).
 	open_game_mode_panel(user)
 	feedback_add_details("admin_verb","SGM")
 

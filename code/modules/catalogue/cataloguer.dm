@@ -246,7 +246,7 @@ GLOBAL_LIST_EMPTY(all_cataloguers)
 
 /obj/item/cataloguer/interact(mob/user)
 	// DQEdit — structured TGUI Cataloguer panel (see
-	// modular_dq/code/modules/admin/cataloguer_panel.dm).
+	// code/modules/admin/cataloguer_panel.dm).
 	tgui_interact(user)
 	add_fingerprint(user)
 

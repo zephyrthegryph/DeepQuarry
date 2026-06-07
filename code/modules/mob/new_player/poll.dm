@@ -1,6 +1,6 @@
 // DQEdit Start — poll system fully migrated to TGUI.
 // Entry-point procs now spawn /datum/privacy_poll_dialog or
-// /datum/poll_browser_dialog (modular_dq/code/modules/polls/poll_dialogs.dm).
+// /datum/poll_browser_dialog (code/modules/polls/poll_dialogs.dm).
 // The DB-write helpers below (vote_on_poll, log_text_poll_reply,
 // vote_on_numval_poll) are still called from those datums.
 

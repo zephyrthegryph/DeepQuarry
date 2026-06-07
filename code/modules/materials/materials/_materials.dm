@@ -211,7 +211,7 @@ GLOBAL_LIST_INIT(name_to_material, populate_material_list())
 	var/cut_delay = 0            // Delay in ticks when cutting through this wall.
 	// DQEdit — radioactivity / luminescence moved out into
 	// /datum/component/material_radioactive and /material_luminescent
-	// (see modular_dq/code/modules/materials/material_components.dm).
+	// (see code/modules/materials/material_components.dm).
 	// Readers query via dq_material_radioactivity() / dq_material_luminescence().
 	var/ignition_point           // K, point at which the material catches on fire.
 	var/melting_point = 1800     // K, walls will take damage if they're next to a fire hotter than this
@@ -245,7 +245,7 @@ GLOBAL_LIST_INIT(name_to_material, populate_material_list())
 	//
 	// Behavior properties (luminescence, radioactivity, toxicity) live on
 	// /datum/component subtypes attached to the material; see
-	// modular_dq/code/modules/materials/material_components.dm. They're
+	// code/modules/materials/material_components.dm. They're
 	// queried via dq_material_luminescence/radioactivity/toxicity which
 	// return the component magnitude or 0.
 	var/material_class = MATCLASS_METAL

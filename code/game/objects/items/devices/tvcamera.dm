@@ -56,7 +56,7 @@
 	user.set_machine(src)
 	show_ui(user)
 
-// DQEdit Start — show_ui body moved to modular_dq/code/modules/tvcamera_panel.dm (structured TGUI).
+// DQEdit Start — show_ui body moved to code/modules/tvcamera_panel.dm (structured TGUI).
 // DQEdit End
 
 /obj/item/tvcamera/Topic(bred, href_list, state = GLOB.tgui_physical_state)
@@ -214,7 +214,7 @@
 	//user.set_machine(src)
 	show_bodycam_ui(user)
 
-// DQEdit Start — show_bodycam_ui body moved to modular_dq/code/modules/tvcamera_panel.dm (structured TGUI).
+// DQEdit Start — show_bodycam_ui body moved to code/modules/tvcamera_panel.dm (structured TGUI).
 // DQEdit End
 
 /obj/item/clothing/accessory/bodycam/Topic(bred, href_list, state = GLOB.tgui_physical_state)

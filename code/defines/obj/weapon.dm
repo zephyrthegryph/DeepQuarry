@@ -379,7 +379,7 @@
 // each part instance carries a `material_id` that points into
 // GLOB.name_to_material, and get_rating() derives the rating from a
 // per-part-type formula over the material's properties. See
-// modular_dq/code/modules/materials/material_stock_parts.dm for the
+// code/modules/materials/material_stock_parts.dm for the
 // formulas and the imbue/crafting flow.
 
 

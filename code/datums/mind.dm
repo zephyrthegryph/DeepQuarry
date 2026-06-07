@@ -112,7 +112,7 @@
 /datum/mind/proc/store_memory(new_text)
 	memory += "[new_text]<BR>"
 
-// DQEdit Start — show_memory body relocated to modular_dq/code/modules/admin/misc_admin_panels.dm (structured TGUI). Stub here keeps the proc declaration parseable.
+// DQEdit Start — show_memory body relocated to code/modules/admin/misc_admin_panels.dm (structured TGUI). Stub here keeps the proc declaration parseable.
 /datum/mind/proc/show_memory(mob/recipient)
 	return  // body provided by modular override
 // DQEdit End
@@ -122,7 +122,7 @@
 		tgui_alert_async(user, "Not before round-start!", "Alert")
 		return
 	// DQEdit — fully structured TGUI panel; see
-	// modular_dq/code/modules/admin/edit_memory_panel.dm.
+	// code/modules/admin/edit_memory_panel.dm.
 	if(!tgui_edit_memory_panel)
 		tgui_edit_memory_panel = new(src, user)
 	tgui_edit_memory_panel.tgui_interact(user)

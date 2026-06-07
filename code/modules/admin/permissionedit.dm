@@ -16,7 +16,7 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 ))
 
 
-// DQEdit Start — edit_admin_permissions body relocated to modular_dq/code/modules/admin/permissions_panel.dm (structured TGUI).
+// DQEdit Start — edit_admin_permissions body relocated to code/modules/admin/permissions_panel.dm (structured TGUI).
 // The legacy 400-line HTML/asset-cache builder is gone; edit_rights_topic and topic.dm's editrightsbrowser* handlers still own the actions and call edit_admin_permissions() at the end to refresh — that now opens the structured panel.
 // DQEdit End
 

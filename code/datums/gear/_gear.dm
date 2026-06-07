@@ -119,7 +119,7 @@ GLOBAL_LIST_EMPTY_TYPED(gear_datums, /datum/gear)
 		description = initial(O.desc)
 	// DQEdit — gear_tweak_free_matrix_recolor swapped for gear_tweak_unified_recolor,
 	// which packs tint / palette-swap / matrix into one mode-selectable tweak (see
-	// modular_dq/code/datums/gear/gear_tweak_recolor.dm).
+	// code/datums/gear/gear_tweak_recolor.dm).
 	gear_tweaks = list(GLOB.gear_tweak_free_name, GLOB.gear_tweak_free_desc, GLOB.gear_tweak_item_tf_spawn, GLOB.gear_tweak_unified_recolor, GLOB.gear_tweak_free_digestable)
 
 /datum/gear_data

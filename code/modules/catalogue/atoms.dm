@@ -1,6 +1,6 @@
 // DQEdit — catalogue_delay var on /atom moved to GLOB.dq_catalogue_delay_by_type
 // (per-type defaults) plus GLOB.dq_catalogue_delay_by_atom (per-instance overrides).
-// See modular_dq/code/modules/consolidation/atom_var_components.dm.
+// See code/modules/consolidation/atom_var_components.dm.
 /atom
 	// List of types of /datum/category_item/catalogue that should be 'unlocked' when scanned by a Cataloguer.
 	// It is null by default to save memory by not having everything hold onto empty lists. Use macros like LAZYLEN() to check.
@@ -42,7 +42,7 @@
 		return FALSE
 	return ..()
 
-// DQEdit — get_catalogue_delay() now defined in modular_dq/.../components/catalogue_delay.dm
+// DQEdit — get_catalogue_delay() now defined in .../components/catalogue_delay.dm
 
 // Override for special behaviour.
 // Should return a list with one or more "/datum/category_item/catalogue" types, or null.

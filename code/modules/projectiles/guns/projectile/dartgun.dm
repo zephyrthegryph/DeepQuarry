@@ -137,7 +137,7 @@
 	if(.)
 		return TRUE
 	// DQEdit — structured TGUI Dartgun (see
-	// modular_dq/code/modules/admin/dartgun_panel.dm).
+	// code/modules/admin/dartgun_panel.dm).
 	user.set_machine(src)
 	tgui_interact(user)
 

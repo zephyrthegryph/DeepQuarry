@@ -183,7 +183,7 @@
 	// DQEdit — qualitative scanner output. The old block dumped exact
 	// damage numbers and the full medical_issue catalog; the new builder
 	// returns qualitative bands plus DQ scanner-audience findings.
-	// Implementation lives in modular_dq/code/modules/medical/bodyscanner/.
+	// Implementation lives in code/modules/medical/bodyscanner/.
 	return dq_build_tgui_data()
 
 /obj/machinery/bodyscanner/tgui_act(action, params)

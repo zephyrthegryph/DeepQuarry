@@ -4,7 +4,7 @@
 //
 // DQEdit (Stage 5): belly fullscreen overlay has been migrated to a TGUI
 // window (interfaces/BellyOverlay.tsx) backed by /datum/belly_overlay_tgui
-// in modular_dq/code/modules/belly_overlay/. The previous in-DM compositor
+// in code/modules/belly_overlay/. The previous in-DM compositor
 // (4 colored layers + bubbles.dmi mush/liquid layers) is gone — see git
 // history if you need to reference the original logic.
 /obj/belly/proc/vore_fx(mob/living/living_prey, severity = 0)

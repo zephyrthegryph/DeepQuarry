@@ -10,7 +10,7 @@
 
 /obj/item/moneybag/attack_hand(user as mob)
 	// DQEdit — structured TGUI Moneybag (see
-	// modular_dq/code/modules/admin/moneybag_panel.dm).
+	// code/modules/admin/moneybag_panel.dm).
 	tgui_interact(user)
 
 /obj/item/moneybag/proc/count_coins()
