@@ -21,7 +21,7 @@
 // Referenced by code/controllers/subsystems/mapping.dm (active subsystem).
 /datum/map_template/engine
 
-// Dynamic overmap template — was defined in modular_chomp/maps/overmap/space_pois/space_pois.dm.
+// Dynamic overmap template — was defined in maps/chomp/overmap/space_pois/space_pois.dm.
 /datum/map_template/dynamic_overmap
 	var/scanner_desc = "You should not see this."
 	var/block_size = 0

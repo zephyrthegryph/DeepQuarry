@@ -273,7 +273,7 @@
 
 /datum/map_template/relicbase_lateload/undeground_mine
 	name = Z_NAME_RB_UNDERMINES
-	mappath = "modular_chomp/maps/relic_base/relicbase-6.dmm"
+	mappath = "maps/chomp/relic_base/relicbase-6.dmm"
 	associated_map_datum = /datum/map_z_level/relicbase_lateload/undeground_mine
 
 // Surface Wilds Z-Level
@@ -285,7 +285,7 @@
 /datum/map_template/relicbase_lateload/surface_wild
 	name = Z_NAME_RB_SURFACE_WILDS
 	name_alias = Z_NAME_ALIAS_SURFACE_WILDS
-	mappath = "modular_chomp/maps/relic_base/relicbase-7.dmm"
+	mappath = "maps/chomp/relic_base/relicbase-7.dmm"
 	associated_map_datum = /datum/map_z_level/relicbase_lateload/surface_wild
 
 // Wilderness Sky Z-Level
@@ -296,7 +296,7 @@
 
 /datum/map_template/relicbase_lateload/wilderness_sky
 	name = Z_NAME_RB_WILDERNESS_SKY
-	mappath = "modular_chomp/maps/relic_base/relicbase-8.dmm"
+	mappath = "maps/chomp/relic_base/relicbase-8.dmm"
 	associated_map_datum = /datum/map_z_level/relicbase_lateload/wilderness_sky
 
 // Surface Ocean Z-Level
@@ -308,7 +308,7 @@
 /datum/map_template/relicbase_lateload/surface_ocean
 	name = Z_NAME_RB_SURFACE_OCEAN
 	name_alias = Z_NAME_ALIAS_SURFACE
-	mappath = "modular_chomp/maps/relic_base/relicbase-9.dmm"
+	mappath = "maps/chomp/relic_base/relicbase-9.dmm"
 	associated_map_datum = /datum/map_z_level/relicbase_lateload/surface_ocean
 
 // Surface Mine Z-Level
@@ -320,7 +320,7 @@
 /datum/map_template/relicbase_lateload/surface_mine
 	name = Z_NAME_RB_SURFACE_MINES
 	name_alias = Z_NAME_ALIAS_SURFACE_MINES
-	mappath = "modular_chomp/maps/relic_base/relicbase-10.dmm"
+	mappath = "maps/chomp/relic_base/relicbase-10.dmm"
 	associated_map_datum = /datum/map_z_level/relicbase_lateload/surface_mine
 
 // Misc Z-Level
@@ -332,7 +332,7 @@
 /datum/map_template/relicbase_lateload/carrier
 	name = Z_NAME_RB_CARRIER
 	name_alias = Z_NAME_ALIAS_MISC
-	mappath = "modular_chomp/maps/relic_base/relicbase-11.dmm"
+	mappath = "maps/chomp/relic_base/relicbase-11.dmm"
 	associated_map_datum = /datum/map_z_level/relicbase_lateload/carrier
 
 // Centcom Z-Level
@@ -343,7 +343,7 @@
 /datum/map_template/relicbase_lateload/centcom
 	name = Z_NAME_RB_CENTCOM
 	name_alias = Z_NAME_ALIAS_CENTCOM
-	mappath = "modular_chomp/maps/relic_base/relicbase-12.dmm"
+	mappath = "maps/chomp/relic_base/relicbase-12.dmm"
 	associated_map_datum = /datum/map_z_level/relicbase_lateload/centcom
 
 // Transit Z-Level
@@ -353,7 +353,7 @@
 
 /datum/map_template/relicbase_lateload/transit
 	name = Z_NAME_RB_TRANSIT
-	mappath = "modular_chomp/maps/relic_base/relicbase-13.dmm"
+	mappath = "maps/chomp/relic_base/relicbase-13.dmm"
 	associated_map_datum = /datum/map_z_level/relicbase_lateload/transit
 
 /datum/planet/thor

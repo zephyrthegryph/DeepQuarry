@@ -202,7 +202,7 @@
 /datum/map_template/cetus_lateload/surface
 	name = Z_NAME_SC_SURFACE
 	name_alias = Z_NAME_ALIAS_SURFACE
-	mappath = "modular_chomp/maps/southern_cross/southern_cross-5.dmm"
+	mappath = "maps/chomp/southern_cross/southern_cross-5.dmm"
 	associated_map_datum = /datum/map_z_level/cetus_lateload/surface
 
 // Surface Mines Z-Level
@@ -214,7 +214,7 @@
 /datum/map_template/cetus_lateload/surface_mine
 	name = Z_NAME_SC_SURFACE_MINE
 	name_alias = Z_NAME_ALIAS_SURFACE_MINES
-	mappath = "modular_chomp/maps/southern_cross/southern_cross-6.dmm"
+	mappath = "maps/chomp/southern_cross/southern_cross-6.dmm"
 	associated_map_datum = /datum/map_z_level/cetus_lateload/surface_mine
 
 // Surface Wilds Z-Level
@@ -226,7 +226,7 @@
 /datum/map_template/cetus_lateload/surface_wild
 	name = Z_NAME_SC_SURFACE_WILD
 	name_alias = Z_NAME_ALIAS_SURFACE_WILDS
-	mappath = "modular_chomp/maps/southern_cross/southern_cross-10.dmm"
+	mappath = "maps/chomp/southern_cross/southern_cross-10.dmm"
 	associated_map_datum = /datum/map_z_level/cetus_lateload/surface_wild
 
 // Misc Z-Level
@@ -238,7 +238,7 @@
 /datum/map_template/cetus_lateload/misc
 	name = Z_NAME_CETUS_MISC
 	name_alias = Z_NAME_ALIAS_MISC
-	mappath = "modular_chomp/maps/cetus/cetus-6.dmm"
+	mappath = "maps/chomp/cetus/cetus-6.dmm"
 	associated_map_datum = /datum/map_z_level/cetus_lateload/misc
 
 // Centcom Z-Level
@@ -249,7 +249,7 @@
 /datum/map_template/cetus_lateload/centcom
 	name = Z_NAME_CETUS_CENTCOM
 	name_alias = Z_NAME_ALIAS_CENTCOM
-	mappath = "modular_chomp/maps/cetus/cetus-7.dmm"
+	mappath = "maps/chomp/cetus/cetus-7.dmm"
 	associated_map_datum = /datum/map_z_level/cetus_lateload/centcom
 
 // Transit Z-Level
@@ -259,7 +259,7 @@
 
 /datum/map_template/cetus_lateload/transit
 	name = Z_NAME_CETUS_TRANSIT
-	mappath = "modular_chomp/maps/cetus/cetus-8.dmm"
+	mappath = "maps/chomp/cetus/cetus-8.dmm"
 	associated_map_datum = /datum/map_z_level/cetus_lateload/transit
 
 //Thor Z-Level

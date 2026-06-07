@@ -1,22 +1,23 @@
 // To be filled out when more progress on the new map occurs.
-/datum/map/soluna_nexus
-	name = "Soluna Nexus"
-	full_name = "Soluna Nexus"
-	path = "soluna_nexus"
+/datum/map/southern_cross
+	name = "Southern Cross"
+	full_name = "Southern Cross"
+	path = "southern_cross"
 
 	lobby_screens = list('html/lobby/chompstation.webp')
 	id_hud_icons = 'icons/mob/hud_jobs_vr.dmi'
 
 	holomap_smoosh = list(list(
-		Z_LEVEL_SN_STATION_ONE,
-		Z_LEVEL_SN_STATION_TWO,
-		Z_LEVEL_SN_STATION_THREE,
+		Z_LEVEL_SC_STATION_MAINTS,
+		Z_LEVEL_SC_STATION_ONE,
+		Z_LEVEL_SC_STATION_TWO,
+		Z_LEVEL_SC_STATION_THREE,
 		))
 
-	zlevel_datum_type = /datum/map_z_level/soluna_nexus
+	zlevel_datum_type = /datum/map_z_level/southern_cross
 
-	station_name  = "NLS Soluna Nexus"
-	station_short = "Soluna Nexus"
+	station_name  = "NLS Southern Cross"
+	station_short = "Southern Cross"
 	facility_type = "station"
 	dock_name     = "NCS Northern Star" // Now we're the centcom!
 	boss_name     = "Central Command"
@@ -72,26 +73,27 @@
 							NETWORK_SUPPLY,
 							)
 	usable_email_tlds = list("freemail.nt")
-	allowed_spawns = list("Arrivals Shuttle","Gateway", "Cryogenic Storage", "Cyborg Storage", "Station gateway", "Sif plains", "Fuel Depot")
-	default_skybox = /datum/skybox_settings/soluna_nexus
-	unit_test_exempt_areas = list(/area/ninja_dojo, /area/shuttle/ninja)
-	unit_test_exempt_from_atmos = list(/area/engineering/Telecomms_Network, /area/security/Transit_Turrets)
+	allowed_spawns = list("Arrivals Shuttle","Gateway", "Cryogenic Storage", "Cyborg Storage", "Station gateway", "Sif plains", "Fuel Depot", "Tyr Wreckage", "The Dark")
+	default_skybox = /datum/skybox_settings/southern_cross
+	unit_test_exempt_areas = list(/area/ninja_dojo, /area/shuttle/ninja, /area/thirddeck/roof, /area/hallway/secondary/entry/D2/arrivals)
+	unit_test_exempt_from_atmos = list(/area/tcomm/chamber)
 
 	planet_datums_to_make = list(/datum/planet/sif, /datum/planet/thor, /datum/planet/tyr) //This must be added to load maps at round start otherwise they will have weather or sun.
 
 	unit_test_z_levels = list(
-		Z_LEVEL_SN_STATION_ONE,
-		Z_LEVEL_SN_STATION_TWO,
-		Z_LEVEL_SN_STATION_THREE,
+		Z_LEVEL_SC_STATION_MAINTS,
+		Z_LEVEL_SC_STATION_ONE,
+		Z_LEVEL_SC_STATION_TWO,
+		Z_LEVEL_SC_STATION_THREE,
 		)
 
 	lateload_z_levels = list(
 		list(Z_NAME_SC_SURFACE),
 		list(Z_NAME_SC_SURFACE_MINE),
 		list(Z_NAME_SC_SURFACE_WILD),
-		list(Z_NAME_SN_MISC),
-		list(Z_NAME_SN_CENTCOM),
-		list(Z_NAME_SN_TRANSIT),
+		list(Z_NAME_SC_MISC),
+		list(Z_NAME_SC_CENTCOM),
+		list(Z_NAME_SC_TRANSIT),
 		list(Z_NAME_VR_WORLD_CH),
 		list(Z_NAME_FUELDEPOT_CH),
 		list(Z_NAME_PLANET_THOR_CH),
@@ -103,24 +105,25 @@
 		list(Z_NAME_GATEWAY_MADNESS_LAB_CH),
 		list(Z_NAME_GATEWAY_ABANDONED_CITY_CH),
 		list(Z_NAME_GATEWAY_SKYSCRAPER_CH),
+		list(Z_NAME_GATEWAY_HIDDEN_ECLIPSE_CH)
 		)
 
-/datum/map/soluna_nexus/perform_map_generation()
+/datum/map/southern_cross/perform_map_generation()
 	// First, place a bunch of submaps. This comes before tunnel/forest generation as to not interfere with the submap.(This controls POI limit generation, increase or lower its values to have more or less POI's)
 
 	// Cave submaps are first.
 	var/surface_mine_z = GLOB.map_templates_loaded[Z_NAME_ALIAS_SURFACE_MINES]
-	seed_submaps(list(surface_mine_z), 140, /area/surface/cave/unexplored/normal, /datum/map_template/surface/mountain_ch/normal)
-	seed_submaps(list(surface_mine_z), 140, /area/surface/cave/unexplored/deep, /datum/map_template/surface/mountain_ch/deep)
+	seed_submaps(list(surface_mine_z), 140, /area/surface/cave/unexplored/normal, /datum/map_template/surface/mountain_ch/normal)  //CHOMPEdit bumped up from 60 to 80
+	seed_submaps(list(surface_mine_z), 140, /area/surface/cave/unexplored/deep, /datum/map_template/surface/mountain_ch/deep)  //CHOMPEdit bumped up from 60 to 80
 
 	// Plains to make them less plain.
 	var/surface_z = GLOB.map_templates_loaded[Z_NAME_ALIAS_SURFACE]
-	seed_submaps(list(surface_z), 220, /area/surface/outside/plains/normal, /datum/map_template/surface/plains_ch) // Center area is WIP until map editing settles down.
+	seed_submaps(list(surface_z), 220, /area/surface/outside/plains/normal, /datum/map_template/surface/plains_ch) // Center area is WIP until map editing settles down.  //CHOMPEdit bumped up from 80 to 140
 
 	// Wilderness is next.
 	var/surface_wild_z = GLOB.map_templates_loaded[Z_NAME_ALIAS_SURFACE_WILDS]
-	seed_submaps(list(surface_wild_z), 240, /area/surface/outside/wilderness/normal, /datum/map_template/surface/wilderness_ch/normal)
-	seed_submaps(list(surface_wild_z), 240, /area/surface/outside/wilderness/deep, /datum/map_template/surface/wilderness_ch/deep)
+	seed_submaps(list(surface_wild_z), 240, /area/surface/outside/wilderness/normal, /datum/map_template/surface/wilderness_ch/normal)  //CHOMPEdit bumped up from 60 to 150
+	seed_submaps(list(surface_wild_z), 240, /area/surface/outside/wilderness/deep, /datum/map_template/surface/wilderness_ch/deep)  //CHOMPEdit bumped up from 60 to 150
 	// If Space submaps are made, add a line to make them here as well.
 
 	// Now for the tunnels. (This decides the load order of ore generation and cave generation. Check Random_Map to see % )
@@ -129,7 +132,7 @@
 	// Todo: Forest generation.
 	return 1
 
-/datum/map/soluna_nexus/get_map_info()
+/datum/map/southern_cross/get_map_info()
 	. = list()
 	. +=  "The NLS [full_name] is a small waystation in orbit of the frozen garden world of Sif, jewel of the Vir system.<br>"
 	. +=  "Though Vir is typically peaceful, the system has seen its fair share of conflict in the face of technological extremists, rogue drone intelligence, and worse.<br>"
@@ -137,16 +140,16 @@
 	return jointext(., "<br>")
 
 // Skybox Settings
-/datum/skybox_settings/soluna_nexus
+/datum/skybox_settings/southern_cross
 	icon_state = "dyable"
 	random_color = TRUE
 
 // Lateload handling
-/datum/map_template/soluna_nexus_lateload
+/datum/map_template/southern_cross_lateload
 	allow_duplicates = FALSE
 	var/associated_map_datum
 
-/datum/map_template/soluna_nexus_lateload/on_map_loaded(z)
+/datum/map_template/southern_cross_lateload/on_map_loaded(z)
 	if(!associated_map_datum || !ispath(associated_map_datum))
 		log_game("Extra z-level [src] has no associated map datum")
 		return
@@ -154,137 +157,137 @@
 	new associated_map_datum(using_map, z)
 	return ..()
 
-/datum/map_z_level/soluna_nexus_lateload/New(datum/map/map, mapZ)
+/datum/map_z_level/southern_cross_lateload/New(datum/map/map, mapZ)
 	z = mapZ
 	return ..(map)
 
-// For making the 4-in-1 holomap, we calculate some offsets
-#define SOUTHERN_CROSS_MAP_SIZE 200 // Width and height of compiled in Southern Cross z levels.
+// For making the 6-in-1 holomap, we calculate some offsets
+#define SOUTHERN_CROSS_MAP_SIZE 160 // Width and height of compiled in Southern Cross z levels.
 #define SOUTHERN_CROSS_HOLOMAP_CENTER_GUTTER 40 // 40px central gutter between columns
 #define SOUTHERN_CROSS_HOLOMAP_MARGIN_X ((HOLOMAP_ICON_SIZE - (2*SOUTHERN_CROSS_MAP_SIZE) - SOUTHERN_CROSS_HOLOMAP_CENTER_GUTTER) / 2) // 100
-#define SOUTHERN_CROSS_HOLOMAP_MARGIN_Y ((HOLOMAP_ICON_SIZE - (2*SOUTHERN_CROSS_MAP_SIZE)) / 2) // 60
+#define SOUTHERN_CROSS_HOLOMAP_MARGIN_Y ((HOLOMAP_ICON_SIZE - (3*SOUTHERN_CROSS_MAP_SIZE)) / 2) // 60
 
 // Station Z-Levels
-/datum/map_z_level/soluna_nexus/station
+/datum/map_z_level/southern_cross/station
 	flags = MAP_LEVEL_STATION|MAP_LEVEL_CONTACT|MAP_LEVEL_PLAYER|MAP_LEVEL_CONSOLES|MAP_LEVEL_VORESPAWN
 	holomap_legend_x = 220
 	holomap_legend_y = 160
 
-/datum/map_z_level/soluna_nexus/station/station_one
-	z = Z_LEVEL_SN_STATION_ONE
-	name = "Deck 1"
-	base_turf = /turf/space
+/datum/map_z_level/southern_cross/station/station_maintenance
+	z = Z_LEVEL_SC_STATION_MAINTS
+	name = "Maintenance Deck"
 	transit_chance = 15
-	holomap_offset_x = SOUTHERN_CROSS_HOLOMAP_MARGIN_X - SOUTHERN_CROSS_HOLOMAP_CENTER_GUTTER / 2
+	base_turf = /turf/space
+	holomap_offset_x = HOLOMAP_ICON_SIZE - SOUTHERN_CROSS_HOLOMAP_MARGIN_X - SOUTHERN_CROSS_MAP_SIZE - 40
 	holomap_offset_y = SOUTHERN_CROSS_HOLOMAP_MARGIN_Y //+ SOUTHERN_CROSS_MAP_SIZE*0
 
-/datum/map_z_level/soluna_nexus/station/station_two
-	z = Z_LEVEL_SN_STATION_TWO
+/datum/map_z_level/southern_cross/station/station_one
+	z = Z_LEVEL_SC_STATION_ONE
+	name = "Deck 1"
+	base_turf = /turf/simulated/open
+	transit_chance = 15
+	holomap_offset_x = SOUTHERN_CROSS_HOLOMAP_MARGIN_X - 40
+	holomap_offset_y = SOUTHERN_CROSS_HOLOMAP_MARGIN_Y //+ SOUTHERN_CROSS_MAP_SIZE*0
+
+/datum/map_z_level/southern_cross/station/station_two
+	z = Z_LEVEL_SC_STATION_TWO
 	name = "Deck 2"
 	base_turf = /turf/simulated/open
 	transit_chance = 15
-	holomap_offset_x = SOUTHERN_CROSS_HOLOMAP_MARGIN_X - SOUTHERN_CROSS_HOLOMAP_CENTER_GUTTER / 2
+	holomap_offset_x = SOUTHERN_CROSS_HOLOMAP_MARGIN_X - 40
 	holomap_offset_y = SOUTHERN_CROSS_HOLOMAP_MARGIN_Y + SOUTHERN_CROSS_MAP_SIZE
 
-/datum/map_z_level/soluna_nexus/station/station_three
-	z = Z_LEVEL_SN_STATION_THREE
+/datum/map_z_level/southern_cross/station/station_three
+	z = Z_LEVEL_SC_STATION_THREE
 	name = "Deck 3"
 	base_turf = /turf/simulated/open
 	transit_chance = 15
-	holomap_offset_x = SOUTHERN_CROSS_HOLOMAP_MARGIN_X + SOUTHERN_CROSS_MAP_SIZE + SOUTHERN_CROSS_HOLOMAP_CENTER_GUTTER / 2
+	holomap_offset_x = HOLOMAP_ICON_SIZE - SOUTHERN_CROSS_HOLOMAP_MARGIN_X - SOUTHERN_CROSS_MAP_SIZE - 40
 	holomap_offset_y = SOUTHERN_CROSS_HOLOMAP_MARGIN_Y + SOUTHERN_CROSS_MAP_SIZE
 
-/* //CHOMPedit: Disabling empty space map level as overmap generation now generates this as needed.
-/datum/map_z_level/southern_cross/empty_space
-	z = Z_LEVEL_EMPTY_SPACE
-	name = "Empty"
-	flags = MAP_LEVEL_PLAYER
-	transit_chance = 60
-*/
-
-// Surface Z-Level (overlaps with /datum/map_z_level/southern_cross_lateload/surface so could instead be a common map)
-/datum/map_z_level/soluna_nexus_lateload/surface
+// Surface Z-Level
+/datum/map_z_level/southern_cross_lateload/surface
 	name = Z_NAME_SC_SURFACE
 	flags = MAP_LEVEL_CONTACT|MAP_LEVEL_PLAYER|MAP_LEVEL_SEALED|MAP_LEVEL_CONSOLES|MAP_LEVEL_VORESPAWN
 	base_turf = /turf/simulated/floor/outdoors/rocks
 
-/datum/map_template/soluna_nexus_lateload/surface
+/datum/map_template/southern_cross_lateload/surface
 	name = Z_NAME_SC_SURFACE
 	name_alias = Z_NAME_ALIAS_SURFACE
-	mappath = "modular_chomp/maps/southern_cross/southern_cross-5.dmm"
-	associated_map_datum = /datum/map_z_level/soluna_nexus_lateload/surface
+	mappath = "maps/chomp/southern_cross/southern_cross-5.dmm"
+	associated_map_datum = /datum/map_z_level/southern_cross_lateload/surface
 
-// Surface Mine Z-Level (overlaps with /datum/map_z_level/southern_cross_lateload/surface_mine so could instead be a common map)
-/datum/map_z_level/soluna_nexus_lateload/surface_mine
+// Surface Mines Z-Level
+/datum/map_z_level/southern_cross_lateload/surface_mine
 	name = Z_NAME_SC_SURFACE_MINE
 	flags = MAP_LEVEL_CONTACT|MAP_LEVEL_PLAYER|MAP_LEVEL_SEALED|MAP_LEVEL_CONSOLES
 	base_turf = /turf/simulated/floor/outdoors/rocks
 
-/datum/map_template/soluna_nexus_lateload/surface_mine
+/datum/map_template/southern_cross_lateload/surface_mine
 	name = Z_NAME_SC_SURFACE_MINE
 	name_alias = Z_NAME_ALIAS_SURFACE_MINES
-	mappath = "modular_chomp/maps/southern_cross/southern_cross-6.dmm"
-	associated_map_datum = /datum/map_z_level/soluna_nexus_lateload/surface_mine
+	mappath = "maps/chomp/southern_cross/southern_cross-6.dmm"
+	associated_map_datum = /datum/map_z_level/southern_cross_lateload/surface_mine
 
-// Surface Wild Z-Level (overlaps with /datum/map_z_level/southern_cross_lateload/surface_wild so could instead be a common map)
-/datum/map_z_level/soluna_nexus_lateload/surface_wild
+// Surface Wilds Z-Level
+/datum/map_z_level/southern_cross_lateload/surface_wild
 	name = Z_NAME_SC_SURFACE_WILD
 	flags = MAP_LEVEL_PLAYER|MAP_LEVEL_SEALED|MAP_LEVEL_CONTACT|MAP_LEVEL_CONSOLES
 	base_turf = /turf/simulated/floor/outdoors/rocks
 
-/datum/map_template/soluna_nexus_lateload/surface_wild
+/datum/map_template/southern_cross_lateload/surface_wild
 	name = Z_NAME_SC_SURFACE_WILD
 	name_alias = Z_NAME_ALIAS_SURFACE_WILDS
-	mappath = "modular_chomp/maps/southern_cross/southern_cross-10.dmm"
-	associated_map_datum = /datum/map_z_level/soluna_nexus_lateload/surface_wild
+	mappath = "maps/chomp/southern_cross/southern_cross-10.dmm"
+	associated_map_datum = /datum/map_z_level/southern_cross_lateload/surface_wild
 
 // Misc Z-Level
-/datum/map_z_level/soluna_nexus_lateload/misc
-	name = Z_NAME_SN_MISC
+/datum/map_z_level/southern_cross_lateload/misc
+	name = Z_NAME_SC_MISC
 	flags = MAP_LEVEL_PLAYER|MAP_LEVEL_VORESPAWN
 	transit_chance = 15
 
-/datum/map_template/soluna_nexus_lateload/misc
-	name = Z_NAME_SN_MISC
+/datum/map_template/southern_cross_lateload/misc
+	name = Z_NAME_SC_MISC
 	name_alias = Z_NAME_ALIAS_MISC
-	mappath = "modular_chomp/maps/soluna_nexus/soluna_nexus-6.dmm"
-	associated_map_datum = /datum/map_z_level/soluna_nexus_lateload/misc
+	mappath = "maps/chomp/southern_cross/southern_cross-7.dmm"
+	associated_map_datum = /datum/map_z_level/southern_cross_lateload/misc
 
 // Centcom Z-Level
-/datum/map_z_level/soluna_nexus_lateload/centcom
-	name = Z_NAME_SN_CENTCOM
+/datum/map_z_level/southern_cross_lateload/centcom
+	name = Z_NAME_SC_CENTCOM
 	flags = MAP_LEVEL_ADMIN|MAP_LEVEL_CONTACT
 
-/datum/map_template/soluna_nexus_lateload/centcom
-	name = Z_NAME_SN_CENTCOM
+/datum/map_template/southern_cross_lateload/centcom
+	name = Z_NAME_SC_CENTCOM
 	name_alias = Z_NAME_ALIAS_CENTCOM
-	mappath = "modular_chomp/maps/soluna_nexus/soluna_nexus-7.dmm"
-	associated_map_datum = /datum/map_z_level/soluna_nexus_lateload/centcom
+	mappath = "maps/chomp/southern_cross/southern_cross-8.dmm"
+	associated_map_datum = /datum/map_z_level/southern_cross_lateload/centcom
 
 // Transit Z-Level
-/datum/map_z_level/soluna_nexus_lateload/transit
-	name = Z_NAME_SN_TRANSIT
+/datum/map_z_level/southern_cross_lateload/transit
+	name = Z_NAME_SC_TRANSIT
 	flags = MAP_LEVEL_ADMIN|MAP_LEVEL_SEALED|MAP_LEVEL_PLAYER|MAP_LEVEL_CONTACT
 
-/datum/map_template/soluna_nexus_lateload/transit
-	name = Z_NAME_SN_TRANSIT
-	mappath = "modular_chomp/maps/soluna_nexus/soluna_nexus-8.dmm"
-	associated_map_datum = /datum/map_z_level/soluna_nexus_lateload/transit
+/datum/map_template/southern_cross_lateload/transit
+	name = Z_NAME_SC_TRANSIT
+	mappath = "maps/chomp/southern_cross/southern_cross-9.dmm"
+	associated_map_datum = /datum/map_z_level/southern_cross_lateload/transit
 
 //Thor Z-Level
-/datum/map_z_level/soluna_nexus_lateload/thor
+/datum/map_z_level/southern_cross_lateload/thor
 	name = Z_NAME_PLANET_THOR_CH
 	flags = MAP_LEVEL_PLAYER|MAP_LEVEL_SEALED
 	base_turf = /turf/simulated/floor/outdoors/rocks
 
 /datum/map_template/common_lateload/thor
-	associated_map_datum = /datum/map_z_level/soluna_nexus_lateload/thor
+	associated_map_datum = /datum/map_z_level/southern_cross_lateload/thor
 
 // Tyr Z-Level
-/datum/map_z_level/soluna_nexus_lateload/valley
+/datum/map_z_level/southern_cross_lateload/valley
 	name = Z_NAME_PLANET_TYR_CH
 	flags = MAP_LEVEL_PLAYER|MAP_LEVEL_SEALED
 	base_turf = /turf/simulated/floor/outdoors/rocks
 
 /datum/map_template/common_lateload/tyr
-	associated_map_datum = /datum/map_z_level/soluna_nexus_lateload/valley
+	associated_map_datum = /datum/map_z_level/southern_cross_lateload/valley

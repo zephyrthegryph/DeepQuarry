@@ -1,4 +1,4 @@
-//Used in  modular_chomp/maps/overmap/space_pois/dj_31x28
+//Used in  maps/chomp/overmap/space_pois/dj_31x28
 /obj/item/paper/djstation/poi
 	info = span_bold("Welcome new owner!") + "<BR><BR>You have purchased the latest in listening equipment. The telecommunication setup we created is the best in listening to common and private radio fequencies. Here is a step by step guide to start listening in on those saucy radio channels:<br><ol><li>Equip yourself with a multi-tool</li><li>Use the multitool on each machine, that is the broadcaster, receiver and the relay.</li><li>Turn all the machines on, it has already been configured for you to listen on.</li></ol> Simple as that. Now to listen to the private channels, you'll have to configure the intercoms, located on the front desk. Here is a list of frequencies for you to listen on.<br><ul><li>145.7 - Common Channel</li><li>144.7 - Private AI Channel</li><li>135.9 - Security Channel</li><li>135.7 - Engineering Channel</li><li>135.5 - Medical Channel</li><li>135.3 - Command Channel</li><li>135.1 - Science Channel</li><li>134.7 - Supply Channel</li>"
 
@@ -6,7 +6,7 @@
 	info = "Station has stopped responding to my reports for about the past month. I assume Vostok just has his knickers in a twist.<br><br>Hell, not my problem. Got all the vodka and cigarettes I need to last me a year."
 	name = "communications update"
 
-//Used in modular_chomp\maps\overmap\space_pois\oldstation_80x45.dmm
+//Used in maps\chomp\overmap\space_pois\oldstation_80x45.dmm
 /obj/item/paper/cryo_awaken
 	info = span_bold("**WARNING**") + "<BR><BR>Catastrophic damage sustained to station. Powernet exhausted to reawaken crew.<BR><BR>Immediate Objectives<br><br>1: Activate emergency power generator<br>2: Lift station lockdown on the bridge<br><br>Please locate the 'Damage Report' on the bridge for a detailed situation report."
 	name = "Cryo Awakening Alert"
@@ -27,7 +27,7 @@
 	info = span_bold("*Prototype Hardsuit*") + "<br><br>The B01-RIG Hardsuit is a prototype powered exoskeleton. Based off of a recovered pre-void war era united Earth government powered military exosuit, the RIG Hardsuit is a breakthrough in Hardsuit technology, and is the first post-void war era Hardsuit that can be safely used by an operator.<br><br>The B01 however suffers a myriad of constraints. It is slow and bulky to move around, it lacks any significant armor plating against direct attacks and its internal heads up display is unfinished,  resulting in the user being unable to see long distances.<br><br>The B01 is unlikely to see any form of mass production, but will serve as a base for future Hardsuit developments."
 	name = "B01-RIG Hardsuit Report"
 
-//Used in modular_chomp\maps\overmap\space_pois\ussp_84x90.dmm
+//Used in maps\chomp\overmap\space_pois\ussp_84x90.dmm
 /obj/item/paper/djstation/relay_reports
 	info = span_bold("Aug. 28th, 2532") + "<hr><small>Our listening outpost has relayed some alarming reports about TSF activity in the sector. While intercepted communications suggests it's a simple research effort, I can't shake the feeling that those dogged bastards have finally chased us down.<br><br>The Captain assures me that there's nothing to worry about, but I find it hard to take a man who's paranoid of a powered shower door seriously.<br><br><i>- Comms Officer Vostok</i></small>"
 	name = "personal log"
@@ -80,7 +80,7 @@
 	info = "That idiot bastard Totstoi found my button. Stupid drunk was trying to put change into the free cigarette machine and dropped it. Lo' and behold, dumbass decides to look under the machine for his precious rubles.<br><br>Thankfully that green-livered swine cares more about drink than anything else, managed to buy him off. Will have to move the switch somewhere else now, but where?"
 	name = "worn paper"
 
-//Used in modular_chomp\maps\overmap\space_pois\wizardcrash_20x35.dmm
+//Used in maps\chomp\overmap\space_pois\wizardcrash_20x35.dmm
 /obj/item/paper/zap_brief
 	info = "To the Magnificent Z.A.P.<BR>A small mining base has been created within our territory by wandless scum. Send them a message from the wizard federation they will not forget. I know your kind is rather fragile, but a group of lightly armed miners should not pose any threat to you at all. Just be warned they have a security cyborg for self defence, you might want to tune your spells to that threat. I look forward to hearing of your success.<BR>Grand Magus Abra the Wonderous"
 	name = "Mission Briefing"

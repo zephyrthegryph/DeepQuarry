@@ -1,5 +1,5 @@
 // Boot wrapper for the Deep Quarry station map.
-// Selected via USE_MAP_DEEP_QUARRY in modular_chomp/maps/~map_system/_map_selection.dm.
+// Selected via USE_MAP_DEEP_QUARRY in maps/chomp/~map_system/_map_selection.dm.
 
 #if !defined(USING_MAP_DATUM)
 
