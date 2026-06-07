@@ -48,8 +48,9 @@
 	return null
 
 /obj/machinery/atmospherics/binary/Destroy()
-	. = ..()
-
+	// DQEdit Start — disconnect/qdel BEFORE chaining ..() so node and
+	// network derefs run against still-valid state. /atom/movable/Destroy
+	// queues us into the gc and may flush refs in the parent chain.
 	if(node1)
 		node1.disconnect(src)
 		qdel(network1)
@@ -59,6 +60,8 @@
 
 	node1 = null
 	node2 = null
+	return ..()
+	// DQEdit End
 
 /obj/machinery/atmospherics/binary/atmos_init()
 	if(node1 && node2)

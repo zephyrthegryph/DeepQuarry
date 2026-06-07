@@ -92,8 +92,7 @@
 	return null
 
 /obj/machinery/atmospherics/tvalve/Destroy()
-	. = ..()
-
+	// DQEdit Start — disconnect/qdel BEFORE ..() so node derefs are valid.
 	if(node1)
 		node1.disconnect(src)
 		qdel(network_node1)
@@ -107,6 +106,8 @@
 	node1 = null
 	node2 = null
 	node3 = null
+	return ..()
+	// DQEdit End
 
 /obj/machinery/atmospherics/tvalve/proc/go_to_side()
 
@@ -246,7 +247,7 @@
 
 	else if(reference==node3)
 		qdel(network_node3)
-		node2 = null
+		node3 = null // DQEdit — was `node2 = null` (typo); node3 disconnect must null node3, not double-null node2
 
 	update_underlays()
 

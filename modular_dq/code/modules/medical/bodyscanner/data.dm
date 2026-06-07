@@ -146,7 +146,11 @@
 	var/list/reagentData = list()
 	if(H.reagents.reagent_list.len >= 1)
 		for(var/datum/reagent/R in H.reagents.reagent_list)
-			if(R.scannable >= scan_level)
+			// `R.scannable` is the MIN scan_level needed to detect this reagent
+			// (0 BENEFICIAL .. 3 SECRETIVE .. 99 UNSCANNABLE). Skip when our
+			// scan_level can't reach it. The previous `>=` was inverted —
+			// it hid every reagent the scanner SHOULD have shown.
+			if(R.scannable > scan_level)
 				continue
 			reagentData += list(list(
 				"name"     = R.name,
@@ -158,6 +162,10 @@
 	var/list/ingestedData = list()
 	if(H.ingested.reagent_list.len >= 1)
 		for(var/datum/reagent/R in H.ingested.reagent_list)
+			// Apply the same scan_level gate to ingested — was missing
+			// entirely, leaking unscannable chems via the ingested list.
+			if(R.scannable > scan_level)
+				continue
 			ingestedData += list(list(
 				"name"     = R.name,
 				"amount"   = R.volume,

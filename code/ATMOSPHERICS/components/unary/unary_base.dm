@@ -38,13 +38,14 @@
 	return null
 
 /obj/machinery/atmospherics/unary/Destroy()
-	. = ..()
-
+	// DQEdit Start — disconnect/qdel BEFORE ..() so node deref is valid.
 	if(node)
 		node.disconnect(src)
 		qdel(network)
 
 	node = null
+	return ..()
+	// DQEdit End
 
 /obj/machinery/atmospherics/unary/atmos_init()
 	if(node)

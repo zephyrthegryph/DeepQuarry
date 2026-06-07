@@ -377,18 +377,42 @@
 
 	// Apply snapshot tile diffs. Each entry sets the turf type (if
 	// non-baseline) and instantiates each saved movable on the tile.
+	//
+	// Input validation: snapshot JSON files live on disk under
+	// data/quarry_snapshots/ and are reloaded across rounds. Without
+	// bounds + type-path validation, anyone with write access to that
+	// directory could craft a snapshot that instantiates arbitrary turf
+	// or object types when the layer reloads. Guard rails:
+	//   * x/y must be in-bounds integers (1..QUARRY_LAYER_SIZE)
+	//   * turf_path must be a /turf/simulated subtype (no /turf/admin or
+	//     non-turf paths)
+	//   * atom_data["type"] must resolve to a /atom/movable subtype
 	var/applied_turfs = 0
 	var/applied_movables = 0
+	var/rejected_tiles = 0
+	var/rejected_movables = 0
 	for(var/list/tile in doc["tiles"])
-		var/x = tile["x"]
-		var/y = tile["y"]
+		if(!islist(tile))
+			rejected_tiles++
+			continue
+		var/raw_x = tile["x"]
+		var/raw_y = tile["y"]
+		if(!isnum(raw_x) || !isnum(raw_y))
+			rejected_tiles++
+			continue
+		var/x = round(raw_x)
+		var/y = round(raw_y)
+		if(x < 1 || x > QUARRY_LAYER_SIZE || y < 1 || y > QUARRY_LAYER_SIZE)
+			rejected_tiles++
+			continue
 		var/turf/T = locate(x, y, new_z)
 		if(!isturf(T))
 			continue
 		var/list/turf_data = tile["turf"]
 		if(islist(turf_data))
-			var/turf_path = text2path(turf_data["type"])
-			if(turf_path && turf_path != T.type)
+			var/raw_turf_type = turf_data["type"]
+			var/turf_path = istext(raw_turf_type) ? text2path(raw_turf_type) : null
+			if(turf_path && ispath(turf_path, /turf/simulated) && turf_path != T.type)
 				T = T.ChangeTurf(turf_path)
 			if(isturf(T))
 				T.deserialize(turf_data)
@@ -397,6 +421,12 @@
 		if(islist(contents_data))
 			for(var/list/atom_data in contents_data)
 				if(!islist(atom_data))
+					rejected_movables++
+					continue
+				var/raw_atom_type = atom_data["type"]
+				var/atom_path = istext(raw_atom_type) ? text2path(raw_atom_type) : null
+				if(!ispath(atom_path, /atom/movable))
+					rejected_movables++
 					continue
 				try
 					list_to_object(atom_data, T)
@@ -404,6 +434,8 @@
 				catch(var/exception/E)
 					log_game("SSquarry: restore: list_to_object failed for [atom_data["type"]] at ([T.x],[T.y]): [E.name]")
 					continue
+	if(rejected_tiles || rejected_movables)
+		log_game("SSquarry: restore: rejected [rejected_tiles] tile(s) + [rejected_movables] movable(s) for depth [depth] due to bounds/type validation")
 	var/_rl2 = world.timeofday
 
 	var/list/bay_tiles = _quarry_recache_elevator_from_restore(new_z, depth)

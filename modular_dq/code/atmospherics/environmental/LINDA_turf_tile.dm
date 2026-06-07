@@ -718,7 +718,13 @@ Then we space some of our heat, and think about if we should stop conducting.
 
 /turf/open/finish_superconduction()
 	//Conduct with air on my tile if I have it
-	if(..((blocks_air ? temperature : air.temperature)) != FALSE && !blocks_air)
+	// DQEdit — guard air null when blocks_air is FALSE. Previously this
+	// nulldotref'd if the turf had been space-converted or otherwise had
+	// its air swept while a superconduction tick was in flight.
+	var/share_temp = blocks_air ? temperature : air?.temperature
+	if(isnull(share_temp))
+		return
+	if(..(share_temp) != FALSE && !blocks_air)
 		temperature = air.temperature_share(null, thermal_conductivity, temperature, heat_capacity)
 
 ///Should we attempt to superconduct?

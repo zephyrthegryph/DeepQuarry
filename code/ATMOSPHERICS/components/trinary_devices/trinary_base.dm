@@ -89,8 +89,7 @@
 	return null
 
 /obj/machinery/atmospherics/trinary/Destroy()
-	. = ..()
-
+	// DQEdit Start — disconnect/qdel BEFORE ..() so node derefs are valid.
 	if(node1)
 		node1.disconnect(src)
 		qdel(network1)
@@ -104,6 +103,8 @@
 	node1 = null
 	node2 = null
 	node3 = null
+	return ..()
+	// DQEdit End
 
 // Get the direction each node is facing to connect.
 // It now returns as a list so it can be fetched nicely, each entry corresponds to node of same number.

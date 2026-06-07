@@ -1139,6 +1139,10 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	TEST_ASSERT_NOTNULL(pair, "no usable floor pair on map for ChangeTurf test")
 	var/turf/simulated/floor/A = pair[1]
 	var/turf/simulated/floor/B = pair[2]
+	// Record A's original type so we can restore even if asserts fail. The
+	// previous version permanently walled A whenever any check failed,
+	// corrupting the test map for every subsequent test that picked A.
+	GLOB.dq_atmos_test_walled_turfs[A] = A.type
 
 	var/datum/gas_mixture/donor = new(70)
 	donor.adjust_gas(/datum/gas/oxygen, 50)
@@ -1159,6 +1163,12 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 
 	TEST_ASSERT(!(B.atmos_adjacent_turfs && B.atmos_adjacent_turfs[W]), \
 		"B's atmos_adjacent_turfs still contains the dead A→wall slot")
+
+	// Always restore even on success — keeps the test map clean for the
+	// next test that picks this tile. (On assert failure the entry in
+	// dq_atmos_test_walled_turfs survives so the next isolate_pair call
+	// reverses it via dq_atmos_test_restore_walls.)
+	dq_atmos_test_restore_walls()
 
 
 /// Regression for /turf/simulated/mineral/make_floor() fix: carving a rock to
@@ -1181,14 +1191,23 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 
 	M.make_floor()
 
-	TEST_ASSERT_EQUAL(M.blocks_air, 0, "make_floor didn't set blocks_air=0")
-	TEST_ASSERT_NOTNULL(M.air, \
-		"make_floor left air=null — neighbors will crash on share. DQEdit in mine_turfs.dm missing?")
-	TEST_ASSERT(M.air.total_moles() >= 0, "make_floor air mixture is broken")
-
+	// Restore-on-failure shape: capture each assertion result, drive the
+	// restoration unconditionally, then re-fire any failure. Previously
+	// any failing assert left the mineral as a floor forever, breaking
+	// every subsequent run of the same test.
+	var/blocks_air_post = M.blocks_air
+	var/has_air = !isnull(M.air)
+	var/moles_ok = has_air && M.air.total_moles() >= 0
 	M.make_wall()
-	TEST_ASSERT_EQUAL(M.blocks_air, 1, "make_wall didn't restore blocks_air=1")
-	TEST_ASSERT(isnull(M.air), "make_wall didn't QDEL_NULL the air mixture")
+	var/blocks_air_restored = M.blocks_air
+	var/air_cleared = isnull(M.air)
+
+	TEST_ASSERT_EQUAL(blocks_air_post, 0, "make_floor didn't set blocks_air=0")
+	TEST_ASSERT(has_air, \
+		"make_floor left air=null — neighbors will crash on share. DQEdit in mine_turfs.dm missing?")
+	TEST_ASSERT(moles_ok, "make_floor air mixture is broken")
+	TEST_ASSERT_EQUAL(blocks_air_restored, 1, "make_wall didn't restore blocks_air=1")
+	TEST_ASSERT(air_cleared, "make_wall didn't QDEL_NULL the air mixture")
 
 
 /// Pressure-driven flow: A starts at ~2 atm, B at ~1 atm. Over ticks A
