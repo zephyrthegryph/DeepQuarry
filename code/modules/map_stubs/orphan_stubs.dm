@@ -1,59 +1,40 @@
-// Auto-generated stubs for orphaned types after removing map includes.
-// Each is an empty type definition just so code that references it compiles.
-// No actual content; the original definitions lived in removed map files.
+// Minimal area declarations for areas that are referenced by live feature
+// definitions but whose physical maps are not currently included in the build.
+//
+// These are intentional, valid (empty) area types — NOT broken orphans. They
+// exist so the feature definitions below compile; the areas only become real
+// in-game if/when a map that uses them is added:
+//   - Dorm holodeck programs + projection areas  (computer/HolodeckControl/holodorm)
+//   - Surface turbolift shaft areas              (the surface turbolift)
+//   - Maglev tram shock area                     (/turf/simulated/floor/maglev)
+//
+// Everything else previously stubbed here was resolved during the hard-fork
+// cleanup: item stubs were rescued/implemented in the live tree, and references
+// to areas of fully-removed maps were deleted from the code that listed them.
 
-/area/ai_core_foyer
+// Dorm holodeck programs
+/area/holodeck/holodorm/source_off
+/area/holodeck/holodorm/source_basic
+/area/holodeck/holodorm/source_seating
+/area/holodeck/holodorm/source_beach
+/area/holodeck/holodorm/source_desert
+/area/holodeck/holodorm/source_snow
+/area/holodeck/holodorm/source_garden
+/area/holodeck/holodorm/source_space
+/area/holodeck/holodorm/source_boxing
+
+// Dorm holodeck projection areas
 /area/crew_quarters/sleep/Dorm_1/holo
 /area/crew_quarters/sleep/Dorm_3/holo
 /area/crew_quarters/sleep/Dorm_5/holo
 /area/crew_quarters/sleep/Dorm_7/holo
-/area/groundbase/level1/centsquare
-/area/groundbase/level1/eastspur
-/area/groundbase/level1/northspur
-/area/groundbase/level1/southeastspur
-/area/groundbase/level1/southwestspur
-/area/groundbase/level1/westspur
-/area/groundbase/level2/eastspur
-/area/groundbase/level2/ne
-/area/groundbase/level2/northspur
-/area/groundbase/level2/nw
-/area/groundbase/level2/se
-/area/groundbase/level2/southeastspur
-/area/groundbase/level2/southwestspur
-/area/groundbase/level2/sw
-/area/groundbase/level2/westspur
-/area/groundbase/level3/escapepad
-/area/groundbase/level3/ne
-/area/groundbase/level3/ne/open
-/area/groundbase/level3/nw
-/area/groundbase/level3/nw/open
-/area/groundbase/level3/se
-/area/groundbase/level3/se/open
-/area/groundbase/level3/sw
-/area/groundbase/level3/sw/open
-/area/hallway/station/upper
-/area/holodeck/holodorm/source_basic
-/area/holodeck/holodorm/source_beach
-/area/holodeck/holodorm/source_boxing
-/area/holodeck/holodorm/source_desert
-/area/holodeck/holodorm/source_garden
-/area/holodeck/holodorm/source_off
-/area/holodeck/holodorm/source_seating
-/area/holodeck/holodorm/source_snow
-/area/holodeck/holodorm/source_space
-/area/maintenance/groundbase/level1/netunnel
-/area/maintenance/groundbase/level1/nwtunnel
-/area/maintenance/groundbase/level1/setunnel
-/area/maintenance/groundbase/level1/stunnel
-/area/maintenance/groundbase/level1/swtunnel
-/area/shuttle/sdboat
-/area/submap/event
-/area/tether/surfacebase/surface_one_hall
-/area/tether/surfacebase/surface_three_hall
-/area/tether/surfacebase/surface_two_hall
-/area/tether/surfacebase/tram
-/area/turbolift/t_station/level1
+
+// Surface turbolift shaft areas
 /area/turbolift/t_surface/level1
 /area/turbolift/t_surface/level2
 /area/turbolift/t_surface/level3
 /area/turbolift/tether/transit
+/area/turbolift/t_station/level1
+
+// Maglev tram shock area
+/area/tether/surfacebase/tram

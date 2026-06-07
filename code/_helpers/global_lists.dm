@@ -2855,7 +2855,6 @@ GLOBAL_LIST_INIT(SPECIALS, list(
 	/area/tether/elevator,
 	/turf/unsimulated/wall/planetary,
 	/area/submap/virgo2,
-	/area/submap/event,
 	/area/submap/casino_event,
 	/area/vr
 	// /area/derelict //commented out, all hail derelict-rebuilders!
@@ -2878,7 +2877,6 @@ GLOBAL_LIST_INIT(area_or_turf_fail_types, typecacheof(list(
 	/area/tether/elevator,
 	/turf/unsimulated/wall/planetary,
 	/area/submap/virgo2,
-	/area/submap/event,
 	/area/submap/casino_event,
 	/area/vr //CHOMPedit
 	)))

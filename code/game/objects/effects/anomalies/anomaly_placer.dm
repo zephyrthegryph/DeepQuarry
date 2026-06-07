@@ -46,7 +46,6 @@
 		/area/maintenance,
 		/area/holodeck,
 		/area/ai,
-		/area/ai_core_foyer,
 		/area/ai_upload_foyer,
 		/area/ai_server_room,
 		/area/tcommsat
