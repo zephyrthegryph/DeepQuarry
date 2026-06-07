@@ -830,6 +830,12 @@ GLOBAL_LIST_EMPTY(cached_examine_icons)
 	if(islist(cached_metadata))
 		return cached_metadata
 	var/list/metadata_result = rustg_dmi_read_metadata(file_string)
+	// DQ Architecture-A: editable .dmi are repacked into icons/gen at build time
+	// and do NOT exist on disk at their source path. rust-g reads the real
+	// filesystem (not the .rsc), so a source-path read fails; retry against the
+	// generated copy before giving up.
+	if(!islist(metadata_result) || !length(metadata_result))
+		metadata_result = rustg_dmi_read_metadata("icons/gen/[file_string]")
 	if(!islist(metadata_result) || !length(metadata_result))
 		CRASH("Error while reading DMI metadata for path '[file_string]': [metadata_result]")
 	else
