@@ -583,3 +583,16 @@
 	. = ..()
 	reagents.add_reagent(REAGENT_ID_ANTITOXIN, 15)
 	reagents.add_reagent(REAGENT_ID_PARACETAMOL, 5)
+
+
+// === merged from firstaid_chomp.dm (methylphenidate pill re-open; placed by its definer so the override wins) ===
+/obj/item/reagent_containers/pill/methylphenidate
+	name =  REAGENT_METHYLPHENIDATE + " (10u)"
+	desc = "A pill to help you concentrate."
+	icon_state = "pill2"
+
+/obj/item/reagent_containers/pill/methylphenidate/Initialize(mapload)
+	. = ..()
+	reagents.add_reagent(REAGENT_ID_METHYLPHENIDATE, 10)
+	color = reagents.get_color()
+
