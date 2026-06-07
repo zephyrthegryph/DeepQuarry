@@ -123,7 +123,7 @@ GLOBAL_LIST_EMPTY(all_maps)
 
 	var/datum/skybox_settings/default_skybox // What skybox do we use if a zlevel doesn't have a custom one? Provide a type.
 
-	var/list/lobby_screens = list('modular_chomp/html/lobby/chompstation.webp')				 // The list of lobby screen to pick() from. If left unset the first icon state is always selected.
+	var/list/lobby_screens = list('html/lobby/chompstation.webp')				 // The list of lobby screen to pick() from. If left unset the first icon state is always selected.
 
 	var/default_law_type = /datum/ai_laws/nanotrasen // The default lawset use by synth units, if not overriden by their laws var.
 

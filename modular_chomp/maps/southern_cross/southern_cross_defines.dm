@@ -4,7 +4,7 @@
 	full_name = "Southern Cross"
 	path = "southern_cross"
 
-	lobby_screens = list('modular_chomp/html/lobby/chompstation.webp')
+	lobby_screens = list('html/lobby/chompstation.webp')
 	id_hud_icons = 'icons/mob/hud_jobs_vr.dmi'
 
 	holomap_smoosh = list(list(
