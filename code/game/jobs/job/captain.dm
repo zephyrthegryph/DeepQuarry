@@ -183,3 +183,15 @@ GLOBAL_DATUM_INIT(captain_announcement, /datum/announcement/minor, new(do_newsca
 
 /datum/alt_title/bridge_assistant
 	title = JOB_ALT_BRIDGE_ASSISTANT
+
+
+// === merged from captain_chomp.dm during hard-fork de-suffix (chain-verified, vr->ch order preserved) ===
+/datum/job/captain
+	camp_protection = TRUE
+
+/datum/job/hop
+	camp_protection = TRUE
+
+/datum/alt_title/bridge_officer
+	title = JOB_ALT_BRIDGE_OFFICER
+	title_outfit = /datum/decl/hierarchy/outfit/job/bridge_officer
