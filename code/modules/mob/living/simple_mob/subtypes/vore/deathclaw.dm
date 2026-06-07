@@ -117,3 +117,27 @@
 	desc = "Big! Big! The size of three men! Claws as long as my forearm! Ripped apart! Ripped apart! This one seems angrier than most."
 	melee_damage_lower = 10
 	melee_damage_upper = 40
+
+
+// === merged from butchering_chomp.dm during hard-fork de-suffix. Placed in this file because it
+// is the highest-positioned definer in the override chain for the members it
+// sets, so every override stays after its base definition (resolution preserved). ===
+//I don't know how to add more material currently so uhhh, that will be for late, did have some halffinished un commented code but that seemed to be causing issues?
+/mob/living/simple_mob/vore/bigdragon
+	meat_type = /obj/item/reagent_containers/food/snacks/dragonmeat
+
+/mob/living/simple_mob/vore/aggressive/dragon/virgo3b //phoron dragon
+	meat_type = /obj/item/reagent_containers/food/snacks/phorondragonmeat
+
+/mob/living/simple_mob/vore/aggressive/deathclaw
+	meat_type = /obj/item/reagent_containers/food/snacks/deathclawmeat
+
+/mob/living/simple_mob/metroid
+	meat_amount = 6
+	meat_type = /obj/item/reagent_containers/food/snacks/metroidmeat
+
+/mob/living/simple_mob/metroid/can_butcher(mob/user, obj/item/I)	// Override for special butchering checks.
+	. = ..()
+
+	if(. && (!is_sharp(I) || !has_edge(I)))
+		return FALSE

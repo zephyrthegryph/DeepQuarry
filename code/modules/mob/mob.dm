@@ -1720,3 +1720,44 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 	//	if(NAMEOF(src, logging))
 	//		return debug_variable(var_name, logging, 0, src, FALSE)
 	. = ..()
+
+
+// === merged from items_chomp.dm during hard-fork de-suffix. Placed in this file because it
+// is the highest-positioned definer in the override chain for the members it
+// sets, so every override stays after its base definition (resolution preserved). ===
+/obj/item
+	var/user_vars_to_edit //fun times :3 - pretty much just grabbed from tg immabehonest - list(variable_name = variable_value) eg list("name" = "Wizardly Wizard", "real_name" = "Wizardly Wizard")
+	var/user_vars_remembered //not needed for manual editing, just stores the original vars from the above list to make sure they go back to normal later
+
+/obj/item/Destroy(force, ...)
+	user_vars_remembered = null
+	return ..()
+
+/obj/item/dropped(mob/living/user)
+	. = ..()
+	if (!istype(user))
+		return
+	if(LAZYLEN(user_vars_remembered))
+		for(var/variable in user_vars_remembered)
+			if(variable in user.vars)
+				if(user.vars[variable] == user_vars_to_edit[variable])
+					user.vars[variable] = user_vars_remembered[variable]
+		user_vars_remembered = initial(user_vars_remembered)
+
+/obj/item/equipped(mob/living/user, slot_equipped)
+	. = ..()
+	if (!istype(user))
+		return
+	if(("[slot_equipped]" in GLOB.slot_flags_enumeration) && (slot_flags & GLOB.slot_flags_enumeration["[slot_equipped]"]))
+		if (LAZYLEN(user_vars_to_edit))
+			for(var/variable in user_vars_to_edit)
+				if(variable in user.vars)
+					LAZYSET(user_vars_remembered, variable, user.vars[variable])
+					user.vv_edit_var(variable, user_vars_to_edit[variable])
+	else
+		if(LAZYLEN(user_vars_remembered))
+			for(var/variable in user_vars_remembered)
+				if(variable in user.vars)
+					if(user.vars[variable] == user_vars_to_edit[variable])
+						user.vars[variable] = user_vars_remembered[variable]
+			user_vars_remembered = initial(user_vars_remembered)

@@ -450,3 +450,17 @@
 
 /obj/item/clothing/suit/space/void
 	species_restricted = list(SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_RAPALA, SPECIES_VASILISSAN, SPECIES_ALRAUNE, SPECIES_PROMETHEAN, SPECIES_XENOCHIMERA, SPECIES_XENOMORPH_HYBRID)
+
+
+// === merged from spacesuits_chomp.dm during hard-fork de-suffix. Placed in this file because it
+// is the highest-positioned definer in the override chain for the members it
+// sets, so every override stays after its base definition (resolution preserved). ===
+/obj/item/clothing/suit/space
+
+	can_breach = 0 //disabling breaching as a general mechanic
+
+/obj/item/clothing/suit/space/emergency
+	can_breach = 1
+
+/obj/item/clothing/suit/space/void
+	can_breach = 0

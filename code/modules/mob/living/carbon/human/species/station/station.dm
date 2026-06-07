@@ -2143,3 +2143,49 @@
 	name = "hybrid plasma vessel"
 	stored_plasma = 250 // Starts with max plasma.
 	max_plasma = 250 // Maximum of 250 plasma stored at any one time. Drones normally have 500.
+
+
+// === merged from station_chomp.dm during hard-fork de-suffix. Placed in this file because it
+// is the highest-positioned definer in the override chain for the members it
+// sets, so every override stays after its base definition (resolution preserved). ===
+//Any species commented out here must be made restricted elsewhere. They are kept here for easy reference of what we disabled.
+//Note that at the time of this PR we are simply disabling everything new to discuss keeping versus scrapping later.
+
+///datum/species/zaddat
+//	spawn_flags = SPECIES_IS_RESTRICTED //Species has been enabled elsewhere.
+
+///datum/species/crew_shadekin
+//	spawn_flags = SPECIES_IS_RESTRICTED
+
+/datum/species/human/gravworlder
+	spawn_flags = SPECIES_IS_RESTRICTED
+
+/datum/species/human/spacer
+	spawn_flags = SPECIES_IS_RESTRICTED
+
+///datum/species/alraune
+//	spawn_flags = SPECIES_IS_RESTRICTED //Species has been enabled, keeping this here for reference.
+
+///datum/species/werebeast
+//	spawn_flags = SPECIES_IS_RESTRICTED
+
+/datum/species/shadekin_yw
+	spawn_flags = SPECIES_IS_RESTRICTED
+
+// /datum/species/shadekin
+	//spawn_flags = SPECIES_IS_RESTRICTED
+
+//datum/species/protean
+//	spawn_flags = SPECIES_IS_RESTRICTED
+
+//TFF 20/1/20 - More whitelisted species listed here. Unable to force overrides to be enabled here.
+/*
+/datum/species/xenochimera
+	spawn_flags = SPECIES_CAN_JOIN | SPECIES_IS_WHITELISTED | SPECIES_WHITELIST_SELECTABLE
+
+/datum/species/diona
+	spawn_flags = SPECIES_CAN_JOIN | SPECIES_IS_WHITELISTED | SPECIES_WHITELIST_SELECTABLE
+
+/datum/species/vox
+	spawn_flags = SPECIES_CAN_JOIN | SPECIES_IS_WHITELISTED | SPECIES_WHITELIST_SELECTABLE
+*/
