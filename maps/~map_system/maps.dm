@@ -84,7 +84,7 @@ GLOBAL_LIST_EMPTY(all_maps)
 
 	var/station_name  = "BAD Station"
 	var/station_short = "Baddy"
-	var/facility_type = "facility"
+	var/facility_type = "station" //CHOMPEdit - Default to station instead of "facility"
 	var/dock_name	 = "THE PirateBay"
 	var/dock_type	 = "station"	//VOREStation Edit - for a list of valid types see the switch block in air_traffic.dm at line 148
 	var/boss_name	 = "Captain Roger"
@@ -123,7 +123,7 @@ GLOBAL_LIST_EMPTY(all_maps)
 
 	var/datum/skybox_settings/default_skybox // What skybox do we use if a zlevel doesn't have a custom one? Provide a type.
 
-	var/list/lobby_screens = list('html/lobby/mockingjay00.webp')                 // The list of lobby screen to pick() from. If left unset the first icon state is always selected.
+	var/list/lobby_screens = list('html/lobby/chompstation.webp')				 // The list of lobby screen to pick() from. If left unset the first icon state is always selected.
 
 	var/default_law_type = /datum/ai_laws/nanotrasen // The default lawset use by synth units, if not overriden by their laws var.
 
@@ -277,20 +277,21 @@ GLOBAL_LIST_EMPTY(all_maps)
 // This list needs to be purged but people insist on adding more cruft to the radio.
 /datum/map/proc/default_internal_channels()
 	return list(
-		num2text(PUB_FREQ)	= list(),
-		num2text(AI_FREQ)	= list(ACCESS_SYNTH),
-		num2text(ENT_FREQ)	= list(),
-		num2text(ERT_FREQ)	= list(ACCESS_CENT_SPECOPS),
-		num2text(COMM_FREQ)	= list(ACCESS_HEADS),
-		num2text(ENG_FREQ)	= list(ACCESS_ENGINE_EQUIP, ACCESS_ATMOSPHERICS),
-		num2text(MED_FREQ)	= list(ACCESS_MEDICAL_EQUIP),
-		num2text(MED_I_FREQ)= list(ACCESS_MEDICAL_EQUIP),
-		num2text(BDCM_FREQ)	= list(ACCESS_SECURITY), // CHOMPAdd
-		num2text(SEC_FREQ)	= list(ACCESS_SECURITY),
-		num2text(SEC_I_FREQ)= list(ACCESS_SECURITY),
-		num2text(SCI_FREQ)	= list(ACCESS_TOX,ACCESS_ROBOTICS,ACCESS_XENOBIOLOGY),
-		num2text(SUP_FREQ)	= list(ACCESS_CARGO),
-		num2text(SRV_FREQ)	= list(ACCESS_JANITOR, ACCESS_HYDROPONICS),
+		num2text(PUB_FREQ)   = list(),
+		num2text(AI_FREQ)  = list(ACCESS_SYNTH),
+		num2text(ENT_FREQ)   = list(),
+		num2text(ERT_FREQ) = list(ACCESS_CENT_SPECOPS),
+		num2text(COMM_FREQ)= list(ACCESS_HEADS),
+		num2text(ENG_FREQ) = list(ACCESS_ENGINE_EQUIP, ACCESS_ATMOSPHERICS),
+		num2text(MED_FREQ) = list(ACCESS_MEDICAL_EQUIP),
+		num2text(MED_I_FREQ)=list(ACCESS_MEDICAL_EQUIP),
+		num2text(BDCM_FREQ) =list(ACCESS_SECURITY),
+		num2text(SEC_FREQ) = list(ACCESS_SECURITY),
+		num2text(SEC_I_FREQ)=list(ACCESS_SECURITY),
+		num2text(SCI_FREQ) = list(ACCESS_TOX,ACCESS_ROBOTICS,ACCESS_XENOBIOLOGY),
+		num2text(SUP_FREQ) = list(ACCESS_CARGO, ACCESS_MINING_STATION),
+		num2text(SRV_FREQ) = list(ACCESS_JANITOR, ACCESS_LIBRARY, ACCESS_HYDROPONICS, ACCESS_BAR, ACCESS_KITCHEN),
+		num2text(EXP_FREQ) = list(ACCESS_EXPLORER)
 	)
 
 /datum/map/proc/get_skybox_datum(z)
@@ -307,7 +308,7 @@ GLOBAL_LIST_EMPTY(all_maps)
 /datum/map_z_level
 	var/z = 0				// Actual z-index of the zlevel. This had better be right!
 	var/name				// Friendly name of the zlevel
-	var/flags = NONE			// Bitflag of which *_levels lists this z should be put into.
+	var/flags = NONE		// Bitflag of which *_levels lists this z should be put into.
 	var/turf/base_turf		// Type path of the base turf for this z
 	var/transit_chance = 0	// Percentile chance this z will be chosen for map-edge space transit.
 

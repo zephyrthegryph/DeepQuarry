@@ -5,9 +5,12 @@
 /* FOR LIVE SERVER   */
 /*********************/
 
-// #define USE_MAP_TETHER
-#define USE_MAP_STELLARDELIGHT
-// #define USE_MAP_GROUNDBASE
+// DQEdit Start — the fork boots Deep Quarry. The legacy CHOMP station maps
+// (Southern Cross, Cetus, Soluna Nexus, Relic Base) were removed during the
+// hard-fork merge: they referenced surface map_template types that no longer
+// exist in-repo and had been dead since the fork switched to Deep Quarry.
+#define USE_MAP_DEEP_QUARRY
+// DQEdit End
 
 // Debug
 //#define USE_MAP_MINITEST
@@ -18,22 +21,12 @@
 
 #endif
 
-// Tether
-#ifdef USE_MAP_TETHER
-#include "../tether/tether.dm"
-#endif
-
-// Stellar Delight
-#ifdef USE_MAP_STELLARDELIGHT
-#include "../stellar_delight/stellar_delight.dm"
-#endif
-
-// Groundbase
-#ifdef USE_MAP_GROUNDBASE
-#include "../groundbase/groundbase.dm"
-#endif
-
-// Debug: Minitest
 #ifdef USE_MAP_MINITEST
 #include "../virgo_minitest/virgo_minitest.dm"
 #endif
+
+// DQAdd Start — Deep Quarry boot wrapper now lives in the base maps/ tree.
+#ifdef USE_MAP_DEEP_QUARRY
+#include "../deep_quarry/deep_quarry.dm"
+#endif
+// DQAdd End
