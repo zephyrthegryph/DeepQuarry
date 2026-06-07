@@ -14,6 +14,7 @@ GLOBAL_LIST_INIT(dq_catalogue_delay_by_type, list(
 	var/delay
 
 /datum/component/catalogue_delay_override/Initialize(d)
+	. = ..()
 	delay = d
 
 // The original proc lived on /atom and is called extensively. Keep it as

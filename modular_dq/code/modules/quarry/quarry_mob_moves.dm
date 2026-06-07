@@ -85,11 +85,14 @@ GLOBAL_LIST_EMPTY(_quarry_move_cache)
 
 /mob/living/simple_mob
 	/// Typepaths of /datum/quarry_mob_move available to this mob.
-	/// Empty = use upstream special-attack behavior (unchanged).
-	var/list/quarry_move_pool = list()
+	/// Null/empty = use upstream special-attack behavior (unchanged). The
+	/// `length(quarry_move_pool)` guards in ICheckSpecialAttack /
+	/// ISpecialAttack handle null fine; per CLAUDE.md §6a no eager `= list()`
+	/// because every simple_mob in the game pays the allocation otherwise.
+	var/list/quarry_move_pool
 	/// Per-move cooldown stamps. Keyed by move typepath (as string),
 	/// value is world.time when the move becomes usable again.
-	var/list/quarry_move_cooldowns = null
+	var/list/quarry_move_cooldowns
 
 
 // ---- AI interface overrides ----------------------------------------

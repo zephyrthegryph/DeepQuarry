@@ -136,10 +136,6 @@ SUBSYSTEM_DEF(air)
 	// /tg/-style rebuild_queue/expansion_queue dispatch removed — CHOMP pipes
 	// rebuild their networks through /obj/machinery/atmospherics/pipe Initialize
 	// and the ChangeTurf path, no SSair orchestration needed.
-		//This does mean that the apperent rebuild costs fluctuate very quickly, this is just the cost of having them always process, no matter what
-		cost_rebuilds = TICK_USAGE_REAL - timer
-		if(state != SS_RUNNING)
-			return
 
 	if(currentpart == SSAIR_PIPENETS || !resumed)
 		timer = TICK_USAGE_REAL
@@ -761,14 +757,15 @@ GLOBAL_LIST_EMPTY(colored_images)
 	// chain to. The /tg/ ..() called /datum/ui_state ancestry which CHOMP's
 	// TGUI doesn't have. Skip the parent chain; rights check below handles
 	// the permission gate that ..() would have asserted.
-	if(!check_rights_for(usr.client, R_DEBUG))
+	var/mob/user = ui?.user
+	if(!user || !check_rights_for(user.client, R_DEBUG))
 		return
 	switch(action)
 		if("move-to-target")
 			var/turf/target = locate(params["spot"])
 			if(!target)
 				return
-			usr.forceMove(target)
+			user.forceMove(target)
 		if("toggle-freeze")
 			can_fire = !can_fire
 			return TRUE
@@ -793,7 +790,6 @@ GLOBAL_LIST_EMPTY(colored_images)
 					group.hide_turfs()
 			return TRUE
 		if("toggle_user_display")
-			var/mob/user = ui.user
 			user.hud_used.atmos_debug_overlays = !user.hud_used.atmos_debug_overlays
 			if(user.hud_used.atmos_debug_overlays)
 				user.client.images += GLOB.colored_images

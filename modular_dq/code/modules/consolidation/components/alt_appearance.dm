@@ -6,6 +6,7 @@
 	var/list/appearances
 
 /datum/component/alt_appearances_owner/Initialize()
+	. = ..()
 	appearances = list()
 
 /datum/component/alt_appearances_owner/Destroy(force)
@@ -24,6 +25,7 @@
 	var/list/viewing
 
 /datum/component/alt_appearances_viewer/Initialize()
+	. = ..()
 	viewing = list()
 
 /datum/component/alt_appearances_viewer/Destroy(force)

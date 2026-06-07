@@ -47,8 +47,11 @@
 		return
 	if(stat & (BROKEN|NOPOWER))
 		return
-	usr.set_machine(src)
-	add_fingerprint(usr)
+	var/mob/user = ui?.user
+	if(!user)
+		return
+	user.set_machine(src)
+	add_fingerprint(user)
 
 	switch(action)
 		if("set_frequency")

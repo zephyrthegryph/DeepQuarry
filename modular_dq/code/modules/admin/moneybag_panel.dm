@@ -19,8 +19,11 @@
 	. = ..()
 	if(.)
 		return
-	usr.set_machine(src)
-	add_fingerprint(usr)
+	var/mob/user = ui?.user
+	if(!user)
+		return
+	user.set_machine(src)
+	add_fingerprint(user)
 	if(action == "remove")
 		var/coin_type = "[params["coin"]]"
 		Topic("remove=[coin_type]", list("remove" = coin_type))

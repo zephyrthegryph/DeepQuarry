@@ -5,6 +5,7 @@
 	var/list/image/images
 
 /datum/component/update_on_z/Initialize()
+	. = ..()
 	images = list()
 
 /datum/component/update_on_z/Destroy(force)

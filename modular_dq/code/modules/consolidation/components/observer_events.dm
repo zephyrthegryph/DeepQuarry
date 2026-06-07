@@ -5,6 +5,7 @@
 	var/list/events
 
 /datum/component/observer_events/Initialize()
+	. = ..()
 	events = list()
 
 /datum/component/observer_events/Destroy(force)
