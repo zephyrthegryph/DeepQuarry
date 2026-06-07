@@ -132,6 +132,14 @@ GLOBAL_DATUM_INIT(gear_tweak_pda_ringtone, /datum/gear_tweak/pda_ringtone, new)
 		var/obj/item/pda/P = I
 		P.ttone = metadata
 
+/datum/gear_tweak/pda_ringtone/get_inline_choices()
+	return GLOB.device_ringtones ? assoc_to_keys(GLOB.device_ringtones) : list()
+
+/datum/gear_tweak/pda_ringtone/validate_inline_value(value, mob/user)
+	if(!(value in GLOB.device_ringtones))
+		return PREF_UPDATE_REJECTED
+	return value
+
 // ── Belt items ──────────────────────────────────────────────────────────────────────
 
 /datum/gear/utility_belt

@@ -40,6 +40,14 @@ GLOBAL_DATUM_INIT(gear_tweak_item_tf_spawn, /datum/gear_tweak/item_tf_spawn, new
 		I.item_tf_spawnpoint_set()
 		I.ckeys_allowed_itemspawn = metadata["valid"]
 
+// React inline-edit accepts a boolean: TRUE -> "Anyone" with empty valid list,
+// FALSE -> "Not Enabled". The per-ckey gating (Only Specific Players) needs the
+// modal flow via get_metadata.
+/datum/gear_tweak/item_tf_spawn/validate_inline_value(value, mob/user)
+	return value \
+		? list("state" = "Anyone",      "valid" = list()) \
+		: list("state" = "Not Enabled", "valid" = list())
+
 /datum/gear_tweak/simplemob_picker
 	var/list/simplemob_list
 

@@ -78,22 +78,7 @@
 
 /// For "choice" tweaks, returns the list of valid choice labels. For others, returns null.
 /proc/dq_gear_tweak_choices(datum/gear_tweak/gt)
-	if(istype(gt, /datum/gear_tweak/path))
-		var/datum/gear_tweak/path/p = gt
-		return p.valid_paths ? assoc_to_keys(p.valid_paths) : list()
-	if(istype(gt, /datum/gear_tweak/reagents))
-		var/datum/gear_tweak/reagents/r = gt
-		return (r.valid_reagents ? assoc_to_keys(r.valid_reagents) : list()) + list("Random", "None")
-	if(istype(gt, /datum/gear_tweak/implant_location))
-		// /datum/gear_tweak/implant_location stores its names map as a static list — use
-		// that directly. (BYOND emits a spurious unused_var on the cast because the field
-		// it reads is static; it's a noise warning, not a real bug.)
-		var/datum/gear_tweak/implant_location/il = gt
-		var/list/names = il.bodypart_names_to_tokens
-		return names ? assoc_to_keys(names) : list()
-	if(istype(gt, /datum/gear_tweak/pda_ringtone))
-		return GLOB.device_ringtones ? assoc_to_keys(GLOB.device_ringtones) : list()
-	return null
+	return gt?.get_inline_choices()
 
 /datum/preference_editor/loadout
 	key = "loadout"
@@ -703,7 +688,8 @@
 		if("set_tweak_value")
 			// DQAdd — direct write from React inline widget (text/dropdown/color/boolean).
 			// Bypasses get_metadata's tgui_input_X dialog because the React side already
-			// did the input collection. Per-kind validation lives here.
+			// did the input collection. Per-kind validation lives on /datum/gear_tweak
+			// subtypes via validate_inline_value (see code/datums/gear/gear_tweaks.dm).
 			var/gear_name = params["gear"]
 			var/tweak_idx = text2num(params["tweak"])
 			var/value = params["value"]
@@ -711,50 +697,10 @@
 			if(!G || !isnum(tweak_idx) || tweak_idx < 1 || tweak_idx > length(G.gear_tweaks))
 				return PREF_UPDATE_REJECTED
 			var/datum/gear_tweak/gt = G.gear_tweaks[tweak_idx]
-			// Validate against tweak type.
-			if(istype(gt, /datum/gear_tweak/path))
-				var/datum/gear_tweak/path/p = gt
-				if(!(value in p.valid_paths))
-					return PREF_UPDATE_REJECTED
-			else if(istype(gt, /datum/gear_tweak/reagents))
-				var/datum/gear_tweak/reagents/r = gt
-				if(value != "Random" && value != "None" && !(value in r.valid_reagents))
-					return PREF_UPDATE_REJECTED
-			else if(istype(gt, /datum/gear_tweak/implant_location))
-				var/datum/gear_tweak/implant_location/il = gt
-				if(!(value in il.bodypart_names_to_tokens))
-					return PREF_UPDATE_REJECTED
-			else if(istype(gt, /datum/gear_tweak/pda_ringtone))
-				if(!(value in GLOB.device_ringtones))
-					return PREF_UPDATE_REJECTED
-			else if(istype(gt, /datum/gear_tweak/toggle_digestable))
-				value = value ? TRUE : FALSE
-			else if(istype(gt, /datum/gear_tweak/item_tf_spawn))
-				// React sends a boolean; expand to the {state, valid} dict shape the
-				// spawn-time tweak_item expects. "Only Specific Players" is unavailable
-				// via this inline toggle — pick the modal flow if you need per-ckey gating.
-				value = (value ? list("state" = "Anyone", "valid" = list()) : list("state" = "Not Enabled", "valid" = list()))
-			else if(istype(gt, /datum/gear_tweak/color))
-				// Hex color sanity check — 7-char "#rrggbb".
-				if(!istext(value) || length(value) < 4 || length(value) > 9 || copytext(value, 1, 2) != "#")
-					return PREF_UPDATE_REJECTED
-			else if(istype(gt, /datum/gear_tweak/custom_name) || istype(gt, /datum/gear_tweak/custom_desc) || istype(gt, /datum/gear_tweak/collar_tag))
-				// Author may submit empty to reset to default.
-				if(!istext(value))
-					value = ""
-				if(jobban_isbanned(user, "Custom loadout"))
-					return PREF_UPDATE_REJECTED
-				// Strip HTML tags before persisting — a custom_name with <script> would
-				// otherwise reach the loadout panel via dangerouslySetInnerHTML, and a
-				// custom_desc with <img onerror> would fire in any examine context.
-				value = strip_html_simple(value)
-				// Multibyte-safe length cap. length_char + copytext_char count code points,
-				// not bytes — a Unicode emoji is 1 char even though it's 4 bytes on disk.
-				if(length_char(value) > MAX_MESSAGE_LEN)
-					value = copytext_char(value, 1, MAX_MESSAGE_LEN + 1)
-			else
-				// Unknown kind — refuse rather than write garbage.
+			var/validated = gt.validate_inline_value(value, user)
+			if(validated == PREF_UPDATE_REJECTED)
 				return PREF_UPDATE_REJECTED
+			value = validated
 			var/loadout_key = _current_slot(preferences)
 			var/list/gear_list = preferences.read_preference(/datum/preference/gear_list) || list()
 			var/list/active = gear_list[loadout_key] || list()

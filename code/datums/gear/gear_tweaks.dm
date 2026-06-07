@@ -15,6 +15,28 @@
 /datum/gear_tweak/proc/tweak_item(obj/item/I, metadata)
 	return
 
+// --- Inline-editing virtual dispatch (loadout TGUI) ----------------------
+//
+// Tweaks that want to expose a React inline widget (dropdown, text, boolean,
+// color) override these two procs. The loadout editor calls them
+// polymorphically — no istype chain.
+//
+// get_inline_choices() returns a flat list of valid options for a dropdown,
+// or null when the tweak doesn't support inline editing (must use the modal
+// tgui_input_X flow via get_metadata).
+//
+// validate_inline_value(value, user) sanity-checks (and may normalise) a
+// value coming back from the React widget. Returns either:
+//   - PREF_UPDATE_REJECTED if the value is invalid
+//   - the (possibly normalised) value to persist
+// Default rejects everything so a subtype must explicitly opt in.
+
+/datum/gear_tweak/proc/get_inline_choices()
+	return null
+
+/datum/gear_tweak/proc/validate_inline_value(value, mob/user)
+	return PREF_UPDATE_REJECTED
+
 /*
 * Color adjustment
 */
@@ -660,5 +682,67 @@ GLOBAL_DATUM_INIT(gear_tweak_free_digestable, /datum/gear_tweak/toggle_digestabl
 		return ..()
 	else
 		C.initialize_tag(metadata)
+
+// --- Inline-editing overrides ---------------------------------------------
+//
+// Each tweak that supports inline editing in the loadout TGUI panel
+// overrides get_inline_choices (for dropdowns) and/or validate_inline_value
+// (for any value coming back from a React widget). See base proc comments
+// on /datum/gear_tweak.
+
+/datum/gear_tweak/path/get_inline_choices()
+	return valid_paths ? assoc_to_keys(valid_paths) : list()
+
+/datum/gear_tweak/path/validate_inline_value(value, mob/user)
+	if(!(value in valid_paths))
+		return PREF_UPDATE_REJECTED
+	return value
+
+/datum/gear_tweak/reagents/get_inline_choices()
+	return (valid_reagents ? assoc_to_keys(valid_reagents) : list()) + list("Random", "None")
+
+/datum/gear_tweak/reagents/validate_inline_value(value, mob/user)
+	if(value != "Random" && value != "None" && !(value in valid_reagents))
+		return PREF_UPDATE_REJECTED
+	return value
+
+/datum/gear_tweak/implant_location/get_inline_choices()
+	return assoc_to_keys(bodypart_names_to_tokens)
+
+/datum/gear_tweak/implant_location/validate_inline_value(value, mob/user)
+	if(!(value in bodypart_names_to_tokens))
+		return PREF_UPDATE_REJECTED
+	return value
+
+/datum/gear_tweak/toggle_digestable/validate_inline_value(value, mob/user)
+	return value ? TRUE : FALSE
+
+/datum/gear_tweak/color/validate_inline_value(value, mob/user)
+	// Hex sanity check — "#rrggbb" (7), "#rgb" (4), "#rrggbbaa" (9).
+	if(!istext(value) || length(value) < 4 || length(value) > 9 || copytext(value, 1, 2) != "#")
+		return PREF_UPDATE_REJECTED
+	return value
+
+/datum/gear_tweak/custom_name/validate_inline_value(value, mob/user)
+	return validate_loadout_text(value, user)
+
+/datum/gear_tweak/custom_desc/validate_inline_value(value, mob/user)
+	return validate_loadout_text(value, user)
+
+/datum/gear_tweak/collar_tag/validate_inline_value(value, mob/user)
+	return validate_loadout_text(value, user)
+
+/// Shared text validator for custom_name / custom_desc / collar_tag.
+/// Empty submissions reset to default; jobban-restricted; HTML-stripped;
+/// multibyte-safe length-capped at MAX_MESSAGE_LEN.
+/proc/validate_loadout_text(value, mob/user)
+	if(!istext(value))
+		value = ""
+	if(jobban_isbanned(user, LOADOUT_BAN_STRING))
+		return PREF_UPDATE_REJECTED
+	value = strip_html_simple(value)
+	if(length_char(value) > MAX_MESSAGE_LEN)
+		value = copytext_char(value, 1, MAX_MESSAGE_LEN + 1)
+	return value
 
 #undef LOADOUT_BAN_STRING
