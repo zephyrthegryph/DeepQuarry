@@ -7,6 +7,7 @@
  * https://github.com/stylemistake/juke-build
  */
 
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import Juke from './juke/index.js';
 import { bun, bunRoot } from './lib/bun';
@@ -83,6 +84,75 @@ export const IconRepackTarget = new Juke.Target({
 });
 // DQAdd End
 
+// DQAdd Start — build the in-tree verdigris Rust FFI cdylib before the
+// server runs. Produces verdigris.dll (Windows) / libverdigris.so (Linux)
+// at the repo root, where DreamDaemon loads it via VERDIGRIS_CALL (cave-gen
+// + vendored auxmos atmos). The compiled lib is a gitignored per-platform
+// artifact, so the build is responsible for producing it.
+//
+// onlyWhen gates on cargo being on PATH: DM-only contributors without rustup
+// can't build the lib (they warn-skip and run with whatever lib is present —
+// atmos/cave-gen FFI simply isn't available without it). inputs/outputs
+// dirty-checks the ~minute cargo build against the Rust sources so untouched
+// rebuilds no-op. Source paths are enumerated rather than `verdigris/**` so
+// the (un-gitignored-by-Glob) verdigris/target/ build dir doesn't count as
+// input and force a perpetual rebuild.
+const VERDIGRIS_LIB =
+  process.platform === 'win32' ? 'verdigris.dll' : 'libverdigris.so';
+const VERDIGRIS_RUST_TARGET =
+  process.platform === 'win32'
+    ? 'i686-pc-windows-msvc'
+    : 'i686-unknown-linux-gnu';
+
+export const VerdigrisTarget = new Juke.Target({
+  onlyWhen: () => {
+    const probe = spawnSync('cargo', ['--version'], {
+      stdio: 'ignore',
+      shell: true,
+    });
+    const cargoOk = !probe.error && probe.status === 0;
+    if (!cargoOk) {
+      if (fs.existsSync(VERDIGRIS_LIB)) {
+        Juke.logger.info(
+          `verdigris: cargo not found — using existing ${VERDIGRIS_LIB}`,
+        );
+      } else {
+        Juke.logger.warn(
+          `verdigris: cargo not found and ${VERDIGRIS_LIB} is missing. `
+            + 'Atmos/cave-gen FFI will fail at runtime — install rustup '
+            + `(see verdigris/README.md) or obtain a prebuilt ${VERDIGRIS_LIB}.`,
+        );
+      }
+      return false;
+    }
+    return true;
+  },
+  inputs: [
+    'verdigris/Cargo.toml',
+    'verdigris/Cargo.lock',
+    'verdigris/verdigris/Cargo.toml',
+    'verdigris/verdigris/build.rs',
+    'verdigris/verdigris/src/**/*.rs',
+    'verdigris/atmos/Cargo.toml',
+    'verdigris/atmos/src/**/*.rs',
+    'verdigris/atmos/crates/**/Cargo.toml',
+    'verdigris/atmos/crates/**/*.rs',
+  ],
+  outputs: [VERDIGRIS_LIB],
+  executes: async () => {
+    await Juke.exec(
+      'cargo',
+      ['build', '--release', '--target', VERDIGRIS_RUST_TARGET],
+      { cwd: 'verdigris' },
+    );
+    fs.copyFileSync(
+      `verdigris/target/${VERDIGRIS_RUST_TARGET}/release/${VERDIGRIS_LIB}`,
+      VERDIGRIS_LIB,
+    );
+  },
+});
+// DQAdd End
+
 export const DmTarget = new Juke.Target({
   parameters: [
     DefineParameter,
@@ -132,6 +202,7 @@ export const DmTestTarget = new Juke.Target({
   dependsOn: ({ get }) => [
     get(DefineParameter).includes('ALL_MAPS') && DmMapsIncludeTarget,
     IconRepackTarget,
+    VerdigrisTarget, // DQAdd — tests boot the world, which loads the FFI lib
   ],
   executes: async ({ get }) => {
     fs.copyFileSync(`${DME_NAME}.dme`, `${DME_NAME}.test.dme`);
@@ -184,6 +255,7 @@ export const AutowikiTarget = new Juke.Target({
   dependsOn: ({ get }) => [
     get(DefineParameter).includes('ALL_MAPS') && DmMapsIncludeTarget,
     IconRepackTarget,
+    VerdigrisTarget, // DQAdd — autowiki boots the world, which loads the FFI lib
   ],
   outputs: ['data/autowiki_edits.txt'],
   executes: async ({ get }) => {
@@ -350,7 +422,7 @@ export const LintTarget = new Juke.Target({
 });
 
 export const BuildTarget = new Juke.Target({
-  dependsOn: [TguiTarget, DmTarget],
+  dependsOn: [TguiTarget, DmTarget, VerdigrisTarget], // DQAdd — verdigris FFI lib
 });
 
 export const ServerTarget = new Juke.Target({
