@@ -379,10 +379,6 @@
 
 	var/shoot_time = (burst - 1)* burst_delay
 
-	//These should apparently be disabled to allow for the automatic system to function without causing near-permanant paralysis. Re-enabling them while we sort that out.
-	user.setClickCooldown(shoot_time) //no clicking on things while shooting
-	user.setMoveCooldown(shoot_time) //no moving while shooting either
-
 	next_fire_time = world.time + shoot_time
 	// DQEdit Start — gunfire as noise inside the quarry. Loud sources
 	// alert nearby hostile mobs and bump layer danger. emit_noise is a
