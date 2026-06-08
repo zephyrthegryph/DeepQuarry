@@ -14,7 +14,7 @@
 /datum/preference/text/human/home_system/pref_deserialize(input, datum/preferences/preferences)
 	if(!input || !istext(input))
 		return create_default_value()
-	return STRIP_HTML_SIMPLE(input, maximum_value_length)
+	return sanitize_input(input)
 
 // dropdown choices from the same global the Bay UI used.
 /datum/preference/text/human/home_system/get_pref_choices(datum/preferences/preferences)
@@ -36,7 +36,7 @@
 /datum/preference/text/human/birthplace/pref_deserialize(input, datum/preferences/preferences)
 	if(!input || !istext(input))
 		return create_default_value()
-	return STRIP_HTML_SIMPLE(input, maximum_value_length)
+	return sanitize_input(input)
 
 // birthplace draws from the same home-systems list.
 /datum/preference/text/human/birthplace/get_pref_choices(datum/preferences/preferences)
@@ -58,7 +58,7 @@
 /datum/preference/text/human/citizenship/pref_deserialize(input, datum/preferences/preferences)
 	if(!input || !istext(input))
 		return create_default_value()
-	return STRIP_HTML_SIMPLE(input, maximum_value_length)
+	return sanitize_input(input)
 
 // dropdown choices from the same global the Bay UI used.
 /datum/preference/text/human/citizenship/get_pref_choices(datum/preferences/preferences)
@@ -80,7 +80,7 @@
 /datum/preference/text/human/faction/pref_deserialize(input, datum/preferences/preferences)
 	if(!input || !istext(input))
 		return create_default_value()
-	return STRIP_HTML_SIMPLE(input, maximum_value_length)
+	return sanitize_input(input)
 
 // dropdown choices from the same global the Bay UI used.
 /datum/preference/text/human/faction/get_pref_choices(datum/preferences/preferences)
@@ -102,7 +102,7 @@
 /datum/preference/text/human/religion/pref_deserialize(input, datum/preferences/preferences)
 	if(!input || !istext(input))
 		return create_default_value()
-	return STRIP_HTML_SIMPLE(input, maximum_value_length)
+	return sanitize_input(input)
 
 // dropdown choices from the same global the Bay UI used.
 /datum/preference/text/human/religion/get_pref_choices(datum/preferences/preferences)
