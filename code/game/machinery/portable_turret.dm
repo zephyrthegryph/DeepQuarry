@@ -499,9 +499,11 @@
 		stat &= ~NOPOWER
 		update_icon()
 	else
-		spawn(rand(0, 15))
-			stat |= NOPOWER
-			update_icon()
+		addtimer(CALLBACK(src, PROC_REF(power_off_delayed)), rand(0, 15), TIMER_DELETE_ME)
+
+/obj/machinery/porta_turret/proc/power_off_delayed()
+	stat |= NOPOWER
+	update_icon()
 
 
 /obj/machinery/porta_turret/attackby(obj/item/I, mob/user)
@@ -655,9 +657,11 @@
 			emagged = TRUE
 
 		enabled=0
-		spawn(rand(60,600))
-			if(!enabled)
-				enabled = TRUE
+		addtimer(CALLBACK(src, PROC_REF(emp_reenable)), rand(60, 600), TIMER_DELETE_ME)
+
+/obj/machinery/porta_turret/proc/emp_reenable()
+	if(!enabled)
+		enabled = TRUE
 
 /obj/machinery/porta_turret/ai_defense/emp_act(severity, recursive)
 	. = ..()
@@ -669,9 +673,7 @@
 	if (. & EMP_PROTECT_SELF || prob(75)) // Superior alien technology, I guess.
 		return
 	enabled = FALSE
-	spawn(rand(1 MINUTE, 2 MINUTES))
-		if(!enabled)
-			enabled = TRUE
+	addtimer(CALLBACK(src, PROC_REF(emp_reenable)), rand(1 MINUTE, 2 MINUTES), TIMER_DELETE_ME)
 
 /obj/machinery/porta_turret/ex_act(severity)
 	switch (severity)
@@ -911,8 +913,7 @@
 			set_dir(get_dir(src, target))	//even if you can't shoot, follow the target
 			if(dir != old_dir) // Play rotating sound, but only if we actually rotated
 				playsound(src, 'sound/machines/turrets/turret_rotate.ogg', 100, 1)
-			spawn()
-				shootAt(target)
+			INVOKE_ASYNC(src, PROC_REF(shootAt), target)
 			return TRUE
 	return FALSE
 

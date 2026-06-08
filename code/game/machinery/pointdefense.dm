@@ -221,8 +221,10 @@ GLOBAL_LIST_BOILERPLATE(pointdefense_turrets, /obj/machinery/pointdefense)
 	playsound(src, fire_sounds, 75, 1, 40, pressure_affected = FALSE, ignore_walls = TRUE)
 	use_power_oneoff(idle_power_usage * 10)
 	coil.launch_projectile(target = M.loc, user = src)
-	spawn(10)
-		playsound(src, fire_sounds, 75, 1, 40, pressure_affected = FALSE, ignore_walls = TRUE)
+	addtimer(CALLBACK(src, PROC_REF(fire_sound_delayed)), 10, TIMER_DELETE_ME)
+
+/obj/machinery/pointdefense/proc/fire_sound_delayed()
+	playsound(src, fire_sounds, 75, 1, 40, pressure_affected = FALSE, ignore_walls = TRUE)
 
 /obj/machinery/pointdefense/process()
 	..()

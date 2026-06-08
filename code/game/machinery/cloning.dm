@@ -121,8 +121,10 @@
 	locked = 1
 
 	eject_wait = 1
-	spawn(30)
-		eject_wait = 0
+	addtimer(CALLBACK(src, PROC_REF(clear_eject_wait)), 30, TIMER_DELETE_ME)
+
+/obj/machinery/clonepod/proc/clear_eject_wait()
+	eject_wait = 0
 
 	//Get the clone body ready, let's calculate their health so the pod doesn't immediately eject them!!!
 	var/mob/living/carbon/human/H = BR.produce_human_mob(src,FALSE, FALSE, "clone ([rand(0,999)])")

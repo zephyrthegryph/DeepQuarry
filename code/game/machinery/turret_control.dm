@@ -241,7 +241,9 @@
 		enabled = FALSE
 		updateTurrets()
 
-		spawn(rand(60,600))
-			if(!enabled)
-				enabled = TRUE
-				updateTurrets()
+		addtimer(CALLBACK(src, PROC_REF(emp_reenable)), rand(60, 600), TIMER_DELETE_ME)
+
+/obj/machinery/turretid/proc/emp_reenable()
+	if(!enabled)
+		enabled = TRUE
+		updateTurrets()

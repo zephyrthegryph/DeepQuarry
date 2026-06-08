@@ -115,10 +115,12 @@
 		return
 	stat |= EMPED
 	disable_field() //shutting dowwwwwwn
-	spawn(rand(reboot_delay_min,reboot_delay_max))
-		stat &= ~EMPED
-		if(alwaysactive || wasactive) //reboot after a short delay if we were online before
-			generate_field()
+	addtimer(CALLBACK(src, PROC_REF(emp_reboot)), rand(reboot_delay_min, reboot_delay_max), TIMER_DELETE_ME)
+
+/obj/machinery/atmospheric_field_generator/proc/emp_reboot()
+	stat &= ~EMPED
+	if(alwaysactive || wasactive) //reboot after a short delay if we were online before
+		generate_field()
 
 /obj/machinery/atmospheric_field_generator/ex_act(severity)
 	switch(severity)
