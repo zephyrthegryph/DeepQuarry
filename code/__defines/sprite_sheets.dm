@@ -13,7 +13,11 @@ SPECIES_VULPKANIN = 'icons/inventory/suit/mob_vulpkanin.dmi',\
 SPECIES_ZORREN_HIGH = 'icons/inventory/suit/mob_vulpkanin.dmi',\
 SPECIES_FENNEC = 'icons/inventory/suit/mob_vulpkanin.dmi',\
 SPECIES_ALTEVIAN = 'icons/inventory/suit/mob_altevian.dmi',\
+<<<<<<< HEAD
 SPECIES_XENOMORPH_HYBRID = 'icons/inventory/suit/mob_xenomorph_hybrid.dmi') // Adding Xenohybrid
+=======
+SPECIES_XENOMORPH_HYBRID = 'modular_chomp/icons/inventory/suit/mob_xenomorph_hybrid.dmi')
+>>>>>>> worktree-wf_a47e2fc7-d42-4
 #define VR_SPECIES_SPRITE_SHEETS_HEAD_MOB list(\
 SPECIES_HUMAN = 'icons/inventory/head/mob.dmi',\
 SPECIES_TAJARAN = 'icons/inventory/head/mob_tajaran.dmi',\

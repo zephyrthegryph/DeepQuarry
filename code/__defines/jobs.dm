@@ -56,7 +56,7 @@
 	#define JOB_ALT_LOGISTICS_MANAGER "Logistics Manager"
 	#define JOB_ALT_CARGO_SUPERVISOR "Cargo Supervisor"
 
-#define JOB_PATHFINDER "Pathfinder" // was Pathfinder  //CHOMP explo keep
+#define JOB_PATHFINDER "Pathfinder"
 	// Pathfinder alt titles
 	#define JOB_ALT_EXPEDITION_LEAD "Expedition Lead"
 	#define JOB_ALT_EXPLORATION_MANAGER "Exploration Manager"
@@ -70,7 +70,7 @@
 	#define JOB_ALT_RESEARCH_INTERN "Research Intern"
 	#define JOB_ALT_SECURITY_CADET "Security Cadet"
 	#define JOB_ALT_JR_CARGO_TECH "Jr. Cargo Tech"
-	#define JOB_ALT_JR_EXPLORER "Jr. Explorer" //CHOMP explo keep
+	#define JOB_ALT_JR_EXPLORER "Jr. Explorer"
 	#define JOB_ALT_SERVER "Server"
 	#define JOB_ALT_ASSISTANT "Assistant"
 		//Assistant/Visitor/Whatever
@@ -226,14 +226,14 @@
 
 
 // Station Away Team / Explorer jobs
-#define JOB_EXPLORER "Explorer" // was Explorer //CHOMP explo keep
+#define JOB_EXPLORER "Explorer"
 	// Explorer alt titles
 	#define JOB_ALT_SURVEYOR "Surveyor"
 	#define JOB_ALT_OFFSITE_SCOUT "Offsite Scout"
 	#define JOB_ALT_EXPLORER_MEDIC "Explorer Medic" // Unused
 	#define JOB_ALT_EXPLORERE_TECHNICIAN "Explorer Technician" // Unused
 
-#define JOB_FIELD_MEDIC "Field Medic" // was Field Medic //CHOMP explo keep
+#define JOB_FIELD_MEDIC "Field Medic"
 	// Field Medic alt titles
 	#define JOB_ALT_EXPEDITION_MEDIC "Expedition Medic"
 	#define JOB_ALT_OFFSITE_MEDIC "Offsite Medic"
@@ -270,7 +270,11 @@
 	#define JOB_ALT_EMERGENCY_MEDICAL_TECHNICIAN "Emergency Medical Technician"
 	#define JOB_ALT_MEDICAL_RESPONDER "Medical Responder"
 
+<<<<<<< HEAD
 #define JOB_SEARCH_AND_RESCUE "Search and Rescue" // actual JOB here
+=======
+#define JOB_SEARCH_AND_RESCUE "Search and Rescue"
+>>>>>>> worktree-wf_a47e2fc7-d42-4
 
 #define JOB_GENETICIST "Geneticist" //Disabled atm
 //___________________________________________________________
@@ -363,7 +367,7 @@
 //___________________________________________________________
 
 
-// Station Sepcial jobs	//CHOMPNotice, all of those are used as JOB_ENTERTAINER alts
+// Station Sepcial jobs
 #define JOB_CLOWN "Clown"
 	// Clown alt titles
 	#define JOB_ALT_JESTER "Jester"
@@ -403,7 +407,11 @@
 //___________________________________________________________
 
 
+<<<<<<< HEAD
 //  Blueshield jobs
+=======
+// Blueshield jobs
+>>>>>>> worktree-wf_a47e2fc7-d42-4
 #define JOB_BLUESHIELD_GUARD "Blueshield Guard"
 #define JOB_SECURITY_PILOT "Security Pilot"
 
@@ -478,7 +486,11 @@
 #define ATMOSTECH (1<<7)
 #define AI_DEPT (1<<8)
 #define CYBORG (1<<9)
+<<<<<<< HEAD
 #define BRIGPHYS (1<<10) // Brig Physician
+=======
+#define BRIGPHYS (1<<10)
+>>>>>>> worktree-wf_a47e2fc7-d42-4
 #define CLOWN (1<<13)
 #define MIME (1<<14)
 #define INTERN (1<<15)
@@ -500,7 +512,11 @@
 #define EXPLORER (1<<12)
 #define SAR (1<<13)
 #define XENOBOTANIST (1<<14)
+<<<<<<< HEAD
 #define PILOT (1<<15) // ours is with the other explo jobs.
+=======
+#define PILOT (1<<15)
+>>>>>>> worktree-wf_a47e2fc7-d42-4
 
 #define CIVILIAN (1<<2)
 
@@ -521,9 +537,15 @@
 #define ENTERTAINER (1<<14)
 #define ENTREPRENEUR (1<<15)
 
+<<<<<<< HEAD
 #define OTHER (1<<10) // Note: Unused on VS. Used downstream.
 #define NONCREW (1<<0)
 #define ANOMALY (1<<0) // Note: Unused on VS. Used downstream.
+=======
+#define OTHER (1<<10)
+#define NONCREW (1<<0)
+#define ANOMALY (1<<0)
+>>>>>>> worktree-wf_a47e2fc7-d42-4
 
 #define TALON (1<<3)
 
@@ -542,5 +564,5 @@ GLOBAL_LIST_INIT(command_positions, list(
 	JOB_RESEARCH_DIRECTOR,
 	JOB_CHIEF_MEDICAL_OFFICER,
 	JOB_COMMAND_SECRETARY,
-	JOB_BLUESHIELD_GUARD // CHOMPEnable
+	JOB_BLUESHIELD_GUARD
 ))

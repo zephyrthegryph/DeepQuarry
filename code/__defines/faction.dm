@@ -121,7 +121,10 @@
 
 #define FACTION_MATH "MATH"
 
+<<<<<<< HEAD
 // factions
+=======
+>>>>>>> worktree-wf_a47e2fc7-d42-4
 #define FACTION_TYR "tyr"
 #define FACTION_TYR_ANT "tyr_ants"
 #define FACTION_AWAYMISSION "awaymission"

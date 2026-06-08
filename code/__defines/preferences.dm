@@ -29,7 +29,10 @@
 /// This preference is account specific.
 #define PREFERENCE_PLAYER "player"
 
+<<<<<<< HEAD
 // Widget hints describing how a pref renders in the auto-generated UI.
+=======
+>>>>>>> worktree-wf_a47e2fc7-d42-4
 /// Auto-pick the widget based on the pref subtype.
 #define PREF_WIDGET_AUTO        "auto"
 /// Plain text input.
@@ -53,20 +56,29 @@
 /// Server-managed; not rendered as an editable control.
 #define PREF_WIDGET_HIDDEN      "hidden"
 
+<<<<<<< HEAD
 // Sentinel returned by /datum/preferences/proc/update_preference_v2() and
 // /datum/preference_editor.handle_action().
+=======
+>>>>>>> worktree-wf_a47e2fc7-d42-4
 #define PREF_UPDATE_ACCEPTED    1
 #define PREF_UPDATE_REJECTED    2
 #define PREF_UPDATE_UNCHANGED   3
 
+<<<<<<< HEAD
 // Constraint cascade safety + transactional pref update helpers.
+=======
+>>>>>>> worktree-wf_a47e2fc7-d42-4
 #define PREF_CONSTRAINT_MAX_DEPTH 8
 #define PREF_TRANSACTION_BEGIN(prefs) prefs.begin_update_batch()
 #define PREF_TRANSACTION_END(prefs)   prefs.end_update_batch()
 
+<<<<<<< HEAD
 // autohiss client.autohiss_mode levels. Used by both
 // /datum/preference/text/human/autohiss.apply_to_human() and the Login() hook on
 // /mob/living/carbon/human. Previously redefined locally in each file.
+=======
+>>>>>>> worktree-wf_a47e2fc7-d42-4
 #define AUTOHISS_OFF    0
 #define AUTOHISS_BASIC  1
 #define AUTOHISS_FULL   2
