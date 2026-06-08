@@ -1,24 +1,24 @@
 /datum/powernet
-	var/list/cables = list()	// all cables & junctions
-	var/list/nodes = list()		// all connected machines
+	var/list/cables = list()   // all cables & junctions
+	var/list/nodes  = list()   // all connected machines
 
-	var/load = 0				// the current load on the powernet, increased by each machine at processing
-	var/newavail = 0			// what available power was gathered last tick, then becomes...
-	var/avail = 0				//...the current available power in the powernet
-	var/viewavail = 0			// the availability as it appears on the power console (gradually updated)
-	var/viewload = 0			// the load as it appears on the power console (gradually updated)
-	var/number = 0				// Unused //TODEL
+	var/load     = 0           // current load; increased by each machine during processing
+	var/newavail = 0           // power gathered this tick; becomes avail at tick end
+	var/avail    = 0           // available power for this tick
+	var/viewavail = 0          // availability as shown on power consoles (smoothed)
+	var/viewload  = 0          // load as shown on power consoles (smoothed)
+	var/number    = 0          // Unused — TODEL
 
-	var/smes_demand = 0			// Amount of power demanded by all SMESs from this network. Needed for load balancing.
-	var/list/inputting = list()	// List of SMESs that are demanding power from this network. Needed for load balancing.
-	var/smes_avail = 0			// Amount of power (avail) from SMESes. Used by SMES load balancing
-	var/smes_newavail = 0		// As above, just for newavail
+	var/smes_demand    = 0     // total power demanded by SMESs from this network (for load balancing)
+	var/list/inputting = list()// terminals whose SMES masters are demanding input this tick
+	var/smes_avail     = 0     // power (avail) contributed by SMESes
+	var/smes_newavail  = 0     // as above, for newavail
 
-	var/perapc = 0			// per-apc avilability
-	var/perapc_excess = 0
-	var/netexcess = 0			// excess power on the powernet (typically avail-load)
+	var/perapc       = 0       // per-APC availability ration
+	var/perapc_excess = 0      // accumulated excess fed back to perapc
+	var/netexcess    = 0       // excess power on the net (avail - load), updated each tick
 
-	var/problem = 0				// If this is not 0 there is some sort of issue in the powernet. Monitors will display warnings.
+	var/problem = 0            // non-zero = some issue; power monitors will display warnings
 
 /datum/powernet/New()
 	START_PROCESSING_POWERNET(src)
@@ -34,8 +34,8 @@
 	STOP_PROCESSING_POWERNET(src)
 	return ..()
 
-//Returns the amount of excess power (before refunding to SMESs) from last tick.
-//This is for machines that might adjust their power consumption using this data.
+/// last_surplus() — excess power before refunds to SMESes, from last tick.
+/// Machines may read this to adjust consumption.
 /datum/powernet/proc/last_surplus()
 	return max(avail - load, 0)
 
@@ -47,129 +47,130 @@
 /datum/powernet/proc/is_empty()
 	return !cables.len && !nodes.len
 
-//remove a cable from the current powernet
-//if the powernet is then empty, delete it
-//Warning : this proc DON'T check if the cable exists
+/// remove_cable() — remove a cable and delete the powernet if now empty.
+/// Caller must verify the cable is in this net before calling.
 /datum/powernet/proc/remove_cable(obj/structure/cable/C)
 	cables -= C
 	C.powernet = null
-	if(is_empty())//the powernet is now empty...
-		qdel(src)///... delete it
+	if(is_empty())
+		qdel(src)
 
-//add a cable to the current powernet
-//Warning : this proc DON'T check if the cable exists
+/// add_cable() — add a cable, migrating it from its current net if needed.
+/// Idempotent: safe to call when the cable is already on this net.
 /datum/powernet/proc/add_cable(obj/structure/cable/C)
-	if(C.powernet)// if C already has a powernet...
+	if(C.powernet)
 		if(C.powernet == src)
 			return
-		else
-			C.powernet.remove_cable(C) //..remove it
+		C.powernet.remove_cable(C)
 	C.powernet = src
-	cables +=C
+	cables += C
 
-//remove a power machine from the current powernet
-//if the powernet is then empty, delete it
-//Warning : this proc DON'T check if the machine exists
+/// remove_machine() — remove a power machine; deletes the net if now empty.
+/// Caller must verify the machine is in this net before calling.
 /datum/powernet/proc/remove_machine(obj/machinery/power/M)
-	nodes -=M
+	nodes -= M
 	M.powernet = null
-	if(is_empty())//the powernet is now empty...
-		qdel(src)///... delete it - qdel
+	if(is_empty())
+		qdel(src)
 
-
-//add a power machine to the current powernet
-//Warning : this proc DON'T check if the machine exists
+/// add_machine() — add a power machine, disconnecting it from its old net first.
+/// Idempotent: safe to call when the machine is already on this net.
 /datum/powernet/proc/add_machine(obj/machinery/power/M)
-	if(M.powernet)// if M already has a powernet...
+	if(M.powernet)
 		if(M.powernet == src)
 			return
-		else
-			M.disconnect_from_network()//..remove it
+		M.disconnect_from_network()
 	M.powernet = src
 	nodes[M] = M
 
-// Triggers warning for certain amount of ticks
+/// trigger_warning() — flag a powernet problem visible on power monitors.
 /datum/powernet/proc/trigger_warning(duration_ticks = 20)
 	problem = max(duration_ticks, problem)
 
-
-//handles the power changes in the powernet
-//called every ticks by the powernet controller
+/// reset() — handle per-tick power accounting.
+/// Called every tick by the powernet controller (SSmachines).
+///
+/// Steps:
+///   1. Decay the problem flag.
+///   2. Update per-APC availability ration.
+///   3. Delegate SMES input balancing to /datum/powernet_balancer.
+///   4. Restore excess power to SMESes.
+///   5. Smooth the viewable load/avail.
+///   6. Reset accumulators for the next tick.
 /datum/powernet/proc/reset()
-	var/numapc = 0
-
+	// 1. Decay problem warning.
 	if(problem > 0)
 		problem = max(problem - 1, 0)
 
-	if(nodes && nodes.len) // Added to fix a bad list bug -- TLE
+	// 2. Count APC terminals and update per-APC ration.
+	var/numapc = 0
+	if(nodes && nodes.len)
 		for(var/obj/machinery/power/terminal/term in nodes)
-			if( istype( term.master, /obj/machinery/power/apc ) )
+			// Guard: terminal may have been qdel'd mid-tick.
+			if(!term || QDELETED(term))
+				continue
+			if(istype(term.master, /obj/machinery/power/apc))
 				numapc++
 
 	netexcess = avail - load
 
 	if(numapc)
-		//very simple load balancing. If there was a net excess this tick then it must have been that some APCs used less than perapc, since perapc*numapc = avail
-		//Therefore we can raise the amount of power rationed out to APCs on the assumption that those APCs that used less than perapc will continue to do so.
-		//If that assumption fails, then some APCs will miss out on power next tick, however it will be rebalanced for the tick after.
-		if (netexcess >= 0)
-			perapc_excess += min(netexcess/numapc, (avail - perapc) - perapc_excess)
+		// Simple load balancing: if net surplus existed this tick some APCs used less
+		// than perapc, so raise the ration slightly expecting the same next tick.
+		// Reverts to zero on deficit so we don't over-promise.
+		if(netexcess >= 0)
+			perapc_excess += min(netexcess / numapc, (avail - perapc) - perapc_excess)
 		else
 			perapc_excess = 0
+		perapc = (numapc > 0) ? (avail / numapc + perapc_excess) : 0
 
-		perapc = avail/numapc + perapc_excess
+	// 3. SMES input balancing — delegated to powernet_balancer.
+	//    Only runs when there is actual SMES demand; balancer guards its own
+	//    division-by-zero and validates terminal refs.
+	if(inputting.len && smes_demand > 0)
+		var/datum/powernet_balancer/balancer = new(src)
+		balancer.execute()
+		qdel(balancer)
 
-
-	// At this point, all other machines have finished using power. Anything left over may be used up to charge SMESs.
-	if(inputting.len && smes_demand)
-		var/smes_input_percentage = between(0, (netexcess / smes_demand) * 100, 100)
-		for(var/obj/machinery/power/terminal/T in inputting)
-			var/obj/machinery/power/smes/S = T.master
-			if(istype(S))
-				S.input_power(smes_input_percentage, T)
-
+	// 4. Restore excess power to SMESes proportionally.
 	netexcess = avail - load
 	if(netexcess)
 		var/perc = get_percent_load(1)
 		for(var/obj/machinery/power/smes/S in nodes)
+			if(!S || QDELETED(S))
+				continue
 			S.restore(perc)
 
-	//updates the viewed load (as seen on power computers)
+	// 5. Smooth viewable stats.
 	viewavail = round(0.8 * viewavail + 0.2 * avail)
-	viewload = round(0.8 * viewload + 0.2 * load)
+	viewload  = round(0.8 * viewload  + 0.2 * load)
 
-	//reset the powernet
-	load = 0
-	avail = newavail
-	smes_avail = smes_newavail
+	// 6. Reset accumulators for next tick.
+	load         = 0
+	avail        = newavail
+	smes_avail   = smes_newavail
 	inputting.Cut()
-	smes_demand = 0
-	newavail = 0
+	smes_demand  = 0
+	newavail     = 0
 	smes_newavail = 0
 
 /datum/powernet/proc/get_percent_load(smes_only = 0)
 	if(smes_only)
-		var/smes_used = load - (avail - smes_avail) 			// SMESs are always last to provide power
-		if(!smes_used || smes_used < 0 || !smes_avail)			// SMES power isn't available or being used at all, SMES load is therefore 0%
+		var/smes_used = load - (avail - smes_avail)   // SMESes are last to provide power
+		if(!smes_used || smes_used < 0 || !smes_avail)
 			return 0
-		return between(0, (smes_used / smes_avail) * 100, 100)	// Otherwise return percentage load of SMESs.
+		return between(0, (smes_used / smes_avail) * 100, 100)
 	else
-		if(!load)
+		if(!load || !avail)
 			return 0
 		return between(0, (load / avail) * 100, 100)
 
 /datum/powernet/proc/get_electrocute_damage()
-	//1kW = 5
-	//10kW = 24
-	//100kW = 45
-	//250kW = 53
-	//1MW = 66
-	//10MW = 88
-	//100MW = 110
-	//1GW = 132
+	// Logarithmic damage scaling:
+	// 1kW=5, 10kW=24, 100kW=45, 250kW=53, 1MW=66, 10MW=88, 100MW=110, 1GW=132
 	if(avail >= 1000)
-		var/damage = log(1.1,avail)
-		damage = damage - (log(1.1,damage)*1.5)
+		var/damage = log(1.1, avail)
+		damage = damage - (log(1.1, damage) * 1.5)
 		return round(damage)
 	else
 		return 0
@@ -178,17 +179,12 @@
 // Misc.
 ///////////////////////////////////////////////
 
-
-// return a knot cable (O-X) if one is present in the turf
-// null if there's none
+// return a knot cable (O-X) if one is present in the turf, null otherwise.
 /turf/proc/get_cable_node()
-	// if(!istype(src, /turf/simulated/floor)) // Removal - Why?
-		// return null // Removal - Why?
 	for(var/obj/structure/cable/C in src)
 		if(C.d1 == 0)
 			return C
 	return null
-
 
 /area/proc/get_apc()
 	return apc
