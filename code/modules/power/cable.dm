@@ -105,10 +105,16 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	GLOB.cable_list += src //add it to the global cable list
 
 
-/obj/structure/cable/Destroy()					// called when a cable is deleted
+/obj/structure/cable/Destroy()
+	// Update powernets before removing from the global list so propagate_network
+	// can still walk the cable graph through us (cut_cable_from_powernet sets
+	// src.loc = null internally to exclude the cut cable from propagation).
 	if(powernet)
-		cut_cable_from_powernet()				// update the powernets
-	GLOB.cable_list -= src							//remove it from global cable list
+		cut_cable_from_powernet()
+	// Null the ref in case cut_cable_from_powernet left it set (e.g. the
+	// powernet was qdel'd but the cable's var wasn't cleared by remove_cable).
+	powernet = null
+	GLOB.cable_list -= src
 	return ..()									// then go ahead and delete the cable
 
 /obj/structure/cable/examine(mob/user)
@@ -334,7 +340,10 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	if(!(d1 == direction || d2 == direction)) //if the cable is not pointed in this direction, do nothing
 		return
 
-	var/turf/TB  = get_zstep(src, direction)
+	// get_zstep handles UP/DOWN z-level transitions as well as cardinal dirs.
+	var/turf/TB = get_zstep(src, direction)
+	if(!TB)  // no turf in that direction (edge of z-stack for UP/DOWN)
+		return
 
 	for(var/obj/structure/cable/C in TB)
 
@@ -345,6 +354,10 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 			continue
 
 		if(C.d1 == fdir || C.d2 == fdir) //we've got a matching cable in the neighbor turf
+			// Idempotency guard: already on the same network, nothing to do.
+			if(C.powernet && powernet && C.powernet == powernet)
+				continue
+
 			if(!C.powernet) //if the matching cable somehow got no powernet, make him one (should not happen for cables)
 				var/datum/powernet/newPN = new()
 				newPN.add_cable(C)
@@ -459,39 +472,66 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 		if(PN.is_empty()) //can happen with machines made nodeless when smoothing cables
 			qdel(PN)
 
-// cut the cable's powernet at this cable and updates the powergrid
+// cut_cable_from_powernet() — remove this cable from the powernet and
+// re-propagate the graph on each side of the cut.
+//
+// Special cases handled:
+//   * d1 == 0 (node/knot cable): check machines on the same turf.
+//   * d1 == UP / d1 == DOWN: use get_zstep instead of get_step so
+//     z-level transitions are followed correctly.
+//   * Only-bridge case (P_list.len == 0): cable was isolated; remove it,
+//     scan for machines that may have lost their network connection.
 /obj/structure/cable/proc/cut_cable_from_powernet()
-	var/turf/T1 = loc
-	var/list/P_list
-	if(!T1)	return
-	if(d1)
-		T1 = get_step(T1, d1)
-		P_list = power_list(T1, src, turn(d1,180),0,cable_only = 1)	// what adjacently joins on to cut cable...
-
-	P_list += power_list(loc, src, d1, 0, cable_only = 1)//... and on turf
-
-
-	if(P_list.len == 0)//if nothing in both list, then the cable was a lone cable, just delete it and its powernet
-		powernet.remove_cable(src)
-
-		for(var/obj/machinery/power/P in T1)//check if it was powering a machine
-			if(!P.connect_to_network()) //can't find a node cable on a the turf to connect to
-				P.disconnect_from_network() //remove from current network (and delete powernet)
+	var/turf/home = loc  // cable's current turf — preserved before loc=null
+	if(!home)
+		// Cable already has no turf (e.g. double-Destroy); clean up ref and exit.
+		if(powernet)
+			powernet.remove_cable(src)
 		return
 
-	// remove the cut cable from its turf and powernet, so that it doesn't get count in propagate_network worklist
+	// Build the neighbor-turf cable list using get_zstep so UP/DOWN cables
+	// work correctly.  For a node cable (d1 == 0) there is no d1 side.
+	var/list/P_list = list()
+	var/turf/d1_neighbor = null  // turf on the d1 side of this cable
+
+	if(d1)
+		d1_neighbor = get_zstep(home, d1)  // handles UP/DOWN + cardinal
+		if(d1_neighbor)
+			P_list = power_list(d1_neighbor, src, GLOB.reverse_dir[d1], 0, cable_only = 1)
+
+	P_list += power_list(home, src, d1, 0, cable_only = 1)  // cables on our turf
+
+	if(P_list.len == 0)
+		// Isolated cable (only bridge or lone segment): just remove it.
+		powernet.remove_cable(src)
+
+		// If this was a node cable, machines on the turf may have lost power;
+		// try to reconnect them to any remaining node on the same turf.
+		if(d1 == 0)
+			for(var/obj/machinery/power/P in home)
+				if(P.powernet == 0) continue  // APCs excluded by convention
+				if(!P.connect_to_network())
+					P.disconnect_from_network()
+		return
+
+	// Multi-segment cable: temporarily move the cable off the turf so that
+	// propagate_network doesn't re-add it while rebuilding the split network.
 	loc = null
-	powernet.remove_cable(src) //remove the cut cable from its powernet
+	powernet.remove_cable(src)
 
-	if(!SSmachines.powernet_is_defered()) // Deferring until rebuild
-		var/datum/powernet/newPN = new()// creates a new powernet...
-		propagate_network(P_list[1], newPN)//... and propagates it to the other side of the cable
+	if(!SSmachines.powernet_is_defered())
+		// Propagate a fresh powernet from one side; the other side retains the
+		// old (now empty on this cable's end) network or gets a new one.
+		var/datum/powernet/newPN = new()
+		propagate_network(P_list[1], newPN)
 
-	// Disconnect machines connected to nodes
-	if(d1 == 0) // if we cut a node (O-X) cable
-		for(var/obj/machinery/power/P in T1)
-			if(!P.connect_to_network()) //can't find a node cable on a the turf to connect to
-				P.disconnect_from_network() //remove from current network
+	// Node cable cut: machines on the original turf must re-evaluate their
+	// connection since the node is gone.
+	if(d1 == 0)
+		for(var/obj/machinery/power/P in home)
+			if(P.powernet == 0) continue  // APCs excluded by convention
+			if(!P.connect_to_network())
+				P.disconnect_from_network()
 
 ///////////////////////////////////////////////
 // The cable coil object, used for laying cable
