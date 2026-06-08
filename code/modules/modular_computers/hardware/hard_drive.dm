@@ -53,6 +53,12 @@
 	icon_state = "hdd_micro"
 	hardware_size = 1
 
+/obj/item/computer_hardware/hard_drive/get_slot_var()
+	return "hard_drive"
+
+/obj/item/computer_hardware/hard_drive/is_critical_slot()
+	return TRUE
+
 /obj/item/computer_hardware/hard_drive/diagnostics(mob/user)
 	..()
 	// 999 is a byond limit that is in place. It's unlikely someone will reach that many files anyway, since you would sooner run out of space.
@@ -171,8 +177,9 @@
 			return F
 
 /obj/item/computer_hardware/hard_drive/Destroy()
-	if(holder2 && (holder2.hard_drive == src))
-		holder2.hard_drive = null
+	var/slot = get_slot_var()
+	if(holder2 && (holder2.vars[slot] == src))
+		holder2.vars[slot] = null
 	stored_files = null
 	return ..()
 

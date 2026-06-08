@@ -73,9 +73,13 @@ GLOBAL_VAR_INIT(ntnet_card_uid, 1)
 	icon_state = "netcard_ethernet"
 	hardware_size = 3
 
+/obj/item/computer_hardware/network_card/get_slot_var()
+	return "network_card"
+
 /obj/item/computer_hardware/network_card/Destroy()
-	if(holder2 && (holder2.network_card == src))
-		holder2.network_card = null
+	var/slot = get_slot_var()
+	if(holder2 && (holder2.vars[slot] == src))
+		holder2.vars[slot] = null
 	holder2 = null
 	return ..()
 
@@ -128,8 +132,3 @@ GLOBAL_VAR_INIT(ntnet_card_uid, 1)
 				break
 		return best
 	return 0 // No computer!
-
-/obj/item/computer_hardware/network_card/Destroy()
-	if(holder2 && (holder2.network_card == src))
-		holder2.network_card = null
-	return ..()

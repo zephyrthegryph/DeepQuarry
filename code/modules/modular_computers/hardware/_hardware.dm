@@ -55,6 +55,22 @@
 	return ..()
 
 
+/// Returns the name of the var on /obj/item/modular_computer that holds this
+/// hardware slot, or null if this type has no dedicated named slot.
+/// Each concrete hardware subtype overrides this so that
+/// try_install_component / uninstall_component can work generically via
+/// vars[] without requiring an explicit branch per hardware kind.
+/// Adding a new hardware type only requires: defining the var on
+/// /obj/item/modular_computer and overriding this proc — no edits to core.
+/obj/item/computer_hardware/proc/get_slot_var()
+	return null
+
+/// Returns TRUE if hot-removing this component while the computer is running
+/// should trigger an immediate shutdown (e.g. processor, primary hard drive).
+/// Override to TRUE on hardware whose absence makes the computer inoperable.
+/obj/item/computer_hardware/proc/is_critical_slot()
+	return FALSE
+
 /// Returns a list of lines containing diagnostic information for display.
 /obj/item/computer_hardware/proc/diagnostics(mob/user)
 	to_chat(user, "Hardware Integrity Test... (Corruption: [damage]/[max_damage]) [damage > damage_failure ? "FAIL" : damage > damage_malfunction ? "WARN" : "PASS"]")

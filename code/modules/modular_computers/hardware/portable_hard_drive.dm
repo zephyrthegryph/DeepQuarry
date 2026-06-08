@@ -23,12 +23,22 @@
 	hardware_size = 1
 	max_capacity = 256
 
+/// Portable drives use a separate slot var from regular hard drives so both can
+/// be installed in the same computer simultaneously.
+/obj/item/computer_hardware/hard_drive/portable/get_slot_var()
+	return "portable_drive"
+
+/// Portable drives are hot-swappable and do not trigger a computer shutdown.
+/obj/item/computer_hardware/hard_drive/portable/is_critical_slot()
+	return FALSE
+
 /obj/item/computer_hardware/hard_drive/portable/Initialize(mapload)
 	. = ..()
 	stored_files = list()
 	recalculate_size()
 
 /obj/item/computer_hardware/hard_drive/portable/Destroy()
-	if(holder2 && (holder2.portable_drive == src))
-		holder2.portable_drive = null
+	var/slot = get_slot_var()
+	if(holder2 && (holder2.vars[slot] == src))
+		holder2.vars[slot] = null
 	return ..()
