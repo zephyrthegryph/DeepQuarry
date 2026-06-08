@@ -1,5 +1,7 @@
 //! Metadata + lifecycle functions.
+use crate::panic_safe;
 use const_format::formatcp as const_format;
+use meowtonin::ByondResult;
 
 // bosion can fail to resolve git state in some environments (shallow clone, git
 // worktrees, missing git binary). Fall back to literal placeholders so the build
@@ -32,15 +34,18 @@ pub fn verdigris_features() -> &'static str {
 /// Install the FFI panic hook and any other one-time global state.
 /// DM should call this in `/world/New()` before any other verdigris call.
 #[byond_fn]
-pub fn verdigris_init() {
-    crate::panic::ensure_panic_hook();
+pub fn verdigris_init() -> ByondResult<()> {
+    panic_safe!({
+        Ok(())
+    })
 }
 
 /// Drop transient Rust-side state. Currently a no-op; once the gas-mixture
 /// arena exists this becomes the drain hook for a clean `/world/New()`.
 #[byond_fn]
-pub fn cleanup() {
-    let _ = std::panic::catch_unwind(|| {
+pub fn cleanup() -> ByondResult<()> {
+    panic_safe!({
         // future: arena.drain(); reaction_registry.clear(); etc.
-    });
+        Ok(())
+    })
 }
