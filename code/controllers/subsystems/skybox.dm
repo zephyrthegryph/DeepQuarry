@@ -118,11 +118,9 @@ SUBSYSTEM_DEF(skybox)
 		if(istype(O))
 			var/image/self_image = O.generate_skybox(z)
 			new_overlays += self_image
-			//VOREStation Add
 			if(isbelly(O.loc)) // Teehee
 				base.icon = 'icons/skybox/skybox_vr.dmi'
 				base.icon_state = "flesh"
-			//VOREStation Add End
 			else
 				for(var/obj/effect/overmap/visitable/other in O.loc)
 					if(other != O)

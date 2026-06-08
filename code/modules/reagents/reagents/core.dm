@@ -55,12 +55,12 @@
 	var/effective_dose = dose
 	if(issmall(M)) effective_dose *= 2
 
-	var/is_vampire = FALSE //VOREStation Edit START
+	var/is_vampire = FALSE
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		if(H.species.bloodsucker)
 			H.adjust_nutrition(removed*30)
-			is_vampire = TRUE //VOREStation Edit END
+			is_vampire = TRUE
 	if(alien == IS_SLIME)	// Treat it like nutriment for the jello, but not equivalent.
 		if(data["species"] == M.species.name)	// Unless it's Promethean goo, then refill this one's goo.
 			M.inject_blood(src, volume * volume_mod)
@@ -74,11 +74,11 @@
 		return
 
 	if(effective_dose > 5)
-		if(!is_vampire) //VOREStation Edit.
-			M.adjustToxLoss(removed) //VOREStation Edit.
+		if(!is_vampire) // .
+			M.adjustToxLoss(removed) // .
 	if(effective_dose > 15)
-		if(!is_vampire) //VOREStation Edit.
-			M.adjustToxLoss(removed) //VOREStation Edit.
+		if(!is_vampire) // .
+			M.adjustToxLoss(removed) // .
 	if(data && data["viruses"])
 		var/list/vlist = data["viruses"]
 		if(vlist.len)
@@ -269,7 +269,7 @@
 
 	var/hotspot = (locate(/obj/fire) in T)
 	if(hotspot && !istype(T, /turf/space))
-		var/datum/gas_mixture/lowertemp = T.remove_air(xgm_total_moles(T.return_air())) // DQEdit — XGM T:air:total_moles → LINDA helper
+		var/datum/gas_mixture/lowertemp = T.remove_air(xgm_total_moles(T.return_air())) // XGM T:air:total_moles → LINDA helper
 		lowertemp.temperature = max(min(lowertemp.temperature-2000, lowertemp.temperature / 2), 0)
 		lowertemp.react()
 		T.assume_air(lowertemp)
@@ -284,7 +284,7 @@
 	else if(volume >= 10)
 		T.wet_floor(1)
 
-	T.apply_fire_protection() // CHOMPAdd - Apply fire protection so fires can actually be put out.
+	T.apply_fire_protection() // Apply fire protection so fires can actually be put out.
 
 /datum/reagent/water/touch_obj(obj/O, amount)
 	..()
@@ -340,7 +340,7 @@
 	if(alien == IS_SLIME && prob(10))
 		M.visible_message(span_warning("[M]'s flesh sizzles where the water touches it!"), span_danger("Your flesh burns in the water!"))
 	..()
-//VOREStation Edit End,
+// ,
 
 #undef WATER_LATENT_HEAT
 

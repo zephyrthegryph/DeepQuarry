@@ -1,17 +1,17 @@
 /datum/decl/hierarchy/outfit/job/assistant
-	name = OUTFIT_JOB_NAME(JOB_ALT_VISITOR) //VOREStation Edit - Visitor not Assistant
-	id_type = /obj/item/card/id/generic	//VOREStation Edit
+	name = OUTFIT_JOB_NAME(JOB_ALT_VISITOR) // Visitor not Assistant
+	id_type = /obj/item/card/id/generic
 
 /datum/decl/hierarchy/outfit/job/assistant/visitor
 	name = OUTFIT_JOB_NAME(JOB_ALT_VISITOR)
 	id_pda_assignment = JOB_ALT_VISITOR
 	uniform = /obj/item/clothing/under/assistantformal
 
-//VOREStation Add - Interns
+// Interns
 /datum/decl/hierarchy/outfit/job/assistant/intern
 	name = OUTFIT_JOB_NAME(JOB_INTERN)
 	id_type = /obj/item/card/id/civilian
-//VOREStation Add End - Interns
+// Interns
 
 /datum/decl/hierarchy/outfit/job/assistant/resident
 	name = OUTFIT_JOB_NAME(JOB_ALT_RESIDENT)
@@ -28,7 +28,7 @@
 /datum/decl/hierarchy/outfit/job/service/bartender
 	name = OUTFIT_JOB_NAME(JOB_BARTENDER)
 	uniform = /obj/item/clothing/under/rank/bartender
-	id_type = /obj/item/card/id/civilian/service/bartender		//VOREStation Edit
+	id_type = /obj/item/card/id/civilian/service/bartender
 	pda_type = /obj/item/pda/bar
 	backpack_contents = list(/obj/item/clothing/accessory/permit/gun/bar = 1)
 
@@ -48,7 +48,7 @@
 	uniform = /obj/item/clothing/under/rank/chef
 	suit = /obj/item/clothing/suit/chef
 	head = /obj/item/clothing/head/chefhat
-	id_type = /obj/item/card/id/civilian/service/chef		//VOREStation Edit
+	id_type = /obj/item/card/id/civilian/service/chef
 	pda_type = /obj/item/pda/chef
 
 /datum/decl/hierarchy/outfit/job/service/chef/cook
@@ -73,13 +73,13 @@
 	satchel_one = /obj/item/storage/backpack/satchel/hyd
 	messenger_bag = /obj/item/storage/backpack/messenger/hyd
 	sports_bag = /obj/item/storage/backpack/sport/hyd
-	id_type = /obj/item/card/id/civilian/service/botanist	//VOREStation Edit
+	id_type = /obj/item/card/id/civilian/service/botanist
 	pda_type = /obj/item/pda/botanist
 
 /datum/decl/hierarchy/outfit/job/service/janitor
 	name = OUTFIT_JOB_NAME(JOB_JANITOR)
 	uniform = /obj/item/clothing/under/rank/janitor
-	id_type = /obj/item/card/id/civilian/service/janitor		//VOREStation Edit
+	id_type = /obj/item/card/id/civilian/service/janitor
 	pda_type = /obj/item/pda/janitor
 
 /datum/decl/hierarchy/outfit/job/librarian
@@ -121,7 +121,7 @@
 	suit = /obj/item/clothing/suit/storage/hooded/explorer
 	gloves = /obj/item/clothing/gloves/black
 	id_slot = slot_wear_id
-	id_type = /obj/item/card/id/exploration					//VOREStation Edit
+	id_type = /obj/item/card/id/exploration
 	pda_slot = slot_belt
 	pda_type = /obj/item/pda/cargo // Brown looks more rugged
 	r_pocket = /obj/item/gps/explorer

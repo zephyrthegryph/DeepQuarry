@@ -8,7 +8,7 @@
 									/obj/item/radio/borg, \
 									/obj/item/rig/protean, \
 									/obj/item/implant
-//mob/living/simple_mob/borer, //VORESTATION AI TEMPORARY REMOVAL REPLACE BACK IN LIST WHEN RESOLVED
+// mob/living/simple_mob/borer, // AI TEMPORARY REMOVAL REPLACE BACK IN LIST WHEN RESOLVED
 
 /// Vore unique objects
 #define VENTCRAWL_VORE_WHITELIST 	/obj/belly, \

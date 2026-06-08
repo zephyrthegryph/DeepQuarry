@@ -33,7 +33,7 @@
 	if(length(default) < 12)
 		default.len = 12
 
-	// DQEdit — legacy browser-modal color_matrix_picker fallback removed.
+	// legacy browser-modal color_matrix_picker fallback removed.
 	// Without a valid target (atom or path) there's nothing to preview, so
 	// abort. The tgui_input_mode preference is ignored here — TGUI is the
 	// only matrix-input UI.

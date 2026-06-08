@@ -59,10 +59,10 @@
 		if(default_deconstruction_crowbar(user, O))
 			return
 
-	//VOREStation edit start - for solargrubs
+	// start - for solargrubs
 	if (istype(O, /obj/item/multitool))
 		return ..()
-	//VOREStation edit end
+	// end
 
 	if (istype(O,/obj/item/reagent_containers/glass) || \
 		istype(O,/obj/item/reagent_containers/food/drinks/glass2) || \
@@ -125,12 +125,12 @@
 	user.remove_from_mob(O)
 	O.loc = src
 	holdingitems += O
-	//CHOMPedit start
+	// start
 	if(istype(O,/obj/item/stack/material/supermatter))
 		var/obj/item/stack/material/supermatter/S = O
 		set_light(l_range = max(1, S.get_amount()/10), l_power = max(1, S.get_amount()/10), l_color = "#8A8A00")
 		addtimer(CALLBACK(src, PROC_REF(puny_protons)), 30 SECONDS)
-	//CHOMPedit end
+	// end
 	return 0
 
 /obj/machinery/reagentgrinder/click_alt(mob/user)

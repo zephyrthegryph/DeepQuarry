@@ -83,7 +83,7 @@
 	icon_state = "shieldsparkles"
 	duration = 6
 
-// VOREStation Add - Kinetic Accelerator/Medigun
+// Kinetic Accelerator/Medigun
 /obj/effect/temp_visual/kinetic_blast
 	name = "kinetic explosion"
 	icon = 'icons/obj/projectiles.dmi'
@@ -112,7 +112,6 @@
 	pixel_x = rand(-12, 12)
 	pixel_y = rand(-9, 0)
 	. = ..()
-// VOREStation Add End
 
 /obj/effect/temp_visual/circle_wave
 	icon = 'icons/effects/64x64.dmi'

@@ -91,7 +91,7 @@
 
 /obj/item/taperecorder/hear_talk(mob/M, list/message_pieces, verb)
 	var/msg = multilingual_to_message(message_pieces, requires_machine_understands = TRUE, with_capitalization = TRUE)
-	//START OF CHOMPEDIT
+	// START OF
 	var/voice = "Unknown"
 	if (M.type == /mob/living/carbon/human)
 	{
@@ -100,7 +100,7 @@
 	}
 	else
 		voice = M.name
-	//END OF CHOMPEDIT
+	// END OF
 	if(mytape && recording)
 		mytape.record_speech("[voice] [verb], \"[msg]\"")
 

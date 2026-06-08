@@ -312,7 +312,7 @@
 	push_data()
 	activate_pin(2)
 
-//CHOMPADDITION Math iterators
+// ITION Math iterators
 /obj/item/integrated_circuit/arithmetic/iterator
 	name = "iterator"
 	desc = "This circuit adds Y to its input and provides it as an output."

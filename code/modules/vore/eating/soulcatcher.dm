@@ -350,7 +350,7 @@
 // Function to clear the vore fx overlay
 /obj/soulgem/proc/clear_vore_fx(mob/M)
 	M.clear_fullscreen("belly")
-	M.belly_overlay_tgui?.hide() // DQEdit — hide TGUI belly overlay
+	M.belly_overlay_tgui?.hide() // hide TGUI belly overlay
 	if(M.hud_used && !M.hud_used.hud_shown)
 		M.toggle_hud_vis(TRUE)
 

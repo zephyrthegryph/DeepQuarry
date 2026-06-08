@@ -270,11 +270,9 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 				default_pixel_x = tail_style.mob_offset_x
 				default_pixel_y = tail_style.mob_offset_y
 
-			//ChompEDIT START
 			//icon_key addition for digitigrade switch
 			if(digitigrade && (part.organ_tag == BP_R_LEG  || part.organ_tag == BP_L_LEG || part.organ_tag == BP_R_FOOT || part.organ_tag == BP_L_FOOT))
 				icon_key += "_digi"
-			//ChompEDIT END
 
 	icon_key = "[icon_key][husk ? 1 : 0][fat ? 1 : 0][hulk ? 1 : 0][skeleton ? 1 : 0]"
 	var/icon/base_icon
@@ -360,7 +358,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 
 		GLOB.human_icon_cache[icon_key] = base_icon
 
-	//END CACHED ICON GENERATION. //ChompEDIT END
+	// END CACHED ICON GENERATION. //
 	stand_icon.Blend(base_icon,ICON_OVERLAY)
 
 	var/image/body = image(stand_icon)
@@ -1402,7 +1400,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 	if(vore_belly_image)
 		vore_belly_image.layer = BODY_LAYER+VORE_BELLY_LAYER
 		overlays_standing[VORE_BELLY_LAYER] = vore_belly_image
-		//CHOMPEdit Disabling this until someone comes up with a less destructive approach. //vore_belly_image.plane = PLANE_CH_STOMACH //This one line of code. This ONE LINE OF CODE TOOK 6 HOURS TO FIGURE OUT. THANK YOU REDCAT.
+		// Disabling this until someone comes up with a less destructive approach. //vore_belly_image.plane = PLANE_CH_STOMACH //This one line of code. This ONE LINE OF CODE TOOK 6 HOURS TO FIGURE OUT. THANK YOU REDCAT.
 		vore_belly_image.appearance_flags = appearance_flags
 
 	apply_layer(VORE_BELLY_LAYER)
@@ -1410,7 +1408,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 /mob/living/carbon/human/proc/get_vore_belly_image()
 	if(!(wear_suit && wear_suit.flags_inv & HIDETAIL))
 		var/vs_fullness = vore_fullness_ex["stomach"]
-		var/icon/vorebelly_s = new/icon(icon = 'icons/mob/vore/Bellies.dmi', icon_state = "[species.vore_belly_default_variant]Belly[vs_fullness][struggle_anim_stomach ? "" : " idle"]") //CHOMPEdit
+		var/icon/vorebelly_s = new/icon(icon = 'icons/mob/vore/Bellies.dmi', icon_state = "[species.vore_belly_default_variant]Belly[vs_fullness][struggle_anim_stomach ? "" : " idle"]")
 		vorebelly_s.Blend(vore_sprite_color["stomach"], vore_sprite_multiply["stomach"] ? ICON_MULTIPLY : ICON_ADD)
 		var/image/working = image(vorebelly_s)
 		working.overlays += em_block_image_generic(working)
@@ -1435,7 +1433,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 	if(vore_tail_image)
 		vore_tail_image.layer = BODY_LAYER+VORE_TAIL_LAYER
 		overlays_standing[VORE_TAIL_LAYER] = vore_tail_image
-		//CHOMPEdit Disabling this until someone comes up with a less destructive approach. //vore_tail_image.plane = PLANE_CH_STOMACH //This one line of code. This ONE LINE OF CODE TOOK 6 HOURS TO FIGURE OUT. THANK YOU REDCAT.
+		// Disabling this until someone comes up with a less destructive approach. //vore_tail_image.plane = PLANE_CH_STOMACH //This one line of code. This ONE LINE OF CODE TOOK 6 HOURS TO FIGURE OUT. THANK YOU REDCAT.
 		vore_tail_image.appearance_flags = appearance_flags
 
 	apply_layer(VORE_TAIL_LAYER)
@@ -1483,10 +1481,9 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 		UpdateAppearance()
 		icon = Dummy.icon
 		if(flavourtext)
-			// DQEdit Start — migrated flavor_texts
+			// migrated flavor_texts
 			var/list/_flavor_texts = client.prefs.read_preference(/datum/preference/flavor_texts)
 			flavor_texts = islist(_flavor_texts) ? _flavor_texts.Copy() : list()
-			// DQEdit End
 		if(oocnotes)
 			ooc_notes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes)
 			ooc_notes_likes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes_likes)

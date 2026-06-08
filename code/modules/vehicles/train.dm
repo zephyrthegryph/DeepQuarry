@@ -129,7 +129,7 @@
 /obj/vehicle/train/verb/unlatch_v()
 	set name = "Unlatch"
 	set desc = "Unhitches this train from the one in front of it."
-	set category = "Object.Vehicle" //ChompEDIT - TGPanel
+	set category = "Object.Vehicle" // TGPanel
 	set src in view(1)
 
 	if(!ishuman(usr))

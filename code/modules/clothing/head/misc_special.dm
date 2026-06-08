@@ -141,7 +141,7 @@
 	var/turf/location = src.loc
 	if(istype(location, /mob/))
 		var/mob/living/carbon/human/M = location
-		if(ishuman(M) && (M.item_is_in_hands(src) || M.head == src)) //CHOMPEdit
+		if(ishuman(M) && (M.item_is_in_hands(src) || M.head == src))
 			location = M.loc
 
 	if (istype(location, /turf))

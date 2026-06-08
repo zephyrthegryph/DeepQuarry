@@ -85,7 +85,7 @@
 		scan_rating += S.rating
 	simulation_delay = 25 SECONDS - scan_rating SECONDS
 
-	dq_apply_material_synergies(src) // DQAdd
+	dq_apply_material_synergies(src)
 /obj/machinery/bomb_tester/attackby(obj/item/I, mob/user)
 	if(default_deconstruction_screwdriver(user, I))
 		return
@@ -364,14 +364,14 @@
 		P.info = simulation_results
 
 /obj/machinery/bomb_tester/proc/format_gas_for_results(datum/gas_mixture/G)
-	// DQEdit — G.update_values() removed; no-op under LINDA.
+	// G.update_values() removed; no-op under LINDA.
 	var/results = ""
 	var/pressure = G.return_pressure()
 
 	results += "Pressure: [round(pressure,0.1)] kPa"
 	if(G.total_moles())
 		results += "<br>Temperature: [round(G.temperature-T0C)]&deg;C"
-		// DQEdit — was iterating XGM `G.gas`; under LINDA use gas_ids().
+		// was iterating XGM `G.gas`; under LINDA use gas_ids().
 		for(var/mix in G.gas_ids())
 			results += "<br>[GLOB.gas_data.name[mix]]: [round((LINDA_GAS_AMT(G, mix) / G.total_moles()) * 100)]%"
 

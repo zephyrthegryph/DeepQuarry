@@ -23,7 +23,7 @@ GLOBAL_VAR(bomb_set)
 	var/timing_wire
 	var/removal_stage = 0 // 0 is no removal, 1 is covers removed, 2 is covers open,
 	  					// 3 is sealant open, 4 is unwrenched, 5 is removed from bolts.
-	// DQEdit — TGUI: which view the same TGUI window shows. attack_hand sets
+	// TGUI: which view the same TGUI window shows. attack_hand sets
 	// it FALSE for the main control panel; wirecutter/multitool use sets it
 	// TRUE for the wire-defusion panel.
 	var/wire_view = FALSE
@@ -167,7 +167,7 @@ GLOBAL_VAR(bomb_set)
 				return
 	..()
 
-// DQEdit Start — TGUI migration. attack_hand opens the main control view
+// TGUI migration. attack_hand opens the main control view
 // of NuclearBomb.tsx; nukehack_win switches to the wire-defusion view of
 // the same window. All keypad/auth/timer/safety/anchor and wire/pulse
 // actions are dispatched via tgui_act below.
@@ -372,10 +372,9 @@ GLOBAL_VAR(bomb_set)
 				else
 					visible_message(span_notice("The [src] emits a quiet whirling noise!"))
 			return TRUE
-// DQEdit End
 
 /obj/machinery/nuclearbomb/proc/nukehack_win(mob/user as mob)
-	// DQEdit — wire-defusion view of the same TGUI window. Setting wire_view
+	// wire-defusion view of the same TGUI window. Setting wire_view
 	// before re-opening swaps the React-side view.
 	wire_view = TRUE
 	tgui_interact(user)

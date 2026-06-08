@@ -260,7 +260,7 @@ GLOBAL_VAR_INIT(focused_tests, focused_tests())
 		//Yet more templates
 		// NOT IMPLEMENTED: /obj/machinery/restaurant_portal,
 		//Template type
-		// DQEdit — /obj/machinery/power/turbine deleted with ZAS atmos.
+		// /obj/machinery/power/turbine deleted with ZAS atmos.
 		// NOT IMPLEMENTED: /obj/machinery/power/turbine,
 		//Template type
 		// NOT IMPLEMENTED: /obj/effect/mob_spawn,

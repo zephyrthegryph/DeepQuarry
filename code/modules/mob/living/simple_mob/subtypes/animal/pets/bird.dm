@@ -19,9 +19,9 @@
 	melee_damage_upper = 3
 
 	movement_cooldown = -1
-	// DQEdit — dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
-	// DQEdit — dq_get_softfall(src) type-default moved to GLOB.dq_softfall_by_type
-	// DQEdit — dq_get_parachuting(src) type-default moved to GLOB.dq_parachuting_by_type
+	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
+	// dq_get_softfall(src) type-default moved to GLOB.dq_softfall_by_type
+	// dq_get_parachuting(src) type-default moved to GLOB.dq_parachuting_by_type
 
 	meat_amount = 1
 	meat_type = /obj/item/reagent_containers/food/snacks/meat/chicken

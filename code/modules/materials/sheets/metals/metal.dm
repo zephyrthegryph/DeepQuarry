@@ -1,6 +1,6 @@
 /obj/item/stack/material/steel
 	name = MAT_STEEL
-	icon_state = "sheet-metal" //CHOMPedit - replace materials update
+	icon_state = "sheet-metal" // replace materials update
 	default_type = MAT_STEEL
 	no_variants = FALSE
 	apply_colour = TRUE
@@ -8,7 +8,7 @@
 
 /obj/item/stack/material/plasteel
 	name = MAT_PLASTEEL
-	icon_state = "sheet-plasteel" //CHOMPedit - replace materials update
+	icon_state = "sheet-plasteel" // replace materials update
 	default_type = MAT_PLASTEEL
 	no_variants = FALSE
 	apply_colour = TRUE
@@ -29,7 +29,7 @@
 
 /obj/item/stack/material/durasteel
 	name = MAT_DURASTEEL
-	icon_state = "sheet-durasteel" //CHOMPedit - replace materials update
+	icon_state = "sheet-durasteel" // replace materials update
 	item_state = "sheet-metal"
 	default_type = MAT_DURASTEEL
 	no_variants = FALSE
@@ -38,7 +38,7 @@
 
 /obj/item/stack/material/titanium
 	name = MAT_TITANIUM
-	icon_state = "sheet-titanium" //CHOMPedit - replace materials update
+	icon_state = "sheet-titanium" // replace materials update
 	apply_colour = TRUE
 	item_state = "sheet-silver"
 	default_type = MAT_TITANIUM

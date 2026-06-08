@@ -147,9 +147,9 @@ GLOBAL_LIST_EMPTY(GPS_list)
 
 	toggle_tracking()
 	if(tracking)
-		to_chat(user, "[src] is now tracking, and visible to other GPS devices.")			// CHOMPEDIT : purdev	Fixed an issue where the if/else argument was written backwards
-	else													// CHOMPEDIT : purdev	Fixed an issue where the if/else argument was written backwards
-		to_chat(user, "[src] is no longer tracking, or visible to other GPS devices.")			// CHOMPEDIT : purdev	Fixed an issue where the if/else argument was written backwards
+		to_chat(user, "[src] is now tracking, and visible to other GPS devices.") // purdev Fixed an issue where the if/else argument was written backwards
+	else // purdev Fixed an issue where the if/else argument was written backwards
+		to_chat(user, "[src] is no longer tracking, or visible to other GPS devices.") // purdev Fixed an issue where the if/else argument was written backwards
 
 /obj/item/gps/proc/toggle_tracking()
 	tracking = !tracking

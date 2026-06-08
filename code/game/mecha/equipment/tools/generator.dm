@@ -28,7 +28,7 @@
 	if(!chassis)
 		set_ready_state(TRUE)
 		return PROCESS_KILL
-	if(fuel_amount <= 0) // CHOMPEdit - Spam fix
+	if(fuel_amount <= 0) // Spam fix
 		src.mecha_log_message("Deactivated - no fuel.")
 		set_ready_state(TRUE)
 		return PROCESS_KILL
@@ -120,7 +120,7 @@
 		T.visible_message("The [src] suddenly disgorges a cloud of heated phoron.")
 		destroy()
 	else
-		// DQEdit — T.air was XGM's per-turf mixture; under LINDA call return_air().
+		// T.air was XGM's per-turf mixture; under LINDA call return_air().
 		var/datum/gas_mixture/turf_air = istype(T) ? T.return_air() : null
 		T.assume_gas(GAS_PHORON, 5, turf_air ? turf_air.temperature : T20C)
 		T.visible_message("The [src] suddenly disgorges a cloud of phoron.")

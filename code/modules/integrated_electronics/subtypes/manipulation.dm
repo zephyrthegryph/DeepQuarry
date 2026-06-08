@@ -232,7 +232,7 @@
 	pre_attached_grenade_type = /obj/item/grenade/explosive
 	spawn_flags = null			// Used for world initializing, see the #defines above.
 
-//CHOMPADDITION: Size Circuit
+// ITION: Size Circuit
 /obj/item/integrated_circuit/manipulation/Size
 	name = "size circuit"
 	desc = "This allows a given target to be resized."

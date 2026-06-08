@@ -45,14 +45,14 @@
 /obj/item/holowarrant/attackby(obj/item/W, mob/user)
 	if(active)
 		var/obj/item/card/id/I = W.GetIdCard()
-		if(ACCESS_HOS in I.GetAccess()) // VOREStation edit
+		if(ACCESS_HOS in I.GetAccess())
 			var/choice = tgui_alert(user, "Would you like to authorize this warrant?","Warrant authorization",list("Yes","No"))
 			if(choice == "Yes")
 				active.fields["auth"] = "[I.registered_name] - [I.assignment ? I.assignment : "(Unknown)"]"
 			user.visible_message(span_notice("You swipe \the [I] through the [src]."), \
 					span_notice("[user] swipes \the [I] through the [src]."))
 			return 1
-		to_chat(user, span_warning("You don't have the access to do this!")) // VOREStation edit
+		to_chat(user, span_warning("You don't have the access to do this!"))
 		return 1
 	..()
 
@@ -69,14 +69,13 @@
 	else
 		icon_state = "holowarrant"
 
-// DQEdit Start — show_content moved to code/modules/holowarrant_panel.dm (structured TGUI).
-// DQEdit End
+// show_content moved to code/modules/holowarrant_panel.dm (structured TGUI).
 
-/obj/item/storage/box/holowarrants // VOREStation addition starts
+/obj/item/storage/box/holowarrants // addition starts
 	name = "holowarrant devices"
 	desc = "A box of holowarrant displays for security use."
 
 /obj/item/storage/box/holowarrants/Initialize(mapload)
 	. = ..()
 	for(var/i = 0 to 3)
-		new /obj/item/holowarrant(src) // VOREStation addition ends
+		new /obj/item/holowarrant(src) // addition ends

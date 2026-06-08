@@ -182,9 +182,9 @@
 
 	else if(W.has_tool_quality(TOOL_SCREWDRIVER))
 		if(bcell)
-			if(istype(bcell, /obj/item/cell/device/shield_generator/parry)) //CHOMPedit: Cannot remove the cell from Parry shields.
-				to_chat(user,span_notice("You cannot remove the cell from this device.")) //CHOMPedit: No cell removal.
-				return //CHOMPedit: No cell removal.
+			if(istype(bcell, /obj/item/cell/device/shield_generator/parry)) // Cannot remove the cell from Parry shields.
+				to_chat(user,span_notice("You cannot remove the cell from this device.")) // No cell removal.
+				return // No cell removal.
 			if(istype(bcell, /obj/item/cell/device/shield_generator)) //No stealing self charging batteries!
 				var/choice = tgui_alert(user, "A popup appears on the device 'REMOVING THE INTERNAL CELL WILL DESTROY THE BATTERY. DO YOU WISH TO CONTINUE?'...Well, do you?", "Selection List", list("Cancel", "Remove"))
 				if(choice == "Remove") //Warned you...
@@ -629,6 +629,6 @@
 	charge_delay = 300
 
 /obj/item/cell/device/shield_generator/parry //The cell for the 'parry' shield gen.
-	maxcharge = 200 //CHOMPedit: 100 to 200.
-	charge_amount = 200 //CHOMPedit: 100 to 200.
-	charge_delay = 30 //CHOMPedit: Starts charging three seconds after it's discharged.
+	maxcharge = 200 // 100 to 200.
+	charge_amount = 200 // 100 to 200.
+	charge_delay = 30 // Starts charging three seconds after it's discharged.

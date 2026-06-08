@@ -15,7 +15,7 @@
 	harm_intent_damage = 3
 	melee_damage_lower = 5
 	melee_damage_upper = 5
-	see_in_dark = 10 // CHOMPAdd
+	see_in_dark = 10
 	player_msg = "You're a little squisher! Your cuteness level has increased tenfold."
 	heat_damage_per_tick = 20 // Hot and cold are bad, but cold is AS bad for prommies as it is for slimes.
 	cold_damage_per_tick = 20
@@ -355,11 +355,11 @@
 	for(var/obj/item/clothing/head/H in things_to_drop)
 		if(H)
 			new_hat = H
-			has_hat = TRUE  //Chompedit, I'd delete the whole section, but this is used below for the slime having a hat.
+			has_hat = TRUE // , I'd delete the whole section, but this is used below for the slime having a hat.
 			drop_from_inventory(H)
 			things_to_drop -= H
 //Chompremoval start
-//	for(var/obj/item/I in things_to_drop) //rip hoarders  //Chompedit: Or not.
+// for(var/obj/item/I in things_to_drop) //rip hoarders // Or not.
 //		drop_from_inventory(I)
 
 	//Size update

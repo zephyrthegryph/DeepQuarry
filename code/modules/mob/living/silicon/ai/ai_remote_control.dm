@@ -20,7 +20,7 @@
 
 	var/list/possible = list()
 	for(var/mob/living/silicon/robot/R as anything in GLOB.available_ai_shells)
-		if(R.shell && !R.deployed && (R.stat != DEAD) && (!R.connected_ai || (R.connected_ai == src) ) )	//VOREStation Edit: shell restrictions
+		if(R.shell && !R.deployed && (R.stat != DEAD) && (!R.connected_ai || (R.connected_ai == src) ) ) // shell restrictions
 			if(istype(R.loc, /obj/machinery/recharge_station))	//Check Rechargers
 				var/obj/machinery/recharge_station/RS = R.loc
 				if(!(using_map.ai_shell_restricted && !(RS.z in using_map.ai_shell_allowed_levels)))	//Allow station borgs to be redeployed from Chargers.
@@ -50,8 +50,8 @@
 	else if(mind)
 		soul_link(/datum/soul_link/shared_body, src, target)
 		deployed_shell = target
-		if(src.client) //CHOMPADDITION: Resize shell based on our preffered size
-			target.resize(src.client.prefs.read_preference(/datum/preference/numeric/human/size_multiplier)) //CHOMPADDITION + DQEdit — size_multiplier migrated
+		if(src.client) // ITION: Resize shell based on our preffered size
+			target.resize(src.client.prefs.read_preference(/datum/preference/numeric/human/size_multiplier)) // ITION + size_multiplier migrated
 		target.deploy_init(src)
 		mind.transfer_to(target)
 		if(target.first_transfer)

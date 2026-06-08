@@ -167,7 +167,7 @@
 	if (power_draw >= 0)
 		last_power_draw = power_draw
 		use_power(power_draw)
-		// DQEdit — scrub_gas / pump_gas mutate the turf's air mix directly via
+		// scrub_gas / pump_gas mutate the turf's air mix directly via
 		// the gas_mixture reference. They don't enroll the turf in active_turfs
 		// or call update_visuals, so under LINDA the turf's gas state goes stale
 		// (overlay never re-evaluates) and adjacent turfs never see the change.

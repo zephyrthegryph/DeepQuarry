@@ -100,7 +100,7 @@
 /obj/item/organ/internal/mmi_holder/removed(mob/living/user)
 
 	if(stored_mmi)
-		. = stored_mmi //VOREStation Code
+		. = stored_mmi // Code
 		stored_mmi.forceMove(drop_location())
 		if(owner.mind)
 			owner.mind.transfer_to(stored_mmi.brainmob)

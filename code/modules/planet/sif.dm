@@ -123,11 +123,11 @@ GLOBAL_DATUM(planet_sif, /datum/planet/sif)
 		WEATHER_EMBERFALL	= new /datum/weather/sif/emberfall(),
 		WEATHER_ASH_STORM	= new /datum/weather/sif/ash_storm(),
 		WEATHER_FALLOUT		= new /datum/weather/sif/fallout(),
-		WEATHER_FALLOUT_TEMP	= new /datum/weather/sif/fallout/temp(), //CHOMPedit begin
+		WEATHER_FALLOUT_TEMP	= new /datum/weather/sif/fallout/temp(), // begin
 		WEATHER_CONFETTI		= new /datum/weather/sif/confetti(),
 		WEATHER_DOWNPOURWARNING = new /datum/weather/sif/downpourwarning(),
 		WEATHER_DOWNPOUR = new /datum/weather/sif/downpour(),
-		WEATHER_DOWNPOURFATAL = new /datum/weather/sif/downpourfatal() //CHOMPedit end
+		WEATHER_DOWNPOURFATAL = new /datum/weather/sif/downpourfatal() // end
 		)
 	roundstart_weather_chances = list(
 		WEATHER_CLEAR		= 30,
@@ -345,7 +345,7 @@ GLOBAL_DATUM(planet_sif, /datum/planet/sif)
 	)
 	outdoor_sounds_type = /datum/looping_sound/weather/storm
 	indoor_sounds_type = /datum/looping_sound/weather/storm/indoors
-	// CHOMPEdit - change weather sounds to proper storm sounds
+	// change weather sounds to proper storm sounds
 
 	transition_chances = list(
 		WEATHER_RAIN = 45,
@@ -627,7 +627,7 @@ GLOBAL_DATUM(planet_sif, /datum/planet/sif)
 		WEATHER_MIDNIGHT_FOG	= new /datum/weather/sif/midnightfog(),
 		WEATHER_DOWNPOURWARNING = new /datum/weather/sif/downpourwarning(),
 		WEATHER_DOWNPOUR 		= new /datum/weather/sif/downpour(),
-		WEATHER_DOWNPOURFATAL 	= new /datum/weather/sif/downpourfatal() //CHOMPedit end
+		WEATHER_DOWNPOURFATAL 	= new /datum/weather/sif/downpourfatal() // end
 		)
 //Weather
 /datum/weather/sif/fog

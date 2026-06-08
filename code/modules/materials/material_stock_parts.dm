@@ -16,7 +16,7 @@
 // same 1-5 envelope the old tier system occupied.
 
 /obj/item/stock_parts
-	// DQAdd — name of the /datum/material this part is made from
+	// name of the /datum/material this part is made from
 	// (lowertext, e.g. "exotic_mat_5"). Null = unimbued baseline.
 	var/material_id
 
@@ -97,7 +97,7 @@
 		if(M)
 			name = "[M.display_name] [initial(name)]"
 			color = M.icon_colour
-			// DQEdit — sync the upstream `rating` var to the
+			// sync the upstream `rating` var to the
 			// material-derived value so legacy callers that read
 			// `part.rating` directly (instead of get_rating()) see
 			// the new rating.

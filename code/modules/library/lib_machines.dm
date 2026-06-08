@@ -31,10 +31,10 @@
 	var/category = "Any"
 	var/author
 	var/SQLquery
-	// DQEdit — cached search results (list of assoc lists) for TGUI.
+	// cached search results (list of assoc lists) for TGUI.
 	var/list/last_results = null
 
-// DQEdit Start — TGUI migration. attack_hand opens LibraryVisitor.tsx;
+// TGUI migration. attack_hand opens LibraryVisitor.tsx;
 // filter prompts and search execution move to tgui_act.
 /obj/machinery/librarypubliccomp/attack_hand(mob/user)
 	user.set_machine(src)
@@ -102,7 +102,6 @@
 		if("back")
 			screenstate = 0
 			return TRUE
-// DQEdit End
 
 
 /*
@@ -134,7 +133,7 @@
 
 	var/static/list/base_genre_books
 
-	// DQEdit — TGUI: TRUE when the admin ghost view is active. Toggles the
+	// TGUI: TRUE when the admin ghost view is active. Toggles the
 	// External Archive table to show Delete buttons.
 	var/is_admin_view = FALSE
 
@@ -168,7 +167,7 @@
 			var/obj/item/book/M = new path(null)
 			all_books[M.title] = M
 
-// DQEdit Start — TGUI migration. attack_hand and attack_ghost open
+// TGUI migration. attack_hand and attack_ghost open
 // LibraryComp.tsx. The big browse-rendered switch and Topic dispatcher
 // move to tgui_data + tgui_act. The legacy attack_hand body below is
 // retained only for reference and is unreachable.
@@ -409,9 +408,8 @@
 			var/obj/item/book/NewBook = new newpath(get_turf(src))
 			NewBook.name = "Book: [NewBook.name]"
 			return TRUE
-// DQEdit End
 
-// DQEdit — admin ghost view routes to LibraryComp.tsx with is_admin_view
+// admin ghost view routes to LibraryComp.tsx with is_admin_view
 // set; non-admin ghosts fall through to default handling.
 /obj/machinery/librarycomp/attack_ghost(mob/user)
 	if(!check_rights(R_ADMIN, show_msg = FALSE))
@@ -453,7 +451,7 @@
 		user.drop_item()
 		O.loc = src
 
-// DQEdit Start — TGUI migration. attack_hand opens LibraryScanner.tsx;
+// TGUI migration. attack_hand opens LibraryScanner.tsx;
 // scan/clear/eject move to tgui_act.
 /obj/machinery/libraryscanner/attack_hand(mob/user)
 	user.set_machine(src)
@@ -494,7 +492,6 @@
 			for(var/obj/item/book/B in contents)
 				B.loc = src.loc
 			return TRUE
-// DQEdit End
 
 
 /*

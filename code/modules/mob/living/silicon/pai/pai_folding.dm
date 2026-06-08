@@ -35,7 +35,7 @@
 
 	last_special = world.time + 100
 
-	if(istype(card.loc, /obj/machinery)) // VOREStation edit, this statement allows pAIs stuck in a machine to eject themselves.
+	if(istype(card.loc, /obj/machinery)) // , this statement allows pAIs stuck in a machine to eject themselves.
 		var/obj/machinery/M = card.loc
 		M.ejectpai()
 	//I'm not sure how much of this is necessary, but I would rather avoid issues.
@@ -53,9 +53,9 @@
 					H.visible_message(span_danger("\The [src] explodes out of \the [H]'s [affecting.name] in shower of gore!"))
 					break
 		holder.drop_from_inventory(card)
-	else if(isbelly(card.loc)) //VOREStation edit.
-		to_chat(src, span_notice("There is no room to unfold in here. You're good and stuck.")) //VOREStation edit.
-		return 0 //VOREStation edit.
+	else if(isbelly(card.loc)) // .
+		to_chat(src, span_notice("There is no room to unfold in here. You're good and stuck.")) // .
+		return 0 // .
 	else if(istype(card.loc,/obj/item/pda))
 		var/obj/item/pda/holder = card.loc
 		holder.pai = null
@@ -102,7 +102,7 @@
 		to_chat(src, span_danger("It's not safe to fold up while inside a [loc]!"))
 		return
 
-	release_vore_contents(FALSE) //VOREStation Add
+	release_vore_contents(FALSE)
 
 	var/turf/T = get_turf(src)
 	if(istype(T) && !silent) T.visible_message(span_filter_notice(span_bold("[src]") + " neatly folds inwards, compacting down to a rectangular card."))

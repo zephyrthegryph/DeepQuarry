@@ -108,7 +108,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 	return cameras
 
 /area/proc/atmosalert(danger_level, alarm_source)
-	// DQEdit — original used /obj/machinery/alarm (ZAS air alarm). LINDA's
+	// original used /obj/machinery/alarm (ZAS air alarm). LINDA's
 	// air alarm is /tg/-vendored in code/atmospherics/machinery/air_alarm/
 	// but not yet wired into the build. Until that lands, the proc behaves as a
 	// pure-danger-level tracker without per-machine alarm-source aggregation.
@@ -174,7 +174,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 					spawn(0)
 						E.open()
 
-// DQEdit — atmospheric_field_generator (atm_ret_field.dm) was a ZAS-only machine.
+// atmospheric_field_generator (atm_ret_field.dm) was a ZAS-only machine.
 // Without LINDA replacement these procs neutered; the area-level toggle still
 // runs but with no machinery to drive. Re-implement against LINDA's air alarm
 // system once that's wired.
@@ -436,11 +436,11 @@ GLOBAL_LIST_EMPTY(forced_ambiance_list)
 			return
 
 		if(H.m_intent == I_RUN)
-			H.AdjustStunned(1) // CHOMPedit: No longer a supermassive long stun.
-//			H.AdjustWeakened(6) // CHOMPedit: No longer weakens.
+			H.AdjustStunned(1) // No longer a supermassive long stun.
+// H.AdjustWeakened(6) // No longer weakens.
 		else
-			H.AdjustStunned(1) // CHOMPedit: No longer a supermassive long stun.
-//			H.AdjustWeakened(3) // CHOMPedit: No longer weakens.
+			H.AdjustStunned(1) // No longer a supermassive long stun.
+// H.AdjustWeakened(3) // No longer weakens.
 		to_chat(mob, span_notice("The sudden appearance of gravity makes you fall to the floor!"))
 		if(HAS_TRAIT(H, TRAIT_UNLUCKY) && prob(50) && H.get_bodypart_name(BP_HEAD))
 			H.visible_message(span_warning("[H] falls to the ground from the sudden appearance of gravity, smashing [H.p_their()] head against the ground!"),span_warning("You smash your head into the ground as gravity appears!"))

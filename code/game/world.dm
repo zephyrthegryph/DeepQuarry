@@ -176,14 +176,14 @@ GLOBAL_VAR(restart_counter)
 	load_jobwhitelist()
 
 	src.update_status()
-	setup_season()	//VOREStation Addition
+	setup_season() // ition
 
 #ifdef UNIT_TESTS
 	log_test("Unit Tests Enabled. This will destroy the world when testing is complete.")
 	log_test("If you did not intend to enable this please check code/__defines/unit_testing.dm")
 #endif
 
-	Master.Initialize(10, FALSE, TRUE) // VOREStation Edit
+	Master.Initialize(10, FALSE, TRUE)
 
 	RunUnattendedFunctions()
 
@@ -269,7 +269,7 @@ GLOBAL_VAR(restart_counter)
 
 	logger.init_logging()
 
-	var/latest_changelog = file("[global.config.directory]/../html/changelogs_ch/archive/" + time2text(world.timeofday, "YYYY-MM", TIMEZONE_UTC) + ".yml") // CHOMPEdit - changelogs_ch
+	var/latest_changelog = file("[global.config.directory]/../html/changelogs_ch/archive/" + time2text(world.timeofday, "YYYY-MM", TIMEZONE_UTC) + ".yml") // changelogs_ch
 	GLOB.changelog_hash = fexists(latest_changelog) ? md5(latest_changelog) : 0 //for telling if the changelog has changed recently
 
 	if(GLOB.round_id)
@@ -376,7 +376,7 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 				"med" = SSjob.get_job_titles_in_department(DEPARTMENT_MEDICAL),
 				"sci" = SSjob.get_job_titles_in_department(DEPARTMENT_RESEARCH),
 				"car" = SSjob.get_job_titles_in_department(DEPARTMENT_CARGO),
-				"pla" = SSjob.get_job_titles_in_department(DEPARTMENT_PLANET), //VOREStation Add,
+				"pla" = SSjob.get_job_titles_in_department(DEPARTMENT_PLANET), // ,
 				"civ" = SSjob.get_job_titles_in_department(DEPARTMENT_CIVILIAN),
 				"bot" = SSjob.get_job_titles_in_department(DEPARTMENT_SYNTHETIC)
 			)
@@ -387,7 +387,7 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 			var/real_rank = make_list_rank(t.fields["real_rank"])
 
 			var/department = 0
-			var/active = 0	//CHOMPStation Edit Begin
+			var/active = 0
 			for(var/mob/M in GLOB.player_list)
 				if(M.real_name == name && M.client && M.client.inactivity <= 10 MINUTES)
 					active = 1
@@ -409,7 +409,7 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 			var/rank = t.fields["rank"]
 			var/real_rank = make_list_rank(t.fields["real_rank"])
 
-			var/active = 0	//CHOMPStation Edit Begin
+			var/active = 0
 			for(var/mob/M in GLOB.player_list)
 				if(M.real_name == name && M.client && M.client.inactivity <= 10 MINUTES)
 					active = 1
@@ -437,7 +437,7 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 				continue
 			if(!positions["bot"])
 				positions["bot"] = list()
-			positions["bot"][robot.name] = list("[robot.modtype] [robot.braintype]",isactive) //CHOMPEdit end
+			positions["bot"][robot.name] = list("[robot.modtype] [robot.braintype]",isactive) // end
 
 		for(var/k in positions)
 			positions[k] = list2params(positions[k]) // converts positions["heads"] = list("Bob"="Captain", "Bill"="CMO") into positions["heads"] = "Bob=Captain&Bill=CMO"

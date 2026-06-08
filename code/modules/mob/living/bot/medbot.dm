@@ -19,7 +19,7 @@
 	icon_state = "medibot0"
 	req_one_access = list(ACCESS_ROBOTICS, ACCESS_MEDICAL)
 	botcard_access = list(ACCESS_MEDICAL, ACCESS_MORGUE, ACCESS_SURGERY, ACCESS_CHEMISTRY, ACCESS_VIROLOGY, ACCESS_GENETICS)
-	max_frustration = 7	// CHOMPAdd
+	max_frustration = 7
 
 	var/skin = null //Set to "tox", "ointment" or "o2" for the other two firstaid kits.
 

@@ -262,8 +262,6 @@
 				prob(5);/obj/item/rig/eva,
 				prob(3);/obj/item/rig/hazard,
 				prob(1);/obj/item/rig/merc/empty,
-				prob(4);/obj/item/rig/light/stealth) // CHOMPEdit
-//VOREStation Add Start
+				prob(4);/obj/item/rig/light/stealth)
 /obj/random/rigsuit/chancetofail
 	spawn_nothing_percentage = 50
-//VOREStation Add End

@@ -571,7 +571,7 @@ the implant may become unstable and either pre-maturely inject the subject or si
 	if (. & EMP_PROTECT_SELF || malfunction) //so I'm just going to add a meltdown chance here
 		return
 	malfunction = MALFUNCTION_TEMPORARY
-	if(prob(40)) //CHOMPEDIT: Make the malfunction a probability because annoying
+	if(prob(40)) // Make the malfunction a probability because annoying
 		activate("emp")	//let's shout that this dude is dead
 	if(severity == 1)
 		if(prob(40))	//small chance of obvious meltdown
@@ -747,7 +747,7 @@ the implant may become unstable and either pre-maturely inject the subject or si
 				var/static/regex/size_mult = new/regex("\\d+")
 				if(size_mult.Find(msg))
 					var/resizing_value = text2num(size_mult.match)
-					H.resize(CLAMP(resizing_value/100 , RESIZE_MINIMUM_DORMS, RESIZE_MAXIMUM_DORMS), uncapped = H.has_large_resize_bounds()) //CHOMPEdit - Let resize handle size limits. It's meant to do that.
+					H.resize(CLAMP(resizing_value/100 , RESIZE_MINIMUM_DORMS, RESIZE_MAXIMUM_DORMS), uncapped = H.has_large_resize_bounds()) // Let resize handle size limits. It's meant to do that.
 
 
 

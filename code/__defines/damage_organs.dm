@@ -48,7 +48,7 @@
 #define DROPLIMB_ACID 3
 
 // Damage above this value must be repaired with surgery.
-#define ROBOLIMB_REPAIR_CAP 60 //CHOMPedit, bumping it up to 60 to keep consistency with our global cap of 60
+#define ROBOLIMB_REPAIR_CAP 60 // , bumping it up to 60 to keep consistency with our global cap of 60
 
 #define ORGAN_FLESH    0 // Normal organic organs.
 #define ORGAN_ASSISTED 1 // Like an LVAD - No pulse, but still organic.

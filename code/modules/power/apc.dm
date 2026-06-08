@@ -807,7 +807,7 @@ GLOBAL_LIST_EMPTY(apcs)
 		"failTime" = failure_timer * 2,
 		"gridCheck" = grid_check,
 		"coverLocked" = coverlocked,
-		"siliconUser" = siliconaccess(user) || (isobserver(user) && is_admin(user)), //I add observer here so admins can have more control, even if it makes 'siliconUser' seem inaccurate. //CHOMPEdit borg access
+		"siliconUser" = siliconaccess(user) || (isobserver(user) && is_admin(user)), // I add observer here so admins can have more control, even if it makes 'siliconUser' seem inaccurate. // borg access
 		"emergencyLights" = !emergency_lights,
 		"nightshiftLights" = nightshift_lights,
 		"nightshiftSetting" = nightshift_setting,
@@ -916,7 +916,7 @@ GLOBAL_LIST_EMPTY(apcs)
 	// If can_admin_interact() wasn't only defined on observers, this could just be part of a single-line
 	// conditional.
 	var/locked_exception = FALSE
-	if(siliconaccess(ui.user) || action == "nightshift") //CHOMPEdit borg access
+	if(siliconaccess(ui.user) || action == "nightshift") // borg access
 		locked_exception = TRUE
 
 

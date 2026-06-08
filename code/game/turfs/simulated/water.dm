@@ -20,7 +20,7 @@
 	var/depth = 1 // Higher numbers indicates deeper water.
 
 	var/reagent_type = REAGENT_ID_WATER
-	// var/datum/looping_sound/water/soundloop CHOMPEdit: Removing soundloop for now.
+	// var/datum/looping_sound/water/soundloop Removing soundloop for now.
 
 	var/watercolor = null
 
@@ -33,12 +33,12 @@
 	. = ..()
 	update_icon()
 	handle_fish()
-	// soundloop = new(list(src), FALSE) // CHOMPEdit: Removing soundloop for now.
-	// soundloop.start() // CHOMPEdit: Removing soundloop for now.
+	// soundloop = new(list(src), FALSE) // Removing soundloop for now.
+	// soundloop.start() // Removing soundloop for now.
 
 /turf/simulated/floor/water/Destroy()
-	// soundloop.stop() // CHOMPEdit: Removing soundloop for now.
-	// QDEL_NULL(soundloop) // CHOMPEdit: Removing soundloop for now.
+	// soundloop.stop() // Removing soundloop for now.
+	// QDEL_NULL(soundloop) // Removing soundloop for now.
 
 	. = ..()
 
@@ -237,12 +237,12 @@ GLOBAL_LIST_EMPTY(shoreline_icon_cache)
 		add_overlay(GLOB.shoreline_icon_cache[cache_string])
 
 /turf/simulated/floor/water/is_safe_to_enter(mob/living/L)
-	//CHOMPEDIT: Aquatic flags simulated water as safe now
+	// Aquatic flags simulated water as safe now
 	if(istype(L,/mob/living/carbon))
 		var /mob/living/carbon/A = L
 		if(/datum/trait/positive/aquatic in A.species.traits)
 			return TRUE
-	//CHOMPEDIT: Aquatic flags simulated water as safe now
+	// Aquatic flags simulated water as safe now
 	if(L.get_water_protection() < 1)
 		return FALSE
 	return ..()

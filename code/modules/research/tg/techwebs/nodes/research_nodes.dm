@@ -190,7 +190,7 @@
 	announce_channels = list(CHANNEL_SCIENCE)
 // CHOMPEnable End
 
-/*/datum/techweb_node/paradox_rift //CHOMPEdit Start
+/*/datum/techweb_node/paradox_rift
 	id = TECHWEB_NODE_PARADOX_RIFT
 	display_name = "Paradox Rift"
 	description = "A device that creates a localized paradox, causing unpredictable effects."
@@ -200,7 +200,7 @@
 	)
 	research_costs = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_5_POINTS)
 	announce_channels = list(CHANNEL_SCIENCE)
-*/ //CHOMPEdit End
+*/
 
 //Ghost catching stuff! Disabled on Virgo, but used downstream.
 /datum/techweb_node/ghost_basic

@@ -16,8 +16,8 @@
 /obj/item/implant/reagent_generator/egg/post_implant(mob/living/carbon/source)
 	START_PROCESSING(SSobj, src)
 	to_chat(source, span_notice("You implant [source] with \the [src]."))
-	add_verb(source,assigned_proc) //CHOMPEdit TGPanel
-	add_verb(source,/mob/living/carbon/human/proc/toggle_cascade) //CHOMPEdit TGPanel
+	add_verb(source,assigned_proc) // TGPanel
+	add_verb(source,/mob/living/carbon/human/proc/toggle_cascade) // TGPanel
 	return 1
 
 /mob/living/carbon/human/proc/use_reagent_implant_egg()

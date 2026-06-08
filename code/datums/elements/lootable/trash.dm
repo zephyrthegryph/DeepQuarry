@@ -70,7 +70,7 @@
 		/obj/item/clothing/gloves/botanic_leather,
 		/obj/item/clothing/head/hardhat/red,
 		/obj/item/clothing/mask/gas,
-		/obj/item/clothing/mask/gas/clear, // CHOMPAdd
+		/obj/item/clothing/mask/gas/clear,
 		/obj/item/clothing/suit/storage/apron,
 		/obj/item/clothing/suit/storage/toggle/bomber,
 		/obj/item/clothing/suit/storage/toggle/brown_jacket,
@@ -147,7 +147,7 @@
 
 	rare_loot = list(
 		/obj/item/pizzavoucher,
-		/obj/item/card/emag, // CHOMPAdd
+		/obj/item/card/emag,
 		/obj/item/storage/pill_bottle/paracetamol,
 		/obj/item/storage/pill_bottle/happy,
 		/obj/item/storage/pill_bottle/zoom,
@@ -177,7 +177,7 @@
 		/obj/item/radio_jammer,
 		/obj/item/sleevemate,
 		/obj/item/bodysnatcher,
-		/obj/item/mindbinder, // CHOMPAdd
+		/obj/item/mindbinder,
 		/obj/item/beartrap,
 		/obj/item/cell/hyper/empty,
 		/obj/item/disk/nifsoft/compliance,
@@ -193,7 +193,7 @@
 		/obj/item/gun/energy/mouseray,
 		/obj/item/clothing/accessory/collar/shock/bluespace/modified,
 		/obj/item/gun/energy/sizegun/backfire,
-		/obj/item/grenade/spawnergrenade/clustaur, // CHOMPAdd
+		/obj/item/grenade/spawnergrenade/clustaur,
 		/obj/item/storage/box/monkeycubes,
 		/obj/item/storage/box/monkeycubes/pets/NT_standard,
 		/obj/item/storage/box/monkeycubes/pets/NT_special)

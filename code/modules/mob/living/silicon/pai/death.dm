@@ -1,4 +1,4 @@
-//VOREStation Edit - Let's make it so that pAIs don't just always cease to be when they die! It would be cool if we could fix them.
+// Let's make it so that pAIs don't just always cease to be when they die! It would be cool if we could fix them.
 /mob/living/silicon/pai/death(gibbed,deathmessage="fizzles out and clatters to the floor...")
 	if(paiDA && card)
 		var/area/t = get_area(src)

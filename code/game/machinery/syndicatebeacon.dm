@@ -17,7 +17,7 @@
 	var/charges = 1
 
 /obj/machinery/syndicate_beacon/attack_hand(mob/user as mob)
-	// DQEdit — single-conversation device; tgui_alert is the right
+	// single-conversation device; tgui_alert is the right
 	// primitive. The dynamic "you can switch teams" branch becomes a
 	// labelled button on the alert.
 	user.set_machine(src)
@@ -170,8 +170,7 @@
 // === merged from syndicatebeacon_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 //  Virgo modified syndie beacon, does not give objectives
 
-// DQEdit Start — attack_hand body relocated to code/modules/admin/misc_admin_panels.dm (structured TGUI).
-// DQEdit End
+// attack_hand body relocated to code/modules/admin/misc_admin_panels.dm (structured TGUI).
 
 /obj/machinery/syndicate_beacon/virgo/Topic(href, href_list)
 	if(href_list["betraitor"])

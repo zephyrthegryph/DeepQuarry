@@ -29,7 +29,7 @@
 	name = "suit helmet"
 
 /obj/item/clothing/suit/space/rig/advsuit
-	name = "Hardsuit" //CHOMPEDIT: Replcing Void with Hard to fit the naming convention. Specced down hardsuit for comfort
+	name = "Hardsuit" // Replcing Void with Hard to fit the naming convention. Specced down hardsuit for comfort
 	body_parts_covered = CHEST|LEGS|ARMS|HANDS|FEET
 	heat_protection =	 CHEST|LEGS|ARMS|HANDS|FEET
 	cold_protection =	 CHEST|LEGS|ARMS|HANDS|FEET

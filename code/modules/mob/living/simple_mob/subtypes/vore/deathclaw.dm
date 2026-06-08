@@ -32,7 +32,7 @@
 
 	attacktext = list("mauled")
 
-	faction = FACTION_AWAYMISSION // CHOMPEdit
+	faction = FACTION_AWAYMISSION
 
 	maxHealth = 200
 	health = 200

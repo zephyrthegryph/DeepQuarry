@@ -1,7 +1,7 @@
 /obj/item/folder
 	name = "folder"
 	desc = "A folder."
-	icon = 'icons/obj/bureaucracy.dmi' //CHOMPEdit: Continues using new folder sprite, contrary to YW
+	icon = 'icons/obj/bureaucracy.dmi' // Continues using new folder sprite, contrary to YW
 	icon_state = "folder"
 	w_class = ITEMSIZE_SMALL
 	pressure_resistance = 2
@@ -82,7 +82,7 @@
 		update_icon()
 		to_chat(user, span_notice("You tuck the [P] into \the [src]."))
 
-// DQEdit Start — TGUI migration. attack_self opens Folder.tsx; the Topic
+// TGUI migration. attack_self opens Folder.tsx; the Topic
 // remove/rename/read/look/browse actions move to tgui_act. Reading a
 // paper/photo chains to that item's TGUI viewer (Paper.tsx / Photo.tsx).
 /obj/item/folder/attack_self(mob/user)
@@ -151,4 +151,3 @@
 					var/obj/item/paper_bundle/pb = O
 					pb.attack_self(usr)
 			return TRUE
-// DQEdit End

@@ -271,7 +271,7 @@
 
 	//this needs to be last since if any of the 'other conditions are met their messages take precedence
 	//if(!H.client && !H.teleop)
-	//	return "buzzes, \"Resuscitation failed - Mental interface error. Further attempts may be successful.\""// CHOMPEdit, removing this check to allow revival through bad internet connections.
+	// return "buzzes, \"Resuscitation failed - Mental interface error. Further attempts may be successful.\""// , removing this check to allow revival through bad internet connections.
 
 	return null
 
@@ -302,7 +302,7 @@
 		blood_volume *= 0.3
 	else if(heart.is_bruised())
 		blood_volume *= 0.7
-	else if(heart.damage > 5) //CHOMPedit, so ONE heart damage isnt 20% of blood missing, now its 5
+	else if(heart.damage > 5) // , so ONE heart damage isnt 20% of blood missing, now its 5
 		blood_volume *= 0.9 //chompedit, 90% instead of 80%
 	return blood_volume < H.species.blood_volume*H.species.blood_level_fatal
 
@@ -463,14 +463,14 @@
 	M.Weaken(rand(10,25))
 	M.updatehealth()
 	apply_brain_damage(M)
-	M.adjustHalLoss(40) // CHOMPEdit: Moderate amount of halloss for EVERYONE being defibbed. Defibs feel like being kicked in the chest by a mule. Shit hurts if you're awake.
-	// VOREStation Edits Start: Defib pain
+	M.adjustHalLoss(40) // Moderate amount of halloss for EVERYONE being defibbed. Defibs feel like being kicked in the chest by a mule. Shit hurts if you're awake.
+	// s Start: Defib pain
 	var/datum/component/xenochimera/xc = M.get_xenochimera_component()
 	if(xc) // Only do the following to Xenochimera. Handwave this however you want, this is to balance defibs on an alien race.
 		M.adjustHalLoss(220) // This hurts a LOT, stacks on top of the previous halloss.
 		xc.feral += 100 // If they somehow weren't already feral, force them feral by increasing ferality var directly, to avoid any messy checks. handle_feralness() will immediately set our feral properly according to halloss anyhow.
-	// VOREStation Edits End
-	// SSgame_master.adjust_danger(-20) // VOREStation Edit - We don't use SSgame_master yet.
+	// s End
+	// SSgame_master.adjust_danger(-20) // We don't use SSgame_master yet.
 
 /obj/item/shockpaddles/proc/apply_brain_damage(mob/living/carbon/human/H)
 	if(!H.should_have_organ(O_BRAIN))
@@ -482,7 +482,7 @@
 
 	// If the brain'd `defib_timer` var gets below this number, brain damage will happen at a linear rate.
 	// This is measures in `Life()` ticks. E.g. 10 minute defib timer = 6000 world.time units = 3000 `Life()` ticks.
-	var/brain_damage_timer = ((CONFIG_GET(number/defib_timer) MINUTES) / 2) - ((CONFIG_GET(number/defib_braindamage_timer) MINUTES) / 2) // CHOMPEdit
+	var/brain_damage_timer = ((CONFIG_GET(number/defib_timer) MINUTES) / 2) - ((CONFIG_GET(number/defib_braindamage_timer) MINUTES) / 2)
 
 	if(brain.defib_timer > brain_damage_timer)
 		return // They got revived before brain damage got a chance to set in.

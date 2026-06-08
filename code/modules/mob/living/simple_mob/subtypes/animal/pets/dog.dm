@@ -125,7 +125,7 @@
 	gender = MALE
 	desc = "It's a corgi."
 	var/turns_since_scan = 0
-	makes_dirt = FALSE	//VOREStation edit: no more dirt
+	makes_dirt = FALSE // no more dirt
 	holder_type = /obj/item/holder/corgi
 
 /mob/living/simple_mob/animal/passive/dog/corgi/Ian/Life()

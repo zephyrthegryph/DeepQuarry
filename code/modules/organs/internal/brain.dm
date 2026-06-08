@@ -80,7 +80,7 @@ GLOBAL_LIST_BOILERPLATE(all_brain_organs, /obj/item/organ/internal/brain)
 /obj/item/organ/internal/brain/Initialize(mapload)
 	..()
 	health = CONFIG_GET(number/default_brain_health)
-	defib_timer = (CONFIG_GET(number/defib_timer) MINUTES) / 2	 // CHOMPEdit // Time vars measure things in ticks. Life tick happens every ~2 seconds, therefore dividing by 20
+	defib_timer = (CONFIG_GET(number/defib_timer) MINUTES) / 2 // // Time vars measure things in ticks. Life tick happens every ~2 seconds, therefore dividing by 20
 	return INITIALIZE_HINT_LATELOAD
 
 /obj/item/organ/internal/brain/LateInitialize()
@@ -269,14 +269,12 @@ GLOBAL_LIST_BOILERPLATE(all_brain_organs, /obj/item/organ/internal/brain)
 	if(!R.dna.real_name)	//to prevent null names
 		R.dna.real_name = "promethean ([rand(0,999)])"
 	H.real_name = R.dna.real_name
-	H.ooc_notes = brainmob.ooc_notes // VOREStation Edit
+	H.ooc_notes = brainmob.ooc_notes
 	H.ooc_notes_likes = brainmob.ooc_notes_likes
 	H.ooc_notes_dislikes = brainmob.ooc_notes_dislikes
-	//CHOMPEdit Start
 	H.ooc_notes_favs = brainmob.ooc_notes_favs
 	H.ooc_notes_maybes = brainmob.ooc_notes_maybes
 	H.ooc_notes_style = brainmob.ooc_notes_style
-	//CHOMPEdit End
 
 	H.nutrition = 260 //Enough to try to regenerate ONCE.
 	H.adjustBruteLoss(40)

@@ -161,8 +161,8 @@
 	icon = 'icons/obj/food_ch.dmi'
 	icon_state = "thecakeslice"
 
-	center_of_mass_x = 16 //CHOMPEdit
-	center_of_mass_y= 10 //CHOMPEdit
+	center_of_mass_x = 16
+	center_of_mass_y= 10
 	nutriment_desc = list("cake" = 10, "sweetness" = 10, "singularity?" = 1)
 	nutriment_amt = 5
 	//Add some randomized effect possibly, to make the slices special - Jack
@@ -429,8 +429,8 @@
 	icon = 'icons/obj/food_ch.dmi'
 	icon_state = "chaoscake_slice-1"
 
-	center_of_mass_x = 16 //CHOMPEdit
-	center_of_mass_y= 10 //CHOMPEdit
+	center_of_mass_x = 16
+	center_of_mass_y= 10
 	nutriment_desc = list()
 	nutriment_amt = 4
 	volume = 80

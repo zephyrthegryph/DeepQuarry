@@ -80,7 +80,7 @@
 	switch(response)
 		if("Never for this round")
 			if(be_special_flag)
-				// DQEdit — migrated to /datum/preference/numeric/human/be_special
+				// migrated to /datum/preference/numeric/human/be_special
 				var/_cur = D.client.prefs.read_preference(/datum/preference/numeric/human/be_special)
 				D.client.prefs.update_preference_by_type(/datum/preference/numeric/human/be_special, _cur ^ be_special_flag)
 				to_chat(D, span_notice("You will not be prompted to join similar roles to [role_name] for the rest of this round. Note: If you save your character now, it will save this permanently."))
@@ -175,7 +175,7 @@
 /datum/ghost_query/lost_drone
 	role_name = "Lost Drone"
 	question = "A lost drone onboard has been discovered by a crewmember and they are attempting to reactivate it.  Would you like to play as the drone?"
-	be_special_flag = BE_LOSTDRONE	//VOREStation Edit
+	be_special_flag = BE_LOSTDRONE
 	check_bans = list(JOB_AI, JOB_CYBORG)
 	cutoff_number = 1
 

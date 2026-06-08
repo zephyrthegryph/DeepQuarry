@@ -10,7 +10,7 @@
 
 	..()
 
-	// DQEdit — base shuttle New() may have early-returned without setting
+	// base shuttle New() may have early-returned without setting
 	// current_location (landmark missing). Skip the arming-controller
 	// lookup so we don't trip the null deref / spurious CRASH below.
 	if(!current_location)

@@ -8,12 +8,12 @@
 	layer = TURF_LAYER //This was here when I got here. Why though?
 	var/level = 2
 	var/flags = NONE
-	// DQEdit — was_bloodied, blood_color, fluorescent moved to /datum/component/forensics_state
+	// was_bloodied, blood_color, fluorescent moved to /datum/component/forensics_state
 	var/pass_flags = 0
 	var/throwpass = 0
 	var/germ_level = GERM_LEVEL_AMBIENT // The higher the germ level, the more germ on the atom.
 	var/simulated = TRUE //filter for actions - used by lighting overlays
-	// DQEdit — atom_say_verb removed (no subtype ever overrode it; inlined to "says" in atom_say)
+	// atom_say_verb removed (no subtype ever overrode it; inlined to "says" in atom_say)
 	var/bubble_icon = "normal" ///what icon the atom uses for speechbubbles
 	var/datum/forensics_crime/forensic_data
 
@@ -39,7 +39,7 @@
 	// Track if we are already had initialize() called to prevent double-initialization.
 	//var/initialized = FALSE // using the atom flags
 
-	// DQEdit — chat_color, chat_color_name, chat_color_darkened moved to GLOB sparse maps in atom_var_components.dm
+	// chat_color, chat_color_name, chat_color_darkened moved to GLOB sparse maps in atom_var_components.dm
 	//! Colors
 	/**
 	 * used to store the different colors on an atom
@@ -47,7 +47,7 @@
 	 * its inherent color, the colored paint applied on it, special color effect etc...
 	 */
 	var/list/atom_colours
-	// DQEdit — update_on_z moved to GLOB.update_on_z_by_atom (sparse map).
+	// update_on_z moved to GLOB.update_on_z_by_atom (sparse map).
 	// Saves the var entry from every /atom subtype's init table.
 	// Use SET_UPDATE_ON_Z / GET_UPDATE_ON_Z macros (see observer_listener helpers).
 
@@ -362,14 +362,12 @@
 // blind_message (optional) is what blind people will hear e.g. "You hear something!"
 /atom/proc/visible_message(message, blind_message, list/exclude_mobs, range = world.view, runemessage = "<span style='font-size: 1.5em'>👁</span>")
 
-	//VOREStation Edit
 	var/list/see
 	if(isbelly(loc))
 		var/obj/belly/B = loc
 		see = B.get_mobs_and_objs_in_belly()
 	else
 		see = get_mobs_and_objs_in_view_fast(get_turf(src), range, remote_ghosts = FALSE)
-	//VOREStation Edit End
 
 	var/list/seeing_mobs = see["mobs"]
 	var/list/seeing_objs = see["objs"]
@@ -462,7 +460,7 @@
 		return
 	var/list/speech_bubble_hearers = list()
 	for(var/mob/M in get_mobs_in_view(7, src))
-		// DQEdit — was [atom_say_verb], inlined since no subtype ever overrode it
+		// was [atom_say_verb], inlined since no subtype ever overrode it
 		M.show_message(span_npc_say(span_name("[src]") + " says, \"[message]\""), 2, null, 1)
 		if(M.client)
 			speech_bubble_hearers += M.client

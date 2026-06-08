@@ -22,8 +22,8 @@ LINEN BINS
 	var/special_handling = FALSE
 	resistance_flags = FLAMMABLE
 
-	/// Custom nouns to act as the subject of dreams  //CHOMPEdit - Dreaming
-	var/list/dream_messages = list("white") //CHOMPEdit - Dreaming
+	// / Custom nouns to act as the subject of dreams // Dreaming
+	var/list/dream_messages = list("white") // Dreaming
 
 /obj/item/bedsheet/Initialize(mapload)
 	. = ..()
@@ -59,74 +59,74 @@ LINEN BINS
 
 /obj/item/bedsheet/blue
 	icon_state = "sheetblue"
-	dream_messages = list("blue") //CHOMPEdit - Dreaming
+	dream_messages = list("blue") // Dreaming
 
 /obj/item/bedsheet/green
 	icon_state = "sheetgreen"
-	dream_messages = list("green") //CHOMPEdit - Dreaming
+	dream_messages = list("green") // Dreaming
 
 /obj/item/bedsheet/orange
 	icon_state = "sheetorange"
-	dream_messages = list("orange") //CHOMPEdit - Dreaming
+	dream_messages = list("orange") // Dreaming
 
 /obj/item/bedsheet/purple
 	icon_state = "sheetpurple"
-	dream_messages = list("purple") //CHOMPEdit - Dreaming
+	dream_messages = list("purple") // Dreaming
 
 /obj/item/bedsheet/rainbow
 	icon_state = "sheetrainbow"
-	dream_messages = list("red", "orange", "yellow", "green", "blue", "purple", "a rainbow") //CHOMPEdit - Dreaming
+	dream_messages = list("red", "orange", "yellow", "green", "blue", "purple", "a rainbow") // Dreaming
 
 /obj/item/bedsheet/red
 	icon_state = "sheetred"
-	dream_messages = list("red") //CHOMPEdit - Dreaming
+	dream_messages = list("red") // Dreaming
 
 /obj/item/bedsheet/yellow
 	icon_state = "sheetyellow"
-	dream_messages = list("yellow") //CHOMPEdit - Dreaming
+	dream_messages = list("yellow") // Dreaming
 
 /obj/item/bedsheet/mime
 	icon_state = "sheetmime"
-	dream_messages = list("silence", "gestures", "a pale face", "a gaping mouth", "the mime") //CHOMPEdit - Dreaming
+	dream_messages = list("silence", "gestures", "a pale face", "a gaping mouth", "the mime") // Dreaming
 
 /obj/item/bedsheet/clown
 	icon_state = "sheetclown"
 	item_state = "sheetrainbow"
-	dream_messages = list("honk", "laughter", "a prank", "a joke", "a smiling face", "the clown") //CHOMPEdit - Dreaming
+	dream_messages = list("honk", "laughter", "a prank", "a joke", "a smiling face", "the clown") // Dreaming
 
 /obj/item/bedsheet/captain
 	icon_state = "sheetcaptain"
-	dream_messages = list("authority", "a golden ID", "sunglasses", "a green disc", "an antique gun", "the captain") //CHOMPEdit - Dreaming
+	dream_messages = list("authority", "a golden ID", "sunglasses", "a green disc", "an antique gun", "the captain") // Dreaming
 
 /obj/item/bedsheet/rd
 	icon_state = "sheetrd"
-	dream_messages = list("authority", "a silvery ID", "a bomb", "a mech", "a facehugger", "maniacal laughter", "the research director") //CHOMPEdit - Dreaming
+	dream_messages = list("authority", "a silvery ID", "a bomb", "a mech", "a facehugger", "maniacal laughter", "the research director") // Dreaming
 
 /obj/item/bedsheet/medical
 	name = "medical blanket"
 	desc = "It's a sterilized* blanket commonly used in the Medbay.  *Sterilization is voided if a virologist is present onboard the station."
 	icon_state = "sheetmedical"
-	dream_messages = list("healing", "life", "surgery", "a doctor") //CHOMPEdit - Dreaming
+	dream_messages = list("healing", "life", "surgery", "a doctor") // Dreaming
 
 /obj/item/bedsheet/hos
 	icon_state = "sheethos"
-	dream_messages = list("authority", "a silvery ID", "handcuffs", "a baton", "a flashbang", "sunglasses", "the head of security") //CHOMPEdit - Dreaming
+	dream_messages = list("authority", "a silvery ID", "handcuffs", "a baton", "a flashbang", "sunglasses", "the head of security") // Dreaming
 
 /obj/item/bedsheet/hop
 	icon_state = "sheethop"
-	dream_messages = list("authority", "a silvery ID", "obligation", "a computer", "an ID", "a corgi", "the head of personnel") //CHOMPEdit - Dreaming
+	dream_messages = list("authority", "a silvery ID", "obligation", "a computer", "an ID", "a corgi", "the head of personnel") // Dreaming
 
 /obj/item/bedsheet/ce
 	icon_state = "sheetce"
-	dream_messages = list("authority", "a silvery ID", "the engine", "power tools", "an APC", "a parrot", "the chief engineer") //CHOMPEdit - Dreaming
+	dream_messages = list("authority", "a silvery ID", "the engine", "power tools", "an APC", "a parrot", "the chief engineer") // Dreaming
 
 /obj/item/bedsheet/brown
 	icon_state = "sheetbrown"
-	dream_messages = list("brown") //CHOMPEdit - Dreaming
+	dream_messages = list("brown") // Dreaming
 
 /obj/item/bedsheet/ian
 	icon_state = "sheetian"
-	dream_messages = list("a dog", "a corgi", "woof", "bark", "arf") //CHOMPEdit - Dreaming
+	dream_messages = list("a dog", "a corgi", "woof", "bark", "arf") // Dreaming
 
 /obj/item/bedsheet/double
 	icon_state = "doublesheet"

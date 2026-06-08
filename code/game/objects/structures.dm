@@ -9,8 +9,8 @@
 
 	var/list/connections
 	var/list/other_connections
-	var/list/blend_objects = null // Objects which to blend with //CHOMPEdit default null
-	var/list/noblend_objects = null //Objects to avoid blending with (such as children of listed blend objects. //CHOMPEdit default null
+	var/list/blend_objects = null // Objects which to blend with // default null
+	var/list/noblend_objects = null // Objects to avoid blending with (such as children of listed blend objects. // default null
 
 /obj/structure/Destroy()
 	if(parts)

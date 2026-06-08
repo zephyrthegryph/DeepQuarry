@@ -5,7 +5,7 @@
 /atom/proc/can_atmos_pass(turf/target_turf, vertical = FALSE)
 	switch (can_atmos_pass)
 		if (ATMOS_PASS_PROC)
-			// DQEdit — route to CanZASPass so CHOMP overrides on doors,
+			// route to CanZASPass so CHOMP overrides on doors,
 			// windows, airlocks, blast doors, multi-tile doors, etc. take
 			// effect under LINDA without each needing its own can_atmos_pass
 			// proc override.
@@ -72,7 +72,7 @@
 	var/list/atmos_adjacent_turfs = src.atmos_adjacent_turfs
 	var/canpass = CANATMOSPASS(src, src, FALSE)
 	// I am essentially inlineing two get_dir_multizs here, because they're way too slow on their own. I'm sorry brother
-	// DQEdit — guard SSmapping.multiz_levels[z] indexing: if SSmapping isn't
+	// guard SSmapping.multiz_levels[z] indexing: if SSmapping isn't
 	// fully initialized (e.g. early test setup) or this z hasn't been
 	// registered, fall back to no-multiz so the proc doesn't runtime.
 	var/list/z_traits = (SSmapping?.multiz_levels && length(SSmapping.multiz_levels) >= z) ? SSmapping.multiz_levels[z] : null
@@ -80,7 +80,7 @@
 		// Yes this is a reimplementation of get_step_mutliz. It's faster tho. fuck you
 		// Oh also yes UP and DOWN do just point to +1 and -1 and not z offsets
 		// Multiz is shitcode welcome home
-		// DQEdit — guard against z_traits being null (z-level has no multiz
+		// guard against z_traits being null (z-level has no multiz
 		// metadata registered with SSmapping). Skip vertical traversal entirely
 		// on such z-levels; horizontal cardinal still works.
 		var/turf/current_turf = (direction & (UP|DOWN)) ? \
@@ -94,7 +94,7 @@
 					(null) \
 			) : null) : \
 			(get_step(src, direction))
-		if(!istype(current_turf, /turf/open)) // DQEdit — was isopenturf(); after the /turf/simulated→/turf/open reparent we want all open turfs (floors included)
+		if(!istype(current_turf, /turf/open)) // was isopenturf(); after the /turf/simulated→/turf/open reparent we want all open turfs (floors included)
 			continue
 		// The assumption is that ONLY DURING INIT if two tiles have the same cycle, there's no way canpass(a->b) will be different then canpass(b->a), so this is faster
 		// Saves like 1.2 seconds
@@ -126,7 +126,7 @@
 	var/canpass = CANATMOSPASS(src, src, FALSE)
 	for(var/direction in GLOB.cardinals_multiz)
 		var/turf/current_turf = get_step_multiz(src, direction)
-		if(!istype(current_turf, /turf/open)) // DQEdit — was isopenturf(); CHOMP isopenturf only matches /turf/simulated/open+/turf/space, after the /turf/simulated→/turf/open reparent we want all open turfs (floors included)
+		if(!istype(current_turf, /turf/open)) // was isopenturf(); CHOMP isopenturf only matches /turf/simulated/open+/turf/space, after the /turf/simulated→/turf/open reparent we want all open turfs (floors included)
 			continue
 
 		//Can you and me form a deeper relationship, or is this just a passing wind

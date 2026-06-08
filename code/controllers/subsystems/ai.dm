@@ -40,11 +40,11 @@ SUBSYSTEM_DEF(ai)
 		if(!A || QDELETED(A) || A.busy) // Doesn't exist or won't exist soon or not doing it this tick
 			continue
 
-		var/mob/living/L = A.holder	//VOREStation Edit Start
+		var/mob/living/L = A.holder
 		if(!L?.loc)
 			continue
 
-		if((get_z(L) && process_z[get_z(L)]) || !L.low_priority) //VOREStation Edit End
+		if((get_z(L) && process_z[get_z(L)]) || !L.low_priority)
 			A.handle_strategicals()
 		else
 			slept_mobs++

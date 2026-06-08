@@ -7,7 +7,7 @@
 	var/role_flag = GLOB.be_special_flags[role]
 	if(!role_flag)	return
 
-	// DQEdit — be_special migrated to /datum/preference subtype
+	// be_special migrated to /datum/preference subtype
 	var/_cur = prefs.read_preference(/datum/preference/numeric/human/be_special)
 	var/_new = _cur ^ role_flag
 	prefs.update_preference_by_type(/datum/preference/numeric/human/be_special, _new)

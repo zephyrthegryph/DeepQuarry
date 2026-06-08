@@ -50,7 +50,7 @@
 		desc = "A fuel rod for a fusion reactor. This one is made from [material.use_name]."
 		fuel_colour = material.icon_colour
 		fuel_type = material.use_name
-		// DQEdit — radioactivity / luminescence moved to components on /datum/material.
+		// radioactivity / luminescence moved to components on /datum/material.
 		var/mat_rad = dq_material_radioactivity(material)
 		var/mat_lum = dq_material_luminescence(material)
 		if(mat_rad)

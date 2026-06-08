@@ -73,7 +73,7 @@
 	D.wrapped = R
 	D.name = "small parcel - 'EFTPOS access code'"
 
-// DQEdit Start — TGUI migration. attack_self opens Eftpos.tsx; the
+// TGUI migration. attack_self opens Eftpos.tsx; the
 // Topic switch is converted to tgui_act below.
 /obj/item/eftpos/attack_self(mob/user)
 	. = ..(user)
@@ -100,7 +100,6 @@
 	data["transaction_amount"] = transaction_amount
 	data["linked_account_name"] = linked_account ? linked_account.owner_name : ""
 	return data
-// DQEdit End
 
 /obj/item/eftpos/attackby(obj/item/O, mob/user)
 
@@ -144,7 +143,7 @@
 	else
 		..()
 
-// DQEdit Start — Topic switch lifted into tgui_act with stable action names.
+// Topic switch lifted into tgui_act with stable action names.
 /obj/item/eftpos/tgui_act(action, list/params)
 	. = ..()
 	if(.)
@@ -227,7 +226,6 @@
 				access_code = 0
 				to_chat(usr, "[icon2html(src, usr.client)]" + span_info("Access code reset to 0."))
 			return TRUE
-// DQEdit End
 
 /obj/item/eftpos/proc/scan_card(obj/item/card/I, obj/item/ID_container)
 	if (istype(I, /obj/item/card/id))

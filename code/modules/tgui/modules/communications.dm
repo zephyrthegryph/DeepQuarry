@@ -116,7 +116,7 @@
 		"presets" = list(
 			list("name" = "blank",    "label" = "Clear",        "desc" = "Blank slate."),
 			list("name" = "time",     "label" = "Station Time", "desc" = "The current time according to the station's clock."),
-			list("name" = "shuttle",  "label" = "Shuttle ETA",     "desc" = "Display how much time is left."),  //CHOMPEdit we have a shuttle not a tram silly virgo//VOREStation Edit - Shuttle ETA -> Tram ETA because we use trams
+			list("name" = "shuttle",  "label" = "Shuttle ETA",     "desc" = "Display how much time is left."), // we have a shuttle not a tram silly virgo// Shuttle ETA -> Tram ETA because we use trams
 			list("name" = "message",  "label" = "Message",      "desc" = "A custom message.")
 		),
 	)
@@ -283,10 +283,10 @@
 				return
 
 
-			//CHOMPEdit Start - Add confirmation message
+			// Add confirmation message
 			var/response = tgui_alert(ui.user, "OOC: You are required to Ahelp first before calling the shuttle. Please obtain confirmation from staff before calling the shuttle. \n\n Are you sure you want to call the shuttle?", "Confirm", list("Yes", "No"))
 
-			if(response == "Yes") //CHOMPEdit End
+			if(response == "Yes")
 				call_shuttle_proc(ui.user)
 				if(SSemergency_shuttle.online())
 					post_status(src, "shuttle", user = ui.user)
@@ -431,7 +431,7 @@
 	SSemergency_shuttle.call_evac()
 	log_game("[key_name(user)] has called the shuttle.")
 	message_admins("[key_name_admin(user)] has called the shuttle.", 1)
-	admin_chat_message(message = "Emergency evac beginning! Called by [key_name(user)]!", color = "#CC2222") //VOREStation Add
+	admin_chat_message(message = "Emergency evac beginning! Called by [key_name(user)]!", color = "#CC2222")
 
 	return
 
@@ -478,7 +478,7 @@
 
 	log_game("[user? key_name(user) : "Autotransfer"] has called the shuttle.")
 	message_admins("[user? key_name_admin(user) : "Autotransfer"] has called the shuttle.", 1)
-	admin_chat_message(message = "Autotransfer shuttle dispatched, shift ending soon.", color = "#2277BB") //VOREStation Add
+	admin_chat_message(message = "Autotransfer shuttle dispatched, shift ending soon.", color = "#2277BB")
 
 	return
 

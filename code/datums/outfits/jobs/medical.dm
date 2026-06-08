@@ -88,11 +88,10 @@
 	pda_type = /obj/item/pda/geneticist
 	belt = /obj/item/gene_scanner
 
-	// CHOMPAdd Start - Geneticists get their cool headset
+	// Geneticists get their cool headset
 	headset = /obj/item/radio/headset/headset_medsci
 	headset_alt = /obj/item/radio/headset/headset_medsci
 	headset_earbud = /obj/item/radio/headset/headset_medsci
-	// CHOMPAdd End
 
 /datum/decl/hierarchy/outfit/job/medical/psychiatrist
 	name = OUTFIT_JOB_NAME(JOB_PSYCHIATRIST)

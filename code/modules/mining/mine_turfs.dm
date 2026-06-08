@@ -173,7 +173,7 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 	opacity = 0
 	blocks_air = 0
 	can_build_into_floor = TRUE
-	// DQEdit — under LINDA, a turf with blocks_air=0 but air=null trips
+	// under LINDA, a turf with blocks_air=0 but air=null trips
 	// process_cell guards on every neighbor share. Mineral walls start with
 	// air=null (because /turf/open/Initialize skips create_gas_mixture when
 	// blocks_air=1); when we carve them into a floor here we have to give
@@ -191,7 +191,7 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 	opacity = 1
 	blocks_air = 1
 	can_build_into_floor = FALSE
-	// DQEdit — re-walling a carved mineral: drop the air mixture so we don't
+	// re-walling a carved mineral: drop the air mixture so we don't
 	// leave a stale gas pocket inside a solid wall. air_update_turf below
 	// will then rebuild adjacency excluding this turf.
 	if(air)

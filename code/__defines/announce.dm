@@ -2,7 +2,7 @@
 #define ANNOUNCER_VOICE_SS13 "announcer_ss13"
 #define ANNOUNCER_VOICE_SILENT "announcer_silent"
 #define ANNOUNCER_VOICE_VIRGO "announcer_virgo"
-#define ANNOUNCER_VOICE_CHOMP "announcer_chomp" //CHOMPEdit - Adds CHOMP Announcer
+#define ANNOUNCER_VOICE_CHOMP "announcer_chomp" // Adds CHOMP Announcer
 
 // Announcements
 #define ANNOUNCER_MSG_ROUND_START "announcer_msg_round_start"
@@ -72,7 +72,7 @@
 #define ANNOUNCER_MSG_WEATHER_ALERT "announcer_msg_weather_alert"
 
 // Sets the current voice for the station PA
-GLOBAL_VAR_INIT(current_announcer_voice, ANNOUNCER_VOICE_CHOMP) //CHOMPEdit - Use our announcer
+GLOBAL_VAR_INIT(current_announcer_voice, ANNOUNCER_VOICE_CHOMP) // Use our announcer
 
 // Set sound paths to null to explicitly disable a message from falling back to SS13 default
 GLOBAL_LIST_INIT(announcer_library, list(
@@ -152,7 +152,6 @@ GLOBAL_LIST_INIT(announcer_library, list(
 
 		ANNOUNCER_MSG_NEW_AI = null, // disabled
 	),
-	//CHOMPEdit Start
 	ANNOUNCER_VOICE_CHOMP = list(
 		//Including ALL them here for easy reference.
 		//If it's commented out, that means we use default.
@@ -224,7 +223,7 @@ GLOBAL_LIST_INIT(announcer_library, list(
 //		ANNOUNCER_MSG_WALLROT = null
 //		ANNOUNCER_MSG_SUPPLYORDER = null,
 //		ANNOUNCER_MSG_WEATHER_ALERT = null,
-		), //CHOMPEdit End
+		),
 ))
 
 #define AIRLOCK_MSG_OUT "airlock_out"

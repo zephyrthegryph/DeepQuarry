@@ -263,11 +263,9 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	if(mind.current.key && copytext(mind.current.key,1,2)!="@")	//makes sure we don't accidentally kick any clients
 		to_chat(src, span_warning("Another consciousness is in your body... it is resisting you."))
 		return
-	//VOREStation Add
 	if(GLOB.prevent_respawns.Find(mind.name))
 		to_chat(src, span_warning("You already quit this round as this character, sorry!"))
 		return
-	//VOREStation Add End
 	if(mind.current.ajourn && mind.current.stat != DEAD) //check if the corpse is astral-journeying (it's client ghosted using a cultist rune).
 		var/found_rune
 		for(var/obj/effect/rune/R in mind.current.loc)   //whilst corpse is alive, we can only reenter the body if it's on the rune
@@ -556,10 +554,9 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	GLOB.observer_mob_list -= src
 	for(var/datum/chunk/ghost/ghost_chunks in visibleChunks)
 		ghost_chunks.remove(src)
-	//ChompEDIT START - deal with weird behavior on qdelled ghosts
+	// deal with weird behavior on qdelled ghosts
 	if(client) //qdelling a ghost with a client = make a new ghost i guess
 		ghostize()
-	//ChompEDIT END
 	if(key)
 		key = null
 	return ..()
@@ -642,7 +639,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	else
 		gas_analyzing += span_red("Pressure: [round(pressure,0.1)] kPa")
 	if(total_moles)
-		// DQEdit — XGM env.gas[g] iteration → LINDA env.gases[/datum/gas/X][MOLES].
+		// XGM env.gas[g] iteration → LINDA env.gases[/datum/gas/X][MOLES].
 		for(var/datum/gas/g as anything in environment.gases)
 			var/_moles = environment.gases[g][MOLES]
 			gas_analyzing += "[initial(g.name)]: [round((_moles / total_moles) * 100)]% ([round(_moles, 0.01)] moles)"
@@ -987,7 +984,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 		to_chat(src,span_warning("You cannot alert pAI cards when you are banned from playing as a pAI."))
 		return
 
-	if(!(src.client.prefs?.read_preference(/datum/preference/numeric/human/be_special) & BE_PAI)) // DQEdit — migrated
+	if(!(src.client.prefs?.read_preference(/datum/preference/numeric/human/be_special) & BE_PAI)) // migrated
 		to_chat(src,span_warning("You have 'Be pAI' disabled in your character prefs."))
 		return
 
@@ -1064,7 +1061,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 			to_chat(src, span_notice("New notification has been sent."))
 	else
 		to_chat(src,span_warning("No backup record could be found, sorry."))
-// CHOMPEdit: Revert Removal
+// Revert Removal
 /mob/observer/dead/verb/backup_delay()
 	set category = "Ghost.Settings"
 	set name = "Cancel Transcore Notification"

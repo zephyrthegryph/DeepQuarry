@@ -2,7 +2,7 @@ GLOBAL_DATUM_INIT(news_data, /datum/lore/news, new)
 
 /datum/feed_network/New()
 	CreateFeedChannel("Station Announcements", "NanoTrasen", 1, 1, "New Station Announcement Available")
-	//CreateFeedChannel("Vir News Network", "Oculum Broadcast", 1, 1, "Updates from the Vir News Network!") //VOREStation Removal
+	// CreateFeedChannel("Vir News Network", "Oculum Broadcast", 1, 1, "Updates from the Vir News Network!") // Removal
 
 /datum/lore/news
 	var/datum/feed_channel/station_newspaper

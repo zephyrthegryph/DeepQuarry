@@ -189,7 +189,6 @@
 	if (W.has_tool_quality(TOOL_WRENCH)) //can't wrench it shut, it's always open
 		return
 	return ..()
-//VOREStation Add End
 
 /obj/structure/reagent_dispensers/fueltank/examine(mob/user)
 	. = ..()

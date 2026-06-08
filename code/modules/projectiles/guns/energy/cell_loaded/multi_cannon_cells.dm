@@ -3,7 +3,7 @@
 	name = "macrobattery"
 	icon = 'icons/obj/ammo_vr.dmi'
 	icon_state = "macrobat_wtf"
-	desc = "A large nanite fabricator for a Curabitur cannon. Powered by a mix of precursor and modern tech, this fancy device recharges without an outside power source. Takes approximately three seconds to charge one shot." // CHOMPedit: Clearer charge time
+	desc = "A large nanite fabricator for a Curabitur cannon. Powered by a mix of precursor and modern tech, this fancy device recharges without an outside power source. Takes approximately three seconds to charge one shot." // Clearer charge time
 
 	projectile_type = /obj/item/projectile/beam/chain_lightning //why the hell not
 
@@ -11,7 +11,7 @@
 	var/charge
 	var/max_charge = 10
 	var/ticks = 1
-	var/ticks_to_charge = 3 // CHOMPedit: Reduced from 15 ticks to 3 for a faster recharge, which comes out to around 3 seconds on a localhost. These things are VERY rare.
+	var/ticks_to_charge = 3 // Reduced from 15 ticks to 3 for a faster recharge, which comes out to around 3 seconds on a localhost. These things are VERY rare.
 
 /obj/item/ammo_casing/macrobattery/Initialize(mapload, ...)
 	. = ..()

@@ -1,6 +1,6 @@
 //This is the proc for gibbing a mob. Cannot gib ghosts.
 //added different sort of gibs and animations. N
-/mob/proc/gib(anim="blank", do_gibs, gib_file = 'icons/mob/mob.dmi') //CHOMPEdit
+/mob/proc/gib(anim="blank", do_gibs, gib_file = 'icons/mob/mob.dmi')
 	if(stat != DEAD)
 		death(1)
 	transforming = 1
@@ -90,13 +90,12 @@
 	SEND_SIGNAL(src, COMSIG_MOB_DEATH, gibbed)
 	SEND_GLOBAL_SIGNAL(COMSIG_GLOB_MOB_DEATH, src, gibbed)
 
-	if(src.loc && istype(loc,/obj/belly) || istype(loc,/obj/item/dogborg/sleeper) || istype(loc, /obj/item/clothing/shoes)) deathmessage = "no message" //VOREStation Add - Prevents death messages from inside mobs - CHOMPEdit: Added in-shoe as well
-	//CHOMPAdd Start - Muffle original body death on Mob TF death
+	if(src.loc && istype(loc,/obj/belly) || istype(loc,/obj/item/dogborg/sleeper) || istype(loc, /obj/item/clothing/shoes)) deathmessage = "no message" // Prevents death messages from inside mobs - Added in-shoe as well
+	// Muffle original body death on Mob TF death
 	if(src.loc && isliving(loc))
 		var/mob/living/L = loc
 		if(L.tf_mob_holder == src)
 			deathmessage = "no message"
-	//CHOMPAdd End
 	facing_dir = null
 
 	if(!gibbed && deathmessage != DEATHGASP_NO_MESSAGE)

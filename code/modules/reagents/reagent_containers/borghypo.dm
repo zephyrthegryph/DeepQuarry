@@ -12,7 +12,7 @@
 	/// The single chemical we have currently selected. Used to index `reagent_volumes`, `reagent_names`, and `reagent_ids`.
 	var/mode = 1
 	/// Amount of power this hypo will remove from the robot user's internal cell when a reagent's stores are replenished.
-	var/charge_cost = 325 // CHOMPEdit
+	var/charge_cost = 325
 	var/charge_tick = 0
 	/// Time it takes for shots to recharge (in seconds)
 	var/recharge_time = 5
@@ -28,7 +28,7 @@
 	var/selected_recipe_id
 	var/hypo_sound = 'sound/effects/hypospray.ogg'	// What sound do we play on use?
 
-	var/list/reagent_ids = list(REAGENT_ID_TRICORDRAZINE, REAGENT_ID_INAPROVALINE, REAGENT_ID_BICARIDINE, REAGENT_ID_ANTITOXIN, REAGENT_ID_KELOTANE, REAGENT_ID_TRAMADOL, REAGENT_ID_DEXALIN, REAGENT_ID_SPACEACILLIN) // CHOMPEdit
+	var/list/reagent_ids = list(REAGENT_ID_TRICORDRAZINE, REAGENT_ID_INAPROVALINE, REAGENT_ID_BICARIDINE, REAGENT_ID_ANTITOXIN, REAGENT_ID_KELOTANE, REAGENT_ID_TRAMADOL, REAGENT_ID_DEXALIN, REAGENT_ID_SPACEACILLIN)
 	var/list/reagent_volumes = list()
 	/// Associated list of the names of each of our reagents. Indexed via `mode`.
 	var/list/reagent_names = list()
@@ -43,7 +43,7 @@
 	reagent_ids = list(REAGENT_ID_INAPROVALINE, REAGENT_ID_DEXALIN, REAGENT_ID_TRICORDRAZINE, REAGENT_ID_SPACEACILLIN, REAGENT_ID_OXYCODONE)
 
 /obj/item/reagent_containers/borghypo/crisis
-	reagent_ids = list(REAGENT_ID_INAPROVALINE, REAGENT_ID_TRICORDRAZINE, REAGENT_ID_DEXALIN, REAGENT_ID_BICARIDINE, REAGENT_ID_KELOTANE, REAGENT_ID_ANTITOXIN, REAGENT_ID_SPACEACILLIN, REAGENT_ID_TRAMADOL, REAGENT_ID_ADRANOL) // CHOMPedit: Unifying chems with dogborg equivalent.
+	reagent_ids = list(REAGENT_ID_INAPROVALINE, REAGENT_ID_TRICORDRAZINE, REAGENT_ID_DEXALIN, REAGENT_ID_BICARIDINE, REAGENT_ID_KELOTANE, REAGENT_ID_ANTITOXIN, REAGENT_ID_SPACEACILLIN, REAGENT_ID_TRAMADOL, REAGENT_ID_ADRANOL) // Unifying chems with dogborg equivalent.
 
 /obj/item/reagent_containers/borghypo/lost
 	reagent_ids = list(REAGENT_ID_TRICORDRAZINE, REAGENT_ID_BICARIDINE, REAGENT_ID_DEXALIN, REAGENT_ID_ANTITOXIN, REAGENT_ID_TRAMADOL, REAGENT_ID_SPACEACILLIN)
@@ -351,7 +351,7 @@
 	transfer_amounts = list(5, 10, 20, 30)
 	hypo_sound = 'sound/machines/reagent_dispense.ogg'
 	reagent_ids = list(REAGENT_ID_ALE,
-		REAGENT_ID_APPLEJUICE, //CHOMPADD it has literally every other type of juice..
+		REAGENT_ID_APPLEJUICE, // it has literally every other type of juice..
 		REAGENT_ID_BEER,
 		REAGENT_ID_BERRYJUICE,
 		REAGENT_ID_BITTERS,

@@ -22,14 +22,13 @@
 	matter = list(MAT_STEEL = 400)
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
-	// DQEdit Start — last scan results for TGUI. Replaces the legacy `temp`
+	// last scan results for TGUI. Replaces the legacy `temp`
 	// HTML blob with structured data.
 	var/list/last_beacons = null
 	var/list/last_implants = null
 	var/last_location = null
-	// DQEdit End
 
-// DQEdit Start — TGUI migration. attack_self opens Locator.tsx; Topic
+// TGUI migration. attack_self opens Locator.tsx; Topic
 // frequency/refresh/clear actions move to tgui_act.
 /obj/item/locator/attack_self(mob/user)
 	. = ..(user)
@@ -117,7 +116,6 @@
 			last_implants = i
 			last_location = "[sr.x], [sr.y], [sr.z]"
 			return TRUE
-// DQEdit End
 
 
 /*
@@ -186,6 +184,6 @@
 	var/obj/effect/portal/P = new /obj/effect/portal( get_turf(src) )
 	P.target = T
 	P.creator = src
-	P.failchance = 0 //CHOMPEdit : funny 5% chance to be spaced and die makes the hand tele kinda useless.
+	P.failchance = 0 // funny 5% chance to be spaced and die makes the hand tele kinda useless.
 	src.add_fingerprint(user)
 	return

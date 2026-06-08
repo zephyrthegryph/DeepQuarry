@@ -255,7 +255,6 @@
 	containername = "Zaddat Shroud crate"
 	access = null
 
-//ChompEdit Start
 /datum/supply_pack/voidsuits/unathi_bs_NT
 	name = "NT Unathi breacher chassis"
 	contains = list(/obj/item/rig/breacher)
@@ -286,7 +285,6 @@
 	containertype = /obj/structure/closet/crate/secure/heph
 	containername = "Vox security Rigsuit Crate"
 	access = ACCESS_SECURITY
-//ChompEdit End
 
 /datum/supply_pack/voidsuits/explorer
 	name = JOB_EXPLORER + " voidsuits"
@@ -369,7 +367,7 @@
 	cost = 150
 	containertype = /obj/structure/closet/crate/secure
 	name = "Solgov riot voidsuit crate"
-	access = ACCESS_BRIG // CHOMPEdit
+	access = ACCESS_BRIG
 
 /datum/supply_pack/voidsuits/solgov_pilot //CHOMP explo keep
 	name = "Solgov pilot voidsuit" //CHOMP explo keep

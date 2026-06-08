@@ -11,7 +11,7 @@
 	pass_stack_colors = TRUE
 	supply_conversion_value = 2
 	hardness = 5
-	stack_type = /obj/item/stack/material/cloth //CHOMPEdit
+	stack_type = /obj/item/stack/material/cloth
 
 
 /datum/material/cloth/generate_recipes() //Vorestation Add - adding some funny cool storage pouches to this so botany can do things other than food
@@ -128,7 +128,7 @@
 
 
 
-//CHOMPedit: added stacktype var inside cloth_ch.dm
+// added stacktype var inside cloth_ch.dm
 /datum/material/carpet
 	name = MAT_CARPET
 	display_name = "comfy"
@@ -177,7 +177,7 @@
 	pass_stack_colors = TRUE
 	hardness = 5
 	integrity = 5
-	stack_type = /obj/item/stack/material/fiber //CHOMPEdit
+	stack_type = /obj/item/stack/material/fiber
 	supply_conversion_value = 1
 
 

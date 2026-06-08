@@ -24,10 +24,9 @@ GLOBAL_DATUM(error_cache, /datum/error_viewer/error_cache)
 /datum/error_viewer
 	var/name = ""
 
-// DQEdit Start — browse_to body relocated to code/modules/error_handler/error_viewer_panel.dm (structured TGUI).
+// browse_to body relocated to code/modules/error_handler/error_viewer_panel.dm (structured TGUI).
 /datum/error_viewer/proc/browse_to(client/user, html)
 	return  // body provided by modular override
-// DQEdit End
 
 /datum/error_viewer/proc/build_header(datum/error_viewer/back_to, linear)
 	// Common starter HTML for show_to

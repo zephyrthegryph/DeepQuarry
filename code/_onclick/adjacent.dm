@@ -31,7 +31,7 @@
 		return 1
 	if(get_dist(src,T0) > 1)
 		return 0
-	if(T0.z != z) return 0 //VOREStation Add
+	if(T0.z != z) return 0
 	if(T0.x == x || T0.y == y)
 		// Check for border blockages
 		return T0.ClickCross(get_dir(T0,src), border_only = 1) && src.ClickCross(get_dir(src,T0), border_only = 1, target_atom = target)
@@ -142,7 +142,6 @@ Quick adjacency (to turf):
 
 	Since I don't want to complicate the click code rework by messing with unrelated systems it won't be changed here.
 */
-//CHOMPEdit Begin
 ///True if the dir is north or south, false therwise
 #define NSCOMPONENT(d)   (d&(NORTH|SOUTH))
 ///True if the dir is east/west, false otherwise
@@ -194,4 +193,3 @@ Quick adjacency (to turf):
 	return FALSE
 #undef NSCOMPONENT
 #undef EWCOMPONENT
-//CHOMPEdit End

@@ -18,9 +18,9 @@ SUBSYSTEM_DEF(job)
 	var/list/job_icon_cache = list()
 	var/debug_messages = FALSE
 
-	var/savepath = "data/job_camp_list.json"	// CHOMPadd
-	var/list/shift_keys = list()				// CHOMPadd
-	var/list/restricted_keys = list()			// CHOMPadd
+	var/savepath = "data/job_camp_list.json"
+	var/list/shift_keys = list()
+	var/list/restricted_keys = list()
 
 /datum/controller/subsystem/job/proc/get_all_job_icons() //For all existing HUD icons
 	return occupation_with_excludes + GLOB.alt_titles_with_icons + list("Prisoner")
@@ -28,10 +28,10 @@ SUBSYSTEM_DEF(job)
 /datum/controller/subsystem/job/Initialize()
 	setup_departments()
 	setup_occupations()
-	//CHOMPadd begin
+	// begin
 	if(CONFIG_GET(number/job_camp_time_limit))
 		load_camp_lists()
-	//CHOMPadd end
+	// end
 	return SS_INIT_SUCCESS
 
 /datum/controller/subsystem/job/proc/setup_occupations(faction = FACTION_STATION)
@@ -185,10 +185,8 @@ SUBSYSTEM_DEF(job)
 			player.mind.role_alt_title = get_player_alt_title(player, rank)
 			unassigned -= player
 			job.current_positions++
-			//CHOMPadd START
 			if(job.camp_protection && round_duration_in_ds < SStransfer.get_hard_end() - 30 MINUTES)
 				job.register_shift_key(player.client.ckey)
-			//CHOMPadd END
 			return TRUE
 	job_debug_message("AR has failed, Player: [player], Rank: [rank]")
 	return FALSE
@@ -220,18 +218,18 @@ SUBSYSTEM_DEF(job)
 		if(job.minimum_character_age && (player.read_preference(/datum/preference/numeric/human/age) < job.get_min_age(player.client.prefs.read_preference(/datum/preference/choiced/species), player.client.prefs.read_preference(/datum/preference/organ_data)?[O_BRAIN])))
 			job_debug_message("FOC character not old enough, Player: [player]")
 			continue
-		//VOREStation Code Start
+		// Code Start
 		if(!job.player_has_enough_playtime(player.client))
 			job_debug_message("FOC character not enough playtime, Player: [player]")
 			continue
 		if(!is_job_whitelisted(player, job.title))
 			job_debug_message("FOC is_job_whitelisted failed, Player: [player]")
 			continue
-		//VOREStation Code End
+		// Code End
 		if(flag && !(player.client.prefs.read_preference(/datum/preference/numeric/human/be_special) & flag))
 			job_debug_message("FOC flag failed, Player: [player], Flag: [flag], ")
 			continue
-		// DQEdit — was: GetJobDepartment(job, level) & job.flag — bucket bitfields gone.
+		// was: GetJobDepartment(job, level) & job.flag — bucket bitfields gone.
 		if(player.client.prefs.job_at_level(job.title, level))
 			job_debug_message("FOC pass, Player: [player], Level:[level]")
 			candidates += player
@@ -246,7 +244,7 @@ SUBSYSTEM_DEF(job)
 		if((job.minimum_character_age || job.min_age_by_species) && (player.read_preference(/datum/preference/numeric/human/age) < job.get_min_age(player.client.prefs.read_preference(/datum/preference/choiced/species), player.client.prefs.read_preference(/datum/preference/organ_data)?[O_BRAIN])))
 			continue
 
-		if(istype(job, get_job(JOB_ALT_VISITOR))) // We don't want to give him assistant, that's boring! //VOREStation Edit - Visitor not Assistant
+		if(istype(job, get_job(JOB_ALT_VISITOR))) // We don't want to give him assistant, that's boring! // Visitor not Assistant
 			continue
 
 		if(SSjob.is_job_in_department(job.title, DEPARTMENT_COMMAND)) //If you want a command position, select it!
@@ -373,7 +371,7 @@ SUBSYSTEM_DEF(job)
 	job_debug_message("AC1, Candidates: [length(assistant_candidates)]")
 	for(var/mob/new_player/player in assistant_candidates)
 		job_debug_message("AC1 pass, Player: [player]")
-		assign_role(player, JOB_ALT_VISITOR) //VOREStation Edit - Visitor not Assistant
+		assign_role(player, JOB_ALT_VISITOR) // Visitor not Assistant
 		assistant_candidates -= player
 	job_debug_message("DO, AC1 end")
 
@@ -413,14 +411,12 @@ SUBSYSTEM_DEF(job)
 					job_debug_message("DO player not old enough, Player: [player], Job:[job.title]")
 					continue
 
-				//VOREStation Add
 				if(!job.player_has_enough_playtime(player.client))
 					job_debug_message("DO player not enough playtime, Player: [player]")
 					continue
-				//VOREStation Add End
 
 				// If the player wants that job on this level, then try give it to him.
-				// DQEdit — was: GetJobDepartment(job, level) & job.flag.
+				// was: GetJobDepartment(job, level) & job.flag.
 				if(player.client.prefs.job_at_level(job.title, level))
 
 					// If the job isn't filled
@@ -444,7 +440,7 @@ SUBSYSTEM_DEF(job)
 	for(var/mob/new_player/player in unassigned)
 		if(player.client.prefs.read_preference(/datum/preference/numeric/human/alternate_option) == BE_ASSISTANT)
 			job_debug_message("AC2 Assistant located, Player: [player]")
-			assign_role(player, JOB_ALT_VISITOR) //VOREStation Edit - Visitor not Assistant
+			assign_role(player, JOB_ALT_VISITOR) // Visitor not Assistant
 
 	//For ones returning to lobby
 	for(var/mob/new_player/player in unassigned)
@@ -493,7 +489,7 @@ SUBSYSTEM_DEF(job)
 		var/list/custom_equip_slots = list()
 		var/list/custom_equip_leftovers = list()
 		if(human_mob?.client?.prefs && !(job.mob_type & JOB_SILICON))
-			var/list/active_gear_list = human_mob.client.prefs.get_loadout_for_job(rank) // DQEdit — per-job loadout (was: gear_list[gear_slot])
+			var/list/active_gear_list = human_mob.client.prefs.get_loadout_for_job(rank) // per-job loadout (was: gear_list[gear_slot])
 			for(var/thing in active_gear_list)
 				var/datum/gear/gaar_thing = GLOB.gear_datums[thing]
 				if(!gaar_thing) //Not a real gear datum (maybe removed, as this is loaded from their savefile)
@@ -524,7 +520,7 @@ SUBSYSTEM_DEF(job)
 					gear_implant.implant_loadout(human_mob)
 					continue
 
-				// DQEdit — items with no body slot (the new "Other / Junk" bucket in the
+				// items with no body slot (the new "Other / Junk" bucket in the
 				// loadout editor) used to be silently dropped here. Route them into the
 				// deferred backpack-spawn pile so they end up where the player expects.
 				if(!gaar_thing.slot)
@@ -537,9 +533,9 @@ SUBSYSTEM_DEF(job)
 					//if(G.slot == slot_wear_mask || G.slot == slot_wear_suit || G.slot == slot_head)
 					//	custom_equip_leftovers += thing
 					//else
-					// DQEdit — no_jacket pref deleted; this gate is dead code now.
-//					if(gaar_thing.slot == slot_shoes && human_mob.client?.prefs?.shoe_hater)	//RS ADD //CHOMPEdit - Disable
-//						continue //CHOMPEdit - Disable
+					// no_jacket pref deleted; this gate is dead code now.
+// if(gaar_thing.slot == slot_shoes && human_mob.client?.prefs?.shoe_hater) //RS ADD // Disable
+// continue // Disable
 					if(human_mob.equip_to_slot_or_del(gaar_thing.spawn_item(human_mob, metadata), gaar_thing.slot))
 						to_chat(human_mob, span_notice("Equipping you with \the [thing]!"))
 						if(gaar_thing.slot != slot_tie)
@@ -566,13 +562,13 @@ SUBSYSTEM_DEF(job)
 		// If some custom items could not be equipped before, try again now.
 		for(var/thing in custom_equip_leftovers)
 			var/datum/gear/gear_thing = GLOB.gear_datums[thing]
-			// DQEdit — no_jacket pref deleted; this gate is dead code now.
-//			if(gear_thing.slot == slot_shoes && human_mob.client?.prefs?.shoe_hater) //CHOMPEdit - Disable
-//				continue //CHOMPEdit - Disable
+			// no_jacket pref deleted; this gate is dead code now.
+// if(gear_thing.slot == slot_shoes && human_mob.client?.prefs?.shoe_hater) // Disable
+// continue // Disable
 			if(gear_thing.slot in custom_equip_slots)
 				spawn_in_storage += thing
 			else
-				var/list/active_gear_list = human_mob.client.prefs.get_loadout_for_job(rank) // DQEdit — per-job loadout (was: gear_list[gear_slot])
+				var/list/active_gear_list = human_mob.client.prefs.get_loadout_for_job(rank) // per-job loadout (was: gear_list[gear_slot])
 				var/metadata = active_gear_list[gear_thing.display_name]
 				if(human_mob.equip_to_slot_or_del(gear_thing.spawn_item(human_mob, metadata), gear_thing.slot))
 					to_chat(human_mob, span_notice("Equipping you with \the [thing]!"))
@@ -590,7 +586,7 @@ SUBSYSTEM_DEF(job)
 
 	human_mob.job = rank
 	log_game("JOINED [key_name(human_mob)] as \"[rank]\"")
-	log_game("SPECIES [key_name(human_mob)] is a: \"[human_mob.species.name]\"") //VOREStation Add
+	log_game("SPECIES [key_name(human_mob)] is a: \"[human_mob.species.name]\"")
 
 	// If they're head, give them the account info for their department
 	if(human_mob.mind && job.department_accounts)
@@ -627,7 +623,7 @@ SUBSYSTEM_DEF(job)
 				storage_bag = worn_bag
 				break
 
-			var/list/active_gear_list = human_mob.client.prefs.get_loadout_for_job(rank) // DQEdit — per-job loadout (was: gear_list[gear_slot])
+			var/list/active_gear_list = human_mob.client.prefs.get_loadout_for_job(rank) // per-job loadout (was: gear_list[gear_slot])
 			if(!isnull(storage_bag))
 				for(var/thing in spawn_in_storage)
 					to_chat(human_mob, span_notice("Placing \the [thing] in your [storage_bag.name]!"))
@@ -725,7 +721,7 @@ SUBSYSTEM_DEF(job)
 			if(!job.player_has_enough_playtime(player.client))
 				level6++
 				continue
-			// DQEdit — was: GetJobDepartment(...) & job.flag for each level.
+			// was: GetJobDepartment(...) & job.flag for each level.
 			var/_priority = player.client.prefs.get_job_priority(job.title)
 			switch(_priority)
 				if("high")
@@ -1081,7 +1077,7 @@ SUBSYSTEM_DEF(job)
 		"Emergency Response Team",
 		"Emergency Response Team Leader")
 
-//CHOMPadd start
+// start
 /datum/controller/subsystem/job/proc/load_camp_lists()
 	if(fexists(savepath))
 		restricted_keys = json_decode(file2text(savepath))
@@ -1100,4 +1096,4 @@ SUBSYSTEM_DEF(job)
 	rustg_file_write(json_to_file, savepath)
 	if(!fexists(savepath))
 		log_world("Saving: failed to save [savepath]")
-//CHOMPadd end
+// end

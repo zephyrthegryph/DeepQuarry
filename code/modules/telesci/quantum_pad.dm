@@ -60,17 +60,17 @@
 	teleport_cooldown = initial(teleport_cooldown)
 	teleport_cooldown = max(50, (teleport_cooldown - (E * 100)))
 
-	dq_apply_material_synergies(src) // DQAdd
+	dq_apply_material_synergies(src)
 /obj/machinery/power/quantumpad/attackby(obj/item/I, mob/user, params)
 	if(default_deconstruction_screwdriver(user, I))
 		return
 
 	if(istype(I, /obj/item/multitool))
-		//VOREStation Addition Start
+		// ition Start
 		if(istype(get_area(src), /area/shuttle))
 			to_chat(user, span_warning("This is too unstable a platform for \the [src] to operate on!"))
 			return
-		//VOREStation Addition End
+		// ition End
 		if(panel_open)
 			var/obj/item/multitool/M = I
 			M.connectable = src
@@ -134,10 +134,10 @@
 
 	if(istype(get_area(src), /area/shuttle))
 		to_chat(user, span_warning("This is too unstable a platform for \the [src] to operate on!"))
-		//VOREStation Addition Start
+		// ition Start
 		if(linked_pad)
 			linked_pad.linked_pad = null
-		//VOREStation Addition End
+		// ition End
 		return
 
 	if(!powernet)
@@ -187,11 +187,11 @@
 	update_icon()
 	if(!linked_pad)
 		return
-	//VOREStation Addition Start
+	// ition Start
 	if(istype(get_area(src), /area/shuttle))
 		to_chat(user, span_warning("This is too unstable a platform for \the [src] to operate on!"))
 		return
-	//VOREStation Addition End
+	// ition End
 	playsound(src, 'sound/weapons/flash.ogg', 25, 1)
 	teleporting = 1
 
@@ -266,7 +266,7 @@
 			continue
 		else if(isobserver(ROI) && isEye(ROI))
 			continue
-		do_teleport(ROI, destination, asoundin = 'sound/weapons/emitter2.ogg', asoundout = 'sound/weapons/emitter2.ogg') // CHOMPEdit - Noisy
+		do_teleport(ROI, destination, asoundin = 'sound/weapons/emitter2.ogg', asoundout = 'sound/weapons/emitter2.ogg') // Noisy
 
 /obj/machinery/power/quantumpad/proc/can_traverse_gateway()
 	return TRUE

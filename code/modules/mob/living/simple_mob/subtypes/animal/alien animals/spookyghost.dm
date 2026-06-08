@@ -19,7 +19,7 @@
 	icon_living = "space_ghost"
 	icon_dead = "space_ghost_dead"
 	has_eye_glow = TRUE
-	// DQEdit — dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
+	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 	pass_flags = PASSTABLE
 
 	faction = FACTION_SPACE_GHOST
@@ -124,7 +124,7 @@
 	icon_state = "spookyghost-1"
 	icon_living = "spookyghost-1"
 	icon_dead = "space_ghost_dead"
-	// DQEdit — dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
+	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 	pass_flags = PASSTABLE
 
 	faction = FACTION_SPACE_GHOST

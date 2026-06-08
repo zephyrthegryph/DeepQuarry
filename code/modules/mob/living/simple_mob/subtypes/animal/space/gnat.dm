@@ -30,7 +30,7 @@
 	maxHealth = 5
 	health = 5
 	movement_cooldown = 0
-	// DQEdit — dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
+	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
 	response_help = "baps the"
 	response_disarm = "gently pushes aside the"

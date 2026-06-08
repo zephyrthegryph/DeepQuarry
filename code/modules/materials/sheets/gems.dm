@@ -12,7 +12,7 @@
 	name = MAT_DIAMOND
 	icon_state = "sheet-diamond"
 	default_type = MAT_DIAMOND
-	no_variants = FALSE //CHOMPedit - Variants added
+	no_variants = FALSE // Variants added
 	drop_sound = 'sound/items/drop/glass.ogg'
 	pickup_sound = 'sound/items/pickup/glass.ogg'
 	coin_type = /obj/item/coin/diamond

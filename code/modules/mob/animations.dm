@@ -7,11 +7,11 @@
 	if(anchored||buckled)
 		make_floating(0)
 		return
-	if(ishuman(src)) //VOREStation Edit Start. Floating code.
+	if(ishuman(src)) // . Floating code.
 		var/mob/living/carbon/human/H = src
 		if(H.flying)
 			make_floating(1)
-			return //VOREStation Edit End
+			return
 	var/turf/turf = get_turf(src)
 	if(!istype(turf,/turf/space))
 		var/area/A = turf.loc

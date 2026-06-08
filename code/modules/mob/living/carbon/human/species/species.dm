@@ -76,7 +76,7 @@
 
 	// The languages the species can't speak without an assisted organ.
 	// This list is a guess at things that no one other than the parent species should be able to speak
-	var/list/assisted_langs = list(LANGUAGE_EAL, LANGUAGE_SKRELLIAN, LANGUAGE_ROOTLOCAL, LANGUAGE_ROOTGLOBAL, LANGUAGE_VOX, LANGUAGE_PROMETHEAN, LANGUAGE_HIVEMIND) //CHOMPedit: Added Hivemind.
+	var/list/assisted_langs = list(LANGUAGE_EAL, LANGUAGE_SKRELLIAN, LANGUAGE_ROOTLOCAL, LANGUAGE_ROOTGLOBAL, LANGUAGE_VOX, LANGUAGE_PROMETHEAN, LANGUAGE_HIVEMIND) // Added Hivemind.
 
 	//Soundy emotey things.
 	var/scream_verb_1p = "scream"
@@ -568,9 +568,8 @@
 			H.visible_message( \
 				span_notice("[H] boops [target]'s nose."), \
 				span_notice("You boop [target] on the nose."), )
-	else if(H.zone_sel.selecting == BP_GROIN) //CHOMPEdit
+	else if(H.zone_sel.selecting == BP_GROIN)
 		H.vore_bellyrub(target)
-	//VOREStation Edit End
 	else
 		H.visible_message(span_notice("[H] hugs [target] to make [t_him] feel better!"), \
 						span_notice("You hug [target] to make [t_him] feel better!"))

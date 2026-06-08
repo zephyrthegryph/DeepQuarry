@@ -291,7 +291,7 @@ Proc for attack log creation, because really why not
 		LAZYREMOVE(user.do_afters, interaction_key)
 	SEND_SIGNAL(user, COMSIG_DO_AFTER_ENDED)
 
-/atom/proc/living_mobs(range = world.view, count_held = FALSE) //CHOMPEdit Start
+/atom/proc/living_mobs(range = world.view, count_held = FALSE)
 	var/list/viewers = oviewers(src,range)
 	if(count_held)
 		viewers = viewers(src,range)
@@ -301,7 +301,7 @@ Proc for attack log creation, because really why not
 		if(count_held)
 			for(var/obj/item/holder/H in L.contents)
 				if(istype(H.held_mob, /mob/living))
-					living += H.held_mob //CHOMPEdit End
+					living += H.held_mob
 	return living
 
 /atom/proc/human_mobs(range = world.view)

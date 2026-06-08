@@ -413,11 +413,11 @@
 	if(!target || !istype(target))
 		return
 	if(iscarbon(target))
-		if(isbelly(target.loc) && target.stat == DEAD) //CHOMPAdd Start
+		if(isbelly(target.loc) && target.stat == DEAD)
 			var/datum/reagents/R = new /datum/reagents(amount)
 			. = trans_to_holder(R, amount, multiplier, copy)
 			R.touch_mob(target)
-			return //CHOMPAdd End
+			return
 		var/mob/living/carbon/C = target
 		if(type == CHEM_BLOOD)
 			var/datum/reagents/R = C.reagents

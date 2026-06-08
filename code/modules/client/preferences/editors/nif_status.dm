@@ -1,4 +1,4 @@
-// DQAdd — NIF status panel (read-only display in the Character Setup UI).
+// NIF status panel (read-only display in the Character Setup UI).
 // In-round purchase/install of NIFsoft happens through the NIF item's own UI; this editor
 // just shows whether the character has a NIF saved and what type/durability.
 

@@ -4,6 +4,6 @@
 		if(src && !key)	//we've transferred to another mob. This ghost should be deleted.
 			qdel(src)
 		else
-			if(mind && mind.assigned_role) //CHOMPEdit
-				return //CHOMPEdit
+			if(mind && mind.assigned_role)
+				return
 			cleanup_timer = QDEL_IN_STOPPABLE(src, 10 MINUTES)

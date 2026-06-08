@@ -16,7 +16,6 @@
 	back = /obj/item/tank/jetpack/oxygen
 	flags = OUTFIT_HAS_JETPACK
 
-//CHOMPAdd
 /datum/decl/hierarchy/outfit/pirate/vox
 	name = "Vox Raider"
 	uniform = /obj/item/clothing/under/color/black

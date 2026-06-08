@@ -83,7 +83,7 @@
 		return "[output] [temp]"
 	return
 
-// DQEdit Start — TGUI migration. The view_stats sub-window (formerly
+// TGUI migration. The view_stats sub-window (formerly
 // browse()) now opens MechaSleeper.tsx; inject/eject move to tgui_act.
 /obj/item/mecha_parts/mecha_equipment/tool/sleeper/Topic(href, href_list)
 	..()
@@ -171,7 +171,6 @@
 			if(R && SG)
 				inject_reagent(R, SG)
 			return TRUE
-// DQEdit End
 
 /obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/get_occupant_stats()
 	if(!occupant)

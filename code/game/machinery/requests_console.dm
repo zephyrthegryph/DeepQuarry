@@ -21,7 +21,7 @@ GLOBAL_LIST_EMPTY_TYPED(allConsoles, /obj/machinery/requests_console)
 	name = "requests console"
 	desc = "A console intended to send requests to different departments on the station."
 	anchored = TRUE
-	icon = 'icons/obj/terminals_vr.dmi' //VOREStation Edit
+	icon = 'icons/obj/terminals_vr.dmi'
 	icon_state = "req_comp_0"
 	layer = ABOVE_WINDOW_LAYER
 	circuit = /obj/item/circuitboard/request

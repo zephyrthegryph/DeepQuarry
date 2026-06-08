@@ -50,7 +50,7 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 
 	var/mob/living/friend = null // Our best pal, who we'll follow. Meow.
 	var/named = FALSE //have I been named yet?
-	var/friend_name = null //VOREStation Edit - Lock befriending to this character
+	var/friend_name = null // Lock befriending to this character
 
 /mob/living/simple_mob/animal/passive/cat/Initialize(mapload)
 	icon_living = "[initial(icon_state)]"
@@ -112,7 +112,7 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 			to_chat(L, span_warning("\The [src] ignores you."))
 			return
 
-	//VOREStation Edit Start - Adds friend_name var checks
+	// Adds friend_name var checks
 	if(!friend_name || L.real_name == friend_name)
 		friend = L
 		face_atom(L)
@@ -124,7 +124,6 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 			AI.set_follow(friend)
 	else
 		to_chat(L, span_notice("[src] ignores you."))
-	//VOREStation Edit End
 
 
 //RUNTIME IS ALIVE! SQUEEEEEEEE~
@@ -145,7 +144,7 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 	icon_state = "kitten"
 	item_state = "kitten"
 	gender = NEUTER
-	holder_type = /obj/item/holder/cat/kitten //VOREStation Edit
+	holder_type = /obj/item/holder/cat/kitten
 
 /mob/living/simple_mob/animal/passive/cat/kitten/Initialize(mapload)
 	if(gender == NEUTER)

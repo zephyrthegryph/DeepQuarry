@@ -35,7 +35,7 @@
 			return
 
 	if(P.stored_plasma < cost)
-		to_chat(src, span_danger("We lack the plasma reserves to perform that task.")) // CHOMPedit: It's PLASMA, not PHORON. Fuck I hate mass edits.
+		to_chat(src, span_danger("We lack the plasma reserves to perform that task.")) // It's PLASMA, not PHORON. Fuck I hate mass edits.
 		return 0
 
 	if(needs_foundation)
@@ -270,7 +270,7 @@
 
 	if(O)
 		visible_message(span_boldwarning("[src] vomits up a thick purple substance and begins to shape it!"), span_alium("You shape a [choice]."))
-//		O.color = "#321D37" // CHOMPedit: Removing colouration, adding predefined colour icons.
+// O.color = "#321D37" // Removing colouration, adding predefined colour icons.
 		playsound(src, 'sound/effects/blobattack.ogg', 40, 1)
 
 	return

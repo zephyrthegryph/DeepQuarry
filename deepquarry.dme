@@ -10,7 +10,7 @@
 // END_INTERNALS
 
 // BEGIN_FILE_DIR
-// DQEdit Start — was `#define FILE_DIR .`, which makes DreamMaker
+// was `#define FILE_DIR .`, which makes DreamMaker
 // recursively scan every subdirectory for resource references. With
 // ~5,600 files spread across hundreds of dirs that wastes seconds
 // per build. Replaced with explicit per-tree resource paths. The
@@ -25,7 +25,6 @@
 #define FILE_DIR html
 #define FILE_DIR strings
 #define FILE_DIR config
-// DQEdit End
 // END_FILE_DIR
 
 // BEGIN_PREFERENCES
@@ -376,7 +375,7 @@
 #include "code\__defines\traits\sources.dm"
 #include "code\__defines\verdigris\_verdigris.dm"
 #include "code\__defines\verdigris\random_map.dm"
-// DQAdd — LINDA atmospherics is unconditional (no gating). Defines and macros
+// LINDA atmospherics is unconditional (no gating). Defines and macros
 // hoisted early so they're in scope for every later atmos consumer. ZAS/XGM
 // includes have been removed from the build entirely. See doc/atmos_migration.md.
 #include "code\__defines\atmospherics.dm"
@@ -388,7 +387,7 @@
 #include "code\__defines\atmospherics_linda\atmos_mob_interaction.dm"
 #include "code\__defines\atmospherics_linda\atmos_piping.dm"
 #include "code\__defines\atmospherics_linda\reactions.dm"
-// DQAdd — quarry_defines.dm hoisted up here so the QUARRY_NOISE_*
+// quarry_defines.dm hoisted up here so the QUARRY_NOISE_*
 // and QUARRY_LAYER_SIZE macros are visible to early upstream files
 // (e.g. code/modules/projectiles/gun.dm) that the DQ noise hook
 // patches with markers.
@@ -535,7 +534,6 @@
 #include "code\_onclick\hud\action\item_action.dm"
 #include "code\_onclick\hud\action\positioning.dm"
 #include "code\_onclick\hud\action\types\item.dm"
-// DQEdit End
 #include "code\controllers\admin.dm"
 #include "code\controllers\controller.dm"
 #include "code\controllers\failsafe.dm"
@@ -558,9 +556,7 @@
 #include "code\controllers\subsystems\admin_verbs.dm"
 #include "code\controllers\subsystems\ai.dm"
 #include "code\controllers\subsystems\aifast.dm"
-// DQEdit End
 #include "code\controllers\subsystems\air_traffic.dm"
-// DQEdit End
 #include "code\controllers\subsystems\alarm.dm"
 #include "code\controllers\subsystems\antag_job.dm"
 #include "code\controllers\subsystems\asset_loading.dm"
@@ -649,7 +645,7 @@
 #include "code\datums\ai_law_sets.dm"
 #include "code\datums\ai_laws.dm"
 #include "code\datums\beam.dm"
-// DQEdit — code\datums\browser.dm deleted: /datum/browser and its
+// code\datums\browser.dm deleted: /datum/browser and its
 // modal subtypes (alert / list_picker / pref_like_picker /
 // color_matrix_picker) no longer have any callers; the convenience
 // procs (tg_alert / present_picker / present_pref_like_picker /
@@ -1030,7 +1026,6 @@
 #include "code\datums\wires\tesla_coil.dm"
 #include "code\datums\wires\vending.dm"
 #include "code\datums\wires\wires.dm"
-// DQEdit End
 #include "code\defines\obj.dm"
 #include "code\defines\obj\weapon.dm"
 #include "code\defines\procs\announce.dm"
@@ -2366,7 +2361,7 @@
 #include "code\modules\client\spam_prevention.dm"
 #include "code\modules\client\stored_item.dm"
 #include "code\modules\client\ui_style.dm"
-// DQEdit — Bay preference_setup framework fully deleted. The non-Bay helper procs that
+// Bay preference_setup framework fully deleted. The non-Bay helper procs that
 // used to live in preference_setup/general/{01,03,12}.dm moved to prefs_helpers/, and the
 // /datum/gear loadout catalog from preference_setup/loadout/ moved to code/datums/gear/.
 #include "code\modules\client\prefs_helpers\_defines.dm"
@@ -4728,7 +4723,6 @@
 #include "code\modules\xenobio\items\slimepotions.dm"
 #include "code\modules\xenobio\items\weapons.dm"
 #include "code\modules\xenobio\machinery\processor.dm"
-// DQEdit End
 #include "interface\interface.dm"
 #include "interface\stylesheet.dm"
 #include "interface\skin.dmf"
@@ -4950,7 +4944,6 @@
 #include "code\modules\weapons\melee.dm"
 #include "code\modules\weapons\staves.dm"
 #include "code\modules\xenobio\machinery\monkey_processor.dm"
-// DQEdit End
 #include "code\game\turfs\flooring\planet_presets.dm"
 #include "maps\common\common_elevators.dm"
 #include "maps\common\common_events.dm"
@@ -5075,12 +5068,12 @@
 #include "code\modules\client\preferences\_preference_constraint.dm"
 #include "code\modules\client\preferences\_preference_editor.dm"
 #include "code\modules\client\preferences\_preference_apply_hook.dm"
-// DQAdd — typed_list base + trait subtype must load before composite_traits.dm
+// typed_list base + trait subtype must load before composite_traits.dm
 // (and any other future typed_list subtype) since they're parent types.
 #include "code\modules\client\preferences\_preference_typed_list.dm"
 #include "code\modules\client\preferences\_preference_typed_list_traits.dm"
 #include "code\modules\client\preferences\entity_validation.dm"
-// DQAdd — Mind/Body specialty data model. Must load before composite_mind_body.dm and
+// Mind/Body specialty data model. Must load before composite_mind_body.dm and
 // the mind_body apply hook + constraint, which reference these defines and procs.
 #include "code\modules\mind_body\_defines.dm"
 #include "code\modules\mind_body\_perk_category.dm"

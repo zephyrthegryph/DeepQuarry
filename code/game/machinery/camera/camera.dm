@@ -1,7 +1,7 @@
 /obj/machinery/camera
 	name = "security camera"
 	desc = "It's used to monitor rooms."
-	icon = 'icons/obj/monitors_vr.dmi' //VOREStation Edit - New Icons
+	icon = 'icons/obj/monitors_vr.dmi' // New Icons
 	icon_state = "camera"
 	use_power = USE_POWER_ACTIVE
 	idle_power_usage = 5
@@ -56,7 +56,7 @@
 			log_world("## ERROR [src.name] in [get_area(src)]has errored. [src.network?"Empty network list":"Null network list"]")
 		ASSERT(src.network)
 		ASSERT(src.network.len > 0)
-	// VOREStation Edit Start - Make mapping with cameras easier
+	// Make mapping with cameras easier
 	if(!c_tag)
 		var/area/A = get_area(src)
 		c_tag = "[A ? A.name : "Unknown"] #[rand(111,999)]"
@@ -65,7 +65,6 @@
 
 	if (dir == NORTH)
 		layer = ABOVE_MOB_LAYER
-	// VOREStation Edit End
 
 /obj/machinery/camera/Destroy()
 	if(isMotion())
@@ -219,7 +218,7 @@
 			else
 				to_chat(O, span_infoplain(span_bold("<a href='byond://?src=\ref[O];track2=\ref[O];track=\ref[U];trackname=[U.name]'>[U]</a>") + " holds \a [itemname] up to one of your cameras ..."))
 
-			// DQEdit — structured TGUI AdminReport.
+			// structured TGUI AdminReport.
 			dq_admin_report_html(O, itemname, "<TT>[info]</TT>")
 
 	else if (istype(W, /obj/item/camera_bug))

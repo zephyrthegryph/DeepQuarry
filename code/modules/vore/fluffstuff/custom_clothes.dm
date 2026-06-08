@@ -936,44 +936,44 @@
 	icon_state = "khi_uniform"
 
 /obj/item/clothing/under/rank/khi/cmd //Command version
-	name = "GE command suit" //CHOMPedit: Change to GE
-	desc = "Gilthari Exports uniform. An extra-comfortable command one, at that." //CHOMPedit
+	name = "GE command suit" // Change to GE
+	desc = "Gilthari Exports uniform. An extra-comfortable command one, at that."
 	icon_state = "khi_uniform_cmd"
 	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 0)
 
 /obj/item/clothing/under/rank/khi/sec //Security version
-	name = "GE security suit" //CHOMPedit: Change to GE
-	desc = "Gilthari Exports uniform. This one has angry red security stripes. Keepin' the peace in style." //CHOMPedit
+	name = "GE security suit" // Change to GE
+	desc = "Gilthari Exports uniform. This one has angry red security stripes. Keepin' the peace in style."
 	icon_state = "khi_uniform_sec"
 	armor = list(melee = 10, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 0)
 
 /obj/item/clothing/under/rank/khi/med //Medical version
-	name = "GE medical suit" //CHOMPedit: Change to GE
-	desc = "Gilthari Exports uniform. The medical version. Why not just get a new body, anyway?"//CHOMPedit
+	name = "GE medical suit" // Change to GE
+	desc = "Gilthari Exports uniform. The medical version. Why not just get a new body, anyway?"
 	icon_state = "khi_uniform_med"
 	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 10, rad = 0)
 
 /obj/item/clothing/under/rank/khi/eng //Engineering version
-	name = "GE engineering suit" //CHOMPedit: Change to GE
-	desc = "Gilthari Exports uniform. One fit for an engineer, by the looks of it. Building the future, one disaster at a time." //CHOMPedit
+	name = "GE engineering suit" // Change to GE
+	desc = "Gilthari Exports uniform. One fit for an engineer, by the looks of it. Building the future, one disaster at a time."
 	icon_state = "khi_uniform_eng"
 	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 10)
 
 /obj/item/clothing/under/rank/khi/sci //Science version
-	name = "GE science suit" //CHOMPedit: Change to GE
-	desc = "Gilthari Exports uniform. For performing science in, based on the color! Only SCIENCE can save us now." //CHOMPedit
+	name = "GE science suit" // Change to GE
+	desc = "Gilthari Exports uniform. For performing science in, based on the color! Only SCIENCE can save us now."
 	icon_state = "khi_uniform_sci"
 	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 10, bio = 0, rad = 0)
 
 /obj/item/clothing/under/rank/khi/crg //Cargo version
-	name = "GE cargo suit" //CHOMPedit: Change to GE
-	desc = "A sleek cargo uniform from Gilthari Exports." //CHOMPedit
+	name = "GE cargo suit" // Change to GE
+	desc = "A sleek cargo uniform from Gilthari Exports."
 	icon_state = "khi_uniform_crg"
 	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 0)
 
 /obj/item/clothing/under/rank/khi/civ //Science version
-	name = "GE civilian suit" //CHOMPedit: Change to GE
-	desc = "A sleek civilian uniform from Gilthari Exports." //CHOMPedit
+	name = "GE civilian suit" // Change to GE
+	desc = "A sleek civilian uniform from Gilthari Exports."
 	icon_state = "khi_uniform_civ"
 	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 0)
 
@@ -1207,11 +1207,11 @@ Departamental Swimsuits, for general use
 	icon_state = "trek_command"
 	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0) // Considering only staff heads get to pick it
 
-/obj/item/clothing/under/rank/trek/eng //CHOMPEdit: Engineering only
+/obj/item/clothing/under/rank/trek/eng // Engineering only
 	name = "Operations Uniform"
 	desc = "The uniform worn by operations officers of the mid 2260s. You feel strangely vulnerable just seeing this..."
 	icon_state = "trek_engsec"
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0) // since they're shared between jobs and kinda moot. //CHOMPEdit: I'll tell you what, the armor values are NOT shared. Removed melee bonus.
+	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0) // since they're shared between jobs and kinda moot. // I'll tell you what, the armor values are NOT shared. Removed melee bonus.
 
 /obj/item/clothing/under/rank/trek/medsci
 	name = "MedSci Uniform"
@@ -1225,7 +1225,7 @@ Departamental Swimsuits, for general use
 	desc = "The uniform worn by command officers. This one's from the mid 2360s."
 	icon_state = "trek_next_command"
 
-/obj/item/clothing/under/rank/trek/eng/next //CHOMPEdit: Engineering only
+/obj/item/clothing/under/rank/trek/eng/next // Engineering only
 	desc = "The uniform worn by operation officers. This one's from the mid 2360s."
 	icon_state = "trek_next_engsec"
 
@@ -1238,7 +1238,7 @@ Departamental Swimsuits, for general use
 	desc = "The uniform worn by command officers of the 2140s."
 	icon_state = "trek_ent_command"
 
-/obj/item/clothing/under/rank/trek/eng/ent //CHOMPEdit: Engineering only
+/obj/item/clothing/under/rank/trek/eng/ent // Engineering only
 	desc = "The uniform worn by operations officers of the 2140s."
 	icon_state = "trek_ent_engsec"
 
@@ -1251,7 +1251,7 @@ Departamental Swimsuits, for general use
 	desc = "The uniform worn by command officers of the 2370s."
 	icon_state = "trek_voy_command"
 
-/obj/item/clothing/under/rank/trek/eng/voy //CHOMPEdit: Engineering only
+/obj/item/clothing/under/rank/trek/eng/voy // Engineering only
 	desc = "The uniform worn by operations officers of the 2370s."
 	icon_state = "trek_voy_engsec"
 
@@ -1281,7 +1281,7 @@ Departamental Swimsuits, for general use
 	icon_state = "trek_command" // no unique state for this one
 	item_state = "trek_ds9_command"
 
-/obj/item/clothing/under/rank/trek/eng/ds9 //CHOMPEdit: Engineering only
+/obj/item/clothing/under/rank/trek/eng/ds9 // Engineering only
 	desc = "The uniform worn by operations officers of the 2380s."
 	icon_state = "trek_engsec" // no unique state for this one
 	item_state = "trek_ds9_engsec"

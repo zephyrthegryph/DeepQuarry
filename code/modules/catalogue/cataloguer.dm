@@ -245,21 +245,19 @@ GLOBAL_LIST_EMPTY(all_cataloguers)
 	interact(user)
 
 /obj/item/cataloguer/interact(mob/user)
-	// DQEdit — structured TGUI Cataloguer panel (see
+	// structured TGUI Cataloguer panel (see
 	// code/modules/admin/cataloguer_panel.dm).
 	tgui_interact(user)
 	add_fingerprint(user)
 
 /obj/item/cataloguer/Topic(href, href_list)
 	if(..())
-		// DQEdit Start — close TGUI viewer (legacy browse(null) close)
+		// close TGUI viewer (legacy browse(null) close)
 		SStgui.close_uis(src)
-		// DQEdit End
 		return 0
 	if(href_list["close"] )
-		// DQEdit Start — close TGUI viewer (legacy browse(null) close)
+		// close TGUI viewer (legacy browse(null) close)
 		SStgui.close_uis(src)
-		// DQEdit End
 		return 0
 
 	if(href_list["show_data"])

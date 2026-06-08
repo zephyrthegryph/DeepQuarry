@@ -1,4 +1,4 @@
-// DQAdd — Post-everything cleanup. Runs last to:
+// Post-everything cleanup. Runs last to:
 //   - rewalk worn clothing and re-apply digitigrade transforms
 //   - reset the DNA UI from the now-final body state
 //   - force a limbs / icon refresh so all the changes above become visible at once

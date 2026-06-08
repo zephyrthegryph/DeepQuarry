@@ -25,7 +25,7 @@
 	add_implants()
 
 
-// DQEdit — structured TGUI ImplantChair (see
+// structured TGUI ImplantChair (see
 // code/modules/admin/implant_chair_panel.dm).
 
 /obj/machinery/implantchair/Topic(href, href_list)

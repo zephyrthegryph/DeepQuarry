@@ -4,10 +4,9 @@
 	var/list/cardinal_neighbors = list()
 	for(var/check_dir in GLOB.cardinal)
 		var/turf/simulated/T = get_step(get_turf(src), check_dir)
-		//VOREStation Edit Start - Vines can go up/down stairs, but don't register that they have done this, so do so infinitely, which is annoying and laggy.
+		// Vines can go up/down stairs, but don't register that they have done this, so do so infinitely, which is annoying and laggy.
 		if(istype(T) && !isopenturf(check_dir)) //Let's not have them go on open space where you can't really get to them.
 			cardinal_neighbors |= T
-		//VOREStation Edit End
 	return cardinal_neighbors
 
 /obj/effect/plant/proc/update_neighbors()
@@ -123,10 +122,9 @@
 //spreading vines aren't created on their final turf.
 //Instead, they are created at their parent and then move to their destination.
 /obj/effect/plant/proc/spread_to(turf/target_turf)
-	//VOREStation Edit Start - Vines can go up/down stairs, but don't register that they have done this, so do so infinitely, which is annoying and laggy.
+	// Vines can go up/down stairs, but don't register that they have done this, so do so infinitely, which is annoying and laggy.
 	if(isopenturf(target_turf))
 		return
-	//VOREStation Edit End
 	var/obj/effect/plant/child = new(get_turf(src),seed,parent)
 
 	spawn(1) // This should do a little bit of animation.
@@ -139,14 +137,14 @@
 		child.anchored = TRUE
 		child.update_icon()
 
-		//CHOMPedit start: Pitcher plant spawning
+		// start: Pitcher plant spawning
 		if((seed.get_trait(TRAIT_POTENCY)) >= 70) //Random event spacevines have 70 potency minimum. Should guarantee this always triggers on spacevines.
 			var/mob/living/pitcher
 			if(!seed.get_trait(TRAIT_CARNIVOROUS) && prob(2)) //Check for canivorous or this could call if prob(10) above fails.
 				pitcher = new /mob/living/simple_mob/vore/pitcher_plant(src.loc)
 				pitcher.nutrition = 0 //With 0 nutrition, vine-spawned pitchers should die after ~10 minutes
 				pitcher.adjustToxLoss(170) //Reduce health, 200 is excessive when a lot of these are spawning.
-		//CHOMPedit end
+		// end
 
 		//see if anything is there
 		for(var/thing in child.loc)

@@ -479,7 +479,7 @@
 				my_mob.max_tox = gaslist[GAS_PHORON] * 1.2
 				my_mob.max_n2 = gaslist[GAS_N2] * 1.2
 				my_mob.max_co2 = gaslist[GAS_CO2] * 1.2
-/* //VORESTATION AI TEMPORARY REMOVAL
+/* // AI TEMPORARY REMOVAL
 		if(guard)
 			my_mob.returns_home = TRUE
 			my_mob.wander_distance = guard

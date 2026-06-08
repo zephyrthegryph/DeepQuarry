@@ -38,14 +38,13 @@ GLOBAL_DATUM(character_directory, /datum/character_directory)
 		data["personalGenderTag"] = user.mind.directory_gendertag || "Unset"
 		data["personalSexualityTag"] = user.mind.directory_sexualitytag || "Unset"
 	else if (user?.client?.prefs)
-		// DQEdit Start — directory_* prefs migrated from bare vars to /datum/preference
+		// directory_* prefs migrated from bare vars to /datum/preference
 		data["personalVisibility"] = user.client.prefs.read_preference(/datum/preference/toggle/human/show_in_directory)
 		data["personalTag"] = user.client.prefs.read_preference(/datum/preference/choiced/human/directory_tag) || "Unset"
 		data["personalErpTag"] = user.client.prefs.read_preference(/datum/preference/choiced/human/directory_erptag) || "Unset"
 		data["personalEventTag"] = GLOB.vantag_choices_list[user.client.prefs.read_preference(/datum/preference/choiced/human/vantag_preference)]
 		data["personalGenderTag"] = user.client.prefs.read_preference(/datum/preference/choiced/human/directory_gendertag) || "Unset"
 		data["personalSexualityTag"] = user.client.prefs.read_preference(/datum/preference/choiced/human/directory_sexualitytag) || "Unset"
-		// DQEdit End
 
 	return data
 
@@ -68,7 +67,7 @@ GLOBAL_LIST_EMPTY(chardirectory_photos)
 	var/list/directory_mobs = list()
 	for(var/client/C in GLOB.clients)
 		// Allow opt-out.
-		if(C?.mob?.mind ? !C.mob.mind.show_in_directory : !C?.prefs?.read_preference(/datum/preference/toggle/human/show_in_directory)) // DQEdit — show_in_directory migrated
+		if(C?.mob?.mind ? !C.mob.mind.show_in_directory : !C?.prefs?.read_preference(/datum/preference/toggle/human/show_in_directory)) // show_in_directory migrated
 			continue
 
 		// These are the three vars we're trying to find
@@ -98,14 +97,13 @@ GLOBAL_LIST_EMPTY(chardirectory_photos)
 			sexualitytag = C.mob.mind.directory_sexualitytag || "Unset"
 			eventtag = GLOB.vantag_choices_list[C.mob.mind.vantag_preference]
 		else
-			// DQEdit Start — directory_* prefs migrated to /datum/preference
+			// directory_* prefs migrated to /datum/preference
 			tag = C.prefs.read_preference(/datum/preference/choiced/human/directory_tag) || "Unset"
 			erptag = C.prefs.read_preference(/datum/preference/choiced/human/directory_erptag) || "Unset"
 			character_ad = C.prefs.read_preference(/datum/preference/text/human/directory_ad)
 			gendertag = C.prefs.read_preference(/datum/preference/choiced/human/directory_gendertag) || "Unset"
 			sexualitytag = C.prefs.read_preference(/datum/preference/choiced/human/directory_sexualitytag) || "Unset"
 			eventtag = GLOB.vantag_choices_list[C.prefs.read_preference(/datum/preference/choiced/human/vantag_preference)]
-			// DQEdit End
 
 		if(ishuman(C.mob))
 			var/mob/living/carbon/human/H = C.mob
@@ -305,11 +303,11 @@ GLOBAL_LIST_EMPTY(chardirectory_photos)
 			if (can_set_mind)
 				visible = user.mind.show_in_directory
 			else if (can_set_prefs)
-				visible = user.client.prefs.read_preference(/datum/preference/toggle/human/show_in_directory) // DQEdit — show_in_directory migrated
+				visible = user.client.prefs.read_preference(/datum/preference/toggle/human/show_in_directory) // show_in_directory migrated
 			to_chat(user, span_notice("You are now [!visible ? "shown" : "not shown"] in the directory."))
 			return set_for_mind_or_prefs(user, action, !visible, can_set_prefs, can_set_mind)
 		if ("editAd")
-			var/current_ad = (can_set_mind ? user.mind.directory_ad : null) || (can_set_prefs ? user.client.prefs.read_preference(/datum/preference/text/human/directory_ad) : null) // DQEdit — directory_ad migrated
+			var/current_ad = (can_set_mind ? user.mind.directory_ad : null) || (can_set_prefs ? user.client.prefs.read_preference(/datum/preference/text/human/directory_ad) : null) // directory_ad migrated
 			var/new_ad = tgui_input_text(user, "Change your character ad", "Character Ad", current_ad, MAX_MESSAGE_LEN, TRUE, prevent_enter = TRUE)
 			if(isnull(new_ad))
 				return
@@ -328,7 +326,7 @@ GLOBAL_LIST_EMPTY(chardirectory_photos)
 			var/list/names_list = list()
 			for(var/C in GLOB.vantag_choices_list)
 				names_list[GLOB.vantag_choices_list[C]] = C
-			var/list/new_eventtag = tgui_input_list(usr, "Pick your preference for event involvement", "Event Preference Tag", usr?.client?.prefs?.read_preference(/datum/preference/choiced/human/vantag_preference), names_list) // DQEdit — migrated pref
+			var/list/new_eventtag = tgui_input_list(usr, "Pick your preference for event involvement", "Event Preference Tag", usr?.client?.prefs?.read_preference(/datum/preference/choiced/human/vantag_preference), names_list) // migrated pref
 			if(!new_eventtag)
 				return
 			return set_for_mind_or_prefs(user, action, names_list[new_eventtag], can_set_prefs, can_set_mind)
@@ -339,7 +337,7 @@ GLOBAL_LIST_EMPTY(chardirectory_photos)
 	if (!can_set_prefs && !can_set_mind)
 		to_chat(user, span_warning("You seem to have lost either your mind, or your current preferences, while changing the values.[action == "editAd" ? " Here is your ad that you wrote. [new_value]" : null]"))
 		return
-	// DQEdit Start — all directory pref writes routed through update_preference_by_type
+	// all directory pref writes routed through update_preference_by_type
 	switch(action)
 		if ("setTag")
 			if (can_set_prefs)
@@ -380,4 +378,3 @@ GLOBAL_LIST_EMPTY(chardirectory_photos)
 				user.client.prefs.update_preference_by_type(/datum/preference/choiced/human/directory_sexualitytag, new_value)
 			if (can_set_mind)
 				user.mind.directory_sexualitytag = new_value
-	// DQEdit End

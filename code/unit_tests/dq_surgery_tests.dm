@@ -6,7 +6,7 @@
 // unit_test type in /home/ethan/projects/CHOMPStation2/code/modules/unit_tests/dq_medical_tests.dm.
 //
 // All three sibling files are #included from
-// code/modules/unit_tests/_unit_tests.dm (via DQAdd) so the TEST_ASSERT*
+// code/modules/unit_tests/_unit_tests.dm (via ) so the TEST_ASSERT*
 // macros are still in scope. The medical defines header is re-included
 // once here because the upstream test block compiles before the
 // medical includes.

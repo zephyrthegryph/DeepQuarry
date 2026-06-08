@@ -14,7 +14,7 @@
 		istype(src, /obj/item/slime_extract) || \
 		istype(src, /obj/item/clothing/mask/smokable/cigarette) || \
 		istype(src, /obj/item/storage/fancy/cigarettes) || \
-		istype(src, /obj/item/clothing/mask/chewable) // CHOMPEdit
+		istype(src, /obj/item/clothing/mask/chewable)
 
 /obj/can_be_injected_by(atom/injector)
 	if(!..())

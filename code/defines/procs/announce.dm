@@ -1,4 +1,4 @@
-//VOREStation Edit - Most of this file has been changed to use the Eris-style PA announcements.
+// Most of this file has been changed to use the Eris-style PA announcements.
 //You'll need to compare externally, or use your best judgement when merging.
 GLOBAL_DATUM_INIT(priority_announcement, /datum/announcement/priority, new(do_log = 0))
 GLOBAL_DATUM_INIT(command_announcement, /datum/announcement/priority/command, new(do_log = 0, do_newscast = 1))

@@ -126,7 +126,7 @@
 		. -= 0.5 // ok vibe check passed, take this small movement buff and leave
 
 	. = max(HUMAN_LOWEST_SLOWDOWN, . + CONFIG_GET(number/human_delay))	// Minimum return should be the same as force_max_speed
-	// DQEdit — active medical conditions can slow movement.
+	// active medical conditions can slow movement.
 	. += dq_condition_slowdown()
 	. += ..()
 

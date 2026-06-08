@@ -113,7 +113,6 @@
 #define PLANT_CHERRYBOMB "cherrybomb"
 #define PLANT_NUCLEARORANGE "nuclearorange"
 #define PLANT_LIVEWIREORANGE "livewireorange"
-// CHOMPAdd End
 
 GLOBAL_LIST_INIT(acceptable_fruit_types, list(
 											PLANT_AMBROSIA,
@@ -130,7 +129,7 @@ GLOBAL_LIST_INIT(acceptable_fruit_types, list(
 											PLANT_DURIAN,
 											PLANT_EGGPLANT,
 											PLANT_GRAPES,
-											PLANT_GRASS, // CHOMPAdd
+											PLANT_GRASS,
 											PLANT_GREENGRAPES,
 											PLANT_HAREBELLS,
 											PLANT_LAVENDER,
@@ -143,17 +142,17 @@ GLOBAL_LIST_INIT(acceptable_fruit_types, list(
 											PLANT_POPPIES,
 											PLANT_POTATO,
 											PLANT_PUMPKIN,
-											PLANT_REISHI, // CHOMPAdd
+											PLANT_REISHI,
 											PLANT_RICE,
 											PLANT_ROSE,
 											PLANT_RHUBARB,
-											PLANT_SHAND, // CHOMPAdd
+											PLANT_SHAND,
 											PLANT_SOYBEAN,
 											PLANT_SPINEAPPLE,
 											PLANT_SUGARCANE,
 											PLANT_SUNFLOWERS,
 											PLANT_TOMATO,
-											PLANT_TOWERCAP, // CHOMPAdd
+											PLANT_TOWERCAP,
 											PLANT_VANILLA,
 											PLANT_WATERMELON,
 											PLANT_WHEAT,

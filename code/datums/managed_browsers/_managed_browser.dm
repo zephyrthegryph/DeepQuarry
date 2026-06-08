@@ -46,11 +46,10 @@ GLOBAL_VAR(managed_browser_id_ticker)
 /datum/managed_browser/proc/display()
 	interact(get_html(), get_title(), my_client)
 
-// DQEdit Start — base /datum/managed_browser renders via the structured
+// base /datum/managed_browser renders via the structured
 // AdminReport panel with host topic-forwarding. Subclasses (feedback_viewer
 // etc.) keep working without their own overrides since the override chain
 // only sets html/title and our interact does the wiring.
 /datum/managed_browser/proc/interact(html, title, client/C)
 	if(C?.mob)
 		dq_admin_report_html(C.mob, title, html, src)
-// DQEdit End

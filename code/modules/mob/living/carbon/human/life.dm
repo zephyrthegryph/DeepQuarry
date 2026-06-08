@@ -69,10 +69,10 @@
 			SEND_SIGNAL(src,COMSIG_HANDLE_ALLERGENS, chem_effects[CE_ALLERGEN])
 
 			handle_medical_side_effects()
-			dq_check_ischemic_damage()      // DQEdit — sustained oxyloss damages liver/kidneys/heart
-			dq_check_emergent_conditions()  // DQEdit — spawn/clear damage-emergent conditions based on organ state
-			dq_check_metric_conditions()    // DQEdit — spawn/clear metric-driven conditions (radiation, toxloss, temp, cloneloss)
-			dq_check_chem_conditions()      // DQEdit — spawn/clear chem side effects and drug interactions
+			dq_check_ischemic_damage() // sustained oxyloss damages liver/kidneys/heart
+			dq_check_emergent_conditions() // spawn/clear damage-emergent conditions based on organ state
+			dq_check_metric_conditions() // spawn/clear metric-driven conditions (radiation, toxloss, temp, cloneloss)
+			dq_check_chem_conditions() // spawn/clear chem side effects and drug interactions
 
 			handle_heartbeat()
 			handle_nif()
@@ -334,11 +334,11 @@
 					to_chat(src, span_warning("You feel horribly ill."))
 					AdjustWeakened(3)
 				if(prob(5) && internal_organs.len)
-					// CHOMPedit begin - organ mutations
+					// begin - organ mutations
 					if(prob(2))
 						// random organ time!
 						random_malignant_organ(TRUE,FALSE,prob(40))
-					// CHOMPedit end
+					// end
 					else
 						I = pick(internal_organs) //Internal organ damage...Not good. Not good at all.
 						if(istype(I)) I.add_autopsy_data("Radiation Induced Cancerous Growth", damage)
@@ -372,10 +372,10 @@
 					to_chat(src, span_critical("Your entire body feels like it's on fire!"))
 					adjustHalLoss(5)
 				if(prob(10) && internal_organs.len)
-					// CHOMPedit begin - organ mutations
+					// begin - organ mutations
 					if(prob(2))
 						random_malignant_organ(TRUE,FALSE,prob(60))
-					// CHOMPedit end
+					// end
 					else
 						I = pick(internal_organs) //Internal organ damage...Not good. Not good at all.
 						if(istype(I)) I.add_autopsy_data("Radiation Induced Cancerous Growth", damage)
@@ -544,7 +544,7 @@
 		adjustOxyLoss(-5)
 		return
 
-	// DQEdit — XGM .total_moles var → LINDA proc. Cache to avoid 12 proc calls.
+	// XGM .total_moles var → LINDA proc. Cache to avoid 12 proc calls.
 	var/breath_moles = breath ? breath.total_moles() : 0
 	if(!breath || (breath_moles == 0))
 		failed_last_breath = 1
@@ -711,7 +711,7 @@
 		adjustOxyLoss(CLAMP(ratio,0.1,10)) // Causes slow suffocation
 		if(prob(20))
 			emote("gasp")
-		breath.adjust_gas(GAS_CH4, -poison_methane/6, update = 0) //update after // DQEdit — removed duplicate line; poison_methane already equals LINDA_GAS_AMT(breath, GAS_CH4) from line 608
+		breath.adjust_gas(GAS_CH4, -poison_methane/6, update = 0) // update after // removed duplicate line; poison_methane already equals LINDA_GAS_AMT(breath, GAS_CH4) from line 608
 		throw_alert("methane_in_air", /atom/movable/screen/alert/methane_in_air)
 	else
 		clear_alert("methane_in_air")
@@ -823,7 +823,7 @@
 		else
 			clear_alert("temp")
 
-	// DQEdit — breath.update_values() removed; no-op under LINDA.
+	// breath.update_values() removed; no-op under LINDA.
 	return 1
 
 /mob/living/carbon/human/proc/play_inhale(mob/living/M, exhale)
@@ -863,7 +863,7 @@
 	var/pressure = environment.return_pressure()
 	var/adjusted_pressure = calculate_affecting_pressure(pressure)
 
-	// DQEdit — phoron contamination is offline under LINDA (no contamination
+	// phoron contamination is offline under LINDA (no contamination
 	// flags/limits on GLOB.gas_data, the env.gas dict shape changed, and
 	// pl_effects is a no-op). Loop disabled until LINDA contamination is wired.
 
@@ -907,7 +907,7 @@
 				temp_adj = (1-thermal_protection) * ((loc_temp - bodytemperature) / BODYTEMP_HEAT_DIVISOR)
 
 		//Use heat transfer as proportional to the gas density. However, we only care about the relative density vs standard 101 kPa/20 C air. Therefore we can use mole ratios
-		var/relative_density = environment.total_moles() / MOLES_CELLSTANDARD // DQEdit — XGM var → LINDA proc
+		var/relative_density = environment.total_moles() / MOLES_CELLSTANDARD // XGM var → LINDA proc
 		bodytemperature += between(BODYTEMP_COOLING_MAX, temp_adj*relative_density, BODYTEMP_HEATING_MAX)
 
 	if(isbelly(loc) && allowtemp)
@@ -1171,7 +1171,7 @@
 		if(bloodstr)
 			bloodstr.metabolize()
 
-		// DQEdit — ZAS-era phoron-contamination damage path removed. It read
+		// ZAS-era phoron-contamination damage path removed. It read
 		// `I.contaminated` (which has no setter under LINDA) and
 		// `GLOB.vsc.plc.CONTAMINATION_LOSS` (config holder that's also gone).
 		// Whole branch was inert; restore properly if/when contamination
@@ -1624,9 +1624,9 @@
 		else
 			clear_alert("high")
 
-		if(!surrounding_belly() && !previewing_belly) //VOREStation Add - Belly fullscreens safety
+		if(!surrounding_belly() && !previewing_belly) // Belly fullscreens safety
 			clear_fullscreen("belly")
-			belly_overlay_tgui?.hide() // DQEdit — hide TGUI belly overlay
+			belly_overlay_tgui?.hide() // hide TGUI belly overlay
 
 		if(CONFIG_GET(flag/welder_vision))
 			var/found_welder
@@ -1842,7 +1842,7 @@
 				if(text2num(time2text(world.timeofday, "DD")) == 1)
 					playsound_local(src,pick(GLOB.scawwysownds),50, 0)
 					return
-			*/ // CHOMPedit End
+			*/
 			playsound_local(src,pick(GLOB.scarySounds),50, 1, -1)
 
 /mob/living/carbon/human/proc/handle_changeling()

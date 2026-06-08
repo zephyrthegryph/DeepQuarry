@@ -35,7 +35,7 @@ GLOBAL_LIST_INIT(all_supply_groups, list("Atmospherics",
 	var/cost = null
 	var/containertype = null
 	var/containername = null
-	// DQAdd — list of variant strings to apply to consolidated items.
+	// list of variant strings to apply to consolidated items.
 	var/list/variant_pool = null
 	var/access = null
 	var/one_access = FALSE
@@ -63,4 +63,4 @@ GLOBAL_LIST_INIT(all_supply_groups, list("Atmospherics",
 // Keeping this subtype here for posterity, so it's more apparent that this is the subtype to use if making new randomised packs
 /datum/supply_pack/randomised
 	num_contained = 1
-	// DQEdit — variant_pool moved to base /datum/supply_pack so non-randomised packs can use it too.
+	// variant_pool moved to base /datum/supply_pack so non-randomised packs can use it too.

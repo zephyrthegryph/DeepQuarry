@@ -46,7 +46,7 @@ GLOBAL_LIST(ghost_traps)
 			for(var/bantype in ban_checks)
 				if(jobban_isbanned(O, "[bantype]"))
 					continue
-		if(pref_check && !(O.client.prefs.read_preference(/datum/preference/numeric/human/be_special) & pref_check)) // DQEdit — migrated
+		if(pref_check && !(O.client.prefs.read_preference(/datum/preference/numeric/human/be_special) & pref_check)) // migrated
 			continue
 		if(O.client)
 			to_chat(O, "[request_string]<a href='byond://?src=\ref[src];candidate=\ref[O];target=\ref[target]'>Click here</a> if you wish to play as this option.")

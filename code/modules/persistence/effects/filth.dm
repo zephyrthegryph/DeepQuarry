@@ -1,7 +1,7 @@
 /datum/persistent/filth
 	name = "filth"
 	entries_expire_at = 4 // 4 rounds, 24 hours.
-	var/saves_dirt = TRUE //VOREStation edit
+	var/saves_dirt = TRUE
 	has_admin_data = TRUE
 
 /datum/persistent/filth/GetAdminDataStringFor(thing, can_modify, mob/user)

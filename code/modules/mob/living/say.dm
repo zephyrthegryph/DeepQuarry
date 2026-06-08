@@ -193,10 +193,9 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 	//Clean up any remaining space on the left
 	message = trim_left(message)
 
-	// VOREStation Edit - Reflect messages as needed, no sanitizing because parse_languages will handle it for us
+	// Reflect messages as needed, no sanitizing because parse_languages will handle it for us
 	if(reflect_if_needed(message, src))
 		return
-	// VOREStation Edit End
 
 	// If the message ends in an alphanumeric character (therefore, not punctuation),
 	// and autopunctuation is turned on, add a period.
@@ -350,7 +349,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 
 	//The 'post-say' static speech bubble
 	var/speech_bubble_test = say_test(message)
-	//var/image/speech_bubble = image('icons/mob/talk_vr.dmi',src,"h[speech_bubble_test]") //VOREStation Edit. Commented this out in case we need to reenable.
+	// var/image/speech_bubble = image('icons/mob/talk_vr.dmi',src,"h[speech_bubble_test]") // . Commented this out in case we need to reenable.
 	var/speech_type = custom_speech_bubble
 	if(!speech_type || speech_type == "default")
 		speech_type = speech_bubble_appearance()
@@ -421,13 +420,13 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 	if(whispering)
 		if(do_sound && message)
 			blooploop(message, extrarange = -6, volume = 25, sound_preference = /datum/preference/toggle/whisper_sounds)
-			// playsound(T, pick(voice_sounds_list), 25, TRUE, extrarange = -6, falloff = 1 , is_global = TRUE, frequency = voice_freq, ignore_walls = TRUE, preference = /datum/preference/toggle/whisper_sounds)	//CHOMPEdit - ignore_walls = TRUE
+			// playsound(T, pick(voice_sounds_list), 25, TRUE, extrarange = -6, falloff = 1 , is_global = TRUE, frequency = voice_freq, ignore_walls = TRUE, preference = /datum/preference/toggle/whisper_sounds) // ignore_walls = TRUE
 
 		log_talk(message, LOG_WHISPER, color="#aeaeae")
 	else
 		if(do_sound && message)
 			blooploop(message, volume = 75)
-			// playsound(T, pick(voice_sounds_list), 75, TRUE, falloff = 1 , is_global = TRUE, frequency = voice_freq, ignore_walls = TRUE, preference = /datum/preference/toggle/say_sounds) //CHOMPEdit - ignore_walls = TRUE
+			// playsound(T, pick(voice_sounds_list), 75, TRUE, falloff = 1 , is_global = TRUE, frequency = voice_freq, ignore_walls = TRUE, preference = /datum/preference/toggle/say_sounds) // ignore_walls = TRUE
 		log_talk(message, LOG_SAY, color="#c0c0c0")
 	return 1
 
@@ -452,7 +451,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 		frequency = voice_freq > 0 ? voice_freq : null,\
 		ignore_walls = TRUE,\
 		preference = sound_preference,
-	) //CHOMPEDIT - Ignore_walls set to TRUE
+	) // Ignore_walls set to TRUE
 
 /mob/living/proc/blooploop(message, extrarange = 0, volume, sound_preference = /datum/preference/toggle/say_sounds, bloop_preference = /datum/preference/toggle/bloop_sounds)
 	var/bloopers = min(round((LAZYLEN(message) / BLOOPER_SPEED)) + 1, BLOOPER_MAX_BLOOPERS)

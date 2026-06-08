@@ -260,10 +260,9 @@
 	sprite_icon_state = "default"
 	default_sprite = TRUE
 
-//CHOMPAdd Start - new definition for raptors
+// new definition for raptors
 /datum/robot_sprite/dogborg/raptor
 	has_dead_sprite_overlay = FALSE
 	vis_height = 45
 	icon_x = 64
 	icon_y = 64
-//CHOMPAdd End

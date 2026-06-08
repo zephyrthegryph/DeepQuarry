@@ -105,10 +105,10 @@
 /datum/decl/emote/audible/clap
 	key = "clap"
 	emote_message_3p = "claps."
-	emote_sound = list('sound/misc/clap1.ogg', //ChompEDIT START
+	emote_sound = list('sound/misc/clap1.ogg',
 						'sound/misc/clap2.ogg',
 						'sound/misc/clap3.ogg',
-						'sound/misc/clap4.ogg') //ChompEDIT END
+						'sound/misc/clap4.ogg')
 
 /datum/decl/emote/audible/chuckle
 	key = "chuckle"

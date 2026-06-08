@@ -1,4 +1,4 @@
-// DQAdd — Unified recolor tweak. Replaces /datum/gear_tweak/matrix_recolor as the
+// Unified recolor tweak. Replaces /datum/gear_tweak/matrix_recolor as the
 // default recolor slot on every gear datum (see /datum/gear/New() override).
 //
 // Metadata shape: list("mode" = "off"|"tint"|"palette"|"matrix", "value" = …)

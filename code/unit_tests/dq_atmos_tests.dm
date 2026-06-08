@@ -2221,7 +2221,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	var/datum/pipe_network/N = P1.parent.network
 	TEST_ASSERT(N in SSair.networks, \
 		"pipe_network NOT in SSair.networks after build_network — START_PROCESSING_PIPENET is targeting the wrong list, reconcile_air will never run in the live game")
-	// SSmachines.networks was removed entirely (see machines.dm DQEdit). If
+	// SSmachines.networks was removed entirely (see machines.dm ). If
 	// a future merge re-adds it, the macro's redirect should still keep
 	// pipenets out of it.
 

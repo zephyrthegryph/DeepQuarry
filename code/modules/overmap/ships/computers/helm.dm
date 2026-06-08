@@ -27,8 +27,8 @@ GLOBAL_LIST_EMPTY(all_waypoints)
 	var/dy		//coordinates
 	var/speedlimit = 1/(20 SECONDS) //top speed for autopilot, 5
 	var/accellimit = 0.001 //manual limiter for acceleration
-	//req_one_access = list(ACCESS_PILOT) //VOREStation Edit // CHOMPRemove, removed hard access locks.
-	ai_control = FALSE	//VOREStation Edit - AI/Borgs shouldn't really be flying off in ships without crew help
+	// req_one_access = list(ACCESS_PILOT) // // CHOMPRemove, removed hard access locks.
+	ai_control = FALSE // AI/Borgs shouldn't really be flying off in ships without crew help
 
 // fancy sprite
 /obj/machinery/computer/ship/helm/adv
@@ -44,7 +44,7 @@ GLOBAL_LIST_EMPTY(all_waypoints)
 /obj/machinery/computer/ship/helm/proc/get_known_sectors()
 	var/area/overmap/map = locate() in world
 	for(var/obj/effect/overmap/visitable/S in map)
-		if(!istype(S,/obj/effect/overmap/visitable/sector) && !istype(S,/obj/effect/overmap/visitable/planet)) //CHOMPedit, let planets also be favorited via GPS
+		if(!istype(S,/obj/effect/overmap/visitable/sector) && !istype(S,/obj/effect/overmap/visitable/planet)) // , let planets also be favorited via GPS
 			continue //chompedit end
 		if(S.known)
 			var/datum/computer_file/data/waypoint/R = new()

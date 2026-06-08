@@ -40,19 +40,19 @@
 	var/originhash = md5("[origin]")
 	var/timehash = copytext(md5("[world.time]"),1,10)
 	var/text = null
-	var/logo = tgui_alert(usr, "Do you want the header of your fax to have a NanoTrasen, SolGov, Talon or Trader logo?","Fax Logo",list("NanoTrasen","SolGov", "Talon", "Trader")) //VOREStation Add - Trader
+	var/logo = tgui_alert(usr, "Do you want the header of your fax to have a NanoTrasen, SolGov, Talon or Trader logo?","Fax Logo",list("NanoTrasen","SolGov", "Talon", "Trader")) // Trader
 	if(!logo)
 		return
 	if(logo == "SolGov")
 		logo = 'html/images/sglogo.png'
-	//VOREStation Edit/Add
+	// /Add
 	else if(logo == "NanoTrasen")
 		logo = 'html/images/ntlogo.png'
 	else if(logo == "Talon")
 		logo = 'html/images/talonlogo.png'
 	else
 		logo = 'html/images/trader.png'
-	//VOREStation Edit/Add End
+	// /Add End
 	//TODO change logo based on who you're contacting.
 	text = "<center><img src=\ref[logo]></br>"
 	text += span_bold("[origin] Quantum Uplink Signed Message") + "<br>"
@@ -72,7 +72,7 @@
 	footer = text
 
 
-// DQEdit Start — full TGUI migration. AdminPaper.tsx renders the
+// full TGUI migration. AdminPaper.tsx renders the
 // segment-based body + structured admin controls; tgui_act handles
 // the admin actions. No more byond:// hrefs, no more interactions HTML.
 /obj/item/paper/admin/proc/adminbrowse()
@@ -164,7 +164,6 @@
 
 /obj/item/paper/admin/proc/updateDisplay()
 	SStgui.update_uis(src)
-// DQEdit End
 
 /obj/item/paper/admin/get_signature()
 	return tgui_input_text(usr, "Enter the name you wish to sign the paper with (will prompt for multiple entries, in order of entry)", "Signature")

@@ -1,4 +1,4 @@
-// DQAdd — /datum/perk base class.
+// /datum/perk base class.
 //
 // Each perk belongs to a tree (visual grouping); each tree belongs to a category
 // (pool bucket). The perk's *category* (the PERK_KIND_* it draws from) is derived

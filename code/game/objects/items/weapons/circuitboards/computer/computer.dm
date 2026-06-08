@@ -98,7 +98,7 @@
 
 /obj/item/circuitboard/turbine_control
 	name = T_BOARD("turbine control console")
-	build_path = /obj/machinery/computer // DQEdit — turbine_computer deleted with atmos turbine
+	build_path = /obj/machinery/computer // turbine_computer deleted with atmos turbine
 	hidden = TRUE
 
 /obj/item/circuitboard/solar_control
@@ -187,7 +187,7 @@
 
 /obj/item/circuitboard/area_atmos
 	name = T_BOARD("area air control console")
-	build_path = /obj/machinery/computer // DQEdit — area_atmos deleted with atmos
+	build_path = /obj/machinery/computer // area_atmos deleted with atmos
 
 /obj/item/circuitboard/prison_shuttle
 	name = T_BOARD("prison shuttle control console")
@@ -200,7 +200,7 @@
 
 /obj/item/circuitboard/shutoff_monitor
 	name = T_BOARD("automatic shutoff valve monitor")
-	build_path = /obj/machinery/computer // DQEdit — shutoff_monitor deleted with atmos
+	build_path = /obj/machinery/computer // shutoff_monitor deleted with atmos
 
 /obj/item/circuitboard/stockexchange
 	name = T_BOARD("stock exchange console")

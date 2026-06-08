@@ -97,7 +97,7 @@
 	savefile_key = "voice_freq"
 	savefile_identifier = PREFERENCE_CHARACTER
 	can_randomize = FALSE
-	// DQEdit — was 0..999999 (every audible frequency ever); the useful range for voice
+	// was 0..999999 (every audible frequency ever); the useful range for voice
 	// pitching is roughly 20000-80000Hz with 42500 as the natural-sounding default.
 	minimum = 20000
 	maximum = 80000

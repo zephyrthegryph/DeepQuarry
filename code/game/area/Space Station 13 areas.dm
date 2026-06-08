@@ -174,11 +174,11 @@ NOTE: there are two lists of areas in the end of this file: centcom and station 
 	icon_state = "shuttlered2"
 
 /area/shuttle/administration/centcom
-	name = "Centcom Large Bay (AS)" //VOREStation Edit
+	name = "Centcom Large Bay (AS)"
 	icon_state = "shuttlered"
 
 /area/shuttle/administration/station
-	name = "NSB Adephagia (AS)" //VOREStation Edit
+	name = "NSB Adephagia (AS)"
 	icon_state = "shuttlered2"
 
 /area/shuttle/trade
@@ -379,7 +379,7 @@ NOTE: there are two lists of areas in the end of this file: centcom and station 
 //ENEMY
 
 //names are used
-// CHOMPEdit start: Shuttle condensing
+// start: Shuttle condensing
 /area/syndicate_station
 	name = "\improper Independent Station"
 	icon_state = "yellow"
@@ -397,7 +397,7 @@ NOTE: there are two lists of areas in the end of this file: centcom and station 
 	base_turf = /turf/space
 	ambience = AMBIENCE_HIGHSEC
 	flags = AREA_FLAG_IS_NOT_PERSISTENT
-// CHOMPEdit End: Shuttle condensing
+// Shuttle condensing
 
 /area/syndicate_station/southwest
 	name = "\improper south-west of SS13"
@@ -451,7 +451,7 @@ NOTE: there are two lists of areas in the end of this file: centcom and station 
 	ambience = AMBIENCE_OTHERWORLDLY
 	flags = AREA_FLAG_IS_NOT_PERSISTENT
 
-// CHOMPEdit Start: Shuttle condensing
+// Shuttle condensing
 /area/skipjack_station
 	name = "Raider Outpost"
 	icon_state = "yellow"
@@ -467,7 +467,7 @@ NOTE: there are two lists of areas in the end of this file: centcom and station 
 	base_turf = /turf/space
 	ambience = AMBIENCE_HIGHSEC
 	flags = AREA_FLAG_IS_NOT_PERSISTENT
-// CHOMPEdit End: Shuttle condensing
+// Shuttle condensing
 
 //PRISON
 /area/prison
@@ -1164,7 +1164,7 @@ NOTE: there are two lists of areas in the end of this file: centcom and station 
 	name = "\improper Visitor Room 12"
 	icon_state = "Sleep"
 
-//CHOMPStation Edit Start TFF 6/2/20 - Added two new dorms
+// TFF 6/2/20 - Added two new dorms
 
 /area/crew_quarters/sleep/vistor_room_13
 	name = "\improper Visitor Room 12"
@@ -1174,7 +1174,6 @@ NOTE: there are two lists of areas in the end of this file: centcom and station 
 	name = "\improper Visitor Room 12"
 	icon_state = "Sleep"
 
-//CHOMPStation Edit End
 
 /area/crew_quarters/sleep/engi_wash
 	name = "\improper Engineering Washroom"
@@ -1226,7 +1225,7 @@ NOTE: there are two lists of areas in the end of this file: centcom and station 
 	icon_state = "fitness"
 
 /area/crew_quarters/longue_area
-	name = "\improper Lounge" //VOREStation Edit - Muh speeling.
+	name = "\improper Lounge" // Muh speeling.
 	icon_state = "recreation_area"
 
 /area/crew_quarters/recreation_area
@@ -1304,7 +1303,7 @@ NOTE: there are two lists of areas in the end of this file: centcom and station 
 	name = "\improper Library"
 	icon_state = "library"
 	sound_env = LARGE_SOFTFLOOR
-	lightswitch = 0 // VOREStation Edit - We like dark libraries
+	lightswitch = 0 // We like dark libraries
 
 /area/library_conference_room
 	name = "\improper Library Conference Room"

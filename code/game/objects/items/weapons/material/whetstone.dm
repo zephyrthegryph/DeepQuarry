@@ -49,8 +49,8 @@
 
 /obj/item/material/sharpeningkit/proc/setrepair()
 	repair_amount = material.hardness * 0.1
-	repair_time = material.density * 0.5 // DQEdit — weight renamed to density.
-	sharpen_time = material.density * 3 // DQEdit — weight renamed to density.
+	repair_time = material.density * 0.5 // weight renamed to density.
+	sharpen_time = material.density * 3 // weight renamed to density.
 
 /obj/item/material/sharpeningkit/attackby(obj/item/W, mob/user)
 	if(istype(W, /obj/item/stack/material))

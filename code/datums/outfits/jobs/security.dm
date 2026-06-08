@@ -46,13 +46,12 @@
 	backpack_contents = list(/obj/item/storage/box/evidence = 1)
 	gloves = /obj/item/clothing/gloves/forensic //CHOMP Addition
 
-//VOREStation Edit - More cyberpunky
+// More cyberpunky
 /datum/decl/hierarchy/outfit/job/security/detective/forensic
 	name = OUTFIT_JOB_NAME("Forensic technician")
 	head = null
 	suit = /obj/item/clothing/suit/storage/det_trench/alt2
 	uniform = /obj/item/clothing/under/det
-//VOREStation Edit End
 
 /datum/decl/hierarchy/outfit/job/security/officer
 	name = OUTFIT_JOB_NAME(JOB_SECURITY_OFFICER)

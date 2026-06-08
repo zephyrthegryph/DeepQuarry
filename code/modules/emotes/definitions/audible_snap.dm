@@ -13,13 +13,13 @@
 			var/obj/item/organ/external/L = H.get_organ(limb)
 			if(istype(L) && L.is_usable() && !L.splinted)
 				return TRUE
-	else if(isanimal(user))		//VOREStation Addition Start
+	else if(isanimal(user)) // ition Start
 		var/mob/living/simple_mob/S = user
 		if(S.has_hands)
 			return TRUE
 	else if(ispAI(user))
 		return TRUE
-	else						//VOREStation Addition End
+	else // ition End
 		return FALSE
 
 /datum/decl/emote/audible/snap/do_emote(atom/user, extra_params)

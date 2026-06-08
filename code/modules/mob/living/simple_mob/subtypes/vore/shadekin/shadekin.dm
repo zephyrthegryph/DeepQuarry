@@ -278,7 +278,7 @@
 			comp.in_dark_respite = TRUE
 			belly.owner.handle_belly_update()
 			clear_fullscreen("belly")
-			belly_overlay_tgui?.hide() // DQEdit — hide TGUI belly overlay
+			belly_overlay_tgui?.hide() // hide TGUI belly overlay
 			if(hud_used)
 				if(!hud_used.hud_shown)
 					toggle_hud_vis()
@@ -305,7 +305,7 @@
 	to_chat(src, span_notice("You feel like you can leave the Dark again"))
 
 
-/* //VOREStation AI Temporary Removal
+/* // AI Temporary Removal
 //Blue-eyes want to nom people to heal them
 /mob/living/simple_mob/shadekin/Found(atom/A)
 	if(specific_targets && isliving(A)) //Healing!
@@ -348,7 +348,7 @@
 		return TRUE
 	return FALSE
 
-/* //VOREStation AI Removal
+/* // AI Removal
 //Friendly ones wander towards people, maybe shy-ly if they are set to shy
 /mob/living/simple_mob/shadekin/handle_wander_movement()
 	if(isturf(src.loc) && !resting && !buckled && canmove)

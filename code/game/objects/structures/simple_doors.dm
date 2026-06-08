@@ -80,7 +80,7 @@
 /obj/structure/simple_door/attack_hand(mob/user as mob)
 	return TryToSwitchState(user)
 
-/* // CHOMPEDIT: disabling becaue alt-clicking to view a turf is pretty important.
+/* // disabling becaue alt-clicking to view a turf is pretty important.
 /obj/structure/simple_door/click_alt(mob/user as mob)
 	. = ..()
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
@@ -241,7 +241,7 @@
 	return
 
 /obj/structure/simple_door/process()
-	// DQEdit — material.radioactivity moved to a component; query the helper.
+	// material.radioactivity moved to a component; query the helper.
 	var/rad = dq_material_radioactivity(material)
 	if(!rad)
 		return
@@ -362,7 +362,7 @@
 			return
 	..()
 
-// CHOMPedit start: Allows removing resin doors.
+// start: Allows removing resin doors.
 /obj/structure/simple_door/resin/attack_hand(mob/user as mob)
 	usr.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if (HULK in usr.mutations)
@@ -387,19 +387,19 @@
 	CheckHardness()
 	TryToSwitchState(user)
 	return
-// CHOMPedit end.
+// end.
 
 
 // === merged from simple_doors_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/material/flockium
 	name = MAT_FLOKIUM
 	//stack_type = /obj/item/stack/material/sandstone
-	material_class = MATCLASS_CERAMIC // DQEdit
+	material_class = MATCLASS_CERAMIC
 	icon_base = "flock"
 	icon_reinf = "flock"
 	icon_colour = "#FFFFFF"
 	//shard_type = SHARD_STONE_PIECE
-	density = 30 // DQEdit — weight renamed to density.
+	density = 30 // weight renamed to density.
 	hardness = 200
 	protectiveness = 5 // 20%
 	conductive = 0

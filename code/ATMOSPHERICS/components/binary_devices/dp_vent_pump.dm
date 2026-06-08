@@ -142,7 +142,7 @@
 	if (power_draw >= 0)
 		last_power_draw = power_draw
 		use_power(power_draw)
-		// DQEdit — pump_gas mutated loc's air directly; re-enroll the turf so
+		// pump_gas mutated loc's air directly; re-enroll the turf so
 		// SSair re-processes it and the gas overlay updates.
 		if(isturf(loc))
 			var/turf/open/T = loc

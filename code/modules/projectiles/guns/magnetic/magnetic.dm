@@ -269,7 +269,6 @@
 	if(loaded) //Safety.
 		if(istype(loaded, /obj/item/fuel_assembly))
 			var/obj/item/fuel_assembly/rod = loaded
-			//CHOMPEdit Begin
 			switch(rod.fuel_type)
 				if(MAT_COMPOSITE) //Safety check for rods spawned in without a fueltype.
 					projectile_type = /obj/item/projectile/bullet/magnetic/fuelrod
@@ -363,20 +362,20 @@
 			else
 				M.ear_damage += rand(0, 5)
 				M.ear_deaf = max(M.ear_deaf,15)
-				M.deaf_loop.start() // CHOMPStation Add: Ear Ringing/Deafness
+				M.deaf_loop.start() // Ear Ringing/Deafness
 
 	else if(get_dist(M, T) <= round(max_range * 0.5 * bang_effectiveness))
 		if(!ear_safety)
 			M.Confuse(8)
 			M.ear_damage += rand(0, 3)
 			M.ear_deaf = max(M.ear_deaf,10)
-			M.deaf_loop.start() // CHOMPStation Add: Ear Ringing/Deafness
+			M.deaf_loop.start() // Ear Ringing/Deafness
 
 	else if(!ear_safety && get_dist(M, T) <= (max_range * 0.7 * bang_effectiveness))
 		M.Confuse(4)
 		M.ear_damage += rand(0, 1)
 		M.ear_deaf = max(M.ear_deaf,5)
-		M.deaf_loop.start() // CHOMPStation Add: Ear Ringing/Deafness
+		M.deaf_loop.start() // Ear Ringing/Deafness
 
 	//This really should be in mob not every check
 	if(ishuman(M))
@@ -394,7 +393,6 @@
 				M.sdisabilities |= DEAF
 	else if(M.ear_damage >= 5)
 		to_chat(M, span_danger("Your ears start to ring!"))
-//CHOMPEdit End
 
 /obj/item/gun/magnetic/fuelrod/Initialize(mapload)
 	cell = new /obj/item/cell/high

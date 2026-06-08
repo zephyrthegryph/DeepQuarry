@@ -136,14 +136,13 @@
 			return TRUE
 
 /obj/machinery/icecream_vat/attackby(obj/item/O, mob/user)
-	// CHOMPAdd Start - Allows for deconstruction
+	// Allows for deconstruction
 	if(default_deconstruction_screwdriver(user, O))
 		return
 	if(default_deconstruction_crowbar(user, O))
 		return
 	if(default_part_replacement(user, O))
 		return
-	// CHOMPAdd End
 	if(istype(O, /obj/item/reagent_containers/food/snacks/icecream))
 		var/obj/item/reagent_containers/food/snacks/icecream/I = O
 		if(!I.ice_creamed)

@@ -18,7 +18,7 @@
 
 /datum/material/supermatter/New()
 	. = ..()
-	// DQEdit — was direct `radioactivity = 20` / `luminescence = 3`
+	// was direct `radioactivity = 20` / `luminescence = 3`
 	// vars. Both now live on /datum/component/material_radioactive and
 	// /datum/component/material_luminescent.
 	AddComponent(/datum/component/material_radioactive, 20)

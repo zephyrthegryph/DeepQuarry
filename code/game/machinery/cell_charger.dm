@@ -128,4 +128,4 @@
 	for(var/obj/item/stock_parts/capacitor/C in component_parts)
 		E += C.rating
 	efficiency = active_power_usage * (1+ (E - 1)*0.5)
-	dq_apply_material_synergies(src) // DQAdd
+	dq_apply_material_synergies(src)

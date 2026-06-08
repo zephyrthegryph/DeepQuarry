@@ -19,7 +19,7 @@
 		return 0
 	if (affected.status & ORGAN_DESTROYED)
 		return 0
-	if (!(affected.robotic == ORGAN_ROBOT || affected.robotic == ORGAN_LIFELIKE)) //VOREStation Edit - No good on ORGAN_NANOFORM
+	if (!(affected.robotic == ORGAN_ROBOT || affected.robotic == ORGAN_LIFELIKE)) // No good on ORGAN_NANOFORM
 		return 0
 	if(coverage_check(user, target, affected, tool))
 		return 0
@@ -203,7 +203,7 @@
 	max_duration = 60
 
 /datum/surgery_step/robotics/repair_brute/can_use(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
-	if(..()) //CHOMPEdit begin. Added damage check.
+	if(..()) // begin. Added damage check.
 		var/obj/item/organ/external/affected = target.get_organ(target_zone)
 		if(istype(tool, /obj/item/weldingtool))
 			var/obj/item/weldingtool/welder = tool
@@ -213,7 +213,7 @@
 			else
 				if(!welder.isOn() || !welder.remove_fuel(1,user))
 					return 0
-		return affected && affected.open == BONE_RETRACTED  && (affected.disfigured || affected.brute_dam > 0) && target_zone != O_MOUTH // CHOMPEdit End.
+		return affected && affected.open == BONE_RETRACTED  && (affected.disfigured || affected.brute_dam > 0) && target_zone != O_MOUTH // .
 
 /datum/surgery_step/robotics/repair_brute/begin_step(mob/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
 	var/obj/item/organ/external/affected = target.get_organ(target_zone)
@@ -248,7 +248,7 @@
 	)
 
 	min_duration = 50
-	max_duration = 50 //CHOMPedit
+	max_duration = 50
 
 /datum/surgery_step/robotics/repair_burn/can_use(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
 	if(..())
@@ -307,7 +307,7 @@
 	allowed_procs = list(IS_SCREWDRIVER = 100)
 
 	min_duration = 70
-	max_duration = 70 //CHOMPedit
+	max_duration = 70
 
 /datum/surgery_step/robotics/fix_organ_robotic/can_use(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
 	if(!ishuman(target))

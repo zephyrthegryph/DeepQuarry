@@ -42,7 +42,7 @@
 		return
 	if (ishuman(user) && src.loc == user)
 		var/mob/living/carbon/human/H = user
-		if(src == H.w_uniform) // VOREStation Edit - Un-equip on single click, but not on uniform.
+		if(src == H.w_uniform) // Un-equip on single click, but not on uniform.
 			return
 	return ..()
 
@@ -130,7 +130,7 @@
 	if(user.stat)
 		return
 
-	// CHOMPEdit begin
+	// begin
 	if(iscarbon(usr))
 		var/mob/living/carbon/C = usr
 		if(C.handcuffed)
@@ -141,7 +141,7 @@
 			if(H.ability_flags & 0x1)
 				to_chat(H, span_warning("You cannot remove accessories while phase shifted!"))
 				return
-	//CHOMPEdit end
+	// end
 
 	var/obj/item/clothing/accessory/A
 	var/accessory_amount = LAZYLEN(accessories)

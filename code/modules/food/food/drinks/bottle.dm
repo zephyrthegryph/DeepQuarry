@@ -825,8 +825,8 @@
 	desc = "This could go well with lunch."
 	icon = 'icons/obj/drinks.dmi'
 	icon_state = "snapsbottle"
-	center_of_mass_x = 17 //CHOMPEdit
-	center_of_mass_y= 3 //CHOMPEdit
+	center_of_mass_x = 17
+	center_of_mass_y= 3
 
 /obj/item/reagent_containers/food/drinks/bottle/snaps/Initialize(mapload)
 	. = ..()

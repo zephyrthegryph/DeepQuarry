@@ -131,12 +131,12 @@
 		if(!anchored)
 			user.show_message(span_warning("[src] can now be moved."))
 			cut_overlays()
-			unsense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity)) // CHOMPEdit
+			unsense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
 
 		else if(anchored)
 			user.show_message(span_warning("[src] is now secured."))
 			add_overlay("[base_state]-s")
-			sense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity)) // CHOMPEdit
+			sense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
 
 /obj/machinery/button/flasher
 	name = "flasher button"

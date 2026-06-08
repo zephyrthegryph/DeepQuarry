@@ -70,7 +70,7 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	//VOREStation Removal - Moved to VR
+	// Removal - Moved to VR
 	if(mode_index >= modes.len) // Shouldn't overflow unless someone messes with it in VV poorly but better safe than sorry.
 		mode_index = 1
 	else
@@ -105,10 +105,10 @@
 		return FALSE
 
 	var/list/rcd_results = A.rcd_values(user, src, modes[mode_index])
-	//CHOMPEdit start
+	// start
 	if(rcd_results == 1)
 		return FALSE
-	//CHOMPEdit end
+	// end
 	if(!rcd_results)
 		to_chat(user, span_warning("\The [src] blinks a red light as you point it towards \the [A], indicating \
 		that it won't work. Try changing the mode, or use it on something else."))
@@ -129,7 +129,7 @@
 		rcd_beam = beam_origin.Beam(A, icon_state = "rped_upgrade", time = max(true_delay, 5))
 	busy = TRUE
 
-	perform_effect(A, true_delay) //VOREStation Add
+	perform_effect(A, true_delay)
 	if(do_after(user, true_delay, target = A))
 		busy = FALSE
 		// Doing another check in case we lost matter during the delay for whatever reason.
@@ -313,13 +313,13 @@
 	item_state = "rcdammo"
 	w_class = ITEMSIZE_SMALL
 	matter = list(DEFAULT_WALL_MATERIAL = 30000,MAT_GLASS = 15000)
-	var/remaining = RCD_MAX_CAPACITY / 0.75	//CHOMPEdit
+	var/remaining = RCD_MAX_CAPACITY / 0.75
 
 /obj/item/rcd_ammo/large
 	name = "high-capacity matter cartridge"
 	desc = "Do not ingest."
 	matter = list(DEFAULT_WALL_MATERIAL = 45000,MAT_GLASS = 22500)
-	remaining = RCD_MAX_CAPACITY * 2	//CHOMPEdit
+	remaining = RCD_MAX_CAPACITY * 2
 
 
 // === merged from RCD_vr.dm during hard-fork de-suffix (verified no override-order change) ===
@@ -522,7 +522,7 @@
 	return "It currently holds [remaining]/[initial(remaining)] matter-units."
 
 //////////////////
-//CHOMPEdit start
+// start
 /obj/effect/constructing_effect
 	icon = 'icons/effects/effects_rcd.dmi'
 	icon_state = ""
@@ -556,4 +556,4 @@
 
 /obj/effect/constructing_effect/proc/end()
 	qdel(src)
-//CHOMPEdit end
+// end

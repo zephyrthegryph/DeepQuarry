@@ -1,4 +1,4 @@
-// DQAdd — Category/group/widget metadata for prefs whose declarations live in third-party
+// Category/group/widget metadata for prefs whose declarations live in third-party
 // (Bay/CHOMP/TG) files we don't want to touch directly. Runs once at world init: walks
 // the table and writes the metadata onto the static vars of the existing pref singletons.
 //
@@ -157,7 +157,7 @@ GLOBAL_LIST_INIT(pref_metadata_table, init_pref_metadata_table())
 	tag_pref(., /datum/preference/text/human/species_sound, "size_voice", "voice")
 
 	//// LOADOUT ////
-	// DQEdit — headset/backbag/pdachoice prefs deleted; their variants are loadout gear
+	// headset/backbag/pdachoice prefs deleted; their variants are loadout gear
 	// datums now. Remaining starting-kit prefs (no_jacket toggle, ringtone, comm visibility)
 	// stay hidden and surface via the starting_kit editor or the loadout panel.
 	tag_pref(., /datum/preference/text/human/ringtone, "loadout", "starting_kit", PREF_WIDGET_HIDDEN)
@@ -271,7 +271,7 @@ GLOBAL_LIST_INIT(pref_metadata_table, init_pref_metadata_table())
 		"group" = group,
 		"widget" = widget,
 	)
-	// DQEdit — write the metadata onto the singleton so the auto-renderer picks it up.
+	// write the metadata onto the singleton so the auto-renderer picks it up.
 	if(!GLOB.preference_entries)
 		GLOB.preference_entries = init_preference_entries()
 	var/datum/preference/instance = GLOB.preference_entries[pref_type]

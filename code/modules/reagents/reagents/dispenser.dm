@@ -22,7 +22,6 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_COMMON
 	industrial_use = REFINERYEXPORT_REASON_RAW
 
-//VOREStation Edit
 /datum/reagent/calcium/affect_ingest(mob/living/carbon/M, alien, removed)
 	if(ishuman(M) && rand(1,10000) == 1)
 		var/mob/living/carbon/human/H = M
@@ -32,7 +31,6 @@
 				H.custom_pain("You feel the agonizing power of calcium mending your bones!",60)
 				H.AdjustWeakened(1)
 				break // Only mend one bone, whichever comes first in the list
-//VOREStation Edit End
 
 /datum/reagent/carbon
 	name = REAGENT_CARBON
@@ -176,7 +174,7 @@
 	if(issmall(M))
 		removed *= 2
 
-	if(!(M.species.allergens & allergen_type) && !(M.species.medallergens & medallergen_type) && !(M.isSynthetic()))	//assuming it doesn't cause a horrible reaction, we get the nutrition effects - VOREStation Edit (added synth check)
+	if(!(M.species.allergens & allergen_type) && !(M.species.medallergens & medallergen_type) && !(M.isSynthetic())) // assuming it doesn't cause a horrible reaction, we get the nutrition effects - (added synth check)
 		M.adjust_nutrition(nutriment_factor * removed)
 
 	if(M.isSynthetic() && M.nutrition < 500 && M.species.robo_ethanol_proc)
@@ -335,7 +333,7 @@
 /datum/reagent/iron
 	name = REAGENT_IRON
 	id = REAGENT_ID_IRON
-	// DQEdit — explain the clinical role rather than the materials-science
+	// explain the clinical role rather than the materials-science
 	// one. Iron supplements support hemoglobin synthesis, which lets the
 	// body produce red blood cells faster. Used as a supportive treatment
 	// for anemia from sustained blood loss and as a secondary cure for
@@ -492,7 +490,7 @@
 	touch_met = 50 // It's acid!
 	var/power = 5
 	var/meltdose = 10 // How much is needed to melt
-	affects_robots = TRUE //CHOMPedit, it's acid! Still eats metal!
+	affects_robots = TRUE // , it's acid! Still eats metal!
 	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
 	industrial_use = REFINERYEXPORT_REASON_PRECURSOR
 
@@ -505,7 +503,7 @@
 /datum/reagent/acid/affect_touch(mob/living/carbon/M, alien, removed) // This is the most interesting
 	if(alien == IS_GREY) //ywedit
 		return
-	if(ishuman(M) && !isbelly(M.loc)) //CHOMPEdit Start
+	if(ishuman(M) && !isbelly(M.loc))
 		var/mob/living/carbon/human/H = M
 		if(H.head)
 			if(H.head.unacidable || is_type_in_list(H.head, GLOB.item_digestion_blacklist))
@@ -557,7 +555,7 @@
 				B.digest_nutri_gain += removed * (B.nutrition_percent / 100) + 0.5
 				B.GenerateBellyReagents_digesting()
 			else
-				B.owner_adjust_nutrition(removed * (B.nutrition_percent / 100) * power) //CHOMPEdit End
+				B.owner_adjust_nutrition(removed * (B.nutrition_percent / 100) * power)
 
 	if(volume < meltdose) // Not enough to melt anything
 		M.take_organ_damage(0, removed * power * 0.2) //burn damage, since it causes chemical burns. Acid doesn't make bones shatter, like brute trauma would.
@@ -570,13 +568,13 @@
 				if(affecting.take_damage(0, removed * power * 0.1))
 					H.UpdateDamageIcon()
 				if(prob(100 * removed / meltdose)) // Applies disfigurement
-					if (affecting.organ_can_feel_pain() && !isbelly(H.loc)) //VOREStation Add
+					if (affecting.organ_can_feel_pain() && !isbelly(H.loc))
 						H.emote("scream")
 					H.status_flags |= DISFIGURED
 		else
 			M.take_organ_damage(0, removed * power * 0.1) // Balance. The damage is instant, so it's weaker. 10 units -> 5 damage, double for pacid. 120 units beaker could deal 60, but a) it's burn, which is not as dangerous, b) it's a one-use weapon, c) missing with it will splash it over the ground and d) clothes give some protection, so not everything will hit
 
-/datum/reagent/acid/touch_obj(obj/O, amount) //CHOMPEdit Start
+/datum/reagent/acid/touch_obj(obj/O, amount)
 	if(istype(O, /obj/item) && O.loc)
 		if(isbelly(O.loc) || isbelly(O.loc.loc))
 			var/obj/belly/B = (isbelly(O.loc) ? O.loc : O.loc.loc)
@@ -589,7 +587,7 @@
 				B.owner_adjust_nutrition((B.nutrition_percent / 100) * 5 * spent_amt)
 			return
 	..()
-	if(O.unacidable || is_type_in_list(O, GLOB.item_digestion_blacklist)) //CHOMPEdit End
+	if(O.unacidable || is_type_in_list(O, GLOB.item_digestion_blacklist))
 		return
 	if((istype(O, /obj/item) || istype(O, /obj/effect/plant)) && (volume > meltdose))
 		var/obj/effect/decal/cleanable/molten_item/I = new/obj/effect/decal/cleanable/molten_item(O.loc)
@@ -599,7 +597,7 @@
 		qdel(O)
 		remove_self(meltdose) // 10 units of acid will not melt EVERYTHING on the tile
 
-/datum/reagent/acid/touch_mob(mob/living/L) //CHOMPAdd Start
+/datum/reagent/acid/touch_mob(mob/living/L)
 	if(!isliving(L))
 		return
 	if(isbelly(L.loc))
@@ -615,7 +613,7 @@
 			else
 				B.owner_adjust_nutrition(volume * (B.nutrition_percent / 100) * power)
 	L.adjustFireLoss(volume * power * 0.2)
-	remove_self(volume) //CHOMPAdd End
+	remove_self(volume)
 
 /datum/reagent/silicon
 	name = REAGENT_SILICON

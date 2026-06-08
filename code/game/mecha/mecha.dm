@@ -50,18 +50,18 @@
 	var/firstactivation = 0 			//It's simple. If it's 0, no one entered it yet. Otherwise someone entered it at least once.
 
 	var/stomp_sound = 'sound/mecha/mechstep.ogg'
-	var/stomp_sound_2 = 'sound/mecha/mechstep.ogg' // CHOMPedit: Used for 1-2 step patterns instead of random choice.
+	var/stomp_sound_2 = 'sound/mecha/mechstep.ogg' // Used for 1-2 step patterns instead of random choice.
 	var/swivel_sound = 'sound/mecha/mechturn.ogg'
-	var/reps = 0 // CHOMPedit: Used for 1-2 step patterns.
+	var/reps = 0 // Used for 1-2 step patterns.
 
 	//inner atmos
 	var/use_internal_tank = 0
 	var/internal_tank_valve = ONE_ATMOSPHERE
-	// DQEdit — was ZAS portable canister; now a regular oxygen tank since the
+	// was ZAS portable canister; now a regular oxygen tank since the
 	// ZAS portable machinery was deleted.
 	var/obj/item/tank/internal_tank
 	var/datum/gas_mixture/cabin_air
-	// DQEdit — connected_port was an /obj/machinery/atmospherics/portables_connector
+	// connected_port was an /obj/machinery/atmospherics/portables_connector
 	// (ZAS). Untyped while LINDA portables_connector is wired in.
 	var/obj/connected_port = null
 
@@ -128,7 +128,7 @@
 	var/static/image/radial_image_statpanel = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_examine2")
 
 //Mech actions
-	var/datum/mini_hud/mech/minihud //VOREStation Edit
+	var/datum/mini_hud/mech/minihud
 	var/strafing = 0 				//Are we strafing or not?
 
 	var/defence_mode_possible = 0 	//Can we even use defence mode? This is used to assign it to mechs and check for verbs.
@@ -418,7 +418,7 @@
 		if(!hasInternalDamage(MECHA_INT_TEMP_CONTROL) && prob(5))
 			clearInternalDamage(MECHA_INT_FIRE)
 		if(internal_tank)
-			// DQEdit — internal_tank's pressure-check uses the mixture's own pressure,
+			// internal_tank's pressure-check uses the mixture's own pressure,
 			// not the (deleted ZAS canister's) maximum_pressure var. Use TANK_LEAK_PRESSURE
 			// as the trip threshold instead, matching /tg/'s tank breach logic.
 			var/datum/gas_mixture/int_tank_air = internal_tank.return_air()
@@ -461,7 +461,7 @@
 	src.verbs += verb_path
 
 /obj/mecha/proc/add_airtank()
-	// DQEdit — the ZAS portable canister type was deleted in the LINDA migration.
+	// the ZAS portable canister type was deleted in the LINDA migration.
 	// Mech internal tank now uses /obj/item/tank/air (regular oxygen tank) which
 	// has return_air() and persists in the mech's contents.
 	internal_tank = new /obj/item/tank/air(src)
@@ -481,7 +481,7 @@
 	cabin_air = new
 	cabin_air.temperature = T20C
 	cabin_air.volume = 200
-	// DQEdit — adjust_multi was XGM; LINDA's gas_mixture has adjust_gas per-call.
+	// adjust_multi was XGM; LINDA's gas_mixture has adjust_gas per-call.
 	var/moles_o2 = O2STANDARD * cabin_air.volume / (R_IDEAL_GAS_EQUATION * cabin_air.temperature)
 	var/moles_n2 = N2STANDARD * cabin_air.volume / (R_IDEAL_GAS_EQUATION * cabin_air.temperature)
 	cabin_air.adjust_gas(GAS_O2, moles_o2)
@@ -608,7 +608,7 @@
 			src.mecha_log_message("Toggled lights [lights?"on":"off"].")
 			playsound(src, 'sound/mecha/heavylightswitch.ogg', 50, 1)
 		if("View Stats")
-			// DQEdit — TGUI: open MechaInterface.tsx instead of browse().
+			// TGUI: open MechaInterface.tsx instead of browse().
 			tgui_subview = "main"
 			tgui_interact(occupant)
 
@@ -917,8 +917,8 @@
 	var/result = get_step(src,direction)
 	if(result && Move(result))
 		if(stomp_sound)
-			playsound(src, reps ? stomp_sound : stomp_sound_2,50,0) // CHOMPedit: 1-2 step sequence.
-			reps = (reps+1)%2 // CHOMPedit: 1-2 step sequence.
+			playsound(src, reps ? stomp_sound : stomp_sound_2,50,0) // 1-2 step sequence.
+			reps = (reps+1)%2 // 1-2 step sequence.
 		handle_equipment_movement()
 	if(strafing)	//Also for strafing
 		set_dir(current_dir)
@@ -929,8 +929,8 @@
 	var/result = get_step_rand(src)
 	if(result && Move(result))
 		if(stomp_sound)
-			playsound(src, reps ? stomp_sound : stomp_sound_2,50,0) // CHOMPedit: 1-2 step sequence.
-			reps = (reps+1)%2 // CHOMPedit: 1-2 step sequence.
+			playsound(src, reps ? stomp_sound : stomp_sound_2,50,0) // 1-2 step sequence.
+			reps = (reps+1)%2 // 1-2 step sequence.
 		handle_equipment_movement()
 	return result
 
@@ -1179,12 +1179,12 @@
 		if(O.throwforce)
 			var/pass_damage = O.throwforce
 			var/pass_damage_reduc_mod
-			if(pass_damage <= damage_minimum)//Too little to go through. //CHOMPedit temp_damage_mininum -> damage_minimum
+			if(pass_damage <= damage_minimum) // Too little to go through. // temp_damage_mininum -> damage_minimum
 				src.occupant_message(span_notice("\The [A] bounces off the armor."))
 				src.visible_message("\The [A] bounces off \the [src] armor")
 				return
 
-			else if(O.armor_penetration < minimum_penetration)	//If you don't have enough pen, you won't do full damage //CHOMPedit, temp_minimum_penetration -> minimum_penetration
+			else if(O.armor_penetration < minimum_penetration) // If you don't have enough pen, you won't do full damage // , temp_minimum_penetration -> minimum_penetration
 				src.occupant_message(span_notice("\The [A] struggles to bypass \the [src] armor."))
 				src.visible_message("\The [A] struggles to bypass \the [src] armor")
 				pass_damage_reduc_mod = temp_fail_penetration_value	//This will apply to reduce damage to 2/3 or 66% by default
@@ -1255,12 +1255,12 @@
 		for(var/obj/item/mecha_parts/mecha_equipment/ME in equipment)
 			pass_damage = ME.handle_projectile_contact(Proj, pass_damage)
 
-		if(pass_damage < damage_minimum)//too pathetic to really damage you. //CHOMPedit temp_damage_minimum -> damage_minimum
+		if(pass_damage < damage_minimum) // too pathetic to really damage you. // temp_damage_minimum -> damage_minimum
 			src.occupant_message(span_notice("The armor deflects incoming projectile."))
 			src.visible_message("The [src.name] armor deflects\the [Proj]")
 			return
 
-		else if(Proj.armor_penetration < minimum_penetration)	//If you don't have enough pen, you won't do full damage //CHOMPedit temp_minimum_penetration -> damage_minimum
+		else if(Proj.armor_penetration < minimum_penetration) // If you don't have enough pen, you won't do full damage // temp_minimum_penetration -> damage_minimum
 			src.occupant_message(span_notice("\The [Proj] struggles to pierce \the [src] armor."))
 			src.visible_message("\The [Proj] struggles to pierce \the [src] armor")
 			pass_damage_reduc_mod = temp_fail_penetration_value	//This will apply to reduce damage to 2/3 or 66% by default
@@ -1271,11 +1271,10 @@
 			pass_damage_reduc_mod = 1
 
 		pass_damage = (pass_damage_reduc_mod*pass_damage)//Apply damage reduction before usage.
-		//CHOMPEdit Start we can spark even when taking no damage. But don't check after a proc that might have deleted this
+		// we can spark even when taking no damage. But don't check after a proc that might have deleted this
 		if(prob(25))
 			spark_system.start()
 		src.take_damage(pass_damage, Proj.check_armour)	//The take_damage() proc handles armor values
-		//CHOMPEdit End
 		if(pass_damage > internal_damage_minimum)	//Only decently painful attacks trigger a chance of mech damage.
 			src.check_for_internal_damage(list(MECHA_INT_FIRE,MECHA_INT_TEMP_CONTROL,MECHA_INT_TANK_BREACH,MECHA_INT_CONTROL_LOST,MECHA_INT_SHORT_CIRCUIT),ignore_threshold)
 
@@ -1401,12 +1400,12 @@
 		to_chat(user, span_danger("\The [W] bounces off [src.name]."))
 		src.log_append_to_last("Armor saved.")
 
-	else if(W.force < damage_minimum)	//Is your attack too PATHETIC to do anything. 3 damage to a person shouldn't do anything to a mech. //CHOMPedit temp_damage_minimum -> damage_minumum
+	else if(W.force < damage_minimum) // Is your attack too PATHETIC to do anything. 3 damage to a person shouldn't do anything to a mech. // temp_damage_minimum -> damage_minumum
 		src.occupant_message(span_notice("\The [W] bounces off the armor."))
 		src.visible_message(span_infoplain("\The [W] bounces off \the [src] armor"))
 		return
 
-	else if(W.armor_penetration < minimum_penetration)	//If you don't have enough pen, you won't do full damage ////CHOMPedit temp_minimum_penetration -> minimum_penetration
+	else if(W.armor_penetration < minimum_penetration) // If you don't have enough pen, you won't do full damage //// temp_minimum_penetration -> minimum_penetration
 		src.occupant_message(span_notice("\The [W] struggles to bypass \the [src] armor."))
 		src.visible_message(span_infoplain("\The [W] struggles to bypass \the [src] armor"))
 		pass_damage_reduc_mod = temp_fail_penetration_value	//This will apply to reduce damage to 2/3 or 66% by default
@@ -1659,7 +1658,7 @@
 	var/output = {"<b>Assume direct control over [src]?</b>
 						<a href='byond://?src=\ref[src];ai_take_control=\ref[user];duration=3000'>Yes</a><br>
 						"}
-	// DQEdit — TGUI sub-view: AI attack interface.
+	// TGUI sub-view: AI attack interface.
 	tgui_subview = "attack_ai"
 	tgui_subview_html = output
 	tgui_interact(user)
@@ -1774,7 +1773,7 @@
 			. = t_air.temperature
 	return
 
-// DQEdit — connect/disconnect plumbed a mecha into a ZAS portables_connector +
+// connect/disconnect plumbed a mecha into a ZAS portables_connector +
 // pipe_network. Both types deleted in the LINDA migration. Stub returns 0 (not
 // connected) until the LINDA equivalent (vendored under code/atmospherics/
 // machinery/components/unary_devices/portables_connector.dm) is wired into the build.
@@ -1809,7 +1808,7 @@
 	if(!GC)
 		return
 
-	// DQEdit — portables_connector type deleted; loop is a no-op until LINDA
+	// portables_connector type deleted; loop is a no-op until LINDA
 	// portables_connector is wired in.
 	for(var/turf/T in locs)
 		var/obj/possible_port = null
@@ -2061,7 +2060,7 @@
 	set popup_menu = 0
 	if(usr != src.occupant)
 		return
-	// DQEdit — TGUI: replaces legacy browse(get_stats_html()).
+	// TGUI: replaces legacy browse(get_stats_html()).
 	tgui_subview = "main"
 	tgui_interact(src.occupant)
 	return
@@ -2101,7 +2100,7 @@
 		return
 	if(mob_container.forceMove(src.loc))//ejecting mob container
 		src.mecha_log_message("[mob_container] moved out.")
-		// DQEdit — TGUI: close the exosuit interface on eject.
+		// TGUI: close the exosuit interface on eject.
 		SStgui.close_uis(src)
 		if(occupant.client && dq_get_cloaked_selfimage(src))
 			occupant.client.images -= dq_get_cloaked_selfimage(src)
@@ -2178,7 +2177,7 @@
 ////////////////////////////////////
 
 /obj/mecha/proc/get_stats_html()
-	// DQEdit — Bare stats body for TGUI consumption. The legacy <html>/
+	// Bare stats body for TGUI consumption. The legacy <html>/
 	// <script>/<style> wrapper and the JS-driven 1s ticker are gone:
 	// TGUI's autoupdate handles refresh, and styling is set in
 	// MechaInterface.tsx's outer Box.
@@ -2195,7 +2194,7 @@
 					"}
 	return output
 
-// DQEdit Start — fully-structured TGUI for all five views (main + log +
+// fully-structured TGUI for all five views (main + log +
 // attack_ai + access + maint). One MechaInterface.tsx renders all five
 // via the `view` data field; the legacy four browse() sub-UIs are gone.
 /obj/mecha
@@ -2444,7 +2443,6 @@
 		if("maint_remove_passenger")
 			Topic(null, list("remove_passenger" = "1", "user" = "\ref[usr]"))
 			return TRUE
-// DQEdit End
 
 
 /obj/mecha/proc/report_internal_damage()
@@ -2469,7 +2467,7 @@
 /obj/mecha/proc/get_stats_part()
 	var/integrity = health/initial(health)*100
 	var/cell_charge = get_charge()
-	// DQEdit — internal_tank is now /obj/item/tank, no return_pressure/return_temperature
+	// internal_tank is now /obj/item/tank, no return_pressure/return_temperature
 	// procs on it; read through air_contents (a /datum/gas_mixture).
 	var/datum/gas_mixture/tank_air = internal_tank?.return_air()
 	var/tank_pressure = tank_air ? round(tank_air.return_pressure(), 0.01) : "None"
@@ -2615,7 +2613,7 @@
 	return data
 
 
-// DQEdit — fully-structured TGUI access dialog. The id_card is cached
+// fully-structured TGUI access dialog. The id_card is cached
 // as a weakref so tgui_data can rebuild the available-keycode list each
 // refresh.
 /obj/mecha/proc/output_access_dialog(obj/item/card/id/id_card, mob/user)
@@ -2626,7 +2624,7 @@
 	tgui_interact(user)
 	return
 
-// DQEdit — fully-structured TGUI maintenance console. Action availability
+// fully-structured TGUI maintenance console. Action availability
 // is computed in tgui_data from current state.
 /obj/mecha/proc/output_maintenance_dialog(obj/item/card/id/id_card, mob/user)
 	if(!id_card || !user)
@@ -2746,7 +2744,7 @@
 	if(href_list["view_log"])
 		if(usr != src.occupant)
 			return
-		// DQEdit — fully-structured TGUI log sub-view.
+		// fully-structured TGUI log sub-view.
 		tgui_subview = "log"
 		tgui_interact(src.occupant)
 		return
@@ -2835,9 +2833,8 @@
 	if(href_list["finish_req_access"])
 		if(!in_range(src, usr))	return
 		add_req_access = 0
-		// DQEdit Start — close TGUI panel (legacy browse(null))
+		// close TGUI panel (legacy browse(null))
 		SStgui.close_uis(src)
-		// DQEdit End
 		return
 	if(href_list["dna_lock"])
 		if(usr != src.occupant)	return
@@ -3010,7 +3007,7 @@
 		add_attack_logs(user, src, "attacked")
 		playsound(src, 'sound/weapons/slash.ogg', 50, 1, -1)
 
-	else if(damage < damage_minimum)//Pathetic damage levels just don't harm MECH. //CHOMPedit temp_damage_minimum -> damage_minimum
+	else if(damage < damage_minimum) // Pathetic damage levels just don't harm MECH. // temp_damage_minimum -> damage_minimum
 		src.occupant_message(span_notice("\The [user]'s doesn't dent \the [src] paint."))
 		src.visible_message("\The [user]'s attack doesn't dent \the [src] armor")
 		src.log_append_to_last("Armor saved.")

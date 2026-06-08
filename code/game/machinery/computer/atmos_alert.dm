@@ -47,19 +47,19 @@
 		var/list/alarms = GLOB.atmosphere_alarm.major_alarms()
 		if(alarms.len)
 			icon_screen = "alert:2"
-			playsound(src, 'sound/effects/comp_alert_major.ogg', 70, 1) // CHOMPEdit: Alarm notifications
+			playsound(src, 'sound/effects/comp_alert_major.ogg', 70, 1) // Alarm notifications
 			spawn(100) // Wait 10 seconds, then play it again
-				playsound(src, 'sound/effects/comp_alert_major.ogg', 70, 1) // CHOMPEdit: Alarm notifications
+				playsound(src, 'sound/effects/comp_alert_major.ogg', 70, 1) // Alarm notifications
 		else
 			alarms = GLOB.atmosphere_alarm.minor_alarms()
 			if(alarms.len)
 				icon_screen = "alert:1"
-				playsound(src, 'sound/effects/comp_alert_minor.ogg', 50, 1) // CHOMPEdit: Alarm notifications
+				playsound(src, 'sound/effects/comp_alert_minor.ogg', 50, 1) // Alarm notifications
 				spawn(100) // Wait 10 seconds, then play it again
-					playsound(src, 'sound/effects/comp_alert_minor.ogg', 50, 1) // CHOMPEdit: Alarm notifications
+					playsound(src, 'sound/effects/comp_alert_minor.ogg', 50, 1) // Alarm notifications
 			else
 				icon_screen = initial(icon_screen)
-				playsound(src, 'sound/effects/comp_alert_clear.ogg', 50, 1)  // CHOMPEdit: Alarm notifications
+				playsound(src, 'sound/effects/comp_alert_clear.ogg', 50, 1) // Alarm notifications
 	..()
 
 /obj/machinery/computer/atmos_alert/tgui_act(action, params)

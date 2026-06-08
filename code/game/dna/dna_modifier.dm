@@ -110,7 +110,7 @@
 	for(var/obj/item/stock_parts/micro_laser/P in component_parts)
 		damage_coeff = P.rating
 
-	dq_apply_material_synergies(src) // DQAdd
+	dq_apply_material_synergies(src)
 /obj/machinery/dna_scannernew/relaymove(mob/user as mob)
 	if(user.stat)
 		return

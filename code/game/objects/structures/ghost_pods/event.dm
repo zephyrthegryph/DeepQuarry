@@ -142,7 +142,7 @@
 		//to_chat(user, span_warning("You must have proper out-of-character notes and flavor text configured for your current character slot to use this spawnpoint."))
 		return
 
-	var/choice = tgui_alert(user, "Using this spawner will spawn you as your currently loaded character slot in a special role. It should not be used with characters you regularly play on station. Are you absolutely sure you wish to continue?", "Stowaway Spawner", list("Yes", "No")) // CHOMPEdit
+	var/choice = tgui_alert(user, "Using this spawner will spawn you as your currently loaded character slot in a special role. It should not be used with characters you regularly play on station. Are you absolutely sure you wish to continue?", "Stowaway Spawner", list("Yes", "No"))
 
 	if(choice != "Yes")
 		return
@@ -172,7 +172,7 @@
 
 	SSjob.equip_rank(new_character, JOB_MAINT_LURKER, 1)
 
-	for(var/lang in new_character.client.prefs.read_preference(/datum/preference/alternate_languages)) // DQEdit — migrated
+	for(var/lang in new_character.client.prefs.read_preference(/datum/preference/alternate_languages)) // migrated
 		var/datum/language/chosen_language = GLOB.all_languages[lang]
 		if(chosen_language)
 			if(is_lang_whitelisted(M, chosen_language) || (new_character.species && (chosen_language.name in new_character.species.secondary_langs)))

@@ -1,4 +1,4 @@
-// DQAdd — Resolve ear/tail/wing style names to species-filtered sprite_accessory objects
+// Resolve ear/tail/wing style names to species-filtered sprite_accessory objects
 // and apply them to the character. The raw style name (e.g. "Fox tail") is a /datum/preference
 // pref; the actual character.tail_style is the resolved /datum/sprite_accessory instance.
 //

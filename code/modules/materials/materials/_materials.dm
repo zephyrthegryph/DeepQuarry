@@ -209,13 +209,13 @@ GLOBAL_LIST_INIT(name_to_material, populate_material_list())
 
 	// Attributes
 	var/cut_delay = 0            // Delay in ticks when cutting through this wall.
-	// DQEdit — radioactivity / luminescence moved out into
+	// radioactivity / luminescence moved out into
 	// /datum/component/material_radioactive and /material_luminescent
 	// (see code/modules/materials/material_components.dm).
 	// Readers query via dq_material_radioactivity() / dq_material_luminescence().
 	var/ignition_point           // K, point at which the material catches on fire.
 	var/melting_point = 1800     // K, walls will take damage if they're next to a fire hotter than this
-	// DQEdit — integrity moved into the property system below.
+	// integrity moved into the property system below.
 	var/protectiveness = 10      // How well this material works as armor.  Higher numbers are better, diminishing returns applies.
 	var/opacity = 1              // Is the material transparent? 0.5< makes transparent walls/doors.
 	var/reflectivity = 0         // How reflective to light is the material?  Currently used for laser reflection and defense.
@@ -223,14 +223,14 @@ GLOBAL_LIST_INIT(name_to_material, populate_material_list())
 	var/negation = 0             // Objects that respect this will randomly absorb impacts with this var as the percent chance.
 	var/spatial_instability = 0  // Objects that have trouble staying in the same physical space by sheer laws of nature have this. Percent for respecting items to cause teleportation.
 	var/conductive = 1           // Objects without this var add NOCONDUCT to flags on spawn.
-	// DQEdit — conductivity moved into the property system below.
+	// conductivity moved into the property system below.
 	var/list/composite_material  // If set, object matter var will be a list containing these values.
-	// DQEdit — luminescence moved into /datum/component/material_luminescent.
+	// luminescence moved into /datum/component/material_luminescent.
 	var/radiation_resistance = 0 // Radiation resistance, which is added on top of a material's density for blocking radiation. Needed to make lead special without superrobust weapons.
 	var/supply_conversion_value  // Supply points per sheet that this material sells for.
 	var/can_sharpen = TRUE // Is this material compatible with a sharpening kit?
 
-	// DQAdd Start — material property system.
+	// material property system.
 	//
 	// material_class is one of MATCLASS_METAL/CRYSTAL/ORGANIC/CERAMIC and
 	// drives smelter routing, alloy rules, and per-class stat ranges when
@@ -267,7 +267,6 @@ GLOBAL_LIST_INIT(name_to_material, populate_material_list())
 	// Trait holder (component-driven behaviors attached at New() or roll
 	// time live as full /datum/component children on this material).
 	var/list/traits
-	// DQAdd End
 
 	// Placeholder vars for the time being, todo properly integrate windows/light tiles/rods.
 	var/created_window
@@ -276,7 +275,7 @@ GLOBAL_LIST_INIT(name_to_material, populate_material_list())
 	var/wire_product
 	var/list/window_options = list()
 
-	// DQEdit — hardness/weight moved into the property system above.
+	// hardness/weight moved into the property system above.
 
 	// Noise when someone is faceplanted onto a table made of this material.
 	var/tableslam_noise = 'sound/weapons/tablehit1.ogg'
@@ -333,7 +332,7 @@ GLOBAL_LIST_INIT(name_to_material, populate_material_list())
 
 // Weapons handle applying a divisor for this value locally.
 /datum/material/proc/get_blunt_damage()
-	return density // DQEdit — was `weight`, renamed to density in the new system.
+	return density // was `weight`, renamed to density in the new system.
 
 // Return the matter comprising this material.
 /datum/material/proc/get_matter()
@@ -353,7 +352,7 @@ GLOBAL_LIST_INIT(name_to_material, populate_material_list())
 /datum/material/proc/can_open_material_door(mob/living/user)
 	return 1
 
-// DQEdit — was `(radioactivity>0)`. Radioactivity now lives on a
+// was `(radioactivity>0)`. Radioactivity now lives on a
 // /datum/component/material_radioactive attached to materials that
 // emit. Items made from such materials still need to process for
 // irradiation.

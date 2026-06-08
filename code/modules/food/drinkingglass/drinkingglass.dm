@@ -106,14 +106,14 @@
 				over_liquid |= "[base_icon][amnt]_[S]"
 
 		for(var/k in under_liquid)
-			underlays += image(icon, src, k, -3) //VOREStation Edit
+			underlays += image(icon, src, k, -3)
 
-		var/image/filling = image(icon, src, "[base_icon][amnt][R.glass_icon]", -2) //VOREStation Edit
+		var/image/filling = image(icon, src, "[base_icon][amnt][R.glass_icon]", -2)
 		filling.color = reagents.get_color()
 		underlays += filling
 
 		for(var/k in over_liquid)
-			underlays += image(icon, src, k, -1) //VOREStation Edit
+			underlays += image(icon, src, k, -1)
 	else
 		name = initial(name)
 		desc = initial(desc)
@@ -122,7 +122,7 @@
 	for(var/item in extras)
 		if(istype(item, /obj/item/glass_extra))
 			var/obj/item/glass_extra/GE = item
-			var/image/I = image(icon, src, "[base_icon]_[GE.glass_addition][side]") //VOREStation Edit
+			var/image/I = image(icon, src, "[base_icon]_[GE.glass_addition][side]")
 			if(GE.glass_color)
 				I.color = GE.glass_color
 			underlays += I

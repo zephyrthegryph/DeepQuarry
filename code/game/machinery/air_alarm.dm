@@ -106,8 +106,8 @@
 
 	var/alarms_hidden = FALSE //If the alarms from this machine are visible on consoles
 
-	var/datum/looping_sound/alarm/decompression_alarm/soundloop // CHOMPEdit: Looping Alarms
-	var/atmoswarn = FALSE // CHOMPEdit: Looping Alarms
+	var/datum/looping_sound/alarm/decompression_alarm/soundloop // Looping Alarms
+	var/atmoswarn = FALSE // Looping Alarms
 
 /obj/machinery/alarm/nobreach
 	breach_detection = 0
@@ -149,7 +149,7 @@
 	if(alarm_area.main_air_alarm?.resolve() == src)
 		alarm_area.elect_main_air_alarm(TRUE)
 	alarm_area = null
-	QDEL_NULL(soundloop)  // CHOMPEdit: Looping Alarms
+	QDEL_NULL(soundloop) // Looping Alarms
 	. = ..()
 
 /obj/machinery/alarm/proc/offset_airalarm()
@@ -175,11 +175,10 @@
 	if(name == "alarm")
 		name = "[alarm_area.name] Air Alarm \[[rand(9999)]\]" // random number id to help with players locating alarms, cosmetic
 
-// CHOMPAdd Start
 /obj/machinery/alarm/Initialize(mapload)
 	. = ..()
 	soundloop = new(list(src), FALSE)
-// CHOMPAdd ENd
+// ENd
 
 /obj/machinery/alarm/proc/scan_atmo()
 	var/turf/simulated/location = src.loc
@@ -206,14 +205,12 @@
 		mode = AALARM_MODE_FILL
 		apply_mode()
 
-	// CHOMPAdd Start
 	if(alarm_area?.atmosalm || danger_level > 0)  // Looping Alarms (Trigger Decompression alarm here, on detection of any breach in the area)
 		soundloop.start()
 		atmoswarn = TRUE
 	else if(danger_level == 0 && alarm_area?.atmosalm == 0)  // Looping Alarms (Cancel Decompression alarm here)
 		soundloop.stop()
 		atmoswarn = FALSE
-	// CHOMPAdd End
 
 	//atmos computer remote controll stuff
 	switch(rcon_setting)
@@ -607,7 +604,7 @@
 
 	var/total_moles = environment.total_moles()
 	var/partial_pressure = R_IDEAL_GAS_EQUATION * environment.temperature / environment.volume
-	for(var/gas_id in environment.gas_ids()) // DQEdit — environment.gas (XGM) → environment.gas_ids()
+	for(var/gas_id in environment.gas_ids()) // environment.gas (XGM) → environment.gas_ids()
 		if(!(gas_id in TLV))
 			continue
 		LOAD_TLV_VALUES(TLV[gas_id], LINDA_GAS_AMT(environment, gas_id) * partial_pressure)
@@ -879,11 +876,10 @@
 	..()
 	var/delay_time = rand(0,15)
 	if(delay_time)
-		addtimer(CALLBACK(src, PROC_REF(process_power_change)), delay_time, TIMER_DELETE_ME) // CHOMPEdit
+		addtimer(CALLBACK(src, PROC_REF(process_power_change)), delay_time, TIMER_DELETE_ME)
 		return
 	process_power_change()
 
-// CHOMPAdd Start
 /obj/machinery/alarm/proc/process_power_change()
 	update_icon()
 	if(!soundloop)
@@ -892,7 +888,6 @@
 		soundloop.stop()
 	else if(atmoswarn)
 		soundloop.start()
-// CHOMPAdd End
 
 /obj/machinery/alarm/server/Initialize(mapload)
 	. = ..()
@@ -914,7 +909,6 @@
 
 	TLV["temperature"] =	list(T0C - 40, T0C - 20, T0C + 40, T0C + 66) // K, Lower Temperature for Freezer Air Alarms (This is because TLV is hardcoded to be generated on first_run, and therefore the only way to modify this without changing TLV generation)
 
-// CHOMPEdit START
 /obj/machinery/alarm/sifwilderness
 	breach_detection = 0
 	report_danger_level = 0
@@ -925,7 +919,6 @@
 	TLV["oxygen"] =			list(16, 17, 135, 140)
 	TLV["pressure"] =		list(0,ONE_ATMOSPHERE*0.10,ONE_ATMOSPHERE*1.50,ONE_ATMOSPHERE*1.60)
 	TLV["temperature"] =	list(T0C - 40, T0C - 31, T0C + 40, T0C + 120)
-// CHOMPEdit END
 
 #undef LOAD_TLV_VALUES
 #undef TEST_TLV_VALUES

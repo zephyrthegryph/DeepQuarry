@@ -41,11 +41,9 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 	ooc_notes = null
 	ooc_notes_likes = null
 	ooc_notes_dislikes = null
-	//CHOMPEdit Start
 	ooc_notes_favs = null
 	ooc_notes_maybes = null
 	ooc_notes_style = FALSE
-	//CHOMPEdit End
 	update_icon()
 
 /obj/item/sleevemate/proc/get_mind(mob/living/M)
@@ -356,11 +354,9 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 		icon_state = initial(icon_state)
 
 /obj/item/sleevemate/emag_act(remaining_charges, mob/user)
-	//CHOMPEdit Start
 	var/list/choices = list("Body Snatcher","Mind Binder")
 	var/choice = tgui_input_list(user, "How would you like to modify the [src]?", "", choices)
 	if(!choice || !(choice in choices)) return
-	//CHOMPEdit End
 	to_chat(user,span_danger("You hack [src]!"))
 	var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
 	spark_system.set_up(5, 0, src.loc)
@@ -370,11 +366,9 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 		var/mob/living/L = src.loc
 		L.unEquip(src)
 	src.forceMove(get_turf(src))
-	//CHOMPEdit Start
 	if(choice == "Body Snatcher")
 		new /obj/item/bodysnatcher(src.loc)
 	if(choice == "Mind Binder")
 		new /obj/item/mindbinder(src.loc)
-	//CHOMPEdit End
 	qdel(src)
 	return 1

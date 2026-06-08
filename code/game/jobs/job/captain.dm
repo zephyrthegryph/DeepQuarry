@@ -19,7 +19,7 @@ GLOBAL_DATUM_INIT(captain_announcement, /datum/announcement/minor, new(do_newsca
 	req_admin_notify = 1
 	access = list() 			//See get_access()
 	minimal_access = list() 	//See get_access()
-	minimal_player_age = 31 //ChompEDIT
+	minimal_player_age = 31
 	economic_modifier = 20
 
 	minimum_character_age = 25
@@ -37,7 +37,7 @@ GLOBAL_DATUM_INIT(captain_announcement, /datum/announcement/minor, new(do_newsca
 						they do not understand everything, and are expected to delegate tasks to the appropriate crew member. The " + JOB_SITE_MANAGER + " is expected to \
 						have an understanding of Standard Operating Procedure, and is subject to it, and legal action, in the same way as every other crew member."
 	alt_titles = list(JOB_ALT_OVERSEER= /datum/alt_title/overseer, JOB_ALT_FACILITY_DIRECTOR = /datum/alt_title/facility_director, JOB_ALT_CHIEF_SUPERVISOR = /datum/alt_title/chief_supervisor,
-						JOB_ALT_CAPTAIN = /datum/alt_title/captain,JOB_ALT_COLONY_DIRECTOR= /datum/alt_title/colonydirector) //CHOMPEdit
+						JOB_ALT_CAPTAIN = /datum/alt_title/captain,JOB_ALT_COLONY_DIRECTOR= /datum/alt_title/colonydirector)
 
 
 /*
@@ -57,10 +57,8 @@ GLOBAL_DATUM_INIT(captain_announcement, /datum/announcement/minor, new(do_newsca
 /datum/alt_title/overseer
 	title = JOB_ALT_OVERSEER
 
-// CHOMPAdd Start
 /datum/alt_title/colonydirector
 	title = JOB_ALT_COLONY_DIRECTOR
-// CHOMPAdd End
 
 /datum/alt_title/facility_director
 	title = JOB_ALT_FACILITY_DIRECTOR
@@ -87,7 +85,7 @@ GLOBAL_DATUM_INIT(captain_announcement, /datum/announcement/minor, new(do_newsca
 	supervisors = "the " + JOB_SITE_MANAGER
 	selection_color = "#1D1D4F"
 	req_admin_notify = 1
-	minimal_player_age = 31 //ChompEDIT
+	minimal_player_age = 31
 	economic_modifier = 10
 
 	minimum_character_age = 25
@@ -107,8 +105,8 @@ GLOBAL_DATUM_INIT(captain_announcement, /datum/announcement/minor, new(do_newsca
 						manage the Supply department, through the " + JOB_QUARTERMASTER + ". In addition, the " + JOB_HEAD_OF_PERSONNEL + " oversees the personal accounts \
 						of the crew, including their money and access. If necessary, the " + JOB_HEAD_OF_PERSONNEL + " is first in line to assume Acting Command." //YW EDIT
 	alt_titles = list(JOB_ALT_CREW_RESOURCE_OFFICER = /datum/alt_title/cro, JOB_ALT_DEPUTY_MANAGER = /datum/alt_title/deputy_manager, JOB_ALT_STAFF_MANAGER = /datum/alt_title/staff_manager,
-						JOB_ALT_FACILITY_STEWARD = /datum/alt_title/facility_steward, JOB_ALT_FIRST_MATE = /datum/alt_title/first_mate //CHOMPEdit
-						, JOB_ALT_PERFORMANCE_MANAGEMENT_SUPERVISOR = /datum/alt_title/performance_management_supervisor) //CHOMPEdit
+						JOB_ALT_FACILITY_STEWARD = /datum/alt_title/facility_steward, JOB_ALT_FIRST_MATE = /datum/alt_title/first_mate
+						, JOB_ALT_PERFORMANCE_MANAGEMENT_SUPERVISOR = /datum/alt_title/performance_management_supervisor)
 
 	access = list(ACCESS_SECURITY, ACCESS_SEC_DOORS, ACCESS_BRIG, ACCESS_FORENSICS_LOCKERS, ACCESS_MEDICAL, ACCESS_ENGINE, ACCESS_CHANGE_IDS, ACCESS_AI_UPLOAD, ACCESS_EVA, ACCESS_HEADS, ACCESS_ALL_PERSONAL_LOCKERS, ACCESS_MAINT_TUNNELS, ACCESS_BAR, ACCESS_JANITOR, ACCESS_CONSTRUCTION, ACCESS_MORGUE, ACCESS_CREMATORIUM, ACCESS_KITCHEN, ACCESS_CARGO, ACCESS_CARGO_BOT, ACCESS_MAILSORTING, ACCESS_QM, ACCESS_HYDROPONICS, ACCESS_LAWYER, ACCESS_CHAPEL_OFFICE, ACCESS_LIBRARY, ACCESS_RESEARCH, ACCESS_MINING, ACCESS_HEADS_VAULT, ACCESS_MINING_STATION, ACCESS_HOP, ACCESS_RC_ANNOUNCE, ACCESS_CLOWN, ACCESS_TOMFOOLERY, ACCESS_MIME, ACCESS_KEYCARD_AUTH, ACCESS_GATEWAY, ACCESS_ENTERTAINMENT)
 	minimal_access = list(ACCESS_SECURITY, ACCESS_SEC_DOORS, ACCESS_BRIG, ACCESS_FORENSICS_LOCKERS,ACCESS_MEDICAL, ACCESS_ENGINE, ACCESS_CHANGE_IDS, ACCESS_AI_UPLOAD, ACCESS_EVA, ACCESS_HEADS,ACCESS_ALL_PERSONAL_LOCKERS, ACCESS_MAINT_TUNNELS, ACCESS_BAR, ACCESS_JANITOR, ACCESS_CONSTRUCTION, ACCESS_MORGUE, ACCESS_CREMATORIUM, ACCESS_KITCHEN, ACCESS_CARGO, ACCESS_CARGO_BOT, ACCESS_MAILSORTING, ACCESS_QM, ACCESS_HYDROPONICS, ACCESS_LAWYER,ACCESS_CHAPEL_OFFICE, ACCESS_LIBRARY, ACCESS_RESEARCH, ACCESS_MINING, ACCESS_HEADS_VAULT, ACCESS_MINING_STATION, ACCESS_HOP, ACCESS_RC_ANNOUNCE, ACCESS_CLOWN, ACCESS_TOMFOOLERY, ACCESS_MIME, ACCESS_KEYCARD_AUTH, ACCESS_GATEWAY, ACCESS_ENTERTAINMENT)
@@ -133,10 +131,9 @@ GLOBAL_DATUM_INIT(captain_announcement, /datum/announcement/minor, new(do_newsca
 /datum/alt_title/first_mate
 	title = JOB_ALT_FIRST_MATE
 
-//CHOMPEDIT START: More Alt titles
+// More Alt titles
 /datum/alt_title/performance_management_supervisor
 	title = JOB_ALT_PERFORMANCE_MANAGEMENT_SUPERVISOR //This one can be somewhat seen as an analogue to the captains "Chief Supervisor" role
-//CHOMPEDIT END
 
 //////////////////////////////////
 //		Command Secretary
@@ -159,7 +156,7 @@ GLOBAL_DATUM_INIT(captain_announcement, /datum/announcement/minor, new(do_newsca
 	pto_type = PTO_CIVILIAN
 	alt_titles = list(JOB_ALT_COMMAND_LIAISON = /datum/alt_title/command_liaison, JOB_ALT_COMMAND_ASSISTANT = /datum/alt_title/command_assistant, JOB_ALT_COMMAND_INTERN = /datum/alt_title/command_intern,
 						JOB_ALT_BRIDGE_SECRETARY = /datum/alt_title/bridge_secretary, JOB_ALT_BRIDGE_ASSISTANT = /datum/alt_title/bridge_assistant,
-						JOB_ALT_BRIDGE_OFFICER = /datum/alt_title/bridge_officer //ChompEDIT add bridge officer
+						JOB_ALT_BRIDGE_OFFICER = /datum/alt_title/bridge_officer // add bridge officer
 						)
 
 	access = list(ACCESS_HEADS, ACCESS_KEYCARD_AUTH, ACCESS_RC_ANNOUNCE) //YAWN EDIT

@@ -1,4 +1,4 @@
-// DQEdit — wholesale rewrite. The original file defined 15 bitfield prefs
+// wholesale rewrite. The original file defined 15 bitfield prefs
 // (job_civilian_high/med/low, job_medsci_*, job_engsec_*, job_talon_*, job_other_*)
 // and a GetJobDepartment() helper that read them by department_flag. The whole bucket
 // model is gone in DQ. Job priorities now live in

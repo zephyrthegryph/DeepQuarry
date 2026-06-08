@@ -10,7 +10,7 @@
 	While the central Sol government maintains control of its far-flung people, powerful corporate \
 	interests, rampant cyber and bio-augmentation and secretive factions make life on most human \
 	worlds tumultous at best." //CHOMPedit: blurb variable
-	wikilink="https://wiki.chompstation13.net/index.php?title=Humans" //CHOMPEdit
+	wikilink="https://wiki.chompstation13.net/index.php?title=Humans"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/humans)
 	num_alternate_languages = 3
 	species_language = LANGUAGE_SOL_COMMON
@@ -91,7 +91,7 @@
 	throwforce_absorb_threshold = 10
 	genders = list(MALE, FEMALE, PLURAL, NEUTER)
 
-	min_age = 40 //ChompEDIT - Unathi lore minimal adult age.
+	min_age = 40 // Unathi lore minimal adult age.
 	max_age = 260
 
 	economic_modifier = 10
@@ -172,14 +172,14 @@
 		)
 
 
-	heat_discomfort_level = 320 //VOREStation Edit - 46c (higher than normal humans) Don't spam red text if you're slightly warm.
+	heat_discomfort_level = 320 // 46c (higher than normal humans) Don't spam red text if you're slightly warm.
 	heat_discomfort_strings = list(
 		"You feel soothingly warm.",
 		"You feel the heat sink into your bones.",
 		"You feel warm enough to take a nap."
 		)
 
-	cold_discomfort_level = 288.15	//VOREStation Edit - 15c Give a little bit of wiggle room here come on.
+	cold_discomfort_level = 288.15 // 15c Give a little bit of wiggle room here come on.
 	cold_discomfort_strings = list(
 		"You feel chilly.",
 		"You feel sluggish and cold.",
@@ -245,7 +245,7 @@
 	and have accelerated the fledgling culture into the interstellar age. Their history is full of war and highly fractious \
 	governments, something that permeates even to today's times. They prefer colder, tundra-like climates, much like their \
 	home worlds and speak a variety of languages, especially Siik and Akhani."
-	wikilink="https://wiki.chompstation13.net/index.php?title=Tajaran" //CHOMPEdit: links to our wiki
+	wikilink="https://wiki.chompstation13.net/index.php?title=Tajaran" // links to our wiki
 	catalogue_data = list(/datum/category_item/catalogue/fauna/tajaran)
 
 	body_temperature = 280.15	//Even more cold resistant, even more flammable
@@ -306,11 +306,9 @@
 		)
 
 	default_emotes = list(
-		//VOREStation Add
 		/datum/decl/emote/audible/gnarl,
 		/datum/decl/emote/audible/purr,
 		/datum/decl/emote/audible/purrlong,
-		//VOREStation Add End
 		/datum/decl/emote/human/swish,
 		/datum/decl/emote/human/wag,
 		/datum/decl/emote/human/sway,
@@ -337,7 +335,7 @@
 	of the Qerr'Katish, a caste within their society which keeps the empire of the Skrell running smoothly. Skrell are \
 	herbivores on the whole and tend to be co-operative with the other species of the galaxy, although they rarely reveal \
 	the secrets of their empire to their allies."
-	wikilink="https://wiki.chompstation13.net/index.php?title=Skrell" //CHOMPedit: link to our wiki
+	wikilink="https://wiki.chompstation13.net/index.php?title=Skrell" // link to our wiki
 	catalogue_data = list(/datum/category_item/catalogue/fauna/skrell)
 	num_alternate_languages = 3
 	secondary_langs = list(LANGUAGE_SKRELLIAN, LANGUAGE_SCHECHI)
@@ -349,7 +347,7 @@
 
 	water_movement = -3
 
-	min_age = 19 //ChompEDIT Lore-based adulthood age for this species is greater than 18.
+	min_age = 19 // Lore-based adulthood age for this species is greater than 18.
 	max_age = 130
 
 	economic_modifier = 10
@@ -469,7 +467,7 @@
 	to survive in usual planetary and station atmospheres. Despite these restrictions, worsening conditions on \
 	Xohok and the blessing of the Moghes Hegemony have lead the Zaddat to enter human space in search of work \
 	and living space."
-	wikilink="https://wiki.chompstation13.net/index.php?title=Zaddat" //CHOMPedit: link to our wiki
+	wikilink="https://wiki.chompstation13.net/index.php?title=Zaddat" // link to our wiki
 	catalogue_data = list(/datum/category_item/catalogue/fauna/zaddat)
 
 	hazard_high_pressure = HAZARD_HIGH_PRESSURE + 500  // Dangerously high pressure.
@@ -576,7 +574,7 @@
 	all known species, especially the Skrell. Their communal mind makes them slow to react, and they have difficulty understanding \
 	even the simplest concepts of other minds. Their alien physiology allows them survive happily off a diet of nothing but light, \
 	water and other radiation."
-	wikilink="https://wiki.chompstation13.net/index.php?title=Diona" //CHOMPedit
+	wikilink="https://wiki.chompstation13.net/index.php?title=Diona"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/dionaea)
 
 	has_organ = list(
@@ -606,7 +604,7 @@
 	inherent_verbs = list(
 		/mob/living/carbon/human/proc/diona_split_nymph,
 		/mob/living/carbon/human/proc/regenerate,
-		/mob/proc/adjust_hive_range	//VOREStation Add
+		/mob/proc/adjust_hive_range
 		)
 
 	warning_low_pressure = 50
@@ -623,7 +621,7 @@
 	body_temperature = T0C + 15		//make the plant people have a bit lower body temperature, why not
 
 	flags = NO_DNA | NO_SLEEVE | IS_PLANT | NO_PAIN | NO_SLIP | NO_MINOR_CUT | NO_DEFIB
-	spawn_flags = SPECIES_CAN_JOIN | SPECIES_IS_WHITELISTED | SPECIES_WHITELIST_SELECTABLE	//CHOMPStation Edit: restore whitelist requirement
+	spawn_flags = SPECIES_CAN_JOIN | SPECIES_IS_WHITELISTED | SPECIES_WHITELIST_SELECTABLE // restore whitelist requirement
 
 	blood_color = "#004400"
 	flesh_color = "#907E4A"
@@ -718,8 +716,8 @@
 /datum/species/sergal
 	name = SPECIES_SERGAL
 	name_plural = "Sergals"
-	icobase = 'icons/mob/human_races/r_sergal.dmi' //ChompEDIT - our icons
-	deform = 'icons/mob/human_races/r_def_sergal.dmi' //ChompEDIT - our icons
+	icobase = 'icons/mob/human_races/r_sergal.dmi' // our icons
+	deform = 'icons/mob/human_races/r_def_sergal.dmi' // our icons
 	tail = "tail"
 	icobase_tail = 1
 	unarmed_types = list(/datum/unarmed_attack/stomp, /datum/unarmed_attack/kick, /datum/unarmed_attack/claws, /datum/unarmed_attack/bite/sharp)
@@ -802,7 +800,7 @@
 	assisted_langs = list(LANGUAGE_EAL, LANGUAGE_ROOTLOCAL, LANGUAGE_ROOTGLOBAL, LANGUAGE_VOX, LANGUAGE_PROMETHEAN)
 	inherent_verbs = list(/mob/living/carbon/human/proc/tie_hair, /mob/living/carbon/human/proc/water_stealth, /mob/living/carbon/human/proc/underwater_devour)
 	min_age = 18
-	max_age = 110 //CHOMPEdit
+	max_age = 110
 
 	blurb = "The Akula are a species of amphibious humanoids like the Skrell, but have an appearance very similar to that of a shark. \
 	They were first discovered as a primitive race of underwater dwelling tribal creatures by the Skrell. At first they were not believed \
@@ -854,7 +852,7 @@
 		/mob/living/proc/start_wings_hovering,
 		/mob/living/carbon/human/proc/tie_hair)
 	min_age = 18
-	max_age = 110 //CHOMPedit
+	max_age = 110
 
 	blurb = "Nevreans are a race of avian and dinosaur-like creatures living on Tal. They belong to a group of races that hails from Eltus, \
 	in the Vilous system. Unlike sergals whom they share a star system with, their species is a very peaceful one. They possess remarkable \
@@ -909,7 +907,7 @@
 			they now slowly recover from their previous hubris and aim to revitalize their planet. While many Zorren live in pre-industrial conditions by necessity, \
 			they are an interstellar species known for their pride and stubbornness and doggedly hold out on a Deathworld of their own creation. \
 			As local species, they hold moderate sway on local corporations and are hired by NT and other companies, although they find \"Outlander\" culture deeply weird."
-	wikilink="https://wiki.chompstation13.net/index.php?title=Zorren" //CHOMPEdit: link to our wiki
+	wikilink="https://wiki.chompstation13.net/index.php?title=Zorren" // link to our wiki
 
 	catalogue_data = list(/datum/category_item/catalogue/fauna/zorren)
 
@@ -1093,7 +1091,7 @@
 	the polar tundral regions outside of Skrell territory. Extremely fragile, they developed \
 	hunting skills that emphasized taking out their prey without themselves getting hit. They \
 	are known for their communalism and pack based family structures."
-	wikilink="https://wiki.chompstation13.net/index.php?title=Teshari" //CHOMPedit: link to our wiki
+	wikilink="https://wiki.chompstation13.net/index.php?title=Teshari" // link to our wiki
 	catalogue_data = list(/datum/category_item/catalogue/fauna/teshari)
 
 	num_alternate_languages = 3
@@ -1134,7 +1132,7 @@
 	slowdown = -1
 	snow_movement = -2	// Ignores light snow
 	item_slowdown_mod = 2	// Tiny birds don't like heavy things
-	total_health = 75 //CHOMPEdit
+	total_health = 75
 	//brute_mod = 1.35 //CHOMPRemove
 	//burn_mod =  1.35 //CHOMPRemove
 	mob_size = MOB_MEDIUM
@@ -1237,7 +1235,7 @@
 
 /datum/species/teshari/equip_survival_gear(mob/living/carbon/human/H)
 	..()
-	//if(!(H.client?.prefs?.shoe_hater)) //CHOMPStation Edit. Disables shoe_hater. Un-indents below line by 1.
+	// if(!(H.client?.prefs?.shoe_hater)) // . Disables shoe_hater. Un-indents below line by 1.
 	H.equip_to_slot_or_del(new /obj/item/clothing/shoes/sandal(H),slot_shoes)
 /*
 /datum/species/teshari/handle_falling(mob/living/carbon/human/H, atom/hit_atom, damage_min, damage_max, silent, planetary)
@@ -1345,7 +1343,7 @@
 	heat_level_3 = 1150
 
 	flags =  NO_DNA | NO_SLEEVE
-	spawn_flags = SPECIES_IS_RESTRICTED //SPECIES_CAN_JOIN | SPECIES_IS_WHITELISTED | SPECIES_WHITELIST_SELECTABLE CHOMPedit: disabled maybe forever
+	spawn_flags = SPECIES_IS_RESTRICTED // SPECIES_CAN_JOIN | SPECIES_IS_WHITELISTED | SPECIES_WHITELIST_SELECTABLE disabled maybe forever
 	reagent_tag = IS_SHADEKIN		// for shadekin-unqiue chem interactions
 
 	flesh_color = "#FFC896"
@@ -1702,7 +1700,7 @@
 		/mob/living/carbon/human/proc/tie_hair,
 		/mob/living/carbon/human/proc/lick_wounds,
 		/mob/living/carbon/human/proc/shapeshifter_reassemble)		//Xenochimera get all the special verbs since they can't select traits.
-		// CHOMPEdit: Lick Wounds Verb, reform verb
+		// Lick Wounds Verb, reform verb
 
 	virus_immune = 1 // They practically ARE one.
 	min_age = 18

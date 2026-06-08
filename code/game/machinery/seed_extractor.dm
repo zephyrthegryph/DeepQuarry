@@ -14,7 +14,7 @@
 /* Currently part upgrades do nothing
 /obj/machinery/seed_extractor/RefreshParts()
 	..()
-	dq_apply_material_synergies(src) // DQAdd
+	dq_apply_material_synergies(src)
 */
 
 /obj/machinery/seed_extractor/attackby(obj/item/O as obj, mob/user as mob)

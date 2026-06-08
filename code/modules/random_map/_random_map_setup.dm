@@ -3,7 +3,7 @@
 	-This controls the amount of sand turf it will create in the caves, I assume it controls the amount of minerals and undeground minerals aswell
 */
 
-// CHOMPedit: Resource defines
+// Resource defines
 #define MIN_SURFACE_COUNT   75
 #define MIN_RARE_COUNT      50
 #define MIN_DEEP_COUNT      25
@@ -13,7 +13,7 @@
 #define RESOURCE_MID_MIN    0.5
 #define RESOURCE_LOW_MAX    0.5
 #define RESOURCE_LOW_MIN    0
-// CHOMPedit end
+// end
 
 #define FLOOR_CHAR          0
 #define WALL_CHAR           1

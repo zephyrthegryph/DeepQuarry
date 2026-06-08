@@ -4,7 +4,7 @@
 /datum/trait/positive/speed_fast
 	name = "Haste"
 	desc = "Allows you to move faster on average than baseline."
-	cost = 4 //CHOMPEdit
+	cost = 4
 	var_changes = list("slowdown" = -0.5)
 //	banned_species = list(SPECIES_ALRAUNE, SPECIES_SHADEKIN_CREW, SPECIES_TESHARI, SPECIES_TAJARAN, SPECIES_DIONA, SPECIES_UNATHI) //Either not applicable or buffs ruin species flavour/balance
 //	custom_only = FALSE //Keeping these in comments in case we decide to open them up in future, so the species are already organised.
@@ -15,7 +15,7 @@
 
 	activation_message="Your leg muscles pulsate."
 	primitive_expression_messages=list("dances around.")
-	excludes = list(/datum/trait/positive/unusual_running, /datum/trait/positive/hardy,/datum/trait/positive/hardy_extreme,/datum/trait/positive/hardy_plus, /datum/trait/positive/strength, /datum/trait/positive/strengthplus) // you best not be naruto running in this house //ChompEDIT: Actually excludes this things, also properly excludes the strength perks, otherwise you grab haste first then strength
+	excludes = list(/datum/trait/positive/unusual_running, /datum/trait/positive/hardy,/datum/trait/positive/hardy_extreme,/datum/trait/positive/hardy_plus, /datum/trait/positive/strength, /datum/trait/positive/strengthplus) // you best not be naruto running in this house // Actually excludes this things, also properly excludes the strength perks, otherwise you grab haste first then strength
 
 /datum/trait/positive/unusual_running
 	name = "Unusual Gait"
@@ -35,7 +35,7 @@
 	desc = "Your unarmed attacks deal more damage. (+5 per attack)"
 	cost = 1
 	custom_only = FALSE
-	hidden = FALSE //Disabled on Virgo. //CHOMPEdit
+	hidden = FALSE // Disabled on Virgo. //
 	var_changes = list("unarmed_bonus" = 5)
 	excludes = list(/datum/trait/positive/punchdamageplus)
 	banned_species = list(SPECIES_TESHARI)
@@ -45,7 +45,7 @@
 	desc = "Your unarmed attacks deal high damage. (+10 per attack)"
 	cost = 2
 	custom_only = FALSE
-	hidden = FALSE //Disabled on Virgo. //CHOMPEdit
+	hidden = FALSE // Disabled on Virgo. //
 	var_changes = list("unarmed_bonus" = 10)
 	excludes = list(/datum/trait/positive/punchdamage)
 	banned_species = list(SPECIES_TESHARI, SPECIES_VOX)
@@ -64,9 +64,9 @@
 	desc = "Your unarmed attacks deal more damage (+5), and you can carry heavy equipment with 50% less slowdown."
 	cost = 2
 	custom_only = FALSE
-	hidden = FALSE //Disabled on Virgo. //CHOMPEdit
+	hidden = FALSE // Disabled on Virgo. //
 	var_changes = list("unarmed_bonus" = 5, "item_slowdown_mod" = 0.5)
-	excludes = list(/datum/trait/positive/punchdamage, /datum/trait/positive/hardy, /datum/trait/positive/hardy_plus, /datum/trait/positive/speed_fast) //CHOMPEdit
+	excludes = list(/datum/trait/positive/punchdamage, /datum/trait/positive/hardy, /datum/trait/positive/hardy_plus, /datum/trait/positive/speed_fast)
 	banned_species = list(SPECIES_ALRAUNE, SPECIES_TESHARI, SPECIES_UNATHI, SPECIES_DIONA, SPECIES_PROMETHEAN, SPECIES_PROTEAN)
 
 /datum/trait/positive/strengthplus //see above comment
@@ -74,9 +74,9 @@
 	desc = "You are unreasonably strong. Your unarmed attacks do high damage (+10), you experience much less slowdown from heavy equipment (75% less)."
 	cost = 4
 	custom_only = FALSE
-	hidden = FALSE //Disabled on Virgo. //CHOMPEdit
+	hidden = FALSE // Disabled on Virgo. //
 	var_changes = list("unarmed_bonus" = 10, "item_slowdown_mod" = 0.25)
-	excludes = list(/datum/trait/positive/punchdamage, /datum/trait/positive/hardy, /datum/trait/positive/punchdamageplus, /datum/trait/positive/hardy_plus, /datum/trait/positive/speed_fast) //CHOMPEdit
+	excludes = list(/datum/trait/positive/punchdamage, /datum/trait/positive/hardy, /datum/trait/positive/punchdamageplus, /datum/trait/positive/hardy_plus, /datum/trait/positive/speed_fast)
 	banned_species = list(SPECIES_ALRAUNE, SPECIES_TESHARI, SPECIES_UNATHI, SPECIES_DIONA, SPECIES_PROMETHEAN, SPECIES_PROTEAN, SPECIES_VOX)
 
 /datum/trait/positive/hardy
@@ -93,7 +93,7 @@
 	desc = "Allows you to carry heavy equipment with almost no slowdown."
 	cost = 2
 	var_changes = list("item_slowdown_mod" = 0.25)
-	excludes = list(/datum/trait/positive/speed_fast,/datum/trait/positive/hardy_extreme,/datum/trait/positive/hardy) // CHOMPEdit: Prevents Haste + Hardy being taken together.
+	excludes = list(/datum/trait/positive/speed_fast,/datum/trait/positive/hardy_extreme,/datum/trait/positive/hardy) // Prevents Haste + Hardy being taken together.
 	banned_species = list(SPECIES_ALRAUNE, SPECIES_TESHARI, SPECIES_UNATHI, SPECIES_DIONA, SPECIES_PROMETHEAN, SPECIES_PROTEAN) //Either not applicable or buffs are too strong
 	custom_only = FALSE
 
@@ -126,7 +126,7 @@
 
 	activation_message="Your skin feels strange."
 
-/*   //Chompedit, moving to Positive_ch.dm so it wont be messed with from upstream
+/* // , moving to Positive_ch.dm so it wont be messed with from upstream
 /datum/trait/positive/darksight
 	name = "Darksight"
 	desc = "Allows you to see significantly further in the dark and be 10% more susceptible to flashes."
@@ -234,7 +234,7 @@
 /datum/trait/positive/traceur
 	name = "Traceur"
 	desc = "You're capable of parkour and can *flip over low objects (most of the time)."
-	cost = 1 //CHOMPEdit this is not worth 2 points
+	cost = 1 // this is not worth 2 points
 	var_changes = list("agility" = 90)
 	custom_only = FALSE
 	varchange_type = TRAIT_VARCHANGE_MORE_BETTER
@@ -249,7 +249,7 @@
 	name = "Weaver"
 	desc = "You can produce silk and create various articles of clothing and objects."
 	cost = 2
-	// allowed_species = list(SPECIES_HANNER, SPECIES_CUSTOM) //So it only shows up for custom species and hanner // CHOMPEdit End
+	// allowed_species = list(SPECIES_HANNER, SPECIES_CUSTOM) //So it only shows up for custom species and hanner //
 
 	custom_only = FALSE
 	has_preferences = list("silk_production" = list(TRAIT_PREF_TYPE_BOOLEAN, "Silk production on spawn", TRAIT_NO_VAREDIT_TARGET), \
@@ -296,7 +296,7 @@
 	name = "Cocoon Spinner"
 	desc = "Allows you to build a cocoon around yourself, using it to transform your body if you desire."
 	cost = 1
-//	allowed_species = list(SPECIES_HANNER, SPECIES_CUSTOM) //So it only shows up for custom species and hanner CHOMPEDIT: It's a roleplay trait. Will things explode if more folks have it?
+// allowed_species = list(SPECIES_HANNER, SPECIES_CUSTOM) //So it only shows up for custom species and hanner It's a roleplay trait. Will things explode if more folks have it?
 	custom_only = FALSE
 	excludes = list(/datum/trait/positive/weaver)
 
@@ -304,7 +304,7 @@
 	..()
 	add_verb(H, /mob/living/carbon/human/proc/enter_cocoon)
 
-/* //CHOMPedit: We already have our own version of this trait.
+/* // We already have our own version of this trait.
 /datum/trait/positive/linguist
 	name = "Linguist"
 	desc = "Allows you to have more languages."
@@ -315,7 +315,7 @@
 	varchange_type = TRAIT_VARCHANGE_MORE_BETTER
 */
 
-/* // CHOMPedit: commented out because we disabled baymiss so this does nothing.
+/* // commented out because we disabled baymiss so this does nothing.
 /datum/trait/positive/good_shooter
 	name = "Eagle Eye"
 	desc = "You are better at aiming than most."
@@ -967,7 +967,7 @@
 	desc = "You're able to shift your appearance."
 	cost = 3 //this trait is functionally wholly cosmetic, but it is less flavor-restricted than cocoon, and takes less time, so it's a bit pricier
 	custom_only = FALSE
-	hidden = FALSE //CHOMPEdit - Enable
+	hidden = FALSE // Enable
 
 /datum/trait/positive/shapeshifting/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
@@ -1006,7 +1006,7 @@
 
 /datum/trait/positive/endurance_high
 	cost = 3
-	excludes = list(/datum/trait/positive/endurance_very_high, /datum/trait/positive/endurance_extremely_high) // CHOMPEdit: Increased Endurance.
+	excludes = list(/datum/trait/positive/endurance_very_high, /datum/trait/positive/endurance_extremely_high) // Increased Endurance.
 	// excludes = list(/datum/trait/positive/brute_resist, /datum/trait/positive/minor_brute_resist, /datum/trait/positive/minor_burn_resist, /datum/trait/positive/burn_resist)
 	// Tankiness at the cost of severe downsides should be allowed - we have a large number of negatives that hurt hard, but you can't take many positives.
 

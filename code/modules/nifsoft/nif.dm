@@ -292,7 +292,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 /obj/item/nif/proc/handle_install()
 	if(human.stat || !human.mind) //No stuff while KO or not sleeved
 		return FALSE
-	persist_storable = FALSE		//VOREStation edit - I am not sure if polaris has nifs, but just in case.
+	persist_storable = FALSE // I am not sure if polaris has nifs, but just in case.
 	//Firsties
 	if(!install_done)
 		if(human.mind.name == owner)
@@ -300,7 +300,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 			install_done = world.time + 1 MINUTE
 			notify("Welcome back, [owner]! Performing quick-calibration...")
 		else if(!owner)
-			install_done = world.time + 15 MINUTES // CHOMPedit: Install time from 35 minutes to 15 minutes.
+			install_done = world.time + 15 MINUTES // Install time from 35 minutes to 15 minutes.
 			owner_key = human.ckey
 			notify("Adapting to new user...")
 			sleep(5 SECONDS)
@@ -311,7 +311,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 			stat = NIF_TEMPFAIL
 			return FALSE
 
-	var/percent_done = (world.time - (install_done - (15 MINUTES))) / (15 MINUTES) //CHOMPedit: 35 minutes down to 15 minutes.
+	var/percent_done = (world.time - (install_done - (15 MINUTES))) / (15 MINUTES) // 35 minutes down to 15 minutes.
 
 	if(human.client)
 		human.client.screen.Add(GLOB.global_hud.whitense) //This is the camera static

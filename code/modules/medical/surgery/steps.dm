@@ -1,7 +1,7 @@
 // Surgery steps for procedures the upstream chain didn't have a real
 // step for. Each step is a single-stage operation that completes a
 // /datum/dq_surgery via its `completion_step` mapping. The actual cure
-// is dispatched by the DQEdit in code/modules/surgery/surgery.dm — these
+// is dispatched by the in code/modules/surgery/surgery.dm — these
 // steps just describe what the surgeon does to make it happen.
 //
 // Each step's `can_use` matches what the corresponding /datum/dq_surgery

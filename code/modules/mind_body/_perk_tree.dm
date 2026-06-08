@@ -1,4 +1,4 @@
-// DQAdd — /datum/perk_tree + global registry.
+// /datum/perk_tree + global registry.
 //
 // Trees are pure presentation: each one groups perks (visually within the active
 // category tab). A tree belongs to a category — its perks draw down that category's

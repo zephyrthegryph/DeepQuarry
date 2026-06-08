@@ -54,7 +54,7 @@
 		/obj/item/clothing/suit/storage/hooded/wintercoat/science/rd,
 		/obj/item/clothing/shoes/boots/winter/science,
 		/obj/item/clothing/head/beret/science/rd,
-		/obj/item/bluespace_harpoon) //VOREStation Add
+		/obj/item/bluespace_harpoon)
 
 /obj/structure/closet/secure_closet/xenoarchaeologist
 	name = "Xenoarchaeologist Locker"

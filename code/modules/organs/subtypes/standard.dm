@@ -9,7 +9,7 @@
 	organ_tag = BP_TORSO
 	icon_name = "torso"
 	max_damage = 100
-	min_broken_damage = 60 // CHOMPEdit: Increase all min_broken_damage (Ribs should take more force to break)
+	min_broken_damage = 60 // Increase all min_broken_damage (Ribs should take more force to break)
 	w_class = ITEMSIZE_HUGE
 	body_part = UPPER_TORSO
 	vital = TRUE
@@ -25,7 +25,7 @@
 
 /obj/item/organ/external/chest/robotize()
 	if(..() && owner)
-		if(robotic != ORGAN_NANOFORM) //VOREStation Edit
+		if(robotic != ORGAN_NANOFORM)
 			// Give them fancy new organs.
 			owner.internal_organs_by_name[O_CELL] = new /obj/item/organ/internal/cell(owner,1)
 			owner.internal_organs_by_name[O_VOICE] = new /obj/item/organ/internal/voicebox/robot(owner, 1)
@@ -59,7 +59,7 @@
 	organ_tag = BP_GROIN
 	icon_name = "groin"
 	max_damage = 100
-	min_broken_damage = 50 // CHOMPEdit: Increase all min_broken_damage
+	min_broken_damage = 50 // Increase all min_broken_damage
 	w_class = ITEMSIZE_LARGE
 	body_part = LOWER_TORSO
 	vital = TRUE
@@ -88,7 +88,7 @@
 	name = "left arm"
 	icon_name = "l_arm"
 	max_damage = 80
-	min_broken_damage = 40 // CHOMPEdit: Flat doubling of all min_broken_damage
+	min_broken_damage = 40 // Flat doubling of all min_broken_damage
 	w_class = ITEMSIZE_NORMAL
 	body_part = ARM_LEFT
 	parent_organ = BP_TORSO
@@ -127,7 +127,7 @@
 	name = "left leg"
 	icon_name = "l_leg"
 	max_damage = 80
-	min_broken_damage = 40 // CHOMPEdit: Increase all min_broken_damage
+	min_broken_damage = 40 // Increase all min_broken_damage
 	w_class = ITEMSIZE_NORMAL
 	body_part = LEG_LEFT
 	icon_position = LEFT
@@ -175,7 +175,7 @@
 	name = "left foot"
 	icon_name = "l_foot"
 	max_damage = 50
-	min_broken_damage = 30 // CHOMPEdit: Increase all min_broken_damage
+	min_broken_damage = 30 // Increase all min_broken_damage
 	w_class = ITEMSIZE_SMALL
 	body_part = FOOT_LEFT
 	icon_position = LEFT
@@ -224,7 +224,7 @@
 	name = "left hand"
 	icon_name = "l_hand"
 	max_damage = 50
-	min_broken_damage = 30 // CHOMPEdit: Increase all min_broken_damage
+	min_broken_damage = 30 // Increase all min_broken_damage
 	w_class = ITEMSIZE_SMALL
 	body_part = HAND_LEFT
 	parent_organ = BP_L_ARM
@@ -272,7 +272,7 @@
 	name = "head"
 	slot_flags = SLOT_BELT
 	max_damage = 75
-	min_broken_damage = 50 // CHOMPEdit: Increase all min_broken_damage
+	min_broken_damage = 50 // Increase all min_broken_damage
 	w_class = ITEMSIZE_NORMAL
 	body_part = HEAD
 	vital = TRUE
@@ -290,7 +290,7 @@
 	var/eye_icon_override = FALSE		// if true, we dont reset our icon back to default
 	force = 3
 	throwforce = 7
-	var/eyes_over_markings = FALSE //VOREStation edit
+	var/eyes_over_markings = FALSE
 
 /obj/item/organ/external/head/Initialize(mapload)
 	if(CONFIG_GET(flag/allow_headgibs))
@@ -359,7 +359,7 @@
 	if(!iscarbon(owner) || !owner.species)
 		return
 
-	var/icon/eyecon //VOREStation Add
+	var/icon/eyecon
 
 	//Eye color/icon
 	var/should_have_eyes = owner.should_have_organ(O_EYES)
@@ -383,7 +383,7 @@
 				eyes_icon.Blend(rgb(owner.r_eyes, owner.g_eyes, owner.b_eyes), ICON_ADD)
 
 
-		//VOREStation edit -- allow rendering of eyes over markings.
+		// allow rendering of eyes over markings.
 		if(eyes_over_markings)
 			eyecon = eyes_icon
 		else
@@ -408,14 +408,14 @@
 		mob_icon.Blend(mark_s, ICON_OVERLAY) //So when it's on your body, it has icons
 		icon_cache_key += "[M][markings[M]["color"]]"
 
-	if(eyes_over_markings && eyecon) //VOREStation edit -- toggle to render eyes above markings.
+	if(eyes_over_markings && eyecon) // toggle to render eyes above markings.
 		add_overlay(eyecon)
 		mob_icon.Blend(eyecon, ICON_OVERLAY)
 		icon_cache_key += "[eye_icon]"
 
 	add_overlay(get_hair_icon())
 
-	if (transparent && can_apply_transparency) //VOREStation Edit: transparent instead of nonsolid
+	if (transparent && can_apply_transparency) // transparent instead of nonsolid
 		mob_icon += rgb(,,,180) //do it here so any markings become transparent as well
 
 	return mob_icon

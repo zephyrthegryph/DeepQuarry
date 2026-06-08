@@ -1,9 +1,9 @@
-// DQAdd — Starting Kit editor. Bundles the small "what you spawn with" prefs
+// Starting Kit editor. Bundles the small "what you spawn with" prefs
 // (headset, backpack, PDA, ringtone, no_jacket toggle, communicator visibility) into a
 // single labelled panel instead of letting them auto-render as six unrelated widgets in
 // a LabeledList. The underlying prefs are hidden from auto-render via _pref_metadata.dm.
 
-// DQEdit — starting kit after no_jacket deletion: just ringtone + comm visibility.
+// starting kit after no_jacket deletion: just ringtone + comm visibility.
 // Neither is a gear item. Editor stays hidden; actions dispatch from the loadout panel's
 // PDA-slot context where these two settings live.
 

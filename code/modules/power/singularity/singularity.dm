@@ -363,11 +363,9 @@ GLOBAL_LIST_BOILERPLATE(all_singularities, /obj/singularity)
 	if (!isturf(T))
 		return 0
 
-	// VOREStation Edit Start
 	var/area/A = get_area(T)
 	if(A.flag_check(AREA_FORBID_SINGULO)) //No going to dorms
 		return 0
-	// VOREStation Edit End
 
 	if ((locate(/obj/machinery/containment_field) in T) || (locate(/obj/machinery/shieldwall) in T))
 		return 0

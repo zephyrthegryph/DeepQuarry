@@ -7,7 +7,7 @@
 	capacity projectile settings. In other words: Stun or Kill."
 	description_fluff = "Lawson Arms is Hephaestus Industries’ main personal-energy-weapon branding, often sold alongside MarsTech projectile \
 	weapons to security and law enforcement agencies."
-	icon = 'icons/obj/gun.dmi' // CHOMPEdit: Gun Sprites
+	icon = 'icons/obj/gun.dmi' // Gun Sprites
 	icon_state = "egunstun"
 	item_state = null //so the human update icon uses the icon_state instead.
 	fire_delay = 8
@@ -83,7 +83,7 @@
 	force = 8
 	w_class = ITEMSIZE_LARGE
 	fire_delay = 7
-	charge_meter = 0 //ChompEDIT - tommylaser doesn't have charge sprites.
+	charge_meter = 0 // tommylaser doesn't have charge sprites.
 
 	projectile_type = /obj/item/projectile/beam/burstlaser
 

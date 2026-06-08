@@ -61,7 +61,7 @@
 /datum/design_techweb/mechfab/combat_shield
 	name = "linear combat shield"
 	id = "mech_shield_droid"
-	materials = list(MAT_STEEL = 8000, MAT_GOLD = 2000, MAT_SILVER = 3000, MAT_PHORON = 5000, MAT_VERDANTIUM = 2000, MAT_GLASS = 3750)  //Chompedit  Also bumped up a little
+	materials = list(MAT_STEEL = 8000, MAT_GOLD = 2000, MAT_SILVER = 3000, MAT_PHORON = 5000, MAT_VERDANTIUM = 2000, MAT_GLASS = 3750) // Also bumped up a little
 	build_path = /obj/item/mecha_parts/mecha_equipment/combat_shield
 	category = list(
 		RND_CATEGORY_EQUIPMENT
@@ -72,7 +72,7 @@
 	name = "Omni Shield"
 	desc = "Integral shield projector. Can only protect the exosuit, but has no weak angles."
 	id = "mech_shield_omni"
-	materials = list(MAT_STEEL = 8000, MAT_GOLD = 2000, MAT_SILVER = 3000, MAT_PHORON = 5000, MAT_VERDANTIUM = 2000, MAT_GLASS = 3750)  //Chompedit  Also bumped up a little
+	materials = list(MAT_STEEL = 8000, MAT_GOLD = 2000, MAT_SILVER = 3000, MAT_PHORON = 5000, MAT_VERDANTIUM = 2000, MAT_GLASS = 3750) // Also bumped up a little
 	build_path = /obj/item/mecha_parts/mecha_equipment/omni_shield
 	category = list(
 		RND_CATEGORY_EQUIPMENT

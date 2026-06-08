@@ -13,7 +13,7 @@
 	..()
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
-		// CHOMPEdit: Standardize Species Sounds Getters
+		// Standardize Species Sounds Getters
 		var/vol = H.species.gasp_volume
 		var/s = get_species_sound(get_gendered_sound(H))["gasp"]
 		if(!s && !(get_species_sound(H.species.species_sounds) == "None")) // Failsafe, so we always use the default gasp/etc sounds. None will cancel out anyways.

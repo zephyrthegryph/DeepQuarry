@@ -291,7 +291,7 @@
 	The image seems important."
 	listing_name = "Safety - Mech Operation"
 
-//VOREStation Removal Start
+// Removal Start
 /*
 /datum/decl/poster/nanotrasen/nt_4
 	icon_state = "ntposter04"

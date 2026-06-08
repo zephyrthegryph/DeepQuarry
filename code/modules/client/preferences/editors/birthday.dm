@@ -1,4 +1,4 @@
-// DQAdd — Birthday picker. bday_month + bday_day are numeric 1-12 / 1-31 fields that need
+// Birthday picker. bday_month + bday_day are numeric 1-12 / 1-31 fields that need
 // month-name and day-number dropdowns, not 0-12 / 0-31 sliders.
 
 /datum/preference_editor/birthday

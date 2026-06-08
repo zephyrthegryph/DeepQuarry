@@ -176,7 +176,6 @@
 				if(user.a_intent == I_HELP)
 					if(announce)
 						assailant.visible_message(span_warning("[assailant] sits on [target]'s face!"))
-		//VOREStation Edit End
 
 /obj/item/grab/attack_self(mob/user)
 	. = ..(user)

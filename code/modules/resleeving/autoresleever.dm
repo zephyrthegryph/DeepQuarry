@@ -73,7 +73,7 @@ GLOBAL_LIST_EMPTY(active_autoresleevers)
 		return
 	if(!isobserver(ghost))
 		return
-	if(ghost.mind && ghost.mind.current && ghost.mind.current.stat != DEAD && ghost.mind.current.enabled == TRUE) //CHOMPEdit - Disabled body shouldn't block this.
+	if(ghost.mind && ghost.mind.current && ghost.mind.current.stat != DEAD && ghost.mind.current.enabled == TRUE) // Disabled body shouldn't block this.
 		if(istype(ghost.mind.current.loc, /obj/item/mmi))
 			if(tgui_alert(ghost, "Your brain is still alive, using the auto-resleever will delete that brain. Are you sure?", "Delete Brain", list("No","Yes")) != "Yes")
 				return
@@ -89,7 +89,7 @@ GLOBAL_LIST_EMPTY(active_autoresleevers)
 		to_chat(ghost, span_warning("You are not whitelisted to spawn as this species!"))
 		return
 
-	// CHOMPedit start
+	// start
 
 	var/datum/species/chosen_species
 	var/pref_species = ghost.client.prefs.read_preference(/datum/preference/choiced/species)
@@ -99,7 +99,7 @@ GLOBAL_LIST_EMPTY(active_autoresleevers)
 	if((chosen_species.spawn_flags & SPECIES_IS_WHITELISTED) || (chosen_species.spawn_flags & SPECIES_IS_RESTRICTED))
 		to_chat(ghost, span_warning("This species cannot be resleeved!"))
 		return
-	// CHOMPEdit End: Add checks for Whitelist + Resleeving
+	// Add checks for Whitelist + Resleeving
 
 	//Name matching is ugly but mind doesn't persist to look at.
 	var/charjob
@@ -189,7 +189,7 @@ GLOBAL_LIST_EMPTY(active_autoresleevers)
 		if(new_character.mind.antag_holder)
 			new_character.mind.antag_holder.apply_antags(new_character)
 
-	// DQEdit Start — migrated language prefs to /datum/preference
+	// migrated language prefs to /datum/preference
 	var/list/_ghost_alt_languages = ghost_client.prefs.read_preference(/datum/preference/alternate_languages)
 	var/list/_ghost_lang_custom = ghost_client.prefs.read_preference(/datum/preference/language_custom_keys)
 	for(var/lang in _ghost_alt_languages)
@@ -202,7 +202,6 @@ GLOBAL_LIST_EMPTY(active_autoresleevers)
 			var/datum/language/keylang = GLOB.all_languages[_ghost_lang_custom[key]]
 			if(keylang)
 				new_character.language_keys[key] = keylang
-	// DQEdit End
 	if(ghost_client.prefs.read_preference(/datum/preference/text/human/preferred_language)) // Do we have a preferred language?
 		var/datum/language/def_lang = GLOB.all_languages[ghost_client.prefs.read_preference(/datum/preference/text/human/preferred_language)]
 		if(def_lang)

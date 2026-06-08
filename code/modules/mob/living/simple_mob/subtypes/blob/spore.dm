@@ -18,7 +18,7 @@
 	melee_damage_lower = 2
 	melee_damage_upper = 4
 	movement_cooldown = -2
-	// DQEdit — dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
+	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
 	attacktext = list("slammed into")
 	attack_sound = 'sound/effects/slime_squish.ogg'

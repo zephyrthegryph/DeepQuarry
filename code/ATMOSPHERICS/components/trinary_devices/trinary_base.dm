@@ -89,7 +89,7 @@
 	return null
 
 /obj/machinery/atmospherics/trinary/Destroy()
-	// DQEdit Start — disconnect/qdel BEFORE ..() so node derefs are valid.
+	// disconnect/qdel BEFORE ..() so node derefs are valid.
 	if(node1)
 		node1.disconnect(src)
 		qdel(network1)
@@ -104,7 +104,6 @@
 	node2 = null
 	node3 = null
 	return ..()
-	// DQEdit End
 
 // Get the direction each node is facing to connect.
 // It now returns as a list so it can be fetched nicely, each entry corresponds to node of same number.
@@ -248,7 +247,7 @@
 		node3_connect = dir
 	return list(node1_connect, node2_connect, node3_connect)
 
-//CHOMPEdit Start - Keybinds for EVEEERYTHING
+// Keybinds for EVEEERYTHING
 /obj/machinery/atmospherics/trinary/click_ctrl(mob/user)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if(allowed(user))
@@ -262,4 +261,3 @@
 
 	else
 		to_chat(user, span_warning("Access denied."))
-//CHOMPEdit End

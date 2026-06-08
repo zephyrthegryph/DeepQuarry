@@ -127,7 +127,7 @@ Thus, the two variables affect pump operation are set in New():
 		var/datum/gas_mixture/environment = loc.return_air()
 		var/datum/gas_mixture/leaked = removed.remove_ratio(VOLUME_PUMP_LEAK_AMOUNT)
 		environment.merge(leaked)
-		// DQEdit — leaked gas just mutated the turf's air mix; enroll the turf
+		// leaked gas just mutated the turf's air mix; enroll the turf
 		// so SSair sees the change and the overlay updates.
 		if(isturf(loc))
 			var/turf/open/T = loc

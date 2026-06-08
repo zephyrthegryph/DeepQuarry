@@ -147,7 +147,7 @@
 	can_hold = list(
 		/obj/item/pen/crayon
 	)
-	// DQEdit Start — variant-based crayon spawn (see crayon_pilot.dm). The 6
+	// variant-based crayon spawn (see crayon_pilot.dm). The 6
 	// plain-color subtypes (red/orange/yellow/green/blue/purple) have been
 	// collapsed into the parent type with a `variant` arg.
 	starts_with = list()
@@ -160,7 +160,6 @@
 		C.apply_variant()
 		C.name = "[C.colourName] [initial(C.name)]"
 	update_icon()
-	// DQEdit End
 
 /obj/item/storage/fancy/crayons/update_icon()
 	var/mutable_appearance/ma = new(src)
@@ -190,7 +189,7 @@
 	can_hold = list(
 		/obj/item/pen/crayon/marker
 	)
-	// DQEdit Start — variant-based marker spawn (see crayon_pilot.dm).
+	// variant-based marker spawn (see crayon_pilot.dm).
 	starts_with = list()
 
 /obj/item/storage/fancy/markers/Initialize(mapload)
@@ -201,7 +200,6 @@
 		M.apply_variant()
 		M.name = "[M.colourName] [initial(M.name)]"
 	update_icon()
-	// DQEdit End
 
 /obj/item/storage/fancy/markers/update_icon()
 	var/mutable_appearance/ma = new(src)

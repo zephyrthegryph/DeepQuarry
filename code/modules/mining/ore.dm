@@ -168,7 +168,7 @@
 	icon = 'icons/obj/mining_ore.dmi'
 	icon_state = "ore2"
 	randpixel = 8
-	w_class = ITEMSIZE_LARGE //CHOMPEdit
+	w_class = ITEMSIZE_LARGE
 	var/list/stored_ore = list(
 		ORE_SAND = 0,
 		ORE_HEMATITE = 0,

@@ -1,4 +1,4 @@
-// DQEdit Start — Tooltip system rewritten to TGUI.
+// Tooltip system rewritten to TGUI.
 //
 // The legacy version loaded tooltip.html + jQuery into the hidden
 // `mainwindow.tooltip` BROWSER skin element, then drove it via
@@ -168,4 +168,3 @@
 	if(!istype(user) || !user.client?.tooltips)
 		return
 	user.client.tooltips.hide()
-// DQEdit End

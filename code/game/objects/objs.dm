@@ -30,7 +30,7 @@
 /obj/Destroy()
 	STOP_PROCESSING(SSobj, src)
 
-	//VOREStation Add Start - I really am an idiot why did I make it this way
+	// I really am an idiot why did I make it this way
 	if(micro_target)
 		for(var/thing in src.contents)
 			if(!ismob(thing))
@@ -41,7 +41,6 @@
 			else
 				m.forceMove(get_turf(src.loc))
 			m.visible_message(span_notice("\The [m] tumbles out of \the [src]!"))
-	//VOREStation Add End
 
 	if(istype(src, /obj/item))
 		var/obj/item/I = src
@@ -180,7 +179,7 @@
 	if(gurgled && clean_types & CLEAN_WASH)
 		gurgled = FALSE
 		cut_overlay(GLOB.gurgled_overlays[gurgled_color])
-	// DQEdit — phoron contamination wash branch removed; .contaminated +
+	// phoron contamination wash branch removed; .contaminated +
 	// GLOB.contamination_overlay are gone (ZAS contamination machinery wasn't
 	// ported under LINDA). Restore if contamination gameplay returns.
 

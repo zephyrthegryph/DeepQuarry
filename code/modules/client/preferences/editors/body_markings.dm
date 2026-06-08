@@ -1,4 +1,4 @@
-// DQAdd — Body markings composite editor.
+// Body markings composite editor.
 //
 // Wire actions:
 //   "add"           { marking: "MarkingName" }
@@ -29,7 +29,7 @@
 	var/list/styles = list()
 	for(var/path in GLOB.body_marking_styles_list)
 		var/datum/sprite_accessory/marking/S = GLOB.body_marking_styles_list[path]
-		// DQAdd — expose icon ref + the per-zone state so the React side can render a
+		// expose icon ref + the per-zone state so the React side can render a
 		// colorized preview via ColorizedImage. icon_state is the BP_TORSO variant by
 		// default; the front-end can swap zones if it wants.
 		var/icon_state = S.icon_state
@@ -80,7 +80,7 @@
 			preferences.update_preference_by_type(/datum/preference/body_markings, markings)
 			return PREF_UPDATE_ACCEPTED
 		if("set_color")
-			// DQEdit — open BYOND's color picker dialog. The client sends just the marking
+			// open BYOND's color picker dialog. The client sends just the marking
 			// key; we prompt the user, sanitize, then apply across all zones of the marking.
 			var/M = params["marking"]
 			if(!(M in markings))

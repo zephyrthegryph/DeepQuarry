@@ -84,7 +84,7 @@
 	else
 		GLOB.living_mob_list += src
 	lastarea = get_area(src)
-	set_focus(src) // VOREStation Add - Key Handling
+	set_focus(src) // Key Handling
 	update_transform() // Some mobs may start bigger or smaller than normal.
 	. = ..()
 	log_mob_tag("TAG: [tag] CREATED: [key_name(src)] \[[type]\]")
@@ -564,7 +564,7 @@
 
 /mob/Topic(href, href_list)
 	if(href_list["mach_close"])
-		// DQEdit — legacy browse(null) close removed; the machinery's
+		// legacy browse(null) close removed; the machinery's
 		// TGUI window owns its own close lifecycle. We still unset the
 		// machine binding so the mob isn't held to the now-closed device.
 		unset_machine()
@@ -580,7 +580,7 @@
 				rendered_text += "[part]"
 			index++
 		examine_text = replacetext(rendered_text, "\n", "<BR>")
-		// DQEdit — structured TGUI AdminReport.
+		// structured TGUI AdminReport.
 		dq_admin_report_html(usr, "[name]", examine_text)
 	if(href_list["flavor_change"])
 		update_flavor_text()
@@ -770,7 +770,7 @@
 
 // facing verbs
 /mob/proc/canface()
-//	if(!canmove)						return 0 //VOREStation Edit. Redundant check that only affects conscious proning, actual inability to turn and shift around handled by actual inabilities.
+// if(!canmove) return 0 // . Redundant check that only affects conscious proning, actual inability to turn and shift around handled by actual inabilities.
 	if(stat)							return 0
 	if(anchored)						return 0
 	if(transforming)						return 0

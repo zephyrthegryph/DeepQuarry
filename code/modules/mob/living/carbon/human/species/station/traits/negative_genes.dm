@@ -60,8 +60,8 @@
 	cost = -2
 	custom_only = FALSE
 
-	is_genetrait = TRUE 	//VOREStation Note: TRAITGENETICS - Disabled on VS //CHOMPStation Edit - Enable
-	hidden = FALSE			//VOREStation Note: TRAITGENETICS - Disabled on VS //CHOMPStation Edit - Enable
+	is_genetrait = TRUE // Note: TRAITGENETICS - Disabled on VS // Enable
+	hidden = FALSE // Note: TRAITGENETICS - Disabled on VS // Enable
 
 	activation_message="You twitch."
 	primitive_expression_messages=list("twitches and chitters.")
@@ -165,8 +165,8 @@
 	cost = -4
 	custom_only = FALSE
 
-	is_genetrait = TRUE	//VOREStation Note: TRAITGENETICS - Disabled on VS //CHOMPStation Edit - Enable
-	hidden = FALSE			//VOREStation Note: TRAITGENETICS - Disabled on VS //CHOMPStation Edit - Enable
+	is_genetrait = TRUE // Note: TRAITGENETICS - Disabled on VS // Enable
+	hidden = FALSE // Note: TRAITGENETICS - Disabled on VS // Enable
 
 	activation_message="You feel sore..."
 	primitive_expression_messages=list("shudders.","gasps.","chokes.")
@@ -207,7 +207,7 @@
 	name = "Ambulant Blood"
 	desc = "Your blood reacts to hostile stimulation such as burning when seperated from your body, as if it was its own creature. You WILL be mistaken for a changeling, you may want to document this in your medical records."
 	var_changes = list("ambulant_blood" = TRUE)
-	cost = -1 //CHOMPEdit - Keep original value
+	cost = -1 // Keep original value
 	can_take = ORGANICS
 
 	is_genetrait = FALSE

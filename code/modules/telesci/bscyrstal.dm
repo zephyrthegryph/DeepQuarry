@@ -17,7 +17,7 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	user.balloon_alert_visible("[user] crushes [src]!", "Crushed [src]!") // CHOMPEdit - Balloon alert
+	user.balloon_alert_visible("[user] crushes [src]!", "Crushed [src]!") // Balloon alert
 	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread()
 	s.set_up(5, 1, get_turf(src))
 	s.start()
@@ -30,14 +30,14 @@
 
 /obj/item/bluespace_crystal/throw_impact(atom/hit_atom)
 	if(!..()) // not caught in mid-air
-		balloon_alert_visible("[src] fizzles and disappears upon impact!") // CHOMPEdit - Balloon alert
+		balloon_alert_visible("[src] fizzles and disappears upon impact!") // Balloon alert
 		var/turf/T = get_turf(hit_atom)
 		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread()
 		s.set_up(5, 1, T)
 		s.start()
 		if(isliving(hit_atom))
 			blink_mob(hit_atom)
-		dephase_shadekin() //ChompEDIT - mess with shadekins
+		dephase_shadekin() // mess with shadekins
 		qdel(src)
 
 // Artifical bluespace crystal, doesn't give you much research.

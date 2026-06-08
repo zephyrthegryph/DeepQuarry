@@ -229,7 +229,7 @@ GLOBAL_LIST_EMPTY_TYPED(running_demand_events, /datum/event/supply_demand)
 	var/pressure = mixture.return_pressure()
 	var/total_moles = mixture.total_moles()
 	var desc = "Canister filled to [round(pressure,0.1)] kPa with gas mixture:\n"
-	for(var/gas in mixture.gas_ids()) // DQEdit — mixture.gas (XGM) → mixture.gas_ids()
+	for(var/gas in mixture.gas_ids()) // mixture.gas (XGM) → mixture.gas_ids()
 		desc += "<br>- [GLOB.gas_data.name[gas]]: [round((LINDA_GAS_AMT(mixture, gas) / total_moles) * 100)]%\n"
 	return desc
 
@@ -243,7 +243,7 @@ GLOBAL_LIST_EMPTY_TYPED(running_demand_events, /datum/event/supply_demand)
 		log_game("supply_demand event: canister fails to match [canmix.return_pressure()] kPa < [mixture.return_pressure()] kPa")
 		return
 	// Make sure ratios are equal
-	for(var/gas in mixture.gas_ids()) // DQEdit — mixture.gas (XGM) → mixture.gas_ids()
+	for(var/gas in mixture.gas_ids()) // mixture.gas (XGM) → mixture.gas_ids()
 		var/targetPercent = round((LINDA_GAS_AMT(mixture, gas) / mixture.total_moles()) * 100)
 		var/canPercent = round((LINDA_GAS_AMT(canmix, gas) / canmix.total_moles()) * 100)
 		if(abs(targetPercent-canPercent) > 1)
@@ -315,10 +315,10 @@ GLOBAL_LIST_EMPTY_TYPED(running_demand_events, /datum/event/supply_demand)
 	for(var/i in 1 to differentTypes)
 		var/gasId = pick(unpickedTypes)
 		unpickedTypes -= gasId
-		// DQEdit — XGM mix.gas[id] = X → LINDA set_moles. gasId is a string XGM id.
+		// XGM mix.gas[id] = X → LINDA set_moles. gasId is a string XGM id.
 		var/datum/gas/_gtype = mixture.get_xgm_id_for_gas(gasId)
 		if(_gtype) mixture.set_moles(_gtype, (rand(1,1000) * mixture.volume) / (R_IDEAL_GAS_EQUATION * mixture.temperature))
-	// DQEdit — mixture.update_values() removed; no-op under LINDA.
+	// mixture.update_values() removed; no-op under LINDA.
 	var/datum/supply_demand_order/gas/O = new(qty = 1)
 	O.mixture = mixture
 	required_items += O

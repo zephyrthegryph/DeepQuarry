@@ -231,7 +231,7 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 	else if(issilicon(living))
 		apply_to_silicon(living, value)
 
-// DQEdit — apply_to_X defaults were CRASH() in TG-style, forcing every PREFERENCE_CHARACTER
+// apply_to_X defaults were CRASH() in TG-style, forcing every PREFERENCE_CHARACTER
 // pref to implement every mob-type apply hook. Our pipeline iterates ALL character prefs at
 // spawn / preview, so prefs that don't target a given mob type (PAI/NIF prefs on a human,
 // human prefs on a PAI) need a no-op default instead of a runtime.
@@ -288,7 +288,7 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 		CRASH("Preference type `[preference_type]` is invalid! [extra_info]")
 
 	if(preference_type in value_cache)
-		// DQEdit — read-Copy for list-typed prefs. The cache holds the canonical state;
+		// read-Copy for list-typed prefs. The cache holds the canonical state;
 		// editors and constraints routinely call read_preference, mutate the returned
 		// list, then call update_preference_by_type with the same reference. Without a
 		// copy, the cache is mutated in place — every diff (`old_value != new_value`,
@@ -363,7 +363,7 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 	if(write_mode == WRITE_PREF_MANUAL)
 		return TRUE
 
-	// DQEdit — was a player_setup.save_character(save_data) call for character prefs; that
+	// was a player_setup.save_character(save_data) call for character prefs; that
 	// chain is deleted. write_preference() already wrote into the in-memory savefile cache;
 	// the next savefile.save() (which queue_save / batch flush triggers) flushes to disk.
 	savefile.save()
@@ -384,7 +384,7 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 		return FALSE
 
 	var/new_value = preference.pref_deserialize(preference_value, src)
-	// DQEdit — validate(src, new_value) is the contextual gate. write() still re-checks
+	// validate(src, new_value) is the contextual gate. write() still re-checks
 	// is_valid structurally. This sequencing means a forged Topic that satisfies the
 	// shape but fails the entity-level rule (e.g. an unowned trait, a non-pickable gear
 	// for the wearer's species) is rejected before write() ever touches the cache.
@@ -395,7 +395,7 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 	if(!success)
 		return FALSE
 
-	// DQEdit Start — auto-save with transactional batching. Begin batch so the constraint
+	// auto-save with transactional batching. Begin batch so the constraint
 	// cascade below is one flush. begin/end nest safely.
 	begin_update_batch()
 	// try/catch keeps batch_depth balanced even if any apply hook or constraint runtimes.
@@ -412,7 +412,7 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 		value_cache[preference.type] = new_value
 		save_batch_dirty = TRUE
 
-		// DQEdit — invalidate ONLY the editor static_data cache entries that
+		// invalidate ONLY the editor static_data cache entries that
 		// declared a dependency on this pref key. Most editors have a constant
 		// catalog and stay cached; species changes only drop loadout's entry,
 		// play_mode changes only drop robot_chassis's, etc. The next
@@ -428,7 +428,7 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 			dq_schedule_static_push()
 
 		// Fan out constraints triggered by this key.
-		// DQEdit — guard against constraint cycles. If A's `affects` overlaps B's `triggers` and
+		// guard against constraint cycles. If A's `affects` overlaps B's `triggers` and
 		// vice versa, the cascade would recurse forever. We refuse to recurse past a fixed depth
 		// and stack_trace so the buggy constraint pair is loud, not silent.
 		if(constraint_cascade_depth < PREF_CONSTRAINT_MAX_DEPTH)
@@ -444,7 +444,7 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 		if(preference.savefile_identifier == PREFERENCE_PLAYER)
 			preference.apply_to_client_updated(client, read_preference(preference.type))
 		else if(constraint_cascade_depth == 0)
-			// DQEdit — outermost call only. Constraint-triggered inner calls
+			// outermost call only. Constraint-triggered inner calls
 			// (species_resets_hair, etc.) skip the preview; one rebuild at the
 			// end captures the cumulative new state. update_preview_icon_lazy
 			// renders the south frame synchronously and defers north/east/west
@@ -459,11 +459,10 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 		constraint_cascade_depth = 0
 
 	end_update_batch()
-	// DQEdit End
 
 	return TRUE
 
-// DQAdd — atomic multi-pref update. Callers (e.g., editor handle_action procs, random
+// atomic multi-pref update. Callers (e.g., editor handle_action procs, random
 // character button) wrap a series of update_preference calls in this so disk writes
 // coalesce. Pass a CALLBACK(src, PROC_REF(my_proc), arg1, arg2, ...).
 /datum/preferences/proc/update_many(datum/callback/cb)
@@ -492,7 +491,7 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 	SHOULD_CALL_PARENT(FALSE)
 	CRASH("`is_valid()` was not implemented for [type]!")
 
-// DQAdd Start — validate(prefs, value): the contextual gate for runtime writes.
+// validate(prefs, value): the contextual gate for runtime writes.
 //
 // is_valid stays the structural check (used by write() / serialization round-trips).
 // validate is what update_preference calls: it runs is_valid first, then any per-instance
@@ -505,7 +504,6 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 /datum/preference/proc/validate(datum/preferences/preferences, value)
 	SHOULD_NOT_SLEEP(TRUE)
 	return is_valid(value)
-// DQAdd End
 
 /// Returns data to be sent to users in the menu
 /datum/preference/proc/compile_ui_data(mob/user, value)

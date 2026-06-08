@@ -80,7 +80,7 @@
 
 		// Aliens can get straight through these.
 		if(istype(usr,/mob/living/carbon))
-			if(user.a_intent == I_HURT) // CHOMPAdd
+			if(user.a_intent == I_HURT)
 				var/mob/living/carbon/M = usr
 				if(locate(/obj/item/organ/internal/xenos/hivenode) in M.internal_organs)
 					visible_message (span_warning("[usr] strokes the [name] and it melts away!"), 1)

@@ -27,12 +27,11 @@
 		QDEL_NULL(manifest_dialog)
 	if(late_choices_dialog)
 		QDEL_NULL(late_choices_dialog)
-	// DQEdit Start — clean up poll dialogs (privacy + player poll browser) migrated to TGUI
+	// clean up poll dialogs (privacy + player poll browser) migrated to TGUI
 	if(privacy_poll_dialog)
 		QDEL_NULL(privacy_poll_dialog)
 	if(poll_browser_dialog)
 		QDEL_NULL(poll_browser_dialog)
-	// DQEdit End
 	. = ..()
 
 /mob/new_player/get_status_tab_items()
@@ -85,13 +84,13 @@
 	if(F)
 		//client.prefs.lastnews = md5(F["body"]) //Chomp REMOVE
 		//SScharacter_setup.queue_preferences_save(client.prefs) //Chomp REMOVE
-		//ChompEDIT start - handle reads correctly
+		// start - handle reads correctly
 		var/title
 		F["title"] >> title
 		F["title"] >> title //This is done twice on purpose. For some reason BYOND misses the first read, if performed before the world starts
 		var/body
 		F["body"] >> body
-		//ChompEDIT end
+		// end
 
 		var/dat = "<html><body><center>"
 		dat += "<h1>[title]</h1>"
@@ -100,7 +99,7 @@
 		dat += "<br>"
 		dat += span_normal(span_italics("Last written by [F["author"]], on [F["timestamp"]]."))
 		dat += "</center></body></html>"
-		// DQEdit — structured TGUI AdminReport.
+		// structured TGUI AdminReport.
 		dq_admin_report_html(src, "Server News", dat)
 
 /mob/proc/time_till_respawn()
@@ -137,7 +136,7 @@
 		return 0
 	if(!job.player_has_enough_pto(src.client))
 		return 0
-	// DQEdit — play_mode gating: cyborgs are the only option when chargen has
+	// play_mode gating: cyborgs are the only option when chargen has
 	// play_mode == "robot", and not an option for any other mode. Without this
 	// a player who picked "Robot" in the species picker could still late-join
 	// as a human; conversely, a human could late-join into the Cyborg slot.
@@ -237,7 +236,7 @@
 		return
 
 	// Equip our custom items only AFTER deploying to spawn points eh?
-	equip_custom_items(character)	//CHOMPEdit readded to enable custom_item.txt
+	equip_custom_items(character) // readded to enable custom_item.txt
 
 	// Moving wheelchair if they have one
 	if(character.buckled && istype(character.buckled, /obj/structure/bed/chair/wheelchair))
@@ -261,7 +260,7 @@
 		GLOB.data_core.manifest_inject(character)
 		SSticker.minds += character.mind//Cyborgs and AIs handle this in the transform proc.	//TODO!!!!! ~Carn
 	if(ishuman(character))
-		if(character.client.prefs.read_preference(/datum/preference/toggle/human/auto_backup_implant)) // DQEdit — migrated pref
+		if(character.client.prefs.read_preference(/datum/preference/toggle/human/auto_backup_implant)) // migrated pref
 			var/obj/item/implant/backup/imp = new(src)
 
 			if(imp.handle_implant(character,character.zone_sel.selecting))
@@ -355,13 +354,13 @@
 	new_character.name = real_name
 	client.init_verbs()
 	new_character.dna.ready_dna(new_character)
-	new_character.dna.b_type = client.prefs.read_preference(/datum/preference/text/human/b_type) // DQEdit — migrated pref
+	new_character.dna.b_type = client.prefs.read_preference(/datum/preference/text/human/b_type) // migrated pref
 	new_character.sync_dna_traits(TRUE) // Traitgenes Sync traits to genetics if needed
 	new_character.sync_organ_dna()
 	new_character.sync_addictions() // Handle round-start addictions
 	new_character.initialize_vessel()
 
-	// DQEdit Start — migrated language prefs to /datum/preference
+	// migrated language prefs to /datum/preference
 	var/list/_alt_languages = client.prefs.read_preference(/datum/preference/alternate_languages)
 	var/list/_lang_custom = client.prefs.read_preference(/datum/preference/language_custom_keys)
 	for(var/lang in _alt_languages)
@@ -374,7 +373,6 @@
 			var/datum/language/keylang = GLOB.all_languages[_lang_custom[key]]
 			if(keylang)
 				new_character.language_keys[key] = keylang
-	// DQEdit End
 	if(client.prefs.read_preference(/datum/preference/text/human/preferred_language)) // Do we have a preferred language?
 		var/datum/language/def_lang = GLOB.all_languages[client.prefs.read_preference(/datum/preference/text/human/preferred_language)]
 		if(def_lang)
@@ -387,7 +385,7 @@
 	// Do the initial caching of the player's body icons.
 	new_character.force_update_limbs()
 	new_character.update_icons_body()
-	new_character.update_transform() //VOREStation Edit
+	new_character.update_transform()
 
 	new_character.key = key		//Manually transfer the key to log them in
 
@@ -404,9 +402,8 @@
 /mob/new_player/proc/close_spawn_windows()
 	manifest_dialog?.close_ui()
 	late_choices_dialog?.close_ui()
-	// DQEdit Start — legacy browse() cleanup for latechoices/preferences/News;
+	// legacy browse() cleanup for latechoices/preferences/News;
 	// those windows are all TGUI now, so the close calls target nothing.
-	// DQEdit End
 
 /mob/new_player/get_species()
 	var/datum/species/chosen_species
@@ -460,7 +457,7 @@
 		return TRUE
 
 	//No Flavor Text
-	if (CONFIG_GET(flag/require_flavor) && !(J.mob_type & JOB_SILICON) && (!LAZYACCESS(client?.prefs?.read_preference(/datum/preference/flavor_texts), "general") || length(LAZYACCESS(client.prefs.read_preference(/datum/preference/flavor_texts), "general")) < 30)) // DQEdit — migrated
+	if (CONFIG_GET(flag/require_flavor) && !(J.mob_type & JOB_SILICON) && (!LAZYACCESS(client?.prefs?.read_preference(/datum/preference/flavor_texts), "general") || length(LAZYACCESS(client.prefs.read_preference(/datum/preference/flavor_texts), "general")) < 30)) // migrated
 		to_chat(src,span_warning("Please set your general flavor text to give a basic description of your character. Set it using the 'Set Flavor text' button on the 'General' tab in character setup, and choosing 'General' category."))
 		pass = FALSE
 
@@ -475,7 +472,7 @@
 		pass = FALSE
 
 	//Do they have their scale properly setup?
-	if(!client?.prefs?.read_preference(/datum/preference/numeric/human/size_multiplier)) // DQEdit — migrated
+	if(!client?.prefs?.read_preference(/datum/preference/numeric/human/size_multiplier)) // migrated
 		pass = FALSE
 		to_chat(src,span_warning("You have not set your scale yet. Do this on the VORE tab in character setup."))
 
@@ -484,31 +481,29 @@
 		pass = FALSE
 		to_chat(src,span_warning("You are not allowed to spawn in as this species."))
 
-	//CHOMPEdit Begin - Check species job bans... (Only used for shadekin)
+	// Check species job bans... (Only used for shadekin)
 	if(J.is_species_banned(client?.prefs?.read_preference(/datum/preference/choiced/species), client?.prefs?.read_preference(/datum/preference/organ_data)?[O_BRAIN]))
 		pass = FALSE
 		to_chat(src,span_warning("Your species is not permitted to take this role or job."))
-	//CHOMPEdit End
 
 	//Custom species checks
 	if (client?.prefs?.read_preference(/datum/preference/choiced/species) == SPECIES_CUSTOM)
 
 		//Didn't name it
-		if(!client?.prefs?.read_preference(/datum/preference/text/human/custom_species)) // DQEdit — migrated
+		if(!client?.prefs?.read_preference(/datum/preference/text/human/custom_species)) // migrated
 			pass = FALSE
 			to_chat(src,span_warning("You have to name your custom species. Do this on the VORE tab in character setup."))
 
 	//Check traits/costs
-	// DQEdit Start — migrated traits prefs (typed_list base)
+	// migrated traits prefs (typed_list base)
 	var/list/_pos_traits = client.prefs.read_preference(/datum/preference/typed_list/traits/pos_traits)
 	var/list/_neu_traits = client.prefs.read_preference(/datum/preference/typed_list/traits/neu_traits)
 	var/list/_neg_traits = client.prefs.read_preference(/datum/preference/typed_list/traits/neg_traits)
 	var/list/megalist = _pos_traits + _neu_traits + _neg_traits
 	var/points_left = client.prefs.read_preference(/datum/preference/numeric/human/starting_trait_points)
 	var/traits_left = client.prefs.read_preference(/datum/preference/numeric/human/max_traits)
-	// DQEdit End
-	var/pref_synth = client.prefs.read_preference(/datum/preference/toggle/human/dirty_synth) // DQEdit — migrated
-	var/pref_meat = client.prefs.read_preference(/datum/preference/toggle/human/gross_meatbag) // DQEdit — migrated
+	var/pref_synth = client.prefs.read_preference(/datum/preference/toggle/human/dirty_synth) // migrated
+	var/pref_meat = client.prefs.read_preference(/datum/preference/toggle/human/gross_meatbag) // migrated
 	for(var/datum/trait/T as anything in megalist)
 		var/cost = GLOB.traits_costs[T]
 
@@ -527,17 +522,17 @@
 		if((pref_synth && !(take_flags & SYNTHETICS)) || (pref_meat && !(take_flags & ORGANICS)))
 			pass = FALSE
 			to_chat(src, span_warning("Some of your traits are not usable by your character type (synthetic traits on organic, or vice versa)."))
-	//CHOMPadd start
+	// start
 	if(J.camp_protection && round_duration_in_ds < CONFIG_GET(number/job_camp_time_limit))
 		if(SSjob.restricted_keys.len)
 			var/list/check = SSjob.restricted_keys[J.title]
 			if(client.ckey in check)
 				to_chat(src, span_danger("[J.title] is not presently selectable because you played as it last round. It will become available to you in [round((CONFIG_GET(number/job_camp_time_limit) - round_duration_in_ds) / 600)] minutes, if slots remain open."))
 				pass = FALSE
-	//CHOMPadd end
+	// end
 
 	//CHOMP Addition Begin
-	// DQEdit — migrated neu_traits
+	// migrated neu_traits
 	if(_neu_traits)
 		for(var/T in _neu_traits)
 			var/datum/trait/instance = GLOB.all_traits[T]

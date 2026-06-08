@@ -61,7 +61,7 @@
 /obj/item/projectile/energy/blob/freezing
 	my_chems = list(REAGENT_ID_FROSTOIL)
 	modifier_type_to_apply = /datum/modifier/chilled
-	modifier_duration = 0.25 MINUTE //CHOMPedit: Determined to be to long of a slowdown time.
+	modifier_duration = 0.25 MINUTE // Determined to be to long of a slowdown time.
 
 /obj/item/projectile/energy/blob/freezing/splattering
 	splatter = TRUE

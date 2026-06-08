@@ -9,7 +9,7 @@
 /obj/machinery/slot_machine
 	name = "slot machine"
 	desc = "A gambling machine designed to give you false hope and rob you of your wealth, hence why it's often called a one armed bandit."
-	icon = 'icons/obj/casino_ch.dmi' //CHOMPEdit
+	icon = 'icons/obj/casino_ch.dmi'
 	icon_state = "slotmachine"
 	anchored = 1
 	density = 1
@@ -188,18 +188,18 @@
 			winnings = 200
 
 		if (symbol1 == "seven" && symbol2 == "seven" && symbol3 == "seven")
-			output = span_notice("Three sevens! The slot machine deposits a 300 credit chip!") //CHOMPEdit
-			winnings = 300 //CHOMPEdit
+			output = span_notice("Three sevens! The slot machine deposits a 300 credit chip!")
+			winnings = 300
 			celebrate = 1
 
 		if (symbol1 == "diamond" && symbol2 == "diamond" && symbol3 == "diamond")
-			output = span_notice("Three diamonds! The slot machine deposits a 500 credit chip!") //CHOMPEdit
-			winnings = 500 //CHOMPEdit
+			output = span_notice("Three diamonds! The slot machine deposits a 500 credit chip!")
+			winnings = 500
 			celebrate = 1
 
 		if (symbol1 == "platinum coin" && symbol2 == "platinum coin" && symbol3 == "platinum coin")
-			output = span_notice("Three platinum coins! The slot machine deposits a 1000 credit chip!") //CHOMPEdit
-			winnings = 1000 //CHOMPEdit
+			output = span_notice("Three platinum coins! The slot machine deposits a 1000 credit chip!")
+			winnings = 1000
 			celebrate = 1
 
 		icon_state = initial(icon_state) // Set it back to the original iconstate.

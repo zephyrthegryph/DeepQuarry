@@ -69,7 +69,7 @@
 	var/update_ticks = 0
 	var/newsfeed_channel = 0
 
-	var/obj/item/card/id/id = null //CHOMPADDITION: Making it possible to slot an ID card into the Communicator so it can function as both.
+	var/obj/item/card/id/id = null // ITION: Making it possible to slot an ID card into the Communicator so it can function as both.
 
 	// If you turn this on, it changes the way communicator video works. User configurable option.
 	var/selfie_mode = FALSE
@@ -100,7 +100,7 @@
 
 
 
-//CHOMPADDITION START: Ayo communicator are better than PDAs /obj/item/communicator
+// ITION START: Ayo communicator are better than PDAs /obj/item/communicator
 // Proc: AltClick()
 // Parameters: None
 // Description: Checks if the user is made of silicon and returns if they are. If the user is not made of silicon and can use the communicator,
@@ -140,7 +140,7 @@
 		if (ismob(loc))
 			var/mob/M = loc
 			M.put_in_hands(id)
-			to_chat(M, span_notice("You remove the ID from the [name].")) //ChompEDIT usr --> M
+			to_chat(M, span_notice("You remove the ID from the [name].")) // usr --> M
 			playsound(src, 'sound/machines/id_swipe.ogg', 100, 1)
 		else
 			id.loc = get_turf(src)
@@ -178,7 +178,7 @@
 	return 0
 
 
-//CHOMPADDITION END
+// ITION END
 
 // Proc: register_to_holder()
 // Parameters: None
@@ -265,7 +265,7 @@
 			continue
 		src.known_devices |= comm
 	for(var/mob/observer/dead/O in GLOB.dead_mob_list)
-		if(!O.client || !O.client.prefs.read_preference(/datum/preference/toggle/human/communicator_visibility)) // DQEdit — migrated pref
+		if(!O.client || !O.client.prefs.read_preference(/datum/preference/toggle/human/communicator_visibility)) // migrated pref
 			continue
 		src.known_devices |= O
 
@@ -291,7 +291,7 @@
 // Proc: attackby()
 // Parameters: 2 (C - what is used on the communicator. user - the mob that has the communicator)
 // Description: When an ID is swiped on the communicator, the communicator reads the job and checks it against the Owner name, if success, the occupation is added.
-//CHOMPADDITION: If the ID has already been scanned it is instead inserted into the communicator
+// ITION: If the ID has already been scanned it is instead inserted into the communicator
 /obj/item/communicator/attackby(obj/item/C as obj, mob/user as mob)
 	..()
 	if(istype(C, /obj/item/card/id))
@@ -303,13 +303,13 @@
 		else if(owner == idcard.registered_name && occupation != idcard.assignment) //CHMPEDIT only edit assigment if different
 			occupation = idcard.assignment
 			to_chat(user, span_notice(">Occupation updated."))
-		//CHOMPADDITION START Communicator ID slotting if we have an ID thats also already scanned
+		// ITION START Communicator ID slotting if we have an ID thats also already scanned
 		else if(((src in user.contents) && (C in user.contents)) || (istype(loc, /turf) && in_range(src, user) && (C in user.contents)) )
 			if(id_check(user, 2))
 				to_chat(user, span_notice("You put the ID into \the [src]'s slot."))
 				add_overlay("pda-id")
 				return	//Return in case of failed check or when successful.
-		//CHOMPADDITION END
+		// ITION END
 	return
 
 // Proc: attack_self()
@@ -383,14 +383,14 @@
 // Proc: Destroy()
 // Parameters: None
 // Description: Deletes all the voice mobs, disconnects all linked communicators, and cuts lists to allow successful qdel()
-// CHOMPADDITION: Remvovess any slotted in IDs before deleting
+// ITION: Remvovess any slotted in IDs before deleting
 /obj/item/communicator/Destroy()
-	//CHOMPADDITION START ID handling
+	// ITION START ID handling
 	if (src.id)
 		src.id.forceMove(get_turf(src.loc))
 	else
 		QDEL_NULL(src.id)
-	//CHOMPADDITION END
+	// ITION END
 	for(var/mob/living/voice/voice in contents)
 		voice_mobs.Remove(voice)
 		to_chat(voice, span_danger("[icon2html(src, voice.client)] Connection timed out with remote host."))
@@ -451,7 +451,7 @@
 	communications across different stations, planets, or even star systems. You can wear this one on your wrist!"
 	icon = 'icons/obj/device.dmi'
 	icon_state = "commwatch"
-	slot_flags = SLOT_GLOVES | SLOT_ID | SLOT_BELT //CHOMPEDIT, Commwatches and Wrtist PDAs can go on ID and belt slots
+	slot_flags = SLOT_GLOVES | SLOT_ID | SLOT_BELT // , Commwatches and Wrtist PDAs can go on ID and belt slots
 
 /obj/item/communicator/watch/update_icon()
 	if(video_source)

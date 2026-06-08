@@ -369,7 +369,7 @@ SUBSYSTEM_DEF(ticker)
 				var/datum/job/job_datum = SSjob.get_job(J.title)
 				job_datum.current_positions--
 				player.mind.assigned_role = null
-				continue //VOREStation Add
+				continue
 
 			// Snowflakey AI treatment
 			if(J?.mob_type & JOB_SILICON_AI)
@@ -405,16 +405,16 @@ SUBSYSTEM_DEF(ticker)
 			if(!SSantag_job.player_is_antag(player.mind, only_offstation_roles = 1))
 				SSjob.equip_rank(player, player.mind.assigned_role, 0)
 				UpdateFactionList(player)
-				//equip_custom_items(player)	//VOREStation Removal
-				//player.apply_traits() //VOREStation Removal
-		//VOREStation Addition Start
+				// equip_custom_items(player) // Removal
+				// player.apply_traits() // Removal
+		// ition Start
 		if(player.client)
-			if(player.client.prefs.read_preference(/datum/preference/toggle/human/auto_backup_implant)) // DQEdit — migrated pref
+			if(player.client.prefs.read_preference(/datum/preference/toggle/human/auto_backup_implant)) // migrated pref
 				var/obj/item/implant/backup/imp = new(src)
 
 				if(imp.handle_implant(player,player.zone_sel.selecting))
 					imp.post_implant(player)
-		//VOREStation Addition End
+		// ition End
 		CHECK_TICK
 	if(captainless)
 		for(var/mob/M in GLOB.player_list)

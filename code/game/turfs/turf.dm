@@ -14,7 +14,6 @@
 	var/nitrous_oxide = 0
 	var/methane = 0
 
-	//CHOMPEdit Begin
 	//* Movement / Pathfinding
 	/// How much the turf slows down movement, if any.
 	var/slowdown = 0
@@ -24,7 +23,6 @@
 	var/turf_path_danger = NONE
 	/// pathfinding id - used to avoid needing a big closed list to iterate through every cycle of jps
 	var/pathfinding_cycle
-	//CHOMPEdit End
 
 	//Properties for airtight tiles (/wall)
 	var/thermal_conductivity = 0.05
@@ -113,7 +111,7 @@
 		directional_opacity = ALL_CARDINALS
 
 	//Pathfinding related
-	if(movement_cost && path_weight == 1) // This updates pathweight automatically. //CHOMPEdit
+	if(movement_cost && path_weight == 1) // This updates pathweight automatically. //
 		path_weight = movement_cost
 
 	var/turf/Ab = GetAbove(src)
@@ -131,7 +129,7 @@
 		stack_trace("Improper turf qdel. Do not qdel turfs directly.")
 	changing_turf = FALSE
 	GLOB.cleanbot_reserved_turfs -= src
-	// DQEdit — ZAS connections.erase_all() removed. LINDA tracks turf-to-turf
+	// ZAS connections.erase_all() removed. LINDA tracks turf-to-turf
 	// links via atmos_adjacent_turfs (cleared in /turf/open/Destroy already).
 	..()
 	return QDEL_HINT_IWILLGC
@@ -335,7 +333,7 @@
 /turf/proc/Distance(turf/t)
 	if(get_dist(src,t) == 1)
 		var/cost = (src.x - t.x) * (src.x - t.x) + (src.y - t.y) * (src.y - t.y)
-		cost *= ((isnull(path_weight)? slowdown : path_weight) + (isnull(t.path_weight)? t.slowdown : t.path_weight))/2 //CHOMPEdit
+		cost *= ((isnull(path_weight)? slowdown : path_weight) + (isnull(t.path_weight)? t.slowdown : t.path_weight))/2
 		return cost
 	else
 		return get_dist(src,t)

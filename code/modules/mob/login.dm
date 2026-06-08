@@ -6,12 +6,12 @@
 			if(M == src)	continue
 			if( M.key && (M.key != key) )
 				var/matches
-				//CHOMPEDIT - IP exemptions for those who are known to live together
+				// IP exemptions for those who are known to live together
 				var/list/ip_whitelist = CONFIG_GET(str_list/ip_whitelist)
 				if (ip_whitelist[key])
 					if (ip_whitelist[key] == ip_whitelist[M.key])
 						continue
-				//CHOMPEDIT end
+				// end
 				if( (M.lastKnownIP == client.address) )
 					matches += "IP ([client.address])"
 				if( (client.connection != "web") && (M.computer_id == client.computer_id) )
@@ -47,7 +47,7 @@
 	new /datum/hud(src)
 
 	next_move = 1
-	disconnect_time = null				//VOREStation Addition: clear the disconnect time
+	disconnect_time = null // ition: clear the disconnect time
 	sight |= SEE_SELF
 	..()
 	SEND_SIGNAL(src, COMSIG_MOB_LOGIN)
@@ -78,7 +78,7 @@
 
 	//set macro to normal incase it was overriden (like cyborg currently does)
 	client.set_hotkeys_macro("macro", "hotkeymode")
-	// DQEdit — force hotkey mode regardless of player pref; non-hotkey is disabled in this fork.
+	// force hotkey mode regardless of player pref; non-hotkey is disabled in this fork.
 	winset(client, null, "mainwindow.macro=hotkeymode;hotkey_toggle.is-checked=true;mapwindow.map.focus=true")
 
 	if(!client.tooltips)
@@ -125,7 +125,7 @@
 /mob/Login()
 	. = ..()
 
-	// DQEdit — viewing_alternate_appearances moved to /datum/component/alt_appearances_viewer
+	// viewing_alternate_appearances moved to /datum/component/alt_appearances_viewer
 	var/list/viewing = dq_get_viewing_alt_appearances(src)
 	if(viewing && viewing.len)
 		for(var/datum/alternate_appearance/AA in viewing)

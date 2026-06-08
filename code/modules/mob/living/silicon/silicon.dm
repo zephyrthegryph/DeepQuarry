@@ -24,7 +24,7 @@
 	var/list/access_rights
 	var/obj/item/card/id/idcard
 
-	var/sensor_type = 0 //VOREStation add - silicon omni "is sensor on or nah"
+	var/sensor_type = 0 // add - silicon omni "is sensor on or nah"
 
 	var/hudmode = null
 	fire_stack_decay_rate = -0.55
@@ -144,7 +144,7 @@
 
 
 // this function shows the health of the AI in the Status panel
-//ChompEDIT START - TGPanel
+// TGPanel
 /mob/living/silicon/proc/show_system_integrity()
 	if(!src.stat)
 		. = "System integrity: [round((health/getMaxHealth())*100)]%"
@@ -226,7 +226,7 @@
 			var/synth = (L in speech_synthesizer_langs)
 			. += span_bold("[L.name] ([get_language_prefix()][L.key])") + "[synth ? default_str : null]<br>Speech Synthesizer: <i>[synth ? "YES" : "NOT SUPPORTED"]</i><br>[L.desc]<br><br>"
 
-/mob/living/silicon/proc/toggle_sensor_mode() //VOREStation Add to make borgs use omni starts here - Tank, clueless bird
+/mob/living/silicon/proc/toggle_sensor_mode() // to make borgs use omni starts here - Tank, clueless bird
 	if(sensor_type)
 		if(plane_holder)
 			//Enable the planes, its basically just AR-Bs
@@ -255,7 +255,7 @@
 
 //hudmode = sensor_type //This is checked in examine.dm on humans, so they can see medical/security records depending on mode
 //I made it work like omnis with records by adding stuff to examine.dm
-//VOREStation Add ends here
+// ends here
 
 /mob/living/silicon/verb/pose()
 	set name = "Set Pose"

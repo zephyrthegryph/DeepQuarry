@@ -20,7 +20,7 @@
 #define GAS_ANTINOBLIUM "antinoblium"
 #define GAS_HALON "halon"
 
-// DQEdit — CHOMP code uses GAS_PHORON / GAS_CH4 / GAS_VOLATILE_FUEL by string ID.
+// CHOMP code uses GAS_PHORON / GAS_CH4 / GAS_VOLATILE_FUEL by string ID.
 // LINDA uses different names (plasma vs phoron). The CHOMP _reagents.dm defines
 // load BEFORE this file, so our redefs win and CHOMP code resolves to LINDA gas
 // IDs. /datum/gas/methane and /datum/gas/volatile_fuel are also added below as

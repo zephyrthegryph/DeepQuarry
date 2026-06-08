@@ -107,7 +107,7 @@
 
 /client/verb/drop_item()
 	set hidden = 1
-	if(!isrobot(mob) && mob.stat == CONSCIOUS && (isturf(mob.loc) || isbelly(mob.loc)))	// VOREStation Edit: dropping in bellies
+	if(!isrobot(mob) && mob.stat == CONSCIOUS && (isturf(mob.loc) || isbelly(mob.loc))) // dropping in bellies
 		return mob.drop_item()
 	return
 
@@ -309,7 +309,6 @@
 	else
 		. = my_mob.SelfMove(n, direct, total_delay)
 
-	//CHOMPEdit Begin
 	// If we ended up moving diagonally, increase delay.
 	if((direct & (direct - 1)) && mob.loc == n)
 		total_delay *= SQRT_2

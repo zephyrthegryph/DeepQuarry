@@ -1,4 +1,4 @@
-// DQEdit — LINDA atmospherics rewrite (commit 6fdac16ef1). gas_mixture var accesses (e.g. mix.total_moles) converted to proc calls (mix.total_moles()) for the LINDA engine API. Bulk rewrite by tools/verdigris/linda_rewrite_chomp_atmos.py.
+// LINDA atmospherics rewrite (commit 6fdac16ef1). gas_mixture var accesses (e.g. mix.total_moles) converted to proc calls (mix.total_moles()) for the LINDA engine API. Bulk rewrite by tools/verdigris/linda_rewrite_chomp_atmos.py.
 // Bracketed at file-header rather than per-hunk because the
 // edits are mechanical and span the whole file; the commit SHA
 // is the source of truth for per-line diff context.
@@ -286,7 +286,7 @@
 
 /obj/machinery/telecomms/receiver
 	name = "Subspace Receiver"
-	//icon = 'icons/obj/stationobjs.dmi' //VOREStation Removal - use parent icon
+	// icon = 'icons/obj/stationobjs.dmi' // Removal - use parent icon
 	icon_state = "broadcast receiver"
 	desc = "This machine has a dish-like shape and green lights. It is designed to detect and process subspace radio activity."
 	density = TRUE
@@ -370,7 +370,7 @@
 
 /obj/machinery/telecomms/hub
 	name = "Telecommunication Hub"
-	//icon = 'icons/obj/stationobjs.dmi' //VOREStation Removal - use parent icon
+	// icon = 'icons/obj/stationobjs.dmi' // Removal - use parent icon
 	icon_state = "hub"
 	desc = "A mighty piece of hardware used to send/receive massive amounts of data."
 	density = TRUE
@@ -403,7 +403,7 @@
 
 /obj/machinery/telecomms/relay
 	name = "Telecommunication Relay"
-	//icon = 'icons/obj/stationobjs.dmi' //VOREStation Removal - use parent icon
+	// icon = 'icons/obj/stationobjs.dmi' // Removal - use parent icon
 	icon_state = "relay"
 	desc = "A mighty piece of hardware used to send massive amounts of data far away."
 	density = TRUE
@@ -459,7 +459,7 @@
 
 /obj/machinery/telecomms/bus
 	name = "Bus Mainframe"
-	//icon = 'icons/obj/stationobjs.dmi' //VOREStation Removal - use parent icon
+	// icon = 'icons/obj/stationobjs.dmi' // Removal - use parent icon
 	icon_state = "bus"
 	desc = "A mighty piece of hardware used to send massive amounts of data quickly."
 	density = TRUE
@@ -511,7 +511,7 @@
 
 /obj/machinery/telecomms/processor
 	name = "Processor Unit"
-	//icon = 'icons/obj/stationobjs.dmi' //VOREStation Removal - use parent icon
+	// icon = 'icons/obj/stationobjs.dmi' // Removal - use parent icon
 	icon_state = "processor"
 	desc = "This machine is used to process large quantities of information."
 	density = TRUE
@@ -549,7 +549,7 @@
 
 /obj/machinery/telecomms/server
 	name = "Telecommunication Server"
-	//icon = 'icons/obj/stationobjs.dmi' //VOREStation Removal - use parent icon
+	// icon = 'icons/obj/stationobjs.dmi' // Removal - use parent icon
 	icon_state = "comm_server"
 	desc = "A machine used to store data and network statistics."
 	density = TRUE

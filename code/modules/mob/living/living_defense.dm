@@ -95,14 +95,14 @@
 				span_warning("[src] is covered in sharp bits and it hurt when you touched them!"), )
 
 /mob/living/bullet_act(obj/item/projectile/P, def_zone)
-	//CHOMPedit begin, re-adds stealth removed feature
+	// begin, re-adds stealth removed feature
 	if(istype(get_active_hand(),/obj/item/assembly/signaler))
 		var/obj/item/assembly/signaler/signaler = get_active_hand()
 		if(signaler.deadman && prob(80))
 			log_and_message_admins("has triggered a signaler deadman's switch")
 			src.visible_message("<font color='red'>[src] triggers their deadman's switch!</font>")
 			signaler.signal()
-	//CHOMPedit end
+	// end
 
 	if(ai_holder && P.firer)
 		ai_holder.react_to_attack(P.firer)
@@ -269,7 +269,7 @@
 		if (prob(miss_chance))
 			visible_message(span_notice("\The [O] misses [src] narrowly!"))
 			return*/
-		//CHOMPEDIT - removing baymiss
+		// removing baymiss
 		src.visible_message(span_filter_warning("[span_red("[src] has been hit by [O].")]"))
 		var/armor = run_armor_check(null, "melee")
 
@@ -321,7 +321,7 @@
 /mob/living/proc/turf_collision(turf/T, speed)
 	if(SEND_SIGNAL(src, COMSIG_LIVING_TURF_COLLISION, T, speed) & COMPONENT_LIVING_BLOCK_TURF_COLLISION)
 		return
-	src.take_organ_damage(speed * 5)	// used to be 5 * speed. That's a default of 25 and I dont see anything ever changing the "speed" value. //CHOMPEdit, no. We keep the damage values, no reduction to 12
+	src.take_organ_damage(speed * 5) // used to be 5 * speed. That's a default of 25 and I dont see anything ever changing the "speed" value. // , no. We keep the damage values, no reduction to 12
 	//src.Weaken(3)				// That is absurdly high so im just setting it to a flat 12 with a bit of stun ontop. //Stun is too dangerous
 	playsound(src, get_sfx("punch"), 50) //ouch sound
 

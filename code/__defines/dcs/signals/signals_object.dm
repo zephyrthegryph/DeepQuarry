@@ -38,7 +38,7 @@
 #define COMSIG_ARCADE_VICTORY "arcade_victory"
 ///from /obj/machinery/computer/telescience/proc/doteleport(mob/user): (list/atom/movable/teleported_things, turf/target_turf, sending )
 #define COMSIG_TELESCI_TELEPORT "telesci_teleport"
-// DQEdit — COMSIG_MACHINERY_START_PROCESSING_AIR / STOP_PROCESSING_AIR removed
+// COMSIG_MACHINERY_START_PROCESSING_AIR / STOP_PROCESSING_AIR removed
 // alongside SSair.atmos_machinery; the only "raisers" were the SSair procs that
 // are themselves gone. No subscribers existed.
 ///from /obj/machinery/RefreshParts: ()

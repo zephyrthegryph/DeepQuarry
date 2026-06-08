@@ -248,14 +248,14 @@
 						//TORSO:
 						//ORGANS INVENTORY: Heart, Lungs, Spleen, Voicebox,
 						if(BP_TORSO)
-							for(var/belly in M.vore_organs) //Pervy edit. //CHOMPEdit Start
+							for(var/belly in M.vore_organs) // Pervy edit. //
 								var/obj/belly/B = belly
 								for(var/mob/living/carbon/human/H in B)
 									if(H.size_multiplier < 0.5)
 										beat_size = pick("quiet ", "hushed " ,"low " ,"hushed ")
 									message_holder = pick("You can hear disparate heartbeats as well.", "You can hear a different [beat_size]heartbeat too.", "It sounds like there is more than one heartbeat." ,"You can pick up a [beat_size]heatbeat along with everything else.")
 							if(M.nutrition > 900)	//dead
-								message_holder2 = pick("Your listening is troubled by the occasional deep groan of their body.", "There is some moderate bubbling in the background.", "They seem to have a healthy metabolism as well.") //CHOMPEdit End
+								message_holder2 = pick("Your listening is troubled by the occasional deep groan of their body.", "There is some moderate bubbling in the background.", "They seem to have a healthy metabolism as well.")
 
 							var/obj/item/organ/internal/heart/heart = M.internal_organs_by_name[O_HEART]
 							sound_strength = "hear"

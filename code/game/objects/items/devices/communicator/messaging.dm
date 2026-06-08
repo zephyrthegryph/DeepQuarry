@@ -39,7 +39,7 @@
 			src << 'sound/machines/defib_SafetyOn.ogg'
 			comm.voice_invites |= src
 	if(message == "ping")
-		if(client && client.prefs.read_preference(/datum/preference/toggle/human/communicator_visibility)) // DQEdit — migrated pref
+		if(client && client.prefs.read_preference(/datum/preference/toggle/human/communicator_visibility)) // migrated pref
 			var/random = rand(450,700)
 			random = random / 10
 			exonet.send_message(origin_address, "64 bytes received from [exonet.address] ecmp_seq=1 ttl=51 time=[random] ms")
@@ -170,5 +170,4 @@
 
 
 
-// DQEdit Start — Show Text Messages verb body relocated to code/modules/communicator/exonet_log_panel.dm (structured TGUI).
-// DQEdit End
+// Show Text Messages verb body relocated to code/modules/communicator/exonet_log_panel.dm (structured TGUI).

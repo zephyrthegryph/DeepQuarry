@@ -21,12 +21,11 @@
 		LAZYADD(notices, note)
 		if(LAZYLEN(notices) >= max_notices)
 			break
-	//ChompEDIT START - notices in contents
+	// notices in contents
 	for(var/obj/item/paper/note in contents)
 		LAZYADD(notices, note)
 		if(LAZYLEN(notices) >= max_notices)
 			break
-	//ChompEDIT END
 
 	update_icon()
 

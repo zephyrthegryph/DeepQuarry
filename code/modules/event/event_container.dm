@@ -1,6 +1,6 @@
 
 //
-// VOREStation overrides to the default event manager configuration. //YW EDIT: WHY THE FUCK IS THIS NOT MENTIONED IN THE REGULAR FILE, AAAGGGHAA!
+// overrides to the default event manager configuration. //YW EDIT: WHY THE FUCK IS THIS NOT MENTIONED IN THE REGULAR FILE, AAAGGGHAA!
 //
 // This file lets us configure which events we want in the rotation without conflicts with upstream.
 // It works because the actual event containers don't define New(), allowing us to use New() to replace
@@ -37,7 +37,7 @@
 		new /datum/event_meta(EVENT_LEVEL_MUNDANE, "Space Dust",			/datum/event/dust,	 						0, 		list(DEPARTMENT_ENGINEERING = 20), FALSE, 0, 50),
 		new /datum/event_meta(EVENT_LEVEL_MUNDANE, "Trivial News",			/datum/event/trivial_news, 					400),
 		new /datum/event_meta(EVENT_LEVEL_MUNDANE, "Lore News",				/datum/event/lore_news, 					400),
-		// DQEdit — /datum/event/supply_demand was in supply_demand_vr.dm (deleted with ZAS).
+		// /datum/event/supply_demand was in supply_demand_vr.dm (deleted with ZAS).
 		// Spawns mice, lizards, or dud spiderlings
 		new /datum/event_meta(EVENT_LEVEL_MUNDANE, "Vermin Infestation",	/datum/event/infestation, 					100,	list(DEPARTMENT_ANY = 5, JOB_JANITOR = 100), TRUE),
 		// Rot only weakens walls, not destroy them
@@ -47,7 +47,7 @@
 		new /datum/event_meta(EVENT_LEVEL_MUNDANE, "Lost Carp",				/datum/event/carp_migration, 				0, 		list(DEPARTMENT_SECURITY = 40), TRUE, min_jobs = list(DEPARTMENT_SECURITY = 1)),
 		new /datum/event_meta(EVENT_LEVEL_MUNDANE, "Ian Storm",				/datum/event/ianstorm,	 					1,		list(), TRUE),
 		new /datum/event_meta(EVENT_LEVEL_MUNDANE, "PDA Spam",				/datum/event/pda_spam, 						0, 		list(DEPARTMENT_ANY = 4), TRUE, 25, 50),
-//		new /datum/event_meta(EVENT_LEVEL_MUNDANE, "Lost Spiders",			/datum/event/spider_migration, 				0, 		list(DEPARTMENT_SECURITY = 10), 1), //YW EDIT //CHOMPStation Edit: Moved to disabled and commented. This just spawns spiders on carp spawns.
+// new /datum/event_meta(EVENT_LEVEL_MUNDANE, "Lost Spiders", /datum/event/spider_migration, 0, list(DEPARTMENT_SECURITY = 10), 1), //YW EDIT // Moved to disabled and commented. This just spawns spiders on carp spawns.
 	))
 
 
@@ -104,13 +104,13 @@
 		new /datum/event_meta(EVENT_LEVEL_MODERATE, "Prison Break",				/datum/event/prison_break,				-10,	list(DEPARTMENT_SECURITY = 30, DEPARTMENT_ENGINEERING = 20), TRUE, min_jobs = list(DEPARTMENT_SECURITY = 2)),
 		new /datum/event_meta(EVENT_LEVEL_MODERATE, "Random Antagonist",		/datum/event/random_antag,		 		2.5,	list(DEPARTMENT_SECURITY = 1), TRUE, 0, 5),
 		new /datum/event_meta(EVENT_LEVEL_MODERATE, "Carp School",				/datum/event/carp_migration,			-20, 	list(DEPARTMENT_ENGINEERING = 10, DEPARTMENT_SECURITY = 30, JOB_HEAD_OF_SECURITY = 10, JOB_WARDEN = 5), TRUE, min_jobs = list(DEPARTMENT_SECURITY = 2)),
-		// DQEdit — /datum/event/supply_demand deleted with supply_demand_vr.dm.
+		// /datum/event/supply_demand deleted with supply_demand_vr.dm.
 		new /datum/event_meta(EVENT_LEVEL_MODERATE, "Space Dust",				/datum/event/dust,	 					0,		list(DEPARTMENT_ENGINEERING = 20), TRUE, 0, 50),
 		new /datum/event_meta(EVENT_LEVEL_MODERATE, "Disease Outbreak",			/datum/event/disease_outbreak,			-30,	list(DEPARTMENT_MEDICAL = 30, DEPARTMENT_ANY = 1), TRUE, min_jobs = list(DEPARTMENT_MEDICAL = 2)),
 		new /datum/event_meta(EVENT_LEVEL_MODERATE, "Virology Breach",			/datum/event/prison_break/virology,		0,		list(DEPARTMENT_MEDICAL = 100), TRUE, min_jobs = list(DEPARTMENT_MEDICAL = 1)),
 		new /datum/event_meta(EVENT_LEVEL_MODERATE, "Wormholes",				/datum/event/wormholes,	 				20,		list(DEPARTMENT_ANY = 5)),
 		new /datum/event_meta(EVENT_LEVEL_MODERATE, "Xenobiology Breach",		/datum/event/prison_break/xenobiology,	0,		list(DEPARTMENT_RESEARCH = 100), TRUE, min_jobs = list(DEPARTMENT_RESEARCH = 1), min_jobs = list(DEPARTMENT_RESEARCH = 1, DEPARTMENT_SECURITY =1)),
-//		new /datum/event_meta(EVENT_LEVEL_MODERATE, "Lost Spiders",				/datum/event/spider_migration,			0, 		list(DEPARTMENT_SECURITY = 30), 1), //YW EDIT //CHOMPStation Edit: Moved to disabled. This is a YW feature that spawns spiders on carp spawns.
+// new /datum/event_meta(EVENT_LEVEL_MODERATE, "Lost Spiders", /datum/event/spider_migration, 0, list(DEPARTMENT_SECURITY = 30), 1), //YW EDIT // Moved to disabled. This is a YW feature that spawns spiders on carp spawns.
 	))
 
 
@@ -144,5 +144,5 @@
 		//Needs Xenobio containment breach fixed
 		//new /datum/event_meta(EVENT_LEVEL_MAJOR, "Xenobiology Breach",		/datum/event/prison_break/xenobiology,	-10,	list(DEPARTMENT_RESEARCH = 30, DEPARTMENT_ENGINEERING = 20), 1),
 		//new /datum/event_meta(EVENT_LEVEL_MAJOR, "Meteor Strike",				/datum/event/meteor_strike,		10,		list(DEPARTMENT_ENGINEERING = 15), 1),
-		// DQEdit — /datum/event/supply_demand deleted with supply_demand_vr.dm.
+		// /datum/event/supply_demand deleted with supply_demand_vr.dm.
 	))

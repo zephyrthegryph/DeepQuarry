@@ -1,4 +1,4 @@
-// DQAdd — synchronous file-logger for diagnosing silent DD crashes.
+// synchronous file-logger for diagnosing silent DD crashes.
 //
 // log_world() buffers; if DD segfaults, the last few seconds of output never reach
 // runtime.log. text2file with append mode forces an immediate write per call, so the

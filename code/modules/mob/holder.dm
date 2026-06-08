@@ -310,7 +310,7 @@
 			L.Stun(2)
 
 /obj/item/holder/attackby(obj/item/W as obj, mob/user as mob)
-	//CHOMPADDITION: MicroHandCrush
+	// ITION: MicroHandCrush
 	if(W == src && user.a_intent == I_HURT)
 		for(var/mob/living/M in src.contents)
 			if(user.size_multiplier > M.size_multiplier)
@@ -319,7 +319,7 @@
 				to_chat(M, span_danger("You are roughly squeezed by [user]!"))
 				log_and_message_admins("[key_name(M)] has been harmsqueezed by [key_name(user)]")
 				M.apply_damage(dam)
-	//CHOMPADDITION: MicroHandCrush END
+	// ITION: MicroHandCrush END
 	for(var/mob/M in src.contents)
 		M.attackby(W,user)
 
@@ -328,7 +328,7 @@
 
 /mob/living/MouseDrop(atom/over_object)
 	var/mob/living/carbon/human/H = over_object
-	if(holder_type && issmall(src) && istype(H) && !H.lying && Adjacent(H) && (src.a_intent == I_HELP && H.a_intent == I_HELP)) //VOREStation Edit
+	if(holder_type && issmall(src) && istype(H) && !H.lying && Adjacent(H) && (src.a_intent == I_HELP && H.a_intent == I_HELP))
 		if(!issmall(H) || !ishuman(src))
 			get_scooped(H, (usr == src))
 		return

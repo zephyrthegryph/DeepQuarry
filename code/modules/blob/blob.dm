@@ -40,7 +40,7 @@
 	else
 		icon_state = "blob_damaged"
 
-/obj/effect/blob/take_damage(damage)	// VOREStation Edit
+/obj/effect/blob/take_damage(damage)
 	health -= damage
 	if(health < 0)
 		playsound(src, 'sound/effects/splat.ogg', 50, 1)

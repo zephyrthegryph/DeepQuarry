@@ -76,7 +76,7 @@
 	return null
 
 /obj/machinery/atmospherics/valve/Destroy()
-	// DQEdit Start — disconnect/qdel BEFORE ..() so node derefs are valid.
+	// disconnect/qdel BEFORE ..() so node derefs are valid.
 	if(node1)
 		node1.disconnect(src)
 		qdel(network_node1)
@@ -84,7 +84,6 @@
 		node2.disconnect(src)
 		qdel(network_node2)
 	return ..()
-	// DQEdit End
 
 	node1 = null
 	node2 = null

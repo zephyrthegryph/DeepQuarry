@@ -47,7 +47,7 @@
 	return
 
 
-// DQEdit Start — TGUI migration. attack_self opens ImplantPad.tsx; the
+// TGUI migration. attack_self opens ImplantPad.tsx; the
 // Topic tracking_id stepper moves to tgui_act.
 /obj/item/implantpad/attack_self(mob/user)
 	. = ..(user)
@@ -91,4 +91,3 @@
 			T.id += text2num(params["delta"])
 			T.id = clamp(T.id, 1, 1000)
 			return TRUE
-// DQEdit End

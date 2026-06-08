@@ -770,7 +770,7 @@ BLIND     // can't see anything
 	item_state = "tajblind"
 	prescription = TRUE
 	body_parts_covered = EYES
-	glasses_layer_above = TRUE //ChompEDIT
+	glasses_layer_above = TRUE
 
 /obj/item/clothing/glasses/hud/health/tajblind
 	name = "lightweight veil"

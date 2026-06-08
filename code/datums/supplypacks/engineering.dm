@@ -29,7 +29,7 @@
 	name = "Superconducting Magnetic Coil"
 	desc = "A single standard superconducting magnetic coil."
 	contains = list(/obj/item/smes_coil)
-	cost = 20 //CHOMPEdit - Reduced cost from 75 to 20 to be more in line with the rest of the engineering supplies
+	cost = 20 // Reduced cost from 75 to 20 to be more in line with the rest of the engineering supplies
 	containertype = /obj/structure/closet/crate/focalpoint
 	containername = "Superconducting Magnetic Coil crate"
 
@@ -37,7 +37,7 @@
 	name = "Superconducting Capacitance Coil"
 	desc = "A single high-capacity superconducting magnetic coil."
 	contains = list(/obj/item/smes_coil/super_capacity)
-	cost = 35 //CHOMPEdit - Reduced cost from 90 to 35 to be more in line with the rest of the engineering supplies
+	cost = 35 // Reduced cost from 90 to 35 to be more in line with the rest of the engineering supplies
 	containertype = /obj/structure/closet/crate/focalpoint
 	containername = "Superconducting Capacitance Coil crate"
 
@@ -45,7 +45,7 @@
 	name = "Superconducting Transmission Coil"
 	desc = "A single high-transmission superconducting magnetic coil."
 	contains = list(/obj/item/smes_coil/super_io)
-	cost = 35 //CHOMPEdit - Reduced cost from 90 to 35 to be more in line with the rest of the engineering supplies
+	cost = 35 // Reduced cost from 90 to 35 to be more in line with the rest of the engineering supplies
 	containertype = /obj/structure/closet/crate/focalpoint
 	containername = "Superconducting Transmission Coil crate"
 
@@ -177,7 +177,7 @@
 	cost = 10
 	containertype = /obj/structure/closet/crate/secure/einstein
 	containername = "Emitter crate"
-	access = ACCESS_ENGINE //CHOMPedit
+	access = ACCESS_ENGINE
 
 /datum/supply_pack/eng/engine/field_gen
 	name = "Field Generator crate"
@@ -229,8 +229,8 @@
 			)
 	containertype = /obj/structure/closet/crate/secure/einstein
 	containername = "Particle Accelerator crate"
-	access = list(ACCESS_CE, ACCESS_RESEARCH) // CHOMPEdit
-	one_access = TRUE //CHOMPAdd
+	access = list(ACCESS_CE, ACCESS_RESEARCH)
+	one_access = TRUE
 
 /datum/supply_pack/eng/shield_gen
 	contains = list(/obj/item/circuitboard/shield_gen)
@@ -262,7 +262,7 @@
 /datum/supply_pack/eng/smbig
 	name = "Supermatter Core"
 	desc = "A transport-safe supermatter crystal. EXTREMELY HAZARDOUS. Requires Chief Engineer access."
-	contains = list(/obj/machinery/power/supermatter/station) // CHOMPEdit: Station SM for Cargo Orders
+	contains = list(/obj/machinery/power/supermatter/station) // Station SM for Cargo Orders
 	cost = 150
 	containertype = /obj/structure/closet/crate/secure/phoron
 	containername = "Supermatter crate (CAUTION)"

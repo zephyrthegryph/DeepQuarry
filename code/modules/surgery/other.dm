@@ -16,8 +16,8 @@
 	can_infect = 1
 	blood_level = 1
 
-	min_duration = 50 //CHOMPedit
-	max_duration = 50 //CHOMPedit
+	min_duration = 50
+	max_duration = 50
 
 /datum/surgery_step/fix_vein/can_use(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
 	if(!ishuman(target))
@@ -64,8 +64,8 @@
 	surgery_name = "Detoxify"
 	blood_level = 1
 	allowed_tools = list(/obj/item/surgical/bioregen=100)
-	min_duration = 40 //CHOMPedit
-	max_duration = 40 //CHOMPedit
+	min_duration = 40
+	max_duration = 40
 
 /datum/surgery_step/internal/detoxify/can_use(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
 	return ..() && target_zone == BP_TORSO && (target.toxloss || target.oxyloss || target.cloneloss)

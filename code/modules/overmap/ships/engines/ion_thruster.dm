@@ -37,8 +37,8 @@
 /obj/machinery/ion_engine
 	name = "ion propulsion device"
 	desc = "An advanced ion propulsion device, using energy and minutes amount of gas to generate thrust."
-	icon = 'icons/turf/shuttle_parts_vr.dmi' // VOREStation Edit - New icons
-	icon_state = "ion" // VOREStation Edit - New icons
+	icon = 'icons/turf/shuttle_parts_vr.dmi' // New icons
+	icon_state = "ion" // New icons
 	power_channel = ENVIRON
 	idle_power_usage = 100
 	anchored = TRUE
@@ -59,9 +59,9 @@
 	. = ..()
 
 /obj/machinery/ion_engine/proc/add_glow()
-	var/image/i = image('icons/turf/shuttle_parts_vr.dmi', "ion_overlay") // VOREStation Edit
-	i.plane = PLANE_LIGHTING_ABOVE // VOREStation Edit
-	add_overlay(i) // VOREStation Edit
+	var/image/i = image('icons/turf/shuttle_parts_vr.dmi', "ion_overlay")
+	i.plane = PLANE_LIGHTING_ABOVE
+	add_overlay(i)
 
 /obj/machinery/ion_engine/proc/get_status()
 	. = list()

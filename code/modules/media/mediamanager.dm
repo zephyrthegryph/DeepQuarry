@@ -111,7 +111,7 @@
 	var/volume = 0.5			// Client's volume modifier. Actual volume = "volume * source_volume"
 	var/client/owner			// Client this is actually running in
 	var/forced=0				// If true, current url overrides area media sources
-	// DQEdit Start — media playback via TGUI MediaPlayer hosted in the
+	// media playback via TGUI MediaPlayer hosted in the
 	// hidden rpane.mediapanel skin element. The skin element stays
 	// invisible (is-visible=false); the TGUI's React bundle loads into
 	// it anyway and the HTML5 <audio> element plays audio regardless
@@ -119,7 +119,6 @@
 	// output("...:SetMusic") JS interop.
 	var/datum/tgui_window/media_window
 	var/const/WINDOW_ID = "rpane.mediapanel"
-	// DQEdit End
 
 /datum/media_manager/New(client/C)
 	ASSERT(istype(C))

@@ -88,7 +88,7 @@
 		qdel(src)
 	return
 
-// CHOMPedit start - Allows xenos to clean nests.
+// start - Allows xenos to clean nests.
 /obj/structure/bed/nest/attack_hand(mob/user as mob)
 	usr.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if (HULK in usr.mutations)
@@ -107,4 +107,4 @@
 					return
 	healthcheck()
 	return
-// CHOMPedit end.
+// end.

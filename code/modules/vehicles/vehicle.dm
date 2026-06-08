@@ -42,7 +42,7 @@
 	var/load_offset_y = 0		//pixel_y offset for item overlay
 	var/mob_offset_y = 0		//pixel_y offset for mob overlay
 
-	var/datum/looping_sound/idle_carengine/soundloop //CHOMPedit: Looping engine audio.
+	var/datum/looping_sound/idle_carengine/soundloop // Looping engine audio.
 
 //-------------------------------------------
 // Standard procs
@@ -55,7 +55,7 @@
 
 ///obj/vehicle/New()
 //	..()
-//	//spawn the cell you want in each vehicle // CHOMPedit: Commented out in favour of initialize.
+// //spawn the cell you want in each vehicle // Commented out in favour of initialize.
 
 /obj/vehicle/Destroy()
 	QDEL_NULL(riding_datum)
@@ -213,7 +213,7 @@
 	if(on)
 		return FALSE
 	on = 1
-	playsound(src, 'sound/effects/vehicle/ignition_car.ogg', 60, 2, -2) //CHOMPedit: New sound effects.
+	playsound(src, 'sound/effects/vehicle/ignition_car.ogg', 60, 2, -2) // New sound effects.
 	soundloop.start()
 	set_light(initial(light_range))
 	update_icon()
@@ -225,7 +225,7 @@
 	if(!mechanical)
 		return FALSE
 	on = 0
-	playsound(src, 'sound/effects/vehicle/engine_off.ogg', 60, 2, -2) //CHOMPedit: New sound effects.
+	playsound(src, 'sound/effects/vehicle/engine_off.ogg', 60, 2, -2) // New sound effects.
 	soundloop.stop()
 	set_light(0)
 	update_icon()
@@ -243,7 +243,7 @@
 
 /obj/vehicle/proc/explode()
 	src.visible_message(span_bolddanger("[src] blows apart!"), 1)
-	playsound(src, 'sound/effects/explosions/vehicleexplosion.ogg', 100, 8, 3) //CHOMPedit: New sound effects.
+	playsound(src, 'sound/effects/explosions/vehicleexplosion.ogg', 100, 8, 3) // New sound effects.
 	var/turf/Tsec = get_turf(src)
 
 	//stuns people who are thrown off a train that has been blown up

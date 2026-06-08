@@ -1,4 +1,4 @@
-// DQAdd — Vore thermal messages editor. custom_heat / custom_cold each hold a list of
+// Vore thermal messages editor. custom_heat / custom_cold each hold a list of
 // strings displayed when the character is exposed to that temperature extreme. The user
 // can add, edit, and remove individual messages.
 

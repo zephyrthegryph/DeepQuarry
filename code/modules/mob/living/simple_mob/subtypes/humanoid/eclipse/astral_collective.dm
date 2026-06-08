@@ -33,7 +33,7 @@
 	can_be_drop_prey = FALSE
 	can_be_drop_pred = TRUE
 	pass_flags = PASSTABLE //mostly for the melee mobs.
-	// DQEdit — dq_get_softfall(src) type-default moved to GLOB.dq_softfall_by_type
+	// dq_get_softfall(src) type-default moved to GLOB.dq_softfall_by_type
 
 	min_oxy = 0
 	max_oxy = 0

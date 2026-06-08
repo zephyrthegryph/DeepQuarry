@@ -45,7 +45,7 @@
 		if(!choice)
 			if(tgui_alert(usr, "Error, no mission set. Do you want to exit the setup process?","Strike Team",list("Yes","No"))!="No")
 				return
-	consider_ert_load() //VOREStation Add
+	consider_ert_load()
 
 	if(team.deployed)
 		to_chat(usr, "Looks like someone beat you to it.")
@@ -176,7 +176,7 @@ ADMIN_VERB(response_team, R_ADMIN|R_MOD|R_EVENT, "Dispatch Emergency Response Te
 
 	GLOB.can_call_ert = 0 // Only one call per round, gentleman.
 	GLOB.send_emergency_team = 1
-	consider_ert_load() //VOREStation Add
+	consider_ert_load()
 
 	sleep(600 * 5)
 	GLOB.send_emergency_team = 0 // Can no longer join the ERT.

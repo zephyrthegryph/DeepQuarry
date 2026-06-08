@@ -280,12 +280,10 @@
 	if(W.has_tool_quality(TOOL_WRENCH))
 		to_chat(user, span_notice("It's a holochair, you can't dismantle it!"))
 	return
-//VOREStation Add
 /obj/structure/bed/holobed/attackby(obj/item/W as obj, mob/user as mob)
 	if(W.has_tool_quality(TOOL_WRENCH))
 		to_chat(user, span_notice("It's a holochair, you can't dismantle it!"))
 	return
-//VOREStation Add End
 /obj/item/holo
 	damtype = HALLOSS
 	no_attack_log = 1

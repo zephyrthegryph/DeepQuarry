@@ -6,7 +6,7 @@
 //
 // Run with: bin/test.cmd (or whatever invokes dm.exe with -DUNIT_TESTS).
 //
-// DQEdit — fork is LINDA-only; the historical #ifdef USE_LINDA_ATMOS branch
+// fork is LINDA-only; the historical #ifdef USE_LINDA_ATMOS branch
 // has been collapsed.
 
 /datum/unit_test/xgm_total_moles_helper

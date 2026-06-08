@@ -21,7 +21,7 @@
 /*	alt_titles = list(JOB_ALT_TECHNICAL_ASSISTANT = /datum/alt_title/tech_assist,
 						JOB_ALT_MEDICAL_INTERN= /datum/alt_title/med_intern, JOB_ALT_RESEARCH_ASSISTANT = /datum/alt_title/research_assist,
 						JOB_ALT_VISITOR = /datum/alt_title/visitor)
-	)	*/	//VOREStation Removal: no alt-titles for visitors
+	)	*/ // Removal: no alt-titles for visitors
 
 /datum/job/assistant/get_access()
 	if(CONFIG_GET(flag/assistant_maint))
@@ -78,7 +78,7 @@
 	outfit_type = /datum/decl/hierarchy/outfit/job/assistant/intern
 	alt_titles = list(JOB_ALT_APPRENTICE_ENGINEER = /datum/alt_title/intern_eng,
 						JOB_ALT_MEDICAL_INTERN = /datum/alt_title/intern_med,
-						JOB_ALT_LAB_ASSISTANT = /datum/alt_title/intern_sci, //CHOMPEdit
+						JOB_ALT_LAB_ASSISTANT = /datum/alt_title/intern_sci,
 						JOB_ALT_SECURITY_CADET = /datum/alt_title/intern_sec,
 						JOB_ALT_JR_CARGO_TECH = /datum/alt_title/intern_crg,
 						JOB_ALT_JR_EXPLORER = /datum/alt_title/intern_exp, //CHOMP Explo keep
@@ -102,7 +102,7 @@
 	title_outfit = /datum/decl/hierarchy/outfit/job/assistant/medic
 
 /datum/alt_title/intern_sci
-	title = JOB_ALT_LAB_ASSISTANT //CHOMPEdit
+	title = JOB_ALT_LAB_ASSISTANT
 	title_blurb = "A " + JOB_ALT_LAB_ASSISTANT + " attempts to provide whatever the Research department needs. They are not proper " + JOB_SCIENTIST + "s, and are \
 					often in training to become a " + JOB_SCIENTIST + ". A " + JOB_ALT_LAB_ASSISTANT + " has no real authority." //CHOMPEdit
 	title_outfit = /datum/decl/hierarchy/outfit/job/assistant/scientist

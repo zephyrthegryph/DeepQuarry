@@ -4,7 +4,7 @@
 	var/hostile = FALSE						// Do we try to hurt others?
 	var/retaliate = FALSE					// Attacks whatever struck it first. Mobs will still attack back if this is false but hostile is true.
 	var/mauling = FALSE						// Attacks unconscious mobs
-	var/unconscious_vore = FALSE			//VOREStation Add - allows a mob to go for unconcious targets IF their vore prefs align
+	var/unconscious_vore = FALSE // allows a mob to go for unconcious targets IF their vore prefs align
 	var/handle_corpse = FALSE				// Allows AI to acknowledge corpses (e.g. nurse spiders)
 	var/vore_hostile = FALSE				// The same as hostile, but with vore pref checks
 	var/micro_hunt = FALSE					// Will target mobs at or under the micro_hunt_size size, requires vore_hostile to be true
@@ -27,14 +27,13 @@
 											// This uses strings and not refs to allow for disguises, and to avoid needing to use weakrefs.
 	var/destructive = FALSE					// Will target 'neutral' structures/objects and not just 'hostile' ones.
 
-	var/forgive_resting = TRUE				//VOREStation add - If TRUE on a RETALIATE mob, then mob will drop target if it becomes hostile to you but hasn't taken damage
+	var/forgive_resting = TRUE // add - If TRUE on a RETALIATE mob, then mob will drop target if it becomes hostile to you but hasn't taken damage
 
 // A lot of this is based off of /TG/'s AI code.
 
-//CHOMPEdit Begin
 // Step 1, find out what we can see.
 /datum/ai_holder/proc/list_targets()
-	. = ohearers(vision_range, holder) - holder // CHOMPEdit Remove ourselves to prevent suicidal decisions. ~ SRC is the ai_holder.
+	. = ohearers(vision_range, holder) - holder // Remove ourselves to prevent suicidal decisions. ~ SRC is the ai_holder.
 	. -= GLOB.dview_mob // Not the dview mob!
 
 	var/static/list/hostile_machines = typecacheof(list(/obj/machinery/porta_turret, /obj/mecha))
@@ -44,7 +43,6 @@
 		if(can_see(holder, HM, vision_range))
 			. += HM
 	. = typecache_filter_list_reverse(., ignore)
-//CHOMPEdit End
 
 // Step 2, filter down possible targets to things we actually care about.
 /datum/ai_holder/proc/find_target(list/possible_targets, has_targets_list = FALSE)
@@ -148,24 +146,22 @@
 			if(L.stat == UNCONSCIOUS)	// Do we have mauling? Yes? Then maul people who are sleeping but not SSD
 				if(mauling)
 					return TRUE
-				//VOREStation Add Start
 				else if(unconscious_vore && L.allowmobvore)
 					var/mob/living/simple_mob/vore/eater = holder
 					if(eater.will_eat(L))
 						return TRUE
 					else
 						return FALSE
-				//VOREStation Add End
 				else
 					return FALSE
-		//VOREStation add start
+		// add start
 		else if(forgive_resting && !isbelly(holder.loc))	//Doing it this way so we only think about the other conditions if the var is actually set
 			if((holder.health == holder.getMaxHealth()) && !hostile && (L.resting || L.weakened || L.stunned))	//If our health is full, no one is fighting us, we can forgive
 				var/mob/living/simple_mob/vore/eater = holder
 				if(!eater.will_eat(L))		//We forgive people we can eat by eating them
 					set_stance(STANCE_IDLE)
 					return FALSE	//Forgiven
-		//VOREStation add end
+		// add end
 		return TRUE
 
 	if(istype(the_target, /obj/mecha))
@@ -192,7 +188,6 @@
 	return TRUE
 //	return FALSE
 
-//CHOMPEdit Begin
 //It may seem a bit funny to define a proc above and then immediately override it in the same file
 //But this is basically layering the checks so that the vision check will always come last
 /datum/ai_holder/can_attack(atom/movable/the_target, vision_required = TRUE)
@@ -201,7 +196,6 @@
 	if(vision_required && !can_see_target(the_target))
 		return FALSE
 	return TRUE
-//CHOMPEdit End
 
 // 'Soft' loss of target. They may still exist, we still have some info about them maybe.
 /datum/ai_holder/proc/lose_target()
@@ -365,7 +359,7 @@
 
 // === merged from ai_holder_targeting_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/ai_holder/can_see_target(atom/movable/the_target, view_range = vision_range)
-	if(the_target && !isturf(the_target.loc) && !ismecha(the_target.loc))    //CHOMPEdit, AI shouldn't be targetting people inside objects of any kind
+	if(the_target && !isturf(the_target.loc) && !ismecha(the_target.loc)) // , AI shouldn't be targetting people inside objects of any kind
 		return FALSE
 	return ..()
 

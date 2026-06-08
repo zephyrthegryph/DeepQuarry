@@ -21,7 +21,7 @@
 	if(istype(below))
 		below.update_icon() // To add or remove the 'ceiling-less' overlay.
 
-// DQEdit — has_valid_ZAS_zone is a ZAS query (zone graph). Under LINDA, a turf
+// has_valid_ZAS_zone is a ZAS query (zone graph). Under LINDA, a turf
 // is "simulated" if it's in SSair's active set. Stub returns simulated-ness.
 /proc/has_valid_ZAS_zone(turf/simulated/T)
 	return istype(T)
@@ -34,10 +34,10 @@
 	if(N == /turf/space)
 		var/turf/below = GetBelow(src)
 		var/zones_present = has_valid_ZAS_zone(below) || has_valid_ZAS_zone(src)
-		if(istype(below) && zones_present && !(src.z in using_map.below_blocked_levels) && (!istype(below, /turf/unsimulated/wall) && !istype(below, /turf/simulated/sky)))	// VOREStation Edit: Weird open space
+		if(istype(below) && zones_present && !(src.z in using_map.below_blocked_levels) && (!istype(below, /turf/unsimulated/wall) && !istype(below, /turf/simulated/sky))) // Weird open space
 			N = /turf/simulated/open
 
-	// DQEdit — was `var/obj/fire/old_fire = fire`; ZAS /obj/fire is a stub now
+	// was `var/obj/fire/old_fire = fire`; ZAS /obj/fire is a stub now
 	// and turf.fire isn't set under LINDA. Just drop the var since it's only
 	// referenced again at line 92 (commented out).
 	// var/obj/old_fire = null
@@ -67,7 +67,7 @@
 	if(Be)
 		Be.multiz_turf_del(src, UP)
 
-	// DQEdit — `connections` (turf-to-turf ZAS edge list) and `S.zone` (ZAS zone
+	// `connections` (turf-to-turf ZAS edge list) and `S.zone` (ZAS zone
 	// reference) are both ZAS-only. Under LINDA, turf air adjacency is rebuilt
 	// via SSair.add_to_active() on the changed turf, called below.
 
@@ -78,7 +78,7 @@
 
 	var/turf/W = new N( locate(src.x, src.y, src.z) )
 	if(ispath(N, /turf/simulated/floor))
-		// DQEdit — W.fire was a ZAS hotspot pointer; LINDA hotspots are tracked
+		// W.fire was a ZAS hotspot pointer; LINDA hotspots are tracked
 		// in SSair.active_hotspots, not as a turf var.
 		W.RemoveLattice()
 	W.lighting_corners_initialised = old_lighting_corners_initialized
@@ -89,7 +89,7 @@
 	else if(istype(W_sim) && (SSplanets && SSplanets.z_to_planet.len >= z && SSplanets.z_to_planet[z]) && has_dynamic_lighting())
 		W_sim.shandler = new(src)
 		W_sim.shandler.manualInit()
-	// DQEdit — old_fire was ZAS-only; no-op under LINDA (no old fire to remove).
+	// old_fire was ZAS-only; no-op under LINDA (no old fire to remove).
 
 	if(tell_universe)
 		GLOB.universe.OnTurfChange(W)

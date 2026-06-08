@@ -1,4 +1,4 @@
-// DQEdit Start — reparent /turf/space → /turf/open so vacuum participates in
+// reparent /turf/space → /turf/open so vacuum participates in
 // LINDA's atmos graph (gas vents to space, breaches depressurize). Default
 // initial_gas_mix changed from OPENTURF_DEFAULT_ATMOS to AIRLESS_ATMOS so
 // space stays vacuum at spawn instead of inheriting a breathable mix.
@@ -14,7 +14,6 @@
 	thermal_conductivity = OPEN_HEAT_TRANSFER_COEFFICIENT
 	can_build_into_floor = TRUE
 	initial_gas_mix = AIRLESS_ATMOS
-// DQEdit End
 	var/keep_sprite = FALSE
 	var/edge = FALSE //If we're an edge
 	var/forced_dirs = 0 //Force this one to pretend it's an overedge turf

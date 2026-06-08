@@ -25,7 +25,7 @@
 		if(!O.MayRespawn())
 			continue
 		if(O.client)
-			if(O.client.prefs.read_preference(/datum/preference/numeric/human/be_special) & BE_ALIEN) // DQEdit — migrated
+			if(O.client.prefs.read_preference(/datum/preference/numeric/human/be_special) & BE_ALIEN) // migrated
 				question(O.client)
 
 /obj/item/slime_cube/proc/question(client/C)
@@ -40,7 +40,7 @@
 		if(response == "Yes")
 			transfer_personality(C.mob)
 		else if(response == "Never for this round")
-			C.prefs.update_preference_by_type(/datum/preference/numeric/human/be_special, C.prefs.read_preference(/datum/preference/numeric/human/be_special) ^ BE_ALIEN) // DQEdit — migrated
+			C.prefs.update_preference_by_type(/datum/preference/numeric/human/be_special, C.prefs.read_preference(/datum/preference/numeric/human/be_special) ^ BE_ALIEN) // migrated
 
 /obj/item/slime_cube/proc/reset_search() //We give the players sixty seconds to decide, then reset the timer.
 	icon_state = "slime cube"
@@ -145,7 +145,7 @@
 	light_range = 6
 	on = 1 //Bio-luminesence has one setting, on.
 	power_use = 0
-	light_system = STATIC_LIGHT //CHOMPEdit
+	light_system = STATIC_LIGHT
 	special_handling = TRUE
 
 /obj/item/flashlight/slime/Initialize(mapload)

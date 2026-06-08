@@ -183,7 +183,7 @@
 
 /obj/item/clothing/head/rabbitears
 	name = "rabbit ears"
-	desc = "A pair of rabbit ears!" //CHOMPEDIT:weird description bgone
+	desc = "A pair of rabbit ears!" // weird description bgone
 	icon_state = "bunny"
 	body_parts_covered = 0
 
@@ -870,7 +870,6 @@
 	desc = "A tophat that is far too small to properly sit on someone's head!"
 	icon_state = "tiny_tophat"
 
-// CHOMPEdit Start
 /obj/item/clothing/head/halo
 	name = "holographic demonic halo"
 	desc = "A hologram displaying a demonic halo."
@@ -881,7 +880,6 @@
 /obj/item/clothing/head/halo/alt
 	icon = 'icons/inventory/head/item.dmi'
 	default_worn_icon = 'icons/inventory/head/mob.dmi'
-// CHOMPEdit End
 
 //Replikant Hat
 

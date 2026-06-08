@@ -608,7 +608,7 @@
 	name = REAGENT_SNOWWHITE
 	id = REAGENT_ID_SNOWWHITE
 	result = REAGENT_ID_SNOWWHITE
-	required_reagents = list(REAGENT_ID_PINEAPPLEJUICE = 1, REAGENT_ID_RUM = 1, REAGENT_ID_LEMONLIME = 1, REAGENT_ID_EGG = 1, REAGENT_ID_KAHLUA = 1, REAGENT_ID_SUGAR = 1) //VoreStation Edit
+	required_reagents = list(REAGENT_ID_PINEAPPLEJUICE = 1, REAGENT_ID_RUM = 1, REAGENT_ID_LEMONLIME = 1, REAGENT_ID_EGG = 1, REAGENT_ID_KAHLUA = 1, REAGENT_ID_SUGAR = 1) // Edit
 	result_amount = 2
 
 /datum/decl/chemical_reaction/instant/drinks/irishcarbomb

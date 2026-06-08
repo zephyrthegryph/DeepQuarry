@@ -1,4 +1,4 @@
-// DQAdd — extensions to /datum/preference that bring it in line with the new architecture.
+// extensions to /datum/preference that bring it in line with the new architecture.
 //   Adds:
 //   - group (sub-category within a category)
 //   - widget hint
@@ -88,7 +88,7 @@
 /datum/preference/proc/get_pref_choices(datum/preferences/preferences)
 	return null
 
-// DQAdd — Auto-validation for any text pref that declares a choice set via
+// Auto-validation for any text pref that declares a choice set via
 // get_pref_choices(). The text base's is_valid checks only length, so a forged Topic
 // could write any short string into h_style / b_type / faction / etc. and pass. With
 // this override, the contextual gate (validate()) walks the declared choices for the
@@ -116,7 +116,7 @@
 /datum/preference/proc/get_pref_thumbnails(datum/preferences/preferences)
 	return null
 
-// DQAdd — /datum/preference/choiced already has get_choices() returning either a flat list
+// /datum/preference/choiced already has get_choices() returning either a flat list
 // of raw values OR an assoc value->icon/atom (when should_generate_icons). The auto-renderer
 // only needs the value strings, so flatten to a JSON-safe list of keys.
 /datum/preference/choiced/get_pref_choices(datum/preferences/preferences)
@@ -133,7 +133,7 @@
 ///
 /// The contextual gate `validate(preferences, value)` is defined upstream in
 /// /datum/preference/proc/validate (see code/modules/client/preferences/_preference.dm
-/// DQAdd block) — this proc just chains through it.
+// / block) — this proc just chains through it.
 /datum/preference/proc/sanitize(value, datum/preferences/preferences)
 	if(validate(preferences, value))
 		return value

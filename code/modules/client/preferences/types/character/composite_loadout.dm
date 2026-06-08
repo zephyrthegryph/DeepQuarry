@@ -105,7 +105,7 @@
 	return
 
 
-// DQEdit — gear_slot was numeric (1/2/3) under the old "you have 3 loadout slots" model.
+// gear_slot was numeric (1/2/3) under the old "you have 3 loadout slots" model.
 // New shape: the editor target is a job title (or the literal "_default") indicating
 // which per-job loadout is being edited / applied. Stored as text now.
 /datum/preference/text/human/gear_slot

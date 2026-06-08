@@ -23,9 +23,8 @@ somewhere on that shuttle. Subtypes of these can be then used to perform ship ov
 	. = attempt_hook_up_recursive(sector)
 	if(. && linked && user)
 		to_chat(user, span_notice("[src] reconnected to [linked]"))
-		// DQEdit Start — reconnect dialog is TGUI now; close via SStgui
+		// reconnect dialog is TGUI now; close via SStgui
 		SStgui.close_uis(src)
-		// DQEdit End
 
 /obj/machinery/computer/ship/proc/attempt_hook_up_recursive(obj/effect/overmap/visitable/ship/sector)
 	if(attempt_hook_up(sector))
@@ -37,11 +36,10 @@ somewhere on that shuttle. Subtypes of these can be then used to perform ship ov
 /obj/machinery/computer/ship/proc/display_reconnect_dialog(mob/user, flavor)
 	if(viewing_overmap(user))
 		user.reset_perspective()
-	// DQEdit Start — was an admin_log_show error popup; now a tgui_alert with a single Reconnect choice.
+	// was an admin_log_show error popup; now a tgui_alert with a single Reconnect choice.
 	if(tgui_alert(user, "Unable to connect to [flavor].", "[src]", list("Reconnect", "Close")) == "Reconnect")
 		if(sync_linked(user))
 			interface_interact(user)
-	// DQEdit End
 
 /obj/machinery/computer/ship/Topic(href, href_list)
 	if(..())

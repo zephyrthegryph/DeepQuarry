@@ -12,7 +12,7 @@
 	botcard_access = list(ACCESS_SECURITY, ACCESS_SEC_DOORS, ACCESS_FORENSICS_LOCKERS, ACCESS_MAINT_TUNNELS)
 	patrol_speed = 2
 	target_speed = 3
-	max_frustration = 7	//CHOMPEdit
+	max_frustration = 7
 
 	density = TRUE
 
@@ -38,7 +38,7 @@
 	var/list/threat_found_sounds = list('sound/voice/bcriminal.ogg', 'sound/voice/bjustice.ogg', 'sound/voice/bfreeze.ogg')
 	var/list/preparing_arrest_sounds = list('sound/voice/bgod.ogg', 'sound/voice/biamthelaw.ogg', 'sound/voice/bsecureday.ogg', 'sound/voice/bradio.ogg', 'sound/voice/bcreep.ogg')
 	var/list/fighting_sounds = list('sound/voice/biamthelaw.ogg', 'sound/voice/bradio.ogg', 'sound/voice/bjustice.ogg')
-//VOREStation Add - They don't like being pulled. This is going to fuck with slimesky, but meh.	//Screw you. Just screw you and your 'meh'
+// They don't like being pulled. This is going to fuck with slimesky, but meh. //Screw you. Just screw you and your 'meh'
 /mob/living/bot/secbot/Life()
 	..()
 	if(health > 0 && on && pulledby)
@@ -52,7 +52,6 @@
 				UnarmedAttack(L)
 				say("Do not interfere with active law enforcement routines!")
 				GLOB.global_announcer.autosay("[src] was interfered with in <b>[get_area(src)]</b>, activating defense routines.", "[src]", "Security")
-//VOREStation Add End
 /mob/living/bot/secbot/beepsky
 	name = "Officer Beepsky"
 	desc = "It's Officer Beep O'sky! Powered by a potato and a shot of whiskey."

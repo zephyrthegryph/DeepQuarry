@@ -3,7 +3,7 @@
 	icon_state = "girder"
 	anchored = TRUE
 	density = TRUE
-	layer = TABLE_LAYER //CHOMPEdit - moved so that they render above catwalks.
+	layer = TABLE_LAYER // moved so that they render above catwalks.
 	w_class = ITEMSIZE_HUGE
 	var/state = 0
 	var/health = 200
@@ -41,7 +41,7 @@
 		return
 
 /obj/structure/girder/proc/radiate()
-	// DQEdit — radioactivity moved to a component on /datum/material.
+	// radioactivity moved to a component on /datum/material.
 	var/total_radiation = dq_material_radioactivity(girder_material) + (reinf_material ? dq_material_radioactivity(reinf_material) / 2 : 0)
 	if(!total_radiation)
 		return FALSE

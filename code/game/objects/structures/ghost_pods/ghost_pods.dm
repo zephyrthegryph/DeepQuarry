@@ -64,11 +64,11 @@
 			if(tgui_alert(user, "Are you sure you want to touch \the [src]?", "Confirm", list("No", "Yes")) != "Yes")
 				return
 		trigger()
-		// VOREStation Addition Start
+		// ition Start
 		if(!used)
 			activated = TRUE
 			ghostpod_startup(FALSE)
-		// VOREStation Addition End
+		// ition End
 
 /obj/structure/ghost_pod/manual/attack_ai(mob/living/silicon/user)
 	if(Adjacent(user))
@@ -94,7 +94,6 @@
 	description_info = "A ghost can click on this to return to the round as whatever is contained inside this object."
 
 /obj/structure/ghost_pod/ghost_activated/attack_ghost(mob/observer/dead/user)
-	//VOREStation Add Start
 	if(jobban_isbanned(user, JOB_GHOSTROLES))
 		to_chat(user, span_warning("You cannot inhabit this creature because you are banned from playing ghost roles."))
 		return
@@ -103,7 +102,6 @@
 	if (not_has_ooc_text(user))
 		return
 
-	//VOREStation Add End
 	if(used)
 		to_chat(user, span_warning("Another spirit appears to have gotten to \the [src] before you.  Sorry."))
 		return

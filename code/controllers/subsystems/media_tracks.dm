@@ -120,7 +120,7 @@ SUBSYSTEM_DEF(media_tracks)
 			if(!songdata["url"] || !songdata["title"] || !songdata["duration"])
 				to_chat(C, span_warning("URL, Title, or Duration was missing from a song. Skipping."))
 				continue
-			var/datum/track/T = new(songdata["url"], songdata["title"], songdata["duration"], songdata["artist"], songdata["genre"], songdata["secret"], songdata["lobby"], songdata["casino"]) //ChompEDIT, included 'casino'
+			var/datum/track/T = new(songdata["url"], songdata["title"], songdata["duration"], songdata["artist"], songdata["genre"], songdata["secret"], songdata["lobby"], songdata["casino"]) // , included 'casino'
 			all_tracks += T
 
 			report_progress("New media track added by [C]: [T.title]")

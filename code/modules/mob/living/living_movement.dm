@@ -268,7 +268,7 @@ default behaviour is:
 /mob/living/Moved(atom/oldloc, direct, forced, movetime)
 	. = ..()
 	handle_footstep(loc)
-	if(!forced && movetime /* && !is_incorporeal()*/) // CHOMPEdit
+	if(!forced && movetime /* && !is_incorporeal()*/)
 		SSmotiontracker?.ping(src) // Incase of before init "turf enter gravity" this is ?, unfortunately.
 	if(is_shifted)
 		is_shifted = FALSE

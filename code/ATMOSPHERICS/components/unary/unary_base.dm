@@ -38,14 +38,13 @@
 	return null
 
 /obj/machinery/atmospherics/unary/Destroy()
-	// DQEdit Start — disconnect/qdel BEFORE ..() so node deref is valid.
+	// disconnect/qdel BEFORE ..() so node deref is valid.
 	if(node)
 		node.disconnect(src)
 		qdel(network)
 
 	node = null
 	return ..()
-	// DQEdit End
 
 /obj/machinery/atmospherics/unary/atmos_init()
 	if(node)
@@ -116,7 +115,7 @@
 			return TRUE
 	return FALSE
 
-//CHOMPEdit Start - Keybinds for EVEEERYTHING* (* = not everything))
+// Keybinds for EVEEERYTHING* (* = not everything))
 /obj/machinery/atmospherics/unary/click_ctrl(mob/user)
 	if((power_rating != null) && !(pipe_state in list("scrubber", "uvent", "injector"))) //TODO: Add compatibility with air alarm. When not disabled, overrides air alarm state and doesn't tell the air alarm that. Injectors have their own, different bind for enabling.
 		user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
@@ -131,4 +130,3 @@
 
 		else
 			to_chat(user, span_warning("Access denied."))
-//CHOMPEdit End

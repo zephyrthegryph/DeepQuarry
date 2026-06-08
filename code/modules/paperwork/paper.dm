@@ -44,10 +44,10 @@
 	var/const/deffont = "Verdana"
 	var/const/signfont = "Times New Roman"
 	var/const/crayonfont = "Comic Sans MS"
-	// DQEdit — TGUI: "read" or "write" view. attack_self/show_content sets
+	// TGUI: "read" or "write" view. attack_self/show_content sets
 	// to "read"; attackby pen sets to "write".
 	var/tgui_view = "read"
-	// DQEdit — TGUI: TRUE = caller is allowed to read clear text (humans,
+	// TGUI: TRUE = caller is allowed to read clear text (humans,
 	// silicons, observers, universal_understand). FALSE = stars(info).
 	var/tmp/can_read_view = TRUE
 	resistance_flags = FLAMMABLE
@@ -157,7 +157,7 @@
 	else
 		. += span_notice("You have to go closer if you want to read it.")
 
-// DQEdit Start — TGUI migration. show_content opens Paper.tsx in "read"
+// TGUI migration. show_content opens Paper.tsx in "read"
 // view; attackby pen sets the view to "write" before opening so the
 // info_links HTML (with editable field hrefs) is rendered. The Topic
 // handler is unchanged — byond:// hrefs embedded in info_links still
@@ -279,7 +279,6 @@
 	update_space(t)
 	playsound(src, pick('sound/bureaucracy/pen1.ogg', 'sound/bureaucracy/pen2.ogg'), 10)
 	update_icon()
-// DQEdit End
 
 /obj/item/paper/verb/rename()
 	set name = "Rename paper"
@@ -325,7 +324,7 @@
 				spam_flag = 0
 	return
 
-// DQEdit — AI/cyborg viewer routes through the same TGUI paper window.
+// AI/cyborg viewer routes through the same TGUI paper window.
 /obj/item/paper/attack_ai(mob/living/silicon/ai/user)
 	var/dist
 	if(istype(user) && user.camera)
@@ -548,7 +547,7 @@
 /obj/item/paper/attackby(obj/item/P, mob/user)
 	..()
 	var/clown = 0
-	if(user.mind && ((user.mind.role_alt_title == JOB_CLOWN) || (user.mind.role_alt_title == JOB_ALT_JESTER) || (user.mind.role_alt_title == JOB_ALT_FOOL))) // CHOMPStation Edit - Let clows/fools/jesters use clown stamps
+	if(user.mind && ((user.mind.role_alt_title == JOB_CLOWN) || (user.mind.role_alt_title == JOB_ALT_JESTER) || (user.mind.role_alt_title == JOB_ALT_FOOL))) // Let clows/fools/jesters use clown stamps
 		clown = 1
 
 	if(istype(P, /obj/item/tape_roll))
@@ -625,7 +624,7 @@
 		if(istype(RP) && RP.mode == 2)
 			RP.RenamePaper(user, src)
 		else
-			// DQEdit — pen interact opens Paper.tsx in "write" view; the
+			// pen interact opens Paper.tsx in "write" view; the
 			// info_links HTML rendered there still carries the field hrefs
 			// that route back to Topic for the actual write action.
 			can_read_view = TRUE

@@ -18,7 +18,7 @@
 
 /datum/event/wallrot/announce()
 	if(center)
-		GLOB.command_announcement.Announce("Harmful fungi detected on \the [station_name()]. Hull integrity near [center.loc.name] may be compromised.", "Hazardous Biomass", ANNOUNCER_MSG_WALLROT) //CHOMPEdit - Wording
+		GLOB.command_announcement.Announce("Harmful fungi detected on \the [station_name()]. Hull integrity near [center.loc.name] may be compromised.", "Hazardous Biomass", ANNOUNCER_MSG_WALLROT) // Wording
 
 /datum/event/wallrot/start()
 	spawn()

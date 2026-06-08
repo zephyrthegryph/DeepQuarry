@@ -12,7 +12,7 @@ SUBSYSTEM_DEF(transfer)
 
 /datum/controller/subsystem/transfer/Initialize()
 	timerbuffer = CONFIG_GET(number/vote_autotransfer_initial)
-	shift_hard_end = CONFIG_GET(number/vote_autotransfer_initial) + (CONFIG_GET(number/vote_autotransfer_interval) * 2) //CHOMPStation Edit //Change this "1" to how many extend votes you want there to be.
+	shift_hard_end = CONFIG_GET(number/vote_autotransfer_initial) + (CONFIG_GET(number/vote_autotransfer_interval) * 2) // //Change this "1" to how many extend votes you want there to be.
 	shift_last_vote = shift_hard_end - CONFIG_GET(number/vote_autotransfer_interval)
 	return SS_INIT_SUCCESS
 

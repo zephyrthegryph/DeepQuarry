@@ -335,7 +335,7 @@ GLOBAL_LIST_EMPTY(mob_hat_cache)
 		if(jobban_isbanned(O, JOB_CYBORG))
 			continue
 		if(O.client)
-			if(O.client.prefs.read_preference(/datum/preference/numeric/human/be_special) & BE_PAI) // DQEdit — migrated
+			if(O.client.prefs.read_preference(/datum/preference/numeric/human/be_special) & BE_PAI) // migrated
 				question(O.client)
 
 /mob/living/silicon/robot/drone/proc/question(client/C)
@@ -347,7 +347,7 @@ GLOBAL_LIST_EMPTY(mob_hat_cache)
 		if(response == "Yes")
 			transfer_personality(C)
 		else if (response == "Never for this round")
-			C.prefs.update_preference_by_type(/datum/preference/numeric/human/be_special, C.prefs.read_preference(/datum/preference/numeric/human/be_special) ^ BE_PAI) // DQEdit — migrated
+			C.prefs.update_preference_by_type(/datum/preference/numeric/human/be_special, C.prefs.read_preference(/datum/preference/numeric/human/be_special) ^ BE_PAI) // migrated
 
 /mob/living/silicon/robot/drone/proc/transfer_personality(client/player)
 

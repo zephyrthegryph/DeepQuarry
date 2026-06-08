@@ -124,7 +124,7 @@
 		return
 
 	// Take some gas up from our environment.
-	// DQEdit — was iterating XGM `uptake_gas.gas`; under LINDA use gas_ids().
+	// was iterating XGM `uptake_gas.gas`; under LINDA use gas_ids().
 	// Also dropped the added_particles sentinel that gated a now-removed
 	// update_values() call.
 	var/datum/gas_mixture/uptake_gas = owned_core.loc.return_air()
@@ -305,7 +305,7 @@
 		plasma.adjust_gas(GAS_O2, (size*100), 0)
 		plasma.adjust_gas(GAS_PHORON, (size*100), 0)
 		plasma.temperature = (plasma_temperature/2)
-		// DQEdit — plasma.update_values() removed; no-op under LINDA.
+		// plasma.update_values() removed; no-op under LINDA.
 		T.assume_air(plasma)
 		T.hotspot_expose(plasma_temperature)
 		plasma = null
@@ -653,7 +653,7 @@
 			plasma.adjust_gas(GAS_O2, (size*100), 0)
 			plasma.adjust_gas(GAS_PHORON, (size*100), 0)
 			plasma.temperature = (plasma_temperature/2)
-			// DQEdit — plasma.update_values() removed; no-op under LINDA.
+			// plasma.update_values() removed; no-op under LINDA.
 			TT.assume_air(plasma)
 			TT.hotspot_expose(plasma_temperature)
 			plasma = null
@@ -669,7 +669,7 @@
 		plasma.adjust_gas(GAS_O2, (size*100), 0)
 		plasma.adjust_gas(GAS_PHORON, (size*100), 0)
 		plasma.temperature = (plasma_temperature/2)
-		// DQEdit — plasma.update_values() removed; no-op under LINDA.
+		// plasma.update_values() removed; no-op under LINDA.
 		TT.assume_air(plasma)
 		TT.hotspot_expose(plasma_temperature)
 		plasma = null

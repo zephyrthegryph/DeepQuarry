@@ -24,7 +24,7 @@
 
 	var/update_icon_define = null	// Only needed if you've got multiple files for the same type of clothing
 
-	var/polychromic = FALSE //VOREStation edit
+	var/polychromic = FALSE
 
 	var/update_icon_define_orig = null	// temp storage for original update_icon_define (if it exists)
 	var/update_icon_define_digi = null	// dmi used for the digi sprites
@@ -43,10 +43,10 @@
 			src.attach_accessory(null, tie)
 	set_clothing_index()
 
-	//VOREStation edit start
+	// start
 	if(polychromic)
 		verbs |= /obj/item/clothing/proc/change_color
-	//VOREStation edit start
+	// start
 
 /obj/item/clothing/update_icon()
 	cut_overlays() //This removes all the overlays on the sprite and then goes down a checklist adding them as required.
@@ -188,7 +188,7 @@
 	else
 		icon = initial(icon)
 
-//VOREStation edit start
+// start
 /obj/item/clothing/proc/change_color()
 	set name = "Change Color"
 	set category = "Object"
@@ -204,7 +204,7 @@
 		color = new_color
 	update_icon()
 	update_clothing_icon()
-//VOREStation edit end
+// end
 
 ///////////////////////////////////////////////////////////////////////
 // Ears: headsets, earmuffs and tiny objects
@@ -707,13 +707,13 @@
 	if(user.stat || user.restrained() || user.incapacitated())
 		return
 
-	//CHOMPEdit begin
+	// begin
 	if(istype(user, /mob/living/carbon/human))
 		var/mob/living/carbon/human/H = user
 		if(H.ability_flags & 0x1)
 			to_chat(user, span_warning("You cannot do that while phase shifted."))
 			return
-	//CHOMPEdit end
+	// end
 
 	holding.forceMove(get_turf(user))
 
@@ -769,11 +769,11 @@
 	. = ..()
 	if(holding)
 		add_overlay("[icon_state]_knife")
-	// DQEdit — .contaminated + GLOB.contamination_overlay branch removed;
+	// .contaminated + GLOB.contamination_overlay branch removed;
 	// see /obj/item/wash for the matching cleanup.
-	if(gurgled) //VOREStation Edit Start
+	if(gurgled)
 		wash(CLEAN_ALL)
-		gurgle_contaminate() //VOREStation Edit End
+		gurgle_contaminate()
 	if(ismob(usr))
 		var/mob/M = usr
 		M.update_inv_shoes()

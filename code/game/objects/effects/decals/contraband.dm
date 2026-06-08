@@ -4,7 +4,7 @@
 /obj/item/contraband
 	name = "contraband item"
 	desc = "You probably shouldn't be holding this."
-	icon = 'icons/obj/contraband_vr.dmi' //VOREStation Edit
+	icon = 'icons/obj/contraband_vr.dmi'
 	force = 0
 
 
@@ -128,7 +128,7 @@
 /obj/structure/sign/poster
 	name = "poster"
 	desc = "A large piece of space-resistant printed paper. "
-	icon = 'icons/obj/contraband_vr.dmi' //VOREStation Edit
+	icon = 'icons/obj/contraband_vr.dmi'
 	anchored = TRUE
 	var/serial_number	//Will hold the value of src.loc if nobody initialises it
 	var/poster_type		//So mappers can specify a desired poster

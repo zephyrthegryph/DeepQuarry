@@ -45,7 +45,7 @@
 			toxmob(A)
 		if((istype(A,/obj/machinery/the_singularitygen))||(istype(A,/obj/singularity/))||(istype(A, /obj/machinery/particle_smasher)))
 			A:energy += energy
-		// DQEdit — R-UST fusion core and particle catcher deleted with the fusion
+		// R-UST fusion core and particle catcher deleted with the fusion
 		// subsystem (depended on /obj/effect/fusion_em_field in core_field.dm).
 		// Particles passing through where a fusion core used to be just continue
 		// flying; if fusion is re-implemented on LINDA the energy-transfer branches

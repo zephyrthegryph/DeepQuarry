@@ -11,8 +11,8 @@
 	description_antag = "Some fishing rods can be utilized as long-range, sharp weapons, though their pseudo ranged ability comes at the cost of slow speed."
 	icon_state = "fishing_rod"
 	item_state = "fishing_rod"
-	force_divisor = 0.02	//VOREStation Edit
-	throwforce = 1		//VOREStation Edit
+	force_divisor = 0.02
+	throwforce = 1
 	sharp = TRUE
 	attack_verb = list("whipped", "battered", "slapped", "fished", "hooked")
 	hitsound = 'sound/weapons/punchmiss.ogg'
@@ -90,7 +90,7 @@
 			if(re.id == REAGENT_ID_NUTRIMENT || re.id == REAGENT_ID_PROTEIN || re.id == REAGENT_ID_GLUCOSE || re.id == REAGENT_ID_FISHBAIT)
 				foodvolume += re.volume
 
-		toolspeed = initial(toolspeed) * 10*(0.01/(0.2*(foodvolume/Bait.reagents.maximum_volume + 0.5))) //VOREStation edit: gives fishing a universal formula because Polaris' doesn't work here. Min value of 1, max value of 1/3, 0.5 at 1/2 filled with bait reagents.
+		toolspeed = initial(toolspeed) * 10*(0.01/(0.2*(foodvolume/Bait.reagents.maximum_volume + 0.5))) // gives fishing a universal formula because Polaris' doesn't work here. Min value of 1, max value of 1/3, 0.5 at 1/2 filled with bait reagents.
 
 	else
 		toolspeed = initial(toolspeed)

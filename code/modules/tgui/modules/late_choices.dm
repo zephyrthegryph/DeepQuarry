@@ -8,7 +8,7 @@
 	return STATUS_INTERACTIVE
 
 /proc/get_user_job_priority(mob/user, datum/job/job)
-	// DQEdit — was: GetJobDepartment(job, level) & job.flag bitwise check per level.
+	// was: GetJobDepartment(job, level) & job.flag bitwise check per level.
 	. = 0
 	if(!user?.client?.prefs)
 		return
@@ -80,10 +80,9 @@
 			if(!character_old_enough_for_job(user.client.prefs, job))
 				continue
 
-			//CHOMPEdit Begin - Check species job bans... (Only used for shadekin)
+			// Check species job bans... (Only used for shadekin)
 			if(job.is_species_banned(user.client.prefs.read_preference(/datum/preference/choiced/species), user.client.prefs.read_preference(/datum/preference/organ_data)?[O_BRAIN]))
 				continue
-			//CHOMPEdit End
 
 			var/active = 0
 			// Only players with the job assigned and AFK for less than 10 minutes count as active

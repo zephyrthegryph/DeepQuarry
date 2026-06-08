@@ -65,7 +65,7 @@
 	if(power_usage)
 		if(cell.use(power_usage) != power_usage) // we weren't able to use our full power_usage amount!
 			visible_message(span_warning("\The [src] flickers before going dull."))
-			playsound(src, 'sound/effects/sparks3.ogg', 10, 1, -3) //Small cue that your light went dull in your pocket. //VOREStation Edit
+			playsound(src, 'sound/effects/sparks3.ogg', 10, 1, -3) // Small cue that your light went dull in your pocket. //
 			on = 0
 			update_brightness()
 			return PROCESS_KILL
@@ -406,7 +406,7 @@
 /obj/item/flashlight/flare
 	name = "flare"
 	desc = "A red standard-issue flare. There are instructions on the side reading 'pull cord, make light'."
-	w_class = ITEMSIZE_TINY // CHOMPedit: These can fit in more places.
+	w_class = ITEMSIZE_TINY // These can fit in more places.
 	light_range = 8 // Pretty bright.
 	light_power = 0.8
 	light_color = LIGHT_COLOR_FLARE
@@ -473,7 +473,7 @@
 /obj/item/flashlight/glowstick
 	name = "green glowstick"
 	desc = "A green military-grade chemical light."
-	w_class = ITEMSIZE_TINY // CHOMPedit: These can fit in more places.
+	w_class = ITEMSIZE_TINY // These can fit in more places.
 	light_system = MOVABLE_LIGHT
 	light_range = 4
 	light_power = 0.9

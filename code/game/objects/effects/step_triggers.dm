@@ -16,7 +16,7 @@ GLOBAL_LIST_EMPTY(mapped_autostrips_mob)
 
 /obj/effect/step_trigger/Crossed(atom/movable/H as mob|obj)
 	if((istype(H, /mob/observer) && !affect_ghosts) || (!istype(H, /mob/observer) && H.is_incorporeal() && !affect_ghosts))
-		return	//CHOMPEdit: Fixing some step trigger stuff to coincide with incorporeal check changes
+		return // Fixing some step trigger stuff to coincide with incorporeal check changes
 	..()
 	if(!H)
 		return

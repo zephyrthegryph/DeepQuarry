@@ -1,4 +1,4 @@
-// DQAdd — Flavor text editor. Manages the 9 body-part flavor slots (general/head/face/eyes/
+// Flavor text editor. Manages the 9 body-part flavor slots (general/head/face/eyes/
 // torso/arms/hands/legs/feet) plus the robot module flavor map.
 
 /// Single source of truth for the body-part flavor slots — shared between the static-data
@@ -16,7 +16,7 @@
 	pref_keys = list("flavor_texts", "flavour_texts_robot")
 
 /datum/preference_editor/flavor/build_ui_data(datum/preferences/preferences)
-	// DQEdit — play_mode-derived is_robot flag is passed through so React
+	// play_mode-derived is_robot flag is passed through so React
 	// shows only the body flavor block for humans and only the robot flavor
 	// block for cyborgs (avoid having both visible at once when only one
 	// applies). pAI mode renders neither (configured via the dedicated

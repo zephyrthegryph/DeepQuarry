@@ -1,4 +1,4 @@
-// DQAdd — Language picker composite editor.
+// Language picker composite editor.
 // Manages alternate_languages list (species-aware available pool), language_prefixes
 // (the 3 radio prefix keys), and language_custom_keys (per-language radio keybind).
 //
@@ -61,7 +61,7 @@
 			preferences.update_preference_by_type(/datum/preference/alternate_languages, alt)
 			return PREF_UPDATE_ACCEPTED
 		if("set_prefix")
-			// DQEdit — prompt the user for the prefix character. The TGUI side only sends
+			// prompt the user for the prefix character. The TGUI side only sends
 			// the slot index; we ask for the character here so the user can actually type it.
 			var/list/prefixes = preferences.read_preference(/datum/preference/language_prefixes) || list()
 			var/idx = text2num(params["index"])
@@ -85,7 +85,7 @@
 			preferences.update_preference_by_type(/datum/preference/language_prefixes, defaults.Copy())
 			return PREF_UPDATE_ACCEPTED
 		if("set_custom_key")
-			// DQEdit — prompt for the key. Replaces any prior binding for that key.
+			// prompt for the key. Replaces any prior binding for that key.
 			var/list/keys = preferences.read_preference(/datum/preference/language_custom_keys) || list()
 			var/lang = params["language"]
 			var/typed = tgui_input_text(user, "Bind language '[lang]' to which single character?", "Language Key", null, 1)

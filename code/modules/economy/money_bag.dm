@@ -9,7 +9,7 @@
 	w_class = ITEMSIZE_LARGE
 
 /obj/item/moneybag/attack_hand(user as mob)
-	// DQEdit — structured TGUI Moneybag (see
+	// structured TGUI Moneybag (see
 	// code/modules/admin/moneybag_panel.dm).
 	tgui_interact(user)
 

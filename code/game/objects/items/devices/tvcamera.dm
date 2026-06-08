@@ -56,8 +56,7 @@
 	user.set_machine(src)
 	show_ui(user)
 
-// DQEdit Start — show_ui body moved to code/modules/tvcamera_panel.dm (structured TGUI).
-// DQEdit End
+// show_ui body moved to code/modules/tvcamera_panel.dm (structured TGUI).
 
 /obj/item/tvcamera/Topic(bred, href_list, state = GLOB.tgui_physical_state)
 	if(..())
@@ -115,7 +114,6 @@
 
 /obj/item/tvcamera/afterattack(atom/target, mob/user, proximity_flag, click_parameters)
 	. = ..()
-	// CHOMPEdit
 	if(!camera)
 		return
 	if(camera.status && !isturf(target))
@@ -154,7 +152,7 @@
 	if(camera.status)
 		SEND_SIGNAL(camera, COMSIG_MOVABLE_ATTEMPTED_MOVE) // Forward the movement signal
 
-// CHOMPEdit Start - Bodycam
+// Bodycam
 // Security Bodycam
 
 /obj/item/clothing/accessory/bodycam
@@ -214,8 +212,7 @@
 	//user.set_machine(src)
 	show_bodycam_ui(user)
 
-// DQEdit Start — show_bodycam_ui body moved to code/modules/tvcamera_panel.dm (structured TGUI).
-// DQEdit End
+// show_bodycam_ui body moved to code/modules/tvcamera_panel.dm (structured TGUI).
 
 /obj/item/clothing/accessory/bodycam/Topic(bred, href_list, state = GLOB.tgui_physical_state)
 
@@ -309,7 +306,6 @@
 		H.update_inv_r_hand()
 		H.update_inv_l_hand()
 		H.update_inv_belt()
-// CHOMPEdit End
 
 //Assembly by roboticist
 

@@ -240,7 +240,7 @@
 			if(OB.stored_ore[ore] > 0)
 				var/ore_amount = OB.stored_ore[ore]									// How many ores does the box have?
 				ores_stored[ore] += ore_amount 										// Add the ore to the machine.
-				points += (ore_values[ore]*points_mult*ore_amount) 					// Give Points! VOREStation Edit - or give lots of points! or less points! or no points!
+				points += (ore_values[ore]*points_mult*ore_amount) // Give Points! or give lots of points! or less points! or no points!
 				OB.stored_ore[ore] = 0 												// Set the value of the ore in the box to 0.
 
 

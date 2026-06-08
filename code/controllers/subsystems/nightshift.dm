@@ -29,7 +29,7 @@ SUBSYSTEM_DEF(nightshift)
 	var/announce_z
 	if(length(using_map.station_levels))
 		announce_z = pick(using_map.station_levels)
-	//VOREStation Edit - TTS
+	// TTS
 	var/pickedsound
 	if(!high_security_mode)
 		if(nightshift_active)

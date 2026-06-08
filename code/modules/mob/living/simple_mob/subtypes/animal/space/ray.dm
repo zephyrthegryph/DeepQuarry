@@ -40,7 +40,7 @@
 	maxHealth = 125
 	health = 125
 	movement_cooldown = 0 // Carp go fast
-	// DQEdit — dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
+	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
 	response_help = "strokes the"
 	response_disarm = "gently pushes aside the"

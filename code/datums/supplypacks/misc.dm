@@ -77,7 +77,6 @@
 			/obj/item/toy/plushie/squid/orange,
 			/obj/item/toy/plushie/squid/yellow,
 			/obj/item/toy/plushie/squid/pink,
-			//VOREStation Add Start
 			/obj/item/toy/plushie/lizardplushie/kobold,
 			/obj/item/toy/plushie/slimeplushie,
 			/obj/item/toy/plushie/box,
@@ -97,17 +96,14 @@
 			/obj/item/toy/plushie/dragon/green_east,
 			/obj/item/toy/plushie/dragon/white_east,
 			/obj/item/toy/plushie/dragon/gold_east,
-			//VOREStation Add End
 			//YawnWider Add Start
 			/obj/item/toy/plushie/teshari/_yw,
 			/obj/item/toy/plushie/teshari/w_yw,
 			/obj/item/toy/plushie/teshari/b_yw,
 			/obj/item/toy/plushie/teshari/y_yw,
 			//YawnWider Add End
-			//CHOMPStation Add Start
 			/obj/item/toy/plushie/teppi,
 			/obj/item/toy/plushie/teppi/alt
-			//CHOMPStation Add End
 			)
 	name = "Plushies Crate"
 	desc = "Five random plushies from AlliCo's wide selection!"
@@ -332,7 +328,7 @@
 	containertype = /obj/structure/closet/crate
 	containername = "emergency beacons crate"
 
-/datum/supply_pack/misc/swoopie //CHOMPAdd
+/datum/supply_pack/misc/swoopie
 	name = "SWOOPIE XL CleanBot Kit"
 	contains = list()
 	cost = 100

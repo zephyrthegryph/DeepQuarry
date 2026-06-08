@@ -46,8 +46,8 @@
 
 /obj/item/disk/limb/eggnerdltdred
 	company = "Eggnerd Prototyping Ltd. (Red)"
-	icon = 'icons/obj/items.dmi'	//VOREStation add. Use the right sprites
-	icon_state = "verkdisk"			//VOREStation add. Use the right sprites
+	icon = 'icons/obj/items.dmi' // add. Use the right sprites
+	icon_state = "verkdisk" // add. Use the right sprites
 
 
 //Darkside Incorperated synthetic augmentation list! Many current most used fuzzy and notsofuzzy races made into synths here.
@@ -169,9 +169,9 @@ VS Edit - anyone can select these. */
 
 /datum/robolimb/dsi_teshari/New()
 	species_cannot_use = GLOB.all_species.Copy()
-	species_cannot_use -= SPECIES_TESHARI //VOREStation add - let 'em be selected.
-	species_cannot_use -= SPECIES_CUSTOM //VOREStation add - let 'em be selected.
-	species_cannot_use -= SPECIES_PROTEAN //VOREStation add - let 'em be selected.
+	species_cannot_use -= SPECIES_TESHARI // add - let 'em be selected.
+	species_cannot_use -= SPECIES_CUSTOM // add - let 'em be selected.
+	species_cannot_use -= SPECIES_PROTEAN // add - let 'em be selected.
 	..()
 
 /obj/item/disk/limb/dsi_teshari

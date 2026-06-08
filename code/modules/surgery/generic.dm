@@ -37,8 +37,8 @@
 	)
 	req_open = 0
 
-	min_duration = 40 //CHOMPedit
-	max_duration = 50 //CHOMPedit
+	min_duration = 40
+	max_duration = 50
 
 /datum/surgery_step/generic/cut_open/can_use(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
 	if(..())
@@ -86,8 +86,8 @@
 	)
 	priority = 2
 	req_open = 0
-	min_duration = 40 //CHOMPedit
-	max_duration = 50 //CHOMPedit
+	min_duration = 40
+	max_duration = 50
 	excludes_steps = list(/datum/surgery_step/generic/cut_open)
 
 /datum/surgery_step/generic/cut_with_laser/can_use(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
@@ -142,8 +142,8 @@
 
 	priority = 2
 	req_open = 0
-	min_duration = 60 //Chompedit
-	max_duration = 70 //CHOMPedit
+	min_duration = 60
+	max_duration = 70
 	excludes_steps = list(/datum/surgery_step/generic/cut_open)
 
 /datum/surgery_step/generic/incision_manager/can_use(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
@@ -193,8 +193,8 @@
 		/obj/item/assembly/mousetrap = 25
 	)
 
-	min_duration = 30 //CHOMPedit
-	max_duration = 30 //CHOMPedit
+	min_duration = 30
+	max_duration = 30
 
 /datum/surgery_step/generic/clamp_bleeders/can_use(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
 	if(..())
@@ -327,8 +327,8 @@
 		/obj/item/weldingtool = 25
 	)
 
-	min_duration = 30 //CHOMPedit
-	max_duration = 50 //CHOMPedit
+	min_duration = 30
+	max_duration = 50
 
 /datum/surgery_step/generic/cauterize/can_use(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
 	if(..())
@@ -372,8 +372,8 @@
 	)
 	req_open = 0
 
-	min_duration = 100 //CHOMPedit
-	max_duration = 120 //CHOMPedit
+	min_duration = 100
+	max_duration = 120
 
 /datum/surgery_step/generic/amputate/can_use(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
 	if (target_zone == O_EYES)	//there are specific steps for eye surgery

@@ -48,4 +48,4 @@
 	filename = "Starfire Report: Year 2565"
 	server_file_path = 'news_articles/starfire_report_2565.html'
 
-//End CHOMPedit
+// End

@@ -2,10 +2,10 @@
 	name = "ion rifle"
 	desc = "The RayZar Mk60 EW Halicon is a man portable anti-armor weapon designed to disable mechanical threats, produced by NT. Not the best of its type."
 	description_fluff = "RayZar is Ward-Takahashi’s main consumer weapons brand, known for producing and licensing a wide variety of specialist energy weapons of various types and quality primarily for the civilian market."
-	icon = 'icons/obj/64x32guns_ch.dmi' // CHOMPEdit: Gun Sprites
+	icon = 'icons/obj/64x32guns_ch.dmi' // Gun Sprites
 	icon_state = "ionrifle"
 	item_state = "ionrifle"
-	icon_expected_width = 64 // CHOMPEdit: Gun Sprites
+	icon_expected_width = 64 // Gun Sprites
 	wielded_item_state = "ionrifle-wielded"
 	w_class = ITEMSIZE_HUGE //CHOMP Edit.
 	force = 10
@@ -18,7 +18,7 @@
 /obj/item/gun/energy/ionrifle/pistol
 	name = "ion pistol"
 	desc = "The RayZar Mk63 EW Pan is a man portable anti-armor weapon designed to disable mechanical threats, produced by NT. This model sacrifices capacity for portability."
-	icon = 'icons/obj/gun.dmi' // CHOMPEdit: Gun Sprites
+	icon = 'icons/obj/gun.dmi' // Gun Sprites
 	icon_state = "ionpistol"
 	item_state = null
 	w_class = ITEMSIZE_NORMAL
@@ -26,12 +26,12 @@
 	slot_flags = SLOT_BELT|SLOT_HOLSTER
 	charge_cost = 480
 	projectile_type = /obj/item/projectile/ion/pistol
-	move_delay = 0 // CHOMPEdit: Pistols have move_delay of 0
+	move_delay = 0 // Pistols have move_delay of 0
 
 /obj/item/gun/energy/decloner
 	name = "biological demolecularisor"
 	desc = "A gun that discharges high amounts of controlled radiation to slowly break a target into component elements."
-	icon = 'icons/obj/gun.dmi' // CHOMPEdit: Gun Sprites
+	icon = 'icons/obj/gun.dmi' // Gun Sprites
 	icon_state = "decloner"
 	item_state = "decloner"
 	projectile_type = /obj/item/projectile/energy/declone
@@ -40,7 +40,7 @@
 	name = "floral somatoray"
 	desc = "A tool that discharges controlled radiation which induces mutation in plant cells."
 	description_fluff = "The floral somatoray is a relatively recent invention of the NanoTrasen corporation, turning a process that once involved transferring plants to massive mutating racks, into a remote interface. Do not look directly into the transmission end."
-	icon = 'icons/obj/gun.dmi' //CHOMPedit
+	icon = 'icons/obj/gun.dmi'
 	icon_state = "floramut100"
 	item_state = "floramut"
 	projectile_type = /obj/item/projectile/energy/floramut
@@ -343,7 +343,7 @@
 /obj/item/gun/energy/ionrifle/pistol
 	projectile_type = /obj/item/projectile/ion/pistol // still packs a punch but no AoE
 	w_class = ITEMSIZE_NORMAL //CHOMP Edit.
-	move_delay = 0 // CHOMPEdit: Pistols have move_delay of 0
+	move_delay = 0 // Pistols have move_delay of 0
 
 /obj/item/gun/energy/ionrifle/weak
 	projectile_type = /obj/item/projectile/ion/small

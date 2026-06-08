@@ -69,7 +69,7 @@
 
 /mob/living/simple_mob/vore/otie/feral //gets the pet2tame feature. starts out hostile tho so get gamblin'
 	name = "mutated feral otie"
-	desc = "The classic bioengineered longdog. No pets. Only bite. This one seems to have developed a mutation from an abnormally phoron-rich diet." //CHOMPedit
+	desc = "The classic bioengineered longdog. No pets. Only bite. This one seems to have developed a mutation from an abnormally phoron-rich diet."
 	tt_desc = "Otus phoronis"
 	icon_state = "photie"
 	icon_living = "photie"
@@ -90,7 +90,7 @@
 
 /mob/living/simple_mob/vore/otie/feral/chubby
 	name = "chubby mutated feral otie"
-	desc = "The classic bioengineered longdog. No pets. Only bite. This one seems to have developed a mutation from an abnormally phoron-rich diet. What an absolute unit." //CHOMPedit
+	desc = "The classic bioengineered longdog. No pets. Only bite. This one seems to have developed a mutation from an abnormally phoron-rich diet. What an absolute unit."
 	icon_state = "photiec"
 	icon_living = "photiec"
 	icon_rest = "photiec_rest"

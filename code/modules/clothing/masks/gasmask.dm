@@ -19,7 +19,7 @@
 /obj/item/clothing/mask/gas/filter_air(datum/gas_mixture/air)
 	var/datum/gas_mixture/gas_filtered = new
 
-	// DQEdit — LINDA_GAS_AMT is a read-only ternary expression macro; the old
+	// LINDA_GAS_AMT is a read-only ternary expression macro; the old
 	// `LINDA_GAS_AMT(air, g) -=` line is not assignable. Rewrite as a paired
 	// adjust_gas: transfer the filtered moles, then remove the same from air.
 	for(var/g in filtered_gases)

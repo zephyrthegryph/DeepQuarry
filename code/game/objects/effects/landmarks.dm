@@ -26,9 +26,8 @@
 			//delete_me = TRUE // see above, moving, always use this list with get_turf
 		if("JoinLateGateway")
 			GLOB.latejoin_gateway += loc
-			//GLOB.latejoin += loc				//VOREStation Addition // CHOMPRemove
+			// GLOB.latejoin += loc // ition // CHOMPRemove
 			delete_me = TRUE
-		//CHOMPEdit Begin
 		if("JoinLateStationGateway")
 			GLOB.latejoin_gatewaystation += loc
 			delete_me = TRUE
@@ -44,7 +43,6 @@
 		if("JoinLateTheDark")
 			GLOB.latejoin_thedark += loc
 			delete_me = TRUE
-		//CHOMPEdit End
 		if("JoinLateElevator")
 			GLOB.latejoin_elevator += loc
 			delete_me = TRUE

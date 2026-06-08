@@ -245,7 +245,7 @@
 			if(index == page)
 				dat = span_bold(dat)
 
-	// DQEdit — structured TGUI AdminReport.
+	// structured TGUI AdminReport.
 	dq_admin_report_html(usr, "Admin Playernotes", dat, src)
 
 /datum/admins/proc/player_has_info_legacy(key as text)
@@ -290,7 +290,7 @@
 	dat += "<br>"
 	dat += "<A href='byond://?src=\ref[src];[HrefToken()];add_player_info_legacy=[key]'>Add Comment</A><br>"
 
-	// DQEdit — structured TGUI AdminReport.
+	// structured TGUI AdminReport.
 	dq_admin_report_html(usr, "Info on [key]", dat, src)
 
 /datum/admins/Topic(href, href_list)

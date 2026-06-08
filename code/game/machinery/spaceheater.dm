@@ -15,7 +15,7 @@
 	name = "space heater"
 	desc = "Made by Space Amish using traditional space techniques, this heater is guaranteed not to set the station on fire."
 
-	light_system = STATIC_LIGHT	//CHOMPEdit, runtime cleanup
+	light_system = STATIC_LIGHT // , runtime cleanup
 	light_range = 3
 	light_power = 1
 	light_on = FALSE
@@ -63,7 +63,7 @@
 	if(panel_open)
 		add_overlay("sheater-open")
 	switch(state)
-		//CHOMPEdit start, fixing runtimes
+		// start, fixing runtimes
 		if(SHEATER_OFF)
 			set_light(0)
 			set_light_on(FALSE)
@@ -78,7 +78,7 @@
 			set_light_color("#00ccff")
 			set_light(3)
 			set_light_on(TRUE)
-		//CHOMPEdit end
+		// end
 
 /obj/machinery/space_heater/examine(mob/user)
 	. = ..()
@@ -123,9 +123,8 @@
 		user.visible_message(span_notice("[user] [panel_open ? "opens" : "closes"] the hatch on the [src]."), span_notice("You [panel_open ? "open" : "close"] the hatch on the [src]."))
 		update_icon()
 		if(!panel_open && user.check_current_machine(src))
-			// DQEdit Start — close TGUI panel (legacy browse(null))
+			// close TGUI panel (legacy browse(null))
 			SStgui.close_uis(src)
-			// DQEdit End
 			user.unset_machine()
 	else
 		..()

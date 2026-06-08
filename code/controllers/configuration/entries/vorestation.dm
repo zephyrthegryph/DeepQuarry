@@ -30,7 +30,7 @@
 
 /// Hours
 /datum/config_entry/number/pto_cap
-	default = 200 // CHOMPEdit
+	default = 200
 	protection = CONFIG_ENTRY_LOCKED
 
 /datum/config_entry/flag/require_flavor

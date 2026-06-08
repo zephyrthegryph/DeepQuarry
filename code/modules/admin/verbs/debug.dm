@@ -75,7 +75,7 @@ ADMIN_VERB(Cell, R_DEBUG, "Cell", "Display the atmos information of the current 
 	var/t = span_blue("Coordinates: [T.x],[T.y],[T.z]\n")
 	t += span_red("Temperature: [env.temperature]\n")
 	t += span_red("Pressure: [env.return_pressure()]kPa\n")
-	// DQEdit — was env.gas[g] (XGM); under LINDA env.gases[gas_type][MOLES].
+	// was env.gas[g] (XGM); under LINDA env.gases[gas_type][MOLES].
 	for(var/datum/gas/g as anything in env.gases)
 		var/moles = env.gases[g][MOLES]
 		t += span_blue("[g]: [moles] / [moles * R_IDEAL_GAS_EQUATION * env.temperature / env.volume]kPa\n")
@@ -197,11 +197,11 @@ ADMIN_VERB(cmd_display_del_log, R_DEBUG, "Display del() Log", "Display del's log
 
 	dellog += "</ol>"
 
-	// DQEdit — structured TGUI AdminReport.
+	// structured TGUI AdminReport.
 	dq_admin_report_html(user, "qdel() Log", dellog.Join())
 
 ADMIN_VERB(cmd_display_init_log, R_DEBUG, "Display Initialize() Log", "Displays a list of things that didn't handle Initialize() properly.", ADMIN_CATEGORY_DEBUG_INVESTIGATE)
-	// DQEdit — structured TGUI AdminReport.
+	// structured TGUI AdminReport.
 	dq_admin_report_html(user, "Initialize() Log", replacetext(SSatoms.InitLog(), "\n", "<br>"))
 
 ADMIN_VERB(cmd_display_overlay_log, R_DEBUG, "Display overlay Log", "Display SSoverlays log of everything that's passed through it.", ADMIN_CATEGORY_DEBUG_INVESTIGATE)
@@ -217,7 +217,7 @@ ADMIN_VERB(cmd_display_overlay_log, R_DEBUG, "Display overlay Log", "Display SSo
 		lines += "[entry] => [num2text(data[STAT_ENTRY_TIME], 10)]ms ([data[STAT_ENTRY_COUNT]]) (avg:[num2text(data[STAT_ENTRY_TIME]/(data[STAT_ENTRY_COUNT] || 1), 99)])"
 
 	if (user)
-		// DQEdit — structured TGUI AdminReport.
+		// structured TGUI AdminReport.
 		dq_admin_report_lines(user, "Stats", lines)
 	else
 		. = lines.Join("\n")
@@ -410,7 +410,7 @@ ADMIN_VERB(startSinglo, R_DEBUG|R_ADMIN, "Start Singularity", "Sets up the singu
 		PA.construction_state = 3
 		PA.update_icon()
 
-	// DQEdit — /obj/machinery/power/rad_collector was deleted with the ZAS power
+	// /obj/machinery/power/rad_collector was deleted with the ZAS power
 	// machinery; this loop is a no-op until LINDA's equivalent is wired.
 	log_admin("[key_name(user)] setup the singulo engine")
 	message_admins(span_blue("[key_name_admin(user)] setup the singulo engine"))
@@ -433,7 +433,7 @@ ADMIN_VERB(setup_supermatter_engine, R_DEBUG|R_ADMIN, "Setup supermatter", "Sets
 			continue
 
 		if(istype(M.loc.loc,/area/engineering/engine_room))
-			// DQEdit — rad_collector and ZAS binary/pump removed; supermatter only.
+			// rad_collector and ZAS binary/pump removed; supermatter only.
 			if(istype(M,/obj/machinery/power/supermatter))
 				SM = M
 				spawn(50)
@@ -455,7 +455,7 @@ ADMIN_VERB(setup_supermatter_engine, R_DEBUG|R_ADMIN, "Setup supermatter", "Sets
 	if(!found_the_pump && response == "Setup Completely")
 		to_chat(src, span_red("Unable to locate air supply to fill up with coolant, adding some coolant around the supermatter"))
 		var/turf/simulated/T = SM.loc
-		// DQEdit — was XGM `T.zone.air`; LINDA stores gases on the turf itself.
+		// was XGM `T.zone.air`; LINDA stores gases on the turf itself.
 		// Use the turf's own air mixture via return_air().
 		var/datum/gas_mixture/_air = T.return_air()
 		if(_air)
@@ -646,7 +646,7 @@ ADMIN_VERB(reload_configuration, R_DEBUG, "Reload Configuration", "Reloads the c
 	set name = "Quick Auth NIF"
 	set desc = "Spawns an authentic NIF into someone in quick-implant mode."
 
-	if(!check_rights(R_ADMIN|R_EVENT|R_DEBUG))	//CHOMPStation Edit TFF 24/4/19: Allow Devs to use Quick-NIF verb.
+	if(!check_rights(R_ADMIN|R_EVENT|R_DEBUG)) // TFF 24/4/19: Allow Devs to use Quick-NIF verb.
 		return
 
 	var/mob/living/carbon/human/H = tgui_input_list(usr, "Pick a mob with a player","Quick Authentic NIF", GLOB.player_list)

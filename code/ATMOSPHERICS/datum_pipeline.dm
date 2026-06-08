@@ -125,7 +125,7 @@
 
 	return network
 
-// DQEdit — rewrote off ZAS zones. ZAS branch was `if(target.zone) … modify
+// rewrote off ZAS zones. ZAS branch was `if(target.zone) … modify
 // zone.air …`. Under LINDA, /turf.zone is always null, so we always take the
 // non-zone path: pull a sample from the pipe air, share it with the turf's
 // LINDA mixture (mutual exchange via share()), then merge the sample back
@@ -174,7 +174,7 @@
 				modeled_location.temperature += heat/modeled_location.heat_capacity
 
 		else
-			// DQEdit — collapsed ZAS zone branch. zone is always null under LINDA;
+			// collapsed ZAS zone branch. zone is always null under LINDA;
 			// the air-bearing turf exposes its mixture directly via .air (set in
 			// /turf/open/Initialize). Heat exchanges between the pipe and the turf
 			// air using LINDA's heat_capacity() proc.

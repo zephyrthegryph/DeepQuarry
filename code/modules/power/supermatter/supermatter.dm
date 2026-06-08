@@ -84,8 +84,8 @@
 	var/pull_radius = 14
 	// Time in ticks between delamination ('exploding') and exploding (as in the actual boom)
 	var/pull_time = 100
-	var/min_explosion_power = 12 // CHOMPEdit some more damage was 8
-	var/max_explosion_power = 24 // CHOMPEdit some more damage was 16
+	var/min_explosion_power = 12 // some more damage was 8
+	var/max_explosion_power = 24 // some more damage was 16
 
 	var/emergency_issued = 0
 
@@ -113,18 +113,16 @@
 
 	var/datum/looping_sound/supermatter/soundloop
 
-	// CHOMPAdd Start
 	var/engwarn = FALSE
 	var/critwarn = FALSE
 	var/causalitywarn = FALSE
 	var/stationcrystal = FALSE
-	// CHOMPAdd End
 
 /obj/machinery/power/supermatter/Initialize(mapload)
 	uid = gl_uid++
 	soundloop = new(list(src), TRUE)
-	if(src.z in using_map.station_levels) // CHOMPEdit: Looping Alarms
-		stationcrystal = TRUE  // CHOMPEdit: Looping Alarms
+	if(src.z in using_map.station_levels) // Looping Alarms
+		stationcrystal = TRUE // Looping Alarms
 	return ..()
 
 /obj/machinery/power/supermatter/Destroy()
@@ -167,7 +165,7 @@
 	var/datum/gas_mixture/air = T.return_air()
 	if(!air)
 		return 0
-	// DQEdit — group_multiplier was XGM-only (zones contained multiple tiles
+	// group_multiplier was XGM-only (zones contained multiple tiles
 	// scaled by count). LINDA mixtures are per-tile so divide by 1.
 	return round(xgm_total_moles(air) / 23.1, 0.01)
 
@@ -181,10 +179,9 @@
 	anchored = TRUE
 	grav_pulling = 1
 	exploded = 1
-	// CHOMPEdit Start - Looping Alarms. We want to stop the alarm here.
+	// Looping Alarms. We want to stop the alarm here.
 	if(stationcrystal) // Are we an on-station crystal?
 		addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(reset_sm_alarms)), 10 SECONDS, TIMER_STOPPABLE)
-	// CHOMPEdit End
 
 	sleep(pull_time)
 	var/turf/TS = get_turf(src)		// The turf supermatter is on. SM being in a locker, exosuit, or other container shouldn't block it's effects that way.
@@ -276,15 +273,15 @@
 	var/alert_msg = " Integrity at [integrity]%"
 	var/message_sound = 'sound/ambience/matteralarm.ogg'
 
-	if(!(src.z in using_map.station_levels)) // CHOMPEdit: SM Global Warn Fix; Is our location the same as the station? If no, then we're not going to warn.
-		return // CHOMPEdit: SM Global Warn Fix; No need to announce if we're outside the station's Z, at a POI, etc.
+	if(!(src.z in using_map.station_levels)) // SM Global Warn Fix; Is our location the same as the station? If no, then we're not going to warn.
+		return // SM Global Warn Fix; No need to announce if we're outside the station's Z, at a POI, etc.
 
 	if(final_countdown) // Chompers additon
 		return
 	if(damage > emergency_point)
 		alert_msg = emergency_alert + alert_msg
 		lastwarning = world.timeofday - WARNING_DELAY * 4
-		// DQEdit — /obj/machinery/firealarm was deleted with ZAS fire_alarm.dm;
+		// /obj/machinery/firealarm was deleted with ZAS fire_alarm.dm;
 		// the critalarm/engalarm sound loops are gone. Just track the warn flag
 		// so subsequent ticks don't re-trigger; alarm audio comes back if a LINDA
 		// equivalent is wired later.
@@ -292,7 +289,7 @@
 			critwarn = TRUE
 		safe_warned = FALSE
 	else if(damage > 0 && damage >= damage_archived) // The damage is still going up
-		// DQEdit — firealarm machinery deleted; preserve the engineering light
+		// firealarm machinery deleted; preserve the engineering light
 		// alert but skip the alarm sound loop.
 		if(!engwarn)
 			if(src.z in using_map.station_levels)
@@ -309,7 +306,7 @@
 		safe_warned = TRUE // We are safe, warn only once
 		alert_msg = safe_alert
 		lastwarning = world.timeofday
-		reset_alarms() // CHOMPEdit: Looping Alarms
+		reset_alarms() // Looping Alarms
 	else
 		alert_msg = null
 	if(alert_msg)
@@ -321,7 +318,7 @@
 			for(var/mob/M in GLOB.player_list) // Rykka adds SM Delam alarm
 				if(!isnewplayer(M) && !isdeaf(M)) // Rykka adds SM Delam alarm
 					M << message_sound // Rykka adds SM Delam alarm
-			admin_chat_message(message = "SUPERMATTER DELAMINATING!", color = "#FF2222") //VOREStation Add
+			admin_chat_message(message = "SUPERMATTER DELAMINATING!", color = "#FF2222")
 			public_alert = TRUE
 			log_game("SUPERMATTER([x],[y],[z]) Emergency PUBLIC announcement. Power:[power], Oxygen:[oxygen], Damage:[damage], Integrity:[get_integrity()]")
 		else if(safe_warned && public_alert)
@@ -401,19 +398,19 @@
 
 	if(!istype(L, /turf/space))
 		env = L.return_air()
-		removed = env.remove(gasefficency * xgm_total_moles(env))	//Remove gas from surrounding area // DQEdit — total_moles is a proc in LINDA, use xgm_total_moles helper
+		removed = env.remove(gasefficency * xgm_total_moles(env)) // Remove gas from surrounding area // total_moles is a proc in LINDA, use xgm_total_moles helper
 
-	if(!env || !removed || !xgm_total_moles(removed)) // DQEdit — total_moles is a proc in LINDA, use xgm_total_moles helper
+	if(!env || !removed || !xgm_total_moles(removed)) // total_moles is a proc in LINDA, use xgm_total_moles helper
 		damage += max((power - 15*POWER_FACTOR)/10, 0)
 	else if (grav_pulling) //If supermatter is detonating, remove all air from the zone
-		env.remove(xgm_total_moles(env)) // DQEdit — total_moles is a proc in LINDA, use xgm_total_moles helper
+		env.remove(xgm_total_moles(env)) // total_moles is a proc in LINDA, use xgm_total_moles helper
 	else
 		damage_archived = damage
 
 		damage = max( damage + min( ( (removed.temperature - CRITICAL_TEMPERATURE) / 150 ), damage_inc_limit ) , 0 )
 		//Ok, 100% oxygen atmosphere = best reaction
 		//Maxes out at 100% oxygen pressure
-		oxygen = max(min((LINDA_GAS_AMT(removed, GAS_O2) - (LINDA_GAS_AMT(removed, GAS_N2) * NITROGEN_RETARDATION_FACTOR)) / xgm_total_moles(removed), 1), 0) // DQEdit — XGM mix.gas[id] dict read → LINDA_GAS_AMT macro; total_moles var → xgm_total_moles helper
+		oxygen = max(min((LINDA_GAS_AMT(removed, GAS_O2) - (LINDA_GAS_AMT(removed, GAS_N2) * NITROGEN_RETARDATION_FACTOR)) / xgm_total_moles(removed), 1), 0) // XGM mix.gas[id] dict read → LINDA_GAS_AMT macro; total_moles var → xgm_total_moles helper
 
 		//calculate power gain for oxygen reaction
 		var/temp_factor
@@ -437,7 +434,7 @@
 
 		//Release reaction gasses
 		var/heat_capacity = removed.heat_capacity()
-		// DQEdit — adjust_multi was XGM; LINDA's gas_mixture has adjust_gas per-call.
+		// adjust_multi was XGM; LINDA's gas_mixture has adjust_gas per-call.
 		removed.adjust_gas(GAS_PHORON, max(device_energy / PHORON_RELEASE_MODIFIER, 0))
 		removed.adjust_gas(GAS_O2, max((device_energy + removed.temperature - T0C) / OXYGEN_RELEASE_MODIFIER, 0))
 
@@ -479,14 +476,14 @@
 	set waitfor = FALSE
 
 	if(!final_countdown)
-		// DQEdit — firealarm machinery deleted; flag the warning state without
+		// firealarm machinery deleted; flag the warning state without
 		// triggering the deleted alarm sound loop.
 		if(!causalitywarn)
 			causalitywarn = TRUE
 
-	if(!(src.z in using_map.station_levels)) // CHOMPEdit: SM Global Warn Fix; Is our location the same as the station? If no, then we're not going to use a stabilization field.
-		explode() // CHOMPEdit: SM Global Warn Fix;  Just exploding, because we're not on the station's Z. No safety countdown.
-		return // CHOMPEdit: SM Global Warn Fix; Stops the code here.
+	if(!(src.z in using_map.station_levels)) // SM Global Warn Fix; Is our location the same as the station? If no, then we're not going to use a stabilization field.
+		explode() // SM Global Warn Fix; Just exploding, because we're not on the station's Z. No safety countdown.
+		return // SM Global Warn Fix; Stops the code here.
 
 	if(final_countdown) // We're already doing it go away
 		return
@@ -629,7 +626,7 @@
 	for(var/atom/A in range(pull_range, target))
 		A.singularity_pull(target, pull_power)
 
-// DQEdit — airflow procs were ZAS-only; LINDA has no whole-zone shoves and the
+// airflow procs were ZAS-only; LINDA has no whole-zone shoves and the
 // underlying procs on /atom/movable were deleted with the migration. These
 // supermatter overrides existed to PREVENT the SM from being shoved — under
 // LINDA, /atom/movable has no airflow proc to override, so removing them
@@ -697,14 +694,13 @@
 	causalitywarn = FALSE
 
 /proc/reset_sm_alarms()
-	// DQEdit — /obj/machinery/firealarm was deleted with ZAS fire_alarm.dm; the
+	// /obj/machinery/firealarm was deleted with ZAS fire_alarm.dm; the
 	// SM alarm-sound loops have no host. Stub: just reset lights in engineering
 	// areas. CHOMP doesn't have GLOB.all_areas; iterate world.
 	for(var/area/our_area in world)
 		if(istype(our_area, /area/engineering))
 			for(var/obj/machinery/light/L in our_area)
 				L.reset_alert()
-// CHOMPEdit End
 
 #undef POWER_FACTOR
 #undef DECAY_FACTOR

@@ -49,9 +49,8 @@
 		if(istype(W, /obj/item/tape_roll))
 			return 0
 		if(istype(W, /obj/item/pen))
-			// DQEdit Start — legacy close (TGUI handles paper_bundle now)
+			// legacy close (TGUI handles paper_bundle now)
 			SStgui.close_uis(src)
-			// DQEdit End
 		var/obj/P = pages[page]
 		P.attackby(W, user)
 
@@ -104,7 +103,7 @@
 	else
 		. += span_notice("It is too far away.")
 
-// DQEdit Start — TGUI migration. attack_self opens PaperBundle.tsx;
+// TGUI migration. attack_self opens PaperBundle.tsx;
 // Topic page-flip and remove move to tgui_act. Photo image embedding via
 // browse_rsc is not yet wired through TGUI assets; photo pages show name
 // + scribble only.
@@ -193,7 +192,6 @@
 				page = pages.len
 			update_icon()
 			return TRUE
-// DQEdit End
 
 /obj/item/paper_bundle/verb/rename()
 	set name = "Rename bundle"

@@ -1,4 +1,4 @@
-// DQAdd — Mind/Body specialty editor.
+// Mind/Body specialty editor.
 //
 // build_ui_data        — current spent-per-category + selected perk paths.
 // build_ui_static_data — every category, every tree, every perk meta (name, icon,

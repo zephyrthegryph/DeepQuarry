@@ -94,7 +94,7 @@
 		if(new_character.mind.antag_holder)
 			new_character.mind.antag_holder.apply_antags(new_character)
 
-	// DQEdit Start — migrated language prefs to /datum/preference
+	// migrated language prefs to /datum/preference
 	var/list/_prey_alt_languages = prey.prefs.read_preference(/datum/preference/alternate_languages)
 	var/list/_prey_lang_custom = prey.prefs.read_preference(/datum/preference/language_custom_keys)
 	for(var/lang in _prey_alt_languages)
@@ -107,14 +107,12 @@
 			var/datum/language/keylang = GLOB.all_languages[_prey_lang_custom[key]]
 			if(keylang)
 				new_character.language_keys[key] = keylang
-	// DQEdit End
-	// DQEdit Start — migrated preferred_language
+	// migrated preferred_language
 	var/_preferred_language = prey.prefs.read_preference(/datum/preference/text/human/preferred_language)
 	if(_preferred_language) // Do we have a preferred language?
 		var/datum/language/def_lang = GLOB.all_languages[_preferred_language]
 		if(def_lang)
 			new_character.default_language = def_lang
-	// DQEdit End
 
 	SEND_SIGNAL(new_character, COMSIG_HUMAN_DNA_FINALIZED)
 

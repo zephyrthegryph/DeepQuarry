@@ -19,7 +19,7 @@
 
 /proc/generate_gas_overlays(old_offset, new_offset, datum/gas/gas_type)
 	var/list/to_return = list()
-	// DQEdit — pass the gas's primary_color through to the overlay so it can
+	// pass the gas's primary_color through to the overlay so it can
 	// tint a generic smoke icon. /tg/'s atmospherics.dmi (with per-gas
 	// icon_states "plasma", "tritium", etc.) isn't shipped on this fork;
 	// chemsmoke.dmi gives us a colorable cloud-shaped overlay that works for
@@ -109,7 +109,7 @@
 	id = GAS_PLASMA
 	specific_heat = 200
 	name = "Plasma"
-	// DQEdit — was "plasma" (/tg/ name); the asset on this fork is the legacy
+	// was "plasma" (/tg/ name); the asset on this fork is the legacy
 	// CHOMP/ZAS tile_effects.dmi whose icon_state for this gas is "phoron".
 	gas_overlay = "phoron"
 	moles_visible = MOLES_GAS_VISIBLE
@@ -314,7 +314,7 @@
 	primary_color = COLOR_MAROON
 
 /obj/effect/overlay/gas
-	// DQEdit — restored the pre-LINDA ZAS-era overlay asset (tile_effects.dmi).
+	// restored the pre-LINDA ZAS-era overlay asset (tile_effects.dmi).
 	// /tg/'s 'icons/effects/atmospherics.dmi' (with per-gas icon_states
 	// "plasma", "tritium", "freon", etc.) isn't shipped on this fork; CHOMP's
 	// existing tile_effects.dmi has the legacy phoron/nitrous_oxide/miasma

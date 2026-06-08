@@ -43,7 +43,7 @@ GLOBAL_LIST_INIT(contrast_colors, list("#ff0000", "#00ff00", "#0000ff", "#ffff00
 
 
 // === /tg/-specific vars on /obj/machinery and /obj/item ===
-// DQEdit — atmos_processing removed alongside SSair.atmos_machinery.
+// atmos_processing removed alongside SSair.atmos_machinery.
 /obj/machinery
 	var/rebuilding = FALSE
 
@@ -239,7 +239,7 @@ GLOBAL_LIST_INIT(diagonals_multiz, list(NORTHEAST, NORTHWEST, SOUTHEAST, SOUTHWE
 /turf/proc/should_atmos_process(datum/gas_mixture/air, exposed_temperature)
 	return FALSE
 
-// DQEdit — /turf/proc/check_atmos_process removed; was a no-op that swallowed
+// /turf/proc/check_atmos_process removed; was a no-op that swallowed
 // the temperature_expose handoff. Caller in LINDA_turf_tile.dm now calls
 // should_atmos_process + atmos_expose directly.
 
@@ -273,7 +273,7 @@ GLOBAL_LIST_INIT(diagonals_multiz, list(NORTHEAST, NORTHWEST, SOUTHEAST, SOUTHWE
 		ChangeTurf(/turf/space, preserve_outdoors = TRUE)
 
 
-// DQEdit — /datum/component/wet_floor + TURF_WET_PERMAFROST removed alongside
+// /datum/component/wet_floor + TURF_WET_PERMAFROST removed alongside
 // the matching branch in gasmixtures/reactions.dm. CHOMP keeps wetness on
 // /turf/simulated.wet directly; no component-based tracking.
 
@@ -321,7 +321,7 @@ GLOBAL_LIST_INIT(diagonals_multiz, list(NORTHEAST, NORTHWEST, SOUTHEAST, SOUTHWE
 		H.hallucination = max(H.hallucination, (hallucination_amount || 10))
 	return
 
-// DQEdit — /tg/'s vendored reactions reference foam types in this tree
+// /tg/'s vendored reactions reference foam types in this tree
 // (halon-combustion resin is the live caller; gasmixtures/reactions.dm:897).
 // Declared as thin marker types so type paths resolve at compile; do_foam
 // ignores the foam_type arg and always spawns CHOMP's /obj/effect/effect/foam.
@@ -339,7 +339,7 @@ GLOBAL_LIST_INIT(diagonals_multiz, list(NORTHEAST, NORTHWEST, SOUTHEAST, SOUTHWE
 		new /obj/effect/effect/foam(get_turf(location))
 	return
 
-// DQEdit — /obj/item/stack/sheet doesn't exist on this fork (CHOMP uses
+// /obj/item/stack/sheet doesn't exist on this fork (CHOMP uses
 // /obj/item/stack/material for sheets). Declare /obj/item/stack/sheet as a
 // thin shell parent so /tg/-shaped paths like /obj/item/stack/sheet/hot_ice
 // resolve, and give hot_ice a real (not "stub") item so the freon-cooling
@@ -356,5 +356,5 @@ GLOBAL_LIST_INIT(diagonals_multiz, list(NORTHEAST, NORTHWEST, SOUTHEAST, SOUTHWE
 	icon = 'icons/obj/stacks.dmi'
 	icon_state = "sheet-metal"  // placeholder; no dedicated hot_ice sprite on this fork
 
-// DQEdit — /atom/proc/process_atmos removed alongside SSair.atmos_machinery.
-// DQEdit — /atom/proc/process_exposure removed alongside SSair.atom_process.
+// /atom/proc/process_atmos removed alongside SSair.atmos_machinery.
+// /atom/proc/process_exposure removed alongside SSair.atom_process.

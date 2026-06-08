@@ -84,7 +84,7 @@
 		return
 	if(!affects_dead && M.stat == DEAD && !M.has_modifier_of_type(/datum/modifier/bloodpump_corpse))
 		return
-	if(M.isSynthetic() && (!M.synth_reag_processing || !affects_robots)) //CHOMPEdit
+	if(M.isSynthetic() && (!M.synth_reag_processing || !affects_robots))
 		return
 	if(!istype(location))
 		return
@@ -102,7 +102,7 @@
 				removed *= mod.metabolism_percent
 				ingest_rem_mult *= mod.metabolism_percent
 		// Species
-		if(M.species) //CHOMPEdit
+		if(M.species)
 			removed *= M.species.metabolic_rate
 			ingest_rem_mult *= M.species.metabolic_rate
 		// Metabolism
@@ -138,12 +138,12 @@
 			else
 				var/obj/item/organ/internal/heart/machine/Pump = H.internal_organs_by_name[O_PUMP]
 				var/obj/item/organ/internal/stomach/machine/Cycler = H.internal_organs_by_name[O_CYCLER]
-				var/obj/item/organ/internal/nano/refactory/Refactory = H.internal_organs_by_name[O_FACT]		//VOREStation Addition: Proteans
+				var/obj/item/organ/internal/nano/refactory/Refactory = H.internal_organs_by_name[O_FACT] // ition: Proteans
 
 				if(active_metab.metabolism_class == CHEM_BLOOD)
 					if(Pump)
 						removed *= 1.1 - Pump.damage / Pump.max_damage
-					else if(Refactory)		//VOREStation Addition: Proteans
+					else if(Refactory) // ition: Proteans
 						removed *= 1.1 - Refactory.damage / Refactory.max_damage
 					else
 						removed *= 0.1
@@ -151,14 +151,14 @@
 				else if(active_metab.metabolism_class == CHEM_INGEST)	// If the pump is damaged, we waste chems from the tank.
 					if(Pump)
 						ingest_abs_mult *= max(0.25, 1 - Pump.damage / Pump.max_damage)
-					else if(Refactory)		//VOREStation Addition: Proteans
+					else if(Refactory) // ition: Proteans
 						ingest_abs_mult *= max(0.25, 1 - Refactory.damage / Refactory.max_damage)
 					else
 						ingest_abs_mult *= 0.2
 
 					if(Cycler)	// If we're damaged, we empty our tank slower.
 						ingest_rem_mult = max(0.1, 1 - (Cycler.damage / Cycler.max_damage))
-					else if(Refactory)		//VOREStation Addition: Proteans
+					else if(Refactory) // ition: Proteans
 						ingest_rem_mult = max(0.1, 1 - (Refactory.damage / Refactory.max_damage))
 					else
 						ingest_rem_mult = 0.1

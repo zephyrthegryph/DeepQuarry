@@ -530,7 +530,7 @@
 		|ACCESSORY_SLOT_ARMOR_S\
 		|ACCESSORY_SLOT_ARMOR_M\
 		|ACCESSORY_SLOT_OVER\
-		|ACCESSORY_SLOT_ARMBAND)	//CHOMPEdit - let pcarriers have fashion
+		|ACCESSORY_SLOT_ARMBAND) // let pcarriers have fashion
 	restricted_accessory_slots = (\
 		ACCESSORY_SLOT_INSIGNIA\
 		|ACCESSORY_SLOT_ARMOR_C\
@@ -538,7 +538,7 @@
 		|ACCESSORY_SLOT_ARMOR_L\
 		|ACCESSORY_SLOT_ARMOR_S\
 		|ACCESSORY_SLOT_ARMOR_M\
-		|ACCESSORY_SLOT_ARMBAND)	//CHOMPEdit - let pcarriers have fashion
+		|ACCESSORY_SLOT_ARMBAND) // let pcarriers have fashion
 	blood_overlay_type = "armor"
 
 /obj/item/clothing/suit/armor/pcarrier/mob_can_equip(mob/living/carbon/human/H, slot, disable_warning = FALSE, ignore_obstruction, go_over_slot = FALSE)
@@ -558,7 +558,7 @@
 		return 1
 
 /obj/item/clothing/suit/armor/pcarrier/explorer
-	name = "explorer plate carrier" // CHOMPedit: Clarity for vendors.
+	name = "explorer plate carrier" // Clarity for vendors.
 	desc = "A lightweight explorer plate carrier. It can be equipped with armor plates, but only protects from the cold on it's own."
 	icon_state = "explorer"
 	flags = THICKMATERIAL

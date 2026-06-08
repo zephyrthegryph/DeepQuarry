@@ -1,4 +1,4 @@
-// DQAdd — Character setup UI middleware. Walks the /datum/preference registry, groups by
+// Character setup UI middleware. Walks the /datum/preference registry, groups by
 // category + group, and assembles the JSON payload the new TGUI window consumes.
 //
 // Replaces bay_adapter for the character-prefs window. bay_adapter stays (for now) to keep
@@ -8,7 +8,7 @@
 /datum/preference_middleware/character_setup
 	key = "character_setup"
 
-// DQAdd — explicit category order so the top-tab buttons don't dance every refresh.
+// explicit category order so the top-tab buttons don't dance every refresh.
 // Categories not listed here fall to the end in alphabetical order. Names must match the
 // `category` field tag_pref writes onto singletons (see _pref_metadata.dm).
 GLOBAL_LIST_INIT(dq_category_order, list(
@@ -24,7 +24,7 @@ GLOBAL_LIST_INIT(dq_category_order, list(
 	"misc",
 ))
 
-// DQAdd — play-mode filter lists.
+// play-mode filter lists.
 //
 // /datum/preference/text/human/play_mode is one of "human" (default), "robot",
 // or "pai" — set by the SpeciesPicker editor when the player selects the
@@ -126,7 +126,7 @@ GLOBAL_LIST_INIT(dq_human_mode_hidden_groups, list(
 GLOBAL_LIST_INIT(dq_human_mode_hidden_pref_keys, list(
 ))
 
-// DQAdd — Reverse-index of editor.static_invalidator_keys: maps a pref
+// Reverse-index of editor.static_invalidator_keys: maps a pref
 // savefile_key → list(/datum/preference_editor) that should be rebuilt when
 // that key changes. Built once at world init from the editors' declarations
 // (see /datum/preference_editor.static_invalidator_keys). update_preference
@@ -144,7 +144,7 @@ GLOBAL_LIST_INIT(dq_editor_static_invalidators_by_key, dq_build_editor_static_in
 		for(var/k in editor.static_invalidator_keys)
 			LAZYADD(.[k], editor)
 
-// DQAdd — Explicit per-category group order. Groups within a category render in
+// Explicit per-category group order. Groups within a category render in
 // this order in the React grid; groups not listed fall to the end alphabetically.
 // Without this, group order followed first-encounter of GLOB.preference_entries
 // which is type-registration order (not file order), so "Name" wasn't reliably
@@ -168,7 +168,7 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 	var/list/categories_data = list()
 	var/list/categories_by_name = list() // name -> categories_data entry, for ordering
 
-	// DQEdit — play-mode gating. "robot" collapses organic-only categories /
+	// play-mode gating. "robot" collapses organic-only categories /
 	// groups / keys; "pai" collapses everything physical; "human" collapses
 	// synth-only entries. The species_picker editor (which drives play_mode)
 	// is always allowed through so the player has an escape hatch back to
@@ -187,7 +187,7 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 		var/cat = pref.get_category(preferences)
 		if(!cat)
 			cat = "misc"
-		// DQEdit — categories the user shouldn't see as a tab. Manually rendered
+		// categories the user shouldn't see as a tab. Manually rendered
 		// prefs are handled by a specific editor (markings, traits, mind/body…)
 		// and either get tag_pref'd to a real category OR should just not surface.
 		// Non-contextual prefs (max_traits, starting_trait_points, etc.) are
@@ -198,7 +198,7 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 			continue
 		var/grp = pref.get_group(preferences) || ""
 
-		// DQEdit — play-mode gating. play_mode is itself a hidden pref so
+		// play-mode gating. play_mode is itself a hidden pref so
 		// no escape hatch needed here; the species_picker editor below is
 		// always allowed through.
 		if(playing_as_pai)
@@ -258,7 +258,7 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 	for(var/datum/preference_editor/editor as anything in GLOB.preference_editors)
 		if(editor.hidden)
 			continue
-		// DQEdit — same play-mode gating as for prefs. SpeciesPicker is the
+		// same play-mode gating as for prefs. SpeciesPicker is the
 		// always-visible escape hatch (player needs a way to switch modes).
 		if(editor.key != "species_picker")
 			if(playing_as_pai)
@@ -298,7 +298,7 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 			"data" = editor.build_ui_data(preferences),
 		))
 
-	// DQEdit — drop categories whose only contents are empty groups (every pref/editor is
+	// drop categories whose only contents are empty groups (every pref/editor is
 	// HIDDEN or the category had only hidden composite items). Prevents the top tabs from
 	// rendering "Occupation" / "Persistence" buttons that open to a blank page.
 	var/list/non_empty = list()
@@ -312,12 +312,12 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 			non_empty += list(cat)
 	categories_data = non_empty
 
-	// DQEdit — sort categories by explicit order then alphabetical so the top tabs are
+	// sort categories by explicit order then alphabetical so the top tabs are
 	// stable across refreshes (previously order was first-encounter while iterating
 	// preference_entries, which let new entries shove existing tabs around).
 	sortTim(categories_data, GLOBAL_PROC_REF(dq_cmp_category_entries))
 
-	// DQEdit — sort groups WITHIN each category by GLOB.dq_group_order. Without
+	// sort groups WITHIN each category by GLOB.dq_group_order. Without
 	// this, "Identity" would render whichever group was hit first by the
 	// preference_entries iteration, which made "name" fall below "gender" or
 	// "species" depending on registration order. sortTim's comparator can't
@@ -348,7 +348,7 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 /proc/dq_cmp_group_by_sort_priority(list/a, list/b)
 	return a["sort_priority"] - b["sort_priority"]
 
-// DQAdd — Rebuild a single editor's cache entry on demand. Called from
+// Rebuild a single editor's cache entry on demand. Called from
 // dq_ensure_editor_static_cache when an entry is missing (initial build, or
 // invalidation by update_preference's static_invalidator_keys map).
 /datum/preferences/proc/dq_rebuild_editor_static_entry(datum/preference_editor/editor)
@@ -384,7 +384,7 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 	if(preferences.current_window != PREFERENCE_TAB_CHARACTER_PREFERENCES)
 		return data
 
-	// DQEdit — editor static_data is cached per-preferences-datum. Catalogs
+	// editor static_data is cached per-preferences-datum. Catalogs
 	// (markings, loadout, hair) don't change between opens; rebuilding them
 	// on every send_full_update is wasted CPU + JSON serialization.
 	// Per-editor invalidation: update_preference removes only the entries

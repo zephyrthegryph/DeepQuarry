@@ -9,12 +9,12 @@
 	drop_sound = 'sound/items/drop/rubber.ogg'
 	pickup_sound = 'sound/items/pickup/rubber.ogg'
 
-// CHOMPedit start: More gloves give cold/heat protection.
+// start: More gloves give cold/heat protection.
 	cold_protection = HANDS
 	min_cold_protection_temperature = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE
 	heat_protection = HANDS
 	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
-// CHOMPedit end.
+// end.
 
 /obj/item/clothing/gloves/fyellow                             //Cheap Chinese Crap
 	desc = "These gloves are cheap copies of proper insulated gloves. No way this can end badly."
@@ -27,8 +27,8 @@
 
 /obj/item/clothing/gloves/fyellow/Initialize(mapload)
 	. = ..()
-	//Picks a value between 0 and 1.25, in 5% increments // VOREStation edit
-	var/shock_pick = rand(0,15) // VOREStation Edit
+	// Picks a value between 0 and 1.25, in 5% increments //
+	var/shock_pick = rand(0,15)
 	siemens_coefficient = shock_pick * 0.05
 
 /obj/item/clothing/gloves/black
@@ -42,111 +42,111 @@
 
 /obj/item/clothing/gloves/orange
 	name = "orange gloves"
-	desc = "A pair of gloves. They look heat-resistant." // CHOMPedit: Updated description for temp changes.
+	desc = "A pair of gloves. They look heat-resistant." // Updated description for temp changes.
 	icon_state = "orange"
 
-// CHOMPedit start: More gloves give cold/heat protection.
+// start: More gloves give cold/heat protection.
 	cold_protection = HANDS
 	min_cold_protection_temperature = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE
 	heat_protection = HANDS
 	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
-// CHOMPedit end.
+// end.
 
 /obj/item/clothing/gloves/red
 	name = "red gloves"
-	desc = "A pair of gloves. They look heat-resistant." // CHOMPedit: Updated description for temp changes.
+	desc = "A pair of gloves. They look heat-resistant." // Updated description for temp changes.
 	icon_state = "red"
 
-// CHOMPedit start: More gloves give cold/heat protection.
+// start: More gloves give cold/heat protection.
 	cold_protection = HANDS
 	min_cold_protection_temperature = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE
 	heat_protection = HANDS
 	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
-// CHOMPedit end.
+// end.
 
 /obj/item/clothing/gloves/rainbow
 	name = "rainbow gloves"
-	desc = "A pair of gloves. They look heat-resistant." // CHOMPedit: Updated description for temp changes.
+	desc = "A pair of gloves. They look heat-resistant." // Updated description for temp changes.
 	icon_state = "rainbow"
 
-// CHOMPedit start: More gloves give cold/heat protection.
+// start: More gloves give cold/heat protection.
 	cold_protection = HANDS
 	min_cold_protection_temperature = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE
 	heat_protection = HANDS
 	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
-// CHOMPedit end.
+// end.
 
 /obj/item/clothing/gloves/blue
 	name = "blue gloves"
-	desc = "A pair of gloves. They look heat-resistant." // CHOMPedit: Updated description for temp changes.
+	desc = "A pair of gloves. They look heat-resistant." // Updated description for temp changes.
 	icon_state = "blue"
 
-// CHOMPedit start: More gloves give cold/heat protection.
+// start: More gloves give cold/heat protection.
 	cold_protection = HANDS
 	min_cold_protection_temperature = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE
 	heat_protection = HANDS
 	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
-// CHOMPedit end.
+// end.
 
 /obj/item/clothing/gloves/purple
 	name = "purple gloves"
-	desc = "A pair of gloves. They look heat-resistant." // CHOMPedit: Updated description for temp changes.
+	desc = "A pair of gloves. They look heat-resistant." // Updated description for temp changes.
 	icon_state = "purple"
 
-// CHOMPedit start: More gloves give cold/heat protection.
+// start: More gloves give cold/heat protection.
 	cold_protection = HANDS
 	min_cold_protection_temperature = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE
 	heat_protection = HANDS
 	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
-// CHOMPedit end.
+// end.
 
 /obj/item/clothing/gloves/green
 	name = "green gloves"
-	desc = "A pair of gloves. They look heat-resistant." // CHOMPedit: Updated description for temp changes.
+	desc = "A pair of gloves. They look heat-resistant." // Updated description for temp changes.
 	icon_state = "green"
 
-// CHOMPedit start: More gloves give cold/heat protection.
+// start: More gloves give cold/heat protection.
 	cold_protection = HANDS
 	min_cold_protection_temperature = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE
 	heat_protection = HANDS
 	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
-// CHOMPedit end.
+// end.
 
 /obj/item/clothing/gloves/grey
 	name = "grey gloves"
-	desc = "A pair of gloves. They look heat-resistant." // CHOMPedit: Updated description for temp changes.
+	desc = "A pair of gloves. They look heat-resistant." // Updated description for temp changes.
 	icon_state = "gray"
 
-// CHOMPedit start: More gloves give cold/heat protection.
+// start: More gloves give cold/heat protection.
 	cold_protection = HANDS
 	min_cold_protection_temperature = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE
 	heat_protection = HANDS
 	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
-// CHOMPedit end.
+// end.
 
 /obj/item/clothing/gloves/light_brown
 	name = "light brown gloves"
-	desc = "A pair of gloves. They look heat-resistant." // CHOMPedit: Updated description for temp changes.
+	desc = "A pair of gloves. They look heat-resistant." // Updated description for temp changes.
 	icon_state = "lightbrown"
 
-// CHOMPedit start: More gloves give cold/heat protection.
+// start: More gloves give cold/heat protection.
 	cold_protection = HANDS
 	min_cold_protection_temperature = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE
 	heat_protection = HANDS
 	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
-// CHOMPedit end.
+// end.
 
 /obj/item/clothing/gloves/brown
 	name = "brown gloves"
-	desc = "A pair of gloves. They look heat-resistant." // CHOMPedit: Updated description for temp changes.
+	desc = "A pair of gloves. They look heat-resistant." // Updated description for temp changes.
 	icon_state = "brown"
 
-// CHOMPedit start: More gloves give cold/heat protection.
+// start: More gloves give cold/heat protection.
 	cold_protection = HANDS
 	min_cold_protection_temperature = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE
 	heat_protection = HANDS
 	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
-// CHOMPedit end.
+// end.
 
 /obj/item/clothing/gloves/evening
 	desc = "A pair of gloves that reach past the elbow.  Fancy!"

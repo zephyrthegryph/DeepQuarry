@@ -111,7 +111,7 @@
 		if(-INFINITY to WATER_VAPOR_DEPOSITION_POINT)
 			if(location?.freeze_turf())
 				consumed = MOLES_GAS_VISIBLE
-			// DQEdit — /tg/'s /datum/component/wet_floor + TURF_WET_PERMAFROST
+			// /tg/'s /datum/component/wet_floor + TURF_WET_PERMAFROST
 			// flagged this reaction as VOLATILE so its overlay refresh could be
 			// skipped on permafrosted turfs. CHOMP has no wet_floor component
 			// (its wetness lives directly on /turf/simulated.wet). The flag was
@@ -892,7 +892,7 @@
 
 	// Resin foam effects.
 	var/turf/open/location = holder
-	// DQEdit — /tg/'s foam type is /obj/effect/particle_effect/fluid/foam; CHOMP
+	// /tg/'s foam type is /obj/effect/particle_effect/fluid/foam; CHOMP
 	// has /obj/effect/effect/foam. Use CHOMP's path so the locate() resolves.
 	var/obj/effect/effect/foam/foam = locate() in location
 	var/obj/structure/foamedmetal/resin = locate() in location

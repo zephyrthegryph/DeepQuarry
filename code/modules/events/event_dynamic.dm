@@ -212,10 +212,8 @@ GLOBAL_LIST_EMPTY(event_last_fired)
 					active_with_role[JOB_JANITOR]++
 				else if(istype(R.module, /obj/item/robot_module/robot/clerical/butler))
 					active_with_role[JOB_BOTANIST]++
-				//CHOMPAdd Start
 				else if(istype(R.module, /obj/item/robot_module/robot/miner))
 					active_with_role[DEPARTMENT_CARGO]++
-				//CHOMPAdd End
 
 		if(M.mind.assigned_role in SSjob.get_job_titles_in_department(DEPARTMENT_ENGINEERING))
 			active_with_role[DEPARTMENT_ENGINEERING]++

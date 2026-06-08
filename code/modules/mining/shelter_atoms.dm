@@ -403,7 +403,6 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	if(length(temp_info))
 		. += temp_info
 
-// CHOMPEdit Start
 /obj/item/survivalcapsule/attack_self(mob/user)
 	. = ..(user)
 	if(.)
@@ -413,7 +412,6 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 		to_chat(user, span_danger("\The [src] does not appear to work in VR! This is useless to you!"))
 		return
 	. = ..()
-// CHOMPEdit End
 	get_template()
 	if(!used)
 		if(unique_id && (unique_id in GLOB.unique_deployable))
@@ -502,7 +500,6 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	desc = "A cozy cabin; crammed into a survival capsule."
 	template_id = "shelter_cab"
 
-//CHOMPKeep Start
 /obj/item/survivalcapsule/dropship
 	name = "dropship surfluid shelter capsule"
 	desc = "A military dropship in a capsule. Contains everything an assault squad would need, minus the squad itself. This capsule is significantly larger than most. There's a license for use printed on the bottom."
@@ -510,7 +507,6 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	unique_id = "shelter_6"
 	is_ship = TRUE
 	w_class = ITEMSIZE_SMALL
-//CHOMPKeep End
 
 /obj/item/survivalcapsule/recroom
 	name = "pop-out rec room shelter capsule"
@@ -836,7 +832,7 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	var/buildstacktype = /obj/item/stack/material/steel
 	var/buildstackamount = 5
 
-//CHOMPAdd start - fans weren't updating atmos when destroyed or placed
+// start - fans weren't updating atmos when destroyed or placed
 /obj/structure/fans/Destroy()
 	update_nearby_tiles()
 	return ..()
@@ -844,7 +840,7 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 /obj/structure/fans/Initialize(mapload)
 	.=..()
 	update_nearby_tiles()
-//CHOMPAdd end
+// end
 
 /obj/structure/fans/atom_deconstruct()
 	new buildstacktype(loc,buildstackamount)

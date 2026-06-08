@@ -27,7 +27,7 @@
 	var/storage_name = "Cryogenic Oversight Control"
 	var/allow_items = 1
 
-	req_one_access = list(ACCESS_HEADS) //VOREStation Add
+	req_one_access = list(ACCESS_HEADS)
 
 /obj/machinery/computer/cryopod/update_icon()
 	..()
@@ -86,7 +86,7 @@
 /obj/machinery/computer/cryopod/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui)
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
-		ui = new(user, src, "CryoStorage", storage_name) // VOREStation Edit - Use our own template for our custom data
+		ui = new(user, src, "CryoStorage", storage_name) // Use our own template for our custom data
 		ui.open()
 
 /obj/machinery/computer/cryopod/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -99,7 +99,7 @@
 	var/list/items = list()
 	if(allow_items)
 		for(var/F in frozen_items)
-			items.Add(F) // VOREStation Edit
+			items.Add(F)
 			/* VOREStation Removal
 			items.Add(list(list(
 				"name" = "[F]",
@@ -116,7 +116,7 @@
 
 	add_fingerprint(ui.user)
 
-	return FALSE // VOREStation Edit - prevent topic exploits
+	return FALSE // prevent topic exploits
 	/* VOREStation Edit - Unreachable due to above
 	switch(action)
 		if("item")
@@ -199,8 +199,8 @@
 	dir = WEST
 	flags = REMOTEVIEW_ON_ENTER
 
-	var/base_icon_state = "cryopod_0" //VOREStation Edit - New Icon
-	var/occupied_icon_state = "cryopod_1" //VOREStation Edit - New Icon
+	var/base_icon_state = "cryopod_0" // New Icon
+	var/occupied_icon_state = "cryopod_1" // New Icon
 	var/on_store_message = "has entered long-term storage."
 	var/on_store_name = "Cryogenic Oversight"
 	var/on_enter_visible_message = "starts climbing into the"
@@ -218,9 +218,9 @@
 
 	var/obj/machinery/computer/cryopod/control_computer
 	var/last_no_computer_message = 0
-	var/applies_stasis = 0	//VOREStation Edit: allow people to change their mind
+	var/applies_stasis = 0 // allow people to change their mind
 
-	var/quiet = FALSE // CHOMPEdit - No announcement.
+	var/quiet = FALSE // No announcement.
 /obj/machinery/cryopod/robot
 	name = "robotic storage unit"
 	desc = "A storage unit for robots."
@@ -232,7 +232,7 @@
 	on_store_name = "Robotic Storage Oversight"
 	on_enter_occupant_message = "The storage unit broadcasts a sleep signal to you. Your systems start to shut down, and you enter low-power mode."
 	allow_occupant_types = list(/mob/living/silicon/robot)
-	//disallow_occupant_types = list(/mob/living/silicon/robot/drone) //VOREStation Removal - Why? How else do they leave?
+	// disallow_occupant_types = list(/mob/living/silicon/robot/drone) // Removal - Why? How else do they leave?
 	applies_stasis = 0
 
 /obj/machinery/cryopod/robot/door
@@ -363,7 +363,7 @@
 
 	qdel(R.mmi)
 	for(var/obj/item/I in R.module) // the tools the borg has; metal, glass, guns etc
-		for(var/mob/M in I) //VOREStation edit
+		for(var/mob/M in I)
 			despawn_occupant(M)
 		for(var/obj/item/O in I) // the things inside the tools, if anything; mainly for janiborg trash bags
 			O.forceMove(R)
@@ -384,7 +384,6 @@
 	for(var/mob/M in to_despawn)
 		despawn_occupant(M)
 
-	// VOREStation
 	persist_despawned_mob(to_despawn, src)
 	if(isliving(to_despawn))
 		var/mob/living/L = to_despawn
@@ -405,7 +404,6 @@
 				if(SC)
 					for(var/bm in SC.brainmobs)
 						despawn_occupant(bm)
-	// VOREStation
 
 	//Drop all items into the pod.
 	for(var/obj/item/W in to_despawn)
@@ -426,13 +424,12 @@
 	items -= announce // or the autosay radio.
 
 	for(var/obj/item/W in items)
-		if(islist(W.possessed_voice)) //CHOMPAdd
-			for(var/mob/living/V in W.possessed_voice) //CHOMPEdit - Revert temporary patch
-				//CHOMPEdit Start - Don't try and despawn, instead just ghost and delete, same as item destruction
+		if(islist(W.possessed_voice))
+			for(var/mob/living/V in W.possessed_voice) // Revert temporary patch
+				// Don't try and despawn, instead just ghost and delete, same as item destruction
 				V.ghostize(0)
 				qdel(V)
-				//CHOMPEdit End
-		//VOREStation Addition Start
+		// ition Start
 		if(istype(W, /obj/item/pda))
 			var/obj/item/pda/found_pda = W
 			found_pda.delete_id = TRUE
@@ -441,7 +438,7 @@
 			if(pdas_found.len)
 				for(var/obj/item/pda/found_pda in pdas_found)
 					found_pda.delete_id = TRUE
-		//VOREStation Addition End
+		// ition End
 
 		var/preserve = 0
 
@@ -458,11 +455,11 @@
 		if(!preserve)
 			qdel(W)
 		else
-			log_special_item(W,to_despawn) //VOREStation Add
+			log_special_item(W,to_despawn)
 			/* VOREStation Removal - We do our own thing.
 			if(control_computer && control_computer.allow_items)
 				control_computer.frozen_items += W
-				W.loc = control_computer //VOREStation Edit
+				W.loc = control_computer
 			else
 				W.forceMove(src.loc)
 			VOREStation Removal End */
@@ -479,10 +476,10 @@
 				to_chat(O.owner.current, span_warning("You get the feeling your target is no longer within your reach..."))
 			qdel(O)
 
-	//VOREStation Edit - Resleeving.
+	// Resleeving.
 	if(to_despawn.mind)
 		SStranscore.leave_round(to_despawn)
-	//VOREStation Edit End - Resleeving.
+	// Resleeving.
 
 		// Everything below should only be applicable to a cliented living/carbon/human.
 		// All living/carbon/humans should have minds.
@@ -538,7 +535,6 @@
 		control_computer._admin_logs += "[key_name(to_despawn)] ([to_despawn.mind.role_alt_title]) at [stationtime2text()]"
 		log_and_message_admins("([to_despawn.mind.role_alt_title]) entered cryostorage.", to_despawn)
 
-		//VOREStation Edit Start
 		var/depart_announce = TRUE
 		var/departing_job = to_despawn.mind.role_alt_title
 
@@ -546,20 +542,19 @@
 		if(istype(to_despawn, /mob/living/dominated_brain))
 			depart_announce = FALSE
 
-		if(src.quiet) // CHOMPEdit - No announcement.
+		if(src.quiet) // No announcement.
 			depart_announce = FALSE
 
 		if(depart_announce)
 			announce.autosay("[to_despawn.real_name][departing_job ? ", [departing_job], " : " "][on_store_message]", "[on_store_name]", announce_channel, using_map.get_map_levels(z, TRUE, om_range = DEFAULT_OVERMAP_RANGE))
 			visible_message(span_notice("\The [initial(name)] [on_store_visible_message_1] [to_despawn.real_name] [on_store_visible_message_2]"), 3)
 
-		//VOREStation Edit End
 
-	//VOREStation Edit begin: Dont delete mobs-in-mobs
+	// begin: Dont delete mobs-in-mobs
 	if(to_despawn.client && to_despawn.stat<2)
 		var/mob/observer/dead/newghost = to_despawn.ghostize()
 		newghost.timeofdeath = world.time
-	//VOREStation Edit end: Dont delete mobs-in-mobs
+	// end: Dont delete mobs-in-mobs
 
 	//This should guarantee that ghosts don't spawn.
 	to_despawn.ckey = null

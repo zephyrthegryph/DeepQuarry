@@ -12,7 +12,7 @@
 	reusable = TRUE
 	event_type = /datum/event2/event/grid_check
 
-// DQEdit — /obj/machinery/power/generator (turbine) was deleted with the ZAS
+// /obj/machinery/power/generator (turbine) was deleted with the ZAS
 // power machinery cleanup; GLOB.all_turbines no longer exists. Without
 // turbines, overpower is always 0 — grid checks fall back to weight-only.
 /datum/event2/meta/grid_check/proc/get_overpower()
@@ -29,7 +29,7 @@
 	var/obj/machinery/power/generator/engine // The turbine that will send a power spike.
 
 /datum/event2/event/grid_check/set_up()
-	// DQEdit — no turbines under LINDA (see get_overpower); engine stays null
+	// no turbines under LINDA (see get_overpower); engine stays null
 	// and start() will no-op the power_spike branch.
 	engine = null
 

@@ -5,7 +5,7 @@
 	slot = ACCESSORY_SLOT_WEAPON
 	concealed_holster = 1
 	var/obj/item/holstered = null
-	var/list/can_hold //VOREStation Add
+	var/list/can_hold
 	var/holster_in = 'sound/items/holsterin.ogg'
 	var/holster_out = 'sound/items/holsterout.ogg'
 	w_class = ITEMSIZE_NORMAL
@@ -14,14 +14,13 @@
 	if(holstered && istype(user))
 		to_chat(user, span_warning("There is already \a [holstered] holstered here!"))
 		return
-	//VOREStation Edit - Machete sheath support
+	// Machete sheath support
 	if (LAZYLEN(can_hold))
 		if(!is_type_in_list(I,can_hold))
 			to_chat(user, span_warning("[I] won't fit in [src]!"))
 			return
 
 	else if (!(I.slot_flags & SLOT_HOLSTER))
-	//VOREStation Edit End
 		to_chat(user, span_warning("[I] won't fit in [src]!"))
 		return
 
@@ -48,7 +47,7 @@
 	if(istype(user.get_active_hand(),/obj) && istype(user.get_inactive_hand(),/obj))
 		to_chat(user, span_warning("You need an empty hand to draw \the [holstered]!"))
 	else
-		// CHOMPEdit begin
+		// begin
 		if(iscarbon(user))
 			var/mob/living/carbon/C = user
 			if(C.handcuffed)
@@ -59,13 +58,13 @@
 				if(H.ability_flags & 0x1)
 					to_chat(H, span_warning("You cannot draw \the [holstered] while phase shifted!"))
 					return
-		//CHOMPEdit end
+		// end
 		var/sound_vol = 25
 		if(user.a_intent == I_HURT)
 			sound_vol = 50
 			user.visible_message(
-				span_danger("[user] draws \the [holstered], ready to go!"), //VOREStation Edit
-				span_warning("You draw \the [holstered], ready to go!") //VOREStation Edit
+				span_danger("[user] draws \the [holstered], ready to go!"),
+				span_warning("You draw \the [holstered], ready to go!")
 				)
 		else
 			user.visible_message(
@@ -146,7 +145,7 @@
 	icon_state = "holster"
 
 /obj/item/clothing/accessory/holster/armpit/black
-	name = "black armpit holster" // CHOMPedit: Loaodut bugfix
+	name = "black armpit holster" // Loaodut bugfix
 	icon_state = "holster_b"
 
 /obj/item/clothing/accessory/holster/waist
@@ -157,9 +156,9 @@
 	concealed_holster = 0
 
 /obj/item/clothing/accessory/holster/waist/black
-	name = "black waist holster" // CHOMPedit: Loadout bugfix
+	name = "black waist holster" // Loadout bugfix
 	icon_state = "holster_b_low"
-	overlay_state = "holster_b_low" // CHOMPedit
+	overlay_state = "holster_b_low"
 
 /obj/item/clothing/accessory/holster/hip
 	name = "hip holster"
@@ -168,7 +167,7 @@
 	concealed_holster = 0
 
 /obj/item/clothing/accessory/holster/hip/black
-	name = "black hip holster" // CHOMPedit: Loadout bugfix
+	name = "black hip holster" // Loadout bugfix
 	desc = "A handgun holster slung low on the hip, draw pardner!"
 	icon_state = "holster_b_hip"
 
@@ -180,10 +179,10 @@
 	concealed_holster = 0
 
 /obj/item/clothing/accessory/holster/leg/black
-	name = "black leg holster" // CHOMPedit: Loadout bugfix
+	name = "black leg holster" // Loadout bugfix
 	desc = "A tacticool handgun holster. Worn on the upper leg."
 	icon_state = "holster_b_leg"
-	overlay_state = "holster_b_leg" // CHOMPedit
+	overlay_state = "holster_b_leg"
 
 
 // === merged from holster_vr.dm during hard-fork de-suffix (verified no override-order change) ===

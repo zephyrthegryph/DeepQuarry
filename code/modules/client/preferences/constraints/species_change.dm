@@ -1,4 +1,4 @@
-// DQAdd — When species changes, several other prefs need to be re-checked: hair style might
+// When species changes, several other prefs need to be re-checked: hair style might
 // not be valid for the new species, age might fall outside the new species' min/max, custom
 // base must be valid for the species, body markings must match the new species' allowed list.
 //

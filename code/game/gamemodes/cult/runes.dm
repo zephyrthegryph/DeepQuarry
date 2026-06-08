@@ -197,7 +197,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 	if(cultists.len >= 9)
 		if(!GLOB.narsie_cometh)//so we don't initiate Hell more than one time.
 			to_chat(world, span_world(span_narsie(span_red("THE VEIL HAS BEEN SHATTERED!"))))
-			world << sound('sound/effects/weather/old_wind/wind_5_1.ogg') // CHOMPEdit - No idea why this wind is here now
+			world << sound('sound/effects/weather/old_wind/wind_5_1.ogg') // No idea why this wind is here now
 
 			SetUniversalState(/datum/universal_state/hell)
 			GLOB.narsie_cometh = 1
@@ -449,7 +449,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 		if(!O.client)	continue
 		if(!O.MayRespawn()) continue
 		if(O.mind && O.mind.current && O.mind.current.stat != DEAD)	continue
-		if(!(O.client.prefs.read_preference(/datum/preference/numeric/human/be_special) & BE_CULTIST)) continue // DQEdit — be_special migrated to /datum/preference
+		if(!(O.client.prefs.read_preference(/datum/preference/numeric/human/be_special) & BE_CULTIST)) continue // be_special migrated to /datum/preference
 		ghost = O
 		break
 	if(!ghost)
@@ -904,7 +904,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 			if(N)
 				continue
 			C.ear_deaf += 50
-			C.deaf_loop.start(skip_start_sound = TRUE) // CHOMPStation Add: Ear Ringing/Deafness
+			C.deaf_loop.start(skip_start_sound = TRUE) // Ear Ringing/Deafness
 			C.show_message(span_warning("The world around you suddenly becomes quiet."), 3)
 			affected += C
 			if(prob(1))
@@ -925,7 +925,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 			if(N)
 				continue
 			C.ear_deaf += 30
-			C.deaf_loop.start(skip_start_sound = TRUE) // CHOMPStation Add: Ear Ringing/Deafness
+			C.deaf_loop.start(skip_start_sound = TRUE) // Ear Ringing/Deafness
 			//talismans is weaker.
 			C.show_message(span_warning("The world around you suddenly becomes quiet."), 3)
 			affected += C

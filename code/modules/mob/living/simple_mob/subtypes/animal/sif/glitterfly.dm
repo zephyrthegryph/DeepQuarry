@@ -39,7 +39,7 @@
 	health = 10
 
 	movement_cooldown = -2
-	// DQEdit — dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
+	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
 	melee_damage_lower = 1
 	melee_damage_upper = 2

@@ -49,7 +49,7 @@
 /atom/movable/screen/nifsc/nme/Click()
 	..()
 	var/mob/living/carbon/brain/caught_soul/CS = usr
-	CS.nme_brain() //CHOMPEdit
+	CS.nme_brain()
 
 /atom/movable/screen/nifsc/nsay
 	name = "Speak into Soulcatcher"
@@ -59,7 +59,7 @@
 /atom/movable/screen/nifsc/nsay/Click()
 	..()
 	var/mob/living/carbon/brain/caught_soul/CS = usr
-	CS.nsay_brain() //CHOMPEdit
+	CS.nsay_brain()
 
 
 /mob/living/carbon/brain/caught_soul/create_mob_hud(datum/hud/HUD, apply_to_client = TRUE)

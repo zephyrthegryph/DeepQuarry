@@ -656,8 +656,8 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 				return
 
 			for(var/obj/item/W in Tar)
-				if(istype(W, /obj/item/implant/backup) || istype(W, /obj/item/nif))	//VOREStation Edit - There's basically no reason to remove either of these
-					continue	//VOREStation Edit
+				if(istype(W, /obj/item/implant/backup) || istype(W, /obj/item/nif)) // There's basically no reason to remove either of these
+					continue
 				Tar.drop_from_inventory(W)
 
 		if("drop_specific")

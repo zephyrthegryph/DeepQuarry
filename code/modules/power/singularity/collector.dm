@@ -39,7 +39,7 @@
 			var/amount_of_rads = pulse_information.strength
 			receive_pulse((amount_of_rads))
 
-			if(LINDA_GAS_AMT(P.air_contents, GAS_PHORON) == 0)  // DQEdit — XGM .gas[id] read
+			if(LINDA_GAS_AMT(P.air_contents, GAS_PHORON) == 0) // XGM .gas[id] read
 				investigate_log(span_red("out of fuel") + ".","singulo")
 				eject()
 			else

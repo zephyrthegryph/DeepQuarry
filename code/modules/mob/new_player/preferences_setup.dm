@@ -186,15 +186,14 @@
 		mannequin.dna = new /datum/dna(null)
 	copy_to(mannequin, TRUE)
 
-	// DQEdit Start — equip_preview_mob bitfield replaced by two toggles. Keep the same
+	// equip_preview_mob bitfield replaced by two toggles. Keep the same
 	// boolean shape so the rest of this proc is untouched.
 	var/_preview_loadout = read_preference(/datum/preference/toggle/human/preview_loadout)
 	var/_preview_job     = read_preference(/datum/preference/toggle/human/preview_job)
 	if(!_preview_loadout && !_preview_job)
 		return
-	// DQEdit End
 
-	// DQEdit — was 25 lines of department-switch logic duplicated with get_highest_job().
+	// was 25 lines of department-switch logic duplicated with get_highest_job().
 	// Single call now; the visitor sentinel is the explicit prefer_visitor_role pref. For
 	// the preview the visitor case wants JOB_ALT_VISITOR rather than the get_highest_job
 	// fallback of JOB_ALT_ASSISTANT, so handle that special case here. Fall back to
@@ -217,7 +216,7 @@
 			loadout_target_job = SSjob.get_job(_loadout_key)
 		previewJob = loadout_target_job || get_highest_job() || SSjob.get_job(JOB_INTERN)
 
-	// DQEdit Start — equip job FIRST, then loadout. Previously the order was loadout-then-job,
+	// equip job FIRST, then loadout. Previously the order was loadout-then-job,
 	// but `mob_can_equip` rejects equipping into an occupied slot AND `equip_to_slot_or_del`
 	// silently qdels the rejected item, so a job whose outfit overlapped a loadout slot was
 	// trying to (correctly) refuse to equip — but in practice some items still bled through
@@ -229,9 +228,9 @@
 		previewJob.equip_preview(mannequin, islist(alt_titles) ? alt_titles[previewJob.title] : null)
 
 	if(_preview_loadout && !(previewJob && _preview_job && (previewJob.type == /datum/job/ai || previewJob.type == /datum/job/cyborg)))
-		// DQEdit — migrated gear_list/gear_slot
+		// migrated gear_list/gear_slot
 		var/list/equipped_slots = list()
-		// DQEdit — per-job loadout. Use the preview job's title to pick the right loadout
+		// per-job loadout. Use the preview job's title to pick the right loadout
 		// list, falling back to "_default". Was: gear_list[gear_slot] (single shared list).
 		var/list/active_gear_list = get_loadout_for_job(previewJob ? previewJob.title : null)
 		for(var/thing in active_gear_list)
@@ -265,9 +264,8 @@
 					if(mannequin.equip_to_slot_or_del(G.spawn_item(mannequin, metadata), G.slot))
 						if(G.slot != slot_tie)
 							equipped_slots += G.slot
-	// DQEdit End
 
-// DQAdd — Preview rebuild runs synchronously so pref changes feel instant; only
+// Preview rebuild runs synchronously so pref changes feel instant; only
 // the static_data PUSH to tgui viewers is deferred. The push is what was hitting
 // BYOND's recursion limit on size_multiplier — send_full_update + tgui_static_data
 // + middleware.get_ui_static_data walks every editor catalog AND every pref via
@@ -346,7 +344,7 @@
 	mannequin.toggle_wing(setting = _animations_toggle)
 	update_character_previews(mannequin, south_only)
 
-// DQEdit — get_highest_job() moved to
+// get_highest_job() moved to
 // code/modules/client/preferences/types/character/job_priorities.dm. It now
 // reads from /datum/preference/job_priorities (one sparse assoc) and respects
 // prefer_visitor_role, replacing the bucket-by-department_flag switch that lived here.
@@ -358,7 +356,7 @@
 		var/datum/sprite_accessory/S = GLOB.hair_styles_list[hairstyle]
 		if(S.name == DEVELOPER_WARNING_NAME)
 			continue
-		if(!(pref_species in S.species_allowed) && (!read_preference(/datum/preference/text/human/custom_base) || !(read_preference(/datum/preference/text/human/custom_base) in S.species_allowed))) // DQEdit — migrated
+		if(!(pref_species in S.species_allowed) && (!read_preference(/datum/preference/text/human/custom_base) || !(read_preference(/datum/preference/text/human/custom_base) in S.species_allowed))) // migrated
 			continue
 		if(!S.can_be_selected && (!client || !check_rights_for(client, R_HOLDER)))
 			continue
@@ -380,7 +378,7 @@
 			continue
 		if(bio_gender == FEMALE && S.gender == MALE)
 			continue
-		if(!(pref_species in S.species_allowed) && (!read_preference(/datum/preference/text/human/custom_base) || !(read_preference(/datum/preference/text/human/custom_base) in S.species_allowed))) // DQEdit — migrated
+		if(!(pref_species in S.species_allowed) && (!read_preference(/datum/preference/text/human/custom_base) || !(read_preference(/datum/preference/text/human/custom_base) in S.species_allowed))) // migrated
 			continue
 		if(!S.can_be_selected && (!client || !check_rights_for(client, R_HOLDER)))
 			continue

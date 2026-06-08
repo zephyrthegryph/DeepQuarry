@@ -129,7 +129,7 @@
 	desc = "A heavy winter jacket. A white star of life is emblazoned on the back, with the words search and rescue written underneath."
 	icon_state = "coatsar"
 	armor = list(melee = 15, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 50, rad = 5)
-	hoodtype = /obj/item/clothing/head/hood/winter/medical/sar //VOREStation edit: sar winter hood
+	hoodtype = /obj/item/clothing/head/hood/winter/medical/sar // sar winter hood
 	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_MEDICAL)
 
 /obj/item/clothing/suit/storage/hooded/wintercoat/science

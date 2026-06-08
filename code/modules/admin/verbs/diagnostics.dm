@@ -1,4 +1,4 @@
-// DQEdit — rewrote off ZAS zones. SSair.zones / SSair.tiles_to_update /
+// rewrote off ZAS zones. SSair.zones / SSair.tiles_to_update /
 // /datum/zone don't exist under LINDA. Report LINDA's real stats instead:
 // active_turfs (turfs SSair is currently sharing), excited_groups (groups of
 // turfs converging on equilibrium), hotspot count from SSair.hotspots, and
@@ -34,7 +34,7 @@ ADMIN_VERB(air_report, R_DEBUG, "Show Air Report", "Displays the current atmos s
 	Networks: [length(SSair.networks)]<BR>
 "}
 
-	// DQEdit — structured TGUI AdminReport.
+	// structured TGUI AdminReport.
 	dq_admin_report_html(user, "Airreport", output)
 
 ADMIN_VERB(radio_report, R_DEBUG, "Radio report", "Displays a radio report.", ADMIN_CATEGORY_DEBUG_INVESTIGATE)
@@ -57,7 +57,7 @@ ADMIN_VERB(radio_report, R_DEBUG, "Radio report", "Displays a radio report.", AD
 					continue
 				output += "&nbsp;&nbsp;&nbsp;&nbsp;[device]<br>"
 
-	// DQEdit — structured TGUI AdminReport.
+	// structured TGUI AdminReport.
 	dq_admin_report_html(user, "Radioreport", output)
 	feedback_add_details("admin_verb","RR") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 

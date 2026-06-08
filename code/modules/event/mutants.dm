@@ -55,7 +55,7 @@
 		if(LOC_HANGAR3)
 			spawn_area_type = /area/hangar/three
 			locstring = "the hangar deck"
-		if(LOC_FIELD) // CHOMPEdit - Another one for the list...
+		if(LOC_FIELD) // Another one for the list...
 			spawn_area_type = /area/maintenance/field
 			locstring = "the maintenance deck"
 

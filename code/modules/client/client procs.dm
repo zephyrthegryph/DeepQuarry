@@ -123,7 +123,6 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		cmd_mentor_pm(C, null)
 		return
 
-	//VOREStation Add
 	if(href_list["discord_reg"])
 		var/their_id = html_decode(href_list["discord_reg"])
 		var/sane = FALSE
@@ -161,12 +160,11 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 			log_and_message_admins("[ckey] failed to register their Discord ID. Their Discord snowflake ID is: [their_id]. Is the database connected?", src)
 		qdel(query)
 		return
-	//VOREStation Add End
 	if(href_list["reload_statbrowser"])
 		stat_panel.reinitialize()
 
-	if(href_list["reload_statbrowser"]) //CHOMPEdit
-		stat_panel.reinitialize() //CHOMPEdit
+	if(href_list["reload_statbrowser"])
+		stat_panel.reinitialize()
 
 	//Logs all hrefs
 	log_href("[src] (usr:[usr]\[[COORD(usr)]\]) : [hsrc ? "[hsrc] " : ""][href]")
@@ -364,7 +362,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	if(holder)
 		add_admin_verbs()
 		admin_memo_show()
-		message_admins("Staff login: [key_name(src)]") // CHOMPEdit: Admin Login Notice //Edit2: This logs more than just admins so why not change it
+		message_admins("Staff login: [key_name(src)]") // Admin Login Notice //Edit2: This logs more than just admins so why not change it
 
 	winset(src, null, "command=\".configure graphics-hwmode on\"")
 
@@ -377,7 +375,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	screen += void
 
 	if(CONFIG_GET(flag/paranoia_logging))
-		var/alert = FALSE //VOREStation Edit start.
+		var/alert = FALSE // start.
 		if(isnum(player_age) && player_age == 0)
 			log_and_message_admins("PARANOIA: [key_name(src)] has connected here for the first time.")
 			alert = TRUE
@@ -389,9 +387,9 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 				if(!check_rights_for(X, R_HOLDER))
 					continue
 				if(X.prefs?.read_preference(/datum/preference/toggle/holder/play_adminhelp_ping))
-					X << 'sound/voice/bcriminal.ogg' //ChompEDIT - back to beepsky
+					X << 'sound/voice/bcriminal.ogg' // back to beepsky
 				window_flash(X)
-		//VOREStation Edit end.
+		// end.
 	attempt_auto_fit_viewport()
 	fully_created = TRUE
 
@@ -716,7 +714,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		return TRUE
 
 /client/proc/disconnect_with_message(message = "You have been intentionally disconnected by the server.<br>This may be for security or administrative reasons.")
-	// DQEdit Start — disconnect overlay via to_chat + window_flash (no browse).
+	// disconnect overlay via to_chat + window_flash (no browse).
 	// Pre-disconnect popup windows can't reliably use TGUI: the qdel(src)
 	// below tears down the client before any TGUI window has time to
 	// render, and TGUI windows are owned by the client that's about to
@@ -725,7 +723,6 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	to_chat(src, span_userdanger("You have been disconnected from the server."))
 	to_chat(src, span_warning(message))
 	to_chat(src, span_warning("If you feel this is in error, you can contact an administrator out-of-game (for example, on Discord)."))
-	// DQEdit End
 	qdel(src)
 
 /client/verb/toggle_fullscreen()

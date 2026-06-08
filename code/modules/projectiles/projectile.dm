@@ -628,13 +628,12 @@
 		if(check_penetrate(A))
 			passthrough = TRUE
 		penetrating--
-	/* //CHOMPEdit Begin
+	/*
 	var/obj/item/projectile/bullet/this = src
 	if(istype(this))
 		if(!this.velocity)
 			passthrough = FALSE
 			penetrating = 0
-	//CHOMPEdit End
 	*/
 
 	if(passthrough)
@@ -754,7 +753,7 @@
 	//admin logs
 	if(!no_attack_log)
 		if(istype(firer, /mob) && istype(target_mob))
-			add_attack_logs(firer,target_mob,"Shot with \a [src.type] projectile") //CHOMPEdit
+			add_attack_logs(firer,target_mob,"Shot with \a [src.type] projectile")
 
 	if(dephasing)
 		target_mob.phase_in() //If the mob is phased, dephase them. If they're not phased, this does nothing.

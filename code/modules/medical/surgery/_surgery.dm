@@ -59,7 +59,7 @@
 	/// progression then takes over.
 	var/cure_severity = 100
 	/// Which internal organs the surgery actually repairs, as a list of
-	/// O_* tags. Read by the DQEdit on /datum/surgery_step/internal/fix_organ
+	// / O_* tags. Read by the on /datum/surgery_step/internal/fix_organ
 	/// to gate which organs get their damage zeroed when the step finishes
 	/// — upstream behaviour zeros every internal organ in the zone, which
 	/// is far too generous (a craniotomy would also fix every other organ

@@ -239,7 +239,7 @@
 	return attack_hand(user)
 
 /obj/machinery/magnetic_controller/attack_hand(mob/user as mob)
-	// DQEdit — structured TGUI MagneticConsole (see
+	// structured TGUI MagneticConsole (see
 	// code/modules/admin/magnetic_console_panel.dm).
 	if(stat & (BROKEN|NOPOWER))
 		return

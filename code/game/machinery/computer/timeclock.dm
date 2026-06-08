@@ -56,7 +56,7 @@
 		if(!card && user.unEquip(I))
 			I.forceMove(src)
 			card = I
-			playsound(src, 'sound/effects/insert_id_card.ogg', 75, 0)  // CHOMPEdit: Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
+			playsound(src, 'sound/effects/insert_id_card.ogg', 75, 0) // Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
 			SStgui.update_uis(src)
 			update_icon()
 		else if(card)
@@ -121,13 +121,13 @@
 			if(card)
 				ui.user.put_in_hands(card)
 				card = null
-				playsound(src, 'sound/effects/remove_id_card.ogg', 75, 0) // CHOMPEdit: Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
+				playsound(src, 'sound/effects/remove_id_card.ogg', 75, 0) // Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
 			else
 				var/obj/item/I = ui.user.get_active_hand()
 				if (istype(I, /obj/item/card/id) && ui.user.unEquip(I))
 					I.forceMove(src)
 					card = I
-					playsound(src, 'sound/effects/insert_id_card.ogg', 75, 0)  // CHOMPEdit: Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
+					playsound(src, 'sound/effects/insert_id_card.ogg', 75, 0) // Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
 			update_icon()
 			return TRUE
 		if("switch-to-onduty-rank")
@@ -136,7 +136,7 @@
 					makeOnDuty(params["switch-to-onduty-rank"], params["switch-to-onduty-assignment"], ui.user)
 					ui.user.put_in_hands(card)
 					card = null
-					playsound(src, 'sound/effects/remove_id_card.ogg', 75, 0)  // CHOMPEdit: Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
+					playsound(src, 'sound/effects/remove_id_card.ogg', 75, 0) // Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
 			update_icon()
 			return TRUE
 		if("switch-to-offduty")
@@ -145,7 +145,7 @@
 					makeOffDuty(ui.user)
 					ui.user.put_in_hands(card)
 					card = null
-					playsound(src, 'sound/effects/remove_id_card.ogg', 75, 0)  // CHOMPEdit: Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
+					playsound(src, 'sound/effects/remove_id_card.ogg', 75, 0) // Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
 			update_icon()
 			return TRUE
 
@@ -178,17 +178,15 @@
 		return
 	if(newassignment != newjob.title && !(newassignment in newjob.alt_titles))
 		return
-	//CHOMPadd START
 	if(newjob.camp_protection && round_duration_in_ds < CONFIG_GET(number/job_camp_time_limit))
 		if(SSjob.restricted_keys.len)
 			var/list/check = SSjob.restricted_keys[newjob.title]
 			if(user.client.ckey in check)
 				to_chat(user,span_danger("[newjob.title] is not presently selectable because you played as it last round. It will become available to you in [round((CONFIG_GET(number/job_camp_time_limit) - round_duration_in_ds) / 600)] minutes, if slots remain open."))
 				return
-	//CHOMPadd END
 
 	if(newjob)
-		newjob.register_shift_key(user.client.ckey)//CHOMPadd
+		newjob.register_shift_key(user.client.ckey)
 		card.access = newjob.get_access()
 		card.rank = newjob.title
 		card.assignment = newassignment
@@ -239,10 +237,10 @@
 	return TRUE
 
 /obj/machinery/computer/timeclock/proc/getCooldown()
-	return 1 MINUTES - (world.time - card.last_job_switch) // CHOMPedit: 10 minute wait down to 1 minute.
+	return 1 MINUTES - (world.time - card.last_job_switch) // 10 minute wait down to 1 minute.
 
 /obj/machinery/computer/timeclock/proc/checkFace(mob/user)
-	var/turf/location = get_turf(src) // CHOMPedit: Needed for admin logs.
+	var/turf/location = get_turf(src) // Needed for admin logs.
 	if(!card)
 		to_chat(user, span_notice("No ID is inserted."))
 		return FALSE
@@ -259,8 +257,8 @@
 		return FALSE
 CHOMPedit end. */
 	else
-		message_admins("[key_name_admin(user)] has modified '[card.registered_name]' 's ID with a timeclock terminal. [ADMIN_JMP(location)]") // CHOMPedit: Logging
-		log_game("[key_name_admin(user)] has modified '[card.registered_name]' 's ID with a timeclock terminal.") // CHOMPedit: Logging
+		message_admins("[key_name_admin(user)] has modified '[card.registered_name]' 's ID with a timeclock terminal. [ADMIN_JMP(location)]") // Logging
+		log_game("[key_name_admin(user)] has modified '[card.registered_name]' 's ID with a timeclock terminal.") // Logging
 		return TRUE
 
 /obj/item/card/id

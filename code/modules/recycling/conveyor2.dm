@@ -10,8 +10,8 @@
 	icon_state = "conveyor0"
 	name = "conveyor belt"
 	desc = "A conveyor belt."
-	plane = OBJ_PLANE //CHOMPEdit
-	layer = STAIRS_LAYER //CHOMPEdit
+	plane = OBJ_PLANE
+	layer = STAIRS_LAYER
 	anchored = TRUE
 	active_power_usage = 100
 	circuit = /obj/item/circuitboard/conveyor

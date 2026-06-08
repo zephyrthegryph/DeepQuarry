@@ -50,10 +50,10 @@
 		validckey = 1
 	qdel(query)
 	if(!validckey)
-		if(!banned_mob || (banned_mob && !IsGuestKey(banned_mob.key))) //VOREStation Edit Start.
+		if(!banned_mob || (banned_mob && !IsGuestKey(banned_mob.key))) // .
 			var/confirm = tgui_alert(usr, "This ckey hasn't been seen, are you sure?", "Confirm Badmin", list("Yes", "No"))
 			if(confirm != "Yes")
-				return //VOREStation Edit End
+				return
 
 	var/a_ckey
 	var/a_computerid

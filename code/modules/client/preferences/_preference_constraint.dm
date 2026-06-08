@@ -1,4 +1,4 @@
-// DQAdd — Cross-pref invariants. A constraint fires when one of its trigger pref keys
+// Cross-pref invariants. A constraint fires when one of its trigger pref keys
 // changes; it may then read and mutate any pref. Constraints replace the ad-hoc cross-pref
 // logic that used to live inside sanitize_character() and tgui_act() switches.
 //

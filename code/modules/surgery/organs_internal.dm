@@ -76,7 +76,7 @@
 		return
 	var/obj/item/organ/external/affected = target.get_organ(target_zone)
 
-	// DQEdit Start — restrict which internal organs this step may repair.
+	// restrict which internal organs this step may repair.
 	// Without this, fix_organ zeros every internal organ in the zone:
 	// craniotomy would also fix every other organ in the head, lung_repair
 	// would heal heart+liver+kidneys in the torso. The DQ surgery records
@@ -84,16 +84,14 @@
 	// If no DQ surgery maps to this step, behaviour falls back to the
 	// upstream "fix everything" semantics for the rare non-DQ caller.
 	var/list/dq_permitted = dq_organs_step_may_repair(src.type, target_zone)
-	// DQEdit End
 
 	for(var/obj/item/organ/internal/I in affected.internal_organs)
 		if(I && (I.damage > 0 || I.status == ORGAN_DEAD || I.germ_level))
 			if(!(I.robotic >= ORGAN_ROBOT))
-				// DQEdit Start — skip organs the matching DQ surgery doesn't
+				// skip organs the matching DQ surgery doesn't
 				// claim to repair.
 				if(dq_permitted && !dq_permitted[I.organ_tag])
 					continue
-				// DQEdit End
 				user.visible_message(span_notice("[user] treats damage to [target]'s [I.name] with [tool_name]."), \
 				span_notice("You treat damage to [target]'s [I.name] with [tool_name].") )
 				user.balloon_alert_visible("starts treating damage to [target]'s [I.name]", "treating damage to \the [I.name]")
@@ -409,7 +407,7 @@
 		user.balloon_alert(user, "there is a [o_a][O.organ_tag] already!")
 		return SURGERY_FAILURE
 
-	// CHOMPadd begin - Malignant organs
+	// begin - Malignant organs
 	if(O && istype(O,/obj/item/organ/internal/malignant))
 		// malignant organs use a whitelist for allowed locations, and may be placed anywhere in it, not just one organ slot!
 		var/obj/item/organ/internal/malignant/ML = O
@@ -419,7 +417,7 @@
 		else
 			to_chat(user, span_warning("\The [O] won't fit in \the [affected.name]."))
 			return SURGERY_FAILURE
-	// CHOMPadd end
+	// end
 
 	if(O && affected.organ_tag == O.parent_organ)
 		organ_compatible = 1
@@ -468,8 +466,8 @@
 	/obj/item/stack/cable_coil = 75
 	)
 
-	min_duration = 40 //CHOMPedit
-	max_duration = 40 //CHOMPedit
+	min_duration = 40
+	max_duration = 40
 
 /datum/surgery_step/internal/attach_organ/can_use(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
 	if (!..())

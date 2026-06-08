@@ -74,7 +74,7 @@ FLOOR SAFES
 		icon_state = initial(icon_state)
 
 
-// DQEdit Start — TGUI migration. attack_hand opens Safe.tsx; the Topic
+// TGUI migration. attack_hand opens Safe.tsx; the Topic
 // dial/open/retrieve actions move to tgui_act below.
 /obj/structure/safe/attack_hand(mob/user)
 	user.set_machine(src)
@@ -146,7 +146,6 @@ FLOOR SAFES
 			if(open && P && in_range(src, user))
 				user.put_in_hands(P)
 			return TRUE
-// DQEdit End
 
 
 /obj/structure/safe/attackby(obj/item/I, mob/user)

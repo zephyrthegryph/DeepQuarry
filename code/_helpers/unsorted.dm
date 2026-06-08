@@ -399,29 +399,29 @@ Turf and target are seperate in case you want to teleport some distance from a t
 /proc/sort_mobs()
 	var/list/moblist = list()
 	var/list/sortmob = sort_names(GLOB.mob_list)
-	var/list/after_simplemob_minded = list() //CHOMPEdit
+	var/list/after_simplemob_minded = list()
 	for(var/mob/observer/eye/M in sortmob)
-		if (!M.client && !M.disconnect_time) //CHOMPEdit Addition
+		if (!M.client && !M.disconnect_time) // Addition
 			after_simplemob_minded.Add(M)
 			continue
 		moblist.Add(M)
 	for(var/mob/observer/blob/M in sortmob)
-		if (!M.client && !M.disconnect_time) //CHOMPEdit Addition
+		if (!M.client && !M.disconnect_time) // Addition
 			after_simplemob_minded.Add(M)
 			continue
 		moblist.Add(M)
 	for(var/mob/living/silicon/ai/M in sortmob)
-		if (!M.client && !M.disconnect_time) //CHOMPEdit Addition
+		if (!M.client && !M.disconnect_time) // Addition
 			after_simplemob_minded.Add(M)
 			continue
 		moblist.Add(M)
 	for(var/mob/living/silicon/pai/M in sortmob)
-		if (!M.client && !M.disconnect_time) //CHOMPEdit Addition
+		if (!M.client && !M.disconnect_time) // Addition
 			after_simplemob_minded.Add(M)
 			continue
 		moblist.Add(M)
 	for(var/mob/living/silicon/robot/M in sortmob)
-		if (!M.client && !M.disconnect_time) //CHOMPEdit Addition
+		if (!M.client && !M.disconnect_time) // Addition
 			after_simplemob_minded.Add(M)
 			continue
 		moblist.Add(M)
@@ -436,12 +436,12 @@ Turf and target are seperate in case you want to teleport some distance from a t
 			moblist.Add(M)
 	moblist.Add(delaylist)
 	for(var/mob/living/carbon/brain/M in sortmob)
-		if (!M.client && !M.disconnect_time) //CHOMPEdit Addition
+		if (!M.client && !M.disconnect_time) // Addition
 			after_simplemob_minded.Add(M)
 			continue
 		moblist.Add(M)
 	for(var/mob/living/carbon/alien/M in sortmob)
-		if (!M.client && !M.disconnect_time) //CHOMPEdit Addition
+		if (!M.client && !M.disconnect_time) // Addition
 			after_simplemob_minded.Add(M)
 			continue
 		moblist.Add(M)
@@ -450,13 +450,13 @@ Turf and target are seperate in case you want to teleport some distance from a t
 	for(var/mob/new_player/M in sortmob)
 		moblist += M
 	for(var/mob/living/simple_mob/M in sortmob)
-		if (!M.client && !M.disconnect_time) //CHOMPEdit Addition
+		if (!M.client && !M.disconnect_time) // Addition
 			after_simplemob_minded.Add(M)
 			continue
 		moblist.Add(M)
-	moblist.Add(after_simplemob_minded) //CHOMPEdit
+	moblist.Add(after_simplemob_minded)
 	after_simplemob_minded.Cut()
-	//VOREStation Addition Start
+	// ition Start
 	for(var/mob/living/dominated_brain/M in sortmob)
 		moblist += M
 	return moblist
@@ -769,7 +769,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 						X.underlays = old_underlays
 						X.decals = old_decals
 
-					// DQEdit — air-transfer used ZAS zone.air; LINDA uses per-turf return_air().
+					// air-transfer used ZAS zone.air; LINDA uses per-turf return_air().
 					var/datum/gas_mixture/source_air = T.return_air()
 					if(source_air)
 						var/datum/gas_mixture/dest_air = X.return_air()
@@ -1189,7 +1189,7 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 /proc/dview(range = world.view, center, invis_flags = 0)
 	if(!center)
 		return
-	if(!GLOB.dview_mob) //VOREStation Add: Debugging
+	if(!GLOB.dview_mob) // Debugging
 		GLOB.dview_mob = new
 
 	GLOB.dview_mob.loc = center
@@ -1527,7 +1527,7 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 	. += new /atom/movable/screen/plane_master/main{plane = MOB_PLANE}
 	. += new /atom/movable/screen/plane_master/cloaked								//Cloaked atoms!
 
-	//VOREStation Add - Random other plane masters
+	// Random other plane masters
 	. += new /atom/movable/screen/plane_master{plane = PLANE_CH_STATUS_R}			//Right-side status icon
 	. += new /atom/movable/screen/plane_master{plane = PLANE_CH_HEALTH_VR}			//Health bar but transparent at 100
 	. += new /atom/movable/screen/plane_master{plane = PLANE_CH_BACKUP}				//Backup implant status
@@ -1535,7 +1535,6 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 	. += new /atom/movable/screen/plane_master{plane = PLANE_CH_STOMACH}				//Stomachs
 	. += new /atom/movable/screen/plane_master{plane = PLANE_AUGMENTED}				//Augmented reality
 	. += new /atom/movable/screen/plane_master{plane = PLANE_SOULCATCHER}			//Soulcatcher
-	//VOREStation Add End
 /proc/CallAsync(datum/source, proctype, list/arguments)
 	set waitfor = FALSE
 	return call(source, proctype)(arglist(arguments))

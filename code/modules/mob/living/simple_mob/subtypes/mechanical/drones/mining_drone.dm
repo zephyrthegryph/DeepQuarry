@@ -30,7 +30,7 @@
 	maxHealth = 50
 	health = 50
 	movement_cooldown = 1.5
-	// DQEdit — dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
+	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
 	base_attack_cooldown = 2.5 SECONDS
 	projectiletype = /obj/item/projectile/energy/excavate

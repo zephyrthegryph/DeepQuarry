@@ -41,7 +41,7 @@
 	if(require_xgm_gas || rejects_xgm_gas || minimum_xgm_pressure || maximum_xgm_pressure)
 		if(!GM)
 			return
-		// DQEdit — XGM string-id .gas[id] → LINDA macro that translates to .gases lookup.
+		// XGM string-id .gas[id] → LINDA macro that translates to .gases lookup.
 		if(require_xgm_gas && LINDA_GAS_AMT(GM, require_xgm_gas) <= 10)
 			return
 		if(rejects_xgm_gas && LINDA_GAS_AMT(GM, rejects_xgm_gas) >= 1)
@@ -57,7 +57,7 @@
 		var/obj/distilling_tester/distillery_tester = holder.my_atom
 		if(distillery_tester.current_temp < temp_range[1] || distillery_tester.current_temp > temp_range[2])
 			return FALSE
-	// DQEdit — /obj/machinery/portable_atmospherics/powered/reagent_distillery and
+	// /obj/machinery/portable_atmospherics/powered/reagent_distillery and
 	// /obj/machinery/reagent_refinery/reactor were deleted with the ZAS atmos
 	// machinery cleanup. Without those specific machines, the temperature checks
 	// degrade to "use ambient gas temperature" which is already the fallback below.
@@ -74,7 +74,7 @@
 	if(temp_shift != 0)
 		if(istype(holder.my_atom,/obj/distilling_tester))
 			return
-		// DQEdit — reagent_distillery (ZAS-tied) deleted; fall through to ambient
+		// reagent_distillery (ZAS-tied) deleted; fall through to ambient
 		// gas temp shift below for any distilling done in the open.
 		// Change gas temps
 		if(!GM)
@@ -89,7 +89,7 @@
 	id = "distill_biomass"
 	result = REAGENT_ID_BIOMASS
 	required_reagents = list(REAGENT_ID_BLOOD = 1, REAGENT_ID_SUGAR = 1, REAGENT_ID_PHORON = 0.5)
-	result_amount = 6 // CHOMPEdit Buffed to 2400 units per sheet to be in line with the buffed instant reaction. Requires actually using the machine, and having blood to spare so this one should be more phoron-efficient.
+	result_amount = 6 // Buffed to 2400 units per sheet to be in line with the buffed instant reaction. Requires actually using the machine, and having blood to spare so this one should be more phoron-efficient.
 
 	temp_range = list(T20C + 80, T20C + 130)
 	temp_shift = -2
@@ -224,7 +224,7 @@
 	inhibitors = list(REAGENT_ID_WATER = 5)
 	result_amount = 1
 
-	temp_range = list(T0C + 10, T20C + 15) //CHOMPedit: I know this doesn't make sense, and this is a baindaid fix but distiller code refuses to go this low, even with correct variables
+	temp_range = list(T0C + 10, T20C + 15) // I know this doesn't make sense, and this is a baindaid fix but distiller code refuses to go this low, even with correct variables
 	temp_shift = 20
 
 /datum/decl/chemical_reaction/distilling/cryogel/on_reaction(datum/reagents/holder, created_volume)

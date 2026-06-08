@@ -40,14 +40,14 @@
 	network = "tcommsat"
 	autolinkers = list("hub", "relay", "c_relay", "s_relay", "m_relay", "r_relay", "science", "medical",
 	"supply", "service", "common", "command", "engineering", "security", "unused", "hb_relay", "casino_relay",
-	"receiverA", "broadcasterA") //VOREStation Edit - Added "hb_relay" || CHOMPStation Edit - Added "casino_relay"
+	"receiverA", "broadcasterA") // Added "hb_relay" || Added "casino_relay"
 
 /obj/machinery/telecomms/hub/preset_cent
 	id = "CentCom Hub"
 	network = "tcommsat"
 	produces_heat = 0
 	autolinkers = list("hub_cent", "c_relay", "s_relay", "m_relay", "r_relay", "hb_relay",
-		"centcom", "receiverCent", "broadcasterCent") //VOREStation Edit - Added "hb_relay"
+		"centcom", "receiverCent", "broadcasterCent") // Added "hb_relay"
 
 //Receivers
 
@@ -55,7 +55,7 @@
 	id = "Receiver A"
 	network = "tcommsat"
 	autolinkers = list("receiverA") // link to relay
-	freq_listening = list(AI_FREQ, SCI_FREQ, MED_FREQ, SUP_FREQ, SRV_FREQ, COMM_FREQ, ENG_FREQ, SEC_FREQ, BDCM_FREQ, ENT_FREQ) // CHOMPEdit
+	freq_listening = list(AI_FREQ, SCI_FREQ, MED_FREQ, SUP_FREQ, SRV_FREQ, COMM_FREQ, ENG_FREQ, SEC_FREQ, BDCM_FREQ, ENT_FREQ)
 
 
 	//Common and other radio frequencies for people to freely use
@@ -102,7 +102,7 @@
 /obj/machinery/telecomms/bus/preset_four
 	id = "Bus 4"
 	network = "tcommsat"
-	freq_listening = list(ENG_FREQ, AI_FREQ, PUB_FREQ, ENT_FREQ, BDCM_FREQ) // CHOMPEdit
+	freq_listening = list(ENG_FREQ, AI_FREQ, PUB_FREQ, ENT_FREQ, BDCM_FREQ)
 
 	autolinkers = list("processor4", "engineering", "common")
 
@@ -169,7 +169,7 @@
 
 /obj/machinery/telecomms/server/presets/common
 	id = "Common Server"
-	freq_listening = list(PUB_FREQ, AI_FREQ, ENT_FREQ, BDCM_FREQ) // AI Private and Common // CHOMPEdit
+	freq_listening = list(PUB_FREQ, AI_FREQ, ENT_FREQ, BDCM_FREQ) // AI Private and Common //
 
 	autolinkers = list("common")
 

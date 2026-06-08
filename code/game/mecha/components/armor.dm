@@ -91,7 +91,7 @@
 /obj/item/mecha_parts/component/armor/military
 	name = "military grade mecha plating"
 
-	step_delay = 6 //CHOMPedit
+	step_delay = 6
 
 	max_integrity = 100
 
@@ -100,7 +100,7 @@
 	required_type = list(/obj/mecha/combat)
 
 	// damage_minimum = 15 //CHOMPremove
-	// minimum_penetration = 20 //chompedit making this less OP, was 25, is now 20 //Chompedit 2, were removing these
+	// minimum_penetration = 20 //chompedit making this less OP, was 25, is now 20 // 2, were removing these
 
 	damage_absorption = list(
 		"brute"=0.5,
@@ -215,10 +215,10 @@
 /obj/item/mecha_parts/component/armor/alien
 	name = "strange mecha plating"
 	step_delay = 2
-	//Chompedit start  Trying to make this armor decent, without making it OP. Chompedit 2, nerfing damage absorption 2024/8/12
+	// start Trying to make this armor decent, without making it OP. 2, nerfing damage absorption 2024/8/12
 	//damage_minimum = 12
 	//minimum_penetration = 10
-	//Chompedit end
+	// end
 
 	damage_absorption = list(
 		"brute"=0.7,

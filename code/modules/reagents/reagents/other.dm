@@ -592,7 +592,7 @@
 		for(var/mob/living/simple_mob/vore/aggressive/macrophage/virus in T)
 			virus.adjustToxLoss(rand(5, 10))
 
-	T.apply_fire_protection() // CHOMPAdd - Apply fire protection
+	T.apply_fire_protection() // Apply fire protection
 
 /datum/reagent/space_cleaner/affect_touch(mob/living/carbon/M, alien, removed)
 	if(M.r_hand)
@@ -1192,7 +1192,7 @@
 
 	var/hotspot = (locate(/obj/fire) in T)
 	if(hotspot && !isspace(T))
-		var/datum/gas_mixture/lowertemp = T.remove_air(xgm_total_moles(T.return_air())) // DQEdit — XGM T.air → LINDA helper
+		var/datum/gas_mixture/lowertemp = T.remove_air(xgm_total_moles(T.return_air())) // XGM T.air → LINDA helper
 		lowertemp.temperature = max(min(lowertemp.temperature-2000, lowertemp.temperature / 2), 0)
 		lowertemp.react()
 		T.assume_air(lowertemp)
@@ -1204,7 +1204,7 @@
 		if(prob(5))
 			T.visible_message(span_warning("The foam sizzles as it lands on \the [T]!"))
 
-	T.apply_fire_protection() // CHOMPEdit - Apply fire protection to the turf
+	T.apply_fire_protection() // Apply fire protection to the turf
 
 /datum/reagent/firefighting_foam/touch_obj(obj/O, reac_volume)
 	O.water_act(reac_volume / 5)

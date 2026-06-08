@@ -298,7 +298,7 @@
 		speed_coeff += P.rating
 	heal_level = max(min((efficiency * 15) + 10, 100), MINIMUM_HEAL_LEVEL)
 
-	dq_apply_material_synergies(src) // DQAdd
+	dq_apply_material_synergies(src)
 /obj/machinery/clonepod/proc/get_completion()
 	. = (100 * ((get_occupant().health + 100) / (heal_level + 100)))
 

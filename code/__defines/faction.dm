@@ -121,10 +121,9 @@
 
 #define FACTION_MATH "MATH"
 
-//CHOMPAdd Start factions
-#define FACTION_TYR "tyr" //CHOMPAdd
-#define FACTION_TYR_ANT "tyr_ants" //CHOMPAdd
+// factions
+#define FACTION_TYR "tyr"
+#define FACTION_TYR_ANT "tyr_ants"
 #define FACTION_AWAYMISSION "awaymission"
-#define FACTION_BLACKHOLE "blackhole" //CHOMPAdd
-#define FACTION_ECLIPSE "eclipse" //CHOMPAdd
-//CHOMPAdd End
+#define FACTION_BLACKHOLE "blackhole"
+#define FACTION_ECLIPSE "eclipse"

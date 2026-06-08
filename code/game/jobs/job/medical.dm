@@ -16,17 +16,17 @@
 	req_admin_notify = 1
 	economic_modifier = 10
 	access = list(ACCESS_MEDICAL, ACCESS_MEDICAL_EQUIP, ACCESS_MORGUE, ACCESS_GENETICS, ACCESS_HEADS,
-				ACCESS_CHEMISTRY, ACCESS_VIROLOGY, ACCESS_CMO, ACCESS_SURGERY, ACCESS_RC_ANNOUNCE, ACCESS_TELEPORTER, //CHOMPEdit
+				ACCESS_CHEMISTRY, ACCESS_VIROLOGY, ACCESS_CMO, ACCESS_SURGERY, ACCESS_RC_ANNOUNCE, ACCESS_TELEPORTER,
 				ACCESS_KEYCARD_AUTH, ACCESS_PSYCHIATRIST, ACCESS_EVA, ACCESS_EXTERNAL_AIRLOCKS, ACCESS_MAINT_TUNNELS, ACCESS_GATEWAY)
 
 	minimal_access = list(ACCESS_MEDICAL, ACCESS_MEDICAL_EQUIP, ACCESS_MORGUE, ACCESS_GENETICS, ACCESS_HEADS,
-				ACCESS_CHEMISTRY, ACCESS_VIROLOGY, ACCESS_CMO, ACCESS_SURGERY, ACCESS_RC_ANNOUNCE, ACCESS_TELEPORTER, //CHOMPEdit
+				ACCESS_CHEMISTRY, ACCESS_VIROLOGY, ACCESS_CMO, ACCESS_SURGERY, ACCESS_RC_ANNOUNCE, ACCESS_TELEPORTER,
 				ACCESS_KEYCARD_AUTH, ACCESS_PSYCHIATRIST, ACCESS_EVA, ACCESS_EXTERNAL_AIRLOCKS, ACCESS_MAINT_TUNNELS, ACCESS_GATEWAY)
 	alt_titles = list(JOB_ALT_CHIEF_PHYSICIAN = /datum/alt_title/chief_physician, JOB_ALT_MEDICAL_DIRECTOR = /datum/alt_title/medical_director, /*CHOMPEdit RemovalJOB_ALT_HEALTHCARE_MANAGER = /datum/alt_title/healthcare_manager*/)
 
 	minimum_character_age = 25
 	min_age_by_species = list(SPECIES_UNATHI = 70, FBP_MECHANICAL = 10, SPECIES_HUMAN_VATBORN = 14)
-	minimal_player_age = 31 //ChompEDIT
+	minimal_player_age = 31
 	ideal_character_age = 50
 	ideal_age_by_species = list(SPECIES_UNATHI = 140, FBP_MECHANICAL = 20, SPECIES_HUMAN_VATBORN = 20)
 	banned_job_species = list(SPECIES_TESHARI, SPECIES_DIONA, SPECIES_PROMETHEAN, SPECIES_ZADDAT, FBP_DIGITAL)
@@ -237,19 +237,19 @@
 	departments = list(DEPARTMENT_MEDICAL)
 	department_flag = MEDSCI
 	faction = FACTION_STATION
-	total_positions = 2 // CHOMPEdit
-	spawn_positions = 2 // CHOMPEdit
+	total_positions = 2
+	spawn_positions = 2
 	pto_type = PTO_MEDICAL
 	supervisors = "the " + JOB_CHIEF_MEDICAL_OFFICER
 	selection_color = "#013D3B"
 	economic_modifier = 4
-	economic_modifier = 5	// CHOMPAdd - "Makes Parameds make as much as offduty medical."
+	economic_modifier = 5 // "Makes Parameds make as much as offduty medical."
 	access = list(ACCESS_MEDICAL, ACCESS_MEDICAL_EQUIP, ACCESS_MORGUE, ACCESS_SURGERY, ACCESS_CHEMISTRY, ACCESS_VIROLOGY, ACCESS_EVA, ACCESS_MAINT_TUNNELS, ACCESS_EXTERNAL_AIRLOCKS, ACCESS_PSYCHIATRIST)
 	minimal_access = list(ACCESS_MEDICAL, ACCESS_MEDICAL_EQUIP, ACCESS_MORGUE, ACCESS_EVA, ACCESS_MAINT_TUNNELS, ACCESS_EXTERNAL_AIRLOCKS)
 	outfit_type = /datum/decl/hierarchy/outfit/job/medical/paramedic
 	job_description = "A " + JOB_PARAMEDIC + " is primarily concerned with the recovery of patients who are unable to make it to the Medical Department on their own. \
 						They may also be called upon to keep patients stable when Medical is busy or understaffed."
-	alt_titles = list(JOB_ALT_EMERGENCY_MEDICAL_TECHNICIAN = /datum/alt_title/emt, JOB_ALT_MEDICAL_RESPONDER = /datum/alt_title/medical_responder) //CHOMPedit: Removed SAR because that's an actual job here
+	alt_titles = list(JOB_ALT_EMERGENCY_MEDICAL_TECHNICIAN = /datum/alt_title/emt, JOB_ALT_MEDICAL_RESPONDER = /datum/alt_title/medical_responder) // Removed SAR because that's an actual job here
 	banned_job_species = list(SPECIES_DIONA)
 
 	min_age_by_species = list(SPECIES_PROMETHEAN = 2)

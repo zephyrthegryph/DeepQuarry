@@ -1,4 +1,4 @@
-// DQAdd — Resolve all_underwear category->item names into the actual category_item datums
+// Resolve all_underwear category->item names into the actual category_item datums
 // on the character, and copy through the per-item metadata. Lives in a hook because the
 // resolution depends on the global underwear catalog (GLOB.global_underwear.categories_by_name).
 

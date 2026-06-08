@@ -98,7 +98,7 @@
 	required = /obj/item/slime_extract/grey
 
 /datum/decl/chemical_reaction/instant/slime/grey_monkey/on_reaction(datum/reagents/holder)
-	for(var/i = 1 to 5) //CHOMPedit  Increased number of monkey cubes from 4 to 5
+	for(var/i = 1 to 5) // Increased number of monkey cubes from 4 to 5
 		new /obj/item/reagent_containers/food/snacks/monkeycube(get_turf(holder.my_atom))
 	..()
 
@@ -365,7 +365,7 @@
 	if(!istype(T))
 		return
 
-	// DQEdit — was filtering by ZAS zone membership; under LINDA there are no
+	// was filtering by ZAS zone membership; under LINDA there are no
 	// zones. Fall back to view-radius proximity (visually meaningful and matches
 	// "you're in the same room" 95% of the time on stations without windowed walls).
 	log_and_message_admins("Orange extract reaction (heat wave) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
@@ -715,7 +715,7 @@
 	if(!istype(T))
 		return
 
-	// DQEdit — was ZAS-zone filter; under LINDA fall back to view-radius.
+	// was ZAS-zone filter; under LINDA fall back to view-radius.
 	log_and_message_admins("Dark Blue extract reaction (cold snap) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
 
 	var/list/nearby_things = view(T)

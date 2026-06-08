@@ -36,7 +36,7 @@ GLOBAL_LIST_INIT(all_technomancer_assistance, subtypesof(/datum/technomancer/ass
 	var/tab = 4 // Info tab, so new players can read it before doing anything.
 	var/spell_tab = ALL_SPELLS
 	var/show_scepter_text = 0
-	var/universal = FALSE //VOREStation Add - Allows non-technomancers to use this catalog
+	var/universal = FALSE // Allows non-technomancers to use this catalog
 
 /obj/item/technomancer_catalog/apprentice
 	name = "apprentice's catalog"
@@ -48,7 +48,6 @@ GLOBAL_LIST_INIT(all_technomancer_assistance, subtypesof(/datum/technomancer/ass
 	budget = 2000
 	max_budget = 2000
 
-//VOREStation Add
 /obj/item/technomancer_catalog/universal
 	name = "universal catalog"
 	desc = "A catalog to be used with the 'Universal Core', its contents shamelessly \
@@ -57,13 +56,12 @@ GLOBAL_LIST_INIT(all_technomancer_assistance, subtypesof(/datum/technomancer/ass
 	budget = 700
 	max_budget = 700
 	universal = TRUE
-//VOREStation Add End
 
 // Proc: bind_to_owner()
 // Parameters: 1 (new_owner - mob that the book is trying to bind to)
 // Description: Links the catalog to hopefully the technomancer, so that only they can access it.
 /obj/item/technomancer_catalog/proc/bind_to_owner(mob/living/carbon/human/new_owner)
-	if(!owner && (GLOB.technomancers.is_antagonist(new_owner.mind) || universal)) //VOREStation Edit - Universal catalogs
+	if(!owner && (GLOB.technomancers.is_antagonist(new_owner.mind) || universal)) // Universal catalogs
 		owner = new_owner
 
 // Proc: New()
@@ -106,7 +104,7 @@ GLOBAL_LIST_INIT(all_technomancer_assistance, subtypesof(/datum/technomancer/ass
 		else
 			return span_bold("[category]")
 
-// DQEdit Start — TGUI migration: full structured data, no embedded
+// TGUI migration: full structured data, no embedded
 // byond:// hrefs. All actions dispatched via tgui_act.
 /obj/item/technomancer_catalog/attack_self(mob/user)
 	. = ..(user)
@@ -234,7 +232,6 @@ GLOBAL_LIST_INIT(all_technomancer_assistance, subtypesof(/datum/technomancer/ass
 							core.remove_spell(spell)
 							break
 			return TRUE
-// DQEdit End
 
 /obj/item/technomancer_catalog/attackby(atom/movable/AM, mob/user)
 	var/turf/T = get_turf(user)

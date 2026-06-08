@@ -210,7 +210,7 @@
 	..()
 	var/list/selector_uniforms = list(
 		"undersuit, modernized"=/obj/item/clothing/under/rank/security/modern,
-		"GE uniform"=/obj/item/clothing/under/rank/khi/sec, //CHOMPEdit, KHI becomes GE
+		"GE uniform"=/obj/item/clothing/under/rank/khi/sec, // , KHI becomes GE
 		"voidsuit underlayer"=/obj/item/clothing/under/undersuit/sec,
 		"skirt"=/obj/item/clothing/under/rank/security/skirt,
 		"turtleneck"=/obj/item/clothing/under/rank/security/turtleneck,

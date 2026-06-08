@@ -1,4 +1,4 @@
-// DQAdd — NIF cross-pref invariants.
+// NIF cross-pref invariants.
 
 /datum/preference_constraint/species_strips_protean_nif
 	triggers = list("species", "nif_path")

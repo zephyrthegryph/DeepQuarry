@@ -119,7 +119,7 @@
 	melee_damage_upper = 15
 	attack_armor_pen = 0
 
-/* //VOREStation AI Temporary removal
+/* // AI Temporary removal
 /mob/living/simple_mob/hostile/creature/vore
 	vore_active = 1
 	// NO VORE SPRITES
@@ -144,10 +144,10 @@
 /mob/living/simple_mob/animal/passive/cat
 	vore_active = 1
 	// NO VORE SPRITES
-	//specific_targets = 0 // Targeting UNLOCKED //VOREStation Removal - Incompatable
+	// specific_targets = 0 // Targeting UNLOCKED // Removal - Incompatable
 	vore_max_size = RESIZE_TINY
 
-/* //VOREStation AI Temporary removal
+/* // AI Temporary removal
 /mob/living/simple_mob/animal/passive/cat/PunchTarget()
 	if(istype(target_mob,/mob/living/simple_mob/animal/passive/mouse))
 		visible_message(span_warning("\The [src] pounces on \the [target_mob]!]"))
@@ -177,7 +177,7 @@
 	vore_default_mode = DM_HOLD //can use the toggle if you wanna be catfood
 	vore_standing_too = TRUE //gonna get pounced
 
-/* //VOREStation AI Temporary Removal
+/* // AI Temporary Removal
 /mob/living/simple_mob/animal/passive/cat/fluff/EatTarget()
 	var/mob/living/TM = target_mob
 	LAZYSET(prey_excludes, TM, world.time) //so they won't immediately re-eat someone who struggles out (or gets newspapered out) as soon as they're ate

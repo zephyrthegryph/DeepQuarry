@@ -22,7 +22,7 @@
 	. = speed
 
 	if(module_active && istype(module_active,/obj/item/borg/combat/mobility))
-		. -= 2 // VOREStation Edit
+		. -= 2
 
 	if(get_restraining_bolt())	// Borgs with Restraining Bolts move slower.
 		. += 1

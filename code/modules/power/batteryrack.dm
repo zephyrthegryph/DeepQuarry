@@ -47,7 +47,7 @@
 	input_level = max_transfer_rate
 	output_level = max_transfer_rate
 
-	dq_apply_material_synergies(src) // DQAdd
+	dq_apply_material_synergies(src)
 /obj/machinery/power/smes/batteryrack/Destroy()
 	for(var/obj/item/cell/C in internal_cells)
 		qdel(C)

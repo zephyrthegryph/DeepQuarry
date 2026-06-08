@@ -1,4 +1,4 @@
-// DQEdit — catalogue_delay var on /atom moved to GLOB.dq_catalogue_delay_by_type
+// catalogue_delay var on /atom moved to GLOB.dq_catalogue_delay_by_type
 // (per-type defaults) plus GLOB.dq_catalogue_delay_by_atom (per-instance overrides).
 // See code/modules/consolidation/atom_var_components.dm.
 /atom
@@ -42,7 +42,7 @@
 		return FALSE
 	return ..()
 
-// DQEdit — get_catalogue_delay() now defined in .../components/catalogue_delay.dm
+// get_catalogue_delay() now defined in .../components/catalogue_delay.dm
 
 // Override for special behaviour.
 // Should return a list with one or more "/datum/category_item/catalogue" types, or null.

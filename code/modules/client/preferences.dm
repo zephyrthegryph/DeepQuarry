@@ -16,16 +16,16 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	var/saved_notification = FALSE
 
 	//game-preferences
-	var/lastchangelog = ""				//Saved changlog filesize to detect if there was a change // CHOMPAdd
+	var/lastchangelog = "" // Saved changlog filesize to detect if there was a change //
 
-	// DQEdit — be_special, b_type, blood_reagents, headset, backbag, pdachoice, no_jacket,
+	// be_special, b_type, blood_reagents, headset, backbag, pdachoice, no_jacket,
 	// h_style, grad_style, f_style, s_tone, alternate_languages, language_prefixes,
 	// language_custom_keys, gear_list, gear_slot, traits (legacy alias), synth_color,
 	// synth_markings, digitigrade, antag_faction, antag_vis all migrated to /datum/preference
 	// subtypes. species_preview was unused; deleted.
 
 		//Mob preview
-	// DQEdit — replaced the BYOND map control approach entirely. Instead of
+	// replaced the BYOND map control approach entirely. Instead of
 	// rendering the mannequin onto a map element via screen objects, we
 	// flatten the mannequin (4 directions) and the BG into base-64 PNGs
 	// via getFlatIcon + icon2base64 and ship them in tgui_data. React
@@ -47,14 +47,14 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	// maps each organ to either null(intact), "cyborg" or "amputated"
 	// will probably not be able to do this for head and torso ;)
 
-	// DQEdit — body_markings, flavor_texts, flavour_texts_robot, custom_link, exploit_record migrated to /datum/preference subtypes.
+	// body_markings, flavor_texts, flavour_texts_robot, custom_link, exploit_record migrated to /datum/preference subtypes.
 
 	var/client/client = null
 	var/client_ckey = null
 
-	// DQEdit — communicator_visibility/ringtone migrated to /datum/preference subtypes.
+	// communicator_visibility/ringtone migrated to /datum/preference subtypes.
 
-	// DQEdit — Bay player_setup chain deleted; per-pref sanitize/save/load handles
+	// Bay player_setup chain deleted; per-pref sanitize/save/load handles
 	// everything. /datum/browser/panel also removed (tgui-migration replaces all
 	// browse()/datum/browser usage).
 
@@ -71,7 +71,7 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	/// The json savefile for this datum
 	var/datum/json_savefile/savefile
 
-	// DQAdd — when non-zero, defers save flushes inside a transactional update_many() block.
+	// when non-zero, defers save flushes inside a transactional update_many() block.
 	var/save_batch_depth = 0
 	/// Set when at least one save would have fired during the current batch.
 	var/save_batch_dirty = FALSE
@@ -82,21 +82,21 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	/// Re-entry guard for update_preview_icon(). apply_hooks that write prefs as a side
 	/// effect would otherwise re-trigger preview generation and infinite-recurse.
 	var/updating_preview_icon = FALSE
-	/// DQAdd — Guard for the deferred static_data push (full update — used
+	// / Guard for the deferred static_data push (full update — used
 	/// when an editor cache entry was invalidated, e.g. species change drops
 	/// loadout's catalog). Coalesces multiple invalidations in one tick.
 	var/dq_preview_pending = FALSE
-	/// DQAdd — Guard for the deferred ui_data push (data-only update — used
+	// / Guard for the deferred ui_data push (data-only update — used
 	/// for routine pref edits, slider drags, etc. that only need to refresh
 	/// the preview assets / pref values). Avoids the heavy reconciliation
 	/// that send_full_update would trigger.
 	var/dq_data_push_pending = FALSE
-	/// DQAdd — Cache of editor static_data payloads ({editor_key → list}).
+	// / Cache of editor static_data payloads ({editor_key → list}).
 	/// Built lazily by the character_setup middleware's get_ui_static_data.
 	/// Invalidated by update_preference when a structural pref changes (see
 	/// GLOB.dq_editor_static_invalidator_keys). null means "not built yet".
 	var/list/dq_editor_static_cache = null
-	/// DQAdd — Guard against scheduling multiple deferred cache builds when
+	// / Guard against scheduling multiple deferred cache builds when
 	/// get_ui_static_data is called repeatedly before the first build lands.
 	var/dq_static_pending = FALSE
 
@@ -110,12 +110,12 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 		client_ckey = C.ckey
 		load_and_save = !IsGuestKey(C.key)
 		load_path(C.ckey)
-		// DQEdit — no legacy BYOND savefile migration on this fork.
+		// no legacy BYOND savefile migration on this fork.
 	else
 		CRASH("attempted to create a preferences datum without a client or mock!")
 	load_savefile()
 
-	// DQEdit — Bay player_setup instantiation deleted; new system needs no setup datum.
+	// Bay player_setup instantiation deleted; new system needs no setup datum.
 
 	var/loaded_preferences_successfully = load_preferences()
 	if(loaded_preferences_successfully)
@@ -125,7 +125,7 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	// Didn't load a character, so let's randomize
 	set_biological_gender(pick(MALE, FEMALE))
 	update_preference_by_type(/datum/preference/name/real_name, random_name(read_preference(/datum/preference/choiced/gender/identifying), read_preference(/datum/preference/choiced/species)))
-	update_preference_by_type(/datum/preference/text/human/b_type, RANDOM_BLOOD_TYPE) // DQEdit — migrated
+	update_preference_by_type(/datum/preference/text/human/b_type, RANDOM_BLOOD_TYPE) // migrated
 
 	if(client)
 		apply_all_client_preferences()
@@ -135,17 +135,17 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	save_character() // Save random character
 
 /datum/preferences/Destroy()
-	// DQEdit — character_preview_b64 is just a list of base64 strings, no
+	// character_preview_b64 is just a list of base64 strings, no
 	// atoms to qdel.
 	character_preview_b64 = null
-	// DQEdit — `middleware` is a list of /datum/preference_middleware; QDEL_NULL would
+	// `middleware` is a list of /datum/preference_middleware; QDEL_NULL would
 	// pass the list itself to qdel and trip the "lists should not be qdel'd" runtime.
 	// QDEL_LIST iterates and qdels each entry then clears the list.
 	QDEL_LIST(middleware)
 	value_cache = null
 	return ..()
 
-// DQAdd Start — transactional batching for constraint cascades and editor actions.
+// transactional batching for constraint cascades and editor actions.
 // Wrap multiple update_preference() calls in update_many(); all the writes are coalesced
 // into a single save flush at the end. Calls nest safely.
 /datum/preferences/proc/begin_update_batch()
@@ -160,7 +160,6 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 		save_batch_dirty = FALSE
 		save_character()
 		save_preferences()
-// DQAdd End
 
 /datum/preferences/proc/ShowChoices(mob/user)
 	if(!user || !user.client)
@@ -170,7 +169,7 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 		to_chat(user, span_danger("No mob exists for the given client!"))
 		return
 
-	// DQEdit — refresh the body appearance + base64 assets before tgui opens.
+	// refresh the body appearance + base64 assets before tgui opens.
 	// Preview build is the dominant cost of opening the window
 	// (~500-1500ms for a fully-dressed mannequin × 4 directions). Defer the
 	// north/east/west renders to a spawn() so the window paints with the
@@ -181,7 +180,7 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 		update_preview_icon_lazy()
 	tgui_interact(user)
 
-// DQEdit Start — asset-based character preview. update_character_previews
+// asset-based character preview. update_character_previews
 // flattens the mannequin (one frame per cardinal direction) plus the BG
 // into base-64 PNG strings via getFlatIcon + icon2base64 and stashes them
 // on character_preview_b64. React displays them with <img> tags scaled by
@@ -191,7 +190,7 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	if(!mannequin)
 		return
 	LAZYINITLIST(character_preview_b64)
-	// DQEdit — bake size_multiplier + species icon scale into the flattened
+	// bake size_multiplier + species icon scale into the flattened
 	// PNG. getFlatIcon ignores the mannequin's matrix transform (that's how
 	// in-world rendering applies size), so without this Scale() step the
 	// preview ignores the size slider entirely.
@@ -218,7 +217,6 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 
 /datum/preferences/proc/clear_character_previews()
 	character_preview_b64 = null
-// DQEdit End
 
 /datum/preferences/proc/process_link(mob/user, list/href_list)
 	if(!user)	return
@@ -240,7 +238,7 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 
 	if(href_list["save"])
 		if(save_character())
-			to_chat(usr,span_notice("Character [read_preference(/datum/preference/name/real_name)] saved!")) // DQEdit — was player_setup.preferences.read_preference
+			to_chat(usr,span_notice("Character [read_preference(/datum/preference/name/real_name)] saved!")) // was player_setup.preferences.read_preference
 		save_preferences()
 	else if(href_list["reload"])
 		load_preferences(TRUE)
@@ -274,7 +272,7 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	return 1
 
 /datum/preferences/proc/copy_to(mob/living/carbon/human/character, icon_updates = TRUE)
-	// DQEdit — sanitize via the new registry-walking sanitize_preferences() instead of the
+	// sanitize via the new registry-walking sanitize_preferences() instead of the
 	// deleted Bay player_setup.sanitize_setup() chain.
 	sanitize_preferences()
 
@@ -285,7 +283,7 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 		// write_ instead of update_ to avoid update_preference_by_type calling copy_to again.
 		write_preference_by_type(/datum/preference/name/real_name, random_name(read_preference(/datum/preference/choiced/gender/identifying), read_preference(/datum/preference/choiced/species)))
 
-	// DQEdit — apply pipeline:
+	// apply pipeline:
 	//   1. Per-pref apply() walks every PREFERENCE_CHARACTER pref in priority order.
 	//   2. /datum/preference_apply_hook subtypes run after, for cross-pref orchestration that
 	//      doesn't fit a single pref (name sanitization, species/trait synthesis, organ apply,
@@ -399,7 +397,7 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 		user.client?.prefs_vr.load_vore()
 		ShowChoices(user)
 
-// DQEdit — vanity_copy_to rewritten to ride the same /datum/preference apply pipeline as
+// vanity_copy_to rewritten to ride the same /datum/preference apply pipeline as
 // copy_to(), with a curated list of "vanity-scope" pref types so we only touch appearance/
 // identity bits. The bool flags select which subsets get copied; the heavy lifting
 // (species-filtered accessory resolution, markings overlay rebuild, name sanitization
@@ -498,7 +496,7 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 		character.species.micro_size_mod = 0
 		character.species.icon_scale_x = 1
 		character.species.icon_scale_y = 1
-		for(var/trait in read_preference(/datum/preference/typed_list/traits/neu_traits)) // DQEdit — typed_list pref base
+		for(var/trait in read_preference(/datum/preference/typed_list/traits/neu_traits)) // typed_list pref base
 			if(trait in traits_to_copy)
 				var/datum/trait/instance = GLOB.all_traits[trait]
 				if(!instance)
@@ -538,13 +536,13 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 
 
 // === merged from preferences_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
-// DQEdit — metadata_maybes/metadata_favs/matadata_ooc_style were dead declarations
+// metadata_maybes/metadata_favs/matadata_ooc_style were dead declarations
 // (never referenced anywhere); equivalent functionality is on /datum/preference/text/living/ooc_notes_{maybes,favs} and /datum/preference/toggle/living/ooc_notes_style. Deleted.
-// DQEdit — job_other_low/med/high migrated to /datum/preference/numeric/human/job_other_* subtypes; declarations deleted.
+// job_other_low/med/high migrated to /datum/preference/numeric/human/job_other_* subtypes; declarations deleted.
 
 
 // === merged from preferences_vr.dm during hard-fork de-suffix (manually verified) ===
-// DQEdit — show_in_directory, directory_*, sensorpref, capture_crystal,
+// show_in_directory, directory_*, sensorpref, capture_crystal,
 // auto_backup_implant, borg_petting migrated to /datum/preference subtypes
 // (see code/modules/client/preferences/types/character/directory.dm).
 

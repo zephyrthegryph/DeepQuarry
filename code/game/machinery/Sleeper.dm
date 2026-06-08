@@ -31,7 +31,7 @@
 		if(sleepernew)
 			sleeper = sleepernew
 			sleepernew.console = src
-			break //VOREStation Edit
+			break
 
 
 /obj/machinery/sleep_console/attack_ai(mob/user)
@@ -485,17 +485,17 @@
 		M.forceMove(src)
 		update_use_power(USE_POWER_ACTIVE)
 		occupant = M
-		occupant.cozyloop.start() // CHOMPStation Add: Cozy Music
+		occupant.cozyloop.start() // Cozy Music
 		update_icon()
 
 /obj/machinery/sleeper/proc/go_out()
 	if(!occupant || occupant.loc != src)
-		occupant.cozyloop.stop() // CHOMPStation Add: Cozy Music
+		occupant.cozyloop.stop() // Cozy Music
 		occupant = null // JUST IN CASE
 		return
 	occupant.Stasis(0)
 	occupant.forceMove(get_turf(src))
-	occupant.cozyloop.stop() // CHOMPStation Add: Cozy Music
+	occupant.cozyloop.stop() // Cozy Music
 	occupant = null
 	for(var/atom/movable/A in src) // In case an object was dropped inside or something
 		if(A == beaker || A == circuit)

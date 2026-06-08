@@ -74,7 +74,7 @@
 	if(stat &NOPOWER)
 		icon_state = "auth_off"
 
-// DQEdit Start — TGUI migration. attack_hand opens KeycardAuth.tsx;
+// TGUI migration. attack_hand opens KeycardAuth.tsx;
 // Topic event/reset actions move to tgui_act.
 /obj/machinery/keycard_auth/attack_hand(mob/user as mob)
 	if(user.stat || stat & (NOPOWER|BROKEN))
@@ -120,7 +120,6 @@
 			reset()
 			add_fingerprint(usr)
 			return TRUE
-// DQEdit End
 
 /obj/machinery/keycard_auth/proc/reset()
 	active = 0

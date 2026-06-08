@@ -31,11 +31,11 @@
 	permeability_coefficient = 0.05
 	min_cold_protection_temperature = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE
 	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
-	armor = list(melee = 15, bullet = 10, laser = 10, energy = 10, bomb = 5, bio = 0, rad = 0) // CHOMPedit: Now protective.
+	armor = list(melee = 15, bullet = 10, laser = 10, energy = 10, bomb = 5, bio = 0, rad = 0) // Now protective.
 	resistance_flags = FIRE_PROOF
 
-/obj/item/clothing/gloves/combat //CHOMPedit: Combined effect of SWAT gloves and insulated gloves, with better protective stats.
-	desc = "These military-grade tactical gloves protect the user from electrical shocks, fire, high-velocity impacts and varying temperatures." // CHOMPedit: Updated description.
+/obj/item/clothing/gloves/combat // Combined effect of SWAT gloves and insulated gloves, with better protective stats.
+	desc = "These military-grade tactical gloves protect the user from electrical shocks, fire, high-velocity impacts and varying temperatures." // Updated description.
 	name = "combat gloves"
 	icon_state = "swat"
 	item_state = "swat"
@@ -43,7 +43,7 @@
 	permeability_coefficient = 0.05
 	min_cold_protection_temperature = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE
 	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
-	armor = list(melee = 20, bullet = 15, laser = 15, energy = 15, bomb = 10, bio = 0, rad = 0) // CHOMPedit: Now protective.
+	armor = list(melee = 20, bullet = 15, laser = 15, energy = 15, bomb = 10, bio = 0, rad = 0) // Now protective.
 	resistance_flags = FIRE_PROOF
 
 /obj/item/clothing/gloves/sterile
@@ -91,12 +91,11 @@
 	icon_state = "work"
 	item_state = "wgloves"
 	armor = list(melee = 10, bullet = 10, laser = 10, energy = 5, bomb = 0, bio = 0, rad = 0)
-// CHOMPEdit Start - If they resist lasers and energy they should help inulate against heat and cold.
+// If they resist lasers and energy they should help inulate against heat and cold.
 	cold_protection = HANDS
 	min_cold_protection_temperature = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE
 	heat_protection = HANDS
 	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
-// CHOMPEdit End
 /obj/item/clothing/gloves/tactical
 	desc = "These brown tactical gloves are made from a durable synthetic, and have hardened knuckles."
 	name = "tactical gloves"
@@ -119,7 +118,7 @@
 	species_restricted = list("Vox")
 	drop_sound = 'sound/items/drop/metalboots.ogg'
 	pickup_sound = 'sound/items/pickup/toolbox.ogg'
-	armor = list (melee = 20, bullet = 15, laser = 10, energy = 10, bomb =5, bio = 30, rad = 30) //gently bumped up Heavy engineering gloves value for protection //ChompEdit
+	armor = list (melee = 20, bullet = 15, laser = 10, energy = 10, bomb =5, bio = 30, rad = 30) // gently bumped up Heavy engineering gloves value for protection //
 
 	min_cold_protection_temperature = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE
 	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
@@ -164,7 +163,7 @@
 
 
 // === merged from miscellaneous_vr.dm during hard-fork de-suffix (verified no override-order change) ===
-//CHOMPEdit Start??? Somehow wedding rigs were attributed to me from 9 years ago but is not upstream and is only on here, yet there's no chomp edits?
+// ??? Somehow wedding rigs were attributed to me from 9 years ago but is not upstream and is only on here, yet there's no chomp edits?
 /obj/item/clothing/gloves/weddingring
 	name = "golden wedding ring"
 	desc = "For showing your devotion to another person. It has a golden glimmer to it."
@@ -185,7 +184,7 @@
 	name = "silver wedding ring"
 	icon_state = "wedring_s"
 	item_state = "wedring_s"
-//CHOMPEdit End???
+// ???
 
 /obj/item/clothing/gloves/color
 	name = "gloves"

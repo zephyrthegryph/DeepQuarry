@@ -68,7 +68,7 @@ ADMIN_VERB(cmd_check_new_players, R_HOLDER, "Check new Players", "Check the acco
 		to_chat(user, "Some accounts did not have proper ages set in their clients. This function requires database to be present.")
 
 	if(msg != "")
-		// DQEdit — structured TGUI AdminReport.
+		// structured TGUI AdminReport.
 		dq_admin_report_html(user, "Player Age Check", msg)
 		return
 	to_chat(user, "No matches for that age range found.")
@@ -473,7 +473,7 @@ ADMIN_VERB(respawn_character, (R_ADMIN|R_REJUVINATE), "Spawn Character", "(Re)Sp
 		to_chat(src, "Something went wrong and spawning failed.")
 		return
 
-	// DQEdit — mind_scan / resleeve_scan migrated to /datum/preference.
+	// mind_scan / resleeve_scan migrated to /datum/preference.
 	// Respect admin spawn record choice. There's really not a nice way to do this without butchering copy_to() code for an admin proc
 	var/old_mind_scan = picked_client.prefs.read_preference(/datum/preference/toggle/human/mind_scan)
 	var/old_body_scan = picked_client.prefs.read_preference(/datum/preference/toggle/human/resleeve_scan)
@@ -510,7 +510,7 @@ ADMIN_VERB(respawn_character, (R_ADMIN|R_REJUVINATE), "Spawn Character", "(Re)Sp
 		new_character.mind.loaded_from_ckey = picked_ckey
 		new_character.mind.loaded_from_slot = picked_slot
 
-	for(var/lang in picked_client.prefs.read_preference(/datum/preference/alternate_languages)) // DQEdit — migrated language pref
+	for(var/lang in picked_client.prefs.read_preference(/datum/preference/alternate_languages)) // migrated language pref
 		var/datum/language/chosen_language = GLOB.all_languages[lang]
 		if(chosen_language)
 			if(is_lang_whitelisted(src,chosen_language) || (new_character.species && (chosen_language.name in new_character.species.secondary_langs)))
@@ -525,7 +525,7 @@ ADMIN_VERB(respawn_character, (R_ADMIN|R_REJUVINATE), "Spawn Character", "(Re)Sp
 			if(new_character.mind)
 				new_character.mind.assigned_role = charjob
 				new_character.mind.role_alt_title = SSjob.get_player_alt_title(new_character, charjob)
-			equip_custom_items(new_character)	//CHOMPEdit readded to enable custom_item.txt
+			equip_custom_items(new_character) // readded to enable custom_item.txt
 
 	//If customised job title, modify here.
 	if(custom_job && custom_job_title)
@@ -943,12 +943,11 @@ ADMIN_VERB(spawn_character_mob, R_SPAWN, "Spawn Character As Mob", "Spawn a spec
 
 
 	new_mob.key = picked_client.key //Finally put them in the mob
-	// DQEdit Start — migrated flavor_texts/flavour_texts_robot
+	// migrated flavor_texts/flavour_texts_robot
 	if(flavor == "General")
 		new_mob.flavor_text = LAZYACCESS(new_mob?.client?.prefs?.read_preference(/datum/preference/flavor_texts), "general")
 	if(flavor == "Robot")
 		new_mob.flavor_text = LAZYACCESS(new_mob?.client?.prefs?.read_preference(/datum/preference/flavour_texts_robot), "Default")
-	// DQEdit End
 	if(organs)
 		new_mob.copy_from_prefs_vr()
 		if(LAZYLEN(new_mob.vore_organs))

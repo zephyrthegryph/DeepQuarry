@@ -72,22 +72,21 @@
 	var/num_devs_online = 0
 	var/num_event_managers_online = 0
 	var/num_mentors_online = 0
-	for(var/client/C in GLOB.admins) // VOREStation Edit - GLOB
+	for(var/client/C in GLOB.admins) // GLOB
 		var/temp = ""
 		var/category = R_ADMIN
-		// VOREStation Edit - Apply stealthmin protection to all levels
+		// Apply stealthmin protection to all levels
 		if(C.holder.fakekey && !check_rights_for(src, R_ADMIN|R_MOD))	// Only admins and mods can see stealthmins
 			continue
-		// VOREStation Edit End
-		if(check_rights_for(C, R_BAN)) // admins //VOREStation Edit
+		if(check_rights_for(C, R_BAN)) // admins //
 			num_admins_online++
-		else if(check_rights_for(C, R_ADMIN) && !check_rights_for(C, R_SERVER)) // mods //VOREStation Edit: Game masters
+		else if(check_rights_for(C, R_ADMIN) && !check_rights_for(C, R_SERVER)) // mods // Game masters
 			category = R_MOD
 			num_mods_online++
 		else if(check_rights_for(C, R_SERVER)) // developers
 			category = R_SERVER
 			num_devs_online++
-		else if(check_rights_for(C, R_STEALTH)) // event managers //VOREStation Edit: Retired Staff
+		else if(check_rights_for(C, R_STEALTH)) // event managers // Retired Staff
 			category = R_EVENT
 			num_event_managers_online++
 		else if(check_rights_for(C, R_MENTOR))
@@ -125,7 +124,7 @@
 	msg = span_bold("Current Admins ([num_admins_online]):") + "\n" + msg
 
 	if(CONFIG_GET(flag/show_mods))
-		msg += "\n" + span_bold(" Current Moderators ([num_mods_online]):") + "\n" + modmsg // CHOMPEdit
+		msg += "\n" + span_bold(" Current Moderators ([num_mods_online]):") + "\n" + modmsg
 
 	if(CONFIG_GET(flag/show_devs))
 		msg += "\n" + span_bold(" Current Developers ([num_devs_online]):") + "\n" + devmsg

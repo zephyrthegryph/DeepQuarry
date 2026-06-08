@@ -64,7 +64,7 @@ GLOBAL_VAR_INIT(photo_count, 0)
 	else
 		return list(span_notice("It is too far away to examine."))
 
-// DQEdit Start — TGUI migration. show() opens Photo.tsx; the image is
+// TGUI migration. show() opens Photo.tsx; the image is
 // embedded via icon2html (inline base64 data URL) instead of the legacy
 // browse_rsc + img-tag dance.
 /obj/item/photo/proc/show(mob/user as mob)
@@ -88,7 +88,6 @@ GLOBAL_VAR_INIT(photo_count, 0)
 	else
 		data["image_html"] = ""
 	return data
-// DQEdit End
 
 /obj/item/photo/verb/rename()
 	set name = "Rename photo"
@@ -218,7 +217,7 @@ GLOBAL_VAR_INIT(photo_count, 0)
 	for(var/i; i <= sorted.len; i++)
 		var/atom/A = sorted[i]
 		if(A)
-			var/icon/img = getFlatIcon(A, no_anim = TRUE)//, picture_planes = picture_planes)//build_composite_icon(A) //VOREStation Edit
+			var/icon/img = getFlatIcon(A, no_anim = TRUE) // , picture_planes = picture_planes)//build_composite_icon(A) //
 
 			// If what we got back is actually a picture, draw it.
 			if(istype(img, /icon))

@@ -48,9 +48,9 @@
 
 	// Find out of this mob is a proper mob!
 	if (persister.mind && persister.mind.loaded_from_ckey)
-		if(ckey(persister.mind.key) != persister.mind.loaded_from_ckey) //CHOMPAdd
+		if(ckey(persister.mind.key) != persister.mind.loaded_from_ckey)
 			warning("Persist (P4P): [persister.mind] was loaded from ckey [persister.mind.loaded_from_ckey] mismatching the current ckey [ckey(persister.mind.key)].")
-			return //CHOMPAdd End
+			return
 		// Okay this mob has a real loaded-from-savefile mind in it!
 		var/datum/preferences/prefs = GLOB.preferences_datums[persister.mind.loaded_from_ckey]
 		if(!prefs)
@@ -118,7 +118,7 @@
 // Saves mob's current coloration state to prefs.
 /proc/apply_coloration_to_prefs(mob/living/carbon/human/character, datum/preferences/prefs)
 	if(!istype(character)) return
-	// DQEdit — h_style/f_style/s_tone/b_type migrated to /datum/preference.
+	// h_style/f_style/s_tone/b_type migrated to /datum/preference.
 	prefs.update_preference_by_type(/datum/preference/text/human/h_style, character.h_style)
 
 	prefs.update_preference_by_type(/datum/preference/color/human/eyes_color, rgb(character.r_eyes, character.g_eyes, character.b_eyes))
@@ -143,7 +143,7 @@
 
 	// secondary ears
 	prefs.update_preference_by_type(/datum/preference/text/human/ear_secondary_style, character.ear_secondary_style?.name)
-	prefs.update_preference_by_type(/datum/preference/ear_secondary_colors, character.ear_secondary_colors) // DQEdit — migrated pref
+	prefs.update_preference_by_type(/datum/preference/ear_secondary_colors, character.ear_secondary_colors) // migrated pref
 
 	prefs.update_preference_by_type(/datum/preference/color/human/tail_color1, rgb(character.r_tail, character.g_tail, character.b_tail))
 	prefs.update_preference_by_type(/datum/preference/color/human/tail_color2, rgb(character.r_tail2, character.g_tail2, character.b_tail2))
@@ -156,8 +156,8 @@
 	prefs.update_preference_by_type(/datum/preference/color/human/wing_color3, rgb(character.r_wing3, character.g_wing3, character.b_wing3))
 	prefs.update_preference_by_type(/datum/preference/numeric/human/wing_alpha, character.a_wing)
 
-	prefs.update_preference_by_type(/datum/preference/text/human/custom_species, character.custom_species) // DQEdit — migrated pref
-	prefs.update_preference_by_type(/datum/preference/toggle/human/digitigrade, character.digitigrade) // DQEdit — migrated pref
+	prefs.update_preference_by_type(/datum/preference/text/human/custom_species, character.custom_species) // migrated pref
+	prefs.update_preference_by_type(/datum/preference/toggle/human/digitigrade, character.digitigrade) // migrated pref
 
 // Saves mob's current organ state to prefs.
 /proc/apply_organs_to_prefs(mob/living/carbon/human/character, datum/preferences/prefs)
@@ -199,7 +199,7 @@
 // Saves mob's current body markings state to prefs.
 /proc/apply_markings_to_prefs(mob/living/carbon/human/character, datum/preferences/prefs)
 	if(!istype(character)) return
-	prefs.update_preference_by_type(/datum/preference/body_markings, character.get_prioritised_markings()) // DQEdit — migrated pref, overwrite with new list
+	prefs.update_preference_by_type(/datum/preference/body_markings, character.get_prioritised_markings()) // migrated pref, overwrite with new list
 
 /**
 * Resolve any surplus/deficit in nutrition's effet on weight all at once.
@@ -244,7 +244,7 @@
 		WARNING("Persist (NIF): [H] has no mind slot, skipping")
 		return
 
-	// DQEdit Start — NIF data now lives in the main per-character savefile alongside everything else.
+	// NIF data now lives in the main per-character savefile alongside everything else.
 	var/datum/json_savefile/savefile = new /datum/json_savefile("data/player_saves/[copytext(H.ckey,1,2)]/[H.ckey]/preferences.json")
 	var/list/save_data = savefile.get_entry("character[slot]", list())
 
@@ -276,4 +276,3 @@
 		H.client.prefs.value_cache -= /datum/preference/nif_path
 		H.client.prefs.value_cache -= /datum/preference/numeric/nif_durability
 		H.client.prefs.value_cache -= /datum/preference/nif_savedata
-	// DQEdit End

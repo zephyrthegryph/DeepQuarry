@@ -226,7 +226,7 @@ Any-Mode: (hotkey doesn't need to be on)
 
 // Set the DreamSeeker input macro to the type appropriate for its mob
 /client/proc/set_hotkeys_macro(macro_name = "macro", hotkey_macro_name = "hotkeymode", hotkeys_enabled = null)
-	// DQEdit — non-hotkey mode is permanently disabled in this fork; the
+	// non-hotkey mode is permanently disabled in this fork; the
 	// skin removed the hotkey_toggle element and the input/say/status bars
 	// that only existed for non-hotkey mode. Ignore the caller / pref and
 	// force hotkey mode every time, so clients whose saved preference is

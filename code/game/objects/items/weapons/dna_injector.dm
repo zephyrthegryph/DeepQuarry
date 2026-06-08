@@ -235,7 +235,7 @@
 
 // Injectors for all original genes and some new ones
 /obj/item/dnainjector/set_trait/anxiety	// stutter
-	trait_path = /datum/trait/negative/disability_nervousness //CHOMPStation Edit: neutral -> negative
+	trait_path = /datum/trait/negative/disability_nervousness // neutral -> negative
 /obj/item/dnainjector/set_trait/anxiety/disable
 	disabling = TRUE
 
@@ -243,12 +243,12 @@
 	trait_path = /datum/trait/positive/superpower_noprints
 /obj/item/dnainjector/set_trait/noprints/disable
 	disabling = TRUE
-//VOREStation Note: TRAITGENETICS - tourettes Disabled on VS //CHOMPStation Edit - Enable
+// Note: TRAITGENETICS - tourettes Disabled on VS // Enable
 /obj/item/dnainjector/set_trait/tourettes // tour
 	trait_path = /datum/trait/neutral/disability_tourettes
 /obj/item/dnainjector/set_trait/tourettes/disable
 	disabling = TRUE
-//VOREStation Note: TRAITGENETICS - tourettes Disabled on VS //CHOMPStation Edit - Enable
+// Note: TRAITGENETICS - tourettes Disabled on VS // Enable
 /obj/item/dnainjector/set_trait/cough // cough
 	trait_path = /datum/trait/negative/disability_cough
 /obj/item/dnainjector/set_trait/cough/disable
@@ -288,12 +288,12 @@
 	trait_path = /datum/trait/neutral/coldadapt
 /obj/item/dnainjector/set_trait/coldadapt/disable
 	disabling = TRUE
-//VOREStation Note: TRAITGENETICS - Disabled on VS //CHOMPStation Edit - Enable
+// Note: TRAITGENETICS - Disabled on VS // Enable
 /obj/item/dnainjector/set_trait/xray // xraymut
 	trait_path = /datum/trait/positive/superpower_xray
 /obj/item/dnainjector/set_trait/xray/disable
 	disabling = TRUE
-//VOREStation Note: TRAITGENETICS - Disabled on VS //CHOMPStation Edit - Enable
+// Note: TRAITGENETICS - Disabled on VS // Enable
 /obj/item/dnainjector/set_trait/deaf // deafmut
 	trait_path = /datum/trait/negative/disability_deaf
 /obj/item/dnainjector/set_trait/deaf/disable

@@ -389,7 +389,7 @@
 	spaceport_freebie = 0
 	last_spaceport_action = ""
 
-// DQEdit — structured TGUI Orion Trail panel; the attack_hand override
+// structured TGUI Orion Trail panel; the attack_hand override
 // lives in code/modules/admin/orion_trail_panel.dm and
 // re-runs the upstream game-over side effects before opening the panel.
 
@@ -398,9 +398,8 @@
 		return
 	if(href_list["close"])
 		usr.unset_machine()
-		// DQEdit Start — close the TGUI panel instead of a browse() window.
+		// close the TGUI panel instead of a browse() window.
 		SStgui.close_uis(src)
-		// DQEdit End
 
 	if(busy)
 		return
@@ -1315,7 +1314,7 @@
 							/obj/item/toy/redbutton									= 2,
 							/obj/item/toy/gnome										= 2,
 							/obj/item/toy/AI										= 2,
-							/obj/item/clothing/gloves/ring/buzzer/toy				= 2, // CHOMPAdd
+							/obj/item/clothing/gloves/ring/buzzer/toy				= 2,
 							/obj/item/storage/box/handcuffs/fake				= 2,
 							/obj/item/toy/nuke										= 2,
 							/obj/item/toy/minigibber								= 2,

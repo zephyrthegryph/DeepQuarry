@@ -91,7 +91,7 @@ ADMIN_VERB(sec_camera_report, R_DEBUG, "Camera Report", "Gives a report of the c
 
 	output += "</ul>"
 
-	// DQEdit — structured TGUI AdminReport.
+	// structured TGUI AdminReport.
 	dq_admin_report_html(user, "Camera Report", output)
 	feedback_add_details("admin_verb","mCRP") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
@@ -113,7 +113,7 @@ ADMIN_VERB(intercom_view, R_DEBUG, "Intercom Range Display", "Displays the inter
 					qdel(F)
 	feedback_add_details("admin_verb","mIRD") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-// DQEdit — deleted ZAS-only admin debug verbs (testZAScolors / testZAScolors_remove /
+// deleted ZAS-only admin debug verbs (testZAScolors / testZAScolors_remove /
 // rebootAirMaster) and their /client scratch state. ZAS zones don't exist
 // under LINDA; the visualization concepts (zone-adjacency colours, reboot ZAS)
 // don't map onto LINDA's excited_groups model. The Air Report verb

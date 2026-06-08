@@ -614,11 +614,10 @@
 	smoke.set_up(10, 0, get_turf(src), 300)
 	smoke.start()
 
-	// CHOMPAdd - Chance to make a terrible fire
+	// Chance to make a terrible fire
 	if(prob(70))
 		var/turf/T = get_turf(src)
 		T.lingering_fire(0.45)
-	// CHOMPAdd End
 
 	// Set off fire alarms!
 	var/area/area_to_check = get_area(src)
@@ -844,7 +843,7 @@
 /datum/cooking_item
 	var/max_cookwork
 	var/cookwork
-	var/overcook_mult = 6 // How long it takes to overcook. This is max_cookwork x overcook mult. If you're changing this, mind that at 3x, a max_cookwork of 30 becomes 90 ticks for the purpose of burning, and a max_cookwork of 4 only has 12 before burning! // CHOMPedit: doubled to 6
+	var/overcook_mult = 6 // How long it takes to overcook. This is max_cookwork x overcook mult. If you're changing this, mind that at 3x, a max_cookwork of 30 becomes 90 ticks for the purpose of burning, and a max_cookwork of 4 only has 12 before burning! // doubled to 6
 	var/result_type = 0
 	var/obj/item/reagent_containers/cooking_container/container = null
 	var/combine_target = null
@@ -894,7 +893,7 @@
 	// to_world("RefreshParts returned cooking power of [cooking_power] during this step.") // Debug lines, uncomment if you need to test.
 
 
-	dq_apply_material_synergies(src) // DQAdd
+	dq_apply_material_synergies(src)
 /obj/machinery/appliance/proc/toggle_safety(mob/user)
 	food_safety = !food_safety
 	to_chat(user, span_notice("You flip \the [src]'s safe mode switch. Safe mode is now [food_safety ? "on" : "off"]."))

@@ -193,8 +193,8 @@
 		)
 
 /datum/language/teshari/get_random_name(gender)
-	return ..(gender, 1, 4, 1.5) //CHOMPedit: Keep "1" as the second argument because tesharii here typically omit the pack name (thus only use 1 name). This is because
-								//CHOMPedit: there are very few packs and thus most tesharii would have the same first name.
+	return ..(gender, 1, 4, 1.5) // Keep "1" as the second argument because tesharii here typically omit the pack name (thus only use 1 name). This is because
+								// there are very few packs and thus most tesharii would have the same first name.
 
 /datum/language/zaddat
 	name = LANGUAGE_ZADDAT
@@ -421,7 +421,6 @@
 	machine_understands = FALSE
 	flags = RESTRICTED | HIVEMIND //CHOMPstation Edit: Changining from WHITELISTED to RESTRICTED | Empathy should be shadekin exclusive. This probably breaks carbon shadekins ability to use emptathy, we dont use them and if it does it should be implemented like DIONA root talk. -shark
 
-//CHOMPAdd Start
 /datum/language/marish
 	name = LANGUAGE_MARISH
 	desc = "Where shadekin have a language rooted in empathy, there are still subtle tones and syllables that are as delicate as the emotions that shadekin normally communicate with."
@@ -448,7 +447,6 @@
 		"ko", "ne", "en", "po", "tro", "ra", "li", "on", "byl", "cto", "eni", "ost", "ol", "ego",
 		"ver", "stv", "pro", "ski"
 	)
-//CHOMPAdd End
 
 /datum/language/drudakar
 	name = LANGUAGE_DRUDAKAR

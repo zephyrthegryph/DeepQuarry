@@ -302,7 +302,7 @@ GLOBAL_LIST_BOILERPLATE(pointdefense_turrets, /obj/machinery/pointdefense)
 	var/rotation_divisor = total_component_rating_of_type(/obj/item/stock_parts/manipulator)
 	rotation_speed = 4.5 SECONDS / (rotation_divisor ? rotation_divisor : 1)
 
-	dq_apply_material_synergies(src) // DQAdd
+	dq_apply_material_synergies(src)
 /obj/machinery/pointdefense/proc/Activate()
 	if(active)
 		return FALSE

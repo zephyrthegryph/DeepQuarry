@@ -1,4 +1,4 @@
-// DQEdit — DeepQuarry preferences + loadout rewrite (commit fd3e36a673). Bay preference_setup framework deleted; /datum/gear loadout catalog relocated from code/modules/client/preference_setup/loadout/ to code/datums/gear/.
+// DeepQuarry preferences + loadout rewrite (commit fd3e36a673). Bay preference_setup framework deleted; /datum/gear loadout catalog relocated from code/modules/client/preference_setup/loadout/ to code/datums/gear/.
 // Bracketed at file-header rather than per-hunk because the
 // edits are mechanical and span the whole file; the commit SHA
 // is the source of truth for per-line diff context.
@@ -26,7 +26,7 @@
 /datum/gear/utility/communicator/New()
 	..()
 	var/list/communicators = list()
-	for(var/obj/item/communicator_type as anything in typesof(/obj/item/communicator) - list(/obj/item/communicator/integrated,/obj/item/communicator/commlink)) //VOREStation Edit - Remove Commlink
+	for(var/obj/item/communicator_type as anything in typesof(/obj/item/communicator) - list(/obj/item/communicator/integrated,/obj/item/communicator/commlink)) // Remove Commlink
 		communicators[initial(communicator_type.name)] = communicator_type
 	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(communicators))
 
@@ -36,7 +36,7 @@
 
 /datum/gear/utility/codex
 	display_name = "the traveler's guide to borealis" //YW Edit
-	path = /obj/item/book/codex //VOREStation Edit
+	path = /obj/item/book/codex
 	cost = 0
 
 /datum/gear/utility/news
@@ -44,7 +44,7 @@
 	path = /obj/item/book/codex/lore/news
 	cost = 0
 
-/* //VORESTATION REMOVAL
+/* // REMOVAL
 /datum/gear/utility/corp_regs
 	display_name = "corporate regulations and legal code"
 	path = /obj/item/book/codex/corp_regs
@@ -194,7 +194,7 @@ modular computers
 /datum/gear/utility/customlaptop
 	display_name = "laptop computer, custom"
 	path = /obj/item/modular_computer/laptop/preset/
-	cost = 6 //VOREStation Edit
+	cost = 6
 
 /datum/gear/utility/customlaptop/New()
 	..()

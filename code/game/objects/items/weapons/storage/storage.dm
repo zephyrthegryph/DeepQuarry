@@ -14,7 +14,7 @@
 		)
 	w_class = ITEMSIZE_NORMAL
 	show_messages = 1
-	matter = list(MAT_FIBERS = 50) //CHOMPAdd
+	matter = list(MAT_FIBERS = 50)
 
 	/// List of objects which this item can store (if set, it can't store anything else)
 	var/list/can_hold
@@ -100,7 +100,7 @@
 	orient2hud()
 
 	if(LAZYLEN(starts_with) && !empty)
-		// DQEdit — starts_with values are now list(count, variant). See code/modules/consolidation/spawn_with_variant.dm.
+		// starts_with values are now list(count, variant). See code/modules/consolidation/spawn_with_variant.dm.
 		for(var/newtype in starts_with)
 			var/list/spec = dq_resolve_spawn_value(starts_with[newtype])
 			var/count = spec["count"]
@@ -485,7 +485,7 @@
 		if(!stop_messages)
 			to_chat(usr, span_notice("[src] cannot hold [W] as it's a storage item of the same size."))
 		return 0 //To prevent the stacking of same sized storage items.
-	//CHOMPEdit - Getting around to proper object flags
+	// Getting around to proper object flags
 	if(HAS_TRAIT(W, TRAIT_NODROP)) //SHOULD be handled in unEquip, but better safe than sorry.
 		if(!stop_messages)
 			to_chat(usr, span_warning("\the [W] is stuck to your hand, you can't put it in \the [src]!"))
@@ -690,7 +690,7 @@
 	if(!Adjacent(usr))
 		return
 
-	//VOREStation Add: No turf dumping if user is in a belly
+	// No turf dumping if user is in a belly
 	if(isbelly(usr.loc))
 		return
 

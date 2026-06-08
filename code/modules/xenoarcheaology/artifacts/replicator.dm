@@ -65,7 +65,7 @@
 	/obj/item/grenade/chem_grenade/cleaner,
 	/obj/item/grenade/chem_grenade/metalfoam)
 
-//	/mob/living/simple_mob/mimic/crate,	// Vorestation edit //VORESTATION AI TEMPORARY REMOVAL, REPLACE BACK IN LIST WHEN FIXED
+// /mob/living/simple_mob/mimic/crate, // Vorestation edit // AI TEMPORARY REMOVAL, REPLACE BACK IN LIST WHEN FIXED
 	var/quantity = rand(5, 15)
 	for(var/i=0, i<quantity, i++)
 		var/background = pick("yellow","purple","green","blue","red","orange","white")

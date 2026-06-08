@@ -16,7 +16,7 @@
 	pocketable = TRUE
 
 	var/insert_delay = 0 SECONDS
-	var/remove_delay = 0 SECONDS // CHOMPedit: Faster, QOL.
+	var/remove_delay = 0 SECONDS // Faster, QOL.
 
 /obj/item/storage/pouch/stall_insertion(obj/item/W, mob/user)
 	// No delay if you have the pouch in your hands
@@ -49,14 +49,14 @@
 	desc = "This storage pouch can be used to provide a good amount of additional storage for quick access."
 	icon_state = "large_generic"
 	max_storage_space = ITEMSIZE_COST_SMALL*6
-	remove_delay = 1 SECONDS // CHOMPedit: Faster.
+	remove_delay = 1 SECONDS // Faster.
 
 /obj/item/storage/pouch/small
 	name = "storage pouch (small)"
 	desc = "This storage pouch can be used to provide a small amount of additional storage for quick access."
 	icon_state = "small_generic"
 	max_storage_space = ITEMSIZE_COST_SMALL*2
-//	remove_delay = 1 SECOND // Chompedit: Faster.
+// remove_delay = 1 SECOND // Faster.
 
 /obj/item/storage/pouch/ammo
 	name = "storage pouch (ammo)"
@@ -179,13 +179,13 @@
 	name = "storage pouch (flares)"
 	desc = "This storage pouch can be used to provide some additional storage for quick access. Can only hold flares and glowsticks."
 	icon_state = "flare"
-	storage_slots = 14 // CHOMPedit: Full box of flares.
-	remove_delay = 0 // CHOMPedit: Quick access to light sources.
+	storage_slots = 14 // Full box of flares.
+	remove_delay = 0 // Quick access to light sources.
 	can_hold = list(/obj/item/flashlight/flare, /obj/item/flashlight/glowstick)
 /obj/item/storage/pouch/flares/full_flare
-	starts_with = list(/obj/item/flashlight/flare = 14) // CHOMPedit: Full box of flares.
+	starts_with = list(/obj/item/flashlight/flare = 14) // Full box of flares.
 /obj/item/storage/pouch/flares/full_glow
-	starts_with = list(/obj/item/flashlight/glowstick = 14) // CHOMPedit: Full box of glowsticks.
+	starts_with = list(/obj/item/flashlight/glowstick = 14) // Full box of glowsticks.
 
 /obj/item/storage/pouch/flares/update_icon()
 	cut_overlays()
@@ -231,6 +231,6 @@
 	name = "storage pouch of holding"
 	desc = "This storage pouch can be used to provide some additional storage for quick access. Seems to use extradimensional storage!"
 	icon_state = "holdingpouch"
-	max_storage_space = INVENTORY_POUCH_SPACE*2 //VOREStation Edit: Consistency with normal bags of holding
+	max_storage_space = INVENTORY_POUCH_SPACE*2 // Consistency with normal bags of holding
 
 #undef INVENTORY_POUCH_SPACE

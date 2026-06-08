@@ -93,7 +93,7 @@
 	var/obj/item/dnalockingchip/attached_lock
 
 	var/last_shot = 0			//records the last shot fired
-	var/recoil_mode = 1			//If the gun will hurt micros if shot or not. Disabled on Virgo, used downstream. //CHOMPEDIT - Enabled
+	var/recoil_mode = 1 // If the gun will hurt micros if shot or not. Disabled on Virgo, used downstream. // Enabled
 	var/mounted_gun = 0				//If the gun is mounted within a rigsuit or elsewhere. This makes it so the gun can be shot even if it's loc != a mob
 
 	var/charge_sections = 4
@@ -126,7 +126,6 @@
 
 	playsound(src, 'sound/machines/button.ogg', 25)
 	update_icon()
-//VOREStation Add End
 
 /obj/item/gun/Initialize(mapload)
 	. = ..()
@@ -384,7 +383,7 @@
 	user.setMoveCooldown(shoot_time) //no moving while shooting either
 
 	next_fire_time = world.time + shoot_time
-	// DQEdit Start — gunfire as noise inside the quarry. Loud sources
+	// gunfire as noise inside the quarry. Loud sources
 	// alert nearby hostile mobs and bump layer danger. emit_noise is a
 	// no-op outside a quarry z, so non-mine play is unaffected.
 	if(SSquarry)
@@ -394,7 +393,6 @@
 				? QUARRY_NOISE_WEAPON_LASER \
 				: QUARRY_NOISE_WEAPON_BALLISTIC
 			SSquarry.emit_noise(origin, loudness, src)
-	// DQEdit End
 	handle_gunfire(target, user, clickparams, pointblank, reflex, 1, FALSE)
 
 /obj/item/gun/proc/handle_gunfire(atom/target, mob/living/user, clickparams, pointblank=0, reflex=0, ticker, recursive = FALSE)

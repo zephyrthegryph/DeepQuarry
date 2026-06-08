@@ -74,7 +74,7 @@
 	"A group of Skrell getting their squish on",
 	"Enough soporific to put the entire station down",
 	"Delicious Vietnamese cuisine",
-	//Here down are non-spess cards. -VOREStation Add for these.
+	// Here down are non-spess cards. - for these.
 
 	"'Tweeting.'",
 	"72 virgins.",

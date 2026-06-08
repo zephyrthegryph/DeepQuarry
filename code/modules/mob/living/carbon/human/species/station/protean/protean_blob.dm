@@ -24,7 +24,7 @@
 	melee_damage_lower = 5
 	melee_damage_upper = 5
 	attacktext = list("slashed")
-	see_in_dark = 10 // CHOMPAdd
+	see_in_dark = 10
 
 	min_oxy = 0
 	max_oxy = 0
@@ -86,7 +86,7 @@
 	add_verb(src,/mob/living/simple_mob/protean_blob/proc/nano_rig_transform)
 	add_verb(src,/mob/living/simple_mob/protean_blob/proc/appearance_switch)
 	add_verb(src,/mob/living/simple_mob/protean_blob/proc/nano_latch)
-	remove_verb(src,/mob/living/simple_mob/proc/nutrition_heal) // CHOMPAdd
+	remove_verb(src,/mob/living/simple_mob/proc/nutrition_heal)
 	add_verb(src,/mob/living/simple_mob/proc/animal_mount)
 	add_verb(src,/mob/living/proc/toggle_rider_reins)
 

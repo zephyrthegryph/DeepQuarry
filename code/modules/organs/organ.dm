@@ -25,7 +25,7 @@
 
 	// Damage vars.
 	var/min_bruised_damage = 10			// Damage before considered bruised
-	var/min_broken_damage = 60			// Damage before becoming broken CHOMPEdit: Flat doubling of all min_broken_damage
+	var/min_broken_damage = 60 // Damage before becoming broken Flat doubling of all min_broken_damage
 	var/max_damage						// Damage cap
 	var/can_reject = 1					// Can this organ reject?
 	var/rejecting						// Is this organ already being rejected?
@@ -57,7 +57,7 @@
 	if(trace_chemicals) trace_chemicals.Cut()
 	QDEL_NULL(data)
 
-	// DQEdit — clear medical_issues so conditions don't outlive their
+	// clear medical_issues so conditions don't outlive their
 	// host organ with a dangling affectedorgan pointer. Without this an
 	// amputated arm with an active tendon_severed leaks the condition
 	// onto the floor with the limb.
@@ -186,7 +186,7 @@
 
 	if(!owner && reagents)
 		var/datum/reagent/blood/B = locate(/datum/reagent/blood) in reagents.reagent_list
-		if(B && prob(40) && !isbelly(loc)) //VOREStation Edit
+		if(B && prob(40) && !isbelly(loc))
 			reagents.remove_reagent(REAGENT_ID_BLOOD,0.1)
 			blood_splatter(src,B,1)
 		if(CONFIG_GET(flag/organs_decay) && decays) damage += rand(1,3)
@@ -201,7 +201,7 @@
 		handle_antibiotics()
 		handle_rejection()
 		handle_germ_effects()
-		// DQEdit — bridge germ_level into the wound_infection condition.
+		// bridge germ_level into the wound_infection condition.
 		// Once germs cross INFECTION_LEVEL_ONE we spawn the condition,
 		// which then handles symptoms / progression / chem cure on its
 		// own. germ_level continues to evolve underneath as the hidden
@@ -257,7 +257,7 @@
 
 	var/antibiotics = iscarbon(owner) ? owner.chem_effects[CE_ANTIBIOTIC] || 0 : 0
 
-	// DQEdit Start — the germ_level toxin-damage path is replaced by the
+	// the germ_level toxin-damage path is replaced by the
 	// wound_infection condition (code/modules/medical/...).
 	// We keep germ_level itself for surgery sanitation, antibiotic
 	// progression, and necrosis-by-germs (still ticks below), but the
@@ -271,7 +271,6 @@
 	//       infection_damage = CLAMP(round((germ_level - INFECTION_LEVEL_TWO)/1000), 0, 0.1)
 	//   if(infection_damage)
 	//       owner.adjustToxLoss(infection_damage)
-	// DQEdit End
 
 	if (germ_level > 0 && germ_level < INFECTION_LEVEL_ONE/2 && prob(30))
 		adjust_germ_level(-antibiotics)
@@ -312,7 +311,7 @@
 	// immunosuppressant that changes transplant data to make it match.
 	if(data && can_reject)
 		if(!rejecting)
-			if(blood_incompatible(data.b_type, owner.dna.b_type, data.get_species_name(), owner.species.name)) //VOREStation Edit - Process species by name.
+			if(blood_incompatible(data.b_type, owner.dna.b_type, data.get_species_name(), owner.species.name)) // Process species by name.
 				rejecting = 1
 		else
 			rejecting++ //Rejection severity increases over time.
@@ -419,7 +418,7 @@
 	robotize()
 	robotic = ORGAN_ASSISTED
 	min_bruised_damage = 15
-	min_broken_damage = 60 // CHOMPEdit: Flat doubling of all min_broken_damage
+	min_broken_damage = 60 // Flat doubling of all min_broken_damage
 	butcherable = FALSE
 
 /obj/item/organ/proc/digitize() //Used to make the circuit-brain. On this level in the event more circuit-organs are added/tweaks are wanted.
@@ -446,7 +445,7 @@
 				take_damage(rand(1,3))
 
 /obj/item/organ/proc/removed(mob/living/user)
-	// DQEdit — conditions stay attached to the organ so re-implantation
+	// conditions stay attached to the organ so re-implantation
 	// brings them back. Unhook owner so the now-detached patient stops
 	// processing them. Re-anchoring happens in the implantation surgery
 	// step via dq_reseat_owner().
@@ -514,7 +513,7 @@
 
 	handle_organ_mod_special()
 
-	// DQEdit — re-anchor medical conditions that travelled with the
+	// re-anchor medical conditions that travelled with the
 	// extracted organ. See /obj/item/organ/external/replaced for the
 	// limb-level equivalent.
 	dq_reseat_owner(target)

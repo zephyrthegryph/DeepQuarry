@@ -21,7 +21,7 @@
 
 
 /obj/machinery/computer/arcade/orion_trail/attack_hand(mob/living/user)
-	// DQEdit — structured TGUI Orion Trail; the upstream attack_hand's
+	// structured TGUI Orion Trail; the upstream attack_hand's
 	// game-over side effects (death, ignite_mob etc. when emagged) still
 	// run here, then the panel opens.
 	if(..())

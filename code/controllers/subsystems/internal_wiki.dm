@@ -835,7 +835,7 @@ SUBSYSTEM_DEF(internal_wiki)
 	var/obj/item/stack/stack_path = M.stack_type
 	SSinternal_wiki.add_icon(data, initial(stack_path.icon), initial(stack_path.icon_state), initial(M.icon_colour))
 	// Get internal data
-	// DQEdit — weight renamed to density; radioactivity is a component lookup.
+	// weight renamed to density; radioactivity is a component lookup.
 	data["integrity"] = M.integrity
 	data["hardness"] = M.hardness
 	data["weight"] = M.density

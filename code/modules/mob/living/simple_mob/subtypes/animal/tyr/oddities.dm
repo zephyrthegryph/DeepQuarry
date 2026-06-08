@@ -25,7 +25,7 @@
 	melee_damage_lower = 5
 	melee_damage_upper = 5
 
-	// DQEdit — dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
+	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
 /obj/item/projectile/energy/blob/rainbowfly
 	damage = 10

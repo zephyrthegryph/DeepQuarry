@@ -1,6 +1,6 @@
 /obj/item/stack/material/glass
 	name = MAT_GLASS
-	icon_state = "sheet-glass" //CHOMPedit - replace materials update
+	icon_state = "sheet-glass" // replace materials update
 	default_type = MAT_GLASS
 	no_variants = FALSE
 	drop_sound = 'sound/items/drop/glass.ogg'
@@ -9,7 +9,7 @@
 
 /obj/item/stack/material/glass/reinforced
 	name = "reinforced glass"
-	icon_state = "sheet-rglass" //CHOMPedit - replace materials update
+	icon_state = "sheet-rglass" // replace materials update
 	default_type = MAT_RGLASS
 	no_variants = FALSE
 	apply_colour = TRUE
@@ -18,7 +18,7 @@
 	name = MAT_PGLASS
 	desc = "This sheet is special platinum-glass alloy designed to withstand large temperatures"
 	singular_name = "borosilicate glass sheet"
-	icon_state = "sheet-phoronglass" //CHOMPedit - replace materials update
+	icon_state = "sheet-phoronglass" // replace materials update
 	default_type = MAT_PGLASS
 	no_variants = FALSE
 	apply_colour = TRUE
@@ -27,7 +27,7 @@
 	name = MAT_RPGLASS
 	desc = "This sheet is special platinum-glass alloy designed to withstand large temperatures. It is reinforced with few rods."
 	singular_name = "reinforced borosilicate glass sheet"
-	icon_state = "sheet-phoronrglass" //CHOMPedit - replace materials update
+	icon_state = "sheet-phoronrglass" // replace materials update
 	default_type = MAT_RPGLASS
 	no_variants = FALSE
 	apply_colour = TRUE

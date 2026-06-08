@@ -28,7 +28,7 @@
 /obj/machinery/casino_prize_dispenser
 	name = "Casino Prize Exchanger"
 	desc = "Exchange your chips to obtain wonderful prizes! Hoepfully you'll get to keep some of them for a while."
-	icon = 'icons/obj/casino_ch.dmi' //CHOMPEdit
+	icon = 'icons/obj/casino_ch.dmi'
 	icon_state ="casino_prize_dispenser"
 	var/icon_vend ="casino_prize_dispenser-vend"
 	anchored = 1
@@ -48,7 +48,6 @@
 	var/datum/data/casino_prize/currently_vending = null // What we're requesting payment for right now
 	var/list/log = list() //Log only SS13 staff is allowed to look at, CKEYS are listed here for record keeping of prizes and players for events!
 
-	//CHOMPEdit Start
 	var/category_weapons	 = 1	//For listing categories, if false then prizes of this categories cant be obtained nor bought for post-shift enjoyment
 	var/category_gear		 = 1	//If 1 prizes will be only logged
 	var/category_clothing	 = 1	//If 2 prizes will both be logged and spawned
@@ -56,7 +55,6 @@
 	var/category_drinks		 = 1
 	var/category_pets		 = 1
 	var/category_mechs		 = 1
-	//CHOMPEdit End
 	var/category_implants	 = 1
 	var/category_event		 = 1	//For special events, holidays, etc
 
@@ -65,7 +63,6 @@
 	power_change()
 
 	item_list = list()
-	//CHOMPEdit Start
 	item_list["Weapons"] = list(
 		CASINO_PRIZE("Scepter", /obj/item/scepter, 1, 500, "weapons"),
 		CASINO_PRIZE("Chain of Command", /obj/item/melee/chainofcommand, 1, 250, "weapons"),
@@ -193,7 +190,7 @@
 		CASINO_PRIZE("Mech:Shuttlecraft", /obj/item/grenade/spawnergrenade/casino/gygax/shuttlecraft, 1, 500, "mechs"),
 		CASINO_PRIZE("Rig: Solgov engineering hardsuit control module", /obj/item/rig/bayeng, 1, 500, "mechs"),
 		CASINO_PRIZE("Rig: Solgov medical hardsuit control module", /obj/item/rig/baymed, 1, 500, "mechs"),
-		CASINO_PRIZE("Rig: Advanced hardsuit control module", /obj/item/rig/ce, 1, 500, "mechs"),//CHOMPEDIT: Hardsuit
+		CASINO_PRIZE("Rig: Advanced hardsuit control module", /obj/item/rig/ce, 1, 500, "mechs"), // Hardsuit
 		CASINO_PRIZE("Rig: Pursuit hardsuit control module", /obj/item/rig/ch/pursuit, 1, 750, "mechs"),
 		CASINO_PRIZE("Rig: Combat hardsuit control module", /obj/item/rig/combat, 1, 750, "mechs"),
 		CASINO_PRIZE("Rig: ERT-J suit control module (Elite Janitor NT approved)", /obj/item/rig/ert/janitor, 1, 250, "mechs"),
@@ -231,7 +228,6 @@
 
 	item_list["Event"] = list(
 	)
-	//CHOMPEdit End
 
 /obj/machinery/casino_prize_dispenser/power_change()
 	..()
@@ -332,12 +328,10 @@
 					restriction_check = category_misc
 				if("drinks")
 					restriction_check = category_drinks
-				//CHOMPAdd Start
 				if("pets")
 					restriction_check = category_pets
 				if("mechs")
 					restriction_check = category_mechs
-				//CHOMPAdd End
 				if("implants")
 					restriction_check = category_implants
 				if("event")

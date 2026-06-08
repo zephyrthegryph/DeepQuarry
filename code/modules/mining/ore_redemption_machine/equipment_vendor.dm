@@ -50,7 +50,7 @@
 		EQUIPMENT("Defense Equipment - Razor Drone Deployer",	/obj/item/grenade/spawnergrenade/manhacks/station/locked,	1000),
 		EQUIPMENT("Defense Equipment - Sentry Drone Deployer",	/obj/item/grenade/spawnergrenade/ward,						1500),
 		EQUIPMENT("Defense Equipment - Smoke Bomb",				/obj/item/grenade/smokebomb,								100),
-		EQUIPMENT("Defense Equipment - Phase Pistol",			/obj/item/gun/energy/locked/phasegun/pistol,				1500), //CHOMPEDIT
+		EQUIPMENT("Defense Equipment - Phase Pistol",			/obj/item/gun/energy/locked/phasegun/pistol,				1500),
 		EQUIPMENT("Hybrid Equipment - Proto-Kinetic Crusher",	/obj/item/kinetic_crusher,									1000),
 		EQUIPMENT("Hybrid Equipment - Proto-Kinetic Dagger",	/obj/item/kinetic_crusher/machete/dagger,					500),
 		EQUIPMENT("Hybrid Equipment - Proto-Kinetic Machete",	/obj/item/kinetic_crusher/machete,							1000),

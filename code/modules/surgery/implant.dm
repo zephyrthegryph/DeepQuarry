@@ -56,7 +56,7 @@
 	)
 
 	min_duration = 60
-	max_duration = 60  //CHOMPedit
+	max_duration = 60
 
 /datum/surgery_step/cavity/make_space/can_use(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
 	if(..())
@@ -92,8 +92,8 @@
 		/obj/item/weldingtool = 25
 	)
 
-	min_duration = 30 //CHOMPedit
-	max_duration = 30 //CHOMPedit
+	min_duration = 30
+	max_duration = 30
 
 /datum/surgery_step/cavity/close_space/can_use(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
 	if(..())
@@ -125,7 +125,7 @@
 	allowed_tools = list(/obj/item = 100)
 
 	min_duration = 80
-	max_duration = 80 //CHOMPedit
+	max_duration = 80
 
 /datum/surgery_step/cavity/place_item/can_use(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
 	if(!istype(tool))
@@ -181,7 +181,7 @@
 		affected.owner.custom_pain("You feel something rip in your [affected.name]!", 1)
 	affected.implants += tool
 	tool.loc = affected
-	if(istype(tool,/obj/item/nif)){var/obj/item/nif/N = tool;N.implant(target)} //VOREStation Add - NIF support
+	if(istype(tool,/obj/item/nif)){var/obj/item/nif/N = tool;N.implant(target)} // NIF support
 	affected.cavity = 0
 
 //////////////////////////////////////////////////////////////////
@@ -197,8 +197,8 @@
 
 	allowed_procs = list(IS_WIRECUTTER = 75)
 
-	min_duration = 50 //CHOMPedit
-	max_duration = 50 //CHOMPedit
+	min_duration = 50
+	max_duration = 50
 
 /datum/surgery_step/cavity/implant_removal/can_use(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
 	return ..()

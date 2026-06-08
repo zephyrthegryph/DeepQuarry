@@ -25,7 +25,7 @@
 
 //////////////////////////////////////////////////////////////////////////////////////
 // Gateway submaps go here
-#include "gateway/snowfield.dm" //CHOMPEDIT - Use the good one instead
+#include "gateway/snowfield.dm" // Use the good one instead
 /datum/map_template/common_lateload/gateway/snowfield_ch
 	name = Z_NAME_GATEWAY_SNOW_FIELD_CH
 	name_alias = Z_NAME_ALIAS_GATEWAY

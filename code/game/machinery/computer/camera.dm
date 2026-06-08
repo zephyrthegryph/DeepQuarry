@@ -73,7 +73,7 @@
 	return proximity_flag
 
 GLOBAL_LIST_EMPTY(entertainment_screens)
-GLOBAL_LIST_EMPTY(bodycamera_screens) // CHOMPEdit
+GLOBAL_LIST_EMPTY(bodycamera_screens)
 
 /obj/machinery/computer/security/telescreen/entertainment
 	name = "entertainment monitor"
@@ -146,13 +146,13 @@ GLOBAL_LIST_EMPTY(bodycamera_screens) // CHOMPEdit
 		if(isliving(usr) && Adjacent(usr) && !usr.incapacitated())
 			toggle()
 			visible_message(span_infoplain(span_bold("[usr]") + " toggles [src] [enabled ? "on" : "off"]."),span_info("You toggle [src] [enabled ? "on" : "off"]."), runemessage = "click")
-	//CHOMPEdit start - Changing click to only come into play when shift or alt clicking. These things are ANNOYING.
+	// start - Changing click to only come into play when shift or alt clicking. These things are ANNOYING.
 			return
 	if(modifiers["shift"])
 		attack_hand(usr)
 		return
 	..()
-	//CHOMPEdit end
+	// end
 
 /obj/machinery/computer/security/telescreen/entertainment/update_icon()
 	return // NUH

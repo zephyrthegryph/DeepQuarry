@@ -57,10 +57,9 @@ GLOBAL_LIST_EMPTY(smeses)
 	var/should_be_mapped = 0 // If this is set to 0 it will send out warning on New()
 	var/grid_check = FALSE // If true, suspends all I/O.
 
-	// CHOMPAdd: More humming noises
+	// More humming noises
 	var/datum/looping_sound/generator/soundloop
 	var/noisy = FALSE
-	// CHOMPAdd End
 
 /obj/machinery/power/smes/drain_power(drain_check, surge, amount = 0)
 
@@ -75,9 +74,9 @@ GLOBAL_LIST_EMPTY(smeses)
 	. = ..()
 	GLOB.smeses += src
 	add_nearby_terminals()
-	soundloop = new(list(src), FALSE) // CHOMPEdit: hmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
-	soundloop.extra_range = -6 // CHOMPEdit: Doing this here bc we're reusing the generator hum, and can't directly edit that one
-	soundloop.falloff = 0.2 // CHOMPEdit: Harsher falloff.
+	soundloop = new(list(src), FALSE) // hmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+	soundloop.extra_range = -6 // Doing this here bc we're reusing the generator hum, and can't directly edit that one
+	soundloop.falloff = 0.2 // Harsher falloff.
 	if(!check_terminals())
 		stat |= BROKEN
 		return
@@ -347,7 +346,7 @@ GLOBAL_LIST_EMPTY(smeses)
 		to_chat(user, span_filter_notice(span_warning("You need to open access hatch on [src] first!")))
 		return FALSE
 
-	// DQEdit — /obj/item/fusion_coil was deleted with the fusion subsystem; the
+	// /obj/item/fusion_coil was deleted with the fusion subsystem; the
 	// charge-from-coil branch is removed. SMES still chargeable by other means.
 	if(W.has_tool_quality(TOOL_WELDER))
 		var/obj/item/weldingtool/WT = W.get_welder()

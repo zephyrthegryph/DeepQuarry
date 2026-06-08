@@ -39,7 +39,7 @@ GLOBAL_VAR_INIT(floorIsLava, 0)
 
 ///////////////////////////////////////////////////////////////////////////////////////////////Panels
 
-// DQEdit Start — Show Player Panel context-menu verb now opens a structured TGUI panel.
+// Show Player Panel context-menu verb now opens a structured TGUI panel.
 // The legacy 200-line HTML body has been deleted; ac_* / mute / dna / simplemake
 // handlers in /datum/admins.Topic still own the per-action behavior.
 ADMIN_VERB_ONLY_CONTEXT_MENU(show_player_panel, R_HOLDER, "Show Player Panel", mob/player in world)
@@ -49,7 +49,6 @@ ADMIN_VERB_ONLY_CONTEXT_MENU(show_player_panel, R_HOLDER, "Show Player Panel", m
 		return
 	user.holder?.dq_open_edit_player_panel(player)
 	feedback_add_details("admin_verb","SPP")
-// DQEdit End
 
 
 /datum/player_info/var/author // admin who authored the information
@@ -84,13 +83,12 @@ ADMIN_VERB(show_player_info, R_ADMIN|R_MOD|R_EVENT|R_DEBUG, "Show Player Info", 
 	var/datum/tgui_module/player_notes_info/A = new(src)
 	A.tgui_interact(user.mob)
 
-// DQEdit Start — access_news_network now opens a structured TGUI panel.
+// access_news_network now opens a structured TGUI panel.
 // The legacy switch-driven HTML builder is gone; ac_* Topic handlers
 // in /datum/admins.Topic still own state transitions, and the panel
 // refreshes after each click via SStgui.update_uis().
 ADMIN_VERB(access_news_network, R_ADMIN|R_EVENT, "Access Newscaster Network", "Allows you to view, add and edit news feeds.", ADMIN_CATEGORY_FUN_EVENT_KIT)
 	user.holder?.dq_open_newscaster_panel()
-// DQEdit End
 
 
 /datum/admins/proc/Jobbans()
@@ -105,12 +103,12 @@ ADMIN_VERB(access_news_network, R_ADMIN|R_EVENT, "Access Newscaster Network", "A
 		dat += text("<tr><td>[t] (<a href='byond://?src=[REF(src)];[HrefToken()];removejobban=[r]'>unban</a>)</td></tr>")
 	dat += "</table>"
 
-	// DQEdit — structured TGUI AdminReport; byond:// links forwarded to host.
+	// structured TGUI AdminReport; byond:// links forwarded to host.
 	dq_admin_report_html(owner, "Job Bans", dat, src)
 
 /datum/admins/proc/Game()
 	if(!check_rights(0))	return
-	// DQEdit — structured TGUI Game Panel (see
+	// structured TGUI Game Panel (see
 	// code/modules/admin/game_panel_panel.dm).
 	open_game_panel(owner)
 
@@ -598,7 +596,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(show_traitor_panel, R_ADMIN|R_FUN|R_EVENT, "Show Tra
 	feedback_add_details("admin_verb","STP") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(show_game_mode, R_ADMIN|R_EVENT, "Show Game Mode", "Show the current round configuration.", ADMIN_CATEGORY_GAME)
-	// DQEdit — structured TGUI GameModePanel (see
+	// structured TGUI GameModePanel (see
 	// code/modules/admin/game_mode_panel.dm).
 	open_game_mode_panel(user)
 	feedback_add_details("admin_verb","SGM")

@@ -90,7 +90,7 @@
 		adjust_gas(L[i], L[i + 1])
 		i += 2
 
-// DQEdit — update_values() removed. Every CHOMP caller has been migrated
+// update_values() removed. Every CHOMP caller has been migrated
 // to drop the no-op call (LINDA auto-archives on read).
 
 // XGM: remove_volume(removed_volume) — remove a fraction by volume.
@@ -432,12 +432,12 @@ GLOBAL_DATUM_INIT(gas_data, /datum/xgm_gas_data, new())
 // 7. Legacy decls + vars
 // =====================================================================
 
-// DQEdit — group_multiplier removed. Every CHOMP read was rewritten to
+// group_multiplier removed. Every CHOMP read was rewritten to
 // drop the `* group_multiplier` (the value was always 1, so dropping it is
 // behaviour-preserving). XGM-era multi-tile zone scalar isn't needed under
 // LINDA, where every turf has its own gas_mixture.
 
-// DQEdit — /datum/gas_mixture.gas (XGM empty-list stub) removed. Every
+// /datum/gas_mixture.gas (XGM empty-list stub) removed. Every
 // legacy read site has been migrated to gas_ids() / LINDA_GAS_AMT() /
 // .gases[type][MOLES]. Confirmed via grep before deletion. If a stale
 // reader resurfaces, it should fail compile rather than silently read 0.
@@ -447,7 +447,7 @@ GLOBAL_DATUM_INIT(gas_data, /datum/xgm_gas_data, new())
 /obj/machinery/atmospherics/proc/pipeline_expansion(datum/pipeline/net)
 	return list()
 
-// DQEdit — /datum/pipeline.building was a ZAS-era rebuild sentinel; zero
+// /datum/pipeline.building was a ZAS-era rebuild sentinel; zero
 // callers under LINDA, removed.
 
 // CHOMP datum_pipeline.dm calls multiply() during gas rebalancing. LINDA's
@@ -500,7 +500,7 @@ GLOBAL_DATUM_INIT(gas_data, /datum/xgm_gas_data, new())
 	var/burn_product = null
 	var/burn_product_energy = 0
 
-// DQEdit — XGM contamination machinery + GLOB.vsc config holders fully
+// XGM contamination machinery + GLOB.vsc config holders fully
 // removed. /atom.contaminated had no setter under LINDA (ZAS contamination
 // pipeline was never ported); the only readers (carbon/human/life.dm phoron
 // damage branch, custom_items_vr.dm modkit check) have been deleted alongside

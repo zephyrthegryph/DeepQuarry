@@ -47,8 +47,8 @@
 					/obj/item/reagent_containers/food/drinks/glass2/shot = 10,
 					/obj/item/reagent_containers/food/drinks/glass2/pint = 10,
 					/obj/item/reagent_containers/food/drinks/glass2/mug = 10,
-					/obj/item/reagent_containers/food/drinks/glass2/carafe = 2,	//VOREStation Add - Carafes and Pitchers
-					/obj/item/reagent_containers/food/drinks/glass2/pitcher = 2,	//VOREStation Add - Carafes and Pitchers
+					/obj/item/reagent_containers/food/drinks/glass2/carafe = 2, // Carafes and Pitchers
+					/obj/item/reagent_containers/food/drinks/glass2/pitcher = 2, // Carafes and Pitchers
 					/obj/item/reagent_containers/food/drinks/glass2/wine = 10,
 					/obj/item/reagent_containers/food/drinks/bottle/whitewine = 5,
 					/obj/item/reagent_containers/food/drinks/bottle/grapejuice = 5,
@@ -129,8 +129,8 @@
 					/obj/item/reagent_containers/food/drinks/glass2/shot = 10,
 					/obj/item/reagent_containers/food/drinks/glass2/pint = 10,
 					/obj/item/reagent_containers/food/drinks/glass2/mug = 10,
-					/obj/item/reagent_containers/food/drinks/glass2/carafe = 2,	//VOREStation Add - Carafes and Pitchers
-					/obj/item/reagent_containers/food/drinks/glass2/pitcher = 2,	//VOREStation Add - Carafes and Pitchers
+					/obj/item/reagent_containers/food/drinks/glass2/carafe = 2, // Carafes and Pitchers
+					/obj/item/reagent_containers/food/drinks/glass2/pitcher = 2, // Carafes and Pitchers
 					/obj/item/reagent_containers/food/drinks/glass2/wine = 10,
 					/obj/item/reagent_containers/food/drinks/bottle/whitewine = 5,
 					/obj/item/reagent_containers/food/drinks/bottle/grapejuice = 5,
@@ -202,7 +202,7 @@
 					/obj/item/reagent_containers/food/drinks/decaf_tea = 2,
 					/obj/item/reagent_containers/food/drinks/h_chocolate = 2,
 					/obj/item/reagent_containers/food/drinks/greentea = 10,
-					/obj/item/reagent_containers/food/drinks/chaitea = 5) // VOREStation Edit - Lowers Coffee/Hot Chocolate/Tea Prices from 3 -> 2.
+					/obj/item/reagent_containers/food/drinks/chaitea = 5) // Lowers Coffee/Hot Chocolate/Tea Prices from 3 -> 2.
 	vending_sound = "machines/vending/vending_coffee.ogg"
 
 /obj/machinery/vending/snack
@@ -340,7 +340,7 @@
 					/obj/item/reagent_containers/food/snacks/liquidvitamin = 8,
 					/obj/item/reagent_containers/food/snacks/liquidprotein = 8,
 					/obj/item/reagent_containers/pill/diet = 8,
-					/obj/item/reagent_containers/hypospray/autoinjector/biginjector/glucose = 5,	//VOREStation Removal, //CHOMPedit nah
+					/obj/item/reagent_containers/hypospray/autoinjector/biginjector/glucose = 5, // Removal, // nah
 					/obj/item/towel/random = 8,
 					/obj/item/toy/tennis = 4)
 
@@ -360,13 +360,13 @@
 					/obj/item/reagent_containers/food/snacks/liquidvitamin = 5,
 					/obj/item/reagent_containers/food/snacks/liquidprotein = 5,
 					/obj/item/reagent_containers/pill/diet = 25,
-					/obj/item/reagent_containers/hypospray/autoinjector/biginjector/glucose = 5, //CHOMPedit nah
+					/obj/item/reagent_containers/hypospray/autoinjector/biginjector/glucose = 5, // nah
 					/obj/item/towel/random = 20,
 					/obj/item/toy/tennis = 15)
 
 	contraband = list(/obj/item/reagent_containers/syringe/steroid = 4,
 						/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteanshake = 2,
-						/obj/item/toy/baseball = 2) // VOREStation Add - Slurpable blobs.
+						/obj/item/toy/baseball = 2) // Slurpable blobs.
 
 /obj/machinery/vending/cart
 	name = "PTech"
@@ -560,7 +560,7 @@
 					/obj/item/hailer = 3,
 					/obj/item/flashlight/maglight = 3,
 					/obj/item/clothing/glasses/omnihud/sec = 6,
-					/obj/item/clothing/accessory/bodycam = 10) // CHOMPAdd
+					/obj/item/clothing/accessory/bodycam = 10)
 	contraband = list(/obj/item/clothing/glasses/sunglasses = 2,
 					/obj/item/storage/box/donut = 2,
 					/obj/item/implanter/compliance = 1)
@@ -706,7 +706,7 @@
 	/obj/item/storage/toolbox/lunchbox/syndicate = 3,
 	/obj/item/reagent_containers/cooking_container/oven = 5,
 	/obj/item/reagent_containers/cooking_container/fryer = 4,
-	/obj/item/trash/bowl = 10) //VOREStation Add
+	/obj/item/trash/bowl = 10)
 	contraband = list(/obj/item/material/knife/butch = 2)
 
 /obj/machinery/vending/tool
@@ -731,7 +731,7 @@
 					/obj/item/reagent_containers/spray/windowsealant = 5)
 	contraband = list(/obj/item/weldingtool/hugetank = 2,
 					/obj/item/clothing/gloves/fyellow = 2)
-	premium = list(/obj/item/clothing/gloves/heavy_engineer = 1) //VOREStation Edit - yellow gloves are common in engineering, let's make "premium" actually mean something
+	premium = list(/obj/item/clothing/gloves/heavy_engineer = 1) // yellow gloves are common in engineering, let's make "premium" actually mean something
 	req_log_access = ACCESS_CE
 	has_logs = 1
 
@@ -864,18 +864,15 @@
 					/obj/item/toy/mistletoe = 1,
 					/obj/item/toy/plushie/tinytin = 1,
 					/obj/item/toy/plushie/tinytin_sec = 1,
-					//VOREStation Add End
 					//YawnWider Add Start
 					/obj/item/toy/plushie/teshari/_yw = 1,
 					/obj/item/toy/plushie/teshari/w_yw = 1,
 					/obj/item/toy/plushie/teshari/b_yw = 1,
 					/obj/item/toy/plushie/teshari/y_yw = 1,
 					//YawnWider Add End
-					//CHOMPStation Add Start
 					/obj/item/toy/plushie/customizable/dragon = 10,
 					/obj/item/toy/plushie/teppi = 1,
 					/obj/item/toy/plushie/teppi/alt = 1,
-					//CHOMPStation Add End
 					/obj/item/toy/plushie/dragon = 1,
 					/obj/item/toy/plushie/dragon/green = 1,
 					/obj/item/toy/plushie/dragon/purple = 1,
@@ -926,18 +923,15 @@
 					/obj/item/toy/mistletoe = 50,
 					/obj/item/toy/plushie/tinytin = 35,
 					/obj/item/toy/plushie/tinytin_sec = 50,
-					//VOREStation Add End
 					//YawnWider Add Start
 					/obj/item/toy/plushie/teshari/_yw = 150,
 					/obj/item/toy/plushie/teshari/w_yw = 150,
 					/obj/item/toy/plushie/teshari/b_yw = 150,
 					/obj/item/toy/plushie/teshari/y_yw = 150,
 					//YawnWider Add End
-					//CHOMPStation Add Start
 					/obj/item/toy/plushie/customizable/dragon = 50,
 					/obj/item/toy/plushie/teppi = 50,
 					/obj/item/toy/plushie/teppi/alt = 50,
-					//CHOMPStation Add End
 					/obj/item/toy/plushie/dragon = 50,
 					/obj/item/toy/plushie/dragon/green = 50,
 					/obj/item/toy/plushie/dragon/purple = 50,
@@ -1356,8 +1350,8 @@
 		/obj/item/clothing/mask/bandana/red = 5,
 		/obj/item/clothing/suit/storage/hooded/wintercoat/security = 5,
 		/obj/item/clothing/accessory/armband = 5,
-		/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vis = 5, //VoreStation edit - cool visor!!!
-		/obj/item/clothing/glasses/hud/security/eyepatch2 = 5, //VoreStation edit - cool eyepatch!
+		/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vis = 5, // edit - cool visor!!!
+		/obj/item/clothing/glasses/hud/security/eyepatch2 = 5, // edit - cool eyepatch!
 		/obj/item/clothing/accessory/holster/armpit = 2,
 		/obj/item/clothing/accessory/holster/armpit/black = 2,
 		/obj/item/clothing/accessory/holster/waist = 2,
@@ -1438,7 +1432,7 @@
 		/obj/item/clothing/shoes/white = 5,
 		/obj/item/clothing/suit/storage/toggle/labcoat = 5,
 		/obj/item/clothing/suit/storage/toggle/labcoat/modern = 5,
-		/obj/item/clothing/suit/storage/toggle/labcoat/old = 5, //VoreStation edit, pre-fulp labcoat.
+		/obj/item/clothing/suit/storage/toggle/labcoat/old = 5, // edit, pre-fulp labcoat.
 		/obj/item/clothing/mask/surgical = 5,
 		/obj/item/clothing/suit/storage/hooded/wintercoat/medical = 5,
 		/obj/item/clothing/suit/storage/hooded/wintercoat/medical/alt = 5,
@@ -1459,7 +1453,7 @@
 		/obj/item/clothing/under/rank/chemist/skirt = 5,
 		/obj/item/clothing/shoes/white = 5,
 		/obj/item/clothing/suit/storage/toggle/labcoat/chemist = 5,
-		/obj/item/clothing/suit/storage/toggle/labcoat/old/chem = 5, //VoreStation edit, pre-fulp labcoat.
+		/obj/item/clothing/suit/storage/toggle/labcoat/old/chem = 5, // edit, pre-fulp labcoat.
 		/obj/item/clothing/under/rank/neo_chem = 5,
 		/obj/item/clothing/under/rank/neo_chem_skirt = 5,
 		/obj/item/clothing/under/rank/neo_pharma = 5,
@@ -1506,7 +1500,7 @@
 		/obj/item/clothing/under/rank/neo_viro_skirt = 5,
 		/obj/item/clothing/suit/storage/toggle/labcoat/virologist = 5,
 		/obj/item/clothing/suit/storage/toggle/labcoat/old/vir = 5,
-		/obj/item/clothing/suit/storage/hooded/wintercoat/medical/viro = 5, //VoreStation edit, pre-fulp labcoat.
+		/obj/item/clothing/suit/storage/hooded/wintercoat/medical/viro = 5, // edit, pre-fulp labcoat.
 		/obj/item/clothing/head/beret/medical/viro = 5,
 		/obj/item/clothing/mask/surgical = 5,
 		/obj/item/storage/backpack/virology = 5,
@@ -1526,7 +1520,7 @@
 		/obj/item/clothing/under/rank/scientist/skirt = 5,
 		/obj/item/clothing/under/rank/scientist/turtleneck = 5,
 		/obj/item/clothing/suit/storage/toggle/labcoat = 5,
-		/obj/item/clothing/suit/storage/toggle/labcoat/old = 5, //VoreStation edit, pre-fulp labcoat.
+		/obj/item/clothing/suit/storage/toggle/labcoat/old = 5, // edit, pre-fulp labcoat.
 		/obj/item/clothing/suit/storage/toggle/labcoat/modern = 5,
 		/obj/item/clothing/shoes/white = 5,
 		/obj/item/clothing/shoes/slippers = 5,

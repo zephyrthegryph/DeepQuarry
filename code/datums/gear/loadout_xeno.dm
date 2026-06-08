@@ -114,7 +114,7 @@
 
 /datum/gear/uniform/undercoat/New()
 	..()
-	// DQEdit — variants are now in GLOB.dq_teshari_undercoat_variants
+	// variants are now in GLOB.dq_teshari_undercoat_variants
 	var/list/undercoats = list()
 	for(var/v in GLOB.dq_teshari_undercoat_variants)
 		var/list/spec = GLOB.dq_teshari_undercoat_variants[v]
@@ -607,7 +607,7 @@
 
 /datum/gear/uniform/undercoatcolor
 	display_name = "undercoat, recolorable (Teshari)"
-	// DQEdit — base recolorable; the white_grey sprite is set via a fixed variant.
+	// base recolorable; the white_grey sprite is set via a fixed variant.
 	path = /obj/item/clothing/under/teshari/undercoat/standard
 	whitelisted = SPECIES_TESHARI
 	sort_category = "Xenowear"
@@ -694,7 +694,7 @@
 
 /datum/gear/shoes/teshwrap
 	display_name = "Teshari legwraps"
-	path = /obj/item/clothing/shoes/footwraps //CHOMPEDIT: Tesh can wear regular footwraps, but im paranoid about corrupting saves so we just repath this for now
+	path = /obj/item/clothing/shoes/footwraps // Tesh can wear regular footwraps, but im paranoid about corrupting saves so we just repath this for now
 	sort_category = "Xenowear"
 	whitelisted = SPECIES_TESHARI
 	cost = 1

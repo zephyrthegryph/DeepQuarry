@@ -317,8 +317,8 @@ ADMIN_VERB(generic_structure, R_SPAWN, "Spawn Generic Structure", "Spawn a custo
 /client/proc/get_path_from_partial_text(default_path)
 	var/desired_path = tgui_input_text(src, "Enter full or partial typepath.","Typepath","[default_path]")
 
-	if(!desired_path)	//VOREStation Add - If you don't give it anything it builds a list of every possible thing in the game and crashes your client.
-		return			//VOREStation Add - And the main way for it to do that is to push the cancel button, which should just do nothing. :U
+	if(!desired_path) // If you don't give it anything it builds a list of every possible thing in the game and crashes your client.
+		return // And the main way for it to do that is to push the cancel button, which should just do nothing. :U
 
 	var/list/types = typesof(/atom)
 	var/list/matches = list()

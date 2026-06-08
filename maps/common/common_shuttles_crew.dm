@@ -1,5 +1,5 @@
 //This is old chomp code that will need updating to re-add to our game.
-//CHOMPedit: Shuttle 3, Sif-bound exploration shuttle for the exploration outpost, Hangar 3, and the wilderness.
+// Shuttle 3, Sif-bound exploration shuttle for the exploration outpost, Hangar 3, and the wilderness.
 //Created so pilots stop stealing the autopilot shuttles and making station-planet travel more burdensome.
 
 GLOBAL_LIST_EMPTY(shuttdisp_list)

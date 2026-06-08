@@ -71,7 +71,7 @@ SUBSYSTEM_DEF(pai)
 		return FALSE
 	if(jobban_isbanned(user, "pAI"))
 		return FALSE
-	if(!(user.client.prefs.read_preference(/datum/preference/numeric/human/be_special) & BE_PAI)) // DQEdit — be_special migrated
+	if(!(user.client.prefs.read_preference(/datum/preference/numeric/human/be_special) & BE_PAI)) // be_special migrated
 		return FALSE
 	if(check_is_delayed(REF(user)))
 		return FALSE

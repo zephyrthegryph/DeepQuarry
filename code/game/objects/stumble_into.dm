@@ -96,7 +96,7 @@
 	M.emote("scream")
 	M.stop_flying()
 
-// DQEdit — cryo_cell deleted with ZAS unary atmos machinery; stumble override removed.
+// cryo_cell deleted with ZAS unary atmos machinery; stumble override removed.
 
 /obj/machinery/porta_turret/stumble_into(mob/living/M)
 	..()
@@ -104,7 +104,7 @@
 		attacked = TRUE
 		VARSET_IN(src, attacked, FALSE, 6 SECONDS)
 
-// DQEdit — space_heater (spaceheater.dm) deleted with ZAS atmos machinery;
+// space_heater (spaceheater.dm) deleted with ZAS atmos machinery;
 // stumble override removed.
 
 /obj/machinery/suit_storage_unit/stumble_into(mob/living/M)

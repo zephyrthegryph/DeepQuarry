@@ -29,7 +29,7 @@
 
 	var/obj/item/tank/Tank = loaded
 
-	// DQEdit — Tank.air_contents.update_values() removed; no-op under LINDA.
+	// Tank.air_contents.update_values() removed; no-op under LINDA.
 
 	var/turf/T = get_turf(src)
 
@@ -55,7 +55,7 @@
 	if( (!phoron_amt || phoron_amt < max(0.25, 3 + co2_amt - oxy_amt - (n2o_amt / 2))) && (!ch4_amt || ch4_amt < max(0.25, 3 + co2_amt - oxy_amt - (n2o_amt / 2))) )
 		phoron_mix_proper = FALSE
 
-	if(Tank.air_contents.return_pressure() >= T.return_air().return_pressure() && phoron_mix_proper) // DQEdit — T.air → T.return_air()
+	if(Tank.air_contents.return_pressure() >= T.return_air().return_pressure() && phoron_mix_proper) // T.air → T.return_air()
 		return 1
 
 	return 0

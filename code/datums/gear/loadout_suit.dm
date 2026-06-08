@@ -675,37 +675,37 @@
 
 /datum/gear/suit/snowsuit/command
 	display_name = "snowsuit, command"
-	path = /obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/command // CHOMPEdit
+	path = /obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/command
 	allowed_roles = list(JOB_SITE_MANAGER,JOB_RESEARCH_DIRECTOR,JOB_HEAD_OF_PERSONNEL,JOB_HEAD_OF_SECURITY,JOB_CHIEF_ENGINEER,JOB_COMMAND_SECRETARY,JOB_BLUESHIELD_GUARD) //YW ADDITIONS
 	show_roles = FALSE
 
 /datum/gear/suit/snowsuit/security
 	display_name = "snowsuit, security"
-	path = /obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/security // CHOMPEdit
+	path = /obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/security
 	allowed_roles = list(JOB_SECURITY_OFFICER, JOB_HEAD_OF_SECURITY, JOB_WARDEN, JOB_DETECTIVE, JOB_BLUESHIELD_GUARD, JOB_SECURITY_PILOT) //YW ADDITIONS
 	show_roles = FALSE
 
 /datum/gear/suit/snowsuit/medical
 	display_name = "snowsuit, medical"
-	path = /obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/medical // CHOMPEdit
-	allowed_roles = list(JOB_MEDICAL_DOCTOR,JOB_CHIEF_MEDICAL_OFFICER,JOB_CHEMIST,JOB_PARAMEDIC,JOB_GENETICIST, JOB_PSYCHIATRIST, JOB_SEARCH_AND_RESCUE) // CHOMPEdit
+	path = /obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/medical
+	allowed_roles = list(JOB_MEDICAL_DOCTOR,JOB_CHIEF_MEDICAL_OFFICER,JOB_CHEMIST,JOB_PARAMEDIC,JOB_GENETICIST, JOB_PSYCHIATRIST, JOB_SEARCH_AND_RESCUE)
 	show_roles = FALSE
 
 /datum/gear/suit/snowsuit/science
 	display_name = "snowsuit, science"
-	path = /obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/science // CHOMPEdit
+	path = /obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/science
 	allowed_roles = list(JOB_RESEARCH_DIRECTOR,JOB_SCIENTIST, JOB_ROBOTICIST, JOB_XENOBIOLOGIST)
 	show_roles = FALSE
 
 /datum/gear/suit/snowsuit/engineering
 	display_name = "snowsuit, engineering"
-	path = /obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/engineering // CHOMPEdit
+	path = /obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/engineering
 	allowed_roles = list(JOB_CHIEF_ENGINEER,JOB_ATMOSPHERIC_TECHNICIAN, JOB_ENGINEER)
 	show_roles = FALSE
 
 /datum/gear/suit/snowsuit/cargo
 	display_name = "snowsuit, supply"
-	path = /obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/cargo // CHOMPEdit
+	path = /obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/cargo
 	allowed_roles = list(JOB_QUARTERMASTER,JOB_SHAFT_MINER,JOB_CARGO_TECHNICIAN,JOB_HEAD_OF_PERSONNEL)
 	show_roles = FALSE
 

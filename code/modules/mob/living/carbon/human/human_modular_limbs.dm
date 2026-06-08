@@ -86,11 +86,11 @@
 	if(world.time < last_special + (2 SECONDS) || get_active_hand() != E)
 		return FALSE
 	/*CHOMPRemove Start
-	//VOREStation Addition Start
+	// ition Start
 	if(species.name == SPECIES_PROTEAN)
 		to_chat(src, span_warning("This is not compatible with your nanomachine body!"))
 		return FALSE
-	//VOREStation Addition End
+	// ition End
 	*///CHOMPRemove End
 	if(incapacitated() || restrained())
 		to_chat(src, span_warning("You can't do that in your current state!"))
@@ -125,11 +125,11 @@
 	if(world.time < last_special + (2 SECONDS))
 		return FALSE
 	/*CHOMPRemove Start
-	//VOREStation Addition Start
+	// ition Start
 	if(species.name == SPECIES_PROTEAN)
 		to_chat(src, span_warning("You can't just detach parts of your nanomachine body!"))
 		return FALSE
-	//VOREStation Addition End
+	// ition End
 	*///CHOMPRemove End
 	if(incapacitated() || restrained())
 		to_chat(src, span_warning("You can't do that in your current state!"))

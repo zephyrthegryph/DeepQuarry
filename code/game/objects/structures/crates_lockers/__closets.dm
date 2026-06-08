@@ -333,8 +333,8 @@
 						to_chat(user, span_notice("You need more welding fuel to complete this task."))
 						return
 			if(do_after(user, 2 SECONDS * S.toolspeed, target = src))
-				if(opened) //ChompEDIT - cancel weld if opened mid-progress to prevent welder-traps
-					return //ChompEDIT
+				if(opened) // cancel weld if opened mid-progress to prevent welder-traps
+					return
 				playsound(src, S.usesound, 50)
 				sealed = !sealed
 				update_icon()
@@ -400,13 +400,13 @@
 	if(ishuman(usr) || isrobot(usr))
 		add_fingerprint(usr)
 		toggle(usr)
-	else if(isanimal(usr))	//VOREStation Addition Start
+	else if(isanimal(usr)) // ition Start
 		var/mob/living/simple_mob/s = usr
 		if(s.has_hands)
 			add_fingerprint(usr)
 			toggle(usr)
 		else
-			to_chat(usr, span_warning("This mob type can't use this verb."))		//VOREStation Addition End
+			to_chat(usr, span_warning("This mob type can't use this verb.")) // ition End
 	else
 		to_chat(usr, span_warning("This mob type can't use this verb."))
 
@@ -549,7 +549,7 @@
 /obj/structure/closet/verb/hidden_vore()
 	set src in oview(1)
 	set category = "Object"
-	set name = "Devour Occupants" //ChompEDIT vore as a verb is cronge
+	set name = "Devour Occupants" // vore as a verb is cronge
 
 	if(!isliving(usr)) //no ghosts
 		return

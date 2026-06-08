@@ -58,7 +58,7 @@
 
 /mob/proc/saypiece_scramble(datum/multilingual_say_piece/SP)
 	if(SP.speaking)
-		return SP.speaking.scramble(SP.message, languages) //CHOMPEdit: fix for partial understanding
+		return SP.speaking.scramble(SP.message, languages) // fix for partial understanding
 	else
 		return stars(SP.message)
 
@@ -111,7 +111,7 @@
 		if(client?.prefs?.read_preference(/datum/preference/toggle/ghost_ears) && (speaker in view(src)))
 			message = span_bold("[message]")
 
-	if(is_deaf() && stat != DEAD) //CHOMPEdit - Dead people should be able to hear stuff like ghosts can
+	if(is_deaf() && stat != DEAD) // Dead people should be able to hear stuff like ghosts can
 		if(speaker == src)
 			to_chat(src, span_filter_say(span_warning("You cannot hear yourself speak!")))
 		else

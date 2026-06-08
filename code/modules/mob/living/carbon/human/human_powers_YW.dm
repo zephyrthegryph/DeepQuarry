@@ -1,7 +1,7 @@
 /mob/living/carbon/human/proc/telepathy(mob/M as mob in oview())
 	set name = "Project mind"
 	set desc = "Talk telepathically to someone over a distance."
-	set category = "Abilities.General" //CHOMPEdit
+	set category = "Abilities.General"
 
 	var/msg = tgui_input_text(src, "Message:", "Project mind", max_length = MAX_MESSAGE_LEN)
 	if(msg)

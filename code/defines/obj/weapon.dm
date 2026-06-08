@@ -77,7 +77,7 @@
 
 /obj/item/disk
 	name = "disk"
-	icon = 'icons/obj/discs_vr.dmi' //VOREStation Edit
+	icon = 'icons/obj/discs_vr.dmi'
 	drop_sound = 'sound/items/drop/disk.ogg'
 	pickup_sound =  'sound/items/pickup/disk.ogg'
 
@@ -374,7 +374,7 @@
 	icon_state = "matter_bin"
 	matter = list(MAT_STEEL = 80)
 
-// DQEdit — Tier subtypes (adv / super / hyper / omni / nano / pico /
+// Tier subtypes (adv / super / hyper / omni / nano / pico /
 // high / ultra / phasic) are gone. Stock parts are now material-driven:
 // each part instance carries a `material_id` that points into
 // GLOB.name_to_material, and get_rating() derives the rating from a

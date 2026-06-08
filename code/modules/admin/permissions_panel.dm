@@ -1,7 +1,7 @@
 // Permissions Panel — structured TGUI replacement for the 1200-line legacy
 // admin_log_show HTML panel.
 
-// DQEdit — local copy of PERMISSIONS_LOGS_PER_PAGE. The original is defined
+// local copy of PERMISSIONS_LOGS_PER_PAGE. The original is defined
 // inside permissionedit.dm where it was used in the now-removed proc body,
 // and DM macros are file-scope so we can't see it from here.
 #define PERMISSIONS_LOGS_PER_PAGE 20

@@ -1,6 +1,6 @@
 #define FUSION_ROD_SHEET_AMT 15
 /obj/machinery/fusion_fuel_compressor
-	var/blitzprogress = 0	//CHOMPEdit
+	var/blitzprogress = 0
 	name = "fuel compressor"
 	icon = 'icons/obj/machines/power/fusion.dmi'
 	icon_state = "fuel_compressor1"
@@ -12,7 +12,7 @@
 /obj/machinery/fusion_fuel_compressor/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	verbs -= /obj/machinery/fusion_fuel_compressor/verb/eject_sheet //CHOMPAdd
+	verbs -= /obj/machinery/fusion_fuel_compressor/verb/eject_sheet
 
 /obj/machinery/fusion_fuel_compressor/MouseDrop_T(atom/movable/target, mob/user)
 	if(user.incapacitated() || !user.Adjacent(src))
@@ -49,7 +49,6 @@
 		return
 	if(default_part_replacement(user, thing))
 		return
-//CHOMPEdit Begin
 	if(istype(thing, /obj/item/stack/material))
 		var/obj/item/stack/material/M = thing
 		var/datum/material/mat = M.get_material()
@@ -99,6 +98,5 @@
 		new/obj/item/stack/material/supermatter(get_turf(src))
 		blitzprogress = 0
 	verbs -= /obj/machinery/fusion_fuel_compressor/verb/eject_sheet
-//CHOMPEdit End
 
 #undef FUSION_ROD_SHEET_AMT

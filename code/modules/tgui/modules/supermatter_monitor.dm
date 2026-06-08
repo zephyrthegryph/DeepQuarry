@@ -62,7 +62,7 @@
 			data["SM_gas_N2"] = round(100*LINDA_GAS_AMT(air, GAS_N2)/air.total_moles(),0.01)
 			data["SM_gas_PH"] = round(100*LINDA_GAS_AMT(air, GAS_PHORON)/air.total_moles(),0.01)
 			data["SM_gas_CH4"] = round(100*LINDA_GAS_AMT(air, GAS_CH4)/air.total_moles(),0.01)
-			data["SM_gas_N2O"] = round(100*LINDA_GAS_AMT(air, GAS_N2O)/air.total_moles(),0.01) // DQEdit — "sleeping_agent" string is not a LINDA gas id; GAS_N2O = "n2o" is the real id
+			data["SM_gas_N2O"] = round(100*LINDA_GAS_AMT(air, GAS_N2O)/air.total_moles(),0.01) // "sleeping_agent" string is not a LINDA gas id; GAS_N2O = "n2o" is the real id
 		else
 			data["SM_gas_O2"] = 0
 			data["SM_gas_CO2"] = 0

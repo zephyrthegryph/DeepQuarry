@@ -2,7 +2,7 @@
 // Mobs Subsystem - Process mob.Life()
 //
 
-//VOREStation Edits - Contains temporary debugging code to diagnose extreme tick consumption.
+// s - Contains temporary debugging code to diagnose extreme tick consumption.
 //Revert file to Polaris version when done.
 
 SUBSYSTEM_DEF(mobs)
@@ -60,11 +60,10 @@ SUBSYSTEM_DEF(mobs)
 		else if(M.low_priority && !(M.loc && get_z(M) && process_z[get_z(M)]))
 			slept_mobs++
 			continue
-		//CHOMPEdit Start - Enable pausing mobs (For transformation, holding until reformation, etc.)
+		// Enable pausing mobs (For transformation, holding until reformation, etc.)
 		else if(!M.enabled)
 			slept_mobs++
 			continue
-		//CHOMPEdit End
 
 		M.Life(times_fired)
 

@@ -112,16 +112,15 @@
 /datum/mind/proc/store_memory(new_text)
 	memory += "[new_text]<BR>"
 
-// DQEdit Start — show_memory body relocated to code/modules/admin/misc_admin_panels.dm (structured TGUI). Stub here keeps the proc declaration parseable.
+// show_memory body relocated to code/modules/admin/misc_admin_panels.dm (structured TGUI). Stub here keeps the proc declaration parseable.
 /datum/mind/proc/show_memory(mob/recipient)
 	return  // body provided by modular override
-// DQEdit End
 
 /datum/mind/proc/edit_memory(mob/user)
 	if(!SSticker || !SSticker.mode)
 		tgui_alert_async(user, "Not before round-start!", "Alert")
 		return
-	// DQEdit — fully structured TGUI panel; see
+	// fully structured TGUI panel; see
 	// code/modules/admin/edit_memory_panel.dm.
 	if(!tgui_edit_memory_panel)
 		tgui_edit_memory_panel = new(src, user)
@@ -496,7 +495,7 @@
 /mob/living/carbon/human/mind_initialize()
 	. = ..()
 	if(!mind.assigned_role)
-		mind.assigned_role = JOB_ALT_VISITOR	//defualt //VOREStation Edit - Visitor not Assistant
+		mind.assigned_role = JOB_ALT_VISITOR // defualt // Visitor not Assistant
 
 //slime
 /mob/living/simple_mob/slime/mind_initialize()
@@ -568,7 +567,7 @@
 /mob/living/mind_initialize()
 	. = ..()
 	if (client?.prefs)
-		// DQEdit — directory tags migrated from legacy /datum/preferences vars
+		// directory tags migrated from legacy /datum/preferences vars
 		// to /datum/preference subtypes.
 		mind.show_in_directory = client.prefs.read_preference(/datum/preference/toggle/human/show_in_directory)
 		mind.directory_tag = client.prefs.read_preference(/datum/preference/choiced/human/directory_tag)

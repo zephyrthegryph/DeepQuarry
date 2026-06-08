@@ -17,14 +17,14 @@
 		EQUIPMENT("Defense Equipment - Smoke Bomb",					/obj/item/grenade/smokebomb,												10),
 		EQUIPMENT("Defense Equipment - Razor Drone Deployer",		/obj/item/grenade/spawnergrenade/manhacks/station/locked,					100),
 		EQUIPMENT("Defense Equipment - Sentry Drone Deployer",		/obj/item/grenade/spawnergrenade/ward,										150),
-		EQUIPMENT("Defense Equipment - Phase Pistol",				/obj/item/gun/energy/locked/phasegun/pistol,								100), //CHOMPEDIT
-		EQUIPMENT("Defense Equipment - Marksman Frontier Phaser", 	/obj/item/gun/energy/locked/frontier/rifle,									800), //CHOMPADD
-		EQUIPMENT("Defense Equipment - Frontier Shotgun",			/obj/item/gun/energy/locked/frontier/shotgun,								800), //CHOMPADD
-		EQUIPMENT("Defense Equipment - Frontier Carbine",			/obj/item/gun/energy/locked/frontier/carbine,								800), //CHOMPEDIT
-		EQUIPMENT("Defense Equipment - Frontier Phaser",			/obj/item/gun/energy/locked/frontier,										600), //CHOMPADD
-		EQUIPMENT("Defense Equipment - Holdout Frontier Phaser", 	/obj/item/gun/energy/locked/frontier/holdout,								300), //CHOMPADD
-		EQUIPMENT("Defense Equipment - Phase Carbine",				/obj/item/gun/energy/locked/phasegun,										200), //CHOMPEDIT
-		EQUIPMENT("Defense Equipment - Phase Rifle",				/obj/item/gun/energy/locked/phasegun/rifle,									350), //CHOMPEDIT
+		EQUIPMENT("Defense Equipment - Phase Pistol",				/obj/item/gun/energy/locked/phasegun/pistol,								100),
+		EQUIPMENT("Defense Equipment - Marksman Frontier Phaser", 	/obj/item/gun/energy/locked/frontier/rifle,									800),
+		EQUIPMENT("Defense Equipment - Frontier Shotgun",			/obj/item/gun/energy/locked/frontier/shotgun,								800),
+		EQUIPMENT("Defense Equipment - Frontier Carbine",			/obj/item/gun/energy/locked/frontier/carbine,								800),
+		EQUIPMENT("Defense Equipment - Frontier Phaser",			/obj/item/gun/energy/locked/frontier,										600),
+		EQUIPMENT("Defense Equipment - Holdout Frontier Phaser", 	/obj/item/gun/energy/locked/frontier/holdout,								300),
+		EQUIPMENT("Defense Equipment - Phase Carbine",				/obj/item/gun/energy/locked/phasegun,										200),
+		EQUIPMENT("Defense Equipment - Phase Rifle",				/obj/item/gun/energy/locked/phasegun/rifle,									350),
 		EQUIPMENT("Defense Equipment - Plasteel Machete",			/obj/item/material/knife/machete,											50),
 		EQUIPMENT("Hybrid Equipment - Proto-Kinetic Machete",		/obj/item/kinetic_crusher/machete,											100),
 		EQUIPMENT("Hybrid Equipment - Proto-Kinetic Dagger",		/obj/item/kinetic_crusher/machete/dagger,									75),
@@ -43,20 +43,20 @@
 		EQUIPMENT("Mini-Translocator",								/obj/item/perfect_tele/one_beacon,											120),
 		EQUIPMENT("Survey Tools - Mapping Unit",					/obj/item/mapping_unit,														150),
 		EQUIPMENT("Survey Tools - Mapping Beacon",					/obj/item/holomap_beacon,													25),
-		EQUIPMENT("Survey Tools - Advanced Cataloguer",				/obj/item/cataloguer/advanced,												300), //CHOMPADD
+		EQUIPMENT("Survey Tools - Advanced Cataloguer",				/obj/item/cataloguer/advanced,												300),
 		EQUIPMENT("Survival Equipment - Insulated Poncho",			/obj/random/thermalponcho,													75),
 		EQUIPMENT("Survival Equipment - Glowstick", 				/obj/item/flashlight/glowstick,												5),
 		EQUIPMENT("Survival Equipment - Flare", 					/obj/item/flashlight/flare,													5),
 		EQUIPMENT("Survival Equipment - Radioisotope Glowstick",	/obj/item/flashlight/glowstick/radioisotope,								40),
 		EQUIPMENT("Survival Equipment - Modular Explorer Suit",		/obj/item/clothing/suit/armor/pcarrier/explorer,							200),
 		EQUIPMENT("Survival Equipment - Armored Jumpsuit",			/obj/item/clothing/under/explorer/armored,									200),
-		EQUIPMENT("Survival Equipment - Exploration Plate",			/obj/item/clothing/accessory/armor/armorplate/explorer,						50), //CHOMPADD
-		EQUIPMENT("Survival Equipment - Exploration Arm Guards",	/obj/item/clothing/accessory/armor/armguards/explorer,						50), //CHOMPADD
-		EQUIPMENT("Survival Equipment - Exploration Leg Guards",	/obj/item/clothing/accessory/armor/legguards/explorer,						50), //CHOMPADD
-		EQUIPMENT("Survival Equipment - Exploration Riot shield",	/obj/item/shield/riot/explorer,												75), //CHOMPADD
-		EQUIPMENT("Survival Equipment - Storage Pouch",				/obj/item/clothing/accessory/storage/pouches/green,							10), //CHOMPADD
-		EQUIPMENT("Survival Equipment - Large Storage Pouch",		/obj/item/clothing/accessory/storage/pouches/large/green,					25), //CHOMPADD
-		EQUIPMENT("Survival Equipment - Pathfinder Belt",			/obj/item/storage/belt/explorer/pathfinder,									200), //CHOMPADD
+		EQUIPMENT("Survival Equipment - Exploration Plate",			/obj/item/clothing/accessory/armor/armorplate/explorer,						50),
+		EQUIPMENT("Survival Equipment - Exploration Arm Guards",	/obj/item/clothing/accessory/armor/armguards/explorer,						50),
+		EQUIPMENT("Survival Equipment - Exploration Leg Guards",	/obj/item/clothing/accessory/armor/legguards/explorer,						50),
+		EQUIPMENT("Survival Equipment - Exploration Riot shield",	/obj/item/shield/riot/explorer,												75),
+		EQUIPMENT("Survival Equipment - Storage Pouch",				/obj/item/clothing/accessory/storage/pouches/green,							10),
+		EQUIPMENT("Survival Equipment - Large Storage Pouch",		/obj/item/clothing/accessory/storage/pouches/large/green,					25),
+		EQUIPMENT("Survival Equipment - Pathfinder Belt",			/obj/item/storage/belt/explorer/pathfinder,									200),
 		EQUIPMENT("Exotic Sample Container",						/obj/item/storage/sample_container,											100),
 	)
 	prize_list["Consumables"] = list(
@@ -113,9 +113,9 @@
 		EQUIPMENT("Thalers - 1000",									/obj/item/spacecash/c1000,													1000),
 		EQUIPMENT("Umbrella",										/obj/item/melee/umbrella/random,											20),
 		EQUIPMENT("UAV - Recon Skimmer",							/obj/item/uav,																40),
-		EQUIPMENT("Mining-Grade PSG",								/obj/item/personal_shield_generator/belt/mining/loaded,						100), //CHOMPADD
-		EQUIPMENT("Security-Grade PSG",								/obj/item/personal_shield_generator/belt/security/loaded,					200), //CHOMPADD
-		EQUIPMENT("PSG Variant-P",			   						/obj/item/personal_shield_generator/belt/parry,	            				250), //CHOMPADD
+		EQUIPMENT("Mining-Grade PSG",								/obj/item/personal_shield_generator/belt/mining/loaded,						100),
+		EQUIPMENT("Security-Grade PSG",								/obj/item/personal_shield_generator/belt/security/loaded,					200),
+		EQUIPMENT("PSG Variant-P",			   						/obj/item/personal_shield_generator/belt/parry,	            				250),
 	)
 
 /obj/machinery/mineral/equipment_vendor/survey/get_points(obj/item/card/id/target)

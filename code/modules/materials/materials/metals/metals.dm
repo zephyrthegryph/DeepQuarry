@@ -1,8 +1,7 @@
-// DQEdit Start — material_class added per subtype so the dynamic-material
+// material_class added per subtype so the dynamic-material
 // system (SSquarry rolls) and downstream synergy checks have a coarse
 // classification. The legacy hardness/conductivity/integrity/weight vars
 // are unchanged; classes are purely additive metadata.
-// DQEdit End
 
 
 // Very rare alloy that is reflective, should be used sparingly.
@@ -116,7 +115,7 @@
 
 /datum/material/uranium/New()
 	. = ..()
-	// DQEdit — was `radioactivity = 12` direct var. Now lives on a
+	// was `radioactivity = 12` direct var. Now lives on a
 	// /datum/component/material_radioactive carrying the magnitude.
 	AddComponent(/datum/component/material_radioactive, 12)
 

@@ -1,4 +1,4 @@
-// DQAdd — Apply biological/identifying gender from prefs. Biological gender goes through
+// Apply biological/identifying gender from prefs. Biological gender goes through
 // character.set_gender() so dependent body state (icons, identity) updates correctly;
 // identifying is a direct field. This is two prefs that should always write together to
 // preserve invariants, so it lives in a hook rather than two competing per-pref applies.

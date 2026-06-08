@@ -2,7 +2,7 @@
 	COOLDOWN_DECLARE(ui_refresh_cooldown)
 
 /datum/preferences/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui, custom_state)
-	// DQEdit — build the base64 preview assets before tgui opens so the
+	// build the base64 preview assets before tgui opens so the
 	// initial static_data includes them. update_preview_icon → update_character_previews
 	// flattens the mannequin into 4 direction PNGs + BG PNG via icon2base64.
 	if(!character_preview_b64)
@@ -50,7 +50,7 @@
 	data["active_slot"] = default_slot
 	data["saved_notification"] = saved_notification
 
-	// DQEdit — preview assets ship in ui_data so they reach React via the
+	// preview assets ship in ui_data so they reach React via the
 	// normal polling channel (send_update — ui_data only) instead of via
 	// send_full_update (ui_data + static_data + heavy editor catalogs).
 	// Posting preview rebuilds through send_full_update was reconciling the
@@ -72,7 +72,7 @@
 
 	data["character_profiles"] = create_character_profiles()
 
-	// DQEdit — preview assets now ship in ui_data (see /datum/preferences/tgui_data).
+	// preview assets now ship in ui_data (see /datum/preferences/tgui_data).
 	// data["overflow_role"] = SSjob.get_jobType(SSjob.overflow_role).title
 
 	data["window"] = current_window
@@ -186,7 +186,7 @@
 			if(!IsGuestKey(ui.user.key))
 				open_copy_dialog(ui.user)
 			. = TRUE
-		// DQEdit — switch_category was for the deleted Bay PreferencesMenu sidebar. The new
+		// switch_category was for the deleted Bay PreferencesMenu sidebar. The new
 		// DQCharacterSetup window owns its own client-side category state via React useState
 		// and doesn't ping the server to switch tabs. Action removed; if anything still calls
 		// it, falls through to the no-op default.
@@ -200,7 +200,7 @@
 			update_tgui_static_data(ui.user)
 			COOLDOWN_START(src, ui_refresh_cooldown, 5 SECONDS)
 			. = TRUE
-		// DQEdit — Cycle Background flips bgstate to the next choice and
+		// Cycle Background flips bgstate to the next choice and
 		// re-renders the preview assets so the new BG shows up immediately
 		// via the next static_data push.
 		if("cycle_background")
@@ -214,7 +214,7 @@
 				update_tgui_static_data(ui.user)
 			. = TRUE
 
-// DQEdit — jiggle_map / dq_force_pref_window_visible removed. The asset-
+// jiggle_map / dq_force_pref_window_visible removed. The asset-
 // based preview renders <img> tags from base64; nothing depends on
 // BYOND map control timing, the tgui_window visible signal, or the React
 // Window's visibility flicker. Normal pool tgui windows work as-is.

@@ -119,8 +119,8 @@
 		/obj/item/clothing/shoes/boots/winter/security,
 		/obj/item/flashlight/maglight,
 		/obj/item/clothing/mask/gas/half,
-		/obj/item/clothing/mask/gas/sechailer/swat/hos, // CHOMPEdit
-		/obj/item/clothing/accessory/bodycam) // CHOMPEdit
+		/obj/item/clothing/mask/gas/sechailer/swat/hos,
+		/obj/item/clothing/accessory/bodycam)
 
 
 /obj/structure/closet/secure_closet/hos/Initialize(mapload)
@@ -147,7 +147,7 @@
 		/obj/item/clothing/under/rank/warden/corp,
 		/obj/item/clothing/suit/storage/vest/wardencoat,
 		/obj/item/clothing/suit/storage/vest/wardencoat/alt,
-		/obj/item/clothing/suit/storage/vest/wardencoat/alt2, //VOREStation Add,
+		/obj/item/clothing/suit/storage/vest/wardencoat/alt2, // ,
 		/obj/item/clothing/head/helmet/dermal,
 		/obj/item/clothing/head/helmet/warden,
 		/obj/item/clothing/head/helmet/warden/hat,
@@ -183,7 +183,7 @@
 		/obj/item/ammo_magazine/m12gdrumjack/beanbag,
 		/obj/item/ticket_printer,		//CHOMPStation addition
 		/obj/item/retail_scanner/security,	//CHOMPStation addition
-		/obj/item/clothing/accessory/bodycam // CHOMPEdit
+		/obj/item/clothing/accessory/bodycam
 
 		)
 
@@ -217,7 +217,7 @@
 		/obj/item/hailer,
 		/obj/item/flashlight/flare,
 		/obj/item/clothing/under/rank/security/corp,
-		/obj/item/ammo_magazine/m45/rubber, //VOREStation Removal, //CHOMP Edit it has been restored
+		/obj/item/ammo_magazine/m45/rubber, // Removal, //CHOMP Edit it has been restored
 		/obj/item/gun/energy/taser,
 		/obj/item/cell/device/weapon,
 		/obj/item/holowarrant,				//CHOMPStation addition
@@ -390,8 +390,8 @@ GLOBAL_LIST_BOILERPLATE(all_brig_closets, /obj/structure/closet/secure_closet/br
 		/obj/item/clothing/head/beret/sec/corporate/hos,
 //		/obj/item/clothing/suit/storage/hooded/wintercoat/security, //CHOMP Remove
 		/obj/item/clothing/suit/storage/hooded/wintercoat/security/hos,
-		/obj/item/clothing/shoes/boots/winter/security, //CHOMPADD
-		/obj/item/clothing/mask/gas/sechailer/swat/hos, //CHOMPADD
+		/obj/item/clothing/shoes/boots/winter/security,
+		/obj/item/clothing/mask/gas/sechailer/swat/hos,
 		/obj/item/clothing/mask/gas/half,
 		/obj/item/clothing/head/helmet/HoS/hat/red,
 		/obj/item/clothing/suit/storage/vest/hoscoat/neo_hos_parade_jacket,
@@ -416,8 +416,8 @@ GLOBAL_LIST_BOILERPLATE(all_brig_closets, /obj/structure/closet/secure_closet/br
 		/obj/item/melee/baton/loaded,
 //		/obj/item/storage/secure/briefcase/nsfw_pack_hos,
 //YW Removal,
-		/obj/item/gun/projectile/caseless/prototype/loaded, // CHOMPADD
-		/obj/item/ammo_magazine/m5mmcaseless, // CHOMPADD
+		/obj/item/gun/projectile/caseless/prototype/loaded,
+		/obj/item/ammo_magazine/m5mmcaseless,
 		/obj/item/gun/energy/x01,
 		/obj/item/cell/device/weapon,
 		/obj/item/melee/telebaton,
@@ -425,7 +425,7 @@ GLOBAL_LIST_BOILERPLATE(all_brig_closets, /obj/structure/closet/secure_closet/br
 //		/obj/item/clothing/suit/storage/hooded/wintercoat/security, //CHOMP Remove
 //		/obj/item/clothing/shoes/boots/winter/security, //CHOMP Remove
 		/obj/item/ticket_printer, //CHOMP Add
-		/obj/item/gun/energy/taser, // CHOMPADD
+		/obj/item/gun/energy/taser,
 		/obj/item/flashlight/maglight,
 		/obj/item/personal_shield_generator/security/loaded)
 

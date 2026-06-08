@@ -141,8 +141,8 @@
 	storage_slots = 8	//If they get better everything-else, why not the belt too?
 	can_hold = list(
 		/obj/item/rcd,	//They've given one from the get-go, it's hard to imagine they wouldn't be given something that can store it neater than a bag
-		/obj/item/pipe_dispenser, //CHOMPAdd
-		/obj/item/holosign_creator/combifan, //CHOMPAdd
+		/obj/item/pipe_dispenser,
+		/obj/item/holosign_creator/combifan,
 		/obj/item/tool/crowbar,
 		/obj/item/tool/screwdriver,
 		/obj/item/weldingtool,
@@ -252,7 +252,7 @@
 		/obj/item/reagent_containers/glass/bottle,
 		/obj/item/reagent_containers/pill,
 		/obj/item/reagent_containers/syringe,
-		/obj/item/storage/quickdraw/syringe_case, //VOREStation Addition - Adds syringe cases,
+		/obj/item/storage/quickdraw/syringe_case, // ition - Adds syringe cases,
 		/obj/item/flame/lighter/zippo,
 		/obj/item/storage/fancy/cigarettes,
 		/obj/item/storage/pill_bottle,
@@ -270,7 +270,7 @@
 		/obj/item/flashlight,
 		/obj/item/cell/device,
 		/obj/item/extinguisher/mini,
-		/obj/item/ammo_casing/macrobattery, // CHOMPedit: Macrobatteries for the Curabitur can fit into medbelts.
+		/obj/item/ammo_casing/macrobattery, // Macrobatteries for the Curabitur can fit into medbelts.
 		/obj/item/sleevemate,
 		/obj/item/mass_spectrometer,
 		/obj/item/surgical,
@@ -328,7 +328,7 @@
 		/obj/item/taperoll,
 		/obj/item/gun/projectile/colt/detective,
 		/obj/item/holowarrant,
-		/obj/item/ticket_printer	//VOREStation Edit
+		/obj/item/ticket_printer
 		)
 
 /obj/item/storage/belt/detective
@@ -374,7 +374,7 @@
 		/obj/item/gun/energy/stunrevolver/detective,	//In keeping with the same vein as above, they can store their special one
 		/obj/item/holowarrant,
 		/obj/item/reagent_containers/food/drinks/flask,
-		/obj/item/ticket_printer	//VOREStation Edit
+		/obj/item/ticket_printer
 		)
 
 /obj/item/storage/belt/soulstone
@@ -517,7 +517,7 @@
 		/obj/item/taperoll,
 		/obj/item/reagent_containers/spray,
 		/obj/item/soap,
-		/obj/item/holosign_creator, //CHOMPAdd
+		/obj/item/holosign_creator,
 		/obj/item/lightreplacer,
 		/obj/item/clothing/glasses/hud/janitor
 		)

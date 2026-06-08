@@ -287,7 +287,7 @@
 	return
 
 /turf/simulated/shuttlewalls/proc/radiate()
-	// DQEdit — radioactivity moved to a component on /datum/material.
+	// radioactivity moved to a component on /datum/material.
 	var/total_radiation = dq_material_radioactivity(material) + (reinf_material ? dq_material_radioactivity(reinf_material) / 2 : 0) + (girder_material ? dq_material_radioactivity(girder_material) / 2 : 0)
 	if(!total_radiation)
 		return

@@ -498,7 +498,7 @@
 			to_chat(src,span_warning("Looks like you lost your chance..."))
 			return
 
-//		T.add_modifier(/datum/modifier/gory_devourment, 10 SECONDS) //CHOMPEdit - Don't need this because we don't do resleeving sickness.
+// T.add_modifier(/datum/modifier/gory_devourment, 10 SECONDS) // Don't need this because we don't do resleeving sickness.
 
 		//Removing an internal organ
 		if(T_int && T_int.damage >= 25) //Internal organ and it's been severely damaged
@@ -1113,7 +1113,7 @@
 					<br>
 					"}
 
-		// DQEdit — structured TGUI AdminReport.
+		// structured TGUI AdminReport.
 		dq_admin_report_html(src, "Chemical Refresher", output)
 		return
 	else
@@ -1427,7 +1427,7 @@
 		if(!checkplayer.client) //no client, no problem
 			continue
 		if(checkplayer.name == chosen_name)
-			if(checkplayer.client.prefs.read_preference(/datum/preference/toggle/human/resleeve_lock)) // DQEdit — resleeve_lock migrated
+			if(checkplayer.client.prefs.read_preference(/datum/preference/toggle/human/resleeve_lock)) // resleeve_lock migrated
 				to_chat(src, span_notice("\The [checkplayer]'s preferences forbid you from impersonating them."))
 				log_and_message_admins("[key_name(src)] attempted to impersonate [key_name(checkplayer)], but preferences prevented it.", src)
 				return

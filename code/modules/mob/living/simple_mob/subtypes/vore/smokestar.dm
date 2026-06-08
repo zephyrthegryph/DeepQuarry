@@ -18,7 +18,7 @@
 	can_be_drop_prey = TRUE
 	unsuitable_atoms_damage = 0
 	melee_miss_chance = 0
-	// DQEdit — dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
+	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 	pass_flags = PASSTABLE
 
 	melee_damage_lower = 8

@@ -33,7 +33,7 @@
 			real_name = name
 			gender = p.read_preference(/datum/preference/choiced/gender/identifying)
 
-			for(var/language in p.read_preference(/datum/preference/alternate_languages)) // DQEdit — migrated
+			for(var/language in p.read_preference(/datum/preference/alternate_languages)) // migrated
 				add_language(language)
 
 // Proc: Login()
@@ -109,7 +109,7 @@
 	//Speech bubbles.
 	if(comm)
 		var/speech_bubble_test = say_test(message)
-		//var/image/speech_bubble = image('icons/mob/talk_vr.dmi',comm,"h[speech_bubble_test]") //VOREStation Edit - Commented out in case of needed reenable.
+		// var/image/speech_bubble = image('icons/mob/talk_vr.dmi',comm,"h[speech_bubble_test]") // Commented out in case of needed reenable.
 		var/speech_type = custom_speech_bubble
 		if(!speech_type || speech_type == "default")
 			speech_type = speech_bubble_appearance()
@@ -146,10 +146,9 @@
 	else if(item_tf)
 		..(m_type,message,range)
 
-//CHOMPEdit Start: Emotes!
+// Emotes!
 /mob/living/voice/get_available_emotes()
 	LAZYOR(., GLOB.simple_mob_default_emotes)
-//CHOMPEdit End
 
 
 // === merged from voice_vr.dm during hard-fork de-suffix (verified no override-order change) ===

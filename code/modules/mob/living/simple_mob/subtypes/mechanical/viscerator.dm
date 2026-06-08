@@ -25,7 +25,7 @@
 	icon = 'icons/mob/critter.dmi'
 	icon_state = "viscerator_attack"
 	icon_living = "viscerator_attack"
-	// DQEdit — dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
+	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
 	faction = FACTION_SYNDICATE
 	maxHealth = 15

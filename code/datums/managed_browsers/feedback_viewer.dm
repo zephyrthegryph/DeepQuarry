@@ -110,7 +110,7 @@ ADMIN_VERB(view_feedback, R_ADMIN|R_DEBUG|R_EVENT, "View Feedback", "Open the Fe
 // Used to show the full version of feedback in a seperate window.
 /datum/managed_browser/feedback_viewer/proc/display_big_feedback(author, text)
 	var/dat = replacetext(text, "\n", "<br>")
-	// DQEdit — structured TGUI AdminReport.
+	// structured TGUI AdminReport.
 	dq_admin_report_html(my_client.mob, "[author]'s Feedback", dat, src)
 
 

@@ -7,7 +7,7 @@
 	if(!ishuman(parent))
 		return COMPONENT_INCOMPATIBLE
 	xeno = parent //asigning the reference
-	add_verb(xeno,/mob/living/carbon/human/proc/queen_aura_toggle) //CHOMPEdit TGPanel
+	add_verb(xeno,/mob/living/carbon/human/proc/queen_aura_toggle) // TGPanel
 
 /datum/component/xenoqueenbuff/process()
 	if(QDELETED(xeno))

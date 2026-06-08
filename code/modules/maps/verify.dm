@@ -21,10 +21,9 @@ GLOBAL_LIST_EMPTY(map_reports)
 	return ..()
 
 
-// DQEdit Start — show_to body relocated to code/modules/maps/map_report_panel.dm (structured TGUI).
+// show_to body relocated to code/modules/maps/map_report_panel.dm (structured TGUI).
 /datum/map_report/proc/show_to(client/C)
 	return  // body provided by modular override
-// DQEdit End
 
 /datum/map_report/Topic(href, href_list)
 	. = ..()

@@ -37,7 +37,7 @@
 	AddElement(/datum/element/rotatable)
 
 /obj/machinery/atmospherics/pipeturbine/Destroy()
-	// DQEdit Start — disconnect/qdel BEFORE ..() so node derefs are valid.
+	// disconnect/qdel BEFORE ..() so node derefs are valid.
 	if(node1)
 		node1.disconnect(src)
 		qdel(network1)
@@ -47,7 +47,6 @@
 
 	node1 = null
 	return ..()
-	// DQEdit End
 	node2 = null
 
 /obj/machinery/atmospherics/pipeturbine/process()

@@ -16,7 +16,7 @@
 	ammo_type = /obj/item/ammo_casing/a357
 	projectile_type = /obj/item/projectile/bullet/pistol/strong
 	var/chamber_offset = 0 //how many empty chambers in the cylinder until you hit a round
-	fire_sound = 'sound/weapons/gunshot4.ogg' //CHOMPedit
+	fire_sound = 'sound/weapons/gunshot4.ogg'
 
 /obj/item/gun/projectile/revolver/verb/spin_cylinder()
 	set name = "Spin cylinder"
@@ -170,7 +170,7 @@
 	icon_state = "deckard-empty"
 	caliber = ".38"
 	ammo_type = /obj/item/ammo_casing/a38
-	move_delay = 0 // CHOMPEdit: Pistols have move_delay of 0
+	move_delay = 0 // Pistols have move_delay of 0
 
 /obj/item/gun/projectile/revolver/deckard/emp
 	ammo_type = /obj/item/ammo_casing/a38/emp

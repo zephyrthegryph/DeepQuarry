@@ -136,7 +136,6 @@
 
 	if(!speaker_mask) speaker_mask = speaker.real_name
 	message = "[get_spoken_verb(message)], \"[format_message(message, get_spoken_verb(message))]\""
-	//VOREStation Edit Start
 	if(speaker.hive_lang_range == -1)
 		var/turf/t = get_turf(speaker)
 		for(var/mob/player in GLOB.player_list)
@@ -152,7 +151,6 @@
 	else
 		for(var/mob/player in GLOB.player_list)
 			player.hear_broadcast(src, speaker, speaker_mask, message)
-	//VOREStation Edit End
 
 /mob/proc/hear_broadcast(datum/language/language, mob/speaker, speaker_name, message)
 	if((language in languages) && language.check_special_condition(src))
@@ -247,20 +245,18 @@
 	return 0
 
 /mob/proc/get_language_prefix()
-	// DQEdit Start — migrated language_prefixes
+	// migrated language_prefixes
 	var/list/_lang_prefixes = client?.prefs?.read_preference(/datum/preference/language_prefixes)
 	if(_lang_prefixes && _lang_prefixes.len)
 		return _lang_prefixes[1]
-	// DQEdit End
 
 	return CONFIG_GET(str_list/language_prefixes)[1]
 
 /mob/proc/is_language_prefix(prefix)
-	// DQEdit Start — migrated language_prefixes
+	// migrated language_prefixes
 	var/list/_lang_prefixes = client?.prefs?.read_preference(/datum/preference/language_prefixes)
 	if(_lang_prefixes && _lang_prefixes.len)
 		return prefix in _lang_prefixes
-	// DQEdit End
 
 	return prefix in CONFIG_GET(str_list/language_prefixes)
 
@@ -289,8 +285,7 @@
 			else
 				. += span_bold("[L.name] ([get_language_prefix()][L.key][lang_key ? " [get_language_prefix()][lang_key]" : ""])") + " <a href='byond://?src=\ref[src];set_lang_key=\ref[L]'>Edit Custom Key</a> - cannot speak!<br/>[L.desc]<br/><br/>"
 
-// DQEdit Start — check_languages verb body relocated to code/modules/mob/language/language_panel.dm (structured TGUI).
-// DQEdit End
+// check_languages verb body relocated to code/modules/mob/language/language_panel.dm (structured TGUI).
 
 /mob/living/Topic(href, href_list)
 	if(href_list["default_lang"])

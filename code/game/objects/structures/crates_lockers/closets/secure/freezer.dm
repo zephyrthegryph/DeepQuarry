@@ -14,8 +14,8 @@
 		/obj/item/reagent_containers/food/condiment/spacespice = 2
 		)
 
-	open_sound = 'sound/machines/kitchen/fridge/open_fridge.ogg' // CHOMPEdit: Fridge sounds~
-	close_sound = 'sound/machines/kitchen/fridge/close_fridge.ogg' // CHOMPEdit: Fridge sounds~
+	open_sound = 'sound/machines/kitchen/fridge/open_fridge.ogg' // Fridge sounds~
+	close_sound = 'sound/machines/kitchen/fridge/close_fridge.ogg' // Fridge sounds~
 
 /obj/structure/closet/secure_closet/freezer/kitchen/mining
 	req_access = list()
@@ -27,8 +27,8 @@
 	icon_state = ""
 	closet_appearance = null
 
-	open_sound = 'sound/machines/kitchen/fridge/open_fridge.ogg' // CHOMPEdit: Fridge sounds~
-	close_sound = 'sound/machines/kitchen/fridge/close_fridge.ogg' // CHOMPEdit: Fridge sounds~
+	open_sound = 'sound/machines/kitchen/fridge/open_fridge.ogg' // Fridge sounds~
+	close_sound = 'sound/machines/kitchen/fridge/close_fridge.ogg' // Fridge sounds~
 
 	starts_with = list(
 		/obj/item/reagent_containers/food/snacks/meat/monkey = 10)
@@ -40,8 +40,8 @@
 	icon_state = ""
 	closet_appearance = null
 
-	open_sound = 'sound/machines/kitchen/fridge/open_fridge.ogg' // CHOMPEdit: Fridge sounds~
-	close_sound = 'sound/machines/kitchen/fridge/close_fridge.ogg' // CHOMPEdit: Fridge sounds~
+	open_sound = 'sound/machines/kitchen/fridge/open_fridge.ogg' // Fridge sounds~
+	close_sound = 'sound/machines/kitchen/fridge/close_fridge.ogg' // Fridge sounds~
 
 	starts_with = list(
 		/obj/item/reagent_containers/food/drinks/milk = 6,

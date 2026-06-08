@@ -21,7 +21,7 @@
 	movement_sound = 'sound/effects/houndstep.ogg'
 	// To promote a more diverse weapon selection.
 	armor = list(melee = 25, bullet = 25, laser = -20, bio = 100, rad = 100)
-	// DQEdit — dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
+	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
 	say_list_type = /datum/say_list/cyber_horror
 
@@ -136,7 +136,7 @@
 
 // You do NOT Want to get in touchy range of this thing.
 	armor = list(melee = 75, bullet = -10, laser = -25, bio = 100, rad = 100)
-	// DQEdit — dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
+	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
 
 // Leaping is a special attack, so these values determine when leap can happen.

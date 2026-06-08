@@ -1,4 +1,4 @@
-// DQAdd — Underwear picker. One pick per underwear category (e.g., "Top", "Bottom"),
+// Underwear picker. One pick per underwear category (e.g., "Top", "Bottom"),
 // drawn from the global underwear catalog.
 //
 // Wire actions:
@@ -22,7 +22,7 @@
 	return list("selections" = payload)
 
 /datum/preference_editor/underwear/build_ui_static_data(datum/preferences/preferences)
-	// DQEdit — emit per-item icon refs so the React side can render thumbnails.
+	// emit per-item icon refs so the React side can render thumbnails.
 	var/list/categories = list()
 	for(var/datum/category_group/underwear/UWC in GLOB.global_underwear.categories)
 		var/list/items = list()

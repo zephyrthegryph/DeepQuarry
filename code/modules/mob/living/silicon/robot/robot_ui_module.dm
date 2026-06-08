@@ -44,11 +44,10 @@
 			modules += R.restrict_modules_to
 		else if(R.shell)
 			modules += GLOB.shell_module_types
-			// CHOMPAdd Start, crisis mode for shells
+			// , crisis mode for shells
 			if(R.crisis || GLOB.security_level == SEC_LEVEL_RED || R.crisis_override)
 				to_chat(src, span_red("Crisis mode active. Combat module available."))
 				modules |= GLOB.emergency_module_types
-			// CHOMPAdd End
 		else
 			modules += GLOB.robot_module_types
 			if(R.crisis || GLOB.security_level >= SEC_LEVEL_RED || R.crisis_override)

@@ -31,14 +31,12 @@
 		for(var/atom/movable/AM in contents)
 			if(AM.simulated)
 				AM.forceMove(T)
-			//VOREStation Add Start
 			if(isanimal(AM))
 				var/mob/living/simple_mob/AMBLINAL = AM
 				if(!AMBLINAL.mind)
 					AMBLINAL.ghostjoin = 1
 					AMBLINAL.ghostjoin_icon()
 					GLOB.active_ghost_pods |= AMBLINAL
-			//VOREStation Add End
 		user.visible_message(span_notice("[user] pries \the [src] open."), \
 								span_notice("You pry open \the [src]."), \
 								span_notice("You hear splitting wood."))
@@ -210,7 +208,7 @@
 						/mob/living/simple_mob/vore/aggressive/mimic,
 						/mob/living/simple_mob/vore/aggressive/rat,
 						/mob/living/simple_mob/vore/aggressive/rat/tame,
-						/mob/living/simple_mob/vore/aggressive/rat/labrat, //CHOMPEdit
+						/mob/living/simple_mob/vore/aggressive/rat/labrat,
 						/mob/living/simple_mob/vore/zorgoia, //CHOMPstation edit
 						/mob/living/simple_mob/vore/rabbit,
 						/mob/living/simple_mob/vore/weretiger;0.5,
@@ -230,9 +228,9 @@
 						/mob/living/simple_mob/animal/space/alien/drone,
 						/mob/living/simple_mob/animal/space/alien/sentinel,
 						/mob/living/simple_mob/animal/space/alien/queen,
-						/mob/living/simple_mob/vore/otie/feral, //ChompEDIT uncomment
-						/mob/living/simple_mob/vore/otie/feral/chubby, //ChompEDIT add
-						/mob/living/simple_mob/vore/otie/red, //ChompEDIT uncomment
+						/mob/living/simple_mob/vore/otie/feral, // uncomment
+						/mob/living/simple_mob/vore/otie/feral/chubby, // add
+						/mob/living/simple_mob/vore/otie/red, // uncomment
 						/mob/living/simple_mob/vore/aggressive/corrupthound))
 	return ..()
 
@@ -282,7 +280,7 @@
 /obj/structure/largecrate/animal/otie/phoron/Initialize(mapload)
 	starts_with = list(pick(/mob/living/simple_mob/vore/otie/cotie/phoron;2,
 						/mob/living/simple_mob/vore/otie/red/friendly;0.5,
-						/mob/living/simple_mob/vore/otie/red/chubby;0.5)) //ChompEDIT add
+						/mob/living/simple_mob/vore/otie/red/chubby;0.5)) // add
 	return ..()
 
 /obj/structure/largecrate/animal/otie/attack_hand(mob/living/carbon/human/M as mob)//I just couldn't decide between the icons lmao

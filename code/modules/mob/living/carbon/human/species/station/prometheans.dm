@@ -7,7 +7,7 @@
 	mimic many forms of life. Derived from the Aetolian giant slime (Macrolimus vulgaris) inhabiting the warm, tropical planet \
 	of Aetolus, they are a relatively new lab-created sapient species, and as such many things about them have yet to be comprehensively studied. \
 	What has Science done?"
-	wikilink="https://wiki.chompstation13.net/index.php?title=Promethean" //CHOMPEdit
+	wikilink="https://wiki.chompstation13.net/index.php?title=Promethean"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/promethean)
 	show_ssd =         "totally quiescent"
 	death_message =    "rapidly loses cohesion, splattering across the ground..."
@@ -114,7 +114,7 @@
 		/mob/living/carbon/human/proc/prommie_blobform,
 		/mob/living/proc/set_size,
 		/mob/living/carbon/human/proc/promethean_select_opaqueness,
-		/mob/living/carbon/human/proc/shapeshifter_reassemble //CHOMPEdit: reform verb
+		/mob/living/carbon/human/proc/shapeshifter_reassemble // reform verb
 		)
 
 	valid_transform_species = list(
@@ -149,7 +149,7 @@
 							/obj/item/storage/toolbox/lunchbox/syndicate))	//Only pick the empty types
 	var/obj/item/storage/toolbox/lunchbox/L = new boxtype(get_turf(H))
 	new /obj/item/reagent_containers/food/snacks/candy/proteinbar(L)
-	new /obj/item/tool/prybar/red(L) //VOREStation Add,
+	new /obj/item/tool/prybar/red(L) // ,
 	if(H.backbag == 1)
 		H.equip_to_slot_or_del(L, slot_r_hand)
 	else
@@ -361,7 +361,7 @@
 		t_she = "They are"
 	else if(H.identifying_gender == NEUTER)
 		t_she = "It is"
-	else if(H.identifying_gender == HERM) //VOREStation Edit
+	else if(H.identifying_gender == HERM)
 		t_she = "Shi is"
 
 	switch(GLOB.stored_shock_by_ref["\ref[H]"])

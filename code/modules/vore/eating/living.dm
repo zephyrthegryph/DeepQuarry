@@ -717,7 +717,7 @@
 	return ..()
 
 // This is about 0.896m^3 of atmosphere
-// DQEdit — was XGM (total_moles var, gas list). Under LINDA, set initial moles
+// was XGM (total_moles var, gas list). Under LINDA, set initial moles
 // via adjust_gas() in New(); total_moles is computed on demand.
 /datum/gas_mixture/belly_air
 	volume = 2500
@@ -734,7 +734,7 @@
 
 /datum/gas_mixture/belly_air/vox/New()
 	. = ..()
-	adjust_gas(GAS_N2, 100) // CHOMPEdit
+	adjust_gas(GAS_N2, 100)
 
 /datum/gas_mixture/belly_air/zaddat
 	volume = 2500
@@ -1113,7 +1113,7 @@
 	dat += span_bold("Global Vore Privacy is:") + " [eating_privacy_global ? span_green("Subtle") : span_red("Loud")]<br>"
 	dat += span_bold("Current active belly:") + " [vore_selected ? vore_selected.get_belly_name(TRUE) : "None"]<br>"
 	dat += span_bold("Belly rub target:") + " [belly_rub_target ? belly_rub_target : (vore_selected ? vore_selected.get_belly_name(TRUE) : "None")]<br>"
-	// DQEdit — structured TGUI AdminReport.
+	// structured TGUI AdminReport.
 	dq_admin_report_html(user, "Vore Prefs: [src]", dat, src)
 
 // Full screen belly overlays!
@@ -1621,7 +1621,7 @@
 		absorbed = FALSE
 		muffled = FALSE
 		clear_fullscreen("belly")
-		belly_overlay_tgui?.hide() // DQEdit — hide TGUI belly overlay
+		belly_overlay_tgui?.hide() // hide TGUI belly overlay
 		clear_fullscreen(ATOM_BELLY_FULLSCREEN)
 		stop_sound_channel(CHANNEL_PREYLOOP)
 

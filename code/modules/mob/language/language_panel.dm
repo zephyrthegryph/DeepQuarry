@@ -82,10 +82,9 @@ GLOBAL_LIST_EMPTY(dq_languages_panels)
 			SStgui.update_uis(src)
 			return TRUE
 
-// DQEdit Start — Known Languages verb now opens a structured TGUI panel.
+// Known Languages verb now opens a structured TGUI panel.
 /mob/verb/check_languages()
 	set name = "Check Known Languages"
 	set category = "IC.Game"
 	set src = usr
 	dq_open_languages_panel(src)
-// DQEdit End

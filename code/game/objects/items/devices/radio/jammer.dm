@@ -28,7 +28,7 @@ GLOBAL_LIST_EMPTY(active_radio_jammers)
 	var/on = 0
 	var/jam_range = 7
 	var/obj/item/cell/device/weapon/power_source
-	var/tick_cost = 5 //VOREStation Edit - For the ERPs.
+	var/tick_cost = 5 // For the ERPs.
 
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'

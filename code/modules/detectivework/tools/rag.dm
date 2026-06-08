@@ -145,7 +145,7 @@
 	if(!proximity)
 		return
 
-	if(istype(A, /obj/structure/reagent_dispensers) || istype(A, /obj/item/reagent_containers/glass/bucket) || istype(A, /obj/structure/mopbucket))  //VOREStation Edit - "Allows rags to be used on buckets and mopbuckets"
+	if(istype(A, /obj/structure/reagent_dispensers) || istype(A, /obj/item/reagent_containers/glass/bucket) || istype(A, /obj/structure/mopbucket)) // "Allows rags to be used on buckets and mopbuckets"
 		if(!reagents.get_free_space())
 			to_chat(user, span_warning("\The [src] is already soaked."))
 			return
@@ -167,7 +167,7 @@
 		src.ignite()
 	if(exposed_temperature >= 900 + T0C)
 		var/turf/T = get_turf(src)
-		T?.feed_lingering_fire(0.1) // CHOMPAdd - Lingering fire, feeding fires
+		T?.feed_lingering_fire(0.1) // Lingering fire, feeding fires
 		new /obj/effect/decal/cleanable/ash(get_turf(src))
 		qdel(src)
 

@@ -1,4 +1,4 @@
-// DQAdd — Persistence settings editor. persistence_settings is a bitfield of PERSIST_*
+// Persistence settings editor. persistence_settings is a bitfield of PERSIST_*
 // flags (SPAWN/WEIGHT/ORGANS/MARKINGS/SIZE). The auto-renderer can't show a bitfield as
 // anything useful, so we expose each flag as its own checkbox.
 

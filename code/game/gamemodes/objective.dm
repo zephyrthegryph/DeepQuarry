@@ -146,7 +146,7 @@ GLOBAL_LIST_EMPTY(all_objectives)
 
 		if(!istype(I)) return 1
 
-		if(I.assignment == JOB_ALT_VISITOR) //VOREStation Edit - Visitor not Assistant
+		if(I.assignment == JOB_ALT_VISITOR) // Visitor not Assistant
 			return 1
 		else
 			return 0
@@ -498,7 +498,7 @@ GLOBAL_LIST_EMPTY(all_objectives)
 
 			for(var/obj/item/I in all_items) //Check for phoron tanks
 				if(istype(I, steal_target))
-					found_amount += (target_name=="28 moles of phoron (full tank)" ? LINDA_GAS_AMT(I:air_contents, GAS_PHORON) : (I:amount)) // DQEdit — XGM .gas[id] → LINDA
+					found_amount += (target_name=="28 moles of phoron (full tank)" ? LINDA_GAS_AMT(I:air_contents, GAS_PHORON) : (I:amount)) // XGM .gas[id] → LINDA
 			return found_amount>=target_amount
 
 		if("50 coins (in bag)")
@@ -635,7 +635,7 @@ GLOBAL_LIST_EMPTY(all_objectives)
 		//if (!target.current.restrained())
 		//	return 0 // They're loose. Close but no cigar.
 
-		var/area/shuttle/skipjack/A = locate() // CHOMPEdit: Shuttle consensing
+		var/area/shuttle/skipjack/A = locate() // Shuttle consensing
 		for(var/mob/living/carbon/human/M in A)
 			if(target.current == M)
 				return 1 //They're restrained on the shuttle. Success.
@@ -684,7 +684,7 @@ GLOBAL_LIST_EMPTY(all_objectives)
 /datum/objective/heist/loot/check_completion()
 	var/total_amount = 0
 
-	for(var/obj/O in locate(/area/shuttle/skipjack)) // CHOMPEdit: Shuttle area pathname
+	for(var/obj/O in locate(/area/shuttle/skipjack)) // Shuttle area pathname
 		if(istype(O,target)) total_amount++
 		for(var/obj/I in O.contents)
 			if(istype(I,target)) total_amount++

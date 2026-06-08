@@ -10,7 +10,7 @@
 
 // For calculators.
 /obj/item/integrated_circuit/passive/power/solar_cell
-	name = "photovoltaic cell (tiny)" //CHOMPEDIT: bring in line with other variable size objects such as energy cells
+	name = "photovoltaic cell (tiny)" // bring in line with other variable size objects such as energy cells
 	desc = "It's a very tiny solar cell, generally used in calculators."
 	extended_desc = "The cell generates 1W of energy per second in optimal lighting conditions.  Less light will result in less power being generated."
 	icon_state = "solar_cell"
@@ -18,7 +18,7 @@
 	spawn_flags = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
 	var/max_power = 1
 
-//CHOMPADDITION: Photocell Variants
+// ITION: Photocell Variants
 //Using these cuts down individual running power transfer processes and gains you a tiny bit of extra complexity
 /obj/item/integrated_circuit/passive/power/solar_cell/dual
 	name = "photovoltaic cell (small)"
@@ -40,7 +40,7 @@
 	complexity = 40
 	max_power = 8
 	spawn_flags = IC_SPAWN_RESEARCH
-//CHOMPADDITION: Photocell Variants END
+// ITION: Photocell Variants END
 
 /obj/item/integrated_circuit/passive/power/solar_cell/handle_passive_energy()
 	var/turf/T = get_turf(src)

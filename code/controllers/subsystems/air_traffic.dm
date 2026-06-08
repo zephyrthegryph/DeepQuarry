@@ -6,7 +6,7 @@ SUBSYSTEM_DEF(atc)
 	priority = FIRE_PRIORITY_ATC
 	runlevels = RUNLEVEL_GAME
 	wait = 2 SECONDS
-	flags = SS_BACKGROUND | SS_NO_FIRE  // DQEdit — disable ATC chatter; flag also pulls SS out of fire list
+	flags = SS_BACKGROUND | SS_NO_FIRE // disable ATC chatter; flag also pulls SS out of fire list
 	VAR_PRIVATE/next_tick = 0
 	VAR_PRIVATE/datum/atc_chatter_type/chatter_datum = new() // don't change, override the chatter_box() proc
 	VAR_PRIVATE/delay_min = 45 MINUTES				//How long between ATC traffic, minimum
@@ -24,9 +24,8 @@ SUBSYSTEM_DEF(atc)
 	var/sdfchannel
 
 /datum/controller/subsystem/atc/Initialize()
-	// DQEdit Start — ATC disabled fork-wide; skip channel allocation and report no-need
+	// ATC disabled fork-wide; skip channel allocation and report no-need
 	return SS_INIT_NO_NEED
-	// DQEdit End
 	//generate our static event frequencies for the shift. alternately they can be completely fixed, up in the core block
 	ertchannel = "[rand(700,749)].[rand(1,9)]"
 	medchannel = "[rand(750,799)].[rand(1,9)]"

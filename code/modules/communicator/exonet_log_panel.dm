@@ -31,7 +31,7 @@
 	data["lines"] = host ? (host.exonet_messages ? host.exonet_messages.Copy() : list()) : list()
 	return data
 
-// DQEdit Start — Show Text Messages verb now opens a structured TGUI panel.
+// Show Text Messages verb now opens a structured TGUI panel.
 /mob/observer/dead/verb/show_text_messages()
 	set category = "Ghost.Settings"
 	set name = "Show Text Messages"
@@ -39,4 +39,3 @@
 	if(!dq_exonet_log_panel_cache)
 		dq_exonet_log_panel_cache = new(src)
 	dq_exonet_log_panel_cache.tgui_interact(src)
-// DQEdit End

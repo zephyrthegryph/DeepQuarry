@@ -20,7 +20,7 @@
 /obj/item/projectile/bullet/on_hit(atom/target, blocked = 0)
 	..(target, blocked)
 		//var/mob/living/L = target
-		//shake_camera(L, 3, 2) CHOMPEDIT - "Muh realism". The screenshake is obnoxious for gameplay. TODO: Replace with blood splatter indicator.
+		// shake_camera(L, 3, 2) "Muh realism". The screenshake is obnoxious for gameplay. TODO: Replace with blood splatter indicator.
 
 /obj/item/projectile/bullet/attack_mob(mob/living/target_mob, distance, miss_modifier)
 	if(penetrating > 0 && damage > 20 && prob(damage))
@@ -58,10 +58,10 @@
 		if(D.glass) chance *= 2
 	else if(istype(A, /obj/structure/girder))
 		chance = 100
-	else if(istype(A, /obj/machinery/door/airlock/voidcraft)) //CHOMPEDIT Begin, lets the code see shuttlecraft structures and not treat them as air.
+	else if(istype(A, /obj/machinery/door/airlock/voidcraft)) // , lets the code see shuttlecraft structures and not treat them as air.
 		chance = 0
 	else if(istype(A, /turf/simulated/shuttle/wall))
-		chance = 0 //CHOMPEDIT End. Yeah, shuttlecraft can handle small arms fire just fine.
+		chance = 0 // . Yeah, shuttlecraft can handle small arms fire just fine.
 
 	if(prob(chance))
 		if(A.opacity)
@@ -147,7 +147,7 @@
 
 /obj/item/projectile/bullet/shotgun
 	name = "slug"
-	icon_state = "bullet_chonk" //CHOMPEdit
+	icon_state = "bullet_chonk"
 	fire_sound = 'sound/weapons/gunshot_shotgun.ogg'
 	damage = 50
 	armor_penetration = 20
@@ -204,7 +204,7 @@
 /obj/item/projectile/bullet/rifle
 	fire_sound = 'sound/weapons/gunshot_generic_rifle.ogg'
 	armor_penetration = 15
-	//penetrating = 1 CHOMPedit: This is the only thing I see that could cause stun and unsure what can be pierced with a penetrating of 1.
+	// penetrating = 1 This is the only thing I see that could cause stun and unsure what can be pierced with a penetrating of 1.
 	hud_state = "rifle"
 	hud_state_empty = "rifle_empty"
 
@@ -466,7 +466,7 @@
 	desc = "Whose smart idea was it to use toys as crowd control? Ages 18 and up."
 	damage = 0 // It's a damn toy.
 	embed_chance = 0
-	agony = 20 // The riot part of the riot dart //CHOMPedit, nerf this >:3 old 50
+	agony = 20 // The riot part of the riot dart // , nerf this >:3 old 50
 	nodamage = TRUE
 	sharp = FALSE
 	damage_type = HALLOSS

@@ -1,6 +1,6 @@
 /datum/unit_test/proc/create_test_human(turf/loc = null)
 	if(!loc)
-		// DQEdit — was T.zone.air.return_pressure() under ZAS; LINDA exposes
+		// was T.zone.air.return_pressure() under ZAS; LINDA exposes
 		// per-turf air directly via return_air().
 		for(var/turf/simulated/floor/tiled/T in world)
 			var/datum/gas_mixture/air = T.return_air()

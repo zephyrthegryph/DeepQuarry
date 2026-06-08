@@ -1,4 +1,4 @@
-// DQAdd — Standard Issue starting-kit items as zero-cost loadout gear datums.
+// Standard Issue starting-kit items as zero-cost loadout gear datums.
 //
 // Replaces the headset / backbag / pdachoice prefs (deleted). Players who don't pick
 // anything still get their job's themed kit via the regular job outfit equip pipeline

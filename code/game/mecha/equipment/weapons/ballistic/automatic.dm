@@ -5,7 +5,7 @@
 	equip_cooldown = 10
 	projectile = /obj/item/projectile/bullet/pistol/medium
 	fire_sound = 'sound/weapons/gunshot_machinegun.ogg'
-	projectiles = 300 //10 bursts, matching the Scattershot's 10. Also, conveniently, doesn't eat your powercell when reloading like 300 bullets does. //CHOMPEdit: Literally
+	projectiles = 300 // 10 bursts, matching the Scattershot's 10. Also, conveniently, doesn't eat your powercell when reloading like 300 bullets does. // Literally
 	projectiles_per_shot = 3
 	deviation = 0.3
 	projectile_energy_cost = 20

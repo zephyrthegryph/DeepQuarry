@@ -1,4 +1,4 @@
-// DQAdd — Mind/Body specialty prefs.
+// Mind/Body specialty prefs.
 //
 // Two flat typed_lists (body_perks + mind_perks), one entry per selected perk path.
 // Pool budgets are PER CATEGORY (each Body sub-category and each Mind department),

@@ -1,6 +1,6 @@
 // Surgery → condition-cure integration.
 //
-// Called from /datum/surgery_step's dispatch site (DQEdit in
+// Called from /datum/surgery_step's dispatch site ( in
 // code/modules/surgery/surgery.dm). When a completing surgery_step
 // matches the `completion_step` field of one of our /datum/dq_surgery
 // records, the conditions listed in `treats` are cleared from the
@@ -63,7 +63,7 @@ GLOBAL_PROTECT(dq_surgery_by_step)
 
 /// Returns the union of `heals_organs` lists from every DQ surgery that
 /// maps to the given `step_path` and whose `body_region` matches `zone`.
-/// Used by the fix_organ DQEdit to restrict which internal organs a
+// / Used by the fix_organ to restrict which internal organs a
 /// shared surgery_step is allowed to repair — the upstream step zeros
 /// every internal organ in the zone, which is more than any single DQ
 /// surgery intends.

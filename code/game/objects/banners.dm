@@ -37,7 +37,7 @@
 	desc = "A banner that flies for the pride of the hegemony."
 	//catalogue_data = list(/datum/category_item/catalogue/information/organization/altevian_hegemony) // TODO?
 
-//VOREStation Removal //CHOMP re-addition. Seriously? You commented this out for your lore? What's wrong with JUST NOT SPAWNING IT or something.
+// Removal //CHOMP re-addition. Seriously? You commented this out for your lore? What's wrong with JUST NOT SPAWNING IT or something.
 /obj/item/banner/virgov
 	name = "\improper VirGov banner"
 	icon_state = "banner-virgov"

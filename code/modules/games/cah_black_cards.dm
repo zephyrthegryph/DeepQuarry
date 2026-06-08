@@ -37,7 +37,7 @@
 	"The robots are not disposal bins for your _____.",
 	"You can never have too many _____ on shift.",
 
-	//Here down are non-spess cards. -VOREStation Add for these.
+	// Here down are non-spess cards. - for these.
 	"_____: kid tested mother approved.",
 	"_____: good to the last drop.",
 	"_____? There's an app for that.",

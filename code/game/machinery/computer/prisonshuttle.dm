@@ -25,7 +25,7 @@ GLOBAL_VAR_INIT(prison_shuttle_timeleft, 0)
 /obj/machinery/computer/prison_shuttle/attack_ai(mob/user as mob)
 	return src.attack_hand(user)
 
-// DQEdit Start — TGUI migration. Replaces the browse() + Topic dispatch
+// TGUI migration. Replaces the browse() + Topic dispatch
 // UI with PrisonShuttleConsole.tsx. Drops the `temp` "Shuttle sent"
 // notification state — the to_chat() notice already covers that flow.
 /obj/machinery/computer/prison_shuttle/attack_hand(mob/user as mob)
@@ -88,7 +88,6 @@ GLOBAL_VAR_INIT(prison_shuttle_timeleft, 0)
 				prison_process()
 			add_fingerprint(usr)
 			return TRUE
-// DQEdit End
 
 
 /obj/machinery/computer/prison_shuttle/proc/prison_can_move()

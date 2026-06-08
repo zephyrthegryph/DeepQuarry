@@ -1,4 +1,4 @@
-// DQAdd — Mind/Body specialty system defines.
+// Mind/Body specialty system defines.
 //
 // Two top-level types (Body + Mind), each divided into thematic *categories* with
 // their own age-derived point pools. Categories own one or more *trees* which group

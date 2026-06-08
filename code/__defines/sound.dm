@@ -8,12 +8,12 @@
 #define CHANNEL_AMBIENCE 1018
 #define CHANNEL_BUZZ 1017
 #define CHANNEL_BICYCLE 1016
-#define CHANNEL_PREYLOOP 1015	//VORESTATION ADD - Fancy Sound Loop channel
+#define CHANNEL_PREYLOOP 1015 // ADD - Fancy Sound Loop channel
 
 //THIS SHOULD ALWAYS BE THE LOWEST ONE!
 //KEEP IT UPDATED
 
-#define CHANNEL_HIGHEST_AVAILABLE 1014	//VORESTATION EDIT - Fancy Sound Loop channel from 1015
+#define CHANNEL_HIGHEST_AVAILABLE 1014 // EDIT - Fancy Sound Loop channel from 1015
 
 #define SOUND_MINIMUM_PRESSURE 10
 #define FALLOFF_SOUNDS 0.5
@@ -164,7 +164,7 @@
 	'sound/ambience/ai/ai3.ogg'\
 	)
 
-// Peaceful sounds when floating in the void. //CHOMPedit, added title2, my nostalgia okay?
+// Peaceful sounds when floating in the void. // , added title2, my nostalgia okay?
 #define AMBIENCE_SPACE list(\
 	'sound/ambience/space/space_serithi.ogg',\
 	'sound/ambience/space/space1.ogg',\
@@ -183,7 +183,7 @@
 	'sound/ambience/foreboding/foreboding2.ogg'\
 	)
 
-// Ambience heard when aboveground on Sif and not in a Point of Interest. // CHOMPEdit: Changed to Snowbirds Loops 1-4
+// Ambience heard when aboveground on Sif and not in a Point of Interest. // Changed to Snowbirds Loops 1-4
 #define AMBIENCE_SIF list(\
 	'sound/ambience/snow_and_ice/Snowbirds_loop1.ogg',\
 	'sound/ambience/snow_and_ice/Snowbirds_loop2.ogg',\
@@ -206,7 +206,7 @@
 	'sound/ambience/vaporwave.ogg'\
 	)
 
-//CHOMPedit: Exploration outpost ambience. Current tracks taken from Rainworld and Natural Selection 2.
+// Exploration outpost ambience. Current tracks taken from Rainworld and Natural Selection 2.
 #define AMBIENCE_OUTPOST list(\
 	'sound/ambience/expoutpost/expoutpost1.ogg',\
 	'sound/ambience/expoutpost/expoutpost2.ogg',\
@@ -242,7 +242,7 @@
 	'sound/ambience/atmospherics/atmospherics1.ogg'\
 	)
 
-// CHOMPEdit: New Planet Ambience
+// New Planet Ambience
 #define AMBIENCE_THOR list(\
 	'sound/ambience/thor/birds_stinger1.ogg',\
 	'sound/ambience/thor/birds_stinger2.ogg',\

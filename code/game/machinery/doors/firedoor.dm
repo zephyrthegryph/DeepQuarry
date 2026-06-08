@@ -49,8 +49,8 @@
 		"hot",
 		"cold"
 	)
-	var/open_sound = 'sound/machines/firelockopen.ogg' //CHOMPEdit firedoor sound variable.
-	var/close_sound = 'sound/machines/firelockclose.ogg' //CHOMPEdit firedoor sound variable.
+	var/open_sound = 'sound/machines/firelockopen.ogg' // firedoor sound variable.
+	var/close_sound = 'sound/machines/firelockclose.ogg' // firedoor sound variable.
 
 /obj/machinery/door/firedoor/Initialize(mapload)
 	. = ..()
@@ -446,9 +446,9 @@
 	switch(animation)
 		if("opening")
 			flick("door_opening", src)
-			playsound(src, open_sound, 37, 1) //CHOMPEdit var
+			playsound(src, open_sound, 37, 1) // var
 		if("closing")
-			playsound(src, close_sound, 37, 1) //CHOMPEdit var
+			playsound(src, close_sound, 37, 1) // var
 			flick("door_closing", src)
 	return
 
@@ -522,8 +522,8 @@
 /obj/machinery/door/firedoor/multi_tile
 	icon = 'icons/obj/doors/DoorHazard2x1.dmi'
 	width = 2
-	open_sound = 'sound/machines/firewide1o.ogg' //CHOMPEdit
-	close_sound = 'sound/machines/firewide1c.ogg' //CHOMPEdit
+	open_sound = 'sound/machines/firewide1o.ogg'
+	close_sound = 'sound/machines/firewide1c.ogg'
 
 /obj/machinery/door/firedoor/glass
 	name = "\improper Emergency Glass Shutter"

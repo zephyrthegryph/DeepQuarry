@@ -24,7 +24,7 @@
 	icon = 'icons/mob/robots_vr.dmi'
 	icon_state = "corrupt-repairbot"
 	icon_living = "corrupt-repairbot"
-	// DQEdit — dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
+	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
 	faction = FACTION_UNDERDARK
 	maxHealth = 25

@@ -55,7 +55,7 @@ GLOBAL_LIST_EMPTY(dq_attacks_panels)
 			SStgui.update_uis(src)
 			return TRUE
 
-// DQEdit Start — Check Attacks verb now opens a structured TGUI panel.
+// Check Attacks verb now opens a structured TGUI panel.
 /mob/living/carbon/human/verb/check_attacks()
 	set name = "Check Attacks"
 	set category = "IC.Game"
@@ -66,4 +66,3 @@ GLOBAL_LIST_EMPTY(dq_attacks_panels)
 		panel = new(src)
 		GLOB.dq_attacks_panels[key] = panel
 	panel.tgui_interact(src)
-// DQEdit End

@@ -24,7 +24,7 @@
 	///Highest-intensity light affecting us, which determines our visibility.
 	var/affecting_dynamic_lumi = 0
 	///Lazylist to keep track on the sources of illumination.
-	// DQEdit — affected_dynamic_lights moved to /datum/component/movable_state
+	// affected_dynamic_lights moved to /datum/component/movable_state
 	///Either FALSE, [EMISSIVE_BLOCK_GENERIC], or [EMISSIVE_BLOCK_UNIQUE]
 	var/blocks_emissive = EMISSIVE_BLOCK_NONE
 	///Internal holder for emissive blocker object, do not use directly use blocks_emissive

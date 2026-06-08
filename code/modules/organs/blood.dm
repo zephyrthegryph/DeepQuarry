@@ -97,7 +97,7 @@ BLOOD_VOLUME_SURVIVE = 40
 			else if(heart.is_bruised())
 				blood_volume_raw *= 0.7
 				blood_volume *= 0.7
-			else if(heart.damage > 5) //CHOMPedit, //CHOMPedit, so 0.00005 heart damage isnt 20% of blood missing, now its 5
+			else if(heart.damage > 5) // , // , so 0.00005 heart damage isnt 20% of blood missing, now its 5
 				blood_volume_raw *= 0.9 //chompedit from 0.8 to 0.9
 				blood_volume *= 0.9 //chompedit from 0.8 to 0.9
 			else if(heart.damage)
@@ -111,7 +111,7 @@ BLOOD_VOLUME_SURVIVE = 40
 			dmg_coef = 0.5
 			threshold_coef = 0.75
 
-		// DQEdit Start — DQ medical owns blood-loss presentation. The
+		// DQ medical owns blood-loss presentation. The
 		// vanilla branch below floods chat with "you feel woozy" etc.,
 		// which collides with our internal_hemorrhage/hypovolemic_shock
 		// symptoms. We keep the pale flag (sprite cue), the oxyloss
@@ -147,7 +147,6 @@ BLOOD_VOLUME_SURVIVE = 40
 			Sleeping(3)
 			adjustToxLoss(3 * dmg_coef)
 			adjustOxyLoss(75 * dmg_coef)
-		// DQEdit End
 
 		// Without enough blood you slowly go hungry.
 		if(blood_volume_raw < species.blood_volume*species.blood_level_safe)
@@ -287,7 +286,6 @@ BLOOD_VOLUME_SURVIVE = 40
 	//CHOMNPAdd Start, deathbringers for example delete those before the fire damage is calculated
 	if(!vessel)
 		return 0
-	//CHOMPAdd End
 
 	var/current_blood = vessel.get_reagent_amount(REAGENT_ID_BLOOD)
 	if(current_blood < BLOOD_MINIMUM_STOP_PROCESS)
@@ -454,7 +452,6 @@ BLOOD_VOLUME_SURVIVE = 40
 		var/atom/movable/A = source
 		if(!isturf(A.loc))
 			return
-	//VOREStation Edit End
 	var/obj/effect/decal/cleanable/blood/B
 	var/decal_type = /obj/effect/decal/cleanable/blood/splatter
 	var/turf/T = get_turf(target)

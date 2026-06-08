@@ -23,5 +23,4 @@
 				"exr" = 20,
 				"volchannel" = VOLUME_CHANNEL_SPECIES_SOUNDS
 			)
-			// CHOMPEdit End
 	return ..()

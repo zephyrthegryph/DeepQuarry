@@ -216,14 +216,14 @@
 		if(!do_after(user, calc_duration * toolspeed, M, target_zone = zone, max_distance = reach))
 			success = FALSE
 			to_chat(user, span_warning("You must remain close to and keep focused on your patient to conduct surgery."))
-			user.balloon_alert(user, "you must remain close to and keep focused on your patent to conduct surgery") // CHOMPEdit
+			user.balloon_alert(user, "you must remain close to and keep focused on your patent to conduct surgery")
 
 	if(!affected) // If the limb was just attached, get it to adjust germ levels
 		affected = M.get_organ(zone)
 
 	if(success)
 		selected_surgery.end_step(user, M, zone, src)
-		// DQEdit — surgery completion cures matching cascading conditions
+		// surgery completion cures matching cascading conditions
 		if(ishuman(M))
 			dq_apply_surgery_cures(selected_surgery, M, zone)
 		if(affected && prob(100-cleanliness)) //Infection chance based on cleanliness.

@@ -78,7 +78,7 @@
 			SStgui.update_uis(src)
 			return TRUE
 
-// DQEdit Start — spellbook now opens via TGUI panel rather than admin_log_show.
+// spellbook now opens via TGUI panel rather than admin_log_show.
 /obj/item/spellbook/attack_self(mob/user = usr)
 	. = ..(user)
 	if(.)
@@ -91,4 +91,3 @@
 		to_chat(user, span_warning("You stare at the book but cannot make sense of the markings!"))
 		return
 	dq_open_spellbook(user)
-// DQEdit End

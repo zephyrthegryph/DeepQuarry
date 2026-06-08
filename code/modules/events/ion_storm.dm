@@ -3,8 +3,8 @@
 /datum/event/ionstorm
 	has_skybox_image = TRUE
 	announceWhen = -1 // Never (setup may override)
-	var/botEmagChance = 0 //VOREStation Edit
-	var/ionBorgs = TRUE // CHOMPStation Edit
+	var/botEmagChance = 0
+	var/ionBorgs = TRUE
 	var/cloud_hueshift
 	var/list/players = list()
 
@@ -51,7 +51,7 @@
 			continue
 		var/law = target.generate_ion_law()
 		target.add_ion_law(law)
-		//CHOMPEdit Start - Outpost 21 upport: shells don't get ion laws, and sync to AI instead
+		// Outpost 21 upport: shells don't get ion laws, and sync to AI instead
 		if(target.deployed_shell)
 			var/mob/living/silicon/robot/shell = target.deployed_shell
 			if(!shell.emagged) // emagged ignores law updates
@@ -81,7 +81,6 @@
 			to_chat(target, law)
 			target.add_ion_law(law)
 			target.show_laws()
-	// CHOMPEdit End
 
 /* //VOREstation edit. Was fucking up all PDA messagess.
 	for (var/obj/machinery/message_server/MS in GLOB.message_servers)

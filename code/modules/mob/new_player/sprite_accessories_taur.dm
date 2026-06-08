@@ -71,7 +71,7 @@
 //Hoooo boy.
 /datum/riding/taur/get_offsets(pass_index) // list(dir = x, y, layer)
 	var/mob/living/L = ridden
-	var/scale_x = L.icon_scale_x * L.size_multiplier //VOREStation Edit Start
+	var/scale_x = L.icon_scale_x * L.size_multiplier
 	var/scale_y = L.icon_scale_y * L.size_multiplier
 	var/scale_difference = (L.size_multiplier - rider_size) * 10
 
@@ -79,7 +79,7 @@
 		"[NORTH]" = list(0, 8*scale_y + scale_difference, ABOVE_MOB_LAYER),
 		"[SOUTH]" = list(0, 8*scale_y + scale_difference, BELOW_MOB_LAYER),
 		"[EAST]" = list(-10*scale_x, 8*scale_y + scale_difference, ABOVE_MOB_LAYER),
-		"[WEST]" = list(10*scale_x, 8*scale_y + scale_difference, ABOVE_MOB_LAYER)) //VOREStation Edit End
+		"[WEST]" = list(10*scale_x, 8*scale_y + scale_difference, ABOVE_MOB_LAYER))
 
 	return values
 
@@ -307,9 +307,9 @@
 
 /datum/sprite_accessory/tail/taur/naga/alt_3c
 	name = "Naga alt style tri-color (Taur)"
-	suit_sprites = 'icons/mob/taursuits_naga_alt_ch.dmi' //TODO: PORT CHOMPS NAGA_ALT AND MAKE THESE NAGA_ALT. //CHOMPStation Edit
-	vore_tail_sprite_variant = "Naga3Piece" //CHOMPStation Add
-	fullness_icons = 1 //CHOMPStation Add
+	suit_sprites = 'icons/mob/taursuits_naga_alt_ch.dmi' // TODO: PORT CHOMPS NAGA_ALT AND MAKE THESE NAGA_ALT. //
+	vore_tail_sprite_variant = "Naga3Piece"
+	fullness_icons = 1
 	icon_state = "altnaga_s"
 	extra_overlay = "altnaga_markings"
 	extra_overlay2 = "altnaga_stripes"

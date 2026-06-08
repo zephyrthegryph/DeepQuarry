@@ -123,7 +123,7 @@
 		/mob/living/silicon/robot/proc/take_image,
 		/mob/living/silicon/robot/proc/view_images,
 		/mob/living/silicon/robot/proc/delete_images,
-		/mob/living/silicon/robot/proc/ex_reserve_refill, //CHOMPEdit re-adds the extinquisher refill from water
+		/mob/living/silicon/robot/proc/ex_reserve_refill, // re-adds the extinquisher refill from water
 		/mob/living/proc/toggle_rider_reins,
 		/mob/living/proc/vertical_nom,
 		/mob/living/proc/shred_limb,
@@ -457,14 +457,13 @@
 
 	//Flavour text.
 	if(client)
-		// DQEdit Start — migrated flavour_texts_robot
+		// migrated flavour_texts_robot
 		var/list/_robot_flavor = client.prefs.read_preference(/datum/preference/flavour_texts_robot)
 		var/module_flavour = LAZYACCESS(_robot_flavor, modtype)
-		if(module_flavour && (module_flavour != " " || module_flavour != ".")) //CHOMPEDIT: Skip module flavor if " " or "."
+		if(module_flavour && (module_flavour != " " || module_flavour != ".")) // Skip module flavor if " " or "."
 			flavor_text = module_flavour
 		else
 			flavor_text = LAZYACCESS(_robot_flavor, "Default")
-		// DQEdit End
 		//and meta info
 		ooc_notes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes)
 		ooc_notes_likes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes_likes)
@@ -473,7 +472,7 @@
 		ooc_notes_maybes = read_preference(/datum/preference/text/living/ooc_notes_maybes)
 		ooc_notes_style = read_preference(/datum/preference/toggle/living/ooc_notes_style)
 		private_notes = client.prefs.read_preference(/datum/preference/text/living/private_notes)
-		custom_link = client.prefs.read_preference(/datum/preference/text/human/custom_link) // DQEdit — migrated pref
+		custom_link = client.prefs.read_preference(/datum/preference/text/human/custom_link) // migrated pref
 
 /mob/living/silicon/robot/verb/namepick()
 	set name = "Pick Name"
@@ -550,7 +549,7 @@
 	to_chat(src, span_filter_notice("You feel [grabbable ? "more" : "less"] grabbable."))
 
 // this function displays jetpack pressure in the stat panel
-//ChompEDIT START - TGPanel
+// TGPanel
 /mob/living/silicon/robot/proc/show_jetpack_pressure()
 	. = list()
 	// if you have a jetpack, show the internal tank pressure
@@ -930,7 +929,7 @@
 					if(grabbable)
 						attempt_to_scoop(H)
 					else
-						if(client && !client.prefs.read_preference(/datum/preference/toggle/human/borg_petting)) // DQEdit — migrated pref
+						if(client && !client.prefs.read_preference(/datum/preference/toggle/human/borg_petting)) // migrated pref
 							visible_message(span_notice("[H] reaches out for [src], but quickly refrains from petting."))
 							return
 						else
@@ -1023,7 +1022,7 @@
 	cut_overlays()
 	add_overlay(active_thinking_indicator)
 	add_overlay(active_typing_indicator)
-	handle_status_indicators() //CHOMPAdd, needed as we don't have priority overlays anymore
+	handle_status_indicators() // , needed as we don't have priority overlays anymore
 
 	icon			= sprite_datum.sprite_icon
 	icon_state		= sprite_datum.sprite_icon_state

@@ -1,4 +1,4 @@
-// DQAdd — play_mode pref.
+// play_mode pref.
 //
 // Drives whether the character setup UI is configuring a human (organic),
 // cyborg, or pAI. Replaces the older /datum/preference/toggle/human/playing_as_robot.

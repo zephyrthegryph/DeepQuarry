@@ -68,7 +68,7 @@
 	return // Doesn't care about material or anything else.
 
 /obj/structure/bed/bath/attackby(obj/item/I, mob/user)
-	if(istype(I, /obj/item/mop) || istype(I, /obj/item/soap)) //VOREStation Edit - "Allows soap and rags to be used on mopbuckets"
+	if(istype(I, /obj/item/mop) || istype(I, /obj/item/soap)) // "Allows soap and rags to be used on mopbuckets"
 		if(reagents.total_volume < 1)
 			to_chat(user, span_warning("\The [src] is out of water!"))
 		else

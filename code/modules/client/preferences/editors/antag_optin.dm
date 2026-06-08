@@ -1,4 +1,4 @@
-// DQAdd — Antagonist opt-in editor. be_special is a bitfield of BE_* flags, one bit per
+// Antagonist opt-in editor. be_special is a bitfield of BE_* flags, one bit per
 // antag role the player is willing to be considered for. Auto-render can't render this,
 // so we expose each flag as its own toggle.
 

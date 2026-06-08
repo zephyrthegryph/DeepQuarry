@@ -585,7 +585,7 @@
 			/obj/item/clothing/under/rank/warden/corp,
 			/obj/item/clothing/suit/storage/vest/wardencoat,
 			/obj/item/clothing/suit/storage/vest/wardencoat/alt,
-			/obj/item/clothing/suit/storage/vest/wardencoat/alt2, //VOREStation Add,
+			/obj/item/clothing/suit/storage/vest/wardencoat/alt2, // ,
 			/obj/item/clothing/head/helmet/warden,
 			/obj/item/cartridge/security,
 			/obj/item/radio/headset/headset_sec,
@@ -614,7 +614,7 @@
 			/obj/item/clothing/suit/storage/vest/hos,
 			/obj/item/clothing/under/rank/head_of_security/corp,
 			/obj/item/clothing/suit/storage/vest/hoscoat,
-			/obj/item/clothing/suit/storage/vest/hoscoat/jensen/alt, //VOREStation Add,
+			/obj/item/clothing/suit/storage/vest/hoscoat/jensen/alt, // ,
 			/obj/item/clothing/head/helmet/dermal,
 			/obj/item/cartridge/hos,
 			/obj/item/radio/headset/heads/hos,
@@ -726,7 +726,7 @@
 	containername = "Morale Posters"
 	access = ACCESS_MAINT_TUNNELS
 
-//CHOMPEdit Start, enable this
+// , enable this
 /datum/supply_pack/security/guardbeast
 	name = "VARMAcorp autoNOMous security solution"
 	cost = 150
@@ -746,7 +746,6 @@
 			ACCESS_SECURITY,
 			ACCESS_XENOBIOLOGY)
 	one_access = TRUE
-//CHOMPEdit End
 
 /datum/supply_pack/security/trackingimplant
 	name = "Implants - Tracking"

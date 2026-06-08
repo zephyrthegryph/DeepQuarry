@@ -56,7 +56,7 @@
 	item_state = "book15"
 	author = "Central Engineering Division"
 	title = "Supermatter Engine Operating Manual"
-	//CHOMPEdit Start - Updated Supermatter Engine Manual
+	// Updated Supermatter Engine Manual
 	dat = {"<html>
 				<head>
 				<style>
@@ -204,14 +204,14 @@
 			</html>"}
 
 //R-UST port
-/obj/item/book/manual/rust_engine	// CHOMPedit START : Updating the R-UST manual
+/obj/item/book/manual/rust_engine // Updating the R-UST manual
 	name = "R-UST Operating Manual"
 	icon = 'icons/obj/library_ch.dmi'
-	icon_state = "bookRusty" 				// Chompedit : Changed this to a new unique R-UST manual icon rather than just re-using the Supermatter book cover sprite
+	icon_state = "bookRusty" // Changed this to a new unique R-UST manual icon rather than just re-using the Supermatter book cover sprite
 	item_state = "book15"
 	author = "Central Engineering Division"
 	title = "R-UST Operating Manual"
-	//R-UST guide Re-Writen by Gozulio to reflect how the R-UST actually operates. (CHOMPedit, re-written again :3 By Foxglove)
+	// R-UST guide Re-Writen by Gozulio to reflect how the R-UST actually operates. ( , re-written again :3 By Foxglove)
 	dat = {"<html>
 				<head>
 				<style>

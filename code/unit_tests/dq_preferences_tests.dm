@@ -1,4 +1,4 @@
-// DQAdd — Smoke tests for the new preferences architecture. These don't run any UI;
+// Smoke tests for the new preferences architecture. These don't run any UI;
 // they exercise the registry / batch / constraint / sanitize / serialize paths.
 //
 // Included from /code/modules/unit_tests/_unit_tests.dm which already gates on UNIT_TESTS,

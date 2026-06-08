@@ -16,7 +16,7 @@
 				if(J.mob_type & JOB_SILICON)
 					return FALSE
 			else // If SSjob couldn't find a job, they don't have one yet, so the next best thing we can switch on are job preferences
-				// DQEdit — was: bitwise-OR three engsec bitfield prefs and AND with (AI_DEPT | CYBORG).
+				// was: bitwise-OR three engsec bitfield prefs and AND with (AI_DEPT | CYBORG).
 				// New shape: check the player's priority list directly for AI / Cyborg titles.
 				var/datum/preferences/_prefs = player.current.client.prefs
 				if(_prefs.get_job_priority("AI") != "off" || _prefs.get_job_priority("Cyborg") != "off")

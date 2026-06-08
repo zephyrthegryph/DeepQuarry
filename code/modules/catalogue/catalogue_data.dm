@@ -356,7 +356,7 @@ GLOBAL_DATUM_INIT(catalogue_data, /datum/category_collection/catalogue, new)
 	name = "Government - Commonwealth of Sol-Procyon" //VS EDIT 2
 	datum_to_copy = /datum/lore/organization/gov/commonwealth //VS EDIT 3
 
-/* //VOREStation Removal
+/* // Removal
 /datum/category_item/catalogue/information/organization/virgov
 	name = "Government - Vir Governmental Authority"
 	datum_to_copy = /datum/lore/organization/gov/virgov
@@ -439,7 +439,7 @@ GLOBAL_DATUM_INIT(catalogue_data, /datum/category_collection/catalogue, new)
 
 // === merged from catalogue_data_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 //TODO: VIRGO_LORE_WRITING_WIP - this whole file
-//CHOMPedits: basically every "desc" variable in this file.
+// s: basically every "desc" variable in this file.
 
 /datum/category_item/catalogue/fauna/akula
 	name = "Sapients - Akula"

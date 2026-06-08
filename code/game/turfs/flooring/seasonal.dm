@@ -28,33 +28,33 @@ GLOBAL_VAR(world_time_day)
 
 	initial_flooring = /datum/decl/flooring/grass/seasonal_grass
 
-	grass = null //CHOMPEdit
+	grass = null
 	var/static/list/overlays_cache = list()
-	animal_chance = 0.5 // CHOMPedit: upstream redeclared these as new vars for some reason
-	animals = null // CHOMPedit end
+	animal_chance = 0.5 // upstream redeclared these as new vars for some reason
+	animals = null // end
 	var/tree_chance = 1
-	var/trees = null //CHOMPEdit
+	var/trees = null
 	var/snow_chance = 10
 
 /turf/simulated/floor/outdoors/grass/seasonal/Initialize(mapload)
 
 	switch(GLOB.world_time_season)
 		if("spring")
-			trees = "seasonalspring" //CHOMPEdit
-			animals = "seasonalspring" //CHOMPEdit
-			grass = "seasonalspring" //CHOMPEdit
+			trees = "seasonalspring"
+			animals = "seasonalspring"
+			grass = "seasonalspring"
 
 			grass_chance = 30
 		if("summer")
-			trees = "seasonalsummer" //CHOMPEdit
-			animals = "seasonalsummer" //CHOMPEdit
-			grass = "seasonalsummer" //CHOMPEdit
+			trees = "seasonalsummer"
+			animals = "seasonalsummer"
+			grass = "seasonalsummer"
 
 		if("autumn")
-			trees = "seasonalautumn" //CHOMPEdit
+			trees = "seasonalautumn"
 
-			animals = "seasonalautumn" //CHOMPEdit
-			grass = "seasonalautumn" //CHOMPEdit
+			animals = "seasonalautumn"
+			grass = "seasonalautumn"
 
 			grass_chance = 10
 			animal_chance = 0.25
@@ -62,24 +62,24 @@ GLOBAL_VAR(world_time_day)
 			grass_chance = 0
 			trees = "seasonalwinter"
 
-			animals = "seasonalwinter" //CHOMPEdit
+			animals = "seasonalwinter"
 			if(prob(snow_chance))
 				chill()
 				return
 
-			grass = "seasonalwinter" //CHOMPEdit
+			grass = "seasonalwinter"
 
 			grass_chance = 1
 			animal_chance = 0.1
 
 
 	if(tree_chance && prob(tree_chance) && !check_density())
-		var/tree_type = pickweight(GLOB.grass_trees[trees]) //CHOMPEdit
+		var/tree_type = pickweight(GLOB.grass_trees[trees])
 		new tree_type(src)
 
 
 	if(animal_chance && prob(animal_chance) && !check_density())
-		var/animal_type = pickweight(GLOB.grass_animals[animals]) //CHOMPEdit
+		var/animal_type = pickweight(GLOB.grass_animals[animals])
 		new animal_type(src)
 
 

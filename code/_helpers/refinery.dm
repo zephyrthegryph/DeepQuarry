@@ -7,14 +7,14 @@
 		if(remaining_volume <= 0)
 			break
 
-		//CHOMPedit start
+		// start
 		if(istype(O,/obj/item/stack/material/supermatter))
 			var/regrets = 0
 			for(var/obj/item/stack/material/supermatter/S in holdingitems)
 				regrets += S.get_amount()
 			puny_protons(regrets, R.my_atom, holdingitems)
 			return
-		//CHOMPedit end
+		// end
 
 		if(GLOB.sheet_reagents[O.type])
 			var/obj/item/stack/stack = O
@@ -65,7 +65,7 @@
 
 	return (R.total_volume > start_volume)
 
-// CHOMPedit start: Repurposed coffee grinders and supermatter do not mix.
+// start: Repurposed coffee grinders and supermatter do not mix.
 /proc/puny_protons(regrets = 0, atom/our_atom, list/holdingitems)
 	our_atom.set_light(0)
 	if(regrets > 0) // If you thought grinding supermatter would end well. Values taken from ex_act() for the supermatter stacks.
@@ -96,4 +96,4 @@
 		span_warning("You hear an unearthly shriek, burning heat washing over you."))
 		new /obj/effect/decal/cleanable/ash(our_atom.loc)
 		qdel(our_atom)
-// CHOMPedit end
+// end

@@ -14,12 +14,12 @@
 
 /obj/item/organ/external
 	name = "external"
-	min_broken_damage = 60 // CHOMPEdit: Flat doubling of all min_broken_damage
+	min_broken_damage = 60 // Flat doubling of all min_broken_damage
 	max_damage = 0
 	dir = SOUTH
 	organ_tag = "limb"
 
-	var/brokenpain = 50				   //CHOMPEdit
+	var/brokenpain = 50
 	// Strings
 	var/broken_description             // fracture string if any.
 	var/damage_state = "00"            // Modifier used for generating the on-mob damage overlay for this limb.
@@ -359,7 +359,7 @@
 			organ.replaced(owner,src)
 		owner.refresh_modular_limb_verbs()
 
-	// DQEdit — re-anchor any medical conditions that rode along with
+	// re-anchor any medical conditions that rode along with
 	// the severed limb. They were unhooked from `owner` on removed();
 	// hook them back up so symptoms, vital effects, and organ damage
 	// resume firing on the patient.
@@ -610,7 +610,7 @@
 		to_chat(user, span_notice("Nothing to fix!"))
 		return 0
 
-	if(brute_dam + burn_dam >= min_broken_damage) //VOREStation Edit - Makes robotic limb damage scalable
+	if(brute_dam + burn_dam >= min_broken_damage) // Makes robotic limb damage scalable
 		to_chat(user, span_danger("The damage is far too severe to patch over externally."))
 		return 0
 	/*	// Leaving this here as a reference to how it used to work, but as of now, this just makes self repair for synths extra tedious.
@@ -667,7 +667,7 @@ This function completely restores a damaged organ to perfect condition.
 
 	// remove embedded objects and drop them on the floor
 	for(var/obj/implanted_object in implants)
-		if(istype(implanted_object,/obj/item/implant) || istype(implanted_object,/obj/item/nif))	// We don't want to remove REAL implants. Just shrapnel etc. //VOREStation Edit - NIFs pls
+		if(istype(implanted_object,/obj/item/implant) || istype(implanted_object,/obj/item/nif)) // We don't want to remove REAL implants. Just shrapnel etc. // NIFs pls
 			continue
 		implanted_object.loc = get_turf(src)
 		implants -= implanted_object
@@ -706,21 +706,21 @@ This function completely restores a damaged organ to perfect condition.
 /obj/item/organ/external/proc/createwound(type = CUT, damage)
 	if(damage == 0) return
 
-	// DQEdit — every damage path that affects this organ funnels through
+	// every damage path that affects this organ funnels through
 	// createwound (take_damage, surgery failures, custom event damage,
 	// reaction damage). One hook here covers them all. See
 	// code/modules/medical/cascades.dm.
 	if(owner)
 		dq_check_damage_cascades(type, damage)
 
-	// DQEdit — vanilla /datum/wound/internal_bleeding is disabled. The
+	// vanilla /datum/wound/internal_bleeding is disabled. The
 	// internal_hemorrhage cascading condition replaces it as the
 	// gameplay surface for internal bleeding.
 
 //Burn damage can cause fluid loss due to blistering and cook-off
 
 	if(owner && (damage > 5 || damage + burn_dam >= 15) && type == BURN && (robotic < ORGAN_ROBOT) && !(data.get_species_flags() & NO_BLOOD))
-		var/fluid_loss = 0.1 * (damage/(owner.getMaxHealth() - (-owner.getMaxHealth()))) * owner.species.blood_volume*(1 - owner.species.blood_level_fatal) //CHOMPedit reduce fluid loss 4-fold so lasers dont suck your blood
+		var/fluid_loss = 0.1 * (damage/(owner.getMaxHealth() - (-owner.getMaxHealth()))) * owner.species.blood_volume*(1 - owner.species.blood_level_fatal) // reduce fluid loss 4-fold so lasers dont suck your blood
 		owner.remove_blood(fluid_loss)
 	// first check whether we can widen an existing wound
 	if(wounds.len > 0 && prob(max(50+(number_wounds-1)*10,90)))
@@ -773,7 +773,7 @@ This function completely restores a damaged organ to perfect condition.
 /obj/item/organ/external/proc/need_process()
 	if(status & (ORGAN_CUT_AWAY|ORGAN_BLEEDING|ORGAN_BROKEN|ORGAN_DESTROYED|ORGAN_DEAD|ORGAN_MUTATED))
 		return 1
-	if(brute_dam || burn_dam)//VOREStation Edit - But they do for medichines! ---&& (robotic < ORGAN_ROBOT)) //Robot limbs don't autoheal and thus don't need to process when damaged
+	if(brute_dam || burn_dam) // But they do for medichines! ---&& (robotic < ORGAN_ROBOT)) //Robot limbs don't autoheal and thus don't need to process when damaged
 		return 1
 	if(last_dam != brute_dam + burn_dam) // Process when we are fully healed up.
 		last_dam = brute_dam + burn_dam
@@ -782,7 +782,7 @@ This function completely restores a damaged organ to perfect condition.
 		last_dam = brute_dam + burn_dam
 	if(germ_level)
 		return 1
-	// DQEdit — any active condition on the organ needs processing.
+	// any active condition on the organ needs processing.
 	// Conditions don't show up as damage or germs, so without this
 	// the organ would stop ticking after the wound heals.
 	if(LAZYLEN(medical_issues))
@@ -806,7 +806,7 @@ This function completely restores a damaged organ to perfect condition.
 		//Infections
 		update_germs()
 
-		// DQEdit Start — tick cascading medical conditions. The external
+		// tick cascading medical conditions. The external
 		// /process() override never calls /obj/item/organ/process() when
 		// the organ has an owner, so medical_issues handle_effects()
 		// would otherwise be skipped entirely for attached external
@@ -814,7 +814,6 @@ This function completely restores a damaged organ to perfect condition.
 		// medical system; without this hook they never advance.
 		for(var/datum/medical_issue/I in medical_issues)
 			I.handle_effects()
-		// DQEdit End
 	else
 		..()
 
@@ -1041,10 +1040,9 @@ Note that amputating the affected organ does in fact remove the infection from t
 
 	if(cannot_amputate || !owner)
 		return
-	//VOREStation Add
 	if(robotic >= ORGAN_NANOFORM)
 		disintegrate = DROPLIMB_BURN //Ashes will be fine
-	else if(disintegrate == DROPLIMB_EDGE && nonsolid) //VOREStation Add End
+	else if(disintegrate == DROPLIMB_EDGE && nonsolid)
 		disintegrate = DROPLIMB_BLUNT //splut
 
 	GLOB.lost_limbs_shift_roundstat++
@@ -1273,20 +1271,18 @@ Note that amputating the affected organ does in fact remove the infection from t
 				show_message = FALSE
 
 		if(show_message)
-			// CHOMPEdit Start
 			owner.custom_pain(pick(\
 				span_danger("You hear a loud cracking sound coming from \the [owner]."),\
 				span_danger("Something feels like it shattered in your [name]!"),\
 				span_danger("You hear a sickening crack.")), brokenpain)
-			// CHOMPEdit End
 			if(scream)
 				owner.emote("scream")
 		jostle_bone()
 
-	if(istype(owner.loc, /obj/belly)) //CHOMPedit, bone breaks in bellys should be whisper range to prevent bar wide blender prefbreak. This is a hacky passive hardcode, if a pref gets added, remove this if else
+	if(istype(owner.loc, /obj/belly)) // , bone breaks in bellys should be whisper range to prevent bar wide blender prefbreak. This is a hacky passive hardcode, if a pref gets added, remove this if else
 		playsound(src, "fracture", 90, 1, -6.5)
 	else
-		playsound(src, "fracture", 90, 1, -2) // CHOMPedit: Much more audible bonebreaks.
+		playsound(src, "fracture", 90, 1, -2) // Much more audible bonebreaks.
 	status |= ORGAN_BROKEN
 	broken_description = pick("broken","fracture","hairline fracture")
 
@@ -1360,7 +1356,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 
 	dislocated = -1
 	cannot_break = 1
-	min_broken_damage = ROBOLIMB_REPAIR_CAP //VOREStation Addition - Makes robotic limb damage scalable
+	min_broken_damage = ROBOLIMB_REPAIR_CAP // ition - Makes robotic limb damage scalable
 	remove_splint()
 	get_icon()
 	unmutate()
@@ -1411,7 +1407,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 	return !(status & (ORGAN_MUTATED|ORGAN_DEAD))
 
 /obj/item/organ/external/proc/is_malfunctioning()
-	return ((robotic >= ORGAN_ROBOT) && (brute_dam + burn_dam) >= min_broken_damage*0.83 && prob(brute_dam + burn_dam)) //VOREStation Edit - Makes robotic limb damage scalable
+	return ((robotic >= ORGAN_ROBOT) && (brute_dam + burn_dam) >= min_broken_damage*0.83 && prob(brute_dam + burn_dam)) // Makes robotic limb damage scalable
 
 /obj/item/organ/external/proc/embed(obj/item/W, silent = 0)
 	if(!owner || loc != owner)
@@ -1436,7 +1432,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 	var/is_robotic = robotic >= ORGAN_ROBOT
 	var/mob/living/carbon/human/victim = owner
 
-	// DQEdit — conditions stay attached to the limb so reattach surgery
+	// conditions stay attached to the limb so reattach surgery
 	// brings them back with the limb (necrosis, fractures, severed
 	// tendons). We do unhook them from `owner` so the now-detached
 	// patient stops processing them and their effects (slowdown,
@@ -1630,7 +1626,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 	. = 0
 	for(var/obj/item/organ/external/L in organs)
 		for(var/obj/item/I in L.implants)
-			if(!istype(I,/obj/item/implant) && !istype(I,/obj/item/nif)) //VOREStation Add - NIFs
+			if(!istype(I,/obj/item/implant) && !istype(I,/obj/item/nif)) // NIFs
 				return 1
 
 /obj/item/organ/external/proc/is_hidden_by_sprite_accessory(clothing_only = FALSE)			// Clothing only will mean the check should only be used in places where we want to hide clothing icon, not organ itself.

@@ -955,7 +955,7 @@
 	)
 	departmental_flags = DEPARTMENT_BITFLAG_SCIENCE
 
-// Decided that we were not keen on this being able to be printed freely as we immediately saw undesirable behaviour //CHOMPEdit - Re-enable
+// Decided that we were not keen on this being able to be printed freely as we immediately saw undesirable behaviour // Re-enable
 /datum/design_techweb/telekinetic_gloves
 	name = "Kinesis Assistance Module"
 	id = "tk_gloves"

@@ -161,28 +161,26 @@
 			if(L.stat == UNCONSCIOUS)	// Do we have mauling? Yes? Then maul people who are sleeping but not SSD
 				if(mauling)
 					return TRUE
-				//VOREStation Add Start
 				else if(unconscious_vore && L.allowmobvore)
 					var/mob/living/simple_mob/vore/eater = holder
 					if(eater.will_eat(L))
 						return TRUE
 					else
 						return FALSE
-				//VOREStation Add End
 				else
 					return FALSE
 //		if(!check_attacker(L))
 //			if((L.dir == 1 && holder.y >= L.y) || (L.dir == 2 && holder.y <= L.y) || (L.dir == 4 && holder.x >= L.x) || (L.dir == 8 && holder.x <= L.x)) //stop attacking if they look at you
 //				set_stance(STANCE_IDLE)
 //				return FALSE
-		//VOREStation add start
+		// add start
 		else if(forgive_resting && !isbelly(holder.loc))	//Doing it this way so we only think about the other conditions if the var is actually set
 			if((holder.health == holder.getMaxHealth()) && !hostile && (L.resting || L.weakened || L.stunned))	//If our health is full, no one is fighting us, we can forgive
 				var/mob/living/simple_mob/vore/eater = holder
 				if(!eater.will_eat(L))		//We forgive people we can eat by eating them
 					set_stance(STANCE_IDLE)
 					return FALSE	//Forgiven
-		//VOREStation add end
+		// add end
 		if(holder.IIsAlly(L))
 			return FALSE
 		return TRUE

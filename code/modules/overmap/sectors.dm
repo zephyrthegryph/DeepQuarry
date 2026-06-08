@@ -51,7 +51,7 @@
 
 	var/mob_announce_cooldown = 0 //Define this to make it so when visited, the ATC will announce their arrival. Only used if you have a Crossed/Uncrossed that calls announce_atc w/ announce_atc being redefined.
 
-/obj/effect/overmap/visitable/Initialize(mapload, dyn_poi) //CHOMPEdit - dyn_poi
+/obj/effect/overmap/visitable/Initialize(mapload, dyn_poi) // dyn_poi
 	. = ..()
 	if(. == INITIALIZE_HINT_QDEL)
 		return
@@ -67,7 +67,6 @@
 
 	forceMove(locate(start_x, start_y, using_map.overmap_z))
 
-	// CHOMPAdd Start
 	if(dyn_poi)
 		for(var/obj/effect/overmap/visitable/dynamic/poi/P in loc.contents) // If we've spawned on another poi, we'll try again once.
 			if(P == src)
@@ -81,7 +80,6 @@
 			sanity++
 			if(sanity > 1)
 				return INITIALIZE_HINT_QDEL
-	// CHOMPAdd End
 
 	if(!docking_codes)
 		docking_codes = "[ascii2text(rand(65,90))][ascii2text(rand(65,90))][ascii2text(rand(65,90))][ascii2text(rand(65,90))]"
@@ -278,12 +276,12 @@
 	if(has_distress_beacon)
 		return FALSE
 	has_distress_beacon = TRUE
-	admin_chat_message(message = "Overmap panic button hit on z[z] ([name]) by '[user?.ckey || "Unknown"]'", color = "#FF2222") //VOREStation Add
-	//CHOMPedit start: Making the rescue beacon more generic rather then upstreams
+	admin_chat_message(message = "Overmap panic button hit on z[z] ([name]) by '[user?.ckey || "Unknown"]'", color = "#FF2222")
+	// start: Making the rescue beacon more generic rather then upstreams
 	var/message = "This is an automated distress signal from a MIL-DTL-93352-compliant beacon transmitting on [PUB_FREQ*0.1]kHz. \
 	This beacon was launched from '[real_name ? real_name : initial(name)]'. Additional information has been provided for rescuers: [get_distress_info()]. \
 	This message will repeat one time in 5 minutes. Thank you for your urgent assistance."
-	//CHOMPedit end
+	// end
 
 	for(var/zlevel in levels_for_distress)
 		GLOB.priority_announcement.Announce(message, new_title = "Automated Distress Signal", new_sound = ANNOUNCER_MSG_DISTRESS_SIGNAL, zlevel = zlevel)
@@ -299,10 +297,10 @@
 /obj/effect/overmap/visitable/proc/get_distress_info()
 	return "\[X:[x], Y:[y]\]"
 
-/obj/effect/overmap/visitable/proc/distress_update() //CHOMPedit start: Making the rescue beacon more generic rather then upstreams
+/obj/effect/overmap/visitable/proc/distress_update() // start: Making the rescue beacon more generic rather then upstreams
 	var/message = "This is the final message from the distress beacon launched from '[real_name ? real_name : initial(name)]'. Additional information has been provided for rescuers: [get_distress_info()]. \
 	Thank you for your urgent assistance."
-	//CHOMPedit end
+	// end
 
 	for(var/zlevel in levels_for_distress)
 		GLOB.priority_announcement.Announce(message, new_title = "Automated Distress Signal", new_sound = ANNOUNCER_MSG_DISTRESS_SIGNAL, zlevel = zlevel)
@@ -334,8 +332,8 @@
 	// zero POIs. To re-enable: recover space_pois.dm + space_areas.dm + loot_vr.dm
 	// from git history, drop the stub in code/modules/map_stubs/map_stubs.dm, then
 	// restore the master-creation line below.
-	// if(!GLOB.dynamic_sector_master) //CHOMPedit: hook dynamic sector generation into overmap gen
-	// 	new /obj/effect/overmap/visitable/dynamic // CHOMPedit, glob var assignment is handled in the object.
+	// if(!GLOB.dynamic_sector_master) // hook dynamic sector generation into overmap gen
+	// new /obj/effect/overmap/visitable/dynamic // , glob var assignment is handled in the object.
 
 	testing("Overmap build complete.")
 	return 1

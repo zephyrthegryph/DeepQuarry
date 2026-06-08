@@ -119,7 +119,7 @@
 	if(flags & ATOM_INITIALIZED)
 		stack_trace("Warning: [src]([type]) initialized multiple times!")
 	flags |= ATOM_INITIALIZED
-	// DQEdit — set /tg/'s INITIALIZED_1 in parallel with CHOMP's ATOM_INITIALIZED so
+	// set /tg/'s INITIALIZED_1 in parallel with CHOMP's ATOM_INITIALIZED so
 	// LINDA's `flags_1 & INITIALIZED_1` checks (SSair.add_to_active, signal-handler
 	// gates, /tg/ component lifecycle) work without us having to rewrite each
 	// callsite to use the CHOMP flag.

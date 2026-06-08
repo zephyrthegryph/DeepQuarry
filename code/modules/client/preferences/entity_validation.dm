@@ -1,4 +1,4 @@
-// DQAdd — Entity-level pickability rules.
+// Entity-level pickability rules.
 //
 // The principle: the rule for "is this trait/gear/style legal for player X right now?"
 // lives on the entity (the trait, the gear, the accessory), not duplicated as is_valid

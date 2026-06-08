@@ -23,11 +23,11 @@
 	description_info = "Ctrl-Clicking on this object will attempt to activate its unique ability."
 	icon = 'icons/obj/props/telecube.dmi'
 	icon_state = "cube"
-	w_class = ITEMSIZE_NO_CONTAINER //CHOMPEdit - Made impossible to store to help resolve a certain repeated issue that has been happening with these.
+	w_class = ITEMSIZE_NO_CONTAINER // Made impossible to store to help resolve a certain repeated issue that has been happening with these.
 
 	catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/telecube)
 
-	//slowdown = 2.5 //CHOMPEdit - Removes slowdown in exchange for being impossible to store in backpacks.
+	// slowdown = 2.5 // Removes slowdown in exchange for being impossible to store in backpacks.
 
 	throw_range = 2
 

@@ -135,7 +135,7 @@
 	return air
 
 // This is about 0.896m^3 of atmosphere, which is enough to last for quite a while.
-// DQEdit — was XGM /datum/gas_mixture subtype with `total_moles =` and
+// was XGM /datum/gas_mixture subtype with `total_moles =` and
 // `gas = list(...)`. LINDA stores gases in `gases[/datum/gas/X][MOLES]` and
 // total_moles is computed. Re-shape as adjust_gas calls in New().
 /datum/gas_mixture/pod_air
@@ -144,5 +144,5 @@
 
 /datum/gas_mixture/pod_air/New()
 	. = ..()
-	adjust_gas(GAS_O2, 21)  // DQEdit — literal "oxygen" doesn't match LINDA gas IDs; GAS_O2 is "o2"
+	adjust_gas(GAS_O2, 21) // literal "oxygen" doesn't match LINDA gas IDs; GAS_O2 is "o2"
 	adjust_gas(GAS_N2, 79)

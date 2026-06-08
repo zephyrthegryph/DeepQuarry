@@ -1,4 +1,4 @@
-// DQAdd — Species picker editor.
+// Species picker editor.
 //
 // Replaces the auto-rendered species dropdown + the separate custom_species
 // and custom_base text inputs with a single popup editor. Cards show each

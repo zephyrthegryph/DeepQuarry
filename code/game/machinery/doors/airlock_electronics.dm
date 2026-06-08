@@ -6,7 +6,7 @@
 
 	matter = list(MAT_STEEL = 50,MAT_GLASS = 50)
 
-	req_one_access = list(ACCESS_ENGINE, ACCESS_TALON_ENGINEER) // Access to unlock the device, ignored if emagged //VOREStation Edit - Add talon
+	req_one_access = list(ACCESS_ENGINE, ACCESS_TALON_ENGINEER) // Access to unlock the device, ignored if emagged // Add talon
 	var/list/apply_any_access = list(ACCESS_ENGINE) // Can apply any access, not just their own
 
 	var/secure = 0 //if set, then wires will be randomized and bolts will drop if the door is broken
@@ -22,7 +22,7 @@
 		to_chat(user, span_notice("You remove the access restrictions on [src]!"))
 		return 1
 
-// DQEdit Start — TGUI migration. attack_self opens AirlockElectronics.tsx;
+// TGUI migration. attack_self opens AirlockElectronics.tsx;
 // the Topic dispatch moves to tgui_act.
 /obj/item/airlock_electronics/attack_self(mob/user)
 	. = ..(user)
@@ -93,7 +93,6 @@
 		if("access")
 			toggle_access(params["access"])
 			return TRUE
-// DQEdit End
 
 /obj/item/airlock_electronics/proc/toggle_access(acc)
 	if (acc == "all")

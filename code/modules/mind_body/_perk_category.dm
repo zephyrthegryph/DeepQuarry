@@ -1,4 +1,4 @@
-// DQAdd — /datum/perk_category + registry.
+// /datum/perk_category + registry.
 //
 // A category owns ONE pool, drawn down by every perk in every tree whose `category` id
 // matches. For Body, each category has a single tree. For Mind, each category (a

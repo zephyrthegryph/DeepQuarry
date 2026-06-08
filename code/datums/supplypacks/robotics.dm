@@ -240,7 +240,7 @@
 	containertype = /obj/structure/largecrate/vehicle/quadtrailer
 	containername = "ATV Trailer Crate"
 
-/* //CHOMPedit commented micromech stuff, because fuck this trash
+/* // commented micromech stuff, because fuck this trash
 /datum/supply_pack/robotics/mecha_gopher
 	name = "Circuit Crate (\"Gopher\" APLU)"
 	desc = "A set of standard core components for a Gopher micro-mech. Requires Robotics access."

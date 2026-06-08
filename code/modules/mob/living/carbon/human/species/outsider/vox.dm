@@ -20,7 +20,7 @@
 	refer to them as 'shitbirds' for their violent and offensive nature, as well as their horrible \
 	smell.<br/><br/>Most humans will never meet a Vox raider, instead learning of this insular species through \
 	dealing with their traders and merchants; those that do rarely enjoy the experience."
-	wikilink="https://wiki.chompstation13.net/index.php?title=Vox" //CHOMPEdit
+	wikilink="https://wiki.chompstation13.net/index.php?title=Vox"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/vox)
 
 //	taste_sensitivity = TASTE_DULL
@@ -44,7 +44,7 @@
 	cold_level_2 = 50
 	cold_level_3 = 0
 
-	breath_type = GAS_N2 //CHOMPedit
+	breath_type = GAS_N2
 	poison_type = GAS_O2
 	ideal_air_type = /datum/gas_mixture/belly_air/vox
 	siemens_coefficient = 0.2
@@ -100,10 +100,10 @@
 
 	H.equip_to_slot_or_del(new /obj/item/clothing/mask/breath(H), slot_wear_mask)
 	if(H.backbag == 1)
-		H.equip_to_slot_or_del(new /obj/item/tank/nitrogen(H), slot_back) //CHOMPedit
+		H.equip_to_slot_or_del(new /obj/item/tank/nitrogen(H), slot_back)
 		H.internal = H.back
 	else
-		H.equip_to_slot_or_del(new /obj/item/tank/nitrogen(H), slot_r_hand) //CHOMPedit
+		H.equip_to_slot_or_del(new /obj/item/tank/nitrogen(H), slot_r_hand)
 		H.internal = H.r_hand
 	H.internal = locate(/obj/item/tank) in H.contents
 	if(istype(H.internal,/obj/item/tank) && H.internals)

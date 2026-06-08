@@ -89,7 +89,7 @@ GLOBAL_DATUM_INIT(tickets, /datum/tickets, new)
 	for(var/datum/ticket/T as anything in l2b)
 		dat += span_adminnotice(span_adminhelp("Ticket #[T.id]") + ": <A href='byond://?_src_=holder;ahelp=\ref[T];[HrefToken()];ahelp_action=ticket'>[T.initiator_key_name]: [T.name]</A>") + "<br>"
 	dat += "</html>"
-	// DQEdit — structured TGUI AdminReport (fallback path; primary tickets
+	// structured TGUI AdminReport (fallback path; primary tickets
 	// UI is the dedicated TGUI module).
 	dq_admin_report_html(usr, title, dat.Join(), src)
 

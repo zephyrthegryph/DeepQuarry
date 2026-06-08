@@ -188,10 +188,10 @@
 /obj/vehicle/train/engine/relaymove(mob/user, direction)
 	if(user != load)
 		return 0
-	// Start CHOMPStation Edit
+	// Start
 	if(user.paralysis || user.sleeping)
 		return 0
-	// End CHOMPStation Edit
+	// End
 	if(is_train_head())
 		if(direction == reverse_direction(dir) && tow)
 			return 0
@@ -227,7 +227,7 @@
 
 /obj/vehicle/train/engine/verb/start_engine()
 	set name = "Start engine"
-	set category = "Object.Vehicle" //ChompEDIT - TGPanel
+	set category = "Object.Vehicle" // TGPanel
 	set src in view(0)
 
 	if(!ishuman(usr))
@@ -250,7 +250,7 @@
 
 /obj/vehicle/train/engine/verb/stop_engine()
 	set name = "Stop engine"
-	set category = "Object.Vehicle" //ChompEDIT - TGPanel
+	set category = "Object.Vehicle" // TGPanel
 	set src in view(0)
 
 	if(!ishuman(usr))
@@ -266,7 +266,7 @@
 
 /obj/vehicle/train/engine/verb/remove_key()
 	set name = "Remove key"
-	set category = "Object.Vehicle" //ChompEDIT - TGPanel
+	set category = "Object.Vehicle" // TGPanel
 	set src in view(0)
 
 	if(!ishuman(usr))

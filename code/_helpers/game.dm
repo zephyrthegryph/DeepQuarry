@@ -299,7 +299,7 @@
 		if(!ismob(mob))
 			GLOB.player_list -= mob
 			continue
-		//VOREStation Edit End - Trying to fix some vorestation bug.
+		// Trying to fix some vorestation bug.
 		if(get_turf(mob) in hearturfs)
 			mobs |= mob
 			continue
@@ -455,7 +455,7 @@
 	var/i = 0
 	while(candidates.len <= 0 && i < 5)
 		for(var/mob/observer/dead/G in GLOB.player_list)
-			if(G.client.prefs.read_preference(/datum/preference/numeric/human/be_special) & BE_ALIEN) // DQEdit — migrated
+			if(G.client.prefs.read_preference(/datum/preference/numeric/human/be_special) & BE_ALIEN) // migrated
 				if(((G.client.inactivity/10)/60) <= ALIEN_SELECT_AFK_BUFFER + i) // the most active players are more likely to become an alien
 					if(!(G.mind && G.mind.current && G.mind.current.stat != DEAD))
 						candidates += G.key
@@ -583,7 +583,7 @@
 * Gets the highest and lowest pressures from the tiles in GLOB.cardinal directions
 * around us, then checks the difference.
 */
-// DQEdit — was gated on T.zone (ZAS). Under LINDA, return_air() returning a
+// was gated on T.zone (ZAS). Under LINDA, return_air() returning a
 // non-null mixture is the equivalent "this turf has air to sample" signal.
 // Walls (blocks_air=1) have air=null and we treat them as "no pressure" so the
 // open/closed boundary still shows as a non-zero differential.
@@ -621,7 +621,7 @@
 				direction = 3
 			if(WEST)
 				direction = 4
-		// DQEdit — zone-check replaced with return_air() non-null check; walls
+		// zone-check replaced with return_air() non-null check; walls
 		// (blocks_air=1) have air=null and are excluded as "no readings".
 		var/turf/simulated/T=get_turf(get_step(loc,dir))
 		var/list/rstats = new /list(stats.len)

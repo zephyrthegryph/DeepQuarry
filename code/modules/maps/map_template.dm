@@ -69,7 +69,7 @@
 	SSatoms.InitializeAtoms(areas + turfs + atoms)
 
 	admin_notice(span_danger("Initializing atmos pipenets and machinery in submap."), R_DEBUG)
-	// DQEdit — SSmachines.setup_atmos_machinery was stubbed by the LINDA
+	// SSmachines.setup_atmos_machinery was stubbed by the LINDA
 	// migration. SSair now owns atmos-machine init; for submap loads (which
 	// run after SSair.Initialize) wire just the freshly-loaded devices
 	// instead of re-scanning the whole all_machines list.
@@ -106,7 +106,7 @@
 	// This would normally be handled by SSmapping
 	world.increment_max_z()
 
-	on_map_preload(world.maxz) //VOREStation Edit
+	on_map_preload(world.maxz)
 	var/datum/parsed_map/parsed = load_map(
 		file(mappath),
 		x,
@@ -125,7 +125,7 @@
 	//initialize things that are normally initialized after map load
 	initTemplateBounds(bounds)
 	log_game("Z-level [name] loaded at at [x],[y],[world.maxz]")
-	on_map_loaded(world.maxz) //VOREStation Edit
+	on_map_loaded(world.maxz)
 	return TRUE
 
 /datum/map_template/proc/load(turf/T, centered = FALSE)
@@ -295,7 +295,7 @@
 
 			chosen_template.preload_size(chosen_template.mappath)
 			var/width_border = SUBMAP_MAP_EDGE_PAD + round((chosen_template.width) / 2)
-			var/height_border = SUBMAP_MAP_EDGE_PAD + round((chosen_template.height) / 2)																									//VOREStation Edit
+			var/height_border = SUBMAP_MAP_EDGE_PAD + round((chosen_template.height) / 2)
 			var/z_level = pick(z_levels)
 			var/turf/T = locate(rand(width_border, world.maxx - width_border), rand(height_border, world.maxy - height_border), z_level)
 			var/valid = TRUE
@@ -377,7 +377,7 @@ GLOBAL_LIST_EMPTY(map_templates_loaded)
 
 /datum/map_template/proc/on_map_loaded(z)
 	//We missed air init!
-	// DQEdit — was T.update_air_properties() (ZAS zone-graph refresh). LINDA
+	// was T.update_air_properties() (ZAS zone-graph refresh). LINDA
 	// equivalent: rebuild adjacency + add to active so SSair processes the
 	// newly-loaded turfs next tick.
 	if(SSair.initialized)

@@ -20,7 +20,7 @@
 	pickup_sound = 'sound/items/pickup/wrapper.ogg'
 	resistance_flags = FLAMMABLE
 
-// DQEdit Start — TGUI migration. The 3-screen browse() pager becomes a
+// TGUI migration. The 3-screen browse() pager becomes a
 // single TGUI window with all channels/messages shipped in one payload
 // and curr_page driving the view. Photo embedding (browse_rsc) is not
 // yet wired through TGUI assets, so message photos are omitted.
@@ -99,7 +99,6 @@
 			curr_page--
 			playsound(src, "pageturn", 50, 1)
 			return TRUE
-// DQEdit End
 
 /obj/item/newspaper/attackby(obj/item/W, mob/user)
 	if(istype(W, /obj/item/pen))

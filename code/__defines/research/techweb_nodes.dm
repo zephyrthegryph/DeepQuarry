@@ -166,13 +166,13 @@
 #define TECHWEB_NODE_GHOST_ADVANCED "ghost_advanced"
 #define TECHWEB_NODE_GHOST_ROUNDS "ghost_rounds"
 
-//CHOMPEDIT Start - Chomp Specific techwebs.
-#define TECHWEB_NODE_CHOMP_AMMO "chomp_ammo" //CHOMPEDIT ADD - Adds Chomp unique ammo for autolathe
-#define TECHWEB_NODE_PHASE_WEAPONS "phase_weapons" //CHOMPEDIT ADD - Adds Phase Weaponry
-#define TECHWEB_NODE_METAMORPHOSIS_RAY "metamorphosis_ray" //CHOMPEDIT Add - Adds Caseless Rifle
-#define TECHWEB_NODE_MOD_ANOMALY_SUIT "mod_anomaly_suit" //CHOMPEDIT Add - Adds Anomaly RIGs
-#define TECHWEB_NODE_MECH_SHIELDS "mech_shields" //CHOMPEDIT Add - Adds Mech Shields
-#define TECHWEB_NODE_TYRGOODS "tyrian tech" //CHOMPEDIT Add - Adds Craftable Tyr Loot
-#define TECHWEB_NODE_PRECUSORTOOLS "precursor tools" //CHOMPEDIT Add - Adds craftable precursor items
-#define TECHWEB_NODE_PARADOX_RIFT "paradox rift" //CHOMPEDIT Add - Adds Paradox Rift.
-//CHOMPEDIT End - Chomp Specific techwebs.
+// Chomp Specific techwebs.
+#define TECHWEB_NODE_CHOMP_AMMO "chomp_ammo" // ADD - Adds Chomp unique ammo for autolathe
+#define TECHWEB_NODE_PHASE_WEAPONS "phase_weapons" // ADD - Adds Phase Weaponry
+#define TECHWEB_NODE_METAMORPHOSIS_RAY "metamorphosis_ray" // Add - Adds Caseless Rifle
+#define TECHWEB_NODE_MOD_ANOMALY_SUIT "mod_anomaly_suit" // Add - Adds Anomaly RIGs
+#define TECHWEB_NODE_MECH_SHIELDS "mech_shields" // Add - Adds Mech Shields
+#define TECHWEB_NODE_TYRGOODS "tyrian tech" // Add - Adds Craftable Tyr Loot
+#define TECHWEB_NODE_PRECUSORTOOLS "precursor tools" // Add - Adds craftable precursor items
+#define TECHWEB_NODE_PARADOX_RIFT "paradox rift" // Add - Adds Paradox Rift.
+// Chomp Specific techwebs.

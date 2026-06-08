@@ -4,7 +4,7 @@
 	if(!SSticker.HasRoundStarted())
 		tgui_alert(usr, "The game hasn't started yet!")
 		return
-	// DQEdit — structured TGUI AdminReport.
+	// structured TGUI AdminReport.
 	var/list/lines = list()
 	for(var/entry in GLOB.bombers)
 		lines += "[entry]"
@@ -14,7 +14,7 @@
 	if(!SSticker.HasRoundStarted())
 		tgui_alert(usr, "The game hasn't started yet!")
 		return
-	// DQEdit — structured TGUI AdminReport.
+	// structured TGUI AdminReport.
 	var/list/lines = list()
 	for(var/entry in GLOB.lastsignalers)
 		lines += "[entry]"
@@ -24,14 +24,14 @@
 	if(!SSticker.HasRoundStarted())
 		tgui_alert(usr, "The game hasn't started yet!")
 		return
-	// DQEdit — structured TGUI AdminReport.
+	// structured TGUI AdminReport.
 	var/list/lines = list()
 	for(var/entry in GLOB.lawchanges)
 		lines += "[entry]"
 	dq_admin_report_lines(usr, "Law Changes", lines, "<b>Showing last [length(GLOB.lawchanges)] law changes.</b>")
 
 /datum/admins/proc/list_dna()
-	// DQEdit — structured TGUI AdminReport with typed table.
+	// structured TGUI AdminReport with typed table.
 	var/list/rows = list()
 	for(var/entry in GLOB.mob_list)
 		var/mob/living/carbon/human/subject = entry
@@ -45,7 +45,7 @@
 	dq_admin_report_table(usr, "DNA Log", list("Name", "DNA", "Blood Type"), rows, "<b>Showing DNA from blood.</b>")
 
 /datum/admins/proc/list_fingerprints() //kid named fingerprints
-	// DQEdit — structured TGUI AdminReport with typed table.
+	// structured TGUI AdminReport with typed table.
 	var/list/rows = list()
 	for(var/entry in GLOB.mob_list)
 		var/mob/living/carbon/human/subject = entry
@@ -61,7 +61,7 @@
 	if(!SSticker.HasRoundStarted())
 		tgui_alert(usr, "The game hasn't started yet!")
 		return
-	// DQEdit — structured TGUI AdminReport; manifest body stays as
+	// structured TGUI AdminReport; manifest body stays as
 	// pre-formatted HTML (per-department tables formatted by data_core).
 	dq_admin_report_html(usr, "Manifest", "<h4>Crew Manifest</h4>[GLOB.data_core.get_manifest()]")
 

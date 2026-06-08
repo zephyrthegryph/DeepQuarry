@@ -89,9 +89,9 @@
 	if(T && T.masters[src])
 		var/rendered = span_game(span_say(span_name(name) + " " + span_message(message)))
 		to_chat(src, span_game(span_say(span_italics("Holopad action relayed, [span_name(real_name)] [span_message(message)]"))))
-		var/obj/effect/overlay/aiholo/hologram = T.masters[src] //VOREStation Add for people in the hologram to hear the messages
+		var/obj/effect/overlay/aiholo/hologram = T.masters[src] // for people in the hologram to hear the messages
 
-		//var/obj/effect/overlay/hologram = T.masters[src] //VOREStation edit. Done above.
+		// var/obj/effect/overlay/hologram = T.masters[src] // . Done above.
 		var/list/in_range = get_mobs_and_objs_in_view_fast(get_turf(hologram), world.view, 2) //Emotes are displayed from the hologram, not the pad
 		var/list/m_viewers = in_range["mobs"]
 		var/list/o_viewers = in_range["objs"]

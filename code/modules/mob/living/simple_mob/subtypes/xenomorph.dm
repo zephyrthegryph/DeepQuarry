@@ -66,8 +66,8 @@
 /mob/living/simple_mob/xeno_ch/Login()
 	. = ..()
 	faction = "neutral"
-	add_verb(src,/mob/living/simple_mob/xeno_ch/proc/xeno_build) //CHOMPEdit TGPanel
-	add_verb(src,/mob/living/simple_mob/verb/toggle_speech_sounds) //CHOMPEdit TGPanel
+	add_verb(src,/mob/living/simple_mob/xeno_ch/proc/xeno_build) // TGPanel
+	add_verb(src,/mob/living/simple_mob/verb/toggle_speech_sounds) // TGPanel
 	build_action.Grant(src)
 
 
@@ -93,9 +93,9 @@
 
 /mob/living/simple_mob/xeno_ch/hunter/Login()
 	. = ..()
-	add_verb(src,/mob/living/simple_mob/proc/pounce_toggle) //CHOMPEdit TGPanel
-	add_verb(src,/mob/living/proc/ventcrawl) //CHOMPEdit TGPanel
-	add_verb(src,/mob/living/proc/hide) //CHOMPEdit TGPanel
+	add_verb(src,/mob/living/simple_mob/proc/pounce_toggle) // TGPanel
+	add_verb(src,/mob/living/proc/ventcrawl) // TGPanel
+	add_verb(src,/mob/living/proc/hide) // TGPanel
 	pounce_action.Grant(src)
 
 //Xenomorph Sentinel subtype
@@ -121,11 +121,11 @@
 
 /mob/living/simple_mob/xeno_ch/sentinel/Login()
 	. = ..()
-	add_verb(src,/mob/living/simple_mob/proc/pounce_toggle) //CHOMPEdit TGPanel
-	add_verb(src,/mob/living/proc/hide) //CHOMPEdit TGPanel
-	add_verb(src,/mob/living/simple_mob/proc/neurotoxin) //CHOMPEdit TGPanel
-	add_verb(src,/mob/living/simple_mob/proc/acidspit) //CHOMPEdit TGPanel
-	add_verb(src,/mob/living/simple_mob/proc/corrosive_acid) //CHOMPEdit TGPanel
+	add_verb(src,/mob/living/simple_mob/proc/pounce_toggle) // TGPanel
+	add_verb(src,/mob/living/proc/hide) // TGPanel
+	add_verb(src,/mob/living/simple_mob/proc/neurotoxin) // TGPanel
+	add_verb(src,/mob/living/simple_mob/proc/acidspit) // TGPanel
+	add_verb(src,/mob/living/simple_mob/proc/corrosive_acid) // TGPanel
 	pounce_action.Grant(src)
 	neurotox_action.Grant(src)
 	acidspit_action.Grant(src)
@@ -155,10 +155,10 @@
 
 /mob/living/simple_mob/xeno_ch/queen/Login()
 	. = ..()
-	add_verb(src,/mob/living/simple_mob/proc/neurotoxin) //CHOMPEdit TGPanel
-	add_verb(src,/mob/living/simple_mob/proc/acidspit) //CHOMPEdit TGPanel
-	add_verb(src,/mob/living/simple_mob/proc/corrosive_acid) //CHOMPEdit TGPanel
-	add_verb(src,/mob/living/simple_mob/proc/speen) //CHOMPEdit TGPanel
+	add_verb(src,/mob/living/simple_mob/proc/neurotoxin) // TGPanel
+	add_verb(src,/mob/living/simple_mob/proc/acidspit) // TGPanel
+	add_verb(src,/mob/living/simple_mob/proc/corrosive_acid) // TGPanel
+	add_verb(src,/mob/living/simple_mob/proc/speen) // TGPanel
 	neurotox_action.Grant(src)
 	acidspit_action.Grant(src)
 	corrode_action.Grant(src)

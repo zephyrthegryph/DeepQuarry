@@ -15,7 +15,7 @@
 #define ORGAN_DISLOCATED 0x4000
 #define ALCOHOL_POISONING 0x8000
 #define BLOODLOSS 0x10000
-#define WEIRD_ORGANS 0x20000 //CHOMPedit malignant
+#define WEIRD_ORGANS 0x20000 // malignant
 
 /obj/machinery/medical_kiosk
 	name = "medical kiosk"
@@ -156,10 +156,10 @@
 			problems |= INFECTION
 		if(I.damage)
 			problems |= INTERNAL_DAMAGE
-		//CHOMPedit begin- malignants
+		// begin- malignants
 		if(istype(I,/obj/item/organ/internal/malignant))
 			problems |= WEIRD_ORGANS
-		//CHOMPedit end
+		// end
 
 	if(HUSK in user.mutations)
 		problems |= HUSKED_BODY
@@ -310,10 +310,10 @@
 			medication_dispensed = TRUE
 			new /obj/item/reagent_containers/pill/small_inaprovaline(src.loc)
 			inaprovaline_given = TRUE
-	//CHOMPedit begin malignants
+	// begin malignants
 	if(problems & WEIRD_ORGANS)
 		problem_text += "<br>" + span_warning("Anatomical irregularities detected - Please see a medical professional.")
-	//CHOMPedit end
+	// end
 	if(problems & HUSKED_BODY)
 		problem_text += "<br>" + span_danger("SEVERITY: 'Minor' - Anatomical structure lost, resuscitation not possible!") //Only borers will ever see this.
 	//thoughts and prayers
@@ -364,4 +364,4 @@
 #undef ORGAN_DISLOCATED
 #undef ALCOHOL_POISONING
 #undef BLOODLOSS
-#undef WEIRD_ORGANS // CHOMPedit - malignants
+#undef WEIRD_ORGANS // malignants

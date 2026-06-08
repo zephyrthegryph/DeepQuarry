@@ -1,4 +1,4 @@
-// DQAdd — Loadout / gear slot builder.
+// Loadout / gear slot builder.
 //
 // Data model:
 //   gear_list saves {loadout_slot_num_str: {gear_name: metadata}}. Multiple items can be
@@ -124,7 +124,7 @@
 
 /// Maps /datum/decl/hierarchy/outfit field name -> body slot id key used by the UI.
 /// Used to translate the chosen job's outfit into ghost-placeholder slot labels.
-/// DQEdit — l_ear/r_ear/back removed: those slots are filled at runtime by pre_equip()
+// / l_ear/r_ear/back removed: those slots are filled at runtime by pre_equip()
 /// from the indirect vars (headset, backpack), not declared statically on the outfit.
 /// Resolved separately below in job_default_labels so the ghost shows the job's actual
 /// themed kit instead of being blank.
@@ -304,7 +304,7 @@
 					"icon_state" = inh_state,
 				)
 
-	// DQEdit — Per-job loadout summary. Each entry: {key, label, count, cost}. The picker
+	// Per-job loadout summary. Each entry: {key, label, count, cost}. The picker
 	// in the React side renders this so the player can see "I have 3 picks in my Captain
 	// loadout, 0 in my Cook loadout, 4 in default" at a glance.
 	var/list/loadouts = list(
@@ -340,11 +340,11 @@
 		preview_job = preferences.get_highest_job() || SSjob.get_job(JOB_INTERN)
 	else
 		preview_job = SSjob.get_job(loadout_key) || preferences.get_highest_job() || SSjob.get_job(JOB_INTERN)
-	// DQEdit — backbag pref deleted; ignore the param. Kept the second arg for now in
+	// backbag pref deleted; ignore the param. Kept the second arg for now in
 	// case anything else still references the proc with two args (slated to drop).
 	var/list/job_defaults = job_default_labels(preview_job, null)
 
-	// DQAdd — Pull dynamic data from the (hidden) starting-kit and underwear editors so the
+	// Pull dynamic data from the (hidden) starting-kit and underwear editors so the
 	// loadout panel can show all of it in one place. The editors themselves don't render on
 	// their own; their action dispatch still works because they're registered.
 	var/list/sk_data = list()
@@ -405,7 +405,7 @@
 	// Species/taur gates are now centralized on /datum/gear/proc/is_pickable_by, which
 	// reads the current prefs directly — no need to pre-resolve species/tail here.
 	//
-	// DQEdit — role filtering moved to React (LoadoutBuilder.tsx) so it can re-filter
+	// role filtering moved to React (LoadoutBuilder.tsx) so it can re-filter
 	// instantly when the player switches the editing target between "_default" and a
 	// specific job loadout. Static data ships every item that passes the species/taur
 	// gates; the React side filters by allowed_roles against the current loadout_key.
@@ -458,7 +458,7 @@
 		if(items.len)
 			categories[category] = items
 
-	// DQAdd — embed starting-kit and underwear static payloads so the loadout React side
+	// embed starting-kit and underwear static payloads so the loadout React side
 	// can render those controls inline. The standalone editors are marked hidden=TRUE so
 	// they don't render their own panels.
 	var/list/sk_static = list()
@@ -570,7 +570,7 @@
 	_validate_and_persist_slot(preferences)
 	switch(action)
 		if("set_loadout_key")
-			// DQEdit — was "switch_slot" + numeric index. Now switches which per-job loadout
+			// was "switch_slot" + numeric index. Now switches which per-job loadout
 			// is being edited. Validates against priorities + the "_default" sentinel.
 			var/new_key = params["key"]
 			if(!istext(new_key) || !_valid_loadout_key(preferences, new_key))
@@ -643,7 +643,7 @@
 			return PREF_UPDATE_ACCEPTED
 
 		if("set_tweak")
-			// DQAdd — opens the gear_tweak's input dialog and saves the returned value.
+			// opens the gear_tweak's input dialog and saves the returned value.
 			var/gear_name = params["gear"]
 			var/tweak_idx = text2num(params["tweak"])
 			dq_log("set_tweak enter: gear=[gear_name] idx=[tweak_idx] user=[user]")
@@ -686,7 +686,7 @@
 			return PREF_UPDATE_ACCEPTED
 
 		if("set_tweak_value")
-			// DQAdd — direct write from React inline widget (text/dropdown/color/boolean).
+			// direct write from React inline widget (text/dropdown/color/boolean).
 			// Bypasses get_metadata's tgui_input_X dialog because the React side already
 			// did the input collection. Per-kind validation lives on /datum/gear_tweak
 			// subtypes via validate_inline_value (see code/datums/gear/gear_tweaks.dm).
@@ -718,7 +718,7 @@
 			return PREF_UPDATE_ACCEPTED
 
 		if("pick_tweak_color")
-			// DQAdd — opens BYOND's tgui_color_picker for a standalone /datum/gear_tweak/color
+			// opens BYOND's tgui_color_picker for a standalone /datum/gear_tweak/color
 			// tweak (kind=color in React). Mirrors how the trait_picker editor handles its
 			// blood color action — single explicit picker call, no JS-side color input.
 			var/gear_name = params["gear"]
@@ -752,7 +752,7 @@
 			return PREF_UPDATE_ACCEPTED
 
 		if("recolor_pick_tint")
-			// DQAdd — opens tgui_color_picker for the unified recolor tweak's tint mode.
+			// opens tgui_color_picker for the unified recolor tweak's tint mode.
 			var/gear_name = params["gear"]
 			var/tweak_idx = text2num(params["tweak"])
 			var/datum/gear/G = GLOB.gear_datums[gear_name]
@@ -784,7 +784,7 @@
 			return PREF_UPDATE_ACCEPTED
 
 		if("recolor_pick_palette_swatch")
-			// DQAdd — palette-mode swatch picker. Takes `original` hex; opens tgui_color_picker
+			// palette-mode swatch picker. Takes `original` hex; opens tgui_color_picker
 			// and updates the `original → new` mapping inside the recolor metadata's value dict.
 			var/gear_name = params["gear"]
 			var/tweak_idx = text2num(params["tweak"])
@@ -826,7 +826,7 @@
 			return PREF_UPDATE_ACCEPTED
 
 		if("recolor_pick_matrix")
-			// DQAdd — opens the matrix colormatrix picker for the unified recolor tweak.
+			// opens the matrix colormatrix picker for the unified recolor tweak.
 			var/gear_name = params["gear"]
 			var/tweak_idx = text2num(params["tweak"])
 			dq_log("recolor_pick_matrix enter: gear=[gear_name] idx=[tweak_idx]")
@@ -871,7 +871,7 @@
 			return PREF_UPDATE_ACCEPTED
 
 		if("set_recolor")
-			// DQAdd — direct write for the unified recolor tweak. value is a dict:
+			// direct write for the unified recolor tweak. value is a dict:
 			//   {mode: "off"|"tint"|"palette"|"matrix", value: <mode-specific>}
 			var/gear_name = params["gear"]
 			var/tweak_idx = text2num(params["tweak"])

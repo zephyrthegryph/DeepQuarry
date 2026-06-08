@@ -4,7 +4,7 @@
 /obj/item/pda
 	name = "\improper PDA"
 	desc = "A portable microcomputer by Thinktronic Systems, LTD. Functionality determined by a preprogrammed ROM cartridge."
-	icon = 'icons/obj/pda_vr.dmi'			//VOREStation edit
+	icon = 'icons/obj/pda_vr.dmi'
 	icon_state = "pda"
 	item_state = "electronic"
 	w_class = ITEMSIZE_SMALL
@@ -42,7 +42,7 @@
 	var/list/programs = list(
 		new/datum/data/pda/app/main_menu,
 		new/datum/data/pda/app/notekeeper,
-		new/datum/data/pda/app/timeclock, //CHOMPEdit: Add the timeclock to default apps
+		new/datum/data/pda/app/timeclock, // Add the timeclock to default apps
 		new/datum/data/pda/app/news,
 		new/datum/data/pda/app/messenger,
 		new/datum/data/pda/app/manifest,
@@ -123,7 +123,7 @@
 
 	switch(pdachoice)
 		if(1)
-			icon = 'icons/obj/pda_vr.dmi'			//VOREStation edit
+			icon = 'icons/obj/pda_vr.dmi'
 			model_name = "Thinktronic 5230 Personal Data Assistant"
 		if(2)
 			icon = 'icons/obj/pda_slim.dmi'
@@ -152,7 +152,7 @@
 				SPECIES_VR_TESHARI = 'icons/mob/species/teshari/pda_wrist.dmi',
 			)
 		if(7)
-			icon = 'icons/obj/pda_slider.dmi'			//VOREStation edit
+			icon = 'icons/obj/pda_slider.dmi'
 			model_name = "Slider® Personal Data Assistant"
 		if(8)
 			icon = 'icons/obj/pda_vintage.dmi'
@@ -491,7 +491,7 @@
 /obj/item/storage/box/PDAs
 	name = "box of spare PDAs"
 	desc = "A box of spare PDA microcomputers."
-	icon = 'icons/obj/pda_vr.dmi'			//VOREStation edit
+	icon = 'icons/obj/pda_vr.dmi'
 	icon_state = "pdabox"
 
 /obj/item/storage/box/PDAs/Initialize(mapload)

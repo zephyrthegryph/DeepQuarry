@@ -306,7 +306,7 @@
 	for(var/I in _interactions)
 		dat += "[I]<br>"
 	dat += "</html>"
-	// DQEdit — structured TGUI AdminReport (fallback path).
+	// structured TGUI AdminReport (fallback path).
 	dq_admin_report_html(user, "Ticket #[id]", dat.Join(), src)
 
 /datum/tickets/proc/TicketListLegacy(mob/user, state)
@@ -335,5 +335,5 @@
 	if(tickets_found == 0)
 		dat += "No [state] tickets found."
 	dat += "</html>"
-	// DQEdit — structured TGUI AdminReport (fallback path).
+	// structured TGUI AdminReport (fallback path).
 	dq_admin_report_html(user, "[state] Tickets", dat.Join(), src)

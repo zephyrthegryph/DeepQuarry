@@ -482,7 +482,7 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 	switch(action)
 		if("toggle_job")
 			var/title = "[params["title"]]"
-			// DQEdit — use REF() macro (canonical form) instead of legacy \ref[target] interpolation.
+			// use REF() macro (canonical form) instead of legacy \ref[target] interpolation.
 			holder.Topic("jobban3=[title];jobban4=[REF(target)]", list("_src_" = "holder", "jobban3" = title, "jobban4" = REF(target)))
 			SStgui.update_uis(src)
 			return TRUE

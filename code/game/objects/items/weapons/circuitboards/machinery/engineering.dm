@@ -2,7 +2,7 @@
 #error T_BOARD macro is not defined but we need it!
 #endif
 
-// DQEdit — restored pipelayer and space_heater circuitboards; CHOMP atmos
+// restored pipelayer and space_heater circuitboards; CHOMP atmos
 // machinery is back (with LINDA gas_mixture engine underneath).
 /obj/item/circuitboard/pipelayer
 	name = T_BOARD("pipe layer")

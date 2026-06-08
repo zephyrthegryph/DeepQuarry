@@ -72,10 +72,8 @@
  * Weapon
  */
 /obj/item/cell/device/weapon
-	// CHOMPEdit Start
 	name = "advanced device power cell" //This was a yawn change. I quite like this, makes more sense.
 	desc = "A small upgraded power cell designed to power handheld devices."
-	// CHOMPEdit End
 	icon_state = "m_sup"
 	charge = 2400
 	maxcharge = 2400
@@ -109,7 +107,7 @@
 	icon_state = "meb_m_nu"
 	matter = list(MAT_STEEL = 400, MAT_GLASS = 80)
 	self_recharge = TRUE
-	charge_amount = 60 //2.5% // CHOMPEdit
+	charge_amount = 60 // 2.5% //
 	charge_delay = 75
 
 /*

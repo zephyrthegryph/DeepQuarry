@@ -787,7 +787,7 @@
 	auto_loading_type = CLOSED_BOLT | LOCK_OPEN_EMPTY | LOCK_SLAPPABLE
 	is_long = FALSE
 	fire_sound = "sound/weapons/serdy/vityaz.ogg"
-	move_delay = 0 // CHOMPEdit: Pistols have move_delay of 0
+	move_delay = 0 // Pistols have move_delay of 0
 
 /obj/item/gun/projectile/automatic/serdy/vityazb
 	name = "WKHM 'Vityaz-B'"
@@ -807,7 +807,7 @@
 	auto_loading_type = CLOSED_BOLT | LOCK_OPEN_EMPTY | LOCK_SLAPPABLE
 	is_long = FALSE
 	fire_sound = "sound/weapons/serdy/vityaz.ogg"
-	move_delay = 0 // CHOMPEdit: Pistols have move_delay of 0
+	move_delay = 0 // Pistols have move_delay of 0
 
 
 //LMGs
@@ -1006,7 +1006,7 @@
 	bolt_release = "slide release"
 	auto_loading_type = CLOSED_BOLT | LOCK_OPEN_EMPTY
 	load_method = MAGAZINE
-	move_delay = 0 // CHOMPEdit: Pistols have move_delay of 0
+	move_delay = 0 // Pistols have move_delay of 0
 
 /obj/item/gun/projectile/serdy_pistols/ssp4
 	name = "WKHM SSP4"
@@ -1017,7 +1017,7 @@
 	allowed_magazines = list(/obj/item/ammo_magazine/ssp4)
 	icon_state = "ssp4"
 	projectile_type = /obj/item/projectile/bullet/a10mm
-	move_delay = 0 // CHOMPEdit: Pistols have move_delay of 0
+	move_delay = 0 // Pistols have move_delay of 0
 
 /obj/item/gun/projectile/serdy_pistols/makarov
 	name = "Makarov PM"
@@ -1078,7 +1078,7 @@
 	desc = "A 7 shot, gas-seal revolver designed to have increased muzzle velocity by not allowing excess gasses to escape out of the sides of the cylinder. One of the few revolvers that can be suppressed. Good luck finding a suppressor for one, though. Chambered in .357."
 	icon_state = "nagant"
 	max_shells = 7
-	move_delay = 0 // CHOMPEdit: Pistols have move_delay of 0
+	move_delay = 0 // Pistols have move_delay of 0
 
 /obj/item/gun/projectile/revolver/saa
 	name = "Colt Single Action Army"
@@ -1261,78 +1261,78 @@
 	bolt_name="slide"
 	bolt_release = "slide release"
 	auto_loading_type = CLOSED_BOLT | LOCK_OPEN_EMPTY
-	move_delay = 0 // CHOMPEdit: Pistols have move_delay of 0
+	move_delay = 0 // Pistols have move_delay of 0
 
 /obj/item/gun/projectile/silenced
 	bolt_name="slide"
 	bolt_release = "slide release"
 	auto_loading_type = CLOSED_BOLT | LOCK_OPEN_EMPTY
-	move_delay = 0 // CHOMPEdit: Pistols have move_delay of 0
+	move_delay = 0 // Pistols have move_delay of 0
 
 /obj/item/gun/projectile/deagle
 	bolt_name="slide"
 	bolt_release = "slide release"
 	auto_loading_type = CLOSED_BOLT | LOCK_OPEN_EMPTY
-	move_delay = 0 // CHOMPEdit: Pistols have move_delay of 0
+	move_delay = 0 // Pistols have move_delay of 0
 
 /obj/item/gun/projectile/gyropistol
 	bolt_name="slide"
 	bolt_release = "slide release"
 	auto_loading_type = CLOSED_BOLT | LOCK_OPEN_EMPTY
-	move_delay = 0 // CHOMPEdit: Pistols have move_delay of 0
+	move_delay = 0 // Pistols have move_delay of 0
 
 /obj/item/gun/projectile/pistol
 	bolt_name="slide"
 	bolt_release = "slide release"
 	auto_loading_type = CLOSED_BOLT | LOCK_OPEN_EMPTY
-	move_delay = 0 // CHOMPEdit: Pistols have move_delay of 0
+	move_delay = 0 // Pistols have move_delay of 0
 
 /obj/item/gun/projectile/pirate
 	manual_chamber = FALSE
-	move_delay = 0 // CHOMPEdit: Pistols have move_delay of 0
+	move_delay = 0 // Pistols have move_delay of 0
 
 /obj/item/gun/projectile/derringer
 	manual_chamber = FALSE
-	move_delay = 0 // CHOMPEdit: Pistols have move_delay of 0
+	move_delay = 0 // Pistols have move_delay of 0
 
 /obj/item/gun/projectile/luger
 	bolt_name="slide"
 	bolt_release = "slide release"
 	auto_loading_type = CLOSED_BOLT | LOCK_OPEN_EMPTY
-	move_delay = 0 // CHOMPEdit: Pistols have move_delay of 0
+	move_delay = 0 // Pistols have move_delay of 0
 
 /obj/item/gun/projectile/p92x
 	bolt_name="slide"
 	bolt_release = "slide release"
 	auto_loading_type = CLOSED_BOLT | LOCK_OPEN_EMPTY
-	move_delay = 0 // CHOMPEdit: Pistols have move_delay of 0
+	move_delay = 0 // Pistols have move_delay of 0
 
 //pistol_vr.dm
 /obj/item/gun/projectile/lamia
 	bolt_name="slide"
 	bolt_release = "slide release"
 	auto_loading_type = CLOSED_BOLT | LOCK_OPEN_EMPTY
-	move_delay = 0 // CHOMPEdit: Pistols have move_delay of 0
+	move_delay = 0 // Pistols have move_delay of 0
 
 
 /obj/item/gun/projectile/giskard	//To be updated to .380
 	bolt_name="slide"
 	bolt_release = "slide release"
 	auto_loading_type = CLOSED_BOLT | LOCK_OPEN_EMPTY
-	move_delay = 0 // CHOMPEdit: Pistols have move_delay of 0
+	move_delay = 0 // Pistols have move_delay of 0
 
 //pistol_yw.dm
 /obj/item/gun/projectile/automatic/glock
 	bolt_name="slide"
 	bolt_release = "slide release"
 	auto_loading_type = CLOSED_BOLT | LOCK_OPEN_EMPTY
-	move_delay = 0 // CHOMPEdit: Pistols have move_delay of 0
+	move_delay = 0 // Pistols have move_delay of 0
 
 /obj/item/gun/projectile/ppk
 	bolt_name="slide"
 	bolt_release = "slide release"
 	auto_loading_type = CLOSED_BOLT | LOCK_OPEN_EMPTY
-	move_delay = 0 // CHOMPEdit: Pistols have move_delay of 0
+	move_delay = 0 // Pistols have move_delay of 0
 
 /obj/item/gun/projectile/m2024
 	bolt_name="slide"
@@ -1347,7 +1347,7 @@
 //revolver.dm
 /obj/item/gun/projectile/revolver 	//To be updated to use .375
 	manual_chamber = FALSE
-	move_delay = 0 // CHOMPEdit: Pistols have move_delay of 0
+	move_delay = 0 // Pistols have move_delay of 0
 
 
 //semiauto.dm

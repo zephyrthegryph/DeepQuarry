@@ -1,4 +1,4 @@
-// DQAdd — Post-apply orchestration hooks. Where a Bay copy_to_mob did cross-pref work that
+// Post-apply orchestration hooks. Where a Bay copy_to_mob did cross-pref work that
 // touches the character mob (re-sanitize the real name using species rules, run the species
 // produceCopy() pipeline with the trait list, spawn-time body backup, etc.), the new
 // architecture expresses that as a /datum/preference_apply_hook subtype.

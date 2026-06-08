@@ -104,7 +104,7 @@
 
 			last_spam_time = world.time
 
-			/*	//VOREStation Removal: no need to spam the AI tenfold
+			/* // Removal: no need to spam the AI tenfold
 			if (prob(50)) //Give the AI an increased chance to intercept the message
 				for(var/mob/living/silicon/ai/ai in GLOB.mob_list)
 					// Allows other AIs to intercept the message but the AI won't intercept their own message.

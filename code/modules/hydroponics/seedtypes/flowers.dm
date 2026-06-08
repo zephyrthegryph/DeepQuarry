@@ -41,7 +41,7 @@
 	name = PLANT_SUNFLOWERS
 	seed_name = PLANT_SUNFLOWERS
 	display_name = PLANT_SUNFLOWERS
-	mutants = list(PLANT_SOLARFLOWER) //CHOMPEdit - Adding mutation strain for solarflowers.
+	mutants = list(PLANT_SOLARFLOWER) // Adding mutation strain for solarflowers.
 	kitchen_tag = PLANT_SUNFLOWERS
 
 /datum/seed/flower/sunflower/New()
@@ -59,7 +59,7 @@
 	seed_name = PLANT_LAVENDER
 	display_name = PLANT_LAVENDER
 	kitchen_tag = PLANT_LAVENDER
-	mutants = list(PLANT_MILKDEW) //CHOMPEdit - Adding mutation strain for milkdew.
+	mutants = list(PLANT_MILKDEW) // Adding mutation strain for milkdew.
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,20), REAGENT_ID_BICARIDINE = list(1,10))
 
 /datum/seed/flower/lavender/New()

@@ -77,7 +77,7 @@
 		gaiters[initial(gaiter_type.name)] = gaiter_type
 	gear_tweaks += new/datum/gear_tweak/path(sortTim(gaiters, GLOBAL_PROC_REF(cmp_text_asc)))
 
-//CHOMPAdd - Put this mask in loadout
+// Put this mask in loadout
 /datum/gear/mask/death
 	display_name = "cyborg visor" //This was named 'white mask' before when it's...Not. It's literally a cyborg visor gas mask.
 	path = /obj/item/clothing/mask/gas/cyborg

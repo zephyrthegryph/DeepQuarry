@@ -507,7 +507,7 @@
 				prob(3);/obj/item/gun/energy/lasercannon,\
 				prob(3);/obj/item/gun/projectile/shotgun/pump/rifle/lever,\
 				prob(3);/obj/item/gun/projectile/automatic/bullpup,\
-				/*prob(2);/obj/item/gun/energy/pulse_rifle,\ */ //CHOMPEDIT Players should absolutely not have this
+				/*prob(2);/obj/item/gun/energy/pulse_rifle,\ */ // Players should absolutely not have this
 				prob(2);/obj/item/gun/energy/gun/nuclear,\
 				prob(2);/obj/item/gun/projectile/automatic/l6_saw,\
 				prob(2);/obj/item/gun/energy/gun/burst,\

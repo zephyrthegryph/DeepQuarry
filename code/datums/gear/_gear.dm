@@ -36,14 +36,14 @@ GLOBAL_LIST_EMPTY_TYPED(gear_datums, /datum/gear)
 
 	return 1
 
-// DQEdit — /datum/category_item/player_setup_item/loadout/loadout (the Bay loadout tab)
+// /datum/category_item/player_setup_item/loadout/loadout (the Bay loadout tab)
 // deleted. /datum/preference_editor/loadout owns the new UI.
 
 /datum/gear
 	var/display_name       //Name/index. Must be unique.
 	var/description        //Description of this gear. If left blank will default to the description of the pathed item.
 	var/path               //Path to item.
-	var/variant            // DQAdd — variant key for consolidated parent types
+	var/variant // variant key for consolidated parent types
 	var/cost = 1           //Number of points used. Items in general cost 1 point, storage/armor/gloves/special use costs 2 points.
 	var/slot               //Slot to equip to.
 	var/list/allowed_roles //Roles that can spawn with this item.
@@ -56,7 +56,7 @@ GLOBAL_LIST_EMPTY_TYPED(gear_datums, /datum/gear)
 	var/list/ckeywhitelist	//restricted based on these ckeys?
 	var/list/character_name	//restricted to these character names?
 
-// DQAdd — Entity-level pickability rule. The single source of truth for "can this
+// Entity-level pickability rule. The single source of truth for "can this
 // player legitimately have this gear in their loadout?" Read at write time
 // (loadout editor) and at spawn time (preferences_setup / SSjob.equip_rank); both
 // places previously had drift-prone copies of this check.
@@ -117,7 +117,7 @@ GLOBAL_LIST_EMPTY_TYPED(gear_datums, /datum/gear)
 	if(!description)
 		var/obj/O = path
 		description = initial(O.desc)
-	// DQEdit — gear_tweak_free_matrix_recolor swapped for gear_tweak_unified_recolor,
+	// gear_tweak_free_matrix_recolor swapped for gear_tweak_unified_recolor,
 	// which packs tint / palette-swap / matrix into one mode-selectable tweak (see
 	// code/datums/gear/gear_tweak_recolor.dm).
 	gear_tweaks = list(GLOB.gear_tweak_free_name, GLOB.gear_tweak_free_desc, GLOB.gear_tweak_item_tf_spawn, GLOB.gear_tweak_unified_recolor, GLOB.gear_tweak_free_digestable)
@@ -132,16 +132,16 @@ GLOBAL_LIST_EMPTY_TYPED(gear_datums, /datum/gear)
 
 /datum/gear/proc/spawn_item(location, metadata)
 	var/datum/gear_data/gd = new(path, location)
-	// DQEdit — propagate variant from gear to gear_data so tweaks can override it.
+	// propagate variant from gear to gear_data so tweaks can override it.
 	gd.variant = variant
-	// DQEdit — key metadata by 1-based gear_tweaks index instead of `"[gt]"` (the datum's
+	// key metadata by 1-based gear_tweaks index instead of `"[gt]"` (the datum's
 	// runtime text rep), so values persist across server restarts. The DQ loadout editor
 	// also writes by index.
 	if(length(gear_tweaks) && metadata)
 		for(var/i in 1 to length(gear_tweaks))
 			var/datum/gear_tweak/gt = gear_tweaks[i]
 			gt.tweak_gear_data(metadata["[i]"], gd)
-	// DQEdit — spawn via helper to apply variant.
+	// spawn via helper to apply variant.
 	var/item = spawn_with_variant(gd.path, gd.location, gd.variant)
 	if(length(gear_tweaks) && metadata)
 		for(var/i in 1 to length(gear_tweaks))

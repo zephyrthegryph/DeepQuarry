@@ -142,7 +142,7 @@
 		density = initial(density)
 		can_pull_size = initial(can_pull_size)
 		can_pull_mobs = initial(can_pull_mobs)
-		dq_clear_hovering(src)  // DQEdit — reset to type-default
+		dq_clear_hovering(src) // reset to type-default
 		update_icon()
 
 		//Cosmetics mostly

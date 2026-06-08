@@ -116,7 +116,6 @@
 		M.forceMove(get_turf(user))
 		to_chat(M, span_warning("[user] shakes you out of \the [src]!"))
 		to_chat(user, span_notice("You shake [M] out of \the [src]!"))
-//CHOMPADD END
 /obj/item/glass_jar/attackby(obj/item/W, mob/user)
 	if(istype(W, /obj/item/spacecash))
 		if(contains == JAR_NOTHING)
@@ -145,7 +144,6 @@
 				to_chat(M, span_warning("[user] stuffs you into \the [src]!"))
 				M.forceMove(src)
 				to_chat(user, span_notice("You stuff \the [M] into \the [src]!"))
-//CHOMPADD END
 /obj/item/glass_jar/update_icon() // Also updates name and desc
 	underlays.Cut()
 	cut_overlays()

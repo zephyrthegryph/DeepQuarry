@@ -160,7 +160,7 @@
 		health = 100
 		set_stat(CONSCIOUS)
 	else
-		var/initialhealth = health // CHOMPEdit: Getting our health before this check
+		var/initialhealth = health // Getting our health before this check
 		health = getMaxHealth() - getOxyLoss() - getToxLoss() - getFireLoss() - getBruteLoss() - getCloneLoss() - halloss
 		if(!((ishuman(src)) || (issilicon(src))) && can_feel_pain() || ((src.isSynthetic() && synth_cosmetic_pain))) // Only run this if we're non-human/non-silicon + can feel pain, bc humans already do this. human_damage doesn't call parent, but sanity is better here.
 			if(health < initialhealth) // Did we lose health?
@@ -183,4 +183,4 @@
 					if(51 to INFINITY)
 						if(prob(pain_noise * 3)  && !isbelly(loc)) // More likely, most severe damage. No pain noises inside bellies.
 							emote("pain")
-	// CHOMPEdit End: Pain
+	// Pain

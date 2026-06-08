@@ -92,7 +92,7 @@
 	pilot_type = null
 
 	var/grenade_type = /obj/item/grenade/shooter/energy/homing
-	var/grenade_timer = 50	//CHOMPEdit
+	var/grenade_timer = 50
 	special_attack_cooldown = 45 SECONDS
 	special_attack_min_range = 2
 	special_attack_max_range = 7
@@ -122,8 +122,8 @@
 	var/obj/item/grenade/G = new grenade_type(get_turf(src))
 	if(istype(G))
 		G.throw_at(A, G.throw_range, G.throw_speed, src)
-		G.det_time = grenade_timer	//CHOMPEdit
-		G.activate(src)	//CHOMPEdit
+		G.det_time = grenade_timer
+		G.activate(src)
 		special_attack_charges = max(special_attack_charges-1, 0)
 
 	set_AI_busy(FALSE)

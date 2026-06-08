@@ -53,11 +53,11 @@ SUBSYSTEM_DEF(supply)
 		return 1
 	if(istype(A,/obj/item/radio/beacon))
 		return 1
-	if(istype(A,/obj/item/perfect_tele_beacon))	//VOREStation Addition: Translocator beacons
-		return 1										//VOREStation Addition: Translocator beacons
-	if(istype(A,/obj/machinery/power/quantumpad)) //	//VOREStation Add: Quantum pads
-		return 1					//VOREStation Add: Quantum pads
-	if(istype(A,/obj/structure/extraction_point )) // CHOMPStation Add: Fulton beacons
+	if(istype(A,/obj/item/perfect_tele_beacon)) // ition: Translocator beacons
+		return 1 // ition: Translocator beacons
+	if(istype(A,/obj/machinery/power/quantumpad)) // // Quantum pads
+		return 1 // Quantum pads
+	if(istype(A,/obj/structure/extraction_point )) // Fulton beacons
 		return 1
 
 	for(var/atom/B in A.contents)
@@ -191,7 +191,7 @@ SUBSYSTEM_DEF(supply)
 			slip.info +="CONTENTS:<br><ul>"
 
 		var/list/contains
-		// DQEdit — any pack may have a variant_pool; pick from it per spawn.
+		// any pack may have a variant_pool; pick from it per spawn.
 		var/list/variant_pool_local = SP.variant_pool
 		if(istype(SP,/datum/supply_pack/randomised))
 			var/datum/supply_pack/randomised/SPR = SP
@@ -206,7 +206,7 @@ SUBSYSTEM_DEF(supply)
 			if(!typepath)
 				continue
 
-			// DQEdit — contains values are list(count, variant); for randomised, variant comes from pool.
+			// contains values are list(count, variant); for randomised, variant comes from pool.
 			var/list/spec = dq_resolve_spawn_value(contains[typepath])
 			var/number_of_items = max(1, spec["count"])
 			var/variant = spec["variant"]

@@ -16,7 +16,7 @@
 	var/msg = span_filter_pray(span_blue("[icon2html(cross, GLOB.admins)] <b>" + span_purple("PRAY: ") + "[key_name(src, 1)] [ADMIN_QUE(src)] [ADMIN_PP(src)] [ADMIN_VV(src)] [ADMIN_SM(src)] ([admin_jump_link(src, src)]) [ADMIN_CA(src)] [ADMIN_SC(src)] [ADMIN_SMITE(src)]:</b> [raw_msg]"))
 
 	for(var/client/C in GLOB.admins)
-		if(!check_rights_for(C, R_ADMIN|R_EVENT)) //CHOMPEdit
+		if(!check_rights_for(C, R_ADMIN|R_EVENT))
 			continue
 		if(C.prefs?.read_preference(/datum/preference/toggle/show_chat_prayers))
 			to_chat(C, msg, type = MESSAGE_TYPE_PRAYER, confidential = TRUE)
@@ -28,16 +28,16 @@
 
 /proc/CentCom_announce(msg, mob/Sender, iamessage)
 	msg = span_blue(span_bold(span_orange("[uppertext(using_map.boss_short)]M[iamessage ? " IA" : ""]:") + "[key_name(Sender, 1)] [ADMIN_PP(Sender)] [ADMIN_VV(Sender)] [ADMIN_SM(Sender)] ([admin_jump_link(Sender)]) [ADMIN_CA(Sender)] [ADMIN_BSA(Sender)] [ADMIN_CENTCOM_REPLY(Sender)]:") + " [msg]")
-	for(var/client/C in GLOB.admins) //VOREStation Edit - GLOB admins
-		if(!check_rights_for(C, R_ADMIN|R_EVENT)) //CHOMPEdit
+	for(var/client/C in GLOB.admins) // GLOB admins
+		if(!check_rights_for(C, R_ADMIN|R_EVENT))
 			continue
 		to_chat(C,msg)
 		C << 'sound/machines/signal.ogg'
 
 /proc/Syndicate_announce(msg, mob/Sender)
 	msg = span_blue(span_bold(span_crimson("ILLEGAL:") + "[key_name(Sender, 1)] [ADMIN_PP(Sender)] [ADMIN_VV(Sender)] [ADMIN_SM(Sender)] ([admin_jump_link(Sender)]) [ADMIN_CA(Sender)] [ADMIN_BSA(Sender)] [ADMIN_SYNDICATE_REPLY(Sender)]:") + " [msg]")
-	for(var/client/C in GLOB.admins) //VOREStation Edit - GLOB admins
-		if(!check_rights_for(C, R_ADMIN|R_EVENT)) //CHOMPEdit
+	for(var/client/C in GLOB.admins) // GLOB admins
+		if(!check_rights_for(C, R_ADMIN|R_EVENT))
 			continue
 		to_chat(C,msg)
 		C << 'sound/machines/signal.ogg'

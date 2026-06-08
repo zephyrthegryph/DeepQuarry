@@ -31,7 +31,7 @@
 	allowed_procs = list(IS_CROWBAR = 50)
 
 	min_duration = 50
-	max_duration = 50 //CHOMPEdit
+	max_duration = 50
 
 /datum/surgery_step/open_encased/saw/can_use(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
 	if(!ishuman(target))
@@ -85,8 +85,8 @@
 
 	allowed_procs = list(IS_CROWBAR = 75)
 
-	min_duration = 30 //CHOMPedit
-	max_duration = 30 //CHOMPedit
+	min_duration = 30
+	max_duration = 30
 
 /datum/surgery_step/open_encased/retract/can_use(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
 	if(!ishuman(target))
@@ -143,7 +143,7 @@
 	allowed_procs = list(IS_CROWBAR = 75)
 
 	min_duration = 20
-	max_duration = 30 //CHOMPedit
+	max_duration = 30
 
 /datum/surgery_step/open_encased/close/can_use(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
 	if(!ishuman(target))
@@ -205,7 +205,7 @@
 	allowed_procs = list(IS_SCREWDRIVER = 75)
 
 	min_duration = 20
-	max_duration = 20 //CHOMPedit
+	max_duration = 20
 
 /datum/surgery_step/open_encased/mend/can_use(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
 	if(!ishuman(target))
@@ -249,8 +249,8 @@
 
 	priority = 3
 
-	min_duration = 30 //CHOMPedit
-	max_duration = 35 //CHOMPedit
+	min_duration = 30
+	max_duration = 35
 	excludes_steps = list(/datum/surgery_step/open_encased/saw)
 
 /datum/surgery_step/open_encased/advancedsaw_open/can_use(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
@@ -304,8 +304,8 @@
 
 	priority = 3
 
-	min_duration = 30 //CHOMPedit
-	max_duration = 30 //CHOMPedit
+	min_duration = 30
+	max_duration = 30
 
 /datum/surgery_step/open_encased/advancedsaw_mend/can_use(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
 	if(!ishuman(target))

@@ -12,7 +12,7 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 		)
 
 	var/list/valid_transform_species = list()
-	//var/default_form = SPECIES_HUMAN //VOREStation edit
+	// var/default_form = SPECIES_HUMAN //
 
 	base_species = SPECIES_HUMAN
 	selects_bodytype = SELECTS_BODYTYPE_SHAPESHIFTER
@@ -65,7 +65,7 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 
 /datum/species/shapeshifter/handle_post_spawn(mob/living/carbon/human/H)
 	..()
-	GLOB.wrapped_species_by_ref["\ref[H]"] = base_species //VOREStation edit
+	GLOB.wrapped_species_by_ref["\ref[H]"] = base_species
 
 	for(var/obj/item/organ/external/E in H.organs)
 		E.sync_colour_to_human(H)
@@ -137,7 +137,7 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 	if(!new_gender)
 		return
 
-	var/new_gender_identity = tgui_input_list(src, "Please select a gender Identity.", "Shapeshifter Gender Identity", list(FEMALE, MALE, NEUTER, PLURAL, HERM)) //VOREStation Edit
+	var/new_gender_identity = tgui_input_list(src, "Please select a gender Identity.", "Shapeshifter Gender Identity", list(FEMALE, MALE, NEUTER, PLURAL, HERM))
 	if(!new_gender_identity)
 		return
 

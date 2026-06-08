@@ -1,4 +1,4 @@
-// DQAdd — Spawn the NIF item onto the character at spawn from the three NIF prefs.
+// Spawn the NIF item onto the character at spawn from the three NIF prefs.
 // Lives in a hook because the spawn depends on three prefs together (path + durability +
 // savedata), and the per-pref apply for nif_path alone doesn't know about durability or
 // savedata.

@@ -139,7 +139,7 @@
 		X.copy_overlays(T, TRUE)
 		X.decals = old_decals
 
-	// DQEdit — air-transfer used ZAS zone.air. Under LINDA each turf has its own
+	// air-transfer used ZAS zone.air. Under LINDA each turf has its own
 	// air via return_air(); copy from source-turf's air to dest-turf's air directly.
 	var/datum/gas_mixture/source_air = T.return_air()
 	if(source_air)

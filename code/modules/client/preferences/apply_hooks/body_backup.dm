@@ -1,4 +1,4 @@
-// DQAdd — Post-spawn orchestration for the vore_misc tab:
+// Post-spawn orchestration for the vore_misc tab:
 //   - recalculate vis (stomach sprite pref applies via apply_to_human; this is the redraw)
 //   - VANTAG hud flag refresh (vantag_preference already wrote via its apply_to_human; this
 //     bitsets the hud flag that says "VANTAG changed, redraw")

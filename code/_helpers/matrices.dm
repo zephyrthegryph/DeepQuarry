@@ -13,13 +13,13 @@
 /atom/proc/SpinAnimation(speed = 10, loops = -1, clockwise = 1, segments = 3)
 	if(!segments)
 		return
-	//VOREStation Addition Start
+	// ition Start
 	if(speed == 0)
 		loops = 0
 	if(speed < 0)
 		speed = speed * -1
 		clockwise = 0
-	//VOREStation Addition End
+	// ition End
 	var/segment = 360/segments
 	if(!clockwise)
 		segment = -segment

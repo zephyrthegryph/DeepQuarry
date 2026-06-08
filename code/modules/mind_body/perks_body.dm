@@ -1,4 +1,4 @@
-// DQAdd — Body perks. 22-ish per category, one tree per category. Pool sizes are set
+// Body perks. 22-ish per category, one tree per category. Pool sizes are set
 // to give a player room to invest in ~3-4 perks per category at age 18, sculpting a
 // build path rather than buying everything. var_changes effects are real where they
 // touch /datum/species vars (brute_mod, total_health, slowdown, etc.); softer effects

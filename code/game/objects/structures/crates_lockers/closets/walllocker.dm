@@ -59,7 +59,6 @@
 	pixel_x = 32
 	dir = EAST
 
-//VOREStation Add Start
 /obj/structure/closet/walllocker/medical
 	name = "first-aid closet"
 	desc = "It's a wall-mounted storage unit for first aid supplies."
@@ -101,7 +100,6 @@
 /obj/structure/closet/walllocker/wooden/east
 	pixel_x = 32
 	dir = EAST
-//VOREStation Add End
 
 //double-size "cabinet" lockers, from Killian
 /obj/structure/closet/walllocker_double

@@ -49,7 +49,7 @@
 		if(istype(P, /obj/item/stock_parts/manipulator))
 			repair += P.rating * 2
 
-	dq_apply_material_synergies(src) // DQAdd
+	dq_apply_material_synergies(src)
 /obj/machinery/mech_recharger/process()
 	..()
 	if(!charging)

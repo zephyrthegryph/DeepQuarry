@@ -1,4 +1,4 @@
-// DQAdd — Generic base class for preferences whose value is a list of typepaths.
+// Generic base class for preferences whose value is a list of typepaths.
 //
 // The shape we kept rewriting by hand on every list-of-X pref was:
 //   1. is the value a list at all?

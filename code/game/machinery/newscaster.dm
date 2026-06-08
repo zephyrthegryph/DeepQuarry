@@ -124,7 +124,7 @@ GLOBAL_LIST_BOILERPLATE(allCasters, /obj/machinery/newscaster)
 /obj/machinery/newscaster
 	name = "newscaster"
 	desc = "A standard newsfeed handler for use on commercial space stations. All the news you absolutely have no use for, in one place!"
-	icon = 'icons/obj/terminals_vr.dmi' //VOREStation Edit
+	icon = 'icons/obj/terminals_vr.dmi'
 	icon_state = "newscaster_normal"
 	layer = ABOVE_WINDOW_LAYER
 	blocks_emissive = NONE
@@ -704,7 +704,7 @@ GLOBAL_LIST_BOILERPLATE(allCasters, /obj/machinery/newscaster)
 		spawn(300)
 			alert = 0
 			update_icon()
-//		playsound(src.loc, 'sound/machines/twobeep.ogg', 75, 1) //CHOMPEdit less peeps pls
+// playsound(src.loc, 'sound/machines/twobeep.ogg', 75, 1) // less peeps pls
 	else
 		for(var/mob/O in hearers(world.view-1, T))
 			O.show_message(span_newscaster("<EM>[name]</EM> beeps, \"Attention! Wanted issue distributed!\""),2)

@@ -1,4 +1,4 @@
-// DQAdd — Trait list cleanup constraint.
+// Trait list cleanup constraint.
 //
 // The write path's typed_list/traits.validate already rejects an unpickable trait coming
 // from the user. This constraint is for state that becomes unpickable *because of another

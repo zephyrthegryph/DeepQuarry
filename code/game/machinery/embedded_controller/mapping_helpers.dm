@@ -183,7 +183,7 @@ Any frequency works, it's self-setting, but it seems like people have decided AU
 	Buttons
 */
 
-// CHOMPStation Addition: Button helpers, because they didn't exist before due to 'just use sensors'
+// ition: Button helpers, because they didn't exist before due to 'just use sensors'
 /obj/effect/map_helper/airlock/button
 	name = "Use a subtype! - button"
 	my_device_type = /obj/machinery/access_button
@@ -210,4 +210,4 @@ Any frequency works, it's self-setting, but it seems like people have decided AU
 	icon_state = "btnin"
 	tag_addon = "_interior_button"
 	command = "cycle_interior"
-// CHOMPStation Addition End
+// ition End

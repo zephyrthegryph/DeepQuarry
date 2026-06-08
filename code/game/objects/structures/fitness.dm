@@ -15,17 +15,17 @@
 	if(!istype(user))
 		..()
 		return
-	if(user.nutrition < 70) //CHOMPEdit Set minimum nutrition to be the same as in fitness_machines_vr.dm
+	if(user.nutrition < 70) // Set minimum nutrition to be the same as in fitness_machines_vr.dm
 		to_chat(user, span_warning("You need more energy to use the punching bag. Go eat something."))
-	else if(user.weight < 70) // CHOMPAdd Begin Add weight loss to old fitness equipment
-		to_chat(user, span_notice("You're too skinny to risk losing any more weight!")) // CHOMPAdd End
+	else if(user.weight < 70) // Add weight loss to old fitness equipment
+		to_chat(user, span_notice("You're too skinny to risk losing any more weight!"))
 	else
 		if(user.a_intent == I_HURT)
 			user.setClickCooldown(user.get_attack_speed())
 			flick("[icon_state]_hit", src)
 			playsound(src, 'sound/effects/woodhit.ogg', 25, 1, -1)
 			user.do_attack_animation(src)
-			user.adjust_nutrition(-10) //CHOMPEdit Set nutrition drain to be the same as in fitness_machines_vr.dm
+			user.adjust_nutrition(-10) // Set nutrition drain to be the same as in fitness_machines_vr.dm
 			user.weight -= 0.25 * weightloss_power * (0.01 * user.weight_loss)
 			to_chat(user, span_warning("You [pick(hit_message)] \the [src]."))
 
@@ -49,12 +49,12 @@
 	if(user.loc != src.loc)
 		to_chat(user, span_warning("You must be on the weight machine to use it."))
 		return
-	if(user.nutrition < 70) //CHOMPEdit Set minimum nutrition to be the same as in fitness_machines_vr.dm
+	if(user.nutrition < 70) // Set minimum nutrition to be the same as in fitness_machines_vr.dm
 		to_chat(user, span_warning("You need more energy to lift weights. Go eat something."))
 		return
-	if(user.weight < 70) //CHOMPAdd Begin Add weight loss to old fitness equipment
+	if(user.weight < 70) // Add weight loss to old fitness equipment
 		to_chat(user, span_notice("You're too skinny to risk losing any more weight!"))
-		return //CHOMPAdd End
+		return
 	if(fitness_being_used)
 		to_chat(user, span_warning("The weight machine is already in use by somebody else."))
 		return
@@ -63,7 +63,7 @@
 		playsound(src, 'sound/effects/weightlifter.ogg', 50, 1)
 		user.set_dir(SOUTH)
 		flick("[icon_state]_[weight]", src)
-		if(do_after(user, 3 SECONDS + (weight * 10), target = src)) //CHOMPEdit Set timer to be similar to the machines in fitness_machines_vr.dm
+		if(do_after(user, 3 SECONDS + (weight * 10), target = src)) // Set timer to be similar to the machines in fitness_machines_vr.dm
 			playsound(src, 'sound/effects/weightdrop.ogg', 25, 1)
 			user.adjust_nutrition(weight * -10)
 			var/weightloss_enhanced = weightloss_power * (weight * 0.5)

@@ -92,9 +92,8 @@ ADMIN_VERB(display_tags, R_ADMIN, "View Tags", "Display all of the tagged datums
 	else
 		dat += "No datums tagged :("
 
-	// DQEdit Start — Tag Menu now opens a structured TGUI panel.
+	// Tag Menu now opens a structured TGUI panel.
 	user.holder.dq_open_tag_menu(user.mob)
-	// DQEdit End
 
 #undef TAG_DEL
 #undef TAG_MARK

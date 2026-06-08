@@ -28,36 +28,36 @@
 						/area/vacant/vacant_shop,
 						/area/rnd/research_storage, // This should probably be fixed,
 						/area/security/riot_control, // This should probably be fixed,
-						/area/hallway/Stairwell_Aft, //CHOMPEdit Start - SN areas - open space/stairwell
-						/area/harbor/Aft_Shuttlebay, //CHOMPEdit - maint area
-						/area/harbor/Port_3_Deck_Airlock_Access, //CHOMPEdit - maint area
-						/area/rnd/Testing_Chamber, //CHOMPEdit - Bomb range
-						/area/harbor/Port_Shuttlebay, //CHOMPEdit - shuttlebay
-						/area/harbor/Star_Shuttlebay, //CHOMPEdit - shuttlebay
-						/area/harbor/For_Shuttlebay, //CHOMPEdit - shuttlebay
-						/area/engineering/Solar_Array_AftPort, //CHOMPEdit - Solars
-						/area/engineering/Solar_Array_AftStar, //CHOMPEdit - Solars
-						/area/engineering/Solar_Control_AftPort, //CHOMPEdit - Solar Control
-						/area/engineering/Solar_Control_AftStar, //CHOMPEdit - Solar Control
-						/area/engineering/Solar_Control_ForPort, //CHOMPEdit - Solar Control
-						/area/engineering/Solar_Control_ForStar, //CHOMPEdit - Solar Control
-						/area/hallway/Star_3_Deck_Stairwell, //CHOMPEdit - Area is 100% glass, unable to put down atmos tiles.
-						/area/harbor/Star_3_Deck_Airlock_Access, //CHOMPEdit - maint area
-						/area/engineering/Central_Engineering_Post, //CHOMPEdit - maint area
-						/area/engineering/Solar_Array_ForStar, //CHOMPEdit - Solars
-						/area/engineering/Solar_Array_ForPort, //CHOMPEdit End - Solars
+						/area/hallway/Stairwell_Aft, // SN areas - open space/stairwell
+						/area/harbor/Aft_Shuttlebay, // maint area
+						/area/harbor/Port_3_Deck_Airlock_Access, // maint area
+						/area/rnd/Testing_Chamber, // Bomb range
+						/area/harbor/Port_Shuttlebay, // shuttlebay
+						/area/harbor/Star_Shuttlebay, // shuttlebay
+						/area/harbor/For_Shuttlebay, // shuttlebay
+						/area/engineering/Solar_Array_AftPort, // Solars
+						/area/engineering/Solar_Array_AftStar, // Solars
+						/area/engineering/Solar_Control_AftPort, // Solar Control
+						/area/engineering/Solar_Control_AftStar, // Solar Control
+						/area/engineering/Solar_Control_ForPort, // Solar Control
+						/area/engineering/Solar_Control_ForStar, // Solar Control
+						/area/hallway/Star_3_Deck_Stairwell, // Area is 100% glass, unable to put down atmos tiles.
+						/area/harbor/Star_3_Deck_Airlock_Access, // maint area
+						/area/engineering/Central_Engineering_Post, // maint area
+						/area/engineering/Solar_Array_ForStar, // Solars
+						/area/engineering/Solar_Array_ForPort, // Solars
 						)
 
 	var/list/exempt_from_apc = typesof(/area/construction,
 						/area/medical/genetics,
 						/area/mine,
-						/area/vacant/vacant_shop, //CHOMPEdit Start - SN areas
-						/area/maintenance/ab_Chapel, //CHOMPEdit - maint area
-						/area/rnd/Testing_Chamber, //CHOMPEdit - Bomb range
-						/area/engineering/Solar_Array_AftPort, //CHOMPEdit - Solars
-						/area/engineering/Solar_Array_AftStar, //CHOMPEdit - Solars
-						/area/engineering/Solar_Array_ForStar, //CHOMPEdit - Solars
-						/area/engineering/Solar_Array_ForPort, //CHOMPEdit End - Solars
+						/area/vacant/vacant_shop, // SN areas
+						/area/maintenance/ab_Chapel, // maint area
+						/area/rnd/Testing_Chamber, // Bomb range
+						/area/engineering/Solar_Array_AftPort, // Solars
+						/area/engineering/Solar_Array_AftStar, // Solars
+						/area/engineering/Solar_Array_ForStar, // Solars
+						/area/engineering/Solar_Array_ForPort, // Solars
 						)
 
 	// Some maps have areas specific to the map, so include those.
@@ -85,7 +85,7 @@
 						for(var/obj/machinery/power/P in apc_list)
 							TEST_FAIL("[bad_msg] has too many APCs. (X[P.x]|Y[P.y]) - Z[P.z])")
 
-			// DQEdit — air_scrub_info/air_vent_info were populated by ZAS air alarm
+			// air_scrub_info/air_vent_info were populated by ZAS air alarm
 			// registration. LINDA has no equivalent registry yet (would re-emerge
 			// when /tg/'s air alarm machinery is ported). Skip these checks.
 
@@ -153,7 +153,7 @@
 /datum/unit_test/active_edges
 
 /datum/unit_test/active_edges/Run()
-	// DQEdit — ZAS connection_edge system deleted; LINDA tracks adjacency on
+	// ZAS connection_edge system deleted; LINDA tracks adjacency on
 	// /turf vars, not via /datum/connection_edge. This test is a no-op until
 	// the LINDA equivalent (looking at the active_turfs queue) is written.
 	return

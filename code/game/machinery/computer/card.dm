@@ -278,7 +278,7 @@
 
 		if("terminate")
 			if(is_authenticated())
-				modify.assignment = "Dismissed"	//VOREStation Edit: setting adjustment
+				modify.assignment = "Dismissed" // setting adjustment
 				modify.access = list()
 				SEND_GLOBAL_SIGNAL(COMSIG_GLOB_TERMINATE_EMPLOYEE_IDCARD, modify)
 

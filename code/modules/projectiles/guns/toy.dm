@@ -51,7 +51,7 @@
 	matter = list(MAT_PLASTIC = 2000)
 	handle_casings = null
 	recoil = 0 //it's a toy //CHOMP Edit
-	fire_sound = 'sound/items/syringeproj.ogg' //CHOMPedit
+	fire_sound = 'sound/items/syringeproj.ogg'
 
 /*
  * Moist Nugget
@@ -65,7 +65,7 @@
 	item_state = "moistnugget"
 	max_shells = 5
 	matter = list(MAT_PLASTIC = 2500)
-	fire_sound = 'sound/items/syringeproj.ogg' //CHOMPedit
+	fire_sound = 'sound/items/syringeproj.ogg'
 
 /*
  * Pistol
@@ -83,7 +83,7 @@
 	load_method = MAGAZINE
 	matter = list(MAT_PLASTIC = 1000)
 	recoil = 0 //it's a toy //CHOMP Edit
-	fire_sound = 'sound/items/syringeproj.ogg' //CHOMPedit
+	fire_sound = 'sound/items/syringeproj.ogg'
 
 /obj/item/gun/projectile/pistol/toy/update_icon()
 	if(ammo_magazine)
@@ -116,7 +116,7 @@
 	item_state = "leveraction"
 	max_shells = 5
 	pump_animation = "leveraction-cycling"
-	fire_sound = 'sound/items/syringeproj.ogg' //CHOMPedit
+	fire_sound = 'sound/items/syringeproj.ogg'
 
 /*
  * Revolver
@@ -135,7 +135,7 @@
 	matter = list(MAT_PLASTIC = 1000)
 	handle_casings = null
 	recoil = null //it's a toy
-	fire_sound = 'sound/items/syringeproj.ogg' //CHOMPedit
+	fire_sound = 'sound/items/syringeproj.ogg'
 
 /*
  * Big Iron
@@ -198,7 +198,7 @@
 	projectile_type = /obj/item/projectile/bullet/foam_dart
 	matter = list(MAT_PLASTIC = 1500)
 	recoil = null //it's a toy
-	fire_sound = 'sound/items/syringeproj.ogg' //CHOMPedit
+	fire_sound = 'sound/items/syringeproj.ogg'
 
 	firemodes = list(
 		list(mode_name="semiauto",       burst=1, fire_delay=0.1,    move_delay=null, burst_accuracy=null, dispersion=null),
@@ -222,7 +222,7 @@
 	icon = 'icons/obj/gun_toy.dmi'
 	icon_state = "smg"
 	caliber = "foam"
-	manual_chamber = FALSE //CHOMPEdit, borgs can't manually chamber...
+	manual_chamber = FALSE // , borgs can't manually chamber...
 	load_method = SINGLE_CASING
 	max_shells = 15
 	var/cleanup = 0
@@ -230,7 +230,7 @@
 	projectile_type = /obj/item/projectile/bullet/foam_dart
 	recoil = null
 	handle_casings = null
-	fire_sound = 'sound/items/syringeproj.ogg' //CHOMPedit
+	fire_sound = 'sound/items/syringeproj.ogg'
 	special_weapon_handling = TRUE
 
 /obj/item/gun/projectile/cyborgtoy/attack_self(mob/user)

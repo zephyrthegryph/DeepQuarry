@@ -66,7 +66,7 @@
 		input_power_multiplier += C.rating
 		zap_cooldown -= (C.rating - 1)
 
-	dq_apply_material_synergies(src) // DQAdd
+	dq_apply_material_synergies(src)
 /obj/machinery/power/tesla_coil/update_icon()
 	if(panel_open)
 		icon_state = "[icontype]_open[anchored]"
@@ -191,7 +191,7 @@
 	for(var/obj/item/stock_parts/capacitor/C in component_parts)
 		relay_efficiency += C.rating * 0.05
 
-	dq_apply_material_synergies(src) // DQAdd
+	dq_apply_material_synergies(src)
 /obj/machinery/power/tesla_coil/relay/coil_act(power, explosive, current_jumps)
 	var/diminishing_returns = 1 + ((current_jumps * 0.1)-0.1) //The more jumps, the less effective the amplifier is. At 10 jumps, it's only 1/2 as effective.
 	var/power_relayed = ((power * relay_efficiency) / diminishing_returns)
@@ -228,7 +228,7 @@
 	for(var/obj/item/stock_parts/capacitor/C in component_parts)
 		split_count += C.rating
 
-	dq_apply_material_synergies(src) // DQAdd
+	dq_apply_material_synergies(src)
 /obj/machinery/power/tesla_coil/splitter/coil_act(power, explosive, current_jumps)
 	var/power_per_bolt = power / (split_count + 1)
 	var/power_produced = power_per_bolt / power_loss
@@ -261,7 +261,7 @@
 		amp_eff += ((C.rating * AMPLIFIER_STRENGTH) - AMPLIFIER_STRENGTH)
 	input_power_multiplier = 1 //no mult for you
 
-	dq_apply_material_synergies(src) // DQAdd
+	dq_apply_material_synergies(src)
 /obj/machinery/power/tesla_coil/amplifier/coil_act(power, explosive, current_jumps)
 	var/diminishing_returns = 1 + ((current_jumps * 0.1)-0.1) //The more jumps, the less effective the amplifier is. At 10 jumps, it stops increasing power. Use something else!
 	var/power_produced = ((power * amp_eff) / diminishing_returns)
@@ -296,7 +296,7 @@
 	for(var/obj/item/stock_parts/capacitor/C in component_parts)
 		zap_range += C.rating * 1
 
-	dq_apply_material_synergies(src) // DQAdd
+	dq_apply_material_synergies(src)
 /obj/machinery/power/tesla_coil/recaster/coil_act(power, explosive, current_jumps)
 	var/power_relayed = power / power_loss
 	var/power_produced = power / (power_loss * 2)
@@ -325,7 +325,7 @@
 	if(input_power_multiplier == 1)
 		input_power_multiplier = 2
 
-	dq_apply_material_synergies(src) // DQAdd
+	dq_apply_material_synergies(src)
 /obj/machinery/power/tesla_coil/collector/coil_act(power, explosive, current_jumps)
 	add_avail(power*input_power_multiplier)
 	flick("[icontype]hit", src)

@@ -1,4 +1,4 @@
-// DQEdit — equip_preview_mob, animations_toggle, bgstate, ear_style, ear_secondary_style,
+// equip_preview_mob, animations_toggle, bgstate, ear_style, ear_secondary_style,
 // ear_secondary_colors, tail_style, wing_style migrated to /datum/preference subtypes.
 // bgstate_options moved onto /datum/preference/text/human/bgstate as bgstate_choices.
 // markings_subwindow stays as runtime UI state.
@@ -7,7 +7,7 @@
 
 // Sanitize ear/wing/tail styles
 /datum/preferences/proc/sanitize_body_styles()
-	// DQEdit Start — migrated ear/tail/wing styles to /datum/preference
+	// migrated ear/tail/wing styles to /datum/preference
 	var/_ear_style = read_preference(/datum/preference/text/human/ear_style)
 	var/_ear_secondary_style = read_preference(/datum/preference/text/human/ear_secondary_style)
 	var/_wing_style = read_preference(/datum/preference/text/human/wing_style)
@@ -39,7 +39,6 @@
 		update_preference_by_type(/datum/preference/text/human/wing_style, null)
 	if(_tail_style && !(_tail_style in get_available_styles(GLOB.tail_styles_list)))
 		update_preference_by_type(/datum/preference/text/human/tail_style, null)
-	// DQEdit End
 
 /datum/preferences/proc/get_available_styles(style_list)
 	. = list("Normal" = null)
@@ -52,7 +51,7 @@
 			continue
 		if(instance.ckeys_allowed && (!client || !(client.ckey in instance.ckeys_allowed)))
 			continue
-		var/_custom_base = read_preference(/datum/preference/text/human/custom_base) // DQEdit — migrated pref
+		var/_custom_base = read_preference(/datum/preference/text/human/custom_base) // migrated pref
 		if(instance.species_allowed && (!pref_species || !(pref_species in instance.species_allowed)) && (!client || !check_rights_for(client, R_ADMIN | R_EVENT | R_FUN)) && (!_custom_base || !(_custom_base in instance.species_allowed)))
 			continue
 		if(!instance.can_be_selected && (!client || !check_rights_for(client, R_HOLDER)))
@@ -70,6 +69,6 @@
 	return new_marking
 
 
-// DQEdit — /datum/category_item/player_setup_item/general/body and all its tgui_data/
+// /datum/category_item/player_setup_item/general/body and all its tgui_data/
 // tgui_act/tgui_constant_data/has_flag/reset_limbs helpers were the Bay-prefs Body tab.
 // Deleted; the new auto-renderer + accessories/markings apply_hooks own the equivalent.

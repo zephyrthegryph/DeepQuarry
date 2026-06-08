@@ -116,7 +116,7 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 	if(uniform)
 		H.equip_to_slot_or_del(new uniform(H),slot_w_uniform)
 	if(suit)
-		// DQEdit — no_jacket pref deleted; always equip the default suit. Players who don't
+		// no_jacket pref deleted; always equip the default suit. Players who don't
 		// want it pick an alternate uniform via the regular loadout system.
 		H.equip_to_slot_or_del(new suit(H),slot_wear_suit)
 	if(back)
@@ -126,10 +126,10 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 	if(gloves)
 		H.equip_to_slot_or_del(new gloves(H),slot_gloves)
 	if(shoes)
-	//CHOMPEdit Start, remove RS No shoes
+	// , remove RS No shoes
 	//	if(!(H.client?.prefs?.shoe_hater))	//RS ADD
 		H.equip_to_slot_or_del(new shoes(H),slot_shoes)
-	//CHOMPEdit End, remove RS No Shoes
+	// , remove RS No Shoes
 	if(mask)
 		H.equip_to_slot_or_del(new mask(H),slot_wear_mask)
 	if(head)
@@ -184,7 +184,7 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 		pda.ownjob = assignment
 		pda.ownrank = rank
 		pda.name = "PDA-[H.real_name] ([assignment])"
-		var/_ringtone = H.client?.prefs?.read_preference(/datum/preference/text/human/ringtone) // DQEdit — migrated pref
+		var/_ringtone = H.client?.prefs?.read_preference(/datum/preference/text/human/ringtone) // migrated pref
 		if(_ringtone)
 			pda.ttone = _ringtone
 		return pda
@@ -385,9 +385,9 @@ Keep outfits simple. Spawn with basic uniforms and minimal gear. Gear instead go
 	pda_type = /obj/item/pda/pathfinder
 	id_type = /obj/item/card/id/exploration/head
 	id_pda_assignment = JOB_PATHFINDER
-	backpack = /obj/item/storage/backpack/explorer //CHOMPADD
-	satchel_one = /obj/item/storage/backpack/satchel/explorer //CHOMPADD
-	messenger_bag = /obj/item/storage/backpack/messenger/explorer //CHOMPADD
+	backpack = /obj/item/storage/backpack/explorer
+	satchel_one = /obj/item/storage/backpack/satchel/explorer
+	messenger_bag = /obj/item/storage/backpack/messenger/explorer
 	flags = OUTFIT_HAS_BACKPACK|OUTFIT_EXTENDED_SURVIVAL|OUTFIT_COMPREHENSIVE_SURVIVAL
 
 	headset = /obj/item/radio/headset/pathfinder

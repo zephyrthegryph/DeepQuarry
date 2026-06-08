@@ -216,7 +216,7 @@
 	name = "grass patch"
 	icon = 'icons/turf/flooring/grass.dmi'
 	icon_state = "grass0"
-	can_dirty = FALSE //VOREStation Edit
+	can_dirty = FALSE
 	initial_flooring = /datum/decl/flooring/grass
 	footstep = FOOTSTEP_GRASS
 	barefootstep = FOOTSTEP_GRASS

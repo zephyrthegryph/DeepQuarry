@@ -63,7 +63,7 @@
 
 /obj/vehicle/bike/verb/toggle()
 	set name = "Toggle Engine"
-	set category = "Object.Vehicle" //ChompEDIT - TGPanel
+	set category = "Object.Vehicle" // TGPanel
 	set src in view(0)
 	toggle_proc(usr)
 
@@ -91,7 +91,7 @@
 
 /obj/vehicle/bike/verb/kickstand(mob/user as mob)
 	set name = "Toggle Kickstand"
-	set category = "Object.Vehicle" //ChompEDIT - TGPanel
+	set category = "Object.Vehicle" // TGPanel
 	set src in view(0)
 
 	if(!isliving(usr) || HAS_TRAIT(usr, TRAIT_AMBIENT_PEST_MOB))

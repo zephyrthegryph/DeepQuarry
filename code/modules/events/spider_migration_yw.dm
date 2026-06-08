@@ -11,9 +11,9 @@
 /datum/event/spider_migration/announce()
 	var/announcement = ""
 	if(severity == EVENT_LEVEL_MAJOR)
-		announcement = "Massive migration of unknown biological entities has been detected near [station_name()], please stand-by." //CHOMPStation Edit: Restore original message.
+		announcement = "Massive migration of unknown biological entities has been detected near [station_name()], please stand-by." // Restore original message.
 	else
-		announcement = "Unknown biological [spawned_spider.len == 1 ? "entity has" : "entities have"] been detected near [station_name()], please stand-by." //CHOMPStation Edit: Restore original message.
+		announcement = "Unknown biological [spawned_spider.len == 1 ? "entity has" : "entities have"] been detected near [station_name()], please stand-by." // Restore original message.
 	GLOB.command_announcement.Announce(announcement, "Lifesign Alert", new_sound = ANNOUNCER_MSG_UNIDENTIFIED_LIFESIGNS)
 
 /datum/event/spider_migration/start()

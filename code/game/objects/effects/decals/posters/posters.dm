@@ -92,8 +92,8 @@
 /obj/structure/sign/poster
 	name = "poster"
 	desc = "A large piece of space-resistant printed paper. "
-	icon = 'icons/obj/contraband_vr.dmi' //VOREStation Edit
-	icon_state = "poster" //VOREStation Edit
+	icon = 'icons/obj/contraband_vr.dmi'
+	icon_state = "poster"
 	anchored = TRUE
 	VAR_PROTECTED/datum/decl/poster/poster_decl = null // Assigned by Initialize() to a random poster decl. If this is mapset to a path, it will be used to locate the decl specified by that path.
 	VAR_PROTECTED/roll_type = /obj/item/poster

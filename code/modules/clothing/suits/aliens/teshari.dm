@@ -202,21 +202,21 @@
 	name = "head of security cloak"
 	desc = "A soft Teshari cloak made for the " + JOB_HEAD_OF_SECURITY + ". This one is made with stronger fibers." //CHOMPedot
 	icon_state = "tesh_cloak_hos"
-	allowed = list(POCKET_GENERIC, POCKET_SECURITY) //CHOMPedit start
+	allowed = list(POCKET_GENERIC, POCKET_SECURITY) // start
 	body_parts_covered = UPPER_TORSO|LOWER_TORSO
 	item_flags = THICKMATERIAL
 	siemens_coefficient = 0.6
-	armor = list(melee = 40, bullet = 30, laser = 30, energy = 10, bomb = 10, bio = 0, rad = 0) //CHOMPedit end
+	armor = list(melee = 40, bullet = 30, laser = 30, energy = 10, bomb = 10, bio = 0, rad = 0) // end
 
 /obj/item/clothing/suit/storage/teshari/cloak/jobs/sec
 	name = "security cloak"
-	desc = "A soft Teshari cloak made for the Security department. This one is made with stronger fibers." //CHOMPedit
+	desc = "A soft Teshari cloak made for the Security department. This one is made with stronger fibers."
 	icon_state = "tesh_cloak_sec"
-	allowed = list(POCKET_GENERIC, POCKET_SECURITY) //CHOMPedit start
+	allowed = list(POCKET_GENERIC, POCKET_SECURITY) // start
 	body_parts_covered = UPPER_TORSO|LOWER_TORSO
 	item_flags = THICKMATERIAL
 	siemens_coefficient = 0.6
-	armor = list(melee = 40, bullet = 30, laser = 30, energy = 10, bomb = 10, bio = 0, rad = 0) //CHOMPedit end
+	armor = list(melee = 40, bullet = 30, laser = 30, energy = 10, bomb = 10, bio = 0, rad = 0) // end
 
 /obj/item/clothing/suit/storage/teshari/cloak/jobs/iaa
 	name = "internal affairs cloak"
@@ -489,13 +489,13 @@
 
 /obj/item/clothing/suit/storage/teshari/beltcloak/jobs/sec
 	name = "security belted cloak"
-	desc = "A soft Teshari cloak made for the Security department. This one is made with stronger fibers." //CHOMPedit
+	desc = "A soft Teshari cloak made for the Security department. This one is made with stronger fibers."
 	icon_state = "tesh_beltcloak_sec"
-	allowed = list(POCKET_GENERIC, POCKET_SECURITY) //CHOMPedit start
+	allowed = list(POCKET_GENERIC, POCKET_SECURITY) // start
 	body_parts_covered = UPPER_TORSO|LOWER_TORSO
 	item_flags = THICKMATERIAL
 	siemens_coefficient = 0.6
-	armor = list(melee = 40, bullet = 30, laser = 30, energy = 10, bomb = 10, bio = 0, rad = 0) //CHOMPedit end
+	armor = list(melee = 40, bullet = 30, laser = 30, energy = 10, bomb = 10, bio = 0, rad = 0) // end
 
 /obj/item/clothing/suit/storage/teshari/beltcloak/jobs/qm
 	name = "quartermaster belted cloak"
@@ -519,13 +519,13 @@
 
 /obj/item/clothing/suit/storage/teshari/beltcloak/jobs/hos
 	name = "security chief belted cloak"
-	desc = "A soft Teshari cloak made for the " + JOB_HEAD_OF_SECURITY + ". This one is made with stronger fibers." //CHOMPedit
+	desc = "A soft Teshari cloak made for the " + JOB_HEAD_OF_SECURITY + ". This one is made with stronger fibers."
 	icon_state = "tesh_beltcloak_hos"
-	allowed = list(POCKET_GENERIC, POCKET_SECURITY) //CHOMPedit start
+	allowed = list(POCKET_GENERIC, POCKET_SECURITY) // start
 	body_parts_covered = UPPER_TORSO|LOWER_TORSO
 	item_flags = THICKMATERIAL
 	siemens_coefficient = 0.6
-	armor = list(melee = 40, bullet = 30, laser = 30, energy = 10, bomb = 10, bio = 0, rad = 0) //CHOMPedit end
+	armor = list(melee = 40, bullet = 30, laser = 30, energy = 10, bomb = 10, bio = 0, rad = 0) // end
 
 /obj/item/clothing/suit/storage/teshari/beltcloak/jobs/jani
 	name = "janitor belted cloak"

@@ -76,7 +76,7 @@
 	// For really persistent looters
 	src.emag += new /obj/item/gun/energy/robotic/laser/retro(src)
 
-	var/datum/matter_synth/wood = new /datum/matter_synth/wood(50000) //CHOMPEdit - "Buffing this to 50k on account of broken code not letting us pick up more stacks. Wee."
+	var/datum/matter_synth/wood = new /datum/matter_synth/wood(50000) // "Buffing this to 50k on account of broken code not letting us pick up more stacks. Wee."
 	synths += wood
 
 	var/obj/item/stack/material/cyborg/wood/W = new (src)
@@ -87,7 +87,7 @@
 	src.modules += new /obj/item/dogborg/sleeper/compactor/generic(src)
 	src.emag += new /obj/item/dogborg/pounce(src)
 
-	//CHOMPEdit - "Giving the gravekeeper drone more modules to allow it to actually do it's job."
+	// "Giving the gravekeeper drone more modules to allow it to actually do it's job."
 	src.modules += new /obj/item/tool/wirecutters/cyborg(src) //Gotta clear those pesky landmines somehow. Also allows for deconstruction of things in the way!
 	src.modules += new /obj/item/multitool(src)
 	src.modules += new /obj/item/soap/nanotrasen(src)

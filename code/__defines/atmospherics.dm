@@ -27,7 +27,7 @@
 // SSair's `fire()` uses these to checkpoint where it was when MC tick budget runs
 // out, so it resumes from the same subtask on the next fire().
 #define SSAIR_PIPENETS 1
-// DQEdit — SSAIR_ATMOSMACHINERY (2) deleted with the atmos_machinery process
+// SSAIR_ATMOSMACHINERY (2) deleted with the atmos_machinery process
 // queue; devices run via SSmachines. Don't reuse value 2 — leaving the gap
 // keeps the fire() switch identifiers stable if a future merge re-introduces it.
 #define SSAIR_ACTIVETURFS 3
@@ -35,7 +35,7 @@
 #define SSAIR_EXCITEDGROUPS 5
 #define SSAIR_HIGHPRESSURE 6
 #define SSAIR_SUPERCONDUCTIVITY 7
-// DQEdit — SSAIR_PROCESS_ATOMS (8) deleted alongside atom_process / process_exposure.
+// SSAIR_PROCESS_ATOMS (8) deleted alongside atom_process / process_exposure.
 
 // Pipeline rebuild helper subtasks.
 #define SSAIR_REBUILD_PIPELINE 1
@@ -55,7 +55,7 @@
 #define Z_LEVEL_UP UP
 #define Z_LEVEL_DOWN DOWN
 
-// DQEdit — TURF_WET_PERMAFROST removed; the only reference was the deleted
+// TURF_WET_PERMAFROST removed; the only reference was the deleted
 // VOLATILE_REACTION branch in gasmixtures/reactions.dm (water_vapor reaction).
 
 // /tg/'s LINDA plane defines — alias to CHOMP's nearest equivalents.
@@ -79,7 +79,7 @@
 /proc/xgm_total_moles(datum/gas_mixture/mix)
 	return mix ? mix.total_moles() : 0
 
-// DQEdit — FUSION_HEAT_CAP is #define'd in code/modules/power/fusion/_setup.dm
+// FUSION_HEAT_CAP is #define'd in code/modules/power/fusion/_setup.dm
 // then #undef'd in core_field.dm. fusion_reactions.dm (which loads after
 // core_field.dm) still references it. Redeclare globally so the macro is in
 // scope at fusion_reactions.dm:149+.

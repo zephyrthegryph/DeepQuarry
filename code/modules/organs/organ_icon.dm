@@ -164,7 +164,7 @@ GLOBAL_LIST_EMPTY(limb_icon_cache)
 		mob_icon.Blend(I, ICON_OVERLAY)
 		icon_cache_key += "_[nail_polish.icon]_[nail_polish.icon_state]_[nail_polish.color]"
 
-	if (transparent && !istype(src,/obj/item/organ/external/head) && can_apply_transparency && should_apply_transparency) //VORESTATION EDIT: transparent instead of nonsolid
+	if (transparent && !istype(src,/obj/item/organ/external/head) && can_apply_transparency && should_apply_transparency) // EDIT: transparent instead of nonsolid
 		mob_icon += rgb(,,,180) //do it here so any markings become transparent as well
 
 	dir = SOUTH

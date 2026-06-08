@@ -131,7 +131,7 @@
 		<B>End of second log.</B>
 	"}
 
-//VOREStation additions below this line - Killian's wrecks
+// additions below this line - Killian's wrecks
 /obj/structure/prop/blackbox/mackerel_wreck
 	catalogue_data = list(/datum/category_item/catalogue/information/blackbox/mackerel_wreck)
 
@@ -250,7 +250,7 @@
 		<B>SPEAKER FOUR, \"MAX\":</B> Predicted to be Maxwell Ulysses Sarevic, zorren, known smuggler, and wanted in the Elysian Colonies for liberation of slaves and, quote, \'harshing my vibe, and being a, like, <U>total lamer</U>, dude\', unquote. 99% confidence.
 	"}
 
-//CHOMPADD start - Snowfield blackbox. Could move this to snowfield_ch.dm tbh.
+// start - Snowfield blackbox. Could move this to snowfield_ch.dm tbh.
 
 /obj/structure/prop/blackbox/snowfield_base
 	catalogue_data = list(/datum/category_item/catalogue/information/blackbox/snowfield_base)
@@ -306,4 +306,4 @@
 		<B>SWITCHING MODE TO : <U>ENERGY-SAVING MODE.</U></B>
 	"}
 
-//CHOMPADD end
+// end

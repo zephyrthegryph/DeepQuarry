@@ -16,7 +16,7 @@
 		return create_default_value()
 	return STRIP_HTML_SIMPLE(input, maximum_value_length)
 
-// DQAdd — dropdown choices from the same global the Bay UI used.
+// dropdown choices from the same global the Bay UI used.
 /datum/preference/text/human/home_system/get_pref_choices(datum/preferences/preferences)
 	return GLOB.home_system_choices + list("Unset")
 
@@ -38,7 +38,7 @@
 		return create_default_value()
 	return STRIP_HTML_SIMPLE(input, maximum_value_length)
 
-// DQAdd — birthplace draws from the same home-systems list.
+// birthplace draws from the same home-systems list.
 /datum/preference/text/human/birthplace/get_pref_choices(datum/preferences/preferences)
 	return GLOB.home_system_choices + list("Unset")
 
@@ -60,7 +60,7 @@
 		return create_default_value()
 	return STRIP_HTML_SIMPLE(input, maximum_value_length)
 
-// DQAdd — dropdown choices from the same global the Bay UI used.
+// dropdown choices from the same global the Bay UI used.
 /datum/preference/text/human/citizenship/get_pref_choices(datum/preferences/preferences)
 	return GLOB.citizenship_choices + list("None")
 
@@ -82,7 +82,7 @@
 		return create_default_value()
 	return STRIP_HTML_SIMPLE(input, maximum_value_length)
 
-// DQAdd — dropdown choices from the same global the Bay UI used.
+// dropdown choices from the same global the Bay UI used.
 /datum/preference/text/human/faction/get_pref_choices(datum/preferences/preferences)
 	return GLOB.faction_choices + list("None")
 
@@ -104,7 +104,7 @@
 		return create_default_value()
 	return STRIP_HTML_SIMPLE(input, maximum_value_length)
 
-// DQAdd — dropdown choices from the same global the Bay UI used.
+// dropdown choices from the same global the Bay UI used.
 /datum/preference/text/human/religion/get_pref_choices(datum/preferences/preferences)
 	return GLOB.religion_choices + list("None")
 
@@ -128,6 +128,6 @@
 /datum/preference/choiced/human/economic_status/apply_to_human(mob/living/carbon/human/target, value)
 	return // Economic status is read directly from prefs when needed, not stored on the mob.
 
-// DQEdit — /datum/category_item/player_setup_item/general/background was the Bay-prefs UI
+// /datum/category_item/player_setup_item/general/background was the Bay-prefs UI
 // wrapper for the home_system/birthplace/citizenship/faction/religion/economic_status prefs
 // above. The new auto-renderer renders each as a choice/text widget directly.

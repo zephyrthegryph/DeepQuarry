@@ -468,7 +468,7 @@
 
 
 // === merged from seed_storage_vr.dm during hard-fork de-suffix (verified no override-order change) ===
-//CHOMPEDIT seeds: teaseed
+// seeds: teaseed
 /obj/machinery/seed_storage/garden
 	starting_seeds = list(
 		/obj/item/seeds/appleseed = 3,
@@ -522,7 +522,7 @@
 		/obj/item/seeds/shrinkshroom = 3,
 		/obj/item/seeds/megashroom = 3)
 
-//CHOMPedit: adds pitcherseed
+// adds pitcherseed
 /obj/machinery/seed_storage/xenobotany
 	name = "Xenobotany seed storage"
 	scanner = list("stats", "produce", "soil", "temperature", "light")

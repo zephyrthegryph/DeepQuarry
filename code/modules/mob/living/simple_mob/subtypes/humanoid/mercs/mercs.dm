@@ -5,7 +5,7 @@
 // Probably shouldn't use this directly, there are a bunch of sub-classes that are more complete.
 /mob/living/simple_mob/humanoid/merc
 	name = "mercenary"
-	desc = "A tough looking individual armed with only a knife." //CHOMPEdit
+	desc = "A tough looking individual armed with only a knife."
 	tt_desc = "E Homo sapiens"
 	icon_state = "syndicate"
 	icon_living = "syndicate"
@@ -57,7 +57,7 @@
 	for(var/mob/M in range(T, 2))
 		if(M.faction == faction) 	// Don't grenade our friends
 			return FALSE
-		if(M!=src && can_see(M))	// And lets check if we can actually see at least two people before we throw a grenade //CHOMPEdit dear god
+		if(M!=src && can_see(M)) // And lets check if we can actually see at least two people before we throw a grenade // dear god
 			if(!M.stat)			// Dead things don't warrant a grenade
 				mob_count ++
 	if(mob_count < 2)
@@ -89,7 +89,7 @@
 	wander = TRUE			// ... but "patrol" a little.
 	intelligence_level = AI_SMART // Also knows not to walk while confused if it risks death.
 	threaten_delay = 30 SECONDS // Mercs will give you 30 seconds to leave or get shot.
-	use_astar = TRUE //CHOMPEdit
+	use_astar = TRUE
 
 /datum/ai_holder/simple_mob/merc/guard_limit
 	guard_limit = TRUE
@@ -180,7 +180,7 @@
 	desc = "A tough looking individual armed with an submachine gun."
 	icon_state = "syndicateranged_smg"
 	icon_living = "syndicateranged_smg"
-	projectiletype = /obj/item/projectile/bullet/a10mm //CHOMPedit, 20 instead of 35, SMG
+	projectiletype = /obj/item/projectile/bullet/a10mm // , 20 instead of 35, SMG
 
 	loot_list = list(/obj/item/gun/projectile/automatic/c20r = 100)
 
@@ -191,7 +191,7 @@
 
 /mob/living/simple_mob/humanoid/merc/ranged/smg/sol
 	icon_state = "bluforranged_smg"
-	icon_living = "bluforranged_smg"	//CHOMPEdit - Fixes typo that makes smg mercs invis sometimes
+	icon_living = "bluforranged_smg" // Fixes typo that makes smg mercs invis sometimes
 
 	corpse = /obj/effect/landmark/mobcorpse/solarpeacekeeper
 	loot_list = list(/obj/item/gun/projectile/automatic/c20r = 100)
@@ -216,14 +216,12 @@
 
 /mob/living/simple_mob/humanoid/merc/ranged/rifle/mag
 	loot_list = list(/obj/item/gun/magnetic/railgun/flechette = 100)
-	projectiletype = /obj/item/projectile/bullet/magnetic/flechette/rapid // CHOMPEdit Who thought rapid fire 20 damage with 100% armor pen was a good idea?
+	projectiletype = /obj/item/projectile/bullet/magnetic/flechette/rapid // Who thought rapid fire 20 damage with 100% armor pen was a good idea?
 
 	projectilesound = 'sound/weapons/rapidslice.ogg'
-	// CHOMPAdd Start
 	projectile_dispersion = 5
 	projectile_accuracy = -20
 	base_attack_cooldown = 15
-	// CHOMPAdd End
 	reload_max = 10
 
 // Laser Rifle
@@ -364,7 +362,7 @@
 				new casingtype(loc) //... leave the casing.
 			ranged_cooldown = world.time + ranged_cooldown_time + ((injury_level / 2) SECONDS) //Special addition here. This is a timer. Keeping updating the time after shooting. Add that ranged cooldown time specified in the mob to the world time.
 		return TRUE	//End these commands here.
-	// CHOMPAddition End
+	// ition End
 
 	visible_message(span_danger(span_bold("\The [src]") + " fires at \the [orig_targ]!"))
 	shoot(A)

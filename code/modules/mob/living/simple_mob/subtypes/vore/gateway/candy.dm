@@ -50,8 +50,8 @@
 	. = ..()
 	if(!riding_datum)
 		riding_datum = new /datum/riding/simple_mob(src)
-	add_verb(src,/mob/living/simple_mob/proc/animal_mount) //CHOMPEdit TGPanel
-	add_verb(src,/mob/living/proc/toggle_rider_reins) //CHOMPEdit TGPanel
+	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
+	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
 
 /mob/living/simple_mob/vore/candy/bluecabold/MouseDrop_T(mob/living/M, mob/living/user)
@@ -74,8 +74,8 @@
 	. = ..()
 	if(!riding_datum)
 		riding_datum = new /datum/riding/simple_mob(src)
-	add_verb(src,/mob/living/simple_mob/proc/animal_mount) //CHOMPEdit TGPanel
-	add_verb(src,/mob/living/proc/toggle_rider_reins) //CHOMPEdit TGPanel
+	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
+	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
 
 /mob/living/simple_mob/vore/candy/redcabold/MouseDrop_T(mob/living/M, mob/living/user)
@@ -98,8 +98,8 @@
 	. = ..()
 	if(!riding_datum)
 		riding_datum = new /datum/riding/simple_mob(src)
-	add_verb(src,/mob/living/simple_mob/proc/animal_mount) //CHOMPEdit TGPanel
-	add_verb(src,/mob/living/proc/toggle_rider_reins) //CHOMPEdit TGPanel
+	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
+	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
 
 /mob/living/simple_mob/vore/candy/yellowcabold/MouseDrop_T(mob/living/M, mob/living/user)
@@ -122,8 +122,8 @@
 	. = ..()
 	if(!riding_datum)
 		riding_datum = new /datum/riding/simple_mob(src)
-	add_verb(src,/mob/living/simple_mob/proc/animal_mount) //CHOMPEdit TGPanel
-	add_verb(src,/mob/living/proc/toggle_rider_reins) //CHOMPEdit TGPanel
+	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
+	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
 
 /mob/living/simple_mob/vore/candy/orangecabold/MouseDrop_T(mob/living/M, mob/living/user)
@@ -146,8 +146,8 @@
 	. = ..()
 	if(!riding_datum)
 		riding_datum = new /datum/riding/simple_mob(src)
-	add_verb(src,/mob/living/simple_mob/proc/animal_mount) //CHOMPEdit TGPanel
-	add_verb(src,/mob/living/proc/toggle_rider_reins) //CHOMPEdit TGPanel
+	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
+	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
 
 /mob/living/simple_mob/vore/candy/purplecabold/MouseDrop_T(mob/living/M, mob/living/user)
@@ -170,8 +170,8 @@
 	. = ..()
 	if(!riding_datum)
 		riding_datum = new /datum/riding/simple_mob(src)
-	add_verb(src,/mob/living/simple_mob/proc/animal_mount) //CHOMPEdit TGPanel
-	add_verb(src,/mob/living/proc/toggle_rider_reins) //CHOMPEdit TGPanel
+	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
+	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
 
 /mob/living/simple_mob/vore/candy/marshmellowserpent/MouseDrop_T(mob/living/M, mob/living/user)
@@ -236,7 +236,7 @@
 			L.throw_at(get_edge_target_turf(L, throwdir), 3, 1, src)
 		else
 			to_chat(L, span_warning("\The [src] hits you with incredible force, but you remain in place."))
-			visible_message(span_danger("\The [src] hits \the [L] with incredible force, to no visible effect!")) // CHOMPEdit: Visible/audible feedback for *resisting* the slam.
+			visible_message(span_danger("\The [src] hits \the [L] with incredible force, to no visible effect!")) // Visible/audible feedback for *resisting* the slam.
 			playsound(src, "punch", 50, 1)
 
 /mob/living/simple_mob/vore/candy/yellowcabold //Speeds folks
@@ -516,8 +516,8 @@
 	var/obj/item/grenade/G = new grenade_type(get_turf(src))
 	if(istype(G))
 		G.throw_at(G.throw_range, G.throw_speed, src)
-		G.det_time = grenade_timer	//CHOMPEdit
-		G.activate(src)	//CHOMPEdit
+		G.det_time = grenade_timer
+		G.activate(src)
 	if(prob(25))
 		new /obj/random/mob/candycritter (src.loc)
 		new /obj/random/mob/candycritter (src.loc)
@@ -670,8 +670,8 @@
 	. = ..()
 	if(!riding_datum)
 		riding_datum = new /datum/riding/simple_mob(src)
-	add_verb(src,/mob/living/simple_mob/proc/animal_mount) //CHOMPEdit TGPanel
-	add_verb(src,/mob/living/proc/toggle_rider_reins) //CHOMPEdit TGPanel
+	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
+	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
 
 /mob/living/simple_mob/vore/candy/worm/MouseDrop_T(mob/living/M, mob/living/user)
@@ -694,8 +694,8 @@
 	. = ..()
 	if(!riding_datum)
 		riding_datum = new /datum/riding/simple_mob(src)
-	add_verb(src,/mob/living/simple_mob/proc/animal_mount) //CHOMPEdit TGPanel
-	add_verb(src,/mob/living/proc/toggle_rider_reins) //CHOMPEdit TGPanel
+	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
+	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
 
 /mob/living/simple_mob/vore/candy/peppermint/MouseDrop_T(mob/living/M, mob/living/user)

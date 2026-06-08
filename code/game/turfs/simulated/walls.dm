@@ -299,7 +299,7 @@
 
 /turf/simulated/wall/proc/radiate()
 	SIGNAL_HANDLER
-	// DQEdit — radioactivity moved to a component on /datum/material.
+	// radioactivity moved to a component on /datum/material.
 	var/total_radiation = dq_material_radioactivity(material) + (reinf_material ? dq_material_radioactivity(reinf_material) / 2 : 0) + (girder_material ? dq_material_radioactivity(girder_material) / 2 : 0)
 	if(!total_radiation)
 		return
@@ -776,7 +776,7 @@ rborosilicate = 12
 
 	t1 += "<p><a href='byond://?src=[REF(src)];close=1'>Close</a></p>\n"
 
-	// DQEdit — structured TGUI AdminReport; byond:// links forwarded to host.
+	// structured TGUI AdminReport; byond:// links forwarded to host.
 	dq_admin_report_html(user, "Access Control", t1, src)
 
 /obj/item/rcd/Topic(href, href_list)
@@ -784,10 +784,9 @@ rborosilicate = 12
 	if (usr.stat || usr.restrained())
 		return
 	if (href_list["close"])
-		// DQEdit Start — close TGUI window
+		// close TGUI window
 		SStgui.close_uis(src)
 		return
-		// DQEdit End
 
 	if (href_list["access"])
 		toggle_access(href_list["access"])

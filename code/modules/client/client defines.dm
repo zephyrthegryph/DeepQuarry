@@ -92,14 +92,14 @@
 	var/related_accounts_cid = "(Requires database)"	//So admins know why it isn't working - Used to determine what other accounts previously logged in from this computer id
 	var/account_join_date = "(Requires database)"
 	var/account_age = "(Requires database)"
-	var/list/department_hours = list()	// VOREStation Edit - Track hours of leave accured for each department.
-	var/list/play_hours	= list() // VOREStation Edit - Tracks total playtime hours for each departments.
+	var/list/department_hours = list() // Track hours of leave accured for each department.
+	var/list/play_hours	= list() // Tracks total playtime hours for each departments.
 
 	preload_rsc = PRELOAD_RSC
 
 	var/global/atom/movable/screen/click_catcher/void
 
-	control_freak = 0 //CHOMPedit KSC 1/30/20 - This enables all clientside options for Players.
+	control_freak = 0 // KSC 1/30/20 - This enables all clientside options for Players.
 	// List of all asset filenames sent to this client by the asset cache, along with their assoicated md5s
 	var/list/sent_assets = list()
 	/// List of all completed blocking send jobs awaiting acknowledgement by send_asset

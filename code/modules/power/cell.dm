@@ -5,7 +5,7 @@
 /obj/item/cell
 	name = "power cell"
 	desc = "A rechargable electrochemical power cell."
-	icon = 'icons/obj/power_cells.dmi' //swap to 'icons/obj/power_cells_.dmi' for new sprites. //CHOMPEdit - Enable new sprites
+	icon = 'icons/obj/power_cells.dmi' // swap to 'icons/obj/power_cells_.dmi' for new sprites. // Enable new sprites
 	icon_state = "b_st"
 	item_state = "cell"
 	force = 5.0

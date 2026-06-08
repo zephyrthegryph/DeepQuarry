@@ -5,10 +5,10 @@
 	anchored = TRUE
 
 	var/working = FALSE
-	var/negative_dir = null	//VOREStation Addition
-	var/hand_fed = TRUE //CHOMPAdd
+	var/negative_dir = null // ition
+	var/hand_fed = TRUE
 
-/obj/machinery/recycling/Initialize(mapload) //CHOMPAdd
+/obj/machinery/recycling/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
 
@@ -38,7 +38,7 @@
 		return
 	if(default_part_replacement(user, O))
 		return
-	if(!hand_fed) //CHOMPAdd
+	if(!hand_fed)
 		return
 	var/mob/living/M = user
 	if(can_accept_item(O))
@@ -89,32 +89,32 @@
 
 	effic_factor = CLAMP01(initial(effic_factor)+total_rating)
 
-	dq_apply_material_synergies(src) // DQAdd
+	dq_apply_material_synergies(src)
 /obj/machinery/recycling/crusher/can_accept_item(obj/item/O)
 	if(LAZYLEN(O.matter))
 		return ..()
-	//VOREStation Addition Start - Let's the machine decide to put things it can't accept somewhere else.
+	// ition Start - Let's the machine decide to put things it can't accept somewhere else.
 	else if(negative_dir && isitem(O) && !ishuman(O.loc))
 		O.forceMove(get_step(src, negative_dir))
 	else
 		return FALSE
-	//VOREStation Addition End
+	// ition End
 
 /obj/machinery/recycling/crusher/take_item(obj/item/O)
 	. = ..()
-	var/trash = 1//CHOMPEDIT: Trash multiplier
+	var/trash = 1 // Trash multiplier
 	working = TRUE
 	icon_state = "crusher-process"
 	update_use_power(USE_POWER_ACTIVE)
 	sleep(5 SECONDS)
 	var/list/modified_mats = list()
-	if(istype(O,/obj/item/trash))//CHOMPEDIT Start: Trash multiplier
-		trash = 5 //CHOMPEDIT: Trash good
+	if(istype(O,/obj/item/trash)) // Trash multiplier
+		trash = 5 // Trash good
 	if(istype(O,/obj/item/stack))
 		var/obj/item/stack/S = O
 		trash = S.amount
 	for(var/mat in O.matter)
-		modified_mats[mat] = O.matter[mat] * effic_factor * trash//CHOMPEDIT: Trash multiplier
+		modified_mats[mat] = O.matter[mat] * effic_factor * trash // Trash multiplier
 	var/turf/T = get_step(src, dir)
 	for(var/obj/item/debris_pack/D in T.contents)
 		if(istype(D))
@@ -124,7 +124,7 @@
 			icon_state = "crusher"
 			qdel(O)
 			working = FALSE
-			return //CHOMPEdit End
+			return
 	new /obj/item/debris_pack(get_step(src, dir), modified_mats)
 	update_use_power(USE_POWER_IDLE)
 	icon_state = "crusher"
@@ -155,7 +155,7 @@
 	working = TRUE
 	icon_state = "sorter-process"
 	update_use_power(USE_POWER_ACTIVE)
-	sleep(2 SECONDS) //CHOMPEdit
+	sleep(2 SECONDS)
 	sort_item(O)
 	dispense_if_possible()
 	update_use_power(USE_POWER_IDLE)

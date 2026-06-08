@@ -1,7 +1,7 @@
 /obj/structure/window
 	name = "window"
 	desc = "A window."
-	icon = 'icons/obj/structures_vr.dmi' // VOREStation Edit - New icons
+	icon = 'icons/obj/structures_vr.dmi' // New icons
 	density = TRUE
 	can_atmos_pass = ATMOS_PASS_PROC
 	w_class = ITEMSIZE_NORMAL
@@ -120,13 +120,11 @@
 	take_damage(proj_damage)
 	return
 
-//CHOMPEdit Begin
 /obj/structure/window/can_pathfinding_enter(atom/movable/actor, dir, datum/pathfinding/search)
 	return ..() || (!fulltile && (src.dir) != dir)
 
 /obj/structure/window/can_pathfinding_exit(atom/movable/actor, dir, datum/pathfinding/search)
 	return ..() || (!fulltile && (src.dir != dir))
-//CHOMPEdit End
 /obj/structure/window/ex_act(severity)
 	switch(severity)
 		if(1.0)

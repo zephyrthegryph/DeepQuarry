@@ -28,20 +28,17 @@
 
 /datum/decl/emote/visible/flip/do_extra(mob/user)
 	. = ..()
-	// VOREStation Add - Fancy flips
+	// Fancy flips
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
 		H.handle_flip_vr()
-	// VOREStation Add End
 	else if(istype(user))
 		user.SpinAnimation(7,1)
 
-// CHOMPAdd Start
 /datum/decl/emote/visible/flip/slip
 	key = "sflip"
 	emote_message_1p = "You barely avoid falling over!"
 	emote_message_3p = "barely avoids falling over!"
-// CHOMPAdd End
 
 /datum/decl/emote/visible/floorspin
 	key = "floorspin"

@@ -9,9 +9,9 @@
 	var/image/blood_overlay = null //this saves our blood splatter overlay, which will be processed not to go over the edges of the sprite
 	var/randpixel = 6
 	var/abstract = 0
-	// DQEdit — r_speed removed (dead, 0 refs)
+	// r_speed removed (dead, 0 refs)
 	var/health = null
-	// DQEdit — burn_point removed (dead, 0 refs)
+	// burn_point removed (dead, 0 refs)
 	var/burning = null
 	var/hitsound = "swing_hit"
 	var/usesound = null // Like hitsound, but for when used properly and not to kill someone.
@@ -330,12 +330,12 @@
 /obj/item/attack_hand(mob/living/user as mob)
 	if (!user) return
 	..()
-	if(anchored) // Start CHOMPStation Edit
+	if(anchored) // Start
 		if(hascall(src, "attack_self"))
 			return src.attack_self(user)
 		else
 			to_chat(user, span_notice("This is anchored and you can't lift it."))
-		return // End CHOMPStation Edit
+		return // End
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
 		var/obj/item/organ/external/temp = H.organs_by_name[BP_R_HAND]
@@ -370,15 +370,15 @@
 			var/obj/effect/temporary_effect/item_pickup_ghost/ghost = new(old_loc)
 			ghost.assumeform(src)
 			ghost.animate_towards(user)
-	//VORESTATION EDIT START. This handles possessed items.
-	if(src.possessed_voice && src.possessed_voice.len > 1 && !(user.ckey in warned_of_possession)) // CHOMPEdit Is this item possessed?
+	// EDIT START. This handles possessed items.
+	if(src.possessed_voice && src.possessed_voice.len > 1 && !(user.ckey in warned_of_possession)) // Is this item possessed?
 		warned_of_possession |= user.ckey
 		tgui_alert_async(user,{"
 		THIS ITEM IS POSSESSED BY A PLAYER CURRENTLY IN THE ROUND. This could be by anomalous means or otherwise.
 		If this is not something you wish to partake in, it is highly suggested you place the item back down.
 		If this is fine to you, ensure that the other player is fine with you doing things to them beforehand!
 		"},"OOC Warning")
-	//VORESTATION EDIT END.
+	// EDIT END.
 	return
 
 /obj/item/attack_ai(mob/user as mob)
@@ -661,7 +661,7 @@ GLOBAL_LIST_INIT(slot_flags_enumeration, list(
 		return
 	if(!usr.canmove || usr.stat || usr.restrained() || !Adjacent(usr) || usr.is_incorporeal())
 		return
-	if(isanimal(usr))	//VOREStation Edit Start - Allows simple mobs with hands to use the pickup verb
+	if(isanimal(usr)) // Allows simple mobs with hands to use the pickup verb
 		var/mob/living/simple_mob/s = usr
 		if(!s.has_hands)
 			to_chat(usr, span_warning("You can't pick things up!"))
@@ -676,7 +676,7 @@ GLOBAL_LIST_INIT(slot_flags_enumeration, list(
 	if(src.anchored) //Object isn't anchored
 		to_chat(usr, span_warning("You can't pick that up!"))
 		return
-	if(L.get_active_hand()) //Hand is not full	//VOREStation Edit End
+	if(L.get_active_hand()) // Hand is not full //
 		to_chat(usr, span_warning("Your hand is full."))
 		return
 	if(!isturf(src.loc)) //Object is on a turf
@@ -1225,7 +1225,7 @@ Note: This proc can be overwritten to allow for different types of auto-alignmen
 	new_voice.transfer_identity(candidate) 			//Now make the voice mob load from the ghost's active character in preferences.
 	new_voice.mind = candidate.mind					//Transfer the mind, if any.
 	new_voice.ckey = candidate.ckey					//Finally, bring the client over.
-	candidate.mind = null							//CHOMPAdd - Remove the mind from the mob to avoid issues with multi TF interactions
+	candidate.mind = null // Remove the mind from the mob to avoid issues with multi TF interactions
 	new_voice.tf_mob_holder = candidate_original_form //Save what mob they are! We'll need this for OOC escape and transformation back to their normal form.
 	if(candidate_name) 								//Were we given a candidate_name? Great! Name them that.
 		new_voice.name = "[candidate_name]"
@@ -1236,16 +1236,15 @@ Note: This proc can be overwritten to allow for different types of auto-alignmen
 	GLOB.listening_objects |= src
 	remove_verb(new_voice, /mob/living/voice/verb/change_name) //No changing your name! Bad!
 	remove_verb(new_voice, /mob/living/voice/verb/hang_up) //Also you can't hang up. You are the item!
-	src.item_tf_spawnpoint_used() //CHOMPEdit - Item TF spawnpoints
+	src.item_tf_spawnpoint_used() // Item TF spawnpoints
 	if(!istype(src, /obj/item/communicator) && is_item_tf)
 		new_voice.item_tf = is_item_tf 					// allows items to use /me
 		new_voice.emote_type = 1
-	//CHOMPEdit Start - Let the inhabitor know what happened to them
+	// Let the inhabitor know what happened to them
 	if(istype(src, /obj/item/mindbinder))
 		to_chat(new_voice,span_notice("Your mind has been stored in [src]!"))
 	else
 		to_chat(new_voice,span_notice("You have become [src]!"))
-	//CHOMPEdit End
 
 // Chomp edit
 /obj/item/proc/muffled_by_belly(mob/user)

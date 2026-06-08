@@ -759,7 +759,7 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 	output_air.merge(removed)
 	return TRUE
 
-// DQEdit — /datum/gas_mixture/proc/electrolyze removed. /tg/'s electrolyzer
+// /datum/gas_mixture/proc/electrolyze removed. /tg/'s electrolyzer
 // machinery (which is the only caller) isn't ported to DQ; the proc had no
 // live callers, and keeping it required /datum/electrolyzer_reaction +
 // GLOB.electrolyzer_reactions stubs in tg_infra_compat. Re-add this proc

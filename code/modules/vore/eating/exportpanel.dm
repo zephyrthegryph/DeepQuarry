@@ -28,7 +28,7 @@
 	var/mob/living/host = user
 
 	data["db_version"] = "0.3"
-	data["db_repo"] = "chompstation" // CHOMPEdit
+	data["db_repo"] = "chompstation"
 	data["mob_name"] = host.read_preference(/datum/preference/name/real_name)
 
 	for(var/belly in host.vore_organs)

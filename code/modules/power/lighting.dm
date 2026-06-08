@@ -441,7 +441,6 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 
 	update()
 
-//CHOMPStation Edit Start
 /obj/machinery/light/proc/set_alert_engineering()
 	if(!shows_alerts)
 		return
@@ -449,7 +448,6 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	light_color = "#ff9900"
 	brightness_color = "#ff9900"
 	update()
-// CHOMPStation Edit End
 
 // update lighting
 /obj/machinery/light/proc/update(trigger = 1)

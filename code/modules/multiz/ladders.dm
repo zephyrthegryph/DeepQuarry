@@ -149,7 +149,7 @@
 			if(!A.CanPass(M, M.loc, 1.5, 0))
 				to_chat(M, span_notice("\The [A] is blocking \the [src]."))
 				return FALSE
-		return M.forceMove(T) //VOREStation Edit - Fixes adminspawned ladders
+		return M.forceMove(T) // Fixes adminspawned ladders
 
 /obj/structure/ladder/CanPass(obj/mover, turf/source, height, airflow)
 	return airflow || !density

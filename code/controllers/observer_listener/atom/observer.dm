@@ -1,4 +1,4 @@
-// DQEdit — observer_events moved to /datum/component/observer_events.
+// observer_events moved to /datum/component/observer_events.
 // Component is sparse: only atoms that actually register listeners pay.
 // `register`/`unregister` are /atom/procs (they existed before our refactor,
 // keeping them as instance methods doesn't add proc-table cost). The internal

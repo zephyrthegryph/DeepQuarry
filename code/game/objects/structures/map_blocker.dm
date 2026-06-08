@@ -10,7 +10,7 @@
 	unacidable = TRUE
 	plane = PLANE_BUILDMODE
 
-/*	//VOREStation Edit
+/*
 /obj/effect/blocker/Initialize(mapload) // For non-gateway maps.
 	. = ..()
 	icon = null

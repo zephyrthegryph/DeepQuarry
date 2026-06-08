@@ -9,7 +9,7 @@
 	icon = 'icons/mob/critter.dmi'
 	icon_state = "ward"
 	icon_living = "ward"
-	// DQEdit — dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
+	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 	response_help   = "pets"
 	response_disarm = "swats away"
 	response_harm   = "punches"
@@ -20,7 +20,7 @@
 	maxHealth = 15
 	health = 15
 	movement_cooldown = -1
-	// DQEdit — dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
+	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
 	mob_bump_flag = 0
 

@@ -157,7 +157,7 @@
 		return list(ACCESS_MAINT_TUNNELS, ACCESS_ENTERTAINMENT, ACCESS_TOMFOOLERY, ACCESS_MIME)
 	else
 		return list(ACCESS_ENTERTAINMENT, ACCESS_TOMFOOLERY, ACCESS_MIME)
-*/ //CHOMPEDIT: END remove Mime/clown defines (These are alt titles of Entertainer on our codebase)
+*/ // END remove Mime/clown defines (These are alt titles of Entertainer on our codebase)
 
 /obj/item/card/id/civilian/lurker
 	desc = "A rather old and scuffed-looking ID. It seems legit, but something also seems very off somehow. Say, what's the issue/expiry date..?"

@@ -58,7 +58,7 @@
 	libcategory = "Reference"
 	drop_sound = 'sound/items/drop/device.ogg'
 
-/* //VORESTATION REMOVAL
+/* // REMOVAL
 // Combines SOP/Regs/Law
 /obj/item/book/codex/corp_regs
 	name = "NanoTrasen Regulatory Compendium"

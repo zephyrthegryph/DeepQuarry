@@ -280,7 +280,7 @@
 	)
 	departmental_flags = DEPARTMENT_BITFLAG_ENGINEERING | DEPARTMENT_BITFLAG_SCIENCE
 
-// DQAdd — partslathe design entry. The circuitboard + machine live in
+// partslathe design entry. The circuitboard + machine live in
 // code/game/objects/items/weapons/circuitboards/circuitboards.dm and
 // code/game/machinery/partslathe.dm respectively. Referenced from
 // engi_nodes.dm "construction" techweb node.

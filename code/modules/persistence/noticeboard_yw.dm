@@ -1,4 +1,4 @@
-//ChompEDIT Start - Rework this whole thing, it was bad.
+// Rework this whole thing, it was bad.
 /obj/structure/noticeboard/anomaly
 	name = "xenoarchaeology notice board"
 
@@ -114,4 +114,3 @@
 	src.contents += P
 	. = ..()
 
-//ChompEDIT End

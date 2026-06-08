@@ -193,9 +193,8 @@
 				if(src.electronics && istype(src.electronics, /obj/item/circuitboard/broken))
 					to_chat(user,span_warning("The assembly has broken airlock electronics."))
 					return
-				// DQEdit Start — close TGUI panel (legacy browse(null))
+				// close TGUI panel (legacy browse(null))
 				SStgui.close_uis(src)
-				// DQEdit End
 				playsound(src, W.usesound, 100, 1)
 				user.visible_message("[user] pries the windoor into the frame.", "You start prying the windoor into the frame.")
 

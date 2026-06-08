@@ -189,7 +189,7 @@
 							"[prob(50)?"The crew":random_player] has a fatal, incurable disease. Provide comfort.",
 							"You are the station psychologist. Give advice to [prob(50)?"the crew":random_player].",
 							"[random_player] is the monarch of of England. Ensure all crewmembers pay due respect.",
-							// "Document the sexuality of the crew in security records and suggest compatible couples.", CHOMPEdit - Weird :)
+							// "Document the sexuality of the crew in security records and suggest compatible couples.", Weird :)
 							"[prob(50)?"The crew":random_player] is [prob(50)?"ugly":"beautiful"]. Ensure all are aware.",
 							"Everything on the station is now some form of a donut pastry. Donuts are not to be consumed.",
 							"You are a Magic 8-ball. Always respond with variants of \"Yes\", \"No\", \"Maybe\", or \"Ask again later.\".",

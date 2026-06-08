@@ -384,13 +384,12 @@
 	if(digitalcamo)
 		msg += "[p_Theyre()] repulsively uncanny!"
 
-	// DQEdit Start — list externally-visible symptoms from cascading
+	// list externally-visible symptoms from cascading
 	// conditions. Anyone examining sees what's plainly visible (bleeding,
 	// pallor, blue lips, labored breathing). Patient-only sensations
 	// (pain, dizziness) stay hidden.
 	for(var/line in dq_externally_visible_symptom_lines())
 		msg += span_warning(line)
-	// DQEdit End
 
 	if(hasHUD(user,"security"))
 		var/perpname = name

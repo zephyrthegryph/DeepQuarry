@@ -196,7 +196,7 @@
 /datum/map_template/surface/mountains/normal/crashedcontainmentshuttle
 	name = "Crashed Cargo Shuttle"
 	desc = "A severely damaged military shuttle, its cargo seems to remain intact."
-	mappath = "maps/submaps/surface_submaps/mountains/crashedcontainmentshuttle_vr.dmm" //VOREStation Edit
+	mappath = "maps/submaps/surface_submaps/mountains/crashedcontainmentshuttle_vr.dmm"
 	cost = 30
 
 /datum/map_template/surface/mountains/normal/deadspy
@@ -237,7 +237,7 @@
 	allow_duplicates = TRUE
 	template_group = "Underground Cliffs"
 
-/datum/map_template/surface/mountains/normal/deadly_rabbit // VOREStation Edit
+/datum/map_template/surface/mountains/normal/deadly_rabbit
 	name = "The Killer Rabbit"
 	desc = "A cave where the Knights of the Round have fallen to a murderous Rabbit."
 	mappath = "maps/submaps/surface_submaps/mountains/deadly_rabbit_vr.dmm"
@@ -256,39 +256,39 @@
 	cost = 5
 	allow_duplicates = TRUE */
 
-/datum/map_template/surface/mountains/normal/crashed_ufo //VOREStation Edit
+/datum/map_template/surface/mountains/normal/crashed_ufo
 	name = "Crashed UFO"
 	desc = "A (formerly) flying saucer that is now embedded into the mountain, yet it still seems to be running..."
 	mappath = "maps/submaps/surface_submaps/mountains/crashed_ufo.dmm"
 	cost = 40
 	discard_prob = 50
 
-/datum/map_template/surface/mountains/normal/crashed_ufo_frigate //VOREStation Edit
+/datum/map_template/surface/mountains/normal/crashed_ufo_frigate
 	name = "Crashed UFO Frigate"
 	desc = "A (formerly) flying saucer that is now embedded into the mountain, yet the combat protocols still seem to be running..."
 	mappath = "maps/submaps/surface_submaps/mountains/crashed_ufo_frigate.dmm"
 	cost = 60
 	discard_prob = 50
 
-/datum/map_template/surface/mountains/normal/Scave1 //VOREStation Edit
+/datum/map_template/surface/mountains/normal/Scave1
 	name = "Spider Cave 1"
 	desc = "A minning tunnel home to an aggressive collection of spiders."
 	mappath = "maps/submaps/surface_submaps/mountains/Scave1.dmm"
 	cost = 20
 
-/datum/map_template/surface/mountains/normal/CaveTrench //VOREStation Edit
+/datum/map_template/surface/mountains/normal/CaveTrench
 	name = "Cave River"
 	desc = "A strange underground river."
 	mappath = "maps/submaps/surface_submaps/mountains/CaveTrench.dmm"
 	cost = 20
 
-/datum/map_template/surface/mountains/normal/Cavelake //VOREStation Edit
+/datum/map_template/surface/mountains/normal/Cavelake
 	name = "Cave Lake"
 	desc = "A large underground lake."
 	mappath = "maps/submaps/surface_submaps/mountains/Cavelake.dmm"
 	cost = 20
 
-/datum/map_template/surface/mountains/normal/vault1 //VOREStation Edit
+/datum/map_template/surface/mountains/normal/vault1
 	name = "Mine Vault 1"
 	desc = "A small vault with potential loot."
 	mappath = "maps/submaps/surface_submaps/mountains/vault1.dmm"
@@ -296,7 +296,7 @@
 	allow_duplicates = TRUE
 	template_group = "Buried Vaults"
 
-/datum/map_template/surface/mountains/normal/vault2 //VOREStation Edit
+/datum/map_template/surface/mountains/normal/vault2
 	name = "Mine Vault 2"
 	desc = "A small vault with potential loot."
 	mappath = "maps/submaps/surface_submaps/mountains/vault2.dmm"
@@ -304,53 +304,53 @@
 	allow_duplicates = TRUE
 	template_group = "Buried Vaults"
 
-/datum/map_template/surface/mountains/normal/vault3 //VOREStation Edit
+/datum/map_template/surface/mountains/normal/vault3
 	name = "Mine Vault 3"
 	desc = "A small vault with potential loot. Also a horrible suprise."
 	mappath = "maps/submaps/surface_submaps/mountains/vault3.dmm"
 	cost = 15
 	template_group = "Buried Vaults"
 
-/datum/map_template/surface/mountains/normal/vault4 //VOREStation Edit
+/datum/map_template/surface/mountains/normal/vault4
 	name = "Mine Vault 4"
 	desc = "A small xeno vault with potential loot. Also horrible suprises."
 	mappath = "maps/submaps/surface_submaps/mountains/vault4.dmm"
 	cost = 20
 	template_group = "Buried Vaults"
 
-/datum/map_template/surface/mountains/normal/vault5 //VOREStation Edit
+/datum/map_template/surface/mountains/normal/vault5
 	name = "Mine Vault 5"
 	desc = "A small xeno vault with potential loot. Also major horrible suprises."
 	mappath = "maps/submaps/surface_submaps/mountains/vault5.dmm"
 	cost = 25
 	template_group = "Buried Vaults"
 
-/datum/map_template/surface/mountains/normal/vault6 //VOREStation Edit
+/datum/map_template/surface/mountains/normal/vault6
 	name = "Mine Vault 6"
 	desc = "A small mercenary tower with potential loot."
 	mappath = "maps/submaps/surface_submaps/mountains/vault6.dmm"
 	cost = 25
 	template_group = "Buried Vaults"
 
-/datum/map_template/surface/mountains/normal/BlastMine1 //VOREStation Edit
+/datum/map_template/surface/mountains/normal/BlastMine1
 	name = "Blast Mine 1"
 	desc = "An abandoned blast mining site, seems that local wildlife has moved in."
 	mappath = "maps/submaps/surface_submaps/mountains/BlastMine1.dmm"
 	cost = 20
 
-/datum/map_template/surface/mountains/normal/lava_trench //VOREStation Edit
+/datum/map_template/surface/mountains/normal/lava_trench
 	name = "lava trench"
 	desc = "A long stretch of lava underground, almost river-like, with a small crystal research outpost on the side."
 	mappath = "maps/submaps/surface_submaps/mountains/lava_trench.dmm"
 	cost = 20
 
-/datum/map_template/surface/mountains/normal/crashedmedshuttle //VOREStation Edit
+/datum/map_template/surface/mountains/normal/crashedmedshuttle
 	name = "Crashed Med Shuttle"
 	desc = "A medical response shuttle that went missing some time ago. So this is where they went."
-	mappath = "maps/submaps/surface_submaps/mountains/CrashedMedShuttle1_vr.dmm" //VOREStation Edit
+	mappath = "maps/submaps/surface_submaps/mountains/CrashedMedShuttle1_vr.dmm"
 	cost = 20
 
-/datum/map_template/surface/mountains/normal/excavation1 //VOREStation Edit
+/datum/map_template/surface/mountains/normal/excavation1
 	name = "Excavation Site"
 	desc = "An abandoned mining site."
 	mappath = "maps/submaps/surface_submaps/mountains/excavation1.dmm"
@@ -362,7 +362,7 @@
 	mappath = "maps/submaps/surface_submaps/mountains/spatial_anomaly.dmm"
 	cost = INFINITY /// Prevent spawning.
 
-/datum/map_template/surface/mountains/normal/Speakeasy //VOREStation add
+/datum/map_template/surface/mountains/normal/Speakeasy // add
 	name = "Speakeasy"
 	desc = "A hidden underground bar to serve drinks in secret and in style."
 	mappath = "maps/submaps/surface_submaps/mountains/speakeasy_vr.dmm"

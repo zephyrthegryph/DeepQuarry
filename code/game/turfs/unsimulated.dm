@@ -8,7 +8,6 @@
 /turf/unsimulated/Initialize(mapload)
 	. = ..()
 
-//VOREStation Add
 /turf/unsimulated/fake_space
 	name = "\proper space"
 	icon = 'icons/turf/space.dmi'
@@ -18,7 +17,6 @@
 /turf/unsimulated/fake_space/Initialize(mapload)
 	. = ..()
 	icon_state = "[((x + y) ^ ~(x * y) + z) % 25]"
-//VOREStation Add End
 
 // Better nip this just in case.
 /turf/unsimulated/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)

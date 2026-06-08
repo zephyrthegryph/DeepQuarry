@@ -25,7 +25,7 @@
 	name = MAT_MARBLE
 	icon_colour = "#AAAAAA"
 	density = 26
-	hardness = 30 //VOREStation Edit - Please.
+	hardness = 30 // Please.
 	integrity = 201 //hack to stop kitchen benches being flippable, todo: refactor into weight system
 	stack_type = /obj/item/stack/material/marble
 	supply_conversion_value = 2
@@ -36,7 +36,7 @@
 		new /datum/stack_recipe("light marble floor tile", /obj/item/stack/tile/wmarble, 1, 4, 20, recycle_material = "[name]"),
 		new /datum/stack_recipe("dark marble floor tile", /obj/item/stack/tile/bmarble, 1, 4, 20, recycle_material = "[name]")
 	)
-//VOREStation Addition Start
+// ition Start
 /datum/material/stone/flint
 	name = MAT_FLINT
 	icon_colour = "#9e9c99"
@@ -51,7 +51,7 @@
 
 /datum/material/stone/flint/generate_recipes()
 	return
-//VOREStation Addition End
+// ition End
 
 /datum/material/stone/concrete
 	name = MAT_CONCRETE

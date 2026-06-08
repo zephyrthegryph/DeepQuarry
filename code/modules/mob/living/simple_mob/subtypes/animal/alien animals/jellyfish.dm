@@ -24,7 +24,7 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 	icon_living = "space_jellyfish"
 	icon_dead = "space_jellyfish_dead"
 	has_eye_glow = TRUE
-	// DQEdit — dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
+	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 	density = FALSE
 
 

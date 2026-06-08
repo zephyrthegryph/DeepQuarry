@@ -315,7 +315,7 @@
 		/obj/item/ammo_casing/a145 = 4
 	)
 
-// DQEdit — gasthrower (gun/magnetic/gasthrower) was a ZAS-tied weapon that fired
+// gasthrower (gun/magnetic/gasthrower) was a ZAS-tied weapon that fired
 // canister contents; deleted with ZAS atmos machinery. Flamer briefcase now ships
 // just the support gear.
 /obj/item/storage/secure/briefcase/flamer
@@ -326,7 +326,7 @@
 		/obj/item/tank/phoron/pressurized = 2
 	)
 
-// DQEdit — /obj/item/fuel_assembly and /obj/item/gun/magnetic/fuelrod were part
+// /obj/item/fuel_assembly and /obj/item/gun/magnetic/fuelrod were part
 // of the fusion subsystem (deleted with core_field.dm). Fuelrod briefcase
 // remains as a placeholder shell so the uplink listing still resolves but the
 // case spawns empty until fusion content is replaced.

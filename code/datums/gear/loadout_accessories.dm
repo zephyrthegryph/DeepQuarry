@@ -1,4 +1,4 @@
-// DQEdit — DeepQuarry preferences + loadout rewrite (commit fd3e36a673). Bay preference_setup framework deleted; /datum/gear loadout catalog relocated from code/modules/client/preference_setup/loadout/ to code/datums/gear/.
+// DeepQuarry preferences + loadout rewrite (commit fd3e36a673). Bay preference_setup framework deleted; /datum/gear loadout catalog relocated from code/modules/client/preference_setup/loadout/ to code/datums/gear/.
 // Bracketed at file-header rather than per-hunk because the
 // edits are mechanical and span the whole file; the commit SHA
 // is the source of truth for per-line diff context.
@@ -37,12 +37,12 @@
 /datum/gear/accessory/wallet_poly
 	display_name = "wallet, polychromic"
 	path = /obj/item/storage/wallet/poly
-	cost = 0 //VOREStation Edit
+	cost = 0
 
 /datum/gear/accessory/wallet/womens
 	display_name = "wallet, womens"
 	path = /obj/item/storage/wallet/womens
-	cost = 0 //VOREStation Edit
+	cost = 0
 
 /datum/gear/accessory/wallet/womens/New()
 	..()

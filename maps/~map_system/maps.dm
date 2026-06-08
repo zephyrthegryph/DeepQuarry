@@ -55,8 +55,8 @@ GLOBAL_LIST_EMPTY(all_maps)
 
 	//Similar to above, but only pick ONE to load, useful for random away missions and whatnot
 	var/list/lateload_gateway = list()
-	var/list/lateload_overmap = list() //VOREStation Add - The same thing as gateway, but not
-	var/list/lateload_redgate = list() //VOREStation Add - The same thing as gateway, but safe-ish
+	var/list/lateload_overmap = list() // The same thing as gateway, but not
+	var/list/lateload_redgate = list() // The same thing as gateway, but safe-ish
 
 	var/list/allowed_jobs = list() //Job datums to use.
 								//Works a lot better so if we get to a point where three-ish maps are used
@@ -70,23 +70,23 @@ GLOBAL_LIST_EMPTY(all_maps)
 	var/list/holomap_offset_y = list()
 	var/list/holomap_legend_x = list()
 	var/list/holomap_legend_y = list()
-	var/list/meteor_strike_areas	// VOREStation Edit - Areas meteor strikes may choose to hit.
-	var/ai_shell_restricted = FALSE			//VOREStation Addition - are there z-levels restricted?
-	var/ai_shell_allowed_levels = list()	//VOREStation Addition - which z-levels ARE we allowed to visit?
+	var/list/meteor_strike_areas // Areas meteor strikes may choose to hit.
+	var/ai_shell_restricted = FALSE // ition - are there z-levels restricted?
+	var/ai_shell_allowed_levels = list() // ition - which z-levels ARE we allowed to visit?
 
-	//VOREStation Addition Start
+	// ition Start
 	var/list/belter_docked_z = list()
 	var/list/belter_transit_z = list()
 	var/list/belter_belt_z = list()
 	var/list/mining_station_z = list()
 	var/list/mining_outpost_z = list()
-	//VOREStation Addition End
+	// ition End
 
 	var/station_name  = "BAD Station"
 	var/station_short = "Baddy"
-	var/facility_type = "station" //CHOMPEdit - Default to station instead of "facility"
+	var/facility_type = "station" // Default to station instead of "facility"
 	var/dock_name	 = "THE PirateBay"
-	var/dock_type	 = "station"	//VOREStation Edit - for a list of valid types see the switch block in air_traffic.dm at line 148
+	var/dock_type	 = "station" // for a list of valid types see the switch block in air_traffic.dm at line 148
 	var/boss_name	 = "Captain Roger"
 	var/boss_short	= "Cap'"
 	var/company_name  = "BadMan"
@@ -110,11 +110,10 @@ GLOBAL_LIST_EMPTY(all_maps)
 
 	var/allowed_spawns = list("Arrivals Shuttle","Gateway", "Cryogenic Storage", "Cyborg Storage")
 
-	// VOREStation Edit - Persistence!
+	// Persistence!
 	var/datum/spawnpoint/spawnpoint_died = /datum/spawnpoint/arrivals 	// Used if you end the round dead.
 	var/datum/spawnpoint/spawnpoint_left = /datum/spawnpoint/arrivals 	// Used of you end the round at centcom.
 	var/datum/spawnpoint/spawnpoint_stayed = /datum/spawnpoint/cryo 	// Used if you end the round on the station.
-	// VOREStation Edit End
 
 	var/use_overmap = 0		  // If overmap should be used (including overmap space travel override)
 	var/overmap_size = 20		 // Dimensions of overmap zlevel if overmap is used.
@@ -190,7 +189,7 @@ GLOBAL_LIST_EMPTY(all_maps)
 
 // Boolean for if we should use SSnightshift night hours
 /datum/map/proc/get_nightshift()
-	return get_night(5) //Defaults to z1, customize however you want on your own maps - CHOMPEdit - Sif is 5
+	return get_night(5) // Defaults to z1, customize however you want on your own maps - Sif is 5
 
 /datum/map/proc/setup_map()
 	return
@@ -227,7 +226,7 @@ GLOBAL_LIST_EMPTY(all_maps)
 	if(z) // Else, it's not a valid z and we want to expunge it
 		empty_levels |= z
 
-//CHOMPAdd Start restricted map view
+// restricted map view
 /datum/map/proc/get_visible_map_levels(srcz, long_range = FALSE)
 	if (long_range && (srcz in contact_levels))
 		return contact_levels.Copy() - admin_levels
@@ -237,7 +236,6 @@ GLOBAL_LIST_EMPTY(all_maps)
 	//Just give them back their zlevel
 	else
 		return list(srcz)
-//CHOMPAdd End
 
 // Get a list of 'nearby' or 'connected' zlevels.
 // You should at least return a list with the given z if nothing else.

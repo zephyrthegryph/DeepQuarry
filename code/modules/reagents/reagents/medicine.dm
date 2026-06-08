@@ -722,7 +722,7 @@
 			M.Weaken(5)
 		if(dose >= 10 && M.paralysis < 40)
 			M.AdjustParalysis(1) //Messing with the core with a simple chemical probably isn't the best idea.
-	// DQEdit — base brain healing moved to dq_alkysine_brain_effect (see
+	// base brain healing moved to dq_alkysine_brain_effect (see
 	// code/modules/medical/organ_decay/). Alkysine still works
 	// on mildly-damaged brains, but stops keeping up past the salvageable
 	// threshold (~60% organ damage), at which point ongoing decay

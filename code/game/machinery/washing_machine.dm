@@ -11,8 +11,8 @@
 /obj/machinery/washing_machine
 	name = "Washing Machine"
 	desc = "Not a hiding place. Unfit for pets."
-	icon = 'icons/obj/machines/washing_machine_vr.dmi' //VOREStation Edit
-	icon_state = "wm_1" //VOREStation Edit
+	icon = 'icons/obj/machines/washing_machine_vr.dmi'
+	icon_state = "wm_1"
 	density = TRUE
 	anchored = TRUE
 	clicksound = "button"

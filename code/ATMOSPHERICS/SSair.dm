@@ -3,7 +3,7 @@ SUBSYSTEM_DEF(air)
 	dependencies = list(
 		/datum/controller/subsystem/mapping,
 		/datum/controller/subsystem/atoms,
-		// DQEdit — setup_atmos_machinery iterates SSmachines.all_machines, so
+		// setup_atmos_machinery iterates SSmachines.all_machines, so
 		// SSmachines must finish populating that list before SSair inits.
 		/datum/controller/subsystem/machines,
 	)
@@ -14,7 +14,7 @@ SUBSYSTEM_DEF(air)
 
 	var/cached_cost = 0
 
-	// DQEdit — cost_atoms / atom_process / process_atoms removed alongside
+	// cost_atoms / atom_process / process_atoms removed alongside
 	// /atom/proc/process_exposure. /tg/'s atom-exposure pipeline (paper
 	// burning, etc.) isn't wired on this fork — atoms use CHOMP's fire_act
 	// dispatch instead. Strip the SSAIR_PROCESS_ATOMS step + atom_process
@@ -38,7 +38,7 @@ SUBSYSTEM_DEF(air)
 	var/list/expansion_queue = list()
 	/// List of turfs to recalculate adjacent turfs on before processing
 	var/list/adjacent_rebuild = list()
-	// DQEdit — /tg/'s SSair.atmos_machinery (an atmos-tick-scheduled device
+	// /tg/'s SSair.atmos_machinery (an atmos-tick-scheduled device
 	// queue) is dead code on this fork: atmospherics devices run via
 	// SSmachines.processing_machines (CHOMP-legacy /obj/machinery process()).
 	// Nothing ever called start_processing_machine, so the list was always
@@ -58,7 +58,7 @@ SUBSYSTEM_DEF(air)
 	//Special functions lists
 	var/list/turf/active_super_conductivity = list()
 	var/list/turf/open/high_pressure_delta = list()
-	// DQEdit — atom_process removed; see cost_atoms comment.
+	// atom_process removed; see cost_atoms comment.
 	/// Reactions which will contribute to a hotspot's size.
 	var/list/hotspot_reactions
 
@@ -106,13 +106,13 @@ SUBSYSTEM_DEF(air)
 
 	setup_allturfs()
 	setup_atmos_machinery()
-	// DQEdit — setup_pipenets() removed: CHOMP pipes call build_network()
+	// setup_pipenets() removed: CHOMP pipes call build_network()
 	// themselves lazily through return_air() / build_network(), so no
 	// central pipenet construction phase is needed once each device's
 	// atmos_init() has wired its node references.
 	setup_turf_visuals()
 	process_adjacent_rebuild()
-	// DQEdit — atmos_handbooks_init() removed. /tg/'s gas handbook is an
+	// atmos_handbooks_init() removed. /tg/'s gas handbook is an
 	// in-game wiki UI that DQ doesn't ship; the call had nothing to do.
 	return SS_INIT_SUCCESS
 
@@ -149,7 +149,7 @@ SUBSYSTEM_DEF(air)
 		resumed = FALSE
 		currentpart = SSAIR_ACTIVETURFS
 
-	// DQEdit — SSAIR_ATMOSMACHINERY step removed: see vars block comment.
+	// SSAIR_ATMOSMACHINERY step removed: see vars block comment.
 
 	if(currentpart == SSAIR_ACTIVETURFS)
 		timer = TICK_USAGE_REAL
@@ -210,7 +210,7 @@ SUBSYSTEM_DEF(air)
 		cost_superconductivity = MC_AVERAGE(cost_superconductivity, TICK_DELTA_TO_MS(cached_cost))
 		resumed = FALSE
 
-	// DQEdit — SSAIR_PROCESS_ATOMS step removed; see cost_atoms comment.
+	// SSAIR_PROCESS_ATOMS step removed; see cost_atoms comment.
 
 	currentpart = SSAIR_PIPENETS
 	SStgui.update_uis(SSair) //Lightning fast debugging motherfucker
@@ -271,8 +271,8 @@ SUBSYSTEM_DEF(air)
 // /tg/-style pipenet rebuild queues are unused under CHOMP's /datum/pipe_network
 // pipeline model.
 
-// DQEdit — process_atoms removed alongside atom_process / process_exposure.
-// DQEdit — process_atmos_machinery removed; see vars block comment.
+// process_atoms removed alongside atom_process / process_exposure.
+// process_atmos_machinery removed; see vars block comment.
 
 /datum/controller/subsystem/air/proc/process_super_conductivity(resumed = FALSE)
 	if (!resumed)
@@ -378,7 +378,7 @@ SUBSYSTEM_DEF(air)
 
 ///Adds a turf to active processing, handles duplicates. Call this with blockchanges == TRUE if you want to nuke the assoc excited group
 /datum/controller/subsystem/air/proc/add_to_active(turf/open/activate, blockchanges = FALSE)
-	// DQEdit — after the /turf/simulated → /turf/open reparent, walls and
+	// after the /turf/simulated → /turf/open reparent, walls and
 	// minerals match the /turf/open type but have blocks_air=1 / air=null.
 	// They reach this proc via legitimate paths — ChangeTurf calls
 	// mark_for_update on the new turf regardless of type, and /tg/'s design
@@ -458,7 +458,7 @@ SUBSYSTEM_DEF(air)
 	for(var/turf/open/potential_diff as anything in difference_check)
 		// I can't use 0 here, so we're gonna do this instead. If it ever breaks I'll eat my shoe
 		potential_diff.current_cycle = -INFINITY
-		// DQEdit — defend against air=null turfs (walls/mineral after the
+		// defend against air=null turfs (walls/mineral after the
 		// /turf/simulated → /turf/open reparent, since walls inherit /turf/open
 		// by type but blocks_air=1 → no air). Skip them so we never try to
 		// .compare() against null or activate them.
@@ -468,7 +468,7 @@ SUBSYSTEM_DEF(air)
 			// If it's already been processed, then it's already talked to us
 			if(enemy_tile.current_cycle == -INFINITY)
 				continue
-			// DQEdit — same null-air defense for the neighbor side.
+			// same null-air defense for the neighbor side.
 			if(!enemy_tile.air)
 				continue
 			// .air instead of .return_air() because we can guarantee that the proc won't do anything
@@ -613,7 +613,7 @@ SUBSYSTEM_DEF(air)
 /turf/open/space/resolve_active_graph()
 	return list()
 
-// DQEdit — single-pass init for every map-loaded /obj/machinery/atmospherics.
+// single-pass init for every map-loaded /obj/machinery/atmospherics.
 // /tg/ ran this off SSair.atmos_machinery (which doubled as the per-tick
 // process queue). On this fork devices process via SSmachines, so we don't
 // need a duplicate registry — SSmachines.all_machines already holds every
@@ -697,10 +697,10 @@ GLOBAL_LIST_EMPTY(colored_images)
 	var/datum/atmosphere/mix = atmos_gen[gas_string]
 	return mix.gas_string
 
-// DQEdit — start_processing_machine / stop_processing_machine removed.
+// start_processing_machine / stop_processing_machine removed.
 // See vars block comment: SSair never owned device processing on this fork.
 
-// DQEdit — added /proc/ keyword so these are fresh declarations rather than
+// added /proc/ keyword so these are fresh declarations rather than
 // overrides. CHOMP's TGUI base uses tgui_state/tgui_interact (different proc
 // names) and has no /datum-level ui_* base, so the original /tg/ override
 // syntax was relying on a base declaration in tg_infra_compat.dm. Promoting
@@ -753,7 +753,7 @@ GLOBAL_LIST_EMPTY(colored_images)
 	return data
 
 /datum/controller/subsystem/air/proc/ui_act(action, list/params, datum/tgui/ui, datum/ui_state/state)
-	// DQEdit — was . = ..(); but as a fresh declaration there's no parent to
+	// was . = ..(); but as a fresh declaration there's no parent to
 	// chain to. The /tg/ ..() called /datum/ui_state ancestry which CHOMP's
 	// TGUI doesn't have. Skip the parent chain; rights check below handles
 	// the permission gate that ..() would have asserted.

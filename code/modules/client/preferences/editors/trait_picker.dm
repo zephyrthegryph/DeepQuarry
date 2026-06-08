@@ -1,4 +1,4 @@
-// DQAdd — Trait picker composite editor.
+// Trait picker composite editor.
 // Owns the workflow for selecting positive/neutral/negative traits with point budget +
 // max-traits enforcement + species/synth/meatbag filtering.
 //
@@ -80,7 +80,7 @@
 			preferences.update_preference_by_type(/datum/preference/numeric/human/traits_cheating, !cur)
 			return PREF_UPDATE_ACCEPTED
 		if("set_blood_color")
-			// DQEdit — open BYOND's color picker so the user can actually pick a color.
+			// open BYOND's color picker so the user can actually pick a color.
 			var/current = preferences.read_preference(/datum/preference/color/human/blood_color) || "#A10808"
 			var/picked = tgui_color_picker(user, "Blood color", "Color picker", current)
 			if(!picked)

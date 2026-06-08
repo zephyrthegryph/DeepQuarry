@@ -16,7 +16,7 @@
 
 	nuke_chat()
 
-	// DQEdit — BYOND's native alert() instead of tg_alert (which used a
+	// BYOND's native alert() instead of tg_alert (which used a
 	// browser-rendered modal). Native alert is safe here even when the
 	// TGUI panel is broken (the whole point of this verb).
 	action = alert(src.mob, "Did that work?", "", "Yes", "No, switch to old ui")

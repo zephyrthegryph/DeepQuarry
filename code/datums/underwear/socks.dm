@@ -216,11 +216,11 @@
 
 
 // === merged from socks_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
-/datum/category_item/underwear/socks/generate_image(list/metadata, layer = FLOAT_LAYER, digitigrade = FALSE) //CHOMPEdit
+/datum/category_item/underwear/socks/generate_image(list/metadata, layer = FLOAT_LAYER, digitigrade = FALSE)
 	if(!icon_state)
 		return
 
-	var/image/I = image(icon = digitigrade ? 'icons/mob/human.dmi' : icon, icon_state = icon_state, layer = layer) //CHOMPEdit
+	var/image/I = image(icon = digitigrade ? 'icons/mob/human.dmi' : icon, icon_state = icon_state, layer = layer)
 	for(var/datum/gear_tweak/gt in tweaks)
 		gt.tweak_item(I, metadata && metadata["[gt]"] ? metadata["[gt]"] : gt.get_default())
 	return I

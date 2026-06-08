@@ -1,4 +1,4 @@
-// DQAdd — Apply organ_data + rlimb_data prefs to the character. Walks every defined external
+// Apply organ_data + rlimb_data prefs to the character. Walks every defined external
 // and internal organ, converts to cyborg / amputated / FBP variants per the saved state.
 // Pulled verbatim from /datum/category_item/player_setup_item/general/body/copy_to_mob().
 //

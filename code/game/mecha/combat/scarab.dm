@@ -1,4 +1,4 @@
-//ChompEdit - Making use of unused assets.
+// Making use of unused assets.
 /obj/mecha/combat/scarab
 	desc = "A very speedy and cramped quadredped combat mech designed for recon operations."
 	name = "Scarab"

@@ -142,7 +142,7 @@
 	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
 	radio_connection = SSradio.add_object(src, frequency, RADIO_CHAT)
-//CHOMPedit BEGIN re-adds stealth removal
+// BEGIN re-adds stealth removal
 /obj/item/assembly/signaler/process()
 	if(!deadman)
 		STOP_PROCESSING(SSobj, src)
@@ -163,7 +163,7 @@
 	START_PROCESSING(SSobj, src)
 	log_and_message_admins("is threatening to trigger a signaler deadman's switch")
 	usr.visible_message("<font color='red'>[usr] moves their finger over [src]'s signal button...</font>")
-//CHOMPedit end
+// end
 
 /obj/item/assembly/signaler/Destroy()
 	if(SSradio)

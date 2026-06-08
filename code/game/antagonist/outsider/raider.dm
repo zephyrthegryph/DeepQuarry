@@ -197,7 +197,7 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 		return 0
 
 	for(var/datum/mind/player in current_antagonists)
-		if(!player.current || get_area(player.current) != locate(/area/shuttle/skipjack)) // CHOMPEdit: Changed locate to work with new condensed shuttles
+		if(!player.current || get_area(player.current) != locate(/area/shuttle/skipjack)) // Changed locate to work with new condensed shuttles
 			return 0
 	return 1
 

@@ -1,4 +1,4 @@
-// DQAdd — preview rendering for play_mode = "robot" / "pai".
+// preview rendering for play_mode = "robot" / "pai".
 //
 // For human mode, /datum/preferences/proc/update_preview_icon dresses a
 // /mob/living/carbon/human/dummy/mannequin mannequin and flattens it via
@@ -9,7 +9,7 @@
 // render the four-direction preview identically to the organic case.
 //
 // The hook into update_preview_icon lives in
-// code/modules/mob/new_player/preferences_setup.dm — a DQEdit branch that
+// code/modules/mob/new_player/preferences_setup.dm — a branch that
 // dispatches to update_robot_preview / update_pai_preview based on the
 // play_mode pref before falling through to the human mannequin path.
 

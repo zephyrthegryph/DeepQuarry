@@ -27,7 +27,7 @@
 
 	speed = 3
 
-	// DQEdit — dq_get_softfall(src) type-default moved to GLOB.dq_softfall_by_type
+	// dq_get_softfall(src) type-default moved to GLOB.dq_softfall_by_type
 
 	mob_size = MOB_LARGE
 

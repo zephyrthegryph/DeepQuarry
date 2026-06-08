@@ -18,7 +18,7 @@
 
 /// Walk the material's components and apply each to the item that's
 /// just been assigned this material. Called from
-/// /obj/item/material/set_material via DQEdit.
+// / /obj/item/material/set_material via .
 /datum/material/proc/dq_apply_material_behaviors(obj/item/I)
 	if(!I)
 		return

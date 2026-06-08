@@ -411,7 +411,7 @@
 
 // === merged from station_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 // Alt mining voidsuit
-// CHOMPStation Edit Start: Commonwealth -> Solgov.
+// Commonwealth -> Solgov.
 /obj/item/clothing/suit/space/void/mining/alt2
 	desc = "A surplus Solgov mining voidsuit! Slightly more comfortable and easier to move in than your average voidsuit."
 
@@ -538,7 +538,6 @@
 	icon_state = "void_command_bay"
 	item_state = null
 	camera_networks = list(NETWORK_COMMAND)
-// CHOMPStation Edit End
 
 
 // === merged from station_chomp.dm during hard-fork de-suffix (verified no override-order change) ===

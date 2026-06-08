@@ -70,7 +70,7 @@
 		brainmob.loc = src
 		brainmob.container = src
 		brainmob.set_stat(CONSCIOUS)
-		brainmob.blinded = 0 //VOREedit Fixes MMIs vision
+		brainmob.blinded = 0 // Fixes MMIs vision
 		GLOB.dead_mob_list -= brainmob//Update dem lists
 		GLOB.living_mob_list += brainmob
 

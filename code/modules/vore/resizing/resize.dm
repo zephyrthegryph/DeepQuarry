@@ -107,7 +107,7 @@
  * * aura_animation - CHANGE_ME. Default: TRUE
  * * allow_stripping - CHANGE_ME.  Default: FALSE
  */
-/mob/living/proc/resize(new_size, animate = TRUE, uncapped = FALSE, ignore_prefs = FALSE, aura_animation = FALSE, allow_stripping = FALSE) //CHOMPEdit - Disable aura_animation. Too expensive for something you can't even see.
+/mob/living/proc/resize(new_size, animate = TRUE, uncapped = FALSE, ignore_prefs = FALSE, aura_animation = FALSE, allow_stripping = FALSE) // Disable aura_animation. Too expensive for something you can't even see.
 	if(!uncapped)
 		if((z in using_map.station_levels) && CONFIG_GET(flag/pixel_size_limit))
 			var/size_diff = ((runechat_y_offset() / size_multiplier) * new_size) // This returns 32 multiplied with the new size
@@ -164,7 +164,7 @@
 	else
 		update_transform() //Lame way
 
-/mob/living/carbon/human/resize(new_size, animate = TRUE, uncapped = FALSE, ignore_prefs = FALSE, aura_animation = FALSE, allow_stripping = FALSE) //CHOMPEdit - Disable aura_animation. Too expensive for something you can't even see.
+/mob/living/carbon/human/resize(new_size, animate = TRUE, uncapped = FALSE, ignore_prefs = FALSE, aura_animation = FALSE, allow_stripping = FALSE) // Disable aura_animation. Too expensive for something you can't even see.
 	if(!resizable && !ignore_prefs)
 		return 1
 	var/previous_scale = size_multiplier
@@ -299,7 +299,7 @@
  *
  * @return false if normal code should continue, 1 to prevent normal code.
  */
-/mob/living/proc/handle_micro_bump_other(mob/living/tmob, nofetish = 0) //CHOMPEDIT - changed a lot in this whole proc tbh, to bring back micro combat balance
+/mob/living/proc/handle_micro_bump_other(mob/living/tmob, nofetish = 0) // changed a lot in this whole proc tbh, to bring back micro combat balance
 	ASSERT(istype(tmob))
 	//If we're flying, don't do any special interactions.
 	if(flying)
@@ -344,14 +344,14 @@
 	// We need to be above a certain size ratio in order to do anything to the prey.
 	// For DISARM and HURT intent, this is >=0.75, for GRAB it is >=0.5
 	var/size_ratio = get_effective_size(FALSE) - tmob.get_effective_size(TRUE)
-	if((a_intent == I_GRAB || a_intent == I_DISARM) && size_ratio < 0.5) //CHOMPEDIT - more step changes
+	if((a_intent == I_GRAB || a_intent == I_DISARM) && size_ratio < 0.5) // more step changes
 		return FALSE
 	if(a_intent == I_HURT && size_ratio < 0.75)
 		return FALSE
 	if(a_intent == I_HELP) // Theoretically not possible, but just in case.
 		return FALSE
 
-	//CHOMPEdit - removed chance to dodge steppies. Get rng out of my combat.
+	// removed chance to dodge steppies. Get rng out of my combat.
 	now_pushing = 0
 	forceMove(tmob.loc)
 	if(a_intent != I_HELP)
@@ -360,7 +360,7 @@
 			to_chat(prey, span_danger("[src.name] passes over you."))
 			return FALSE
 		tmob.resting = 1
-		tmob.Weaken(3)		//CHOMPEdit - do both regardless of intent, dummy
+		tmob.Weaken(3) // do both regardless of intent, dummy
 		if(nofetish)
 			to_chat(pred, span_danger("You casually knock [tmob.name] over."))
 			to_chat(prey, span_danger("[src.name] casually knocks you over."))
@@ -381,7 +381,7 @@
 	var/datum/sprite_accessory/tail/taur/tail = null
 	if(istaurtail(pred.tail_style))
 		tail = pred.tail_style
-	if(!nofetish)	//CHOMPedit - Brings back mandatory step mechanics, circumvents the fetish stuff if no pref match
+	if(!nofetish) // Brings back mandatory step mechanics, circumvents the fetish stuff if no pref match
 		if(a_intent == I_GRAB)
 			// You can only grab prey if you have no shoes on. And both of you are cool with it.
 			if(pred.shoes || !(pred.pickup_pref && prey.pickup_pref))

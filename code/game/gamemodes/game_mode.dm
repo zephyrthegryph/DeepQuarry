@@ -416,7 +416,7 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 				continue
 			if(isobserver(player) && !ghosts_only)
 				continue
-			if(!role || (player.client.prefs.read_preference(/datum/preference/numeric/human/be_special) & role)) // DQEdit — be_special migrated
+			if(!role || (player.client.prefs.read_preference(/datum/preference/numeric/human/be_special) & role)) // be_special migrated
 				log_game("[player.key] had [antag_id] enabled, so we are drafting them.")
 				candidates |= player.mind
 	else
@@ -427,7 +427,7 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 
 		// Get a list of all the people who want to be the antagonist for this round
 		for(var/mob/new_player/player in players)
-			if(!role || (player.client.prefs.read_preference(/datum/preference/numeric/human/be_special) & role)) // DQEdit — be_special migrated
+			if(!role || (player.client.prefs.read_preference(/datum/preference/numeric/human/be_special) & role)) // be_special migrated
 				log_game("[player.key] had [antag_id] enabled, so we are drafting them.")
 				candidates += player.mind
 				players -= player
@@ -534,7 +534,7 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 							msg += "[span_bold(L.name)] ([ckey(D.mind.key)]), the [L.job] ([span_red(span_bold("Ghosted"))])<br>"
 							continue //Ghosted while alive
 
-			continue // CHOMPEdit: Escape infinite loop in case there's nobody connected. Shouldn't happen ever, but.
+			continue // Escape infinite loop in case there's nobody connected. Shouldn't happen ever, but.
 
 	msg = span_notice(msg)// close the span from right at the top
 

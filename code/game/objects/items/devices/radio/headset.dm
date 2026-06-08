@@ -66,12 +66,12 @@
 	if(!ishuman(src.loc))				//CHOMP Addition, this IF block.
 		return ..(freq, level)		//CHOMP Addition end
 	if (aiOverride)
-		playsound(loc, 'sound/effects/radio_common.ogg', 20, 1, 1, preference = /datum/preference/toggle/radio_sounds) //CHOMPAdd
+		playsound(loc, 'sound/effects/radio_common.ogg', 20, 1, 1, preference = /datum/preference/toggle/radio_sounds)
 		return ..(freq, level)
 	if(ishuman(src.loc))
 		var/mob/living/carbon/human/H = src.loc
 		if(H.l_ear == src || H.r_ear == src)
-			playsound(loc, 'sound/effects/radio_common.ogg', 20, 1, 1, preference = /datum/preference/toggle/radio_sounds) //CHOMPAdd
+			playsound(loc, 'sound/effects/radio_common.ogg', 20, 1, 1, preference = /datum/preference/toggle/radio_sounds)
 			return ..(freq, level)
 	return -1
 
@@ -244,97 +244,97 @@
 
 /obj/item/radio/headset/headset_sec
 	name = "security radio headset"
-	desc = "This headset is used by your elite security force." // CHOMPAdd
+	desc = "This headset is used by your elite security force."
 	icon_state = "sec_headset"
 	ks2type = /obj/item/encryptionkey/headset_sec
 
 /obj/item/radio/headset/alt/headset_sec
 	name = "security bowman headset"
-	desc = "This bowman headset is used by your elite security force." // CHOMPAdd
+	desc = "This bowman headset is used by your elite security force."
 	icon_state = "sec_headset_alt"
 	ks2type = /obj/item/encryptionkey/headset_sec
 
 /obj/item/radio/headset/earbud/headset_sec
 	name = "security earbud"
-	desc = "This tiny earbud is used by your elite security force." // CHOMPAdd
+	desc = "This tiny earbud is used by your elite security force."
 	icon_state = "sec_earbud"
 	ks2type = /obj/item/encryptionkey/headset_sec
 
 /obj/item/radio/headset/headset_eng
 	name = "engineering radio headset"
-	desc = "When the engineers wish to chat like girls." // CHOMPAdd
+	desc = "When the engineers wish to chat like girls."
 	icon_state = "eng_headset"
 	ks2type = /obj/item/encryptionkey/headset_eng
 
 /obj/item/radio/headset/alt/headset_eng
 	name = "engineering bowman headset"
-	desc = "When the engineers wish to chat like girls." // CHOMPAdd
+	desc = "When the engineers wish to chat like girls."
 	icon_state = "eng_headset_alt"
 	ks2type = /obj/item/encryptionkey/headset_eng
 
 /obj/item/radio/headset/earbud/headset_eng
 	name = "engineering earbud"
-	desc = "When the engineers wish to chat like girls." // CHOMPAdd
+	desc = "When the engineers wish to chat like girls."
 	icon_state = "eng_earbud"
 	ks2type = /obj/item/encryptionkey/headset_eng
 
 /obj/item/radio/headset/headset_med
 	name = "medical radio headset"
-	desc = "A headset for the trained staff of the medbay." // CHOMPAdd
+	desc = "A headset for the trained staff of the medbay."
 	icon_state = "med_headset"
 	ks2type = /obj/item/encryptionkey/headset_med
 
 /obj/item/radio/headset/alt/headset_med
 	name = "medical bowman headset"
-	desc = "A bowman headset for the trained staff of the medbay." // CHOMPAdd
+	desc = "A bowman headset for the trained staff of the medbay."
 	icon_state = "med_headset_alt"
 	ks2type = /obj/item/encryptionkey/headset_med
 
 /obj/item/radio/headset/earbud/headset_med
 	name = "medical earbud"
-	desc = "A tiny earbud for the trained staff of the medbay." // CHOMPAdd
+	desc = "A tiny earbud for the trained staff of the medbay."
 	icon_state = "med_earbud"
 	ks2type = /obj/item/encryptionkey/headset_med
 
 /obj/item/radio/headset/headset_sci
 	name = "science radio headset"
-	desc = "A sciency headset. Like usual." // CHOMPAdd
+	desc = "A sciency headset. Like usual."
 	icon_state = "com_headset"
 	ks2type = /obj/item/encryptionkey/headset_sci
 
 /obj/item/radio/headset/alt/headset_sci
 	name = "science bowman headset"
-	desc = "A sciency bowman headset. Like usual." // CHOMPAdd
+	desc = "A sciency bowman headset. Like usual."
 	icon_state = "com_headset_alt"
 	ks2type = /obj/item/encryptionkey/headset_sci
 
 /obj/item/radio/headset/earbud/headset_sci
 	name = "science earbud"
-	desc = "A tiny sciency earbud. Like usual." // CHOMPAdd
+	desc = "A tiny sciency earbud. Like usual."
 	icon_state = "com_earbud"
 	ks2type = /obj/item/encryptionkey/headset_sci
 
 /obj/item/radio/headset/headset_com
 	name = "command radio headset"
-	desc = "A headset with a commanding channel." // CHOMPAdd
+	desc = "A headset with a commanding channel."
 	icon_state = "com_headset"
 	ks2type = /obj/item/encryptionkey/headset_com
 
 /obj/item/radio/headset/alt/headset_com
 	name = "command bowman headset"
-	desc = "A bowman headset with a commanding channel." // CHOMPAdd
+	desc = "A bowman headset with a commanding channel."
 	icon_state = "com_headset_alt"
 	ks2type = /obj/item/encryptionkey/headset_com
 
 /obj/item/radio/headset/earbud/headset_com
 	name = "command earbud"
-	desc = "A tiny earbud with a commanding channel." // CHOMPAdd
+	desc = "A tiny earbud with a commanding channel."
 	icon_state = "com_earbud"
 	ks2type = /obj/item/encryptionkey/headset_com
 
 /obj/item/radio/headset/heads/captain
 	name = "site manager's headset"
-	desc = "The headset of the boss." // CHOMPAdd
+	desc = "The headset of the boss."
 	icon_state = "com_headset"
 	ks2type = /obj/item/encryptionkey/heads/captain
 
@@ -345,103 +345,103 @@
 
 /obj/item/radio/headset/alt/heads/captain
 	name = "site manager's bowman headset"
-	desc = "The bowman headset of the boss." // CHOMPAdd
+	desc = "The bowman headset of the boss."
 	icon_state = "com_headset_alt"
 	ks2type = /obj/item/encryptionkey/heads/captain
 
 /obj/item/radio/headset/earbud/heads/captain
 	name = "site manager's earbud"
-	desc = "The tiny earbud of the boss." // CHOMPAdd
+	desc = "The tiny earbud of the boss."
 	icon_state = "com_earbud"
 	ks2type = /obj/item/encryptionkey/heads/captain
 
 /obj/item/radio/headset/heads/rd
 	name = "research director's headset"
-	desc = "The headset of the eccentric-in-chief." // CHOMPAdd
+	desc = "The headset of the eccentric-in-chief."
 	icon_state = "com_headset"
 	ks2type = /obj/item/encryptionkey/heads/rd
 
 /obj/item/radio/headset/alt/heads/rd
 	name = "research director's bowman headset"
-	desc = "The bowman headset of the eccentric-in-chief." // CHOMPAdd
+	desc = "The bowman headset of the eccentric-in-chief."
 	icon_state = "com_headset_alt"
 	ks2type = /obj/item/encryptionkey/heads/rd
 
 /obj/item/radio/headset/earbud/heads/rd
 	name = "research director's earbud"
-	desc = "The tiny earbud of the eccentric-in-chief." // CHOMPAdd
+	desc = "The tiny earbud of the eccentric-in-chief."
 	icon_state = "com_earbud"
 	ks2type = /obj/item/encryptionkey/heads/rd
 
 /obj/item/radio/headset/heads/hos
 	name = "head of security's headset"
-	desc = "The headset of the hardass who protects your worthless lives." // CHOMPAdd
+	desc = "The headset of the hardass who protects your worthless lives."
 	icon_state = "com_headset"
 	ks2type = /obj/item/encryptionkey/heads/hos
 
 /obj/item/radio/headset/alt/heads/hos
 	name = "head of security's bowman headset"
-	desc = "The bowman headset of the hardass who protects your worthless lives." // CHOMPAdd
+	desc = "The bowman headset of the hardass who protects your worthless lives."
 	icon_state = "com_headset_alt"
 	ks2type = /obj/item/encryptionkey/heads/hos
 
 /obj/item/radio/headset/earbud/heads/hos
 	name = "head of security's earbud"
-	desc = "The tiny earbud of the hardass who protects your worthless lives." // CHOMPAdd
+	desc = "The tiny earbud of the hardass who protects your worthless lives."
 	icon_state = "com_earbud"
 	ks2type = /obj/item/encryptionkey/heads/hos
 
 /obj/item/radio/headset/heads/ce
 	name = "chief engineer's headset"
-	desc = "The headset of the clown who is in charge of the circus." // CHOMPAdd
+	desc = "The headset of the clown who is in charge of the circus."
 	icon_state = "com_headset"
 	ks2type = /obj/item/encryptionkey/heads/ce
 
 /obj/item/radio/headset/alt/heads/ce
 	name = "chief engineer's bowman headset"
-	desc = "The bowman headset of the clown who is in charge of the circus." // CHOMPAdd
+	desc = "The bowman headset of the clown who is in charge of the circus."
 	icon_state = "com_headset_alt"
 	ks2type = /obj/item/encryptionkey/heads/ce
 
 /obj/item/radio/headset/earbud/heads/ce
 	name = "chief engineer's earbud"
-	desc = "The tiny earbud of the clown who is in charge of the circus." // CHOMPAdd
+	desc = "The tiny earbud of the clown who is in charge of the circus."
 	icon_state = "com_earbud"
 	ks2type = /obj/item/encryptionkey/heads/ce
 
 /obj/item/radio/headset/heads/cmo
 	name = "chief medical officer's headset"
-	desc = "The headset of the highly trained medical chief." // CHOMPAdd
+	desc = "The headset of the highly trained medical chief."
 	icon_state = "com_headset"
 	ks2type = /obj/item/encryptionkey/heads/cmo
 
 /obj/item/radio/headset/alt/heads/cmo
 	name = "chief medical officer's bowman headset"
-	desc = "The bowman headset of the highly trained medical chief." // CHOMPAdd
+	desc = "The bowman headset of the highly trained medical chief."
 	icon_state = "com_headset_alt"
 	ks2type = /obj/item/encryptionkey/heads/cmo
 
 /obj/item/radio/headset/earbud/heads/cmo
 	name = "chief medical officer's earbud"
-	desc = "The tiny earbud of the highly trained medical chief." // CHOMPAdd
+	desc = "The tiny earbud of the highly trained medical chief."
 	icon_state = "com_earbud"
 	ks2type = /obj/item/encryptionkey/heads/cmo
 
 /obj/item/radio/headset/heads/hop
 	name = "head of personnel's headset"
-	desc = "The headset of the poor fool who will one day be " + JOB_SITE_MANAGER + "." // CHOMPAdd
+	desc = "The headset of the poor fool who will one day be " + JOB_SITE_MANAGER + "."
 	icon_state = "com_headset"
 	ks2type = /obj/item/encryptionkey/heads/hop
 
 /obj/item/radio/headset/alt/heads/hop
 	name = "head of personnel's bowman headset"
-	desc = "The bowman headset of the poor fool who will one day be " + JOB_SITE_MANAGER + "." // CHOMPAdd
+	desc = "The bowman headset of the poor fool who will one day be " + JOB_SITE_MANAGER + "."
 	icon_state = "com_headset_alt"
 	ks2type = /obj/item/encryptionkey/heads/hop
 
 /obj/item/radio/headset/earbud/heads/hop
 	name = "head of personnel's earbud"
-	desc = "The tiny earbud of the poor fool who will one day be " + JOB_SITE_MANAGER + "." // CHOMPAdd
+	desc = "The tiny earbud of the poor fool who will one day be " + JOB_SITE_MANAGER + "."
 	icon_state = "com_earbud"
 	ks2type = /obj/item/encryptionkey/heads/hop
 
@@ -454,93 +454,93 @@
 
 /obj/item/radio/headset/cargo
 	name = "supply radio headset"
-	desc = "A headset used by the QM's slaves." // CHOMPAdd
+	desc = "A headset used by the QM's slaves."
 	icon_state = "cargo_headset"
 	ks2type = /obj/item/encryptionkey/headset_cargo
 
 /obj/item/radio/headset/alt/cargo
 	name = "supply bowman headset"
-	desc = "A bowman headset used by the QM's slaves." // CHOMPAdd
+	desc = "A bowman headset used by the QM's slaves."
 	icon_state = "cargo_headset_alt"
 	ks2type = /obj/item/encryptionkey/headset_cargo
 
 /obj/item/radio/headset/earbud/cargo
 	name = "supply earbud"
-	desc = "A tiny earbud used by the QM's slaves." // CHOMPAdd
+	desc = "A tiny earbud used by the QM's slaves."
 	icon_state = "cargo_earbud"
 	ks2type = /obj/item/encryptionkey/headset_cargo
 
 /obj/item/radio/headset/qm
 	name = "qm radio headset"
-	desc = "A headset used by the QM." // CHOMPAdd
+	desc = "A headset used by the QM."
 	icon_state = "cargo_headset"
 	ks2type = /obj/item/encryptionkey/qm
 
 /obj/item/radio/headset/alt/qm
 	name = "qm bowman headset"
-	desc = "A bowman headset used by the QM." // CHOMPAdd
+	desc = "A bowman headset used by the QM."
 	icon_state = "cargo_headset_alt"
 	ks2type = /obj/item/encryptionkey/qm
 
 /obj/item/radio/headset/earbud/qm
 	name = "qm earbud"
-	desc = "A tiny earbud used by the QM." // CHOMPAdd
+	desc = "A tiny earbud used by the QM."
 	icon_state = "cargo_earbud"
 	ks2type = /obj/item/encryptionkey/qm
 
 /obj/item/radio/headset/service
 	name = "service radio headset"
-	desc = "Headset used by the service staff, tasked with keeping the station full, happy and clean." // CHOMPAdd
+	desc = "Headset used by the service staff, tasked with keeping the station full, happy and clean."
 	icon_state = "srv_headset"
 	ks2type = /obj/item/encryptionkey/headset_service
 
 /obj/item/radio/headset/alt/service
 	name = "service bowman headset"
-	desc = "Bowman headset used by the service staff, tasked with keeping the station full, happy and clean." // CHOMPAdd
+	desc = "Bowman headset used by the service staff, tasked with keeping the station full, happy and clean."
 	icon_state = "srv_headset_alt"
 	ks2type = /obj/item/encryptionkey/headset_service
 
 /obj/item/radio/headset/earbud/service
 	name = "service earbud"
-	desc = "A tiny earbud used by the service staff, tasked with keeping the station full, happy and clean." // CHOMPAdd
+	desc = "A tiny earbud used by the service staff, tasked with keeping the station full, happy and clean."
 	icon_state = "srv_earbud"
 	ks2type = /obj/item/encryptionkey/headset_service
 
 /obj/item/radio/headset/ert
 	name = "emergency response team radio headset"
-	desc = "The headset of the boss's boss." // CHOMPAdd
+	desc = "The headset of the boss's boss."
 	icon_state = "com_headset"
 	centComm = 1
 	ks2type = /obj/item/encryptionkey/ert
 
 /obj/item/radio/headset/alt/ert
 	name = "emergency response team bowman headset"
-	desc = "The bowman headset of the boss's boss." // CHOMPAdd
+	desc = "The bowman headset of the boss's boss."
 	icon_state = "com_headset_alt"
 	centComm = 1
 	ks2type = /obj/item/encryptionkey/ert
 
 /obj/item/radio/headset/ia
 	name = "internal affairs headset"
-	desc = "The headset of your worst enemy." // CHOMPAdd
+	desc = "The headset of your worst enemy."
 	icon_state = "com_headset"
 	ks2type = /obj/item/encryptionkey/heads/hos
 
 /obj/item/radio/headset/alt/ia
 	name = "internal affairs bowman headset"
-	desc = "The bowman headset of your worst enemy." // CHOMPAdd
+	desc = "The bowman headset of your worst enemy."
 	icon_state = "com_headset_alt"
 	ks2type = /obj/item/encryptionkey/heads/hos
 
 /obj/item/radio/headset/earbud/ia
 	name = "internal affairs earbud"
-	desc = "The tiny earbud of your worst enemy." // CHOMPAdd
+	desc = "The tiny earbud of your worst enemy."
 	icon_state = "com_earbud"
 	ks2type = /obj/item/encryptionkey/heads/hos
 
 /obj/item/radio/headset/centcom
 	name = "centcom radio headset"
-	desc = "The headset of the boss's boss." // CHOMPAdd
+	desc = "The headset of the boss's boss."
 	icon_state = "cent_headset"
 	item_state = "headset"
 	centComm = 1
@@ -548,103 +548,103 @@
 
 /obj/item/radio/headset/alt/centcom
 	name = "centcom bowman headset"
-	desc = "The bowman headset of the boss's boss." // CHOMPAdd
+	desc = "The bowman headset of the boss's boss."
 	icon_state = "com_headset_alt"
 	centComm = 1
 	ks2type = /obj/item/encryptionkey/ert
 
 /obj/item/radio/headset/nanotrasen
 	name = "\improper NT radio headset"
-	desc = "The headset of a Nanotrasen corporate employee." // CHOMPAdd
+	desc = "The headset of a Nanotrasen corporate employee."
 	icon_state = "nt_headset"
 	centComm = 1
 	ks2type = /obj/item/encryptionkey/ert
 
 /obj/item/radio/headset/alt/nanotrasen
 	name = "\improper NT bowman headset"
-	desc = "The bowman headset of a Nanotrasen corporate employee." // CHOMPAdd
+	desc = "The bowman headset of a Nanotrasen corporate employee."
 	icon_state = "nt_headset_alt"
 	centComm = 1
 	ks2type = /obj/item/encryptionkey/ert
 
 /obj/item/radio/headset/pathfinder
 	name = "pathfinder's headset"
-	desc = "Headset used by pathfinders for exploring. Access to the explorer and command channels." // CHOMPAdd
+	desc = "Headset used by pathfinders for exploring. Access to the explorer and command channels."
 	icon_state = "exp_headset"
 	adhoc_fallback = TRUE
 	ks2type = /obj/item/encryptionkey/pathfinder
 
 /obj/item/radio/headset/alt/pathfinder
 	name = "pathfinder's bowman headset"
-	desc = "Bowman headset used by pathfinders for exploring. Access to the explorer and command channels." // CHOMPAdd
+	desc = "Bowman headset used by pathfinders for exploring. Access to the explorer and command channels."
 	icon_state = "exp_headset_alt"
 	adhoc_fallback = TRUE
 	ks2type = /obj/item/encryptionkey/pathfinder
 
 /obj/item/radio/headset/pilot
 	name = "pilot's headset"
-	desc = "A headset used by pilots." // CHOMPAdd
+	desc = "A headset used by pilots."
 	icon_state = "pilot_headset"
 	adhoc_fallback = TRUE
 
 /obj/item/radio/headset/alt/pilot
 	name = "pilot's bowman headset"
-	desc = "A bowman headset used by pilots." // CHOMPAdd
+	desc = "A bowman headset used by pilots."
 	icon_state = "pilot_headset_alt"
 	adhoc_fallback = TRUE
 
 /obj/item/radio/headset/explorer
 	name = "away team member's headset"
-	desc = "Headset used by the away team for exploring. Access to the away team channel." // CHOMPAdd
+	desc = "Headset used by the away team for exploring. Access to the away team channel."
 	icon_state = "exp_headset"
 	adhoc_fallback = TRUE
 	ks2type = /obj/item/encryptionkey/explorer
 
 /obj/item/radio/headset/alt/explorer
 	name = "away team's bowman headset"
-	desc = "Bowman headset used by the away team for exploring. Access to the away team channel." // CHOMPAdd
+	desc = "Bowman headset used by the away team for exploring. Access to the away team channel."
 	icon_state = "exp_headset_alt"
 	adhoc_fallback = TRUE
 	ks2type = /obj/item/encryptionkey/explorer
 
 /obj/item/radio/headset/sar
 	name = "search and rescue headset"
-	desc = "A headset for field medics." // CHOMPAdd
+	desc = "A headset for field medics."
 	icon_state = "sar_headset"
 	adhoc_fallback = TRUE
 	ks2type = /obj/item/encryptionkey/sar
 
 /obj/item/radio/headset/alt/sar
 	name = "search and rescue bowman headset"
-	desc = "A bowman headset for field medics." // CHOMPAdd
+	desc = "A bowman headset for field medics."
 	icon_state = "sar_headset_alt"
 	adhoc_fallback = TRUE
 	ks2type = /obj/item/encryptionkey/sar
 
 /obj/item/radio/headset/talon
 	name = "talon headset"
-	desc = "A headset for communication between the crew of the ITV Talon." // CHOMPAdd
+	desc = "A headset for communication between the crew of the ITV Talon."
 	adhoc_fallback = TRUE
 	icon_state = "pilot_headset"
 	ks2type = /obj/item/encryptionkey/talon
 
 /obj/item/radio/headset/alt/talon
 	name = "talon bowman headset"
-	desc = "A bowman headset for communication between the crew of the ITV Talon." // CHOMPAdd
+	desc = "A bowman headset for communication between the crew of the ITV Talon."
 	adhoc_fallback = TRUE
 	icon_state = "pilot_headset_alt"
 	ks2type = /obj/item/encryptionkey/talon
 
 /obj/item/radio/headset/earbud/talon
 	name = "talon earbud"
-	desc = "A tiny earbud for communication between the crew of the ITV Talon." // CHOMPAdd
+	desc = "A tiny earbud for communication between the crew of the ITV Talon."
 	adhoc_fallback = TRUE
 	icon_state = "pilot_headset"
 	ks2type = /obj/item/encryptionkey/talon
 
 /obj/item/radio/headset/headset_rob
 	name = "robotics radio headset"
-	desc = "Made specifically for the roboticists who cannot decide between departments." // CHOMPAdd
+	desc = "Made specifically for the roboticists who cannot decide between departments."
 	icon_state = "rob_headset"
 	ks2type = /obj/item/encryptionkey/headset_rob
 
@@ -682,7 +682,7 @@
 
 /obj/item/radio/headset/mmi_radio
 	name = "brain-integrated radio"
-	desc = "MMIs and synthetic brains are often equipped with these." // CHOMPAdd
+	desc = "MMIs and synthetic brains are often equipped with these."
 	icon = 'icons/obj/robot_component.dmi'
 	icon_state = "radio"
 	item_state = "headset"

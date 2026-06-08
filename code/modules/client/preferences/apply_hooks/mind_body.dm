@@ -1,4 +1,4 @@
-// DQAdd — Mind/Body apply hook.
+// Mind/Body apply hook.
 //
 // Runs at SPECIES + 5 so it can write var_changes onto the species the traits hook
 // just synthesised. Body perks write var_changes (like traits); Mind perks call

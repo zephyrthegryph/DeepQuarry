@@ -191,7 +191,7 @@
 			if(istype(target, /obj/item/implantcase/chem))
 				return
 
-			// CHOMPedit begin - Engineered organ training
+			// begin - Engineered organ training
 			if(istype(target, /obj/item/organ/internal/malignant/engineered/lattice))
 				var/datum/reagent/R = pick(reagents.reagent_list)
 				if(R)
@@ -202,7 +202,7 @@
 					mode = SYRINGE_DRAW
 					update_icon()
 				return
-			// CHOMPedit end
+			// end
 
 			if(!target.is_injectable_container() && !ismob(target))
 				to_chat(user, span_notice("You cannot directly fill this object."))
@@ -212,13 +212,13 @@
 				return
 
 			var/mob/living/carbon/human/H = target
-			var/obj/item/organ/external/affected //VOREStation Edit - Moved this outside this if
+			var/obj/item/organ/external/affected // Moved this outside this if
 			if(istype(H))
 				if(!H.consume_liquid_belly)
 					if(liquid_belly_check())
 						to_chat(user, span_infoplain("[user == H ? "You can't" : "\The [H] can't"] take that, it contains something produced from a belly!"))
 						return
-				affected = H.get_organ(user.zone_sel.selecting) //VOREStation Edit - See above comment.
+				affected = H.get_organ(user.zone_sel.selecting) // See above comment.
 				if(!affected)
 					to_chat(user, span_danger("\The [H] is missing that limb!"))
 					return
@@ -279,7 +279,7 @@
 			else
 				to_chat(user, span_notice("The syringe is empty."))
 
-//		dirty(target,affected) //VOREStation Add -- Removed by Request
+// dirty(target,affected) // Removed by Request
 	return
 
 /obj/item/reagent_containers/syringe/proc/syringestab(mob/living/carbon/target as mob, mob/living/carbon/user as mob)
@@ -365,7 +365,7 @@
 /obj/item/reagent_containers/syringe/inaprovaline/Initialize(mapload)
 	. = ..()
 	reagents.add_reagent(REAGENT_ID_INAPROVALINE, 15)
-	//mode = SYRINGE_INJECT //VOREStation Edit - Starts capped
+	// mode = SYRINGE_INJECT // Starts capped
 	//update_icon()
 
 /obj/item/reagent_containers/syringe/antitoxin
@@ -375,7 +375,7 @@
 /obj/item/reagent_containers/syringe/antitoxin/Initialize(mapload)
 	. = ..()
 	reagents.add_reagent(REAGENT_ID_ANTITOXIN, 15)
-	//mode = SYRINGE_INJECT //VOREStation Edit - Starts capped
+	// mode = SYRINGE_INJECT // Starts capped
 	//update_icon()
 
 /obj/item/reagent_containers/syringe/antiviral
@@ -385,7 +385,7 @@
 /obj/item/reagent_containers/syringe/antiviral/Initialize(mapload)
 	. = ..()
 	reagents.add_reagent(REAGENT_ID_SPACEACILLIN, 15)
-	//mode = SYRINGE_INJECT //VOREStation Edit - Starts capped
+	// mode = SYRINGE_INJECT // Starts capped
 	//update_icon()
 
 /obj/item/reagent_containers/syringe/drugs
@@ -397,7 +397,7 @@
 	reagents.add_reagent(REAGENT_ID_BLISS,  5)
 	reagents.add_reagent(REAGENT_ID_MINDBREAKER,  5)
 	reagents.add_reagent(REAGENT_ID_CRYPTOBIOLIN, 5)
-	//mode = SYRINGE_INJECT //VOREStation Edit - Starts capped
+	// mode = SYRINGE_INJECT // Starts capped
 	//update_icon()
 
 /obj/item/reagent_containers/syringe/ld50_syringe/choral/Initialize(mapload)
@@ -412,7 +412,7 @@
 
 /obj/item/reagent_containers/syringe/steroid/Initialize(mapload)
 	. = ..()
-	//reagents.add_reagent(REAGENT_ID_ADRENALINE,5) //VOREStation Edit - No thanks.
+	// reagents.add_reagent(REAGENT_ID_ADRENALINE,5) // No thanks.
 	reagents.add_reagent(REAGENT_ID_HYPERZINE,10)
 
 /obj/item/reagent_containers/syringe/proc/dirty(mob/living/carbon/human/target, obj/item/organ/external/eo)

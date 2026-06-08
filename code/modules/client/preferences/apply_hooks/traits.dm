@@ -1,4 +1,4 @@
-// DQAdd — Species + trait synthesis. Builds the character's actual species datum from the
+// Species + trait synthesis. Builds the character's actual species datum from the
 // chosen species + saved trait list via species.produceCopy(), applies each trait's pref,
 // then writes blood color/blood reagents/species sounds.
 //
@@ -14,7 +14,7 @@
 		return
 
 	// Detect synthetic vs organic so the trait filter can use it.
-	// DQEdit — write_preference_by_type, not update_, to avoid re-triggering the preview
+	// write_preference_by_type, not update_, to avoid re-triggering the preview
 	// cascade that called this hook in the first place (would infinite-recurse).
 	if(target.isSynthetic())
 		preferences.write_preference_by_type(/datum/preference/toggle/human/dirty_synth, 1)

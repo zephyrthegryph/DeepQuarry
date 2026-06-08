@@ -1,4 +1,4 @@
-// DQEdit — original fix_atmos verb was a ZAS-specific reset (purge pipenets,
+// original fix_atmos verb was a ZAS-specific reset (purge pipenets,
 // delete zones, reset all turf .air vars, reboot SSair). Under LINDA atmos the
 // concepts (zones, pipenets-as-/datum/pipe_network, turf.air var) don't exist
 // in the same shape. The LINDA equivalent is SSair.process_excited_groups()

@@ -46,7 +46,7 @@
 	say_list_type = /datum/say_list/squirrel
 
 	mob_size = MOB_SMALL
-	// DQEdit — dq_get_softfall(src) type-default moved to GLOB.dq_softfall_by_type
+	// dq_get_softfall(src) type-default moved to GLOB.dq_softfall_by_type
 
 	var/static/list/overlays_cache = list()
 	var/do_seasons = TRUE

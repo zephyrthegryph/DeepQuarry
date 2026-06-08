@@ -117,7 +117,7 @@
 	var/resting = 0			//Carbon
 	var/lying = 0
 	var/lying_prev = 0
-	var/is_shifted = FALSE // VoreStation Edit; pixel shifting
+	var/is_shifted = FALSE // Edit; pixel shifting
 	var/canmove = 1
 	//Allows mobs to move through dense areas without restriction. For instance, in space or out of holder objects.
 	var/incorporeal_move = 0 //0 is off, 1 is normal, 2 is for ninjas.
@@ -294,7 +294,7 @@
 // === merged from mob_defines_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /mob
 	var/vantag_hud = 0			// Do I have the HUD enabled?
-	var/mob/living/simple_mob/temporary_form		// For holding onto a temporary form	//CHOMPEdit - should be mob/living/simple_mob, not /mob
+	var/mob/living/simple_mob/temporary_form // For holding onto a temporary form // should be mob/living/simple_mob, not /mob
 
 	var/disconnect_time = null		//Time of client loss, set by Logout(), for timekeeping
 

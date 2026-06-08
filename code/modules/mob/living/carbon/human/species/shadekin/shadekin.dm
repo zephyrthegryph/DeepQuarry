@@ -100,11 +100,11 @@
 		BP_R_FOOT = list("path" = /obj/item/organ/external/foot/right)
 		)
 
-	species_component = list(/datum/component/shadekin/full, /datum/component/radiation_effects/radiation_immune) //CHOMPEdit: Enabling full shadekin & no-power radiation component.
+	species_component = list(/datum/component/shadekin/full, /datum/component/radiation_effects/radiation_immune) // Enabling full shadekin & no-power radiation component.
 	component_requires_late_recalc = TRUE
 
 /datum/species/shadekin/handle_death(mob/living/carbon/human/H)
-	var/special_handling = TRUE //varswitch for downstream //CHOMPEdit - Enable.
+	var/special_handling = TRUE // varswitch for downstream // Enable.
 	H.clear_dark_maws() //clear dark maws on death or similar
 	var/datum/component/shadekin/SK = H.get_shadekin_component()
 	if(!special_handling || (SK && SK.no_retreat))
@@ -173,7 +173,7 @@
 			SK.respite_activating = FALSE
 			belly.owner.handle_belly_update()
 			H.clear_fullscreen("belly")
-			H.belly_overlay_tgui?.hide() // DQEdit — hide TGUI belly overlay
+			H.belly_overlay_tgui?.hide() // hide TGUI belly overlay
 			if(H.hud_used)
 				if(!H.hud_used.hud_shown)
 					H.toggle_hud_vis()
@@ -226,17 +226,17 @@
 
 	switch(SK.eye_color)
 		if(BLUE_EYES)
-			total_health = 75 //CHOMPEdit
+			total_health = 75
 		if(RED_EYES)
-			total_health = 150 //CHOMPEdit
+			total_health = 150
 		if(PURPLE_EYES)
 			total_health = 150
 		if(YELLOW_EYES)
-			total_health = 50 //CHOMPEdit
+			total_health = 50
 		if(GREEN_EYES)
 			total_health = 100
 		if(ORANGE_EYES)
-			total_health = 125 //CHOMPEdit
+			total_health = 125
 
 	H.maxHealth = total_health
 

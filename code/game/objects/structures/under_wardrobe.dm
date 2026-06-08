@@ -15,7 +15,7 @@
 		return
 	interact(user)
 
-// DQEdit Start — TGUI migration. interact opens UndiesWardrobe.tsx; Topic
+// TGUI migration. interact opens UndiesWardrobe.tsx; Topic
 // handlers move to tgui_act below.
 /obj/structure/undies_wardrobe/interact(mob/living/carbon/human/H)
 	tgui_interact(H)
@@ -50,7 +50,6 @@
 		))
 	data["categories"] = cats
 	return data
-// DQEdit End
 
 /obj/structure/undies_wardrobe/proc/get_metadata(mob/living/carbon/human/H, underwear_category, datum/gear_tweak/gt)
 	var/metadata = H.all_underwear_metadata[underwear_category]
@@ -79,7 +78,7 @@
 
 	return ..()
 
-// DQEdit Start — Topic switch lifted into tgui_act with stable action names.
+// Topic switch lifted into tgui_act with stable action names.
 /obj/structure/undies_wardrobe/tgui_act(action, list/params)
 	. = ..()
 	if(.)
@@ -117,4 +116,3 @@
 	if(changed)
 		H.update_underwear()
 	return TRUE
-// DQEdit End

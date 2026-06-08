@@ -1,8 +1,8 @@
-// DQEdit — savefile is single-version on this fork. No legacy migrations carried over.
+// savefile is single-version on this fork. No legacy migrations carried over.
 #define SAVEFILE_VERSION_MAX	1
 
 /datum/preferences/proc/save_data_needs_update(list/save_data)
-	// DQEdit — empty list = new char; anything else with the current version = fine; anything else = stale, wipe it.
+	// empty list = new char; anything else with the current version = fine; anything else = stale, wipe it.
 	if(!save_data)
 		return -1
 	if(save_data["version"] == SAVEFILE_VERSION_MAX)
@@ -10,10 +10,10 @@
 	return -2
 
 /datum/preferences/proc/update_preferences(current_version, datum/json_savefile/S)
-	return // DQEdit — no migrations on this fork.
+	return // no migrations on this fork.
 
 /datum/preferences/proc/update_character(current_version, list/save_data)
-	return // DQEdit — no migrations on this fork.
+	return // no migrations on this fork.
 
 /datum/preferences/proc/load_path(ckey, filename = "preferences.json")
 	if(!ckey || !load_and_save)
@@ -27,19 +27,19 @@
 
 // General preferences, have to be preloaded
 /datum/preferences/proc/load_early_prefs()
-	lastchangelog	= savefile.get_entry("lastchangelog", lastchangelog) // CHOMPAdd
+	lastchangelog	= savefile.get_entry("lastchangelog", lastchangelog)
 	default_slot	= savefile.get_entry("default_slot", default_slot)
 	lastnews		= savefile.get_entry("lastnews", lastnews)
 	lastlorenews	= savefile.get_entry("lastlorenews", lastlorenews)
 
 /datum/preferences/proc/sanitize_early_prefs()
-	lastchangelog	= sanitize_text(lastchangelog, initial(lastchangelog)) // CHOMPAdd
+	lastchangelog	= sanitize_text(lastchangelog, initial(lastchangelog))
 	default_slot 	= sanitize_integer(default_slot, 1, CONFIG_GET(number/character_slots), initial(default_slot))
 	lastnews		= sanitize_text(lastnews, initial(lastnews))
 	lastlorenews	= sanitize_text(lastlorenews, initial(lastlorenews))
 
 /datum/preferences/proc/save_early_prefs()
-	savefile.set_entry("lastchangelog",	lastchangelog) // CHOMPAdd
+	savefile.set_entry("lastchangelog",	lastchangelog)
 	savefile.set_entry("default_slot",	default_slot)
 	savefile.set_entry("lastnews",		lastnews)
 	savefile.set_entry("lastlorenews",	lastlorenews)
@@ -58,7 +58,7 @@
 		if(fexists(bacpath))
 			fdel(bacpath) //only keep 1 version of backup
 		fcopy(savefile.path, bacpath) //byond helpfully lets you use a savefile for the first arg.
-		// DQEdit — surface the wipe so the player knows their old savefile was incompatible
+		// surface the wipe so the player knows their old savefile was incompatible
 		// with the fork's clean-room pref schema. Backup is preserved at <path>.updatebac
 		// for manual recovery / admin help.
 		if(client)
@@ -79,7 +79,7 @@
 		fcopy(savefile.path, bacpath) //byond helpfully lets you use a savefile for the first arg.
 		update_preferences(needs_update, savefile) //needs_update = savefile_version if we need an update (positive integer)
 
-		// DQEdit — Bay player_setup.load_preferences chain deleted; PREFERENCE_PLAYER prefs
+		// Bay player_setup.load_preferences chain deleted; PREFERENCE_PLAYER prefs
 		// load via the per-pref read() path triggered by read_preference() in apply_all_client_preferences().
 
 		//save the updated version
@@ -99,7 +99,7 @@
 		default_slot = old_default_slot
 		// max_save_slots = old_max_save_slots
 		save_preferences()
-	// DQEdit — Bay player_setup.load_preferences chain deleted; see comment above.
+	// Bay player_setup.load_preferences chain deleted; see comment above.
 
 	return TRUE
 
@@ -108,7 +108,7 @@
 		CRASH("Attempted to save the preferences of [client] without a savefile. This should have been handled by load_preferences()")
 	savefile.set_entry("version", SAVEFILE_VERSION_MAX) //updates (or failing that the sanity checks) will ensure data is not invalid at load. Assume up-to-date
 
-	// DQEdit — Bay player_setup.save_preferences chain deleted; per-pref write() handles persistence.
+	// Bay player_setup.save_preferences chain deleted; per-pref write() handles persistence.
 
 	for(var/preference_type in GLOB.preference_entries)
 		var/datum/preference/preference = GLOB.preference_entries[preference_type]
@@ -171,7 +171,7 @@
 		value_cache -= preference.type
 		read_preference(preference.type)
 
-	// DQEdit — Bay player_setup.load_character chain deleted; pre-cache loop above already
+	// Bay player_setup.load_character chain deleted; pre-cache loop above already
 	// loaded every PREFERENCE_CHARACTER pref from save_data via read_preference().
 
 	//try to fix any outdated data if necessary
@@ -207,7 +207,7 @@
 			write_preference(preference, preference.pref_serialize(value_cache[preference.type]))
 
 	save_data["version"] = SAVEFILE_VERSION_MAX //load_character will sanitize any bad data, so assume up-to-date.
-	// DQEdit — Bay player_setup.save_character chain deleted; per-pref write() handles persistence.
+	// Bay player_setup.save_character chain deleted; per-pref write() handles persistence.
 
 	return TRUE
 
@@ -222,11 +222,10 @@
 	slot = sanitize_integer(slot, 1, CONFIG_GET(number/character_slots), initial(default_slot))
 	if(slot != default_slot)
 		default_slot = slot
-		// DQEdit Start — Don't copy NIF to the new slot; clear migrated /datum/preference values.
+		// Don't copy NIF to the new slot; clear migrated /datum/preference values.
 		update_preference_by_type(/datum/preference/nif_path, null)
 		update_preference_by_type(/datum/preference/numeric/nif_durability, null)
 		update_preference_by_type(/datum/preference/nif_savedata, list())
-		// DQEdit End
 		savefile.set_entry("default_slot", slot)
 
 	// Clear stale data before overwriting.
@@ -235,7 +234,7 @@
 	return TRUE
 
 /datum/preferences/proc/sanitize_preferences()
-	// DQEdit — walk the /datum/preference registry and run each entry's sanitize() against
+	// walk the /datum/preference registry and run each entry's sanitize() against
 	// its currently-cached value. Per-pref sanitizers live in _pref_sanitizers.dm.
 	// Cross-pref invariants are enforced by /datum/preference_constraint subtypes after
 	// each update; this proc just makes sure the load-time values are clean.

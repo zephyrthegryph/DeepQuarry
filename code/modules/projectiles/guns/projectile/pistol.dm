@@ -11,7 +11,7 @@
 	icon_state = "colt"
 	caliber = ".45"
 	load_method = MAGAZINE
-	move_delay = 0 // CHOMPEdit: Pistols have move_delay of 0
+	move_delay = 0 // Pistols have move_delay of 0
 
 /obj/item/gun/projectile/colt/update_icon()
 	if(ammo_magazine)
@@ -86,7 +86,7 @@
 	projectile_type = /obj/item/projectile/bullet/pistol/medium
 	caliber = ".45"
 	load_method = MAGAZINE
-	move_delay = 0 // CHOMPEdit: Pistols have move_delay of 0
+	move_delay = 0 // Pistols have move_delay of 0
 
 /obj/item/gun/projectile/sec/update_icon()
 	..()
@@ -97,7 +97,7 @@
 
 /obj/item/gun/projectile/sec/flash
 	magazine_type = /obj/item/ammo_magazine/m45/flash
-	move_delay = 0 // CHOMPEdit: Pistols have move_delay of 0
+	move_delay = 0 // Pistols have move_delay of 0
 
 /obj/item/gun/projectile/sec/wood
 	name = "custom .45 pistol"
@@ -122,7 +122,7 @@
 	caliber = ".45"
 	silenced = 1
 	fire_delay = 1
-	move_delay = 0 // CHOMPEdit: Pistols have move_delay of 0
+	move_delay = 0 // Pistols have move_delay of 0
 	recoil = 0
 	load_method = MAGAZINE
 	magazine_type = /obj/item/ammo_magazine/m45
@@ -190,7 +190,7 @@
 	allowed_magazines = list(/obj/item/ammo_magazine/m75)
 	auto_eject = 1
 	auto_eject_sound = 'sound/weapons/smg_empty_alarm.ogg'
-	move_delay = 0 // CHOMPEdit: Pistols have move_delay of 0
+	move_delay = 0 // Pistols have move_delay of 0
 
 /obj/item/gun/projectile/gyropistol/update_icon()
 	..()
@@ -224,7 +224,7 @@
 	magazine_type = /obj/item/ammo_magazine/m9mm/compact
 	allowed_magazines = list(/obj/item/ammo_magazine/m9mm/compact)
 	projectile_type = /obj/item/projectile/bullet/pistol
-	move_delay = 0 // CHOMPEdit: Pistols have move_delay of 0
+	move_delay = 0 // Pistols have move_delay of 0
 
 /obj/item/gun/projectile/pistol/flash
 	magazine_type = /obj/item/ammo_magazine/m9mm/compact/flash
@@ -401,7 +401,7 @@
 	load_method = MAGAZINE
 	magazine_type = /obj/item/ammo_magazine/m9mm
 	allowed_magazines = list(/obj/item/ammo_magazine/m9mm) // Can accept illegal large capacity magazines, or compact magazines.
-	move_delay = 0 // CHOMPEdit: Pistols have move_delay of 0
+	move_delay = 0 // Pistols have move_delay of 0
 
 /obj/item/gun/projectile/p92x/update_icon()
 	..()
@@ -574,7 +574,7 @@
 	load_method = MAGAZINE
 	auto_eject = 1
 	auto_eject_sound = 'sound/weapons/smg_empty_alarm.ogg'
-	move_delay = 0 // CHOMPEdit: Pistols have move_delay of 0
+	move_delay = 0 // Pistols have move_delay of 0
 
 /obj/item/gun/projectile/lamia/update_icon()
 	cut_overlays()

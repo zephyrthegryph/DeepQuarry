@@ -61,7 +61,7 @@
 /datum/map_template/surface/plains/farm1
 	name = "Farm 1"
 	desc = "A small farm tended by a farmbot."
-	mappath = "maps/submaps/surface_submaps/plains/farm1_vr.dmm" //VOREStation Edit
+	mappath = "maps/submaps/surface_submaps/plains/farm1_vr.dmm"
 	cost = 10
 
 /datum/map_template/surface/plains/construction1
@@ -73,13 +73,13 @@
 /datum/map_template/surface/plains/camp1
 	name = "Camp Site 1"
 	desc = "A small campsite, complete with housing and bonfire."
-	mappath = "maps/submaps/surface_submaps/plains/camp1_vr.dmm" //VOREStation Edit
+	mappath = "maps/submaps/surface_submaps/plains/camp1_vr.dmm"
 	cost = 10
 
 /datum/map_template/surface/plains/house1
 	name = "House 1"
 	desc = "A fair sized house out in the frontier, that belonged to a well-traveled explorer."
-	mappath = "maps/submaps/surface_submaps/plains/house1_vr.dmm" //VOREStation Edit
+	mappath = "maps/submaps/surface_submaps/plains/house1_vr.dmm"
 	cost = 10
 
 /datum/map_template/surface/plains/beacons
@@ -128,7 +128,7 @@
 /datum/map_template/surface/plains/Shakden
 	name = "Shantak Den"
 	desc = "Not to be confused with Shaq Den"
-	mappath = "maps/submaps/surface_submaps/plains/Shakden_vr.dmm" //VOREStation Edit
+	mappath = "maps/submaps/surface_submaps/plains/Shakden_vr.dmm"
 	cost = 10
 
 /datum/map_template/surface/plains/Field1
@@ -140,7 +140,7 @@
 /datum/map_template/surface/plains/Thiefc
 	name = "Thieves Cave"
 	desc = "A thieves stash"
-	mappath = "maps/submaps/surface_submaps/plains/Thiefc_vr.dmm" //VOREStation Edit
+	mappath = "maps/submaps/surface_submaps/plains/Thiefc_vr.dmm"
 	cost = 20
 
 /datum/map_template/surface/plains/smol2
@@ -158,13 +158,13 @@
 /datum/map_template/surface/plains/Boathouse
 	name = "Boathouse"
 	desc = "A fance house on a lake."
-	mappath = "maps/submaps/surface_submaps/plains/Boathouse_vr.dmm" //VOREStation Edit
+	mappath = "maps/submaps/surface_submaps/plains/Boathouse_vr.dmm"
 	cost = 30
 
 /datum/map_template/surface/plains/PooledR
 	name = "Pooled Rocks"
 	desc = "An intresting rocky location"
-	mappath = "maps/submaps/surface_submaps/plains/PooledR_vr.dmm" //VOREStation Edit
+	mappath = "maps/submaps/surface_submaps/plains/PooledR_vr.dmm"
 	cost = 15
 
 /datum/map_template/surface/plains/Smol3
@@ -176,7 +176,7 @@
 /datum/map_template/surface/plains/Diner
 	name = "Diner"
 	desc = "Old Timey Tasty"
-	mappath = "maps/submaps/surface_submaps/plains/Diner_vr.dmm" //VOREStation Edit
+	mappath = "maps/submaps/surface_submaps/plains/Diner_vr.dmm"
 	cost = 25
 
 /datum/map_template/surface/plains/snow1
@@ -212,7 +212,7 @@
 /datum/map_template/surface/plains/RationCache
 	name = "Ration Cache"
 	desc = "A forgotten cache of emergency rations."
-	mappath = "maps/submaps/surface_submaps/plains/RationCache_vr.dmm" //VOREStation Edit
+	mappath = "maps/submaps/surface_submaps/plains/RationCache_vr.dmm"
 	cost = 5
 
 /datum/map_template/surface/plains/SupplyDrop2
@@ -224,13 +224,13 @@
 /datum/map_template/surface/plains/Oldhouse
 	name = "Old House"
 	desc = "Someones old library it seems.."
-	mappath = "maps/submaps/surface_submaps/plains/Oldhouse_vr.dmm" //VOREStation Edit
+	mappath = "maps/submaps/surface_submaps/plains/Oldhouse_vr.dmm"
 	cost = 15
 
 /datum/map_template/surface/plains/ChemSpill1
 	name = "Ruptured Canister"
 	desc = "A dumped chemical canister. Looks dangerous."
-	mappath = "maps/submaps/surface_submaps/plains/chemspill1_vr.dmm" //VOREStation Edit
+	mappath = "maps/submaps/surface_submaps/plains/chemspill1_vr.dmm"
 	cost = 10
 
 /datum/map_template/surface/plains/PlainsKururak
@@ -275,7 +275,7 @@
 /datum/map_template/surface/plains/lonehome
 	name = "Lone Home"
 	desc = "A quite inoffensive looking home, damaged but still holding up."
-	mappath = "maps/submaps/surface_submaps/plains/lonehome_vr.dmm" //VOREStation Edit
+	mappath = "maps/submaps/surface_submaps/plains/lonehome_vr.dmm"
 	cost = 15
 
 /datum/map_template/surface/plains/hotspring

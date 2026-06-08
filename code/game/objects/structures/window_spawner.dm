@@ -7,7 +7,7 @@
 	name = "window grille spawner"
 	icon = 'icons/obj/structures.dmi'
 	icon_state = "wingrille"
-	layer = 1.9 // CHOMPedit: more visible for mappers
+	layer = 1.9 // more visible for mappers
 	density = TRUE
 	anchored = TRUE
 	pressure_resistance = 4*ONE_ATMOSPHERE
@@ -28,7 +28,7 @@
 	return FALSE
 
 /obj/effect/wingrille_spawn/Initialize(mapload)
-	if(win_path && SSticker && SSticker.current_state < GAME_STATE_FINISHED) // CHOMPedit: let's make these work after round start
+	if(win_path && SSticker && SSticker.current_state < GAME_STATE_FINISHED) // let's make these work after round start
 		activate()
 	..()
 	return INITIALIZE_HINT_QDEL

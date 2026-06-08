@@ -1,4 +1,4 @@
-// DQAdd — Cyborg chargen prefs (module + chassis sprite).
+// Cyborg chargen prefs (module + chassis sprite).
 //
 // robot_module: the human-readable module name (e.g. "Engineering"), keyed
 //   against GLOB.robot_modules. Determines what abilities the cyborg has at

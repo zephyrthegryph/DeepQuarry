@@ -10,15 +10,15 @@
 	var/total_burn  = 0
 	var/total_brute = 0
 	for(var/obj/item/organ/external/O in organs)	//hardcoded to streamline things a bit
-		if((O.robotic >= ORGAN_ROBOT) && !O.vital && !(O.robotic ==ORGAN_NANOFORM))	//CHOMPEdit - Protean changes
+		if((O.robotic >= ORGAN_ROBOT) && !O.vital && !(O.robotic ==ORGAN_NANOFORM)) // Protean changes
 			continue //*non-vital* robot limbs don't count towards shock and crit
 		total_brute += O.brute_dam
 		total_burn  += O.burn_dam
 
-	// CHOMPEdit Start: Pain/etc calculations, but more efficient:tm: - this should work for literally anything that applies to health. Far better than slapping emote("pain") everywhere like scream does.
+	// Pain/etc calculations, but more efficient:tm: - this should work for literally anything that applies to health. Far better than slapping emote("pain") everywhere like scream does.
 	if(health > getMaxHealth()) //Overhealth
 		health = getMaxHealth()
-	var/initialhealth = health // CHOMPEdit: Getting our health before this check
+	var/initialhealth = health // Getting our health before this check
 	health = getMaxHealth() - getOxyLoss() - getToxLoss() - getCloneLoss() - total_burn - total_brute
 	if(can_feel_pain() || ((isSynthetic() && synth_cosmetic_pain))) // Are we capable of feeling pain?
 		if(health < initialhealth) // Did we lose health?
@@ -28,7 +28,7 @@
 			switch(damage)
 				if(-INFINITY to 0)
 					//TODO: fix husking
-					if( ((getMaxHealth() - total_burn) < (-getMaxHealth()) * huskmodifier) && stat == DEAD) // CHOMPEdit
+					if( ((getMaxHealth() - total_burn) < (-getMaxHealth()) * huskmodifier) && stat == DEAD)
 						ChangeToHusk()
 					return
 				if(1 to 25)
@@ -40,7 +40,7 @@
 				if(51 to INFINITY)
 					if(prob(pain_noise * 3)  && !isbelly(loc)) // More likely, most severe damage. No pain noises inside bellies.
 						emote("pain")
-	// CHOMPEdit End: Pain
+	// Pain
 
 	//TODO: fix husking
 	if( ((getMaxHealth() - total_burn) < (-getMaxHealth()) * huskmodifier) && stat == DEAD)
@@ -101,7 +101,7 @@
 /mob/living/carbon/human/getBruteLoss()
 	var/amount = 0
 	for(var/obj/item/organ/external/O in organs)
-		if(O.robotic >= ORGAN_ROBOT && !O.vital && !(O.robotic ==ORGAN_NANOFORM))	//CHOMPEdit - Protean changes
+		if(O.robotic >= ORGAN_ROBOT && !O.vital && !(O.robotic ==ORGAN_NANOFORM)) // Protean changes
 			continue //*non-vital*robot limbs don't count towards death, or show up when scanned
 		amount += O.brute_dam
 	return amount
@@ -125,7 +125,7 @@
 /mob/living/carbon/human/getFireLoss()
 	var/amount = 0
 	for(var/obj/item/organ/external/O in organs)
-		if(O.robotic >= ORGAN_ROBOT && !O.vital && !(O.robotic ==ORGAN_NANOFORM))	//CHOMPEdit - Protean changes
+		if(O.robotic >= ORGAN_ROBOT && !O.vital && !(O.robotic ==ORGAN_NANOFORM)) // Protean changes
 			continue //*non-vital*robot limbs don't count towards death, or show up when scanned
 		amount += O.burn_dam
 	return amount
@@ -161,7 +161,7 @@
 				if(M.energy_based && M.energy_source)
 					M.energy_source.use(M.damage_cost*amount)
 				amount *= M.incoming_brute_damage_percent
-		if(nif && nif.flag_check(NIF_C_BRUTEARMOR,NIF_FLAGS_COMBAT)){amount *= 0.7} //VOREStation Edit - NIF mod for damage resistance for this type of damage
+		if(nif && nif.flag_check(NIF_C_BRUTEARMOR,NIF_FLAGS_COMBAT)){amount *= 0.7} // NIF mod for damage resistance for this type of damage
 		take_overall_damage(amount, 0)
 	else
 		for(var/datum/modifier/M in modifiers)
@@ -183,7 +183,7 @@
 				if(M.energy_based && M.energy_source)
 					M.energy_source.use(M.damage_cost*amount)
 				amount *= M.incoming_fire_damage_percent
-		if(nif && nif.flag_check(NIF_C_BURNARMOR,NIF_FLAGS_COMBAT)){amount *= 0.7} //VOREStation Edit - NIF mod for damage resistance for this type of damage
+		if(nif && nif.flag_check(NIF_C_BURNARMOR,NIF_FLAGS_COMBAT)){amount *= 0.7} // NIF mod for damage resistance for this type of damage
 		take_overall_damage(0, amount)
 	else
 		for(var/datum/modifier/M in modifiers)
@@ -207,7 +207,7 @@
 					if(M.energy_based && M.energy_source)
 						M.energy_source.use(M.damage_cost*amount)
 					amount *= M.incoming_brute_damage_percent
-			if(nif && nif.flag_check(NIF_C_BRUTEARMOR,NIF_FLAGS_COMBAT)){amount *= 0.7} //VOREStation Edit - NIF mod for damage resistance for this type of damage
+			if(nif && nif.flag_check(NIF_C_BRUTEARMOR,NIF_FLAGS_COMBAT)){amount *= 0.7} // NIF mod for damage resistance for this type of damage
 			O.take_damage(amount, 0, sharp=is_sharp(damage_source), edge=has_edge(damage_source), used_weapon=damage_source)
 		else
 			for(var/datum/modifier/M in modifiers)
@@ -233,7 +233,7 @@
 					if(M.energy_based && M.energy_source)
 						M.energy_source.use(M.damage_cost*amount)
 					amount *= M.incoming_fire_damage_percent
-			if(nif && nif.flag_check(NIF_C_BURNARMOR,NIF_FLAGS_COMBAT)){amount *= 0.7} //VOREStation Edit - NIF mod for damage resistance for this type of damage
+			if(nif && nif.flag_check(NIF_C_BURNARMOR,NIF_FLAGS_COMBAT)){amount *= 0.7} // NIF mod for damage resistance for this type of damage
 			O.take_damage(0, amount, sharp=is_sharp(damage_source), edge=has_edge(damage_source), used_weapon=damage_source)
 		else
 			for(var/datum/modifier/M in modifiers)
@@ -601,7 +601,7 @@ This function restores all organs.
 	if((damagetype != BRUTE) && (damagetype != BURN))
 		if(damagetype == HALLOSS)
 			if((damage > 25 && prob(20)) || (damage > 50 && prob(60)))
-				if(organ && organ.organ_can_feel_pain() && !isbelly(loc) && !istype(loc, /obj/item/dogborg/sleeper)) //VOREStation Add
+				if(organ && organ.organ_can_feel_pain() && !isbelly(loc) && !istype(loc, /obj/item/dogborg/sleeper))
 					emote("scream")
 		..(damage, damagetype, def_zone, blocked)
 		return 1
@@ -657,7 +657,7 @@ This function restores all organs.
 			if(organ.take_damage(0, damage, sharp, edge, used_weapon, projectile=projectile))
 				UpdateDamageIcon()
 
-	// CHOMPEdit: Pain Emotes!
+	// Pain Emotes!
 	var/pain_noise = (damage * species.pain_mod) // Halve the incoming, then multiply it by our mod. 50 damage becomes 25 x 0.6 on highest strength, meaning prob 15. 50 x 1.4 means prob 35, etc.
 	switch(damage)
 		if(0 to 25)
@@ -669,7 +669,6 @@ This function restores all organs.
 		if(51 to INFINITY)
 			if(prob(pain_noise * 3)  && !isbelly(loc)) // More likely, most severe damage. No pain noises inside bellies.
 				emote("pain")
-	// CHOMPEdit End
 
 	// Will set our damageoverlay icon to the next level, which will then be set back to the normal level the next mob.Life().
 	updatehealth()

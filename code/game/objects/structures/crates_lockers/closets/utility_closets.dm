@@ -19,7 +19,7 @@
 
 /obj/structure/closet/emcloset/Initialize(mapload)
 	switch (pickweight(list("small" = 55, "aid" = 25, "tank" = 10, "both" = 10)))
-	//CHOMPEdit Block Start - Modified List
+	// Block Start - Modified List
 		if ("small")
 			starts_with = list(
 				/obj/item/storage/toolbox/emergency,
@@ -54,7 +54,7 @@
 				/obj/item/clothing/suit/space/emergency = 2,
 				/obj/item/clothing/head/helmet/space/emergency = 2,
 				/obj/item/suit_cooling_unit = 2)
-	//CHOMPEdit Block End
+	// Block End
 
 	return ..()
 
@@ -149,7 +149,7 @@
 	if(prob(40))
 		starts_with += /obj/item/clothing/head/hardhat
 	if(prob(30))
-		starts_with += /obj/item/reagent_containers/spray/windowsealant //VOREStation Add
+		starts_with += /obj/item/reagent_containers/spray/windowsealant
 	return ..()
 
 /*

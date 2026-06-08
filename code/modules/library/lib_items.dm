@@ -210,13 +210,13 @@ Book Cart End
 		display_content(user)
 		user.visible_message("[user] opens a book titled \"[src.title]\" and begins reading intently.")
 		playsound(src, 'sound/bureaucracy/bookopen.ogg', 50, 1)
-		// DQEdit — onclose() was for the legacy "book" browse() window
+		// onclose() was for the legacy "book" browse() window
 		// that no longer exists (books are TGUI now).
 		playsound(src, 'sound/bureaucracy/bookclose.ogg', 50, 1)
 	else
 		to_chat(user, "This book is completely blank!")
 
-// DQEdit Start — TGUI migration. display_content now opens Book.tsx,
+// TGUI migration. display_content now opens Book.tsx,
 // which renders the book's HTML content with a "Penned by [author]"
 // preamble.
 /obj/item/book/proc/display_content(mob/living/user)
@@ -234,7 +234,6 @@ Book Cart End
 	data["author"] = author || ""
 	data["content"] = dat || ""
 	return data
-// DQEdit End
 
 /obj/item/book/attackby(obj/item/W, mob/user)
 	if(carved)
@@ -340,7 +339,7 @@ Book Cart End
 	var/list/pages = list() //the contents of each page
 	special_handling = TRUE
 
-// DQEdit Start — TGUI migration. show_content now opens BookBundle.tsx;
+// TGUI migration. show_content now opens BookBundle.tsx;
 // Topic page-flip moves to tgui_act. Photo image embedding via
 // browse_rsc is not yet wired through TGUI assets.
 /obj/item/book/bundle/proc/show_content(mob/user)
@@ -413,7 +412,6 @@ Book Cart End
 				page--
 				playsound(src, "pageturn", 50, 1)
 			return TRUE
-// DQEdit End
 
 /*
  * Barcode Scanner

@@ -1,5 +1,5 @@
 /turf
-	// DQEdit — thermal_conductivity and heat_capacity are already declared on
+	// thermal_conductivity and heat_capacity are already declared on
 	// CHOMP's /turf (code/game/turfs/turf.dm:30-31) with values 0.05 and 1.
 	// LINDA wanted heat_capacity = INFINITY (opt-in heating); CHOMP defaults
 	// matter (most turfs are heat-able). Don't redeclare — runtime will use
@@ -138,7 +138,7 @@
 /turf/open/return_analyzable_air()
 	return return_air()
 
-// DQEdit — moved to /turf/simulated because to_be_destroyed/max_fire_temperature_sustained
+// moved to /turf/simulated because to_be_destroyed/max_fire_temperature_sustained
 // are declared on CHOMP's /turf/simulated (simulated.dm:13-14), not the base /turf.
 // Non-simulated turfs (space, unsimulated walls) inherit the no-op base.
 /turf/should_atmos_process(datum/gas_mixture/air, exposed_temperature)
@@ -179,7 +179,7 @@
 
 /turf/open/temperature_expose(datum/gas_mixture/air, exposed_temperature)
 	SEND_SIGNAL(src, COMSIG_TURF_EXPOSE, air, exposed_temperature)
-	// DQEdit — was calling a no-op check_atmos_process() shim that swallowed
+	// was calling a no-op check_atmos_process() shim that swallowed
 	// the work; replaced with the direct should-then-expose check. (/tg/'s
 	// original used a /datum/element to dispatch; we skip the element layer.)
 	if(should_atmos_process(air, exposed_temperature))
@@ -189,7 +189,7 @@
 	temperature_archived = temperature
 
 /turf/open/archive()
-	// DQEdit — walls/rocks (blocks_air=1, air=null) dispatch through here
+	// walls/rocks (blocks_air=1, air=null) dispatch through here
 	// after the /turf/simulated → /turf/open reparent. Fall through to the
 	// base implementation that just records temperature_archived.
 	if(!air)
@@ -289,7 +289,7 @@
 	SSair.remove_from_active(src)
 
 /turf/open/process_cell(fire_count)
-	// DQEdit — after the /turf/simulated → /turf/open reparent, walls and
+	// after the /turf/simulated → /turf/open reparent, walls and
 	// minerals (blocks_air=1, air=null) also dispatch through this proc.
 	// /tg/ stock relies on walls being /turf/closed; under the reparent the
 	// same proc serves both. Bail without sharing — add_to_active's routing
@@ -326,7 +326,7 @@
 			continue
 		#endif
 
-		// DQEdit — after the /turf/simulated → /turf/open reparent, walls
+		// after the /turf/simulated → /turf/open reparent, walls
 		// also istype /turf/open, so an `as anything in` cast doesn't
 		// filter them out. /tg/ stock relies on walls being /turf/closed
 		// (a separate type); under the reparent we have to runtime-check.
@@ -687,7 +687,7 @@ Then we space some of our heat, and think about if we should stop conducting.
 				continue
 			var/turf/neighbor = get_step(src, direction)
 
-			// DQEdit — guard against off-map/null neighbor. get_step returns
+			// guard against off-map/null neighbor. get_step returns
 			// null at the world edge; rocks/walls under the reparent dispatch
 			// through /turf/open/archive which deref's .air → null crash.
 			if(!neighbor || !neighbor.thermal_conductivity)
@@ -718,7 +718,7 @@ Then we space some of our heat, and think about if we should stop conducting.
 
 /turf/open/finish_superconduction()
 	//Conduct with air on my tile if I have it
-	// DQEdit — guard air null when blocks_air is FALSE. Previously this
+	// guard air null when blocks_air is FALSE. Previously this
 	// nulldotref'd if the turf had been space-converted or otherwise had
 	// its air swept while a superconduction tick was in flight.
 	var/share_temp = blocks_air ? temperature : air?.temperature
@@ -736,7 +736,7 @@ Then we space some of our heat, and think about if we should stop conducting.
 	return TRUE
 
 /turf/open/consider_superconductivity(starting)
-	// DQEdit — after the /turf/simulated → /turf/open reparent, walls/rocks
+	// after the /turf/simulated → /turf/open reparent, walls/rocks
 	// dispatch through /turf/open but have air=null. Defer to /turf/closed
 	// behaviour (use src.temperature instead of air.temperature) so super-
 	// conduction works on walls without a null.temperature deref.

@@ -121,7 +121,7 @@ GLOBAL_DATUM(banlist, /savefile)
 		GLOB.banlist["temp"] << temp
 		if (temp)
 			GLOB.banlist["minutes"] << bantimestamp
-	admin_action_message(bannedby, ckey, "banned", reason, temp ? minutes : -1) //VOREStation Add
+	admin_action_message(bannedby, ckey, "banned", reason, temp ? minutes : -1)
 	return 1
 
 /proc/RemoveBan(foldername)
@@ -150,7 +150,7 @@ GLOBAL_DATUM(banlist, /savefile)
 			GLOB.banlist.cd = "/base"
 			GLOB.banlist.dir.Remove(A)
 			continue
-	admin_action_message(usr.key, key, "unbanned", "\[Unban\]", 0) //VOREStation Add
+	admin_action_message(usr.key, key, "unbanned", "\[Unban\]", 0)
 	return 1
 
 /proc/GetExp(minutes as num)
@@ -168,10 +168,9 @@ GLOBAL_DATUM(banlist, /savefile)
 			timeleftstring = "[exp] Minutes"
 		return timeleftstring
 
-// DQEdit Start — unbanpanel body relocated to code/modules/admin/misc_admin_panels.dm (structured TGUI).
+// unbanpanel body relocated to code/modules/admin/misc_admin_panels.dm (structured TGUI).
 /datum/admins/proc/unbanpanel()
 	dq_open_unban_panel(owner)
-// DQEdit End
 
 //////////////////////////////////// DEBUG ////////////////////////////////////
 

@@ -9,8 +9,8 @@
 	icon = 'icons/obj/surgery.dmi'
 	icon_state = "brain1"
 	no_vore = TRUE
-	can_pain_emote = FALSE // CHOMPEdit: Sanity/safety
-	low_priority = TRUE //CHOMPEdit
+	can_pain_emote = FALSE // Sanity/safety
+	low_priority = TRUE
 
 	can_pain_emote = FALSE
 	low_priority = TRUE

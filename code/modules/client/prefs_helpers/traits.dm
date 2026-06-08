@@ -2,7 +2,7 @@
 #define NEUTRAL_MODE 2
 #define NEGATIVE_MODE 3
 
-// DQEdit — custom_base, blood_color, pos_traits/neu_traits/neg_traits,
+// custom_base, blood_color, pos_traits/neu_traits/neg_traits,
 // traits_cheating/starting_trait_points/max_traits, dirty_synth, gross_meatbag
 // all migrated to /datum/preference subtypes. Legacy declarations deleted.
 
@@ -23,7 +23,7 @@
 		choices = choices.Copy()
 	return choices
 
-// DQEdit — /datum/category_item/player_setup_item/general/traits and helpers (the Bay
+// /datum/category_item/player_setup_item/general/traits and helpers (the Bay
 // trait picker UI) were deleted. /datum/preference_editor/trait_picker owns the new UI.
 
 /proc/check_trait_conflict(datum/trait/our_trait, datum/trait/other_trait)

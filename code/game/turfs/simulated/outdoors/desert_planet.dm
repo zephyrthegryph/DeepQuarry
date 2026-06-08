@@ -253,5 +253,5 @@
 	var/depth = 1 // Higher numbers indicates deeper water.
 
 	var/reagent_type = "water"
-	// var/datum/looping_sound/water/soundloop CHOMPEdit: Removing soundloop for now.
+	// var/datum/looping_sound/water/soundloop Removing soundloop for now.
 */

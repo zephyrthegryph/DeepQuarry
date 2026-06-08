@@ -42,7 +42,7 @@
 		return EyeMove(n, direct)
 	return 0
 
-// DQEdit — ZAS airflow_hit / airflow_speed / airflow_dest are dead under LINDA;
+// ZAS airflow_hit / airflow_speed / airflow_dest are dead under LINDA;
 // /tg/'s spacewind operates on /atom/movable.experience_pressure_difference
 // directly (and observer eyes are anchored so they don't move). Removed.
 

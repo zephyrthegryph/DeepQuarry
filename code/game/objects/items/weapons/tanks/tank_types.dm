@@ -46,7 +46,7 @@
 
 	air_contents.adjust_gas(GAS_O2, ((3*ONE_ATMOSPHERE)*70/(R_IDEAL_GAS_EQUATION*T20C) * O2STANDARD) - LINDA_GAS_AMT(air_contents, GAS_O2))
 	air_contents.adjust_gas(GAS_N2O, ((3*ONE_ATMOSPHERE)*70/(R_IDEAL_GAS_EQUATION*T20C) * N2STANDARD) - LINDA_GAS_AMT(air_contents, GAS_N2O))
-	// DQEdit — update_values() removed; no-op under LINDA.
+	// update_values() removed; no-op under LINDA.
 
 /*
  * Air
@@ -104,7 +104,7 @@
 
 /obj/item/tank/vox/Initialize(mapload)
 	. = ..()
-	air_contents.adjust_gas(GAS_PHORON, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C)) //VOREStation Edit
+	air_contents.adjust_gas(GAS_PHORON, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
 
 /obj/item/tank/phoron/pressurized
 	name = "fuel can"
@@ -202,7 +202,7 @@
 	gauge_icon = "indicator_double"					// Ensuring unique sprite stuff ig.
 	volume = 10
 
-//CHOMPEdit Start - for CO2 breathers
+// for CO2 breathers
 /obj/item/tank/carbon_dioxide
 	name = "carbon dioxide tank"
 	desc = "A tank of carbon dioxide"
@@ -233,7 +233,6 @@
 /obj/item/tank/emergency/carbon_dioxide/double/Initialize(mapload)
 	. = ..()
 	src.air_contents.adjust_gas(GAS_CO2, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
-//CHOMPEdit End
 
 /*
  * Nitrogen
@@ -246,7 +245,7 @@
 
 /obj/item/tank/nitrogen/Initialize(mapload)
 	. = ..()
-	src.air_contents.adjust_gas(GAS_N2, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C)) //CHOMPedit
+	src.air_contents.adjust_gas(GAS_N2, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
 
 /obj/item/tank/nitrogen/examine(mob/user)
 	. = ..()
@@ -410,7 +409,7 @@
 	gauge_icon = "indicator_bigtank"
 	gauge_cap = 3
 
-//CHOMPEdit Start - for CO2 breathers
+// for CO2 breathers
 /obj/item/tank/carbon_dioxide
 	icon = 'icons/obj/tank_vr.dmi'
 	icon_state = "oxygen_f"
@@ -430,4 +429,3 @@
 	gauge_icon = "indicator_double"
 	volume = 12
 	gauge_cap = 3
-//CHOMPEdit End

@@ -428,7 +428,7 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 	pose_icon.plane = PLANE_STATUS
 	pose_icon.layer = HUD_LAYER
 	pose_icon.appearance_flags = PIXEL_SCALE|TILE_BOUND|RESET_ALPHA|RESET_TRANSFORM
-	pose_icon.color = dq_get_chat_color(src) // DQEdit — tint pose icon with the user's DQ chat colour to match their runechat
+	pose_icon.color = dq_get_chat_color(src) // tint pose icon with the user's DQ chat colour to match their runechat
 	pose_icon.pixel_y = y_offset
 	pose_icon.pixel_x = x_offset
 
@@ -442,13 +442,12 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 	cut_overlay(pose_indicator)
 	pose_indicator = null
 
-// DQEdit Start — set_flavor verb body relocated to code/modules/mob/living/carbon/human/flavor_panel.dm (structured TGUI).
+// set_flavor verb body relocated to code/modules/mob/living/carbon/human/flavor_panel.dm (structured TGUI).
 /mob/living/carbon/human/verb/set_flavor()
 	set name = "Set Flavour Text"
 	set desc = "Sets an extended description of your character's features."
 	set category = "IC.Settings"
 	dq_open_flavor_panel(src)
-// DQEdit End
 
 /mob/living/carbon/human/proc/toggle_tail(setting,message = 0)
 	if(!tail_style || !tail_style.ani_state)

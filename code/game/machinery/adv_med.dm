@@ -28,7 +28,7 @@
 	for(var/obj/item/stock_parts/scanning_module/P in component_parts)
 		scan_level += max(0, (P.rating - 2)) //We require T3 parts or higher to actually increase our scan level.
 
-	dq_apply_material_synergies(src) // DQAdd
+	dq_apply_material_synergies(src)
 /obj/machinery/bodyscanner/Destroy()
 	if(console)
 		console.scanner = null
@@ -134,7 +134,7 @@
 		return
 	occupant.forceMove(get_turf(src))
 	occupant = null
-	update_icon() //icon_state = "body_scanner_1" //VOREStation Edit - Health display for consoles with light and such.
+	update_icon() // icon_state = "body_scanner_1" // Health display for consoles with light and such.
 	SStgui.update_uis(src)
 	return
 
@@ -180,7 +180,7 @@
 		ui.open()
 
 /obj/machinery/bodyscanner/tgui_data(mob/user)
-	// DQEdit — qualitative scanner output. The old block dumped exact
+	// qualitative scanner output. The old block dumped exact
 	// damage numbers and the full medical_issue catalog; the new builder
 	// returns qualitative bands plus DQ scanner-audience findings.
 	// Implementation lives in code/modules/medical/bodyscanner/.
@@ -389,10 +389,10 @@
 
 			var/unknown_body = 0
 			for(var/obj/item/implant/I as anything in e.implants)
-				var/obj/item/nif/N = I //VOREStation Add: NIFs
+				var/obj/item/nif/N = I // NIFs
 				if(istype(I) && I.known_implant)
 					imp += "[I] implanted:"
-				else if(istype(N) && N.known_implant) //VOREStation Add: NIFs
+				else if(istype(N) && N.known_implant) // NIFs
 					imp += "[N] implanted:"
 				else
 					unknown_body++
@@ -409,7 +409,7 @@
 			else
 				dat += "<td>[e.name]</td><td>-</td><td>-</td><td>Not Found</td>"
 			dat += "</tr>"
-		var/hasMalignants = "" //CHOMPedit - malignant organs
+		var/hasMalignants = "" // malignant organs
 		for(var/obj/item/organ/i in occupant.internal_organs)
 			var/mech = ""
 			var/i_dead = ""
@@ -444,11 +444,11 @@
 			for(var/datum/medical_issue/MI in i.medical_issues)
 				mi += "[MI.name] detected:"
 
-			// CHOMPedit begin - malignant organs
+			// begin - malignant organs
 			if(istype(i, /obj/item/organ/internal/malignant))
 				var/obj/item/organ/external/ORG = occupant.organs_by_name[i.parent_organ]
 				hasMalignants += span_red(" -[ORG.name]") + "<BR>"
-			// CHOMPedit end
+			// end
 
 			dat += "<tr>"
 			if(fake_death && istype(i, /obj/item/organ/internal/brain))
@@ -473,10 +473,10 @@
 			dat += span_red("Cataracts detected.") + "<BR>"
 		if(occupant.disabilities & NEARSIGHTED)
 			dat += span_red("Retinal misalignment detected.") + "<BR>"
-		//CHOMPedit begin - malignant organs
+		// begin - malignant organs
 		if(hasMalignants != "")
 			dat += span_red("Unknown anatomy detected!") + "<BR>[hasMalignants]"
-		//CHOMPedit end
+		// end
 		if(has_withdrawl != "")
 			dat += span_red("Experiencing withdrawal symptoms!") + "<BR>[has_withdrawl]"
 		if(HUSK in occupant.mutations) // VOREstation edit

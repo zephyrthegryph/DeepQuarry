@@ -122,4 +122,4 @@
 	logs += L
 
 GLOBAL_DATUM_INIT(stockExchange, /datum/stockMarket, new)
-// DQEdit — plotBarGraph deleted; StockChart TGUI panel renders typed values directly.
+// plotBarGraph deleted; StockChart TGUI panel renders typed values directly.

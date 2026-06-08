@@ -271,7 +271,7 @@
 
 /obj/item/clothing/mask/chameleon
 	name = "gas mask"
-	icon_state = "gas_alt" //Chompedit: file change
+	icon_state = "gas_alt" // file change
 	desc = "It looks like a plain gask mask, but on closer inspection, it seems to have a small dial inside."
 
 /obj/item/clothing/mask/chameleon/Initialize(mapload)
@@ -285,7 +285,7 @@
 		return
 	name = "gas mask"
 	desc = "It's a gas mask."
-	icon_state = "gas_alt" //ChompEdit: file change
+	icon_state = "gas_alt" // file change
 	update_icon()
 	update_clothing_icon()
 

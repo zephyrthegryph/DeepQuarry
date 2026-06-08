@@ -17,12 +17,10 @@
 			return ACCESS_QM
 		if(NETWORK_ERT)
 			return ACCESS_CENT_SPECOPS
-		//VOREStation Add Start
 		if(NETWORK_TALON_SHIP)
 			return ACCESS_TALON
 		if(NETWORK_TALON_HELMETS)
 			return ACCESS_TALON
-		//VOREStation Add End
 
 	if(network in using_map.station_networks)
 		return ACCESS_SECURITY // Default for all other station networks

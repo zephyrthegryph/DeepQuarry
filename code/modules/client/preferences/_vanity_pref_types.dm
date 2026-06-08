@@ -1,4 +1,4 @@
-// DQAdd — Pref types that are considered "vanity" for /datum/preferences/proc/vanity_copy_to.
+// Pref types that are considered "vanity" for /datum/preferences/proc/vanity_copy_to.
 // These are the appearance / identity / OOC / size+voice prefs that the
 // protean reconstitutor / shapeshifter / appearance changer paths want to copy from a saved
 // character without copying job priorities, antag flags, or anything gameplay-affecting.

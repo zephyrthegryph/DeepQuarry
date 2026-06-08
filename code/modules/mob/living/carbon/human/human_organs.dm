@@ -24,7 +24,7 @@
 	if(force_process || force)
 		bad_external_organs.Cut()
 		for(var/obj/item/organ/external/Ex in organs)
-			bad_external_organs += Ex //VOREStation Edit - Silly and slow to |= this
+			bad_external_organs += Ex // Silly and slow to |= this
 
 	//processing internal organs is pretty cheap, do that first.
 	for(var/obj/item/organ/I in internal_organs)
@@ -142,12 +142,12 @@
 	// Check again...
 	if(!l_hand && !r_hand)
 		return
-	var/adrenaline = has_modifier_of_type(/datum/modifier/adrenaline)	//CHOMPEdit
+	var/adrenaline = has_modifier_of_type(/datum/modifier/adrenaline)
 	for (var/obj/item/organ/external/E in organs)
 		if(!E || !E.can_grasp)
 			continue
 
-		if((E.is_broken() || E.is_dislocated()) && !E.splinted && !adrenaline)	//CHOMPEdit
+		if((E.is_broken() || E.is_dislocated()) && !E.splinted && !adrenaline)
 			switch(E.body_part)
 				if(HAND_LEFT, ARM_LEFT)
 					if(!l_hand)

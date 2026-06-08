@@ -38,20 +38,18 @@
 					multilimb_pain_time = world.time + (100 - power)
 			last_pain_message = message
 			to_chat(src,message)
-			// CHOMPAdd: Emote in pain for custom pain, too
+			// Emote in pain for custom pain, too
 			if(prob(power / 10) && !isbelly(loc)) // No pain noises inside bellies.
 				emote("pain")
-			// CHOMPAdd End
 
 	else if(force || (message != last_pain_message) || (world.time >= next_pain_time))
 		last_pain_message = message
 		to_chat(src,message)
 		next_pain_time = world.time + (100 - power)
 		multilimb_pain_time = world.time + (100 - power)
-		// CHOMPAdd: Emote in pain for custom pain, too
+		// Emote in pain for custom pain, too
 		if(prob(power / 10) && !isbelly(loc)) // No pain noises inside bellies.
 			emote("pain")
-		// CHOMPAdd End
 
 /mob/living/carbon/human/proc/handle_pain()
 	if(stat)
@@ -72,9 +70,9 @@
 		if(dam > maxdam && (maxdam == 0 || prob(70)) )
 			damaged_organ = E
 			maxdam = dam
-			if(ishuman(src)) //VOREStation Edit Start
+			if(ishuman(src))
 				var/mob/living/carbon/human/H = src
-				maxdam *= H.species.trauma_mod //VOREStation edit end
+				maxdam *= H.species.trauma_mod // end
 	if(damaged_organ && chem_effects[CE_PAINKILLER] < maxdam)
 		if(maxdam > 10 && paralysis)
 			AdjustParalysis(-round(maxdam/10))

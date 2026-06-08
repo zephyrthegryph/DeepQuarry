@@ -25,7 +25,7 @@
 
 /obj/effect/weaversilk/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume)
 	var/turf/T = get_turf(src)
-	T?.feed_lingering_fire(0.1) // CHOMPAdd - Lingering fire, feeding fires
+	T?.feed_lingering_fire(0.1) // Lingering fire, feeding fires
 	qdel(src)
 
 /obj/effect/weaversilk/attack_generic(mob/user as mob, damage)
@@ -131,8 +131,8 @@
 	icon_state = "web_bindings"
 	body_parts_covered = CHEST|LEGS|FEET|ARMS|HANDS
 	flags_inv = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETAIL
-	//CHOMPedit - Teshari sprite, this was originally a YW edit of the old web bindings
+	// Teshari sprite, this was originally a YW edit of the old web bindings
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/vore/custom_onmob_yw.dmi'
 		)
-	//CHOMPedit end
+	// end

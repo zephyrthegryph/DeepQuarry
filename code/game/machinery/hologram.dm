@@ -114,11 +114,11 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 	return
 
 /obj/machinery/hologram/holopad/proc/create_holo(mob/living/silicon/ai/A, turf/T = loc)
-	var/obj/effect/overlay/aiholo/hologram = new(T)//Spawn a blank effect at the location. //VOREStation Edit to specific type for adding vars
-	hologram.master = A //VOREStation Edit: So you can reference the master AI from in the hologram procs
+	var/obj/effect/overlay/aiholo/hologram = new(T) // Spawn a blank effect at the location. // to specific type for adding vars
+	hologram.master = A // So you can reference the master AI from in the hologram procs
 	hologram.icon = A.holo_icon
-	hologram.pixel_x = 16 - round(A.holo_icon.Width() / 2) //VOREStation Edit: centers the hologram on the tile
-	//hologram.mouse_opacity = 0//So you can't click on it. //VOREStation Removal
+	hologram.pixel_x = 16 - round(A.holo_icon.Width() / 2) // centers the hologram on the tile
+	// hologram.mouse_opacity = 0//So you can't click on it. // Removal
 	hologram.layer = FLY_LAYER//Above all the other objects/mobs. Or the vast majority of them.
 	hologram.anchored = TRUE//So space wind cannot drag it.
 	hologram.name = "[A.name] (Hologram)"//If someone decides to right click.
@@ -139,7 +139,7 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 	masters[A] = hologram
 	set_light(2)			//pad lighting
 	icon_state = "holopad1"
-	flick("holopadload", src) //VOREStation Add
+	flick("holopadload", src)
 	A.holo = src
 	if(LAZYLEN(masters))
 		START_MACHINE_PROCESSING(src)
@@ -177,7 +177,6 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 		//Hologram left the screen (got stuck on a wall or something)
 		if(get_dist(H, user.eyeobj) > world.view)
 			clear_holo(user)
-		//VOREStation Add End
 		#ifdef IS_RANGE_BASED
 		if((get_dist(H, src) > holo_range))
 			clear_holo(user)

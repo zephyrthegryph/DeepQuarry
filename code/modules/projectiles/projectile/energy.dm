@@ -195,7 +195,7 @@
 	icon_state = "neurotoxin"
 	damage = 0
 	damage_type = BIOACID
-	agony = 60 //CHOMPedit lowered agony damage
+	agony = 60 // lowered agony damage
 	check_armour = "bio"
 	armor_penetration = 25	// It's acid-based
 	hitsound_wall = 'sound/weapons/effects/alien_spit_wall.ogg'
@@ -256,13 +256,13 @@
 		M.Weaken(2)
 		M.ear_damage += rand(1, 10)
 		M.ear_deaf = max(M.ear_deaf,15)
-		M.deaf_loop.start() // CHOMPStation Add: Ear Ringing/Deafness
+		M.deaf_loop.start() // Ear Ringing/Deafness
 	if (M.ear_damage >= 15)
 		to_chat(M, span_danger("Your ears start to ring badly!"))
 		if (prob(M.ear_damage - 5))
 			to_chat(M, span_danger("You can't hear anything!"))
 			M.sdisabilities |= DEAF
-			M.deaf_loop.start() // CHOMPStation Add: Ear Ringing/Deafness
+			M.deaf_loop.start() // Ear Ringing/Deafness
 	else
 		if (M.ear_damage >= 5)
 			to_chat(M, span_danger("Your ears start to ring!"))
@@ -292,7 +292,7 @@
 /obj/item/projectile/energy/phase
 	name = "phase wave"
 	icon_state = "phase"
-	range = 13 //Chompedit This range was still awful
+	range = 13 // This range was still awful
 	damage = 5
 	mob_bonus_damage = 45
 	hud_state = "laser_heat"
@@ -306,7 +306,7 @@
 	hud_state = "laser_heat"
 
 /obj/item/projectile/energy/phase/heavy/cannon
-	range = 20 //Chompedit This range was mediocre, but not worth a cannon.
+	range = 20 // This range was mediocre, but not worth a cannon.
 	damage = 15
 	hud_state = "laser_heat"
 */
@@ -380,7 +380,7 @@
 /obj/item/projectile/energy/phase
 	name = "phase wave"
 	icon_state = "phase"
-	fire_sound = 'sound/weapons/phase_new/phasecarbine.ogg' //CHOMPedit - New sounds.
+	fire_sound = 'sound/weapons/phase_new/phasecarbine.ogg' // New sounds.
 	range = 13
 	damage = 5
 	mob_bonus_damage = 45
@@ -388,23 +388,23 @@
 	hud_state = "laser_heat"
 
 /obj/item/projectile/energy/phase/light
-	fire_sound = 'sound/weapons/phase_new/phasepistol.ogg' //CHOMPedit - New sounds.
+	fire_sound = 'sound/weapons/phase_new/phasepistol.ogg' // New sounds.
 	range = 11
 	mob_bonus_damage = 35
 	armor_penetration = -50
 	hud_state = "laser_heat"
 
 /obj/item/projectile/energy/phase/heavy
-	fire_sound = 'sound/weapons/phase_new/phaserifle.ogg' //CHOMPedit - New sounds.
-	range = 16 //Chompedit This range was not great
+	fire_sound = 'sound/weapons/phase_new/phaserifle.ogg' // New sounds.
+	range = 16 // This range was not great
 	damage = 10
 	mob_bonus_damage = 50
 	armor_penetration = -25
 	hud_state = "laser_heat"
 
 /obj/item/projectile/energy/phase/heavy/cannon
-	fire_sound = 'sound/weapons/phase_new/phasecannon.ogg' //CHOMPedit - New sounds.
-	range = 20 //Chompedit This range was mediocre, but not worth a cannon.
+	fire_sound = 'sound/weapons/phase_new/phasecannon.ogg' // New sounds.
+	range = 20 // This range was mediocre, but not worth a cannon.
 	damage = 15
 	mob_bonus_damage = 60
 	armor_penetration = -20

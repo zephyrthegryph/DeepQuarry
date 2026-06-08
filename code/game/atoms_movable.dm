@@ -13,7 +13,7 @@
 	var/turf/throw_source = null
 	var/throw_speed = 2
 	var/throw_range = 7
-	// DQEdit — moved_recently moved to /datum/component/movable_state
+	// moved_recently moved to /datum/component/movable_state
 	var/mob/pulledby = null
 	var/item_state = null // Used to specify the item state for the on-mob overlays.
 	var/icon_scale_x = DEFAULT_ICON_SCALE_X // Used to scale icons up or down horizonally in update_transform().
@@ -27,11 +27,11 @@
 	var/does_spin = TRUE // Does the atom spin when thrown (of course it does :P)
 	var/movement_type = NONE
 
-	// DQEdit — dq_get_cloaked(src) moved to /datum/component/movable_state
-	// DQEdit — cloaked_selfimage moved to /datum/component/movable_state
-	// DQEdit — belly_cycles moved to /datum/component/movable_state
+	// dq_get_cloaked(src) moved to /datum/component/movable_state
+	// cloaked_selfimage moved to /datum/component/movable_state
+	// belly_cycles moved to /datum/component/movable_state
 	var/autotransferable = TRUE // Toggle for autotransfer mechanics.
-	// DQEdit — recursive_listeners moved to /datum/component/movable_state
+	// recursive_listeners moved to /datum/component/movable_state
 	var/listening_recursive = NON_LISTENING_ATOM
 	var/unacidable = TRUE
 
@@ -583,7 +583,7 @@
 	. = TRUE // We did work
 
 	var/static/animation_time = 1 SECOND
-	// DQEdit — cloaked_selfimage in component
+	// cloaked_selfimage in component
 	var/image/csi = dq_get_cloaked_selfimage(src)
 	if(csi)
 		qdel(csi)

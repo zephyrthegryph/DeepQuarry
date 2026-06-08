@@ -462,7 +462,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	if (href_list["mach_close"])
 		if (href_list["mach_close"] == "aialerts")
 			viewalerts = 0
-		// DQEdit — legacy browse(null) close removed; see /mob/Topic.
+		// legacy browse(null) close removed; see /mob/Topic.
 		unset_machine()
 	if (href_list["switchcamera"])
 		switchCamera(locate(href_list["switchcamera"])) in GLOB.cameranet.cameras
@@ -662,9 +662,9 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 						"carp",
 						"spider",
 						"bear",
-						"fox",			// CHOMPStation Edit: Fox holograms!
-						"fox, alt",		// CHOMPStation Edit: Fox holograms!
-						"syndifox",		// CHOMPStation Edit: Fox holograms!
+						"fox", // Fox holograms!
+						"fox, alt", // Fox holograms!
+						"syndifox", // Fox holograms!
 						"slime",
 						"ian",
 						"runtime",
@@ -729,12 +729,12 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 								holo_icon = getHologramIcon(icon('icons/mob/AI.dmi',"holoskrm"))
 							if("female skrell")
 								holo_icon = getHologramIcon(icon('icons/mob/AI.dmi',"holoskrf"))
-							if("fox")																// CHOMPStation Edit: Fox holograms!
-								holo_icon = getHologramIcon(icon('icons/mob/pets.dmi',"fox"))		// CHOMPStation Edit: Fox holograms!
-							if("syndifox")															// CHOMPStation Edit: Fox holograms!
-								holo_icon = getHologramIcon(icon('icons/mob/pets.dmi',"syndifox"))	// CHOMPStation Edit: Fox holograms!
-							if("fox, alt")															// CHOMPStation Edit: Fox holograms!
-								holo_icon = getHologramIcon(icon('icons/mob/pets.dmi',"fox2"))		// CHOMPStation Edit: Fox holograms!
+							if("fox") // Fox holograms!
+								holo_icon = getHologramIcon(icon('icons/mob/pets.dmi',"fox")) // Fox holograms!
+							if("syndifox") // Fox holograms!
+								holo_icon = getHologramIcon(icon('icons/mob/pets.dmi',"syndifox")) // Fox holograms!
+							if("fox, alt") // Fox holograms!
+								holo_icon = getHologramIcon(icon('icons/mob/pets.dmi',"fox2")) // Fox holograms!
 
 //Toggles the luminosity and applies it by re-entereing the camera.
 /mob/living/silicon/ai/proc/toggle_camera_light()
@@ -824,11 +824,11 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 		src.aiRadio.interact(src)
 
 /mob/living/silicon/ai/proc/sensor_mode()
-	set name = "Toggle Sensor Augmentation" //VOREStation Add
+	set name = "Toggle Sensor Augmentation"
 	set category = "AI.Settings"
 	set desc = "Augment visual feed with internal sensor overlays"
-	sensor_type = !sensor_type //VOREStation Add
-	to_chat(src, "You [sensor_type ? "enable" : "disable"] your sensors.") //VOREStation Add
+	sensor_type = !sensor_type
+	to_chat(src, "You [sensor_type ? "enable" : "disable"] your sensors.")
 	toggle_sensor_mode()
 
 /mob/living/silicon/ai/proc/toggle_hologram_movement()
@@ -837,11 +837,10 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	set desc = "Toggles hologram movement based on moving with your virtual eye."
 
 	hologram_follow = !hologram_follow
-	//VOREStation Add - Required to stop movement because we use walk_to(wards) in hologram.dm
+	// Required to stop movement because we use walk_to(wards) in hologram.dm
 	if(holo)
 		var/obj/effect/overlay/aiholo/hologram = holo.masters[src]
 		walk(hologram, 0)
-	//VOREStation Add End
 	to_chat(src, span_filter_notice("Your hologram will [hologram_follow ? "follow" : "no longer follow"] you now."))
 
 

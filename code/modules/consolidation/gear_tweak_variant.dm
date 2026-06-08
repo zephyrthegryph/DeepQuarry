@@ -10,7 +10,7 @@
 // the freshly-spawned item with the variant's name/icon_state/etc.
 
 /datum/gear_data
-	// DQAdd — variant string set by gear_tweak/variant, consumed in tweak_item.
+	// variant string set by gear_tweak/variant, consumed in tweak_item.
 	var/variant
 
 /datum/gear_tweak/variant

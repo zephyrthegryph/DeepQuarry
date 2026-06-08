@@ -36,7 +36,7 @@ GENERAL_PROTECT_DATUM(/datum/managed_browser/feedback_form)
 /datum/managed_browser/feedback_form/proc/can_be_private()
 	return CONFIG_GET(flag/sqlite_feedback_privacy) && SSsqlite.get_feedback_pepper()
 
-// DQEdit Start — TGUI migration. Replaces the legacy /datum/browser
+// TGUI migration. Replaces the legacy /datum/browser
 // renderer with a structured TGUI feedback form. The Topic() href
 // dispatch and get_html() are gone; everything flows through tgui_act.
 /datum/managed_browser/feedback_form/display()
@@ -120,4 +120,3 @@ GENERAL_PROTECT_DATUM(/datum/managed_browser/feedback_form)
 			SStgui.close_uis(src)
 			qdel(src)
 			return TRUE
-// DQEdit End

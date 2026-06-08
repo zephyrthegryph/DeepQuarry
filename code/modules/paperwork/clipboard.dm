@@ -67,7 +67,7 @@
 		update_icon()
 		to_chat(user, span_notice("You clip the [P] onto \the [src]."))
 
-// DQEdit Start — TGUI migration. attack_self opens Clipboard.tsx; the
+// TGUI migration. attack_self opens Clipboard.tsx; the
 // Topic pen/write/remove/rename/read/look actions move to tgui_act.
 // Reading a paper/photo chains to that item's TGUI viewer
 // (Paper.tsx / Photo.tsx).
@@ -174,4 +174,3 @@
 					var/obj/item/photo/ph = O
 					ph.show(usr)
 			return TRUE
-// DQEdit End

@@ -55,7 +55,7 @@
 	var/cache_key = "[base_icon]-[material.name]"
 	if(isnull(GLOB.stool_cache[cache_key]))
 		var/image/I = image(icon, base_icon)
-		if(applies_material_colour) //VOREStation Add - Goes with added var
+		if(applies_material_colour) // Goes with added var
 			I.color = material.icon_colour
 		GLOB.stool_cache[cache_key] = I
 	add_overlay(GLOB.stool_cache[cache_key])
@@ -110,12 +110,11 @@
 			qdel(C)
 			return
 		var/padding_type
-		//CHOMPEDIT START: making carpets different and not just the boring basic red no matter carpet type, consider merging material variables at stack level in future - Jack
+		// making carpets different and not just the boring basic red no matter carpet type, consider merging material variables at stack level in future - Jack
 		if(istype(W,/obj/item/stack/tile/carpet))
 			var/obj/item/stack/tile/carpet/M = W
 			if(M.material && (M.material.flags & MATERIAL_PADDING))
 				padding_type = "[M.material.name]"
-		//CHOMPEDIT END
 		else if(istype(W,/obj/item/stack/material))
 			var/obj/item/stack/material/M = W
 			if(M.material && (M.material.flags & MATERIAL_PADDING))

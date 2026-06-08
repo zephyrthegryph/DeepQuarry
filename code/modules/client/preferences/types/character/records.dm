@@ -31,6 +31,6 @@
 /datum/preference/text/human/gen_record/apply_to_human(mob/living/carbon/human/target, value)
 	target.gen_record = value
 
-// DQEdit — /datum/category_item/player_setup_item/general/records was the Bay-prefs UI
+// /datum/category_item/player_setup_item/general/records was the Bay-prefs UI
 // wrapper for the three record prefs above. New auto-renderer handles them through the
 // medical_records group; the records widgets render as longtext editors.

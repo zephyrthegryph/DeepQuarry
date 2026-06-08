@@ -85,7 +85,7 @@
 
 		eater.drop_from_inventory(src) // Drop food from inventory so it doesn't end up staying on the hud after qdel, and so inhands go away
 
-		//CHOMPAdd Start - Consume item TF mobs as raw nutrition if prefs align
+		// Consume item TF mobs as raw nutrition if prefs align
 		if(possessed_voice && possessed_voice.len && eater.can_be_drop_pred && eater.food_vore && eater.vore_selected)
 			var/obj/item/reagent_containers/food/rawnutrition/NR = new /obj/item/reagent_containers/food/rawnutrition(usr)
 			NR.name = "piece of food"
@@ -95,23 +95,20 @@
 				possessed_voice -= V
 				qdel(V)
 			NR.forceMove(eater.vore_selected)
-		//CHOMPAdd End
 		if(trash)
 			var/obj/item/TrashItem = new trash(eater)
 			eater.put_in_hands(TrashItem)
-			//CHOMPAdd Start - Transfer item TF mobs to the trash if able
+			// Transfer item TF mobs to the trash if able
 			if(possessed_voice && possessed_voice.len)
 				for(var/mob/living/voice/V in possessed_voice)
 					TrashItem.inhabit_item(V, null, V.tf_mob_holder, TRUE)
 					possessed_voice -= V
 					qdel(V)
-			//CHOMPAdd End
-		//CHOMPAdd Start - Clean up any remaining item TF mobs
+		// Clean up any remaining item TF mobs
 		if(possessed_voice && possessed_voice.len)
 			for(var/mob/living/voice/V in possessed_voice)
 				possessed_voice -= V
 				qdel(V)
-		//CHOMPAdd End
 		qdel(src)
 
 /obj/item/reagent_containers/food/snacks/attack_self(mob/user)
@@ -168,7 +165,7 @@
 					return ITEM_INTERACT_FAILURE
 
 			user.setClickCooldown(user.get_attack_speed(src)) //puts a limit on how fast people can eat/drink things
-			// CHOMPEdit Start - Changing a lot of the to_chat ahead
+			// Changing a lot of the to_chat ahead
 			if (fullness <= 50)
 				to_chat(eater, span_danger("You hungrily chew out a piece of [src] and gobble it!"))
 			if (fullness > 50 && fullness <= 150)
@@ -281,21 +278,21 @@
 				bitecount++
 				On_Consume(eater, user)
 			return TRUE
-	else if(isliving(eater) && user.stuffing_feeder) //CHOMPAdd Start
+	else if(isliving(eater) && user.stuffing_feeder)
 		var/swallow_whole = user.stuffing_feeder
 		var/obj/belly/belly_target
 		if(swallow_whole)
 			belly_target = tgui_input_list(user, "Choose Belly", "Belly Choice", eater.feedable_bellies())
 			if(!(eater.feeding))
 				to_chat(user, "You can't feed [eater] a whole [src] as they refuse to be fed whole things!")
-				balloon_alert(user, "they refuse to be fed whole things!") // CHOMPEdit
+				balloon_alert(user, "they refuse to be fed whole things!")
 				return
 			if(!belly_target)
 				to_chat(user, "You can't feed [eater] a whole [src] as they don't appear to have a belly to fit it!")
-				balloon_alert(user, "they don't have a belly to fit it!")// CHOMPEdit
+				balloon_alert(user, "they don't have a belly to fit it!")
 				return
 			user.visible_message("[user] attempts to make [eater] consume [src] whole into their [belly_target].")
-			user.balloon_alert_visible("attempts to make [eater] consume [src] whole into their [belly_target].")// CHOMPEdit
+			user.balloon_alert_visible("attempts to make [eater] consume [src] whole into their [belly_target].")
 			var/feed_duration = 3 SECONDS
 			user.setClickCooldown(user.get_attack_speed(src))
 			if(!do_after(user, feed_duration, eater))
@@ -303,11 +300,11 @@
 			if(!belly_target)
 				return
 			add_attack_logs(user,eater,"Whole-fed with [src.name] containing [reagentlist(src)] into [belly_target]", admin_notify = FALSE)
-			user.visible_message("[user] successfully forces [src] into [eater]'s [belly_target].") // CHOMPEdit
-			user.balloon_alert_visible("forces [src] into [eater]'s [belly_target].") // CHOMPEdit
+			user.visible_message("[user] successfully forces [src] into [eater]'s [belly_target].")
+			user.balloon_alert_visible("forces [src] into [eater]'s [belly_target].")
 			user.drop_item()
 			forceMove(belly_target)
-			return ITEM_INTERACT_SUCCESS //CHOMPAdd End
+			return ITEM_INTERACT_SUCCESS
 
 	return ITEM_INTERACT_FAILURE
 
@@ -1484,7 +1481,7 @@
 	nutriment_desc = list("bun" = 2, "clown shoe" = 3)
 	bitesize = 2
 
-// CHOMPedit begin - honkwork infection
+// begin - honkwork infection
 /obj/item/reagent_containers/food/snacks/clownburger/Initialize(mapload)
 	. = ..()
 	reagents.add_reagent("protein", 2) // needed to call On_Consume()... Is this actually an issue?
@@ -1494,7 +1491,7 @@
 		var/mob/living/carbon/human/H = user
 		H.malignant_organ_spawn( /obj/item/organ/internal/malignant/parasite/honker )
 	. = ..()
-// CHOMPedit end
+// end
 
 
 /obj/item/reagent_containers/food/snacks/mimeburger
@@ -4224,7 +4221,7 @@
 			icon_state = "pizzabox_open"
 
 		if( pizza )
-			var/image/pizzaimg = image(icon = pizza.icon, icon_state = pizza.icon_state)	//VOREStation Edit: Icons for bad pizza
+			var/image/pizzaimg = image(icon = pizza.icon, icon_state = pizza.icon_state) // Icons for bad pizza
 			pizzaimg.pixel_y = -3
 			add_overlay(pizzaimg)
 
@@ -8078,8 +8075,8 @@
 	slices_num = 6
 	nutriment_amt = 12
 	nutriment_desc = list("a warm, buttery sweetness that reminds you of home" = 5)
-	center_of_mass_x = 16 //CHOMPEdit
-	center_of_mass_y= 9 //CHOMPEdit
+	center_of_mass_x = 16
+	center_of_mass_y= 9
 
 /obj/item/reagent_containers/food/snacks/slicable/buttspie/Initialize(mapload)
 	. = ..()
@@ -8161,8 +8158,8 @@
 	filling_color = "#E39C29"
 	nutriment_amt = 8
 	nutriment_desc = list(REAGENT_ID_VANILLA = 8)
-	center_of_mass_x = 15 //CHOMPEdit
-	center_of_mass_y= 9 //CHOMPEdit
+	center_of_mass_x = 15
+	center_of_mass_y= 9
 	bitesize = 2
 
 /obj/item/reagent_containers/food/snacks/sliceable/blondies/Initialize(mapload)
@@ -8178,8 +8175,8 @@
 	filling_color = "#F5B951"
 	bitesize = 2
 	nutriment_desc = list(REAGENT_ID_VANILLA = 1)
-	center_of_mass_x = 16 //CHOMPEdit
-	center_of_mass_y= 12 //CHOMPEdit
+	center_of_mass_x = 16
+	center_of_mass_y= 12
 
 /obj/item/reagent_containers/food/snacks/blondiesslice/filled
 	nutriment_amt = 1

@@ -77,7 +77,7 @@
 	id = REAGENT_ID_WATER
 	result = REAGENT_ID_WATER
 	required_reagents = list(REAGENT_ID_OXYGEN = 1, REAGENT_ID_HYDROGEN = 2)
-	inhibitors = list(REAGENT_ID_SODIUM = 1, REAGENT_ID_CARBON = 1) // So it doesnt turn into water when you try to make lye. // CHOMPEdit
+	inhibitors = list(REAGENT_ID_SODIUM = 1, REAGENT_ID_CARBON = 1) // So it doesnt turn into water when you try to make lye. //
 	result_amount = 1
 
 /datum/decl/chemical_reaction/instant/thermite
@@ -768,12 +768,11 @@
 		var/mob/living/L = holder.my_atom
 		if(L.stat != DEAD)
 			e.amount *= 0.5
-	//VOREStation Add Start
 	else
 		holder.clear_reagents() //No more powergaming by creating a tiny amount of this
 	//VORESTation Add End
 	e.start()
-	//holder.clear_reagents() //VOREStation Removal
+	// holder.clear_reagents() // Removal
 	return
 
 /datum/decl/chemical_reaction/instant/flash_powder
@@ -820,10 +819,8 @@
 	// 100 created volume = 4 heavy range & 7 light range. A few tiles smaller than traitor EMP grandes.
 	// 200 created volume = 8 heavy range & 14 light range. 4 tiles larger than traitor EMP grenades.
 	empulse(location, round(created_volume / 24), round(created_volume / 20), round(created_volume / 18), round(created_volume / 14), 1)
-	//VOREStation Edit Start
 	if(!isliving(holder.my_atom)) //No more powergaming by creating a tiny amount of this
 		holder.clear_reagents()
-	//VOREStation Edit End
 	return
 
 /datum/decl/chemical_reaction/instant/nitroglycerin
@@ -848,7 +845,7 @@
 		holder.clear_reagents() //No more powergaming by creating a tiny amount of this
 	e.start()
 
-	//holder.clear_reagents() //VOREStation Removal
+	// holder.clear_reagents() // Removal
 	return
 #endif
 
@@ -882,10 +879,8 @@
 	playsound(location, 'sound/effects/smoke.ogg', 50, 1, -3)
 	spawn(0)
 		S.start()
-	//VOREStation Edit Start
 	if(!isliving(holder.my_atom)) //No more powergaming by creating a tiny amount of this
 		holder.clear_reagents()
-	//VOREStation Edit End
 	return
 
 /datum/decl/chemical_reaction/instant/foam
@@ -905,10 +900,8 @@
 	var/datum/effect/effect/system/foam_spread/s = new()
 	s.set_up(created_volume, location, holder, 0)
 	s.start()
-	//VOREStation Edit Start
 	if(!isliving(holder.my_atom)) //No more powergaming by creating a tiny amount of this
 		holder.clear_reagents()
-	//VOREStation Edit End
 	return
 
 /datum/decl/chemical_reaction/instant/metalfoam
@@ -1604,7 +1597,7 @@
 	id = REAGENT_ID_NUTRIMENT
 	result = REAGENT_ID_NUTRIMENT
 	required_reagents = list(REAGENT_PURPLESAP = 1, REAGENT_ID_ORANGESAP = 1, REAGENT_ID_BLUESAP = 1)
-	catalysts = list(REAGENT_ID_WATER = 5) //CHOMPedit: Catalyst added to prevent conflict with reagents reacting and nixxing each other in black sapbeans
+	catalysts = list(REAGENT_ID_WATER = 5) // Catalyst added to prevent conflict with reagents reacting and nixxing each other in black sapbeans
 	result_amount = 3
 
 /////SERAZINE RECIPES//////
@@ -1831,7 +1824,7 @@
 	name = REAGENT_VERMICETOL
 	id = REAGENT_ID_VERMICETOL
 	result = REAGENT_ID_VERMICETOL
-	required_reagents = list(REAGENT_ID_KELOTANE = 1, REAGENT_ID_DERMALINE = 1, REAGENT_ID_SHOCKCHEM = 1, REAGENT_ID_PHORON = 0.1) // CHOMPEdit
+	required_reagents = list(REAGENT_ID_KELOTANE = 1, REAGENT_ID_DERMALINE = 1, REAGENT_ID_SHOCKCHEM = 1, REAGENT_ID_PHORON = 0.1)
 	catalysts = list(REAGENT_ID_PHORON = 5)
 	result_amount = 3
 

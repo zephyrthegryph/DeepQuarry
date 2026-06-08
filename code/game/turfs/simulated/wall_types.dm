@@ -129,13 +129,12 @@
 /turf/simulated/wall/durasteel/Initialize(mapload)
 	. = ..(mapload, MAT_DURASTEEL, MAT_DURASTEEL)
 
-// CHOMPAdd Start
 /turf/simulated/wall/durasteel/blueserg/Initialize(mapload)
 	. = ..(mapload, MAT_DURASTEEL, MAT_DURASTEEL)
 
 /turf/simulated/wall/durasteel/blueserg/attackby(obj/item/I, mob/user)
 	return
-// CHOMPAdd ENd
+// ENd
 
 /turf/simulated/wall/wood/Initialize(mapload)
 	. = ..(mapload,  MAT_WOOD)
@@ -146,10 +145,8 @@
 /turf/simulated/wall/sifwood/Initialize(mapload)
 	. = ..(mapload,  MAT_SIFWOOD)
 
-// CHOMPEdit Start
 /turf/simulated/wall/rsifwood/Initialize(mapload)
 	. = ..(mapload,  MAT_SIFWOOD, MAT_SIFWOOD, MAT_SIFWOOD)
-// CHOMPEdit End
 
 /turf/simulated/wall/birchwood/Initialize(mapload)
 	. = ..(mapload,  MAT_BIRCHWOOD)
@@ -448,8 +445,8 @@
 	icon = 'icons/turf/wall_masks_eris.dmi'
 	icon_state = "generic"
 	wall_masks = 'icons/turf/wall_masks_eris.dmi'
-	var/static/list/blend_objects = list(/obj/machinery/door) //CHOMPEdit convert to static list
-	var/static/list/noblend_objects = list(/obj/machinery/door/window, /obj/machinery/door/firedoor) //CHOMPEdit convert to static list
+	var/static/list/blend_objects = list(/obj/machinery/door) // convert to static list
+	var/static/list/noblend_objects = list(/obj/machinery/door/window, /obj/machinery/door/firedoor) // convert to static list
 
 /turf/simulated/wall/eris/can_join_with_low_wall(obj/structure/low_wall/WF)
 	return istype(WF, /obj/structure/low_wall/eris)
@@ -485,8 +482,8 @@
 	icon = 'icons/turf/wall_masks_bay.dmi'
 	icon_state = "generic"
 	wall_masks = 'icons/turf/wall_masks_bay.dmi'
-	var/static/list/blend_objects = list(/obj/machinery/door) //CHOMPEdit convert to static list
-	var/static/list/noblend_objects = list(/obj/machinery/door/window, /obj/machinery/door/firedoor) //CHOMPEdit convert to static list
+	var/static/list/blend_objects = list(/obj/machinery/door) // convert to static list
+	var/static/list/noblend_objects = list(/obj/machinery/door/window, /obj/machinery/door/firedoor) // convert to static list
 
 	var/stripe_color // Adds a colored stripe to the walls
 
@@ -533,8 +530,8 @@
 	wall_masks = 'icons/turf/wall_masks_tgmc.dmi' // not really a MASK per-se, I guess
 	icon_state = "metal0"
 
-	var/static/list/blend_objects = list(/obj/machinery/door) //CHOMPEdit convert to static list
-	var/static/list/noblend_objects = list(/obj/machinery/door/window, /obj/machinery/door/firedoor) //CHOMPEdit convert to static list
+	var/static/list/blend_objects = list(/obj/machinery/door) // convert to static list
+	var/static/list/noblend_objects = list(/obj/machinery/door/window, /obj/machinery/door/firedoor) // convert to static list
 
 	var/wall_base_state = "metal"
 	var/wall_blend_category = "metal"
@@ -1007,11 +1004,9 @@ GLOBAL_LIST_EMPTY(flesh_overlay_cache)
 	icon_state = "sifwood"
 	icon = 'icons/turf/wall_masks_vr.dmi'
 
-//CHOMPEdit Start
 /turf/simulated/wall/rsifwood
 	icon_state = "sifwood"
 	icon = 'icons/turf/wall_masks_vr.dmi'
-//CHOMPEdit End
 
 /turf/simulated/wall/silver
 	icon_state = "silver"

@@ -38,7 +38,7 @@
 
 /datum/material/deathclawscale
 	name = "deathclaw scale"
-	material_class = MATCLASS_ORGANIC // DQEdit — class assignment
+	material_class = MATCLASS_ORGANIC // class assignment
 	icon_colour = "#8d6653"
 	icon_base = "solid"
 	icon_reinf = "reinf_mesh"
@@ -50,7 +50,7 @@
 
 /datum/material/dragonscale
 	name = "dragon scale"
-	material_class = MATCLASS_ORGANIC // DQEdit — class assignment
+	material_class = MATCLASS_ORGANIC // class assignment
 	icon_colour = "#ffffff"
 	icon_base = "solid"
 	icon_reinf = "reinf_mesh"
@@ -62,7 +62,7 @@
 
 /datum/material/phorondragonscale
 	name = "phoron dragon scale"
-	material_class = MATCLASS_ORGANIC // DQEdit — class assignment
+	material_class = MATCLASS_ORGANIC // class assignment
 	icon_colour = "#8d6653"
 	icon_base = "solid"
 	icon_reinf = "reinf_mesh"
@@ -74,7 +74,7 @@
 
 /datum/material/xenochitin
 	name = "xenochitin"
-	material_class = MATCLASS_ORGANIC // DQEdit — class assignment
+	material_class = MATCLASS_ORGANIC // class assignment
 	icon_colour = "#8d6653"
 	icon_base = "solid"
 	icon_reinf = "reinf_mesh"

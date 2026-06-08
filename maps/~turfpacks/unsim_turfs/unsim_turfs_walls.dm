@@ -163,11 +163,9 @@
 	icon_state = "sifwood"
 	icon = 'icons/turf/wall_masks_vr.dmi'
 
-//CHOMPEdit Start
 /turf/unsimulated/wall/rsifwood
 	icon_state = "sifwood"
 	icon = 'icons/turf/wall_masks_vr.dmi'
-//CHOMPEdit End
 
 /turf/unsimulated/wall/silver
 	icon_state = "silver"

@@ -27,7 +27,7 @@
 	melee_miss_chance = 0
 	melee_attack_delay = 1.5
 	ai_holder_type = /datum/ai_holder/simple_mob/retaliate
-	// DQEdit — dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
+	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
 	heat_resist = 1.0
 	cold_resist = 1.0
@@ -92,7 +92,7 @@
 	. = ..()
 	if(icon_state != icon_dead) //I mean on death() Life() should disable but i guess doesnt hurt to make sure -shark
 		var/turf/moth_loc = get_turf(src)
-		if(isturf(moth_loc) && moth_loc.return_air()) // DQEdit — XGM turf.air → LINDA return_air()
+		if(isturf(moth_loc) && moth_loc.return_air()) // XGM turf.air → LINDA return_air()
 			var/datum/gas_mixture/env = moth_loc.return_air() //Gets all the information on the local air.
 			var/transfer_moles = 0.25 * env.total_moles() //The bigger the room, the harder it is to heat the room.
 			var/datum/gas_mixture/removed = env.remove(transfer_moles)
@@ -136,7 +136,7 @@
 	icon_dead = "livingice-dead"
 	minbodytemp = 0			// Minimum "okay" temperature in kelvin
 	maxbodytemp = 300			// Maximum of above
-	// DQEdit — dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
+	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 	heat_resist = 0.2
 	cold_resist = 1.0
 

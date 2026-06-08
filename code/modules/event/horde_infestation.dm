@@ -11,7 +11,7 @@
 	announceWhen = rand(announceWhen, announceWhen + 60)
 
 	for(var/obj/machinery/atmospherics/unary/vent_pump/temp_vent in GLOB.machines) //Gathering together all possible areas to spawn mobs.
-		//CHOMPEdit: Added a couple areas to the exclusion.
+		// Added a couple areas to the exclusion.
 		var/area/in_area = get_area(temp_vent)
 		if(in_area.flag_check(AREA_FORBID_EVENTS))
 			continue
@@ -40,7 +40,7 @@
 /datum/event/horde_infestation/start()
 	if(spiders)
 		for(var/obj/machinery/atmospherics/unary/vent_pump/temp_vent in GLOB.machines)
-			//CHOMPEdit: Added a couple areas to the exclusion. Also made this actually work.
+			// Added a couple areas to the exclusion. Also made this actually work.
 			var/area/in_area = get_area(temp_vent)
 			if(in_area.flag_check(AREA_FORBID_EVENTS))
 				continue
@@ -52,14 +52,13 @@
 
 		while((spawncount >= 1) && vents.len)
 			var/obj/vent = pick(vents)
-		//CHOMPEDIT START adding spider EGGS to the possible spawns instead of singular spiderling spawns.
+		// adding spider EGGS to the possible spawns instead of singular spiderling spawns.
 			var/spawn_spiderlings = pickweight(list(
 				/obj/effect/spider/spiderling/space = 95,
 				/obj/effect/spider/eggcluster/space = 4,
 				/obj/effect/spider/eggcluster/royal/space = 1
 				))
-			new spawn_spiderlings(vent.loc) //VOREStation Edit - No nurses //Oh my JESUS CHRIST, this slipped past me. Literally no nurses. Well guess what, nurses are back.
-		//CHOMPEDIT END
+			new spawn_spiderlings(vent.loc) // No nurses //Oh my JESUS CHRIST, this slipped past me. Literally no nurses. Well guess what, nurses are back.
 			vents -= vent
 			spawncount--
 	if(metroids)

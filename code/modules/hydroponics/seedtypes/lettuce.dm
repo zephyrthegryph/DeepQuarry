@@ -4,7 +4,7 @@
 	seed_name = PLANT_LETTUCE
 	display_name = PLANT_LETTUCE
 	kitchen_tag = PLANT_LETTUCE
-	mutants = list(PLANT_SIFLETTUCE) // ChompEDIT - Makes the glacial lettuce obtainable
+	mutants = list(PLANT_SIFLETTUCE) // Makes the glacial lettuce obtainable
 	chems = list(REAGENT_ID_NUTRIMENT = list(1,15))
 
 /datum/seed/lettuce/New()

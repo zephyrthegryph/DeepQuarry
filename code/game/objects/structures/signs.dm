@@ -3,8 +3,8 @@
 	anchored = TRUE
 	opacity = 0
 	density = FALSE
-	plane = OBJ_PLANE //VOREStation Edit
-	layer = ABOVE_JUNK_LAYER //VOREStation Edit
+	plane = OBJ_PLANE
+	layer = ABOVE_JUNK_LAYER
 	w_class = ITEMSIZE_NORMAL
 	flags = WALL_ITEM
 

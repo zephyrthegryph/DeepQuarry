@@ -51,7 +51,7 @@
 			grill_loop.stop(src)
 
 /obj/machinery/appliance/cooker/grill/attackby(obj/item/O as obj, mob/user as mob)
-	if(default_deconstruction_screwdriver(user, O)) //CHOMPedit - Allows for deconstruction
+	if(default_deconstruction_screwdriver(user, O)) // Allows for deconstruction
 		return
 	if(default_deconstruction_crowbar(user, O))
 		return

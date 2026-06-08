@@ -333,7 +333,7 @@
 	else
 		return 0
 
-// VOREStation Add Start - Helper procs for RCD
+// Helper procs for RCD
 /obj/structure/disposalconstruct/proc/is_pipe()
 	return (ptype != DISPOSAL_PIPE_BIN && ptype != DISPOSAL_PIPE_OUTLET && ptype != DISPOSAL_PIPE_CHUTE)
 
@@ -350,4 +350,3 @@
 			return FALSE
 
 	return TRUE
-// VOREStation Add End

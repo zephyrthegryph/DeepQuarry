@@ -179,7 +179,7 @@
 
 	update_static_data_for_all_viewers()
 
-	dq_apply_material_synergies(src) // DQAdd
+	dq_apply_material_synergies(src)
 ///Computes this machines cost efficiency based on the available parts
 /obj/machinery/rnd/production/proc/compute_efficiency()
 	PROTECTED_PROC(TRUE)
@@ -188,7 +188,7 @@
 	for(var/obj/item/stock_parts/manipulator/manip in component_parts)
 		efficiency -= manip.rating * 0.1
 
-	// DQEdit — uniform-class synergy bonus reduces material cost further.
+	// uniform-class synergy bonus reduces material cost further.
 	efficiency = efficiency / dq_synergy_value(src, "uniform_bonus", 1)
 	return efficiency
 

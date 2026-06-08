@@ -147,7 +147,7 @@
 	var/tmp/digested_prey_count = 0				// Amount of prey that have been digested
 
 	var/item_digest_mode = IM_DIGEST_FOOD	// Current item-related mode from item_digest_modes
-	var/contaminates = TRUE					// Whether the belly will contaminate stuff // CHOMPEdit
+	var/contaminates = TRUE // Whether the belly will contaminate stuff //
 	var/contamination_flavor = "Generic"	// Determines descriptions of contaminated items
 	var/contamination_color = "green"		// Color of contamination overlay
 
@@ -644,7 +644,7 @@
 		for(var/mob/living/L in endfx)
 			if(L.surrounding_belly()) continue
 			L.clear_fullscreen("belly")
-			L.belly_overlay_tgui?.hide() // DQEdit — hide TGUI belly overlay
+			L.belly_overlay_tgui?.hide() // hide TGUI belly overlay
 			if(L.hud_used)
 				if(!L.hud_used.hud_shown)
 					L.toggle_hud_vis()
@@ -894,7 +894,7 @@
 						I.gurgle_contaminate(contents, contamination_flavor, contamination_color) //We do an initial contamination pass to get stuff like IDs wet.
 					if(item_digest_mode == IM_HOLD)
 						items_preserved |= I
-					else if(item_digest_mode == IM_DIGEST_FOOD && !(istype(I,/obj/item/reagent_containers/food) || istype(I,/obj/item/organ) || istype(I,/obj/item/reagent_containers/pill))) // CHOMPEdit - Allow pills to digest in bellies
+					else if(item_digest_mode == IM_DIGEST_FOOD && !(istype(I,/obj/item/reagent_containers/food) || istype(I,/obj/item/organ) || istype(I,/obj/item/reagent_containers/pill))) // Allow pills to digest in bellies
 						items_preserved |= I
 
 	//Reagent transfer

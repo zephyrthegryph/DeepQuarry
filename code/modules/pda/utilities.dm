@@ -135,7 +135,7 @@
 	icon = "tachometer-alt"
 
 /datum/data/pda/utility/scanmode/gas/scan_atom(atom/A, mob/user)
-	analyze_gases(A, user) // DQEdit — was pda.analyze_gases; LINDA exposes it as a free proc
+	analyze_gases(A, user) // was pda.analyze_gases; LINDA exposes it as a free proc
 
 /datum/data/pda/utility/scanmode/notes
 	base_name = "Note Scanner"

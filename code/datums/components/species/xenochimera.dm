@@ -420,13 +420,13 @@
 		///End of xenochimera limb rejection code.
 
 		//Dead when hatching
-		//var/sickness_duration = 10 MINUTES //CHOMPedit
+		// var/sickness_duration = 10 MINUTES //
 		var/has_braindamage = FALSE
 		if(stat == DEAD)
 			//Reviving from ded takes extra nutrition - if it isn't provided from outside sources, it comes from you
 			if(!hasnutriment())
 				nutrition=nutrition * 0.75
-				//sickness_duration = 20 MINUTES //CHOMPedit
+				// sickness_duration = 20 MINUTES //
 			has_braindamage = TRUE
 
 		// Finalize!
@@ -435,7 +435,7 @@
 		xc.chimera_hatch((reload_slot == "From Slot" && client))
 		visible_message(span_warning(span_huge("[src] rises to \his feet."))) //Bloody hell...
 		if(has_braindamage)
-			//add_modifier(/datum/modifier/resleeving_sickness/chimera, sickness_duration) //CHOMPedit
+			// add_modifier(/datum/modifier/resleeving_sickness/chimera, sickness_duration) //
 			adjustBrainLoss(5) // if they're reviving from dead, they come back with 5 brainloss on top of whatever's unhealed.
 
 /datum/component/xenochimera/proc/chimera_hatch(from_save_slot)

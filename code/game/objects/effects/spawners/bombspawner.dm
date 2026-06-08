@@ -60,7 +60,7 @@ ADMIN_VERB(spawn_tanktransferbomb, R_SPAWN, "Instant TTV", "Spawn a tank transfe
 	OT.master = V
 
 	PT.valve_welded = 1
-	// DQEdit — XGM exposed total_moles as a writable var; LINDA exposes it only
+	// XGM exposed total_moles as a writable var; LINDA exposes it only
 	// as a computed proc. The total is implied by the adjust_gas calls above —
 	// dropping the assignment is correct, and update_values() is a no-op under
 	// auxmos archiving.

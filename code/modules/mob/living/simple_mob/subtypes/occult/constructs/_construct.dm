@@ -22,9 +22,9 @@
 	response_disarm = "flailed at"
 	response_harm   = "punched"
 
-	// DQEdit — dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
-	// DQEdit — dq_get_softfall(src) type-default moved to GLOB.dq_softfall_by_type
-	// DQEdit — dq_get_parachuting(src) type-default moved to GLOB.dq_parachuting_by_type
+	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
+	// dq_get_softfall(src) type-default moved to GLOB.dq_softfall_by_type
+	// dq_get_parachuting(src) type-default moved to GLOB.dq_parachuting_by_type
 
 	has_langs = list(LANGUAGE_GALCOM, LANGUAGE_CULT)
 

@@ -61,7 +61,7 @@
 		pixel_y = (CELLSIZE * (0.5 + cell_y)) - center_of_mass_y
 
 /obj/item/reagent_containers/food/container_resist(mob/living/M)
-	if(istype(M, /mob/living/voice)) return	// CHOMPAdd - Stops sentient food from astral projecting
+	if(istype(M, /mob/living/voice)) return // Stops sentient food from astral projecting
 	if(food_inserted_micros)
 		food_inserted_micros -= M
 	if(isdisposalpacket(loc))

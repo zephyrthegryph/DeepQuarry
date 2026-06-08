@@ -82,7 +82,7 @@
 	efficiency = mlrating
 	active_power_usage = max(100, 2000 / caprating)
 
-	dq_apply_material_synergies(src) // DQAdd
+	dq_apply_material_synergies(src)
 /obj/machinery/microwave/Initialize(mapload)
 	. = ..()
 
@@ -623,7 +623,7 @@
 
 	. = ..()
 
-/obj/machinery/microwave/proc/cookingContents() //VOREEdit, this is a better way to deal with the contents of a microwave, since the previous method is stupid.
+/obj/machinery/microwave/proc/cookingContents() // , this is a better way to deal with the contents of a microwave, since the previous method is stupid.
 	var/list/workingList = contents.Copy() // Using the copy proc because otherwise the two lists seem to become soul bonded.
 	workingList -= component_parts
 	workingList -= circuit

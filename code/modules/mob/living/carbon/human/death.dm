@@ -141,7 +141,7 @@
 
 	mutations.Add(HUSK)
 	status_flags |= DISFIGURED	//makes them unknown without fucking up other stuff like admintools
-	remove_blood(560) //CHOMPedit
+	remove_blood(560)
 	update_icons_body()
 	return
 

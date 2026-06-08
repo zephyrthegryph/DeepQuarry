@@ -339,7 +339,7 @@
 	H.trait_injection_reagents += REAGENT_ID_RAINBOWTOXIN 	// Funny flashing lights.
 	H.trait_injection_reagents += REAGENT_ID_PARALYSISTOXIN 	// Paralysis!
 	H.trait_injection_reagents += REAGENT_ID_PAINENZYME		// Pain INCREASER
-	H.trait_injection_reagents += REAGENT_ID_APHRODISIAC		// Horni //CHOMPedit
+	H.trait_injection_reagents += REAGENT_ID_APHRODISIAC // Horni //
 
 /datum/trait/neutral/long_vore
 	name = "Long Predatorial Reach"
@@ -1588,7 +1588,7 @@
 	name = "Drippy"
 	desc = "You cannot hold your form together, or produce a constant film of sludge that drips off of your body. Hope the station has a janitor."
 	cost = 0
-	custom_only = FALSE // CHOMPAdd, enables all races to take the trait
+	custom_only = FALSE // , enables all races to take the trait
 
 	// Traitgenes Made into a genetrait
 	is_genetrait = TRUE
@@ -1839,14 +1839,14 @@
 	name = "Growing"
 	desc = "After you consume enough nutrition, you start to slowly grow while metabolizing nutrition faster."
 	cost = 0
-	hidden = FALSE //Disabled on Virgo // CHOMPEdit
+	hidden = FALSE // Disabled on Virgo //
 	added_component_path = /datum/component/nutrition_size_change/growing
 
 /datum/trait/neutral/nutritionshrink
 	name = "Shrinking"
 	desc = "If you don't eat enough, your body starts shrinking to make up the difference!"
 	cost = 0
-	hidden = FALSE //Disabled on Virgo // CHOMPEdit
+	hidden = FALSE // Disabled on Virgo //
 	added_component_path = /datum/component/nutrition_size_change/shrinking
 
 /datum/trait/neutral/disease_carrier

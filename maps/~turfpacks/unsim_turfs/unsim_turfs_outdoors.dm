@@ -6,7 +6,7 @@
 /turf/unsimulated/floor/outdoors/grass/sif
 	name = "growth"
 	icon_state = "grass_sif0"
-	edge_blending_priority = 3 // CHOMPedit
+	edge_blending_priority = 3
 
 /turf/unsimulated/floor/outdoors/grass/forest
 	name = "thick grass"
@@ -22,7 +22,7 @@
 /turf/unsimulated/floor/outdoors/mud
 	name = "mud"
 	icon_state = "mud_dark"
-	edge_blending_priority = 4 // CHOMPedit
+	edge_blending_priority = 4
 
 /turf/unsimulated/floor/outdoors/rocks
 	name = "rocks"

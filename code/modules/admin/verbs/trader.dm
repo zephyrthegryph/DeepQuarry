@@ -53,7 +53,7 @@ ADMIN_VERB(trader_ship, R_ADMIN|R_EVENT, "Dispatch Beruang Trader Ship", "Invite
 
 	GLOB.can_call_traders = FALSE // Only one call per round.
 	GLOB.send_beruang = TRUE
-	consider_trader_load() //VOREStation Add
+	consider_trader_load()
 
 	sleep(300 SECONDS)
 	GLOB.send_beruang = FALSE // Can no longer join the traders.

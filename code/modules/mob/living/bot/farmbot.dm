@@ -19,7 +19,7 @@
 	var/replaces_nutriment = 0
 	var/collects_produce = 0
 	var/removes_dead = 0
-	var/times_idle = 0 //VOREStation Add
+	var/times_idle = 0
 	var/obj/structure/reagent_dispensers/watertank/tank
 
 
@@ -112,14 +112,13 @@
 		if("replacenutri")
 			replaces_nutriment = !replaces_nutriment
 			. = TRUE
-		// VOREStation Edit: No automatic hydroponics
+		// No automatic hydroponics
 		// if("collect")
 		// 	collects_produce = !collects_produce
 		// 	. = TRUE
 		// if("removedead")
 		// 	removes_dead = !removes_dead
 		// 	. = TRUE
-		// VOREStation Edit End
 
 
 /mob/living/bot/farmbot/update_icons()
@@ -139,25 +138,25 @@
 	if(emagged)
 		for(var/mob/living/carbon/human/H in view(7, src))
 			target = H
-			times_idle = 0 //VOREStation Add - Idle shutoff time
+			times_idle = 0 // Idle shutoff time
 			return
 	else
 		for(var/obj/machinery/portable_atmospherics/hydroponics/tray in view(7, src))
 			if(confirmTarget(tray))
 				target = tray
-				times_idle = 0 //VOREStation Add - Idle shutoff time
+				times_idle = 0 // Idle shutoff time
 				return
-		if(!target && refills_water && tank && tank.reagents?.total_volume < tank.reagents.maximum_volume) // ChompEDIT - runtime
+		if(!target && refills_water && tank && tank.reagents?.total_volume < tank.reagents.maximum_volume) // runtime
 			for(var/obj/structure/sink/source in view(7, src))
 				target = source
-				times_idle = 0 //VOREStation Add - Idle shutoff time
+				times_idle = 0 // Idle shutoff time
 				return
-	if(++times_idle == 150) turn_off() //VOREStation Add - Idle shutoff time
+	if(++times_idle == 150) turn_off() // Idle shutoff time
 
 /mob/living/bot/farmbot/calcTargetPath() // We need to land NEXT to the tray, because the tray itself is impassable
 	if(isnull(target))
 		return
-	target_path = SSpathfinder.default_bot_pathfinding(src, get_turf(target), 1, 32) //CHOMPEdit
+	target_path = SSpathfinder.default_bot_pathfinding(src, get_turf(target), 1, 32)
 	if(!target_path)
 		ignore_list |= target
 		target = null
@@ -237,7 +236,7 @@
 
 		busy = 1
 		while(do_after(src, 1 SECOND, target = A) && tank.reagents.total_volume < tank.reagents.maximum_volume)
-			tank.reagents.add_reagent("water", 100) //VOREStation Edit
+			tank.reagents.add_reagent("water", 100)
 			if(prob(5))
 				playsound(src, 'sound/effects/slosh.ogg', 25, 1)
 

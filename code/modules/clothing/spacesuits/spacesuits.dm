@@ -11,7 +11,7 @@
 	center_of_mass_y = 0
 	flags = PHORONGUARD
 	item_flags = THICKMATERIAL | AIRTIGHT | ALLOW_SURVIVALFOOD
-	permeability_coefficient = 0  //Chompedit was 0.01, zeroed to test protecting those who are vulnerable to water.
+	permeability_coefficient = 0 // was 0.01, zeroed to test protecting those who are vulnerable to water.
 	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 100, rad = 50)
 	flags_inv = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE|BLOCKHAIR
 	body_parts_covered = HEAD|FACE|EYES
@@ -37,7 +37,7 @@
 	if(camera_networks)
 		verbs |= /obj/item/clothing/head/helmet/space/proc/toggle_camera
 
-	if(type == /obj/item/clothing/head/helmet/space) //VOREStation edit - use the specially refitted sprites by KBraid. Done this way to avoid breaking subtypes.
+	if(type == /obj/item/clothing/head/helmet/space) // use the specially refitted sprites by KBraid. Done this way to avoid breaking subtypes.
 		LAZYSET(sprite_sheets, SPECIES_TESHARI, 'icons/inventory/head/mob_teshari.dmi')
 
 /obj/item/clothing/head/helmet/space/proc/toggle_camera()
@@ -73,12 +73,12 @@
 	icon_state = "space"
 	w_class = ITEMSIZE_HUGE // So you can't fit this in your bag and be prepared at all times.
 	gas_transfer_coefficient = 0.01
-	permeability_coefficient = 0  //Chompedit was 0.01, zeroed to test protecting those who are vulnerable to water.
+	permeability_coefficient = 0 // was 0.01, zeroed to test protecting those who are vulnerable to water.
 	flags = PHORONGUARD
 	item_flags = THICKMATERIAL
 	body_parts_covered = CHEST|LEGS|FEET|ARMS|HANDS
 	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS)
-	slowdown = 1 // CHOMPedit: 1.5 to 1. More sane movespeed delay. Voidsuits are still faster.
+	slowdown = 1 // 1.5 to 1. More sane movespeed delay. Voidsuits are still faster.
 	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 100, rad = 50)
 	flags_inv = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER
 	cold_protection = CHEST|LEGS|FEET|ARMS|HANDS
@@ -93,12 +93,12 @@
 	var/list/supporting_limbs //If not-null, automatically splints breaks. Checked when removing the suit.
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
-//VOREStation edit start - use the specially refitted sprites by KBraid. Done this way to avoid breaking subtypes.
+// start - use the specially refitted sprites by KBraid. Done this way to avoid breaking subtypes.
 /obj/item/clothing/suit/space/Initialize(mapload)
 	. = ..()
 	if(type == /obj/item/clothing/suit/space)
 		LAZYSET(sprite_sheets, SPECIES_TESHARI, 'icons/inventory/suit/mob_teshari.dmi')
-//VOREStation edit end.
+// end.
 
 /obj/item/clothing/suit/space/equipped(mob/M)
 	check_limb_support(M)

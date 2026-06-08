@@ -68,12 +68,10 @@
 //	buckled_mob = M
 	buckled_mobs |= M
 
-	//VOREStation Add
 	if(riding_datum)
 		riding_datum.ridden = src
 		riding_datum.handle_vehicle_offsets()
 	M.update_water()
-	//VOREStation Add End
 
 	post_buckle_mob(M)
 	M.throw_alert("buckled", /atom/movable/screen/alert/restrained/buckled, new_master = src)
@@ -96,12 +94,10 @@
 	//	buckled_mob = null
 		buckled_mobs -= buckled_mob
 
-		//VOREStation Add
 		buckled_mob.update_water()
 		if(riding_datum)
 			riding_datum.restore_position(buckled_mob)
 			riding_datum.handle_vehicle_offsets() // So the person in back goes to the front.
-		//VOREStation Add End
 		post_buckle_mob(.)
 
 /atom/movable/proc/unbuckle_all_mobs(force = FALSE)

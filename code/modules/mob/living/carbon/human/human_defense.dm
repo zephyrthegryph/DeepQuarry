@@ -80,7 +80,7 @@ emp_act
 				msg_admin_attack("[key_name(src)] was disarmed by a stun effect")
 
 				drop_from_inventory(c_hand)
-				if(!isbelly(loc)) //VOREStation Add
+				if(!isbelly(loc))
 					if (affected.robotic >= ORGAN_ROBOT)
 						automatic_custom_emote(VISIBLE_MESSAGE, "drops what they were holding, their [affected.name] malfunctioning!", check_stat = TRUE)
 					else
@@ -202,7 +202,7 @@ emp_act
 	return null
 
 /mob/living/carbon/human/proc/check_shields(damage = 0, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
-	for(var/obj/item/shield in list(l_hand, r_hand, wear_suit, l_ear, r_ear))	//CHOMPEdit - included ears for the headset/event item
+	for(var/obj/item/shield in list(l_hand, r_hand, wear_suit, l_ear, r_ear)) // included ears for the headset/event item
 		if(!shield) continue
 		. = shield.handle_shield(src, damage, damage_source, attacker, def_zone, attack_text)
 		if(.) return
@@ -317,7 +317,7 @@ emp_act
 	return 1
 
 /mob/living/carbon/human/proc/attack_joint(obj/item/organ/external/organ, obj/item/W, effective_force, dislocate_mult, blocked)
-	if(!organ || (organ.dislocated == 1) || (organ.dislocated == -1) || blocked >= 100) //VOREStation Edit Bugfix
+	if(!organ || (organ.dislocated == 1) || (organ.dislocated == -1) || blocked >= 100) // Bugfix
 		return 0
 
 	if(W.damtype != BRUTE)

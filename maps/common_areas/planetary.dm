@@ -309,7 +309,7 @@
 	sound_env = SMALL_ENCLOSED
 	ambience = AMBIENCE_SUBSTATION
 
-//Rust-Engine Outpost CHOMPedit - ksc
+// Rust-Engine Outpost ksc
 
 /area/surface/outpost/engineering/atmos_room
 	name = "North Atmos Room"

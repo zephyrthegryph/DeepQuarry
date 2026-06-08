@@ -63,8 +63,8 @@
 	in_use = FALSE
 	preserve_item = 1
 	var/uses_charges = 0 					// If the area editor has limited uses.
-	var/initial_charges = 25 //CHOMPedit
-	var/charges = 25						// The amount of uses the area editor has. //CHOMPedit
+	var/initial_charges = 25
+	var/charges = 25 // The amount of uses the area editor has. //
 	var/station_master = 1					// If the areaeditor can add charges to others.
 	var/wire_schematics = 0					// If the areaeditor can see wires.
 	var/can_override = 0						// If you want the areaeditor to override the 'Don't make a new area where one already exists' logic. Only given to CE blueprints.
@@ -193,7 +193,7 @@
 		. += "<a href='byond://?src=[REF(src)];view_legend=1'><< Back</a>"
 		. += view_station_wire_set(user, legend)
 
-	// DQEdit — structured TGUI AdminReport; byond:// links forwarded to host.
+	// structured TGUI AdminReport; byond:// links forwarded to host.
 	dq_admin_report_html(user, "[src]", ., src)
 
 /obj/item/wire_reader/Topic(href, href_list)
@@ -237,10 +237,10 @@
 
 /obj/item/areaeditor/blueprints/engineers
 	name = "writing blueprints"
-	desc = "A piece of paper that allows for expansion of the station and creation of new areas. There is a \"For Official Use Only\" stamp on it. NOT to be mistaken with the station blueprints."		// CHOMPEDIT : purdev (some spelling fixes)
+	desc = "A piece of paper that allows for expansion of the station and creation of new areas. There is a \"For Official Use Only\" stamp on it. NOT to be mistaken with the station blueprints." // purdev (some spelling fixes)
 	station_master = 0
 	uses_charges = 1
-	can_override = 1 //CHOMPedit, This will allow easier building on the planets, dont think blueprint grief is too big of a problem. -Lotion
+	can_override = 1 // , This will allow easier building on the planets, dont think blueprint grief is too big of a problem. -Lotion
 
 
 
@@ -269,7 +269,7 @@
 			//legend is a wireset
 			. += "<a href='byond://?src=[REF(src)];view_legend=1'><< Back</a>"
 			. += view_wire_set(user, legend)
-	// DQEdit — structured TGUI AdminReport; byond:// links forwarded to host.
+	// structured TGUI AdminReport; byond:// links forwarded to host.
 	dq_admin_report_html(user, "[src]", ., src)
 
 

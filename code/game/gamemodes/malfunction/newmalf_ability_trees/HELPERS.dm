@@ -68,7 +68,7 @@
 	if(!help)
 		help = "Error loading help (file /html/malf_ai.html is probably missing). Please report this to server administration staff."
 
-	// DQEdit — structured TGUI AdminReport.
+	// structured TGUI AdminReport.
 	dq_admin_report_html(user, "Malf AI Help", help)
 
 

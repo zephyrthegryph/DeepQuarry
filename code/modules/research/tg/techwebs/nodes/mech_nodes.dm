@@ -209,7 +209,7 @@
 		"gygax_left_leg",
 		"gygax_right_leg",
 		"gygax_armour",
-		"scarab_chassis", //CHOMPEdit Start - Adding Scarab
+		"scarab_chassis", // Adding Scarab
 		"scarab_torso",
 		"scarab_head",
 		"scarab_left_arm",
@@ -218,7 +218,7 @@
 		"scarab_right_legs",
 		"scarab_main",
 		"scarab_peri",
-		"scarab_targ", //CHOMPEdit End - Adding Scarab
+		"scarab_targ", // Adding Scarab
 	)
 	research_costs = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_3_POINTS)
 	announce_channels = list(CHANNEL_SCIENCE)
@@ -260,7 +260,7 @@
 /datum/techweb_node/mech_infiltrator
 	id = TECHWEB_NODE_MECH_INFILTRATOR
 	display_name = "Infiltration Exosuits"
-	description = "Advanced exosuits with phasing capabilities, allowing it to move through walls and obstacles, ideal for covert and special operations." //CHOMPEDIT exosuit -> exosuits
+	description = "Advanced exosuits with phasing capabilities, allowing it to move through walls and obstacles, ideal for covert and special operations." // exosuit -> exosuits
 	prereq_ids = list(TECHWEB_NODE_MECH_LIGHT, TECHWEB_NODE_ANOMALY_RESEARCH)
 	design_ids = list(
 		"exo_int_armor_phazon",
@@ -274,7 +274,7 @@
 		"janus_coil",
 		"janus_module",
 		"mech_cloaking",
-		"phazon_chassis", //CHOMPEdit Start - Adds Phazon
+		"phazon_chassis", // Adds Phazon
 		"phazon_torso",
 		"phazon_head",
 		"phazon_left_arm",
@@ -283,7 +283,7 @@
 		"phazon_right_leg",
 		"phazon_main",
 		"phazon_peri",
-		"phazon_targ", //CHOMPEdit End - Adds Phazon
+		"phazon_targ", // Adds Phazon
 	)
 	research_costs = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_4_POINTS)
 	announce_channels = list(CHANNEL_SCIENCE)
@@ -307,7 +307,7 @@
 		"mech_ion-r",
 		"mech_laser_xray",
 		"mech_laser_xray-r",
-		"mech_phoron_bore", //CHOMPEDIT Add - Phoron Bore
+		"mech_phoron_bore", // Add - Phoron Bore
 	)
 	research_costs = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_4_POINTS)
 	announce_channels = list(CHANNEL_SCIENCE)
@@ -365,7 +365,7 @@
 	discount_experiments = list(/datum/experiment/physical/teleporting = TECHWEB_TIER_3_POINTS)
 	announce_channels = list(CHANNEL_SCIENCE)
 
-/datum/techweb_node/mech_shields //CHOMPEdit Start - Adds Mech Shields
+/datum/techweb_node/mech_shields // Adds Mech Shields
 	id = TECHWEB_NODE_MECH_SHIELDS
 	display_name = "Exosuit Shields"
 	description = "Exosuit shield technology that allows for absorbing high-velocity impacts without any harm to the mech itself."
@@ -375,4 +375,4 @@
 		"mech_shield_droid",
 	)
 	research_costs = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_4_POINTS)
-	announce_channels = list(CHANNEL_SCIENCE) //CHOMPEdit End - Adds Mech Shields
+	announce_channels = list(CHANNEL_SCIENCE) // Adds Mech Shields

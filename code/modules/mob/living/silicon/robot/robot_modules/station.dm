@@ -269,7 +269,6 @@
 // Cyborgs (non-drones), default loadout. This will be given to every module.
 /obj/item/robot_module/robot/create_equipment(mob/living/silicon/robot/robot)
 	..()
-	//CHOMPEdit Start
 	var/datum/matter_synth/water = new /datum/matter_synth(500)
 	water.name = "Water reserves"
 	water.recharge_rate = 10
@@ -279,7 +278,6 @@
 	var/obj/item/robot_tongue/T = new /obj/item/robot_tongue(src)
 	T.water = water
 	src.modules += T
-	//CHOMPEdit End
 	var/obj/item/gps/robot/robot_gps = new /obj/item/gps/robot(src)
 	adjust_gps(robot_gps)
 	src.modules += robot_gps
@@ -347,7 +345,7 @@
 
 	var/obj/item/stack/nanopaste/N = new /obj/item/stack/nanopaste(src)
 	var/obj/item/stack/medical/advanced/bruise_pack/B = new /obj/item/stack/medical/advanced/bruise_pack(src)
-	var/obj/item/stack/medical/advanced/ointment/O = new /obj/item/stack/medical/advanced/ointment(src) //VoreStation edit: we have burn surgeries so they should be able to do them
+	var/obj/item/stack/medical/advanced/ointment/O = new /obj/item/stack/medical/advanced/ointment(src) // edit: we have burn surgeries so they should be able to do them
 	N.uses_charge = 1
 	N.charge_costs = list(1000)
 	N.synths = list(medicine)
@@ -476,7 +474,7 @@
 	src.modules += new /obj/item/pickaxe/plasmacutter/borg(src)
 	src.modules += new /obj/item/dogborg/stasis_clamp(src)
 	src.modules += new /obj/item/storage/pouch/eng_parts/borg(src)
-	src.modules += new /obj/item/holosign_creator/combifan(src) //CHOMPAdd
+	src.modules += new /obj/item/holosign_creator/combifan(src)
 
 	var/datum/matter_synth/metal = new /datum/matter_synth/metal(40000)
 	var/datum/matter_synth/glass = new /datum/matter_synth/glass(40000)
@@ -521,7 +519,7 @@
 	src.modules += new /obj/item/taperoll/police(src)
 	src.modules += new /obj/item/reagent_containers/spray/pepper(src)
 	src.modules += new /obj/item/gripper/security(src)
-	src.modules += new /obj/item/gun/energy/robotic/phasegun(src) // CHOMPedit: Phasegun for regular sec cyborg.
+	src.modules += new /obj/item/gun/energy/robotic/phasegun(src) // Phasegun for regular sec cyborg.
 	src.modules += new /obj/item/ticket_printer(src)
 	src.emag += new /obj/item/gun/energy/robotic/laser/rifle(src)
 
@@ -558,7 +556,7 @@
 	src.modules += new /obj/item/mop(src)
 	src.modules += new /obj/item/pupscrubber(src)
 	src.modules += new /obj/item/lightreplacer(src)
-	src.modules += new /obj/item/vac_attachment(src) //CHOMPAdd
+	src.modules += new /obj/item/vac_attachment(src)
 	src.modules += new /obj/item/borg/sight/janitor(src)
 	src.modules += new /obj/item/reagent_containers/glass/bucket/cyborg(src)
 	var/obj/item/reagent_containers/spray/LS = new /obj/item/reagent_containers/spray(src)
@@ -763,8 +761,8 @@
 	src.modules += new /obj/item/storage/bag/sheetsnatcher/borg(src)
 	src.modules += new /obj/item/gripper/miner(src)
 	src.modules += new /obj/item/mining_scanner/robot(src)
-	src.modules += new /obj/item/gun/energy/robotic/phasegun(src) //CHOMPedit: Phasegun for regular mining cyborg.
-	src.modules += new /obj/item/vac_attachment(src) //CHOMPAdd
+	src.modules += new /obj/item/gun/energy/robotic/phasegun(src) // Phasegun for regular mining cyborg.
+	src.modules += new /obj/item/vac_attachment(src)
 
 	var/obj/item/card/id/robot_id = robot.idcard
 	robot_id.name = "\improper Synthetic Miner ID"
@@ -951,7 +949,7 @@
 	src.modules += new /obj/item/pickaxe/borgdrill(src)
 	src.modules += new /obj/item/ore_bag(src)
 	src.modules += new /obj/item/storage/bag/sheetsnatcher/borg(src)
-	src.modules += new /obj/item/gun/energy/robotic/phasegun(src)  //Chompedit, makes the mining borg able to defend itself.
+	src.modules += new /obj/item/gun/energy/robotic/phasegun(src) // , makes the mining borg able to defend itself.
 	src.emag += new /obj/item/pickaxe/diamonddrill(src)
 
 /obj/item/robot_module/drone/talon

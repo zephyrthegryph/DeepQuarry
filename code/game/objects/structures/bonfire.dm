@@ -1,4 +1,4 @@
-// DQEdit — LINDA atmospherics rewrite (commit 6fdac16ef1). gas_mixture var accesses (e.g. mix.total_moles) converted to proc calls (mix.total_moles()) for the LINDA engine API. Bulk rewrite by tools/verdigris/linda_rewrite_chomp_atmos.py.
+// LINDA atmospherics rewrite (commit 6fdac16ef1). gas_mixture var accesses (e.g. mix.total_moles) converted to proc calls (mix.total_moles()) for the LINDA engine API. Bulk rewrite by tools/verdigris/linda_rewrite_chomp_atmos.py.
 // Bracketed at file-header rather than per-hunk because the
 // edits are mechanical and span the whole file; the commit SHA
 // is the source of truth for per-line diff context.
@@ -40,7 +40,7 @@
 /obj/structure/bonfire/permanent/sifwood/Initialize(mapload, material_name)
 	. = ..(mapload, MAT_SIFWOOD)
 
-//CHOMPStation Addition Start
+// ition Start
 /obj/structure/bonfire/examine(mob/user)
 	. = ..()
 	var/X = get_fuel_amount()
@@ -49,7 +49,7 @@
 		. += "[src] has a crude grill plate over it."
 	if(can_buckle)
 		. += "[src] has a makeshift stake built in it, perfect for witches and space templars."
-//CHOMPStation Addition end
+// ition end
 
 /obj/structure/bonfire/attackby(obj/item/W, mob/user)
 	if(istype(W, /obj/item/stack/rods) && !can_buckle && !grill)
@@ -150,13 +150,13 @@
 		return FALSE
 
 	if(istype(consumed_fuel, /obj/item/stack/material/log))
-		next_fuel_consumption = world.time + 6 MINUTES	//VOREStation Edit
+		next_fuel_consumption = world.time + 6 MINUTES
 		qdel(consumed_fuel)
 		update_icon()
 		return TRUE
 
 	else if(istype(consumed_fuel, /obj/item/stack/material/wood)) // One log makes two planks of wood.
-		next_fuel_consumption = world.time + 3 MINUTE	//VOREStation Edit
+		next_fuel_consumption = world.time + 3 MINUTE
 		qdel(consumed_fuel)
 		update_icon()
 		return TRUE
@@ -350,13 +350,13 @@
 		return FALSE
 
 	if(istype(consumed_fuel, /obj/item/stack/material/log))
-		next_fuel_consumption = world.time + 6 MINUTES	//VOREStation Edit
+		next_fuel_consumption = world.time + 6 MINUTES
 		qdel(consumed_fuel)
 		update_icon()
 		return TRUE
 
 	else if(istype(consumed_fuel, /obj/item/stack/material/wood)) // One log makes two planks of wood.
-		next_fuel_consumption = world.time + 3 MINUTES	//VOREStation Edit
+		next_fuel_consumption = world.time + 3 MINUTES
 		qdel(consumed_fuel)
 		update_icon()
 		return TRUE

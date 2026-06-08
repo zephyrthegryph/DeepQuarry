@@ -404,7 +404,7 @@
 
 /mob/living/carbon/human/Topic(href, href_list)
 	if (href_list["mach_close"]) // This is horrible.
-		// DQEdit — legacy browse(null) close removed; see /mob/Topic.
+		// legacy browse(null) close removed; see /mob/Topic.
 		unset_machine()
 
 	if(href_list["item"])
@@ -756,10 +756,9 @@
 	if (href_list["flavor_change"])
 		switch(href_list["flavor_change"])
 			if("done")
-				// DQEdit Start — flavor_changes is TGUI now; close via SStgui
+				// flavor_changes is TGUI now; close via SStgui
 				SStgui.close_uis(src)
 				return
-				// DQEdit End
 			if("general")
 				var/msg = strip_html_simple(tgui_input_text(usr,"Update the general description of your character. This will be shown regardless of clothing.","Flavor Text",html_decode(flavor_texts[href_list["flavor_change"]]), multiline = TRUE, prevent_enter = TRUE))	//Separating out OOC notes
 				if(msg)

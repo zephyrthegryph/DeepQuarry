@@ -39,7 +39,7 @@
 	max_age = 200
 	oxy_mod = 0
 	//radiation_mod = 0	//Can't be assed with fandangling rad protections while blob formed/suited
-	darksight = 10 // CHOMPAdd
+	darksight = 10
 	siemens_coefficient = 2
 	brute_mod =        0.8
 	burn_mod =        1.5
@@ -441,7 +441,7 @@ CHOMP Removal end*/
 	owner = 1
 	if(new_name)
 		name += " ([new_name])"
-		validstring += "[time2text(world.timeofday, "Month") +" "+ num2text(text2num(time2text(world.timeofday, "YYYY"))+544)]" // CHOMPEdit
+		validstring += "[time2text(world.timeofday, "Month") +" "+ num2text(text2num(time2text(world.timeofday, "YYYY"))+544)]"
 		registring += "[new_name]"
 
 /obj/item/clothing/accessory/permit/nanotech/examine(mob/user)

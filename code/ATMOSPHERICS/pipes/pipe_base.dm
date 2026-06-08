@@ -57,7 +57,7 @@
 /obj/machinery/atmospherics/pipe/proc/handle_leaking()	// Used specifically to update leaking status on different pipes.
 	return
 
-/obj/machinery/atmospherics/pipe/pipeline_expansion()  // DQEdit — was proc/; base in xgm_compat_shim now
+/obj/machinery/atmospherics/pipe/pipeline_expansion() // was proc/; base in xgm_compat_shim now
 	return null
 
 // For pipes this is the same as pipeline_expansion()

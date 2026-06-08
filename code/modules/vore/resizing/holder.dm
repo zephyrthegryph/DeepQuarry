@@ -1,10 +1,8 @@
 /obj/item/holder/dropped(mob/user, equipping, slot)
-	// CHOMPEdit Start
 	..()
 	spawn(1)
 		if(!throwing && isturf(loc))
 			qdel(src)
-	// CHOMPEdit End
 
 /obj/item/holder/attack_hand(mob/living/user as mob) //straight up just copypasted from objects/items.dm with a few things changed (doesn't called dropped unless +actually dropped+)
 	if (!user) return
@@ -32,9 +30,9 @@
 
 	src.pickup(user)
 	if (src.loc == user)
-		if(!mob_can_unequip(user, user.get_inventory_slot(src))) //VOREStation Edit
+		if(!mob_can_unequip(user, user.get_inventory_slot(src)))
 			return
-		else //VOREStation Edit
+		else
 			user.temporarilyRemoveItemFromInventory(src)
 	else
 		if(isliving(src.loc))
@@ -45,16 +43,16 @@
 			var/obj/effect/temporary_effect/item_pickup_ghost/ghost = new(old_loc)
 			ghost.assumeform(src)
 			ghost.animate_towards(user)
-	else if (old_loc == user) //VOREStation Edit
+	else if (old_loc == user)
 		dropInto(user.drop_location())
 		dropped(user)
-	//VORESTATION EDIT START. This handles possessed items.
-	if(src.possessed_voice && src.possessed_voice.len > 1 && !(user.ckey in warned_of_possession)) // CHOMPEdit Is this item possessed?
+	// EDIT START. This handles possessed items.
+	if(src.possessed_voice && src.possessed_voice.len > 1 && !(user.ckey in warned_of_possession)) // Is this item possessed?
 		warned_of_possession |= user.ckey
 		tgui_alert_async(user,{"
 		THIS ITEM IS POSSESSED BY A PLAYER CURRENTLY IN THE ROUND. This could be by anomalous means or otherwise.
 		If this is not something you wish to partake in, it is highly suggested you place the item back down.
 		If this is fine to you, ensure that the other player is fine with you doing things to them beforehand!
 		"},"OOC Warning")
-	//VORESTATION EDIT END.
+	// EDIT END.
 	return

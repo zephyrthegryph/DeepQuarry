@@ -1,4 +1,4 @@
-// DQAdd — Rebuild body marking overlays on the character's organs from the body_markings
+// Rebuild body marking overlays on the character's organs from the body_markings
 // composite pref. Iterates organs and writes per-organ markings + sets character.markings_len.
 // Lives in a hook because it touches the character's organ structure, and ordering matters
 // (markings have priority = position in the list).
@@ -12,7 +12,7 @@
 
 	// Clear any stale markings from organs (apply_to_human on body_markings cleared character.markings_len's
 	// concept of "owns the list," but the organ overlay list is rebuilt fresh here).
-	// DQEdit — organs_by_name can include internal organs (e.g. posibrain in
+	// organs_by_name can include internal organs (e.g. posibrain in
 	// FBP/protean torsos) that don't have a `markings` var. Filter to external
 	// limbs only before touching .markings.
 	for(var/N in target.organs_by_name)

@@ -12,7 +12,7 @@
 
 	// Looping through the player list has the added bonus of working for mobs inside containers
 	var/sound/S = sound(get_sfx(soundin))
-	var/maxdistance = (world.view + extrarange) * 2  //VOREStation Edit - 3 to 2
+	var/maxdistance = (world.view + extrarange) * 2 // 3 to 2
 	var/list/listeners = GLOB.player_list.Copy()
 
 	// Get AI holograms of active AIs too
@@ -267,7 +267,7 @@
 					'sound/weapons/mine/pickaxe2.ogg',
 					'sound/weapons/mine/pickaxe3.ogg',
 					'sound/weapons/mine/pickaxe4.ogg')
-			//VORESTATION EDIT - vore sounds for better performance
+			// EDIT - vore sounds for better performance
 			if ("hunger_sounds") soundin = pick('sound/vore/growl1.ogg','sound/vore/growl2.ogg','sound/vore/growl3.ogg','sound/vore/growl4.ogg','sound/vore/growl5.ogg')
 
 			if("classic_digestion_sounds") soundin = pick(
@@ -311,7 +311,7 @@
 					'sound/vore/belches/belch5.ogg','sound/vore/belches/belch6.ogg','sound/vore/belches/belch7.ogg','sound/vore/belches/belch8.ogg',
 					'sound/vore/belches/belch9.ogg','sound/vore/belches/belch10.ogg','sound/vore/belches/belch11.ogg','sound/vore/belches/belch12.ogg',
 					'sound/vore/belches/belch13.ogg','sound/vore/belches/belch14.ogg','sound/vore/belches/belch15.ogg')
-			//END VORESTATION EDIT
+			// END EDIT
 			if ("terminal_type")
 				soundin = pick('sound/machines/terminal_button01.ogg', 'sound/machines/terminal_button02.ogg', 'sound/machines/terminal_button03.ogg', \
 								'sound/machines/terminal_button04.ogg', 'sound/machines/terminal_button05.ogg', 'sound/machines/terminal_button06.ogg', \
@@ -450,7 +450,7 @@ GLOBAL_LIST_INIT(species_sound_map, list(
 	var/pref_species = pref.read_preference(/datum/preference/choiced/species)
 	var/datum/species/valid = GLOB.all_species[pref_species]
 	if(valid.selects_bodytype == (SELECTS_BODYTYPE_CUSTOM || SELECTS_BODYTYPE_SHAPESHIFTER)) // Custom species or xenochimera handling here
-		valid = coalesce(GLOB.all_species[pref.read_preference(/datum/preference/text/human/custom_base)], GLOB.all_species[pref_species]) // DQEdit — migrated pref
+		valid = coalesce(GLOB.all_species[pref.read_preference(/datum/preference/text/human/custom_base)], GLOB.all_species[pref_species]) // migrated pref
 	// Now we start getting our sounds.
 	var/id_gender = pref.read_preference(/datum/preference/choiced/gender/identifying)
 	if(valid.gender_specific_species_sounds) // Do we have gender-specific sounds?

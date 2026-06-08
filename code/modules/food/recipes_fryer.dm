@@ -185,7 +185,6 @@
 	result = /obj/item/reagent_containers/food/snacks/pisanggoreng
 	coating = /datum/reagent/nutriment/coating/batter
 
-//VOREStation Add Start
 //CHOMP removal start
 /*/datum/recipe/generalschicken
 *	appliance = FRYER
@@ -206,7 +205,6 @@
 *		/obj/item/reagent_containers/food/snacks/meat
 *	)
 *	result = /obj/item/storage/box/wings //This is kinda like the donut box.
-//VOREStation Add End
 Chomp remove end */
 
 /datum/recipe/churro

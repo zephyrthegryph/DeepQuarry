@@ -11,7 +11,7 @@
 	var/nutriment_factor = 30 // Per unit
 	var/injectable = 0
 	color = "#664330"
-	affects_robots = 1	//VOREStation Edit
+	affects_robots = 1
 	wiki_flag = WIKI_FOOD
 	coolant_modifier = -1
 	scannable = SCANNABLE_BENEFICIAL
@@ -44,23 +44,23 @@
 				data -= taste
 
 /datum/reagent/nutriment/affect_blood(mob/living/carbon/M, alien, removed)
-	if(!injectable && alien != IS_SLIME && alien != IS_CHIMERA && !M.isSynthetic()) //VOREStation Edit
+	if(!injectable && alien != IS_SLIME && alien != IS_CHIMERA && !M.isSynthetic())
 		M.adjustToxLoss(0.1 * removed)
 		return
 	affect_ingest(M, alien, removed)
-	//VOREStation Edits Start
+	// s Start
 	if(M.isSynthetic())
 		M.adjust_nutrition((nutriment_factor * removed) * M.species?.synthetic_food_coeff)
-	//VOREStation Edits End
+	// s End
 	..()
 
 /datum/reagent/nutriment/affect_ingest(mob/living/carbon/M, alien, removed)
 	switch(alien)
 		if(IS_DIONA) return
 		if(IS_UNATHI) removed *= 0.5
-		if(IS_CHIMERA) removed *= 0.25 //VOREStation Edit
+		if(IS_CHIMERA) removed *= 0.25
 	if(issmall(M)) removed *= 2 // Small bodymass, more effect from lower volume.
-	//VOREStation Edits Start
+	// s Start
 	if(!M.isSynthetic())
 		if(!(M.species.allergens & allergen_type) && !(M.species.medallergens & medallergen_type))	//assuming it doesn't cause a horrible reaction, we'll be ok!
 			M.heal_organ_damage(0.5 * removed, 0)
@@ -69,7 +69,7 @@
 	else
 		M.adjust_nutrition(((nutriment_factor + M.food_preference(allergen_type)) * removed) * M.species.synthetic_food_coeff) //RS edit
 
-	//VOREStation Edits Stop
+	// s Stop
 
 // Aurora Cooking Port Insertion Begin
 
@@ -186,7 +186,7 @@
 
 	var/hotspot = (locate(/obj/fire) in T)
 	if(hotspot && !istype(T, /turf/space))
-		var/datum/gas_mixture/lowertemp = T.remove_air(xgm_total_moles(T.return_air())) // DQEdit — XGM T:air:total_moles → LINDA helper
+		var/datum/gas_mixture/lowertemp = T.remove_air(xgm_total_moles(T.return_air())) // XGM T:air:total_moles → LINDA helper
 		lowertemp.temperature = max(min(lowertemp.temperature-2000, lowertemp.temperature / 2), 0)
 		lowertemp.react()
 		T.assume_air(lowertemp)
@@ -296,10 +296,8 @@
 			..(M, alien, removed*1.2) // Teshari get a bit more nutrition from meat.
 		if(IS_UNATHI)
 			..(M, alien, removed*2.25) //Unathi get most of their nutrition from meat.
-		//VOREStation Edit Start
 		if(IS_CHIMERA)
 			..(M, alien, removed*4) //Xenochimera are obligate carnivores.
-		//VOREStation Edit End
 		else
 			..()
 
@@ -802,7 +800,7 @@
 /datum/reagent/frostoil/affect_ingest(mob/living/carbon/M, alien, removed) // Eating frostoil now acts like capsaicin. Wee!
 	if(alien == IS_DIONA)
 		return
-	if(alien == IS_ALRAUNE) // VOREStation Edit: It wouldn't affect plants that much.
+	if(alien == IS_ALRAUNE) // It wouldn't affect plants that much.
 		if(prob(5))
 			to_chat(M, span_rose("You feel a chilly, tingling sensation in your mouth."))
 		M.bodytemperature -= rand(10, 25)
@@ -819,7 +817,7 @@
 		M.bodytemperature -= rand(1, 5) * M.species.spice_mod // Really fucks you up, cause it makes you cold.
 		if(prob(5))
 			M.visible_message(span_warning("[M] [pick("dry heaves!","coughs!","splutters!")]"), pick(span_danger("You feel like your insides are freezing!"), span_danger("Your insides feel like they're turning to ice!")))
-	// holder.remove_reagent(REAGENT_ID_CAPSAICIN, 5) // VOREStation Edit: Nop, we don't instadelete spices for free.
+	// holder.remove_reagent(REAGENT_ID_CAPSAICIN, 5) // Nop, we don't instadelete spices for free.
 
 /datum/reagent/frostoil/cryotoxin //A longer lasting version of frost oil.
 	name = REAGENT_CRYOTOXIN
@@ -858,7 +856,7 @@
 /datum/reagent/proc/handle_spicy(mob/living/carbon/M, alien, removed)
 	if(alien == IS_DIONA)
 		return
-	if(alien == IS_ALRAUNE) // VOREStation Edit: It wouldn't affect plants that much.
+	if(alien == IS_ALRAUNE) // It wouldn't affect plants that much.
 		if(prob(5))
 			to_chat(M, span_rose("You feel a pleasant sensation in your mouth."))
 		M.bodytemperature += rand(10, 25)
@@ -876,7 +874,7 @@
 		M.bodytemperature += rand(1, 5) * M.species.spice_mod // Really fucks you up, cause it makes you overheat, too.
 		if(prob(5))
 			M.visible_message(span_warning("[M] [pick("dry heaves!","coughs!","splutters!")]"), pick(span_danger("You feel like your insides are burning!"), span_danger("You feel like your insides are on fire!"), span_danger("You feel like your belly is full of lava!")))
-	// holder.remove_reagent(REAGENT_ID_FROSTOIL, 5)  // VOREStation Edit: Nop, we don't instadelete spices for free.
+	// holder.remove_reagent(REAGENT_ID_FROSTOIL, 5) // Nop, we don't instadelete spices for free.
 
 /datum/reagent/condensedcapsaicin
 	name = REAGENT_CONDENSEDCAPSAICIN
@@ -1346,17 +1344,15 @@
 		return
 	M.heal_organ_damage(0.5 * removed, 0)
 	holder.remove_reagent(REAGENT_ID_CAPSAICIN, 10 * removed)
-	//VOREStation Edit
 	if(ishuman(M) && rand(1,10000) == 1)
 		var/mob/living/carbon/human/H = M
 		for(var/obj/item/organ/external/O in H.bad_external_organs)
 			if(O.status & ORGAN_BROKEN)
 				O.mend_fracture()
 				H.custom_pain("You feel the agonizing power of calcium mending your bones!",60)
-				H.adjustHalLoss(60) // CHOMPAdd - Get hallos damaged
-				H.AdjustStunned(1) // CHOMPEdit - Crawling again, weakened to stunned
+				H.adjustHalLoss(60) // Get hallos damaged
+				H.AdjustStunned(1) // Crawling again, weakened to stunned
 				break // Only mend one bone, whichever comes first in the list
-	//VOREStation Edit End
 
 /datum/reagent/drink/milk/cream
 	name = REAGENT_CREAM
@@ -1469,7 +1465,7 @@
 			M.bodytemperature -= 0.5
 		if(M.bodytemperature < T0C)
 			M.bodytemperature += 0.5
-		//M.adjustToxLoss(5 * removed) //VOREStation Removal
+		// M.adjustToxLoss(5 * removed) // Removal
 
 /datum/reagent/drink/tea/icetea/affect_blood(mob/living/carbon/M, alien, removed)
 	..()
@@ -1478,7 +1474,7 @@
 			M.bodytemperature -= 0.5
 		if(M.bodytemperature < T0C)
 			M.bodytemperature += 0.5
-		//M.adjustToxLoss(5 * removed) //VOREStation Removal
+		// M.adjustToxLoss(5 * removed) // Removal
 
 /datum/reagent/drink/tea/icetea/decaf
 	name = REAGENT_ICETEADECAF
@@ -1672,7 +1668,7 @@
 		return
 	..()
 
-	//if(alien == IS_TAJARA) //VOREStation Edit Begin
+	// if(alien == IS_TAJARA) //
 		//M.adjustToxLoss(0.5 * removed)
 		//M.make_jittery(4) //extra sensitive to caffine
 	if(adj_temp > 0)
@@ -1691,7 +1687,7 @@
 		return
 	//if(alien == IS_TAJARA)
 		//M.adjustToxLoss(4 * REM)
-		//M.apply_effect(3, STUTTER) //VOREStation Edit end
+		// M.apply_effect(3, STUTTER) // end
 	M.make_jittery(5)
 
 /datum/reagent/drink/coffee/handle_addiction(mob/living/carbon/M, alien)
@@ -1734,7 +1730,7 @@
 			M.bodytemperature -= 0.5
 		if(M.bodytemperature < T0C)
 			M.bodytemperature += 0.5
-		//M.adjustToxLoss(5 * removed) //VOREStation Removal
+		// M.adjustToxLoss(5 * removed) // Removal
 
 /datum/reagent/drink/coffee/icecoffee/affect_blood(mob/living/carbon/M, alien, removed)
 	..()
@@ -1743,7 +1739,7 @@
 			M.bodytemperature -= 0.5
 		if(M.bodytemperature < T0C)
 			M.bodytemperature += 0.5
-		//M.adjustToxLoss(5 * removed) //VOREStation Removal
+		// M.adjustToxLoss(5 * removed) // Removal
 
 /datum/reagent/drink/coffee/soy_latte
 	name = REAGENT_SOYLATTE
@@ -1788,18 +1784,18 @@
 /datum/reagent/drink/decaf
 	name = REAGENT_DECAF
 	id = REAGENT_ID_DECAF
-	description = "Coffee with at least 97% of its caffeine content removed. All of the flavor, none of the kick!" // CHOMPEdit - In defense of decaf coffee
-	taste_description = "coffee" // CHOMPEdit - In defense of decaf coffee
+	description = "Coffee with at least 97% of its caffeine content removed. All of the flavor, none of the kick!" // In defense of decaf coffee
+	taste_description = "coffee" // In defense of decaf coffee
 	taste_mult = 1.3
 	color = "#482000"
 	adj_temp = 25
 
 	cup_icon_state = "cup_coffee"
 	cup_name = REAGENT_ID_DECAF
-	cup_desc = "Just as bitter as regular coffee, but it won't keep you up at night!" // CHOMPEdit - In defense of decaf coffee
+	cup_desc = "Just as bitter as regular coffee, but it won't keep you up at night!" // In defense of decaf coffee
 
 	glass_name = "decaf coffee"
-	glass_desc = "Just as bitter as regular coffee, but it won't keep you up at night!" // CHOMPEdit - In defense of decaf coffee
+	glass_desc = "Just as bitter as regular coffee, but it won't keep you up at night!" // In defense of decaf coffee
 	allergen_type = ALLERGEN_COFFEE //Decaf coffee is still coffee, just less stimulating.
 
 /datum/reagent/drink/hot_coco
@@ -2644,7 +2640,7 @@
 			M.bodytemperature -= rand(1,3)
 		if(M.bodytemperature < T0C)
 			M.bodytemperature += rand(1,3)
-		//M.adjustToxLoss(5 * removed) //VOREStation Removal
+		// M.adjustToxLoss(5 * removed) // Removal
 
 /datum/reagent/drink/ice/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
@@ -2653,7 +2649,7 @@
 			M.bodytemperature -= rand(1,3)
 		if(M.bodytemperature < T0C)
 			M.bodytemperature += rand(1,3)
-		//M.adjustToxLoss(5 * removed) //VOREStation Removal
+		// M.adjustToxLoss(5 * removed) // Removal
 
 /datum/reagent/drink/nothing
 	name = REAGENT_NOTHING
@@ -3253,7 +3249,7 @@
 		return
 	//if(alien == IS_TAJARA)
 		//M.adjustToxLoss(4 * REM)
-		//M.apply_effect(3, STUTTER) //VOREStation Edit end
+		// M.apply_effect(3, STUTTER) // end
 	if(!(M.isSynthetic()))
 		M.make_jittery(5)
 
@@ -6017,7 +6013,7 @@
 	if(alien == IS_SLIME)
 		chem_effective = 0.75
 	if(alien != IS_DIONA)
-		M.heal_organ_damage(6 * removed * chem_effective, 6 * removed * chem_effective) //VOREStation Edit
+		M.heal_organ_damage(6 * removed * chem_effective, 6 * removed * chem_effective)
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		for(var/obj/item/organ/I in H.internal_organs)
@@ -6395,7 +6391,7 @@
 			M.eye_blurry = max(M.eye_blurry, 30)
 			if(prob(20))
 				M.ear_deaf = max(M.ear_deaf, 4)
-				M.deaf_loop.start() // CHOMPStation Add: Ear Ringing/Deafness
+				M.deaf_loop.start() // Ear Ringing/Deafness
 				M.Confuse(2)
 			else
 				M.Weaken(2)

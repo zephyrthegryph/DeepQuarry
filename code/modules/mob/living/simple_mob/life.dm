@@ -1,4 +1,4 @@
-// DQEdit — LINDA atmospherics rewrite (commit 6fdac16ef1). gas_mixture var accesses (e.g. mix.total_moles) converted to proc calls (mix.total_moles()) for the LINDA engine API. Bulk rewrite by tools/verdigris/linda_rewrite_chomp_atmos.py.
+// LINDA atmospherics rewrite (commit 6fdac16ef1). gas_mixture var accesses (e.g. mix.total_moles) converted to proc calls (mix.total_moles()) for the LINDA engine API. Bulk rewrite by tools/verdigris/linda_rewrite_chomp_atmos.py.
 // Bracketed at file-header rather than per-hunk because the
 // edits are mechanical and span the whole file; the commit SHA
 // is the source of truth for per-line diff context.
@@ -20,7 +20,7 @@
 	handle_special()
 
 	handle_guts()
-	do_healing()	//VOREStation Add
+	do_healing()
 
 	return TRUE
 
@@ -73,7 +73,7 @@
 		if(-INFINITY to 150)
 			throw_alert("nutrition", /atom/movable/screen/alert/starving)
 
-//VOREStation ADD START - I made this for catslugs but tbh it's probably cool to give to everything.
+// ADD START - I made this for catslugs but tbh it's probably cool to give to everything.
 //Gives all simplemobs passive healing as long as they can find food.
 //Slow enough that it should affect combat basically not at all
 
@@ -99,7 +99,7 @@
 		adjustFireLoss(-1)
 	nutrition -= 5
 	heal_countdown = 5
-//VOREStation ADD END
+// ADD END
 
 // Override for special bullshit.
 /mob/living/simple_mob/proc/handle_special()

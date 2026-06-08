@@ -36,7 +36,7 @@
 							ACCESS_HEADS, ACCESS_CONSTRUCTION,
 							ACCESS_CE, ACCESS_RC_ANNOUNCE, ACCESS_KEYCARD_AUTH, ACCESS_TCOMSAT, ACCESS_AI_UPLOAD, ACCESS_GATEWAY)
 	alt_titles = list(JOB_ALT_HEAD_ENGINEER = /datum/alt_title/head_engineer, JOB_ALT_FOREMAN = /datum/alt_title/foreman, JOB_ALT_MAINTENANCE_MANAGER = /datum/alt_title/maintenance_manager)
-	minimal_player_age = 31 //ChompEDIT
+	minimal_player_age = 31
 
 	outfit_type = /datum/decl/hierarchy/outfit/job/engineering/chief_engineer
 	job_description = "The " + JOB_CHIEF_ENGINEER + " manages the Engineering Department, ensuring that the Engineers work on what needs to be done, handling distribution \

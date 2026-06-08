@@ -16,7 +16,7 @@
 
 /obj/item/material/star/throw_impact(atom/hit_atom)
 	..()
-	if(dq_material_radioactivity(material) > 0 && isliving(hit_atom)) // DQEdit — radioactivity is a component now.
+	if(dq_material_radioactivity(material) > 0 && isliving(hit_atom)) // radioactivity is a component now.
 		var/mob/living/M = hit_atom
 		M.adjustToxLoss(rand(20,40))
 

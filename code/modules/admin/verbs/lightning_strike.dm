@@ -91,7 +91,7 @@ ADMIN_VERB(admin_lightning_strike, R_FUN, "Lightning Strike", "Causes lightning 
 			if(iscarbon(L))
 				var/mob/living/carbon/C = L
 				C.ear_deaf += 10
-				C.deaf_loop.start() // CHOMPStation Add: Ear Ringing/Deafness
+				C.deaf_loop.start() // Ear Ringing/Deafness
 			to_chat(L, span_danger("Lightning struck nearby, and the thunderclap is deafening!"))
 
 #undef LIGHTNING_REDIRECT_RANGE

@@ -96,17 +96,17 @@
 	name = "alien pistol"
 	desc = "A weapon that works very similarly to a traditional energy weapon. How this came to be will likely be a mystery for the ages."
 	catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_pistol)
-	icon = 'icons/obj/gun.dmi' // CHOMPStation Edit: Override back to base gun.dmi
+	icon = 'icons/obj/gun.dmi' // Override back to base gun.dmi
 	icon_state = "alienpistol"
 	item_state = "alienpistol"
-	fire_delay = 9 //CHOMPedit changed cooldown from 10 to 9.
-	charge_cost = 380 // CHOMPedit changed from 480 to 380. Aka five shots to six shots.
+	fire_delay = 9 // changed cooldown from 10 to 9.
+	charge_cost = 380 // changed from 480 to 380. Aka five shots to six shots.
 
-	projectile_type = /obj/item/projectile/beam/precursor //CHOMPedit changed beam type
+	projectile_type = /obj/item/projectile/beam/precursor // changed beam type
 	cell_type = /obj/item/cell/device/weapon/recharge/alien // Self charges.
 	modifystate = "alienpistol"
-	battery_lock = 1 //CHOMPedit adds battery lock.
-	move_delay = 0 // CHOMPEdit: Pistols have move_delay of 0
+	battery_lock = 1 // adds battery lock.
+	move_delay = 0 // Pistols have move_delay of 0
 
 /datum/category_item/catalogue/anomalous/precursor_a/alien_pistol
 	name = "Precursor Alpha Weapon - Appendageheld Laser"
@@ -156,7 +156,7 @@
 	charge_cost = 480	//to compensate a bit for self-recharging
 	cell_type = /obj/item/cell/device/weapon/recharge/captain
 	battery_lock = 1
-/* 	var/remainingshots = 0 //you may get a limited number of shots regardless of the charge //CHOMPedit: no
+/* 	var/remainingshots = 0 // you may get a limited number of shots regardless of the charge // no
 	var/failurechance = 0 //chance per shot of something going awry
 
 /obj/item/gun/energy/captain/Initialize(mapload)
@@ -266,13 +266,13 @@
 	name = "laser cannon"
 	desc = "With the laser cannon, the lasing medium is enclosed in a tube lined with uranium-235 and subjected to high neutron \
 	flux in a nuclear reactor core. This incredible technology may help YOU achieve high excitation rates with small laser volumes!"
-	icon = 'icons/obj/gun.dmi'  // CHOMPStation Edit: Override back to base gun.dmi
+	icon = 'icons/obj/gun.dmi' // Override back to base gun.dmi
 	icon_state = "lasercannon"
 	item_state = null
 	wielded_item_state = "mhdhowitzer-wielded" //Placeholder
 	slot_flags = SLOT_BELT|SLOT_BACK
 	projectile_type = /obj/item/projectile/beam/heavylaser/cannon
-	battery_lock = 0  //ChompEdit  This thing is worthless with this.
+	battery_lock = 0 // This thing is worthless with this.
 	fire_delay = 20
 	w_class = ITEMSIZE_HUGE //CHOMP Edit. Lol a cannon used to be just large size? Are you kidding me? A CANNON.  Deserves this.
 	one_handed_penalty = 90 // The thing's heavy and huge.
@@ -297,7 +297,7 @@
 	name = "xray laser gun"
 	desc = "A high-power laser gun capable of expelling concentrated xray blasts, which are able to penetrate matter easier than \
 	standard photonic beams, resulting in an effective 'anti-armor' energy weapon."
-	icon = 'icons/obj/gun.dmi' // CHOMPStation Edit: Override back to base gun.dmi
+	icon = 'icons/obj/gun.dmi' // Override back to base gun.dmi
 	icon_state = "xray"
 	item_state = "xray"
 	projectile_type = /obj/item/projectile/beam/xray
@@ -312,8 +312,8 @@
 	desc = "The HI DMR 9E is an older design of Hephaestus Industries. A designated marksman rifle capable of shooting powerful \
 	ionized beams, this is a weapon to kill from a distance."
 	description_fluff = "The leading arms producer in the SCG, Hephaestus typically only uses its 'top level' branding for its military-grade equipment used by armed forces across human space."
-	icon = 'icons/obj/64x32guns_ch.dmi' // CHOMPEdit: Gun Sprites
-	icon_expected_width = 64 // CHOMPEdit: Gun Sprites
+	icon = 'icons/obj/64x32guns_ch.dmi' // Gun Sprites
+	icon_expected_width = 64 // Gun Sprites
 	icon_state = "sniper"
 	item_state = "sniper"
 	item_state_slots = list(slot_r_hand_str = "lsniper", slot_l_hand_str = "lsniper")

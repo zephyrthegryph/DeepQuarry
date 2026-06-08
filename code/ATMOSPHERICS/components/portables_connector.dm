@@ -79,7 +79,7 @@
 	return null
 
 /obj/machinery/atmospherics/portables_connector/Destroy()
-	// DQEdit Start — disconnect/qdel BEFORE ..() so connected_device/node derefs are valid.
+	// disconnect/qdel BEFORE ..() so connected_device/node derefs are valid.
 	if(connected_device)
 		connected_device.disconnect()
 
@@ -87,7 +87,6 @@
 		node.disconnect(src)
 		qdel(network)
 	return ..()
-	// DQEdit End
 
 	node = null
 

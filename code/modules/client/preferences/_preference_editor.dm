@@ -1,4 +1,4 @@
-// DQAdd — Composite preference editors. Where a single /datum/preference + widget is too
+// Composite preference editors. Where a single /datum/preference + widget is too
 // thin to express the UI (trait picker with conflict detection, marking color/zone matrix,
 // loadout slot builder, language pref tied to runechat color, etc.), a /datum/preference_editor
 // owns the workflow.
@@ -60,7 +60,7 @@ GLOBAL_LIST_INIT(preference_editors_by_key, init_preference_editors_by_key())
 	/// — the smaller editors keep their action handlers but don't render on their own.
 	var/hidden = FALSE
 
-	/// DQAdd — Pref savefile_keys whose change forces this editor's static_data
+	// / Pref savefile_keys whose change forces this editor's static_data
 	/// cache entry to rebuild. Most editors have a constant catalog (markings,
 	/// hair, traits, etc.) and don't need invalidation at all; loadout filters
 	/// by species/tail, robot_chassis filters by play_mode, etc.

@@ -5,9 +5,9 @@
 /////////////////////////////
 /obj/item/mecha_parts/mecha_equipment/weapon/energy/microlaser
 	w_class = ITEMSIZE_LARGE
-	desc = "A mounted micro laser-carbine for micro mechs." //CHOMPedit
+	desc = "A mounted micro laser-carbine for micro mechs."
 	equip_cooldown = 10 // same as the laser carbine
-	name = "\improper WS-19 \"Torch\" micro laser carbine" //CHOMPedit
+	name = "\improper WS-19 \"Torch\" micro laser carbine"
 	icon = 'icons/mecha/mecha_equipment_vr.dmi'
 	icon_state = "micromech_laser"
 	energy_drain = 50
@@ -18,9 +18,9 @@
 
 /obj/item/mecha_parts/mecha_equipment/weapon/energy/laser/microheavy
 	w_class = ITEMSIZE_LARGE
-	desc = "A mounted micro laser cannon for micro mechs." //CHOMPedit
+	desc = "A mounted micro laser cannon for micro mechs."
 	equip_cooldown = 30 // same as portable
-	name = "\improper PC-20 \"Lance\" micro light laser cannon" //CHOMPedit
+	name = "\improper PC-20 \"Lance\" micro light laser cannon"
 	icon = 'icons/mecha/mecha_equipment_vr.dmi'
 	icon_state = "micromech_lasercannon"
 	energy_drain = 120
@@ -31,8 +31,8 @@
 
 /obj/item/mecha_parts/mecha_equipment/weapon/energy/microtaser
 	w_class = ITEMSIZE_LARGE
-	desc = "A mounted micro taser for micro mechs." //CHOMPedit
-	name = "\improper TS-12 \"Suppressor\" integrated micro taser" //CHOMPedit
+	desc = "A mounted micro taser for micro mechs."
+	name = "\improper TS-12 \"Suppressor\" integrated micro taser"
 	icon = 'icons/mecha/mecha_equipment_vr.dmi'
 	icon_state = "micromech_taser"
 	energy_drain = 40
@@ -44,8 +44,8 @@
 
 /obj/item/mecha_parts/mecha_equipment/weapon/ballistic/microshotgun
 	w_class = ITEMSIZE_LARGE
-	desc = "A mounted micro combat shotgun with integrated ammo-lathe." //CHOMPedit
-	name = "\improper Remington C-12 \"Micro-Boomstick\"" //CHOMPedit
+	desc = "A mounted micro combat shotgun with integrated ammo-lathe."
+	name = "\improper Remington C-12 \"Micro-Boomstick\""
 	icon = 'icons/mecha/mecha_equipment_vr.dmi'
 	icon_state = "micromech_shotgun"
 	equip_cooldown = 15
@@ -83,8 +83,8 @@
 
 /obj/item/mecha_parts/mecha_equipment/weapon/ballistic/missile_rack/grenade/microflashbang
 	w_class = ITEMSIZE_LARGE
-	desc = "A mounted micro flashbang launcher for micro mechs." //CHOMPedit
-	name = "\improper FP-20 mounted micro flashbang launcher" //CHOMPedit
+	desc = "A mounted micro flashbang launcher for micro mechs."
+	name = "\improper FP-20 mounted micro flashbang launcher"
 	icon = 'icons/mecha/mecha_equipment_vr.dmi'
 	icon_state = "micromech_launcher"
 	projectiles = 1
@@ -102,8 +102,8 @@
 
 /obj/item/mecha_parts/mecha_equipment/tool/drill/micro
 	w_class = ITEMSIZE_LARGE
-	name = "Micro Drill" //CHOMPedit
-	desc = "This is the micro drill that'll sorta poke holes in the heavens!" //CHOMPedit
+	name = "Micro Drill"
+	desc = "This is the micro drill that'll sorta poke holes in the heavens!"
 	icon = 'icons/mecha/mecha_equipment_vr.dmi'
 	icon_state = "microdrill"
 	equip_cooldown = 30
@@ -154,8 +154,8 @@
 
 /obj/item/mecha_parts/mecha_equipment/tool/micro/orescoop
 	w_class = ITEMSIZE_LARGE
-	name = "Mounted micro ore box" //CHOMPedit
-	desc = "A small mounted ore scoop and hopper, for gathering ores in a micro mech." //CHOMPedit
+	name = "Mounted micro ore box"
+	desc = "A small mounted ore scoop and hopper, for gathering ores in a micro mech."
 	icon = 'icons/mecha/mecha_equipment_vr.dmi'
 	icon_state = "microscoop"
 	equip_cooldown = 5

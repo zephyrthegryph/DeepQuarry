@@ -30,7 +30,7 @@
 /datum/preference/text/human/preferred_language/get_pref_choices(datum/preferences/preferences)
 	if(!GLOB.all_languages)
 		return null
-	// DQEdit — only surface languages the player can actually speak: their
+	// only surface languages the player can actually speak: their
 	// species default plus everything in alternate_languages. The old "every
 	// language ever" list was overwhelming and let the player pick a tongue
 	// their character would never know.

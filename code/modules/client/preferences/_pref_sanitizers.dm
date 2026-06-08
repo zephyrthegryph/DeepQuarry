@@ -1,4 +1,4 @@
-// DQAdd — per-pref sanitize() overrides. Migrated from the Bay handlers' sanitize_character
+// per-pref sanitize() overrides. Migrated from the Bay handlers' sanitize_character
 // procs into the new architecture. The central sanitize_preferences() proc walks the
 // registry and invokes sanitize() on each entry; cross-pref invariants stay in
 // /datum/preference_constraint subtypes.
@@ -202,14 +202,14 @@
 
 // ----- Gear slot / list -----
 
-// DQEdit — gear_slot is text now ("_default" or a job title). Default to "_default" if
+// gear_slot is text now ("_default" or a job title). Default to "_default" if
 // the stored value is empty/garbage.
 /datum/preference/text/human/gear_slot/sanitize(value, datum/preferences/preferences)
 	if(!istext(value) || !length(value))
 		return "_default"
 	return value
 
-// DQEdit — Walk every per-job loadout in the map and prune unknown / over-budget gear.
+// Walk every per-job loadout in the map and prune unknown / over-budget gear.
 // Old shape was {slot_num_str: list_of_gear}; the keys changed to job titles + "_default"
 // but the per-list cleanup logic is identical.
 /datum/preference/gear_list/sanitize(list/value, datum/preferences/preferences)

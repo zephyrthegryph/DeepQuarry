@@ -92,7 +92,7 @@ GLOBAL_VAR_INIT(warrant_uid, 0)
 					W.fields["auth"] = "Unauthorized"
 					W.fields["arrestsearch"] = "arrest"
 				if(temp == "Search")
-					W.fields["namewarrant"] = "No suspect/location given" // VOREStation edit
+					W.fields["namewarrant"] = "No suspect/location given"
 					W.fields["charges"] = "No reason given"
 					W.fields["auth"] = "Unauthorized"
 					W.fields["arrestsearch"] = "search"
@@ -137,7 +137,7 @@ GLOBAL_VAR_INIT(warrant_uid, 0)
 
 		if("editwarrantauth")
 			. = TRUE
-			if(!(ACCESS_HOS in I.GetAccess())) // VOREStation edit begin
+			if(!(ACCESS_HOS in I.GetAccess())) // begin
 				to_chat(ui.user, span_warning("You don't have the access to do this!"))
-				return // VOREStation edit end
+				return // end
 			activewarrant.fields["auth"] = "[I.registered_name] - [I.assignment ? I.assignment : "(Unknown)"]"

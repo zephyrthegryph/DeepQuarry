@@ -1,4 +1,4 @@
-// DQAdd — Organs / cybernetics editor. organ_data is an assoc {limb_name -> status} for
+// Organs / cybernetics editor. organ_data is an assoc {limb_name -> status} for
 // external limbs ("amputated"/"cyborg") and internal organs (FBP_ASSISTED/MECHANICAL/DIGITAL).
 // rlimb_data is an assoc {limb_name -> robolimb model name} populated only when a limb is
 // set to "cyborg".

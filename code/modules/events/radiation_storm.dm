@@ -9,14 +9,14 @@
 	var/postStartTicks 		= 0
 
 /datum/event/radiation_storm/announce()
-	GLOB.command_announcement.Announce("High levels of radiation detected near \the [station_name()]. Please evacuate into one of the shielded maintenance tunnels or dorms. The area of the cafeteria is also shielded.", "Anomaly Alert", new_sound = ANNOUNCER_MSG_RADIATION) //CHOMPEdit: Restored original message, TFF 16/4/20 - mention additional safe place(s) in announcement
+	GLOB.command_announcement.Announce("High levels of radiation detected near \the [station_name()]. Please evacuate into one of the shielded maintenance tunnels or dorms. The area of the cafeteria is also shielded.", "Anomaly Alert", new_sound = ANNOUNCER_MSG_RADIATION) // Restored original message, TFF 16/4/20 - mention additional safe place(s) in announcement
 
 /datum/event/radiation_storm/start()
 	make_maint_all_access()
 
 /datum/event/radiation_storm/tick()
 	if(activeFor == enterBelt)
-		GLOB.command_announcement.Announce("The [using_map.facility_type] has entered the radiation belt. Please remain in a sheltered area until we have passed the radiation belt.", "Anomaly Alert") //CHOMPEdit: Restored original message
+		GLOB.command_announcement.Announce("The [using_map.facility_type] has entered the radiation belt. Please remain in a sheltered area until we have passed the radiation belt.", "Anomaly Alert") // Restored original message
 		radiate()
 
 	if(activeFor >= enterBelt && activeFor <= leaveBelt)
@@ -27,7 +27,7 @@
 		radiate()
 
 	else if(activeFor == leaveBelt)
-		GLOB.command_announcement.Announce("The [using_map.facility_type] has passed the radiation belt. Please allow for up to one minute while radiation levels dissipate, and report to medbay if you experience any unusual symptoms. Maintenance will lose all access again shortly.", "Anomaly Alert") //CHOMPEdit: Restored original message
+		GLOB.command_announcement.Announce("The [using_map.facility_type] has passed the radiation belt. Please allow for up to one minute while radiation levels dissipate, and report to medbay if you experience any unusual symptoms. Maintenance will lose all access again shortly.", "Anomaly Alert") // Restored original message
 /datum/event/radiation_storm/proc/radiate()
 	for(var/mob/living/carbon/C in GLOB.living_mob_list)
 		if(!(C.z in using_map.station_levels) || C.isSynthetic() || isbelly(C.loc))
@@ -48,7 +48,6 @@
 			var/mob/living/carbon/human/H = C
 			var/chance = 5.0
 			chance -= (chance / 100) * C.getarmor(null, "rad")
-			//CHOMPEdit Start
 			if(C.species.traits.Find(/datum/trait/positive/rad_resistance))
 				chance -= (chance / 100) * 20
 			if(C.species.traits.Find(/datum/trait/positive/rad_resistance_extreme))
@@ -56,7 +55,6 @@
 			if(C.species.traits.Find(/datum/trait/positive/rad_immune))
 				chance -= (chance / 100) * 100
 			if(prob(round(chance, 0.01)))
-			//CHOMPEdit End
 				if (prob(75))
 					randmutb(H) // Applies bad mutation
 					domutcheck(H,null,MUTCHK_FORCED)

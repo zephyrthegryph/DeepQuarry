@@ -31,7 +31,7 @@
 	var/list/summoned_mobs = list()	// Maintained horribly with maintain_summon_list().
 	var/list/wards_in_use = list()	// Wards don't count against the cap for other summons.
 	var/max_summons = 10			// Maximum allowed summoned entities.  Some cores will have different caps.
-	var/universal = FALSE			// Allows non-technomancers to use the core - VOREStation Add
+	var/universal = FALSE // Allows non-technomancers to use the core -
 
 /obj/item/technomancer_core/Initialize(mapload)
 	. = ..()
@@ -85,7 +85,7 @@
 	if(world.time % 5 == 0) // Maintaining fat lists is expensive, I imagine.
 		maintain_summon_list()
 	if(wearer && wearer.mind)
-		if(!(GLOB.technomancers.is_antagonist(wearer.mind)) && !universal) // In case someone tries to wear a stolen core. //VOREStation Edit - Add universal cores
+		if(!(GLOB.technomancers.is_antagonist(wearer.mind)) && !universal) // In case someone tries to wear a stolen core. // Add universal cores
 			wearer.adjust_instability(20)
 	if(!wearer || wearer.stat == DEAD) // Unlock if we're dead or not worn.
 		canremove = TRUE
@@ -348,7 +348,7 @@
 	canremove = !canremove
 	to_chat(usr, span_notice("You [canremove ? "de" : ""]activate the locking mechanism on \the [src]."))
 
-//For the adminbuse! VOREStation Add
+// For the adminbuse!
 /obj/item/technomancer_core/universal
 	name = "universal core"
 	desc = "A bewilderingly complex 'black box' that allows the wearer to accomplish amazing feats. \
@@ -361,4 +361,3 @@
 	instability_modifier = 0.3
 	spell_power_modifier = 0.7
 	universal = TRUE
-//VOREStation Add End

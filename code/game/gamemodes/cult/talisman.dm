@@ -64,7 +64,7 @@
 		qdel(src)
 		return
 
-	// DQEdit — Talisman rune picker is just a labelled list-of-actions,
+	// Talisman rune picker is just a labelled list-of-actions,
 	// which is exactly what tgui_input_list is for. Routes the user's
 	// pick straight to Topic(rune=<choice>) so the existing handler
 	// runs unchanged.

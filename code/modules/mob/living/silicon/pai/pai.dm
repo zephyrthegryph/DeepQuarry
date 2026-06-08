@@ -6,7 +6,7 @@
 	emote_type = 2		// pAIs emotes are heard, not seen, so they can be seen through a container (eg. person)
 	pass_flags = 1
 	mob_size = MOB_SMALL
-	// DQEdit — dq_get_softfall(src) type-default moved to GLOB.dq_softfall_by_type
+	// dq_get_softfall(src) type-default moved to GLOB.dq_softfall_by_type
 
 	holder_type = /obj/item/holder/pai
 
@@ -166,7 +166,7 @@
 		ooc_notes_style = read_preference(/datum/preference/toggle/living/ooc_notes_style)
 		private_notes = client.prefs.read_preference(/datum/preference/text/living/private_notes)
 
-	src << sound('sound/effects/pai_login.ogg', volume = 75)	//VOREStation Add
+	src << sound('sound/effects/pai_login.ogg', volume = 75)
 
 /// Load pref save data from client and apply it to the pai.
 /mob/living/silicon/pai/proc/apply_preferences(client/cli, silent = 1)

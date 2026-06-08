@@ -49,7 +49,7 @@
 	var/has_langs = list(LANGUAGE_GALCOM)// Text name of their language if they speak something other than galcom. They speak the first one.
 
 	//Movement things.
-	var/movement_cooldown = 1			//VOREStation Edit - 1 is slower than normal human speed // Lower is faster.
+	var/movement_cooldown = 1 // 1 is slower than normal human speed // Lower is faster.
 	var/movement_sound = null			// If set, will play this sound when it moves on its own will.
 	var/turn_sound = null				// If set, plays the sound when the mob's dir changes in most cases.
 	var/movement_shake_radius = 0		// If set, moving will shake the camera of all living mobs within this radius slightly.
@@ -162,16 +162,15 @@
 	var/limb_icon
 	// Used for if the mob can drop limbs. Overrides the icon cache key, so it doesn't keep remaking the icon needlessly.
 	var/limb_icon_key
-	var/understands_common = TRUE 		//VOREStation Edit - Makes it so that simplemobs can understand galcomm without being able to speak it.
-	var/heal_countdown = 5				//VOREStation Edit - A cooldown ticker for passive healing
-	var/list/myid_access = list() //VOREStation Edit
-	var/ID_provided = FALSE //VOREStation Edit
-	// VOREStation Add: Move/Shoot/Attack delays based on damage
+	var/understands_common = TRUE // Makes it so that simplemobs can understand galcomm without being able to speak it.
+	var/heal_countdown = 5 // A cooldown ticker for passive healing
+	var/list/myid_access = list()
+	var/ID_provided = FALSE
+	// Move/Shoot/Attack delays based on damage
 	var/damage_fatigue_mult = 1			// Our multiplier for how heavily mobs are affected by injury. [UPDATE THIS IF THE FORMULA CHANGES]: Formula = injury_level = round(rand(1,3) * damage_fatigue_mult * clamp(((rand(2,5) * (h / getMaxHealth())) - rand(0,2)), 1, 5))
 	var/injury_level = 0 				// What our injury level is. Rather than being the flat damage, this is the amount added to various delays to simulate injuries in a manner as lightweight as possible.
 	var/threshold = 0.6					// When we start slowing down. Configure this setting per-mob. Default is 60%
 	var/injury_enrages = FALSE			// Do injuries enrage (aka strengthen) our mob? If yes, we'll interpret how hurt we are differently.
-	// VOREStation Add End
 
 	var/has_recoloured = FALSE
 	var/hunting_cooldown = 0
@@ -191,7 +190,7 @@
 	remove_verb(src, /mob/verb/observe)
 	health = maxHealth
 
-	if(ID_provided) //VOREStation Edit
+	if(ID_provided)
 		myid = new /obj/item/card/id(src)
 		myid.access = myid_access.Copy()
 
@@ -328,12 +327,11 @@
 	if(m_intent == I_WALK)
 		. *= 1.5
 
-	// VOREStation Edit Start
 	if(injury_enrages) // If we enrage, then do this, else
 		. -= injury_level
 	else
 		. += injury_level
-	// VOREStation Edit Stop
+	// Stop
 
 	. += CONFIG_GET(number/animal_delay)
 
@@ -515,7 +513,7 @@
 	var/vore_stomach_flavor				// The flavortext for the first belly if not the default
 
 	var/vore_default_item_mode = IM_DIGEST_FOOD			//How belly will interact with items
-	var/vore_default_contaminates = TRUE				//Will it contaminate? // CHOMPedit: Put back to true like it always was.
+	var/vore_default_contaminates = TRUE // Will it contaminate? // Put back to true like it always was.
 	var/vore_default_contamination_flavor = "Generic"	//Contamination descriptors
 	var/vore_default_contamination_color = "green"		//Contamination color
 
@@ -585,30 +583,30 @@
 
 /mob/living/simple_mob/proc/will_eat(mob/living/M)
 	if(client) //You do this yourself, dick!
-		//ai_log("vr/wont eat [M] because we're player-controlled", 3) //VORESTATION AI TEMPORARY REMOVAL
+		// ai_log("vr/wont eat [M] because we're player-controlled", 3) // AI TEMPORARY REMOVAL
 		return 0
 	if(!istype(M)) //Can't eat 'em if they ain't /mob/living
-		//ai_log("vr/wont eat [M] because they are not /mob/living", 3) //VORESTATION AI TEMPORARY REMOVAL
+		// ai_log("vr/wont eat [M] because they are not /mob/living", 3) // AI TEMPORARY REMOVAL
 		return 0
 	if(src == M) //Don't eat YOURSELF dork
-		//ai_log("vr/won't eat [M] because it's me!", 3) //VORESTATION AI TEMPORARY REMOVAL
+		// ai_log("vr/won't eat [M] because it's me!", 3) // AI TEMPORARY REMOVAL
 		return 0
 	if(M.is_incorporeal()) // No eating the phased ones
 		return 0
 	if(vore_ignores_undigestable && !M.digestable) //Don't eat people with nogurgle prefs
-		//ai_log("vr/wont eat [M] because I am picky", 3) //VORESTATION AI TEMPORARY REMOVAL
+		// ai_log("vr/wont eat [M] because I am picky", 3) // AI TEMPORARY REMOVAL
 		return 0
 	if(!M.allowmobvore || !M.devourable) // Don't eat people who don't want to be ate by mobs
-		//ai_log("vr/wont eat [M] because they don't allow mob vore", 3) //VORESTATION AI TEMPORARY REMOVAL
+		// ai_log("vr/wont eat [M] because they don't allow mob vore", 3) // AI TEMPORARY REMOVAL
 		return 0
 	if(LAZYFIND(prey_excludes, M)) // They're excluded
-		//ai_log("vr/wont eat [M] because they are excluded", 3) //VORESTATION AI TEMPORARY REMOVAL
+		// ai_log("vr/wont eat [M] because they are excluded", 3) // AI TEMPORARY REMOVAL
 		return 0
 	if(M.size_multiplier < vore_min_size || M.size_multiplier > vore_max_size)
-		//ai_log("vr/wont eat [M] because they too small or too big", 3) //VORESTATION AI TEMPORARY REMOVAL
+		// ai_log("vr/wont eat [M] because they too small or too big", 3) // AI TEMPORARY REMOVAL
 		return 0
 	if(vore_capacity != 0 && (vore_fullness >= vore_capacity)) // We're too full to fit them
-		//ai_log("vr/wont eat [M] because I am too full", 3) //VORESTATION AI TEMPORARY REMOVAL
+		// ai_log("vr/wont eat [M] because I am too full", 3) // AI TEMPORARY REMOVAL
 		return 0
 	return 1
 
@@ -669,24 +667,24 @@
 // Attempt to eat target
 // TODO - Review this.  Could be some issues here
 /mob/living/simple_mob/proc/EatTarget(mob/living/M)
-	//ai_log("vr/EatTarget() [M]",2) //VORESTATION AI TEMPORARY REMOVAL
-	//stop_automated_movement = 1 //VORESTATION AI TEMPORARY REMOVAL
+	// ai_log("vr/EatTarget() [M]",2) // AI TEMPORARY REMOVAL
+	// stop_automated_movement = 1 // AI TEMPORARY REMOVAL
 	var/old_target = M
-	set_AI_busy(1) //VORESTATION AI TEMPORARY EDIT
+	set_AI_busy(1) // AI TEMPORARY EDIT
 	. = animal_nom(M)
 	playsound(src, swallowsound, 50, 1)
 	update_icon()
 
 	if(.)
 		// If we succesfully ate them, lose the target
-		set_AI_busy(0) // lose_target(M) //Unsure what to put here. Replaced with set_AI_busy(1) //VORESTATION AI TEMPORARY EDIT
+		set_AI_busy(0) // lose_target(M) //Unsure what to put here. Replaced with set_AI_busy(1) // AI TEMPORARY EDIT
 		return old_target
 	else if(old_target == M)
 		// If we didn't but they are still our target, go back to attack.
 		// but don't run the handler immediately, wait until next tick
 		// Otherwise we'll be in a possibly infinate loop
-		set_AI_busy(0) //VORESTATION AI TEMPORARY EDIT
-	//stop_automated_movement = 0 //VORESTATION AI TEMPORARY EDIT
+		set_AI_busy(0) // AI TEMPORARY EDIT
+	// stop_automated_movement = 0 // AI TEMPORARY EDIT
 
 /mob/living/simple_mob/death()
 	release_vore_contents()
@@ -1038,7 +1036,7 @@
 		layer = MOB_LAYER
 
 	// Animate instead of set. Original set left commented out
-	// src.transform = M //VOREStation edit
+	// src.transform = M //
 	animate(src, transform = M, time = anim_time)
 
 	// This from original living.dm update_transforms too
@@ -1066,8 +1064,8 @@
 
 /mob/living/simple_mob/Initialize(mapload)
 	. = ..()
-	add_verb(src,/mob/living/simple_mob/proc/use_headset) //CHOMPEdit TGPanel
-	add_verb(src,/mob/living/simple_mob/proc/use_pda) //CHOMPEdit TGPanel
+	add_verb(src,/mob/living/simple_mob/proc/use_headset) // TGPanel
+	add_verb(src,/mob/living/simple_mob/proc/use_pda) // TGPanel
 
 /mob/living/simple_mob/update_icon()
 	. = ..()

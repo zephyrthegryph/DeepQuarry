@@ -37,15 +37,15 @@
 
 	for (var/mob/living/silicon/ai/aiPlayer in GLOB.mob_list)
 		if (aiPlayer.stat != 2)
-			to_chat(world, span_filter_system(span_bold("[aiPlayer.name]'s laws at the end of the round were:"))) // VOREStation edit
+			to_chat(world, span_filter_system(span_bold("[aiPlayer.name]'s laws at the end of the round were:")))
 		else
-			to_chat(world, span_filter_system(span_bold("[aiPlayer.name]'s laws when it was deactivated were:"))) // VOREStation edit
+			to_chat(world, span_filter_system(span_bold("[aiPlayer.name]'s laws when it was deactivated were:")))
 		aiPlayer.show_laws(1)
 
 		if (aiPlayer.connected_robots.len)
 			var/robolist = span_bold("The AI's loyal minions were:") + " "
 			for(var/mob/living/silicon/robot/robo in aiPlayer.connected_robots)
-				robolist += "[robo.name][robo.stat?" (Deactivated), ":", "]"  // VOREStation edit
+				robolist += "[robo.name][robo.stat?" (Deactivated), ":", "]"
 			to_chat(world, span_filter_system("[robolist]"))
 
 	var/dronecount = 0

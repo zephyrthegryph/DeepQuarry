@@ -261,13 +261,12 @@
 			to_chat(usr, span_filter_adminlog("Job Master has not been setup!"))
 			return
 
-		// DQEdit Start — Job-Ban Panel now opens a structured TGUI panel.
+		// Job-Ban Panel now opens a structured TGUI panel.
 		// The legacy HTML builder below this block is unreachable but left
 		// in place so an upstream merge that touches it still hits the
 		// CONTRIBUTING-required edit marker.
 		dq_open_jobban_panel(M)
 		return
-		// DQEdit End
 	else if(href_list["jobban3"])
 		if(!check_rights(R_MOD,0) && !check_rights(R_ADMIN,0))
 			to_chat(usr, span_filter_adminlog(span_warning("You do not have the appropriate permissions to add job bans!")))
@@ -537,7 +536,6 @@
 				if(T)
 					T.Resolve(usr)
 				qdel(M.client)
-				// CHOMPedit End
 				//qdel(M)	// See no reason why to delete mob. Important stuff can be lost. And ban can be lifted before round ends.
 			if("No")
 				if(!check_rights(R_BAN))   return
@@ -588,7 +586,7 @@
 
 		if(SSticker && SSticker.mode)
 			return tgui_alert_async(usr, "The game has already started.")
-		// DQEdit Start — mode picker via tgui_input_list (was a browse() href list)
+		// mode picker via tgui_input_list (was a browse() href list)
 		var/list/labels = list()
 		var/list/label_to_mode = list()
 		for(var/mode in config.modes)
@@ -605,7 +603,6 @@
 		var/picked_mode = label_to_mode[pick]
 		if(picked_mode)
 			.(href, list("c_mode2" = picked_mode))
-		// DQEdit End
 
 	else if(href_list["f_secret"])
 		if(!check_rights(R_ADMIN|R_EVENT))	return
@@ -614,7 +611,7 @@
 			return tgui_alert_async(usr, "The game has already started.")
 		if(GLOB.master_mode != "secret")
 			return tgui_alert_async(usr, "The game mode has to be secret!")
-		// DQEdit Start — force-secret picker via tgui_input_list
+		// force-secret picker via tgui_input_list
 		var/list/labels = list()
 		var/list/label_to_mode = list()
 		for(var/mode in config.modes)
@@ -629,7 +626,6 @@
 		var/picked_mode = label_to_mode[pick]
 		if(picked_mode)
 			.(href, list("f_secret2" = picked_mode))
-		// DQEdit End
 
 	else if(href_list["c_mode2"])
 		if(!check_rights(R_ADMIN|R_SERVER|R_EVENT))	return
@@ -1161,11 +1157,10 @@
 			var/obj/item/photo/H = fax
 			H.show(usr)
 		else if (istype(fax, /obj/item/paper_bundle))
-			// DQEdit Start — paper_bundle is TGUI now; open its window directly
+			// paper_bundle is TGUI now; open its window directly
 			// rather than building an HTML page list.
 			var/obj/item/paper_bundle/B = fax
 			B.tgui_interact(usr)
-			// DQEdit End
 		else
 			to_chat(usr, span_warning("The faxed item is not viewable. This is probably a bug, and should be reported on the tracker: [fax.type]"))
 
@@ -1500,7 +1495,7 @@
 		if(check_rights(R_ADMIN|R_SERVER))
 			populate_inactive_customitems_list(src.owner)
 
-	// DQEdit — GLOB.vsc was a ZAS atmos-tuning settings holder; removed in LINDA
+	// GLOB.vsc was a ZAS atmos-tuning settings holder; removed in LINDA
 	// migration since LINDA tuning is compile-time in auxmos. Stub admin response.
 	else if(href_list["vsc"])
 		if(check_rights(R_ADMIN|R_SERVER|R_EVENT))

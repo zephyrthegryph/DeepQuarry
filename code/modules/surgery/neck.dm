@@ -170,7 +170,7 @@
 		/obj/item/assembly/mousetrap = 25)
 
 	min_duration = 100
-	max_duration = 100 //CHOMPedit
+	max_duration = 100
 
 /datum/surgery_step/brainstem/mend_cord/can_use(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
 	return ..() && target.op_stage.brainstem == 3

@@ -6,7 +6,7 @@
 		//Z_LEVEL_SURFACE_SKYLANDS, //Sky islands removal due to lack of use
 		//Z_LEVEL_SURFACE_VALLEY //Replaced with Tyr
 	)
-//Z_LEVEL_SURFACE_CASINO //CHOMPedit - KSC = So there is weather on the Casino. //Move this into /datum/planet/sif and remember to add a coma for the new entry, for when you need the casino again
+// Z_LEVEL_SURFACE_CASINO // KSC = So there is weather on the Casino. //Move this into /datum/planet/sif and remember to add a coma for the new entry, for when you need the casino again
 
 /obj/effect/step_trigger/teleporter/bridge/east_to_west/Initialize(mapload)
 	teleport_x = src.x - 4

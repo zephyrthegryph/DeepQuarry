@@ -1,4 +1,4 @@
-// DQAdd — Trait-list pref base. Delegates per-entry validity to is_trait_takeable_by()
+// Trait-list pref base. Delegates per-entry validity to is_trait_takeable_by()
 // on the trait itself (entity_validation.dm). Subtypes only declare `required_category`
 // so the pref knows which bucket it represents (positive / neutral / negative).
 //

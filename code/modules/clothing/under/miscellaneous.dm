@@ -266,14 +266,14 @@
 	icon_state = "pirate"
 	item_state_slots = list(slot_r_hand_str = "sl_suit", slot_l_hand_str = "sl_suit")
 	body_parts_covered = CHEST|LEGS
-	has_sensor = 0 // CHOMPEdit: Fixes sensors issue
+	has_sensor = 0 // Fixes sensors issue
 
 /obj/item/clothing/under/soviet
 	name = "soviet uniform"
 	desc = "For the Motherland!"
 	icon_state = "soviet"
 	item_state_slots = list(slot_r_hand_str = "grey", slot_l_hand_str = "grey")
-	has_sensor = 0 // CHOMPEdit: Fixes sensors issue
+	has_sensor = 0 // Fixes sensors issue
 
 /obj/item/clothing/under/redcoat
 	name = "redcoat uniform"
@@ -614,15 +614,15 @@
 	name = "white tabard-dress"
 	desc = "A gold-trimmed white tabard-dress with a large V-shaped boob window. For when you want to show off your hips and look classy at the same time."
 	icon_state = "white_tabard"
-	icon = 'icons/inventory/uniform/mob_ch.dmi' //CHOMPedit
-	icon_override = 'icons/inventory/uniform/mob_ch.dmi' //CHOMPedit
+	icon = 'icons/inventory/uniform/mob_ch.dmi'
+	icon_override = 'icons/inventory/uniform/mob_ch.dmi'
 
 /obj/item/clothing/under/dress/tabard/black
 	name = "black tabard-dress"
 	desc = "A gold-trimmed black tabard-dress with a large circular boob window. For when you want to show off your hips and look classy at the same time."
 	icon_state = "black_tabard"
-	icon = 'icons/inventory/uniform/mob_ch.dmi' //CHOMPedit
-	icon_override = 'icons/inventory/uniform/mob_ch.dmi' //CHOMPedit
+	icon = 'icons/inventory/uniform/mob_ch.dmi'
+	icon_override = 'icons/inventory/uniform/mob_ch.dmi'
 
 /*
  * Wedding Stuff
@@ -1822,7 +1822,7 @@
 				return
 			last_activated = world.time
 			original_size = H.size_multiplier
-			H.resize(target_size, ignore_prefs = FALSE)		//In case someone else tries to put it on you. //ChompEDIT - no uncapped
+			H.resize(target_size, ignore_prefs = FALSE) // In case someone else tries to put it on you. // no uncapped
 			H.visible_message(span_warning("The space around [H] distorts as they change size!"),span_notice("The space around you distorts as you change size!"))
 			log_admin("Admin [key_name(M)]'s size was altered by a bluespace bracelet.")
 
@@ -1833,7 +1833,7 @@
 		if(!H.resizable)
 			return
 		last_activated = world.time
-		H.resize(original_size, ignore_prefs = FALSE) //ChompEDIT - no uncapped
+		H.resize(original_size, ignore_prefs = FALSE) // no uncapped
 		original_size = null
 		H.visible_message(span_warning("The space around [H] distorts as they return to their original size!"),span_notice("The space around you distorts as you return to your original size!"))
 		log_admin("Admin [key_name(M)]'s size was altered by a bluespace bracelet.")
@@ -1852,9 +1852,9 @@
 	. = ..()
 	if(!emagged)
 		emagged = TRUE
-		target_size = (rand(25,200)) /100 //ChompEDIT - set to our rule cap
-		if(target_size < 0.25) //ChompEDIT - set to our rule cap
-			target_size = 0.25 //ChompEDIT - set to our rule cap
+		target_size = (rand(25,200)) /100 // set to our rule cap
+		if(target_size < 0.25) // set to our rule cap
+			target_size = 0.25 // set to our rule cap
 		user.visible_message(span_notice("\The [user] swipes the [emag_source] over the \the [src]."),span_notice("You swipes the [emag_source] over the \the [src]."))
 		return 1
 
@@ -1863,9 +1863,9 @@
 
 /obj/item/clothing/gloves/bluespace/emagged/Initialize(mapload)
 	. = ..()
-	target_size = (rand(25,200)) /100 //ChompEDIT - set to our rule cap
-	if(target_size < 0.25) //ChompEDIT - set to our rule cap
-		target_size = 0.25 //ChompEDIT - set to our rule cap
+	target_size = (rand(25,200)) /100 // set to our rule cap
+	if(target_size < 0.25) // set to our rule cap
+		target_size = 0.25 // set to our rule cap
 
 /obj/item/clothing/gloves/bluespace/deluxe
 	name = "deluxe size standardization bracelet"

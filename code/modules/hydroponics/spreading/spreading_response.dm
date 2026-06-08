@@ -25,9 +25,9 @@
 	. = ..()
 	if(seed.get_trait(TRAIT_SPREAD)==2)
 		if(isturf(old_loc))
-			unsense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity), center = old_loc) // CHOMPEdit
+			unsense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity), center = old_loc)
 		if(isturf(loc))
-			sense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity)) // CHOMPEdit
+			sense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
 
 /obj/effect/plant/attack_hand(mob/user)
 	manual_unbuckle(user)

@@ -62,12 +62,12 @@ ADMIN_VERB(admin_ghost, R_HOLDER, "Aghost", "Ghost out of your body with the opt
 		if(build_mode)
 			togglebuildmode(body)
 			ghost = body.ghostize(1, TRUE)
-			log_and_message_admins("[key_name(user)] admin-ghosted.") // CHOMPEdit - Add logging.
+			log_and_message_admins("[key_name(user)] admin-ghosted.") // Add logging.
 			if(build_mode == "Yes")
 				togglebuildmode(ghost)
 		else
 			ghost = body.ghostize(1, TRUE)
-			log_and_message_admins("[key_name(user)] admin-ghosted.") // CHOMPEdit - Add logging.
+			log_and_message_admins("[key_name(user)] admin-ghosted.") // Add logging.
 		user.init_verbs()
 		if(body)
 			body.teleop = ghost
@@ -556,7 +556,7 @@ ADMIN_VERB(delbook, R_ADMIN, "Delete Book", "Permamently deletes a book from the
 		to_chat(user, span_warning("Unable to locate a library computer to use for book deleting."))
 		return
 
-	// DQEdit Start — Delete Book panel now opens a structured TGUI panel.
+	// Delete Book panel now opens a structured TGUI panel.
 	var/list/book_rows = list()
 	var/error_msg = ""
 	if(!SSdbcore.IsConnected())
@@ -574,7 +574,6 @@ ADMIN_VERB(delbook, R_ADMIN, "Delete Book", "Permamently deletes a book from the
 		qdel(query)
 	var/datum/dq_delete_book_panel/panel = new(our_comp, book_rows, error_msg)
 	panel.tgui_interact(user.mob)
-	// DQEdit End
 
 ADMIN_VERB(toggle_spawning_with_recolour, R_ADMIN|R_EVENT|R_FUN, "Toggle Simple/Robot recolour verb", "Makes it so new robots/simple_mobs spawn with a verb to recolour themselves for this round. You must set them separately.", ADMIN_CATEGORY_SERVER_GAME)
 	var/which = tgui_alert(user, "Which do you want to toggle?", "Choose Recolour Toggle", list("Robot", "Simple Mob"))

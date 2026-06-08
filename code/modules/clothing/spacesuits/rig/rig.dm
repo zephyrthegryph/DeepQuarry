@@ -93,7 +93,7 @@
 	var/rigsuit_min_pressure = 0							  // Min pressure the rig protects against when sealed
 
 	var/emp_protection = 0
-	item_flags = PHORONGUARD //VOREStation add
+	item_flags = PHORONGUARD // add
 
 	var/datum/effect/effect/system/spark_spread/spark_system
 	var/datum/mini_hud/rig/minihud

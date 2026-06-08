@@ -10,7 +10,7 @@
 	if(DraggedH.species.get_bodytype() == SPECIES_TESHARI)
 		var/mob/living/M = over_object
 		// only perform the grab if; grabber and grabbed adjacent, caller is grabbed OR grabber, and the grabbed's grab preference is true.
-		if(holder_type && istype(M) && Adjacent(M) && (usr == M || usr == DraggedH) && DraggedH != M && !M.incapacitated() && DraggedH.pickup_pref && (M != usr || (M == usr && M.pickup_active)) && (DraggedH.a_intent == I_HELP && M.a_intent == I_HELP)) //VOREStation Edit
+		if(holder_type && istype(M) && Adjacent(M) && (usr == M || usr == DraggedH) && DraggedH != M && !M.incapacitated() && DraggedH.pickup_pref && (M != usr || (M == usr && M.pickup_active)) && (DraggedH.a_intent == I_HELP && M.a_intent == I_HELP))
 			get_scooped(M, (usr == DraggedH))
 			return
 	return ..()

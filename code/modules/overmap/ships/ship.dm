@@ -15,7 +15,7 @@
 	scanner_desc = "Unknown spacefaring vessel."
 	dir = NORTH
 	icon_state = "ship_nosprite"
-	appearance_flags = TILE_BOUND|KEEP_TOGETHER|LONG_GLIDE //VOREStation Edit
+	appearance_flags = TILE_BOUND|KEEP_TOGETHER|LONG_GLIDE
 	light_power = 4
 	layer = OBJ_LAYER + 0.1 // make movables a little higher than regular sectors
 
@@ -39,9 +39,9 @@
 	var/engines_state = 0 //global on/off toggle for all engines
 	var/thrust_limit = 1  //global thrust limit for all engines, 0..1
 	var/halted = 0        //admin halt or other stop.
-	//VOREStation add
-	var/last_sound = 0 //The last time a ship sound was played		//VOREStation add
-	var/sound_cooldown = 10 SECONDS		//VOREStation add
+	// add
+	var/last_sound = 0 // The last time a ship sound was played // add
+	var/sound_cooldown = 10 SECONDS // add
 
 	/// Vis contents overlay holding the ship's vector when in motion
 	var/obj/effect/overlay/vis/vector
@@ -136,12 +136,10 @@
 			SSstarmover.toggle_move_stars(zz)
 		if(last_sound + sound_cooldown >= world.time)
 			return
-		//VOREStation Add Start
 		last_sound = world.time
 		for(var/mob/potential_mob as anything in GLOB.player_list)
 			if(potential_mob.z in map_z)
 				SEND_SOUND(potential_mob, 'sound/ambience/shutdown.ogg')
-		//VOREStation Add End
 
 	// If it started moving
 	else
@@ -151,12 +149,10 @@
 			SSstarmover.toggle_move_stars(zz, fore_dir)
 		if(last_sound + sound_cooldown >= world.time)
 			return
-		//VOREStation Add Start
 		last_sound = world.time
 		for(var/mob/potential_mob as anything in GLOB.player_list)
 			if(potential_mob.z in map_z)
 				SEND_SOUND(potential_mob, 'sound/ambience/startup.ogg')
-		//VOREStation Add End
 
 /obj/effect/overmap/visitable/ship/proc/get_brake_path()
 	if(!get_acceleration())

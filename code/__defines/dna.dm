@@ -125,7 +125,7 @@
 // Needs to match the highest number above.
 #define DNA_UI_LENGTH      65
 
-#define DNA_SE_LENGTH 93 // Traitgenes (Expanded from 49 to 84, there have been a considerable expansion of genes. //CHOMPEdit: Upped to 93. NOTE: Ensure it's increased when there is a conflict here! Thanks!
+#define DNA_SE_LENGTH 93 // Traitgenes (Expanded from 49 to 84, there have been a considerable expansion of genes. // Upped to 93. NOTE: Ensure it's increased when there is a conflict here! Thanks!
 // This leaves room for future expansion. This can be arbitrarily raised without worry if genes start to get crowded.
 // Should have more than 10 empty genes after setup. - Willbird)
 

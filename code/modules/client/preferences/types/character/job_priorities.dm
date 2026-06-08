@@ -1,4 +1,4 @@
-// DQAdd — job-priority pref (the new shape).
+// job-priority pref (the new shape).
 //
 // Replaces the 15 legacy bitfield prefs (job_civilian_high/med/low,
 // job_medsci_*, job_engsec_*, job_talon_*, job_other_*) with a single sparse assoc list:

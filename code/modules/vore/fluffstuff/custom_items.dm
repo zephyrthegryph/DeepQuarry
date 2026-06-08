@@ -64,7 +64,7 @@
 		if(LAZYLEN(SS.breaches))
 			to_chat(user, span_warning("You should probably repair that before you start tinkering with it."))
 			return
-	// DQEdit — `|| O.contaminated` dropped alongside ZAS contamination removal.
+	// `|| O.contaminated` dropped alongside ZAS contamination removal.
 	if(O.forensic_data?.has_blooddna()) //check if we're bloody or gooey or whatever, so modkits can't be used to hide crimes easily.
 		to_chat(user, span_warning("You should probably clean that up before you start tinkering with it."))
 		return
@@ -87,7 +87,7 @@
 		to_type = to_suit
 		keycheck = TRUE
 	else
-		to_chat(user, span_notice("This kit doesn't seem to have any tools or parts for whatever you're trying to use it on.")) //CHOMPAdd new error message
+		to_chat(user, span_notice("This kit doesn't seem to have any tools or parts for whatever you're trying to use it on.")) // new error message
 		return
 	if(!isturf(O.loc))
 		to_chat(user, span_warning("You need to put \the [O] on the ground, a table, or other worksurface before modifying it."))
@@ -594,7 +594,7 @@
 	PRIVATE_PROC(TRUE)
 	visible_message(span_warning("The [name] shatters into dust!"))
 	if(owner_c)
-		to_chat(owner_c, span_notice("A signal is sent notifying of your demise by \the [name].")) // CHOMPEdit
+		to_chat(owner_c, span_notice("A signal is sent notifying of your demise by \the [name]."))
 	update_state(3)
 	name = "broken [initial(name)]"
 	desc = "This seems like a necklace, but the actual pendant is missing."

@@ -18,6 +18,6 @@
 	// Init must come before cleanup so the panic hook catches any failure inside cleanup itself.
 	verdigris_init()
 	verdigris_cleanup()
-	// DQAdd — log so we can confirm Rust loaded and read what features it has.
+	// log so we can confirm Rust loaded and read what features it has.
 	log_world("Verdigris loaded: [verdigris_version()] | features: [verdigris_features()]")
 	..()

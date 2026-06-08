@@ -187,7 +187,7 @@ This allows for events that have their announcement happen after the end itself.
 		abort()
 		message_admins("Event '[type]' was aborted by [usr.key].")
 
-	// SSgame_master.interact(usr) // To refresh the UI. // VOREStation Edit - We don't use SSgame_master yet.
+	// SSgame_master.interact(usr) // To refresh the UI. // We don't use SSgame_master yet.
 
 /*
  * Procs to Override

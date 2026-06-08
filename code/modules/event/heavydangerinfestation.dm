@@ -56,7 +56,7 @@
 	for(var/areapath in typesof(spawn_area_type))
 		var/area/A = locate(areapath)
 		for(var/turf/simulated/floor/F in A.contents)
-			//VOREStation Edit - Fixes event
+			// Fixes event
 			var/blocked = FALSE
 			for(var/atom/movable/AM in F)
 				if(AM.density)

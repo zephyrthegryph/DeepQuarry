@@ -953,9 +953,9 @@
 	ear_damage = max(0, ear_damage + damage)
 	ear_deaf = max(0, ear_deaf + deaf)
 	if(ear_deaf > 0) //CHOMPStaiton Enable: Ear Ringing/Deafness
-		deaf_loop.start() // CHOMPStation Add: Ear Ringing/Deafness - Not sure if we need this, but, safety.
+		deaf_loop.start() // Ear Ringing/Deafness - Not sure if we need this, but, safety.
 	else if(ear_deaf <= 0)
-		deaf_loop.stop() // CHOMPStation Add: Ear Ringing/Deafness - Not sure if we need this, but, safety.
+		deaf_loop.stop() // Ear Ringing/Deafness - Not sure if we need this, but, safety.
 
 //pass a negative argument to skip one of the variable
 /mob/living/setEarDamage(damage, deaf)
@@ -1602,7 +1602,7 @@ Maybe later, gotta figure out a way to click yourself when in a locker etc.
 
 /mob/living/Initialize(mapload)
 	. = ..()
-	add_verb(src,/mob/living/proc/click_self) //CHOMPEdit TGPanel
+	add_verb(src,/mob/living/proc/click_self) // TGPanel
 */
 
 /mob/living/proc/handle_vorefootstep(m_intent, turf/T) // Moved from living_ch.dm
@@ -1648,13 +1648,11 @@ Maybe later, gotta figure out a way to click yourself when in a locker etc.
 		to_chat(src, span_filter_notice("OOC notes updated. Don't forget to save!"))
 		log_admin("[key_name(src)] updated their OOC notes mid-round.")
 		ooc_notes_window(src)
-		//CHOMPEdit Start
 		set_metainfo_likes(src, FALSE)
 		set_metainfo_dislikes(src, FALSE)
 		set_metainfo_favs(src, FALSE)
 		set_metainfo_maybes(src, FALSE)
 		set_metainfo_ooc_style(src, FALSE)
-		//CHOMPEdit End
 
 /mob/living/proc/set_metainfo_panel(mob/user)
 	if(user != src)

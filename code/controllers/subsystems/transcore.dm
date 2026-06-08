@@ -76,13 +76,11 @@ SUBSYSTEM_DEF(transcore)
 		//In a human
 		BITSET(H.hud_updateflag, BACKUP_HUD)
 
-		//CHOMPEdit Start
 		if(H == imp.imp_in && H.stat < DEAD)
 			if(H.mind)
 				db.m_backup(H.mind,H.nif)
 			else if(H.vr_link && H.vr_link.mind)
 				db.m_backup(H.vr_link.mind,H.nif)
-		//CHOMPEdit End
 
 		if(MC_TICK_CHECK)
 			return
@@ -118,7 +116,7 @@ SUBSYSTEM_DEF(transcore)
 		if(since_backup < overdue_time)
 			curr_MR.dead_state = MR_NORMAL
 		else
-/*			if(curr_MR.dead_state != MR_DEAD) //First time switching to dead	//Remove auto notification! Ghosts have a button to notify, so no more false flags. CHOMPEdit: Readded removal.
+/*			if(curr_MR.dead_state != MR_DEAD) // First time switching to dead //Remove auto notification! Ghosts have a button to notify, so no more false flags. Readded removal.
 				if(curr_MR.do_notify)
 					db.notify(curr_MR)
 					curr_MR.last_notification = world.time

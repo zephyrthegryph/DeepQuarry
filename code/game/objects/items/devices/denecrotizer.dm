@@ -99,7 +99,7 @@
 		to_chat(D, span_notice("Sorry, someone else has already inhabited [src]."))
 		return FALSE
 
-	if(capture_caught && !D.client.prefs.read_preference(/datum/preference/toggle/human/capture_crystal)) // DQEdit — migrated pref
+	if(capture_caught && !D.client.prefs.read_preference(/datum/preference/toggle/human/capture_crystal)) // migrated pref
 		to_chat(D, span_notice("Sorry, [src] is participating in capture mechanics, and your preferences do not allow for that."))
 		return FALSE
 

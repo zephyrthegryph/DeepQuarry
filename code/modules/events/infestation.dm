@@ -14,7 +14,7 @@
 #define VERM_MICE 0
 #define VERM_LIZARDS 1
 #define VERM_MOTHROACH 2
-#define VERM_SPIDERS 3 //CHOMPEdit - This edit wasn't commented >:(
+#define VERM_SPIDERS 3 // This edit wasn't commented >:(
 
 /datum/event/infestation
 	announceWhen = 10
@@ -25,21 +25,21 @@
 	var/vermstring
 
 /datum/event/infestation/start()
-//CHOMPEdit changed for Southern Cross areas
+// changed for Southern Cross areas
 	location = rand(0,9)
 	var/list/turf/simulated/floor/turfs = list()
 	var/spawn_area_type = get_spawn_area()
 	for(var/areapath in typesof(spawn_area_type))
 		var/area/A = locate(areapath)
 		for(var/turf/simulated/floor/F in A.contents)
-			//VOREStation Edit - Fixes event
+			// Fixes event
 			var/blocked = FALSE
 			for(var/atom/movable/AM in F)
 				if(AM.density)
 					blocked = TRUE
 			if(!blocked)
 				turfs += F
-			//VOREStation Edit - Fixes event
+			// Fixes event
 
 	var/list/spawn_types = list()
 	var/min_number //CHOMP Add
@@ -57,7 +57,6 @@
 			max_number = 6
 			vermstring = "lizards"
 
-		// ChompEDIT Begin
 		if(VERM_SPIDERS)
 			spawn_types = list(/obj/effect/spider/spiderling)
 			min_number = 4 //CHOMP Add
@@ -124,7 +123,6 @@
 			spawn_area_type = /area/security/nuke_storage
 			locstring = "the vault"
 	return spawn_area_type
-		// ChompEDIT End
 /* CHOMPedit - Upstream Code, not implmeneted here
 /datum/event/infestation/tick()
 	if(activeFor % 5 != 0)

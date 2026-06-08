@@ -31,7 +31,7 @@
 	cost = 40
 	containertype = /obj/structure/closet/crate/secure/lawson
 	containername = "Energy sidearms crate"
-	access = ACCESS_ARMORY //VOREStation Edit - Guns are for the armory.
+	access = ACCESS_ARMORY // Guns are for the armory.
 
 /datum/supply_pack/munitions/flareguns
 	name = "Weapons - Flare guns"
@@ -45,7 +45,7 @@
 	cost = 25
 	containertype = /obj/structure/closet/crate/secure/gear
 	containername = "Flare gun crate"
-	access = ACCESS_ARMORY //VOREStation Edit - Guns are for the armory.
+	access = ACCESS_ARMORY // Guns are for the armory.
 
 /datum/supply_pack/munitions/eweapons
 	name = "Weapons - Experimental weapons crate"
@@ -61,7 +61,7 @@
 /datum/supply_pack/munitions/energyweapons
 	name = "Weapons - Laser rifle crate"
 	desc = "A pair of standard laser rifles, from Hephaestus Arms. Requires Armory access."
-	contains = list(/obj/item/gun/energy/laser = 2) //VOREStation Edit - Made to be consistent with the energy guns crate.
+	contains = list(/obj/item/gun/energy/laser = 2) // Made to be consistent with the energy guns crate.
 	cost = 50
 	containertype = /obj/structure/closet/crate/secure/heph
 	containername = "Energy weapons crate"
@@ -177,7 +177,7 @@
 	cost = 40
 	containertype = /obj/structure/closet/crate/secure/weapon
 	containername = "Ballistic Weapons crate"
-	access = ACCESS_ARMORY //VOREStation Edit - Guns are for the armory.
+	access = ACCESS_ARMORY // Guns are for the armory.
 
 /datum/supply_pack/munitions/caseless
 	name = "Weapons - Prototype Caseless Rifle"
@@ -255,7 +255,7 @@
 	cost = 25
 	containertype = /obj/structure/closet/crate
 	containername = "Ballistic ammunition crate"
-	access = ACCESS_ARMORY //VOREStation Edit - Guns are for the armory.
+	access = ACCESS_ARMORY // Guns are for the armory.
 
 /datum/supply_pack/munitions/bsmgammo
 	name = "Ammunition - 9mm top mounted lethal"

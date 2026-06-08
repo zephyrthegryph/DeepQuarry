@@ -8,9 +8,9 @@
  * Crap
  */
 /obj/item/cell/crap
-	name = "\improper rechargable AA battery" // CHOMPEdit
+	name = "\improper rechargable AA battery"
 	desc = "An older, cheap power cell. It's probably been in use for quite some time now."
-	desc = "You can't top the plasma top." //TOTALLY TRADEMARK INFRINGEMENT // CHOMPEdit
+	desc = "You can't top the plasma top." // TOTALLY TRADEMARK INFRINGEMENT //
 	icon_state = "crap"
 	charge = 500
 	maxcharge = 500
@@ -188,8 +188,8 @@
 /obj/item/cell/emergency_light
 	name = "miniature power cell"
 	desc = "A tiny power cell with a very low power capacity. Used in light fixtures to power them in the event of an outage."
-	charge = 360 // CHOMPEdit
-	maxcharge = 360 //Emergency lights use 0.2 W per tick, meaning ~30 minutes of emergency power from a cell // CHOMPEdit
+	charge = 360
+	maxcharge = 360 // Emergency lights use 0.2 W per tick, meaning ~30 minutes of emergency power from a cell //
 	matter = list(MAT_GLASS = 20)
 	icon_state = "em_light"
 	connector_type = "emergency"

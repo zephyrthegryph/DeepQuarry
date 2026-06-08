@@ -1,4 +1,4 @@
-// DQAdd Start — deep quarry submap registration for the entrance level.
+// deep quarry submap registration for the entrance level.
 // This causes the PoI maps to get compiled-checked during MAP_TEST CI.
 #ifdef MAP_TEST
 #include "deep_quarry_entrance.dmm"

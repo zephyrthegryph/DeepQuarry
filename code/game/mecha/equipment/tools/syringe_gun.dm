@@ -126,7 +126,7 @@
 			occupant_message("Reagent processing started.")
 			src.mecha_log_message("Reagent processing started.")
 		return
-	// DQEdit — TGUI: structured reagent management UI (MechaSyringeGun.tsx).
+	// TGUI: structured reagent management UI (MechaSyringeGun.tsx).
 	if(top_filter.get("show_reagents"))
 		if(chassis?.occupant)
 			tgui_interact(chassis.occupant)
@@ -140,7 +140,7 @@
 		return
 	return
 
-// DQEdit Start — structured TGUI for syringe-gun reagent management.
+// structured TGUI for syringe-gun reagent management.
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
@@ -289,7 +289,7 @@
 		occupant_message(span_warning("No reagent info gained from [A]."))
 		return 0
 	occupant_message("Analyzing reagents...")
-	//VOREStation Block Edit - Start
+	// Block Edit - Start
 	for(var/datum/reagent/R in A.reagents.reagent_list)
 		if(R.id in known_reagents)
 			occupant_message("Reagent \"[R.name]\" already present in database, skipping.")

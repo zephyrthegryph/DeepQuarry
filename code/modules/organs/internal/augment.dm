@@ -27,7 +27,7 @@
 	var/radial_name = null	// The augment's name in the Radial Menu.
 	var/radial_state = null	// Icon state for the augment's radial icon.
 
-	var/aug_cooldown = 1 SECONDS //CHOMPedit, no reason for it to be 30 seconds, the powerful implants already have their own values
+	var/aug_cooldown = 1 SECONDS // , no reason for it to be 30 seconds, the powerful implants already have their own values
 	var/cooldown = null
 
 	description_fluff = "If attempting to implant a compatible augment into a synthetic limb, the limb must be screwdrivered open and then the augment port opened with a crowbar before insertion can begin."

@@ -1,4 +1,4 @@
-// DQEdit — DeepQuarry preferences + loadout rewrite (commit fd3e36a673). Bay preference_setup framework deleted; /datum/gear loadout catalog relocated from code/modules/client/preference_setup/loadout/ to code/datums/gear/.
+// DeepQuarry preferences + loadout rewrite (commit fd3e36a673). Bay preference_setup framework deleted; /datum/gear loadout catalog relocated from code/modules/client/preference_setup/loadout/ to code/datums/gear/.
 // Bracketed at file-header rather than per-hunk because the
 // edits are mechanical and span the whole file; the commit SHA
 // is the source of truth for per-line diff context.
@@ -571,8 +571,8 @@
 	"feminine skinsuit"=/obj/item/clothing/under/skinsuit/fem,
 	"gray skinsuit"=/obj/item/clothing/under/skinsuit/gray,
 	"feminine gray skinsuit"=/obj/item/clothing/under/skinsuit/fem/gray,
-	"short gray skinsuit"=/obj/item/clothing/under/skinsuit/gray/short, // CHOMPedit: New skinsuits.
-	"feminine short gray skinsuit"=/obj/item/clothing/under/skinsuit/fem/gray/short, // CHOMPedit: New skinsuits.
+	"short gray skinsuit"=/obj/item/clothing/under/skinsuit/gray/short, // New skinsuits.
+	"feminine short gray skinsuit"=/obj/item/clothing/under/skinsuit/fem/gray/short, // New skinsuits.
 	"leotard skinsuit"=/obj/item/clothing/under/skinsuit/leotard,
 	"feminine leotard skinsuit"=/obj/item/clothing/under/skinsuit/fem/leotard,
 	"gray leotard skinsuit"=/obj/item/clothing/under/skinsuit/leotard/gray,

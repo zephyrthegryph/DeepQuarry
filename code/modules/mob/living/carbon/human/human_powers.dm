@@ -212,7 +212,7 @@
 		for(var/obj/item/organ/external/EO in organs)
 			if(EO.robotic >= ORGAN_ASSISTED)
 				if(EO.brute_dam || EO.burn_dam)
-					output += "[EO.name] - " + span_warning("[EO.burn_dam + EO.brute_dam > EO.min_broken_damage ? "Heavy Damage" : "Light Damage"]") + "\n" //VOREStation Edit - Makes robotic limb damage scalable
+					output += "[EO.name] - " + span_warning("[EO.burn_dam + EO.brute_dam > EO.min_broken_damage ? "Heavy Damage" : "Light Damage"]") + "\n" // Makes robotic limb damage scalable
 				else
 					output += "[EO.name] - " + span_green("OK") + "\n"
 

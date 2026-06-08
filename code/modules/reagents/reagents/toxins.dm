@@ -117,7 +117,7 @@
 
 /datum/reagent/toxin/hydrophoron/affect_touch(mob/living/carbon/M, alien, removed)
 	M.take_organ_damage(0, removed * 0.1) //being splashed directly with hydrophoron causes minor chemical burns
-	// DQEdit — ZAS pl_effects() (phoron contamination side-effect) removed; the
+	// ZAS pl_effects() (phoron contamination side-effect) removed; the
 	// burn damage above is the meaningful remainder under LINDA.
 	..()
 
@@ -199,7 +199,7 @@
 	if(alien == IS_VOX)
 		return
 	M.take_organ_damage(0, removed * 0.1) //being splashed directly with phoron causes minor chemical burns
-	// DQEdit — ZAS pl_effects() removed (see hydrophoron/affect_touch).
+	// ZAS pl_effects() removed (see hydrophoron/affect_touch).
 
 /datum/reagent/toxin/phoron/affect_blood(mob/living/carbon/M, alien, removed)
 	if(alien == IS_VOX)
@@ -804,7 +804,7 @@
 			M.eye_blurry = max(M.eye_blurry, 30)
 			if(prob(20))
 				M.ear_deaf = max(M.ear_deaf, 4)
-				M.deaf_loop.start() // CHOMPStation Add: Ear Ringing/Deafness
+				M.deaf_loop.start() // Ear Ringing/Deafness
 				M.Confuse(2)
 			else
 				M.Weaken(2)
@@ -852,7 +852,7 @@
 		if(alien == IS_SLIME)
 			if(prob(30))
 				M.ear_deaf = max(M.ear_deaf, 4)
-				M.deaf_loop.start() // CHOMPStation Add: Ear Ringing/Deafness
+				M.deaf_loop.start() // Ear Ringing/Deafness
 			M.eye_blurry = max(M.eye_blurry, 60)
 			M.Weaken(30)
 			M.Confuse(40)

@@ -24,7 +24,7 @@
 	if(exposed_temperature < TCMB)
 		exposed_temperature = TCMB
 		CRASH("[src].hotspot_expose() called with exposed_temperature < [TCMB]")
-	// DQEdit — honor flame-retardant protection (set by firefoam, extinguishers,
+	// honor flame-retardant protection (set by firefoam, extinguishers,
 	// fire-resistant tile coatings). Protection lasts FIRE_PROTECTION_DURATION
 	// after apply_fire_protection() was called.
 	if(fire_protection && (world.time - fire_protection < FIRE_PROTECTION_DURATION))
@@ -149,7 +149,7 @@
 	)
 	AddElement(/datum/element/connect_loc, loc_connections)
 
-	// DQEdit — fire_puff.ogg is a /tg/ asset CHOMP doesn't ship. Sound disabled until vendored.
+	// fire_puff.ogg is a /tg/ asset CHOMP doesn't ship. Sound disabled until vendored.
 	if(COOLDOWN_FINISHED(our_turf, fire_puff_cooldown))
 		COOLDOWN_START(our_turf, fire_puff_cooldown, 5 SECONDS)
 
@@ -265,7 +265,7 @@
 		add_overlay(lightning_overlay)
 	if(temperature > 4500000) //This is where noblium happens. Some fusion-y effects.
 		var/fusion_amt = temperature < LERP(4500000,12000000,0.5) ? gauss_lerp(temperature, 4500000, 12000000) : 1
-		// DQEdit — 'icons/effects/atmospherics.dmi' is a /tg/ asset CHOMP doesn't ship.
+		// 'icons/effects/atmospherics.dmi' is a /tg/ asset CHOMP doesn't ship.
 		// Reuse the existing fire.dmi as a substitute; less "fusion-y" looking but
 		// the hotspot still renders. Replace when the /tg/ asset is vendored.
 		var/mutable_appearance/fusion_overlay = mutable_appearance('icons/effects/fire.dmi', "light")
@@ -330,7 +330,7 @@
 	if(bypassing)
 		set_fire_stage("heavy")
 		if(!cold_fire && istype(location, /turf/simulated))
-			// DQEdit — burn_tile is on /turf/simulated in CHOMP, not /turf parent.
+			// burn_tile is on /turf/simulated in CHOMP, not /turf parent.
 			var/turf/simulated/sim_loc = location
 			sim_loc.burn_tile()
 
@@ -383,12 +383,12 @@
 	return
 
 /datum/looping_sound/fire
-	// DQEdit — fireclip1..7.ogg are /tg/ assets CHOMP doesn't ship. Empty
+	// fireclip1..7.ogg are /tg/ assets CHOMP doesn't ship. Empty
 	// mid_sounds list makes the loop silent until vendored.
 	mid_sounds = list()
 	volume = 30
 	mid_length = 2 SECONDS
-	// DQEdit — falloff_distance is a /tg/-specific looping_sound var; CHOMP
+	// falloff_distance is a /tg/-specific looping_sound var; CHOMP
 	// doesn't have it. Removed.
 
 #define MIN_SIZE_SOUND 2

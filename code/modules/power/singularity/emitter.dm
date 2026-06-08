@@ -154,7 +154,7 @@
 				disconnect_from_network()
 			if(2)
 				to_chat(user, span_warning("\The [src] needs to be unwelded from the floor."))
-		update_icon() // VOREStation Add
+		update_icon()
 		return
 
 	if(W.has_tool_quality(TOOL_WELDER))
@@ -191,7 +191,7 @@
 						disconnect_from_network()
 				else
 					to_chat(user, span_warning("You need more welding fuel to complete this task."))
-		update_icon() // VOREStation Add
+		update_icon()
 		return
 
 	if(istype(W, /obj/item/stack/material) && W.get_material_name() == MAT_STEEL)
@@ -220,7 +220,7 @@
 		if(src.allowed(user))
 			src.locked = !src.locked
 			to_chat(user, "The controls are now [src.locked ? "locked." : "unlocked."]")
-			update_icon() // VOREStation Add
+			update_icon()
 		else
 			to_chat(user, span_warning("Access denied."))
 		return

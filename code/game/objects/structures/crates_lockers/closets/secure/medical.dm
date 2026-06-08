@@ -46,7 +46,7 @@
 		/obj/item/clothing/under/rank/nursesuit,
 		/obj/item/clothing/head/nursehat,
 		/obj/item/storage/box/freezer = 3,
-		/obj/item/storage/belt/medical) //VOREStation Add
+		/obj/item/storage/belt/medical)
 
 /obj/structure/closet/secure_closet/medical3/Initialize(mapload)
 	if(prob(50))
@@ -213,7 +213,7 @@
 		/obj/item/reagent_containers/dropper = 2,
 		/obj/item/reagent_containers/glass/bottle/inaprovaline = 2,
 		/obj/item/reagent_containers/glass/bottle/antitoxin = 2,
-		/obj/item/storage/fancy/vials) //VOREStation Add
+		/obj/item/storage/fancy/vials)
 
 
 /obj/structure/closet/secure_closet/psych

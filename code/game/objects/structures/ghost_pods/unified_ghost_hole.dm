@@ -134,7 +134,7 @@
 
 	SSjob.equip_rank(new_character, JOB_MAINT_LURKER, 1)
 
-	for(var/lang in new_character.client.prefs.read_preference(/datum/preference/alternate_languages)) // DQEdit — migrated
+	for(var/lang in new_character.client.prefs.read_preference(/datum/preference/alternate_languages)) // migrated
 		var/datum/language/chosen_language = GLOB.all_languages[lang]
 		if(chosen_language)
 			if(is_lang_whitelisted(M, chosen_language) || (new_character.species && (chosen_language.name in new_character.species.secondary_langs)))

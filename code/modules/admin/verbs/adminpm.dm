@@ -158,7 +158,7 @@ ADMIN_VERB(cmd_admin_pm_panel, R_ADMIN|R_MOD|R_SERVER|R_EVENT, "Admin PM", "Dire
 	log_admin("PM: [key_name(src)]->[key_name(recipient)]: [rawmsg]")
 	//we don't use message_admins here because the sender/receiver might get it too
 	for(var/client/X in GLOB.admins)
-		if(!check_rights_for(X, R_ADMIN|R_SERVER)) // CHOMPEdit
+		if(!check_rights_for(X, R_ADMIN|R_SERVER))
 			continue
 		if(X.key!=key && X.key!=recipient.key)	//check client/X is an admin and isn't the sender or recipient
 			to_chat(X, span_admin_pm_notice(span_bold("PM: [key_name(src, X, 0)]-&gt;[key_name(recipient, X, 0)]:") + " [keywordparsedmsg]"))

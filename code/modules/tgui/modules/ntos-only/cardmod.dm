@@ -171,7 +171,7 @@
 			. = TRUE
 		if("terminate")
 			if(computer && program.can_run(ui.user, 1))
-				id_card.assignment = "Dismissed"	//VOREStation Edit: setting adjustment
+				id_card.assignment = "Dismissed" // setting adjustment
 				id_card.access = list()
 				SEND_GLOBAL_SIGNAL(COMSIG_GLOB_TERMINATE_EMPLOYEE_IDCARD, id_card)
 			. = TRUE

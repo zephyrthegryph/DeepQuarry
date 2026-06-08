@@ -124,7 +124,7 @@
 	)
 
 /datum/stock/displayValues(mob/user)
-	// DQEdit — structured TGUI StockChart panel; typed value series goes
+	// structured TGUI StockChart panel; typed value series goes
 	// to the React side which renders an SVG chart.
 	if(!user?.client)
 		return

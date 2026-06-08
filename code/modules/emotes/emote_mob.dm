@@ -56,7 +56,7 @@
 
 		if(act == "custom")
 			if(!message)
-				message = sanitize_or_reflect(tgui_input_text(src,"Choose an emote to display.", encode = FALSE), src) //VOREStation Edit - Reflect too long messages, within reason
+				message = sanitize_or_reflect(tgui_input_text(src,"Choose an emote to display.", encode = FALSE), src) // Reflect too long messages, within reason
 			if(!message)
 				return
 			if (!m_type)
@@ -72,13 +72,12 @@
 		act = copytext(tempstr,1,splitpoint)
 		message = copytext(tempstr,splitpoint+1,0)
 
-	//VOREStation Add - NIF soulcatcher shortcuts
+	// NIF soulcatcher shortcuts
 	if(act == "nsay")
 		return nsay(message)
 
 	if(act == "nme")
 		return nme(message)
-	//VOREStation Add End
 
 	var/datum/decl/emote/use_emote = get_emote_by_key(act)
 	if(!istype(use_emote))

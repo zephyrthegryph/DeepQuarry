@@ -181,7 +181,7 @@
 	charge_per_burn = initial(charge_per_burn) / energy_upgrade
 	change_power_consumption(initial(idle_power_usage) / energy_upgrade, USE_POWER_IDLE)
 
-	dq_apply_material_synergies(src) // DQAdd
+	dq_apply_material_synergies(src)
 //Exhaust effect
 /obj/effect/engine_exhaust
 	name = "engine exhaust"

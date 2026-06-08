@@ -1,4 +1,4 @@
-// DQAdd — Occupation / job priority editor.
+// Occupation / job priority editor.
 //
 // Backed by the single /datum/preference/job_priorities pref (sparse assoc
 // {title: "high"|"med"|"low"}). Adding a department or a job is a /datum/job

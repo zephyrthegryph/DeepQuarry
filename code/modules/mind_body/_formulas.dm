@@ -1,4 +1,4 @@
-// DQAdd — Pool formulas + the pickability gate.
+// Pool formulas + the pickability gate.
 //
 // Single shared pool per side: one Body pool covering Strength + Vigor + Speed
 // + Endurance, one Mind pool covering all 7 departments. Categories on the UI

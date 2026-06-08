@@ -15,11 +15,11 @@
 	max_age = 250
 	health_hud_intensity = 1.5
 	base_species = SPECIES_ALRAUNE
-	selects_bodytype = SELECTS_BODYTYPE_CUSTOM //VOREStation edit
+	selects_bodytype = SELECTS_BODYTYPE_CUSTOM
 
-	// male_scream_sound = null //CHOMPedit
-	// female_scream_sound = null //CHOMPedit
-	wikilink="https://wiki.chompstation13.net/index.php?title=Alraune" //CHOMPedit: add wiki link
+	// male_scream_sound = null //
+	// female_scream_sound = null //
+	wikilink="https://wiki.chompstation13.net/index.php?title=Alraune" // add wiki link
 
 	body_temperature = T20C
 	breath_type = GAS_O2
@@ -71,7 +71,7 @@
 	\
 	Most Alraunes are not interested in traversing space, their heavy preference for natural environments and general\
 	disinterest in things outside it keeps them as a species at a rather primal stage."
-	//CHOMPEdit: removed line referencing Virgo lore which does not apply here.
+	// removed line referencing Virgo lore which does not apply here.
 	catalogue_data = list(/datum/category_item/catalogue/fauna/alraune)
 
 	has_limbs = list(
@@ -141,7 +141,7 @@
 		H.adjustOxyLoss(-5)
 		return ..()// if somehow they don't breathe, abort breathing.
 
-	if(!breath || (xgm_total_moles(breath) == 0)) // DQEdit — xgm_total_moles bridges XGM-var/LINDA-proc gap
+	if(!breath || (xgm_total_moles(breath) == 0)) // xgm_total_moles bridges XGM-var/LINDA-proc gap
 		H.failed_last_breath = 1
 		if(H.health > H.get_crit_point())
 			H.adjustOxyLoss(ALRAUNE_MAX_OXYLOSS)
@@ -165,7 +165,7 @@
 	var/SA_sleep_min = 5
 	var/inhaled_gas_used = 0
 
-	var/breath_total = xgm_total_moles(breath) // DQEdit — cache total_moles for repeated use
+	var/breath_total = xgm_total_moles(breath) // cache total_moles for repeated use
 	var/breath_pressure = (breath_total*R_IDEAL_GAS_EQUATION*breath.temperature)/BREATH_VOLUME
 
 	var/inhaling
@@ -179,7 +179,7 @@
 	poison = LINDA_GAS_AMT(breath, poison_type)
 	exhaling = LINDA_GAS_AMT(breath, exhale_type)
 
-	var/inhale_pp = (inhaling/breath_total)*breath_pressure // DQEdit — was breath.total_moles
+	var/inhale_pp = (inhaling/breath_total)*breath_pressure // was breath.total_moles
 	var/toxins_pp = (poison/breath_total)*breath_pressure
 	var/exhaled_pp = (exhaling/breath_total)*breath_pressure
 
@@ -234,7 +234,7 @@
 		H.clear_alert("tox_in_air")
 
 	// If there's some other shit in the air lets deal with it here.
-	if(LINDA_GAS_AMT(breath, GAS_N2O)) // DQEdit — string "sleeping_agent" doesn't exist as a LINDA gas id; GAS_N2O = "n2o" is the real id
+	if(LINDA_GAS_AMT(breath, GAS_N2O)) // string "sleeping_agent" doesn't exist as a LINDA gas id; GAS_N2O = "n2o" is the real id
 		var/SA_pp = (LINDA_GAS_AMT(breath, GAS_N2O) / breath_total) * breath_pressure
 
 		// Enough to make us paralysed for a bit
@@ -251,7 +251,7 @@
 		else if(SA_pp > 0.15)
 			if(prob(20))
 				spawn(0) H.emote(pick("giggle", "laugh"))
-		breath.adjust_gas(GAS_N2O, -LINDA_GAS_AMT(breath, GAS_N2O)/6, update = 0) //update after // DQEdit — was "sleeping_agent" string (XGM); LINDA uses GAS_N2O = "n2o"
+		breath.adjust_gas(GAS_N2O, -LINDA_GAS_AMT(breath, GAS_N2O)/6, update = 0) // update after // was "sleeping_agent" string (XGM); LINDA uses GAS_N2O = "n2o"
 
 	// Were we able to breathe?
 	if (failed_inhale || failed_exhale)
@@ -296,7 +296,7 @@
 		else
 			temp_adj /= (BODYTEMP_HEAT_DIVISOR * 5)	//don't raise temperature as much as if we were directly exposed
 
-		var/relative_density = xgm_total_moles(breath) / (MOLES_CELLSTANDARD * BREATH_PERCENTAGE) // DQEdit — total_moles is a proc in LINDA, use xgm_total_moles helper
+		var/relative_density = xgm_total_moles(breath) / (MOLES_CELLSTANDARD * BREATH_PERCENTAGE) // total_moles is a proc in LINDA, use xgm_total_moles helper
 		temp_adj *= relative_density
 
 		if (temp_adj > BODYTEMP_HEATING_MAX) temp_adj = BODYTEMP_HEATING_MAX
@@ -309,7 +309,7 @@
 	else if(breath.temperature <= cold_discomfort_level)
 		get_environment_discomfort(src,"cold")
 
-	// DQEdit — breath.update_values() removed; no-op under LINDA.
+	// breath.update_values() removed; no-op under LINDA.
 	..()
 
 /obj/item/organ/internal/brain/alraune

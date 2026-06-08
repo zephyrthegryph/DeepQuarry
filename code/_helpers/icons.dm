@@ -354,7 +354,7 @@
 	if(!no_color)
 		flat_icon.ColorTone(rgb(125,180,225))//Let's make it bluish.
 	flat_icon.ChangeOpacity(0.5)//Make it half transparent.
-	*/ //VOREStation Removal End
+	*/ // Removal End
 	var/icon/alpha_mask = new('icons/effects/effects.dmi', "scanline")//Scanline effect.
 	flat_icon.AddAlphaMask(alpha_mask)//Finally, let's mix in a distortion effect.
 	return flat_icon

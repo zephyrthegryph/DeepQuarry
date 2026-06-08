@@ -118,7 +118,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 		var/category = current_list[2]
 
 		for(var/entry in current_list[1])
-			// DQEdit — list values may be list(count, variant). Resolve them.
+			// list values may be list(count, variant). Resolve them.
 			var/list/spec = dq_resolve_spawn_value(current_list[1][entry])
 			var/datum/stored_item/vending_product/product = new/datum/stored_item/vending_product(src, entry)
 
@@ -632,10 +632,9 @@ GLOBAL_LIST_EMPTY(vending_products)
 	if(user.GetIdCard())
 		var/obj/item/card/id/tempid = user.GetIdCard()
 		if(req_log_access in tempid.GetAccess())
-			// DQEdit Start — Vending Log now opens a structured TGUI panel.
+			// Vending Log now opens a structured TGUI panel.
 			var/datum/dq_vending_log_panel/panel = new(name, user.name, log)
 			panel.tgui_interact(user)
-			// DQEdit End
 	else
 		to_chat(user,span_warning("You do not have the required access to view the vending logs for this machine."))
 

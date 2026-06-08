@@ -160,7 +160,7 @@
 	name = "gamma beam"
 	icon_state = "xray"
 	fire_sound = 'sound/weapons/eluger.ogg'
-	damage = 12 //CHOMPedit
+	damage = 12
 	armor_penetration = 90
 	irradiate = 20
 	light_color = "#00CC33"
@@ -388,7 +388,7 @@
 	tracer_type = /obj/effect/projectile/tracer/pointdefense
 	impact_type = /obj/effect/projectile/impact/pointdefense
 
-// CHOMPADD a physical/projectile coil-gun type pointdefense
+// a physical/projectile coil-gun type pointdefense
 /obj/item/projectile/beam/coildefense
 	name = "defense coil salvo"
 	icon_state = "coil"
@@ -404,7 +404,7 @@
 	impact_type = /obj/effect/projectile/impact/coildefense
 
 
-/obj/item/projectile/beam/precursor //CHOMPedit added Precursor beam
+/obj/item/projectile/beam/precursor // added Precursor beam
 	name = "precursor beam"
 	icon_state = "alien beam"
 	fire_sound = 'sound/weapons/MediumLaser.ogg'

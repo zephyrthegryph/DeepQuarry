@@ -39,7 +39,7 @@
 	maxHealth = 25
 	health = 25
 	movement_cooldown = -2
-	// DQEdit — dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
+	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 	density = FALSE
 
 	vore_active = TRUE

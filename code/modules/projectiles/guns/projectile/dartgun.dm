@@ -136,7 +136,7 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	// DQEdit — structured TGUI Dartgun (see
+	// structured TGUI Dartgun (see
 	// code/modules/admin/dartgun_panel.dm).
 	user.set_machine(src)
 	tgui_interact(user)

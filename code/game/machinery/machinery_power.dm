@@ -60,7 +60,7 @@
 		return
 	if(chan == CURRENT_CHANNEL)
 		chan = power_channel
-	// DQEdit — scale by any synergy power_use_mod (e.g. Cold Forge halves draw).
+	// scale by any synergy power_use_mod (e.g. Cold Forge halves draw).
 	amount = amount * dq_synergy_value(src, "power_use_mod", 1)
 	return A.use_power_oneoff(amount, chan)
 
@@ -73,17 +73,16 @@
 	return 0
 
 /obj/machinery
-	var/recursive_set = FALSE //CHOMPEdit: bool to indicate if recursive movement detection ever got set. If it did, don't try to set it again!
+	var/recursive_set = FALSE // bool to indicate if recursive movement detection ever got set. If it did, don't try to set it again!
 
 // Do not do power stuff in New/Initialize until after ..()
 /obj/machinery/Initialize(mapload)
 	. = ..()
-	//ChompEDIT START -- only add this if we init on a non-turf (and non-null)
+	// only add this if we init on a non-turf (and non-null)
 	if(!recursive_set && loc && !isturf(loc))
 		recursive_set = TRUE
 		AddComponent(/datum/component/recursive_move)
 		RegisterSignal(src, COMSIG_MOVABLE_ATTEMPTED_MOVE, PROC_REF(update_power_on_move)) //we only need this for recursive moving
-	//ChompEDIT END
 	var/power = POWER_CONSUMPTION
 	REPORT_POWER_CONSUMPTION_CHANGE(0, power)
 	power_init_complete = TRUE
@@ -104,12 +103,11 @@
 	. = ..()
 	update_power_on_move(src, old_loc, loc)
 
-	//ChompEDIT START -- only add this if we move into a non-turf (not null) and we've never been given recursive move handling
+	// only add this if we move into a non-turf (not null) and we've never been given recursive move handling
 	if(!recursive_set && loc && !isturf(loc))
 		recursive_set = TRUE
 		AddComponent(/datum/component/recursive_move)
 		RegisterSignal(src, COMSIG_MOVABLE_ATTEMPTED_MOVE, PROC_REF(update_power_on_move)) //we only need this for recursive moving
-	//ChompEDIT END
 
 	/* No
 	if(ismovable(old_loc)) // Unregister recursive movement.

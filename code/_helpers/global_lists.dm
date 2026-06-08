@@ -436,9 +436,9 @@ GLOBAL_LIST_INIT(reagent_containers_can_be_placed_into, list(
 		/obj/machinery/computer/pandemic,
 		/obj/machinery/reagent_refinery,
 		/obj/vehicle/train/trolley_tank,
-		/obj/machinery/feeder, //CHOMPedit,
-		/obj/machinery/chemical_synthesizer, //CHOMPedit,
-		/obj/machinery/food_replicator // CHOMPAdd
+		/obj/machinery/feeder, // ,
+		/obj/machinery/chemical_synthesizer, // ,
+		/obj/machinery/food_replicator
 	),
 	REAGENT_CONTAINER_CAN_BE_PLACED_INTO_WATERCOOLER = list(
 		/obj/structure/table,
@@ -627,7 +627,7 @@ GLOBAL_LIST_INIT(unique_gamma_loot, list(
 	/obj/item/bluespace_harpoon,
 	/obj/item/clothing/glasses/thermal/syndi,
 	/obj/item/gun/energy/netgun,
-	/obj/item/gun/projectile/pirate, // CHOMPAdd
+	/obj/item/gun/projectile/pirate,
 	/obj/item/gun/projectile/dartgun,
 	/obj/item/clothing/gloves/black/bloodletter,
 	/obj/item/gun/energy/mouseray/metamorphosis
@@ -702,7 +702,7 @@ GLOBAL_LIST_INIT(radio_channels_by_freq, list(
 	num2text(ENG_FREQ) = CHANNEL_ENGINEERING,
 	num2text(MED_FREQ) = CHANNEL_MEDICAL,
 	num2text(MED_I_FREQ)=CHANNEL_MEDICAL_1,
-	num2text(BDCM_FREQ) =CHANNEL_BODYCAM, // CHOMPEdit
+	num2text(BDCM_FREQ) =CHANNEL_BODYCAM,
 	num2text(SEC_FREQ) = CHANNEL_SECURITY,
 	num2text(SEC_I_FREQ)=CHANNEL_SECURITY_1,
 	num2text(SCI_FREQ) = CHANNEL_SCIENCE,
@@ -723,13 +723,13 @@ GLOBAL_LIST_INIT(default_internal_channels, list(
 	num2text(ENG_FREQ) = list(ACCESS_ENGINE_EQUIP, ACCESS_ATMOSPHERICS),
 	num2text(MED_FREQ) = list(ACCESS_MEDICAL_EQUIP),
 	num2text(MED_I_FREQ)=list(ACCESS_MEDICAL_EQUIP),
-	num2text(BDCM_FREQ) =list(ACCESS_SECURITY), // CHOMPAdd
+	num2text(BDCM_FREQ) =list(ACCESS_SECURITY),
 	num2text(SEC_FREQ) = list(ACCESS_SECURITY),
 	num2text(SEC_I_FREQ)=list(ACCESS_SECURITY),
 	num2text(SCI_FREQ) = list(ACCESS_TOX, ACCESS_ROBOTICS, ACCESS_XENOBIOLOGY),
 	num2text(SUP_FREQ) = list(ACCESS_CARGO, ACCESS_MINING_STATION),
 	num2text(SRV_FREQ) = list(ACCESS_JANITOR, ACCESS_LIBRARY, ACCESS_HYDROPONICS, ACCESS_BAR, ACCESS_KITCHEN),
-	num2text(EXP_FREQ) = list(ACCESS_EXPLORER, ACCESS_PILOT) // CHOMPEdit
+	num2text(EXP_FREQ) = list(ACCESS_EXPLORER, ACCESS_PILOT)
 ))
 
 GLOBAL_LIST_INIT(default_medbay_channels, list(
@@ -745,7 +745,7 @@ GLOBAL_LIST_INIT(device_ringtones, list("beep" = 'sound/machines/twobeep.ogg',
 										"SKREE" = 'sound/voice/shriek1.ogg',
 										// "holy" = 'sound/items/PDA/ambicha4-short.ogg',
 										"xeno" = 'sound/voice/hiss1.ogg',
-										"dust" = 'sound/effects/supermatter.ogg', // CHOMPEdit
+										"dust" = 'sound/effects/supermatter.ogg',
 										"spark" = 'sound/effects/sparks4.ogg',
 										"rad" = 'sound/items/geiger/high1.ogg',
 										"servo" = 'sound/machines/rig/rigservo.ogg',
@@ -832,7 +832,7 @@ GLOBAL_LIST_INIT(home_system_choices, list(
 	))
 
 GLOBAL_LIST_INIT(faction_choices, list(
-	"Sol Central", // CHOMPAdd
+	"Sol Central",
 	"NanoTrasen Incorporated",
 	"Hephaestus Industries",
 	"Vey-Medical",
@@ -1085,7 +1085,6 @@ GLOBAL_LIST_INIT(maint_mob_pred_options, list(
 	"Meowl" = /mob/living/simple_mob/vore/meowl,
 	"Abyss Leaper" = /mob/living/simple_mob/vore/vore_hostile/leaper,
 	"Abyss Lurker" = /mob/living/simple_mob/vore/vore_hostile/abyss_lurker,
-	// CHOMPAdd Start
 	"Horse" = /mob/living/simple_mob/vore/horse/big,
 	"Lizardman" = /mob/living/simple_mob/vore/aggressive/lizardman,
 	"Giant Lab Rat" = /mob/living/simple_mob/vore/aggressive/rat/labrat,
@@ -1111,7 +1110,6 @@ GLOBAL_LIST_INIT(maint_mob_pred_options, list(
 	"Space Carp" = /mob/living/simple_mob/animal/space/carp,
 	"Great White Carp" = /mob/living/simple_mob/animal/space/carp/large/huge/vorny,
 	"Giant Bat" = /mob/living/simple_mob/vore/bat
-	// CHOMPAdd End
 	))
 
 // GLOB.alldirs in global.dm is the same list of directions, but since
@@ -1278,7 +1276,7 @@ GLOBAL_LIST_INIT(description_icons, list(
 	"wrench" = image(icon='icons/obj/tools.dmi',icon_state="wrench"),
 	"crowbar" = image(icon='icons/obj/tools.dmi',icon_state="crowbar"),
 	"multitool" = image(icon='icons/obj/device.dmi',icon_state="multitool"),
-	"cable coil" = image(icon='icons/obj/power.dmi',icon_state="coil"), // VOREStation Edit
+	"cable coil" = image(icon='icons/obj/power.dmi',icon_state="coil"),
 
 	"metal sheet" = image(icon='icons/obj/items.dmi',icon_state="sheet-metal"),
 	"plasteel sheet" = image(icon='icons/obj/items.dmi',icon_state="sheet-plasteel"),
@@ -1289,9 +1287,9 @@ GLOBAL_LIST_INIT(description_icons, list(
 	"stunbaton" = image(icon='icons/obj/weapons.dmi',icon_state="stunbaton_active"),
 	"slimebaton" = image(icon='icons/obj/weapons.dmi',icon_state="slimebaton_active"),
 
-	"power cell" = image(icon='icons/obj/power_cells.dmi',icon_state="b_st"), //CHOMPEdit
-	"device cell" = image(icon='icons/obj/power_cells.dmi',icon_state="m_st"), //CHOMPEdit
-	"weapon cell" = image(icon='icons/obj/power_cells.dmi',icon_state="m_sup"), //CHOMPEdit
+	"power cell" = image(icon='icons/obj/power_cells.dmi',icon_state="b_st"),
+	"device cell" = image(icon='icons/obj/power_cells.dmi',icon_state="m_st"),
+	"weapon cell" = image(icon='icons/obj/power_cells.dmi',icon_state="m_sup"),
 
 	"hatchet" = image(icon='icons/obj/weapons.dmi',icon_state="hatchet"),
 	))
@@ -1718,7 +1716,7 @@ GLOBAL_LIST_INIT(player_sizes_list, list(
 		"Tiny" 		= RESIZE_TINY))
 
 //stores vantag settings indexed by name
-//CHOMPEdit start - expanding the vore hud list
+// start - expanding the vore hud list
 GLOBAL_LIST_INIT(vantag_choices_list, list(
 		VANTAG_NONE		=	"No Involvement",
 		VANTAG_VORE		=	"Be Prey (Any)",
@@ -1731,7 +1729,7 @@ GLOBAL_LIST_INIT(vantag_choices_list, list(
 		VANTAG_VORE_DA	=	"Be Pred (Absorption)",
 		VANTAG_KIDNAP	=	"Be Kidnapped",
 		VANTAG_KILL		=	"Be Killed"))
-//CHOMPEdit end
+// end
 
 //Blacklist to exclude items from object ingestion. Digestion blacklist located in digest_act_vr.dm
 GLOBAL_LIST_INIT(item_vore_blacklist, list(
@@ -2301,7 +2299,7 @@ GLOBAL_LIST_INIT(remainless_species, list(SPECIES_PROMETHEAN,
 				SPECIES_ALRAUNE,
 				SPECIES_PROTEAN,
 				/*
-				SPECIES_MONKEY,					//Exclude all monkey subtypes, to prevent abuse of it. They aren't, //CHOMPEDIT How about let preds have skeletons, people can do so much worse than this
+				SPECIES_MONKEY, // Exclude all monkey subtypes, to prevent abuse of it. They aren't, // How about let preds have skeletons, people can do so much worse than this
 				SPECIES_MONKEY_TAJ,				//set to have remains anyway, but making double sure,
 				SPECIES_MONKEY_SKRELL,
 				SPECIES_MONKEY_UNATHI,
@@ -2698,7 +2696,7 @@ GLOBAL_LIST_INIT(event_wildlife_roaming, list(
 														/mob/living/simple_mob/animal/passive/mouse/brown = 2,
 														/mob/living/simple_mob/animal/passive/mouse/gray = 2,
 														/mob/living/simple_mob/animal/passive/mouse/white = 2,
-														/mob/living/simple_mob/animal/passive/mouse/rat/strong = 3), // CHOMPEdit
+														/mob/living/simple_mob/animal/passive/mouse/rat/strong = 3),
 												list(/mob/living/simple_mob/animal/passive/bird/black_bird = 1,
 														/mob/living/simple_mob/animal/passive/bird/azure_tit = 1,
 														/mob/living/simple_mob/animal/passive/bird/european_robin = 1,
@@ -2776,7 +2774,7 @@ GLOBAL_LIST_INIT(selectable_speech_bubbles, list(
 	"tentacles",
 	"heart",
 	"textbox",
-	"possessed",		// CHOMPEDIT : purdev (spelling changed <3)
+	"possessed", // purdev (spelling changed <3)
 	"square",
 	"medical",
 	"medical_square",
@@ -2878,7 +2876,7 @@ GLOBAL_LIST_INIT(area_or_turf_fail_types, typecacheof(list(
 	/turf/unsimulated/wall/planetary,
 	/area/submap/virgo2,
 	/area/submap/casino_event,
-	/area/vr //CHOMPedit
+	/area/vr
 	)))
 
 //GRIPPERS!!!

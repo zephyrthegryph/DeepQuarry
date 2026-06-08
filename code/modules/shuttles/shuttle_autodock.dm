@@ -21,7 +21,7 @@
 
 /datum/shuttle/autodock/New(_name, obj/effect/shuttle_landmark/start_waypoint)
 	..(_name, start_waypoint)
-	// DQEdit — base New() may have early-returned without setting
+	// base New() may have early-returned without setting
 	// current_location (landmark missing because the shuttle's home map
 	// was removed). Skip the rest so we don't trip null derefs.
 	if(!current_location)

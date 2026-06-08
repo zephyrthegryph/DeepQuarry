@@ -11,14 +11,14 @@
 	var/obj/item/reagent_containers/syringe/syringe
 	var/cryogenic = FALSE
 	var/robotic = FALSE
-	var/mass_grave = FALSE //CHOMPEdit
+	var/mass_grave = FALSE
 
 /obj/item/bodybag/attack_self(mob/user)
 	. = ..(user)
 	if(.)
 		return TRUE
-	if(mass_grave) //CHOMPedit - TODO, upport this.
-		return FALSE //CHOMPedit - TODO, upport this.
+	if(mass_grave) // TODO, upport this.
+		return FALSE // TODO, upport this.
 
 	if(cryogenic)
 		var/obj/structure/closet/body_bag/cryobag/R = new /obj/structure/closet/body_bag/cryobag(user.loc)

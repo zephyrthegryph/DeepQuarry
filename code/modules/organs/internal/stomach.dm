@@ -53,14 +53,14 @@
 
 	acidtype = REAGENT_ID_SACID
 
-	organ_verbs = list(/mob/living/carbon/human/proc/reagent_purge, /mob/living/carbon/human/proc/synth_reag_toggle) //VOREStation Add + CHOMPAdd
+	organ_verbs = list(/mob/living/carbon/human/proc/reagent_purge, /mob/living/carbon/human/proc/synth_reag_toggle) // +
 
 /obj/item/organ/internal/stomach/machine/handle_organ_proc_special()
 	..()
 	if(owner && owner.stat != DEAD)
 		owner.bodytemperature += round(owner.robobody_count * 0.25, 0.1)
 
-/*			//VOREStation Removal - normal chem processing
+/* // Removal - normal chem processing
 		if(ishuman(owner))
 			var/mob/living/carbon/human/H = owner
 

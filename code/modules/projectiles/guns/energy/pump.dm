@@ -116,7 +116,7 @@
 	item_state = "phaser"
 	item_icons = list(slot_l_hand_str = 'icons/mob/items/lefthand_guns_vr.dmi', slot_r_hand_str = 'icons/mob/items/righthand_guns_vr.dmi', "slot_belt" = 'icons/inventory/belt/mob.dmi')
 	fire_sound = 'sound/weapons/laser2.ogg'
-	charge_cost = 100 //Chompedit Reduced cost
+	charge_cost = 100 // Reduced cost
 
 	battery_lock = 1
 	unacidable = TRUE
@@ -127,9 +127,9 @@
 	projectile_type = /obj/item/projectile/beam/phaser
 	//CHOMP Edit: Changed beam type to new phaser beam type.
 	firemodes = list(
-		list(mode_name="lethal", fire_delay=10, projectile_type=/obj/item/projectile/beam/phaser, charge_cost = 80), //Chompedit Reduced cost
-		list(mode_name="low-power", fire_delay=5, projectile_type=/obj/item/projectile/beam/phaser/light, charge_cost = 40), //Chompedit Reduced cost
-	)  //CHOMPedit Adjusts cost and fire delay to match adjusted beams.
+		list(mode_name="lethal", fire_delay=10, projectile_type=/obj/item/projectile/beam/phaser, charge_cost = 80), // Reduced cost
+		list(mode_name="low-power", fire_delay=5, projectile_type=/obj/item/projectile/beam/phaser/light, charge_cost = 40), // Reduced cost
+	) // Adjusts cost and fire delay to match adjusted beams.
 	recoil_mode = 0
 
 /obj/item/gun/energy/locked/frontier/unload_ammo(mob/user)
@@ -180,15 +180,15 @@
 	item_state = "energykill"
 	item_icons = list(slot_l_hand_str = 'icons/mob/items/lefthand_guns.dmi', slot_r_hand_str = 'icons/mob/items/righthand_guns.dmi')
 	phase_power = 25
-	one_handed_penalty = 15 //CHOMPEdit Added this, same as phase carbine.
-	w_class = ITEMSIZE_LARGE  //CHOMPEdit Should be bigger.
+	one_handed_penalty = 15 // Added this, same as phase carbine.
+	w_class = ITEMSIZE_LARGE // Should be bigger.
 
 	modifystate = "carbinekill"
 	//CHOMP Edit: Changed beam type to new phaser beam type.
 	firemodes = list(
-		list(mode_name="lethal", fire_delay=10, projectile_type=/obj/item/projectile/beam/phaser, modifystate="carbinekill", charge_cost = 60), //Chompedit Reduced cost
-		list(mode_name="low-power", fire_delay=5, projectile_type=/obj/item/projectile/beam/phaser/light, modifystate="carbinestun", charge_cost = 30), //Chompedit Reduced cost
-		list(mode_name="burst", burst=3, fire_delay=10, move_delay=4, burst_accuracy=list(0,0,0), dispersion=list(0.0, 0.2, 0.5), projectile_type=/obj/item/projectile/beam/phaser/light, charge_cost = 90), //Chompedit Added this
+		list(mode_name="lethal", fire_delay=10, projectile_type=/obj/item/projectile/beam/phaser, modifystate="carbinekill", charge_cost = 60), // Reduced cost
+		list(mode_name="low-power", fire_delay=5, projectile_type=/obj/item/projectile/beam/phaser/light, modifystate="carbinestun", charge_cost = 30), // Reduced cost
+		list(mode_name="burst", burst=3, fire_delay=10, move_delay=4, burst_accuracy=list(0,0,0), dispersion=list(0.0, 0.2, 0.5), projectile_type=/obj/item/projectile/beam/phaser/light, charge_cost = 90), // Added this
 	)
 
 /obj/item/gun/energy/locked/frontier/carbine/update_icon()
@@ -214,12 +214,12 @@
 	phase_power = 15
 
 	w_class = ITEMSIZE_SMALL
-	charge_cost = 200 //Chompedit Reduced cost
+	charge_cost = 200 // Reduced cost
 	modifystate = "holdoutkill"
 	//CHOMP Edit: Changed beam type to new phaser beam type.
 	firemodes = list(
-		list(mode_name="lethal", fire_delay=20, projectile_type=/obj/item/projectile/beam/phaser, modifystate="holdoutkill", charge_cost = 200), //Chompedit Reduced cost
-		list(mode_name="low-power", fire_delay=10, projectile_type=/obj/item/projectile/beam/phaser/light, modifystate="holdoutstun", charge_cost = 50), //Chompedit Reduced cost
+		list(mode_name="lethal", fire_delay=20, projectile_type=/obj/item/projectile/beam/phaser, modifystate="holdoutkill", charge_cost = 200), // Reduced cost
+		list(mode_name="low-power", fire_delay=10, projectile_type=/obj/item/projectile/beam/phaser/light, modifystate="holdoutstun", charge_cost = 50), // Reduced cost
 		list(mode_name="stun", fire_delay=12, projectile_type=/obj/item/projectile/beam/stun/med, modifystate="holdoutshock", charge_cost = 300),
 	)
 
@@ -244,13 +244,13 @@
 	accuracy = -15 //better than most snipers but still has penalty
 	scoped_accuracy = 40
 	one_handed_penalty = 50 // The weapon itself is heavy, and the long barrel makes it hard to hold steady with just one hand.
-	phase_power = 30 //ChompEdit efficient crank charger
-	projectile_type = /obj/item/projectile/beam/phaser/heavy //CHOMPEdit
+	phase_power = 30 // efficient crank charger
+	projectile_type = /obj/item/projectile/beam/phaser/heavy
 	modifystate = "riflekill"
 	//CHOMP Edit: Changed beam type to new phaser beam type.
 	firemodes = list(
-		list(mode_name="lethal", fire_delay=12, projectile_type=/obj/item/projectile/beam/phaser, modifystate="riflestun", charge_cost = 60), //Chompedit Reduced cost
-		list(mode_name="sniper", fire_delay=35, move_delay=4, projectile_type=/obj/item/projectile/beam/phaser/heavy, modifystate="riflekill", charge_cost = 100), //Chompedit Reduced cost
+		list(mode_name="lethal", fire_delay=12, projectile_type=/obj/item/projectile/beam/phaser, modifystate="riflestun", charge_cost = 60), // Reduced cost
+		list(mode_name="sniper", fire_delay=35, move_delay=4, projectile_type=/obj/item/projectile/beam/phaser/heavy, modifystate="riflekill", charge_cost = 100), // Reduced cost
 	)
 
 /obj/item/gun/energy/locked/frontier/rifle/ui_action_click()
@@ -286,7 +286,7 @@
 	phase_power = 20
 
 	w_class = ITEMSIZE_SMALL
-	charge_cost = 200 //Chompedit Reduced cost
+	charge_cost = 200 // Reduced cost
 	modifystate = "handbowkill"
 	firemodes = list(
 		list(mode_name="lethal", fire_delay=12, projectile_type=/obj/item/projectile/energy/phase/bolt/heavy, modifystate="handbowkill", charge_cost = 200), //CHOMP Edit

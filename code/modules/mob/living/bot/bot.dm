@@ -43,7 +43,7 @@
 	var/max_frustration = 0
 	can_pain_emote = FALSE // Sanity/safety, if bots ever get emotes later, undo this
 
-	can_pain_emote = FALSE // CHOMPEdit: Sanity/safety, if bots ever get emotes later, undo this
+	can_pain_emote = FALSE // Sanity/safety, if bots ever get emotes later, undo this
 	allow_mind_transfer = TRUE
 
 /mob/living/bot/Initialize(mapload)
@@ -205,7 +205,6 @@
 	if(ignore_list.len)
 		for(var/atom/A in ignore_list)
 			if(!A || !A.loc || prob(1))
-			//CHOMPEdit Begin
 				if(A in ignore_past)
 					if(prob(10/ignore_past[A]) || !A || !A.loc)
 						ignore_past[A]++
@@ -213,7 +212,6 @@
 				else
 					ignore_past[A] = 1
 					ignore_list -= A
-			//CHOMPEdit End
 	handleRegular()
 
 	var/panic_speed_mod = 0
@@ -304,7 +302,7 @@
 		if(makeStep(target_path))
 			frustration = 0
 		else if(max_frustration)
-			frustration++ //CHOMPEdit
+			frustration++
 	return
 
 
@@ -332,18 +330,16 @@
 	return 1
 
 /mob/living/bot/proc/handlePatrol()
-	//CHOMPEdit Begin
 	if(makeStep(patrol_path))
 		frustration = 0
 	else if(max_frustration)
 		frustration++
-	//CHOMPEdit End
 	return
 
 /mob/living/bot/proc/startPatrol()
 	var/turf/T = getPatrolTurf()
 	if(T)
-		target_path = SSpathfinder.default_bot_pathfinding(src, T, 1) //CHOMPEdit
+		target_path = SSpathfinder.default_bot_pathfinding(src, T, 1)
 		if(!patrol_path)
 			patrol_path = list()
 		obstacle = null
@@ -375,14 +371,14 @@
 	return
 
 /mob/living/bot/proc/calcTargetPath()
-	target_path = SSpathfinder.default_bot_pathfinding(src, get_turf(target), 0) //CHOMPEdit
+	target_path = SSpathfinder.default_bot_pathfinding(src, get_turf(target), 0)
 	if(!target_path)
 		if(target && target.loc)
 			ignore_list |= target
 		resetTarget()
 		obstacle = null
-	else if(target in ignore_past)	//CHOMPEdit
-		ignore_past.Remove(target)	//CHOMPEdit
+	else if(target in ignore_past)
+		ignore_past.Remove(target)
 	return
 
 /mob/living/bot/proc/makeStep(list/path)
@@ -398,8 +394,8 @@
 /mob/living/bot/proc/resetTarget()
 	target = null
 	target_path = list()
-	//CHOMPEdit frustration = 0
-	//CHOMPEdit obstacle = null
+	// frustration = 0
+	// obstacle = null
 
 /mob/living/bot/proc/turn_on()
 	if(stat)

@@ -119,7 +119,7 @@
 				to_chat(src, span_warning("Something solid above stops you from passing."))
 				return 0
 
-			else if(isliving(src)) //VOREStation Edit Start. Are they a mob, and are they currently flying??
+			else if(isliving(src)) // . Are they a mob, and are they currently flying??
 				var/mob/living/H = src
 				if(H.flying)
 					if(H.incapacitated(INCAPACITATION_ALL))
@@ -136,7 +136,7 @@
 						return 0
 				else
 					to_chat(src, span_warning("Gravity stops you from moving upward."))
-					return 0 //VOREStation Edit End.
+					return 0 // .
 
 			else
 				to_chat(src, span_warning("Gravity stops you from moving upward."))
@@ -192,7 +192,7 @@
 	return 0
 
 /mob/living/zMove(direction)
-	// DQEdit — ZAS zpipes and ventcrawling deleted with the LINDA migration.
+	// ZAS zpipes and ventcrawling deleted with the LINDA migration.
 	// LINDA's vent equivalents (vendored under code/atmospherics/
 	// machinery/) need their own multiz traversal hook wired in.
 	return ..()
@@ -225,8 +225,8 @@
 	if(dq_get_hovering(src) || is_incorporeal())
 		return TRUE
 
-	if(flying) //VOREStation Edit. Allows movement up/down with wings.
-		return TRUE //VOREStation Edit
+	if(flying) // . Allows movement up/down with wings.
+		return TRUE
 
 	if(Process_Spacemove())
 		return TRUE
@@ -303,9 +303,9 @@
 
 	if(throwing)
 		return
-	//VOREStation Edit Start. Flight on mobs.
+	// . Flight on mobs.
 	if(isliving(src))
-		var/mob/living/L = src //VOREStation Edit Start. Flight on mobs.
+		var/mob/living/L = src // . Flight on mobs.
 		if(L.flying) //Some other checks are done in the wings_toggle proc
 			if(L.nutrition > 0.5)
 				L.adjust_nutrition(-0.5) //You use up -0.5 nutrition per TILE and tick of flying above open spaces. If people wanna flap their wings in the hallways, shouldn't penalize them for it.
@@ -326,7 +326,6 @@
 				return
 		if(LAZYLEN(L.grabbed_by)) //If you're grabbed (presumably by someone flying) let's not have you fall. This also allows people to grab onto you while you jump over a railing to prevent you from falling!
 			return
-	//VOREStation Edit End
 
 	if(can_fall() && can_fall_to(below))
 		// We spawn here to let the current move operation complete before we start falling. fall() is normally called from
@@ -372,7 +371,7 @@
 		return FALSE
 
 	var/turf/below = GetBelow(src)
-	// DQEdit — zpipe type deleted; only check disposal pipes for now.
+	// zpipe type deleted; only check disposal pipes for now.
 	if(locate(/obj/structure/disposalpipe/up) in below)
 		return FALSE
 
@@ -403,7 +402,7 @@
 
 // Check if this atom prevents things standing on it from falling. Return TRUE to allow the fall.
 /obj/proc/CanFallThru(atom/movable/mover as mob|obj, turf/target as turf)
-	if(!isturf(mover.loc)) // VORESTATION EDIT. We clearly didn't have enough backup checks.
+	if(!isturf(mover.loc)) // EDIT. We clearly didn't have enough backup checks.
 		return FALSE //If this ain't working Ima be pissed.
 	return TRUE
 
@@ -602,7 +601,7 @@
 			if(istype(hit_turf))
 				hit_turf.break_tile()
 //Using /atom/movable instead of /obj/item because I'm not sure what all humans can pick up or wear
-// DQEdit — dq_get_parachute(src), dq_get_hovering(src), dq_get_softfall(src), dq_get_parachuting(src) moved to /datum/component/movable_state
+// dq_get_parachute(src), dq_get_hovering(src), dq_get_softfall(src), dq_get_parachuting(src) moved to /datum/component/movable_state
 
 /atom/movable/proc/isParachute()
 	return dq_get_parachute(src)

@@ -75,10 +75,8 @@ GLOBAL_DATUM_INIT(security_announcement_down, /datum/announcement/priority/secur
 		for(var/obj/machinery/status_display/FA in GLOB.machines)
 			if(FA.z in using_map.contact_levels)
 				FA.on_alert_changed(newlevel)
-		//VOREStation Add
 		for(var/obj/machinery/holoposter/HP as anything in GLOB.holoposters)
 			HP.update_icon()
-		//VOREStation Add End
 
 		if(level >= SEC_LEVEL_RED)
 			SSatc.reroute_traffic(yes = 1) // Tell them fuck off we're busy.
@@ -86,9 +84,9 @@ GLOBAL_DATUM_INIT(security_announcement_down, /datum/announcement/priority/secur
 			SSatc.reroute_traffic(yes = 0)
 
 		spawn()
-			//SSnightshift.check_nightshift(TRUE) //CHOMPedit: disabling this for now as we do not use the nightshift currently.
+			// SSnightshift.check_nightshift(TRUE) // disabling this for now as we do not use the nightshift currently.
 
-		admin_chat_message(message = "Security level is now: [uppertext(get_security_level())]", color = "#CC2222") //VOREStation Add
+		admin_chat_message(message = "Security level is now: [uppertext(get_security_level())]", color = "#CC2222")
 
 /proc/get_security_level()
 	switch(GLOB.security_level)

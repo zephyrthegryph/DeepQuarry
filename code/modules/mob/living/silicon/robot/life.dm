@@ -77,7 +77,7 @@
 		Paralyse(3)
 		AdjustSleeping(-1)
 
-	//if(resting) // VOREStation edit. Our borgos would rather not.
+	// if(resting) // . Our borgos would rather not.
 	//	Weaken(5)
 
 	if(health < (-getMaxHealth()) && stat != 2) //die only once
@@ -88,7 +88,7 @@
 		if (src.weakened > 0)	// Do not fullstun on weaken
 			AdjustWeakened(-1)
 		*/// CHOMPRemove End
-		if (paralysis || stunned || weakened || !has_power) //Stunned etc. // CHOMPEdit all states
+		if (paralysis || stunned || weakened || !has_power) // Stunned etc. // all states
 			set_stat(UNCONSCIOUS)
 			if (stunned > 0)
 				AdjustStunned(-1)
@@ -122,8 +122,8 @@
 		ear_damage -= 0.05
 		ear_damage = max(ear_damage, 0)
 
-	if(ear_deaf <= 0) // CHOMPStation Add: Ear Ringing/Deafness - Not sure if we need this, but, safety.
-		deaf_loop.stop() // CHOMPStation Add: Ear Ringing/Deafness - Not sure if we need this, but, safety.
+	if(ear_deaf <= 0) // Ear Ringing/Deafness - Not sure if we need this, but, safety.
+		deaf_loop.stop() // Ear Ringing/Deafness - Not sure if we need this, but, safety.
 
 	density = !( lying )
 

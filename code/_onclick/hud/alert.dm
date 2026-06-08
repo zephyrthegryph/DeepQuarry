@@ -134,13 +134,12 @@ The box in your backpack has an oxygen tank and breath mask in it."
 	desc = "You're not getting enough phoron. Find some good air before you pass out!"
 	icon_state = "not_enough_tox"
 
-// CHOMPEdit Start Oxygen is toxic to phoron breathers and nitrogen breathers. I'm tired of seeing "You're choking on phoron!" when it's not phoron.
+// Oxygen is toxic to phoron breathers and nitrogen breathers. I'm tired of seeing "You're choking on phoron!" when it's not phoron.
 /atom/movable/screen/alert/tox_in_air
 	name = "Choking (Toxic)"
 	desc = "There's a dangerous toxin in the air and you're breathing it in. Find some fresh air. \
 Your emergency supply kit should have an air tank and gas mask in it!"
 	icon_state = "too_much_tox"
-// CHOMPEdit End
 
 /atom/movable/screen/alert/not_enough_fuel
 	name = "Choking (No Volatile fuel)"
@@ -512,7 +511,7 @@ so as to remain in compliance with the most up-to-date laws."
 	var/obj/master = master_ref?.resolve()
 	if(master)
 		return usr.client.Click(master, location, control, params)
-	..() // VOREStation Edit: Pass through to click_vr
+	..() // Pass through to click_vr
 
 /atom/movable/screen/alert/Destroy()
 	..()

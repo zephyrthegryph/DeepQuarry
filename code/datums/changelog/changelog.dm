@@ -40,7 +40,7 @@
 /datum/changelog/proc/get_dates()
 	. = list()
 	var/regex/yml_regex = regex(@"\.yml", "g")
-	for(var/archive_file in flist("html/changelogs_ch/archive/")) // CHOMPEdit
+	for(var/archive_file in flist("html/changelogs_ch/archive/"))
 		. += replacetext(archive_file, yml_regex, "")
 
 /datum/changelog/proc/get_testmerge_data()

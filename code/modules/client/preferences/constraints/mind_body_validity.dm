@@ -1,4 +1,4 @@
-// DQAdd — Mind/Body refit constraint.
+// Mind/Body refit constraint.
 //
 // Fires on age change and on any direct perk-list change. With a single shared
 // pool per side, the refit is simple: drop any entry the entity rule no longer

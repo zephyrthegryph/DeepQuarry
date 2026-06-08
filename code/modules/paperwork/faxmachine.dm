@@ -1,5 +1,5 @@
 GLOBAL_LIST_EMPTY_TYPED(allfaxes, /obj/machinery/photocopier/faxmachine)
-GLOBAL_LIST_INIT(admin_departments, list("[using_map.boss_name]", "Solar Central Government", "Central Command Job Boards", "Supply")) //CHOMPEdit
+GLOBAL_LIST_INIT(admin_departments, list("[using_map.boss_name]", "Solar Central Government", "Central Command Job Boards", "Supply"))
 GLOBAL_LIST_EMPTY(alldepartments)
 GLOBAL_VAR(last_fax_role_request)
 
@@ -36,11 +36,11 @@ GLOBAL_LIST_EMPTY(adminfaxes)	//cache for faxes that have been sent to admins
 		GLOB.alldepartments |= department
 
 /obj/machinery/photocopier/faxmachine/attack_hand(mob/user)
-	if(issilicon(user)) //CHOMPEdit Start this allows borgs to use fax machines, meant for the Unity and Clerical modules.
+	if(issilicon(user)) // this allows borgs to use fax machines, meant for the Unity and Clerical modules.
 		authenticated = user.name
 		tgui_interact(user)
 	else
-		tgui_interact(user) //CHOMPEdit End
+		tgui_interact(user)
 
 /obj/machinery/photocopier/faxmachine/verb/remove_card()
 	set name = "Remove ID card"
@@ -388,8 +388,8 @@ Extracted to its own procedure for easier logic handling with paper bundles.
 	// Sadly, we can't use a switch statement here due to not using a constant value for the current map's centcom name.
 	if(destination == using_map.boss_name)
 		message_admins(sender, "[uppertext(using_map.boss_short)] FAX", rcvdcopy, "CentComFaxReply", "#006100")
-	else if(destination == "Solar Central Government") // Vorestation Edit //CHOMPedit
-		message_admins(sender, "Solar Central Government FAX", rcvdcopy, "CentComFaxReply", "#1F66A0") // Vorestation Edit //CHOMPedit
+	else if(destination == "Solar Central Government") // Vorestation Edit //
+		message_admins(sender, "Solar Central Government FAX", rcvdcopy, "CentComFaxReply", "#1F66A0") // Vorestation Edit //
 	else if(destination == "Supply")
 		message_admins(sender, "[uppertext(using_map.boss_short)] SUPPLY FAX", rcvdcopy, "CentComFaxReply", "#5F4519")
 	else if(destination == "Talon Headquarters")
@@ -428,7 +428,7 @@ Extracted to its own procedure for easier logic handling with paper bundles.
 		if(check_rights_for(C, (R_ADMIN|R_MOD|R_EVENT)))
 			to_chat(C,msg)
 			C << 'sound/machines/printer.ogg'
-	sender.client << 'sound/machines/printer.ogg' //CHOMPEdit - The pain must be felt
+	sender.client << 'sound/machines/printer.ogg' // The pain must be felt
 
 	var/faxid = export_fax(sent)
 	message_chat_admins(sender, faxname, sent, faxid, font_colour) //Sends to admin chat
@@ -565,7 +565,7 @@ Extracted to its own procedure for easier logic handling with paper bundles.
 /proc/get_discord_role_id_from_department(department)
 	switch(department)
 		if("Command")
-			if(CONFIG_GET(string/role_request_id_command)) // CHOMPEdit
+			if(CONFIG_GET(string/role_request_id_command))
 				return CONFIG_GET(string/role_request_id_command)
 
 		if("Security")

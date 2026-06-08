@@ -154,7 +154,7 @@
 	max_components = 6
 	desc = "A bulky modular pistol frame. This only only accepts six parts."
 	burst_delay = 2
-	move_delay = 0 // CHOMPEdit: Pistols have move_delay of 0
+	move_delay = 0 // Pistols have move_delay of 0
 
 /obj/item/gun/energy/modular/carbine
 	name = "modular carbine"

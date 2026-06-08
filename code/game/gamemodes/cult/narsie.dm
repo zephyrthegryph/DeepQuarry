@@ -43,7 +43,7 @@ GLOBAL_VAR_INIT(narsie_cometh, 0)
 	. = ..()
 	if(announce)
 		to_chat(world, span_world(span_narsie(span_red("[uppertext(name)] HAS RISEN"))))
-		world << sound('sound/effects/weather/old_wind/wind_5_1.ogg') // CHOMPEdit - For some reason different wind sound path
+		world << sound('sound/effects/weather/old_wind/wind_5_1.ogg') // For some reason different wind sound path
 
 	narsie_spawn_animation()
 

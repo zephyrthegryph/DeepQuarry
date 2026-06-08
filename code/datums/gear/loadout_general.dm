@@ -83,7 +83,7 @@
 	var/list/blacklisted_types = list()
 	// look if theres a better way to do this im all ears
 	blacklisted_types += subtypesof(/obj/item/toy/plushie/therapy)
-	blacklisted_types += /obj/item/toy/plushie/borgplushie/drake //VOREStation addition
+	blacklisted_types += /obj/item/toy/plushie/borgplushie/drake // addition
 	blacklisted_types += /obj/item/toy/plushie/dragon/gold_east
 	blacklisted_types += /obj/item/toy/plushie/customizable
 	for(var/obj/item/toy/plushie/plushie_type as anything in subtypesof(/obj/item/toy/plushie) - blacklisted_types)
@@ -221,7 +221,7 @@
 	coffeemugs["tall black coffee mug"] = /obj/item/reagent_containers/food/drinks/glass2/coffeemug/tall/black
 	coffeemugs["tall metal coffee mug"] = /obj/item/reagent_containers/food/drinks/glass2/coffeemug/tall/metal
 	coffeemugs["tall rainbow coffee mug"] = /obj/item/reagent_containers/food/drinks/glass2/coffeemug/tall/rainbow
-	//coffeemugs["Talon coffee mug"] = /obj/item/reagent_containers/food/drinks/glass2/coffeemug/talon //CHOMPedit
+	// coffeemugs["Talon coffee mug"] = /obj/item/reagent_containers/food/drinks/glass2/coffeemug/talon //
 	gear_tweaks += new /datum/gear_tweak/path(coffeemugs)
 	gear_tweaks += new /datum/gear_tweak/reagents(lunchables_drink_reagents())
 
@@ -283,7 +283,7 @@
 	toytype["Big Red Button"] = /obj/item/toy/redbutton
 	toytype["Garden gnome"] = /obj/item/toy/gnome
 	toytype["Toy AI"] = /obj/item/toy/AI
-	toytype["Hand buzzer"] = /obj/item/clothing/gloves/ring/buzzer/toy // CHOMPAdd
+	toytype["Hand buzzer"] = /obj/item/clothing/gloves/ring/buzzer/toy
 	toytype["Toy nuke"] = /obj/item/toy/nuke
 	toytype["Toy gibber"] = /obj/item/toy/minigibber
 	toytype["Toy xeno"] = /obj/item/toy/toy_xeno

@@ -86,7 +86,7 @@
 		/obj/item/rig_module/device/drill,
 		/obj/item/rig_module/device/orescanner,
 		/obj/item/rig_module/vision/material,
-		/obj/item/rig_module/maneuvering_jets) //VOREStation Edit - Added maneuvering jets
+		/obj/item/rig_module/maneuvering_jets) // Added maneuvering jets
 
 //Engineering suit
 /obj/item/rig/eva
@@ -124,12 +124,12 @@
 		/obj/item/rig_module/vision/meson
 		)
 
-//Chief Engineer's rig. This is sort of a halfway point between the old hardsuits (voidsuits) and the rig class. //CHOMPEDIT: if its a mechanized suit its a hardsuit
+// Chief Engineer's rig. This is sort of a halfway point between the old hardsuits (voidsuits) and the rig class. // if its a mechanized suit its a hardsuit
 /obj/item/rig/ce
 
-	name = "advanced hardsuit control module" //CHOMPEDIT: Hardsuit
-	suit_type = "advanced hardsuit" //CHOMPEDIT: Hardsuit
-	desc = "An advanced hardsuit that protects against hazardous, low pressure environments. Shines with a high polish."//CHOMPEDIT: Hardsuit
+	name = "advanced hardsuit control module" // Hardsuit
+	suit_type = "advanced hardsuit" // Hardsuit
+	desc = "An advanced hardsuit that protects against hazardous, low pressure environments. Shines with a high polish." // Hardsuit
 	icon_state = "ce_rig"
 	armor = list(melee = 40, bullet = 10, laser = 30,energy = 25, bomb = 40, bio = 100, rad = 100)
 	slowdown = 0
@@ -141,7 +141,7 @@
 
 	helm_type = /obj/item/clothing/head/helmet/space/rig/ce
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/ce
-	boot_type = /obj/item/clothing/shoes/magboots/rig/ce //VOREStation Add
+	boot_type = /obj/item/clothing/shoes/magboots/rig/ce
 
 	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_ENGINEERING, POCKET_CE, POCKET_BAYSUIT)
 

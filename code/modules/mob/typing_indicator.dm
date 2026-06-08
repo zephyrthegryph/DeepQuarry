@@ -1,19 +1,19 @@
 /proc/generate_speech_bubble(bubble_loc, speech_state, set_layer = FLOAT_LAYER)
-	var/image/I = image('icons/mob/talk_vr.dmi', bubble_loc, speech_state, set_layer)  //VOREStation Edit - talk_vr.dmi instead of talk.dmi for right-side icons
-	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)			//VOREStation Edit
-	/*			//VOREStation Removal Start
+	var/image/I = image('icons/mob/talk_vr.dmi', bubble_loc, speech_state, set_layer) // talk_vr.dmi instead of talk.dmi for right-side icons
+	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
+	/* // Removal Start
 	if(istype(bubble_loc, /atom/movable))
 		var/atom/movable/AM = bubble_loc
 		var/x_scale = AM.get_icon_scale_x()
 		if(abs(x_scale) < 2) // reset transform on bubbles, except for the Very Large
 			I.pixel_z = (AM.icon_expected_height * (x_scale-1))
 			I.appearance_flags |= RESET_TRANSFORM
-	*/			//VOREStation Removal Start
+	*/ // Removal Start
 	return I
 
 /mob/verb/say_wrapper()
 	set name = "Say verb"
-	set category = "IC.TGUI Say" //CHOMPEdit
+	set category = "IC.TGUI Say"
 
 	if(client?.prefs?.read_preference(/datum/preference/toggle/tgui_say))
 		winset(src, null, "command=[client.tgui_say_create_open_command(SAY_CHANNEL)]")
@@ -24,7 +24,7 @@
 
 /mob/verb/me_wrapper()
 	set name = "Me verb"
-	set category = "IC.TGUI Say" //CHOMPEdit
+	set category = "IC.TGUI Say"
 
 	if(client?.prefs?.read_preference(/datum/preference/toggle/tgui_say) && client?.prefs?.read_preference(/datum/preference/toggle/tgui_say_emotes))
 		winset(src, null, "command=[client.tgui_say_create_open_command(ME_CHANNEL)]")
@@ -35,7 +35,7 @@
 
 /mob/verb/whisper_wrapper()
 	set name = "Whisper verb"
-	set category = "IC.TGUI Say" //CHOMPEdit
+	set category = "IC.TGUI Say"
 
 	if(client?.prefs?.read_preference(/datum/preference/toggle/tgui_say))
 		winset(src, null, "command=[client.tgui_say_create_open_command(WHIS_CHANNEL)]")
@@ -46,7 +46,7 @@
 
 /mob/verb/subtle_wrapper()
 	set name = "Subtle verb"
-	set category = "IC.TGUI Say" //CHOMPEdit
+	set category = "IC.TGUI Say"
 	set desc = "Emote to nearby people (and your pred/prey)"
 
 	if(client?.prefs?.read_preference(/datum/preference/toggle/tgui_say) && client?.prefs?.read_preference(/datum/preference/toggle/tgui_say_emotes))

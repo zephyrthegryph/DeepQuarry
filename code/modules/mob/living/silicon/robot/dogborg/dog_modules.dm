@@ -31,7 +31,7 @@
 	else
 		to_chat(user, span_warning("Pressure: [round(pressure,0.1)] kPa"))
 	if(total_moles)
-		// DQEdit — was XGM env.gas[g] iteration; under LINDA, env.gases keys are
+		// was XGM env.gas[g] iteration; under LINDA, env.gases keys are
 		// /datum/gas type paths and the moles live at gases[g][MOLES].
 		for(var/datum/gas/g as anything in environment.gases)
 			var/moles = environment.gases[g][MOLES]
@@ -98,8 +98,8 @@
 /obj/item/reagent_containers/borghypo/hound
 	name = "MediHound hypospray"
 	desc = "An advanced chemical synthesizer and injection system utilizing carrier's reserves, designed for heavy-duty medical equipment."
-//	charge_cost = 10 // CHOMPedit: Water requirement removal.
-	reagent_ids = list(REAGENT_ID_INAPROVALINE, REAGENT_ID_TRICORDRAZINE, REAGENT_ID_DEXALIN, REAGENT_ID_BICARIDINE, REAGENT_ID_KELOTANE, REAGENT_ID_ANTITOXIN, REAGENT_ID_SPACEACILLIN, REAGENT_ID_TRAMADOL, REAGENT_ID_ADRANOL) // CHOMPedit: More chems for Medihound
+// charge_cost = 10 // Water requirement removal.
+	reagent_ids = list(REAGENT_ID_INAPROVALINE, REAGENT_ID_TRICORDRAZINE, REAGENT_ID_DEXALIN, REAGENT_ID_BICARIDINE, REAGENT_ID_KELOTANE, REAGENT_ID_ANTITOXIN, REAGENT_ID_SPACEACILLIN, REAGENT_ID_TRAMADOL, REAGENT_ID_ADRANOL) // More chems for Medihound
 	var/datum/matter_synth/water = null
 
 /* CHOMPedit start: Water requirement removal. *
@@ -136,7 +136,7 @@
 	icon_state = "synthtongue"
 	hitsound = 'sound/effects/attackblob.ogg'
 	var/emagged = 0
-	var/datum/matter_synth/water = null //CHOMPAdd readds water
+	var/datum/matter_synth/water = null // readds water
 	var/busy = 0 	//prevents abuse and runtimes
 	flags = NOBLUDGEON //No more attack messages
 
@@ -169,7 +169,6 @@
 		return
 	if(user.client && (target in user.client.screen))
 		to_chat(user, span_warning("You need to take \the [target.name] off before cleaning it!"))
-	//CHOMPADD Start
 	if(istype(target, /obj/structure/sink) || istype(target, /obj/structure/toilet)) //Dog vibes.
 		if (water.energy == water.max_energy && istype(target, /obj/structure/sink)) return
 		if (water.energy == water.max_energy && istype(target, /obj/structure/toilet))
@@ -183,9 +182,7 @@
 		busy = 0
 	else if(water.energy < 5)
 		to_chat(user, span_notice("Your mouth feels dry. You should drink up some water ."))
-	//CHOMPADD End
 		return
-	//CHOMPADD Start
 	else if(istype(target,/obj/effect/decal/cleanable))
 		user.visible_message(span_filter_notice("[user] begins to lick off \the [target.name]."), span_notice("You begin to lick off \the [target.name]..."))
 		busy = 1
@@ -196,7 +193,6 @@
 			var/mob/living/silicon/robot/R = user
 			R.cell.charge += 50
 		busy = 0
-	//CHOMPADD End
 	else if(istype(target,/obj/item))
 		if(istype(target,/obj/item/trash))
 			user.visible_message(span_filter_notice("[user] nibbles away at \the [target.name]."), span_notice("You begin to nibble away at \the [target.name]..."))
@@ -207,19 +203,19 @@
 				qdel(target)
 				var/mob/living/silicon/robot/R = user
 				R.cell.charge += 250
-				water.use_charge(5)  //CHOMPAdd
-			busy = 0 //CHOMPAdd prevents abuse
+				water.use_charge(5)
+			busy = 0 // prevents abuse
 			return
 		if(istype(target,/obj/item/reagent_containers/food))
 			user.visible_message("[user] nibbles away at \the [target.name].", span_notice("You begin to nibble away at \the [target.name]..."))
-			busy = 1 //CHOMPAdd prevents abuse
+			busy = 1 // prevents abuse
 			if(do_after (user, 5 SECONDS, target))
 				user.visible_message("[user] finishes eating \the [target.name].", span_notice("You finish eating \the [target.name]."))
 				user << span_notice("You finish off \the [target.name].")
 				del(target)
 				var/mob/living/silicon/robot/R = user
 				R.cell.charge = R.cell.charge + 250
-			busy = 0 //CHOMPAdd prevents abuse
+			busy = 0 // prevents abuse
 			return
 		if(istype(target,/obj/item/cell))
 			user.visible_message(span_filter_notice("[user] begins cramming \the [target.name] down its throat."), span_notice("You begin cramming \the [target.name] down your throat..."))
@@ -230,11 +226,10 @@
 				var/mob/living/silicon/robot/R = user
 				var/obj/item/cell/C = target
 				R.cell.charge += C.charge / 3
-				water.use_charge(5) //CHOMPAdd
+				water.use_charge(5)
 				qdel(target)
-			busy = 0 //CHOMPAdd prevents abuse
+			busy = 0 // prevents abuse
 			return
-		//CHOMPAdd Start
 		user.visible_message(span_filter_notice("[user] begins to lick \the [target.name] clean..."), span_notice("You begin to lick \the [target.name] clean..."))
 		busy = 1
 		if(do_after(user, 5 SECONDS, target))
@@ -244,7 +239,6 @@
 			qdel(C)
 			target.wash(CLEAN_WASH)
 		busy = 0
-		//CHOMPADD End
 	else if(ishuman(target))
 		if(src.emagged)
 			var/mob/living/silicon/robot/R = user
@@ -261,11 +255,10 @@
 		else
 			user.visible_message(span_notice("\The [user] affectionately licks all over \the [target]'s face!"), span_notice("You affectionately lick all over \the [target]'s face!"))
 			playsound(src, 'sound/effects/attackblob.ogg', 50, 1)
-			water.use_charge(5) //CHOMPAdd
+			water.use_charge(5)
 			var/mob/living/carbon/human/H = target
 			if(H.species.lightweight == 1)
 				H.Weaken(3)
-	//CHOMPAdd Start
 	else
 		user.visible_message(span_filter_notice("[user] begins to lick \the [target.name] clean..."), span_notice("You begin to lick \the [target.name] clean..."))
 		busy = 1
@@ -279,7 +272,6 @@
 				var/turf/simulated/T = target
 				T.dirt = 0
 	busy = 0
-	//CHOMPADD End
 	return
 
 /obj/item/pupscrubber
@@ -359,7 +351,7 @@
 	if(!proximity)
 		return
 
-	// DQEdit — /obj/machinery/clamp was a ZAS pipe-clamp tool (clamp.dm in atmoalter),
+	// /obj/machinery/clamp was a ZAS pipe-clamp tool (clamp.dm in atmoalter),
 	// deleted with ZAS atmos machinery. Stasis-clamp tool reduced to a polite
 	// no-op until LINDA's atmos machinery is wired in.
 	if (istype(A, /obj/machinery/atmospherics/pipe))
@@ -439,15 +431,14 @@
 	pixel_y = pixel_y + 10
 
 	src.visible_message(span_danger("\The [src] leaps at [T]!"))
-	/* //ChompEDIT START - disable for now
+	/* // disable for now
 	if(bluespace)
 		src.forceMove(get_turf(T))
 		T.hitby(src)
 	else
 		src.throw_at(get_step(get_turf(T),get_turf(src)), 4, 1, src)
 	*/
-	src.throw_at(get_step(get_turf(T),get_turf(src)), 4, 1, src) //ChompEDIT - no bluespace pounce
-	//ChompEDIT END
+	src.throw_at(get_step(get_turf(T),get_turf(src)), 4, 1, src) // no bluespace pounce
 	playsound(src, 'sound/mecha/mechstep2.ogg', 50, 1)
 	pixel_y = default_pixel_y
 
@@ -463,7 +454,7 @@
 	if(ishuman(T))
 		var/mob/living/carbon/human/H = T
 		if(H.species.lightweight == 1)
-			H.Stun(3) // CHOMPEdit - Crawling made this useless. Changing to stun instead.
+			H.Stun(3) // Crawling made this useless. Changing to stun instead.
 			H.drop_both_hands() //Stuns no longer drop items, so were forcing it >:3
 			return
 
@@ -471,7 +462,7 @@
 	T.apply_damage(20, HALLOSS, null, armor_block)
 	if(prob(75)) //75% chance to stun for 5 seconds, really only going to be 4 bcus click cooldown+animation.
 		T.apply_effect(5, STUN, armor_block)
-		T.drop_both_hands() //CHOMPEdit Stuns no longer drop items
+		T.drop_both_hands() // Stuns no longer drop items
 
 /obj/item/reagent_containers/glass/beaker/large/borg
 	var/mob/living/silicon/robot/R

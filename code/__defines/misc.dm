@@ -122,9 +122,9 @@
 #define AREA_ALWAYS_HAS_GRAVITY		0x8000	// If an area should always have gravity, even during events that would otherwise remove it.
 // The 0x800000 is blocked by INITIALIZED, do NOT use it!
 
-#define PHASE_SHIELDED				0x100000 // A less rough way to prevent phase shifting without blocking access //VOREStation Note: Not implemented on VS. Used downstream.
-#define AREA_LIMIT_DARK_RESPITE		0x200000 // Shadekin will die normally in those areas //VOREStation Note: Not implemented on VS. Used downstream.
-#define AREA_ALLOW_CLOCKOUT			0x400000 // The PDA timeclock app can only be used in these areas //VOREStation Note: Not implemented on VS. Used downstream.
+#define PHASE_SHIELDED				0x100000 // A less rough way to prevent phase shifting without blocking access // Note: Not implemented on VS. Used downstream.
+#define AREA_LIMIT_DARK_RESPITE		0x200000 // Shadekin will die normally in those areas // Note: Not implemented on VS. Used downstream.
+#define AREA_ALLOW_CLOCKOUT			0x400000 // The PDA timeclock app can only be used in these areas // Note: Not implemented on VS. Used downstream.
 
 // OnTopic return values
 #define TOPIC_NOACTION 0
@@ -346,8 +346,8 @@ GLOBAL_LIST_EMPTY(##LIST_NAME);\
 #define JOB_SILICON			0x6 // 2|4, probably don't set jobs to this, but good for checking
 
 //Job defines
-#define JOB_OUTSIDER	"Outsider" //VOREStation Note: Not implemented on VS. Used downstream.
-#define JOB_ANOMALY 	"Anomaly" //VOREStation Note: Not implemented on VS. Used downstream.
+#define JOB_OUTSIDER	"Outsider" // Note: Not implemented on VS. Used downstream.
+#define JOB_ANOMALY 	"Anomaly" // Note: Not implemented on VS. Used downstream.
 #define JOB_VR			"VR Avatar"
 
 #define DEFAULT_OVERMAP_RANGE 0 // Makes general computers and devices be able to connect to other overmap z-levels on the same tile.
@@ -529,8 +529,8 @@ GLOBAL_LIST_INIT(all_volume_channels, list(
 #define ANNOUNCER_NAME "Facility PA"
 
 //For custom species
-#define STARTING_SPECIES_POINTS 1 //CHOMPEdit
-#define MAX_SPECIES_TRAITS 6	//CHOMPEdit - Cap positive traits at 6, given negatives are unlimited.
+#define STARTING_SPECIES_POINTS 1
+#define MAX_SPECIES_TRAITS 6 // Cap positive traits at 6, given negatives are unlimited.
 
 // Xenochimera thing mostly
 #define REVIVING_NOW		-1

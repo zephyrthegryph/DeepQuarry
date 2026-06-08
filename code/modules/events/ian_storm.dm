@@ -1,4 +1,4 @@
-/datum/event/ianstorm //VORESTATION AI TEMPORARY REMOVAL
+/datum/event/ianstorm // AI TEMPORARY REMOVAL
 	announceWhen = 1
 	startWhen = 2
 	endWhen = 3

@@ -1,4 +1,4 @@
-// DQEdit — LINDA atmospherics rewrite (commit 6fdac16ef1). gas_mixture var accesses (e.g. mix.total_moles) converted to proc calls (mix.total_moles()) for the LINDA engine API. Bulk rewrite by tools/verdigris/linda_rewrite_chomp_atmos.py.
+// LINDA atmospherics rewrite (commit 6fdac16ef1). gas_mixture var accesses (e.g. mix.total_moles) converted to proc calls (mix.total_moles()) for the LINDA engine API. Bulk rewrite by tools/verdigris/linda_rewrite_chomp_atmos.py.
 // Bracketed at file-header rather than per-hunk because the
 // edits are mechanical and span the whole file; the commit SHA
 // is the source of truth for per-line diff context.
@@ -157,7 +157,7 @@
 	var/new_name = tgui_input_text(user, "Please enter a new name for this vessel. Note that you can only set its name once, so choose wisely.", "Rename Shuttle", visible_name)
 	var/sanitized_name = sanitizeName(new_name, MAX_NAME_LEN, TRUE)
 	if(sanitized_name)
-		//can_rename = FALSE //VOREStation Removal
+		// can_rename = FALSE // Removal
 		to_chat(user, span_notice("You've renamed the vessel to '[sanitized_name]'."))
 		message_admins("[key_name_admin(user)] renamed shuttle '[visible_name]' to '[sanitized_name]'.")
 		visible_name = sanitized_name

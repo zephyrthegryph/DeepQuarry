@@ -4,7 +4,7 @@
 	desc = "Need to expel something? Don't mind having to clean up the mess afterwards? The MPA6 'Sickshot' is the answer to your prayers. \
 	Using a short-range concentrated blast of disruptive sound, the Sickshot will nauseate the target for several seconds. NOTE: Not suitable \
 	for use in vacuum. Usage on animals may cause panic and rage. May cause contraction and release of various 'things' from various 'orifices', even if the target is already dead."
-	//CHOMPedit , changed desc and description_info to make it not sound like a self defense weapon. Because its not, it only does 5 damage and some very minor confusion
+	// , changed desc and description_info to make it not sound like a self defense weapon. Because its not, it only does 5 damage and some very minor confusion
 	description_info = "This gun causes nausea in targets, causing vomiting. It will also cause them to vomit up prey, sometimes. Repeated shots may help in that case."
 	description_fluff = ""
 	description_antag = ""

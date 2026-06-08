@@ -391,10 +391,8 @@
 	radiation_healing = TRUE
 	radiation_nutrition = TRUE
 
-//CHOMPAdd Start
 /datum/component/radiation_effects/radiation_immune
 	show_panel = FALSE
 	glows = FALSE
 	glow_toggle = FALSE
 	radiation_immunity = TRUE
-//CHOMPAdd End

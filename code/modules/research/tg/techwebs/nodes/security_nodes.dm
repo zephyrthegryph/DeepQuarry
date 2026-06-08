@@ -365,7 +365,7 @@
 	research_costs = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_4_POINTS)
 	announce_channels = list(CHANNEL_SECURITY)
 
-/datum/techweb_node/phase_weapons //CHOMPEdit Start - Adds Phase Weaponry
+/datum/techweb_node/phase_weapons // Adds Phase Weaponry
 	id = TECHWEB_NODE_PHASE_WEAPONS
 	display_name = "Advanced phase Weaponry"
 	description = "Advanced weaponry that uses phase technology, allowing weaponry that deals minor damage to higher-functioning entities while dealing more to lower-functioning entities" //I dunno how to explain 'if you shoot a mob it does more damage but if you shoot a player it does less' in IC terms.
@@ -382,7 +382,7 @@
 		"handbow_frontier_phaser",
 	)
 	research_costs = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_3_POINTS) //They mostly work on mobs.
-	announce_channels = list(CHANNEL_SECURITY) //CHOMPEdit End - Adds Phase Weaponry
+	announce_channels = list(CHANNEL_SECURITY) // Adds Phase Weaponry
 
 //CHOMPEnable Start
 /datum/techweb_node/cryogun
@@ -411,7 +411,7 @@
 	research_costs = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_5_POINTS)
 	announce_channels = list(CHANNEL_SECURITY)
 
-/datum/techweb_node/metamorphosis_ray //CHOMPEdit Start
+/datum/techweb_node/metamorphosis_ray
 	id = TECHWEB_NODE_METAMORPHOSIS_RAY
 	display_name = "Metamorposis Ray"
 	description = "A Specialized weapon that allows transforming the target into various simple creatures."
@@ -420,4 +420,4 @@
 		"metamorphosisray",
 	)
 	research_costs = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_5_POINTS)
-	announce_channels = list(CHANNEL_SECURITY) //CHOMPEdit End
+	announce_channels = list(CHANNEL_SECURITY)

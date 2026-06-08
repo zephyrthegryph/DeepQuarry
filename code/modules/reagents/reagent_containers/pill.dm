@@ -88,7 +88,7 @@
 		add_attack_logs(user,target,"Spiked [target.name] with a pill containing [reagentlist()]")
 
 		reagents.trans_to(target, reagents.total_volume)
-		/* for(var/mob/O in viewers(2, user)) // CHOMPEdit - balloon_alert_visible handles this
+		/* for(var/mob/O in viewers(2, user)) // balloon_alert_visible handles this
 			O.show_message(span_warning("[user] puts something in \the [target]."), 1)
 		*/
 		qdel(src)
@@ -342,10 +342,10 @@
 
 /obj/item/reagent_containers/pill/zoom/Initialize(mapload)
 	. = ..()
-	if(prob(50))						//VOREStation edit begin: Zoom pill adjustments
+	if(prob(50)) // begin: Zoom pill adjustments
 		reagents.add_reagent(REAGENT_ID_MOLD, 2)	//Chance to be more dangerous
 	reagents.add_reagent(REAGENT_ID_EXPIREDMEDICINE, 5)
-	reagents.add_reagent(REAGENT_ID_STIMM, 5)	//VOREStation edit end: Zoom pill adjustments
+	reagents.add_reagent(REAGENT_ID_STIMM, 5) // end: Zoom pill adjustments
 	color = reagents.get_color()
 
 /obj/item/reagent_containers/pill/diet

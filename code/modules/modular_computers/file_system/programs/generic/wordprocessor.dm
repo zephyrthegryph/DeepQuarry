@@ -74,7 +74,7 @@
 
 	switch(action)
 		if("PRG_txtrpeview")
-			// DQEdit — structured TGUI AdminReport.
+			// structured TGUI AdminReport.
 			dq_admin_report_html(ui.user, open_file, "[pencode2html(loaded_data)]")
 			return TRUE
 

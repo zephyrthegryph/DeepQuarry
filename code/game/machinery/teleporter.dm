@@ -163,14 +163,14 @@
 			O.show_message(span_warning("Failure: Cannot authenticate locked on coordinates. Please reinstate coordinate matrix."))
 		return
 	if(istype(M, /atom/movable))
-		//VOREStation Addition Start: Prevent taurriding abuse
+		// ition Start: Prevent taurriding abuse
 		if(isliving(M))
 			var/mob/living/L = M
 			if(LAZYLEN(L.buckled_mobs))
 				var/datum/riding/R = L.riding_datum
 				for(var/rider in L.buckled_mobs)
 					R.force_dismount(rider)
-		//VOREStation Addition End: Prevent taurriding abuse
+		// ition End: Prevent taurriding abuse
 		if(prob(5) && !accurate) //oh dear a problem, put em in deep space
 			do_teleport(M, locate(rand((2*TRANSITIONEDGE), world.maxx - (2*TRANSITIONEDGE)), rand((2*TRANSITIONEDGE), world.maxy - (2*TRANSITIONEDGE)), 3), 2)
 		else
@@ -253,7 +253,7 @@
 	visible_message(span_notice("Test firing!"))
 	com.teleport()
 	use_power(5000)
-	flick(src, "controller-c") //VOREStation Add
+	flick(src, "controller-c")
 
 	VARSET_IN(src, active, FALSE, 3 SECONDS)
 

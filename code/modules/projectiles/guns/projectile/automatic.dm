@@ -31,7 +31,7 @@
 	slot_flags = SLOT_BELT
 	magazine_type = null // R&D builds this. Starts unloaded.
 	allowed_magazines = list(/obj/item/ammo_magazine/m9mmAdvanced, /obj/item/ammo_magazine/m9mm)
-	fire_sound = "sound/weapons/gunshot_pathetic.ogg" //CHOMPedit
+	fire_sound = "sound/weapons/gunshot_pathetic.ogg"
 
 	firemodes = list(
 		list(mode_name="semiauto",       burst=1, fire_delay=0.1,    move_delay=null, burst_accuracy=null, dispersion=null),
@@ -111,7 +111,7 @@
 	magazine_type = /obj/item/ammo_magazine/m545
 	allowed_magazines = list(/obj/item/ammo_magazine/m545)
 	projectile_type = /obj/item/projectile/bullet/rifle/a545
-	fire_sound = "sound/weapons/ballistics/a762.ogg" //CHOMPedit
+	fire_sound = "sound/weapons/ballistics/a762.ogg"
 
 	one_handed_penalty = 30
 
@@ -143,7 +143,7 @@
 	load_method = MAGAZINE
 	magazine_type = /obj/item/ammo_magazine/m9mmAdvanced
 	allowed_magazines = list(/obj/item/ammo_magazine/m9mmAdvanced)
-	fire_sound = "sound/weapons/gunshot_pathetic.ogg" //CHOMPedit
+	fire_sound = "sound/weapons/gunshot_pathetic.ogg"
 
 	firemodes = list(
 		list(mode_name="semiauto",       burst=1, fire_delay=0.1,    move_delay=null, burst_accuracy=null, dispersion=null),
@@ -176,8 +176,8 @@
 	magazine_type = /obj/item/ammo_magazine/m9mmt/rubber
 	allowed_magazines = list(/obj/item/ammo_magazine/m9mmt)
 	projectile_type = /obj/item/projectile/bullet/pistol/medium
-	move_delay = 0 // CHOMPEdit: Pistols have move_delay of 0
-	fire_sound = "sound/weapons/gunshot_pathetic.ogg" //CHOMPedit
+	move_delay = 0 // Pistols have move_delay of 0
+	fire_sound = "sound/weapons/gunshot_pathetic.ogg"
 
 /obj/item/gun/projectile/automatic/wt550/update_icon()
 	..()
@@ -212,7 +212,7 @@
 	projectile_type = /obj/item/projectile/bullet/rifle/a762
 	auto_eject = 1
 	auto_eject_sound = 'sound/weapons/smg_empty_alarm.ogg'
-	fire_sound = "sound/weapons/ballistics/a762.ogg" //CHOMPedit
+	fire_sound = "sound/weapons/ballistics/a762.ogg"
 
 	one_handed_penalty = 60
 
@@ -291,7 +291,7 @@
 	magazine_type = /obj/item/ammo_magazine/m545saw
 	allowed_magazines = list(/obj/item/ammo_magazine/m545saw, /obj/item/ammo_magazine/m545)
 	projectile_type = /obj/item/projectile/bullet/rifle/a545
-	fire_sound = "sound/weapons/Gunshot_light.ogg" //CHOMPedit
+	fire_sound = "sound/weapons/Gunshot_light.ogg"
 
 	one_handed_penalty = 90
 
@@ -299,8 +299,8 @@
 
 	firemodes = list(
 		list(mode_name="semiauto",       burst=1, fire_delay=0.1,    move_delay=null, burst_accuracy=null, dispersion=null),
-		list(mode_name="3-round bursts", burst=3,burst_delay=1 ,fire_delay=null, move_delay=4,    burst_accuracy=list(0,-15,-15), dispersion=list(0.0, 0.6, 1.0)), //CHOMPedit, firerate buff
-		list(mode_name="short bursts",	burst=5,burst_delay=1 ,move_delay=3, burst_accuracy = list(0,-15,-15,-30,-30), dispersion = list(0.6, 1.0, 1.0, 1.0, 1.2)) //CHOMPedit, firerate buff
+		list(mode_name="3-round bursts", burst=3,burst_delay=1 ,fire_delay=null, move_delay=4,    burst_accuracy=list(0,-15,-15), dispersion=list(0.0, 0.6, 1.0)), // , firerate buff
+		list(mode_name="short bursts",	burst=5,burst_delay=1 ,move_delay=3, burst_accuracy = list(0,-15,-15,-30,-30), dispersion = list(0.6, 1.0, 1.0, 1.0, 1.2)) // , firerate buff
 		)
 
 	special_weapon_handling = TRUE
@@ -406,10 +406,10 @@
 	caliber = ".45"
 	magazine_type = /obj/item/ammo_magazine/m45uzi
 	allowed_magazines = list(/obj/item/ammo_magazine/m45uzi)
-	move_delay = 0 // CHOMPEdit: Pistols have move_delay of 0
+	move_delay = 0 // Pistols have move_delay of 0
 	var/is64x32 = TRUE
 	var/is_picked_up = FALSE
-	fire_sound = "sound/weapons/gunshot_pathetic.ogg" //CHOMPedit
+	fire_sound = "sound/weapons/gunshot_pathetic.ogg"
 
 	firemodes = list(
 		list(mode_name="semiauto", burst=1, fire_delay=0.1),
@@ -423,7 +423,7 @@
 	else
 		icon_state = "mini-uzi-empty"
 
-// CHOMPEdit: Uzi tilting
+// Uzi tilting
 /obj/item/gun/projectile/automatic/mini_uzi/Initialize(mapload)
 	. = ..()
 	if(is64x32)
@@ -450,7 +450,7 @@
 		if(is_picked_up)
 			transform = transform.Turn(-45)
 		transform = transform.Translate(-16,0)
-// CHOMPEdit end: Uzi tilting
+// end: Uzi tilting
 
 /* CHOMPEDIT Commented out, moved to automatic_ch.dm *
 /obj/item/gun/projectile/automatic/p90
@@ -490,7 +490,7 @@
 	load_method = MAGAZINE
 	magazine_type = /obj/item/ammo_magazine/m45tommy
 	allowed_magazines = list(/obj/item/ammo_magazine/m45tommy, /obj/item/ammo_magazine/m45tommydrum)
-	fire_sound = "sound/weapons/Gunshot1.ogg" //CHOMPedit
+	fire_sound = "sound/weapons/Gunshot1.ogg"
 
 	firemodes = list(
 		list(mode_name="semiauto", burst=1, fire_delay=0.1),
@@ -523,7 +523,7 @@
 	magazine_type = /obj/item/ammo_magazine/m762
 	allowed_magazines = list(/obj/item/ammo_magazine/m762, /obj/item/ammo_magazine/m762/ext)
 	projectile_type = /obj/item/projectile/bullet/rifle/a762
-	fire_sound = "sound/weapons/ballistics/a762.ogg" //CHOMPedit
+	fire_sound = "sound/weapons/ballistics/a762.ogg"
 
 	one_handed_penalty = 45
 
@@ -558,7 +558,7 @@
 	caliber = "9mm"
 	magazine_type = /obj/item/ammo_magazine/m9mmt
 	allowed_magazines = list(/obj/item/ammo_magazine/m9mmt)
-	fire_sound = "sound/weapons/Gunshot1.ogg" //CHOMPedit
+	fire_sound = "sound/weapons/Gunshot1.ogg"
 
 	firemodes = list(
 		list(mode_name="semiauto", burst=1, fire_delay=0.1),
@@ -730,7 +730,7 @@
 // For general use
 /obj/item/gun/projectile/automatic/stg
 	name = "\improper Sturmgewehr"
-	desc = "An STG-560 built by RauMauser. Experience the terror of the Siegfried line, redone for the 26th century! The Kaiser would be proud. Uses unique 7.92x33mm Kurz rounds." //CHOMPEdit: 24th->26th
+	desc = "An STG-560 built by RauMauser. Experience the terror of the Siegfried line, redone for the 26th century! The Kaiser would be proud. Uses unique 7.92x33mm Kurz rounds." // 24th->26th
 	icon_state = "stg60"
 	item_state = "arifle"
 	w_class = ITEMSIZE_LARGE

@@ -1,4 +1,4 @@
-// DQAdd — Re-sanitize the character's real_name on spawn using species rules + FBP
+// Re-sanitize the character's real_name on spawn using species rules + FBP
 // classification, then inject a surname if config requires one. This depends on both
 // real_name and species so it can't live on either pref alone.
 

@@ -43,9 +43,9 @@ GLOBAL_LIST_INIT(global_huds, list(
 
 /datum/global_hud/proc/setup_overlay(icon_state)
 	var/atom/movable/screen/screen = new /atom/movable/screen()
-	screen.alpha = 30 // Adjut this if you want goggle overlays to be thinner or thicker. //VOREStation Edit
+	screen.alpha = 30 // Adjut this if you want goggle overlays to be thinner or thicker. //
 	screen.screen_loc = "SOUTHWEST to NORTHEAST" // Will tile up to the whole screen, scaling beyond 15x15 if needed.
-	screen.icon = 'icons/obj/hud_tiled_vr.dmi'	//VOREStation Edit
+	screen.icon = 'icons/obj/hud_tiled_vr.dmi'
 	screen.icon_state = icon_state
 	screen.layer = SCREEN_LAYER
 	screen.plane = PLANE_FULLSCREEN

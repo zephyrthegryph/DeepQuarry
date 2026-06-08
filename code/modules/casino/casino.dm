@@ -38,8 +38,8 @@
 
 	var/obj/item/roulette_ball/ball
 
-	var/datum/effect/effect/system/confetti_spread //CHOMPAdd
-	var/confetti_strength = 5 //CHOMPAdd
+	var/datum/effect/effect/system/confetti_spread
+	var/confetti_strength = 5
 
 /obj/structure/casino_table/roulette_table/Initialize(mapload)
 	.=..()
@@ -65,10 +65,10 @@
 	busy = 1
 	ball.on_spin()
 	icon_state = spin_state
-	var/result = rand(0,36) //CHOMPEdit
+	var/result = rand(0,36)
 	if(ball.cheatball)
 		result = ball.get_cheated_result()
-	var/color = "gold" //CHOMPEdit
+	var/color = "gold"
 	add_fingerprint(user)
 	if((result > 0 && result < 11) || (result > 18 && result < 29))
 		if(result % 2)
@@ -87,7 +87,6 @@
 		busy = 0
 		icon_state = initial(icon_state)
 
-		//CHOMPAdd Start
 		if(color=="gold") // Happy celebrations!
 			visible_message(span_notice("The roulette stops spinning, the ball lands on the golden zero! Fortune favors all bets!"))
 			confetti_spread = new /datum/effect/effect/system/confetti_spread()
@@ -98,7 +97,6 @@
 					sleep(10)
 		else
 			visible_message(span_notice("The roulette stops spinning, the ball landing on [result], [color]."))
-		//CHOMPAdd End
 
 /obj/structure/casino_table/roulette_table/attackby(obj/item/W, mob/user)
 	if(istype(W, /obj/item/roulette_ball))
@@ -160,7 +158,7 @@
 	var/cheatball = FALSE
 
 /obj/item/roulette_ball/proc/get_cheated_result()
-	return rand(0,36)		// No cheating by default //CHOMPEdit
+	return rand(0,36) // No cheating by default //
 
 /obj/item/roulette_ball/proc/get_ball_desc()
 	return ball_desc
@@ -322,7 +320,7 @@
 	desc = "A small ball used for roulette wheel. This one is made of regular metal. Its weighted to only land on 0 or 00."
 
 /obj/item/roulette_ball/cheat/zeros/get_cheated_result()
-	return pick(list(0)) //CHOMPEdit
+	return pick(list(0))
 
 /obj/item/roulette_ball/cheat/red
 	desc = "A small ball used for roulette wheel. This one is made of regular metal. Its weighted to only land on red."
@@ -352,19 +350,19 @@
 //Blackjack table
 //
 /obj/structure/casino_table/blackjack_l
-	icon = 'icons/obj/casino_ch.dmi' //CHOMPEdit
+	icon = 'icons/obj/casino_ch.dmi'
 	name = "gambling table"
 	desc = "Gambling table, try your luck and skills!"
 	icon_state = "blackjack_l"
 
 /obj/structure/casino_table/blackjack_m
-	icon = 'icons/obj/casino_ch.dmi' //CHOMPEdit
+	icon = 'icons/obj/casino_ch.dmi'
 	name = "gambling table"
 	desc = "Gambling table, try your luck and skills!"
 	icon_state = "blackjack_m"
 
 /obj/structure/casino_table/blackjack_r
-	icon = 'icons/obj/casino_ch.dmi' //CHOMPEdit
+	icon = 'icons/obj/casino_ch.dmi'
 	name = "gambling table"
 	desc = "Gambling table, try your luck and skills!"
 	icon_state = "blackjack_r"
@@ -569,12 +567,12 @@
 	desc = "The Sentient Prize Automated Sales Machinery, also known as SPASM! Here one can see who is on sale as sentinet prizes, as well as selling self and also buying prizes."
 	icon = 'icons/obj/casino_ch.dmi'
 	icon_state = "casinoslave_hub_off"
-	density = 0 //CHOMPEdit
+	density = 0
 	anchored = 1
-	req_access = list(300) //CHOMPEdit
+	req_access = list(300)
 
 	var/casinosentientprize_sale = "disabled"
-	var/casinosentientprize_price = 100 //CHOMPEdit
+	var/casinosentientprize_price = 100
 	var/collar_list = list()
 	var/sentientprizes_ckeys_list = list() //Same trick as lottery, to keep life simple
 	var/obj/item/clothing/accessory/collar/casinosentientprize/selected_collar = null
@@ -621,13 +619,11 @@
 					to_chat(user, span_warning("The SPASM beeps in an upset manner, you already have a collar!"))
 					return
 				var/confirm = tgui_alert(user, "Are you sure you want to become a sentient prize?", "Confirm Sentient Prize", list("Yes", "No"))
-				//CHOMPEdit Start
 				if(!confirm)
 					return
 				if(confirm == "No")
 					to_chat(user, span_warning("The SPASM beeps in a sad manner at your impolite decline..."))
 					return
-				//CHOMPEdit End
 				var/confirmitemtf = tgui_alert(user, "Would you like to allow others to turn you into an item upon claiming you if they choose to?", "Confirm Item TF Preference", list("Yes", "No"))
 				var/allowitemtf = FALSE
 				if(confirmitemtf == "Yes")
@@ -691,7 +687,7 @@
 				C.icon_state = "casinoslave"
 				C.update_icon()
 				C.name = "disabled Sentient Prize Collar: [C.sentientprizename]"
-				C.desc = "A collar worn by sentient prizes on the Golden Goose Casino. The tag says its registered to [C.sentientprizename], but harsh red text informs you its been disabled." //CHOMPEdit
+				C.desc = "A collar worn by sentient prizes on the Golden Goose Casino. The tag says its registered to [C.sentientprizename], but harsh red text informs you its been disabled."
 				sentientprizes_ckeys_list -= C.sentientprizeckey
 				C.sentientprizeckey = null
 				collar_list -= C
@@ -737,7 +733,7 @@
 							selected_collar.icon_state = "casinoslave"
 							selected_collar.update_icon()
 							selected_collar.name = "disabled Sentient Prize Collar: [selected_collar.sentientprizename]"
-							selected_collar.desc = "A collar worn by sentient prizes on the Golden Goose Casino. The tag says its registered to [selected_collar.sentientprizename], but harsh red text informs you its been disabled." //CHOMPEdit
+							selected_collar.desc = "A collar worn by sentient prizes on the Golden Goose Casino. The tag says its registered to [selected_collar.sentientprizename], but harsh red text informs you its been disabled."
 							sentientprizes_ckeys_list -= selected_collar.sentientprizeckey
 							selected_collar.sentientprizeckey = null
 							collar_list -= selected_collar
@@ -796,7 +792,7 @@
 		selected_collar.icon_state = "casinoslave"
 		selected_collar.update_icon()
 		selected_collar.name = "disabled Sentient Prize Collar: [selected_collar.sentientprizename]"
-		selected_collar.desc = "A collar worn by sentient prizes on the Golden Goose Casino. The tag says its registered to [selected_collar.sentientprizename], but harsh red text informs you its been disabled." //CHOMPEdit
+		selected_collar.desc = "A collar worn by sentient prizes on the Golden Goose Casino. The tag says its registered to [selected_collar.sentientprizename], but harsh red text informs you its been disabled."
 		sentientprizes_ckeys_list -= selected_collar.sentientprizeckey
 		selected_collar.sentientprizeckey = null
 		collar_list -= selected_collar
@@ -825,7 +821,7 @@
 		selected_collar.update_icon()
 		selected_collar.ownername = user.name
 		selected_collar.name =  "Sentient Prize Collar: [selected_collar.sentientprizename] owned by [selected_collar.ownername]!"
-		selected_collar.desc = "A collar worn by sentient prizes on the Golden Goose Casino. The tag says its registered to [selected_collar.sentientprizename] and they are owned by [selected_collar.ownername]." //CHOMPEdit
+		selected_collar.desc = "A collar worn by sentient prizes on the Golden Goose Casino. The tag says its registered to [selected_collar.sentientprizename] and they are owned by [selected_collar.ownername]."
 		selected_collar = null
 
 /obj/machinery/casinosentientprize_handler/proc/setprice(mob/living/user)

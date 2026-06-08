@@ -1,4 +1,4 @@
-// DQAdd — Mind perks. ~22 per department category, distributed across that
+// Mind perks. ~22 per department category, distributed across that
 // department's sub-role trees. All Mind perks share their department's pool, so
 // taking perks across multiple sub-roles is the intended specialisation pattern.
 // Most effects are descriptive roadmaps for content to read off mob flags.

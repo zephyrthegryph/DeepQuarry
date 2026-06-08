@@ -10,7 +10,7 @@ GLOBAL_LIST_EMPTY(available_ai_shells)
 
 // Premade AI shell, for roundstart shells.
 /mob/living/silicon/robot/ai_shell/Initialize(mapload)
-	add_verb(src,/mob/living/silicon/robot/proc/transfer_shell_act) //CHOMPEdit TGPanel //CHOMPEDIT: add sideloader
+	add_verb(src,/mob/living/silicon/robot/proc/transfer_shell_act) // TGPanel // add sideloader
 	mmi = new /obj/item/mmi/inert/ai_remote(src)
 	post_mmi_setup()
 	return ..()
@@ -25,7 +25,7 @@ GLOBAL_LIST_EMPTY(available_ai_shells)
 	return
 
 /mob/living/silicon/robot/proc/make_shell()
-	add_verb(src,/mob/living/silicon/robot/proc/transfer_shell_act) //CHOMPEdit TGPanel //CHOMPEDIT: add sideloader
+	add_verb(src,/mob/living/silicon/robot/proc/transfer_shell_act) // TGPanel // add sideloader
 	shell = TRUE
 	braintype = "AI Shell"
 	SetName("[modtype] AI Shell [num2text(ident)]")
@@ -37,9 +37,9 @@ GLOBAL_LIST_EMPTY(available_ai_shells)
 	notify_ai(ROBOT_NOTIFICATION_AI_SHELL)
 	update_icon()
 
-//CHOMPADDITION: Ai shell sideloading
+// ITION: Ai shell sideloading
 /mob/living/silicon/robot/proc/transfer_shell_act()
-	set category = "Abilities.Silicon" //ChompEDIT - TGPanel
+	set category = "Abilities.Silicon" // TGPanel
 	set name = "Transfer to Shell"
 	transfer_shell()
 
@@ -47,7 +47,7 @@ GLOBAL_LIST_EMPTY(available_ai_shells)
 /mob/living/silicon/robot/proc/transfer_shell(mob/living/silicon/robot/target)
 	var/mob/living/silicon/ai/AI = mainframe
 	//relay AI
-	if(!CONFIG_GET(flag/allow_ai_shells)) // CHOMPEdit
+	if(!CONFIG_GET(flag/allow_ai_shells))
 		to_chat(src, span_warning("AI Shells are not allowed on this server. You shouldn't have this verb because of it, so consider making a bug report."))
 		return
 
@@ -65,7 +65,7 @@ GLOBAL_LIST_EMPTY(available_ai_shells)
 
 	var/list/possible = list()
 	for(var/mob/living/silicon/robot/R as anything in GLOB.available_ai_shells)
-		if(R != src && R.shell && !R.deployed && (R.stat != DEAD) && (!R.connected_ai || (R.connected_ai == AI) ) )	//VOREStation Edit: shell restrictions
+		if(R != src && R.shell && !R.deployed && (R.stat != DEAD) && (!R.connected_ai || (R.connected_ai == AI) ) ) // shell restrictions
 			if(istype(R.loc, /obj/machinery/recharge_station))	//Check Rechargers
 				var/obj/machinery/recharge_station/RS = R.loc
 				if(!(using_map.ai_shell_restricted && !(RS.z in using_map.ai_shell_allowed_levels)))	//Allow station borgs to be redeployed from Chargers.
@@ -114,8 +114,8 @@ GLOBAL_LIST_EMPTY(available_ai_shells)
 		soul_link(/datum/soul_link/shared_body, AI, target)
 		AI.deployed_shell = target
 		target.deploy_init(AI)
-		if(src.client) //CHOMPADDITION: Resize shell based on our preffered size
-			target.resize(src.client.prefs.read_preference(/datum/preference/numeric/human/size_multiplier)) //CHOMPADDITION + DQEdit — size_multiplier migrated
+		if(src.client) // ITION: Resize shell based on our preffered size
+			target.resize(src.client.prefs.read_preference(/datum/preference/numeric/human/size_multiplier)) // ITION + size_multiplier migrated
 		mind.transfer_to(target)
 		if(target.first_transfer)
 			target.first_transfer = FALSE
@@ -125,12 +125,12 @@ GLOBAL_LIST_EMPTY(available_ai_shells)
 		src.copy_vore_prefs_to_mob(target)
 		AI.teleop = target // So the AI 'hears' messages near its core.
 		target.post_deploy()
-//CHOMPADDITION END
+// ITION END
 
 /mob/living/silicon/robot/proc/revert_shell()
 	if(!shell)
 		return
-	remove_verb(src,/mob/living/silicon/robot/proc/transfer_shell_act ) //CHOMPEDIT: remove sideloader //CHOMPEdit
+	remove_verb(src,/mob/living/silicon/robot/proc/transfer_shell_act ) // remove sideloader //
 	undeploy()
 	shell = FALSE
 	GLOB.available_ai_shells -= src
@@ -156,13 +156,12 @@ GLOBAL_LIST_EMPTY(available_ai_shells)
 	connected_ai = mainframe // So they share laws.
 	mainframe.connected_robots |= src
 
-	// CHOMPEdit Start - Outpost 21 upport: force the law sync when an AI enters this shell, unless emagged
+	// Outpost 21 upport: force the law sync when an AI enters this shell, unless emagged
 	var/org_lu = lawupdate
 	if(!emagged)
 		lawupdate = TRUE // not emagged, so the AI shell should have law priority. Prevents confusion when you suddenly have two different ion laws. One in shell one in core.
 	lawsync()
 	lawupdate = org_lu
-	// CHOMPEdit End
 
 	// Give button to leave.
 	add_verb(src, /mob/living/silicon/robot/proc/undeploy_act)

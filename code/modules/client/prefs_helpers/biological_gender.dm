@@ -1,4 +1,4 @@
-// DQEdit — Bay-prefs Basic tab deleted. The only surviving non-Bay piece is the
+// Bay-prefs Basic tab deleted. The only surviving non-Bay piece is the
 // set_biological_gender helper on /datum/preferences, which is still called from name
 // random-character flows and several pref editors.
 

@@ -84,7 +84,7 @@
 	for(var/datum/gas_mixture/air in gases)
 		volume += air.volume
 
-// DQEdit — pipenet gas equalization. The original /proc/equalize_gases pooled
+// pipenet gas equalization. The original /proc/equalize_gases pooled
 // every member mixture's gases + thermal energy, then redistributed to each
 // mixture proportionally to its volume share, with all mixtures ending at the
 // pool average temperature.

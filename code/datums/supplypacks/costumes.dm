@@ -216,7 +216,7 @@
 	contains = list(
 			/obj/item/clothing/under/teshari/undercoat/standard
 			)
-	// DQAdd — randomised pack: pick from this variant pool per draw
+	// randomised pack: pick from this variant pool per draw
 	variant_pool = list("orange_grey", "rainbow", "lightgrey_grey", "white_grey", "red_grey", "orange", "yellow_grey", "green_grey", "blue_grey", "purple_grey", "pink_grey", "brown_grey")
 	cost = 20
 	containertype = /obj/structure/closet/crate
@@ -511,9 +511,9 @@
 	contains = list(
 			/obj/item/storage/backpack/saddlebag_common,
 			/obj/item/storage/backpack/saddlebag_common/robust,
-			/obj/item/storage/backpack/saddlebag_common/robust/lightweight,	//CHOMPEdit
-			/obj/item/storage/backpack/saddlebag_common/vest/heavy,	//CHOMPEdit
-			/obj/item/storage/backpack/saddlebag_common/lightweight,	//CHOMPEdit
+			/obj/item/storage/backpack/saddlebag_common/robust/lightweight,
+			/obj/item/storage/backpack/saddlebag_common/vest/heavy,
+			/obj/item/storage/backpack/saddlebag_common/lightweight,
 			/obj/item/storage/backpack/saddlebag_common/vest
 			)
 	cost = 60

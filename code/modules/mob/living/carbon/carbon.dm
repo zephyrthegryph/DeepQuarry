@@ -113,7 +113,7 @@
 		if(species.emp_sensitivity & EMP_DEAFEN)
 			src.ear_damage += rand(0,deafen_dur) //this will heal pretty quickly, but spamming them at someone could cause serious damage
 			src.ear_deaf = max(src.ear_deaf,deafen_dur)
-			src.deaf_loop.start() // CHOMPStation Add: Ear Ringing/Deafness
+			src.deaf_loop.start() // Ear Ringing/Deafness
 		if(species.emp_sensitivity & EMP_CONFUSE)
 			if(confuse_dur >= 1)
 				to_chat(src, span_danger("Oh god, everything's spinning!"))
@@ -282,7 +282,7 @@
 				AdjustSleeping(-5)
 				if(src.sleeping == 0)
 					src.resting = 0
-				if(H) H.in_stasis = 0 //VOREStation Add - Just In Case
+				if(H) H.in_stasis = 0 // Just In Case
 				M.visible_message(span_notice("[M] shakes [src] trying to wake [H.p_them()] up!"), \
 									span_notice("You shake [src] trying to wake [H.p_them()] up!"))
 			else
@@ -441,7 +441,7 @@
 	return 0
 
 /mob/living/carbon/can_feel_pain(check_organ)
-	if(!species) //CHOMPEdit
+	if(!species)
 		return 0
 	if(isSynthetic())
 		return 0

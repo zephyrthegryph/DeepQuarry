@@ -132,10 +132,9 @@
 		2 * age >= seed.get_trait(TRAIT_MATURATION) && \
 		!(locate(/obj/effect/plant) in get_turf(src)) && \
 		prob(2 * seed.get_trait(TRAIT_POTENCY)))
-		// CHOMPEdit Start - Need to start processing the vine or it'll never spread.
+		// Need to start processing the vine or it'll never spread.
 		var/obj/effect/plant/D = new /obj/effect/plant(get_turf(src), seed)
 		SSplants.add_plant(D)
-		// CHOMPEdit End
 
 	if(prob(3))  // On each tick, there's a chance the pest population will increase
 		pestlevel += 0.1 * HYDRO_SPEED_MULTIPLIER

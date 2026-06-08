@@ -45,7 +45,7 @@ GLOBAL_LIST_INIT(spawntypes, populate_spawn_points())
 /datum/spawnpoint/arrivals
 	display_name = "Arrivals Shuttle"
 	msg = "will arrive to the station shortly by shuttle"
-	disallow_job = list(JOB_OUTSIDER) //CHOMPEdit add
+	disallow_job = list(JOB_OUTSIDER) // add
 
 /datum/spawnpoint/arrivals/New()
 	..()
@@ -71,7 +71,7 @@ GLOBAL_LIST_INIT(spawntypes, populate_spawn_points())
 	display_name = "Cryogenic Storage"
 	msg = "has completed cryogenic revival"
 	allowed_mob_types = JOB_CARBON
-	disallow_job = list(JOB_OUTSIDER) //CHOMPEdit add
+	disallow_job = list(JOB_OUTSIDER) // add
 
 /datum/spawnpoint/cryo/New()
 	..()
@@ -81,7 +81,7 @@ GLOBAL_LIST_INIT(spawntypes, populate_spawn_points())
 	display_name = "Cyborg Storage"
 	msg = "has been activated from storage"
 	allowed_mob_types = JOB_SILICON
-	disallow_job = list(JOB_OUTSIDER) //CHOMPEdit add
+	disallow_job = list(JOB_OUTSIDER) // add
 
 /datum/spawnpoint/cyborg/New()
 	..()
@@ -106,7 +106,7 @@ GLOBAL_LIST_INIT(spawntypes, populate_spawn_points())
 /datum/spawnpoint/tram
 	display_name = "Tram Station"
 	msg = "will arrive to the station shortly by shuttle"
-	disallow_job = list(JOB_OUTSIDER) //CHOMPEdit add
+	disallow_job = list(JOB_OUTSIDER) // add
 
 /datum/spawnpoint/tram/New()
 	..()

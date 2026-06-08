@@ -79,7 +79,7 @@
 /datum/preference/text/human/wing_style/apply_to_human(mob/living/carbon/human/target, value)
 	return
 
-/// DQAdd — Shared helper: build a {style_name -> {icon, icon_state}} payload from a
+// / Shared helper: build a {style_name -> {icon, icon_state}} payload from a
 /// sprite_accessory global. Lives on /datum/preferences so any subtype can call it.
 /proc/sprite_accessory_thumbs(list/accessory_list)
 	if(!accessory_list)
@@ -102,7 +102,7 @@
 	savefile_identifier = PREFERENCE_CHARACTER
 	can_randomize = FALSE
 	maximum_value_length = MAX_NAME_LEN
-	// DQAdd — own the choice list here so get_pref_choices() returns it directly.
+	// own the choice list here so get_pref_choices() returns it directly.
 	var/static/list/bgstate_choices = list("steel", "000", "midgrey", "FFF", "white", "techmaint", "desert", "grass", "snow")
 
 /datum/preference/text/human/bgstate/create_default_value()
@@ -127,7 +127,7 @@
 	maximum = 65535
 	widget = PREF_WIDGET_HIDDEN  // bitfield; surfaced via the two toggles below
 
-// DQAdd — two toggles that mirror the equip_preview_mob bitfield. Cleaner UX than a single
+// two toggles that mirror the equip_preview_mob bitfield. Cleaner UX than a single
 // 0-65535 numeric. The actual pref stays a bitfield so existing consumers keep working;
 // the toggles bridge into it via apply hooks.
 /datum/preference/toggle/human/preview_loadout

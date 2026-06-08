@@ -43,7 +43,7 @@
 
 /obj/item/clothing/suit/space/rig
 	name = "chestpiece"
-	allowed = list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS,/obj/item/storage) //ChompEdit: allows all suits to carry a backpack on their back unless otherwise specified.
+	allowed = list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS,/obj/item/storage) // allows all suits to carry a backpack on their back unless otherwise specified.
 	body_parts_covered = CHEST|LEGS|ARMS
 	heat_protection =	 CHEST|LEGS|ARMS
 	cold_protection =	 CHEST|LEGS|ARMS

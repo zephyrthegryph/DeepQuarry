@@ -1,13 +1,13 @@
 /obj/item/extraction_pack
-	name = "bluespace fulton extraction pack" // CHOMPedit
-	desc = "A balloon that can be used to extract equipment or personnel to anywhere a bluespace Fulton Recovery Beacon is. Anything not bolted down can be moved. Link the pack to a beacon by using the pack in hand." // CHOMPedit
+	name = "bluespace fulton extraction pack"
+	desc = "A balloon that can be used to extract equipment or personnel to anywhere a bluespace Fulton Recovery Beacon is. Anything not bolted down can be moved. Link the pack to a beacon by using the pack in hand."
 	icon = 'icons/obj/fulton.dmi'
 	icon_state = "extraction_pack"
 	w_class = ITEMSIZE_NORMAL
 	var/obj/structure/extraction_point/beacon
 	var/list/beacon_networks = list("station")
 	var/uses_left = 3
-	var/can_use_indoors = TRUE // CHOMPedit: Can be used anywhere.
+	var/can_use_indoors = TRUE // Can be used anywhere.
 	var/safe_for_living_creatures = 1
 
 /obj/item/extraction_pack/examine()
@@ -137,7 +137,7 @@
 			if(uses_left <= 0)
 				qdel(src)
 
-// CHOMPedit Start - Makes fultons work pretty much anywhere.
+// Makes fultons work pretty much anywhere.
 
 /obj/item/fulton_core
 	name = "bluespace extraction beacon signaller"

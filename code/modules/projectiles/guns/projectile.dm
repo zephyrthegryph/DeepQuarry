@@ -55,7 +55,7 @@
 	update_icon()
 
 /obj/item/gun/projectile/consume_next_projectile()
-	if(!manual_chamber) //CHOMPEdit Start - Manual Chambering
+	if(!manual_chamber) // Manual Chambering
 		//get the next casing
 		if(loaded.len)
 			chambered = loaded[1] //load next casing.
@@ -66,7 +66,7 @@
 			if(handle_casings != HOLD_CASINGS)
 				ammo_magazine.stored_ammo -= chambered
 	if(manual_chamber && auto_loading_type && CHECK_BITFIELD(auto_loading_type,OPEN_BOLT) && bolt_open)
-		chamber_bullet() //CHOMPEdit End - Manual Chambering
+		chamber_bullet() // Manual Chambering
 
 	var/mob/living/M = loc // TGMC Ammo HUD
 	if(istype(M)) // TGMC Ammo HUD
@@ -84,8 +84,8 @@
 
 /obj/item/gun/projectile/handle_click_empty()
 	..()
-	if(!manual_chamber) //CHOMPEdit - Manual Chambering
-		process_chambered() //CHOMPEdit - Manual Chambering
+	if(!manual_chamber) // Manual Chambering
+		process_chambered() // Manual Chambering
 
 /obj/item/gun/projectile/proc/process_chambered()
 	if (!chambered) return
@@ -200,9 +200,9 @@
 
 //attempts to unload src. If allow_dump is set to 0, the speedloader unloading method will be disabled
 /obj/item/gun/projectile/proc/unload_ammo(mob/user, allow_dump=1)
-	if(manual_chamber && only_open_load && !bolt_open) //CHOMPEdit - Manual Chambering
-		to_chat(user,span_warning("You must open the bolt to load or unload this gun!")) //CHOMPEdit - Manual Chambering
-		return //CHOMPEdit - Manual Chambering
+	if(manual_chamber && only_open_load && !bolt_open) // Manual Chambering
+		to_chat(user,span_warning("You must open the bolt to load or unload this gun!")) // Manual Chambering
+		return // Manual Chambering
 
 	if(ammo_magazine)
 		user.put_in_hands(ammo_magazine)
@@ -245,10 +245,10 @@
 		return TRUE
 	if(special_weapon_handling && !callback)
 		return FALSE
-	if(manual_chamber) //CHOMPEdit Gun Rework
-		if(do_after(user, 0.4 SECONDS, src)) //CHOMPEdit Gun Rework
-			bolt_handle(user) //CHOMPEdit Gun Rework
-	else if(firemodes.len > 1) //CHOMPEdit Gun Rework
+	if(manual_chamber) // Gun Rework
+		if(do_after(user, 0.4 SECONDS, src)) // Gun Rework
+			bolt_handle(user) // Gun Rework
+	else if(firemodes.len > 1) // Gun Rework
 		switch_firemodes(user)
 	else
 		unload_ammo(user)
@@ -261,7 +261,7 @@
 
 /obj/item/gun/projectile/afterattack(atom/A, mob/living/user)
 	..()
-	if(auto_eject && ammo_magazine && ammo_magazine.stored_ammo && !ammo_magazine.stored_ammo.len && !(manual_chamber && chambered && chambered.BB != null)) //CHOMPEdit - Manual Chambering
+	if(auto_eject && ammo_magazine && ammo_magazine.stored_ammo && !ammo_magazine.stored_ammo.len && !(manual_chamber && chambered && chambered.BB != null)) // Manual Chambering
 		ammo_magazine.loc = get_turf(src.loc)
 		user.visible_message(
 			"[ammo_magazine] falls out and clatters on the floor!",

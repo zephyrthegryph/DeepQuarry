@@ -2,21 +2,21 @@
 //I don't know what the hell I'm doing right now. Please help. Especially with the update_icons stuff. -Joan Risu
 
 /obj/vehicle/train/rover/engine
-	name = "\improper NT T-41LV Humvee" //ChompEDIT
-	desc = "The corporate market model of the UF T-41LV, a SolGov reconnaissance and exploration vehicle, painted in Nanotrasen blue. Trailers can be latched for transporting heavy equipment, though its performance will noticeably degrade with more than one." //ChompEDIT
+	name = "\improper NT T-41LV Humvee"
+	desc = "The corporate market model of the UF T-41LV, a SolGov reconnaissance and exploration vehicle, painted in Nanotrasen blue. Trailers can be latched for transporting heavy equipment, though its performance will noticeably degrade with more than one."
 	icon = 'icons/vore/rover_vr.dmi'
 	icon_state = "rover"
-	light_power = 2 // CHOMPedit: 1 to 2, more light range.
-	light_range = 6 // CHOMPedit: 3 to 6, more light range.
+	light_power = 2 // 1 to 2, more light range.
+	light_range = 6 // 3 to 6, more light range.
 	on = 0
 	powered = 1
 	locked = 0
-	move_delay = 0.2	//CHOMPedit: Move delay reduced from 0.5 to 0.2.
-	charge_use = 2.5	//CHOMPedit: Reduced from 5 to 2.5 for more fuel efficiency, being a dedicated transport vehicle.
+	move_delay = 0.2 // Move delay reduced from 0.5 to 0.2.
+	charge_use = 2.5 // Reduced from 5 to 2.5 for more fuel efficiency, being a dedicated transport vehicle.
 
 	//Health stuff
-	health = 250	// CHOMPedit: 100 to 250. Cars are usually just a bit tougher than humans.
-	maxhealth = 250	// CHOMPedit: Cars are usually just a bit tougher than humans.
+	health = 250 // 100 to 250. Cars are usually just a bit tougher than humans.
+	maxhealth = 250 // Cars are usually just a bit tougher than humans.
 	fire_dam_coeff = 0.6
 	brute_dam_coeff = 0.5
 
@@ -26,7 +26,7 @@
 	pixel_y = -8
 
 	var/car_limit = 1	//how many cars an engine can pull before performance degrades. This should be 0 to prevent trailers from unhitching.
-						//CHOMPedit: Set to 1 because the thing slows down to a crawl with even one trailer. Unhitching doesn't occur at regular movement speeds, or even at faster speeds than base.
+						// Set to 1 because the thing slows down to a crawl with even one trailer. Unhitching doesn't occur at regular movement speeds, or even at faster speeds than base.
 	active_engines = 1
 	var/obj/item/key/rover/key
 	var/siren = 0 //This is for eventually getting the siren sprite to work.
@@ -38,8 +38,8 @@
 	icon_state = "dunebug"
 
 /obj/item/key/rover
-	name = "\improper ignition key" //CHOMPedit: Name update
-	desc = "A universal electronic tri-key for starting most Nanotrasen vehicles." //CHOMPedit: Desc update
+	name = "\improper ignition key" // Name update
+	desc = "A universal electronic tri-key for starting most Nanotrasen vehicles." // Desc update
 	icon = 'icons/obj/vehicles.dmi'
 	icon_state = "securikey"
 	w_class = ITEMSIZE_TINY
@@ -216,7 +216,7 @@
 
 /obj/vehicle/train/rover/engine/verb/start_engine()
 	set name = "Start engine"
-	set category = "Object.Vehicle" //ChompEDIT - TGPanel
+	set category = "Object.Vehicle" // TGPanel
 	set src in view(0)
 
 	if(!ishuman(usr))
@@ -237,7 +237,7 @@
 
 /obj/vehicle/train/rover/engine/verb/stop_engine()
 	set name = "Stop engine"
-	set category = "Object.Vehicle" //ChompEDIT - TGPanel
+	set category = "Object.Vehicle" // TGPanel
 	set src in view(0)
 
 	if(!ishuman(usr))
@@ -253,7 +253,7 @@
 
 /obj/vehicle/train/rover/engine/verb/remove_key()
 	set name = "Remove key"
-	set category = "Object.Vehicle" //ChompEDIT - TGPanel
+	set category = "Object.Vehicle" // TGPanel
 	set src in view(0)
 
 	if(!ishuman(usr))
@@ -395,7 +395,7 @@
 	else
 		move_delay = max(0, (-car_limit * active_engines) + train_length - active_engines)	//limits base overweight so you cant overspeed trains
 		move_delay *= (1 / max(1, active_engines)) * 2 										//overweight penalty (scaled by the number of engines)
-		move_delay += 1 														//base reference speed //CHOMPedit: Move-delay from server config (2) to 1.
+		move_delay += 1 // base reference speed // Move-delay from server config (2) to 1.
 		move_delay *= 1.1																	//makes cargo trains 10% slower than running when not overweight
 
 /obj/vehicle/train/rover/trolley/update_car(train_length, active_engines)

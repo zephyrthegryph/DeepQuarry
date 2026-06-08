@@ -49,7 +49,7 @@
 // Skills
 //
 /obj/machinery/computer/ship
-	var/ai_control = TRUE	//VOREStation Edit
+	var/ai_control = TRUE
 
 //
 // Topic
@@ -70,11 +70,11 @@
 	return TRUE
 
 /obj/machinery/computer/ship/attack_ai(mob/user)
-	//VOREStation Addition Start
+	// ition Start
 	if(!ai_control && issilicon(user))
 		to_chat(user, span_warning("Access Denied."))
 		return
-	//VOREStation Addition End
+	// ition End
 	if(tgui_status(user, tgui_state()) > STATUS_CLOSE)
 		return interface_interact(user)
 
@@ -87,11 +87,11 @@
 /obj/machinery/computer/ship/attack_hand(mob/user)
 	if((. = ..()))
 		return
-	//VOREStation Addition Start
+	// ition Start
 	if(!ai_control && issilicon(user))
 		to_chat(user, span_warning("Access Denied."))
 		return TRUE
-	//VOREStation Addition End
+	// ition End
 	if(!allowed(user))
 		to_chat(user, span_warning("Access Denied."))
 		return TRUE

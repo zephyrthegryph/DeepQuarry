@@ -44,7 +44,7 @@
 	maxHealth = 50 // Shield has 150 for total of 200.
 	health = 50
 	movement_cooldown = 1.5
-	// DQEdit — dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
+	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
 	base_attack_cooldown = 5
 	projectiletype = /obj/item/projectile/beam/drone

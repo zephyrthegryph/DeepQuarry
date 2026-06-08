@@ -110,7 +110,7 @@
 		update_icon()
 		return
 
-	else if (W.has_tool_quality(TOOL_WRENCH) && !(src.destroyed)) // CHOMPEdit - Make sure it's not broken
+	else if (W.has_tool_quality(TOOL_WRENCH) && !(src.destroyed)) // Make sure it's not broken
 		if(connected_port)
 			disconnect()
 			to_chat(user, span_notice("You disconnect \the [src] from the port."))
@@ -181,7 +181,7 @@
 	..()
 
 /obj/machinery/portable_atmospherics/proc/log_open()
-	// DQEdit — was iterating XGM `air_contents.gas` (string-id dict).
+	// was iterating XGM `air_contents.gas` (string-id dict).
 	// gas_ids() returns the same string IDs under LINDA.
 	var/list/gas_id_list = air_contents.gas_ids()
 	if(!length(gas_id_list))

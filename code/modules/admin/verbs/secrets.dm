@@ -48,7 +48,7 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 	switch(action)
 		//Generic Buttons anyone can use.
 		if("admin_log")
-			// DQEdit — structured TGUI AdminReport.
+			// structured TGUI AdminReport.
 			if(!GLOB.admin_log.len)
 				dq_admin_report_html(holder, "Admin Logs", "No-one has done anything this round!")
 			else
@@ -56,7 +56,7 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 		if("dialog_log")
 			SSadmin_verbs.dynamic_invoke_verb(ui.user, /datum/admin_verb/persistent_client_logs)
 		if("show_admins")
-			// DQEdit — structured TGUI AdminReport with typed table.
+			// structured TGUI AdminReport with typed table.
 			if(GLOB.admin_datums)
 				var/list/rows = list()
 				for(var/ckey in GLOB.admin_datums)

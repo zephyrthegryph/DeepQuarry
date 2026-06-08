@@ -1,11 +1,11 @@
-//#define NEWSFILE "data/news.sav"	//where the memos are saved //ChompEDIT - moved to __defines/admin_ch
+// #define NEWSFILE "data/news.sav" //where the memos are saved // moved to __defines/admin_ch
 
 /client/
 	//var/last_news_hash = null // Stores a hash of the last news window it saw, which gets compared to the current one to see if it is different.
 
 // Returns true if news was updated since last seen.
 /client/proc/check_for_new_server_news()
-	if(GLOB.servernews_hash != prefs.lastnews) //ChompEDIT
+	if(GLOB.servernews_hash != prefs.lastnews)
 		return TRUE
 	return FALSE
 
@@ -33,7 +33,7 @@ ADMIN_VERB(modify_server_news, R_SERVER|R_EVENT, "Modify Public News", "Modify t
 		F["timestamp"] << time2text(world.realtime, "DDD, MMM DD YYYY")
 		message_admins("[user.key] modified the news to read:<br>[new_title]<br>[new_body]")
 
-/client/proc/get_server_news() //ChompEDIT - child of /client/
+/client/proc/get_server_news() // child of /client/
 	var/savefile/F = new(NEWSFILE)
 	if(F)
 		if(GLOB.servernews_hash != prefs.lastnews) //ChompADD

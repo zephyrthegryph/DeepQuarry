@@ -1,10 +1,10 @@
-// DQAdd — Cyborg chargen-driven spawn.
+// Cyborg chargen-driven spawn.
 //
 // The module-selection popup fires from two places: /mob/living/silicon/robot
 // /LateInitialize (atom initialization) AND /mob/living/silicon/robot/Login
 // (when a player slots in). We override LateInitialize here in a modular
 // file; the Login() call site has its pick_module() replaced inline with a
-// DQEdit marker (see code/modules/mob/living/silicon/robot/login.dm).
+// marker (see code/modules/mob/living/silicon/robot/login.dm).
 //
 // apply_cyborg_chargen_prefs_or_default reads the chargen prefs (robot_module
 // + robot_chassis), looks up the matching sprite, and runs apply_module +
@@ -52,13 +52,12 @@
 	transform_module()
 
 /mob/living/silicon/robot/LateInitialize()
-	// DQEdit Start — upstream calls pick_module() here. If a client is
+	// upstream calls pick_module() here. If a client is
 	// already attached (e.g. admin-spawned borg with a player riding), try
 	// chargen-prefs apply; otherwise update_icon() and let the player's
 	// eventual Login() take care of it. The popup never opens.
 	if(client)
 		apply_cyborg_chargen_prefs_or_default()
 	update_icon()
-	// DQEdit End
 
 #undef DQ_DEFAULT_CYBORG_MODULE

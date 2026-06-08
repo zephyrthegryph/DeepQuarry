@@ -4,13 +4,13 @@
 	req_access = list(ACCESS_ALL_PERSONAL_LOCKERS)
 	var/registered_name = null
 
-	/* //VOREStation Removal
+	/* // Removal
 	starts_with = list(
 		/obj/item/radio/headset)
 	*/
 
 /obj/structure/closet/secure_closet/personal/Initialize(mapload)
-	/* //VOREStation Removal
+	/* // Removal
 	if(prob(50))
 		starts_with += /obj/item/storage/backpack
 	else

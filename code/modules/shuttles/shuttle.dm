@@ -54,7 +54,7 @@
 	else
 		current_location = SSshuttles.get_landmark(current_location)
 	if(!istype(current_location))
-		// DQEdit — landmark missing usually means the shuttle's home map
+		// landmark missing usually means the shuttle's home map
 		// was removed. Log once and skip registration so subtype New()s
 		// don't trip null derefs on current_location.docking_controller.
 		log_shuttle("Shuttle '[name]' could not find its starting location landmark; skipping registration.")
@@ -181,8 +181,8 @@
 		if(attempt_move(interim, TRUE))
 			interim.shuttle_arrived()
 
-			if(process_longjump(current_location, destination)) //VOREStation Edit - To hook custom shuttle code in
-				return //VOREStation Edit - It handled it for us (shuttle crash or such)
+			if(process_longjump(current_location, destination)) // To hook custom shuttle code in
+				return // It handled it for us (shuttle crash or such)
 
 			var/last_progress_sound = 0
 			var/made_warning = FALSE
@@ -321,7 +321,7 @@
 					bug.gib()
 				else
 					qdel(AM) //it just gets atomized I guess? TODO throw it into space somewhere, prevents people from using shuttles as an atom-smasher
-	var/list/radios = list()	//CHOMPEdit
+	var/list/radios = list()
 	var/list/powernets = list()
 	for(var/area/A in shuttle_area)
 		// If there was a zlevel above our origin and we own the ceiling, erase our ceiling now we're leaving
@@ -345,17 +345,13 @@
 					//M.throw_at_random(FALSE, 4, 1)
 					if(istype(M, /mob/living/carbon))
 						M.Weaken(3)
-						//VOREStation Add
 						if(move_direction)
 							throw_a_mob(M,move_direction)
-						//VOREStation Add End
 		// We only need to rebuild powernets for our cables. No need to check machines because they are on top of cables.
 		for(var/obj/structure/cable/C in A)
 			powernets |= C.powernet
-		//CHOMPEdit Begin
 		for(var/obj/item/radio/intercom/I in A)
 			radios |= I
-		//CHOMPEdit End
 
 	// Update our base turfs before we move, so that transparent turfs look good.
 	var/new_base = destination.base_turf || /turf/space
@@ -384,11 +380,9 @@
 		cables |= P.cables
 		qdel(P)
 	SSmachines.setup_powernets_for_cables(cables)
-	//CHOMPEdit Begin
 	for(var/obj/item/radio/intercom/I in radios)
 		if(istype(I))
 			I.update_broadcast_tiles()
-	//CHOMPEdit End
 	// Adjust areas of mothershuttle so it doesn't try and bring us with it if it jumps while we aren't on it.
 	if(mothershuttle)
 		var/datum/shuttle/MS = SSshuttles.shuttles[mothershuttle]

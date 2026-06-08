@@ -136,14 +136,13 @@
 /datum/trait/proc/apply_pref(datum/preferences/P)
 	ASSERT(P)
 	if(var_changes_pref)
-		// DQEdit Start — route through /datum/preference when the key has been migrated
+		// route through /datum/preference when the key has been migrated
 		for(var/V in var_changes_pref)
 			var/datum/preference/migrated = GLOB.preference_entries_by_key[V]
 			if(migrated)
 				P.update_preference_by_type(migrated.type, var_changes_pref[V])
 			else
 				P.vars[V] = var_changes_pref[V]
-		// DQEdit End
 	return
 
 //Similar to the above, but for removing. Probably won't be called often/ever.
@@ -155,14 +154,13 @@
 /datum/trait/proc/remove_pref(datum/preferences/P)
 	ASSERT(P)
 	if(var_changes_pref)
-		// DQEdit Start — reset migrated keys to their /datum/preference default
+		// reset migrated keys to their /datum/preference default
 		for(var/V in var_changes_pref)
 			var/datum/preference/migrated = GLOB.preference_entries_by_key[V]
 			if(migrated)
 				P.update_preference_by_type(migrated.type, migrated.create_default_value())
 			else
 				P.vars[V] = initial(P.vars[V])
-		// DQEdit End
 	return
 
 /datum/trait/proc/get_default_prefs()

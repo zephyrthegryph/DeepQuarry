@@ -1,4 +1,4 @@
-// DQAdd — Cyborg chassis + module picker editor (Looks tab, robot mode).
+// Cyborg chassis + module picker editor (Looks tab, robot mode).
 //
 // Lives in appearance/chassis. The category/group filter in
 // /datum/preference_middleware/character_setup hides this in human mode.

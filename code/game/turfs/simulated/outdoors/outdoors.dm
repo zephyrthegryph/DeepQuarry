@@ -23,7 +23,7 @@ GLOBAL_LIST_EMPTY(turf_edge_cache)
 	can_build_into_floor = TRUE
 
 	// When a turf gets demoted or promoted, this list gets adjusted.  The top-most layer is the layer on the bottom of the list, due to how pop() works.
-	//var/list/turf_layers = list(/turf/simulated/floor/outdoors/rocks) CHOMPEdit kill. See outdoors_ch.dm for replacement.
+	// var/list/turf_layers = list(/turf/simulated/floor/outdoors/rocks) kill. See outdoors_ch.dm for replacement.
 
 /turf/simulated/floor/Destroy()
 	if(is_outdoors())
@@ -82,7 +82,7 @@ GLOBAL_LIST_EMPTY(turf_edge_cache)
 /turf/simulated/floor/outdoors/mud
 	name = "mud"
 	icon_state = "mud_dark"
-	edge_blending_priority = 4 // CHOMPedit
+	edge_blending_priority = 4
 	initial_flooring = /datum/decl/flooring/mud
 	flags = TURF_CAN_DIG_SHOVEL
 
@@ -138,7 +138,7 @@ CHOMP Removal End */
 
 /turf/simulated/floor/outdoors/ex_act(severity)
 	switch(severity)
-		//VOREStation Edit - Outdoor turfs less explosion resistant
+		// Outdoor turfs less explosion resistant
 		if(1)
 			if(prob(66))
 				ChangeTurf(get_base_turf_by_area(src))
@@ -149,7 +149,6 @@ CHOMP Removal End */
 				return
 			else if(prob(33))
 				demote()
-		//VOREStation Edit End
 		if(3)
 			if(prob(66))
 				return

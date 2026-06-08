@@ -154,7 +154,7 @@
 /atom/
 	var/datum/component/orbiter/orbiters
 
-// DQEdit — orbiting and orbit_target moved to /datum/component/movable_state.
+// orbiting and orbit_target moved to /datum/component/movable_state.
 
 /atom/movable/proc/orbit(atom/A, radius = 10, clockwise = FALSE, rotation_speed = 20, rotation_segments = 36, pre_rotation = TRUE)
 	if(!istype(A) || !get_turf(A) || A == src)

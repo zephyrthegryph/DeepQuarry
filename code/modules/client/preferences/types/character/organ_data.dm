@@ -26,7 +26,7 @@
 	return islist(value)
 
 /datum/preference/organ_data/apply_to_human(mob/living/carbon/human/target, value)
-	return // DQEdit — handled by /datum/preference_apply_hook/organs (apply_hooks/organs.dm)
+	return // handled by /datum/preference_apply_hook/organs (apply_hooks/organs.dm)
 
 /datum/preference/organ_data/apply_to_living(mob/living/target, value)
 	return

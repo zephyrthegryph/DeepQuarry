@@ -153,7 +153,7 @@
 
 /mob/living/silicon/ai/proc/ai_actual_track(mob/living/target as mob)
 	if(!istype(target))	return FALSE
-	var/mob/living/silicon/ai/U = src //ChompEDIT usr --> src
+	var/mob/living/silicon/ai/U = src // usr --> src
 
 	if(target == U.cameraFollow)
 		return TRUE
