@@ -64,75 +64,6 @@ export const DmMapsIncludeTarget = new Juke.Target({
   },
 });
 
-// DQAdd Start — build the in-tree verdigris Rust FFI cdylib before the
-// server runs. Produces verdigris.dll (Windows) / libverdigris.so (Linux)
-// at the repo root, where DreamDaemon loads it via VERDIGRIS_CALL (cave-gen
-// + vendored auxmos atmos). The compiled lib is a gitignored per-platform
-// artifact, so the build is responsible for producing it.
-//
-// When cargo IS present: build succeeds or the target throws (hard fail).
-// When cargo IS NOT present AND a prebuilt lib exists: warn and skip.
-// When cargo IS NOT present AND no prebuilt lib exists: hard fail — a build
-//   without the FFI lib would compile but crash at runtime; that's worse
-//   than a clear build-time error.
-const VERDIGRIS_LIB =
-  process.platform === 'win32' ? 'verdigris.dll' : 'libverdigris.so';
-const VERDIGRIS_RUST_TARGET =
-  process.platform === 'win32'
-    ? 'i686-pc-windows-msvc'
-    : 'i686-unknown-linux-gnu';
-
-export const VerdigrisTarget = new Juke.Target({
-  onlyWhen: () => {
-    const probe = spawnSync('cargo', ['--version'], {
-      stdio: 'ignore',
-      shell: true,
-    });
-    const cargoOk = !probe.error && probe.status === 0;
-    if (!cargoOk) {
-      if (fs.existsSync(VERDIGRIS_LIB)) {
-        Juke.logger.info(
-          `verdigris: cargo not found — using existing ${VERDIGRIS_LIB} (DM-only build)`,
-        );
-        return false; // skip — prebuilt lib will serve at runtime
-      }
-      // No cargo and no prebuilt lib: building would produce a runtime-crashing binary.
-      Juke.logger.error(
-        `verdigris: cargo not found and ${VERDIGRIS_LIB} is missing. `
-          + 'Cannot build — atmos/cave-gen FFI will crash at runtime without it. '
-          + 'Install rustup (see verdigris/README.md) or obtain a prebuilt '
-          + `${VERDIGRIS_LIB} and place it at the repo root.`,
-      );
-      throw new Juke.ExitCode(1);
-    }
-    return true;
-  },
-  inputs: [
-    'verdigris/Cargo.toml',
-    'verdigris/Cargo.lock',
-    'verdigris/verdigris/Cargo.toml',
-    'verdigris/verdigris/build.rs',
-    'verdigris/verdigris/src/**/*.rs',
-    'verdigris/atmos/Cargo.toml',
-    'verdigris/atmos/src/**/*.rs',
-    'verdigris/atmos/crates/**/Cargo.toml',
-    'verdigris/atmos/crates/**/*.rs',
-  ],
-  outputs: [VERDIGRIS_LIB],
-  executes: async () => {
-    await Juke.exec(
-      'cargo',
-      ['build', '--release', '--target', VERDIGRIS_RUST_TARGET],
-      { cwd: 'verdigris' },
-    );
-    fs.copyFileSync(
-      `verdigris/target/${VERDIGRIS_RUST_TARGET}/release/${VERDIGRIS_LIB}`,
-      VERDIGRIS_LIB,
-    );
-  },
-});
-// DQAdd End
-
 // DQAdd Start — regenerate .dmi files from their PNG + .dmi.toml sources
 // before DM compile. Architecture A migration: every DMI has editable
 // PNG + TOML sources alongside it; this target re-packs them when stale.
@@ -143,13 +74,9 @@ export const VerdigrisTarget = new Juke.Target({
 // build_step.py's own BLAKE2b dirty-check is the authoritative per-file
 // gate; Juke's coarser mtime check is the outer skip-entirely gate.
 export const IconRepackTarget = new Juke.Target({
-  inputs: [
-    'icons/**/*.dmi.toml',
-    'icons/**/*.png',
-    'maps/**/*.dmi.toml',
-    'maps/**/*.png',
-  ],
-  outputs: ['icons/gen/**/*.dmi'],
+  // No Juke inputs/outputs: build_step.py does its own BLAKE2b dirty-check, and
+  // declaring an 'icons/gen/**/*.dmi' output makes Juke try to touch outputs
+  // that may not exist yet, crashing the build. Let the python step gate itself.
   executes: async () => {
     await Juke.exec('python3', [
       '-m', 'tools.dq_icons.build_step',
@@ -175,32 +102,84 @@ export const CleanIconsTarget = new Juke.Target({
 export const ValidateDmeTarget = new Juke.Target({
   inputs: ['code/**/*.dm', `${DME_NAME}.dme`],
   executes: async () => {
-    const dmeContent = fs.readFileSync(`${DME_NAME}.dme`, 'utf-8');
+    // A .dm file is "compiled" if it is reachable from the .dme through the
+    // transitive #include graph — NOT just if it appears literally in the .dme.
+    // Many files are pulled in by intermediate aggregators (e.g.
+    // code/modules/tgs/includes.dm includes its core/v5 subfiles; code/__odlint.dm
+    // includes __pragmas.dm). A naive "is it in the .dme" check false-positives
+    // on every such transitively-included file, so we walk the graph.
+    //
+    // #include paths in the .dme are relative to the repo root; #include paths
+    // inside a .dm file are relative to that file's own directory. Both may use
+    // either slash style.
 
-    // Build the set of all paths mentioned in the DME (normalise to forward-slash).
-    const mentioned = new Set<string>();
-    for (const match of dmeContent.matchAll(/#include\s+"([^"]+\.dm)"/g)) {
-      mentioned.add(match[1].replace(/\\/g, '/'));
+    // Resolve an #include target to a repo-root-relative, forward-slash path.
+    const resolveInclude = (baseDir: string, raw: string): string => {
+      const combined = baseDir === '.' ? raw : `${baseDir}/${raw}`;
+      const out: string[] = [];
+      for (const seg of combined.replace(/\\/g, '/').split('/')) {
+        if (seg === '' || seg === '.') continue;
+        if (seg === '..') { out.pop(); continue; }
+        out.push(seg);
+      }
+      return out.join('/');
+    };
+    const dirOf = (file: string): string => {
+      const i = file.lastIndexOf('/');
+      return i === -1 ? '.' : file.slice(0, i);
+    };
+
+    const ACTIVE_INCLUDE = /^[ \t]*#include\s+"([^"]+\.dm)"/gm;
+    const COMMENTED_INCLUDE = /^[ \t]*\/\/\s*#include\s+"([^"]+\.dm)"/gm;
+
+    const reachable = new Set<string>();  // compiled (transitively included)
+    const disabled = new Set<string>();   // intentionally commented-out includes
+    const queue: string[] = [];
+
+    const seed = (content: string, baseDir: string) => {
+      for (const m of content.matchAll(ACTIVE_INCLUDE)) {
+        queue.push(resolveInclude(baseDir, m[1]));
+      }
+      for (const m of content.matchAll(COMMENTED_INCLUDE)) {
+        disabled.add(resolveInclude(baseDir, m[1]));
+      }
+    };
+
+    seed(fs.readFileSync(`${DME_NAME}.dme`, 'utf-8'), '.');
+    while (queue.length > 0) {
+      const file = queue.pop() as string;
+      if (reachable.has(file)) continue;
+      reachable.add(file);
+      if (!fs.existsSync(file)) continue; // missing include target: DM compile will report it
+      seed(fs.readFileSync(file, 'utf-8'), dirOf(file));
     }
+
+    // Unit-test files are compiled only under a separate test .dme, never from
+    // deepquarry.dme — exclude them from the "is it wired into the build" check.
+    const EXCLUDED_PREFIXES = [
+      'code/modules/unit_tests/',
+      'code/unit_tests/',
+    ];
 
     const dmFiles = Juke.glob('code/**/*.dm');
     const missing: string[] = [];
     for (const file of dmFiles) {
       const normalized = file.replace(/\\/g, '/');
-      if (!mentioned.has(normalized)) {
-        missing.push(normalized);
-      }
+      if (reachable.has(normalized) || disabled.has(normalized)) continue;
+      if (EXCLUDED_PREFIXES.some((p) => normalized.startsWith(p))) continue;
+      missing.push(normalized);
     }
 
     if (missing.length > 0) {
       Juke.logger.error(
-        `${missing.length} .dm file(s) under code/ are not included in ${DME_NAME}.dme:\n` +
-        missing.map((f) => `  ${f}`).join('\n') +
-        '\n\nAdd each file to deepquarry.dme, or delete it if unused.',
+        `${missing.length} .dm file(s) under code/ are not reachable from ${DME_NAME}.dme `
+          + 'via the #include graph (silently uncompiled):\n'
+        + missing.map((f) => `  ${f}`).join('\n')
+        + '\n\nAdd each file to deepquarry.dme (or an included aggregator), or delete it if unused.',
       );
       throw new Juke.ExitCode(1);
     }
-    Juke.logger.info(`ValidateDme: all ${dmFiles.length} code/ .dm files are included.`);
+    Juke.logger.info(`ValidateDme: all ${dmFiles.length} code/ .dm files are reachable from the DME.`);
   },
 });
 // DQAdd End
