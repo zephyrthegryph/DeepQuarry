@@ -21,24 +21,6 @@
 // Referenced by code/controllers/subsystems/mapping.dm (active subsystem).
 /datum/map_template/engine
 
-// Dynamic overmap template — was defined in modular_chomp/maps/overmap/space_pois/space_pois.dm.
-/datum/map_template/dynamic_overmap
-	var/scanner_desc = "You should not see this."
-	var/block_size = 0
-	var/poi_icon
-	var/poi_color
-	var/active_icon
-	var/faction
-	var/list/mobs_to_pick_from
-	var/prob_fall = 0
-	var/prob_spawn = 0
-	var/atmos_comp = TRUE
-	var/interactable = TRUE
-	var/annihilate_bounds = TRUE
-
-/datum/map_template/dynamic_overmap/proc/update_lighting(turf/T)
-	return
-
 // Engine loader landmark — was defined in the same engine submap file.
 /obj/effect/landmark/engine_loader
 
