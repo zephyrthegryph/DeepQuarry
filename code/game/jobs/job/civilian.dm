@@ -245,14 +245,12 @@
 						assuming their paperwork is in order."
 	alt_titles = list(JOB_ALT_INTERNAL_AFFAIRS_LIAISON = /datum/alt_title/ia_liaison, JOB_ALT_INTERNAL_AFFAIRS_DELEGATE = /datum/alt_title/ia_delegate,
 						JOB_ALT_INTERNAL_AFFAIRS_INVESTIGATOR = /datum/alt_title/ia_investigator)
-	dept_time_required = 20 // CHOMPEdit
+	dept_time_required = 20
 
-//YW UNCOMMENTINGSTART: REINSTATE LOYALTY IMPLANT
 /datum/job/lawyer/equip(mob/living/carbon/human/H)
 	. = ..()
 	if(.)
 		H.implant_loyalty()
-//YW UNCOMMENTING END
 
 /datum/alt_title/ia_liaison
 	title = JOB_ALT_INTERNAL_AFFAIRS_LIAISON
@@ -325,7 +323,7 @@
 						JOB_ALT_ACTOR = /datum/alt_title/actor, JOB_ALT_DANCER = /datum/alt_title/dancer, JOB_ALT_SINGER = /datum/alt_title/singer,
 						JOB_ALT_MAGICIAN = /datum/alt_title/magician, JOB_ALT_COMEDIAN = /datum/alt_title/comedian, JOB_ALT_TRAGEDIAN = /datum/alt_title/tragedian,
 						JOB_CLOWN = /datum/alt_title/clown, JOB_ALT_JESTER = /datum/alt_title/clown/jester,JOB_ALT_FOOL = /datum/alt_title/clown/fool,
-						JOB_MIME= /datum/alt_title/mime,JOB_ALT_PASEUR= /datum/alt_title/mime/poseur, //CHOMPEDIT: Adding clown + mime and their alts as alts of entertainer
+						JOB_MIME= /datum/alt_title/mime,JOB_ALT_PASEUR= /datum/alt_title/mime/poseur,
 						JOB_ALT_ARTIST = /datum/alt_title/artist, JOB_ALT_FITNESS_INSTRUCTOR = /datum/alt_title/fitnessinstructor, JOB_ALT_GAME_MASTER = /datum/alt_title/game_master)
 // Entertainer Alt Titles
 /datum/alt_title/actor
@@ -372,11 +370,9 @@
 	title = JOB_ALT_GAME_MASTER
 	title_blurb = "A " + JOB_ALT_GAME_MASTER + " provides recreation for the crew by hosting variety of games. From cards to roleplaying to something more personalized."
 
-// ChompADD
 /datum/alt_title/fitnessinstructor
 	title = JOB_ALT_FITNESS_INSTRUCTOR
 	title_blurb = "A " + JOB_ALT_FITNESS_INSTRUCTOR + " dedicates themselves to improving the health of the crew through physical activity, and boy, do they need the help."
-// ChompADD END
 
 //////////////////////////////////
 //			Entrepreneur

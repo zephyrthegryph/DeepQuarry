@@ -2,7 +2,7 @@
 
 	//The name of the job
 	var/title = "NOPE"
-	//Job access. The use of minimal_access or access is determined by a config setting: CONFIG_GET(flag/jobs_have_minimal_access) // CHOMPEdit
+	//Job access. The use of minimal_access or access is determined by a config setting: CONFIG_GET(flag/jobs_have_minimal_access)
 	var/list/minimal_access = list()      // Useful for servers which prefer to only have access given to the places a job absolutely needs (Larger server population)
 	var/list/access = list()              // Useful for servers which either have fewer players, so each person needs to fill more than one role, or servers which like to give more access, so players can't hide forever in their super secure departments (I'm looking at you, chemistry!)
 	var/flag = 0 	                      // Bitflags for the job
@@ -39,9 +39,9 @@
 	// Description of the job's role and minimum responsibilities.
 	var/job_description = "This Job doesn't have a description! Please report it!"
 
-	var/camp_protection = FALSE				//CHOMPadd
-	var/list/restricted_keys = list()		//CHOMPadd
-	var/list/shift_keys = list()			//CHOMPadd
+	var/camp_protection = FALSE
+	var/list/restricted_keys = list()
+	var/list/shift_keys = list()
 
 	//Requires a ckey to be whitelisted in jobwhitelist.txt
 	var/whitelist_only = 0
@@ -103,10 +103,10 @@
 			if(CLASS_MIDDLE)	income = 1
 			if(CLASS_LOWMID)	income = 0.75
 			if(CLASS_LOWER)		income = 0.50
-			if(CLASS_BROKE)		income = 0	//VOREStation Add - Rent's not cheap
+			if(CLASS_BROKE)		income = 0
 
 	//give them an account in the station database
-	var/money_amount = (rand(15,40) + rand(15,40)) * income * economic_modifier * ECO_MODIFIER //VOREStation Edit - Smoothed peaks, ECO_MODIFIER rather than per-species ones.
+	var/money_amount = (rand(15,40) + rand(15,40)) * income * economic_modifier * ECO_MODIFIER
 	var/datum/money_account/M = create_account(H.real_name, money_amount, null, offmap_spawn)
 	if(H.mind)
 		var/remembered_info = ""
@@ -200,34 +200,20 @@
 ///Assigns minimum age by race & brain type. Code says Positronic = mechanical and Drone = digital because nothing can be simple.
 ///Will first check based on brain type, then based on species.
 /datum/job/proc/get_min_age(species_name, brain_type)
-	return minimum_character_age // VOREStation Edit - Minimum character age by rules is 18, return default which is standard for all species
-	//return (brain_type && LAZYACCESS(min_age_by_species, brain_type)) || LAZYACCESS(min_age_by_species, species_name) || minimum_character_age //VOREStation Removal
+	return minimum_character_age
 
 /datum/job/proc/get_ideal_age(species_name, brain_type)
-	return ideal_character_age // VOREStation Edit - Minimum character age by rules is 18, return default which is standard for all species
-	//return (brain_type && LAZYACCESS(ideal_age_by_species, brain_type)) || LAZYACCESS(ideal_age_by_species, brain_type) || ideal_character_age //VOREStation Removal
+	return ideal_character_age
 
 /datum/job/proc/is_species_banned(species_name, brain_type)
-	// CHOMPEdit begin -- Shadekin cannot be any crew position
 	if(species_name == SPECIES_SHADEKIN)
 		return TRUE
-	// CHOMPEdit end
-	return FALSE // VOREStation Edit - Any species can be any job.
-	/* VOREStation Removal
-	if(banned_job_species == null)
-		return
-	if(species_name in banned_job_species)
-		return TRUE
-	if(brain_type in banned_job_species)
-		return TRUE
-	*/
+	return FALSE
 
-//CHOMPadd start
 /datum/job/proc/register_shift_key(key)
 	if(key)
 		var/list/keylist = list(key)
 		SSjob.shift_keys[title] += keylist
-//CHOMPadd end
 
 /datum/job/proc/update_limit(comperator)
 	return

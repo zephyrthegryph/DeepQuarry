@@ -27,7 +27,7 @@
 						ACCESS_EXPLORER, ACCESS_PATHFINDER, ACCESS_XENOBOTANY) //YW Edit access_gateway, _explorer, _pathfinder, and _xenobotany
 
 	minimum_character_age = 25
-	minimal_player_age = 31 //ChompEDIT
+	minimal_player_age = 31
 	min_age_by_species = list(SPECIES_UNATHI = 70, FBP_MECHANICAL = 10, SPECIES_HUMAN_VATBORN = 14)
 	ideal_character_age = 50
 	ideal_age_by_species = list(SPECIES_UNATHI = 140, FBP_MECHANICAL = 20, SPECIES_HUMAN_VATBORN = 20)
@@ -251,7 +251,7 @@
 	supervisors = "the " + JOB_RESEARCH_DIRECTOR
 	selection_color = "#633D63"
 	economic_modifier = 7
-	access = list(ACCESS_ROBOTICS, ACCESS_TOX, ACCESS_TOX_STORAGE, ACCESS_RESEARCH, ACCESS_XENOBOTANY, ACCESS_HYDROPONICS, ACCESS_XENOBIOLOGY) //CHOMPS KSC 9/2/2020 - Added "access_xenobiology" to their access so they can enter Xenobotany.
+	access = list(ACCESS_ROBOTICS, ACCESS_TOX, ACCESS_TOX_STORAGE, ACCESS_RESEARCH, ACCESS_XENOBOTANY, ACCESS_HYDROPONICS, ACCESS_XENOBIOLOGY)
 	minimal_access = list(ACCESS_RESEARCH, ACCESS_XENOBOTANY, ACCESS_HYDROPONICS, ACCESS_TOX_STORAGE)
 	pto_type = PTO_SCIENCE
 

@@ -38,7 +38,7 @@
 	faction = FACTION_STATION
 	total_positions = 1
 	spawn_positions = 1
-	supervisors = "the " + JOB_RESEARCH_DIRECTOR //CHOMPedit
+	supervisors = "the " + JOB_RESEARCH_DIRECTOR
 	selection_color = "#d6d05c"
 	economic_modifier = 8
 	minimal_player_age = 7
@@ -64,20 +64,20 @@
 /datum/job/pilot
 	title = "Pilot"
 	flag = PILOT
-	departments = list(DEPARTMENT_PLANET) //CHOMPedit: keep them part of exploration
-	department_flag = MEDSCI //CHOMPedit
+	departments = list(DEPARTMENT_PLANET)
+	department_flag = MEDSCI
 	faction = "Station"
 	total_positions = 5
 	spawn_positions = 5
-	supervisors = "the Pathfinder" //CHOMPedit
-	selection_color = "#999440" //CHOMP Edit
+	supervisors = "the Pathfinder"
+	selection_color = "#999440"
 	economic_modifier = 5
 	minimal_player_age = 3
 	pto_type = PTO_EXPLORATION
-	access = list(ACCESS_PILOT, ACCESS_EXTERNAL_AIRLOCKS, ACCESS_EVA, ACCESS_EXPLORER) //CHOMPedit gave pilot a little more access
-	minimal_access = list(ACCESS_PILOT, ACCESS_EXTERNAL_AIRLOCKS, ACCESS_EVA, ACCESS_EXPLORER) //CHOMPedit gave pilot a little more access
+	access = list(ACCESS_PILOT, ACCESS_EXTERNAL_AIRLOCKS, ACCESS_EVA, ACCESS_EXPLORER)
+	minimal_access = list(ACCESS_PILOT, ACCESS_EXTERNAL_AIRLOCKS, ACCESS_EVA, ACCESS_EXPLORER)
 	outfit_type = /datum/decl/hierarchy/outfit/job/pilot
-	job_description = "A Pilot flies the various shuttles in the Vir System." //CHOMPedit: Replaces Virgo reference with Vir.
+	job_description = "A Pilot flies the various shuttles in the Vir System."
 	alt_titles = list("Co-Pilot" = /datum/alt_title/co_pilot, "Navigator" = /datum/alt_title/navigator, "Helmsman" = /datum/alt_title/helmsman)
 
 /datum/alt_title/co_pilot
@@ -99,7 +99,7 @@
 	faction = FACTION_STATION
 	total_positions = 3
 	spawn_positions = 3
-	supervisors = "the " + JOB_PATHFINDER //CHOMPedit
+	supervisors = "the " + JOB_PATHFINDER
 	selection_color = "#999440"
 	economic_modifier = 6
 	pto_type = PTO_EXPLORATION
@@ -126,13 +126,13 @@
 	faction = FACTION_STATION
 	total_positions = 2
 	spawn_positions = 2
-	supervisors = "the " + JOB_PATHFINDER //CHOMPedit
+	supervisors = "the " + JOB_PATHFINDER
 	selection_color = "#999440"
 	economic_modifier = 6
 	minimal_player_age = 3
 	pto_type = PTO_EXPLORATION
-	access = list(ACCESS_MEDICAL, ACCESS_MEDICAL_EQUIP, ACCESS_MORGUE, ACCESS_EVA, ACCESS_MAINT_TUNNELS, ACCESS_EXTERNAL_AIRLOCKS,ACCESS_EXPLORER) // CHOMPedit: No more pilot, surgery or chemistry access.
-	minimal_access = list(ACCESS_MEDICAL, ACCESS_MEDICAL_EQUIP, ACCESS_MORGUE,ACCESS_EXPLORER) // CHOMPedit: No more pilot access.
+	access = list(ACCESS_MEDICAL, ACCESS_MEDICAL_EQUIP, ACCESS_MORGUE, ACCESS_EVA, ACCESS_MAINT_TUNNELS, ACCESS_EXTERNAL_AIRLOCKS,ACCESS_EXPLORER)
+	minimal_access = list(ACCESS_MEDICAL, ACCESS_MEDICAL_EQUIP, ACCESS_MORGUE,ACCESS_EXPLORER)
 	outfit_type = /datum/decl/hierarchy/outfit/job/medical/sar
 	job_description = "A " + JOB_FIELD_MEDIC + " works as the field doctor of expedition teams."
 	alt_titles = list(JOB_ALT_EXPEDITION_MEDIC = /datum/alt_title/expedition_medic, JOB_ALT_OFFSITE_MEDIC = /datum/alt_title/offsite_medic)

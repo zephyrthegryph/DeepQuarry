@@ -36,7 +36,7 @@
 							ACCESS_HEADS, ACCESS_CONSTRUCTION,
 							ACCESS_CE, ACCESS_RC_ANNOUNCE, ACCESS_KEYCARD_AUTH, ACCESS_TCOMSAT, ACCESS_AI_UPLOAD, ACCESS_GATEWAY)
 	alt_titles = list(JOB_ALT_HEAD_ENGINEER = /datum/alt_title/head_engineer, JOB_ALT_FOREMAN = /datum/alt_title/foreman, JOB_ALT_MAINTENANCE_MANAGER = /datum/alt_title/maintenance_manager)
-	minimal_player_age = 31 //ChompEDIT
+	minimal_player_age = 31
 
 	outfit_type = /datum/decl/hierarchy/outfit/job/engineering/chief_engineer
 	job_description = "The " + JOB_CHIEF_ENGINEER + " manages the Engineering Department, ensuring that the Engineers work on what needs to be done, handling distribution \
@@ -158,7 +158,7 @@
 	access = list(ACCESS_EVA, ACCESS_ENGINE, ACCESS_ENGINE_EQUIP, ACCESS_TECH_STORAGE, ACCESS_MAINT_TUNNELS, ACCESS_EXTERNAL_AIRLOCKS, ACCESS_CONSTRUCTION, ACCESS_ATMOSPHERICS, ACCESS_EXTERNAL_AIRLOCKS)
 	minimal_access = list(ACCESS_EVA, ACCESS_ENGINE, ACCESS_ATMOSPHERICS, ACCESS_MAINT_TUNNELS, ACCESS_EMERGENCY_STORAGE, ACCESS_CONSTRUCTION, ACCESS_EXTERNAL_AIRLOCKS)
 
-	alt_titles = list(JOB_ALT_ATMOSPHERIC_ENGINEER = /datum/alt_title/atmos_engi, JOB_ALT_ATMOSPHERIC_MAINTAINER = /datum/alt_title/atmos_maint, /*CHOMPEdit JOB_ALT_DISPOSALS_TECHNICIAN = /datum/alt_title/disposals_tech*/
+	alt_titles = list(JOB_ALT_ATMOSPHERIC_ENGINEER = /datum/alt_title/atmos_engi, JOB_ALT_ATMOSPHERIC_MAINTAINER = /datum/alt_title/atmos_maint,
 						JOB_ALT_FUEL_TECHNICIAN = /datum/alt_title/refuel_tech, JOB_ALT_FIREFIGHTER = /datum/alt_title/firefighter)
 
 	minimal_player_age = 3

@@ -13,7 +13,7 @@
 	selection_color = "#3F823F"
 	supervisors = "your Laws"
 	req_admin_notify = 1
-	minimal_player_age = 31 //ChompEDIT
+	minimal_player_age = 31
 	account_allowed = 0
 	economic_modifier = 0
 	has_headset = FALSE
@@ -21,7 +21,7 @@
 	mob_type = JOB_SILICON_AI
 	disallow_jobhop = TRUE
 	pto_type = PTO_CIVILIAN
-	dept_time_required = 20 // CHOMPEdit
+	dept_time_required = 20
 	outfit_type = /datum/decl/hierarchy/outfit/job/silicon/ai
 	job_description = "The " + JOB_AI + " oversees the operation of the station and its crew, but has no real authority over them. \
 						The " + JOB_AI + " is required to follow its Laws, and Lawbound Synthetics that are linked to it are expected to follow \
@@ -51,9 +51,9 @@
 	faction = FACTION_STATION
 	pto_type = PTO_CYBORG
 	minimal_player_age = 3		//1 day is a little too little time
-	total_positions = 8 		//Along with one able to spawn later in the round. // CHOMPedit: Doubles total spawn positions for cyborgs.
-	spawn_positions = 6 		//Let's have 3 able to spawn in roundstart // CHOMPedit: Doubles total spawn positions for cyborgs.
-	supervisors = "your Laws and the " + JOB_AI	//Nodrak
+	total_positions = 8
+	spawn_positions = 6
+	supervisors = "your Laws and the " + JOB_AI
 	selection_color = "#254C25"
 	minimal_player_age = 1
 	account_allowed = 0
