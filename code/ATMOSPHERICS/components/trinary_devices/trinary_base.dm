@@ -72,24 +72,23 @@
 	return list(node1, node2, node3)
 
 /obj/machinery/atmospherics/trinary/network_expand(datum/pipe_network/new_network, obj/machinery/atmospherics/pipe/reference)
-	if(reference == node1)
-		network1 = new_network
-
-	else if(reference == node2)
-		network2 = new_network
-
-	else if (reference == node3)
-		network3 = new_network
-
+	// Idempotency guard: check membership before assigning slot vars.
 	if(new_network.normal_members.Find(src))
 		return 0
+
+	if(reference == node1)
+		network1 = new_network
+	else if(reference == node2)
+		network2 = new_network
+	else if(reference == node3)
+		network3 = new_network
 
 	new_network.normal_members += src
 
 	return null
 
 /obj/machinery/atmospherics/trinary/Destroy()
-	// DQEdit Start — disconnect/qdel BEFORE ..() so node derefs are valid.
+	// Disconnect/qdel BEFORE ..() so node derefs are valid.
 	if(node1)
 		node1.disconnect(src)
 		qdel(network1)
@@ -103,8 +102,10 @@
 	node1 = null
 	node2 = null
 	node3 = null
+	network1 = null
+	network2 = null
+	network3 = null
 	return ..()
-	// DQEdit End
 
 // Get the direction each node is facing to connect.
 // It now returns as a list so it can be fetched nicely, each entry corresponds to node of same number.

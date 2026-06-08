@@ -215,26 +215,28 @@
 	return neighbor_nodes
 
 /obj/machinery/atmospherics/omni/network_expand(datum/pipe_network/new_network, obj/machinery/atmospherics/pipe/reference)
+	// Idempotency guard: check membership before assigning port network vars.
+	if(new_network.normal_members.Find(src))
+		return 0
+
 	for(var/datum/omni_port/P in ports)
 		if(reference == P.node)
 			P.network = new_network
 			break
-
-	if(new_network.normal_members.Find(src))
-		return 0
 
 	new_network.normal_members += src
 
 	return null
 
 /obj/machinery/atmospherics/omni/Destroy()
-	loc = null
-
+	// Disconnect all ports before ..() so node.disconnect(src) runs against
+	// still-valid state.
 	for(var/datum/omni_port/P in ports)
 		if(P.node)
 			P.node.disconnect(src)
 			qdel(P.network)
 			P.node = null
+		P.network = null
 	ports = null
 	. = ..()
 
