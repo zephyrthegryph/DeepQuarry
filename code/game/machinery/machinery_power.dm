@@ -167,6 +167,15 @@
 	REPORT_POWER_CONSUMPTION_CHANGE(0, power) // Add to new channel
 	return TRUE
 
+/// Convenience wrapper: sets idle or active power consumption depending on use_power_mode.
+/// Prefer calling update_idle_power_usage() / update_active_power_usage() directly in new code.
+/obj/machinery/proc/change_power_consumption(new_power_consumption, use_power_mode = USE_POWER_IDLE)
+	switch(use_power_mode)
+		if(USE_POWER_IDLE)
+			update_idle_power_usage(new_power_consumption)
+		if(USE_POWER_ACTIVE)
+			update_active_power_usage(new_power_consumption)
+
 // Sets the idle_power_usage var and then forces an area power update if use_power was USE_POWER_IDLE
 /obj/machinery/proc/update_idle_power_usage(new_power_usage)
 	if(idle_power_usage == new_power_usage)
