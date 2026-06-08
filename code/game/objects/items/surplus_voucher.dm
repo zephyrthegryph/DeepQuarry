@@ -46,7 +46,7 @@
 					prob(1);/obj/structure/plushie/ian)
 	playsound(T, 'sound/effects/phasein.ogg', 25, 1)
 	new path(T)
-	del(src)
+	qdel(src)
 
 /obj/item/surplus_voucher/eng
 	name = "Engineering Surplus Voucher"
@@ -71,7 +71,7 @@
 					prob(1);/obj/item/toy/figure/engineer)
 	playsound(T, 'sound/effects/phasein.ogg', 25, 1)
 	new path(T)
-	del(src)
+	qdel(src)
 
 
 
@@ -106,7 +106,7 @@
 					prob(2);/obj/item/toy/plushie/borgplushie/medihound)
 	playsound(T, 'sound/effects/phasein.ogg', 25, 1)
 	new path(T)
-	del(src)
+	qdel(src)
 
 /obj/item/surplus_voucher/sci
 	name = "Science Surplus Voucher"
@@ -139,7 +139,7 @@
 					prob(1);/obj/item/toy/figure/borg)
 	playsound(T, 'sound/effects/phasein.ogg', 25, 1)
 	new path(T)
-	del(src)
+	qdel(src)
 
 /obj/item/surplus_voucher/sec
 	name = "Security Surplus Voucher"
@@ -165,7 +165,7 @@
 					prob(1);/obj/item/toy/plushie/borgplushie)
 	playsound(T, 'sound/effects/phasein.ogg', 25, 1)
 	new path(T)
-	del(src)
+	qdel(src)
 
 /obj/item/surplus_voucher/ser
 	name = "Service Surplus Voucher"
@@ -194,4 +194,4 @@
 					prob(1);/obj/item/toy/figure/bartender)
 	playsound(T, 'sound/effects/phasein.ogg', 25, 1)
 	new path(T)
-	del(src)
+	qdel(src)

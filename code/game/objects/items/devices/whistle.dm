@@ -51,8 +51,7 @@
 			to_chat(user, span_danger("*BZZZZZZZZT*"))
 
 	spamcheck = 1
-	spawn(20)
-		spamcheck = 0
+	addtimer(VARSET_CALLBACK(src, spamcheck, 0), 2 SECONDS)
 
 /obj/item/hailer/emag_act(remaining_charges, mob/user)
 	if(isnull(insults))

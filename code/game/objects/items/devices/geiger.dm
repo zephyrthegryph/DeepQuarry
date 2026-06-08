@@ -189,13 +189,11 @@
 
 /obj/item/geiger/wall/attack_ai(mob/user as mob)
 	src.add_fingerprint(user)
-	spawn (0)
-		attack_self(user)
+	addtimer(CALLBACK(src, PROC_REF(attack_self), user), 0)
 
 /obj/item/geiger/wall/attack_hand(mob/user as mob)
 	src.add_fingerprint(user)
-	spawn (0)
-		attack_self(user)
+	addtimer(CALLBACK(src, PROC_REF(attack_self), user), 0)
 
 /obj/item/geiger/wall/north
 	pixel_y = 28

@@ -184,5 +184,5 @@
 			our_ai.disconnect_shell("Disconnecting from remote shell due to insufficent power.")
 		our_ai.adjustOxyLoss(2)
 		our_ai.updatehealth()
-		sleep(10)
+		sleep(1 SECOND)
 	flush = FALSE

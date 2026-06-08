@@ -8,8 +8,8 @@
 
 /obj/effect/calldown_attack/Initialize(mapload)
 	. = ..()
-	var/delay = rand(25, 30)
-	addtimer(CALLBACK(src, PROC_REF(spawn_object)), delay-7)
+	var/delay = rand(2.5 SECONDS, 3 SECONDS)
+	addtimer(CALLBACK(src, PROC_REF(spawn_object)), delay - 0.7 SECONDS)
 
 /obj/effect/calldown_attack/proc/spawn_object()
 	new /obj/effect/falling_effect/calldown_attack(loc)

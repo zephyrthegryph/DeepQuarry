@@ -312,12 +312,14 @@
 		var/obj/machinery/door/blast/B = locate(href_list["toggle_blast_door"])
 		if(!B)
 			return
-		spawn(0)
-			if(B.density)
-				B.open()
-			else
-				B.close()
+		addtimer(CALLBACK(src, PROC_REF(toggle_blast_door_deferred), B), 0)
 
+
+/obj/item/commcard/proc/toggle_blast_door_deferred(obj/machinery/door/blast/B)
+	if(B.density)
+		B.open()
+	else
+		B.close()
 
 // Updates status displays with a new message
 // Copied from /obj/item/cartridge/proc/post_status(),

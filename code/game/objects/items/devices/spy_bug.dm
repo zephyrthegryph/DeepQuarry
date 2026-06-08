@@ -128,7 +128,6 @@
 			if(linkedmonitor)
 				linkedmonitor.unpair(src)
 			linkedmonitor = null
-			spawn(0)
 			qdel(src)
 		..()
 
@@ -138,7 +137,6 @@
 	if(linkedmonitor)
 		linkedmonitor.unpair(src)
 	linkedmonitor = null
-	spawn(0)
 	qdel(src)
 
 /obj/item/camerabug/Destroy()
