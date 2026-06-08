@@ -6,7 +6,7 @@ SUBSYSTEM_DEF(atc)
 	priority = FIRE_PRIORITY_ATC
 	runlevels = RUNLEVEL_GAME
 	wait = 2 SECONDS
-	flags = SS_BACKGROUND | SS_NO_FIRE  // DQEdit — disable ATC chatter; flag also pulls SS out of fire list
+	flags = SS_BACKGROUND | SS_NO_FIRE // disable ATC chatter; flag also pulls SS out of fire list
 	VAR_PRIVATE/next_tick = 0
 	VAR_PRIVATE/datum/atc_chatter_type/chatter_datum = new() // don't change, override the chatter_box() proc
 	VAR_PRIVATE/delay_min = 45 MINUTES				//How long between ATC traffic, minimum
@@ -16,7 +16,7 @@ SUBSYSTEM_DEF(atc)
 	VAR_PRIVATE/initial_delay = 15 MINUTES			//How long to wait before sending the first message of the shift.
 	VAR_PRIVATE/squelched = FALSE					//If ATC is squelched currently
 
-	//define a block of frequencies so we can have them be static instead of being random for each call
+	// Channel frequency vars; unused while ATC is disabled (SS_NO_FIRE), retained for re-enable reference
 	var/ertchannel
 	var/medchannel
 	var/engchannel
@@ -24,16 +24,11 @@ SUBSYSTEM_DEF(atc)
 	var/sdfchannel
 
 /datum/controller/subsystem/atc/Initialize()
-	// DQEdit Start — ATC disabled fork-wide; skip channel allocation and report no-need
+	// ATC disabled fork-wide; skip channel allocation and report no-need.
+	// To re-enable ATC: remove SS_NO_FIRE from flags, change Initialize() to
+	// allocate channels + return SS_INIT_SUCCESS, and verify busy_space/ chatter
+	// datums (code/modules/busy_space/) work with the loremaster data.
 	return SS_INIT_NO_NEED
-	// DQEdit End
-	//generate our static event frequencies for the shift. alternately they can be completely fixed, up in the core block
-	ertchannel = "[rand(700,749)].[rand(1,9)]"
-	medchannel = "[rand(750,799)].[rand(1,9)]"
-	engchannel = "[rand(800,849)].[rand(1,9)]"
-	secchannel = "[rand(850,899)].[rand(1,9)]"
-	sdfchannel = "[rand(900,999)].[rand(1,9)]"
-	return SS_INIT_SUCCESS
 
 /datum/controller/subsystem/atc/fire()
 	if(times_fired < 1)
