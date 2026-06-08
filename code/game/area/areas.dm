@@ -436,11 +436,11 @@ GLOBAL_LIST_EMPTY(forced_ambiance_list)
 			return
 
 		if(H.m_intent == I_RUN)
-			H.AdjustStunned(1) // CHOMPedit: No longer a supermassive long stun.
-//			H.AdjustWeakened(6) // CHOMPedit: No longer weakens.
+			H.AdjustStunned(1)
+//			H.AdjustWeakened(6)
 		else
-			H.AdjustStunned(1) // CHOMPedit: No longer a supermassive long stun.
-//			H.AdjustWeakened(3) // CHOMPedit: No longer weakens.
+			H.AdjustStunned(1)
+//			H.AdjustWeakened(3)
 		to_chat(mob, span_notice("The sudden appearance of gravity makes you fall to the floor!"))
 		if(HAS_TRAIT(H, TRAIT_UNLUCKY) && prob(50) && H.get_bodypart_name(BP_HEAD))
 			H.visible_message(span_warning("[H] falls to the ground from the sudden appearance of gravity, smashing [H.p_their()] head against the ground!"),span_warning("You smash your head into the ground as gravity appears!"))
@@ -448,7 +448,7 @@ GLOBAL_LIST_EMPTY(forced_ambiance_list)
 			playsound(H, 'sound/effects/tableheadsmash.ogg', 90, TRUE)
 		playsound(mob, "bodyfall", 50, 1)
 
-/area/proc/prison_break(break_lights = TRUE, open_doors = TRUE, open_blast_doors = FALSE) //CHOMP Edit set blast doors to FALSE
+/area/proc/prison_break(break_lights = TRUE, open_doors = TRUE, open_blast_doors = FALSE)
 	var/obj/machinery/power/apc/theAPC = get_apc()
 	if(theAPC && theAPC.operating)
 		if(break_lights)

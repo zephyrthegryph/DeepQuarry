@@ -30,10 +30,10 @@
 	if(faction_verb && player.current)
 		add_verb(player.current, faction_verb)
 
-	spawn(1 SECOND) //Added a delay so that this should pop up at the bottom and not the top of the text flood the new antag gets.
-		to_chat(player.current, span_notice("Once you decide on a goal to pursue, you can optionally display it to \
-			everyone at the end of the shift with the " + span_bold("Set Ambition") + " verb, located in the IC tab.  You can change this at any time, \
-			and it otherwise has no bearing on your round."))
+	var/msg = span_notice("Once you decide on a goal to pursue, you can optionally display it to \
+		everyone at the end of the shift with the " + span_bold("Set Ambition") + " verb, located in the IC tab.  You can change this at any time, \
+		and it otherwise has no bearing on your round.")
+	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(to_chat), player.current, msg), 1 SECOND) //Added a delay so that this should pop up at the bottom and not the top of the text flood the new antag gets.
 	add_verb(player.current, /mob/living/proc/write_ambition)
 
 	if(can_speak_aooc)

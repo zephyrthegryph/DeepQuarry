@@ -362,14 +362,12 @@
 // blind_message (optional) is what blind people will hear e.g. "You hear something!"
 /atom/proc/visible_message(message, blind_message, list/exclude_mobs, range = world.view, runemessage = "<span style='font-size: 1.5em'>👁</span>")
 
-	//VOREStation Edit
 	var/list/see
 	if(isbelly(loc))
 		var/obj/belly/B = loc
 		see = B.get_mobs_and_objs_in_belly()
 	else
 		see = get_mobs_and_objs_in_view_fast(get_turf(src), range, remote_ghosts = FALSE)
-	//VOREStation Edit End
 
 	var/list/seeing_mobs = see["mobs"]
 	var/list/seeing_objs = see["objs"]
