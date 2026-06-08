@@ -1,0 +1,7 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Fixed stumble vore, slip vore, drop vore, and throw vore being silently non-functional (the signal element was created but never attached)"
+  - code_imp: "Belly serialization is now schema-driven; adding a new belly var only requires one entry in get_schema() instead of updating vars_to_save, copy(), and belly_import separately"
+  - code_imp: "Vore icon update tiers documented and shared add_vore_fullness_overlays() helper extracted to reduce simple_mob overlay duplication"
+  - code_imp: "Added /datum/vore_state for structured vore preference serialization and round-trip save/load safety"

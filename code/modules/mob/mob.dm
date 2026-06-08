@@ -37,6 +37,7 @@
 		QDEL_NULL_LIST(vore_organs)
 	if(vorePanel)
 		QDEL_NULL(vorePanel)
+	QDEL_NULL(vore_state_datum)
 
 	for(var/mob/observer/dead/M in following_mobs)
 		M.stop_following()
