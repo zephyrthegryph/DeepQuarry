@@ -85,9 +85,18 @@
 						for(var/obj/machinery/power/P in apc_list)
 							TEST_FAIL("[bad_msg] has too many APCs. (X[P.x]|Y[P.y]) - Z[P.z])")
 
-			// air_scrub_info/air_vent_info were populated by ZAS air alarm
-			// registration. LINDA has no equivalent registry yet (would re-emerge
-			// when /tg/'s air alarm machinery is ported). Skip these checks.
+			// Scan for areas lacking atmos coverage. The air alarm maintains a
+			// per-area registry of the vents/scrubbers that have broadcast to it
+			// (alarm_area.air_vent_info / air_scrub_info, populated via
+			// /obj/machinery/alarm/receive_signal). Unit tests run ~10s after world
+			// init with the MC already ticking, so vents have broadcast their status
+			// by now and the registry reflects real coverage.
+			if(!(A.type in exempt_from_atmos))
+				if(!A.air_scrub_info.len)
+					TEST_FAIL("[bad_msg] lacks an Air scrubber. (X[A.x]|Y[A.y]) - (Z[A.z])")
+
+				if(!A.air_vent_info.len)
+					TEST_FAIL("[bad_msg] lacks an Air vent. (X[A.x]|Y[A.y]) - (Z[A.z])")
 
 /// Test that tests cables on defined z-levels
 /datum/unit_test/wire_test

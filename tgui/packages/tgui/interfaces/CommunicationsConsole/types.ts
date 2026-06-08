@@ -6,7 +6,6 @@ export type Data = {
   emagged: BooleanLike;
   authenticated: BooleanLike;
   authmax: BooleanLike;
-  atcsquelch: BooleanLike;
   boss_short: string;
   stat_display: {
     type: string;

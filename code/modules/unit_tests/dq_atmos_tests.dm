@@ -103,9 +103,10 @@
 		qdel(C)
 
 
-/// Verifies SSair successfully called auxtools_atmos_init at boot — that gas
-/// reaction singletons were instantiated. If auxtools_atmos_init crashed,
-/// gas_reactions would be empty and burn() / equalize() would fail at runtime.
+/// Verifies SSair initialized and built its gas-reaction roster at boot — that
+/// init_gas_reactions() populated SSair.gas_reactions. If it didn't, gas_mixture
+/// react() would do nothing and burn() / equalize() would silently no-op.
+/// (Gas math runs in pure DM; the Rust auxmos backend is not wired — see SSair.)
 /datum/unit_test/dq_ssair_initialized
 
 /datum/unit_test/dq_ssair_initialized/Run()

@@ -17,7 +17,6 @@ export const CommunicationsConsoleMain = (props) => {
     security_level,
     security_level_color,
     authenticated,
-    atcsquelch,
     boss_short,
   } = data;
 
@@ -114,16 +113,6 @@ export const CommunicationsConsoleMain = (props) => {
               onClick={() => act('messagelist')}
             >
               {reportText}
-            </Button>
-          </LabeledList.Item>
-          <LabeledList.Item label="Misc">
-            <Button
-              icon="microphone"
-              disabled={!authenticated}
-              selected={atcsquelch}
-              onClick={() => act('toggleatc')}
-            >
-              {!atcsquelch ? 'ATC Relay Enabled' : 'ATC Relay Disabled'}
             </Button>
           </LabeledList.Item>
         </LabeledList>

@@ -373,6 +373,9 @@
 		log_game("SSquarry: restore_layer: load_new_z failed for depth [depth]")
 		return null
 	var/new_z = world.maxz
+	// Refresh atmos vertical-adjacency for the restored layer's z-level (multi-z
+	// atmos — see SSair.build_multiz_atmos_levels).
+	SSair.build_multiz_atmos_levels()
 	var/_rl1 = world.timeofday
 
 	// Apply snapshot tile diffs. Each entry sets the turf type (if

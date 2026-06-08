@@ -54,11 +54,3 @@
 	pod.occupant_type = "[pod.make_antag] [pod.occupant_type]"
 
 	say_dead_object("[span_notice(pod.occupant_type)] pod is now available in \the [get_area(pod)].", pod)
-
-/datum/event2/event/ghost_pod_spawner/stowaway/announce()
-	if(prob(announce_odds))
-		if(SSatc.is_squelched())
-			return
-		SSatc.msg("Attention civilian vessels in [using_map.starsys_name] shipping lanes, caution is advised as \
-		[pick("an unidentified vessel", "a known criminal's vessel", "a derelict vessel")] \
-		has been detected passing multiple local stations.")

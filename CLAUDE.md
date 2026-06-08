@@ -218,27 +218,38 @@ YAML into the master changelog and deletes the stub.
 Things that are deliberately mid-flight or disabled, so you don't "fix" them by
 accident or assume they work:
 
-- **Atmospherics — dual engine, mid-migration.** The live engine is CHOMP/ZAS.
-  A LINDA + auxmos (Rust/verdigris) port exists but is gated behind
-  `USE_LINDA_ATMOS` and is **not** the active path. Known gap: `SSair.Initialize()`
-  does not yet call `auxtools_atmos_init()`, so the LINDA path is incomplete.
-  See `doc/atmos_migration.md`, `code/ATMOSPHERICS/README.md`.
-- **Overmap — present but off on the live map.** The full `code/modules/overmap/`
-  subsystem compiles, but `maps/deep_quarry/` sets `use_overmap = FALSE` (ground-only).
-  It is exercised by `virgo_minitest`.
-- **Dynamic overmap POI system — disabled, restore later.** The spawn hook in
-  `code/modules/overmap/sectors.dm` is commented out; the POI templates/loot were
-  removed. Re-enabling requires restoring that content from git history. Leave it
-  disabled unless explicitly asked to revive it.
-- **ATC (Air Traffic Control) — disabled fork-wide.** `SSatc.Initialize()` returns
-  `SS_INIT_NO_NEED` and the subsystem carries `SS_NO_FIRE`. The chatter
-  implementation (`code/modules/busy_space/`) is intact for a future re-enable.
-- **verdigris (Rust FFI)** is a build artifact, gitignored per-platform. If `cargo`
-  is absent the build warns and skips it; atmos/cave-gen FFI then fail at runtime.
+- **Atmospherics — LINDA-only.** LINDA (the vendored /tg/ atmos: `/datum/gas_mixture`,
+  `gas_types`, `SSair`, environmental/pipes/components under `code/ATMOSPHERICS/`) is
+  the **live and only** engine. The old CHOMP/ZAS/XGM engine is **deleted**; there is no
+  `USE_LINDA_ATMOS` gate anymore. Gas reactions are the CHOMP roster ported onto LINDA
+  (`gasmixtures/reactions.dm`). Multi-z atmos is wired (`SSair.build_multiz_atmos_levels()`
+  bridges `GLOB.z_levels` → `SSmapping.multiz_levels`; re-run when z-levels are added).
+  Known remaining gaps (not bugs): (a) the **Rust auxmos** gas-math backend is **not wired** —
+  `auxmos_bindings.dm` isn't compiled and `auxtools_atmos_init()` isn't called; gas math runs
+  in pure DM. Wiring it is a future perf project. (b) Legacy XGM-style callers are still bridged
+  by load-bearing shims (`xgm_compat.dm` ~67 callers of `assume_gas`/`update_nearby_tiles`/etc.,
+  `tg_infra_compat.dm`, `machine_shim.dm` ~39 `set_machine()` callers) rather than migrated to
+  native LINDA APIs. See `doc/atmos_migration.md`, `code/ATMOSPHERICS/README.md`.
+- **Overmap — subsystem on, surface map ground-only, live map still multi-z at runtime.**
+  `code/modules/overmap/` compiles and runs; `maps/deep_quarry/` sets `use_overmap = FALSE`
+  (no overmap sectors). But the live map is **not** single-z: `SSquarry` digs the map into
+  procedurally-generated quarry layers, each loaded as a new z-level via `load_new_z()`, so
+  vertical multi-z atmos applies to them at runtime. The overmap proper is exercised by
+  `virgo_minitest`.
+- **Dynamic overmap POI system — deleted.** The spawn hook in `code/modules/overmap/sectors.dm`
+  and the POI templates/loot were removed. Reviving requires restoring that content from git
+  history. Leave it removed unless explicitly asked to revive it.
+- **ATC (Air Traffic Control) — removed.** The `SSatc` subsystem and its radio-chatter module
+  (`busy_space/atc_chatter*`, `chatter_*`) are deleted. The `loremaster`/`organizations` lore
+  datums that lived alongside it in `busy_space/` are kept (used codebase-wide).
+- **verdigris (Rust FFI)** is a build artifact, gitignored per-platform. If `cargo` is absent
+  the build warns and skips it; cave-gen FFI then fails at runtime. (Atmos does **not** depend
+  on it — gas math is pure DM until the auxmos backend is wired.)
 
-Recent hardening (already landed): ban/admin/stats SQL is fully parameterized;
-all verdigris `#[byond_fn]` entry points are wrapped in `panic_safe!`; the tgui
-Rules-of-Hooks / XSS audit findings are fixed.
+Recent hardening (already landed): ban/admin/stats SQL is fully parameterized; all verdigris
+`#[byond_fn]` entry points are wrapped in `panic_safe!`; the tgui Rules-of-Hooks / XSS audit
+findings are fixed; the unit-test suite was audited for fake-passes and made genuinely
+falsifiable.
 
 ## TL;DR
 

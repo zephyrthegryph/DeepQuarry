@@ -119,8 +119,6 @@ SUBSYSTEM_DEF(emergency_shuttle)
 			var/area/hallway/our_hallway = area
 			our_hallway.readyalert()
 
-	SSatc.reroute_traffic(yes = 1)
-
 //calls the shuttle for a routine crew transfer
 /datum/controller/subsystem/emergency_shuttle/proc/call_transfer()
 	if(!can_call())
@@ -136,7 +134,6 @@ SUBSYSTEM_DEF(emergency_shuttle)
 	var/estimated_time = round(estimate_arrival_time()/60, 1)
 
 	GLOB.priority_announcement.Announce(replacetext(replacetext(using_map.shuttle_called_message, "%dock_name%", "[using_map.dock_name]"),  "%ETA%", "[estimated_time] minute\s"), "Transfer System", ANNOUNCER_MSG_SHUTTLE_ENDROUND_CALLED)
-	SSatc.shift_ending()
 
 //recalls the shuttle
 /datum/controller/subsystem/emergency_shuttle/proc/recall()

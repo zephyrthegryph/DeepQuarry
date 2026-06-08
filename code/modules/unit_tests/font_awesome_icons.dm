@@ -17,7 +17,8 @@
 		return
 
 	load_parse_verify()
-	//verify_quirk_icons()
+	// No verify_quirk_icons() call: this fork has no /datum/quirk type. See the
+	// block comment on the (intentionally absent) proc below for the full rationale.
 	generate_helper_dm_file()
 
 /**
@@ -28,26 +29,20 @@
 	log_test("CSS Actual: [length(font_awesome_css)]")
 	allowed_icons = parse_fa_css_into_icon_list(font_awesome_css)
 
-/**
- * Verifies that all quirk icons are valid.
+/*
+ * verify_quirk_icons() — INTENTIONALLY ABSENT, NOT A TODO.
+ *
+ * The /tg/ original validated /datum/quirk icons against the Font Awesome icon
+ * list. This fork (DeepQuarry, descended from Baystation/Polaris/VOREStation) has
+ * NO /datum/quirk type at all — there are no quirks, and therefore no quirk.icon /
+ * quirk.abstract_parent_type vars to validate. The only remaining `/datum/quirk`
+ * references in the tree are dead, commented-out blocks (a VV hook in human.dm).
+ *
+ * Re-adding a verify_quirk_icons() here would not compile (the type is undefined)
+ * and validating "all quirk icons" would be vacuous (zero quirks). So the check
+ * is left out by design. If a quirk system is ever ported, restore the /tg/
+ * verify_quirk_icons() proc and its call in Run() at the same time.
  */
-/* NOT IMPLEMENTED
-/datum/unit_test/font_awesome_icons/proc/verify_quirk_icons()
-	for(var/datum/quirk/quirk as anything in subtypesof(/datum/quirk))
-		if(quirk == initial(quirk.abstract_parent_type))
-			continue
-
-		var/quirk_icon = initial(quirk.icon)
-		if(findtext(quirk_icon, "tg-") == 1) // TODO: Validate these as well
-			continue
-
-		if(findtext(quirk_icon, " "))
-			var/list/split = splittext(quirk_icon, " ")
-			quirk_icon = split[length(split)] // respect modifier classes
-
-		if(!(quirk_icon in allowed_icons))
-			TEST_FAIL("Quirk [initial(quirk.name)]([quirk]) has invalid icon: [quirk_icon]")
-*/
 
 /// Parses the given Font Awesome CSS file into a list of icon names.
 /datum/unit_test/font_awesome_icons/proc/parse_fa_css_into_icon_list(css)

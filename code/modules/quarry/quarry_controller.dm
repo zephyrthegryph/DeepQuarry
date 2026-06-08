@@ -343,6 +343,11 @@ SUBSYSTEM_DEF(quarry)
 		log_game("SSquarry: failed to load_new_z for depth [depth]")
 		return null
 	var/new_z = world.maxz
+	// The quarry digs the live map into additional z-levels at runtime, so refresh
+	// the atmos vertical-adjacency table to cover the new level (multi-z atmos —
+	// see SSair.build_multiz_atmos_levels). Vertical gas flow then follows turf
+	// density: sealed rock blocks it, an open shaft passes it.
+	SSair.build_multiz_atmos_levels()
 	var/_tl1 = world.timeofday
 
 	// Carve the cave (cave_system/quarry logs its own apply/icon timings).

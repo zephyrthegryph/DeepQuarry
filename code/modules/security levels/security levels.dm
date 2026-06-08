@@ -78,11 +78,6 @@ GLOBAL_DATUM_INIT(security_announcement_down, /datum/announcement/priority/secur
 		for(var/obj/machinery/holoposter/HP as anything in GLOB.holoposters)
 			HP.update_icon()
 
-		if(level >= SEC_LEVEL_RED)
-			SSatc.reroute_traffic(yes = 1) // Tell them fuck off we're busy.
-		else
-			SSatc.reroute_traffic(yes = 0)
-
 		spawn()
 			// SSnightshift.check_nightshift(TRUE) // disabling this for now as we do not use the nightshift currently.
 

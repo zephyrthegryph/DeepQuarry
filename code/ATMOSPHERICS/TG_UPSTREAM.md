@@ -1,9 +1,16 @@
 # /tg/ atmospherics vendor
 
-Vendored verbatim from [tgstation/tgstation](https://github.com/tgstation/tgstation)
-to back the LINDA atmospherics migration. Auxmos (Rust) handles ~1/3 of
-`/datum/gas_mixture`'s procs at boot via byondapi binds; the rest run as DM
-exactly as they do in /tg/.
+Vendored from [tgstation/tgstation](https://github.com/tgstation/tgstation) and
+adapted to DeepQuarry. This is now the **live and only** atmos engine (LINDA);
+the migration is complete and the old CHOMP/ZAS/XGM engine has been deleted.
+
+> **Status note:** the historical framing below ("gated behind `USE_LINDA_ATMOS`",
+> "default builds unaffected", "does not yet build", auxmos handling ~1/3 of the
+> gas procs at boot) is **obsolete**. There is no `USE_LINDA_ATMOS` gate, the code
+> compiles and runs unconditionally from `deepquarry.dme`, and gas math runs in
+> **pure DM** — the Rust auxmos backend is vendored but not wired (see `README.md`).
+> The provenance/vendoring tables below remain accurate and are kept for
+> upstream-tracking.
 
 ## Pinned commit
 
@@ -21,8 +28,9 @@ exactly as they do in /tg/.
 | `code/modules/atmospherics/machinery/**/*` (65 files, ~16,000 LOC) | `code/ATMOSPHERICS/machinery/` |
 | `code/controllers/subsystem/air.dm` (935 LOC) | `code/ATMOSPHERICS/SSair.dm` |
 
-**Total**: 81 files, ~22,000 lines. All gated behind `#ifdef USE_LINDA_ATMOS`
-in `vorestation.dme`. Default builds (USE_LINDA_ATMOS undefined) are unaffected.
+**Total**: ~81 files, ~22,000 lines at vendor time. Now compiled unconditionally
+from `deepquarry.dme` (no `USE_LINDA_ATMOS` gate) and substantially adapted since
+— this is the live engine, not an untouched vendor snapshot.
 
 ## What was NOT vendored
 
@@ -49,13 +57,13 @@ in `vorestation.dme`. Default builds (USE_LINDA_ATMOS undefined) are unaffected.
 3. `rsync -a --delete` the vendored folders, preserving our DQ-specific files.
 4. Update the commit hash above.
 5. Re-run `bash tools/verdigris/generate_atmos_bindings.sh` to refresh bindings.
-6. Run the LINDA-branch compile (toggle `#define USE_LINDA_ATMOS`) and diff the
-   error log against `doc/linda_compile_errors_by_file.txt`.
+6. Rebuild and run the unit-test boot (`bin/test.cmd`); reconcile any drift against
+   the live, adapted files (this is no longer a clean vendor — expect conflicts to
+   resolve by hand).
 
-## Why this exists despite not yet building
+## Why this provenance is kept
 
-The vendor is a **snapshot of /tg/'s LINDA atmos at a known good commit**. Per-file
-adaptation against CHOMP's infrastructure is the work that remains; see
-`doc/atmos_migration.md` "Phase 1.2 sub-structure" for the explicit
-list. Keeping the vendor in tree (rather than re-cloning on every consumer-adaptation
-PR) lets each adaptation PR be small and focused on its single subsystem.
+The original vendor was a snapshot of /tg/'s LINDA atmos at the pinned commit; the
+files have since been adapted against CHOMP's infrastructure and are now the live
+engine. This document is retained so a future vendor bump can diff against the
+known upstream baseline rather than guessing what diverged.

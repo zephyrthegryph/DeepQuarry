@@ -104,7 +104,6 @@
 	data["emagged"]       = emagged
 	data["authenticated"] = is_authenticated(user, 0)
 	data["authmax"] = data["authenticated"] == COMM_AUTHENTICATION_MAX ? TRUE : FALSE
-	data["atcsquelch"] = SSatc.is_squelched()
 	data["boss_short"] = using_map.boss_short
 
 	data["stat_display"] =  list(
@@ -307,9 +306,6 @@
 			if(params["msgid"])
 				setCurrentMessage(ui.user, text2num(params["msgid"]))
 			setMenuState(ui.user, COMM_SCREEN_MESSAGES)
-
-		if("toggleatc")
-			SSatc.reroute_traffic(yes = !SSatc.is_squelched(), silent = TRUE)
 
 		if("delmessage")
 			var/datum/comm_message_listener/l = obtain_message_listener()
