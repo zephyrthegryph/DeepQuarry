@@ -110,6 +110,7 @@ SUBSYSTEM_DEF(air)
 	// (auxtools_atmos_init in auxmos_init_bridge.dm) is not called. Wiring it is
 	// a future perf project — until then there is nothing to initialise here.
 
+	build_multiz_atmos_levels()
 	setup_allturfs()
 	setup_atmos_machinery()
 	// setup_pipenets() removed: CHOMP pipes call build_network()
@@ -430,6 +431,30 @@ SUBSYSTEM_DEF(air)
 	for(var/T in queued_for_activation)
 		add_to_active(T, TRUE)
 	queued_for_activation.Cut()
+
+/// Bridge the movement-multiz connection data (GLOB.z_levels, populated by
+/// /obj/effect/landmark/map_data during mapload) into SSmapping.multiz_levels,
+/// the table init_immediate_calculate_adjacent_turfs reads to decide vertical
+/// atmos adjacency. Without this the init fast-path never wires UP/DOWN turf
+/// adjacency even when z-levels are vertically stacked (the runtime recalc path
+/// uses GetAbove/GetBelow and already works; only init lagged). No-op on
+/// single-z maps, where HasAbove/HasBelow return 0 for every z. Re-runnable
+/// when the z-level layout changes.
+/datum/controller/subsystem/air/proc/build_multiz_atmos_levels()
+	if(!SSmapping)
+		return
+	if(length(SSmapping.multiz_levels) < world.maxz)
+		SSmapping.multiz_levels.len = world.maxz
+	for(var/z in 1 to world.maxz)
+		// Z_LEVEL_UP / Z_LEVEL_DOWN are the numeric direction constants UP (16)
+		// and DOWN (32). init_immediate_calculate_adjacent_turfs reads this
+		// per-z list POSITIONALLY (z_traits[Z_LEVEL_UP] / [Z_LEVEL_DOWN]), so it
+		// must be at least Z_LEVEL_DOWN entries long or both read and write go
+		// out of bounds. Slot 16 = up-connected, slot 32 = down-connected.
+		var/list/traits = new /list(Z_LEVEL_DOWN)
+		traits[Z_LEVEL_UP] = HasAbove(z) ? TRUE : FALSE
+		traits[Z_LEVEL_DOWN] = HasBelow(z) ? TRUE : FALSE
+		SSmapping.multiz_levels[z] = traits
 
 /datum/controller/subsystem/air/proc/setup_allturfs()
 	var/list/active_turfs = src.active_turfs

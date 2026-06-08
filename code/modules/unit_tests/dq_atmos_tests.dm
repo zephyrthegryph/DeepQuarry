@@ -1418,62 +1418,65 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 		"plasmafire thermal energy DROPPED: [initial_thermal] → [final_thermal] (exothermic reaction should raise it)")
 
 
-/// Multi-z spread: a /turf/simulated/open above a floor should propagate gas
-/// down. /turf/simulated/open is the see-through ceiling/floor variant —
-/// /tg/'s zAirIn/zAirOut hooks return TRUE on /turf/simulated/open by default
-/// (in tg_infra_compat) so vertical share is supposed to happen.
-///
-/// GUARDED SKIP (the one sanctioned case). Vertical *atmos* adjacency in LINDA
-/// is wired by init_immediate_calculate_adjacent_turfs, which only traverses
-/// UP/DOWN when SSmapping.multiz_levels[z] carries Z_LEVEL_UP / Z_LEVEL_DOWN
-/// traits. In DeepQuarry, SSmapping.multiz_levels is a never-populated stub
-/// (see modular_dq/code/atmospherics/tg_infra_compat.dm — `multiz_levels =
-/// list()`, and nothing anywhere assigns into it), so the vertical branch is
-/// dead on every z-level of every loaded map. Movement-multiz (GLOB.z_levels /
-/// GetBelow) is a *separate* system and does not feed atmos adjacency. Making
-/// this run through the real production path would require both adding a 2-z
-/// column to the test map AND building out the multiz_levels trait registration
-/// that the mapping subsystem doesn't implement — a disproportionate subsystem
-/// change to exercise code that is currently inert. We therefore verify the
-/// architectural fact and skip with a precise reason. If a build ever wires a
-/// vertically-adjacent open pair, the test below runs the real assertion.
+/// Multi-z spread: gas in an open turf propagates DOWN to the floor directly
+/// below it when the two z-levels are vertically connected. Exercises the full
+/// production multi-z atmos path:
+///   - build_multiz_atmos_levels() bridges GLOB.z_levels (the movement-multiz
+///     connectivity that /obj/effect/landmark/map_data populates) into
+///     SSmapping.multiz_levels (the atmos vertical-adjacency table that the
+///     init fast-path reads but nothing else ever filled);
+///   - immediate_calculate_adjacent_turfs() wires the vertical adjacency via
+///     get_step_multiz/GetBelow once the levels are connected;
+///   - SSair.process_cell shares gas across that adjacency.
+/// The live map is single-z, so we grow two scratch z-levels through the same
+/// world.increment_max_z() path load_new_z() uses, connect + test on them, then
+/// tear the scratch column back down so later tests see a clean world.
 /datum/unit_test/dq_multiz_spread_through_open_turf
 
 /datum/unit_test/dq_multiz_spread_through_open_turf/Run()
-	// Find any genuinely vertically-wired atmos pair: a /turf/simulated/open
-	// with a floor directly below it AND the two in each other's
-	// atmos_adjacent_turfs (the real production wiring, not just geometry).
-	var/turf/simulated/open/upper = null
-	var/turf/simulated/floor/lower = null
-	for(var/turf/simulated/open/cand in world)
-		var/turf/below = GetBelow(cand)
-		if(!istype(below, /turf/simulated/floor))
-			continue
-		var/turf/simulated/floor/floor_below = below
-		if(!floor_below.air || floor_below.blocks_air)
-			continue
-		if(cand.atmos_adjacent_turfs && cand.atmos_adjacent_turfs[floor_below])
-			upper = cand
-			lower = floor_below
-			break
+	world.increment_max_z()
+	var/lower_z = world.maxz
+	world.increment_max_z()
+	var/upper_z = world.maxz
 
-	if(!upper)
-		// Confirm this is the known architectural gap, not a silent regression,
-		// so the skip is honest: multiz_levels must be empty/unpopulated.
-		var/multiz_active = FALSE
-		if(SSmapping?.multiz_levels)
-			for(var/z_entry in SSmapping.multiz_levels)
-				if(islist(z_entry) && (z_entry[Z_LEVEL_UP] || z_entry[Z_LEVEL_DOWN]))
-					multiz_active = TRUE
-					break
-		TEST_ASSERT(!multiz_active, \
-			"SSmapping.multiz_levels has vertical traits registered but no vertically-wired open/floor atmos pair exists — multi-z atmos adjacency regressed")
-		log_test("dq_multiz_spread_through_open_turf: SKIPPED — vertical atmos adjacency is inert fork-wide (SSmapping.multiz_levels unpopulated); see test header for the full rationale.")
-		return
+	// All z-levels share the same x/y dimensions; pick an interior column.
+	var/cx = 3
+	var/cy = 3
+	var/turf/lower_raw = locate(cx, cy, lower_z)
+	var/turf/upper_raw = locate(cx, cy, upper_z)
+	TEST_ASSERT_NOTNULL(lower_raw, "scratch lower turf didn't materialize at [cx],[cy],[lower_z]")
+	TEST_ASSERT_NOTNULL(upper_raw, "scratch upper turf didn't materialize at [cx],[cy],[upper_z]")
 
-	TEST_ASSERT_NOTNULL(upper.air, "/turf/simulated/open has no air mixture")
-	TEST_ASSERT_NOTNULL(lower.air, "floor below /turf/simulated/open has no air mixture")
+	// Connect the two scratch levels the way a height-2 map_data landmark would,
+	// then run the production bridge that feeds atmos vertical adjacency.
+	var/old_z_levels_len = length(GLOB.z_levels)
+	if(length(GLOB.z_levels) < lower_z)
+		GLOB.z_levels.len = lower_z
+	var/old_connected = GLOB.z_levels[lower_z]
+	GLOB.z_levels[lower_z] = TRUE
 
+	SSair.build_multiz_atmos_levels()
+
+	// The bridge must register the vertical traits — this is the wiring fix.
+	var/list/upper_traits = (length(SSmapping.multiz_levels) >= upper_z) ? SSmapping.multiz_levels[upper_z] : null
+	TEST_ASSERT_NOTNULL(upper_traits, "build_multiz_atmos_levels left multiz_levels for z=[upper_z] null")
+	TEST_ASSERT(upper_traits[Z_LEVEL_DOWN], "build_multiz_atmos_levels didn't mark the upper z DOWN-connected from GLOB.z_levels")
+
+	// Build the open-over-floor column with real turf types and air. ChangeTurf
+	// returns the freshly-created turf of the requested type.
+	var/turf/simulated/floor/lower = lower_raw.ChangeTurf(/turf/simulated/floor)
+	var/turf/simulated/open/upper = upper_raw.ChangeTurf(/turf/simulated/open)
+	TEST_ASSERT_NOTNULL(lower, "scratch lower didn't become a simulated floor")
+	TEST_ASSERT_NOTNULL(upper, "scratch upper didn't become a simulated open turf")
+	TEST_ASSERT_NOTNULL(lower.air, "scratch floor has no air mixture")
+	TEST_ASSERT_NOTNULL(upper.air, "scratch open turf has no air mixture")
+
+	// Wire vertical atmos adjacency through the production recompute path.
+	upper.immediate_calculate_adjacent_turfs()
+	TEST_ASSERT(upper.atmos_adjacent_turfs && upper.atmos_adjacent_turfs[lower], \
+		"vertical atmos adjacency wasn't wired: the open turf isn't adjacent to the floor below it")
+
+	// Zero both, load plasma up top, let the real engine share it down.
 	for(var/datum/gas/g as anything in upper.air.gases)
 		upper.air.gases[g][MOLES] = 0
 	for(var/datum/gas/g as anything in lower.air.gases)
@@ -1484,19 +1487,25 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	donor.adjust_gas(/datum/gas/plasma, 100)
 	donor.set_temperature(T20C)
 	upper.assume_air(donor)
+	upper.air_update_turf(TRUE, FALSE)
 
 	dq_atmos_test_wait_real_ssair_ticks(20)
 
 	var/down_p = lower.air.get_moles(/datum/gas/plasma)
 	TEST_ASSERT(down_p > 1, \
-		"multi-z spread failed: floor below /turf/simulated/open got 0 plasma after real SSair ticks")
-	// Conservation across {upper, lower} only holds in a sealed environment.
-	// Under real engine flow, plasma also leaks to upper's horizontal floor
-	// neighbors. Assertion relaxed to "lower has SOMETHING" rather than
-	// exact mass-conservation across just the two-tile pair.
+		"multi-z spread failed: floor below the open turf got [down_p] plasma after real SSair ticks")
 
+	// Tear the scratch column down: clear gas, revert turfs to space, restore
+	// the connectivity table. (world.maxz can't shrink; the spare levels are
+	// left as inert space, which no later test's floor/open searches match.)
 	upper.air.set_moles(/datum/gas/plasma, 0)
 	lower.air.set_moles(/datum/gas/plasma, 0)
+	upper.ChangeTurf(/turf/space)
+	lower.ChangeTurf(/turf/space)
+	GLOB.z_levels[lower_z] = old_connected
+	if(old_z_levels_len < length(GLOB.z_levels))
+		GLOB.z_levels.len = old_z_levels_len
+	SSair.build_multiz_atmos_levels()
 
 
 /// Planetary share: a turf with planetary_atmos=TRUE shares 80% with the
