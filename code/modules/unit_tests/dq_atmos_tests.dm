@@ -929,6 +929,38 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 			T.ChangeTurf(original_type)
 	GLOB.dq_atmos_test_walled_turfs.Cut()
 
+/// Open a sealed test-room floor up to space by ChangeTurf-ing one of its
+/// cardinal neighbors (a /turf/closed/indestructible test-room wall) into a
+/// real /turf/space. ChangeTurf marks the new turf for update, whose
+/// immediate_calculate_adjacent_turfs wires the floor↔space adjacency
+/// bidirectionally — the same production path a hull breach would take.
+/// Returns the created space turf, or null if no convertible neighbor existed.
+/// The original neighbor type is tracked in dq_atmos_test_walled_turfs so
+/// dq_atmos_test_restore_walls() rolls it back.
+/proc/dq_atmos_test_open_to_space(turf/floor)
+	if(!isturf(floor))
+		return null
+	for(var/direction in GLOB.cardinal)
+		var/turf/neighbor = get_step(floor, direction)
+		if(!neighbor)
+			continue
+		// If a neighbor is already space, just use it (and record so we can put
+		// it back). The test-room walls are /turf/closed/indestructible; isolate
+		// helpers leave /turf/simulated/wall. Either way they block air, so pick
+		// a solid neighbor and breach it.
+		if(istype(neighbor, /turf/space))
+			GLOB.dq_atmos_test_walled_turfs[neighbor] = neighbor.type
+			floor.air_update_turf(TRUE, FALSE)
+			return neighbor
+		if(neighbor.blocks_air || istype(neighbor, /turf/closed) || istype(neighbor, /turf/simulated/wall))
+			GLOB.dq_atmos_test_walled_turfs[neighbor] = neighbor.type
+			var/turf/space/created = neighbor.ChangeTurf(/turf/space)
+			// Make sure the floor side recomputes its adjacency too, in case the
+			// space turf's own recompute raced the floor's active state.
+			floor.air_update_turf(TRUE, FALSE)
+			return created
+	return null
+
 /// Legacy entry point — delegates to dq_atmos_test_wait_real_ssair_ticks so
 /// older test bodies that call drive_ticks(list, N) still work. The list
 /// argument is ignored; SSair processes whatever's in its active_turfs list
@@ -1390,33 +1422,57 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 /// down. /turf/simulated/open is the see-through ceiling/floor variant —
 /// /tg/'s zAirIn/zAirOut hooks return TRUE on /turf/simulated/open by default
 /// (in tg_infra_compat) so vertical share is supposed to happen.
+///
+/// GUARDED SKIP (the one sanctioned case). Vertical *atmos* adjacency in LINDA
+/// is wired by init_immediate_calculate_adjacent_turfs, which only traverses
+/// UP/DOWN when SSmapping.multiz_levels[z] carries Z_LEVEL_UP / Z_LEVEL_DOWN
+/// traits. In DeepQuarry, SSmapping.multiz_levels is a never-populated stub
+/// (see modular_dq/code/atmospherics/tg_infra_compat.dm — `multiz_levels =
+/// list()`, and nothing anywhere assigns into it), so the vertical branch is
+/// dead on every z-level of every loaded map. Movement-multiz (GLOB.z_levels /
+/// GetBelow) is a *separate* system and does not feed atmos adjacency. Making
+/// this run through the real production path would require both adding a 2-z
+/// column to the test map AND building out the multiz_levels trait registration
+/// that the mapping subsystem doesn't implement — a disproportionate subsystem
+/// change to exercise code that is currently inert. We therefore verify the
+/// architectural fact and skip with a precise reason. If a build ever wires a
+/// vertically-adjacent open pair, the test below runs the real assertion.
 /datum/unit_test/dq_multiz_spread_through_open_turf
 
 /datum/unit_test/dq_multiz_spread_through_open_turf/Run()
-	// Find a /turf/simulated/open on the map that has a floor directly below it.
+	// Find any genuinely vertically-wired atmos pair: a /turf/simulated/open
+	// with a floor directly below it AND the two in each other's
+	// atmos_adjacent_turfs (the real production wiring, not just geometry).
 	var/turf/simulated/open/upper = null
 	var/turf/simulated/floor/lower = null
 	for(var/turf/simulated/open/cand in world)
 		var/turf/below = GetBelow(cand)
-		if(istype(below, /turf/simulated/floor))
-			var/turf/simulated/floor/floor_below = below
-			if(floor_below.air && !floor_below.blocks_air)
-				upper = cand
-				lower = floor_below
-				break
+		if(!istype(below, /turf/simulated/floor))
+			continue
+		var/turf/simulated/floor/floor_below = below
+		if(!floor_below.air || floor_below.blocks_air)
+			continue
+		if(cand.atmos_adjacent_turfs && cand.atmos_adjacent_turfs[floor_below])
+			upper = cand
+			lower = floor_below
+			break
+
 	if(!upper)
-		log_test("dq_multiz_spread_through_open_turf: no /turf/simulated/open with floor below on test map — skipping")
+		// Confirm this is the known architectural gap, not a silent regression,
+		// so the skip is honest: multiz_levels must be empty/unpopulated.
+		var/multiz_active = FALSE
+		if(SSmapping?.multiz_levels)
+			for(var/z_entry in SSmapping.multiz_levels)
+				if(islist(z_entry) && (z_entry[Z_LEVEL_UP] || z_entry[Z_LEVEL_DOWN]))
+					multiz_active = TRUE
+					break
+		TEST_ASSERT(!multiz_active, \
+			"SSmapping.multiz_levels has vertical traits registered but no vertically-wired open/floor atmos pair exists — multi-z atmos adjacency regressed")
+		log_test("dq_multiz_spread_through_open_turf: SKIPPED — vertical atmos adjacency is inert fork-wide (SSmapping.multiz_levels unpopulated); see test header for the full rationale.")
 		return
 
 	TEST_ASSERT_NOTNULL(upper.air, "/turf/simulated/open has no air mixture")
 	TEST_ASSERT_NOTNULL(lower.air, "floor below /turf/simulated/open has no air mixture")
-
-	// LINDA init builds vertical adjacency via init_immediate_calculate_adjacent_turfs
-	// reading SSmapping.multiz_levels. If init didn't wire upper↔lower, this
-	// test isn't representative of the production multi-z code path — skip.
-	if(!(upper.atmos_adjacent_turfs && upper.atmos_adjacent_turfs[lower]))
-		log_test("dq_multiz_spread_through_open_turf: init didn't wire upper↔lower multi-z adjacency, skipping")
-		return
 
 	for(var/datum/gas/g as anything in upper.air.gases)
 		upper.air.gases[g][MOLES] = 0
@@ -1450,15 +1506,28 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 /datum/unit_test/dq_planetary_atmos_converges_to_baseline
 
 /datum/unit_test/dq_planetary_atmos_converges_to_baseline/Run()
-	// Find a turf with planetary_atmos set.
-	var/turf/open/T = null
-	for(var/turf/open/cand in world)
-		if(cand.planetary_atmos && cand.air && !cand.blocks_air)
-			T = cand
-			break
-	if(!T)
-		log_test("dq_planetary_atmos_converges_to_baseline: no planetary_atmos turf on test map — skipping")
-		return
+	// No mapped turf type sets planetary_atmos on this build, so build the
+	// scenario deterministically from a sealed test-room floor. We set
+	// planetary_atmos = TRUE and register the immutable planetary mix in
+	// SSair.planetary keyed by the floor's initial_gas_mix — exactly what
+	// /turf/open/Initialize does for a planetary turf. The floor's default
+	// initial_gas_mix (OPENTURF_DEFAULT_ATMOS) is plasma-free, so once we
+	// pollute the turf with plasma the per-tick planetary share will drain it
+	// back toward the baseline.
+	var/list/pair = dq_atmos_test_find_floor_pair()
+	TEST_ASSERT_NOTNULL(pair, "no usable floor pair on map for planetary convergence test")
+	var/turf/simulated/floor/T = pair[1]
+	var/turf/simulated/floor/other = pair[2]
+
+	// Seal the turf off from horizontal neighbors so the only sink is the
+	// planetary atmosphere, then keep src active across ticks.
+	dq_atmos_test_isolate_pair(T, other)
+
+	T.planetary_atmos = TRUE
+	if(!SSair.planetary[T.initial_gas_mix])
+		var/datum/gas_mixture/immutable/planetary/baseline = new
+		baseline.parse_string_immutable(T.initial_gas_mix)
+		SSair.planetary[T.initial_gas_mix] = baseline
 
 	var/datum/gas_mixture/planet_mix = SSair.planetary[T.initial_gas_mix]
 	TEST_ASSERT_NOTNULL(planet_mix, "SSair.planetary missing entry for [T.type] gas_mix [T.initial_gas_mix]")
@@ -1479,6 +1548,16 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	dq_atmos_test_wait_real_ssair_ticks(20)
 
 	var/final_plasma = T.air.get_moles(/datum/gas/plasma)
+
+	// Clean up: drop the planetary flag and unwall the room so later tests see
+	// a clean, non-planetary floor. (We leave the SSair.planetary entry in
+	// place — it's an immutable baseline keyed by the standard gas string and
+	// matches what a real planetary turf would have registered anyway.)
+	T.planetary_atmos = FALSE
+	for(var/datum/gas/g as anything in T.air.gases)
+		T.air.gases[g][MOLES] = 0
+	dq_atmos_test_restore_walls()
+
 	TEST_ASSERT(final_plasma < initial_plasma * 0.5, \
 		"planetary share didn't drain phoron pollution: [initial_plasma] → [final_plasma] after real SSair ticks")
 
@@ -1989,24 +2068,27 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	var/datum/gas_mixture/mix = new(CELL_VOLUME)
 	mix.adjust_gas(/datum/gas/freon, 50)
 	mix.adjust_gas(/datum/gas/oxygen, 200)
-	// freonfire fires below FREON_MAXIMUM_BURN_TEMPERATURE and above
-	// FREON_LOWER_TEMPERATURE — pick a value in the middle.
-	mix.set_temperature(T0C + 25) // ~298K, below the 373K cap
+	// freonfire's MIN_TEMP/MAX_TEMP gate is FREON_TERMINAL_TEMPERATURE (20K) to
+	// FREON_MAXIMUM_BURN_TEMPERATURE (283K). Inside react() the burn scale is
+	// 0 at/above the max, 0.5 below FREON_LOWER_TEMPERATURE (60K), and ramps
+	// linearly between. Pick ~150K so we sit firmly in the linear band: above
+	// the gate floor, below the cap, and the scale is comfortably positive so
+	// the reaction actually consumes freon.
+	mix.set_temperature((FREON_LOWER_TEMPERATURE + FREON_MAXIMUM_BURN_TEMPERATURE) / 2) // ~171K
 
 	var/initial_freon = mix.get_moles(/datum/gas/freon)
 	var/initial_temp = mix.temperature
+	TEST_ASSERT(initial_freon > 0, "test setup didn't load freon: [initial_freon]")
 
 	mix.react(null)
 
 	var/final_freon = mix.get_moles(/datum/gas/freon)
 	var/final_temp = mix.temperature
-	if(final_freon < initial_freon)
-		// Reaction ran. Verify it cooled, not heated.
-		TEST_ASSERT(final_temp < initial_temp, \
-			"freonfire is endothermic but temperature ROSE: [initial_temp] → [final_temp]")
-	else
-		// Reaction didn't run (conditions not met) — log so we know.
-		log_test("dq_freonfire_reaction_cools_mixture: freonfire didn't fire under T=[initial_temp] freon=[initial_freon] O2=[mix.get_moles(/datum/gas/oxygen)] — possibly temp-condition mismatch")
+	// Freon combustion is endothermic: it consumes freon and cools the mix.
+	TEST_ASSERT(final_freon < initial_freon, \
+		"freonfire didn't fire under T=[initial_temp] freon=[initial_freon] O2=[mix.get_moles(/datum/gas/oxygen)] — freon was not consumed: [initial_freon] → [final_freon]")
+	TEST_ASSERT(final_temp < initial_temp, \
+		"freonfire is endothermic but temperature ROSE: [initial_temp] → [final_temp]")
 
 
 /// Water vapor condensation: at temperatures below the deposition point,
@@ -2221,7 +2303,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	var/datum/pipe_network/N = P1.parent.network
 	TEST_ASSERT(N in SSair.networks, \
 		"pipe_network NOT in SSair.networks after build_network — START_PROCESSING_PIPENET is targeting the wrong list, reconcile_air will never run in the live game")
-	// SSmachines.networks was removed entirely (see machines.dm ). If
+	// SSmachines.networks was removed entirely (see machines.dm). If
 	// a future merge re-adds it, the macro's redirect should still keep
 	// pipenets out of it.
 
@@ -2676,22 +2758,21 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 /datum/unit_test/dq_phoron_breather_consumes_plasma
 
 /datum/unit_test/dq_phoron_breather_consumes_plasma/Run()
-	// Find a phoron-breathing species (Vox, Diona, etc., depending on map).
-	var/datum/species/phoron_species = null
-	for(var/species_path in GLOB.all_species)
-		var/datum/species/S = GLOB.all_species[species_path]
-		if(S.breath_type == /datum/gas/plasma || S.breath_type == GAS_PHORON)
-			phoron_species = S
-			break
-	if(!phoron_species)
-		log_test("dq_phoron_breather_consumes_plasma: no phoron-breather species on this build, skipping")
-		return
-
+	// No base species in GLOB.all_species declares a phoron/plasma breath_type
+	// on this build — phoron-breathing is only ever a custom-species trait
+	// (/datum/trait/negative/breathes/phoron, which var-changes breath_type to
+	// GAS_PHORON). handle_breath() reads species.breath_type and consumes that
+	// exact gas. To exercise that consumption path deterministically we allocate
+	// a normal human and temporarily flip its species' breath_type to GAS_PHORON
+	// — the same value the phoron-breather trait applies — restoring it after so
+	// the shared species singleton is left untouched for later tests.
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT_NOTNULL(H, "couldn't allocate human")
-	H.set_species(phoron_species.name)
-	TEST_ASSERT(H.species == phoron_species || H.species.name == phoron_species.name, \
-		"set_species didn't apply: got [H.species]")
+	TEST_ASSERT_NOTNULL(H.species, "allocated human has no species datum")
+
+	var/datum/species/species = H.species
+	var/saved_breath_type = species.breath_type
+	species.breath_type = GAS_PHORON
 
 	var/datum/gas_mixture/breath = new(BREATH_VOLUME)
 	breath.adjust_gas(/datum/gas/plasma, 5)
@@ -2703,6 +2784,11 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	H.handle_breath(breath)
 
 	var/final_plasma = breath.get_moles(/datum/gas/plasma)
+
+	// Restore the shared species singleton before asserting so a failure can't
+	// leak the mutated breath_type into subsequent tests.
+	species.breath_type = saved_breath_type
+
 	TEST_ASSERT(final_plasma < initial_plasma, \
 		"phoron-breather didn't consume plasma: [initial_plasma] → [final_plasma]")
 
@@ -2825,35 +2911,24 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 /datum/unit_test/dq_room_depressurizes_when_open_to_space
 
 /datum/unit_test/dq_room_depressurizes_when_open_to_space/Run()
-	// Find a /turf/simulated/floor adjacent to /turf/space.
-	var/turf/simulated/floor/A = null
-	var/turf/space/S = null
-	for(var/turf/simulated/floor/cand in world)
-		if(!cand.air || cand.blocks_air)
-			continue
-		for(var/direction in GLOB.cardinal)
-			var/turf/n = get_step(cand, direction)
-			if(istype(n, /turf/space))
-				A = cand
-				S = n
-				break
-		if(A)
-			break
-	if(!A)
-		log_test("dq_room_depressurizes: no floor-space pair on test map, skipping")
-		return
+	// Deterministically build the floor↔space scenario: grab a sealed test-room
+	// floor, wall off its other neighbors so space is the only sink, then breach
+	// one wall into real /turf/space. ChangeTurf wires the floor↔space adjacency
+	// through the production immediate_calculate_adjacent_turfs path.
+	var/list/pair = dq_atmos_test_find_floor_pair()
+	TEST_ASSERT_NOTNULL(pair, "no usable floor pair on map for depressurization test")
+	var/turf/simulated/floor/A = pair[1]
+	var/turf/simulated/floor/other = pair[2]
 
-	// Real environmental sink: a /turf/space neighbor. Don't wall-isolate —
-	// space is already a real boundary the engine treats correctly.
-	// Make sure S has air (vacuum is a real /datum/gas_mixture, not null).
+	dq_atmos_test_isolate_pair(A, other)
+
+	var/turf/space/S = dq_atmos_test_open_to_space(A)
+	TEST_ASSERT_NOTNULL(S, "couldn't breach a test-room wall into space for depressurization test")
+	// Vacuum is a real /datum/gas_mixture (immutable space mix), never null.
 	TEST_ASSERT_NOTNULL(S.air, "/turf/space.air is null — /turf/open/Initialize didn't create the vacuum mixture")
-	// LINDA init builds floor↔space adjacency where the geometry supports it
-	// but some map edges/specific tiles don't get wired. Skip cleanly if so —
-	// this test specifically validates spread-to-space when the adjacency
-	// EXISTS; the no-adjacency case is a different test.
-	if(!(A.atmos_adjacent_turfs && A.atmos_adjacent_turfs[S]))
-		log_test("dq_room_depressurizes: floor↔space adjacency wasn't wired by init on the test map, skipping")
-		return
+	// ChangeTurf + air_update_turf must have wired floor↔space both ways.
+	TEST_ASSERT(A.atmos_adjacent_turfs && A.atmos_adjacent_turfs[S], \
+		"floor↔space adjacency wasn't wired after breaching the wall to space")
 
 	for(var/datum/gas/g as anything in A.air.gases)
 		A.air.gases[g][MOLES] = 0
@@ -2875,13 +2950,16 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 
 	var/final_pressure = A.air.return_pressure()
 	var/final_moles = A.air.total_moles()
+
+	// Restore baseline air on A and roll the breached wall + isolation walls back
+	// to their original turf types so later tests see a clean sealed room.
+	A.air.set_moles(/datum/gas/nitrogen, MOLES_N2STANDARD)
+	dq_atmos_test_restore_walls()
+
 	TEST_ASSERT(final_pressure < initial_pressure, \
 		"pressurised floor adjacent to space didn't depressurize: [initial_pressure] → [final_pressure]")
 	TEST_ASSERT(final_moles < initial_moles, \
 		"depressurization didn't drain moles: [initial_moles] → [final_moles]")
-
-	// Restore baseline.
-	A.air.set_moles(/datum/gas/nitrogen, MOLES_N2STANDARD)
 
 
 /// Full atmos cycle: vent_pump pressurizes a turf, vent_scrubber on the
@@ -3095,14 +3173,15 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 /datum/unit_test/dq_supermatter_accumulates_damage_in_vacuum
 
 /datum/unit_test/dq_supermatter_accumulates_damage_in_vacuum/Run()
-	// Use a space turf so removed.total_moles will be ~0.
-	var/turf/space/S = null
-	for(var/turf/space/cand in world)
-		S = cand
-		break
-	if(!S)
-		log_test("dq_supermatter_accumulates_damage_in_vacuum: no space turf on map, skipping")
-		return
+	// Deterministically obtain a /turf/space (so removed.total_moles is ~0 and
+	// the SM's no-coolant damage branch fires): breach a sealed test-room floor's
+	// neighbor into space via the production ChangeTurf path.
+	var/list/pair = dq_atmos_test_find_floor_pair()
+	TEST_ASSERT_NOTNULL(pair, "no usable floor pair on map for supermatter vacuum test")
+	var/turf/simulated/floor/floor = pair[1]
+
+	var/turf/space/S = dq_atmos_test_open_to_space(floor)
+	TEST_ASSERT_NOTNULL(S, "couldn't create a space turf for the supermatter vacuum test")
 
 	var/obj/machinery/power/supermatter/SM = new(S)
 	TEST_ASSERT_NOTNULL(SM, "supermatter failed to construct on space turf")
@@ -3112,10 +3191,14 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 
 	SM.process()
 
-	TEST_ASSERT(SM.damage > initial_damage, \
-		"supermatter at power=200 in space (no coolant) didn't accumulate damage: [initial_damage] → [SM.damage]")
+	var/post_damage = SM.damage
 
+	// Clean up the SM and restore the breached wall before asserting.
 	qdel(SM)
+	dq_atmos_test_restore_walls()
+
+	TEST_ASSERT(post_damage > initial_damage, \
+		"supermatter at power=200 in space (no coolant) didn't accumulate damage: [initial_damage] → [post_damage]")
 
 
 /// R-UST fusion engine components all construct without erroring. This is a
