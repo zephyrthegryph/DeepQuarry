@@ -54,5 +54,14 @@
 /datum/config_entry/string/db_daemon
 	protection = CONFIG_ENTRY_LOCKED | CONFIG_ENTRY_HIDDEN
 
+/// Per-query execution timeout in milliseconds for async queries sitting in queries_active.
+/// A query that remains in-flight longer than this is forcibly abandoned and its slot freed.
+/// This prevents a small number of slow/hung queries from exhausting the max_concurrent_queries
+/// pool and blocking all database access. Set to 0 to disable enforcement.
+/// Default: 30000 (30 seconds). Minimum: 1000 ms.
+/datum/config_entry/number/slow_query_timeout_ms
+	default = 30000
+	min_val = 0
+
 /datum/config_entry/flag/enable_stat_tracking
 	protection = CONFIG_ENTRY_LOCKED | CONFIG_ENTRY_HIDDEN

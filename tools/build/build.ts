@@ -64,22 +64,143 @@ export const DmMapsIncludeTarget = new Juke.Target({
   },
 });
 
+// DQAdd Start — build the in-tree verdigris Rust FFI cdylib before the
+// server runs. Produces verdigris.dll (Windows) / libverdigris.so (Linux)
+// at the repo root, where DreamDaemon loads it via VERDIGRIS_CALL (cave-gen
+// + vendored auxmos atmos). The compiled lib is a gitignored per-platform
+// artifact, so the build is responsible for producing it.
+//
+// When cargo IS present: build succeeds or the target throws (hard fail).
+// When cargo IS NOT present AND a prebuilt lib exists: warn and skip.
+// When cargo IS NOT present AND no prebuilt lib exists: hard fail — a build
+//   without the FFI lib would compile but crash at runtime; that's worse
+//   than a clear build-time error.
+const VERDIGRIS_LIB =
+  process.platform === 'win32' ? 'verdigris.dll' : 'libverdigris.so';
+const VERDIGRIS_RUST_TARGET =
+  process.platform === 'win32'
+    ? 'i686-pc-windows-msvc'
+    : 'i686-unknown-linux-gnu';
+
+export const VerdigrisTarget = new Juke.Target({
+  onlyWhen: () => {
+    const probe = spawnSync('cargo', ['--version'], {
+      stdio: 'ignore',
+      shell: true,
+    });
+    const cargoOk = !probe.error && probe.status === 0;
+    if (!cargoOk) {
+      if (fs.existsSync(VERDIGRIS_LIB)) {
+        Juke.logger.info(
+          `verdigris: cargo not found — using existing ${VERDIGRIS_LIB} (DM-only build)`,
+        );
+        return false; // skip — prebuilt lib will serve at runtime
+      }
+      // No cargo and no prebuilt lib: building would produce a runtime-crashing binary.
+      Juke.logger.error(
+        `verdigris: cargo not found and ${VERDIGRIS_LIB} is missing. `
+          + 'Cannot build — atmos/cave-gen FFI will crash at runtime without it. '
+          + 'Install rustup (see verdigris/README.md) or obtain a prebuilt '
+          + `${VERDIGRIS_LIB} and place it at the repo root.`,
+      );
+      throw new Juke.ExitCode(1);
+    }
+    return true;
+  },
+  inputs: [
+    'verdigris/Cargo.toml',
+    'verdigris/Cargo.lock',
+    'verdigris/verdigris/Cargo.toml',
+    'verdigris/verdigris/build.rs',
+    'verdigris/verdigris/src/**/*.rs',
+    'verdigris/atmos/Cargo.toml',
+    'verdigris/atmos/src/**/*.rs',
+    'verdigris/atmos/crates/**/Cargo.toml',
+    'verdigris/atmos/crates/**/*.rs',
+  ],
+  outputs: [VERDIGRIS_LIB],
+  executes: async () => {
+    await Juke.exec(
+      'cargo',
+      ['build', '--release', '--target', VERDIGRIS_RUST_TARGET],
+      { cwd: 'verdigris' },
+    );
+    fs.copyFileSync(
+      `verdigris/target/${VERDIGRIS_RUST_TARGET}/release/${VERDIGRIS_LIB}`,
+      VERDIGRIS_LIB,
+    );
+  },
+});
+// DQAdd End
+
 // DQAdd Start — regenerate .dmi files from their PNG + .dmi.toml sources
 // before DM compile. Architecture A migration: every DMI has editable
 // PNG + TOML sources alongside it; this target re-packs them when stale.
 //
-// No `inputs`/`outputs` declared on purpose: build_step.py does its own
-// per-file mtime check, so letting Juke pre-glob 4800+ source files just
-// to decide whether to invoke us is pure overhead — Juke's stat pass
-// costs ~5s/build, build_step.py's own dirty-check is 0.9s. The target
-// runs unconditionally; the script no-ops when nothing's stale.
+// inputs/outputs are declared so Juke can validate freshness: when no
+// *.dmi.toml or *.png source is newer than any icons/gen/**/*.dmi output
+// Juke skips the target entirely, giving a ~0.9s speedup on clean builds.
+// build_step.py's own BLAKE2b dirty-check is the authoritative per-file
+// gate; Juke's coarser mtime check is the outer skip-entirely gate.
 export const IconRepackTarget = new Juke.Target({
+  inputs: [
+    'icons/**/*.dmi.toml',
+    'icons/**/*.png',
+    'maps/**/*.dmi.toml',
+    'maps/**/*.png',
+  ],
+  outputs: ['icons/gen/**/*.dmi'],
   executes: async () => {
     await Juke.exec('python3', [
       '-m', 'tools.dq_icons.build_step',
       '--output', 'icons/gen',
       'icons', 'maps',
     ]);
+  },
+});
+
+// DQAdd — remove all generated DMI files in icons/gen/. Use this when you
+// want to force a full repack on the next build (e.g. after hash corruption).
+export const CleanIconsTarget = new Juke.Target({
+  executes: async () => {
+    Juke.logger.info('Removing icons/gen/');
+    Juke.rm('icons/gen', { recursive: true });
+  },
+});
+// DQAdd End
+
+// DQAdd Start — validate that every .dm file under code/ is included in
+// deepquarry.dme. Runs before the DM compile so missing includes are caught
+// with a helpful error rather than silently-uncompiled code.
+export const ValidateDmeTarget = new Juke.Target({
+  inputs: ['code/**/*.dm', `${DME_NAME}.dme`],
+  executes: async () => {
+    const dmeContent = fs.readFileSync(`${DME_NAME}.dme`, 'utf-8');
+
+    // Build the set of all paths mentioned in the DME (normalise to forward-slash).
+    const mentioned = new Set<string>();
+    for (const match of dmeContent.matchAll(/#include\s+"([^"]+\.dm)"/g)) {
+      mentioned.add(match[1].replace(/\\/g, '/'));
+    }
+
+    const dmFiles = Juke.glob('code/**/*.dm');
+    const missing: string[] = [];
+    for (const file of dmFiles) {
+      const normalized = file.replace(/\\/g, '/');
+      if (!mentioned.has(normalized)) {
+        missing.push(normalized);
+      }
+    }
+
+    if (missing.length > 0) {
+      Juke.logger.error(
+        `${missing.length} .dm file(s) under code/ are not included in ${DME_NAME}.dme:\n` +
+        missing.map((f) => `  ${f}`).join('\n') +
+        '\n\nAdd each file to deepquarry.dme, or delete it if unused.',
+      );
+      throw new Juke.ExitCode(1);
+    }
+    Juke.logger.info(`ValidateDme: all ${dmFiles.length} code/ .dm files are included.`);
   },
 });
 // DQAdd End
@@ -163,6 +284,8 @@ export const DmTarget = new Juke.Target({
   dependsOn: ({ get }) => [
     get(DefineParameter).includes('ALL_MAPS') && DmMapsIncludeTarget,
     IconRepackTarget, // DQAdd — regenerate .dmi from PNG+TOML before DM compile
+    ValidateDmeTarget, // DQAdd — fail fast if any code/ .dm is missing from the DME
+    DreamCheckerTarget, // DQAdd — run SpacemanDMM lint before DM compile if available
   ],
   inputs: [
     '_maps/map_files/generic/**',
@@ -201,8 +324,9 @@ export const DmTestTarget = new Juke.Target({
   ],
   dependsOn: ({ get }) => [
     get(DefineParameter).includes('ALL_MAPS') && DmMapsIncludeTarget,
-    IconRepackTarget,
-    VerdigrisTarget, // DQAdd — tests boot the world, which loads the FFI lib
+    IconRepackTarget, // tests boot the world, which uses the .rsc
+    ValidateDmeTarget, // catch missing includes before compiling
+    VerdigrisTarget, // tests boot the world, which loads the FFI lib
   ],
   executes: async ({ get }) => {
     fs.copyFileSync(`${DME_NAME}.dme`, `${DME_NAME}.test.dme`);
@@ -398,6 +522,29 @@ export const TguiLintTarget = new Juke.Target({
   dependsOn: [BunTarget, BiomeCheckTarget, TguiTscTarget],
 });
 
+// DQAdd Start — run SpacemanDMM dreamchecker before the DM compile if the
+// binary is available. Best-effort: if dreamchecker is not on PATH the target
+// no-ops with a warning. CI installs it via tools/ci/install_spaceman_dmm.sh;
+// local dev can skip it without consequence.
+export const DreamCheckerTarget = new Juke.Target({
+  inputs: ['code/**/*.dm', 'deepquarry.dme'],
+  onlyWhen: () => {
+    const probe = spawnSync('dreamchecker', ['--version'], {
+      stdio: 'ignore',
+      shell: true,
+    });
+    if (probe.error || probe.status !== 0) {
+      Juke.logger.info('dreamchecker not found on PATH — skipping DM lint (install via tools/ci/install_spaceman_dmm.sh)');
+      return false;
+    }
+    return true;
+  },
+  executes: async () => {
+    await Juke.exec('dreamchecker', [`${DME_NAME}.dme`]);
+  },
+});
+// DQAdd End
+
 export const TguiDevTarget = new Juke.Target({
   dependsOn: [BunTarget],
   executes: ({ args }) => bun('tgui:dev', ...args),
@@ -418,7 +565,7 @@ export const TestTarget = new Juke.Target({
 });
 
 export const LintTarget = new Juke.Target({
-  dependsOn: [TguiLintTarget],
+  dependsOn: [TguiLintTarget, DreamCheckerTarget], // DQAdd — DM lint via SpacemanDMM if available
 });
 
 export const BuildTarget = new Juke.Target({
@@ -454,7 +601,7 @@ export const TguiCleanTarget = new Juke.Target({
 });
 
 export const CleanTarget = new Juke.Target({
-  dependsOn: [TguiCleanTarget],
+  dependsOn: [TguiCleanTarget, CleanIconsTarget], // DQAdd — also remove icons/gen/
   executes: async () => {
     Juke.rm('*.{dmb,rsc}');
     Juke.rm('_maps/templates.dm');

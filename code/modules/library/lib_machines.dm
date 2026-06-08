@@ -65,28 +65,35 @@
 		if("settitle")
 			var/newtitle = tgui_input_text(usr, "Enter a title to search for:", max_length = MAX_MESSAGE_LEN)
 			if(newtitle)
-				title = sanitizeSQL(newtitle)
+				title = newtitle
 			return TRUE
 		if("setcategory")
 			var/newcategory = tgui_input_list(usr, "Choose a category to search for:", "Category", list("Any", "Fiction", "Non-Fiction", "Adult", "Reference", "Religion"))
 			if(!newcategory)
 				newcategory = "Any"
-			category = sanitizeSQL(newcategory)
+			category = newcategory
 			return TRUE
 		if("setauthor")
 			var/newauthor = tgui_input_text(usr, "Enter an author to search for:", max_length = MAX_MESSAGE_LEN)
 			if(newauthor)
-				author = sanitizeSQL(newauthor)
+				author = newauthor
 			return TRUE
 		if("search")
-			SQLquery = "SELECT author, title, category, id FROM library WHERE "
-			if(category == "Any")
-				SQLquery += "author LIKE '%[author]%' AND title LIKE '%[title]%'"
-			else
-				SQLquery += "author LIKE '%[author]%' AND title LIKE '%[title]%' AND category='[category]'"
 			last_results = list()
 			if(SSdbcore.IsConnected())
-				var/datum/db_query/query = SSdbcore.NewQuery(SQLquery)
+				var/datum/db_query/query
+				// category == "Any" means no category filter; both branches use
+				// LIKE parameters so user-supplied title/author cannot inject SQL.
+				if(category == "Any")
+					query = SSdbcore.NewQuery(
+						"SELECT author, title, category, id FROM library WHERE author LIKE :author_pat AND title LIKE :title_pat",
+						list("author_pat" = "%[author]%", "title_pat" = "%[title]%")
+					)
+				else
+					query = SSdbcore.NewQuery(
+						"SELECT author, title, category, id FROM library WHERE author LIKE :author_pat AND title LIKE :title_pat AND category = :category",
+						list("author_pat" = "%[author]%", "title_pat" = "%[title]%", "category" = category)
+					)
 				query.Execute()
 				while(query.NextRow())
 					last_results += list(list(
@@ -96,6 +103,7 @@
 						"id" = "[query.item[4]]",
 					))
 				qdel(query)
+			SQLquery = null // cleared after search — no longer holds interpolated SQL
 			screenstate = 1
 			add_fingerprint(usr)
 			return TRUE
@@ -243,6 +251,8 @@
 	data["internal_archive"] = internal
 	var/list/external = list()
 	if((screenstate == 8 || is_admin_view) && SSdbcore.IsConnected())
+		// sortby is validated in the "sort" tgui_act branch against a fixed whitelist,
+		// so it is safe to interpolate here as a column name (not a value).
 		var/datum/db_query/query = SSdbcore.NewQuery("SELECT id, author, title, category FROM library ORDER BY [sortby]")
 		query.Execute()
 		while(query.NextRow())
@@ -338,11 +348,10 @@
 			if(!SSdbcore.IsConnected())
 				tgui_alert_async(usr, "Connection to Archive has been severed. Aborting.")
 				return TRUE
-			var/sqltitle = sanitizeSQL(scanner.cache.name)
-			var/sqlauthor = sanitizeSQL(scanner.cache.author)
-			var/sqlcontent = sanitizeSQL(scanner.cache.dat)
-			var/sqlcategory = sanitizeSQL(upload_category)
-			var/datum/db_query/query = SSdbcore.NewQuery("INSERT INTO library (author, title, content, category) VALUES ('[sqlauthor]', '[sqltitle]', '[sqlcontent]', '[sqlcategory]')")
+			var/datum/db_query/query = SSdbcore.NewQuery(
+				"INSERT INTO library (author, title, content, category) VALUES (:author, :title, :content, :category)",
+				list("author" = scanner.cache.author, "title" = scanner.cache.name, "content" = scanner.cache.dat, "category" = upload_category)
+			)
 			if(!query.Execute())
 				to_chat(usr, query.ErrorMsg())
 			else
@@ -351,7 +360,11 @@
 			qdel(query)
 			return TRUE
 		if("targetid")
-			var/sqlid = sanitizeSQL(params["id"])
+			var/raw_id = params["id"]
+			var/numeric_id = text2num(raw_id)
+			// Validate that the id is a positive integer before querying.
+			if(!isnum(numeric_id) || numeric_id <= 0 || round(numeric_id) != numeric_id)
+				return TRUE
 			if(!SSdbcore.IsConnected())
 				tgui_alert_async(usr, "Connection to Archive has been severed. Aborting.")
 				return TRUE
@@ -362,16 +375,19 @@
 			bibledelay = 1
 			spawn(6)
 				bibledelay = 0
-			var/datum/db_query/query = SSdbcore.NewQuery("SELECT * FROM library WHERE id=[sqlid]")
+			var/datum/db_query/query = SSdbcore.NewQuery(
+				"SELECT id, author, title, content FROM library WHERE id = :id",
+				list("id" = numeric_id)
+			)
 			query.Execute()
 			while(query.NextRow())
-				var/author = query.item[2]
-				var/title = query.item[3]
+				var/book_author = query.item[2]
+				var/book_title = query.item[3]
 				var/content = query.item[4]
 				var/obj/item/book/B = new(src.loc)
-				B.name = "Book: [title]"
-				B.title = title
-				B.author = author
+				B.name = "Book: [book_title]"
+				B.title = book_title
+				B.author = book_author
 				B.dat = content
 				B.icon_state = "book[rand(1,16)]"
 				B.item_state = B.icon_state
@@ -382,13 +398,20 @@
 		if("delid")
 			if(!check_rights(R_ADMIN))
 				return TRUE
-			var/sqlid = sanitizeSQL(params["id"])
+			var/raw_id = params["id"]
+			var/numeric_id = text2num(raw_id)
+			// Validate that the id is a positive integer before deleting.
+			if(!isnum(numeric_id) || numeric_id <= 0 || round(numeric_id) != numeric_id)
+				return TRUE
 			if(!SSdbcore.IsConnected())
 				tgui_alert_async(usr, "Connection to Archive has been severed. Aborting.")
 				return TRUE
-			var/datum/db_query/query = SSdbcore.NewQuery("DELETE FROM library WHERE id=[sqlid]")
+			var/datum/db_query/query = SSdbcore.NewQuery(
+				"DELETE FROM library WHERE id = :id",
+				list("id" = numeric_id)
+			)
 			query.Execute()
-			log_admin("[usr.key] has deleted the book [sqlid]")
+			log_admin("[usr.key] has deleted library book id=[numeric_id]")
 			qdel(query)
 			return TRUE
 		if("orderbyid")

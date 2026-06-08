@@ -185,23 +185,10 @@
 
 /datum/universal_icon/proc/to_list()
 	RETURN_TYPE(/list)
-	return list("icon_file" = dq_resolve_dmi_disk_path("[icon_file]"), "icon_state" = icon_state, "dir" = dir, "frame" = frame, "transform" = !isnull(transform) ? transform.to_list() : list())
-
-/// DQ Architecture-A: editable .dmi are repacked into icons/gen at build time and do
-/// NOT exist on disk at their source path. rust-g (iconforge) reads the real filesystem
-/// rather than the .rsc, so a source-path read fails for repacked icons; resolve to the
-/// generated copy when the source isn't on disk. Cached per unique path (rust-g FFI).
-/proc/dq_resolve_dmi_disk_path(path)
-	var/static/list/resolved = list()
-	if(path in resolved)
-		return resolved[path]
-	var/out = path
-	if(!rustg_file_exists(path))
-		var/gen_path = "icons/gen/[path]"
-		if(rustg_file_exists(gen_path))
-			out = gen_path
-	resolved[path] = out
-	return out
+	// resolve_icon_dmi_path() handles the DQ Architecture-A case: repacked DMIs live
+	// in icons/gen/ and are NOT at their source path on disk. iconforge reads the real
+	// filesystem rather than the .rsc, so we must give it the resolved gen path.
+	return list("icon_file" = resolve_icon_dmi_path("[icon_file]"), "icon_state" = icon_state, "dir" = dir, "frame" = frame, "transform" = !isnull(transform) ? transform.to_list() : list())
 
 /proc/universal_icon_from_list(list/input_in)
 	RETURN_TYPE(/datum/universal_icon)

@@ -816,31 +816,76 @@ GLOBAL_LIST_EMPTY(cached_examine_icons)
 	var/icon/I = getFlatIcon(thing, force_south = force_south)
 	return icon2html(I, target, sourceonly = sourceonly)
 
-/// Returns rustg-parsed metadata for an icon, universal icon, or DMI file, using cached values where possible
-/// Returns null if passed object is not a filepath or icon with a valid DMI file
+/// Canonical resolver for DMI files that may live in icons/gen/ at runtime.
+///
+/// DQ Architecture-A: editable .dmi files are repacked into icons/gen/ at build
+/// time and do NOT exist on disk at their original source path. rust-g (and
+/// iconforge) read the real filesystem rather than the .rsc, so a source-path
+/// read silently fails for repacked icons. This proc tries the source path first;
+/// if rust-g reports it absent, it retries against the generated copy under
+/// icons/gen/. The resolved path is cached in GLOB.dq_resolved_icon_path_cache so
+/// repeated calls (e.g. per-frame iconforge lookups) cost only a list lookup.
+///
+/// Returns the on-disk path rust-g can use, or the original path unchanged when
+/// neither location exists (callers may then fail gracefully or crash on their own).
+///
+/// COUPLING: all four icon caches (dq_resolved_icon_path_cache, icon_states_cache,
+/// icon_dimensions, dq_icon_metadata_cache) are keyed by the original source path.
+/// When you need to invalidate one, use /proc/invalidate_icon_cache(path) to clear
+/// all four together — never remove entries from individual caches in isolation.
+/proc/resolve_icon_dmi_path(path)
+	if(path in GLOB.dq_resolved_icon_path_cache)
+		return GLOB.dq_resolved_icon_path_cache[path]
+	var/out = path
+	if(!rustg_file_exists(path))
+		var/gen_path = "icons/gen/[path]"
+		if(rustg_file_exists(gen_path))
+			out = gen_path
+	GLOB.dq_resolved_icon_path_cache[path] = out
+	return out
+
+/// Invalidates all runtime icon caches for the given source path.
+///
+/// The four caches maintained by the icon pipeline are tightly coupled:
+///   - GLOB.dq_resolved_icon_path_cache                        (disk location)
+///   - GLOB.icon_states_cache / GLOB.icon_states_cache_lookup  (icon state lists)
+///   - GLOB.icon_dimensions                                     (width/height)
+///   - GLOB.dq_icon_metadata_cache                             (full rustg metadata)
+///
+/// Clearing any one without clearing the others produces inconsistent lookups
+/// (e.g. a resolved gen path with stale metadata). Always call this proc rather
+/// than removing entries from individual caches.
+/// After this call the next access to each cache rebuilds from disk via rustg.
+///
+/// path — the ORIGINAL source path (e.g. "icons/obj/items.dmi"), NOT the gen path.
+/proc/invalidate_icon_cache(path)
+	GLOB.dq_resolved_icon_path_cache -= path
+	GLOB.icon_states_cache -= path
+	GLOB.icon_states_cache_lookup -= path
+	GLOB.icon_dimensions -= path
+	GLOB.dq_icon_metadata_cache -= path
+
+/// Returns rustg-parsed metadata for an icon, universal icon, or DMI file, using cached values where possible.
+/// Returns null if the argument is not a filepath or icon backed by a valid DMI file.
+/// If the file does not exist at its source path, retries against icons/gen/ via resolve_icon_dmi_path().
+/// Crashes with a stack trace if the file cannot be found at either location.
 /proc/icon_metadata(file)
-	var/static/list/icon_metadata_cache = list()
 	if(istype(file, /datum/universal_icon))
 		var/datum/universal_icon/u_icon = file
 		file = u_icon.icon_file
 	var/file_string = "[file]"
 	if(!istext(file) && !(isfile(file) && length(file_string)) || findtext(file_string, ".png"))
 		return null
-	var/list/cached_metadata = icon_metadata_cache[file_string]
+	var/list/cached_metadata = GLOB.dq_icon_metadata_cache[file_string]
 	if(islist(cached_metadata))
 		return cached_metadata
-	var/list/metadata_result = rustg_dmi_read_metadata(file_string)
-	// DQ Architecture-A: editable .dmi are repacked into icons/gen at build time
-	// and do NOT exist on disk at their source path. rust-g reads the real
-	// filesystem (not the .rsc), so a source-path read fails; retry against the
-	// generated copy before giving up.
+	// Resolve the on-disk path; handles icons/gen/ fallback for repacked DMIs.
+	var/resolved = resolve_icon_dmi_path(file_string)
+	var/list/metadata_result = rustg_dmi_read_metadata(resolved)
 	if(!islist(metadata_result) || !length(metadata_result))
-		metadata_result = rustg_dmi_read_metadata("icons/gen/[file_string]")
-	if(!islist(metadata_result) || !length(metadata_result))
-		CRASH("Error while reading DMI metadata for path '[file_string]': [metadata_result]")
-	else
-		icon_metadata_cache[file_string] = metadata_result
-		return metadata_result
+		CRASH("Error while reading DMI metadata for path '[file_string]' (resolved: '[resolved]'): [metadata_result]")
+	GLOB.dq_icon_metadata_cache[file_string] = metadata_result
+	return metadata_result
 
 /// Checks whether a given icon state exists in a given icon file. If `file` and `state` both exist,
 /// this will return `TRUE` - otherwise, it will return `FALSE`.
