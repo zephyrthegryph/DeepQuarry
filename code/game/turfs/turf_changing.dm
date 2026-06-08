@@ -21,9 +21,8 @@
 	if(istype(below))
 		below.update_icon() // To add or remove the 'ceiling-less' overlay.
 
-// has_valid_ZAS_zone is a ZAS query (zone graph). Under LINDA, a turf
-// is "simulated" if it's in SSair's active set. Stub returns simulated-ness.
-/proc/has_valid_ZAS_zone(turf/simulated/T)
+// Under LINDA, a turf is "simulated" if it's /turf/simulated. Stub returns simulated-ness.
+/proc/has_valid_atmos_zone(turf/simulated/T)
 	return istype(T)
 
 //Creates a new turf
@@ -33,7 +32,7 @@
 
 	if(N == /turf/space)
 		var/turf/below = GetBelow(src)
-		var/zones_present = has_valid_ZAS_zone(below) || has_valid_ZAS_zone(src)
+		var/zones_present = has_valid_atmos_zone(below) || has_valid_atmos_zone(src)
 		if(istype(below) && zones_present && !(src.z in using_map.below_blocked_levels) && (!istype(below, /turf/unsimulated/wall) && !istype(below, /turf/simulated/sky))) // Weird open space
 			N = /turf/simulated/open
 

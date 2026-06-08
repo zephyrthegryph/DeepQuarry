@@ -38,10 +38,7 @@
 	block_tele = TRUE
 
 /turf/simulated/wall/solidrock/Initialize(mapload)
-	. = ..(mapload,  MAT_ALIEN_BEDROCK)
-
-/turf/simulated/wall/solidrock/Initialize(mapload)
-	. = ..()
+	. = ..(mapload, MAT_ALIEN_BEDROCK)
 	update_icon(1)
 
 /turf/simulated/wall/solidrock/update_material()
@@ -99,7 +96,7 @@
 	desc = "An old, yet impressively durably rock wall."
 	var/mossyrock_side = "mossyrock_side"
 
-/turf/simulated/wall/solidrock/Initialize(mapload)
+/turf/simulated/wall/solidrock/mossyrockpoi/Initialize(mapload)
 	. = ..(mapload, "mossyrock")
 
 /turf/simulated/wall/solidrock/mossyrockpoi/update_icon(update_neighbors)

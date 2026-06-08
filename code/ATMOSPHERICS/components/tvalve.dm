@@ -250,7 +250,7 @@
 
 	else if(reference==node3)
 		qdel(network_node3)
-		node3 = null // DQEdit — was `node2 = null` (typo); node3 disconnect must null node3, not double-null node2
+		node3 = null
 
 	update_underlays()
 
