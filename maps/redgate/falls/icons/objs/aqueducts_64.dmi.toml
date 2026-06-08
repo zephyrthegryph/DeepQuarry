@@ -1,9 +1,0 @@
-# Generated from aqueducts_64.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
-width = 64
-height = 64
-cols = 3
-
-[[state]]
-name = "cornerduct"
-dirs = 8
-frames = 1

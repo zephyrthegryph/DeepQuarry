@@ -72,9 +72,9 @@
 	water_state = "cult"
 
 /turf/simulated/floor/water/underwater/ruins
-	icon = 'maps/redgate/falls/icons/turfs/marble.dmi'
+	icon = 'icons/turf/flooring/marble.dmi'
 	icon_state = "1" // So it shows up in the map editor as water.
-	water_icon = 'maps/redgate/falls/icons/turfs/marble.dmi'
+	water_icon = 'icons/turf/flooring/marble.dmi'
 	water_state = "1"
 
 /turf/simulated/floor/water/underwater/sand
@@ -162,7 +162,7 @@
 	icon_state = "cult"
 
 /turf/simulated/floor/water/underwater/indoors/ruins
-	icon = 'maps/redgate/falls/icons/turfs/marble.dmi'
+	icon = 'icons/turf/flooring/marble.dmi'
 	icon_state = "1"
 
 /turf/simulated/floor/water/underwater/indoors/sand

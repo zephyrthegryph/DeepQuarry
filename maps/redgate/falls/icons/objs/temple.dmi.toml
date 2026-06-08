@@ -1,9 +1,0 @@
-# Generated from temple.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
-width = 128
-height = 128
-cols = 1
-
-[[state]]
-name = "temple"
-dirs = 1
-frames = 1
