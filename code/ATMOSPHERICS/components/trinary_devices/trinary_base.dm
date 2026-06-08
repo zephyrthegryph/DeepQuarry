@@ -249,7 +249,6 @@
 		node3_connect = dir
 	return list(node1_connect, node2_connect, node3_connect)
 
-//CHOMPEdit Start - Keybinds for EVEEERYTHING
 /obj/machinery/atmospherics/trinary/click_ctrl(mob/user)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if(allowed(user))
@@ -263,4 +262,3 @@
 
 	else
 		to_chat(user, span_warning("Access denied."))
-//CHOMPEdit End

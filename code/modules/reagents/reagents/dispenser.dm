@@ -495,13 +495,13 @@
 	industrial_use = REFINERYEXPORT_REASON_PRECURSOR
 
 /datum/reagent/acid/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_GREY) //ywedit
+	if(alien == IS_GREY)
 		return
 	if(issmall(M)) removed *= 2
 	M.take_organ_damage(0, removed * power * 2)
 
 /datum/reagent/acid/affect_touch(mob/living/carbon/M, alien, removed) // This is the most interesting
-	if(alien == IS_GREY) //ywedit
+	if(alien == IS_GREY)
 		return
 	if(ishuman(M) && !isbelly(M.loc))
 		var/mob/living/carbon/human/H = M

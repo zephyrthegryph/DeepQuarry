@@ -952,7 +952,7 @@
 /mob/living/adjustEarDamage(damage, deaf)
 	ear_damage = max(0, ear_damage + damage)
 	ear_deaf = max(0, ear_deaf + deaf)
-	if(ear_deaf > 0) //CHOMPStaiton Enable: Ear Ringing/Deafness
+	if(ear_deaf > 0)
 		deaf_loop.start() // Ear Ringing/Deafness - Not sure if we need this, but, safety.
 	else if(ear_deaf <= 0)
 		deaf_loop.stop() // Ear Ringing/Deafness - Not sure if we need this, but, safety.
@@ -963,7 +963,7 @@
 		ear_damage = damage
 	if(deaf >= 0)
 		ear_deaf = deaf
-		deaf_loop.start() // Ear Ringing/Deafness - Not sure if we need this, but, safety. NYI. Used downstream. //CHOMPStation Enable
+		deaf_loop.start()
 
 /mob/living/proc/vomit(lost_nutrition = 10, blood = FALSE, stun = 5, distance = 1, message = TRUE, toxic = VOMIT_TOXIC, purge = FALSE)
 	if(!lastpuke)
@@ -1561,7 +1561,6 @@
 		ooc_notes_window(user)
 
 
-// === merged from living_chomp.dm during hard-fork de-suffix (chain-verified: prior definer is this file, nothing between) ===
 /mob/living/Initialize(mapload)
 	. = ..()
 	// Without this the legacy ai_holder is never wired up for any mob, because

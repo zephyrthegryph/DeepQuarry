@@ -1,4 +1,3 @@
-// DQEdit — SSMACHINES_PIPENETS step removed; LINDA's SSair owns pipenets.
 #define SSMACHINES_MACHINERY     2
 #define SSMACHINES_POWERNETS     3
 #define SSMACHINES_POWER_OBJECTS 4
@@ -19,7 +18,6 @@ SUBSYSTEM_DEF(machines)
 
 	var/current_step = SSMACHINES_MACHINERY
 
-	// DQEdit — cost_pipenets removed; SSair tracks its own pipenet cost.
 	var/cost_machinery     = 0
 	var/cost_powernets     = 0
 	var/cost_power_objects = 0
@@ -29,7 +27,6 @@ SUBSYSTEM_DEF(machines)
 	var/list/all_machines = list()
 	var/list/hibernating_vents = list()
 
-	// DQEdit — networks list removed; SSair.networks is the single source.
 	var/list/processing_machines = list()
 	var/list/powernets = list()
 	var/list/powerobjs = list()
@@ -47,7 +44,6 @@ SUBSYSTEM_DEF(machines)
 
 /datum/controller/subsystem/machines/Initialize()
 	makepowernets()
-	// DQEdit — atmos machinery init moved to SSair (LINDA owns atmos init).
 	fire()
 	return SS_INIT_SUCCESS
 
@@ -105,7 +101,6 @@ SUBSYSTEM_DEF(machines)
 			NewPN.add_cable(PC)
 			propagate_network(PC,PC.powernet)
 
-// DQEdit — setup_atmos_machinery removed; SSair owns atmos init.
 // (Submap loads call /obj/machinery/atmospherics/atmos_init() directly,
 //  main-map load runs through SSair.Initialize → setup_atmos_machinery.)
 
@@ -173,7 +168,6 @@ SUBSYSTEM_DEF(machines)
 			return
 
 /datum/controller/subsystem/machines/Recover()
-	// DQEdit — pipenets recovered by SSair, not here.
 	for(var/datum/D as anything in SSmachines.processing_machines)
 		if(!istype(D, /obj/machinery))
 			log_world("## ERROR Found wrong type during SSmachinery recovery: list=SSmachines.machines, item=[D], type=[D?.type]")
@@ -226,7 +220,6 @@ SUBSYSTEM_DEF(machines)
 		hibernating_vents[WR.reference] = null
 		hibernating_vents.Remove(WR.reference)
 
-// DQEdit — SSMACHINES_PIPENETS removed (LINDA SSair owns pipenets).
 #undef SSMACHINES_MACHINERY
 #undef SSMACHINES_POWERNETS
 #undef SSMACHINES_POWER_OBJECTS

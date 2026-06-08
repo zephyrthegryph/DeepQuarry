@@ -18,7 +18,7 @@
 	containername = "eva hardsuit crate"
 	access = list(ACCESS_MINING,
 				  ACCESS_EVA,
-				  ACCESS_EXPLORER, // CHOMP explo keep
+				  ACCESS_EXPLORER,
 				  ACCESS_PILOT)
 	one_access = TRUE
 
@@ -79,7 +79,6 @@
 	containername = "advanced hardsuit crate"
 	access = ACCESS_CE
 
-// CHOMPStation EDIT Start: Change Commonwealth to Solgov
 /datum/supply_pack/misc/solgov_medical_rig
 	name = "solgov medical hardsuit (loaded)"
 	desc = "A fully-equipped Commonwealth of Sol-Procyon Medical hardsuit. Requires Medical access."
@@ -102,7 +101,6 @@
 	containername = "Solgov engineering hardsuit crate"
 	access = ACCESS_ENGINE
 
-// CHOMPStation EDIT End
 
 /datum/supply_pack/hardsuits/breacher_rig
 	name = "unathi breacher hardsuit (empty)"

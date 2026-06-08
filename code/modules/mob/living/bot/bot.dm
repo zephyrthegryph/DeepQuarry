@@ -23,7 +23,7 @@
 	var/list/req_one_access = list()
 
 	var/atom/target = null
-	var/list/ignore_past = list() //CHOMPStation edit
+	var/list/ignore_past = list()
 	var/list/ignore_list = list()
 	var/list/patrol_path = list()
 	var/list/target_path = list()
@@ -49,7 +49,6 @@
 /mob/living/bot/Initialize(mapload)
 	. = ..()
 
-	//default_language = GLOB.all_languages[LANGUAGE_GALCOM] //VOREstation edit: moved to Init
 
 	botcard = new /obj/item/card/id(src)
 	botcard.access = botcard_access.Copy()
@@ -63,8 +62,8 @@
 
 	if(on)
 		turn_on() // Update lights and other stuff
-	update_icons() //VOREstation edit - overlay runtime fix
-	default_language = GLOB.all_languages[LANGUAGE_GALCOM] //VOREstation edit - runtime fix
+	update_icons()
+	default_language = GLOB.all_languages[LANGUAGE_GALCOM]
 
 /mob/living/bot/Destroy()
 	. = ..()

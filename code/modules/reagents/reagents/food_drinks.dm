@@ -1048,7 +1048,7 @@
 	var/adj_drowsy = 0
 	var/adj_sleepy = 0
 	var/adj_temp = 0
-	var/nutriment_factor = 0 //CHOMPStation addition
+	var/nutriment_factor = 0
 	var/water_based = TRUE
 	dermal_absorption = 0
 	wiki_flag = WIKI_DRINK
@@ -1074,9 +1074,9 @@
 		M.bodytemperature = min(310, M.bodytemperature + (adj_temp * TEMPERATURE_DAMAGE_COEFFICIENT))
 	if(adj_temp < 0 && M.bodytemperature > 310)
 		M.bodytemperature = min(310, M.bodytemperature - (adj_temp * TEMPERATURE_DAMAGE_COEFFICIENT))
-	if(issmall(M)) removed *= 2 //CHOMP Station addition Small bodymass, more effect from lower volume.
-	if(M.species.organic_food_coeff) //CHOMPStation addition. If this is set to 0, they don't get nutrition from food.
-		M.nutrition += nutriment_factor * removed //CHOMPStation addition For hunger and fatness
+	if(issmall(M)) removed *= 2
+	if(M.species.organic_food_coeff)
+		M.nutrition += nutriment_factor * removed
 
 /datum/reagent/drink/overdose(mob/living/carbon/M, alien) //Add special interactions here in the future if desired.
 	..()
@@ -2024,7 +2024,7 @@
 	id = REAGENT_ID_GRAPESODA
 	description = "Grapes made into a fine drank."
 	taste_description = "grape soda"
-	nutriment_factor = 1.5 //CHOMPStation addition
+	nutriment_factor = 1.5
 	color = "#421C52"
 	adj_drowsy = -3
 	cup_prefix = "grape soda"
@@ -2055,7 +2055,7 @@
 	id = REAGENT_ID_LEMONADE
 	description = "Oh the nostalgia..."
 	taste_description = REAGENT_ID_LEMONADE
-	nutriment_factor = 1.5 //CHOMPStation addition
+	nutriment_factor = 1.5
 	color = "#FFFF00"
 	adj_temp = -5
 	cup_prefix = REAGENT_ID_LEMONADE
@@ -2070,7 +2070,7 @@
 	id = REAGENT_ID_MELONADE
 	description = "Oh the.. nostalgia?"
 	taste_description = "watermelon"
-	nutriment_factor = 1.5 //CHOMPStation addition
+	nutriment_factor = 1.5
 	color = "#FFB3BB"
 	adj_temp = -5
 	cup_prefix = REAGENT_ID_MELONADE
@@ -2085,7 +2085,7 @@
 	id = REAGENT_ID_APPLEADE
 	description = "Applejuice, improved."
 	taste_description = "apples"
-	nutriment_factor = 1.5 //CHOMPStation addition
+	nutriment_factor = 1.5
 	color = "#FFD1B3"
 	adj_temp = -5
 	cup_prefix = REAGENT_ID_APPLEADE
@@ -2100,7 +2100,7 @@
 	id = REAGENT_ID_PINEAPPLEADE
 	description = "Pineapple, juiced up."
 	taste_description = "sweet`n`sour pineapples"
-	nutriment_factor = 5 //CHOMPStation addition
+	nutriment_factor = 5
 	color = "#FFFF00"
 	adj_temp = -5
 	cup_prefix = REAGENT_ID_PINEAPPLEADE
@@ -2115,7 +2115,7 @@
 	id = REAGENT_ID_KIRASPECIAL
 	description = "Long live the guy who everyone had mistaken for a girl. Baka!"
 	taste_description = "fruity sweetness"
-	nutriment_factor = 1.5 //CHOMPStation addition
+	nutriment_factor = 1.5
 	color = "#CCCC99"
 	adj_temp = -5
 
@@ -2129,7 +2129,7 @@
 	id = REAGENT_ID_BROWNSTAR
 	description = "It's not what it sounds like..."
 	taste_description = "orange and cola soda"
-	nutriment_factor = 1.5 //CHOMPStation addition
+	nutriment_factor = 1.5
 	color = "#9F3400"
 	adj_temp = -2
 
@@ -2239,7 +2239,7 @@
 	id = REAGENT_ID_REWRITER
 	description = "The secret of the sanctuary of the Libarian..."
 	taste_description = "citrus and coffee"
-	nutriment_factor = 1.5 //CHOMPStation addition
+	nutriment_factor = 1.5
 	color = "#485000"
 	adj_temp = -5
 
@@ -2256,7 +2256,7 @@
 	id = REAGENT_ID_NUKACOLA
 	description = "Cola, cola never changes."
 	taste_description = "cola"
-	nutriment_factor = 1.5 //CHOMPStation addition
+	nutriment_factor = 1.5
 	color = "#100800"
 	adj_temp = -5
 	adj_sleepy = -2
@@ -2290,7 +2290,7 @@
 	id = REAGENT_ID_COLA
 	description = "A refreshing beverage."
 	taste_description = "cola"
-	nutriment_factor = 1.5 //CHOMPStation addition
+	nutriment_factor = 1.5
 	reagent_state = LIQUID
 	color = "#100800"
 	adj_drowsy = -3
@@ -2423,7 +2423,7 @@
 	id = REAGENT_ID_SPACEMOUNTAINWIND
 	description = "Blows right through you like a space wind."
 	taste_description = "sweet citrus soda"
-	nutriment_factor = 1.5 //CHOMPStation addition
+	nutriment_factor = 1.5
 	color = "#102000"
 	adj_drowsy = -7
 	adj_sleepy = -1
@@ -2439,7 +2439,7 @@
 	id = REAGENT_ID_DRGIBB
 	description = "A delicious blend of 42 different flavors."
 	taste_description = "cherry soda"
-	nutriment_factor = 3 //CHOMPStation addition
+	nutriment_factor = 3
 	color = "#102000"
 	adj_drowsy = -6
 	adj_temp = -5
@@ -2453,7 +2453,7 @@
 	id = REAGENT_ID_SPACEUP
 	description = "Tastes like a hull breach in your mouth."
 	taste_description = "citrus soda"
-	nutriment_factor = 1.5 //CHOMPStation addition
+	nutriment_factor = 1.5
 	color = "#202800"
 	adj_temp = -8
 
@@ -2467,7 +2467,7 @@
 	id = REAGENT_ID_LEMONLIME
 	description = "A tangy substance made of 0.5% natural citrus!"
 	taste_description = "tangy lime and lemon soda"
-	nutriment_factor = 1.5 //CHOMPStation addition
+	nutriment_factor = 1.5
 	color = "#878F00"
 	adj_temp = -8
 
@@ -2481,7 +2481,7 @@
 	id = REAGENT_ID_GINGERALE
 	description = "The original."
 	taste_description = "somewhat tangy ginger ale"
-	nutriment_factor = 1.5 //CHOMPStation addition
+	nutriment_factor = 1.5
 	color = "#edcf8f"
 	adj_temp = -8
 
@@ -2526,7 +2526,7 @@
 	id = REAGENT_ID_ROYROGERS
 	description = "I'm a cowboy, on a steel horse I ride."
 	taste_description = "cola and fruit"
-	nutriment_factor = 1.5 //CHOMPStation addition
+	nutriment_factor = 1.5
 	color = "#4F1811"
 	adj_temp = -8
 
@@ -2540,7 +2540,7 @@
 	id = REAGENT_ID_COLLINSMIX
 	description = "Best hope it isn't a hoax."
 	taste_description = "gin and lemonade"
-	nutriment_factor = 1.5 //CHOMPStation addition
+	nutriment_factor = 1.5
 	color = "#D7D0B3"
 	adj_temp = -8
 
@@ -2554,7 +2554,7 @@
 	id = REAGENT_ID_ARNOLDPALMER
 	description = "Tastes just like the old man."
 	taste_description = "lemon and sweet tea"
-	nutriment_factor = 1.5 //CHOMPStation addition
+	nutriment_factor = 1.5
 	color = "#AF5517"
 	adj_temp = -8
 
@@ -2677,7 +2677,7 @@
 	id = REAGENT_ID_DREAMCREAM
 	description = "A smoothy, silky mix of honey and dairy."
 	taste_description = "sweet, soothing dairy"
-	nutriment_factor = 5 //CHOMPStation addition
+	nutriment_factor = 5
 	color = "#fcfcc9" // rgb(252, 252, 201)
 
 	glass_name = REAGENT_DREAMCREAM
@@ -2689,7 +2689,7 @@
 	id = REAGENT_ID_VILELEMON
 	description = "A fizzy, sour lemonade mix."
 	taste_description = "fizzy, sour lemon"
-	nutriment_factor = 1.5 //CHOMPStation addition
+	nutriment_factor = 1.5
 	color = "#c6c603" // rgb(198, 198, 3)
 
 	glass_name = REAGENT_VILELEMON
@@ -2702,7 +2702,7 @@
 	id = REAGENT_ID_ENTDRAUGHT
 	description = "A natural, earthy combination of all things peaceful."
 	taste_description = "fresh rain and sweet memories"
-	nutriment_factor = 5 //CHOMPStation addition
+	nutriment_factor = 5
 	color = "#3a6617" // rgb(58, 102, 23)
 
 	glass_name = REAGENT_ENTDRAUGHT
@@ -2725,7 +2725,7 @@
 	id = REAGENT_ID_OILSLICK
 	description = "A viscous, but sweet, ooze."
 	taste_description = "honey"
-	nutriment_factor = 15 //CHOMPStation addition
+	nutriment_factor = 15
 	color = "#FDF5E6" // rgb(253,245,230)
 	water_based = FALSE
 
@@ -2739,7 +2739,7 @@
 	id = REAGENT_ID_SLIMESLAMMER
 	description = "A viscous, but savory, ooze."
 	taste_description = "peanuts`n`slime"
-	nutriment_factor = 20 //CHOMPStation addition
+	nutriment_factor = 20
 	color = "#93604D"
 	water_based = FALSE
 
@@ -2764,7 +2764,7 @@
 	id = REAGENT_ID_NUCLEARWASTE
 	description = "A viscous, glowing slurry."
 	taste_description = "sour honey drops"
-	nutriment_factor = 15 //CHOMPStation addition
+	nutriment_factor = 15
 	color = "#7FFF00" // rgb(127,255,0)
 	water_based = FALSE
 
@@ -2791,7 +2791,7 @@
 	id = REAGENT_ID_SODAOIL
 	description = "A thick, bubbling soda."
 	taste_description = "chewy water"
-	nutriment_factor = 10 //CHOMPStation addition
+	nutriment_factor = 10
 	color = "#F0FFF0" // rgb(245,255,250)
 	water_based = FALSE
 
@@ -2896,7 +2896,7 @@
 	id = REAGENT_ID_FAUXFIZZ
 	description = "One sip and you're in the bahamas... maybe."
 	taste_description = "slightly tropical"
-	nutriment_factor = 4 //CHOMPStation addition
+	nutriment_factor = 4
 	color = "#69375C"
 
 	glass_name = "tropical fizz"
@@ -3788,7 +3788,7 @@
 	id = REAGENT_ID_CUBALIBRE
 	description = "Rum, mixed with cola and a splash of lime. Viva la revolucion."
 	taste_description = "cola with lime"
-	nutriment_factor = 1.5 //CHOMPStation addition
+	nutriment_factor = 1.5
 	color = "#3E1B00"
 	strength = 30
 
@@ -3813,7 +3813,7 @@
 	description = "This thing makes the hair on the back of your neck stand up."
 	taste_description = "sweet tasting iron"
 	taste_mult = 1.5
-	nutriment_factor = 1.5 //CHOMPStation addition
+	nutriment_factor = 1.5
 	color = "#820000"
 	strength = 15
 
@@ -4218,7 +4218,7 @@
 	id = REAGENT_ID_SNOWWHITE
 	description = "A cold refreshment"
 	taste_description = "refreshing cold"
-	nutriment_factor = 1.5 //CHOMPStation addition
+	nutriment_factor = 1.5
 	color = "#FFFFFF"
 	strength = 30
 
@@ -4232,7 +4232,7 @@
 	id = REAGENT_ID_SUIDREAM
 	description = "Comprised of: White soda, blue curacao, melon liquor."
 	taste_description = "fruit"
-	nutriment_factor = 1.5 //CHOMPStation addition
+	nutriment_factor = 1.5
 	color = "#00A86B"
 	strength = 100
 
@@ -4339,7 +4339,7 @@
 	id = REAGENT_ID_WHISKEYCOLA
 	description = "Whiskey, mixed with cola. Surprisingly refreshing."
 	taste_description = "cola with an alcoholic undertone"
-	nutriment_factor = 1.5 //CHOMPStation addition
+	nutriment_factor = 1.5
 	color = "#3E1B00"
 	strength = 25
 
@@ -4353,7 +4353,7 @@
 	id = REAGENT_ID_WHISKEYSODA
 	description = "Ultimate refreshment."
 	taste_description = "carbonated whiskey"
-	nutriment_factor = 1.5 //CHOMPStation addition
+	nutriment_factor = 1.5
 	color = "#EAB300"
 	strength = 15
 
@@ -4540,7 +4540,7 @@
 	id = REAGENT_ID_XANADUCANNON
 	description = "Common in the entertainment districts of Titan."
 	taste_description = "sweet alcohol"
-	nutriment_factor = 1.5 //CHOMPStation addition
+	nutriment_factor = 1.5
 	color = "#614126"
 	strength = 50
 
@@ -4554,7 +4554,7 @@
 	id = REAGENT_ID_DEBUGGER
 	description = "From Shelf. Not for human consumption."
 	taste_description = "oily bitterness"
-	nutriment_factor = 10 //CHOMPStation addition
+	nutriment_factor = 10
 	color = "#d3d3d3"
 	strength = 32
 
@@ -4567,7 +4567,7 @@
 	id = REAGENT_ID_SPACERSBREW
 	description = "Ethanol and orange soda. A common emergency drink on frontier colonies."
 	taste_description = "bitter oranges"
-	nutriment_factor = 1.5 //CHOMPStation addition
+	nutriment_factor = 1.5
 	color = "#ffc04c"
 	strength = 43
 
@@ -4672,7 +4672,7 @@
 	id = REAGENT_ID_ROTGUT
 	description = "A heinous combination of clashing flavors."
 	taste_description = "plague and coldsweats"
-	nutriment_factor = 1.5 //CHOMPStation addition
+	nutriment_factor = 1.5
 	color = "#3a6617" // rgb(58, 102, 23)
 	strength = 10
 
@@ -4983,7 +4983,7 @@
 	description = "This thing makes the hair on the back of your neck stand up."
 	taste_description = "sweet victory and sour iron"
 	taste_mult = 1.5
-	nutriment_factor = 1.5 //CHOMPStation addition
+	nutriment_factor = 1.5
 	color = "#F3C906"
 	strength = 30
 
@@ -6175,7 +6175,6 @@
 		H.add_modifier(/datum/modifier/berserk, 2 SECONDS, suppress_failure = TRUE)
 
 
-// === merged from food_drinks_chomp.dm during hard-fork de-suffix (manually verified: all-new types / new defines, no base re-open) ===
 ////////////////////////////////////////////////
 /////////DRINKS////////////////////////////////
 //////////////////////////////////////////////

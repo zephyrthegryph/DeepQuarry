@@ -181,8 +181,8 @@
 		/obj/item/gun/projectile/revolvershotgun,
 		/obj/item/ammo_magazine/m12gdrumjack/beanbag,
 		/obj/item/ammo_magazine/m12gdrumjack/beanbag,
-		/obj/item/ticket_printer,		//CHOMPStation addition
-		/obj/item/retail_scanner/security,	//CHOMPStation addition
+		/obj/item/ticket_printer,
+		/obj/item/retail_scanner/security,
 		/obj/item/clothing/accessory/bodycam
 
 		)
@@ -204,7 +204,7 @@
 	starts_with = list(
 		/obj/item/clothing/suit/storage/vest/officer,
 		/obj/item/clothing/head/helmet,
-		/obj/item/clothing/mask/gas/sechailer/swat/officer, //CHOMP ADD
+		/obj/item/clothing/mask/gas/sechailer/swat/officer,
 		/obj/item/cartridge/security,
 		/obj/item/radio/headset/headset_sec,
 		/obj/item/storage/belt/security,
@@ -220,11 +220,11 @@
 		/obj/item/ammo_magazine/m45/rubber, // Removal, //it has been restored
 		/obj/item/gun/energy/taser,
 		/obj/item/cell/device/weapon,
-		/obj/item/holowarrant,				//CHOMPStation addition
-		/obj/item/retail_scanner/security,	//CHOMPStation addition
-		/obj/item/clothing/glasses/hud/security,	//CHOMPStation addition
-		/obj/item/ticket_printer,			//CHOMPStation addition
-		/obj/item/gunbox/sec_officer,			//CHOMPStation addition
+		/obj/item/holowarrant,
+		/obj/item/retail_scanner/security,
+		/obj/item/clothing/glasses/hud/security,
+		/obj/item/ticket_printer,
+		/obj/item/gunbox/sec_officer,
 		/obj/item/clothing/mask/gas/sechailer,
 		/obj/item/flashlight/maglight)
 
@@ -271,7 +271,7 @@
 	starts_with = list(
 		/obj/item/clothing/accessory/badge/holo/detective,
 		/obj/item/clothing/gloves/forensic, //replaces black gloves
-		/obj/item/gunbox, //undoes vorestation removal and adds back gunbox
+		/obj/item/gunbox,
 		/obj/item/gunbox/stun,
 		/obj/item/storage/belt/detective,
 		/obj/item/storage/box/evidence,
@@ -287,8 +287,8 @@
 		/obj/item/taperecorder,
 		/obj/item/storage/bag/detective,
 		/obj/item/rectape/random = 3,
-		/obj/item/retail_scanner/security,	//CHOMPStation addition
-		/obj/item/clothing/glasses/hud/security		//CHOMPStation addition
+		/obj/item/retail_scanner/security,
+		/obj/item/clothing/glasses/hud/security
 		)
 
 /obj/structure/closet/secure_closet/injection

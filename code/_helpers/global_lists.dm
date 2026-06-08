@@ -455,9 +455,9 @@ GLOBAL_LIST_EMPTY(item_tf_spawnpoints) // Global variable tracking which items a
 GLOBAL_LIST_INIT(vr_mob_tf_options, list(
 	"Borg" = /mob/living/silicon/robot,
 	"Cortical borer" = /mob/living/simple_mob/animal/borer/non_antag,
-	"Hyena" = /mob/living/simple_mob/animal/hyena, //TODO: Port from Downstream //CHOMPStation Enable
+	"Hyena" = /mob/living/simple_mob/animal/hyena,
 	"Giant spider" = /mob/living/simple_mob/animal/giant_spider/thermic,
-	"Armadillo" = /mob/living/simple_mob/animal/passive/armadillo, //TODO: Port from Downstream //CHOMPStation Enable
+	"Armadillo" = /mob/living/simple_mob/animal/passive/armadillo,
 	"Parrot" = /mob/living/simple_mob/animal/passive/bird/parrot,
 	"Cat" = /mob/living/simple_mob/animal/passive/cat,
 	"Corgi" = /mob/living/simple_mob/animal/passive/dog/corgi,
@@ -469,11 +469,11 @@ GLOBAL_LIST_INIT(vr_mob_tf_options, list(
 	"Shantak" = /mob/living/simple_mob/animal/sif/shantak,
 	"Goose" = /mob/living/simple_mob/animal/space/goose,
 	"Space shark" = /mob/living/simple_mob/animal/space/shark,
-	"Synx" = /mob/living/simple_mob/animal/synx, //TODO: Port from Downstream //CHOMPStation Enable
+	"Synx" = /mob/living/simple_mob/animal/synx,
 	"Dire wolf" = /mob/living/simple_mob/vore/wolf/direwolf,
 	"Construct Artificer" = /mob/living/simple_mob/construct/artificer,
 	"Tech golem" = /mob/living/simple_mob/mechanical/technomancer_golem,
-	"Metroid" = /mob/living/simple_mob/metroid/juvenile/baby, //TODO: Port from Downstream //CHOMPStation Enable
+	"Metroid" = /mob/living/simple_mob/metroid/juvenile/baby,
 	"Otie" = /mob/living/simple_mob/vore/otie/cotie/chubby,
 	"Red-eyed Shadekin" = /mob/living/simple_mob/shadekin/red,
 	"Blue-eyed Shadekin" = /mob/living/simple_mob/shadekin/blue,
@@ -482,9 +482,9 @@ GLOBAL_LIST_INIT(vr_mob_tf_options, list(
 	"Yellow-eyed Shadekin" = /mob/living/simple_mob/shadekin/yellow,
 	"Slime" = /mob/living/simple_mob/slime/xenobio/metal,
 	"Corrupt hound" = /mob/living/simple_mob/vore/aggressive/corrupthound,
-	"Deathclaw" = /mob/living/simple_mob/vore/aggressive/deathclaw/den, //Downstream uses /den variant here. //CHOMPStation Enable
+	"Deathclaw" = /mob/living/simple_mob/vore/aggressive/deathclaw/den,
 	"Weretiger" = /mob/living/simple_mob/vore/weretiger,
-	"Mimic" = /mob/living/simple_mob/vore/aggressive/mimic/floor/plating, //Downstream uses /floor/plating variant here //CHOMPStation Enable
+	"Mimic" = /mob/living/simple_mob/vore/aggressive/mimic/floor/plating,
 	"Giant rat" = /mob/living/simple_mob/vore/aggressive/rat,
 	"Catslug" = /mob/living/simple_mob/vore/alienanimals/catslug,
 	"Dust jumper" = /mob/living/simple_mob/vore/alienanimals/dustjumper,
@@ -492,24 +492,24 @@ GLOBAL_LIST_INIT(vr_mob_tf_options, list(
 	"Teppi" = /mob/living/simple_mob/vore/alienanimals/teppi,
 	"Bee" = /mob/living/simple_mob/vore/bee,
 	"Dragon" = /mob/living/simple_mob/vore/bigdragon/friendly,
-	"Riftwalker" = /mob/living/simple_mob/vore/demon/wendigo, //Downstream uses /wendigo variant here //CHOMPStation Enable
+	"Riftwalker" = /mob/living/simple_mob/vore/demon/wendigo,
 	"Horse" = /mob/living/simple_mob/vore/horse/big,
 	"Morph" = /mob/living/simple_mob/vore/morph,
 	"Leopardmander" = /mob/living/simple_mob/vore/leopardmander,
 	"Rabbit" = /mob/living/simple_mob/vore/rabbit,
 	"Red panda" = /mob/living/simple_mob/vore/redpanda,
 	"Sect drone" = /mob/living/simple_mob/vore/sect_drone,
-	"Armalis vox" = /mob/living/simple_mob/vox/armalis, //TODO: Port from Downstream //CHOMPStation Enable
-	"Xeno hunter" = /mob/living/simple_mob/xeno_ch/hunter, //TODO: Port from Downstream //CHOMPStation Enable
-	"Xeno queen" = /mob/living/simple_mob/xeno_ch/queen/maid, //TODO: Port from Downstream //CHOMPStation Enable
-	"Xeno sentinel" = /mob/living/simple_mob/xeno_ch/sentinel, //TODO: Port from Downstream //CHOMPStation Enable
+	"Armalis vox" = /mob/living/simple_mob/vox/armalis,
+	"Xeno hunter" = /mob/living/simple_mob/xeno_ch/hunter,
+	"Xeno queen" = /mob/living/simple_mob/xeno_ch/queen/maid,
+	"Xeno sentinel" = /mob/living/simple_mob/xeno_ch/sentinel,
 	"Space carp" = /mob/living/simple_mob/animal/space/carp,
 	"Jelly blob" = /mob/living/simple_mob/vore/jelly,
-	"SWOOPIE XL" = /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie, //TODO: Port from Downstream //CHOMPStation Enable
+	"SWOOPIE XL" = /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie,
 	"Abyss lurker" = /mob/living/simple_mob/vore/vore_hostile/abyss_lurker,
 	"Abyss leaper" = /mob/living/simple_mob/vore/vore_hostile/leaper,
 	"Gelatinous cube" = /mob/living/simple_mob/vore/vore_hostile/gelatinous_cube,
-	"Gryphon" = /mob/living/simple_mob/vore/gryphon //TODO: Port from Downstream //CHOMPStation Enable
+	"Gryphon" = /mob/living/simple_mob/vore/gryphon
 	))
 
 GLOBAL_LIST_INIT(vr_mob_spawner_options, list(
@@ -527,7 +527,7 @@ GLOBAL_LIST_INIT(vr_mob_spawner_options, list(
 	"Fennec" = /mob/living/simple_mob/vore/fennec,
 	"Seagull" =/mob/living/simple_mob/vore/seagull,
 	"Corgi" = /mob/living/simple_mob/animal/passive/dog/corgi,
-	"Armadillo" = /mob/living/simple_mob/animal/passive/armadillo, //TODO: Port from Downstream //CHOMPStation Enable
+	"Armadillo" = /mob/living/simple_mob/animal/passive/armadillo,
 	"Racoon" = /mob/living/simple_mob/animal/passive/raccoon,
 	"Goose" = /mob/living/simple_mob/animal/space/goose,
 	"Frog" = /mob/living/simple_mob/vore/aggressive/frog,
@@ -540,12 +540,12 @@ GLOBAL_LIST_INIT(vr_mob_spawner_options, list(
 	"Red otie" = /mob/living/simple_mob/vore/otie/red,
 	"Giant rat" = /mob/living/simple_mob/vore/aggressive/rat,
 	"Giant snake" = /mob/living/simple_mob/vore/aggressive/giant_snake,
-	"Hyena" = /mob/living/simple_mob/animal/hyena, //TODO: Port from Downstream //CHOMPStation Enable
+	"Hyena" = /mob/living/simple_mob/animal/hyena,
 	"Space shark" = /mob/living/simple_mob/animal/space/shark,
 	"Shantak" = /mob/living/simple_mob/animal/sif/shantak,
 	"Kururak" = /mob/living/simple_mob/animal/sif/kururak,
 	"Teppi" = /mob/living/simple_mob/vore/alienanimals/teppi,
-	"Slug" = /mob/living/simple_mob/vore/slug, //TODO: Port from Downstream //CHOMPStation Enable
+	"Slug" = /mob/living/simple_mob/vore/slug,
 	"Catslug" = /mob/living/simple_mob/vore/alienanimals/catslug,
 	"Weretiger" = /mob/living/simple_mob/vore/weretiger,
 	"Dust jumper" = /mob/living/simple_mob/vore/alienanimals/dustjumper,
@@ -557,18 +557,18 @@ GLOBAL_LIST_INIT(vr_mob_spawner_options, list(
 	"Abyss leaper" = /mob/living/simple_mob/vore/vore_hostile/leaper,
 	"Gelatinous cube" = /mob/living/simple_mob/vore/vore_hostile/gelatinous_cube,
 	"Panther" = /mob/living/simple_mob/vore/aggressive/panther,
-	"Lizard man" = /mob/living/simple_mob/vore/aggressive/lizardman, //TODO: Port from Downstream //CHOMPStation Enable
+	"Lizard man" = /mob/living/simple_mob/vore/aggressive/lizardman,
 	"Pakkun" = /mob/living/simple_mob/vore/pakkun,
-	"Synx" = /mob/living/simple_mob/animal/synx, //TODO: Port from Downstream //CHOMPStation Enable
+	"Synx" = /mob/living/simple_mob/animal/synx,
 	"Jelly blob" = /mob/living/simple_mob/vore/jelly,
 	"Voracious lizard" = /mob/living/simple_mob/vore/aggressive/dino,
-	"Baby metroid" = /mob/living/simple_mob/metroid/juvenile/baby, //TODO: Port from Downstream //CHOMPStation Enable
-	"Super metroid" = /mob/living/simple_mob/metroid/juvenile/super, //TODO: Port from Downstream //CHOMPStation Enable
-	"Alpha metroid" = /mob/living/simple_mob/metroid/juvenile/alpha, //TODO: Port from Downstream //CHOMPStation Enable
-	"Gamma metroid" = /mob/living/simple_mob/metroid/juvenile/gamma, //TODO: Port from Downstream //CHOMPStation Enable
-	"Zeta metroid" = /mob/living/simple_mob/metroid/juvenile/zeta, //TODO: Port from Downstream //CHOMPStation Enable
-	"Omega metroid" = /mob/living/simple_mob/metroid/juvenile/omega, //TODO: Port from Downstream //CHOMPStation Enable
-	"Queen metroid" = /mob/living/simple_mob/metroid/juvenile/queen, //TODO: Port from Downstream //CHOMPStation Enable
+	"Baby metroid" = /mob/living/simple_mob/metroid/juvenile/baby,
+	"Super metroid" = /mob/living/simple_mob/metroid/juvenile/super,
+	"Alpha metroid" = /mob/living/simple_mob/metroid/juvenile/alpha,
+	"Gamma metroid" = /mob/living/simple_mob/metroid/juvenile/gamma,
+	"Zeta metroid" = /mob/living/simple_mob/metroid/juvenile/zeta,
+	"Omega metroid" = /mob/living/simple_mob/metroid/juvenile/omega,
+	"Queen metroid" = /mob/living/simple_mob/metroid/juvenile/queen,
 	"Xeno hunter" = /mob/living/simple_mob/animal/space/alien,
 	"Xeno sentinel" = /mob/living/simple_mob/animal/space/alien/sentinel,
 	"Xeno Praetorian" = /mob/living/simple_mob/animal/space/alien/sentinel/praetorian,
@@ -582,13 +582,13 @@ GLOBAL_LIST_INIT(vr_mob_spawner_options, list(
 	"Great White Wolf" = /mob/living/simple_mob/vore/greatwolf,
 	"Great Black Wolf" = /mob/living/simple_mob/vore/greatwolf/black,
 	"Solar grub" = /mob/living/simple_mob/vore/solargrub,
-	"Pitcher plant" = /mob/living/simple_mob/vore/pitcher_plant, //TODO: Port from Downstream //CHOMPStation Enable
-	"Red gummy kobold" = /mob/living/simple_mob/vore/candy/redcabold, //TODO: Port from Downstream //CHOMPStation Enable
-	"Blue gummy kobold" = /mob/living/simple_mob/vore/candy/bluecabold, //TODO: Port from Downstream //CHOMPStation Enable
-	"Yellow gummy kobold" = /mob/living/simple_mob/vore/candy/yellowcabold, //TODO: Port from Downstream //CHOMPStation Enable
-	"Marshmellow serpent" = /mob/living/simple_mob/vore/candy/marshmellowserpent, //TODO: Port from Downstream //CHOMPStation Enable
+	"Pitcher plant" = /mob/living/simple_mob/vore/pitcher_plant,
+	"Red gummy kobold" = /mob/living/simple_mob/vore/candy/redcabold,
+	"Blue gummy kobold" = /mob/living/simple_mob/vore/candy/bluecabold,
+	"Yellow gummy kobold" = /mob/living/simple_mob/vore/candy/yellowcabold,
+	"Marshmellow serpent" = /mob/living/simple_mob/vore/candy/marshmellowserpent,
 	"Riftwalker" = /mob/living/simple_mob/vore/demon,
-	"Wendigo" = /mob/living/simple_mob/vore/demon/wendigo, //TODO: Port from Downstream //CHOMPStation Enable
+	"Wendigo" = /mob/living/simple_mob/vore/demon/wendigo,
 	"Shadekin" = /mob/living/simple_mob/shadekin,
 	"Catgirl" = /mob/living/simple_mob/vore/catgirl,
 	"Wolfgirl" = /mob/living/simple_mob/vore/wolfgirl,
@@ -596,11 +596,11 @@ GLOBAL_LIST_INIT(vr_mob_spawner_options, list(
 	"Lamia" = /mob/living/simple_mob/vore/lamia,
 	"Corrupt hound" = /mob/living/simple_mob/vore/aggressive/corrupthound,
 	"Corrupt corrupt hound" = /mob/living/simple_mob/vore/aggressive/corrupthound/prettyboi,
-	"SWOOPIE XL" = /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie, //TODO: Port from Downstream //CHOMPStation Enable
-	"Cultist Teshari" = /mob/living/simple_mob/humanoid/cultist/tesh, //TODO: Port from Downstream //CHOMPStation Enable
-	"Burning Mage" = /mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fireball, //TODO: Port from Downstream //CHOMPStation Enable
-	"Converted" = /mob/living/simple_mob/humanoid/cultist/noodle, //TODO: Port from Downstream //CHOMPStation Enable
-	"Cultist Teshari Mage" = /mob/living/simple_mob/humanoid/cultist/castertesh, //TODO: Port from Downstream //CHOMPStation Enable
+	"SWOOPIE XL" = /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie,
+	"Cultist Teshari" = /mob/living/simple_mob/humanoid/cultist/tesh,
+	"Burning Mage" = /mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fireball,
+	"Converted" = /mob/living/simple_mob/humanoid/cultist/noodle,
+	"Cultist Teshari Mage" = /mob/living/simple_mob/humanoid/cultist/castertesh,
 	"Monkey" = /mob/living/carbon/human/monkey,
 	"Wolpin" = /mob/living/carbon/human/wolpin,
 	"Sparra" = /mob/living/carbon/human/sparram,
@@ -1981,7 +1981,7 @@ GLOBAL_LIST_INIT(edible_trash, list(/obj/item/broken_device,
 				/obj/item/paicard,
 				/obj/item/pda,
 				/obj/item/radio/headset,
-				/obj/item/starcaster_news, //chompstation addition
+				/obj/item/starcaster_news,
 				/obj/item/inflatable/torn,
 				/obj/item/organ,
 				/obj/item/stack/material/cardboard,
@@ -2022,7 +2022,7 @@ GLOBAL_LIST_INIT(edible_trash, list(/obj/item/broken_device,
 				/obj/item/bikehorn/tinytether,
 				/obj/item/entrepreneur,
 				/obj/item/capture_crystal,
-				/obj/item/material/kitchen, //chompstation addition start
+				/obj/item/material/kitchen,
 				/obj/item/storage/mre,
 				/obj/item/storage/mrebag,
 				/obj/item/storage/fancy/crackers,
@@ -2044,7 +2044,7 @@ GLOBAL_LIST_INIT(edible_trash, list(/obj/item/broken_device,
 				/obj/item/folder,
 				/obj/item/clipboard,
 				/obj/item/coin,
-				/obj/item/clothing/ears, //chompstation addition end
+				/obj/item/clothing/ears,
 				/obj/item/roulette_ball,
 				/obj/item/pizzabox,
 				/obj/item/card/id
@@ -2324,7 +2324,7 @@ GLOBAL_LIST_INIT(alt_titles_with_icons, list(
 				JOB_ALT_RESEARCH_INTERN,
 				JOB_ALT_SECURITY_CADET,
 				JOB_ALT_JR_CARGO_TECH,
-				JOB_ALT_JR_EXPLORER, //CHOMP explo keep
+				JOB_ALT_JR_EXPLORER,
 				JOB_ALT_SERVER,
 				JOB_ALT_ELECTRICIAN,
 				JOB_ALT_FIREFIGHTER,
@@ -2808,7 +2808,6 @@ GLOBAL_LIST_INIT(selectable_speech_bubbles, list(
 GLOBAL_LIST_INIT(BUILDABLE_AREA_TYPES, list(
 	/area/space,
 	/area/mine
-//	/area/surface/outside, 	//SC //CHOMP Comment - Actually these are causing compilation error.
 //	/area/surface/cave,		//SC
 // /area/tether/surfacebase/outside,	//Downstreams, uncomment these if you are using these maps
 //	/area/groundbase/unexplored/outdoors,
@@ -2823,7 +2822,6 @@ GLOBAL_LIST_INIT(BUILDABLE_AREA_TYPES, list(
 GLOBAL_LIST_INIT(blacklisted_areas, typecacheof(list(
 	/area/space,
 	/area/mine
-//	/area/surface/outside,	//SC //CHOMP Comment - Actually these are causing compilation error.
 //	/area/surface/cave,		//SC
 	//TETHER STUFF BELOW THIS	//Downstreams, uncomment these if you are using these maps
 //	/area/tether/surfacebase/outside,

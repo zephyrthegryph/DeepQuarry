@@ -195,11 +195,9 @@
 		if(user.a_intent == I_HELP)
 			var/body_part = parse_zone(user.zone_sel.selecting)
 
-			//Chomp Edit start
 			var/message_holder	//Holds pervy message
 			var/message_holder2	//Hods the nutrition related message.
 			var/beat_size = ""	//Small prey = quiet
-			//Chomp Edit end
 
 			if(body_part)
 				var/their = "their"
@@ -305,7 +303,7 @@
 							sound_strength = "cannot hear"
 							sound = "anything"
 
-				user.visible_message("[user] places [src] against [M]'s [body_part] and listens attentively.", "You place [src] against [their] [body_part]. You [sound_strength] [sound]. [message_holder] [message_holder2]") //Chomp edit. ([message holder] & [message_holder2])
+				user.visible_message("[user] places [src] against [M]'s [body_part] and listens attentively.", "You place [src] against [their] [body_part]. You [sound_strength] [sound]. [message_holder] [message_holder2]")
 				return ITEM_INTERACT_SUCCESS
 
 	return ..(M,user)
@@ -667,7 +665,6 @@
 	..()
 	icon_override = icon_previous_override
 
-//ywedit start. forces different sprite sheet on equip
 /obj/item/clothing/accessory/collar/Initialize(mapload)
 	. = ..()
 	icon_previous_override = icon_override
@@ -686,7 +683,6 @@
 /obj/item/clothing/accessory/collar/dropped(mob/user)
 	..()
 	icon_override = icon_previous_override
-//ywedit end
 
 /obj/item/clothing/accessory/collar/silver
 	name = "Silver tag collar"
@@ -1461,7 +1457,6 @@
 	slot = ACCESSORY_SLOT_DECOR
 
 
-// === merged from accessory_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/clothing/accessory/collar/casinoslave
 	name = "a disabled Sentient Prize Collar"
 	desc = "A collar worn by sentient prizes on the Golden Goose Casino. Although the red text on it shows its disconnected and nonfunctional."

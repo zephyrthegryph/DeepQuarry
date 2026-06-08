@@ -193,7 +193,7 @@ Works together with spawning an observer, noted above.
 				return 0
 		var/mob/observer/dead/ghost = new(src, aghost)	//Transfer safety to observer spawning proc.
 		ghost.can_reenter_corpse = can_reenter_corpse
-		ghost.timeofdeath = src.timeofdeath //BS12 EDIT
+		ghost.timeofdeath = src.timeofdeath
 		ghost.key = key
 		if(istype(loc, /obj/structure/morgue))
 			var/obj/structure/morgue/M = loc
@@ -1136,6 +1136,5 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	forceMove(L)
 
 
-// === merged from observer_chomp.dm during hard-fork de-suffix (manually verified: no middle override of the affected member) ===
 /mob/observer
 	low_priority = TRUE

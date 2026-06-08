@@ -657,7 +657,7 @@ GLOBAL_LIST_INIT(slot_flags_enumeration, list(
 	set category = "Object"
 	set name = "Pick up"
 
-	if(!(usr)) //BS12 EDIT
+	if(!(usr))
 		return
 	if(!usr.canmove || usr.stat || usr.restrained() || !Adjacent(usr) || usr.is_incorporeal())
 		return
@@ -1246,7 +1246,6 @@ Note: This proc can be overwritten to allow for different types of auto-alignmen
 	else
 		to_chat(new_voice,span_notice("You have become [src]!"))
 
-// Chomp edit
 /obj/item/proc/muffled_by_belly(mob/user)
 	if(isbelly(user.loc))
 		var/obj/belly/B = user.loc

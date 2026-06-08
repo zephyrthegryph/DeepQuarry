@@ -299,7 +299,7 @@
 	cost = 45
 	containertype = /obj/structure/closet/crate/secure
 	containername = JOB_EXPLORER + "voidsuit crate"
-	access = ACCESS_EXPLORER //CHOMP explo keep
+	access = ACCESS_EXPLORER
 
 /datum/supply_pack/voidsuits/explorer_medic
 	name = JOB_FIELD_MEDIC + " voidsuits"
@@ -332,7 +332,6 @@
 	access = ACCESS_PILOT
 
 // Surplus!
-// CHOMPStation EDIT Start: Change Commonwealth to Solgov.
 /datum/supply_pack/voidsuits/solgov_mining
 	name = "Solgov mining voidsuit"
 	desc = "A standard Solgov of Sol-Procyon Mining voidsuit. Requires Mining access."
@@ -342,11 +341,11 @@
 	)
 	cost = 150
 	containertype = /obj/structure/closet/crate/secure
-	name = "Solgov mining voidsuit crate" //CHOMP explo keep
+	name = "Solgov mining voidsuit crate"
 	access = ACCESS_MINING
 
-/datum/supply_pack/voidsuits/solgov_anomaly //CHOMP explo keep
-	name = "Solgov anomaly suit" //CHOMP explo keep
+/datum/supply_pack/voidsuits/solgov_anomaly
+	name = "Solgov anomaly suit"
 	desc = "A standard Solgov of Sol-Procyon Anomalous Materials Handling voidsuit. Requires Xenoarchaeology access."
 	contains = list(
 		/obj/item/clothing/suit/space/anomaly/alt,
@@ -354,11 +353,11 @@
 	)
 	cost = 150
 	containertype = /obj/structure/closet/crate/secure
-	name = "Solgov anomaly suit crate" //CHOMP explo keep
+	name = "Solgov anomaly suit crate"
 	access = ACCESS_XENOARCH
 
-/datum/supply_pack/voidsuits/solgov_riot //CHOMP explo keep
-	name = "Solgov riot voidsuit" //CHOMP explo keep
+/datum/supply_pack/voidsuits/solgov_riot
+	name = "Solgov riot voidsuit"
 	desc = "A standard Solgov of Sol-Procyon Riot Control voidsuit. Requires Armory access."
 	contains = list(
 		/obj/item/clothing/suit/space/void/security/riot/alt,
@@ -369,8 +368,8 @@
 	name = "Solgov riot voidsuit crate"
 	access = ACCESS_BRIG
 
-/datum/supply_pack/voidsuits/solgov_pilot //CHOMP explo keep
-	name = "Solgov pilot voidsuit" //CHOMP explo keep
+/datum/supply_pack/voidsuits/solgov_pilot
+	name = "Solgov pilot voidsuit"
 	desc = "A standard Solgov of Sol-Procyon Pilot's voidsuit. Requires Pilot's access."
 	contains = list(
 		/obj/item/clothing/suit/space/void/pilot/alt2,
@@ -378,11 +377,11 @@
 	)
 	cost = 150
 	containertype = /obj/structure/closet/crate/secure
-	name = "Solgov pilot voidsuit crate" //CHOMP explo keep
+	name = "Solgov pilot voidsuit crate"
 	access = ACCESS_PILOT
 
-/datum/supply_pack/voidsuits/solgov_medical //CHOMP explo keep
-	name = "Solgov medical voidsuit" //CHOMP explo keep
+/datum/supply_pack/voidsuits/solgov_medical
+	name = "Solgov medical voidsuit"
 	desc = "A standard Solgov of Sol-Procyon Medical voidsuit. Requires Medical access."
 	contains = list(
 		/obj/item/clothing/suit/space/void/medical/alt2,
@@ -393,8 +392,8 @@
 	name = "Solgov medical voidsuit crate"
 	access = ACCESS_MEDICAL
 
-/datum/supply_pack/voidsuits/solgov_explore //CHOMP explo keep
-	name = "Solgov exploration voidsuit" //CHOMP explo keep
+/datum/supply_pack/voidsuits/solgov_explore
+	name = "Solgov exploration voidsuit"
 	desc = "A standard Solgov of Sol-Procyon Exploration voidsuit. Requires EVA and Exploration access."
 	contains = list(
 		/obj/item/clothing/suit/space/void/exploration/alt2,
@@ -402,11 +401,11 @@
 	)
 	cost = 150
 	containertype = /obj/structure/closet/crate/secure
-	name = "Solgov exploration voidsuit crate"  //CHOMP explo keep
-	access = ACCESS_EXPLORER //CHOMP explo keep
+	name = "Solgov exploration voidsuit crate"
+	access = ACCESS_EXPLORER
 
-/datum/supply_pack/voidsuits/solgov_engineer //CHOMP explo keep
-	name = "Solgov engineering voidsuit" //CHOMP explo keep
+/datum/supply_pack/voidsuits/solgov_engineer
+	name = "Solgov engineering voidsuit"
 	desc = "A standard Solgov of Sol-Procyon Engineering voidsuit. Requires Engineering access."
 	contains = list(
 		/obj/item/clothing/suit/space/void/engineering/alt2,
@@ -414,11 +413,11 @@
 	)
 	cost = 150
 	containertype = /obj/structure/closet/crate/secure
-	name = "Solgov engineering voidsuit crate" //CHOMP explo keep
+	name = "Solgov engineering voidsuit crate"
 	access = ACCESS_ENGINE
 
-/datum/supply_pack/voidsuits/solgov_atmos //CHOMP explo keep
-	name = "Solgov atmos voidsuit" //CHOMP explo keep
+/datum/supply_pack/voidsuits/solgov_atmos
+	name = "Solgov atmos voidsuit"
 	desc = "A standard Solgov of Sol-Procyon Atmospherics voidsuit. Requires Atmospherics access."
 	contains = list(
 		/obj/item/clothing/suit/space/void/atmos/alt2,
@@ -426,11 +425,11 @@
 	)
 	cost = 150
 	containertype = /obj/structure/closet/crate/secure
-	name = "Solgov atmos voidsuit crate" //CHOMP explo keep
+	name = "Solgov atmos voidsuit crate"
 	access = ACCESS_ATMOSPHERICS
 
-/datum/supply_pack/voidsuits/solgov_captain //CHOMP explo keep
-	name = "Solgov captain voidsuit" //CHOMP explo keep
+/datum/supply_pack/voidsuits/solgov_captain
+	name = "Solgov captain voidsuit"
 	desc = "A standard Solgov of Sol-Procyon Captain's voidsuit. Requires Captain's access."
 	contains = list(
 		/obj/item/clothing/suit/space/void/captain/alt,
@@ -438,9 +437,8 @@
 	)
 	cost = 150
 	containertype = /obj/structure/closet/crate/secure
-	name = "Solgov captain voidsuit crate" //CHOMP explo keep
+	name = "Solgov captain voidsuit crate"
 	access = ACCESS_CAPTAIN
-// CHOMPStation EDIT End
 
 /datum/supply_pack/voidsuits/csc_breaker
 	name = "Shipbreaker's Industrial Suit (inc. jetpack)"
