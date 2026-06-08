@@ -121,6 +121,10 @@
 		stun_effect_act(0, P.agony, def_zone, P, electric = TRUE)
 		if(!P.nodamage)
 			apply_damage(P.damage, P.damage_type, def_zone, absorb, proj_sharp, proj_edge, P, TRUE)
+		// Call on_hit() so any modifier_type_to_apply and other effects set on the
+		// projectile are applied even for taser-effect projectiles.  Pass absorb so
+		// a fully-blocked hit still suppresses secondary effects correctly.
+		P.on_hit(src, absorb, def_zone)
 		qdel(P)
 		return
 

@@ -334,9 +334,20 @@
 	//If no angle needs to resolve it from xo/yo!
 	if(direct_target)
 		if(bump_targets)
-			direct_target.bullet_act(src, def_zone)
-		qdel(src)
-		return
+			var/impact_result = direct_target.bullet_act(src, def_zone)
+			// mob/living/bullet_act() already calls on_hit() internally with the correct
+			// absorb value before returning.  Non-mob atoms return PROJECTILE_CONTINUE or
+			// a truthy stop value; on_hit() is a no-op for non-living targets in any case.
+			if(impact_result == PROJECTILE_CONTINUE)
+				// The target (e.g. a reflector) told the projectile to keep flying.
+				// Fall through to the normal launch path below instead of qdel-ing.
+				direct_target = null
+			else
+				qdel(src)
+				return
+		else
+			qdel(src)
+			return
 	if(isnum(angle))
 		setAngle(angle)
 	starting = get_turf(src)
@@ -649,13 +660,21 @@
 	qdel(src)
 	return TRUE
 
-//TODO: make it so this is called more reliably, instead of sometimes by bullet_act() and sometimes not
+// Authoritative effect-application hook.  Called from within mob/living/bullet_act()
+// (which has access to the per-target absorb value) immediately after damage is dealt.
+// Subtype projectiles that want custom on-hit effects should override this proc and
+// chain ..() to preserve base effects.  Non-mob targets: returns 0 (no-op).
+//
+// blocked: armor absorption percentage (0-100+).  >= 100 means a full block — skip
+//   all stun/weaken/modifier effects since no damage got through.
+// def_zone: the body zone that was struck (string from check_zone).
 /obj/item/projectile/proc/on_hit(atom/target, blocked = 0, def_zone)
-	if(blocked >= 100)		return 0//Full block
-	if(!isliving(target))	return 0
-//	if(isanimal(target))	return 0
+	if(blocked >= 100)
+		return 0 // Full block — no effects pass through.
+	if(!isliving(target))
+		return 0 // on_hit only affects living mobs; non-mob targets are handled in bullet_act() implementations.
 	var/mob/living/L = target
-	L.apply_effects(stun, weaken, paralyze, irradiate, stutter, eyeblur, drowsy, agony, blocked, incendiary, flammability) // add in AGONY!
+	L.apply_effects(stun, weaken, paralyze, irradiate, stutter, eyeblur, drowsy, agony, blocked, incendiary, flammability)
 	if(modifier_type_to_apply)
 		L.add_modifier(modifier_type_to_apply, modifier_duration)
 	return 1
