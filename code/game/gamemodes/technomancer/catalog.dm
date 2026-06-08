@@ -159,11 +159,11 @@ GLOBAL_LIST_INIT(all_technomancer_assistance, subtypesof(/datum/technomancer/ass
 	data["assistance"] = assistance
 	return data
 
-/obj/item/technomancer_catalog/tgui_act(action, list/params)
+/obj/item/technomancer_catalog/tgui_act(action, list/params, datum/tgui/ui)
 	. = ..()
 	if(.)
 		return
-	var/mob/living/carbon/human/H = usr
+	var/mob/living/carbon/human/H = ui.user
 	if(H.stat || H.restrained())
 		return TRUE
 	if(!ishuman(H))

@@ -106,7 +106,7 @@
 				float_direction = direction
 				start_process(MECHA_PROC_MOVEMENT)
 		can_move = 0
-		spawn(tmp_step_in) can_move = 1
+		VARSET_IN(src, can_move, 1, tmp_step_in)
 		use_power(tmp_step_energy_drain)
 		return 1
 	return 0

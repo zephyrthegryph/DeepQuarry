@@ -215,7 +215,7 @@
 	com = null
 	return ..()
 
-/obj/machinery/teleport/station/proc/engage()
+/obj/machinery/teleport/station/proc/engage(mob/user)
 	if(stat & (BROKEN|NOPOWER))
 		return
 
@@ -226,11 +226,12 @@
 		com.update_use_power(USE_POWER_ACTIVE)
 		for(var/mob/O in hearers(src, null))
 			O.show_message(span_notice("Teleporter engaged!"), 2)
-	add_fingerprint(usr)
+	if(user)
+		add_fingerprint(user)
 	engaged = 1
 	return
 
-/obj/machinery/teleport/station/proc/disengage()
+/obj/machinery/teleport/station/proc/disengage(mob/user)
 	if(stat & (BROKEN|NOPOWER))
 		return
 
@@ -241,7 +242,8 @@
 		update_use_power(USE_POWER_IDLE)
 		for(var/mob/O in hearers(src, null))
 			O.show_message(span_notice("Teleporter disengaged!"), 2)
-	add_fingerprint(usr)
+	if(user)
+		add_fingerprint(user)
 	engaged = 0
 	return
 

@@ -78,8 +78,8 @@
 				return FALSE
 
 			if(station.engaged)
-				station.disengage()
+				station.disengage(ui.user)
 			else
-				station.engage()
+				station.engage(ui.user)
 
 			return TRUE
