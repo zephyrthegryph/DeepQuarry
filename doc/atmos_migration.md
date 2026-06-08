@@ -5,10 +5,20 @@ with /tg/-lineage LINDA atmospherics backed by an in-tree Rust port of
 [auxmos](https://github.com/Putnam3145/auxmos). It is the authoritative
 document for sequencing, decisions, and compat-layer scope.
 
-**Status**: Phase 0 (bridge hardening) ✅. Phase 1 (vendor + scaffold) ✅.
-Phase 1.5 (unconditional commit to LINDA) ✅ — ZAS/XGM deleted. **Phase 2
-(make-it-actually-build)** is the active work: 806 compile errors across
-166 files, each needing per-site rewriting against LINDA's APIs.
+**Status**: Phases 0–2 ✅. The fork is **LINDA-only**: ZAS (`code/ZAS/`) and
+XGM (`code/modules/xgm/`) are deleted, the tree compiles and boots, and the
+atmos unit tests pass. Gas math currently runs in **pure DM** (the
+`/datum/gas_mixture` bodies); the optional Rust-accelerated **auxmos backend
+is not yet wired** (`auxmos_bindings.dm` uncompiled, `auxtools_atmos_init`
+uncalled) — that is the remaining perf work (Phases 3–4).
+
+CHOMP/ZAS-era callers are served by the compat layer in
+`code/ATMOSPHERICS/xgm_compat.dm` (XGM/ZAS gas + airblock API → LINDA) and
+`code/ATMOSPHERICS/tg_infra_compat.dm` (the `/tg/` infrastructure the vendored
+LINDA files expect). These are still load-bearing — ~50 files call the compat
+API (`assume_gas`, `CanZASPass`, `update_nearby_tiles`, `add_thermal_energy`,
+…). Folding them into native call sites is a large per-site effort with no
+functional change; treat it as its own phase, not a cleanup.
 
 ---
 
