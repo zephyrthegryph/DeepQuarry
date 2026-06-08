@@ -468,17 +468,17 @@ GLOBAL_LIST_EMPTY(all_objectives)
 	return set_target(pick(possible_items))
 
 
-/datum/objective/steal/proc/select_target()
+/datum/objective/steal/proc/select_target(mob/user)
 	var/list/possible_items_all = possible_items+possible_items_special+"custom"
-	var/new_target = tgui_input_list(usr, "Select target:", "Objective target", possible_items_all)
+	var/new_target = tgui_input_list(user, "Select target:", "Objective target", possible_items_all)
 	if (!new_target) return
 	if (new_target == "custom")
-		var/obj/item/custom_target = tgui_input_list(usr, "Select type:", "Type", typesof(/obj/item))
+		var/obj/item/custom_target = tgui_input_list(user, "Select type:", "Type", typesof(/obj/item))
 		if (!custom_target) return
 		var/tmp_obj = new custom_target
 		var/custom_name = tmp_obj:name
 		qdel(tmp_obj)
-		custom_name = tgui_input_text(usr, "Enter target name:", "Objective target", custom_name, MAX_MESSAGE_LEN)
+		custom_name = tgui_input_text(user, "Enter target name:", "Objective target", custom_name, MAX_MESSAGE_LEN)
 		if (!custom_name) return
 		target_name = custom_name
 		steal_target = custom_target

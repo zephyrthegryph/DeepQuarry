@@ -14,7 +14,7 @@
 	var/delay_to_try_again = 0 // How long to wait if first attempt fails.  Set to 0 to never try again.
 
 // Call this to get a ghost volunteer.
-/obj/structure/ghost_pod/proc/trigger(alert, adminalert)
+/obj/structure/ghost_pod/proc/trigger(mob/user, alert, adminalert)
 	if(!ghost_query_type)
 		return FALSE
 	if(busy)
@@ -63,7 +63,7 @@
 		if(confirm_before_open)
 			if(tgui_alert(user, "Are you sure you want to touch \the [src]?", "Confirm", list("No", "Yes")) != "Yes")
 				return
-		trigger()
+		trigger(user)
 		// ition Start
 		if(!used)
 			activated = TRUE
@@ -83,7 +83,7 @@
 	. = ..()
 	addtimer(CALLBACK(src, PROC_REF(trigger)), delay_to_self_open)
 
-/obj/structure/ghost_pod/automatic/trigger()
+/obj/structure/ghost_pod/automatic/trigger(mob/user)
 	. = ..()
 	if(. == FALSE) // If we failed to get a volunteer, try again later if allowed to.
 		if(delay_to_try_again)

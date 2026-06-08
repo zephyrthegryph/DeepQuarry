@@ -591,11 +591,7 @@
 /obj/item/storage/box/explorerkeys
 	name = "box of volunteer headsets"
 	desc = "A box full of volunteer headsets, for issuing out to exploration volunteers."
-<<<<<<< HEAD
 	starts_with = list(/obj/item/radio/headset/volunteer = 7) // explo keep
-=======
-	starts_with = list(/obj/item/radio/headset/volunteer = 7)
->>>>>>> worktree-wf_a47e2fc7-d42-15
 
 /obj/item/storage/box/commandkeys
 	name = "box of command keys"

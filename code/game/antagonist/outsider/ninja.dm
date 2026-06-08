@@ -108,7 +108,7 @@ GLOBAL_DATUM(ninjas, /datum/antagonist/ninja)
 	player.put_in_hands(ninjasuit)
 	player.equip_to_slot_or_del(ninjasuit,slot_back)
 	if(ninjasuit)
-		ninjasuit.toggle_seals(src,TRUE,TRUE)
+		ninjasuit.toggle_seals(player,TRUE,TRUE)
 		ninjasuit.seal_delay = initial(ninjasuit.seal_delay)
 
 	if(istype(player.back,/obj/item/rig))

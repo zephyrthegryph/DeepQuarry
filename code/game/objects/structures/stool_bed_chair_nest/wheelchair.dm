@@ -233,10 +233,13 @@
 
 /obj/structure/bed/chair/wheelchair/MouseDrop(over_object, src_location, over_location)
 	..()
-	if((over_object == usr && (in_range(src, usr) || usr.contents.Find(src))))
-		if(!ishuman(usr))	return
+	var/mob/user = usr
+	if(!istype(user))
+		return
+	if((over_object == user && (in_range(src, user) || user.contents.Find(src))))
+		if(!ishuman(user))	return
 		if(has_buckled_mobs())	return 0
-		visible_message("[usr] collapses \the [src.name].")
+		visible_message("[user] collapses \the [src.name].")
 		var/obj/item/wheelchair/R = new folded_type(get_turf(src))
 		R.name = src.name
 		R.color = src.color

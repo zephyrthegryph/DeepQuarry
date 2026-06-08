@@ -258,7 +258,7 @@
 				else
 					new_objective = objective
 				var/datum/objective/steal/steal = new_objective
-				if (!steal.select_target())
+				if (!steal.select_target(usr))
 					return
 
 			if("capture","absorb", "vore")

@@ -76,9 +76,7 @@
 /obj/effect/effect/foam/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume) // foam disolves when heated, except metal foams
 	if(!metal && prob(max(0, exposed_temperature - 475)))
 		flick("[icon_state]-disolve", src)
-
-		spawn(5)
-			qdel(src)
+		addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(qdel), src), 5)
 
 /obj/effect/effect/foam/Crossed(atom/movable/AM)
 	if(AM.is_incorporeal())
@@ -110,24 +108,26 @@
 		for(var/datum/reagent/R in carry.reagent_list)
 			carried_reagents += R.id
 
+/datum/effect/effect/system/foam_spread/proc/do_start()
+	var/obj/effect/effect/foam/F = locate() in location
+	if(F)
+		F.amount += amount
+		return
+
+	F = new /obj/effect/effect/foam(location, metal)
+	F.amount = amount
+
+	if(!metal) // don't carry other chemicals if a metal foam
+		F.create_reagents(10)
+
+		if(carried_reagents)
+			for(var/id in carried_reagents)
+				F.reagents.add_reagent(id, 1, safety = 1) //makes a safety call because all reagents should have already reacted anyway
+		else
+			F.reagents.add_reagent(REAGENT_ID_WATER, 1, safety = 1)
+
 /datum/effect/effect/system/foam_spread/start()
-	spawn(0)
-		var/obj/effect/effect/foam/F = locate() in location
-		if(F)
-			F.amount += amount
-			return
-
-		F = new /obj/effect/effect/foam(location, metal)
-		F.amount = amount
-
-		if(!metal) // don't carry other chemicals if a metal foam
-			F.create_reagents(10)
-
-			if(carried_reagents)
-				for(var/id in carried_reagents)
-					F.reagents.add_reagent(id, 1, safety = 1) //makes a safety call because all reagents should have already reacted anyway
-			else
-				F.reagents.add_reagent(REAGENT_ID_WATER, 1, safety = 1)
+	INVOKE_ASYNC(src, PROC_REF(do_start))
 
 // wall formed by metal foams, dense and opaque, but easy to break
 

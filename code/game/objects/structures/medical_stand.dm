@@ -97,7 +97,8 @@
 /obj/structure/medical_stand/MouseDrop(mob/living/carbon/human/target, src_location, over_location)
 	..()
 	if(istype(target))
-		if(usr.stat == DEAD || !CanMouseDrop(target))
+		var/mob/user = usr
+		if(!ismob(user) || user.stat == DEAD || !CanMouseDrop(target))
 			return
 		var/list/available_options = list()
 		if (tank)
@@ -107,18 +108,18 @@
 
 		var/action_type
 		if(available_options.len > 1)
-			action_type = tgui_input_list(usr, "What do you want to attach/detach?", "Attach/Detach Choice", available_options)
+			action_type = tgui_input_list(user, "What do you want to attach/detach?", "Attach/Detach Choice", available_options)
 		else if(available_options.len)
 			action_type = available_options[1]
-		if(usr.stat == DEAD || !CanMouseDrop(target))
+		if(user.stat == DEAD || !CanMouseDrop(target))
 			return
 		switch (action_type)
 			if("Gas mask")
-				if(!can_apply_to_target(target, usr)) // There is no point in attempting to apply a mask if it's impossible.
+				if(!can_apply_to_target(target, user)) // There is no point in attempting to apply a mask if it's impossible.
 					return
 				if (breather)
-					src.add_fingerprint(usr)
-					if(!do_after(usr, 3 SECONDS, target) || !can_apply_to_target(target, usr))
+					src.add_fingerprint(user)
+					if(!do_after(user, 3 SECONDS, target) || !can_apply_to_target(target, user))
 						return
 					if(tank)
 						tank.forceMove(src)
@@ -132,33 +133,33 @@
 					src.visible_message(span_infoplain(span_bold("\The [contained]") + " slips to \the [src]!"))
 					update_icon()
 					return
-				usr.visible_message(span_infoplain(span_bold("\The [usr]") + " begins carefully placing the mask onto [target]."),
+				user.visible_message(span_infoplain(span_bold("\The [user]") + " begins carefully placing the mask onto [target]."),
 							span_notice("You begin carefully placing the mask onto [target]."))
-				if(!do_after(usr, 10 SECONDS, target) || !can_apply_to_target(target, usr))
+				if(!do_after(user, 10 SECONDS, target) || !can_apply_to_target(target, user))
 					return
 				// place mask and add fingerprints
-				usr.visible_message(span_notice("\The [usr] has placed \the mask on [target]'s mouth."),
+				user.visible_message(span_notice("\The [user] has placed \the mask on [target]'s mouth."),
 									span_notice("You have placed \the mask on [target]'s mouth."))
 				if(attach_mask(target))
-					src.add_fingerprint(usr)
+					src.add_fingerprint(user)
 					update_icon()
 					START_PROCESSING(SSobj,src)
 				return
 			if("Drip needle")
 				if(attached)
-					if(!do_after(usr, 2 SECONDS, target))
+					if(!do_after(user, 2 SECONDS, target))
 						return
 					visible_message("\The [attached] is taken off \the [src]")
 					attached = null
 				else if(ishuman(target))
-					usr.visible_message(span_infoplain(span_bold("\The [usr]") + " begins inserting needle into [target]'s vein."),
+					user.visible_message(span_infoplain(span_bold("\The [user]") + " begins inserting needle into [target]'s vein."),
 									span_notice("You begin inserting needle into [target]'s vein."))
-					if(!do_after(usr, 5 SECONDS, target))
-						usr.visible_message(span_notice("\The [usr]'s hand slips and pricks \the [target]."),
+					if(!do_after(user, 5 SECONDS, target))
+						user.visible_message(span_notice("\The [user]'s hand slips and pricks \the [target]."),
 									span_notice("Your hand slips and pricks \the [target]."))
 						target.apply_damage(3, BRUTE, pick(BP_R_ARM, BP_L_ARM))
 						return
-					usr.visible_message(span_infoplain(span_bold("\The [usr]") + "hooks \the [target] up to \the [src]."),
+					user.visible_message(span_infoplain(span_bold("\The [user]") + "hooks \the [target] up to \the [src]."),
 									span_notice("You hook \the [target] up to \the [src]."))
 					attached = target
 					START_PROCESSING(SSobj,src)

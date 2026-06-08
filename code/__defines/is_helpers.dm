@@ -61,11 +61,7 @@ GLOBAL_VAR_INIT(refid_filter, TYPEID(filter(type="angular_blur")))
 #define isxeno(A)		istype(A, /mob/living/simple_mob/animal/space/alien)
 #define issimplekin(A)	istype(A, /mob/living/simple_mob/shadekin)
 #define isprotblob(A)	istype(A, /mob/living/simple_mob/protean_blob)
-<<<<<<< HEAD
 #define ismetroid(A)	istype(A, /mob/living/simple_mob/metroid) //ition
-=======
-#define ismetroid(A)	istype(A, /mob/living/simple_mob/metroid)
->>>>>>> worktree-wf_a47e2fc7-d42-4
 
 #define iscarbon(A)		istype(A, /mob/living/carbon)
 #define isalien(A)		istype(A, /mob/living/carbon/alien)

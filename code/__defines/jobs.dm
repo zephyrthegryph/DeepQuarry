@@ -270,11 +270,7 @@
 	#define JOB_ALT_EMERGENCY_MEDICAL_TECHNICIAN "Emergency Medical Technician"
 	#define JOB_ALT_MEDICAL_RESPONDER "Medical Responder"
 
-<<<<<<< HEAD
 #define JOB_SEARCH_AND_RESCUE "Search and Rescue" // actual JOB here
-=======
-#define JOB_SEARCH_AND_RESCUE "Search and Rescue"
->>>>>>> worktree-wf_a47e2fc7-d42-4
 
 #define JOB_GENETICIST "Geneticist" //Disabled atm
 //___________________________________________________________
@@ -407,11 +403,7 @@
 //___________________________________________________________
 
 
-<<<<<<< HEAD
 //  Blueshield jobs
-=======
-// Blueshield jobs
->>>>>>> worktree-wf_a47e2fc7-d42-4
 #define JOB_BLUESHIELD_GUARD "Blueshield Guard"
 #define JOB_SECURITY_PILOT "Security Pilot"
 
@@ -486,11 +478,7 @@
 #define ATMOSTECH (1<<7)
 #define AI_DEPT (1<<8)
 #define CYBORG (1<<9)
-<<<<<<< HEAD
 #define BRIGPHYS (1<<10) // Brig Physician
-=======
-#define BRIGPHYS (1<<10)
->>>>>>> worktree-wf_a47e2fc7-d42-4
 #define CLOWN (1<<13)
 #define MIME (1<<14)
 #define INTERN (1<<15)
@@ -512,11 +500,7 @@
 #define EXPLORER (1<<12)
 #define SAR (1<<13)
 #define XENOBOTANIST (1<<14)
-<<<<<<< HEAD
 #define PILOT (1<<15) // ours is with the other explo jobs.
-=======
-#define PILOT (1<<15)
->>>>>>> worktree-wf_a47e2fc7-d42-4
 
 #define CIVILIAN (1<<2)
 
@@ -537,15 +521,9 @@
 #define ENTERTAINER (1<<14)
 #define ENTREPRENEUR (1<<15)
 
-<<<<<<< HEAD
 #define OTHER (1<<10) // Note: Unused on VS. Used downstream.
 #define NONCREW (1<<0)
 #define ANOMALY (1<<0) // Note: Unused on VS. Used downstream.
-=======
-#define OTHER (1<<10)
-#define NONCREW (1<<0)
-#define ANOMALY (1<<0)
->>>>>>> worktree-wf_a47e2fc7-d42-4
 
 #define TALON (1<<3)
 

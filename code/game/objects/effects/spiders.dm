@@ -210,30 +210,7 @@
 			var/obj/machinery/atmospherics/unary/vent_pump/exit_vent = get_safe_ventcrawl_target(entry_vent)
 			if(!exit_vent)
 				return
-			spawn(rand(20,60))
-				loc = exit_vent
-				var/travel_time = round(get_dist(loc, exit_vent.loc) / 2)
-				spawn(travel_time)
-
-					if(!exit_vent || exit_vent.welded)
-						loc = entry_vent
-						entry_vent = null
-						return
-
-					if(prob(50))
-						src.visible_message(span_notice("You hear something squeezing through the ventilation ducts."),2)
-						SSmotiontracker.ping(src,10)
-					sleep(travel_time)
-
-					if(!exit_vent || exit_vent.welded)
-						loc = entry_vent
-						entry_vent = null
-						return
-					loc = exit_vent.loc
-					entry_vent = null
-					var/area/new_area = get_area(loc)
-					if(new_area)
-						new_area.Entered(src)
+			INVOKE_ASYNC(src, PROC_REF(vent_crawl_async), entry_vent, exit_vent)
 
 	if(isturf(loc))
 		skitter()
@@ -258,6 +235,32 @@
 	if(amount_grown >= 0)
 		amount_grown += rand(0,2)
 
+/obj/effect/spider/spiderling/proc/vent_crawl_async(obj/machinery/atmospherics/unary/vent_pump/entry, obj/machinery/atmospherics/unary/vent_pump/exit_vent)
+	sleep(rand(20,60))
+	loc = exit_vent
+	var/travel_time = round(get_dist(loc, exit_vent.loc) / 2)
+	sleep(travel_time)
+
+	if(!exit_vent || exit_vent.welded)
+		loc = entry
+		entry_vent = null
+		return
+
+	if(prob(50))
+		src.visible_message(span_notice("You hear something squeezing through the ventilation ducts."),2)
+		SSmotiontracker.ping(src,10)
+	sleep(travel_time)
+
+	if(!exit_vent || exit_vent.welded)
+		loc = entry
+		entry_vent = null
+		return
+	loc = exit_vent.loc
+	entry_vent = null
+	var/area/new_area = get_area(loc)
+	if(new_area)
+		new_area.Entered(src)
+
 /obj/effect/spider/spiderling/proc/skitter()
 	if(isturf(loc))
 		if(prob(25))
@@ -280,8 +283,7 @@
 			var/mob/living/simple_mob/animal/giant_spider/GS = new spawn_type(src.loc, src)
 			GS.faction = faction
 			if(stunted)
-				spawn(2)
-					GS.make_spiderling()
+				addtimer(CALLBACK(GS, TYPE_PROC_REF(/mob/living/simple_mob/animal/giant_spider, make_spiderling)), 2)
 			qdel(src)
 
 /obj/effect/spider/spiderling/stunted

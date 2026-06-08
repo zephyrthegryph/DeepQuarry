@@ -291,11 +291,13 @@
 	F.icon_state = "dmg[rand(1,4)]"
 	to_chat(user, span_warning("The thermite starts melting through the wall."))
 
-	spawn(100)
-		if(O)
-			qdel(O)
+	addtimer(CALLBACK(src, PROC_REF(thermitemelt_cleanup), O), 10 SECONDS)
 //	F.sd_LumReset()		//TODO: ~Carn
 	return
+
+/turf/simulated/wall/proc/thermitemelt_cleanup(obj/effect/overlay/O)
+	if(O)
+		qdel(O)
 
 /turf/simulated/wall/proc/radiate()
 	SIGNAL_HANDLER
@@ -316,13 +318,15 @@
 
 /turf/simulated/wall/proc/burn(temperature)
 	if(material.combustion_effect(src, temperature, 0.7))
-		spawn(2)
-			new /obj/structure/girder(src, girder_material.name)
-			src.ChangeTurf(/turf/simulated/floor)
-			for(var/turf/simulated/wall/W in range(3,src))
-				W.burn((temperature/4))
-			for(var/obj/machinery/door/airlock/phoron/D in range(3,src))
-				D.ignite(temperature/4)
+		addtimer(CALLBACK(src, PROC_REF(burn_collapse), temperature, girder_material.name), 2)
+
+/turf/simulated/wall/proc/burn_collapse(temperature, girder_mat_name)
+	new /obj/structure/girder(src, girder_mat_name)
+	src.ChangeTurf(/turf/simulated/floor)
+	for(var/turf/simulated/wall/W in range(3,src))
+		W.burn((temperature/4))
+	for(var/obj/machinery/door/airlock/phoron/D in range(3,src))
+		D.ignite(temperature/4)
 
 /turf/simulated/wall/can_engrave()
 	return (material && material.hardness >= 10 && material.hardness <= 100)

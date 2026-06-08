@@ -1,11 +1,7 @@
 // These are used as the layers for the icons, as well as indexes in a list that holds onto them.
 // Technically the layers used are all -100+layer to make them FLOAT_LAYER overlays.
 //Human Overlays Indexes/////////
-<<<<<<< HEAD
 // edit the file human/update_icons.dm as well, if you update these (and clothing/clothing.dm line 789, the hardcoded layer there in /obj/item/clothing/suit/make_worn_icon)
-=======
-// Edit the file human/update_icons.dm as well if you update these (and clothing/clothing.dm line 789, the hardcoded layer there in /obj/item/clothing/suit/make_worn_icon)
->>>>>>> worktree-wf_a47e2fc7-d42-4
 #define MUTATIONS_LAYER			1		//Mutations like fat, and lasereyes
 #define TAIL_LOWER_LAYER		2		//Tail as viewed from the south
 #define WING_LOWER_LAYER		3		//Wings as viewed from the south

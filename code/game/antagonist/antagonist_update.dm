@@ -12,11 +12,13 @@
 		if(holder) qdel(holder)
 	player.original_character = WEAKREF(player.current)
 	if(!preserve_appearance && (flags & ANTAG_SET_APPEARANCE))
-		spawn(3)
-			var/mob/living/carbon/human/H = player.current
-			if(istype(H))
-				H.change_appearance(APPEARANCE_ALL, H, species_whitelist = valid_species, state = GLOB.tgui_self_state)
+		addtimer(CALLBACK(src, PROC_REF(deferred_set_appearance), player), 3)
 	return player.current
+
+/datum/antagonist/proc/deferred_set_appearance(datum/mind/player)
+	var/mob/living/carbon/human/H = player.current
+	if(istype(H))
+		H.change_appearance(APPEARANCE_ALL, H, species_whitelist = valid_species, state = GLOB.tgui_self_state)
 
 /datum/antagonist/proc/update_access(mob/living/player)
 	for(var/obj/item/card/id/id in player.contents)
@@ -51,30 +53,33 @@
 /datum/antagonist/proc/update_icons_added(datum/mind/player)
 	if(!antag_indicator || !player.current)
 		return
-	spawn(0)
+	INVOKE_ASYNC(src, PROC_REF(deferred_update_icons_added), player)
 
-		var/give_to_player = (!faction_invisible || !(player in faction_members))
-		for(var/datum/mind/antag in current_antagonists)
-			if(!antag.current)
-				continue
-			if(antag.current.client)
-				antag.current.client.images |= get_indicator(antag, player)
-			if(!give_to_player)
-				continue
-			if(player.current.client)
-				player.current.client.images |= get_indicator(player, antag)
+/datum/antagonist/proc/deferred_update_icons_added(datum/mind/player)
+	var/give_to_player = (!faction_invisible || !(player in faction_members))
+	for(var/datum/mind/antag in current_antagonists)
+		if(!antag.current)
+			continue
+		if(antag.current.client)
+			antag.current.client.images |= get_indicator(antag, player)
+		if(!give_to_player)
+			continue
+		if(player.current.client)
+			player.current.client.images |= get_indicator(player, antag)
 
 /datum/antagonist/proc/update_icons_removed(datum/mind/player)
 	if(!antag_indicator || !player.current)
 		return
-	spawn(0)
-		clear_indicators(player)
-		if(player.current && player.current.client)
-			for(var/datum/mind/antag in current_antagonists)
-				if(antag.current && antag.current.client)
-					for(var/image/I in antag.current.client.images)
-						if(I.loc == player.current)
-							qdel(I)
+	INVOKE_ASYNC(src, PROC_REF(deferred_update_icons_removed), player)
+
+/datum/antagonist/proc/deferred_update_icons_removed(datum/mind/player)
+	clear_indicators(player)
+	if(player.current && player.current.client)
+		for(var/datum/mind/antag in current_antagonists)
+			if(antag.current && antag.current.client)
+				for(var/image/I in antag.current.client.images)
+					if(I.loc == player.current)
+						qdel(I)
 
 /datum/antagonist/proc/update_current_antag_max()
 	cur_max = hard_cap

@@ -99,11 +99,7 @@
 #define MAT_LEATHER			"leather"
 #define MAT_CLOTH			"cloth"
 #define MAT_SYNCLOTH		"syncloth"
-<<<<<<< HEAD
 // # define MAT_CARPET "carpet"
-=======
-// # define MAT_CARPET			"carpet"
->>>>>>> worktree-wf_a47e2fc7-d42-4
 #define MAT_COTTON			"cotton"
 
 // colours

@@ -37,11 +37,7 @@
 //#define REFERENCE_TRACKING
 #ifdef REFERENCE_TRACKING
 
-<<<<<<< HEAD
 // #define FIND_REF_NO_CHECK_TICK // new ref tracking
-=======
-//#define FIND_REF_NO_CHECK_TICK
->>>>>>> worktree-wf_a47e2fc7-d42-3
 ///Should we be logging our findings or not
 #define REFERENCE_TRACKING_LOG
 

@@ -154,15 +154,17 @@
 		user.visible_message(span_notice("[user] attempts to buckle [affecting] into \the [src]!"))
 		if(do_after(user, 2 SECONDS, G.affecting, target = src))
 			affecting.loc = loc
-			spawn(0)
-				if(buckle_mob(affecting))
-					affecting.visible_message(\
-						span_danger("[affecting.name] is buckled to [src] by [user.name]!"),\
-						span_danger("You are buckled to [src] by [user.name]!"),\
-						span_notice("You hear metal clanking."))
+			INVOKE_ASYNC(src, PROC_REF(deferred_buckle), affecting, user.name)
 			qdel(W)
 	else
 		..()
+
+/obj/structure/bed/proc/deferred_buckle(mob/living/affecting, buckler_name)
+	if(buckle_mob(affecting))
+		affecting.visible_message(\
+			span_danger("[affecting.name] is buckled to [src] by [buckler_name]!"),\
+			span_danger("You are buckled to [src] by [buckler_name]!"),\
+			span_notice("You hear metal clanking."))
 
 /obj/structure/bed/proc/remove_padding()
 	if(padding_material)
@@ -247,8 +249,7 @@
 		else
 			visible_message("[user] collapses \the [src.name].")
 			new rollertype(get_turf(src))
-			spawn(0)
-				qdel(src)
+			QDEL_IN(src, 0)
 		return
 	..()
 
@@ -346,8 +347,7 @@
 		if(has_buckled_mobs())	return 0
 		visible_message("[usr] collapses \the [src.name].")
 		new rollertype(get_turf(src))
-		spawn(0)
-			qdel(src)
+		QDEL_IN(src, 0)
 		return
 
 /datum/category_item/catalogue/anomalous/precursor_a/alien_bed

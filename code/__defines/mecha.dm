@@ -20,12 +20,7 @@
 #define EQUIP_WEAPON	"weapon"
 #define EQUIP_UTILITY	"utility"
 #define EQUIP_SPECIAL	"core"
-<<<<<<< HEAD
 // ition begin: MICROMECHS
 #define EQUIP_MICRO_UTILITY	"micro_utility"
 #define EQUIP_MICRO_WEAPON	"micro_weapon"
 // ition end: MICROMECHS
-=======
-#define EQUIP_MICRO_UTILITY	"micro_utility"
-#define EQUIP_MICRO_WEAPON	"micro_weapon"
->>>>>>> worktree-wf_a47e2fc7-d42-4

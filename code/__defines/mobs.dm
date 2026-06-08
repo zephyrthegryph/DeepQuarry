@@ -533,11 +533,7 @@
 
 #define MAX_NUTRITION	6000
 
-<<<<<<< HEAD
 #define FAKE_INVIS_ALPHA_THRESHOLD 64 // . 25% down from 50% // If something's alpha var is at or below this number, certain things will pretend it is invisible.
-=======
-#define FAKE_INVIS_ALPHA_THRESHOLD 64 // If something's alpha var is at or below this number, certain things will pretend it is invisible.
->>>>>>> worktree-wf_a47e2fc7-d42-4
 
 #define DEATHGASP_NO_MESSAGE "no message"
 

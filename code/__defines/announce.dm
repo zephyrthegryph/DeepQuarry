@@ -2,11 +2,7 @@
 #define ANNOUNCER_VOICE_SS13 "announcer_ss13"
 #define ANNOUNCER_VOICE_SILENT "announcer_silent"
 #define ANNOUNCER_VOICE_VIRGO "announcer_virgo"
-<<<<<<< HEAD
 #define ANNOUNCER_VOICE_CHOMP "announcer_chomp" // Adds CHOMP Announcer
-=======
-#define ANNOUNCER_VOICE_CHOMP "announcer_chomp"
->>>>>>> worktree-wf_a47e2fc7-d42-3
 
 // Announcements
 #define ANNOUNCER_MSG_ROUND_START "announcer_msg_round_start"
@@ -76,11 +72,7 @@
 #define ANNOUNCER_MSG_WEATHER_ALERT "announcer_msg_weather_alert"
 
 // Sets the current voice for the station PA
-<<<<<<< HEAD
 GLOBAL_VAR_INIT(current_announcer_voice, ANNOUNCER_VOICE_CHOMP) // Use our announcer
-=======
-GLOBAL_VAR_INIT(current_announcer_voice, ANNOUNCER_VOICE_CHOMP)
->>>>>>> worktree-wf_a47e2fc7-d42-3
 
 // Set sound paths to null to explicitly disable a message from falling back to SS13 default
 GLOBAL_LIST_INIT(announcer_library, list(

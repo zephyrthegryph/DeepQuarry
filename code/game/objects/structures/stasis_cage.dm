@@ -53,16 +53,19 @@
 	return ..()
 
 /mob/living/simple_mob/MouseDrop(obj/structure/stasis_cage/over_object)
-	if(istype(over_object) && Adjacent(over_object) && CanMouseDrop(over_object, usr))
+	var/mob/user = usr
+	if(!istype(user))
+		return
+	if(istype(over_object) && Adjacent(over_object) && CanMouseDrop(over_object, user))
 
 		if(!src.buckled || !istype(src.buckled, /obj/effect/energy_net))
-			to_chat(usr, "It's going to be difficult to convince \the [src] to move into \the [over_object] without capturing it in a net.")
+			to_chat(user, "It's going to be difficult to convince \the [src] to move into \the [over_object] without capturing it in a net.")
 			return
 
-		usr.visible_message("[usr] begins stuffing \the [src] into \the [over_object].", "You begin stuffing \the [src] into \the [over_object].")
-		Bumped(usr)
-		if(do_after(usr, 2 SECONDS, target = over_object))
-			usr.visible_message("[usr] has stuffed \the [src] into \the [over_object].", "You have stuffed \the [src] into \the [over_object].")
+		user.visible_message("[user] begins stuffing \the [src] into \the [over_object].", "You begin stuffing \the [src] into \the [over_object].")
+		Bumped(user)
+		if(do_after(user, 2 SECONDS, target = over_object))
+			user.visible_message("[user] has stuffed \the [src] into \the [over_object].", "You have stuffed \the [src] into \the [over_object].")
 			over_object.contain(src)
 	else
 		return ..()

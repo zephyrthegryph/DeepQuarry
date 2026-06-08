@@ -136,7 +136,7 @@
 /datum/action/innate/mecha/mech_defence_mode/Activate()
 	button_icon_state = "mech_defense_mode_[chassis.defence_mode ? "off" : "on"]"
 	build_all_button_icons()
-	chassis.defence_mode()
+	chassis.defence_mode(owner)
 
 
 
@@ -147,7 +147,7 @@
 /datum/action/innate/mecha/mech_overload_mode/Activate()
 	button_icon_state = "mech_overload_[chassis.overload ? "off" : "on"]"
 	build_all_button_icons()
-	chassis.overload()
+	chassis.overload(owner)
 
 
 
@@ -158,7 +158,7 @@
 /datum/action/innate/mecha/mech_smoke/Activate()
 	//button_icon_state = "mech_smoke_[chassis.smoke ? "off" : "on"]"
 	//build_all_button_icons()	//Dual colors notneeded ATM
-	chassis.smoke()
+	chassis.smoke(owner)
 
 
 
@@ -169,7 +169,7 @@
 /datum/action/innate/mecha/mech_zoom/Activate()
 	button_icon_state = "mech_zoom_[chassis.zoom ? "off" : "on"]"
 	build_all_button_icons()
-	chassis.zoom()
+	chassis.zoom(owner)
 
 
 
@@ -180,7 +180,7 @@
 /datum/action/innate/mecha/mech_toggle_thrusters/Activate()
 	button_icon_state = "mech_thrusters_[chassis.thrusters ? "off" : "on"]"
 	build_all_button_icons()
-	chassis.thrusters()
+	chassis.thrusters(owner)
 
 
 
@@ -233,7 +233,7 @@
 	button_icon_state = "mech_damtype_[chassis.damage_type]"
 	playsound(src, 'sound/mecha/mechmove01.ogg', 50, 1)
 	build_all_button_icons()
-	chassis.query_damtype()
+	chassis.query_damtype(owner)
 
 
 
@@ -244,7 +244,7 @@
 /datum/action/innate/mecha/mech_toggle_phasing/Activate()
 	button_icon_state = "mech_phasing_[chassis.phasing ? "off" : "on"]"
 	build_all_button_icons()
-	chassis.phasing()
+	chassis.phasing(owner)
 
 
 
@@ -255,7 +255,7 @@
 /datum/action/innate/mecha/mech_toggle_cloaking/Activate()
 	button_icon_state = "mech_phasing_[dq_get_cloaked(chassis) ? "off" : "on"]"
 	build_all_button_icons()
-	chassis.toggle_cloaking()
+	chassis.toggle_cloaking(owner)
 
 
 
@@ -272,10 +272,10 @@
 	set name = "Toggle defence mode"
 	set src = usr.loc
 	set popup_menu = 0
-	defence_mode()
+	defence_mode(usr)
 
-/obj/mecha/proc/defence_mode()
-	if(usr!=src.occupant)
+/obj/mecha/proc/defence_mode(mob/user)
+	if(user!=src.occupant)
 		return
 	playsound(src, 'sound/mecha/duranddefencemode.ogg', 50, 1)
 	defence_mode = !defence_mode
@@ -295,12 +295,12 @@
 	set name = "Toggle leg actuators overload"
 	set src = usr.loc
 	set popup_menu = 0
-	overload()
+	overload(usr)
 
-/obj/mecha/proc/overload()
-	if(usr.stat == 1)//No manipulating things while unconcious.
+/obj/mecha/proc/overload(mob/user)
+	if(user.stat == 1)//No manipulating things while unconcious.
 		return
-	if(usr!=src.occupant)
+	if(user!=src.occupant)
 		return
 	if(health < initial(health) - initial(health)/3)//Same formula as in movement, just beforehand.
 		src.occupant_message(span_red("Leg actuators damage critical, unable to engage overload."))
@@ -324,10 +324,10 @@
 	set name = "Activate Smoke"
 	set src = usr.loc
 	set popup_menu = 0
-	smoke()
+	smoke(usr)
 
-/obj/mecha/proc/smoke()
-	if(usr!=src.occupant)
+/obj/mecha/proc/smoke(mob/user)
+	if(user!=src.occupant)
 		return
 
 	if(smoke_reserve < 1)
@@ -340,7 +340,7 @@
 
 		var/datum/effect/effect/system/smoke_spread/smoke = new /datum/effect/effect/system/smoke_spread()
 		smoke.attach(src)
-		smoke.set_up(10, 0, usr.loc)
+		smoke.set_up(10, 0, user.loc)
 		smoke.start()
 		playsound(src, 'sound/effects/smoke.ogg', 50, 1, -3)
 
@@ -356,10 +356,10 @@
 	set name = "Zoom"
 	set src = usr.loc
 	set popup_menu = 0
-	zoom()
+	zoom(usr)
 
-/obj/mecha/proc/zoom()//This could use improvements but maybe later.
-	if(usr!=src.occupant)
+/obj/mecha/proc/zoom(mob/user)//This could use improvements but maybe later.
+	if(user!=src.occupant)
 		return
 	if(src.occupant.client)
 		src.zoom = !src.zoom
@@ -382,10 +382,10 @@
 	set name = "Toggle thrusters"
 	set src = usr.loc
 	set popup_menu = 0
-	thrusters()
+	thrusters(usr)
 
-/obj/mecha/proc/thrusters()
-	if(usr!=src.occupant)
+/obj/mecha/proc/thrusters(mob/user)
+	if(user!=src.occupant)
 		return
 	if(src.occupant)
 		if(get_charge() > 0)
@@ -404,10 +404,10 @@
 	set name = "Change melee damage type"
 	set src = usr.loc
 	set popup_menu = 0
-	query_damtype()
+	query_damtype(usr)
 
-/obj/mecha/proc/query_damtype()
-	if(usr!=src.occupant)
+/obj/mecha/proc/query_damtype(mob/user)
+	if(user!=src.occupant)
 		return
 	var/new_damtype = tgui_alert(src.occupant,"Melee Damage Type","Damage Type",list("Brute","Fire","Toxic"))
 	if(!new_damtype)
@@ -432,10 +432,10 @@
 	set name = "Toggle phasing"
 	set src = usr.loc
 	set popup_menu = 0
-	phasing()
+	phasing(usr)
 
-/obj/mecha/proc/phasing()
-	if(usr!=src.occupant)
+/obj/mecha/proc/phasing(mob/user)
+	if(user!=src.occupant)
 		return
 	phasing = !phasing
 	send_byjax(src.occupant,"exosuit.browser","phasing_command","[phasing?"Dis":"En"]able phasing")
@@ -451,10 +451,10 @@
 	set name = "Toggle cloaking"
 	set src = usr.loc
 	set popup_menu = 0
-	toggle_cloaking()
+	toggle_cloaking(usr)
 
-/obj/mecha/proc/toggle_cloaking()
-	if(usr!=src.occupant)
+/obj/mecha/proc/toggle_cloaking(mob/user)
+	if(user!=src.occupant)
 		return
 
 	if(dq_get_cloaked(src))
@@ -473,10 +473,10 @@
 	set name = "Toggle weapons only cycling"
 	set src = usr.loc
 	set popup_menu = 0
-	set_weapons_only_cycle()
+	set_weapons_only_cycle(usr)
 
-/obj/mecha/proc/set_weapons_only_cycle()
-	if(usr!=src.occupant)
+/obj/mecha/proc/set_weapons_only_cycle(mob/user)
+	if(user!=src.occupant)
 		return
 	weapons_only_cycle = !weapons_only_cycle
 	if(weapons_only_cycle)

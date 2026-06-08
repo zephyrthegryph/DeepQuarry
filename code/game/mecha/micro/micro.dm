@@ -92,7 +92,7 @@
 					src.visible_message(span_bolddanger("[src.name] hits [target]."))
 					if(!istype(target, /turf/simulated/wall))
 						var/atom/target_atom = target
-					target_atom.attackby(src,src.occupant)
+						target_atom.attackby(src,src.occupant)
 					else
 						playsound(src, 'sound/weapons/smash.ogg', 50, 1)
 					melee_can_hit = 0

@@ -26,14 +26,15 @@
 	if(!src.can_open())
 		return 0
 
+	var/mob/user = istype(usr, /mob) ? usr : null
 	if(rigged && locate(/obj/item/radio/electropack) in src)
-		if(isliving(usr))
-			var/mob/living/L = usr
+		if(isliving(user))
+			var/mob/living/L = user
 			if(L.electrocute_act(17, src))
 				var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 				s.set_up(5, 1, src)
 				s.start()
-				if(usr.stunned)
+				if(user.stunned)
 					return 2
 
 	playsound(src, open_sound, 50, 1, -3)

@@ -41,7 +41,7 @@
 
 	handle_clothing_setup()
 
-/obj/structure/ghost_pod/manual/survivor/trigger()
+/obj/structure/ghost_pod/manual/survivor/trigger(mob/user)
 	. = ..()
 	desc += "\n The Pod's stasis is broken!"
 	visible_message(message = span_warning("\The [src] hisses and blinks in a myriad of lights as its stasis ceases! \n \

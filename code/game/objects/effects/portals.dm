@@ -16,9 +16,7 @@ GLOBAL_LIST_BOILERPLATE(all_portals, /obj/effect/portal)
 /obj/effect/portal/Bumped(mob/M as mob|obj)
 	if(ismob(M) && !(isliving(M)))
 		return	//do not send ghosts, zshadows, ai eyes, etc
-	spawn(0)
-		src.teleport(M)
-		return
+	INVOKE_ASYNC(src, PROC_REF(teleport), M)
 	return
 
 /obj/effect/portal/Crossed(atom/movable/AM as mob|obj)
@@ -32,17 +30,13 @@ GLOBAL_LIST_BOILERPLATE(all_portals, /obj/effect/portal)
 				SK.attack_dephase(null, src)
 	if(ismob(AM) && !(isliving(AM)))
 		return	//do not send ghosts, zshadows, ai eyes, etc
-	spawn(0)
-		src.teleport(AM)
-		return
+	INVOKE_ASYNC(src, PROC_REF(teleport), AM)
 	return
 
 /obj/effect/portal/attack_hand(mob/user as mob)
 	if(istype(user) && !(isliving(user)))
 		return	//do not send ghosts, zshadows, ai eyes, etc
-	spawn(0)
-		src.teleport(user)
-		return
+	INVOKE_ASYNC(src, PROC_REF(teleport), user)
 	return
 
 /obj/effect/portal/Initialize(mapload)

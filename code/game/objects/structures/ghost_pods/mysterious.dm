@@ -9,8 +9,8 @@
 	ghost_query_type = /datum/ghost_query/corgi_rune
 	confirm_before_open = TRUE
 
-/obj/structure/ghost_pod/manual/corgi/trigger()
-	..(span_warning("\The [usr] places their hand on the rune!"), "is attempting to summon a corgi.")
+/obj/structure/ghost_pod/manual/corgi/trigger(mob/user)
+	..(user, span_warning("\The [user] places their hand on the rune!"), "is attempting to summon a corgi.")
 
 /obj/structure/ghost_pod/manual/corgi/create_occupant(mob/M)
 	lightning_strike(get_turf(src), cosmetic = TRUE)
@@ -35,8 +35,8 @@
 	ghost_query_type = /datum/ghost_query/cursedblade
 	confirm_before_open = TRUE
 
-/obj/structure/ghost_pod/manual/cursedblade/trigger()
-	..(span_warning("\The [usr] attempts to pull out the sword!"), "is activating a cursed blade.")
+/obj/structure/ghost_pod/manual/cursedblade/trigger(mob/user)
+	..(user, span_warning("\The [user] attempts to pull out the sword!"), "is activating a cursed blade.")
 
 /obj/structure/ghost_pod/manual/cursedblade/create_occupant(mob/M)
 	density = FALSE

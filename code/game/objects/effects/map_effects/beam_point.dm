@@ -134,14 +134,12 @@ GLOBAL_LIST_EMPTY(all_beam_points)
 		if(timer_off_index > off_duration.len)
 			timer_off_index = 1
 
-		spawn(off_duration[timer_off_index])
-			.()
+		addtimer(CALLBACK(src, PROC_REF(handle_beam_timer)), off_duration[timer_off_index])
 
 	else // Currently off.
 		// If nobody's around, keep the beams off to avoid wasteful beam process(), if they have one.
 		if(!always_run && !check_for_player_proximity(src, proximity_needed, ignore_ghosts, ignore_afk))
-			spawn(retry_delay)
-				.()
+			addtimer(CALLBACK(src, PROC_REF(handle_beam_timer)), retry_delay)
 			return
 
 		create_beams()
@@ -151,8 +149,7 @@ GLOBAL_LIST_EMPTY(all_beam_points)
 		if(timer_on_index > on_duration.len)
 			timer_on_index = 1
 
-		spawn(on_duration[timer_on_index])
-			.()
+		addtimer(CALLBACK(src, PROC_REF(handle_beam_timer)), on_duration[timer_on_index])
 
 
 

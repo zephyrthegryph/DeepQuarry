@@ -70,11 +70,7 @@
 #define NETWORK_SUBSTATIONS "Substations"
 #define NETWORK_EXPLORATION "Exploration"
 #define NETWORK_XENOBIO "Xenobiology"
-<<<<<<< HEAD
 #define NETWORK_THUNDER "Entertainment" // broader definition
-=======
-#define NETWORK_THUNDER "Entertainment"
->>>>>>> worktree-wf_a47e2fc7-d42-4
 #define NETWORK_BODYCAM "Body Cameras"
 #define NETWORK_COMMUNICATORS "Communicators"
 #define NETWORK_ALARM_ATMOS "Atmosphere Alarms"
@@ -173,13 +169,10 @@ if (!(DATUM.datum_flags & DF_ISPROCESSING)) {\
 #define START_MACHINE_PROCESSING(Datum) START_PROCESSING_IN_LIST(Datum, SSmachines.processing_machines)
 #define STOP_MACHINE_PROCESSING(Datum) STOP_PROCESSING_IN_LIST(Datum, SSmachines.processing_machines)
 
-<<<<<<< HEAD
 // LINDA owns pipenets via SSair, not SSmachines.
 // SSmachines.process_pipenets is a stub; SSair.process_pipenets is the live
 // dispatcher. Without this redirect, /datum/pipe_network/process never runs
 // and reconcile_air is silent — multi-pipeline networks don't equalize.
-=======
->>>>>>> worktree-wf_a47e2fc7-d42-4
 #define START_PROCESSING_PIPENET(Datum) START_PROCESSING_IN_LIST(Datum, SSair.networks)
 #define STOP_PROCESSING_PIPENET(Datum) STOP_PROCESSING_IN_LIST(Datum, SSair.networks)
 

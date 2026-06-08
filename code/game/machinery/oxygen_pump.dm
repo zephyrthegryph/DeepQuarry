@@ -89,12 +89,14 @@
 		if(tank)
 			tank.forceMove(C)
 		breather = C
-		spawn(1)
-		if(!breather.internal && tank)
-			breather.internal = tank
-			if(breather.internals)
-				breather.internals.icon_state = "internal1"
-		update_use_power(USE_POWER_ACTIVE)
+		addtimer(CALLBACK(src, PROC_REF(attach_mask_finish)), 1)
+
+/obj/machinery/oxygen_pump/proc/attach_mask_finish()
+	if(!breather.internal && tank)
+		breather.internal = tank
+		if(breather.internals)
+			breather.internals.icon_state = "internal1"
+	update_use_power(USE_POWER_ACTIVE)
 
 /obj/machinery/oxygen_pump/proc/can_apply_to_target(mob/living/carbon/human/target, mob/user as mob)
 	if(!user)
@@ -252,13 +254,15 @@
 		if(tank)
 			tank.forceMove(C)
 		breather = C
-		spawn(1)
-		if(!breather.internal && tank)
-			breather.internal = tank
-			if(breather.internals)
-				breather.internals.icon_state = "internal1"
-		update_use_power(USE_POWER_ACTIVE)
-		breather.cozyloop.start()
+		addtimer(CALLBACK(src, PROC_REF(attach_mask_finish)), 1)
+
+/obj/machinery/oxygen_pump/anesthetic/attach_mask_finish()
+	if(!breather.internal && tank)
+		breather.internal = tank
+		if(breather.internals)
+			breather.internals.icon_state = "internal1"
+	update_use_power(USE_POWER_ACTIVE)
+	breather.cozyloop.start()
 
 /obj/machinery/oxygen_pump/mobile
 	name = "portable oxygen pump"
@@ -304,13 +308,15 @@
 		if(tank)
 			tank.forceMove(C)
 		breather = C
-		spawn(1)
-		if(!breather.internal && tank)
-			breather.internal = tank
-			if(breather.internals)
-				breather.internals.icon_state = "internal1"
-		update_use_power(USE_POWER_ACTIVE)
-		breather.cozyloop.start()
+		addtimer(CALLBACK(src, PROC_REF(attach_mask_finish)), 1)
+
+/obj/machinery/oxygen_pump/mobile/anesthetic/attach_mask_finish()
+	if(!breather.internal && tank)
+		breather.internal = tank
+		if(breather.internals)
+			breather.internals.icon_state = "internal1"
+	update_use_power(USE_POWER_ACTIVE)
+	breather.cozyloop.start()
 
 /obj/machinery/oxygen_pump/mobile/stabilizer
 	name = "portable patient stabilizer"

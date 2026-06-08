@@ -53,7 +53,7 @@ effective or pretty fucking useless.
 	if(times_used >= max_uses)
 		icon_state = "battererburnt"
 
-/obj/item/mindbatterer/proc/mind_batter_effect(mob/living/carbon/human/M)
+/obj/item/batterer/proc/mind_batter_effect(mob/living/carbon/human/M)
 	if(prob(50))
 		M.Weaken(rand(10,20))
 		if(prob(25))

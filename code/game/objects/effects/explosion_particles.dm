@@ -20,15 +20,17 @@
 	if(istype(loca, /turf/)) location = loca
 	else location = get_turf(loca)
 
+/datum/effect/system/expl_particles/proc/emit_one_particle()
+	var/obj/effect/expl_particles/expl = new /obj/effect/expl_particles(src.location)
+	var/direct = pick(GLOB.alldirs)
+	for(var/i=0, i<pick(1;25,2;50,3,4;200), i++)
+		sleep(1)
+		step(expl,direct)
+
 /datum/effect/system/expl_particles/proc/start()
 	var/i = 0
 	for(i=0, i<src.number, i++)
-		spawn(0)
-			var/obj/effect/expl_particles/expl = new /obj/effect/expl_particles(src.location)
-			var/direct = pick(GLOB.alldirs)
-			for(i=0, i<pick(1;25,2;50,3,4;200), i++)
-				sleep(1)
-				step(expl,direct)
+		INVOKE_ASYNC(src, PROC_REF(emit_one_particle))
 
 /obj/effect/explosion
 	name = "explosive particles"

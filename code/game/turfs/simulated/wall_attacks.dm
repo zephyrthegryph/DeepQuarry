@@ -69,8 +69,7 @@
 	if(isanimal(user))
 		var/mob/living/simple_mob/S = user
 		playsound(src, S.attack_sound, 75, 1)
-	spawn(1)
-		dismantle_wall(1)
+	addtimer(CALLBACK(src, PROC_REF(dismantle_wall), 1), 1)
 
 /turf/simulated/wall/proc/try_touch(mob/user, rotting)
 

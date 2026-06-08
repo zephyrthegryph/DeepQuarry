@@ -121,9 +121,9 @@
 	locked = 1
 
 	eject_wait = 1
-	addtimer(CALLBACK(src, PROC_REF(clear_eject_wait)), 30, TIMER_DELETE_ME)
+	addtimer(CALLBACK(src, PROC_REF(clear_eject_wait), BR, clonemind), 30, TIMER_DELETE_ME)
 
-/obj/machinery/clonepod/proc/clear_eject_wait()
+/obj/machinery/clonepod/proc/clear_eject_wait(datum/transhuman/body_record/BR, datum/mind/clonemind)
 	eject_wait = 0
 
 	//Get the clone body ready, let's calculate their health so the pod doesn't immediately eject them!!!

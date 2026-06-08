@@ -112,10 +112,12 @@
 	playsound(src, 'sound/machines/hiss.ogg', 75, 1)
 	//to_chat(user, span_notice("You slowly deflate the inflatable wall."))
 	visible_message("[src] slowly deflates.")
-	spawn(50)
-		var/obj/item/inflatable/R = new /obj/item/inflatable(loc)
-		src.transfer_fingerprints_to(R)
-		qdel(src)
+	addtimer(CALLBACK(src, PROC_REF(deflate_finish)), 5 SECONDS)
+
+/obj/structure/inflatable/proc/deflate_finish()
+	var/obj/item/inflatable/R = new /obj/item/inflatable(loc)
+	src.transfer_fingerprints_to(R)
+	qdel(src)
 
 /obj/structure/inflatable/proc/puncture()
 	playsound(src, 'sound/machines/hiss.ogg', 75, 1)
@@ -140,7 +142,7 @@
 	user.do_attack_animation(src)
 	if(health <= 0)
 		user.visible_message(span_danger("[user] [attack_verb] open the [src]!"))
-		spawn(1) puncture()
+		addtimer(CALLBACK(src, PROC_REF(puncture)), 1)
 	else
 		user.visible_message(span_danger("[user] [attack_verb] at [src]!"))
 	return 1
@@ -149,7 +151,7 @@
 	health -= damage
 	if(health <= 0)
 		visible_message(span_danger("The [src] deflates!"))
-		spawn(1) puncture()
+		addtimer(CALLBACK(src, PROC_REF(puncture)), 1)
 	return 1
 
 /obj/item/inflatable/door/
@@ -236,10 +238,12 @@
 /obj/structure/inflatable/door/deflate()
 	playsound(src, 'sound/machines/hiss.ogg', 75, 1)
 	visible_message("[src] slowly deflates.")
-	spawn(50)
-		var/obj/item/inflatable/door/R = new /obj/item/inflatable/door(loc)
-		src.transfer_fingerprints_to(R)
-		qdel(src)
+	addtimer(CALLBACK(src, PROC_REF(deflate_finish)), 5 SECONDS)
+
+/obj/structure/inflatable/door/deflate_finish()
+	var/obj/item/inflatable/door/R = new /obj/item/inflatable/door(loc)
+	src.transfer_fingerprints_to(R)
+	qdel(src)
 
 /obj/structure/inflatable/door/puncture()
 	playsound(src, 'sound/machines/hiss.ogg', 75, 1)

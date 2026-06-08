@@ -38,12 +38,9 @@
 #define COMSIG_ARCADE_VICTORY "arcade_victory"
 ///from /obj/machinery/computer/telescience/proc/doteleport(mob/user): (list/atom/movable/teleported_things, turf/target_turf, sending )
 #define COMSIG_TELESCI_TELEPORT "telesci_teleport"
-<<<<<<< HEAD
 // COMSIG_MACHINERY_START_PROCESSING_AIR / STOP_PROCESSING_AIR removed
 // alongside SSair.atmos_machinery; the only "raisers" were the SSair procs that
 // are themselves gone. No subscribers existed.
-=======
->>>>>>> worktree-wf_a47e2fc7-d42-4
 ///from /obj/machinery/RefreshParts: ()
 #define COMSIG_MACHINERY_REFRESH_PARTS "machine_refresh_parts"
 ///from /obj/machinery/default_change_direction_wrench: (mob/user, obj/item/wrench)

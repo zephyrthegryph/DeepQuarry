@@ -12,8 +12,8 @@
 	confirm_before_open = TRUE
 	needscharger = TRUE
 
-/obj/structure/ghost_pod/manual/lost_drone/trigger()
-	..(span_notice("\The [src] appears to be attempting to restart the robot contained inside."), "is attempting to open \a [src].")
+/obj/structure/ghost_pod/manual/lost_drone/trigger(mob/user)
+	..(user, span_notice("\The [src] appears to be attempting to restart the robot contained inside."), "is attempting to open \a [src].")
 
 /obj/structure/ghost_pod/manual/lost_drone/create_occupant(mob/M)
 	density = FALSE

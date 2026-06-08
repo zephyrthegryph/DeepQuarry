@@ -13,11 +13,7 @@
 #define CHANNEL_SCIENCE "Science"
 #define CHANNEL_MEDICAL "Medical"
 #define CHANNEL_MEDICAL_1 "Medical(I)"
-<<<<<<< HEAD
 #define CHANNEL_EXPLORATION "Explorer" // was Explorer // explo keep
-=======
-#define CHANNEL_EXPLORATION "Explorer"
->>>>>>> worktree-wf_a47e2fc7-d42-4
 
 // Special Channels
 #define CHANNEL_RESPONSE_TEAM "Response Team"
@@ -31,10 +27,7 @@
 #define CHANNEL_TALON "Talon"
 #define CHANNEL_CASINO "Casino"
 
-<<<<<<< HEAD
 // Channels
-=======
->>>>>>> worktree-wf_a47e2fc7-d42-4
 #define CHANNEL_BODYCAM "Bodycam"
 #define CHANNEL_OUTSIDER "Outsider"
 

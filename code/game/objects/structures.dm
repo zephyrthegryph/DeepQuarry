@@ -65,7 +65,7 @@
 		return 0
 	visible_message(span_danger("[user] [attack_verb] the [src] apart!"))
 	user.do_attack_animation(src)
-	spawn(1) qdel(src)
+	QDEL_IN(src, 1)
 	return 1
 
 /obj/structure/proc/can_visually_connect()

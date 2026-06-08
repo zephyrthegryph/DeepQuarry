@@ -71,23 +71,24 @@ would spawn and follow the beaker, even if it is carried or thrown.
 	cardinals = c
 	location = loc
 
+/datum/effect/effect/system/steam_spread/proc/emit_one_steam()
+	if(holder)
+		src.location = get_turf(holder)
+	var/obj/effect/effect/steam/steam = new /obj/effect/effect/steam(src.location)
+	var/direction
+	if(src.cardinals)
+		direction = pick(GLOB.cardinal)
+	else
+		direction = pick(GLOB.alldirs)
+	for(var/i=0, i<pick(1,2,3), i++)
+		sleep(5)
+		step(steam,direction)
+	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(qdel), steam), 20)
+
 /datum/effect/effect/system/steam_spread/start()
 	var/i = 0
 	for(i=0, i<src.number, i++)
-		spawn(0)
-			if(holder)
-				src.location = get_turf(holder)
-			var/obj/effect/effect/steam/steam = new /obj/effect/effect/steam(src.location)
-			var/direction
-			if(src.cardinals)
-				direction = pick(GLOB.cardinal)
-			else
-				direction = pick(GLOB.alldirs)
-			for(i=0, i<pick(1,2,3), i++)
-				sleep(5)
-				step(steam,direction)
-			spawn(20)
-				qdel(steam)
+		INVOKE_ASYNC(src, PROC_REF(emit_one_steam))
 
 /////////////////////////////////////////////
 //SPARK SYSTEM (like steam system)
@@ -136,26 +137,30 @@ would spawn and follow the beaker, even if it is carried or thrown.
 	else
 		location = get_turf(loca)
 
+/datum/effect/effect/system/spark_spread/proc/emit_one_spark()
+	if(holder)
+		src.location = get_turf(holder)
+	var/obj/effect/effect/sparks/sparks = new /obj/effect/effect/sparks(src.location)
+	src.total_sparks++
+	var/direction
+	if(src.cardinals)
+		direction = pick(GLOB.cardinal)
+	else
+		direction = pick(GLOB.alldirs)
+	for(var/i=0, i<pick(1,2,3), i++)
+		sleep(5)
+		step(sparks,direction)
+	addtimer(CALLBACK(src, PROC_REF(dec_sparks)), 20)
+
+/datum/effect/effect/system/spark_spread/proc/dec_sparks()
+	src.total_sparks--
+
 /datum/effect/effect/system/spark_spread/start()
 	var/i = 0
 	for(i=0, i<src.number, i++)
 		if(src.total_sparks > 20)
 			return
-		spawn(0)
-			if(holder)
-				src.location = get_turf(holder)
-			var/obj/effect/effect/sparks/sparks = new /obj/effect/effect/sparks(src.location)
-			src.total_sparks++
-			var/direction
-			if(src.cardinals)
-				direction = pick(GLOB.cardinal)
-			else
-				direction = pick(GLOB.alldirs)
-			for(i=0, i<pick(1,2,3), i++)
-				sleep(5)
-				step(sparks,direction)
-			spawn(20)
-				src.total_sparks--
+		INVOKE_ASYNC(src, PROC_REF(emit_one_spark))
 
 
 
@@ -371,30 +376,35 @@ would spawn and follow the beaker, even if it is carried or thrown.
 	if(direct)
 		direction = direct
 
+/datum/effect/effect/system/smoke_spread/proc/emit_one_smoke(color_override)
+	if(holder)
+		src.location = get_turf(holder)
+	var/obj/effect/effect/smoke/smoke = new smoke_type(src.location)
+	src.total_smoke++
+	if(color_override)
+		smoke.color = color_override
+	var/direction = src.direction
+	if(!direction)
+		if(src.cardinals)
+			direction = pick(GLOB.cardinal)
+		else
+			direction = pick(GLOB.alldirs)
+	for(var/i=0, i<pick(0,1,1,1,2,2,2,3), i++)
+		sleep(10)
+		step(smoke,direction)
+	addtimer(CALLBACK(src, PROC_REF(expire_smoke), smoke), smoke.time_to_live*0.75+rand(10,30))
+
+/datum/effect/effect/system/smoke_spread/proc/expire_smoke(obj/effect/effect/smoke/smoke)
+	if(smoke)
+		qdel(smoke)
+	src.total_smoke--
+
 /datum/effect/effect/system/smoke_spread/start(I)
 	var/i = 0
 	for(i=0, i<src.number, i++)
 		if(src.total_smoke > 20)
 			return
-		spawn(0)
-			if(holder)
-				src.location = get_turf(holder)
-			var/obj/effect/effect/smoke/smoke = new smoke_type(src.location)
-			src.total_smoke++
-			if(I)
-				smoke.color = I
-			var/direction = src.direction
-			if(!direction)
-				if(src.cardinals)
-					direction = pick(GLOB.cardinal)
-				else
-					direction = pick(GLOB.alldirs)
-			for(i=0, i<pick(0,1,1,1,2,2,2,3), i++)
-				sleep(10)
-				step(smoke,direction)
-			spawn(smoke.time_to_live*0.75+rand(10,30))
-				if (smoke) qdel(smoke)
-				src.total_smoke--
+		INVOKE_ASYNC(src, PROC_REF(emit_one_smoke), I)
 
 /datum/effect/effect/system/smoke_spread/bad
 	smoke_type = /obj/effect/effect/smoke/bad
@@ -442,40 +452,38 @@ would spawn and follow the beaker, even if it is carried or thrown.
 	attach(atom)
 	oldposition = get_turf(atom)
 
+/datum/effect/effect/system/ion_trail_follow/proc/trail_step()
+	var/turf/T
+	if(istype(holder, /atom/movable))
+		var/atom/movable/AM = holder
+		if(AM.locs && AM.locs.len)
+			T = get_turf(pick(AM.locs))
+		else
+			T = get_turf(AM)
+	else //when would this ever be attached a non-atom/movable?
+		T = get_turf(src.holder)
+	if(T != src.oldposition)
+		if(isturf(T))
+			var/obj/effect/effect/ion_trails/I = new /obj/effect/effect/ion_trails(src.oldposition)
+			src.oldposition = T
+			I.set_dir(src.holder.dir)
+			flick("ion_fade", I)
+			I.icon_state = "blank"
+			addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(qdel), I), 20)
+	addtimer(CALLBACK(src, PROC_REF(reschedule_trail)), 2)
+
+/datum/effect/effect/system/ion_trail_follow/proc/reschedule_trail()
+	if(src.on)
+		src.processing = 1
+		src.start()
+
 /datum/effect/effect/system/ion_trail_follow/start()
 	if(!src.on)
 		src.on = 1
 		src.processing = 1
 	if(src.processing)
 		src.processing = 0
-		spawn(0)
-			var/turf/T
-			if(istype(holder, /atom/movable))
-				var/atom/movable/AM = holder
-				if(AM.locs && AM.locs.len)
-					T = get_turf(pick(AM.locs))
-				else
-					T = get_turf(AM)
-			else //when would this ever be attached a non-atom/movable?
-				T = get_turf(src.holder)
-			if(T != src.oldposition)
-				if(isturf(T))
-					var/obj/effect/effect/ion_trails/I = new /obj/effect/effect/ion_trails(src.oldposition)
-					src.oldposition = T
-					I.set_dir(src.holder.dir)
-					flick("ion_fade", I)
-					I.icon_state = "blank"
-					spawn( 20 )
-						qdel(I)
-				spawn(2)
-					if(src.on)
-						src.processing = 1
-						src.start()
-			else
-				spawn(2)
-					if(src.on)
-						src.processing = 1
-						src.start()
+		INVOKE_ASYNC(src, PROC_REF(trail_step))
 
 /datum/effect/effect/system/ion_trail_follow/proc/stop()
 		src.processing = 0
@@ -502,30 +510,31 @@ would spawn and follow the beaker, even if it is carried or thrown.
 	attach(atom)
 	oldposition = get_turf(atom)
 
+/datum/effect/effect/system/steam_trail_follow/proc/steam_step()
+	if(src.number < 3)
+		var/obj/effect/effect/steam/I = new /obj/effect/effect/steam(src.oldposition)
+		src.number++
+		src.oldposition = get_turf(holder)
+		I.set_dir(src.holder.dir)
+		addtimer(CALLBACK(src, PROC_REF(expire_steam_trail), I), 10)
+	addtimer(CALLBACK(src, PROC_REF(reschedule_steam)), 2)
+
+/datum/effect/effect/system/steam_trail_follow/proc/expire_steam_trail(obj/effect/effect/steam/I)
+	qdel(I)
+	src.number--
+
+/datum/effect/effect/system/steam_trail_follow/proc/reschedule_steam()
+	if(src.on)
+		src.processing = 1
+		src.start()
+
 /datum/effect/effect/system/steam_trail_follow/start()
 	if(!src.on)
 		src.on = 1
 		src.processing = 1
 	if(src.processing)
 		src.processing = 0
-		spawn(0)
-			if(src.number < 3)
-				var/obj/effect/effect/steam/I = new /obj/effect/effect/steam(src.oldposition)
-				src.number++
-				src.oldposition = get_turf(holder)
-				I.set_dir(src.holder.dir)
-				spawn(10)
-					qdel(I)
-					src.number--
-				spawn(2)
-					if(src.on)
-						src.processing = 1
-						src.start()
-			else
-				spawn(2)
-					if(src.on)
-						src.processing = 1
-						src.start()
+		INVOKE_ASYNC(src, PROC_REF(steam_step))
 
 /datum/effect/effect/system/steam_trail_follow/proc/stop()
 	src.processing = 0
@@ -659,30 +668,35 @@ would spawn and follow the beaker, even if it is carried or thrown.
 	if(direct)
 		direction = direct
 
+/datum/effect/effect/system/confetti_spread/proc/emit_one_confetti(color_override)
+	if(holder)
+		src.location = get_turf(holder)
+	var/obj/effect/effect/confetti/confetti = new confetti_type(src.location)
+	src.total_confetti++
+	if(color_override)
+		confetti.color = color_override
+	var/direction = src.direction
+	if(!direction)
+		if(src.cardinals)
+			direction = pick(GLOB.cardinal)
+		else
+			direction = pick(GLOB.alldirs)
+	for(var/i=0, i<pick(0,1,1,1,2,2,2,3), i++)
+		sleep(10)
+		step(confetti,direction)
+	addtimer(CALLBACK(src, PROC_REF(expire_confetti), confetti), confetti.time_to_live*0.75+rand(10,30))
+
+/datum/effect/effect/system/confetti_spread/proc/expire_confetti(obj/effect/effect/confetti/confetti)
+	if(confetti)
+		qdel(confetti)
+	src.total_confetti--
+
 /datum/effect/effect/system/confetti_spread/start(I)
 	var/i = 0
 	for(i=0, i<src.number, i++)
 		if(src.total_confetti > 20)
 			return
-		spawn(0)
-			if(holder)
-				src.location = get_turf(holder)
-			var/obj/effect/effect/confetti/confetti = new confetti_type(src.location)
-			src.total_confetti++
-			if(I)
-				confetti.color = I	//Allows us to do differently colored confetti
-			var/direction = src.direction
-			if(!direction)
-				if(src.cardinals)
-					direction = pick(GLOB.cardinal)
-				else
-					direction = pick(GLOB.alldirs)
-			for(i=0, i<pick(0,1,1,1,2,2,2,3), i++)
-				sleep(10)
-				step(confetti,direction)
-			spawn(confetti.time_to_live*0.75+rand(10,30))
-				if (confetti) qdel(confetti)
-				src.total_confetti--
+		INVOKE_ASYNC(src, PROC_REF(emit_one_confetti), I)
 
 /////////////////////////////////////////////
 // Snow fall
