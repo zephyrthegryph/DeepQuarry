@@ -91,10 +91,7 @@
 			remove_eyes()
 			add_eyes()
 	update_transform()
-	for(var/belly_class in vore_fullness_ex)
-		var/vs_fullness = vore_fullness_ex[belly_class]
-		if(vs_fullness > 0)
-			add_overlay("[icon_state]_[belly_class]-[vs_fullness]")
+	add_vore_fullness_overlays() // Appends per-belly-class overlays; see living_bellies.dm.
 
 /mob/living/simple_mob/regenerate_icons()
 	..()

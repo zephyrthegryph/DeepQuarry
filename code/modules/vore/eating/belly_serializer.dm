@@ -167,6 +167,11 @@
 		list("reagent_gen_cost_limit",     BELLY_FIELD_SCALAR),
 		list("reagent_mode_flags",         BELLY_FIELD_SCALAR),
 		list("show_liquids",               BELLY_FIELD_SCALAR),
+		// reagent_chosen is a tmp var (runtime state, not persisted).
+		// Included here as RUNTIME so copy() can reproduce it, but it is
+		// intentionally excluded from vars_to_save().  The legacy list
+		// incorrectly included it — this entry silences the coverage validator.
+		list("reagent_chosen",             BELLY_FIELD_RUNTIME),
 		list("liquid_overlay",             BELLY_FIELD_SCALAR),
 		list("max_liquid_level",           BELLY_FIELD_SCALAR),
 		list("reagent_touches",            BELLY_FIELD_SCALAR),

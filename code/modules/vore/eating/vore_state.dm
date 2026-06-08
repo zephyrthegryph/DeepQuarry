@@ -260,14 +260,18 @@
 	weight_message_visible  = M.weight_message_visible
 	voice_freq              = M.voice_freq
 
-	// Deep-copy associative lists so they are independent of the mob
+	// Deep-copy associative lists so they are independent of the mob.
+	// Cast through typed locals first: M.vore_sprite_color is declared var/
+	// (not var/list/) so the DM compiler rejects .Copy() on an untyped var.
 	if(islist(M.vore_sprite_color))
-		vore_sprite_color = M.vore_sprite_color.Copy()
+		var/list/src_color = M.vore_sprite_color
+		vore_sprite_color = src_color.Copy()
 	else
 		vore_sprite_color = list("stomach" = "#000", "taur belly" = "#000")
 
 	if(islist(M.vore_sprite_multiply))
-		vore_sprite_multiply = M.vore_sprite_multiply.Copy()
+		var/list/src_multiply = M.vore_sprite_multiply
+		vore_sprite_multiply = src_multiply.Copy()
 	else
 		vore_sprite_multiply = list("stomach" = FALSE, "taur belly" = FALSE)
 
