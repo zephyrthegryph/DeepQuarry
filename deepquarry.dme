@@ -4002,7 +4002,8 @@
 #include "code\modules\planet\virgo3c.dm"
 #include "code\modules\planet\virgo4.dm"
 #include "code\modules\planet\weather.dm"
-#include "code\modules\player_tips_vr\player_tips_controller.dm"
+// DQRemoved: #include "code\modules\player_tips_vr\player_tips_controller.dm" — moved to player_tips/
+#include "code\modules\player_tips\player_tips_controller.dm"
 #include "code\modules\point\point.dm"
 #include "code\modules\power\apc.dm"
 #include "code\modules\power\batteryrack.dm"

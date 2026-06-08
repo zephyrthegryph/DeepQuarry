@@ -16,7 +16,7 @@ SUBSYSTEM_DEF(atc)
 	VAR_PRIVATE/initial_delay = 15 MINUTES			//How long to wait before sending the first message of the shift.
 	VAR_PRIVATE/squelched = FALSE					//If ATC is squelched currently
 
-	//define a block of frequencies so we can have them be static instead of being random for each call
+	// Channel frequency vars; unused while ATC is disabled (SS_NO_FIRE), retained for re-enable reference
 	var/ertchannel
 	var/medchannel
 	var/engchannel
@@ -24,15 +24,11 @@ SUBSYSTEM_DEF(atc)
 	var/sdfchannel
 
 /datum/controller/subsystem/atc/Initialize()
-	// ATC disabled fork-wide; skip channel allocation and report no-need
+	// ATC disabled fork-wide; skip channel allocation and report no-need.
+	// To re-enable ATC: remove SS_NO_FIRE from flags, change Initialize() to
+	// allocate channels + return SS_INIT_SUCCESS, and verify busy_space/ chatter
+	// datums (code/modules/busy_space/) work with the loremaster data.
 	return SS_INIT_NO_NEED
-	//generate our static event frequencies for the shift. alternately they can be completely fixed, up in the core block
-	ertchannel = "[rand(700,749)].[rand(1,9)]"
-	medchannel = "[rand(750,799)].[rand(1,9)]"
-	engchannel = "[rand(800,849)].[rand(1,9)]"
-	secchannel = "[rand(850,899)].[rand(1,9)]"
-	sdfchannel = "[rand(900,999)].[rand(1,9)]"
-	return SS_INIT_SUCCESS
 
 /datum/controller/subsystem/atc/fire()
 	if(times_fired < 1)
