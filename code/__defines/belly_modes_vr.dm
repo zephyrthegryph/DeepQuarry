@@ -41,7 +41,7 @@
 #define MIN_MOB_WEIGHT			70
 #define MAX_MOB_WEIGHT			500
 #define MIN_NUTRITION_TO_GAIN	450	// Above this amount you will gain weight
-#define MAX_NUTRITION_TO_LOSE	150	// Below this amount you will lose weight //CHOMPEdit Making weight loss mechanically more accessible
+#define MAX_NUTRITION_TO_LOSE	150	// Below this amount you will lose weight
 // #define WEIGHT_PER_NUTRITION	0.0285 // Tuned so 1050 (nutrition for average mob) = 30 lbs
 
 // Drain modes

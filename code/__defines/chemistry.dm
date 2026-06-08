@@ -55,7 +55,7 @@
 
 #define MAX_PILL_SPRITE 24 //max icon state of the pill sprites
 #define MAX_BOTTLE_SPRITE 4 //max icon state of the pill sprites
-#define MAX_PATCH_SPRITE 4 //max icon state of the patch sprites, CHOMPedit
+#define MAX_PATCH_SPRITE 4 //max icon state of the patch sprites
 #define MAX_MULTI_AMOUNT 20 // Max number of pills/patches that can be made at once
 #define MAX_UNITS_PER_PILL 60 // Max amount of units in a pill
 #define MAX_UNITS_PER_PATCH 60 // Max amount of units in a patch

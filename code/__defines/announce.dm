@@ -2,7 +2,7 @@
 #define ANNOUNCER_VOICE_SS13 "announcer_ss13"
 #define ANNOUNCER_VOICE_SILENT "announcer_silent"
 #define ANNOUNCER_VOICE_VIRGO "announcer_virgo"
-#define ANNOUNCER_VOICE_CHOMP "announcer_chomp" //CHOMPEdit - Adds CHOMP Announcer
+#define ANNOUNCER_VOICE_CHOMP "announcer_chomp"
 
 // Announcements
 #define ANNOUNCER_MSG_ROUND_START "announcer_msg_round_start"
@@ -72,7 +72,7 @@
 #define ANNOUNCER_MSG_WEATHER_ALERT "announcer_msg_weather_alert"
 
 // Sets the current voice for the station PA
-GLOBAL_VAR_INIT(current_announcer_voice, ANNOUNCER_VOICE_CHOMP) //CHOMPEdit - Use our announcer
+GLOBAL_VAR_INIT(current_announcer_voice, ANNOUNCER_VOICE_CHOMP)
 
 // Set sound paths to null to explicitly disable a message from falling back to SS13 default
 GLOBAL_LIST_INIT(announcer_library, list(
@@ -152,27 +152,20 @@ GLOBAL_LIST_INIT(announcer_library, list(
 
 		ANNOUNCER_MSG_NEW_AI = null, // disabled
 	),
-	//CHOMPEdit Start
 	ANNOUNCER_VOICE_CHOMP = list(
-		//Including ALL them here for easy reference.
-		//If it's commented out, that means we use default.
-		//If it's CHOMP Disabled, that means we null (disable) it
-		//If it's CHOMP Specific Sound, that means we have a custom sound.
 
 //		ANNOUNCER_MSG_ROUND_START = 'sound/AI/welcome.ogg',
 
-		ANNOUNCER_MSG_SHUTTLE_ENDROUND_DOCK = null, //CHOMP Disable
-		ANNOUNCER_MSG_SHUTTLE_ENDROUND_CALLED = null, //CHOMP Disable
-		ANNOUNCER_MSG_SHUTTLE_ENDROUND_RETURNING = null, //CHOMP Disable
-
+		ANNOUNCER_MSG_SHUTTLE_ENDROUND_DOCK = null,
+		ANNOUNCER_MSG_SHUTTLE_ENDROUND_CALLED = null,
+		ANNOUNCER_MSG_SHUTTLE_ENDROUND_RETURNING = null,
 //		ANNOUNCER_MSG_SHUTTLE_EMERG_DOCK = 'sound/AI/shuttledock.ogg',
 //		ANNOUNCER_MSG_SHUTTLE_EMERG_CALLED = 'sound/AI/shuttlecalled.ogg',
 //		ANNOUNCER_MSG_SHUTTLE_EMERG_RECALLED = 'sound/AI/shuttlerecalled.ogg',
 
-		ANNOUNCER_MSG_NIGHTSHIFT_START = null, //CHOMP Disable
-		ANNOUNCER_MSG_NIGHTSHIFT_END = null, //CHOMP Disable
-
-		ANNOUNCER_MSG_NEW_AI = null, //CHOMP Disable - Same as Virgo
+		ANNOUNCER_MSG_NIGHTSHIFT_START = null,
+		ANNOUNCER_MSG_NIGHTSHIFT_END = null,
+		ANNOUNCER_MSG_NEW_AI = null,
 //		ANNOUNCER_MSG_NEW_COMMAND_REPORT = 'sound/AI/commandreport.ogg',
 //		ANNOUNCER_MSG_SECURITY_ADVISEMENT = null,
 
@@ -186,9 +179,8 @@ GLOBAL_LIST_INIT(announcer_library, list(
 //		ANNOUNCER_MSG_IONSTORM = 'sound/AI/ionstorm.ogg',
 //		ANNOUNCER_MSG_METEORS = 'sound/AI/meteors.ogg',
 
-		ANNOUNCER_MSG_AURORA_START = null, //CHOMP Disable
-		ANNOUNCER_MSG_AURORA_END = null, //CHOMP Disable
-
+		ANNOUNCER_MSG_AURORA_START = null,
+		ANNOUNCER_MSG_AURORA_END = null,
 //		ANNOUNCER_MSG_POWER_OFF = 'sound/AI/poweroff.ogg',
 //		ANNOUNCER_MSG_POWER_ON = 'sound/AI/poweron.ogg',
 
@@ -205,8 +197,8 @@ GLOBAL_LIST_INIT(announcer_library, list(
 //		ANNOUNCER_MSG_DEBRISFIELD_END = null,
 
 //		ANNOUNCER_MSG_ELECTRICAL_STORM = null,
-		ANNOUNCER_MSG_DISTRESS_SIGNAL = 'sound/AI/sos_ch.ogg', //CHOMP Specific Sound
-		ANNOUNCER_MSG_IANSTORM = null, //CHOMP Disable
+		ANNOUNCER_MSG_DISTRESS_SIGNAL = 'sound/AI/sos_ch.ogg',
+		ANNOUNCER_MSG_IANSTORM = null,
 //		ANNOUNCER_MSG_SUPERMATTER_CASCADE = null,
 //		ANNOUNCER_MSG_CLANG = null,
 //		ANNOUNCER_MSG_BLUESPACE_ANOM = null,
@@ -224,7 +216,7 @@ GLOBAL_LIST_INIT(announcer_library, list(
 //		ANNOUNCER_MSG_WALLROT = null
 //		ANNOUNCER_MSG_SUPPLYORDER = null,
 //		ANNOUNCER_MSG_WEATHER_ALERT = null,
-		), //CHOMPEdit End
+		),
 ))
 
 #define AIRLOCK_MSG_OUT "airlock_out"
