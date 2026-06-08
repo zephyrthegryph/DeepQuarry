@@ -43,7 +43,7 @@
 		computerid = bancid
 		ip = banip
 
-	var/datum/db_query/query = SSdbcore.NewQuery("SELECT id FROM erro_player WHERE ckey = '[ckey]'")
+	var/datum/db_query/query = SSdbcore.NewQuery("SELECT id FROM erro_player WHERE ckey = :ckey", list("ckey" = ckey))
 	query.Execute()
 	var/validckey = 0
 	if(query.NextRow())
@@ -80,8 +80,11 @@
 
 	reason = sql_sanitize_text(reason)
 
-	var/sql = "INSERT INTO erro_ban (`id`,`bantime`,`serverip`,`bantype`,`reason`,`job`,`duration`,`rounds`,`expiration_time`,`ckey`,`computerid`,`ip`,`a_ckey`,`a_computerid`,`a_ip`,`who`,`adminwho`,`edits`,`unbanned`,`unbanned_datetime`,`unbanned_ckey`,`unbanned_computerid`,`unbanned_ip`) VALUES (null, Now(), '[serverip]', '[bantype_str]', '[reason]', '[job]', [(duration)?"[duration]":"0"], [(rounds)?"[rounds]":"0"], Now() + INTERVAL [(duration>0) ? duration : 0] MINUTE, '[ckey]', '[computerid]', '[ip]', '[a_ckey]', '[a_computerid]', '[a_ip]', '[who]', '[adminwho]', '', null, null, null, null, null)"
-	var/datum/db_query/query_insert = SSdbcore.NewQuery(sql)
+	var/ban_duration_val = (duration) ? duration : 0
+	var/ban_rounds_val = (rounds) ? rounds : 0
+	var/ban_interval = (duration > 0) ? duration : 0
+	var/sql = "INSERT INTO erro_ban (`id`,`bantime`,`serverip`,`bantype`,`reason`,`job`,`duration`,`rounds`,`expiration_time`,`ckey`,`computerid`,`ip`,`a_ckey`,`a_computerid`,`a_ip`,`who`,`adminwho`,`edits`,`unbanned`,`unbanned_datetime`,`unbanned_ckey`,`unbanned_computerid`,`unbanned_ip`) VALUES (null, Now(), :serverip, :bantype_str, :reason, :job, :ban_duration_val, :ban_rounds_val, Now() + INTERVAL :ban_interval MINUTE, :ckey, :computerid, :ip, :a_ckey, :a_computerid, :a_ip, :who, :adminwho, '', null, null, null, null, null)"
+	var/datum/db_query/query_insert = SSdbcore.NewQuery(sql, list("serverip" = serverip, "bantype_str" = bantype_str, "reason" = reason, "job" = job, "ban_duration_val" = ban_duration_val, "ban_rounds_val" = ban_rounds_val, "ban_interval" = ban_interval, "ckey" = ckey, "computerid" = computerid, "ip" = ip, "a_ckey" = a_ckey, "a_computerid" = a_computerid, "a_ip" = a_ip, "who" = who, "adminwho" = adminwho))
 	query_insert.Execute()
 	to_chat(usr, span_filter_adminlog("[span_blue("Ban saved to database.")]"))
 	message_admins("[key_name_admin(usr)] has added a [bantype_str] for [ckey] [(job)?"([job])":""] [(duration > 0)?"([duration] minutes)":""] with the reason: \"[reason]\" to the ban database.")
@@ -119,11 +122,13 @@
 	if(bantype_str == "ANY")
 		bantype_sql = "(bantype = 'PERMABAN' OR (bantype = 'TEMPBAN' AND expiration_time > Now() ) )"
 	else
-		bantype_sql = "bantype = '[bantype_str]'"
+		bantype_sql = "bantype = :bantype_str"
 
-	var/sql = "SELECT id FROM erro_ban WHERE ckey = '[ckey]' AND [bantype_sql] AND (unbanned is null OR unbanned = false)"
+	var/sql = "SELECT id FROM erro_ban WHERE ckey = :ckey AND [bantype_sql] AND (unbanned is null OR unbanned = false)"
+	var/list/sql_params = list("ckey" = ckey, "bantype_str" = bantype_str)
 	if(job)
-		sql += " AND job = '[job]'"
+		sql += " AND job = :job"
+		sql_params["job"] = job
 
 	if(!SSdbcore.IsConnected())
 		return
@@ -131,7 +136,7 @@
 	var/ban_id
 	var/ban_number = 0 //failsafe
 
-	var/datum/db_query/query = SSdbcore.NewQuery(sql)
+	var/datum/db_query/query = SSdbcore.NewQuery(sql, sql_params)
 	query.Execute()
 	while(query.NextRow())
 		ban_id = query.item[1]
@@ -162,7 +167,7 @@
 		to_chat(user, "Cancelled")
 		return
 
-	var/datum/db_query/query = SSdbcore.NewQuery("SELECT ckey, duration, reason FROM erro_ban WHERE id = [banid]")
+	var/datum/db_query/query = SSdbcore.NewQuery("SELECT ckey, duration, reason FROM erro_ban WHERE id = :banid", list("banid" = banid))
 	query.Execute()
 
 	var/eckey = usr.ckey	//Editing admin ckey
@@ -192,7 +197,7 @@
 					to_chat(user, "Cancelled")
 					return
 
-			var/datum/db_query/update_query = SSdbcore.NewQuery("UPDATE erro_ban SET reason = '[value]', edits = CONCAT(edits,'- [eckey] changed ban reason from <cite><b>\\\"[reason]\\\"</b></cite> to <cite><b>\\\"[value]\\\"</b></cite><BR>') WHERE id = [banid]")
+			var/datum/db_query/update_query = SSdbcore.NewQuery("UPDATE erro_ban SET reason = :value, edits = CONCAT(edits, CONCAT('- ', :eckey, ' changed ban reason from <cite><b>\"', :old_reason, '\"</b></cite> to <cite><b>\"', :value, '\"</b></cite><BR>')) WHERE id = :banid", list("value" = value, "eckey" = eckey, "old_reason" = reason, "banid" = banid))
 			update_query.Execute()
 			message_admins("[key_name_admin(user)] has edited a ban for [pckey]'s reason from [reason] to [value]")
 			qdel(update_query)
@@ -204,7 +209,7 @@
 					to_chat(user, "Cancelled")
 					return
 
-			var/datum/db_query/update_query = SSdbcore.NewQuery("UPDATE erro_ban SET duration = [value], edits = CONCAT(edits,'- [eckey] changed ban duration from [duration] to [value]<br>'), expiration_time = DATE_ADD(bantime, INTERVAL [value] MINUTE) WHERE id = [banid]")
+			var/datum/db_query/update_query = SSdbcore.NewQuery("UPDATE erro_ban SET duration = :value, edits = CONCAT(edits, CONCAT('- ', :eckey, ' changed ban duration from ', :old_duration, ' to ', :value, '<br>')), expiration_time = DATE_ADD(bantime, INTERVAL :value MINUTE) WHERE id = :banid", list("value" = value, "eckey" = eckey, "old_duration" = duration, "banid" = banid))
 			message_admins("[key_name_admin(user)] has edited a ban for [pckey]'s duration from [duration] to [value]")
 			update_query.Execute()
 			qdel(update_query)
@@ -220,15 +225,13 @@
 
 	if(!check_rights(R_BAN))	return
 
-	var/sql = "SELECT ckey FROM erro_ban WHERE id = [id]"
-
 	if(!SSdbcore.IsConnected())
 		return
 
 	var/ban_number = 0 //failsafe
 
 	var/pckey
-	var/datum/db_query/query = SSdbcore.NewQuery(sql)
+	var/datum/db_query/query = SSdbcore.NewQuery("SELECT ckey FROM erro_ban WHERE id = :id", list("id" = id))
 	query.Execute()
 	while(query.NextRow())
 		pckey = query.item[1]
@@ -248,10 +251,9 @@
 	var/unban_ckey = src.owner:ckey
 	var/unban_computerid = src.owner:computer_id
 	var/unban_ip = src.owner:address
-	var/sql_update = "UPDATE erro_ban SET unbanned = 1, unbanned_datetime = Now(), unbanned_ckey = '[unban_ckey]', unbanned_computerid = '[unban_computerid]', unbanned_ip = '[unban_ip]' WHERE id = [id]"
 	message_admins("[key_name_admin(usr)] has lifted [pckey]'s ban.")
 
-	var/datum/db_query/query_update = SSdbcore.NewQuery(sql_update)
+	var/datum/db_query/query_update = SSdbcore.NewQuery("UPDATE erro_ban SET unbanned = 1, unbanned_datetime = Now(), unbanned_ckey = :unban_ckey, unbanned_computerid = :unban_computerid, unbanned_ip = :unban_ip WHERE id = :id", list("unban_ckey" = unban_ckey, "unban_computerid" = unban_computerid, "unban_ip" = unban_ip, "id" = id))
 	query_update.Execute()
 	qdel(query_update)
 

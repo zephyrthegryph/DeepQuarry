@@ -381,8 +381,10 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 	round_id++
 
 	for(var/datum/feedback_variable/FV in feedback)
-		var/sql = "INSERT INTO erro_feedback VALUES (null, Now(), [round_id], \"[FV.get_variable()]\", [FV.get_value()], \"[FV.get_details()]\")"
-		var/datum/db_query/query_insert = SSdbcore.NewQuery(sql)
+		var/fv_variable = FV.get_variable()
+		var/fv_value = FV.get_value()
+		var/fv_details = FV.get_details()
+		var/datum/db_query/query_insert = SSdbcore.NewQuery("INSERT INTO erro_feedback VALUES (null, Now(), :round_id, :fv_variable, :fv_value, :fv_details)", list("round_id" = round_id, "fv_variable" = fv_variable, "fv_value" = fv_value, "fv_details" = fv_details))
 		query_insert.Execute()
 		qdel(query_insert)
 
