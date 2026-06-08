@@ -1,6 +1,6 @@
 GLOBAL_DATUM(deathsquad, /datum/antagonist/deathsquad)
 
-/datum/antagonist/
+/datum/antagonist/deathsquad
 	id = MODE_DEATHSQUAD
 	role_type = BE_OPERATIVE
 	role_text = "Death Commando"
