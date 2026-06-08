@@ -25,6 +25,15 @@
 	name = DEPARTMENT_PLANET
 	color = "#bab421"
 	sorting_order = 2 // Same as cargo in importance.
+	// All exploration jobs share EVA and exterior access plus the explorer credential.
+	default_access = list(
+		ACCESS_EXPLORER, ACCESS_EXTERNAL_AIRLOCKS, ACCESS_EVA,
+	)
+	specialized_access = list(
+		ACCESS_EXPLORER, ACCESS_EXTERNAL_AIRLOCKS, ACCESS_EVA,
+		ACCESS_PILOT, ACCESS_GATEWAY, ACCESS_PATHFINDER,
+		ACCESS_MAINT_TUNNELS, ACCESS_RC_ANNOUNCE,
+	)
 
 
 

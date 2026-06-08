@@ -131,16 +131,30 @@
 	. = outfit.equip_base(H, title, alt_title)
 
 /datum/job/proc/get_access()
+	// Start from the job's own access list.
+	// Under the minimal-access config flag, use minimal_access when it is explicitly
+	// populated; otherwise fall through to the full access list.  This lets jobs with
+	// a genuine restricted subset benefit from the flag without forcing every job to
+	// duplicate its full access list in minimal_access.
+	var/list/result
 	if(!config || CONFIG_GET(flag/jobs_have_minimal_access))
-		// Use minimal_access when explicitly populated; otherwise fall through to access.
-		// This allows jobs that define a true minimal subset to restrict access under
-		// the minimal-access config flag without forcing every job to duplicate its
-		// full access list in minimal_access as well.
-		if(src.minimal_access.len)
-			return src.minimal_access.Copy()
-		return src.access.Copy()
+		result = src.minimal_access.len ? src.minimal_access.Copy() : src.access.Copy()
 	else
-		return src.access.Copy()
+		result = src.access.Copy()
+
+	// Merge in the default_access from every department this job belongs to.
+	// Department default_access is always a strict subset of the job's full access
+	// list, so for existing jobs this union is a no-op.  The payoff comes when a new
+	// access flag is added to a department's default_access: all member jobs gain it
+	// from a single edit to the department datum rather than N individual job edits.
+	if(LAZYLEN(src.departments) && LAZYLEN(SSjob.department_datums))
+		for(var/dept_name in src.departments)
+			var/datum/department/dept = LAZYACCESS(SSjob.department_datums, dept_name)
+			if(!istype(dept) || !LAZYLEN(dept.default_access))
+				continue
+			result |= dept.default_access
+
+	return result
 
 //If the configuration option is set to require players to be logged as old enough to play certain jobs, then this proc checks that they are, otherwise it just returns 1
 /datum/job/proc/player_old_enough(client/C)
