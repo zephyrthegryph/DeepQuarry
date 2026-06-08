@@ -1,28 +1,56 @@
 import type { ReactNode } from 'react';
 import type { BooleanLike } from 'tgui-core/react';
 
-export type Data = {
-  vore_words: Record<string, string[]>;
-  unsaved_changes: BooleanLike;
-  inside: InsideData;
-  show_pictures: BooleanLike;
-  icon_overflow: BooleanLike;
-  prey_abilities: PreyAbilityData[] | null;
-  intent_data: IntentData | null;
-  active_tab: number;
-  persist_edit_mode: BooleanLike;
-  presets: string;
-  host_mobtype: HostMob | null;
+/**
+ * Fields related to belly selection, creation, and customization.
+ * Consumed by VoreBellySelectionAndCustomization and VoreSelectedBelly tabs.
+ */
+export type BellyManagementData = {
   our_bellies?: BellyData[] | null;
+  selected?: SelectedData | null;
   min_belly_name: number;
   max_belly_name: number;
-  selected?: SelectedData | null;
-  prefs?: PrefData | null;
-  soulcatcher?: SoulcatcherData | null;
-  abilities?: Abilities | null;
   active_vore_tab?: number;
+  presets: string;
+  host_mobtype: HostMob | null;
+  show_pictures: BooleanLike;
+  icon_overflow: BooleanLike;
+  vore_words: Record<string, string[]>;
+  persist_edit_mode: BooleanLike;
+};
+
+/**
+ * Fields related to vore preferences (mechanical toggles and general settings).
+ * Consumed by VoreUserPreferences and VoreUserGeneral tabs.
+ */
+export type VorePreferencesData = {
+  prefs?: PrefData | null;
   general_pref_data?: GeneralPrefData | null;
 };
+
+/**
+ * Fields related to the prey-inside-belly view and prey interaction.
+ * Consumed by VoreInsidePanel and VoreContentsPreyPanel.
+ */
+export type InsideContainerData = {
+  inside: InsideData;
+  prey_abilities: PreyAbilityData[] | null;
+  intent_data: IntentData | null;
+};
+
+/**
+ * Top-level VorePanel data shape as sent by the DM backend.
+ * Defined as an intersection of cohesive sub-types plus shared UI-state fields.
+ * Field names are preserved exactly as-is to match the backend data contract.
+ */
+export type Data = BellyManagementData &
+  VorePreferencesData &
+  InsideContainerData & {
+    active_tab: number;
+    unsaved_changes: BooleanLike;
+    soulcatcher?: SoulcatcherData | null;
+    abilities?: Abilities | null;
+  };
 
 export type Abilities = {
   nutrition: number;

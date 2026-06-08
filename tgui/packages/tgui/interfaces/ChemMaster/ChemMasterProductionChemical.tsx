@@ -1,7 +1,6 @@
+import { modalOpen } from 'tgui/interfaces/common/ComplexModal';
 import { Box, Button, LabeledList } from 'tgui-core/components';
 import { classes } from 'tgui-core/react';
-
-import { modalOpen } from '../common/ComplexModal';
 
 export const ChemMasterProductionChemical = (props: {
   pillsprite: string;
@@ -73,12 +72,6 @@ export const ChemMasterProductionChemical = (props: {
           onClick={() => modalOpen('create_bottle')}
         >
           Create bottle (60u max)
-        </Button>
-        <Button
-          icon="plus-square"
-          onClick={() => modalOpen('create_bottle_two')}
-        >
-          Two
         </Button>
         <Button
           icon="plus-square"
