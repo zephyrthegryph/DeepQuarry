@@ -4,7 +4,10 @@
 /obj/item/projectile/bullet/pistol/strong
 	damage = 40
 
-/* Old balance stuff, check the code/modules/projectiles/guns/zBallisticPort folder for the new stuff
+/* Old balance stuff — the zBallisticPort namespace was dissolved into canonical files (2025-06).
+   Gun defs → code/modules/projectiles/guns/projectile/automatic_serdy.dm
+   Magazines → code/modules/projectiles/ammunition/magazines_serdy.dm
+   Casings/projectiles → rounds.dm and projectile/bullets.dm
 
 //These are projectiles that do not have damage defined anywhere. Gonna follow laser weapons sorta with a extra kick, 25/35/60
 /obj/item/projectile/bullet/a38 //These projectiles are used but dont exist, revolvers were super underpowered forever

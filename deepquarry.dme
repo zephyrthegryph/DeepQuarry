@@ -4062,6 +4062,7 @@
 #include "code\modules\projectiles\ammunition\ammo_boxes.dm"
 #include "code\modules\projectiles\ammunition\magazines.dm"
 #include "code\modules\projectiles\ammunition\magazines_yw.dm"
+#include "code\modules\projectiles\ammunition\magazines_serdy.dm"
 #include "code\modules\projectiles\ammunition\magnetic.dm"
 #include "code\modules\projectiles\ammunition\rounds.dm"
 #include "code\modules\projectiles\ammunition\rounds_yw.dm"
@@ -4125,6 +4126,7 @@
 #include "code\modules\projectiles\guns\projectile\altevian.dm"
 #include "code\modules\projectiles\guns\projectile\automatic.dm"
 #include "code\modules\projectiles\guns\projectile\automatic_yw.dm"
+#include "code\modules\projectiles\guns\projectile\automatic_serdy.dm"
 #include "code\modules\projectiles\guns\projectile\boltaction.dm"
 #include "code\modules\projectiles\guns\projectile\caseless.dm"
 #include "code\modules\projectiles\guns\projectile\contender.dm"
@@ -4920,9 +4922,13 @@
 #include "code\modules\projectiles\guns\special.dm"
 #include "code\modules\projectiles\guns\staffs.dm"
 #include "code\modules\projectiles\guns\projectile\ammunition\ammo_boxes.dm"
-#include "code\modules\projectiles\guns\zBallisticPort\bullet.dm"
-#include "code\modules\projectiles\guns\zBallisticPort\magazines.dm"
-#include "code\modules\projectiles\guns\zBallisticPort\projectiles.dm"
+// DQRemoved: zBallisticPort shadow namespace — content migrated to canonical locations (2025-06)
+// DQRemoved: guns → code\modules\projectiles\guns\projectile\automatic_serdy.dm
+// DQRemoved: magazines → code\modules\projectiles\ammunition\magazines_serdy.dm
+// DQRemoved: casings+projectiles merged into rounds.dm and projectile\bullets.dm
+// DQRemoved: #include "code\modules\projectiles\guns\zBallisticPort\bullet.dm"
+// DQRemoved: #include "code\modules\projectiles\guns\zBallisticPort\magazines.dm"
+// DQRemoved: #include "code\modules\projectiles\guns\zBallisticPort\projectiles.dm"
 #include "code\modules\projectiles\precursor\eclipse.dm"
 #include "code\modules\projectiles\precursor\tyr.dm"
 #include "code\modules\reagents\machinery\dispenser\chem_synthesizer.dm"
