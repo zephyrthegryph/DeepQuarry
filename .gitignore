@@ -70,3 +70,8 @@ define_sanity_output.txt
 .claude/
 /tools/_*.txt
 /tools/_*.py
+/tools/_*.json
+# In-tree audit/report scratch files (not part of the build)
+/architectural_findings.md
+/architectural_synthesis.md
+/tgui_audit_findings.md

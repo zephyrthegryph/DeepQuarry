@@ -4002,7 +4002,6 @@
 #include "code\modules\planet\virgo3c.dm"
 #include "code\modules\planet\virgo4.dm"
 #include "code\modules\planet\weather.dm"
-// DQRemoved: #include "code\modules\player_tips_vr\player_tips_controller.dm" — moved to player_tips/
 #include "code\modules\player_tips\player_tips_controller.dm"
 #include "code\modules\point\point.dm"
 #include "code\modules\power\apc.dm"
@@ -4923,13 +4922,6 @@
 #include "code\modules\projectiles\guns\special.dm"
 #include "code\modules\projectiles\guns\staffs.dm"
 #include "code\modules\projectiles\guns\projectile\ammunition\ammo_boxes.dm"
-// DQRemoved: zBallisticPort shadow namespace — content migrated to canonical locations (2025-06)
-// DQRemoved: guns → code\modules\projectiles\guns\projectile\automatic_serdy.dm
-// DQRemoved: magazines → code\modules\projectiles\ammunition\magazines_serdy.dm
-// DQRemoved: casings+projectiles merged into rounds.dm and projectile\bullets.dm
-// DQRemoved: #include "code\modules\projectiles\guns\zBallisticPort\bullet.dm"
-// DQRemoved: #include "code\modules\projectiles\guns\zBallisticPort\magazines.dm"
-// DQRemoved: #include "code\modules\projectiles\guns\zBallisticPort\projectiles.dm"
 #include "code\modules\projectiles\precursor\eclipse.dm"
 #include "code\modules\projectiles\precursor\tyr.dm"
 #include "code\modules\reagents\machinery\dispenser\chem_synthesizer.dm"
@@ -5018,7 +5010,6 @@
 #include "code\modules\quarry\quarry_features.dm"
 #include "code\modules\quarry\quarry_configs.dm"
 #include "code\modules\quarry\quarry_turfs.dm"
-// DQRemoved: #include "code\modules\quarry\quarry_atmos_skip.dm" — ZAS zone-graph skip optimization; LINDA doesn't have zones, blocks_air=1 walls already skip atmos.
 #include "code\modules\quarry\quarry_guide.dm"
 #include "code\modules\polls\poll_dialogs.dm"
 #include "code\modules\admin\forward_topic.dm"

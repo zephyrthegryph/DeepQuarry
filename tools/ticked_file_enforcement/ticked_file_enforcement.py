@@ -79,14 +79,7 @@ for code_file in scannable_files:
     else:
         dm_path = os.path.basename(code_file)
 
-    # DQ: a `// DQRemoved: #include "..."` line is the fork's accepted convention for
-    # disabling an upstream include without deleting the line (so the next merge engineer
-    # can see what's gone). Treat it as "included" for enforcement purposes — the file
-    # has been deliberately accounted for. See CLAUDE.md §5g.
-    included = (
-        f"#include \"{dm_path}\"" in lines
-        or f"// DQRemoved: #include \"{dm_path}\"" in lines
-    )
+    included = f"#include \"{dm_path}\"" in lines
 
     forbid_include = False
     for forbidable in FORBIDDEN_INCLUDES:

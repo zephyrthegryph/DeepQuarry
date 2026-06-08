@@ -62,11 +62,9 @@
 /datum/preference/player_alt_titles/apply_to_animal(mob/living/simple_mob/target, value)
 	return
 
-// DQRemoved: /datum/category_item/player_setup_item/occupation Bay-UI bridge —
-// the entire /datum/category_item/player_setup_item/ chain is gone from master.
-// tgui-migration's TGUI occupation panel routed through this bridge; on master
-// occupation selection happens natively via the species picker and character
-// setup TGUI, so the bridge block is obsolete.
+// Note: there is no /datum/category_item/player_setup_item/occupation Bay-UI
+// bridge here — that whole chain is gone. Occupation selection happens natively
+// via the species picker and character setup TGUI.
 
 /datum/preferences/proc/GetPlayerAltTitle(datum/job/job)
 	var/list/alt_titles = read_preference(/datum/preference/player_alt_titles)

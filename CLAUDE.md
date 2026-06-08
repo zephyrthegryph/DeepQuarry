@@ -7,13 +7,20 @@ Baystation12 → Polaris → VOREStation (Virgo) → Yawn-wider → CHOMPStation
 ```
 
 DeepQuarry is a **hard fork**: it no longer tracks or merges from any upstream.
-The old modular-folder discipline (`modular_chomp/`, `modular_dq/`, `// CHOMPEdit`
-/ `// DQEdit` markers, "never edit upstream") existed only to survive upstream
-merges and **no longer applies** — those folders have been dissolved into a single
-unified tree. Just put code where it belongs and edit any file freely.
+The old merge-survival scaffolding **no longer applies** and has been removed:
 
-> If you find an old `// CHOMPEdit` / `// DQEdit` / `modular_*` reference, it's a
-> leftover from before the hard fork; treat it as ordinary code/comment.
+- The modular folders (`modular_chomp/`, `modular_dq/`) were dissolved into one
+  unified tree.
+- The origin/edit markers (`// CHOMPEdit`, `// DQEdit`, `// CHOMPAdd`, `// DQRemoved:`,
+  `// VOREStation Edit`, …) were stripped — they only existed to help a merge
+  engineer locate fork edits, and there are no more merges.
+
+Just put code where it belongs and **edit/delete any file freely**. When you remove
+a file, delete it and drop its `#include` from `deepquarry.dme` — don't comment the
+include out "in case." Git history is the record of what was removed.
+
+> If you still find a stray `// CHOMPEdit` / `// DQEdit` / `modular_*` reference, it's
+> a leftover; treat it as ordinary code/comment and remove it when you touch the file.
 
 ---
 
@@ -53,8 +60,8 @@ top. For proc/var override chains, the last-compiled definition wins; keep that 
 mind when choosing where a file is included. Maps register through the glue in
 `maps/~map_system/` (`_map_selection.dm`, `maps.dm`) — model new maps on those.
 
-Use `// DQRemoved:` to comment out (rather than delete) an `#include` you're
-disabling, so it's greppable.
+When you remove a feature, **delete the file and its `#include` outright** — there's
+no upstream to merge against, so there's no reason to keep a disabled include around.
 
 ---
 
@@ -203,6 +210,35 @@ YAML into the master changelog and deletes the stub.
 - verdigris (Rust FFI): `verdigris/README.md`.
 - Changelog format: `html/changelogs/example.yml`.
 - PR template: `.github/PULL_REQUEST_TEMPLATE.md`.
+
+---
+
+## 9. Current status / known state
+
+Things that are deliberately mid-flight or disabled, so you don't "fix" them by
+accident or assume they work:
+
+- **Atmospherics — dual engine, mid-migration.** The live engine is CHOMP/ZAS.
+  A LINDA + auxmos (Rust/verdigris) port exists but is gated behind
+  `USE_LINDA_ATMOS` and is **not** the active path. Known gap: `SSair.Initialize()`
+  does not yet call `auxtools_atmos_init()`, so the LINDA path is incomplete.
+  See `doc/atmos_migration.md`, `code/ATMOSPHERICS/README.md`.
+- **Overmap — present but off on the live map.** The full `code/modules/overmap/`
+  subsystem compiles, but `maps/deep_quarry/` sets `use_overmap = FALSE` (ground-only).
+  It is exercised by `virgo_minitest`.
+- **Dynamic overmap POI system — disabled, restore later.** The spawn hook in
+  `code/modules/overmap/sectors.dm` is commented out; the POI templates/loot were
+  removed. Re-enabling requires restoring that content from git history. Leave it
+  disabled unless explicitly asked to revive it.
+- **ATC (Air Traffic Control) — disabled fork-wide.** `SSatc.Initialize()` returns
+  `SS_INIT_NO_NEED` and the subsystem carries `SS_NO_FIRE`. The chatter
+  implementation (`code/modules/busy_space/`) is intact for a future re-enable.
+- **verdigris (Rust FFI)** is a build artifact, gitignored per-platform. If `cargo`
+  is absent the build warns and skips it; atmos/cave-gen FFI then fail at runtime.
+
+Recent hardening (already landed): ban/admin/stats SQL is fully parameterized;
+all verdigris `#[byond_fn]` entry points are wrapped in `panic_safe!`; the tgui
+Rules-of-Hooks / XSS audit findings are fixed.
 
 ## TL;DR
 
