@@ -163,9 +163,35 @@
 	DoRegistry()
 
 /datum/component/artifact_master/proc/generate_effects()
-	while(effect_generation_chance > 0)
-		var/chosen_path = pick(subtypesof(/datum/artifact_effect) - GLOB.blacklisted_artifact_effects)
-		if(effect_generation_chance >= 100)	// If we're above 100 percent, just cut a flat amount and add an effect.
+	// Use a proc-local static registry rather than calling subtypesof() on every iteration.
+	// The registry is built once on first use: all subtypes of /datum/artifact_effect
+	// that are NOT in GLOB.blacklisted_artifact_effects. This eliminates the O(n*subtypes)
+	// per-artifact cost of the old pick(subtypesof(...) - blacklist) call.
+	//
+	// The registry is a flat list of type paths. Adding new /datum/artifact_effect subtypes
+	// will include them automatically. Blacklisting a type in GLOB.blacklisted_artifact_effects
+	// requires a server restart to take effect (since the static is built once).
+	var/static/list/effect_registry = null
+	if(isnull(effect_registry))
+		effect_registry = list()
+		var/list/blacklist = GLOB.blacklisted_artifact_effects
+		for(var/path in subtypesof(/datum/artifact_effect))
+			if(!(path in blacklist))
+				effect_registry += path
+		if(!length(effect_registry))
+			// Every effect type is blacklisted — this is a configuration error.
+			CRASH("artifact_master.generate_effects: effect_registry is empty after filtering blacklisted_artifact_effects")
+
+	// The loop uses a decreasing-probability algorithm:
+	//   - Passes where effect_generation_chance >= 100 are unconditional (adds 1 guaranteed
+	//     effect, then subtracts 30 so the chance eventually falls below 100).
+	//   - Subsequent passes halve the chance and add probabilistically.
+	// Minimum output: 1 effect (the first pass is always unconditional).
+	// Hard ceiling: ARTIFACT_MAX_EFFECTS prevents degenerate artifacts with 10+ simultaneous
+	// effects that would saturate SSobj tick budgets when all fire at once in process().
+	while(effect_generation_chance > 0 && my_effects.len < ARTIFACT_MAX_EFFECTS)
+		var/chosen_path = pick(effect_registry)
+		if(effect_generation_chance >= 100)	// Unconditional pass: always adds an effect.
 			var/datum/artifact_effect/AE = new chosen_path(src)
 			if(istype(holder, AE.req_type))
 				my_effects += AE
@@ -175,9 +201,10 @@
 				qdel(AE)
 			continue
 
+		// Probabilistic pass: halve the chance, then roll.
 		effect_generation_chance /= 2
 
-		if(prob(effect_generation_chance))	// Otherwise, add effects as normal, with decreasing probability.
+		if(prob(effect_generation_chance))
 			my_effects += new chosen_path(src)
 
 		effect_generation_chance = round(effect_generation_chance)

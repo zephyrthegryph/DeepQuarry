@@ -1,3 +1,12 @@
+/// Maximum number of effects a single artifact can have.
+/// The generate_effects() algorithm uses a decreasing-probability loop:
+///   - First pass (effect_generation_chance >= 100) is unconditional — guarantees at least 1 effect.
+///   - Each subsequent pass halves effect_generation_chance and adds an effect with that probability.
+///   - The loop exits when effect_generation_chance reaches 0.
+/// This ceiling prevents degenerate artifacts with 10+ effects that would saturate server
+/// tick budgets when they all fire simultaneously during process().
+#define ARTIFACT_MAX_EFFECTS 5
+
 /// <summary>
 /// This is how much artifacts take to activate.
 /// </summary>
