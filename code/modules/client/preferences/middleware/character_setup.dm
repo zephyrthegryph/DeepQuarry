@@ -1,9 +1,10 @@
 // Character setup UI middleware. Walks the /datum/preference registry, groups by
 // category + group, and assembles the JSON payload the new TGUI window consumes.
 //
-// Replaces bay_adapter for the character-prefs window. bay_adapter stays (for now) to keep
-// the legacy /datum/category_item/player_setup_item rendering working alongside; the
-// demolition pass will delete bay_adapter entirely.
+// Replaced the old bay_adapter middleware and /datum/category_item/player_setup_item
+// framework entirely. All slot/persistence actions (load, save, reload, resetslot,
+// copy, game_prefs, refresh_character_preview, cycle_background) are now handled
+// directly in tgui_act on /datum/preferences.
 
 /datum/preference_middleware/character_setup
 	key = "character_setup"

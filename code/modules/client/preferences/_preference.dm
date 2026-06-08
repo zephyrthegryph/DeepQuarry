@@ -906,9 +906,17 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 	/// Should we strip HTML the input or simply restrict it to the maximum_value_length?
 	var/should_strip_html = TRUE
 
+/// Sanitize a raw string value coming from a player (tgui_act, Topic, or savefile load).
+/// Strips HTML markup when should_strip_html is set and enforces the character length cap.
+/// Returns the sanitized string; always returns a text value, never null.
+/// Subtypes may override to add domain-specific constraints while still calling ..().
+/datum/preference/text/proc/sanitize_input(input)
+	if(!istext(input))
+		return ""
+	return should_strip_html ? STRIP_HTML_SIMPLE(input, maximum_value_length) : copytext(input, 1, maximum_value_length)
 
 /datum/preference/text/pref_deserialize(input, datum/preferences/preferences)
-	return should_strip_html ? STRIP_HTML_SIMPLE(input, maximum_value_length) : copytext(input, 1, maximum_value_length)
+	return sanitize_input(input)
 
 /datum/preference/text/create_default_value()
 	return ""

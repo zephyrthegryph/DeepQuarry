@@ -87,11 +87,64 @@
 	if(.)
 		return
 
-	. = bay_act(action, params, ui, state)
-	if(.)
-		return
-
 	switch(action)
+		// Slot / persistence actions
+		if("load")
+			if(!IsGuestKey(ui.user.key))
+				open_load_dialog(ui.user)
+			return TRUE
+		if("save")
+			save_character()
+			save_preferences()
+			saved_notification = TRUE
+			VARSET_IN(src, saved_notification, FALSE, 1 SECONDS)
+			return TRUE
+		if("reload")
+			load_preferences(TRUE)
+			load_character()
+			client.prefs_vr.load_vore()
+			sanitize_preferences()
+			return TRUE
+		if("resetslot")
+			if(!isnewplayer(ui.user))
+				to_chat(ui.user, span_userdanger("You can't change your character slot while being in round."))
+			if("Yes" != tgui_alert(ui.user, "This will reset the current slot. Continue?", "Reset current slot?", list("No", "Yes")))
+				return FALSE
+			if("Yes" != tgui_alert(ui.user, "Are you completely sure that you want to reset this character slot?", "Reset current slot?", list("No", "Yes")))
+				return FALSE
+			reset_slot()
+			sanitize_preferences()
+			return TRUE
+		if("copy")
+			if(!isnewplayer(ui.user))
+				to_chat(ui.user, span_userdanger("You can't change your character slot while being in round."))
+			if(!IsGuestKey(ui.user.key))
+				open_copy_dialog(ui.user)
+			return TRUE
+		if("game_prefs")
+			ui.user.client.game_options()
+			return TRUE
+		if("refresh_character_preview")
+			if(!COOLDOWN_FINISHED(src, ui_refresh_cooldown))
+				return FALSE
+			update_preview_icon()
+			update_tgui_static_data(ui.user)
+			COOLDOWN_START(src, ui_refresh_cooldown, 5 SECONDS)
+			return TRUE
+		// Cycle Background flips bgstate to the next choice and re-renders the
+		// preview assets so the new BG shows up immediately via the next static_data push.
+		if("cycle_background")
+			var/datum/preference/text/human/bgstate/bg = GLOB.preference_entries[/datum/preference/text/human/bgstate]
+			if(bg && length(bg.bgstate_choices))
+				var/current = read_preference(/datum/preference/text/human/bgstate) || bg.bgstate_choices[1]
+				var/idx = bg.bgstate_choices.Find(current)
+				idx = (idx % bg.bgstate_choices.len) + 1
+				update_preference_by_type(/datum/preference/text/human/bgstate, bg.bgstate_choices[idx])
+				update_preview_icon()
+				update_tgui_static_data(ui.user)
+			return TRUE
+
+		// Pref-value actions
 		if("set_preference")
 			var/requested_preference_key = params["preference"]
 			var/value = params["value"]
@@ -107,9 +160,6 @@
 			// SAFETY: `update_preference` performs validation checks
 			if(!update_preference(requested_preference, value))
 				return FALSE
-
-			// if(istype(requested_preference, /datum/preference/name)) // TODO: do this
-			// 	tainted_character_profiles = TRUE
 
 			return TRUE
 
@@ -148,76 +198,6 @@
 
 	return FALSE
 
-/// Actions pertaining to the old bay system
-/datum/preferences/proc/bay_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = FALSE
-
-	switch(action)
-		// Basic actions
-		if("load")
-			if(!IsGuestKey(ui.user.key))
-				open_load_dialog(ui.user)
-			. = TRUE
-		if("save")
-			save_character()
-			save_preferences()
-			saved_notification = TRUE
-			VARSET_IN(src, saved_notification, FALSE, 1 SECONDS)
-			. = TRUE
-		if("reload")
-			load_preferences(TRUE)
-			load_character()
-			client.prefs_vr.load_vore()
-			sanitize_preferences()
-			. = TRUE
-		if("resetslot")
-			if(!isnewplayer(ui.user))
-				to_chat(ui.user, span_userdanger("You can't change your character slot while being in round."))
-			if("Yes" != tgui_alert(ui.user, "This will reset the current slot. Continue?", "Reset current slot?", list("No", "Yes")))
-				return
-			if("Yes" != tgui_alert(ui.user, "Are you completely sure that you want to reset this character slot?", "Reset current slot?", list("No", "Yes")))
-				return
-			reset_slot()
-			sanitize_preferences()
-			. = TRUE
-		if("copy")
-			if(!isnewplayer(ui.user))
-				to_chat(ui.user, span_userdanger("You can't change your character slot while being in round."))
-			if(!IsGuestKey(ui.user.key))
-				open_copy_dialog(ui.user)
-			. = TRUE
-		// switch_category was for the deleted Bay PreferencesMenu sidebar. The new
-		// DQCharacterSetup window owns its own client-side category state via React useState
-		// and doesn't ping the server to switch tabs. Action removed; if anything still calls
-		// it, falls through to the no-op default.
-		if("game_prefs")
-			ui.user.client.game_options()
-			. = TRUE
-		if("refresh_character_preview")
-			if(!COOLDOWN_FINISHED(src, ui_refresh_cooldown))
-				return
-			update_preview_icon()
-			update_tgui_static_data(ui.user)
-			COOLDOWN_START(src, ui_refresh_cooldown, 5 SECONDS)
-			. = TRUE
-		// Cycle Background flips bgstate to the next choice and
-		// re-renders the preview assets so the new BG shows up immediately
-		// via the next static_data push.
-		if("cycle_background")
-			var/datum/preference/text/human/bgstate/bg = GLOB.preference_entries[/datum/preference/text/human/bgstate]
-			if(bg && length(bg.bgstate_choices))
-				var/current = read_preference(/datum/preference/text/human/bgstate) || bg.bgstate_choices[1]
-				var/idx = bg.bgstate_choices.Find(current)
-				idx = (idx % bg.bgstate_choices.len) + 1
-				update_preference_by_type(/datum/preference/text/human/bgstate, bg.bgstate_choices[idx])
-				update_preview_icon()
-				update_tgui_static_data(ui.user)
-			. = TRUE
-
-// jiggle_map / dq_force_pref_window_visible removed. The asset-
-// based preview renders <img> tags from base64; nothing depends on
-// BYOND map control timing, the tgui_window visible signal, or the React
-// Window's visibility flicker. Normal pool tgui windows work as-is.
 
 /datum/preferences/tgui_close(mob/user)
 	load_character()
