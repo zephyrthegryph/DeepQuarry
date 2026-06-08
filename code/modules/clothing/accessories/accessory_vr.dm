@@ -25,8 +25,9 @@
 	var/mob/living/carbon/human/H = loc
 	if(!istype(H) && istype(has_suit) && ishuman(has_suit.loc))
 		H = has_suit.loc
-	if(sprite_sheets && istype(H) && H.species.get_bodytype(H) && (H.species.get_bodytype(H) in sprite_sheets))
-		icon_override = sprite_sheets[H.species.get_bodytype(H)]
+	var/resolved = GLOB.clothing_appearance_handler.resolve_species_icon_override(src, H)
+	if(resolved)
+		icon_override = resolved
 		update_clothing_icon()
 
 /obj/item/clothing/accessory/choker/on_attached(obj/item/clothing/S, mob/user)
@@ -63,8 +64,9 @@
 	var/mob/living/carbon/human/H = loc
 	if(!istype(H) && istype(has_suit) && ishuman(has_suit.loc))
 		H = has_suit.loc
-	if(sprite_sheets && istype(H) && H.species.get_bodytype(H) && (H.species.get_bodytype(H) in sprite_sheets))
-		icon_override = sprite_sheets[H.species.get_bodytype(H)]
+	var/resolved = GLOB.clothing_appearance_handler.resolve_species_icon_override(src, H)
+	if(resolved)
+		icon_override = resolved
 		update_clothing_icon()
 
 /obj/item/clothing/accessory/collar/on_attached(obj/item/clothing/S, mob/user)
