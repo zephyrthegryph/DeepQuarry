@@ -52,11 +52,6 @@
 		/area/groundbase/level3/sw/open,
 		/area/groundbase/level3/escapepad,
 
-		// Tether
-		/area/tether/surfacebase/tram,
-		/area/tether/surfacebase/surface_one_hall,
-		/area/tether/surfacebase/surface_two_hall,
-		/area/tether/surfacebase/surface_three_hall,
 		/area/teleporter/departing,
 		/area/hallway/station/upper,
 	)

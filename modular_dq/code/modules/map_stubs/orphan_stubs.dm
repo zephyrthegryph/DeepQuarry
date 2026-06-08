@@ -35,10 +35,6 @@
 /area/maintenance/groundbase/level1/swtunnel
 /area/shuttle/sdboat
 /area/submap/event
-/area/tether/surfacebase/surface_one_hall
-/area/tether/surfacebase/surface_three_hall
-/area/tether/surfacebase/surface_two_hall
-/area/tether/surfacebase/tram
 /obj/item/bluespace_harpoon/wand
 /obj/item/clothing/accessory/storage/webbing/pilot1
 /obj/item/clothing/accessory/storage/webbing/pilot2
