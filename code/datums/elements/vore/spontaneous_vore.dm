@@ -7,10 +7,14 @@
 	. = ..()
 	if(!isliving(target))
 		return ELEMENT_INCOMPATIBLE
-	RegisterSignal(target, COMSIG_LIVING_STUMBLED_INTO, PROC_REF(handle_stumble))
-	RegisterSignal(target, COMSIG_LIVING_FALLING_DOWN, PROC_REF(handle_fall))
-	RegisterSignal(target, COMSIG_LIVING_HIT_BY_THROWN_ENTITY, PROC_REF(handle_hitby))
-	RegisterSignal(target, COMSIG_MOVABLE_CROSS, PROC_REF(handle_crossed))
+	// override = TRUE: init_vore() (and thus AddElement) can run more than once
+	// on the same mob (admin effects, AI retargeting, species changes), so the
+	// element may re-attach to a mob that already has these handlers. Re-pointing
+	// to the same proc is idempotent and avoids spurious "overridden" runtimes.
+	RegisterSignal(target, COMSIG_LIVING_STUMBLED_INTO, PROC_REF(handle_stumble), override = TRUE)
+	RegisterSignal(target, COMSIG_LIVING_FALLING_DOWN, PROC_REF(handle_fall), override = TRUE)
+	RegisterSignal(target, COMSIG_LIVING_HIT_BY_THROWN_ENTITY, PROC_REF(handle_hitby), override = TRUE)
+	RegisterSignal(target, COMSIG_MOVABLE_CROSS, PROC_REF(handle_crossed), override = TRUE)
 
 /datum/element/spontaneous_vore/Detach(datum/target)
 	. = ..()
