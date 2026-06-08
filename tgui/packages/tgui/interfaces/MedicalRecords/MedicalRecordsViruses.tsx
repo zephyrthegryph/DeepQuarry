@@ -12,9 +12,9 @@ export const MedicalRecordsViruses = (props) => {
     return <NoticeBox>No viruses in database.</NoticeBox>;
   }
 
-  virus.sort((a, b) => (a.name > b.name ? 1 : -1));
+  const sortedVirus = [...virus].sort((a, b) => a.name.localeCompare(b.name));
 
-  return virus.map((vir, i) => (
+  return sortedVirus.map((vir, i) => (
     <Fragment key={i}>
       <Button
         icon="flask"

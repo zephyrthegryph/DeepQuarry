@@ -30,9 +30,17 @@ const pauseEvent = (e) => {
   return false;
 };
 
-type Props = PropsWithChildren<{
+/** Public-facing props. mapMaxX/Y/mapZLevel are injected by the wrapper. */
+type PublicProps = PropsWithChildren<{
   onZoom?: (zoom: number) => void;
 }>;
+
+/** Internal class props — includes the backend-derived dimensions. */
+type InnerProps = PublicProps & {
+  mapMaxX: number;
+  mapMaxY: number;
+  mapZLevel: number | string;
+};
 
 type State = {
   offsetX: number;
@@ -43,10 +51,11 @@ type State = {
   zoom: number;
 };
 
-export class NanoMap extends Component<Props, State> {
-  static Marker: React.FC<NanoMapMarkerProps>;
-  static Zoomer: React.FC<NanoMapZoomerProps>;
-
+/**
+ * Internal class component. All useBackend() calls have been removed;
+ * dimensions are received as props from the NanoMap function-component wrapper.
+ */
+class NanoMapInner extends Component<InnerProps, State> {
   handleDragStart: React.MouseEventHandler<HTMLDivElement>;
   handleDragMove: (e: MouseEvent) => void;
   handleDragEnd: (e: MouseEvent) => void;
@@ -64,8 +73,8 @@ export class NanoMap extends Component<Props, State> {
   }
 
   getWxH = (zoom: number) => {
-    const { config } = useBackend();
-    return [config.mapInfo.maxx * 2 * zoom, config.mapInfo.maxy * 2 * zoom];
+    const { mapMaxX, mapMaxY } = this.props;
+    return [mapMaxX * 2 * zoom, mapMaxY * 2 * zoom];
   };
 
   setZoom(zoom: number, mouseX: number, mouseY: number) {
@@ -96,7 +105,7 @@ export class NanoMap extends Component<Props, State> {
     }
   }
 
-  constructor(props: Props) {
+  constructor(props: InnerProps) {
     super(props);
 
     // Auto center based on window size
@@ -191,13 +200,12 @@ export class NanoMap extends Component<Props, State> {
   }
 
   render() {
-    const { config } = useBackend();
+    const { mapZLevel, children } = this.props;
     const { dragging, offsetX, offsetY, zoom = 1 } = this.state;
-    const { children } = this.props;
 
     const WxH = this.getWxH(zoom);
 
-    const mapUrl = resolveAsset(`minimap_${config.mapZLevel}.png`);
+    const mapUrl = resolveAsset(`minimap_${mapZLevel}.png`);
     const newStyle: CSSProperties = {
       width: `${WxH[0]}px`,
       height: `${WxH[1]}px`,
@@ -267,9 +275,7 @@ const NanoMapMarker = (props: NanoMapMarkerProps) => {
   );
 };
 
-NanoMap.Marker = NanoMapMarker;
-
-type Data = {
+type NanoMapData = {
   map_levels: number[];
 };
 
@@ -279,7 +285,7 @@ type NanoMapZoomerProps = {
 };
 
 const NanoMapZoomer = (props: NanoMapZoomerProps) => {
-  const { act, config, data } = useBackend<Data>();
+  const { act, config, data } = useBackend<NanoMapData>();
   return (
     <Box className="NanoMap__zoomer">
       <LabeledList>
@@ -295,7 +301,7 @@ const NanoMapZoomer = (props: NanoMapZoomerProps) => {
           />
         </LabeledList.Item>
         <LabeledList.Item label="Z-Level">
-          {data.map_levels
+          {[...data.map_levels]
             .sort((a, b) => Number(a) - Number(b))
             .map((level) => (
               <Button
@@ -314,4 +320,28 @@ const NanoMapZoomer = (props: NanoMapZoomerProps) => {
   );
 };
 
-NanoMap.Zoomer = NanoMapZoomer;
+/**
+ * Function-component wrapper around NanoMapInner.
+ * Calls useBackend() here (the only valid place) to extract map dimensions,
+ * then passes them down as props so the class component never calls hooks.
+ */
+const NanoMapFn = (props: PublicProps) => {
+  const { config } = useBackend();
+  return (
+    <NanoMapInner
+      {...props}
+      mapMaxX={config.mapInfo.maxx}
+      mapMaxY={config.mapInfo.maxy}
+      mapZLevel={config.mapZLevel}
+    />
+  );
+};
+
+NanoMapFn.Marker = NanoMapMarker;
+NanoMapFn.Zoomer = NanoMapZoomer;
+
+/** Public NanoMap component. Accepts the same props as before. */
+export const NanoMap = NanoMapFn as typeof NanoMapFn & {
+  Marker: React.FC<NanoMapMarkerProps>;
+  Zoomer: React.FC<NanoMapZoomerProps>;
+};

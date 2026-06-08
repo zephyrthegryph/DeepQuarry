@@ -132,13 +132,13 @@ const oreOrder = [
 ];
 
 const oreSorter = (a, b) => {
-  if (oreOrder.indexOf(a.ore) === -1) {
-    return a.ore - b.ore;
+  const aIdx = oreOrder.indexOf(a.ore);
+  const bIdx = oreOrder.indexOf(b.ore);
+  // If either ore is not in the ordered list, fall back to alphabetic sort.
+  if (aIdx === -1 || bIdx === -1) {
+    return a.ore.localeCompare(b.ore);
   }
-  if (oreOrder.indexOf(b.ore) === -1) {
-    return a.ore - b.ore;
-  }
-  return oreOrder.indexOf(b.ore) - oreOrder.indexOf(a.ore);
+  return bIdx - aIdx;
 };
 
 const MOPCOres = (props) => {

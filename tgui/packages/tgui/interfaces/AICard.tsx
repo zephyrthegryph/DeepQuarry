@@ -61,8 +61,7 @@ export const AICard = (props) => {
     let powerColor: string | undefined;
     if (backup_capacitor >= 75) {
       powerColor = 'green';
-    }
-    if (backup_capacitor >= 25) {
+    } else if (backup_capacitor >= 25) {
       powerColor = 'yellow';
     } else {
       powerColor = 'red';

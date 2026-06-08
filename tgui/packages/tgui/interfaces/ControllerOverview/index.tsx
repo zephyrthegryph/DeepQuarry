@@ -38,7 +38,7 @@ export function ControllerContent(props) {
       sortType: SORTING_TYPES.findIndex((type) => type.label === value),
     };
 
-    if (updates.sortType === undefined) return;
+    if (updates.sortType === undefined || updates.sortType < 0) return;
 
     const { inDeciseconds } = SORTING_TYPES[updates.sortType];
 

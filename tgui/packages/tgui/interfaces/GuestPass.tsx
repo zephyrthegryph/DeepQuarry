@@ -22,7 +22,9 @@ export const GuestPass = (props) => {
 
   const { area, giver, giveName, reason, duration, mode, log, uid } = data;
 
-  area.sort((a, b) => a.area_name.localeCompare(b.area_name));
+  const sortedArea = [...area].sort((a, b) =>
+    a.area_name.localeCompare(b.area_name),
+  );
 
   return (
     <Window width={500} height={520}>
@@ -80,7 +82,7 @@ export const GuestPass = (props) => {
               Issue Pass
             </Button.Confirm>
             <Section title="Access">
-              {area.map((a) => (
+              {sortedArea.map((a) => (
                 <Button.Checkbox
                   checked={a.on}
                   key={a.area}

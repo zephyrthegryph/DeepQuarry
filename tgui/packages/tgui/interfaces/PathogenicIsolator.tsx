@@ -36,7 +36,11 @@ type Data = {
   modal: modalData;
 };
 
-const virusModalBodyOverride = (modal: modalData) => {
+/**
+ * A real React component used as the modal body override for virus entries.
+ * This is rendered by ComplexModal inside a normal React tree, so hooks work.
+ */
+const VirusModalBody = (modal: modalData) => {
   const { act, data } = useBackend<Data>();
   const { can_print } = data;
   const virus = modal.args;
@@ -121,7 +125,9 @@ export const PathogenicIsolator = (props) => {
   tab[0] = <PathogenicIsolatorTabHome />;
   tab[1] = <PathogenicIsolatorTabDatabase />;
 
-  modalRegisterBodyOverride('virus', virusModalBodyOverride);
+  // VirusModalBody is a function component so it is safe to call as a render
+  // function here — ComplexModal invokes it inside the React tree.
+  modalRegisterBodyOverride('virus', VirusModalBody);
   return (
     <Window height={500} width={520}>
       <ComplexModal maxHeight="100%" maxWidth="95%" />

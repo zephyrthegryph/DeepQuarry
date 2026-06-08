@@ -1,5 +1,7 @@
 import { type KeyboardEvent, useEffect, useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { sendAct } from 'tgui/events/act';
+import { backendStateAtom, store } from 'tgui/events/store';
 import {
   Box,
   Button,
@@ -23,28 +25,9 @@ type Data<TArgs = Record<string, unknown>> = {
 const bodyOverrides = {};
 
 /**
- * Sends a call to BYOND to open a modal
- * @param {string} id The identifier of the modal
- * @param {object=} args The arguments to pass to the modal
- */
-export const modalOpen = (id, args = {}) => {
-  const { act, data } = useBackend<Data>();
-
-  const { modal } = data;
-
-  const newArgs = Object.assign(modal ? modal.args : {}, args || {});
-
-  act('modal_open', {
-    id: id,
-    arguments: JSON.stringify(newArgs),
-  });
-};
-
-/**
- * Registers an override for any modal with the given id
- * @param {string} id The identifier of the modal
- * @param {function} bodyOverride The override function that returns the
- *    modal contents
+ * Registers an override for any modal with the given id.
+ * The override function is called with the modal data and returns JSX.
+ * It is invoked inside the ComplexModal component's render, so hooks are valid.
  */
 
 type ModalOverrideData<TArgs = Record<string, unknown>> = {
@@ -61,34 +44,6 @@ export const modalRegisterBodyOverride = (
   bodyOverrides[id] = bodyOverride;
 };
 
-const modalAnswer = (
-  id: string,
-  answer: string | undefined,
-  args: Record<string, unknown>,
-) => {
-  const { act, data } = useBackend<Data>();
-
-  const { modal } = data;
-
-  if (!modal) {
-    return null;
-  }
-
-  const newArgs = Object.assign(modal.args || {}, args || {});
-  act('modal_answer', {
-    id: id,
-    answer: answer,
-    arguments: JSON.stringify(newArgs),
-  });
-};
-
-const modalClose = (id: string | null) => {
-  const { act } = useBackend();
-  act('modal_close', {
-    id: id,
-  });
-};
-
 type ExtendedModalData<TArgs = Record<string, unknown>> = ModalData<TArgs> &
   Partial<{
     value: string;
@@ -101,8 +56,56 @@ type ComplexData<TArgs = Record<string, unknown>> = {
   modal: ExtendedModalData<TArgs> | null;
 };
 
+/** Internal act type — short-hand for the tgui act callback. */
+type ActFn = (action: string, params?: Record<string, unknown>) => void;
+
+/** Reads the current modal from the global jotai store synchronously. */
+const currentModal = (): ModalData | null => {
+  const state = store.get(backendStateAtom);
+  return (state.data as Data).modal ?? null;
+};
+
 /**
- * Displays a modal and its actions. Passed data must have a valid modal field
+ * Pure helpers that operate on already-resolved act/modal values.
+ * These are plain functions with no hook calls — safe to use in event handlers.
+ */
+const doModalOpen = (
+  act: ActFn,
+  modal: ModalData | null,
+  id: string,
+  args: Record<string, unknown> = {},
+) => {
+  const newArgs = Object.assign(modal ? modal.args : {}, args);
+  act('modal_open', {
+    id: id,
+    arguments: JSON.stringify(newArgs),
+  });
+};
+
+const doModalAnswer = (
+  act: ActFn,
+  modal: ExtendedModalData | null,
+  id: string,
+  answer: string | undefined,
+  args: Record<string, unknown>,
+) => {
+  if (!modal) {
+    return;
+  }
+  const newArgs = Object.assign(modal.args || {}, args || {});
+  act('modal_answer', {
+    id: id,
+    answer: answer,
+    arguments: JSON.stringify(newArgs),
+  });
+};
+
+const doModalClose = (act: ActFn, id: string | null) => {
+  act('modal_close', { id: id });
+};
+
+/**
+ * Displays a modal and its actions. Passed data must have a valid modal field.
  *
  * **A valid modal field contains:**
  *
@@ -121,7 +124,7 @@ export const ComplexModal = (props: {
   maxWidth?: string;
   maxHeight?: string;
 }) => {
-  const { data } = useBackend<ComplexData>();
+  const { act, data } = useBackend<ComplexData>();
 
   const { modal } = data;
 
@@ -141,11 +144,15 @@ export const ComplexModal = (props: {
 
   const modalOnEscape:
     | ((e: KeyboardEvent<HTMLDivElement>) => void)
-    | undefined = (e) => modalClose(id);
+    | undefined = (_e) => doModalClose(act, id);
   let modalOnEnter: ((e: KeyboardEvent<HTMLDivElement>) => void) | undefined;
   let modalBody: React.JSX.Element | undefined;
   let modalFooter: React.JSX.Element = (
-    <Button icon="arrow-left" color="grey" onClick={() => modalClose(null)}>
+    <Button
+      icon="arrow-left"
+      color="grey"
+      onClick={() => doModalClose(act, null)}
+    >
       Cancel
     </Button>
   );
@@ -154,7 +161,7 @@ export const ComplexModal = (props: {
   if (bodyOverrides[id]) {
     modalBody = bodyOverrides[id](modal);
   } else if (type === 'input') {
-    modalOnEnter = (e) => modalAnswer(id, curValue, {});
+    modalOnEnter = (_e) => doModalAnswer(act, modal, id, curValue, {});
     modalBody = (
       <Input
         key={id}
@@ -171,7 +178,11 @@ export const ComplexModal = (props: {
     );
     modalFooter = (
       <Box mt="0.5rem">
-        <Button icon="arrow-left" color="grey" onClick={() => modalClose(null)}>
+        <Button
+          icon="arrow-left"
+          color="grey"
+          onClick={() => doModalClose(act, null)}
+        >
           Cancel
         </Button>
         <Button
@@ -181,7 +192,7 @@ export const ComplexModal = (props: {
             float: 'right',
           }}
           m="0"
-          onClick={() => modalAnswer(id, curValue, {})}
+          onClick={() => doModalAnswer(act, modal, id, curValue, {})}
         >
           Confirm
         </Button>
@@ -203,7 +214,7 @@ export const ComplexModal = (props: {
         selected={modal.value}
         width="100%"
         my="0.5rem"
-        onSelected={(val) => modalAnswer(id, val, {})}
+        onSelected={(val) => doModalAnswer(act, modal, id, val, {})}
       />
     );
   } else if (type === 'bento') {
@@ -214,7 +225,9 @@ export const ComplexModal = (props: {
           <Stack.Item key={i}>
             <Button
               selected={i + 1 === parseInt(value, 10)}
-              onClick={() => modalAnswer(id, (i + 1).toString(), {})}
+              onClick={() =>
+                doModalAnswer(act, modal, id, (i + 1).toString(), {})
+              }
             >
               <Image src={c} />
             </Button>
@@ -230,7 +243,9 @@ export const ComplexModal = (props: {
           <Stack.Item key={i}>
             <Button
               selected={i + 1 === parseInt(value, 10)}
-              onClick={() => modalAnswer(id, (i + 1).toString(), {})}
+              onClick={() =>
+                doModalAnswer(act, modal, id, (i + 1).toString(), {})
+              }
             >
               <Box className={c} />
             </Button>
@@ -248,7 +263,7 @@ export const ComplexModal = (props: {
             float: 'left',
           }}
           mb="0"
-          onClick={() => modalAnswer(id, '0', {})}
+          onClick={() => doModalAnswer(act, modal, id, '0', {})}
         >
           {modal.no_text}
         </Button>
@@ -259,7 +274,7 @@ export const ComplexModal = (props: {
             float: 'right',
           }}
           m="0"
-          onClick={() => modalAnswer(id, '1', {})}
+          onClick={() => doModalAnswer(act, modal, id, '1', {})}
         >
           {modal.yes_text}
         </Button>
@@ -285,4 +300,13 @@ export const ComplexModal = (props: {
       {modalFooter}
     </Modal>
   );
+};
+
+/**
+ * Sends a call to BYOND to open a modal.
+ * Reads act/modal from the global jotai store synchronously — no hook call.
+ * Safe to call from event handlers and outside React render.
+ */
+export const modalOpen = (id: string, args: Record<string, unknown> = {}) => {
+  doModalOpen(sendAct, currentModal(), id, args);
 };

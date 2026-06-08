@@ -41,14 +41,19 @@ function migrateHighlights(next: HighlightState): HighlightState {
       defaultHighlightSetting.id,
       ...draft.highlightSettings,
     ];
-    draft.highlightSettingById[defaultHighlightSetting.id] =
-      defaultHighlightSetting;
+    // Store a fresh copy so we never mutate the shared module-level singleton.
+    draft.highlightSettingById[defaultHighlightSetting.id] = {
+      ...defaultHighlightSetting,
+    };
   }
 
   // Update the highlight settings for default highlight
-  // settings compatibility — don't overwrite existing values
-  const defaultHighlight =
-    draft.highlightSettingById[defaultHighlightSetting.id];
+  // settings compatibility — don't overwrite existing values.
+  // Work on a local copy to avoid mutating the stored entry in place before
+  // we have confirmed all fields.
+  const defaultHighlight = {
+    ...draft.highlightSettingById[defaultHighlightSetting.id],
+  };
 
   if (!defaultHighlight.highlightColor) {
     defaultHighlight.highlightColor =
@@ -60,14 +65,16 @@ function migrateHighlights(next: HighlightState): HighlightState {
       draft.highlightText ?? defaultHighlightSetting.highlightText;
   }
 
+  // Write the modified copy back so the draft holds the updated values.
+  draft.highlightSettingById[defaultHighlightSetting.id] = defaultHighlight;
+
   // Ensure that all highlights have the "enabled" var,
   // setting it to true if it doesn't exist.
   for (const id in draft.highlightSettingById) {
-    if (
-      draft.highlightSettingById[id] &&
-      draft.highlightSettingById[id].enabled === undefined
-    ) {
-      draft.highlightSettingById[id].enabled = true;
+    const entry = draft.highlightSettingById[id];
+    if (entry && entry.enabled === undefined) {
+      // Spread to avoid mutating in place; reassign to draft.
+      draft.highlightSettingById[id] = { ...entry, enabled: true };
     }
   }
 

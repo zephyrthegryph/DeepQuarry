@@ -20,8 +20,18 @@ import { createMessage } from './model';
 import { chatRenderer } from './renderer';
 import type { SerializedMessage, StoredChatSettings } from './types';
 
-// List of blacklisted tags
-const FORBID_TAGS = ['a', 'iframe', 'link', 'video'];
+// Tags that may introduce script execution or navigation vectors.
+const FORBID_TAGS = ['a', 'iframe', 'link', 'script', 'style', 'video'];
+
+// DOMPurify config used when sanitizing stored/archived chat HTML.
+// FORBID_ATTR strips inline event handlers and data-component attributes so
+// persisted untrusted HTML cannot trigger the renderer's component-injection
+// path (renderer.tsx processBatch). DOMPurify already strips on* handlers by
+// default; listing FORBID_ATTR here provides defence-in-depth.
+const SANITIZE_CONFIG: Parameters<typeof DOMPurify.sanitize>[1] = {
+  FORBID_TAGS,
+  FORBID_ATTR: ['data-component', 'style'],
+};
 
 /**
  * Custom hook that initializes chat from local storage and periodically saves
@@ -193,7 +203,7 @@ export function useChatPersistence() {
     if (archived) {
       for (const msg of archived) {
         if (msg.html) {
-          msg.html = DOMPurify.sanitize(msg.html, { FORBID_TAGS });
+          msg.html = DOMPurify.sanitize(msg.html, SANITIZE_CONFIG);
         }
       }
       const { storedRounds, storedLines, lastId } =
@@ -279,9 +289,7 @@ export function useChatPersistence() {
   function handleMessages(messages: SerializedMessage[]): void {
     for (const message of messages) {
       if (message.html) {
-        message.html = DOMPurify.sanitize(message.html, {
-          FORBID_TAGS,
-        });
+        message.html = DOMPurify.sanitize(message.html, SANITIZE_CONFIG);
       }
     }
 

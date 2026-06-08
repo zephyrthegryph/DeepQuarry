@@ -358,11 +358,14 @@ const NumvalPoll = (props: {
 }) => {
   const { selected, act } = props;
 
+  // Hook must be called unconditionally before any early return.
+  const [ratings, setRatings] = useState<Record<string, string>>({});
+
   if (selected.voted) {
-    const ratings = selected.voted_ratings ?? [];
+    const votedRatings = selected.voted_ratings ?? [];
     return (
       <Stack vertical>
-        {ratings.map((r, i) => (
+        {votedRatings.map((r, i) => (
           <Stack.Item key={i}>
             <Box bold>
               {r.text} — {r.rating}
@@ -374,7 +377,6 @@ const NumvalPoll = (props: {
   }
 
   const options = (selected.options as NumvalOption[]) ?? [];
-  const [ratings, setRatings] = useState<Record<string, string>>({});
 
   return (
     <>

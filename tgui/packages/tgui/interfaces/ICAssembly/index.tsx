@@ -12,7 +12,7 @@ import {
 } from 'tgui-core/components';
 import { formatPower } from 'tgui-core/format';
 
-import { Plane } from './Plane';
+import { PlaneWrapper } from './Plane';
 import type { Data } from './types';
 
 export const ICAssembly = (props) => {
@@ -66,7 +66,7 @@ export const ICAssembly = (props) => {
       height={800}
     >
       <Window.Content style={{ background: 'none' }}>
-        <Plane />
+        <PlaneWrapper />
         {showInfo && <CircuitInfo />}
       </Window.Content>
     </Window>

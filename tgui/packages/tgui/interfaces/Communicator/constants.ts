@@ -23,5 +23,5 @@ export const tabs = [
 ];
 
 export function notFound(val) {
-  return tabs.includes(val);
+  return !tabs.includes(val);
 }

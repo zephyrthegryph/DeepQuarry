@@ -180,7 +180,7 @@ export function ExperimentConfigure(props) {
 
   const techwebs = data.techwebs ?? [];
 
-  const experiments = data.experiments.sort((a, b) =>
+  const experiments = [...(data.experiments ?? [])].sort((a, b) =>
     a.name.localeCompare(b.name),
   );
 

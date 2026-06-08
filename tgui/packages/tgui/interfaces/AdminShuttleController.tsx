@@ -34,11 +34,13 @@ export const ShuttleList = (props) => {
 
   const { shuttles, overmap_ships } = data;
 
-  shuttles.sort((a, b) => a.name.localeCompare(b.name));
+  const sortedShuttles = [...shuttles].sort((a, b) =>
+    a.name.localeCompare(b.name),
+  );
 
-  overmap_ships.sort((a, b) => {
+  const sortedOvermapShips = [...overmap_ships].sort((a, b) => {
     const a_cmp = a.name?.toLowerCase() || a.name || a.ref;
-    const b_cmp = a.name?.toLowerCase() || a.name || a.ref;
+    const b_cmp = b.name?.toLowerCase() || b.name || b.ref;
 
     return a_cmp.localeCompare(b_cmp);
   });
@@ -47,7 +49,7 @@ export const ShuttleList = (props) => {
     <Section noTopPadding>
       <Section title="Classic Shuttles">
         <Table>
-          {shuttles.map((shuttle) => (
+          {sortedShuttles.map((shuttle) => (
             <Table.Row key={shuttle.ref}>
               <Table.Cell collapsing>
                 <Button
@@ -74,7 +76,7 @@ export const ShuttleList = (props) => {
       </Section>
       <Section title="Overmap Ships">
         <Table>
-          {overmap_ships.map((ship) => (
+          {sortedOvermapShips.map((ship) => (
             <Table.Row key={ship.ref}>
               <Table.Cell collapsing>
                 <Button onClick={() => act('adminobserve', { ref: ship.ref })}>

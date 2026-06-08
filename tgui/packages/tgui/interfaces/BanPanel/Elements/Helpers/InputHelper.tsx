@@ -27,7 +27,7 @@ export const InputHelper = (props: {
       }
       break;
     case 'JOB PERMABAN':
-      if (!banCkey || banReason || !banJob) {
+      if (!banCkey || !banReason || !banJob) {
         return (
           <InputError banCkey={banCkey} banReason={banReason} banJob={banJob} />
         );

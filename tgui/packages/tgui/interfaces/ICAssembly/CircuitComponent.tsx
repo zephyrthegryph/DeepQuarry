@@ -1,5 +1,4 @@
 import { Component, type ComponentProps } from 'react';
-import { useBackend } from 'tgui/backend';
 import { Box, Button, Icon, Stack } from 'tgui-core/components';
 import { shallowDiffers } from 'tgui-core/react';
 import { decodeHtmlEntities } from 'tgui-core/string';
@@ -17,6 +16,8 @@ export type CircuitProps = {
   color?: string;
   gridMode?: boolean;
   onComponentMoved?: (newPos: { x: number; y: number }) => void;
+  /** The act function from useBackend, passed down from a parent function component */
+  act: (action: string, params?: Record<string, unknown>) => void;
 } & ComponentProps<typeof Box> &
   Pick<
     PortProps,
@@ -131,6 +132,7 @@ export class CircuitComponent extends Component<CircuitProps, CircuitState> {
       y,
       circuit,
       color = 'blue',
+      act,
       onPortUpdated,
       onPortLoaded,
       onPortMouseDown,
@@ -142,8 +144,6 @@ export class CircuitComponent extends Component<CircuitProps, CircuitState> {
     const { name, ref, inputs = [], outputs = [], activators = [] } = circuit;
 
     const { startPos, dragPos } = this.state;
-
-    const { act } = useBackend();
 
     let [x_pos, y_pos] = [x, y];
     if (dragPos && startPos && startPos.x === x_pos && startPos.y === y_pos) {

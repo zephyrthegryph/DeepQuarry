@@ -85,14 +85,12 @@ const getItemColor = (
   max1: number,
   max2: number,
 ) => {
-  if (value < min2) {
+  // Check the worst bounds first so they are not short-circuited by average.
+  if (value < min2 || value > max2) {
     return 'bad';
-  } else if (value < min1) {
+  }
+  if (value < min1 || value > max1) {
     return 'average';
-  } else if (value > max1) {
-    return 'average';
-  } else if (value > max2) {
-    return 'bad';
   }
   return 'good';
 };

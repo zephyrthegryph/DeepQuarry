@@ -96,10 +96,10 @@ export const CharacterDirectoryList = (props: {
             View
           </Table.Cell>
         </Table.Row>
-        {directory
+        {[...directory]
           .sort((a, b) => {
             const i = sortOrder ? 1 : -1;
-            return a[sortId].localeCompare(b[sortId]) * i;
+            return String(a[sortId] ?? '').localeCompare(String(b[sortId] ?? '')) * i;
           })
           .map((character, i) => (
             <Table.Row key={i} backgroundColor={getTagColor(character.tag)}>

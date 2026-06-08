@@ -22,8 +22,9 @@ export const ChemDispenserChemicals = (props: {
     buttons,
   } = props;
   const flexFillers: boolean[] = [];
-  const sortedChemicals: Reagent[] = chemicals;
-  sortedChemicals.sort((a, b) => a.name.localeCompare(b.name));
+  const sortedChemicals = [...chemicals].sort((a, b) =>
+    a.name.localeCompare(b.name),
+  );
   return (
     <Section title={sectionTitle} fill scrollable buttons={buttons}>
       <Stack direction="row" wrap="wrap" align="flex-start" g={0.3}>

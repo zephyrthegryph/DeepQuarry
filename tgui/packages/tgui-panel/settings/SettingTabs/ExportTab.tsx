@@ -163,14 +163,14 @@ export const ExportTab = (props) => {
               <>
                 <Stack.Item>
                   <Dropdown
-                    onSelected={(value) => setExportStart(value)}
+                    onSelected={(value) => setExportStart(Number(value))}
                     options={game.databaseStoredRounds}
                     selected={exportStart.toString()}
                   />
                 </Stack.Item>
                 <Stack.Item>
                   <Dropdown
-                    onSelected={(value) => setExportEnd(value)}
+                    onSelected={(value) => setExportEnd(Number(value))}
                     options={game.databaseStoredRounds}
                     selected={exportEnd.toString()}
                   />

@@ -20,7 +20,7 @@ export const IsolationCentrifuge = (props) => {
   let blood_sample = <Box color="average">No vial detected.</Box>;
 
   if (sample_inserted) {
-    if (!antibodies && !pathogens) {
+    if (!antibodies && !pathogens.length) {
       blood_sample = (
         <Box color="average">No antibodies or viral strains detected.</Box>
       );

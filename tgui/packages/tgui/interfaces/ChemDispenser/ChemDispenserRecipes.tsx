@@ -1,8 +1,9 @@
+import { useBackend } from 'tgui/backend';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { handleImportData } from '../PlushieEditor/function';
 import { exportRecipes } from './functions';
-import type { Recipe } from './types';
+import type { Data, Recipe } from './types';
 
 export const ChemDispenserRecipes = (props: {
   /** Associated list of saved recipe macros. */
@@ -24,6 +25,7 @@ export const ChemDispenserRecipes = (props: {
   /** Called when the user attempts to remove a recipe macro. */
   removeAct: (recipe: string) => void;
 }) => {
+  const { act } = useBackend<Data>();
   const {
     recipes,
     recordingRecipe,
@@ -74,7 +76,7 @@ export const ChemDispenserRecipes = (props: {
                   accept=".json"
                   tooltip="Import recipes"
                   icon="file-alt"
-                  onSelectFiles={(files) => handleImportData(files)}
+                  onSelectFiles={(files) => handleImportData(files, act)}
                 />
               </Stack.Item>
               <Stack.Item>

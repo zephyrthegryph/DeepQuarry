@@ -60,9 +60,10 @@ export function useHighlights() {
 
     const draftKeys = highlights.highlightSettings.filter((key) => key !== id);
 
-    // Ensure the default highlight setting always exists
+    // Ensure the default highlight setting always exists.
+    // Store a fresh copy to avoid aliasing the shared module-level singleton.
     if (id === defaultHighlightSetting.id) {
-      draft[defaultHighlightSetting.id] = defaultHighlightSetting;
+      draft[defaultHighlightSetting.id] = { ...defaultHighlightSetting };
       draftKeys.unshift(defaultHighlightSetting.id);
     }
 

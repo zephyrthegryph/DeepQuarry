@@ -25,12 +25,15 @@ export function useSettings() {
         startSettingsMigration(storedSettings);
       } catch (error) {
         console.error('Failed to load panel settings:', error);
+      } finally {
+        // Mark loaded only after migration has run so consumers never see
+        // loaded===true while settings are still at their defaults.
+        setLoaded(true);
       }
     }
 
-    fetchSettings();
     setDisplayScaling();
-    setLoaded(true);
+    fetchSettings();
   }, []);
 
   function storeSettings(update: SettingsState): void {

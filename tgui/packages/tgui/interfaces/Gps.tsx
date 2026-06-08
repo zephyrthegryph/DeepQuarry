@@ -78,15 +78,16 @@ export const Gps = (props) => {
         // Calculate distance to the target. BYOND distance is capped to 127,
         // that's why we roll our own calculations here.
         const dist =
-          signal.dist &&
-          Math.round(
-            vecLength(
-              vecSubtract(
-                coordsToVec(currentCoords),
-                coordsToVec(signal.coords || ''),
-              ),
-            ),
-          );
+          signal.dist !== undefined
+            ? Math.round(
+                vecLength(
+                  vecSubtract(
+                    coordsToVec(currentCoords),
+                    coordsToVec(signal.coords || ''),
+                  ),
+                ),
+              )
+            : undefined;
         return { ...signal, dist, index };
       }),
     (signals: Signal[]) => signals.sort((a, b) => sortSignal(a, b)),

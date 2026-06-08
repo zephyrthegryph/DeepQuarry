@@ -8,4 +8,5 @@ export const gridStatusToText = ['Off Grid', 'Grid Available', 'Using Grid'];
 
 export const statToString = ['Alive', 'Unconscious', 'Dead'];
 
-export const statToColor = ['orange', 'red'];
+// Aligned with statToString: index 0=Alive, 1=Unconscious, 2=Dead
+export const statToColor = ['good', 'average', 'bad'];

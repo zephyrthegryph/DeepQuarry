@@ -50,7 +50,7 @@ export const SidebarPanel: React.FC<SidebarPanelProps> = ({
               accept=".json"
               tooltip="Import plushie data"
               icon="upload"
-              onSelectFiles={(files) => handleImportData(files)}
+              onSelectFiles={(files) => handleImportData(files, act)}
             >
               Import
             </Button.File>

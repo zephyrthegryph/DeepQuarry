@@ -64,7 +64,8 @@ export class ChannelIterator {
   }
 
   public set(channel: Channel): void {
-    this.index = this.channels.indexOf(channel) || 0;
+    const idx = this.channels.indexOf(channel);
+    this.index = idx === -1 ? 0 : idx;
   }
 
   public current(): Channel {

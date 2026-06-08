@@ -17,7 +17,11 @@ import {
   PortTypesToColor,
 } from './types';
 
-export type PlaneProps = Record<never, never>;
+export type PlaneProps = {
+  /** The act callback from useBackend, passed in by the PlaneWrapper */
+  act: (action: string, params?: Record<string, unknown>) => void;
+  data: Data;
+};
 
 type PlaneState = {
   locations: Record<string, { x: number; y: number }>;
@@ -107,7 +111,7 @@ export class Plane extends Component<PlaneProps, PlaneState> {
   };
 
   handlePortUp = (port: PortData, ref: HTMLDivElement, event: MouseEvent) => {
-    const { act } = useBackend();
+    const { act } = this.props;
     const { selectedPort } = this.state;
 
     if (!selectedPort) {
@@ -165,7 +169,7 @@ export class Plane extends Component<PlaneProps, PlaneState> {
     ref: HTMLDivElement,
     event: MouseEvent,
   ) => {
-    const { act } = useBackend();
+    const { act } = this.props;
 
     event.preventDefault();
     act('remove_all_wires', {
@@ -174,7 +178,7 @@ export class Plane extends Component<PlaneProps, PlaneState> {
   };
 
   render() {
-    const { act, data } = useBackend<Data>();
+    const { act, data } = this.props;
     const { locations, selectedPort, mouseX, mouseY } = this.state;
 
     const connections: Connection[] = [];
@@ -255,6 +259,7 @@ export class Plane extends Component<PlaneProps, PlaneState> {
       >
         {data.circuits.map((circuit) => (
           <Circuit
+            act={act}
             circuit={circuit}
             key={circuit.ref}
             onPortLoaded={this.handlePortLocation}
@@ -270,8 +275,17 @@ export class Plane extends Component<PlaneProps, PlaneState> {
   }
 }
 
+/**
+ * Function-component wrapper: calls useBackend() here (valid) and passes
+ * act/data as props to the Plane class component.
+ */
+export const PlaneWrapper = () => {
+  const { act, data } = useBackend<Data>();
+  return <Plane act={act} data={data} />;
+};
+
 const Circuit = (
-  props: { circuit: CircuitData } & Pick<
+  props: { circuit: CircuitData; act: (action: string, params?: Record<string, unknown>) => void } & Pick<
     PortProps,
     | 'onPortUpdated'
     | 'onPortLoaded'
@@ -282,6 +296,7 @@ const Circuit = (
 ) => {
   const {
     circuit,
+    act,
     onPortUpdated,
     onPortLoaded,
     onPortMouseDown,
@@ -289,7 +304,7 @@ const Circuit = (
     onPortRightClick,
   } = props;
 
-  const { act, data } = useBackend<Data>();
+  const { data } = useBackend<Data>();
 
   // Find stored position for this circuit
   const storedPosition = data.component_positions?.find(
@@ -316,6 +331,7 @@ const Circuit = (
 
   return (
     <CircuitComponent
+      act={act}
       circuit={circuit}
       gridMode
       x={pos.x}

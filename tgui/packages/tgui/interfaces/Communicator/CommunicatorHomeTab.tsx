@@ -6,7 +6,15 @@ import type { Data } from './types';
 export const CommunicatorHomeTab = (props) => {
   const { act, data } = useBackend<Data>();
 
-  const { homeScreen } = data;
+  const {
+    homeScreen,
+    /* Phone Notifications */
+    voice_mobs,
+    communicating,
+    requestsReceived,
+    invitesSent,
+    video_comm,
+  } = data;
 
   return (
     <Stack mt={2} wrap="wrap" align="center" justify="center">
@@ -29,8 +37,24 @@ export const CommunicatorHomeTab = (props) => {
             onClick={() => act('switch_tab', { switch_tab: app.number })}
           >
             <Icon
-              spin={hasNotifications(app.module)}
-              color={hasNotifications(app.module) ? 'bad' : null}
+              spin={hasNotifications(app.module, {
+                voice_mobs,
+                communicating,
+                requestsReceived,
+                invitesSent,
+                video_comm,
+              })}
+              color={
+                hasNotifications(app.module, {
+                  voice_mobs,
+                  communicating,
+                  requestsReceived,
+                  invitesSent,
+                  video_comm,
+                })
+                  ? 'bad'
+                  : null
+              }
               name={app.icon}
               position="absolute"
               size={3}
@@ -45,18 +69,16 @@ export const CommunicatorHomeTab = (props) => {
   );
 };
 
-/* Helper for notifications (yes this is a mess, but whatever, it works) */
-const hasNotifications = (app: string | null) => {
-  const { data } = useBackend<Data>();
-
-  const {
-    /* Phone Notifications */
-    voice_mobs,
-    communicating,
-    requestsReceived,
-    invitesSent,
-    video_comm,
-  } = data;
+/** Pure helper — no hooks. All needed notification state is passed in. */
+const hasNotifications = (
+  app: string | null,
+  notifications: Pick<
+    Data,
+    'voice_mobs' | 'communicating' | 'requestsReceived' | 'invitesSent' | 'video_comm'
+  >,
+) => {
+  const { voice_mobs, communicating, requestsReceived, invitesSent, video_comm } =
+    notifications;
 
   if (app === 'Phone') {
     if (

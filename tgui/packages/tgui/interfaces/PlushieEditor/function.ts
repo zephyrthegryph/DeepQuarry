@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { useBackend } from 'tgui/backend';
 import type { Overlay, PlushieConfig } from './types';
 
 export function downloadJson(filename: string, data: PlushieConfig) {
@@ -9,10 +8,15 @@ export function downloadJson(filename: string, data: PlushieConfig) {
   Byond.saveBlob(blob, filename, '.json');
 }
 
+/**
+ * Parses an imported JSON file and sends the config to the backend via act.
+ * `act` must be provided by the calling component (obtained from useBackend).
+ * This is a plain function — it does not call any React hooks.
+ */
 export function handleImportData(
   importString: string | string[],
-): PlushieConfig | null {
-  const { act } = useBackend();
+  act: (action: string, params?: Record<string, unknown>) => void,
+): void {
   const ourInput = Array.isArray(importString) ? importString[0] : importString;
   try {
     const parsedData: PlushieConfig = JSON.parse(ourInput);
@@ -20,7 +24,6 @@ export function handleImportData(
   } catch (err) {
     console.error('Failed to parse JSON:', err);
   }
-  return null;
 }
 
 export function useOverlayMap(overlays: Overlay[]) {

@@ -625,6 +625,15 @@ class ChatRenderer {
             canon_name = TGUI_CHAT_ATTRIBUTES_TO_PROPS[canon_name];
             outputProps[canon_name] = working_value;
           }
+          // Security: validate targetName is an own, known key before rendering.
+          // Prevents untrusted stored HTML from instantiating arbitrary components.
+          if (
+            !targetName ||
+            !Object.hasOwn(TGUI_CHAT_COMPONENTS, targetName)
+          ) {
+            continue;
+          }
+
           const oldHtml = { __html: childNode.innerHTML };
           while (childNode.firstChild) {
             childNode.removeChild(childNode.firstChild);
@@ -635,7 +644,7 @@ class ChatRenderer {
 
           reactRoot.render(
             <Element {...outputProps}>
-              {/** biome-ignore lint/security/noDangerouslySetInnerHtml: Chat rendere */}
+              {/** biome-ignore lint/security/noDangerouslySetInnerHtml: Chat renderer renders trusted server-built HTML inside a validated whitelisted component */}
               <span dangerouslySetInnerHTML={oldHtml} />
             </Element>,
           );

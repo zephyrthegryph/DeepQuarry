@@ -37,7 +37,7 @@ export const MiningStackingConsole = (props) => {
             </LabeledList.Item>
             <LabeledList.Divider />
             {(stacktypes.length &&
-              stacktypes.sort().map((stack) => (
+              [...stacktypes].sort((a, b) => a.type.localeCompare(b.type)).map((stack) => (
                 <LabeledList.Item
                   key={stack.type}
                   label={toTitleCase(stack.type)}
