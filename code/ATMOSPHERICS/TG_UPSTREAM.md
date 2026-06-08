@@ -15,11 +15,11 @@ exactly as they do in /tg/.
 
 | Source path in /tg/ | Destination in DQ |
 |---|---|
-| `code/__DEFINES/atmospherics/*` (7 files, 805 LOC) | `modular_dq/code/__defines/atmospherics_linda/` |
-| `code/modules/atmospherics/gasmixtures/*` (5 files, ~3,000 LOC) | `modular_dq/code/atmospherics/gasmixtures/` |
-| `code/modules/atmospherics/environmental/*` (3 files, 1,393 LOC) | `modular_dq/code/atmospherics/environmental/` |
-| `code/modules/atmospherics/machinery/**/*` (65 files, ~16,000 LOC) | `modular_dq/code/atmospherics/machinery/` |
-| `code/controllers/subsystem/air.dm` (935 LOC) | `modular_dq/code/atmospherics/SSair.dm` |
+| `code/__DEFINES/atmospherics/*` (7 files, 805 LOC) | `code/__defines/atmospherics_linda/` |
+| `code/modules/atmospherics/gasmixtures/*` (5 files, ~3,000 LOC) | `code/ATMOSPHERICS/gasmixtures/` |
+| `code/modules/atmospherics/environmental/*` (3 files, 1,393 LOC) | `code/ATMOSPHERICS/environmental/` |
+| `code/modules/atmospherics/machinery/**/*` (65 files, ~16,000 LOC) | `code/ATMOSPHERICS/machinery/` |
+| `code/controllers/subsystem/air.dm` (935 LOC) | `code/ATMOSPHERICS/SSair.dm` |
 
 **Total**: 81 files, ~22,000 lines. All gated behind `#ifdef USE_LINDA_ATMOS`
 in `vorestation.dme`. Default builds (USE_LINDA_ATMOS undefined) are unaffected.
@@ -50,12 +50,12 @@ in `vorestation.dme`. Default builds (USE_LINDA_ATMOS undefined) are unaffected.
 4. Update the commit hash above.
 5. Re-run `bash tools/verdigris/generate_atmos_bindings.sh` to refresh bindings.
 6. Run the LINDA-branch compile (toggle `#define USE_LINDA_ATMOS`) and diff the
-   error log against `modular_dq/doc/linda_compile_errors_by_file.txt`.
+   error log against `doc/linda_compile_errors_by_file.txt`.
 
 ## Why this exists despite not yet building
 
 The vendor is a **snapshot of /tg/'s LINDA atmos at a known good commit**. Per-file
 adaptation against CHOMP's infrastructure is the work that remains; see
-`modular_dq/doc/atmos_migration.md` "Phase 1.2 sub-structure" for the explicit
+`doc/atmos_migration.md` "Phase 1.2 sub-structure" for the explicit
 list. Keeping the vendor in tree (rather than re-cloning on every consumer-adaptation
 PR) lets each adaptation PR be small and focused on its single subsystem.

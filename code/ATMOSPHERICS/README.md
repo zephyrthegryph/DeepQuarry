@@ -1,8 +1,8 @@
-# modular_dq/code/atmospherics/
+# code/ATMOSPHERICS/
 
 Scaffold for the LINDA atmospherics migration. Gated behind `USE_LINDA_ATMOS`
-(see `modular_dq/code/__defines/atmospherics.dm`). **Not enabled by default**
-and currently incomplete — see `modular_dq/doc/atmos_migration.md` for the
+(see `code/__defines/atmospherics.dm`). **Not enabled by default**
+and currently incomplete — see `doc/atmos_migration.md` for the
 phased plan.
 
 ## Files
