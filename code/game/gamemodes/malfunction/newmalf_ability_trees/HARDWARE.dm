@@ -121,4 +121,4 @@
 					M.set_stat(DEAD)
 
 		if(SSticker.mode)
-			SSticker.mode:station_was_nuked = 1
+			SSticker.mode.station_was_nuked = 1
