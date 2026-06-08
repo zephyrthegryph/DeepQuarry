@@ -231,12 +231,6 @@ VIRGO2_TURF_CREATE(/turf/simulated/floor/hull)
 // === merged from maps/ during hard-fork flatten ===
 
 
-/turf/simulated/floor/maglev/unpowered
-	desc = "Magnetic levitation tram tracks. Unpowered? Looks like it. Safe? Your try."
-
-/turf/simulated/floor/maglev/unpowered/Entered(atom/movable/AM, atom/old_loc)
-	return // No zappy.
-
 /turf/simulated/mineral/thor
 
 /turf/simulated/mineral/thor/ignore_oregen

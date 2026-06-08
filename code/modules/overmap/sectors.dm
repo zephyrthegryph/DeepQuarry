@@ -51,7 +51,7 @@
 
 	var/mob_announce_cooldown = 0 //Define this to make it so when visited, the ATC will announce their arrival. Only used if you have a Crossed/Uncrossed that calls announce_atc w/ announce_atc being redefined.
 
-/obj/effect/overmap/visitable/Initialize(mapload, dyn_poi) // dyn_poi
+/obj/effect/overmap/visitable/Initialize(mapload)
 	. = ..()
 	if(. == INITIALIZE_HINT_QDEL)
 		return
@@ -66,20 +66,6 @@
 	start_y = start_y || rand(OVERMAP_EDGE, using_map.overmap_size - OVERMAP_EDGE)
 
 	forceMove(locate(start_x, start_y, using_map.overmap_z))
-
-	if(dyn_poi)
-		for(var/obj/effect/overmap/visitable/dynamic/poi/P in loc.contents) // If we've spawned on another poi, we'll try again once.
-			if(P == src)
-				continue
-			start_x = start_x || rand(OVERMAP_EDGE, global.using_map.overmap_size - OVERMAP_EDGE)
-			start_y = start_y || rand(OVERMAP_EDGE, global.using_map.overmap_size - OVERMAP_EDGE)
-			forceMove(locate(start_x, start_y, global.using_map.overmap_z))
-			break
-		var/sanity = 0
-		for(var/obj/effect/overmap/visitable/dynamic/poi/P in loc.contents)
-			sanity++
-			if(sanity > 1)
-				return INITIALIZE_HINT_QDEL
 
 	if(!docking_codes)
 		docking_codes = "[ascii2text(rand(65,90))][ascii2text(rand(65,90))][ascii2text(rand(65,90))][ascii2text(rand(65,90))]"
@@ -323,17 +309,6 @@
 		ChangeArea(T, A)
 
 	using_map.sealed_levels |= using_map.overmap_z
-
-	// Dynamic overmap POI generation is DISABLED pending content restoration.
-	// The dynamic-sector system (code/modules/overmap/dynamic_sector.dm) is intact,
-	// but its 40 POI templates (space_pois.dm) and the loot landmarks they place
-	// (loot_vr.dm) were removed in the "Tier 2 cleanup" (35c6976694) and only a
-	// /datum/map_template/dynamic_overmap stub remains, so the master would spawn
-	// zero POIs. To re-enable: recover space_pois.dm + space_areas.dm + loot_vr.dm
-	// from git history, drop the stub in code/modules/map_stubs/map_stubs.dm, then
-	// restore the master-creation line below.
-	// if(!GLOB.dynamic_sector_master) // hook dynamic sector generation into overmap gen
-	// new /obj/effect/overmap/visitable/dynamic // glob var assignment is handled in the object.
 
 	testing("Overmap build complete.")
 	return 1
