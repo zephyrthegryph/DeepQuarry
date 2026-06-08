@@ -18,12 +18,14 @@
 	headset_alt = /obj/item/radio/headset/centcom
 	headset_earbud = /obj/item/radio/headset/centcom
 
+/datum/decl/hierarchy/outfit/USDF/Marine/assign_access(obj/item/card/id/C, rank)
+	C.access = SSaccess.get_all_station_access()
+	C.access |= SSaccess.get_all_centcom_access()
+
 /datum/decl/hierarchy/outfit/USDF/Marine/equip_id(mob/living/carbon/human/H)
 	var/obj/item/card/id/C = ..()
 	C.name = "[H.real_name]'s military ID Card"
 	C.icon_state = "lifetime"
-	C.access = SSaccess.get_all_station_access()
-	C.access += SSaccess.get_all_centcom_access()
 	C.assignment = "USDF"
 	C.registered_name = H.real_name
 	return C
@@ -44,12 +46,14 @@
 	headset_alt = /obj/item/radio/headset/centcom
 	headset_earbud = /obj/item/radio/headset/centcom
 
+/datum/decl/hierarchy/outfit/USDF/Officer/assign_access(obj/item/card/id/C, rank)
+	C.access = SSaccess.get_all_station_access()
+	C.access |= SSaccess.get_all_centcom_access()
+
 /datum/decl/hierarchy/outfit/USDF/Officer/equip_id(mob/living/carbon/human/H)
 	var/obj/item/card/id/C = ..()
 	C.name = "[H.real_name]'s military ID Card"
 	C.icon_state = "lifetime"
-	C.access = SSaccess.get_all_station_access()
-	C.access += SSaccess.get_all_centcom_access()
 	C.assignment = "USDF"
 	C.registered_name = H.real_name
 	return C
@@ -68,12 +72,14 @@
 	headset_alt = /obj/item/radio/headset/centcom
 	headset_earbud = /obj/item/radio/headset/centcom
 
+/datum/decl/hierarchy/outfit/solcom/representative/assign_access(obj/item/card/id/C, rank)
+	C.access = SSaccess.get_all_station_access()
+	C.access |= SSaccess.get_all_centcom_access()
+
 /datum/decl/hierarchy/outfit/solcom/representative/equip_id(mob/living/carbon/human/H)
 	var/obj/item/card/id/C = ..()
 	C.name = "[H.real_name]'s SolGov ID Card" //YW EDIT: SolGov
 	C.icon_state = "lifetime"
-	C.access = SSaccess.get_all_station_access()
-	C.access += SSaccess.get_all_centcom_access()
 	C.assignment = "SolGov Representative" //YW EDIT: SolGov
 	C.registered_name = H.real_name
 	return C
