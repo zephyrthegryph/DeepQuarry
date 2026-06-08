@@ -87,7 +87,7 @@
 
 	switch(action)
 		if("celleject")
-			cell_eject()
+			cell_eject(ui.user)
 			return TRUE
 
 		if("cancel_healing")
@@ -156,12 +156,13 @@
 		return
 	tgui_interact(user)
 
-/obj/item/medigun_backpack/proc/cell_eject()
+/obj/item/medigun_backpack/proc/cell_eject(mob/user)
 	if(!ccell)
 		return FALSE
 	charging = FALSE
 	ccell.forceMove(get_turf(loc))
-	to_chat(usr, span_notice("You remove the [ccell] from \the [src]."))
+	if(user)
+		to_chat(user, span_notice("You remove the [ccell] from \the [src]."))
 	ccell = null
 	update_icon()
 	return TRUE
