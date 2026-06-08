@@ -1,3 +1,32 @@
+// Delivers an event to every program currently running on this computer
+// (both the active foreground program and all background idle threads) in a
+// single atomic pass.  Callers never need to know the active/idle split.
+//
+// event_type: one of COMPUTER_EVENT_POWERFAILURE, COMPUTER_EVENT_NETWORKFAILURE,
+//             COMPUTER_EVENT_IDREMOVED (defined in code/__defines/misc.dm).
+// context:    optional extra datum passed through to the event handler; currently
+//             unused but available for future expansion.
+/obj/item/modular_computer/proc/broadcast_event(event_type, context = null)
+	switch(event_type)
+		if(COMPUTER_EVENT_POWERFAILURE)
+			if(active_program)
+				active_program.event_powerfailure(0)
+			for(var/datum/computer_file/program/P in idle_threads)
+				P.event_powerfailure(1)
+
+		if(COMPUTER_EVENT_NETWORKFAILURE)
+			if(active_program && active_program.requires_ntnet && !get_ntnet_status(active_program.requires_ntnet_feature))
+				active_program.event_networkfailure(0)
+			for(var/datum/computer_file/program/P in idle_threads)
+				if(P.requires_ntnet && !get_ntnet_status(P.requires_ntnet_feature))
+					P.event_networkfailure(1)
+
+		if(COMPUTER_EVENT_IDREMOVED)
+			if(active_program)
+				active_program.event_idremoved(0)
+			for(var/datum/computer_file/program/P in idle_threads)
+				P.event_idremoved(1)
+
 /obj/item/modular_computer/process()
 	if(!enabled) // The computer is turned off
 		last_power_usage = 0
@@ -7,12 +36,8 @@
 		shutdown_computer()
 		return 0
 
-	if(active_program && active_program.requires_ntnet && !get_ntnet_status(active_program.requires_ntnet_feature)) // Active program requires NTNet to run but we've just lost connection. Crash.
-		active_program.event_networkfailure(0)
-
-	for(var/datum/computer_file/program/P in idle_threads)
-		if(P.requires_ntnet && !get_ntnet_status(P.requires_ntnet_feature))
-			P.event_networkfailure(1)
+	// Dispatch network failure event through the unified broadcast proc.
+	broadcast_event(COMPUTER_EVENT_NETWORKFAILURE)
 
 	if(active_program)
 		if(active_program.program_state != PROGRAM_STATE_KILLED)
