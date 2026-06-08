@@ -66,9 +66,7 @@
 
 				if(!reflecting)
 					reflecting = 1
-					spawn(2 SECONDS) //To ensure that most or all of a burst fire cycle is reflected.
-						to_chat(owner, span_danger("Your shield fades due being used up!"))
-						qdel(src)
+					addtimer(CALLBACK(src, PROC_REF(expire_reflect)), 2 SECONDS) //To ensure that most or all of a burst fire cycle is reflected.
 
 				return PROJECTILE_CONTINUE // complete projectile permutation
 
@@ -86,8 +84,10 @@
 
 				if(!reflecting)
 					reflecting = 1
-					spawn(2 SECONDS) //To ensure that most or all of a burst fire cycle is reflected.
-						to_chat(owner, span_danger("Your shield fades due being used up!"))
-						qdel(src)
+					addtimer(CALLBACK(src, PROC_REF(expire_reflect)), 2 SECONDS) //To ensure that most or all of a burst fire cycle is reflected.
 		return 1
 	return 0
+
+/obj/item/spell/reflect/proc/expire_reflect()
+	to_chat(owner, span_danger("Your shield fades due being used up!"))
+	qdel(src)

@@ -87,12 +87,13 @@
 // a lot of instability.
 /mob/living/proc/instability_effects()
 	last_instability_event = world.time
-	spawn(1)
-		var/image/instability_flash = image('icons/obj/spells.dmi',"instability")
-		add_overlay(instability_flash)
-		sleep(4)
-		cut_overlay(instability_flash)
-		qdel(instability_flash)
+	var/image/instability_flash = image('icons/obj/spells.dmi',"instability")
+	add_overlay(instability_flash)
+	addtimer(CALLBACK(src, PROC_REF(instability_flash_clear), instability_flash), 4)
+
+/mob/living/proc/instability_flash_clear(image/instability_flash)
+	cut_overlay(instability_flash)
+	qdel(instability_flash)
 
 /mob/living/silicon/instability_effects()
 	if(instability)
