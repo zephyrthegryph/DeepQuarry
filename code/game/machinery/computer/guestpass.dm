@@ -211,7 +211,7 @@
 		if("duration")
 			var/dur = tgui_input_number(ui.user, "Duration (in minutes) during which pass is valid (up to 360 minutes).", "Duration", null, 360, 0)
 			if(dur)
-				if(dur > 0 && dur <= 360) //VOREStation Edit
+				if(dur > 0 && dur <= 360)
 					duration = dur
 				else
 					to_chat(ui.user, span_warning("Invalid duration."))

@@ -129,9 +129,7 @@
 				src.stat |= MAINT
 				src.unwrenched = 1
 				if (user.check_current_machine(src))
-					// DQEdit Start — close TGUI panel (legacy browse(null))
 					SStgui.close_uis(src)
-					// DQEdit End
 		else /*if (unwrenched==1)*/
 			playsound(src, W.usesound, 50, 1)
 			to_chat(user, span_notice("You begin to fasten \the [src] to the floor..."))

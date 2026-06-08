@@ -71,7 +71,7 @@
 	var/client/C = client
 	C.prefs.copy_to(avatar)
 	avatar.key = key
-	for(var/lang in C.prefs.read_preference(/datum/preference/alternate_languages)) // DQEdit — migrated
+	for(var/lang in C.prefs.read_preference(/datum/preference/alternate_languages))
 		var/datum/language/chosen_language = GLOB.all_languages[lang]
 		if(chosen_language)
 			if(is_lang_whitelisted(usr,chosen_language) || (avatar.species && (chosen_language.name in avatar.species.secondary_langs)))

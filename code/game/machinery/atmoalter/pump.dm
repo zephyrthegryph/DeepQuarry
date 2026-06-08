@@ -76,7 +76,7 @@
 		var/pressure_delta
 		var/output_volume
 		var/air_temperature
-		// DQEdit — `* group_multiplier` dropped (always 1 under LINDA).
+		// `* group_multiplier` dropped (always 1 under LINDA).
 		if(direction_out)
 			pressure_delta = target_pressure - environment.return_pressure()
 			output_volume = environment.volume
@@ -103,7 +103,7 @@
 		last_power_draw = power_draw
 
 		update_connected_network()
-		// DQEdit — pump_gas mutated loc.return_air() directly when not piped
+		// pump_gas mutated loc.return_air() directly when not piped
 		// to a holding tank. Enroll the turf so SSair sees the change.
 		if(!holding && isturf(loc))
 			var/turf/open/T = loc

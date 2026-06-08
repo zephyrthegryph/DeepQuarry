@@ -233,7 +233,6 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 			to_chat(user, "You cannot refit a customised voidsuit.")
 			return
 
-		//VOREStation Edit BEGINS
 		//Make it so autolok suits can't be refitted in a cycler
 		if(istype(I,/obj/item/clothing/suit/space/void/autolok))
 			to_chat(user, "You cannot refit an autolok suit.")
@@ -243,7 +242,6 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 		if(istype(I,/obj/item/clothing/suit/space/void/responseteam))
 			to_chat(user, "The cycler indicates that the Mark VII Emergency Response Suit is not compatible with the refitting system.")
 			return
-		//VOREStation Edit ENDS
 
 		to_chat(user, "You fit \the [I] into the suit cycler.")
 		user.drop_item()

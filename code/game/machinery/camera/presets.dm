@@ -26,7 +26,7 @@ GLOBAL_LIST_INIT(engineering_networks, list(
 										NETWORK_ENGINE,
 										NETWORK_SUBSTATIONS, //YAWN ADD: new substations subnet
 										NETWORK_ENGINEERING,
-										//NETWORK_ENGINEERING_OUTPOST,	//VOREStation Edit: Tether has no Engineering Outpost,
+										//NETWORK_ENGINEERING_OUTPOST,
 										NETWORK_ALARM_ATMOS,
 										NETWORK_ALARM_FIRE,
 										NETWORK_ALARM_POWER))
@@ -117,12 +117,10 @@ GLOBAL_LIST_INIT(engineering_networks, list(
 	invuln = 1
 	always_visible = TRUE
 
-// CHOMPEdit Begin - Bodycams
 /obj/machinery/camera/network/bodycamera
 	network = list(NETWORK_BODYCAM)
 	invuln = 1
 	always_visible = TRUE
-// CHOMPEdit End
 
 // EMP
 

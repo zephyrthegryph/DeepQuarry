@@ -174,13 +174,11 @@
 		return !opacity
 	return !density
 
-// DQEdit — CanZASPass was a ZAS zone-graph hook that controlled whether the door
+// CanZASPass was a ZAS zone-graph hook that controlled whether the door
 // allowed adjacent zones to merge. LINDA tracks adjacency via /turf flags and
 // SSair.add_to_active, not through this hook. The override is dead under LINDA;
 // stub returns the old block-zones semantics so any callers from CHOMP machinery
 // still get a meaningful answer (matters until they're migrated to LINDA APIs).
-// DQEdit — was `proc/CanZASPass` declaration; the parent proc lives on /atom in
-// modular_dq/code/atmospherics/tg_infra_stubs.dm. This is the door override.
 /obj/machinery/door/CanZASPass(turf/T, is_zone)
 	if(is_zone)
 		return !block_air_zones
@@ -191,7 +189,7 @@
 		return
 	if(operating)
 		return
-	// DQEdit — ZAS airflow was deleted with the atmos migration; the old guard
+	// ZAS airflow was deleted with the atmos migration; the old guard
 	// suppressed bumpopen briefly after a mob got shoved by an airflow pulse so
 	// they didn't open the door they were tumbling through. LINDA has no airflow
 	// pulses, so the guard is unconditionally pass-through.
@@ -567,9 +565,8 @@
 		set_opacity(1)	//caaaaarn!
 	operating = 0
 
-	// DQEdit — /obj/fire was a ZAS hotspot type, deleted with the LINDA migration.
-	// LINDA tracks hotspots via /obj/effect/hotspot (vendored under
-	// modular_dq/code/atmospherics/environmental/LINDA_fire.dm). Switch to the
+	// /obj/fire was a ZAS hotspot type, deleted with the LINDA migration.
+	// LINDA tracks hotspots via /obj/effect/hotspot. Switch to the
 	// LINDA type so doors still extinguish fire underneath when they close.
 	var/obj/effect/hotspot/hotspot = locate() in loc
 	if(hotspot)

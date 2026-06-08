@@ -182,10 +182,10 @@ update_flag
 
 	if (src.health <= 10)
 		var/atom/location = src.loc
-		var/obj/machinery/atmospherics/portables_connector/port = locate() in location // CHOMPEdit - Finds if there's a port
+		var/obj/machinery/atmospherics/portables_connector/port = locate() in location
 		location.assume_air(air_contents)
 
-		if(port && anchored) // CHOMPEdit - if it blew up, frees up the port
+		if(port && anchored)
 			disconnect()
 			anchored = 0
 
@@ -225,7 +225,7 @@ update_flag
 			var/returnval = pump_gas_passive(src, air_contents, environment, transfer_moles)
 			if(returnval >= 0)
 				src.update_icon()
-				// DQEdit — pump_gas_passive directly mutates the turf's air mix via
+				// pump_gas_passive directly mutates the turf's air mix via
 				// the gas_mixture reference returned by loc.return_air(); it doesn't
 				// know what type of sink it's writing to, so it can't enroll a turf
 				// in SSair.active_turfs. Without this, under LINDA the gas lands on
@@ -445,7 +445,7 @@ update_flag
 //Dirty way to fill room with gas. However it is a bit easier to do than creating some floor/engine/n2o -rastaf0
 /obj/machinery/portable_atmospherics/canister/nitrous_oxide/roomfiller/Initialize(mapload)
 	. = ..()
-	air_contents.set_moles(/datum/gas/nitrous_oxide, 9*4000)  // DQEdit — was XGM .gas[id] = X
+	air_contents.set_moles(/datum/gas/nitrous_oxide, 9*4000)  // was XGM .gas[id] = X
 	var/turf/simulated/location = src.loc
 	if (istype(src.loc))
 		location.assume_air(air_contents)

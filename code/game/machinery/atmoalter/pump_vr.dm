@@ -57,7 +57,7 @@
 	var/pressure_delta
 	var/output_volume
 	var/air_temperature
-	// DQEdit — `* group_multiplier` dropped (always 1 under LINDA).
+	// `* group_multiplier` dropped (always 1 under LINDA).
 	if(direction_out)
 		pressure_delta = target_pressure - environment.return_pressure()
 		output_volume = environment.volume

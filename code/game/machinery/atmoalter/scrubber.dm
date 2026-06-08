@@ -76,7 +76,7 @@
 		last_power_draw = power_draw
 
 		update_connected_network()
-		// DQEdit — scrub_gas pulled from loc.return_air() directly when not
+		// scrub_gas pulled from loc.return_air() directly when not
 		// piped to a holding tank. Enroll the turf so SSair re-processes it.
 		if(!holding && isturf(loc))
 			var/turf/open/T = loc
@@ -154,16 +154,16 @@
 /obj/machinery/portable_atmospherics/powered/scrubber/huge
 	name = "Huge Air Scrubber"
 	desc = "A larger variation of the portable scrubber, for industrial scrubbing of air. Must be turned on from a remote terminal."
-	icon = 'icons/obj/atmos_vr.dmi' //VOREStation Edit - New Sprite
+	icon = 'icons/obj/atmos_vr.dmi'
 	icon_state = "scrubber:0"
 	anchored = TRUE
 	volume = 500000
 	volume_rate = 7000
 
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 50		//VOREStation Edit //internal circuitry, friction losses and stuff
-	active_power_usage = 1000	//VOREStation Edit // Blowers running
-	power_rating = 100000	//VOREStation Add //100 kW ~ 135 HP
+	idle_power_usage = 50		//internal circuitry, friction losses and stuff
+	active_power_usage = 1000	// Blowers running
+	power_rating = 100000	//100 kW ~ 135 HP
 
 	var/global/gid = 1
 	var/id = 0
