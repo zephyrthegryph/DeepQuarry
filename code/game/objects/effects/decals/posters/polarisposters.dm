@@ -291,7 +291,6 @@
 	The image seems important."
 	listing_name = "Safety - Mech Operation"
 
-//VOREStation Removal Start
 /*
 /datum/decl/poster/nanotrasen/nt_4
 	icon_state = "ntposter04"
@@ -299,7 +298,6 @@
 	desc = "This poster displays a distinctly hostile-looking red Promethean in a black coat. The fine-print around the edges warns the reader about the dangers posed by Almachi Prometheans."
 	listing_name = "Safety - Aetothean Danger"
 */
-//VOREstation Removal End
 
 /datum/decl/poster/nanotrasen/nt_5
 	icon_state = "ntposter05"

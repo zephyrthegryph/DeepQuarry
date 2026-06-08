@@ -80,8 +80,8 @@
 	light_power = 0.5
 	light_color = "#8837A3"
 
-/obj/effect/projectile/impact/precursor //CHOMPedit add precursor impact
-	icon = 'icons/obj/projectiles_ch.dmi'  // CHOMPEdit: Fix path + replace missing file
+/obj/effect/projectile/impact/precursor
+	icon = 'icons/obj/projectiles_ch.dmi'
 	icon_state = "impact_prec"
 	light_range = 2
 	light_power = 0.7
@@ -93,14 +93,12 @@
 	light_power = 3
 	light_color = "#3300ff"
 
-//VOREStation edit: medigun
 /obj/effect/projectile/impact/medigun
 	icon = 'icons/obj/projectiles_vr.dmi'
 	icon_state = "impact_medbeam"
 	light_range = 2
 	light_power = 0.5
 	light_color = "#80F5FF"
-//VOREStation edit ends
 /obj/effect/projectile/impact/pointdefense
 	icon_state = "impact_pointdef"
 

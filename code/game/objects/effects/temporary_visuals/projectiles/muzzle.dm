@@ -68,8 +68,8 @@
 	light_power = 0.5
 	light_color = "#8837A3"
 
-/obj/effect/projectile/muzzle/precursor //CHOMPedit add Precursor muzzle
-	icon = 'icons/obj/projectiles_ch.dmi' // CHOMPEdit: Fix path + replace missing file
+/obj/effect/projectile/muzzle/precursor
+	icon = 'icons/obj/projectiles_ch.dmi'
 	icon_state = "muzzle_prec"
 	light_range = 2
 	light_power = 0.7
@@ -105,14 +105,12 @@
 	light_power = 3
 	light_color = "#3300ff"
 
-//VOREStation edit: medigun
 /obj/effect/projectile/muzzle/medigun
 	icon = 'icons/obj/projectiles_vr.dmi'
 	icon_state = "muzzle_medbeam"
 	light_range = 2
 	light_power = 0.5
 	light_color = "#80F5FF"
-//VOREStation edit ends
 /obj/effect/projectile/muzzle/pointdefense
 	icon_state = "muzzle_pointdef"
 

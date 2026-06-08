@@ -8,15 +8,15 @@ GLOBAL_LIST_EMPTY(mapped_autostrips_mob)
 	invisibility = INVISIBILITY_BADMIN // nope cant see this shit
 	plane = ABOVE_PLANE
 	anchored = TRUE
-	icon = 'icons/mob/screen1.dmi' //VS Edit
-	icon_state = "centermarker" //VS Edit
+	icon = 'icons/mob/screen1.dmi'
+	icon_state = "centermarker"
 
 /obj/effect/step_trigger/proc/Trigger(atom/movable/A)
 	return 0
 
 /obj/effect/step_trigger/Crossed(atom/movable/H as mob|obj)
 	if((istype(H, /mob/observer) && !affect_ghosts) || (!istype(H, /mob/observer) && H.is_incorporeal() && !affect_ghosts))
-		return	//CHOMPEdit: Fixing some step trigger stuff to coincide with incorporeal check changes
+		return
 	..()
 	if(!H)
 		return

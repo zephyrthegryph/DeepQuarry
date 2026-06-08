@@ -2,7 +2,7 @@
 	desc = "You shouldn't see this."
 	listing_name = "N/A"
 
-/* //CHOMPedit: commenting out most of these posters as half are virgo staff and many others are not suitable for here.
+/*
 /datum/decl/poster/lewd/vore_2
 	icon_state = "sbsposter2"
 	name = "AroButt"
@@ -39,7 +39,7 @@
 	icon_state = "dwposter1"
 	name = "WANTED: WAR CRIMINAL"
 	desc = "A poster bringing awareness to the distinguishing costume of a known war criminal operating in Virgo-Erigonne space."
-*/ //CHOMPedit end
+*/
 /datum/decl/poster/vore_15
 	icon_state = "dwposter2"
 	name = "Implanter"
@@ -52,22 +52,22 @@
 	icon_state = "dwposter4"
 	name = "We know"
 	desc = "A poster purporting the infallibility of NanoTrasen's forensics department."
-/* //CHOMPedit
+/*
 /datum/decl/poster/vore_18
 	icon_state = "dwposter5"
 	name = "KAT"
 	desc = "A promotional poster for popular exotube show 'Kat-Kat Korner'"
-*/ //CHOMPedit end
+*/
 /datum/decl/poster/vore_19
 	icon_state = "dwposter6"
 	name = "install.css"
 	desc = "A nostalgia trip."
-/* //CHOMPedit
+/*
 /datum/decl/poster/vore_20
 	icon_state = "dwposter7"
 	name = "TALON"
 	desc = "The logo and banner of a notable group of contractors known to trade with NanoTrasen."
-*/ //CHOMPedit end
+*/
 /datum/decl/poster/vore_21
 	icon_state = "dwposter8"
 	name = "GPA"
@@ -358,7 +358,7 @@
 	icon_state = "tgposter62"
 	name = "Pin the Tail on the Corgi"
 	desc = "A concerned corgi looks at you as it stands and waits, a target overlays its rear end, seemingly waiting for someone to attatch a tail to it, which, it seems to be missing."
-/* //CHOMPedit start
+/*
 /datum/decl/poster/vore_94
 	icon_state = "virgologoposter"
 	name = "Virgo Orbital Research Establishment"
@@ -391,4 +391,4 @@
 	icon_state = "cafejoanposter"
 	name = "Cafe Risu"
 	desc = "A poster depicting a familiar face readying to slurp a big mug of coffee. The face of addiction is not always unpleasant. Sometimes it takes the form of a pretty squirrel partaking of her morning treat..."
-*/ //CHOMPedit end
+*/

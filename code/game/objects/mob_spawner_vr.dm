@@ -29,7 +29,6 @@
 
 /obj/structure/mob_spawner/Destroy()
 	STOP_PROCESSING(SSobj, src)
-	//CHOMPEdit Start
 	for(var/spawned in spawned_mobs)
 		if(istype(spawned, /mob/living))
 			var/mob/living/L = spawned
@@ -37,7 +36,6 @@
 		if(istype(spawned, /obj/structure/closet/crate/mimic))
 			var/obj/structure/closet/crate/mimic/O = spawned
 			O.nest = null
-	//CHOMPEdit End
 	spawned_mobs.Cut()
 	return ..()
 
@@ -63,7 +61,6 @@
 /obj/structure/mob_spawner/proc/do_spawn(mob_path)
 	if(!ispath(mob_path))
 		return 0
-	//CHOMPEdit Start
 	if(!ispath(mob_path, /mob/living) && !ispath(mob_path, /obj/structure/closet/crate/mimic))
 		return 0
 	last_spawn = world.time
@@ -82,7 +79,6 @@
 		O.nest = src
 		return O
 	return 0
-	//CHOMPEdit End
 
 /obj/structure/mob_spawner/proc/get_death_report(mob/living/L)
 	if(L in spawned_mobs)
@@ -132,7 +128,6 @@ It also makes it so a ghost wont know where all the goodies/mobs are.
 /obj/structure/mob_spawner/scanner
 	name ="Lazy Mob Spawner"
 	var/range = 10 //range in tiles from the spawner to detect moving stuff
-//CHOMPEdit Begin
 	var/datum/proximity_monitor/mobspawner/prox
 	var/list/mobs_in_range = list()
 
@@ -140,7 +135,6 @@ It also makes it so a ghost wont know where all the goodies/mobs are.
 	. = ..()
 	prox = new(src, range)
 
-//CHOMPEdit Start
 /obj/structure/mob_spawner/scanner/do_spawn(mob_path)
 	if(!ispath(mob_path))
 		return 0
@@ -173,7 +167,6 @@ It also makes it so a ghost wont know where all the goodies/mobs are.
 		O.nest = spawn_turf
 		return O
 	return 0
-//CHOMPEdit End
 
 /obj/structure/mob_spawner/scanner/proc/NewProximity(atom/movable/AM)
 	if(istype(AM,/mob/living) && !(AM in mobs_in_range))
@@ -184,12 +177,9 @@ It also makes it so a ghost wont know where all the goodies/mobs are.
 	if((AM in mobs_in_range) && (!AM || get_dist(src,new_loc) > range))
 		mobs_in_range -= AM
 
-//CHOMPEdit End
-
 /obj/structure/mob_spawner/scanner/process()
 	if(!can_spawn())
 		return
-	//CHOMPEdit Begin
 	if(world.time > last_spawn + spawn_delay)
 		for(var/mob/living/A in mobs_in_range) //No more calling fucking range(10) every goddamn processing tick, christ.
 			if ((A.faction != mob_faction) && A.ckey)
@@ -197,7 +187,6 @@ It also makes it so a ghost wont know where all the goodies/mobs are.
 				if(chosen_mob)
 					do_spawn(chosen_mob)
 					break //ALSO NO SPAWNING MULTIPLE MOBS
-	//CHOMPEdit End
 
 //////////////
 // Spawners //

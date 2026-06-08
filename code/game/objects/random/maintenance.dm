@@ -103,7 +103,6 @@ something, make sure it's not in one of the other lists.*/
 				prob(2);/obj/item/camera,
 				prob(3);/obj/item/pda,
 				prob(3);/obj/item/radio/headset,
-				/* VOREStation Edit Start */
 				prob(3);/obj/item/toy/monster_bait,
 				prob(2);/obj/item/toy/tennis,
 				prob(2);/obj/item/toy/tennis/red,
@@ -120,7 +119,6 @@ something, make sure it's not in one of the other lists.*/
 				prob(1);/obj/random/potion_ingredient/plus,
 				prob(2);/obj/random/translator,
 				prob(1);/obj/random/shibari
-				/* VOREStation Edit End */
 				)
 
 /obj/random/maintenance/security

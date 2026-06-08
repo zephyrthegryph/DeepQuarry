@@ -46,10 +46,10 @@
 
 	linked_node = node
 //	if(newcolor)
-//		color = newcolor // CHOMPedit: No coloration.
+//		color = newcolor
 
 	if(icon_state == "weeds")
-		icon_state = pick("weeds", "weeds1", "weeds2", "weeds3", "weeds4", "weeds5", "weeds6", "weeds7", "weeds8", "weeds9", "weeds10", "weeds11", "weeds12", "weeds13", "weeds14", "weeds15") // CHOMPedit: More icons variants.
+		icon_state = pick("weeds", "weeds1", "weeds2", "weeds3", "weeds4", "weeds5", "weeds6", "weeds7", "weeds8", "weeds9", "weeds10", "weeds11", "weeds12", "weeds13", "weeds14", "weeds15")
 
 	fullUpdateWeedOverlays()
 
@@ -74,7 +74,7 @@
 	light_color = "#673972"
 
 	var/node_range = NODERANGE
-//	var/set_color = "#321D37" // CHOMPedit:  Removing coloration.
+//	var/set_color = "#321D37"
 
 /obj/effect/alien/weeds/node/Initialize(mapload, node, newcolor)
 	. = ..()
@@ -93,7 +93,7 @@
 //	if(newcolor)
 //		set_color = newcolor
 //	if(set_color)
-//		color = set_color // CHOMPedit: Removing coloration.
+//		color = set_color
 
 	START_PROCESSING(SSobj, src) // Only the node processes in a subsystem, the rest are process()'d by the node
 
@@ -155,7 +155,7 @@
 		if(T1.c_airblock(T2) == BLOCKED)
 			continue
 
-		new /obj/effect/alien/weeds(T2, linked_node) // CHOMPedit: No coloration.
+		new /obj/effect/alien/weeds(T2, linked_node)
 
 /obj/effect/alien/weeds/node/process()
 	set background = 1
@@ -170,7 +170,7 @@
 		if(!W.linked_node)
 			W.linked_node = src
 
-//		W.color = W.linked_node.set_color // CHOMPedit: No coloration.
+//		W.color = W.linked_node.set_color
 
 		if(prob(max(10, 60 - (5 * nearby_weeds.len))))
 			W.process()
@@ -228,20 +228,19 @@
 		health -= 5
 		healthcheck()
 
-// CHOMPedit start - Smaller-ranged nodes for Xenomorph Hybrids, node/weed deletion.
 /obj/effect/alien/weeds/attack_hand(mob/user as mob)
-	usr.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
-	if (HULK in usr.mutations)
-		visible_message(span_warning("[usr] destroys the [name]!"))
+	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
+	if (HULK in user.mutations)
+		visible_message(span_warning("[user] destroys the [name]!"))
 		health = 0
 	else
 
 		// Aliens can get straight through these.
-		if(istype(usr,/mob/living/carbon))
+		if(istype(user,/mob/living/carbon))
 			if(user.a_intent == I_HURT)
-				var/mob/living/carbon/M = usr
+				var/mob/living/carbon/M = user
 				if(locate(/obj/item/organ/internal/xenos/hivenode) in M.internal_organs)
-					visible_message (span_warning("[usr] strokes the [name] and it melts away!"), 1)
+					visible_message (span_warning("[user] strokes the [name] and it melts away!"), 1)
 					health = 0
 					healthcheck()
 					return
@@ -251,7 +250,6 @@
 /obj/effect/alien/weeds/node/weak
 	light_range = 2
 	node_range = 1
-// CHOMPedit end.
 
 #undef NODERANGE
 #undef WEED_NORTH_EDGING

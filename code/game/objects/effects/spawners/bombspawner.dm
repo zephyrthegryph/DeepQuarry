@@ -60,10 +60,6 @@ ADMIN_VERB(spawn_tanktransferbomb, R_SPAWN, "Instant TTV", "Spawn a tank transfe
 	OT.master = V
 
 	PT.valve_welded = 1
-	// DQEdit — XGM exposed total_moles as a writable var; LINDA exposes it only
-	// as a computed proc. The total is implied by the adjust_gas calls above —
-	// dropping the assignment is correct, and update_values() is a no-op under
-	// auxmos archiving.
 	PT.air_contents.adjust_gas(GAS_PHORON, (phoron_amt) - LINDA_GAS_AMT(PT.air_contents, GAS_PHORON))
 	PT.air_contents.adjust_gas(GAS_CO2, (carbon_amt) - LINDA_GAS_AMT(PT.air_contents, GAS_CO2))
 	PT.air_contents.temperature = PHORON_MINIMUM_BURN_TEMPERATURE+1

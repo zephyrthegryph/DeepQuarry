@@ -9,9 +9,7 @@
 	var/image/blood_overlay = null //this saves our blood splatter overlay, which will be processed not to go over the edges of the sprite
 	var/randpixel = 6
 	var/abstract = 0
-	// DQEdit — r_speed removed (dead, 0 refs)
 	var/health = null
-	// DQEdit — burn_point removed (dead, 0 refs)
 	var/burning = null
 	var/hitsound = "swing_hit"
 	var/usesound = null // Like hitsound, but for when used properly and not to kill someone.
@@ -330,12 +328,12 @@
 /obj/item/attack_hand(mob/living/user as mob)
 	if (!user) return
 	..()
-	if(anchored) // Start CHOMPStation Edit
+	if(anchored)
 		if(hascall(src, "attack_self"))
 			return src.attack_self(user)
 		else
 			to_chat(user, span_notice("This is anchored and you can't lift it."))
-		return // End CHOMPStation Edit
+		return
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
 		var/obj/item/organ/external/temp = H.organs_by_name[BP_R_HAND]
@@ -370,15 +368,13 @@
 			var/obj/effect/temporary_effect/item_pickup_ghost/ghost = new(old_loc)
 			ghost.assumeform(src)
 			ghost.animate_towards(user)
-	//VORESTATION EDIT START. This handles possessed items.
-	if(src.possessed_voice && src.possessed_voice.len > 1 && !(user.ckey in warned_of_possession)) // CHOMPEdit Is this item possessed?
+	if(src.possessed_voice && src.possessed_voice.len > 1 && !(user.ckey in warned_of_possession))
 		warned_of_possession |= user.ckey
 		tgui_alert_async(user,{"
 		THIS ITEM IS POSSESSED BY A PLAYER CURRENTLY IN THE ROUND. This could be by anomalous means or otherwise.
 		If this is not something you wish to partake in, it is highly suggested you place the item back down.
 		If this is fine to you, ensure that the other player is fine with you doing things to them beforehand!
 		"},"OOC Warning")
-	//VORESTATION EDIT END.
 	return
 
 /obj/item/attack_ai(mob/user as mob)
@@ -607,7 +603,7 @@ GLOBAL_LIST_INIT(slot_flags_enumeration, list(
 				return 0
 			if(!H.wear_suit.allowed)
 				if(!disable_warning)
-					to_chat(usr, span_warning("You somehow have a suit with no defined allowed items for suit storage, stop that."))
+					to_chat(H, span_warning("You somehow have a suit with no defined allowed items for suit storage, stop that."))
 				return 0
 			if( !(istype(src, /obj/item/pda) || istype(src, /obj/item/pen) || is_type_in_list(src, H.wear_suit.allowed)) )
 				return 0
@@ -661,7 +657,7 @@ GLOBAL_LIST_INIT(slot_flags_enumeration, list(
 		return
 	if(!usr.canmove || usr.stat || usr.restrained() || !Adjacent(usr) || usr.is_incorporeal())
 		return
-	if(isanimal(usr))	//VOREStation Edit Start - Allows simple mobs with hands to use the pickup verb
+	if(isanimal(usr))
 		var/mob/living/simple_mob/s = usr
 		if(!s.has_hands)
 			to_chat(usr, span_warning("You can't pick things up!"))
@@ -676,7 +672,7 @@ GLOBAL_LIST_INIT(slot_flags_enumeration, list(
 	if(src.anchored) //Object isn't anchored
 		to_chat(usr, span_warning("You can't pick that up!"))
 		return
-	if(L.get_active_hand()) //Hand is not full	//VOREStation Edit End
+	if(L.get_active_hand()) //Hand is not full
 		to_chat(usr, span_warning("Your hand is full."))
 		return
 	if(!isturf(src.loc)) //Object is on a turf
@@ -845,8 +841,6 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 /// For zooming with scope or binoculars. Uses remote_view/item component for disabling when you move or drop the item
 /obj/item/proc/zoom(mob/living/M, tileoffset = 14,viewsize = 9) //tileoffset is client view offset in the direction the user is facing. viewsize is how far out this thing zooms. 7 is normal view
 	SIGNAL_HANDLER
-	if(isliving(usr)) //Always prefer usr if set
-		M = usr
 	if(!M.client)
 		return FALSE
 	if(!isliving(M))

@@ -120,7 +120,7 @@
 		if(!SSantag_job.player_is_antag(player.mind) && player.mind.show_in_directory)
 			recipients += player
 
-	recipient_mob = tgui_input_list(usr, "Choose recipient", "Recipients", recipients, recipients)
+	recipient_mob = tgui_input_list(user, "Choose recipient", "Recipients", recipients, recipients)
 
 	if(recipient_mob)
 		initialize_for_recipient(recipient_mob.mind, preset_goodies = TRUE)

@@ -71,7 +71,7 @@
 	icon_state = "radren-off"
 
 /obj/random/vendorall/item_to_spawn()
-	return pick (prob(5);/obj/machinery/vending/coffee,	//VOREStation Edit Start - Let's weight this a little bit
+	return pick (prob(5);/obj/machinery/vending/coffee,
 				prob(5);/obj/machinery/vending/snack,
 				prob(5);/obj/machinery/vending/cola,
 				prob(3);/obj/machinery/vending/fitness,
@@ -86,7 +86,7 @@
 				prob(5);/obj/machinery/vending/radren,
 				prob(3);/obj/machinery/vending/altevian,
 				prob(5);/obj/machinery/vending/desatti,
-				prob(5);/obj/machinery/vending/nukie) //VOREStation Edit End
+				prob(5);/obj/machinery/vending/nukie)
 
 /obj/random/vendorfood //Random food vendors for station use
 	name = "random snack vending machine"
@@ -109,7 +109,6 @@
 	icon = 'icons/obj/vending.dmi'
 	icon_state = "Cola_Machine"
 
-//VOREStation Edit Start
 /obj/random/vendordrink/item_to_spawn() //Not including coffee as it's more specific in usage.
 	return pick (/obj/machinery/vending/cola,
 				/obj/machinery/vending/cola/soft,
@@ -117,7 +116,6 @@
 				/obj/machinery/vending/sovietsoda,
 				/obj/machinery/vending/radren,
 				/obj/machinery/vending/nukie)
-//VOREStation Edit End
 
 /obj/random/obstruction //Large objects to block things off in maintenance
 	name = "random obstruction"
@@ -1510,7 +1508,6 @@
 				/obj/random/multiple/large_corp_crate
 			)
 		)
-//VOREStation Add - Random good, no guns gooder
 /obj/random/multiple/random_size_crate/no_weapons
 	name = "random size corporate crate (no weapons)"
 	desc = "A random size corporate crate with thematic contents: prefers small crates."
@@ -1531,7 +1528,6 @@
 /obj/random/multiple/random_size_crate/no_weapons/nofail
 	spawn_nothing_percentage = 0
 
-//VOREStation Add End
 /*
  * Turf swappers.
  */
@@ -1572,7 +1568,6 @@
 				prob(3);/turf/simulated/floor/outdoors/rocks/caves,
 				prob(1);/turf/simulated/mineral/ignore_mapgen/cave)
 
-//VOREStation Add Start - Underdark stuff that would be cool if existed if the underdark doesn't.
 
 /obj/random/underdark
 	name = "random underdark loot"
@@ -1761,7 +1756,6 @@
 				prob(2);list(/obj/item/mecha_parts/mecha_equipment/weapon/energy/flamer/rigged),
 				prob(1);list(/obj/item/mecha_parts/mecha_equipment/tool/drill/diamonddrill),
 				)
-//VOREStation Add End
 
 /obj/random/multiple/corp_crate_supply
 	name = "random corporate supply crate"

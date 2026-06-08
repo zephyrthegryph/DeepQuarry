@@ -14,15 +14,15 @@
 	var/amount = 3
 	var/expand = 1
 	var/metal = 0
-	var/dries = 1 //VOREStation Add
-	var/slips = 0 //VOREStation Add
+	var/dries = 1
+	var/slips = 0
 
 /obj/effect/effect/foam/Initialize(mapload, ismetal = 0)
 	. = ..()
-	//icon_state = "[ismetal? "m" : ""]foam" //VOREStation Removal
+	//icon_state = "[ismetal? "m" : ""]foam"
 	metal = ismetal
 	playsound(src, 'sound/effects/bubbles2.ogg', 80, 1, -3)
-	if(dries) //VOREStation Add
+	if(dries)
 		addtimer(CALLBACK(src, PROC_REF(post_spread)), 3 + metal * 3)
 		addtimer(CALLBACK(src, PROC_REF(pre_harden)), 12 SECONDS)
 		addtimer(CALLBACK(src, PROC_REF(harden)), 15 SECONDS)
@@ -32,7 +32,7 @@
 	checkReagents()
 
 /obj/effect/effect/foam/proc/pre_harden()
-	return //VOREStation Edit
+	return
 
 /obj/effect/effect/foam/proc/harden()
 	if(metal)
@@ -85,7 +85,7 @@
 		return
 	if(metal)
 		return
-	if(slips && isliving(AM)) //VOREStation Add
+	if(slips && isliving(AM))
 		var/mob/living/M = AM
 		M.slip("the foam", 6)
 

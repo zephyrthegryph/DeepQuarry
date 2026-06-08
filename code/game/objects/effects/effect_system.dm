@@ -199,7 +199,7 @@ would spawn and follow the beaker, even if it is carried or thrown.
 		return 0
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
-		if(!M.get_organ(O_LUNGS)) // CHOMPedit - Making sure smoke doesn't affect lungless people
+		if(!M.get_organ(O_LUNGS))
 			return 0
 		if(H.head && (H.head.item_flags & AIRTIGHT))
 			return 0

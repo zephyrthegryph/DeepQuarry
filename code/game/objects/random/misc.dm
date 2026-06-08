@@ -244,11 +244,11 @@
 	return pick(prob(10);/obj/item/storage/firstaid/regular,
 				prob(8);/obj/item/storage/firstaid/toxin,
 				prob(8);/obj/item/storage/firstaid/o2,
-				prob(4);/obj/item/storage/firstaid/adv, //VOREStation Edit: 6 to 4
+				prob(4);/obj/item/storage/firstaid/adv,
 				prob(8);/obj/item/storage/firstaid/fire,
-				prob(1);/obj/item/denecrotizer/medical, //VOREStation Add,
+				prob(1);/obj/item/denecrotizer/medical,
 				prob(1);/obj/item/storage/firstaid/combat,
-				prob(2);/obj/item/storage/firstaid/experimental) //CHOMPadd
+				prob(2);/obj/item/storage/firstaid/experimental)
 
 /obj/random/contraband
 	name = "Random Illegal Item"
@@ -257,7 +257,7 @@
 	spawn_nothing_percentage = 50
 
 /obj/random/contraband/item_to_spawn()
-	return pick(prob(6);/obj/item/storage/pill_bottle/paracetamol, //VOREStation Edit,
+	return pick(prob(6);/obj/item/storage/pill_bottle/paracetamol,
 				prob(4);/obj/item/storage/pill_bottle/happy,
 				prob(4);/obj/item/storage/pill_bottle/zoom,
 				prob(4);/obj/item/material/butterfly,
@@ -668,11 +668,8 @@
 				prob(2);/obj/item/coin/lead,
 				prob(1);/obj/item/coin/diamond)
 
-//VOREStation Add Start
 /obj/random/coin/sometimes
 	spawn_nothing_percentage = 66
-
-//VOREStation Add End
 
 /obj/random/action_figure
 	name = "random action figure"
@@ -761,7 +758,7 @@
 				/obj/item/toy/plushie/white_cat,
 				/obj/item/toy/plushie/lizardplushie,
 				/obj/item/toy/plushie/lizardplushie/kobold,
-//				/obj/item/toy/plushie/lizardplushie/resh, //CHOMPedit
+//				/obj/item/toy/plushie/lizardplushie/resh,
 				/obj/item/toy/plushie/slimeplushie,
 				/obj/item/toy/plushie/box,
 				/obj/item/toy/plushie/borgplushie,
@@ -781,17 +778,12 @@
 							/obj/item/toy/plushie/borgplushie/drake/eng,
 							/obj/item/toy/plushie/borgplushie/drake/mine,
 							/obj/item/toy/plushie/borgplushie/drake/trauma)),
-				//VOREStation Add End
-				//YawnWider Add Start
 				/obj/item/toy/plushie/teshari/_yw,
 				/obj/item/toy/plushie/teshari/w_yw,
 				/obj/item/toy/plushie/teshari/b_yw,
 				/obj/item/toy/plushie/teshari/y_yw,
-				//YawnWider Add End
-				//CHOMPStation Add Start
 				/obj/item/toy/plushie/teppi,
 				/obj/item/toy/plushie/teppi/alt,
-				//CHOMPStation Add End
 				pick(list(/obj/item/toy/plushie/dragon,
 							/obj/item/toy/plushie/dragon/green,
 							/obj/item/toy/plushie/dragon/purple,
@@ -1118,7 +1110,7 @@
 			/obj/item/reagent_containers/food/drinks/glass2/coffeemug/green,
 			/obj/item/reagent_containers/food/drinks/glass2/coffeemug/green/dark,
 			/obj/item/reagent_containers/food/drinks/glass2/coffeemug/rainbow,
-			/obj/item/reagent_containers/food/drinks/glass2/coffeemug/metal) //CHOMPedit: deleted talon mug
+			/obj/item/reagent_containers/food/drinks/glass2/coffeemug/metal)
 
 /obj/random/donkpocketbox
 	name = "Random Donk-pocket Box"

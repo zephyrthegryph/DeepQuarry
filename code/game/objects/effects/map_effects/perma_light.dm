@@ -28,7 +28,6 @@
 
 	light_color = LIGHT_COLOR_INCANDESCENT_TUBE
 
-// VOREStation Addition Start
 /obj/effect/map_effect/perma_light/gateway
 	name = "permanent light (gateway)"
 	icon_state = "permalight"
@@ -36,4 +35,3 @@
 	light_range = 10
 	light_power = 5
 	light_color = "#b6cdff"
-// VOREStation Addition End
