@@ -1,9 +1,0 @@
-# Generated from cruiser.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
-width = 118
-height = 273
-cols = 1
-
-[[state]]
-name = "skybox"
-dirs = 1
-frames = 1

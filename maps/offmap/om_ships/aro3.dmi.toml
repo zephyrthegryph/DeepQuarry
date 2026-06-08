@@ -1,9 +1,0 @@
-# Generated from aro3.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
-width = 172
-height = 286
-cols = 1
-
-[[state]]
-name = "skybox"
-dirs = 1
-frames = 1
