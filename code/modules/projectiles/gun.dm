@@ -110,6 +110,12 @@
 	///Var for attack_self chain
 	var/special_handling = FALSE
 
+	// Decomposition datums (see gun_datums.dm).
+	// These mirror the tmp/ aim vars and sel_mode/firemodes list; both paths
+	// stay in sync so legacy code that reads the vars directly continues to work.
+	var/datum/gun_aim_state/aim_state = null
+	var/datum/gun_firemode_selector/firemode_selector = null
+
 /obj/item/gun/item_ctrl_click(mob/user)
 	if(can_flashlight && ishuman(user) && loc == user && !user.incapacitated(INCAPACITATION_ALL))
 		toggle_flashlight()
@@ -146,6 +152,17 @@
 	if(sel_mode <= length(firemodes))
 		var/datum/firemode/new_mode = firemodes[sel_mode]
 		new_mode.apply_to(src)
+
+	// Initialise decomposition datums.
+	aim_state          = new /datum/gun_aim_state(src)
+	firemode_selector  = new /datum/gun_firemode_selector(src)
+
+/obj/item/gun/Destroy()
+	QDEL_NULL(aim_state)
+	QDEL_NULL(firemode_selector)
+	// The attached_lock is parented to src (loc = src), qdel cascade handles it.
+	attached_lock = null
+	return ..()
 
 /obj/item/gun/update_twohanding()
 	if(one_handed_penalty)
@@ -542,7 +559,9 @@
 				target = targloc
 
 			if(ticker < burst)
-				addtimer(CALLBACK(src, PROC_REF(handle_gunfire),target, ++ticker, TRUE), burst_delay, TIMER_DELETE_ME)
+				// Bug fix: was incorrectly calling handle_gunfire (which requires a user arg);
+				// userless firing loop must recurse into handle_userless_gunfire.
+				addtimer(CALLBACK(src, PROC_REF(handle_userless_gunfire), target, ++ticker, TRUE), burst_delay, TIMER_DELETE_ME)
 
 	add_attack_logs(src,target,"Fired [src.name] (Unmanned)")
 
@@ -785,12 +804,20 @@
 /obj/item/gun/examine(mob/user)
 	. = ..()
 	if(firemodes.len > 1)
-		var/datum/firemode/current_mode = firemodes[sel_mode]
-		. += "The fire selector is set to [current_mode.name]."
+		var/description = firemode_selector ? firemode_selector.describe() : null
+		if(!description)
+			var/datum/firemode/current_mode = firemodes[sel_mode]
+			description = "The fire selector is set to [current_mode.name]."
+		. += description
 
 /obj/item/gun/proc/switch_firemodes(mob/user)
 	if(firemodes.len <= 1)
 		return null
+
+	// Delegate to the selector datum when available; fall back to inline logic
+	// so guns that never call Initialize() still work.
+	if(firemode_selector)
+		return firemode_selector.cycle(user)
 
 	sel_mode++
 	if(sel_mode > firemodes.len)

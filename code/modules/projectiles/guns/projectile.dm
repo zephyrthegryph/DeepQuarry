@@ -37,6 +37,10 @@
 	///Var for attack_self chain
 	var/special_weapon_handling = FALSE
 
+	/// Ammo provider datum (see ammo_provider.dm).  Set in Initialize() based on
+	/// load_method.  Provides a unified get_next_round()/unload() interface.
+	var/datum/ammo_provider/ammo_provider = null
+
 /obj/item/gun/projectile/Initialize(mapload, starts_loaded = 1)
 	. = ..()
 	if(starts_loaded)
@@ -52,7 +56,24 @@
 				var/ammo_cut = rand(0,ammo_magazine.max_ammo)
 				ammo_magazine.contents.Cut(0,ammo_cut)
 				ammo_magazine.stored_ammo.Cut(0,ammo_cut)
+
+	// Create the appropriate ammo provider for this gun's load method.
+	if(load_method & MAGAZINE)
+		ammo_provider = new /datum/ammo_provider/magazine(src)
+	else
+		// SINGLE_CASING and SPEEDLOADER share the same provider type since they
+		// both use the `loaded` list; the allow_dump flag in unload() distinguishes
+		// speedloader behaviour.
+		ammo_provider = new /datum/ammo_provider/single_casing(src)
+
 	update_icon()
+
+/obj/item/gun/projectile/Destroy()
+	QDEL_NULL(ammo_provider)
+	loaded = null
+	ammo_magazine = null
+	chambered = null
+	return ..()
 
 /obj/item/gun/projectile/consume_next_projectile()
 	if(!manual_chamber) //CHOMPEdit Start - Manual Chambering
@@ -122,8 +143,10 @@
 		M?.hud_used.update_ammo_hud(M, src)
 
 
-//Attempts to load A into src, depending on the type of thing being loaded and the load_method
-//Maybe this should be broken up into separate procs for each load method?
+// Attempts to load A into src, depending on the type of thing being loaded and the load_method.
+// For magazine and single-casing loads the ammo_provider datum (see ammo_provider.dm)
+// provides an alternative API; this proc remains for all direct-attach paths (storage
+// bulk-loading, speedloader intermediate step) that need the full switch logic.
 /obj/item/gun/projectile/proc/load_ammo(obj/item/A, mob/user)
 	if(istype(A, /obj/item/ammo_magazine))
 		var/obj/item/ammo_magazine/AM = A
