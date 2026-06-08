@@ -326,8 +326,16 @@
 
 	using_map.sealed_levels |= using_map.overmap_z
 
-	if(!GLOB.dynamic_sector_master) //CHOMPedit: hook dynamic sector generation into overmap gen
-		new /obj/effect/overmap/visitable/dynamic // CHOMPedit, glob var assignment is handled in the object.
+	// Dynamic overmap POI generation is DISABLED pending content restoration.
+	// The dynamic-sector system (code/modules/overmap/dynamic_sector.dm) is intact,
+	// but its 40 POI templates (space_pois.dm) and the loot landmarks they place
+	// (loot_vr.dm) were removed in the "Tier 2 cleanup" (35c6976694) and only a
+	// /datum/map_template/dynamic_overmap stub remains, so the master would spawn
+	// zero POIs. To re-enable: recover space_pois.dm + space_areas.dm + loot_vr.dm
+	// from git history, drop the stub in code/modules/map_stubs/map_stubs.dm, then
+	// restore the master-creation line below.
+	// if(!GLOB.dynamic_sector_master) //CHOMPedit: hook dynamic sector generation into overmap gen
+	// 	new /obj/effect/overmap/visitable/dynamic // CHOMPedit, glob var assignment is handled in the object.
 
 	testing("Overmap build complete.")
 	return 1
