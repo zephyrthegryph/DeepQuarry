@@ -1,4 +1,7 @@
 /datum/element/spontaneous_vore
+	/// Automatically call Detach() when the host mob is qdel'd, so signal
+	/// registrations are explicitly cleaned up rather than relying on implicit GC.
+	element_flags = ELEMENT_DETACH_ON_HOST_DESTROY
 
 /datum/element/spontaneous_vore/Attach(datum/target)
 	. = ..()
