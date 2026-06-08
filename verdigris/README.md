@@ -99,6 +99,9 @@ DreamDaemon with no DM-side stack. `panic_safe!` catches and converts to a
 The hook is installed lazily on first `panic_safe!` invocation and eagerly via
 `verdigris_init()` (called from `/world/New()` in `_verdigris.dm`).
 
+All current `#[byond_fn]` entry points (`verdigris_version`, `verdigris_features`,
+`verdigris_init`, `cleanup`, `generate_automata`) are wrapped in `panic_safe!`.
+
 ### Rule 2 — No strings in hot paths
 
 Every FFI call costs microseconds (byondapi marshalling). String allocations
