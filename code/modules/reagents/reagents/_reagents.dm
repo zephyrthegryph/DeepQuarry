@@ -230,6 +230,11 @@
 /datum/reagent/proc/initialize_data(newdata) // Called when the reagent is created.
 	if(!isnull(newdata))
 		data = newdata
+	// Ensure data is a proper list instance for reagents that declare data = list(...).
+	// If the type-default data is a list and we received no newdata, make a per-instance
+	// shallow copy so subtypes do not share a single mutable list across all instances.
+	else if(islist(data))
+		data = data.Copy()
 	return
 
 /datum/reagent/proc/mix_data(newdata, newamount) // You have a reagent with data, and new reagent with its own data get added, how do you deal with that?
@@ -241,6 +246,26 @@
 	else if(data)
 		return data
 	return null
+
+/// Returns a list of keys this reagent's data assoc list must always contain, or null if this
+/// reagent uses no structured data. Subtypes override to document their schema.
+/// Used by validate_data() to detect missing keys introduced by code changes.
+/datum/reagent/proc/get_data_schema()
+	return null
+
+/// Validates that the data assoc list contains all keys declared by get_data_schema().
+/// Logs a stack trace for any missing key so issues surface during testing rather than
+/// producing silent null reads at access time.
+/datum/reagent/proc/validate_data()
+	var/list/schema = get_data_schema()
+	if(!schema)
+		return
+	if(!islist(data))
+		stack_trace("[type] ([id]) validate_data(): data is null or not a list, but get_data_schema() returned [schema.len] required keys.")
+		return
+	for(var/key in schema)
+		if(!(key in data))
+			stack_trace("[type] ([id]) validate_data(): data is missing required key '[key]'.")
 
 /datum/reagent/Destroy() // This should only be called by the holder, so it's already handled clearing its references
 	holder = null

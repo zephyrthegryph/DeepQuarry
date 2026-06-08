@@ -1,5 +1,8 @@
 /datum/reagents
 	var/list/datum/reagent/reagent_list = list()
+	/// Associative lookup: reagent id → /datum/reagent datum. Kept in sync with reagent_list.
+	/// Provides O(1) access for has_reagent, get_reagent_amount, get_reagent, get_data, add_reagent (existing check), del_reagent, remove_reagent.
+	var/list/datum/reagent/reagent_by_id = list()
 	var/total_volume = 0
 	var/maximum_volume = 100
 	var/atom/my_atom = null
@@ -9,23 +12,18 @@
 	maximum_volume = max
 	my_atom = A
 
-	//I dislike having these here but map-objects are initialised before world/New() is called. >_>
-	if(!SSchemistry.chemical_reagents)
-		//Chemical Reagents - Initialises all /datum/reagent into a list indexed by reagent id
-		var/paths = subtypesof(/datum/reagent)
-		SSchemistry.chemical_reagents = list()
-		for(var/path in paths)
-			var/datum/reagent/D = new path()
-			if(!D.name)
-				continue
-			if(D.name == REAGENT_DEVELOPER_WARNING) //We remove reagents that don't have a name from being put in the list.
-				continue
-			SSchemistry.chemical_reagents[D.id] = D
+	// Map-objects can be initialised before SSchemistry.Initialize() runs during world/New().
+	// If that happens, trigger the reagent registry init exactly once here rather than duplicating
+	// the full subtypesof scan inline — the proc is idempotent and SSchemistry.Initialize() will
+	// call it again when it runs, which is correct (Recover() also re-sets the list).
+	if(!length(SSchemistry.chemical_reagents))
+		SSchemistry.initialize_chemical_reagents()
 
 /datum/reagents/Destroy()
 	for(var/datum/reagent/R in reagent_list)
 		qdel(R)
 	reagent_list = null
+	reagent_by_id = null
 	if(my_atom && my_atom.reagents == src)
 		my_atom.reagents = null
 	return ..()
@@ -77,6 +75,22 @@
 			total_volume += R.volume
 	return
 
+/// Returns the SSchemistry reaction lookup list used by handle_reactions().
+/// Subtypes override this to select a different reaction bucket (e.g. distilled_reactions_by_reagent).
+/datum/reagents/proc/get_reaction_lookup()
+	return SSchemistry.instant_reactions_by_reagent
+
+/// Returns TRUE if this holder type tracks and passes belly-reagent state when processing reactions.
+/// Distilling holders override this to return FALSE.
+/datum/reagents/proc/supports_belly_reagents()
+	return TRUE
+
+/// Called after handle_reactions() finishes processing, if reactions occurred.
+/// Base implementation sends COMSIG_REAGENTS_HOLDER_REACTED.
+/// Subtypes that do not want this signal (e.g. distilling) override to do nothing.
+/datum/reagents/proc/on_reactions_handled(list/effect_reactions)
+	SEND_SIGNAL(src, COMSIG_REAGENTS_HOLDER_REACTED, effect_reactions)
+
 /datum/reagents/proc/handle_reactions()
 	if(QDELETED(my_atom))
 		return FALSE
@@ -86,13 +100,15 @@
 	var/list/eligible_reactions = list()
 	var/list/effect_reactions = list()
 	var/from_belly
+	var/list/reaction_lookup = get_reaction_lookup()
+	var/belly_tracking = supports_belly_reagents()
 	do
 		from_belly = FALSE
 		reaction_occurred = FALSE
 		for(var/datum/reagent/R as anything in reagent_list)
-			if(SSchemistry.instant_reactions_by_reagent[R.id])
-				eligible_reactions |= SSchemistry.instant_reactions_by_reagent[R.id]
-				if(!from_belly)
+			if(reaction_lookup[R.id])
+				eligible_reactions |= reaction_lookup[R.id]
+				if(belly_tracking && !from_belly)
 					from_belly = R.from_belly
 
 		for(var/datum/decl/chemical_reaction/C as anything in eligible_reactions)
@@ -104,7 +120,7 @@
 	for(var/datum/decl/chemical_reaction/C as anything in effect_reactions)
 		C.post_reaction(src)
 	update_total()
-	SEND_SIGNAL(src, COMSIG_REAGENTS_HOLDER_REACTED, effect_reactions)
+	on_reactions_handled(effect_reactions)
 	return effect_reactions.len
 
 /* Holder-to-chemical */
@@ -116,28 +132,37 @@
 	update_total()
 	amount = min(amount, get_free_space())
 
-	for(var/datum/reagent/current in reagent_list)
-		if(current.id == id)
-			if(current.id == REAGENT_ID_BLOOD)
-				if(LAZYLEN(data) && !isnull(data["species"]) && !isnull(current.data["species"]) && data["species"] != current.data["species"])	// Species bloodtypes are already incompatible, this just stops it from mixing into the one already in a container.
-					continue
+	// O(1) lookup: check if this reagent already exists in the holder
+	var/datum/reagent/current = reagent_by_id[id]
+	if(current)
+		if(current.id == REAGENT_ID_BLOOD)
+			// Blood from a different species is incompatible — do not merge, fall through
+			if(LAZYLEN(data) && !isnull(data["species"]) && !isnull(current.data["species"]) && data["species"] != current.data["species"])
+				current = null // treat as absent so a new entry is added below
 
-			if(was_from_belly)
-				current.from_belly = was_from_belly
-			current.dialysis_returnable = can_dialysis
-			current.volume += amount
-			if(!isnull(data)) // For all we know, it could be zero or empty string and meaningful
-				current.mix_data(data, amount)
-			update_total()
-			if(!safety)
-				handle_reactions()
-			if(my_atom)
-				my_atom.on_reagent_change()
-			return 1
+	if(current)
+		if(was_from_belly)
+			current.from_belly = was_from_belly
+		current.dialysis_returnable = can_dialysis
+		current.volume += amount
+		if(!isnull(data)) // For all we know, it could be zero or empty string and meaningful
+			current.mix_data(data, amount)
+		update_total()
+		if(!safety)
+			handle_reactions()
+		if(my_atom)
+			my_atom.on_reagent_change()
+		return 1
+
 	var/datum/reagent/D = SSchemistry.chemical_reagents[id]
 	if(D)
 		var/datum/reagent/R = new D.type()
 		reagent_list += R
+		// Only update reagent_by_id if no entry exists yet for this id.
+		// Blood incompatibility may create multiple datums with the same id; the first one
+		// keeps the O(1) slot and the extras remain accessible only via reagent_list iteration.
+		if(!reagent_by_id[id])
+			reagent_by_id[id] = R
 		R.holder = src
 		R.volume = amount
 		R.initialize_data(data)
@@ -163,52 +188,58 @@
 /datum/reagents/proc/remove_reagent(id, amount, safety = 0)
 	if(!isnum(amount))
 		return 0
-	for(var/datum/reagent/current in reagent_list)
-		if(current.id == id)
-			current.volume -= amount // It can go negative, but it doesn't matter
-			update_total() // Because this proc will delete it then
-			if(!safety)
-				handle_reactions()
-			if(my_atom)
-				my_atom.on_reagent_change()
-			return 1
+	var/datum/reagent/current = reagent_by_id[id]
+	if(current)
+		current.volume -= amount // It can go negative, but it doesn't matter
+		update_total() // Because this proc will delete it then
+		if(!safety)
+			handle_reactions()
+		if(my_atom)
+			my_atom.on_reagent_change()
+		return 1
 	return 0
 
 /datum/reagents/proc/del_reagent(id)
-	for(var/datum/reagent/current in reagent_list)
-		if (current.id == id)
-			reagent_list -= current
-			qdel(current)
-			update_total()
-			if(my_atom)
-				my_atom.on_reagent_change()
-			return 0
+	var/datum/reagent/current = reagent_by_id[id]
+	if(current)
+		reagent_list -= current
+		// If another datum with the same id remains (e.g. second blood species entry),
+		// promote it into reagent_by_id so O(1) lookups still work for that id.
+		var/datum/reagent/replacement = null
+		for(var/datum/reagent/R as anything in reagent_list)
+			if(R.id == id)
+				replacement = R
+				break
+		if(replacement)
+			reagent_by_id[id] = replacement
+		else
+			reagent_by_id -= id
+		qdel(current)
+		update_total()
+		if(my_atom)
+			my_atom.on_reagent_change()
+		return 0
 
 /datum/reagents/proc/has_reagent(id, amount = 0)
-	for(var/datum/reagent/current in reagent_list)
-		if(current.id == id)
-			if(current.volume >= amount)
-				return 1
-			else
-				return 0
+	var/datum/reagent/current = reagent_by_id[id]
+	if(current)
+		return current.volume >= amount ? 1 : 0
 	return 0
 
 /datum/reagents/proc/has_any_reagent(list/check_reagents)
-	for(var/datum/reagent/current in reagent_list)
-		if(current.id in check_reagents)
-			if(current.volume >= check_reagents[current.id])
-				return 1
-			else
-				return 0
+	for(var/id in check_reagents)
+		var/datum/reagent/current = reagent_by_id[id]
+		if(current)
+			return current.volume >= check_reagents[id] ? 1 : 0
 	return 0
 
 /datum/reagents/proc/has_all_reagents(list/check_reagents)
 	//this only works if check_reagents has no duplicate entries... hopefully okay since it expects an associative list
 	var/missing = check_reagents.len
-	for(var/datum/reagent/current in reagent_list)
-		if(current.id in check_reagents)
-			if(current.volume >= check_reagents[current.id])
-				missing--
+	for(var/id in check_reagents)
+		var/datum/reagent/current = reagent_by_id[id]
+		if(current && current.volume >= check_reagents[id])
+			missing--
 	return !missing
 
 /datum/reagents/proc/clear_reagents()
@@ -217,15 +248,15 @@
 	return
 
 /datum/reagents/proc/get_reagent_amount(id)
-	for(var/datum/reagent/current in reagent_list)
-		if(current.id == id)
-			return current.volume
+	var/datum/reagent/current = reagent_by_id[id]
+	if(current)
+		return current.volume
 	return 0
 
 /datum/reagents/proc/get_data(id)
-	for(var/datum/reagent/current in reagent_list)
-		if(current.id == id)
-			return current.get_data()
+	var/datum/reagent/current = reagent_by_id[id]
+	if(current)
+		return current.get_data()
 	return 0
 
 /datum/reagents/proc/get_reagents()
@@ -463,11 +494,7 @@
 
 // Aurora Cooking Port
 /datum/reagents/proc/get_reagent(id) // Returns reference to reagent matching passed ID
-	for(var/datum/reagent/A in reagent_list)
-		if (A.id == id)
-			return A
-
-	return null
+	return reagent_by_id[id]
 
 //Spreads the contents of this reagent holder all over the vicinity of the target turf.
 /datum/reagents/proc/splash_area(turf/epicentre, range = 3, portion = 1.0, multiplier = 1, copy = 0)

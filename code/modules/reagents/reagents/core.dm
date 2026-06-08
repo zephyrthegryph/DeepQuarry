@@ -27,6 +27,10 @@
 
 	return
 
+/// Documents the keys that blood data must always carry. Used by validate_data().
+/datum/reagent/blood/get_data_schema()
+	return list("donor", "viruses", "species", "blood_DNA", "blood_type", "blood_colour", "resistances", "trace_chem", REAGENT_ID_ANTIBODIES, "changeling")
+
 /datum/reagent/blood/get_data() // Just in case you have a reagent that handles data differently.
 	var/t = data.Copy()
 	if(t["viruses"])
@@ -117,8 +121,8 @@
 		data["changeling"] = TRUE // Spread to other samples as an antag tactic
 
 	if(data["viruses"] || newdata["viruses"])
-		var/list/mix1 = data["viruses"]
-		var/list/mix2 = newdata["viruses"]
+		var/list/mix1 = islist(data["viruses"]) ? data["viruses"] : list()
+		var/list/mix2 = islist(newdata["viruses"]) ? newdata["viruses"] : list()
 
 		var/list/to_mix = list()
 		var/list/preserve = list()
