@@ -33,9 +33,6 @@
 	uses = uses
 	power_change()
 
-// DQEdit Start — TGUI migration. attack_hand opens AiSlipper.tsx; the
-// Topic-driven toggle/fire actions move to tgui_act. attackby keeps the
-// ID-swipe lock/unlock behavior and just closes the UI on lock.
 /obj/machinery/ai_slipper/attackby(obj/item/W, mob/user)
 	if(stat & (NOPOWER|BROKEN))
 		return
@@ -104,7 +101,6 @@
 			cooldown_time = world.timeofday + 100
 			slip_process()
 			return TRUE
-// DQEdit End
 
 /obj/machinery/ai_slipper/proc/slip_process()
 	while(cooldown_time - world.timeofday > 0)

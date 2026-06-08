@@ -15,7 +15,7 @@
 /obj/machinery/biogenerator
 	name = "biogenerator"
 	desc = "Converts plants into biomass, which can be used for fertilizer and sort-of-synthetic products."
-	icon = 'icons/obj/biogenerator_vr.dmi' //VOREStation Edit
+	icon = 'icons/obj/biogenerator_vr.dmi'
 	icon_state = "biogen-stand"
 	density = TRUE
 	anchored = TRUE
@@ -318,6 +318,6 @@
 	build_eff = man_rating
 	eat_eff = bin_rating
 
-	dq_apply_material_synergies(src) // DQAdd
+	dq_apply_material_synergies(src)
 #undef BIOGEN_ITEM
 #undef BIOGEN_REAGENT

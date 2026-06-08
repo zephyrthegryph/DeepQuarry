@@ -144,7 +144,6 @@
 			else
 				M.close()
 
-//CHOMP Add start
 /obj/machinery/button/remote/blast_door/bear
 	name = "stuffed bear"
 	icon = 'icons/obj/stationobjs.dmi'
@@ -169,15 +168,13 @@
 	icon_state = "stuffedbear"
 	desiredstate = !desiredstate
 	trigger(user)
-	spawn(15)
-		update_icon()
+	addtimer(CALLBACK(src, PROC_REF(update_icon)), 15, TIMER_DELETE_ME)
 
 /obj/machinery/button/remote/blast_door/bear/update_icon()
 	if(stat & NOPOWER)
 		icon_state = "stuffedbear"
 	else
 		icon_state = "stuffedbear"
-//CHOMP Add end
 
 /*
 	Emitter remote control

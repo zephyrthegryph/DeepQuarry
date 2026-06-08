@@ -124,7 +124,7 @@ GLOBAL_LIST_BOILERPLATE(allCasters, /obj/machinery/newscaster)
 /obj/machinery/newscaster
 	name = "newscaster"
 	desc = "A standard newsfeed handler for use on commercial space stations. All the news you absolutely have no use for, in one place!"
-	icon = 'icons/obj/terminals_vr.dmi' //VOREStation Edit
+	icon = 'icons/obj/terminals_vr.dmi'
 	icon_state = "newscaster_normal"
 	layer = ABOVE_WINDOW_LAYER
 	blocks_emissive = NONE
@@ -226,9 +226,15 @@ GLOBAL_LIST_BOILERPLATE(allCasters, /obj/machinery/newscaster)
 		ispowered = 1
 		update_icon()
 	else
-		spawn(rand(0, 15))
-			ispowered = 0
-			update_icon()
+		addtimer(CALLBACK(src, PROC_REF(power_off_delayed)), rand(0, 15), TIMER_DELETE_ME)
+
+/obj/machinery/newscaster/proc/power_off_delayed()
+	ispowered = 0
+	update_icon()
+
+/obj/machinery/newscaster/proc/clear_alert()
+	alert = 0
+	update_icon()
 
 /obj/machinery/newscaster/ex_act(severity)
 	switch(severity)
@@ -701,10 +707,7 @@ GLOBAL_LIST_BOILERPLATE(allCasters, /obj/machinery/newscaster)
 			O.show_message(span_newscaster("<EM>[name]</EM> beeps, \"[news_call]\""),2)
 		alert = 1
 		update_icon()
-		spawn(300)
-			alert = 0
-			update_icon()
-//		playsound(src.loc, 'sound/machines/twobeep.ogg', 75, 1) //CHOMPEdit less peeps pls
+		addtimer(CALLBACK(src, PROC_REF(clear_alert)), 300, TIMER_DELETE_ME)
 	else
 		for(var/mob/O in hearers(world.view-1, T))
 			O.show_message(span_newscaster("<EM>[name]</EM> beeps, \"Attention! Wanted issue distributed!\""),2)

@@ -1,8 +1,5 @@
 //  Virgo modified syndie beacon, does not give objectives
 
-// DQEdit Start — attack_hand body relocated to modular_dq/code/modules/admin/misc_admin_panels.dm (structured TGUI).
-// DQEdit End
-
 /obj/machinery/syndicate_beacon/virgo/Topic(href, href_list)
 	if(href_list["betraitor"])
 		if(charges < 1)

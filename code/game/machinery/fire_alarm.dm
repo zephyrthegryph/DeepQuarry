@@ -27,15 +27,15 @@ FIRE ALARM
 	circuit = /obj/item/circuitboard/firealarm
 	var/alarms_hidden = FALSE //If the alarms from this machine are visible on consoles
 
-	var/datum/looping_sound/alarm/fire_alarm/soundloop // CHOMPEdit: Soundloops
-	var/datum/looping_sound/alarm/engineering_alarm/engalarm // CHOMPEdit: Soundloops
-	var/datum/looping_sound/alarm/sm_critical_alarm/critalarm // CHOMPEdit: Soundloops
-	var/datum/looping_sound/alarm/sm_causality_alarm/causality // CHOMPEdit: Soundloops
+	var/datum/looping_sound/alarm/fire_alarm/soundloop
+	var/datum/looping_sound/alarm/engineering_alarm/engalarm
+	var/datum/looping_sound/alarm/sm_critical_alarm/critalarm
+	var/datum/looping_sound/alarm/sm_causality_alarm/causality
 
-	var/firewarn = FALSE // CHOMPEdit: Looping Alarms
-	var/engwarn = FALSE // CHOMPEdit: Looping Alarms
-	var/critwarn = FALSE // CHOMPEdit: Looping Alarms
-	var/causalitywarn = FALSE // CHOMPEdit: Looping Alarms
+	var/firewarn = FALSE
+	var/engwarn = FALSE
+	var/critwarn = FALSE
+	var/causalitywarn = FALSE
 
 /obj/machinery/firealarm/alarms_hidden
 	alarms_hidden = TRUE
@@ -62,17 +62,17 @@ FIRE ALARM
 	if(z in using_map.contact_levels)
 		set_security_level(GLOB.security_level ? get_security_level() : "green")
 
-	soundloop = new(list(src), FALSE) // CHOMPEdit: Create soundloop
-	engalarm = new(list(src), FALSE) // CHOMPEdit: Create soundloop
-	critalarm = new(list(src), FALSE) // CHOMPEdit: Create soundloop
-	causality = new(list(src), FALSE) // CHOMPEdit: Create soundloop
+	soundloop = new(list(src), FALSE)
+	engalarm = new(list(src), FALSE)
+	critalarm = new(list(src), FALSE)
+	causality = new(list(src), FALSE)
 
 /obj/machinery/firealarm/Destroy()
-	reset()		//CHOMPEdit alarm needs to go when destroyed
-	QDEL_NULL(soundloop) // CHOMPEdit: Just clearing the loop here
-	QDEL_NULL(engalarm) // CHOMPEdit: Clearing the loop here too
-	QDEL_NULL(critalarm) // CHOMPEdit: Clearing the loop here too
-	QDEL_NULL(causality) // CHOMPEdit: Clearing the loop here too
+	reset()
+	QDEL_NULL(soundloop)
+	QDEL_NULL(engalarm)
+	QDEL_NULL(critalarm)
+	QDEL_NULL(causality)
 	return ..()
 
 /obj/machinery/firealarm/proc/offset_alarm()
@@ -182,26 +182,26 @@ FIRE ALARM
 
 /obj/machinery/firealarm/power_change()
 	..()
-	spawn(rand(0,15))
-		update_icon()
-		// CHOMPEdit Start: Looping Red/Violet/Orange Alarms
-		if(!soundloop)
-			return
-		if(stat & (NOPOWER | BROKEN)) // Are we broken or out of power?
-			soundloop.stop() // Stop the loop once we're out of power
-			engalarm.stop() // Stop these bc we're out of power
-			critalarm.stop() // Stop these, out of power
-			causality.stop() // etc etc
-		else
-			if(firewarn)
-				soundloop.start()
-			if(engwarn)
-				engalarm.start()
-			if(critwarn)
-				critalarm.start()
-			if(causalitywarn)
-				causality.start()
-		// CHOMPEdit End
+	addtimer(CALLBACK(src, PROC_REF(process_power_change)), rand(0, 15), TIMER_DELETE_ME)
+
+/obj/machinery/firealarm/proc/process_power_change()
+	update_icon()
+	if(!soundloop)
+		return
+	if(stat & (NOPOWER | BROKEN))
+		soundloop.stop()
+		engalarm.stop()
+		critalarm.stop()
+		causality.stop()
+	else
+		if(firewarn)
+			soundloop.start()
+		if(engwarn)
+			engalarm.start()
+		if(critwarn)
+			critalarm.start()
+		if(causalitywarn)
+			causality.start()
 
 /obj/machinery/firealarm/attack_hand(mob/user as mob)
 	if(user.stat || stat & (NOPOWER | BROKEN))
@@ -220,8 +220,8 @@ FIRE ALARM
 	var/area/area = get_area(src)
 	for(var/obj/machinery/firealarm/FA in area)
 		GLOB.fire_alarm.clearAlarm(src.loc, FA)
-		FA.soundloop.stop() // CHOMPEdit: Soundloop
-		FA.firewarn = FALSE // CHOMPEdit: Soundloop Fix
+		FA.soundloop.stop()
+		FA.firewarn = FALSE
 	update_icon()
 	if(user)
 		log_game("[user] reset a fire alarm at [COORD(src)]")
@@ -230,14 +230,13 @@ FIRE ALARM
 	if(!(working))
 		return
 	var/area/area = get_area(src)
-	if(!firewarn && !alarms_hidden) // CHOMPAdd
+	if(!firewarn && !alarms_hidden)
 		GLOB.global_announcer.autosay("Tripped [area]", "Fire Alarm Monitor", DEPARTMENT_ENGINEERING)
 	for(var/obj/machinery/firealarm/FA in area)
 		GLOB.fire_alarm.triggerAlarm(loc, FA, duration, hidden = alarms_hidden)
-		FA.soundloop.start() // CHOMPEdit: Soundloop
-		FA.firewarn = TRUE // CHOMPEdit: Soundloop Fix
+		FA.soundloop.start()
+		FA.firewarn = TRUE
 	update_icon()
-	// playsound(src, 'sound/machines/airalarm.ogg', 25, 0, 4, volume_channel = VOLUME_CHANNEL_ALARMS) // CHOMPEdit: Disable as per soundloop
 	if(user)
 		log_game("[user] triggered a fire alarm at [COORD(src)]")
 
@@ -273,8 +272,6 @@ Just a object used in constructing fire alarms
 	idle_power_usage = 2
 	active_power_usage = 6
 
-// DQEdit Start — TGUI migration. PartyAlarm.tsx handles both clear-text
-// (humans/AI) and scrambled (everyone else) display via a data flag.
 /obj/machinery/partyalarm/attack_hand(mob/user as mob)
 	if(user.stat || stat & (NOPOWER|BROKEN))
 		return
@@ -295,7 +292,6 @@ Just a object used in constructing fire alarms
 	data["time"] = time
 	data["scrambled"] = !(ishuman(user) || isAI(user))
 	return data
-// DQEdit End
 
 /obj/machinery/partyalarm/proc/reset()
 	if(!(working))
@@ -313,12 +309,11 @@ Just a object used in constructing fire alarms
 	A.partyalert()
 	return
 
-// DQEdit Start — Topic dispatch lifted into tgui_act.
-/obj/machinery/partyalarm/tgui_act(action, list/params)
+/obj/machinery/partyalarm/tgui_act(action, list/params, datum/tgui/ui)
 	. = ..()
 	if(.)
 		return
-	if(usr.stat || stat & (BROKEN|NOPOWER))
+	if(ui.user.stat || stat & (BROKEN|NOPOWER))
 		return TRUE
 	switch(action)
 		if("reset")
@@ -335,4 +330,3 @@ Just a object used in constructing fire alarms
 			time += tp
 			time = min(max(round(time), 0), 120)
 			return TRUE
-// DQEdit End

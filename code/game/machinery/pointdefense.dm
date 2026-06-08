@@ -221,8 +221,10 @@ GLOBAL_LIST_BOILERPLATE(pointdefense_turrets, /obj/machinery/pointdefense)
 	playsound(src, fire_sounds, 75, 1, 40, pressure_affected = FALSE, ignore_walls = TRUE)
 	use_power_oneoff(idle_power_usage * 10)
 	coil.launch_projectile(target = M.loc, user = src)
-	spawn(10)
-		playsound(src, fire_sounds, 75, 1, 40, pressure_affected = FALSE, ignore_walls = TRUE)
+	addtimer(CALLBACK(src, PROC_REF(fire_sound_delayed)), 10, TIMER_DELETE_ME)
+
+/obj/machinery/pointdefense/proc/fire_sound_delayed()
+	playsound(src, fire_sounds, 75, 1, 40, pressure_affected = FALSE, ignore_walls = TRUE)
 
 /obj/machinery/pointdefense/process()
 	..()
@@ -302,7 +304,7 @@ GLOBAL_LIST_BOILERPLATE(pointdefense_turrets, /obj/machinery/pointdefense)
 	var/rotation_divisor = total_component_rating_of_type(/obj/item/stock_parts/manipulator)
 	rotation_speed = 4.5 SECONDS / (rotation_divisor ? rotation_divisor : 1)
 
-	dq_apply_material_synergies(src) // DQAdd
+	dq_apply_material_synergies(src)
 /obj/machinery/pointdefense/proc/Activate()
 	if(active)
 		return FALSE

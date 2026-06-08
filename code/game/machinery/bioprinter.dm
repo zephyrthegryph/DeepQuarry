@@ -25,7 +25,7 @@
 
 	var/anomalous_organs = FALSE	// Can it print anomalous organs?
 
-	var/engineered_organs = FALSE // CHOMPedit - Can it print advanced engineered organs that any species can use (Abductor gameplay)
+	var/engineered_organs = FALSE
 
 	// These should be subtypes of /obj/item/organ
 	// Costs roughly 20u Phoron (1 sheet) per internal organ, limbs are 60u for limb and extremity
@@ -37,7 +37,7 @@
 		"Liver"   = list(/obj/item/organ/internal/liver,  20),
 		"Spleen"  = list(/obj/item/organ/internal/spleen, 20),
 		"Stomach"  = list(/obj/item/organ/internal/stomach, 20),
-		"Intestine" = list(/obj/item/organ/internal/intestine, 20), //ChompAdd: this was missing.
+		"Intestine" = list(/obj/item/organ/internal/intestine, 20),
 		"Arm, Left"   = list(/obj/item/organ/external/arm,  40),
 		"Arm, Right"   = list(/obj/item/organ/external/arm/right,  40),
 		"Leg, Left"   = list(/obj/item/organ/external/leg,  40),
@@ -46,7 +46,7 @@
 		"Foot, Right"   = list(/obj/item/organ/external/foot/right,  20),
 		"Hand, Left"   = list(/obj/item/organ/external/hand,  20),
 		"Hand, Right"   = list(/obj/item/organ/external/hand/right,  20),
-		"Organ Lattice" = list(/obj/item/organ/internal/malignant/engineered/lattice,  30) // CHOMPedit - Bioprinting engineered lattice organs
+		"Organ Lattice" = list(/obj/item/organ/internal/malignant/engineered/lattice,  30)
 		)
 
 	var/list/complex_products = list(
@@ -61,7 +61,6 @@
 		"Adrenal Valve Cluster" = list(/obj/item/organ/internal/heart/replicant/rage, 80)
 		)
 
-	// CHOMPadd begin  - engineered organs
 	var/list/engineered_products = list(
 		"Phoroketic Gland"  = list(/obj/item/organ/internal/malignant/engineered/chemorgan/phoron, 90),
 		"Trioketic Gland"  	= list(/obj/item/organ/internal/malignant/engineered/chemorgan/tricord, 90),
@@ -77,7 +76,6 @@
 		"Inaprovic Gland" 	= list(/obj/item/organ/internal/malignant/engineered/chemorgan/inaprovaline, 90),
 		"Euphorian" 		= list(/obj/item/organ/internal/malignant/engineered/chemorgan/bliss, 90)
 		)
-	// CHOMPadd end
 
 /obj/machinery/organ_printer/attackby(obj/item/O, mob/user)
 	if(default_deconstruction_screwdriver(user, O))
@@ -91,13 +89,11 @@
 	return ..()
 
 /obj/machinery/organ_printer/update_icon()
-	//VOREStation Edit
 	cut_overlays()
 	if(panel_open)
 		add_overlay("bioprinter_panel_open")
 	if(printing)
 		add_overlay("bioprinter_working")
-	//VOREStation Edit End
 
 /obj/machinery/organ_printer/Initialize(mapload)
 	. = ..()
@@ -141,7 +137,7 @@
 
 	. = ..()
 
-	dq_apply_material_synergies(src) // DQAdd
+	dq_apply_material_synergies(src)
 /obj/machinery/organ_printer/attack_hand(mob/user)
 
 	if(stat & (BROKEN|NOPOWER))
@@ -173,10 +169,8 @@
 	if(anomalous_organs)
 		possible_list |= anomalous_products
 
-	// CHOMPedit begin - engineered organs
 	if(engineered_organs)
 		possible_list |= engineered_products
-	// CHOMPedit end
 
 	var/choice = tgui_input_list(user, "What would you like to print?", "Print Choice", possible_list)
 

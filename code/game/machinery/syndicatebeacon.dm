@@ -17,9 +17,6 @@
 	var/charges = 1
 
 /obj/machinery/syndicate_beacon/attack_hand(mob/user as mob)
-	// DQEdit — single-conversation device; tgui_alert is the right
-	// primitive. The dynamic "you can switch teams" branch becomes a
-	// labelled button on the alert.
 	user.set_machine(src)
 	var/message = "Scanning [pick("retina pattern", "voice print", "fingerprints", "dna sequence")]... Identity confirmed.\n"
 	var/can_traitor = FALSE
@@ -58,7 +55,7 @@
 			if(1)
 				temptext = span_red(span_italics(span_bold("Double-crosser. You planned to betray us from the start. Allow us to repay the favor in kind.")))
 				updateUsrDialog(usr)
-				spawn(rand(50,200)) selfdestruct()
+				addtimer(CALLBACK(src, PROC_REF(selfdestruct)), rand(50, 200), TIMER_DELETE_ME)
 				return
 			if(2)
 				return
@@ -74,7 +71,7 @@
 
 /obj/machinery/syndicate_beacon/proc/selfdestruct()
 	selfdestructing = 1
-	spawn() explosion(src.loc, 1, rand(1,3), rand(3,8), 10)
+	explosion(src.loc, 1, rand(1,3), rand(3,8), 10)
 
 ////////////////////////////////////////
 //Singularity beacon

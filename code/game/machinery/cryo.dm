@@ -1,8 +1,3 @@
-// DQEdit — LINDA atmospherics rewrite (commit 6fdac16ef1). gas_mixture var accesses (e.g. mix.total_moles) converted to proc calls (mix.total_moles()) for the LINDA engine API. Bulk rewrite by tools/verdigris/linda_rewrite_chomp_atmos.py.
-// Bracketed at file-header rather than per-hunk because the
-// edits are mechanical and span the whole file; the commit SHA
-// is the source of truth for per-line diff context.
-
 #define HEAT_CAPACITY_HUMAN 100 //249840 J/K, for a 72 kg person.
 
 /obj/machinery/atmospherics/unary/cryo_cell
@@ -274,7 +269,7 @@
 	if(occupant.bodytemperature < 261 && occupant.bodytemperature >= 70) //Patch by Aranclanos to stop people from taking burn damage after being ejected
 		occupant.bodytemperature = 261									  // Changed to 70 from 140 by Zuhayr due to reoccurance of bug.
 	unbuckle_mob(occupant, force = TRUE)
-	occupant.cozyloop.stop() // CHOMPStation Add: Cozy Music
+	occupant.cozyloop.stop()
 	//REMOVE_TRAIT(occupant, TRAIT_STASIS, REF(src)) //Stops life almost entirely, so not done here.
 	occupant = null
 	current_heat_capacity = initial(current_heat_capacity)
@@ -304,7 +299,7 @@
 	if(M.health > -100 && (M.health < 0 || M.sleeping))
 		to_chat(M, span_boldnotice("You feel a cold liquid surround you. Your skin starts to freeze up."))
 	occupant = M
-	occupant.cozyloop.start() // CHOMPStation Add: Cozy Music
+	occupant.cozyloop.start()
 	//ADD_TRAIT(occupant, TRAIT_STASIS, REF(src))  //Stops life almost entirely, so not done here.
 	buckle_mob(occupant, forced = TRUE, check_loc = FALSE)
 	vis_contents |= occupant

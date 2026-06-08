@@ -54,10 +54,7 @@
 			if("To Kill")
 				to_chat(user, span_boldwarning("Your wish is granted, but at a terrible cost..."))
 				to_chat(user, span_danger("The Wish Granter is outraged at your excessive wickedness, yet grants you your wish regardless. Someone will be killed soon."))
-				spawn(100)
-					if(user)
-						to_chat(user, span_bolddanger("Suddenly, you feel as though you are being torn to countless shreds! Your wish is coming true!"))
-						user.gib()
+				addtimer(CALLBACK(src, PROC_REF(gib_wisher), user), 100, TIMER_DELETE_ME)
 			if("Peace")
 				to_chat(user, span_infoplain(span_bold("Whatever alien sentience that the Wish Granter possesses is satisfied with your wish. There is a distant wailing as the last of the Faithless begin to die, then silence.")))
 				to_chat(user, span_infoplain("You feel as if you just narrowly avoided a terrible fate..."))
@@ -65,3 +62,8 @@
 					F.health = -10
 					F.set_stat(DEAD)
 					F.icon_state = "faithless_dead"
+
+/obj/machinery/wish_granter/proc/gib_wisher(mob/living/carbon/human/user)
+	if(user)
+		to_chat(user, span_bolddanger("Suddenly, you feel as though you are being torn to countless shreds! Your wish is coming true!"))
+		user.gib()

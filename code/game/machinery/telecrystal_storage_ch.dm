@@ -38,7 +38,7 @@
 	if(..())
 		return TRUE
 
-	add_fingerprint(usr)
+	add_fingerprint(ui.user)
 	switch(action)
 		if("Release")
 			var/amount = 0
@@ -47,7 +47,7 @@
 			else
 				amount = tgui_input_number(ui.user, "How many items?", "How many items would you like to take out?", 1)
 
-			if(QDELETED(src) || QDELETED(usr) || !usr.Adjacent(src))
+			if(QDELETED(src) || QDELETED(ui.user) || !ui.user.Adjacent(src))
 				return FALSE
 
 			var/index = text2num(params["index"])

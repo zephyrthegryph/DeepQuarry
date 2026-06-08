@@ -149,11 +149,13 @@
 	return ..()
 
 /obj/machinery/teleport/hub/Bumped(M as mob|obj)
-	spawn()
-		if(icon_state == "tele1")
-			teleport(M)
-			use_power(5000)
+	INVOKE_ASYNC(src, PROC_REF(bumped_async), M)
 	return
+
+/obj/machinery/teleport/hub/proc/bumped_async(atom/movable/M)
+	if(icon_state == "tele1")
+		teleport(M)
+		use_power(5000)
 
 /obj/machinery/teleport/hub/proc/teleport(atom/movable/M as mob|obj)
 	if(!com)
@@ -163,14 +165,12 @@
 			O.show_message(span_warning("Failure: Cannot authenticate locked on coordinates. Please reinstate coordinate matrix."))
 		return
 	if(istype(M, /atom/movable))
-		//VOREStation Addition Start: Prevent taurriding abuse
 		if(isliving(M))
 			var/mob/living/L = M
 			if(LAZYLEN(L.buckled_mobs))
 				var/datum/riding/R = L.riding_datum
 				for(var/rider in L.buckled_mobs)
 					R.force_dismount(rider)
-		//VOREStation Addition End: Prevent taurriding abuse
 		if(prob(5) && !accurate) //oh dear a problem, put em in deep space
 			do_teleport(M, locate(rand((2*TRANSITIONEDGE), world.maxx - (2*TRANSITIONEDGE)), rand((2*TRANSITIONEDGE), world.maxy - (2*TRANSITIONEDGE)), 3), 2)
 		else
@@ -184,10 +184,13 @@
 		s.set_up(5, 1, src)
 		s.start()
 		accurate = 1
-		spawn(3000)	accurate = 0 //Accurate teleporting for 5 minutes
+		addtimer(CALLBACK(src, PROC_REF(clear_accurate)), 3000, TIMER_DELETE_ME) //Accurate teleporting for 5 minutes
 		for(var/mob/B in hearers(src, null))
 			B.show_message(span_notice("Test fire completed."))
 	return
+
+/obj/machinery/teleport/hub/proc/clear_accurate()
+	accurate = 0
 
 //////
 //////  The middle part
@@ -253,7 +256,7 @@
 	visible_message(span_notice("Test firing!"))
 	com.teleport()
 	use_power(5000)
-	flick(src, "controller-c") //VOREStation Add
+	flick(src, "controller-c")
 
 	VARSET_IN(src, active, FALSE, 3 SECONDS)
 

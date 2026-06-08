@@ -2,7 +2,7 @@
 	name = "exonet node"
 	desc = null // Gets written in New()
 	icon = 'icons/obj/stationobjs.dmi'
-	icon_state = "exonet" //VOREStation Edit
+	icon_state = "exonet"
 	idle_power_usage = 2500
 	density = TRUE
 	var/on = 1
@@ -93,9 +93,11 @@
 		return
 	stat |= EMPED
 	var/duration = (300 * 10)/severity
-	spawn(rand(duration - 20, duration + 20))
-		stat &= ~EMPED
+	addtimer(CALLBACK(src, PROC_REF(emp_recover)), rand(duration - 20, duration + 20), TIMER_DELETE_ME)
 	update_icon()
+
+/obj/machinery/exonet_node/proc/emp_recover()
+	stat &= ~EMPED
 
 // Proc: process()
 // Parameters: None

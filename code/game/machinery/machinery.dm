@@ -242,7 +242,7 @@ Class Procs:
 		return 1
 	if(user.lying || user.stat)
 		return 1
-	if(!user.IsAdvancedToolUser())  //Vorestation edit
+	if(!user.IsAdvancedToolUser())
 		to_chat(user, span_warning("You don't have the dexterity to do this!"))
 		return 1
 	if(ishuman(user))

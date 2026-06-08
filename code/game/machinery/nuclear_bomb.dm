@@ -3,7 +3,7 @@ GLOBAL_VAR(bomb_set)
 /obj/machinery/nuclearbomb
 	name = "\improper Nuclear Fission Explosive"
 	desc = "Uh oh. RUN!!!!"
-	icon = 'modular_chomp/icons/obj/stationobjs.dmi' //chompedit, use the better one
+	icon = 'modular_chomp/icons/obj/stationobjs.dmi'
 	icon_state = "nuclearbomb0"
 	density = TRUE
 	var/deployable = 0.0
@@ -23,9 +23,6 @@ GLOBAL_VAR(bomb_set)
 	var/timing_wire
 	var/removal_stage = 0 // 0 is no removal, 1 is covers removed, 2 is covers open,
 	  					// 3 is sealant open, 4 is unwrenched, 5 is removed from bolts.
-	// DQEdit — TGUI: which view the same TGUI window shows. attack_hand sets
-	// it FALSE for the main control panel; wirecutter/multitool use sets it
-	// TRUE for the wire-defusion panel.
 	var/wire_view = FALSE
 	use_power = USE_POWER_OFF
 
@@ -51,7 +48,7 @@ GLOBAL_VAR(bomb_set)
 	if(timing)
 		GLOB.bomb_set = 1 //So long as there is one nuke timing, it means one nuke is armed.
 		timeleft--
-		playsound(src, 'sound/items/timer.ogg',50) //chompedit... beep :)
+		playsound(src, 'sound/items/timer.ogg',50)
 		if(timeleft <= 0)
 			explode()
 		for(var/mob/M in viewers(1, src))
@@ -167,10 +164,6 @@ GLOBAL_VAR(bomb_set)
 				return
 	..()
 
-// DQEdit Start — TGUI migration. attack_hand opens the main control view
-// of NuclearBomb.tsx; nukehack_win switches to the wire-defusion view of
-// the same window. All keypad/auth/timer/safety/anchor and wire/pulse
-// actions are dispatched via tgui_act below.
 /obj/machinery/nuclearbomb/attack_hand(mob/user as mob)
 	if(extended)
 		if(!ishuman(user))
@@ -359,12 +352,12 @@ GLOBAL_VAR(bomb_set)
 				return TRUE
 			if(light_wire == wire)
 				lighthack = !lighthack
-				spawn(100) lighthack = !lighthack
+				addtimer(CALLBACK(src, PROC_REF(toggle_lighthack)), 100, TIMER_DELETE_ME)
 			if(timing_wire == wire && timing)
 				explode()
 			if(safety_wire == wire)
 				safety = !safety
-				spawn(100) safety = !safety
+				addtimer(CALLBACK(src, PROC_REF(toggle_safety)), 100, TIMER_DELETE_ME)
 				if(safety == 1)
 					visible_message(span_notice("The [src] quiets down."))
 					if(!lighthack && icon_state == "nuclearbomb2")
@@ -372,13 +365,16 @@ GLOBAL_VAR(bomb_set)
 				else
 					visible_message(span_notice("The [src] emits a quiet whirling noise!"))
 			return TRUE
-// DQEdit End
 
 /obj/machinery/nuclearbomb/proc/nukehack_win(mob/user as mob)
-	// DQEdit — wire-defusion view of the same TGUI window. Setting wire_view
-	// before re-opening swaps the React-side view.
 	wire_view = TRUE
 	tgui_interact(user)
+
+/obj/machinery/nuclearbomb/proc/toggle_lighthack()
+	lighthack = !lighthack
+
+/obj/machinery/nuclearbomb/proc/toggle_safety()
+	safety = !safety
 
 /obj/machinery/nuclearbomb/verb/make_deployable()
 	set category = "Object"
@@ -413,7 +409,7 @@ GLOBAL_VAR(bomb_set)
 	safety = 1
 	if(!lighthack)
 		icon_state = "nuclearbomb3"
-	world << sound('sound/machines/Alarm.ogg')//chompedit, nuke is big event, make it global
+	world << sound('sound/machines/Alarm.ogg')
 	if(SSticker && SSticker.mode)
 		SSticker.mode.explosion_in_progress = 1
 	sleep(100)

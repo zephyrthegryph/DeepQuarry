@@ -90,7 +90,7 @@ GLOBAL_LIST_EMPTY(floor_light_cache)
 
 		on = !on
 		if(on) update_use_power(USE_POWER_ACTIVE)
-		//visible_message(span_notice("\The [user] turns \the [src] [on ? "on" : "off"].")) //VOREStation Edit - No thankouuuu. Too spammy.
+		//visible_message(span_notice("\The [user] turns \the [src] [on ? "on" : "off"]."))
 		update_brightness()
 		return
 

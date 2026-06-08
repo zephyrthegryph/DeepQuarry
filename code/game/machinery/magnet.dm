@@ -115,8 +115,7 @@
 				on = !on
 
 				if(on)
-					spawn()
-						magnetic_process()
+					INVOKE_ASYNC(src, PROC_REF(magnetic_process))
 
 /obj/machinery/magnetic_module/process()
 	if(stat & NOPOWER)
@@ -239,8 +238,6 @@
 	return attack_hand(user)
 
 /obj/machinery/magnetic_controller/attack_hand(mob/user as mob)
-	// DQEdit — structured TGUI MagneticConsole (see
-	// modular_dq/code/modules/admin/magnetic_console_panel.dm).
 	if(stat & (BROKEN|NOPOWER))
 		return
 	user.set_machine(src)
@@ -302,7 +299,7 @@
 			if("togglemoving")
 				moving = !moving
 				if(moving)
-					spawn() MagnetMove()
+					INVOKE_ASYNC(src, PROC_REF(MagnetMove))
 
 
 	updateUsrDialog(usr)
@@ -342,8 +339,7 @@
 		pathpos++ // increase iterator
 
 		// Broadcast the signal
-		spawn()
-			radio_connection.post_signal(src, signal, radio_filter = RADIO_MAGNETS)
+		radio_connection.post_signal(src, signal, radio_filter = RADIO_MAGNETS)
 
 		if(speed == 10)
 			sleep(1)

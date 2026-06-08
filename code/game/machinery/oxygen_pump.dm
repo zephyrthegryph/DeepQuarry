@@ -30,7 +30,7 @@
 		if(breather.internals)
 			breather.internals.icon_state = "internal0"
 		breather.remove_from_mob(contained)
-		breather.cozyloop.stop()  // CHOMPStation Add: Cozy Music
+		breather.cozyloop.stop()
 		visible_message(span_notice("\The [contained] rapidly retracts just before /the [src] is destroyed!"))
 		breather = null
 
@@ -73,7 +73,7 @@
 		breather.remove_from_mob(contained)
 		contained.forceMove(src)
 		src.visible_message(span_infoplain(span_bold("\The [user]") + " makes \the [contained] rapidly retract back into \the [src]!"))
-		breather.cozyloop.stop()  // CHOMPStation Add: Cozy Music
+		breather.cozyloop.stop()
 		if(breather.internals)
 			breather.internals.icon_state = "internal0"
 		breather = null
@@ -166,7 +166,7 @@
 				tank.forceMove(src)
 			breather.remove_from_mob(contained)
 			contained.forceMove(src)
-			breather.cozyloop.stop() // CHOMPStation Add: Cozy Music
+			breather.cozyloop.stop()
 			src.visible_message(span_notice("\The [contained] rapidly retracts back into \the [src]!"))
 			breather = null
 			update_use_power(USE_POWER_IDLE)
@@ -244,7 +244,6 @@
 	icon_state_open = "anesthetic_tank_open"
 	mask_type = /obj/item/clothing/mask/breath/anesthetic
 
-// CHOMPStation Add: Cozy Music
 /obj/machinery/oxygen_pump/anesthetic/attach_mask(mob/living/carbon/C)
 	if(C && istype(C))
 		contained.forceMove(get_turf(C))
@@ -259,7 +258,6 @@
 				breather.internals.icon_state = "internal1"
 		update_use_power(USE_POWER_ACTIVE)
 		breather.cozyloop.start()
-// CHOMPStation Add End
 
 /obj/machinery/oxygen_pump/mobile
 	name = "portable oxygen pump"
@@ -297,7 +295,6 @@
 	icon_state_open = "medpump_n2o_open"
 	mask_type = /obj/item/clothing/mask/breath/anesthetic
 
-// CHOMPStation Add: Cozy Music
 /obj/machinery/oxygen_pump/mobile/anesthetic/attach_mask(mob/living/carbon/C)
 	if(C && istype(C))
 		contained.forceMove(get_turf(C))
@@ -312,7 +309,6 @@
 				breather.internals.icon_state = "internal1"
 		update_use_power(USE_POWER_ACTIVE)
 		breather.cozyloop.start()
-// CHOMPStation Add End
 
 /obj/machinery/oxygen_pump/mobile/stabilizer
 	name = "portable patient stabilizer"

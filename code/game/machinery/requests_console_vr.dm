@@ -91,7 +91,7 @@
 	department = JOB_AI
 	departmentType = RC_ASSIST|RC_INFO
 
-/obj/machinery/requests_console/preset/hop //yw edit
+/obj/machinery/requests_console/preset/hop
 	name = "Head of personnel RC"
 	department = "Head of Personnel's Desk"
 	departmentType = RC_ASSIST|RC_INFO

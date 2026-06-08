@@ -1,8 +1,3 @@
-// DQEdit — LINDA atmospherics rewrite (commit 6fdac16ef1). gas_mixture var accesses (e.g. mix.total_moles) converted to proc calls (mix.total_moles()) for the LINDA engine API. Bulk rewrite by tools/verdigris/linda_rewrite_chomp_atmos.py.
-// Bracketed at file-header rather than per-hunk because the
-// edits are mechanical and span the whole file; the commit SHA
-// is the source of truth for per-line diff context.
-
 //# define AMAP
 /obj/machinery/computer/security/verb/station_map()
 	set name = ".map"
@@ -173,7 +168,7 @@
 		qdel(J)
 		H.icon = HI
 		H.hud_layerise()
-		usr.mapobjs += H
+		user.mapobjs += H
 #else
 
 	for(var/i = 0; i<icount; i++)
@@ -292,7 +287,7 @@
 		H.icon = I
 		qdel(I)
 		H.hud_layerise()
-		usr.mapobjs += H
+		user.mapobjs += H
 
 #endif
 
@@ -307,19 +302,19 @@
 	return
 
 /obj/machinery/computer/security/proc/close(mob/user)
-	spawn(20)
-		var/using = null
-		if(user.mapobjs)
-			for(var/obj/machinery/computer/security/seccomp in oview(1,user))
-				if(seccomp == src)
-					using = 1
-					break
-			if(using)
-				close(user)
-			else
-				user.clearmap()
+	addtimer(CALLBACK(src, PROC_REF(close_delayed), user), 20, TIMER_DELETE_ME)
 
-		return
+/obj/machinery/computer/security/proc/close_delayed(mob/user)
+	var/using = null
+	if(user.mapobjs)
+		for(var/obj/machinery/computer/security/seccomp in oview(1,user))
+			if(seccomp == src)
+				using = 1
+				break
+		if(using)
+			close(user)
+		else
+			user.clearmap()
 
 /proc/getr(col)
 	return hex2num(copytext(col, 2,4))
