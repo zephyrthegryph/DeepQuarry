@@ -1,6 +1,6 @@
 
 //
-// overrides to the default event manager configuration. //YW EDIT: WHY THE FUCK IS THIS NOT MENTIONED IN THE REGULAR FILE, AAAGGGHAA!
+// overrides to the default event manager configuration. // WHY THE FUCK IS THIS NOT MENTIONED IN THE REGULAR FILE, AAAGGGHAA!
 //
 // This file lets us configure which events we want in the rotation without conflicts with upstream.
 // It works because the actual event containers don't define New(), allowing us to use New() to replace
@@ -47,7 +47,7 @@
 		new /datum/event_meta(EVENT_LEVEL_MUNDANE, "Lost Carp",				/datum/event/carp_migration, 				0, 		list(DEPARTMENT_SECURITY = 40), TRUE, min_jobs = list(DEPARTMENT_SECURITY = 1)),
 		new /datum/event_meta(EVENT_LEVEL_MUNDANE, "Ian Storm",				/datum/event/ianstorm,	 					1,		list(), TRUE),
 		new /datum/event_meta(EVENT_LEVEL_MUNDANE, "PDA Spam",				/datum/event/pda_spam, 						0, 		list(DEPARTMENT_ANY = 4), TRUE, 25, 50),
-// new /datum/event_meta(EVENT_LEVEL_MUNDANE, "Lost Spiders", /datum/event/spider_migration, 0, list(DEPARTMENT_SECURITY = 10), 1), //YW EDIT // Moved to disabled and commented. This just spawns spiders on carp spawns.
+// new /datum/event_meta(EVENT_LEVEL_MUNDANE, "Lost Spiders", /datum/event/spider_migration, 0, list(DEPARTMENT_SECURITY = 10), 1), // // Moved to disabled and commented. This just spawns spiders on carp spawns.
 	))
 
 
@@ -110,7 +110,7 @@
 		new /datum/event_meta(EVENT_LEVEL_MODERATE, "Virology Breach",			/datum/event/prison_break/virology,		0,		list(DEPARTMENT_MEDICAL = 100), TRUE, min_jobs = list(DEPARTMENT_MEDICAL = 1)),
 		new /datum/event_meta(EVENT_LEVEL_MODERATE, "Wormholes",				/datum/event/wormholes,	 				20,		list(DEPARTMENT_ANY = 5)),
 		new /datum/event_meta(EVENT_LEVEL_MODERATE, "Xenobiology Breach",		/datum/event/prison_break/xenobiology,	0,		list(DEPARTMENT_RESEARCH = 100), TRUE, min_jobs = list(DEPARTMENT_RESEARCH = 1), min_jobs = list(DEPARTMENT_RESEARCH = 1, DEPARTMENT_SECURITY =1)),
-// new /datum/event_meta(EVENT_LEVEL_MODERATE, "Lost Spiders", /datum/event/spider_migration, 0, list(DEPARTMENT_SECURITY = 30), 1), //YW EDIT // Moved to disabled. This is a YW feature that spawns spiders on carp spawns.
+// new /datum/event_meta(EVENT_LEVEL_MODERATE, "Lost Spiders", /datum/event/spider_migration, 0, list(DEPARTMENT_SECURITY = 30), 1), // // Moved to disabled. This is a YW feature that spawns spiders on carp spawns.
 	))
 
 

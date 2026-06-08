@@ -97,7 +97,7 @@ GLOBAL_LIST_EMPTY(all_maps)
 	var/shuttle_leaving_dock
 	var/shuttle_called_message
 	var/shuttle_recall_message
-	var/shuttle_name  = "NAS |Faraday|" // YW EDIT: default name 'NAS |Hawking|'
+	var/shuttle_name  = "NAS |Faraday|" // default name 'NAS |Hawking|'
 	var/emergency_shuttle_docked_message
 	var/emergency_shuttle_leaving_dock
 	var/emergency_shuttle_called_message

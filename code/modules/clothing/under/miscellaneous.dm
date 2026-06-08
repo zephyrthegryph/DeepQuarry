@@ -1680,7 +1680,7 @@
 
 // === merged from miscellaneous_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/clothing/under/customs
-	desc = "A standard SolGov customs uniform. Complete with epaulettes." //YW EDIT: SolGov
+	desc = "A standard SolGov customs uniform. Complete with epaulettes." // SolGov
 
 /obj/item/clothing/var/hides_bulges = FALSE // OwO wats this?
 

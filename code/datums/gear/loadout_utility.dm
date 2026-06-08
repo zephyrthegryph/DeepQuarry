@@ -35,7 +35,7 @@
 	path = /obj/item/camera
 
 /datum/gear/utility/codex
-	display_name = "the traveler's guide to borealis" //YW Edit
+	display_name = "the traveler's guide to borealis"
 	path = /obj/item/book/codex
 	cost = 0
 

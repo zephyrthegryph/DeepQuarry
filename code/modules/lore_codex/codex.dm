@@ -1,13 +1,13 @@
 // Inherits from /book/ so it can fit on bookshelves.
 /obj/item/book/codex // Vorestation Edits throughout this object.
-	name = "The Traveler's Guide to Human Space: Borealis Edition" //YW Edit
+	name = "The Traveler's Guide to Human Space: Borealis Edition"
 	desc = "Contains useful information about the world around you.  It seems to have been written for travelers to the Borealis system, human or not. It also \
-	has the words 'Don't Panic' in small, friendly letters on the cover." //YW Edit
+	has the words 'Don't Panic' in small, friendly letters on the cover."
 	icon_state = "codex"
 	item_state = "book4"
 	unique = TRUE
 	var/datum/codex_tree/tree = null
-	var/root_type = /datum/lore/codex/category/main_borealis_lore	//YW EDIT
+	var/root_type = /datum/lore/codex/category/main_borealis_lore
 
 	var/static/list/codex_tree_keys = list() // static list linking codexes to the correct codex_tree.
 
@@ -33,11 +33,11 @@
 	tree.display(user)
 
 /obj/item/book/codex/lore/vir // Vorestation Edits throughout this object.
-	name = "The Traveler's Guide to Human Space: Borealis Edition" //YW Edit
+	name = "The Traveler's Guide to Human Space: Borealis Edition"
 	desc = "Contains useful information about the world around you.  It seems to have been written for travelers to the Borealis system, human or not. It also \
-	has the words 'Don't Panic' in small, friendly letters on the cover." //YW Edit
+	has the words 'Don't Panic' in small, friendly letters on the cover."
 	icon_state = "codex"
-	root_type = /datum/lore/codex/category/main_borealis_lore	//YW EDIT
+	root_type = /datum/lore/codex/category/main_borealis_lore
 	libcategory = "Reference"
 
 /obj/item/book/codex/lore/robutt
@@ -50,7 +50,7 @@
 
 /obj/item/book/codex/lore/news
 	name = "Daedalus Pocket Newscaster"
-	desc = "A regularly-updating compendium of articles on current events. Essential for new arrivals in the Borealis system and anyone interested in politics." //YW Edit
+	desc = "A regularly-updating compendium of articles on current events. Essential for new arrivals in the Borealis system and anyone interested in politics."
 	icon_state = "newscodex"
 	item_state = "book1"
 	w_class = ITEMSIZE_SMALL

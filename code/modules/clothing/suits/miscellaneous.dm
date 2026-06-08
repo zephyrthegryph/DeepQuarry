@@ -1140,7 +1140,7 @@
 
 // === merged from miscellaneous_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/clothing/suit/customs
-	desc = "A standard SolGov Customs formal jacket." //YW EDIT: SolGov
+	desc = "A standard SolGov Customs formal jacket." // SolGov
 
 /obj/item/clothing/suit/chiton
 	name = "chiton"

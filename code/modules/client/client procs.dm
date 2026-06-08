@@ -148,8 +148,8 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		var/datum/db_query/query = SSdbcore.NewQuery("UPDATE erro_player SET discord_id = '[sql_discord]' WHERE ckey = '[sql_ckey]'")
 		if(query.Execute())
 			to_chat(src, span_notice("Registration complete! Thank you for taking the time to register your Discord ID."))
-			log_and_message_admins("[ckey] has registered their Discord ID. Their Discord snowflake ID is: [their_id]", src) //YW EDIT
-			admin_chat_message(message = "[ckey] has registered their Discord ID. Their Discord is: <@[their_id]>", color = "#4eff22") //YW EDIT
+			log_and_message_admins("[ckey] has registered their Discord ID. Their Discord snowflake ID is: [their_id]", src)
+			admin_chat_message(message = "[ckey] has registered their Discord ID. Their Discord is: <@[their_id]>", color = "#4eff22")
 			notes_add(ckey, "Discord ID: [their_id]")
 			var/port = CONFIG_GET(number/register_server_port)
 			if(port)

@@ -335,7 +335,7 @@
 
 
 // === merged from polarisposters_vr.dm during hard-fork de-suffix (verified no override-order change) ===
-/datum/decl/poster/nanotrasen/nt_7 //YW EDIT: SolGov, USDF
+/datum/decl/poster/nanotrasen/nt_7 // SolGov, USDF
 	name = "SolGov"
 	desc = "This poster showcases an USDF emblem. The outer ring reads,\
 	\"<font face='times new roman ms'>NIL MORTALIBUS ARDUI EST</font>\".\

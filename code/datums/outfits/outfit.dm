@@ -251,7 +251,7 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 	return C
 
 /datum/decl/hierarchy/outfit/solcom/representative
-	name = "SolGov Representative" //YW EDIT: SolGov
+	name = "SolGov Representative" // SolGov
 	shoes = /obj/item/clothing/shoes/laceup
 	uniform = /obj/item/clothing/under/suit_jacket/navy
 	back = /obj/item/storage/backpack/satchel
@@ -266,11 +266,11 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 
 /datum/decl/hierarchy/outfit/solcom/representative/equip_id(mob/living/carbon/human/H)
 	var/obj/item/card/id/C = ..()
-	C.name = "[H.real_name]'s SolGov ID Card" //YW EDIT: SolGov
+	C.name = "[H.real_name]'s SolGov ID Card" // SolGov
 	C.icon_state = "lifetime"
 	C.access = SSaccess.get_all_station_access()
 	C.access += SSaccess.get_all_centcom_access()
-	C.assignment = "SolGov Representative" //YW EDIT: SolGov
+	C.assignment = "SolGov Representative" // SolGov
 	C.registered_name = H.real_name
 	return C
 

@@ -53,7 +53,7 @@
 
 // === merged from permits_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/clothing/accessory/permit/drone
-	desc = "A card issued by the EIO, indicating that the owner is a Drone Intelligence. Drones are mandated to carry this card within SolGov space, by law." //YW EDIT: SolGov
+	desc = "A card issued by the EIO, indicating that the owner is a Drone Intelligence. Drones are mandated to carry this card within SolGov space, by law." // SolGov
 
 /obj/item/clothing/accessory/permit/gun/planetside
 	name = "explorer gun permit" //CHOMP keep explo

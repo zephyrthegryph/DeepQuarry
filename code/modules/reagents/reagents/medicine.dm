@@ -342,16 +342,16 @@
 	reagent_state = LIQUID
 	dermal_absorption = 0.2
 	color = "#8040FF"
-	overdose = REAGENTS_OVERDOSE * 4 //YW EDIT - TRICORD FUCKING KILLS YOU
+	overdose = REAGENTS_OVERDOSE * 4 // TRICORD FUCKING KILLS YOU
 	scannable = SCANNABLE_BENEFICIAL
 	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
 	industrial_use = REFINERYEXPORT_REASON_DRUG
 	medallergen_type = MEDALLERGEN_TRICORD
 
-/datum/reagent/tricordrazine/overdose(mob/living/carbon/M, alien) //YW EDIT START
+/datum/reagent/tricordrazine/overdose(mob/living/carbon/M, alien)
 	..()
 	M.druggy = max(M.druggy, 5)
-	M.Confuse(5) //YW EDIT END
+	M.Confuse(5)
 
 /datum/reagent/tricordrazine/affect_blood(mob/living/carbon/M, alien, removed)
 	if(alien != IS_DIONA)
@@ -1966,7 +1966,7 @@
 	industrial_use = REFINERYEXPORT_REASON_DRUG
 
 /datum/reagent/vermicetol/affect_blood(mob/living/carbon/M, alien, removed)
-	var/chem_effective = 1 * M.species.chem_strength_heal //YW EDIT
+	var/chem_effective = 1 * M.species.chem_strength_heal
 	if(alien == IS_SLIME)
 		chem_effective = 0.75
 	if(alien != IS_DIONA)

@@ -26,7 +26,7 @@
 */
 
 //For general use
-//YW EDITS START: EXTENSIVELY MODIFIED -KK
+// S START: EXTENSIVELY MODIFIED -KK
 /obj/item/modkit_conversion
 	name = "modification kit"
 	desc = "A kit containing all the needed tools and parts to modify a suit and helmet."
@@ -139,7 +139,7 @@
 	parts -= cost
 	if(!parts && delete_on_empty)
 		qdel(src)
-//YW EDITS END
+// S END
 
 //DEBUG ITEM
 /obj/item/modkit_conversion/fluff/debug_gunkit

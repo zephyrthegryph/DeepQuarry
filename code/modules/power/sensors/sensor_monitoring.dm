@@ -26,7 +26,7 @@
 	if(alert != alerting)
 		alerting = !alerting
 		update_icon()
-/* VOREStation Move - Moved to VR File
+/* Moved to VR File
 // Updates icon of this computer according to current status.
 /obj/machinery/computer/power_monitor/update_icon()
 	if(!(stat & (NOPOWER|BROKEN)))

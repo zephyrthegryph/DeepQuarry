@@ -17,7 +17,7 @@
 	// Accidentally committed this to master instead of pull request. Adding comment to make a pull request. Also to note that I have changed the password so we won't appear on the HUB regardless of TGS3.
 	hub_password = "null"
 	name = "Space Station 13"
-	/*YW EDIT we want to be on the hub
+	/*we want to be on the hub
 	name = "VOREStation"
 	visibility = 0
 	*/

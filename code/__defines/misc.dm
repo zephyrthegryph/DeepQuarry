@@ -323,7 +323,7 @@ GLOBAL_LIST_EMPTY(##LIST_NAME);\
 #define RCD_VALUE_DELAY		"delay"
 #define RCD_VALUE_COST		"cost"
 
-#define RCD_SHEETS_PER_MATTER_UNIT	3	// Each physical material sheet is worth four matter units. ///YW EDIT 4->3 *Buffing RCDs Hopefully.*
+#define RCD_SHEETS_PER_MATTER_UNIT	3 // Each physical material sheet is worth four matter units. /// 4->3 *Buffing RCDs Hopefully.*
 #define RCD_MAX_CAPACITY			30 * RCD_SHEETS_PER_MATTER_UNIT
 
 // Radiation 'levels'. Used for the geiger counter, for visuals and sound. They are in different files so this goes here.

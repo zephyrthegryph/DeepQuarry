@@ -47,4 +47,4 @@
 
 // === merged from banners_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/banner/solgov
-	name = "\improper SolGov banner" //YW EDIT: SolGov
+	name = "\improper SolGov banner" // SolGov

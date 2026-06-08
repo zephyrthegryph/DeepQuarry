@@ -1,5 +1,5 @@
 
-/* YW EDIT START
+/* 
 /client/verb/who_advanced()
 	set name = "Advanced Who"
 	set category = "OOC.Resources"
@@ -96,4 +96,4 @@
 	msg += span_bold("Total Players: [length(Lines)]")
 	msg = span_filter_notice(msg)
 	to_chat(src, msg)
-YW EDIT STOP*/
+STOP*/

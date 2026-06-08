@@ -681,7 +681,7 @@
 
 // === merged from misc_vr.dm during hard-fork de-suffix (chain-verified, vr->ch order preserved) ===
 /obj/item/clothing/head/centhat/customs
-	desc = "A formal hat for SolGov Customs Officers." //YW EDIT: SolGov
+	desc = "A formal hat for SolGov Customs Officers." // SolGov
 
 /obj/item/clothing/head/fish
 	name = "fish skull"

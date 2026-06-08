@@ -177,7 +177,7 @@
 /obj/item/circuitboard/teleporter_hub
 	name = T_BOARD("teleporter hub")
 	build_path = /obj/machinery/teleport/hub
-	board_type = new /datum/frame/frame_types/machine //YWEdit makes buildable
+	board_type = new /datum/frame/frame_types/machine // makes buildable
 	matter = list(MAT_STEEL = 50, MAT_GLASS = 50, MAT_GOLD = 100)
 // Balance
 	req_components = list(
@@ -191,7 +191,7 @@
 /obj/item/circuitboard/teleporter_station
 	name = T_BOARD("teleporter station")
 	build_path = /obj/machinery/teleport/station
-	board_type = new /datum/frame/frame_types/machine //YWEdit makes buildable
+	board_type = new /datum/frame/frame_types/machine // makes buildable
 	matter = list(MAT_STEEL = 50, MAT_GLASS = 50, MAT_GOLD = 100)
 	req_components = list(
 							/obj/item/stock_parts/console_screen = 1,

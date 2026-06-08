@@ -64,7 +64,7 @@
 	)
 	gear_tweaks += new/datum/gear_tweak/variant(sortAssoc(selector_uniforms))
 
-//YW EDIT BEGINS
+// BEGINS
 /datum/gear/suit/mil
 	display_name = "military jacket selection"
 	description = "Pick from a modest range of military surplus jackets. They even have some pocket space!"
@@ -77,7 +77,7 @@
 		var/obj/item/clothing/suit/storage/miljacket/miljacket = military_style
 		mil_jackets[initial(miljacket.name)] = miljacket
 	gear_tweaks += new/datum/gear_tweak/variant(sortAssoc(mil_jackets))
-//YW EDIT ENDS
+// S
 
 /datum/gear/suit/greyjacket
 	display_name = "grey jacket"

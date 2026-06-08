@@ -50,7 +50,7 @@
 	return "It currently holds [stored_matter]/[max_stored_matter] matter-units."
 
 // Used to add new cartridges.
-/* VOREStation Tweak - Wow this is annoying, moved to _vr file for overhaul
+/* Wow this is annoying, moved to _vr file for overhaul
 /obj/item/rcd/attackby(obj/item/W, mob/user)
 	if(istype(W, /obj/item/rcd_ammo))
 		var/obj/item/rcd_ammo/cartridge = W

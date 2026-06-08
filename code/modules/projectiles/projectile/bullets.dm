@@ -1,6 +1,6 @@
 /obj/item/projectile/bullet
 	name = "bullet"
-	icon = 'icons/obj/projectiles_yw.dmi' //YWEdit, uses our bullet sprites
+	icon = 'icons/obj/projectiles_yw.dmi' // , uses our bullet sprites
 	icon_state = "bullet"
 	fire_sound = 'sound/weapons/Gunshot4.ogg'
 	damage = 60
