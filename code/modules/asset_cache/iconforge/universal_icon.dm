@@ -185,7 +185,10 @@
 
 /datum/universal_icon/proc/to_list()
 	RETURN_TYPE(/list)
-	return list("icon_file" = "[icon_file]", "icon_state" = icon_state, "dir" = dir, "frame" = frame, "transform" = !isnull(transform) ? transform.to_list() : list())
+	// resolve_icon_dmi_path() handles the DQ Architecture-A case: repacked DMIs live
+	// in icons/gen/ and are NOT at their source path on disk. iconforge reads the real
+	// filesystem rather than the .rsc, so we must give it the resolved gen path.
+	return list("icon_file" = resolve_icon_dmi_path("[icon_file]"), "icon_state" = icon_state, "dir" = dir, "frame" = frame, "transform" = !isnull(transform) ? transform.to_list() : list())
 
 /proc/universal_icon_from_list(list/input_in)
 	RETURN_TYPE(/datum/universal_icon)
