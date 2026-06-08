@@ -65,6 +65,11 @@
 		unlock_ids[id] = TRUE
 
 /datum/techweb_node/Destroy()
+	// Nodes are immutable global datums registered at startup via SSresearch.
+	// Destroying one at runtime would corrupt every techweb that references this node ID.
+	// If you hit this crash, something is incorrectly calling qdel() on a node datum.
+	if(id != "ERROR") // Allow the error_node sentinel to be deleted normally.
+		CRASH("Attempted to destroy techweb node '[id]' ([type]) at runtime — nodes are immutable global datums")
 	SSresearch.techweb_nodes -= id
 	return ..()
 
