@@ -83,11 +83,13 @@
 	of your own. You also have a catalog, to purchase your own functions and equipment as you see fit.")))
 	to_chat(H, span_infoplain(span_bold("It would be wise to speak to your master, and learn what their plans are for today.")))
 
-	spawn(1)
-		GLOB.technomancers.add_antagonist(H.mind, 0, 1, 0, 0, 0)
-		equip_antag(H)
-		used = 1
-		qdel(src)
+	addtimer(CALLBACK(src, PROC_REF(finish_technomancer_spawn), H), 0.1 SECONDS)
+
+/obj/item/antag_spawner/technomancer_apprentice/proc/finish_technomancer_spawn(mob/living/carbon/human/H)
+	GLOB.technomancers.add_antagonist(H.mind, 0, 1, 0, 0, 0)
+	equip_antag(H)
+	used = 1
+	qdel(src)
 
 /obj/item/antag_spawner/technomancer_apprentice/equip_antag(mob/technomancer_mob)
 	var/datum/antagonist/technomancer/antag_datum = SSantag_job.all_antag_types[MODE_TECHNOMANCER]
@@ -132,10 +134,11 @@
 
 	R.key = C.key
 
-	spawn(1)
-		GLOB.mercs.add_antagonist(R.mind, FALSE, TRUE, FALSE, FALSE, FALSE)
-		//add_antagonist(var/datum/mind/player, var/ignore_role, var/do_not_equip, var/move_to_spawn, var/do_not_announce, var/preserve_appearance)
-		qdel(src)
+	addtimer(CALLBACK(src, PROC_REF(finish_drone_spawn), R), 0.1 SECONDS)
+
+/obj/item/antag_spawner/syndicate_drone/proc/finish_drone_spawn(mob/living/silicon/robot/R)
+	GLOB.mercs.add_antagonist(R.mind, FALSE, TRUE, FALSE, FALSE, FALSE)
+	qdel(src)
 
 /obj/item/antag_spawner/syndicate_drone/protector
 	drone_type = /mob/living/silicon/robot/syndicate/protector

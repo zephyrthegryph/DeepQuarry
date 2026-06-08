@@ -11,7 +11,7 @@
 
 /obj/item/stack
 	gender = PLURAL
-	icon = 'icons/obj/stacks_ch.dmi' //CHOMPedit - materials update
+	icon = 'icons/obj/stacks_ch.dmi'
 	randpixel = 7
 	center_of_mass_x = 0
 	center_of_mass_y = 0
@@ -52,9 +52,7 @@
 
 /obj/item/stack/Destroy()
 	if (src && usr && usr.check_current_machine(src))
-		// DQEdit Start — stack window is TGUI now; close via SStgui
 		SStgui.close_uis(src)
-		// DQEdit End
 	if(islist(synths))
 		synths.Cut()
 	return ..()
@@ -262,7 +260,7 @@
 //Ensures that code dealing with stacks uses the same logic
 /obj/item/stack/proc/can_use(used)
 	if(used < 0 || (used != round(used)))
-		stack_trace("Tried to use a bad stack amount: [used]. Location: [src.loc] ([src.x],[src.y],[src.z])") //CHOMPEdit
+		stack_trace("Tried to use a bad stack amount: [used]. Location: [src.loc] ([src.x],[src.y],[src.z])")
 		return 0
 	if(get_amount() < used)
 		return 0
@@ -291,7 +289,7 @@
 
 /obj/item/stack/proc/add(extra)
 	if(extra < 0 || (extra != round(extra)))
-		stack_trace("Tried to add a bad stack amount: [extra]. Location: [src.loc] ([src.x],[src.y],[src.z])") //CHOMPEdit
+		stack_trace("Tried to add a bad stack amount: [extra]. Location: [src.loc] ([src.x],[src.y],[src.z])")
 		return 0
 	if(!uses_charge)
 		if(amount + extra > get_max_amount())
@@ -309,7 +307,7 @@
 
 /obj/item/stack/proc/set_amount(new_amount, no_limits = FALSE)
 	if(new_amount < 0 || (new_amount != round(new_amount)))
-		stack_trace("Tried to set a bad stack amount: [new_amount]. Location: [src.loc] ([src.x],[src.y],[src.z])") //CHOMPEdit
+		stack_trace("Tried to set a bad stack amount: [new_amount]. Location: [src.loc] ([src.x],[src.y],[src.z])")
 		return 0
 
 	// Clean up the new amount
@@ -347,7 +345,7 @@
 		tamount = src.get_amount()
 
 	if(tamount < 0 || (tamount != round(tamount)))
-		stack_trace("Tried to transfer a bad stack amount: [tamount]. Location: [src.loc] ([src.x],[src.y],[src.z])") //CHOMPEdit
+		stack_trace("Tried to transfer a bad stack amount: [tamount]. Location: [src.loc] ([src.x],[src.y],[src.z])")
 		return 0
 
 	var/transfer = max(min(tamount, src.get_amount(), (S.get_max_amount() - S.get_amount())), 0)
@@ -432,12 +430,14 @@
 				user.put_in_hands(F)
 				src.add_fingerprint(user)
 				F.add_fingerprint(user)
-				spawn(0)
-					if (src && user.check_current_machine(src))
-						src.interact(user)
+				addtimer(CALLBACK(src, PROC_REF(reopen_stack_ui), user), 0)
 	else
 		..()
 	return
+
+/obj/item/stack/proc/reopen_stack_ui(mob/user)
+	if (src && user.check_current_machine(src))
+		src.interact(user)
 
 /obj/item/stack/attackby(obj/item/W as obj, mob/user as mob)
 	if(istype(W, /obj/item/gripper))

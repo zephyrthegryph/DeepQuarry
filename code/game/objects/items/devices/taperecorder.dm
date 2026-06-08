@@ -91,7 +91,6 @@
 
 /obj/item/taperecorder/hear_talk(mob/M, list/message_pieces, verb)
 	var/msg = multilingual_to_message(message_pieces, requires_machine_understands = TRUE, with_capitalization = TRUE)
-	//START OF CHOMPEDIT
 	var/voice = "Unknown"
 	if (M.type == /mob/living/carbon/human)
 	{
@@ -100,7 +99,6 @@
 	}
 	else
 		voice = M.name
-	//END OF CHOMPEDIT
 	if(mytape && recording)
 		mytape.record_speech("[voice] [verb], \"[msg]\"")
 
@@ -174,7 +172,7 @@
 
 		//count seconds until full, or recording is stopped
 		while(mytape && recording && mytape.used_capacity < mytape.max_capacity)
-			sleep(10)
+			sleep(1 SECOND)
 			mytape.used_capacity++
 			if(mytape.used_capacity >= mytape.max_capacity)
 				if(ismob(loc))
@@ -277,7 +275,7 @@
 
 		if(mytape.storedinfo.len < i+1)
 			playsleepseconds = 1
-			sleep(10)
+			sleep(1 SECOND)
 			T = get_turf(src)
 			T.audible_message(span_maroon(span_bold("Tape Recorder") + ": End of recording."), runemessage = "click")
 			break
@@ -285,11 +283,11 @@
 			playsleepseconds = mytape.timestamp[i+1] - mytape.timestamp[i]
 
 		if(playsleepseconds > 14)
-			sleep(10)
+			sleep(1 SECOND)
 			T = get_turf(src)
 			T.audible_message(span_maroon(span_bold("Tape Recorder") + ": Skipping [playsleepseconds] seconds of silence"), runemessage = "tape winding")
 			playsleepseconds = 1
-		sleep(10 * playsleepseconds)
+		sleep(playsleepseconds SECONDS)
 
 
 	playing = 0
@@ -298,19 +296,19 @@
 	if(emagged)
 		var/turf/T = get_turf(src)
 		T.audible_message(span_maroon(span_bold("Tape Recorder") + ": This tape recorder will self-destruct in... Five."), runemessage = "beep beep")
-		sleep(10)
+		sleep(1 SECOND)
 		T = get_turf(src)
 		T.audible_message(span_maroon(span_bold("Tape Recorder") + ": Four."))
-		sleep(10)
+		sleep(1 SECOND)
 		T = get_turf(src)
 		T.audible_message(span_maroon(span_bold("Tape Recorder") + ": Three."))
-		sleep(10)
+		sleep(1 SECOND)
 		T = get_turf(src)
 		T.audible_message(span_maroon(span_bold("Tape Recorder") + ": Two."))
-		sleep(10)
+		sleep(1 SECOND)
 		T = get_turf(src)
 		T.audible_message(span_maroon(span_bold("Tape Recorder") + ": One."))
-		sleep(10)
+		sleep(1 SECOND)
 		explode()
 
 

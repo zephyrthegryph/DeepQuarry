@@ -147,9 +147,9 @@ GLOBAL_LIST_EMPTY(GPS_list)
 
 	toggle_tracking()
 	if(tracking)
-		to_chat(user, "[src] is now tracking, and visible to other GPS devices.")			// CHOMPEDIT : purdev	Fixed an issue where the if/else argument was written backwards
-	else													// CHOMPEDIT : purdev	Fixed an issue where the if/else argument was written backwards
-		to_chat(user, "[src] is no longer tracking, or visible to other GPS devices.")			// CHOMPEDIT : purdev	Fixed an issue where the if/else argument was written backwards
+		to_chat(user, "[src] is now tracking, and visible to other GPS devices.")
+	else
+		to_chat(user, "[src] is no longer tracking, or visible to other GPS devices.")
 
 /obj/item/gps/proc/toggle_tracking()
 	tracking = !tracking
@@ -173,11 +173,12 @@ GLOBAL_LIST_EMPTY(GPS_list)
 	var/duration = 5 MINUTES / severity_modifier
 	emped = TRUE
 	update_icon()
+	addtimer(CALLBACK(src, PROC_REF(emp_recover)), duration)
 
-	spawn(duration)
-		emped = FALSE
-		update_icon()
-		visible_message("\The [src] appears to be functional again.")
+/obj/item/gps/proc/emp_recover()
+	emped = FALSE
+	update_icon()
+	visible_message("\The [src] appears to be functional again.")
 
 /obj/item/gps/update_icon()
 	cut_overlays()

@@ -149,7 +149,7 @@
 					M.SetSleeping(0)
 					M.stuttering += 20
 					M.ear_deaf += 30
-					M.deaf_loop.start() // CHOMPStation Add: Ear Ringing/Deafness
+					M.deaf_loop.start()
 					M.Weaken(3)
 					if(prob(30))
 						M.Stun(10)
@@ -164,9 +164,10 @@
 				s.set_up(2, 1, get_turf(user))
 				s.start()
 				user.visible_message(span_warning("\The [src] sparks violently!"))
-				spawn(30)
-					explosion(get_turf(src), -1, -1, 1, 3, adminlog = 1)
-					qdel(src)
-					return
+				addtimer(CALLBACK(src, PROC_REF(deferred_explode)), 3 SECONDS)
 	else
 		user.audible_message(span_bold("[user.GetVoice()]") + "[user.GetAltName()] broadcasts, <FONT size=[broadcast_size] face='[broadcast_font]' color='[broadcast_color]'>\"[message]\"</FONT>", runemessage = message)
+
+/obj/item/megaphone/proc/deferred_explode()
+	explosion(get_turf(src), -1, -1, 1, 3, adminlog = 1)
+	qdel(src)

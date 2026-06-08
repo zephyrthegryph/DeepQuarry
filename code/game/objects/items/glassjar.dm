@@ -109,14 +109,13 @@
 			contains = JAR_NOTHING
 			update_icon()
 			return
-	//CHOMPDDITION: your god can not help you
 	for(var/mob/M in src)
 		if(istype(M,/mob/living/voice)) //Don't knock voices out!
 			continue
 		M.forceMove(get_turf(user))
 		to_chat(M, span_warning("[user] shakes you out of \the [src]!"))
 		to_chat(user, span_notice("You shake [M] out of \the [src]!"))
-//CHOMPADD END
+
 /obj/item/glass_jar/attackby(obj/item/W, mob/user)
 	if(istype(W, /obj/item/spacecash))
 		if(contains == JAR_NOTHING)
@@ -128,7 +127,6 @@
 		user.drop_from_inventory(S)
 		S.loc = src
 		update_icon()
-	//CHOMPDDITION: your god can not help you
 	if(istype(W,/obj/item/holder/micro))
 		var/full = 0
 		for(var/mob/M in src)
@@ -145,7 +143,7 @@
 				to_chat(M, span_warning("[user] stuffs you into \the [src]!"))
 				M.forceMove(src)
 				to_chat(user, span_notice("You stuff \the [M] into \the [src]!"))
-//CHOMPADD END
+
 /obj/item/glass_jar/update_icon() // Also updates name and desc
 	underlays.Cut()
 	cut_overlays()

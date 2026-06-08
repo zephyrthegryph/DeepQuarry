@@ -157,7 +157,7 @@
 	apply_tug_mob_to_mob(leash_pet, leash_master, 2)
 
 	//Knock the pet over if they get further behind. Shouldn't happen too often.
-	sleep(3) //This way running normally won't just yank the pet to the ground.
+	sleep(0.3 SECONDS) //This way running normally won't just yank the pet to the ground.
 	if(!leash_master || !leash_pet || leash_pet.absorbed) //Just to stop error messages. Break the loop early if something removed the master
 		clear_leash()
 		return
@@ -169,7 +169,7 @@
 		leash_pet.apply_effect(5, STUN, 0)
 
 	//This code is to check if the pet has gotten too far away, and then break the leash.
-	sleep(3) //Wait to snap the leash
+	sleep(0.3 SECONDS) //Wait to snap the leash
 	if(!leash_master || !leash_pet || leash_pet.absorbed) //Just to stop error messages
 		clear_leash()
 		return
@@ -211,7 +211,7 @@
 		clear_leash()
 		return
 	//Dropping procs any time the leash changes slots. So, we will wait a tick and see if the leash was actually dropped
-	addtimer(CALLBACK(src, PROC_REF(drop_effects), user), 1)
+	addtimer(CALLBACK(src, PROC_REF(drop_effects), user), 0.1 SECONDS)
 
 /obj/item/leash/proc/drop_effects(mob/user)
 	SIGNAL_HANDLER

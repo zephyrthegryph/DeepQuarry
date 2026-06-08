@@ -22,14 +22,14 @@
 		return TRUE
 	if(colorindex)
 		nonrandom()
-	addtimer(CALLBACK(src, PROC_REF(do_size_effect), capsuleowner), 10, TIMER_DELETE_ME)
+	addtimer(CALLBACK(src, PROC_REF(do_size_effect), capsuleowner), 1 SECOND, TIMER_DELETE_ME)
 
 /obj/item/buttonofnormal/throw_impact(atom/A, speed, mob/user)
 	..()
 	if(isliving(A))
 		if(colorindex)
 			nonrandom()
-		addtimer(CALLBACK(src, PROC_REF(do_size_effect), A), 5, TIMER_DELETE_ME)
+		addtimer(CALLBACK(src, PROC_REF(do_size_effect), A), 0.5 SECONDS, TIMER_DELETE_ME)
 
 /obj/item/buttonofnormal/proc/do_size_effect(atom/A)
 	var/mob/living/capsulehit = A
@@ -88,7 +88,7 @@
 	var/mob/living/capsuleowner = user
 	playsound(src, 'sound/effects/splat.ogg', 30, 1)
 	var/item = pick(winitems)
-	sleep(100)
+	sleep(10 SECONDS)
 	switch(luckynumber7)
 		if(1)	capsuleowner.resize(RESIZE_TINY) //Loss Shrinking!
 		if(2)	capsuleowner.apply_damage(5, BRUTE) //Loss Damaging!
@@ -104,7 +104,7 @@
 		if(777)	new	/obj/item/spacecash/c1000(capsuleowner.loc) //for rigging
 		else luckynumber7 = (rand(0,10))
 	luckynumber7 = rand(0,10)
-	sleep(100)
+	sleep(10 SECONDS)
 	playsound(src.loc, 'sound/machines/slotmachine.ogg', 25, 1)
 
 //items literally just made for the above item spawner
@@ -113,7 +113,7 @@
 //BADvanced size gun
 //
 /obj/item/gun/energy/sizegun/not_advanced
-	name = "\improper corrupted size gun"	// CHOMPedit Adds \improper
+	name = "\improper corrupted size gun"
 	desc = "A highly advanced ray gun with a knob on the side to adjust the size you desire. Or at least that's what it used to be."
 	projectile_type = /obj/item/projectile/beam/sizelaser/chaos
 	charge_cost = 60 //1/3 of the base price for a normal one.

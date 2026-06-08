@@ -347,11 +347,13 @@ This device records all warnings given and teleport events for admin review in c
 			phase_in(G.affecting,get_turf(G.affecting))
 
 	update_icon()
-	spawn(30 SECONDS)
-		ready = 1
-		update_icon()
+	addtimer(CALLBACK(src, PROC_REF(translocator_ready)), 30 SECONDS)
 
 	logged_events["[world.time]"] = "[user] teleported [target] to [real_dest] [televored ? "(Belly: [lowertext(real_dest.name)])" : null]"
+
+/obj/item/perfect_tele/proc/translocator_ready()
+	ready = 1
+	update_icon()
 
 /obj/item/perfect_tele/proc/phase_out(mob/M,turf/T)
 

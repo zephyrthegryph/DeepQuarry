@@ -212,7 +212,6 @@
 			set_light(2)
 			set_light_on(TRUE)
 
-//VOREStation Add Start
 /obj/item/radio/intercom/ctrl_click_ai(mob/user)
 	ToggleBroadcast()
 	to_chat(user, span_notice("\The [src]'s microphone is now <b>[broadcasting ? "enabled" : "disabled"]</b>."))
@@ -224,7 +223,7 @@
 	else
 		set_frequency(AI_FREQ)
 		to_chat(user, span_notice("\The [src]'s frequency is now set to [span_pink(span_bold("AI Private"))]."))
-//VOREStation Add End
+
 /obj/item/radio/intercom/locked
 	var/locked_frequency
 

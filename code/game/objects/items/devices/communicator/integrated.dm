@@ -11,10 +11,12 @@
 // Description: Synths don't use languages properly, so this is a bandaid fix until that can be resolved..
 /obj/item/communicator/integrated/open_connection_to_ghost(user, candidate)
 	..(user, candidate)
-	spawn(1)
-		for(var/mob/living/voice/V in contents)
-			V.universal_speak = 1
-			V.universal_understand = 1
+	addtimer(CALLBACK(src, PROC_REF(set_ghost_voice_universal)), 0.1 SECONDS)
+
+/obj/item/communicator/integrated/proc/set_ghost_voice_universal()
+	for(var/mob/living/voice/V in contents)
+		V.universal_speak = 1
+		V.universal_understand = 1
 
 // Verb: activate()
 // Parameters: None

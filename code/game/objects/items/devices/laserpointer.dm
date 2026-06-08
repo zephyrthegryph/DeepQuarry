@@ -181,8 +181,7 @@
 				C.visible_message(span_warning("[C] pounces on the light!"), span_warning("You pounce on the light!"))
 				step_towards(C, targloc)
 				C.lay_down()
-				spawn(10)
-					C.lay_down()
+				addtimer(CALLBACK(C, PROC_REF(lay_down)), 1 SECOND)
 			else
 				C.set_dir(get_dir(C,targloc))
 				C.visible_message(span_notice("[C] watches the light."), span_notice("Your attention is drawn to the mysterious glowing dot."))
@@ -215,8 +214,10 @@
 			recharge_locked = TRUE
 
 	flick_overlay(I, showto, cooldown)
-	spawn(cooldown)
-		icon_state = initial(icon_state)
+	addtimer(CALLBACK(src, PROC_REF(reset_laser_icon)), cooldown)
+
+/obj/item/laser_pointer/proc/reset_laser_icon()
+	icon_state = initial(icon_state)
 
 /obj/item/laser_pointer/process()
 	if(prob(20 - recharge_locked*5))

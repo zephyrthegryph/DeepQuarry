@@ -41,14 +41,14 @@
 	if(user)
 		comm.visible_message(span_notice("[icon2html(src,viewers(src))] Connecting to [src]."))
 		to_chat(user, span_notice("[icon2html(src,user.client)] Attempting to call [comm]."))
-		sleep(10)
+		sleep(1 SECOND)
 		to_chat(user, span_notice("[icon2html(src,user.client)] Dialing internally from [station_name()], [system_name()]."))
-		sleep(20) //If they don't have an exonet something is very wrong and we want a runtime.
+		sleep(2 SECONDS) //If they don't have an exonet something is very wrong and we want a runtime.
 		to_chat(user, span_notice("[icon2html(src,user.client)] Connection re-routed to [comm] at [comm.exonet.address]."))
-		sleep(40)
+		sleep(4 SECONDS)
 		to_chat(user, span_notice("[icon2html(src,user.client)] Connection to [comm] at [comm.exonet.address] established."))
 		comm.visible_message(span_notice("[icon2html(src,viewers(src))] Connection to [src] at [exonet.address] established."))
-		sleep(20)
+		sleep(2 SECONDS)
 
 	src.add_communicating(comm)
 	comm.add_communicating(src)
@@ -88,13 +88,13 @@
 	if(user)
 		to_chat(user, span_notice("[icon2html(src,user.client)] Connecting to [candidate]."))
 	to_chat(new_voice, span_notice("[icon2html(src,new_voice.client)] Attempting to call [src]."))
-	sleep(10)
+	sleep(1 SECOND)
 	to_chat(new_voice, span_notice("[icon2html(src,new_voice.client)] Dialing to [station_name()], Kara Subsystem, [system_name()]."))
-	sleep(20)
+	sleep(2 SECONDS)
 	to_chat(new_voice, span_notice("[icon2html(src,new_voice.client)] Connecting to [station_name()] telecommunications array."))
-	sleep(40)
+	sleep(4 SECONDS)
 	to_chat(new_voice, span_notice("[icon2html(src,new_voice.client)] Connection to [station_name()] telecommunications array established.  Redirecting signal to [src]."))
-	sleep(20)
+	sleep(2 SECONDS)
 
 	//We're connected, no need to hide everything.
 	new_voice.client.screen.Remove(blackness)
@@ -207,7 +207,6 @@
 	for(var/obj/item/communicator/comm in communicating)
 		var/turf/T = get_turf(comm)
 		if(!T) return
-		//VOREStation Edit Start for commlinks
 		var/list/mobs_to_relay
 		if(istype(comm,/obj/item/communicator/commlink))
 			var/obj/item/communicator/commlink/CL = comm
@@ -215,7 +214,6 @@
 		else
 			var/list/in_range = get_mobs_and_objs_in_view_fast(T,world.view,0) //Range of 3 since it's a tiny video display
 			mobs_to_relay = in_range["mobs"]
-		//VOREStation Edit End
 		var/rendered = "[icon2html(src,mobs_to_relay)] " + span_message("[text]")
 		for(var/mob/mob in mobs_to_relay) //We can't use visible_message(), or else we will get an infinite loop if two communicators hear each other.
 			var/dst = get_dist(get_turf(mob),get_turf(comm))
@@ -235,7 +233,6 @@
 	for(var/obj/item/communicator/comm in communicating)
 		var/turf/T = get_turf(comm)
 		if(!T) return
-		//VOREStation Edit Start for commlinks
 		var/list/mobs_to_relay
 		if(istype(comm,/obj/item/communicator/commlink))
 			var/obj/item/communicator/commlink/CL = comm
@@ -243,7 +240,6 @@
 		else
 			var/list/in_range = get_mobs_and_objs_in_view_fast(T,world.view,0) //Range of 3 since it's a tiny video display
 			mobs_to_relay = in_range["mobs"]
-		//VOREStation Edit End
 
 		for(var/mob/mob in mobs_to_relay)
 			var/list/combined = mob.combine_message(message_pieces, verb, M)
@@ -344,7 +340,7 @@
 		return
 
 	to_chat(user, span_notice("[icon2html(src, user.client)] Attempting to start video over existing call."))
-	sleep(30)
+	sleep(3 SECONDS)
 	to_chat(user, span_notice("[icon2html(src, user.client)] Please wait..."))
 
 	video_source = comm.camera

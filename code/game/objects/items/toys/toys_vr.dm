@@ -58,15 +58,6 @@
 	drop_sound = 'sound/voice/weh.ogg'
 	attack_verb = list("raided", "kobolded", "weh'd")
 
-/* //CHOMPedit: Disable, this is an upstream player reference.
-/obj/item/toy/plushie/lizardplushie/resh
-	name = "security unathi plushie"
-	desc = "An adorable stuffed toy that resembles an unathi wearing a head of security uniform. Perfect example of a monitor lizard."
-	icon = 'icons/obj/toy.dmi'
-	icon_state = "marketable_resh"
-	pokephrase = "Halt! Sssecurity!"		//"Butts!" would be too obvious
-	attack_verb = list("valided", "justiced", "batoned")
-*/ //CHOMPedit end
 
 /obj/item/toy/plushie/slimeplushie
 	name = "slime plushie"
@@ -252,34 +243,6 @@
 	attack_verb = list("existed near")
 	bubble_icon = "textbox"
 
-/* //CHOMPedit: Disable, upstream player reference.
-/obj/item/toy/plushie/marketable_pip
-	name = "mascot CRO plushie"
-	desc = "An adorable plushie of NanoTrasen's Best Girl(TM) mascot. It smells faintly of paperwork."
-	icon = 'icons/obj/toy.dmi'
-	icon_state = "marketable_pip"
-	squeeze_sound = 'sound/effects/whistle.ogg'
-
-/obj/item/toy/plushie/marketable_pip/attackby(obj/item/I, mob/user)
-	var/obj/item/card/id/id = I.GetID()
-	if(istype(id) && cooldown_timer < world.time)
-		var/responses = list("I'm not giving you all-access.", "Do you want an ID modification?", "Where are you swiping that!?", "Congratulations! You've been promoted to unemployed!")
-		pokephrase = pick(responses)
-		user.visible_message(span_notice("[user] swipes \the [I] against \the [src]."))
-		playsound(user, 'sound/effects/whistle.ogg', 10, 0)
-		say_phrase()
-		cooldown_timer = world.time + cooldown_length
-		return ..()
-
-/obj/item/toy/plushie/marketable_pip/attack_self(mob/user as mob)
-	if(!cooldown)
-		playsound(user, 'sound/effects/whistle.ogg', 10, 0)
-		cooldown = TRUE
-		addtimer(VARSET_CALLBACK(src, cooldown, FALSE), 15 SECONDS, TIMER_DELETE_ME)
-	return ..()
-/obj/item/toy/plushie/marketable_pip/proc/cooldownreset()
-	cooldown = 0
-*/ //CHOMPedit end
 
 /obj/item/toy/plushie/moth
 	name = "moth plushie"
@@ -461,7 +424,7 @@
 		flick("[initial(icon_state)]2", src)
 		user.visible_message(span_disarm("[user] doesn't blind [M] with the toy flash!"))
 		cooldown = 1
-		addtimer(CALLBACK(src, PROC_REF(cooldownreset)), 50)
+		addtimer(CALLBACK(src, PROC_REF(cooldownreset)), 5 SECONDS)
 		return ..()
 
 /obj/item/toy/flash/proc/cooldownreset()
@@ -581,14 +544,16 @@
 	if(cooldown < world.time)
 		cooldown = world.time + 1800 //3 minutes
 		user.visible_message(span_warning("[user] presses a button on [src]"), span_notice("You activate [src], it plays a loud noise!"), span_notice("You hear the click of a button."))
-		spawn(5) //gia said so
-			icon_state = "nuketoy"
-			playsound(src, 'sound/machines/alarm.ogg', 10, 0, 0)
-			VARSET_IN(src, icon_state, "nuketoycool", 135)
-			VARSET_IN(src, icon_state, "nuketoyidle", (135 + (cooldown - world.time)))
+		addtimer(CALLBACK(src, PROC_REF(activate_nuke_toy)), 0.5 SECONDS)
 	else
 		var/timeleft = (cooldown - world.time)
 		to_chat(user, span_warning("Nothing happens, and") + " '[round(timeleft/10)]' " + span_warning("appears on a small display."))
+
+/obj/item/toy/nuke/proc/activate_nuke_toy()
+	icon_state = "nuketoy"
+	playsound(src, 'sound/machines/alarm.ogg', 10, 0, 0)
+	VARSET_IN(src, icon_state, "nuketoycool", 135)
+	VARSET_IN(src, icon_state, "nuketoyidle", (135 + (cooldown - world.time)))
 
 /obj/item/toy/nuke/attackby(obj/item/I as obj, mob/living/user as mob)
 	if(istype(I, /obj/item/disk/nuclear))
@@ -659,16 +624,18 @@
 		cooldown = (world.time + 50) //5 second cooldown
 		user.visible_message(span_notice("[user] pulls back the string on [src]."))
 		icon_state = "[initial(icon_state)]cool"
-		sleep(5)
+		sleep(0.5 SECONDS)
 		atom_say("Hiss!")
 		var/list/possible_sounds = list('sound/voice/hiss1.ogg', 'sound/voice/hiss2.ogg', 'sound/voice/hiss3.ogg', 'sound/voice/hiss4.ogg')
 		playsound(get_turf(src), pick(possible_sounds), 50, 1)
-		spawn(45)
-			if(src)
-				icon_state = "[initial(icon_state)]"
+		addtimer(CALLBACK(src, PROC_REF(reset_xenotoy_icon)), 4.5 SECONDS)
 	else
 		to_chat(user, span_warning("The string on [src] hasn't rewound all the way!"))
 		return
+
+/obj/item/toy/toy_xeno/proc/reset_xenotoy_icon()
+	if(src)
+		icon_state = "[initial(icon_state)]"
 
 /*
  * Russian revolver
@@ -797,7 +764,7 @@
 	if(!cooldown)
 		playsound(user, 'sound/weapons/chainsaw_startup.ogg', 10, 0)
 		cooldown = 1
-		addtimer(CALLBACK(src, PROC_REF(cooldownreset)), 50)
+		addtimer(CALLBACK(src, PROC_REF(cooldownreset)), 5 SECONDS)
 
 /obj/item/toy/chainsaw/proc/cooldownreset()
 	cooldown = 0

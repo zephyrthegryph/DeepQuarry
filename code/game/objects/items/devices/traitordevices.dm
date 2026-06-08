@@ -43,16 +43,7 @@ effective or pretty fucking useless.
 	var/list/affected = list()
 	for(var/mob/living/carbon/human/M in orange(10, user))
 		affected += M
-		spawn()
-			if(prob(50))
-
-				M.Weaken(rand(10,20))
-				if(prob(25))
-					M.Stun(rand(5,10))
-				to_chat(M, span_danger("You feel a tremendous, paralyzing wave flood your mind."))
-
-			else
-				to_chat(M, span_danger("You feel a sudden, electric jolt travel through your head."))
+		addtimer(CALLBACK(src, PROC_REF(mind_batter_effect), M), 0)
 
 	add_attack_logs(user,affected,"Used a [name]")
 
@@ -61,3 +52,12 @@ effective or pretty fucking useless.
 	times_used += 1
 	if(times_used >= max_uses)
 		icon_state = "battererburnt"
+
+/obj/item/mindbatterer/proc/mind_batter_effect(mob/living/carbon/human/M)
+	if(prob(50))
+		M.Weaken(rand(10,20))
+		if(prob(25))
+			M.Stun(rand(5,10))
+		to_chat(M, span_danger("You feel a tremendous, paralyzing wave flood your mind."))
+	else
+		to_chat(M, span_danger("You feel a sudden, electric jolt travel through your head."))

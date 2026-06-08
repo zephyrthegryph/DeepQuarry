@@ -44,8 +44,6 @@
 		user.put_in_hands(A)
 		A.add_fingerprint(user)
 
-// DQEdit Start — TGUI migration. The electropack's panel had three
-// controls (power, frequency, code); they all flow through tgui_act now.
 /obj/item/radio/electropack/proc/can_use(mob/user)
 	if(!user || user.stat || user.restrained())
 		return FALSE
@@ -56,7 +54,6 @@
 	if(in_range(src, user) && isturf(loc))
 		return TRUE
 	return FALSE
-// DQEdit End
 
 /obj/item/radio/electropack/receive_signal(datum/signal/signal)
 	if(!signal || signal.encryption != code)
@@ -81,7 +78,6 @@
 		master.receive_signal()
 	return
 
-// DQEdit Start — TGUI Electropack window; no more browse() panel.
 /obj/item/radio/electropack/attack_self(mob/user, flag1)
 	if(!ishuman(user))
 		return
@@ -125,4 +121,3 @@
 			if(isnum(delta))
 				code = clamp(round(code + delta), 1, 100)
 			return TRUE
-// DQEdit End

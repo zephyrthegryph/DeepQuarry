@@ -1,4 +1,4 @@
-#define DEFIB_TIME_LIMIT (10 MINUTES) //VOREStation addition- past this many seconds, defib is useless.
+#define DEFIB_TIME_LIMIT (10 MINUTES)
 
 /obj/item/healthanalyzer
 	name = "health analyzer"
@@ -267,7 +267,6 @@
 		dat += "<br>"
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
-		//CHOMPedit begin - malignant organs
 		for(var/obj/item/organ/internal/io in H.internal_organs)
 			if(istype(io,/obj/item/organ/internal/appendix))
 				var/obj/item/organ/internal/appendix/a = io
@@ -289,7 +288,6 @@
 				else
 					dat += span_warning("Anatomical irregularities detected in subject.")
 					dat += "<br>"
-		//CHOMPedit end
 		// Addictions
 		if(H.get_addiction_to_reagent(REAGENT_ID_ASUSTENANCE) > 0)
 			dat += span_warning("Biologically unstable, requires [REAGENT_ASUSTENANCE] to function properly.")
@@ -511,4 +509,4 @@
 	advscan = SCANNABLE_SECRETIVE
 	icon_state = "health3"
 
-#undef DEFIB_TIME_LIMIT //VOREStation addition
+#undef DEFIB_TIME_LIMIT

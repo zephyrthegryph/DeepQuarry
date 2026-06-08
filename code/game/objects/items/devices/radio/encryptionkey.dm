@@ -124,7 +124,7 @@
 	channels = list(CHANNEL_RESPONSE_TEAM = 1, CHANNEL_SCIENCE = 1, CHANNEL_COMMAND = 1, CHANNEL_MEDICAL = 1, CHANNEL_ENGINEERING = 1, CHANNEL_SECURITY = 1, CHANNEL_SUPPLY = 1, CHANNEL_SERVICE = 1)
 
 /obj/item/encryptionkey/omni		//Literally only for the admin intercoms
-	channels = list(CHANNEL_MERCENARY = 1, CHANNEL_RAIDER = 1, CHANNEL_RESPONSE_TEAM = 1, CHANNEL_SCIENCE = 1, CHANNEL_COMMAND = 1, CHANNEL_MEDICAL = 1, CHANNEL_ENGINEERING = 1, CHANNEL_SECURITY = 1, CHANNEL_SUPPLY = 1, CHANNEL_SERVICE = 1, CHANNEL_OUTSIDER = 1) //CHOMPedit: Added Outsider
+	channels = list(CHANNEL_MERCENARY = 1, CHANNEL_RAIDER = 1, CHANNEL_RESPONSE_TEAM = 1, CHANNEL_SCIENCE = 1, CHANNEL_COMMAND = 1, CHANNEL_MEDICAL = 1, CHANNEL_ENGINEERING = 1, CHANNEL_SECURITY = 1, CHANNEL_SUPPLY = 1, CHANNEL_SERVICE = 1, CHANNEL_OUTSIDER = 1)
 	syndie = 1//Signifies that it de-crypts Syndicate transmissions
 
 /obj/item/encryptionkey/ent
@@ -150,7 +150,7 @@
 /obj/item/encryptionkey/heads/rd
 	name = "research director's encryption key"
 	icon_state = "rd_cypherkey"
-	channels = list(CHANNEL_COMMAND = 1, CHANNEL_SCIENCE = 1, CHANNEL_EXPLORATION = 1) // CHOMPEdit, adds Exploration
+	channels = list(CHANNEL_COMMAND = 1, CHANNEL_SCIENCE = 1, CHANNEL_EXPLORATION = 1)
 
 /obj/item/encryptionkey/ert
 	channels = list(CHANNEL_RESPONSE_TEAM = 1, CHANNEL_SCIENCE = 1, CHANNEL_COMMAND = 1, CHANNEL_MEDICAL = 1, CHANNEL_ENGINEERING = 1, CHANNEL_SECURITY = 1, CHANNEL_SUPPLY = 1, CHANNEL_SERVICE = 1, CHANNEL_EXPLORATION = 1)
@@ -161,12 +161,12 @@
 /obj/item/encryptionkey/pathfinder
 	name = "pathfinder's encryption key"
 	icon_state = "com_cypherkey"
-	channels = list(/*CHANNEL_COMMAND = 1,*/ CHANNEL_EXPLORATION = 1) // CHOMPEdit Remove Command
+	channels = list(/*CHANNEL_COMMAND = 1,*/ CHANNEL_EXPLORATION = 1)
 
 /obj/item/encryptionkey/qm
 	name = "quartermaster's encryption key"
 	icon_state = "qm_cypherkey"
-	channels = list(/*CHANNEL_COMMAND = 1,*/ CHANNEL_SUPPLY = 1) // CHOMPEdit Remove Command
+	channels = list(/*CHANNEL_COMMAND = 1,*/ CHANNEL_SUPPLY = 1)
 
 /obj/item/encryptionkey/pilot
 	name = "pilot's encryption key"
@@ -174,7 +174,7 @@
 	channels = list(CHANNEL_EXPLORATION = 1)
 
 /obj/item/encryptionkey/explorer
-	name = "explorer's encryption key" // CHOMPEdit explo keep
+	name = "explorer's encryption key"
 	icon_state = "rob_cypherkey"
 	channels = list(CHANNEL_EXPLORATION = 1)
 

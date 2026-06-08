@@ -78,10 +78,12 @@
 		for(var/atom/A in get_turf(hit_atom))
 			src.reagents.touch(A)
 		src.icon_state = "burst"
-		spawn(5)
-			if(src)
-				qdel(src)
+		addtimer(CALLBACK(src, PROC_REF(try_qdel)), 0.5 SECONDS)
 	return
+
+/obj/item/toy/balloon/proc/try_qdel()
+	if(src)
+		qdel(src)
 
 /obj/item/toy/balloon/update_icon()
 	if(src.reagents.total_volume >= 1)
@@ -894,10 +896,8 @@
 
 	if(src && input && !M.stat && in_range(M,src))
 		name = input
-		//CHOMPAdd Start - Rename possessed voices too
 		for(var/mob/living/voice/V in possessed_voice)
 			V.name = input
-		//CHOMPAdd End
 		adjusted_name = input
 		to_chat(M, "You name the plushie [input], giving it a hug for good luck.")
 		return 1

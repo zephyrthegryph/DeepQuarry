@@ -11,14 +11,14 @@
 	var/obj/item/reagent_containers/syringe/syringe
 	var/cryogenic = FALSE
 	var/robotic = FALSE
-	var/mass_grave = FALSE //CHOMPEdit
+	var/mass_grave = FALSE
 
 /obj/item/bodybag/attack_self(mob/user)
 	. = ..(user)
 	if(.)
 		return TRUE
-	if(mass_grave) //CHOMPedit - TODO, upport this.
-		return FALSE //CHOMPedit - TODO, upport this.
+	if(mass_grave)
+		return FALSE
 
 	if(cryogenic)
 		var/obj/structure/closet/body_bag/cryobag/R = new /obj/structure/closet/body_bag/cryobag(user.loc)
@@ -61,7 +61,6 @@
 	var/contains_body = FALSE
 	var/has_label = FALSE
 
-//Yawn add
 /obj/item/bodybag/large
 	name = "mass grave body bag"
 	desc = "A large folded bag designed for the storage and transportation of cadavers."
@@ -83,7 +82,6 @@
 	icon = 'icons/obj/closets/bodybag_large.dmi'
 	storage_capacity = (MOB_MEDIUM * 12) - 1 //Holds 12 bodys
 	item_path = /obj/item/bodybag/large
-//End of Yawn add
 
 /obj/structure/closet/body_bag/attackby(obj/item/W as obj, mob/user as mob)
 	if (istype(W, /obj/item/pen))
@@ -127,8 +125,7 @@
 		if(contents.len)	return 0
 		visible_message("[usr] folds up the [src.name]")
 		var/folded = new item_path(get_turf(src))
-		spawn(0)
-			qdel(src)
+		qdel(src)
 		return folded
 
 /obj/structure/closet/body_bag/relaymove(mob/user,direction)
@@ -162,7 +159,7 @@
 /obj/item/bodybag/cryobag
 	name = "stasis bag"
 	desc = "A non-reusable plastic bag designed to slow down bodily functions such as circulation and breathing, \
-	especially useful if short on time or in a hostile environment."		// CHOMPEDIT : purdev (spelling fix)
+	especially useful if short on time or in a hostile environment."
 	icon = 'icons/obj/closets/cryobag.dmi'
 	icon_state = "bodybag_folded"
 	item_state = "bodybag_cryo_folded"
