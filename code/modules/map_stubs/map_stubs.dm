@@ -58,19 +58,7 @@
 // as a stub avoids deleting consumer code blocks.
 /obj/machinery/gateway
 
-// Tether away spawner — was defined in maps/offmap/common_offmaps.dm.
-// Subtypes in maps/common/common_things.dm reference its vars.
-/obj/tether_away_spawner
-	name = "RENAME ME, JERK"
-	icon_state = "x"
-	invisibility = INVISIBILITY_ABSTRACT
-	mouse_opacity = 0
-	density = 0
-	anchored = 1
-	var/list/mobs_to_pick_from
-	var/prob_spawn = 100
-	var/prob_fall = 5
-	var/faction
-	var/atmos_comp
-	var/mob/living/simple_mob/my_mob
-	var/depleted = FALSE
+// NOTE: /obj/tether_away_spawner is no longer stubbed here — it was a vars-only
+// stub that silently disabled the spawners live submaps still place. The real
+// implementation (Initialize + process) now lives in
+// code/modules/awaymissions/tether_away_spawner.dm.

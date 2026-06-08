@@ -2283,6 +2283,7 @@
 #include "code\modules\autowiki\page\techweb.dm"
 #include "code\modules\awaymissions\pamphlet.dm"
 #include "code\modules\awaymissions\redgate.dm"
+#include "code\modules\awaymissions\tether_away_spawner.dm"
 #include "code\modules\balloon_alert\balloon_alert.dm"
 #include "code\modules\blob\blob.dm"
 #include "code\modules\blob2\_defines.dm"
