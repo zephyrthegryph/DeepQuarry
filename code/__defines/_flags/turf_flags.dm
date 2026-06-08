@@ -7,9 +7,6 @@
 #define TURF_PLANET_QUEUED			(1<<3)
 /// registered to a planet
 #define TURF_PLANET_REGISTERED		(1<<4)
-/// queued for ZAS rebuild
-#define TURF_ZONE_REBUILD_QUEUED	(1<<5)
-
 ///CITMAIN TURF FLAGS - Completely unused
 /*
 /// If a turf can be made dirty at roundstart. This is also used in areas.
@@ -27,7 +24,6 @@ DEFINE_BITFIELD(turf_flags, list(
 	BITFIELD(UNUSED_RESERVATION_TURF),
 	BITFIELD(TURF_PLANET_QUEUED),
 	BITFIELD(TURF_PLANET_REGISTERED),
-	BITFIELD(TURF_ZONE_REBUILD_QUEUED),
 ))
 */
 //* /turf_path_danger var on /turf
