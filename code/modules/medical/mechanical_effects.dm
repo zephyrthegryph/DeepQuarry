@@ -47,22 +47,16 @@ GLOBAL_LIST_INIT(dq_mechanical_caps, list(
 	"drop_held_prob"    = 25,
 ))
 
-// Per-Life-tick cache of the conditions list. Each of the five public
-// mechanical_effects helpers below previously walked
-// get_all_conditions() (which itself iterates every organ) independently,
-// so a mob with multiple polytrauma conditions paid 5× the walk every
-// Life tick. Now they all read the cached list rebuilt at most once per
-// world.time stamp.
-/mob/living/carbon/human
-	var/list/_dq_mechanical_conditions_cache
-	var/_dq_mechanical_conditions_cache_time = -1
-
+// Collect the mob's active conditions for the mechanical-effects helpers.
+//
+// This is intentionally NOT cached. A world.time-keyed cache was tried, but
+// conditions can be added or removed within a single tick (medical processing,
+// cures, and unit tests all do this), and a tick-scoped cache returns stale
+// results in that window — a condition added this tick wouldn't affect slowdown
+// or verb-blocks until next tick. get_all_conditions() is an O(organs) walk that
+// skips organs with no medical_issues, so calling it per query is cheap enough.
 /mob/living/carbon/human/proc/_dq_mechanical_conditions()
-	if(_dq_mechanical_conditions_cache_time == world.time)
-		return _dq_mechanical_conditions_cache
-	_dq_mechanical_conditions_cache = get_all_conditions()
-	_dq_mechanical_conditions_cache_time = world.time
-	return _dq_mechanical_conditions_cache
+	return get_all_conditions()
 
 /// Sum a single mechanical-effects key across the mob's active
 /// conditions, capped at the per-key ceiling in `dq_mechanical_caps`.

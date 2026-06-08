@@ -26,6 +26,9 @@
 
 // === /tg/ SSblackbox telemetry — wired to CHOMP's feedback_add_details ===
 /datum/controller/subsystem/blackbox
+	// Feedback-recording compat shim only — no fire() body, so flag SS_NO_FIRE
+	// to keep the MC from adding it to the processing list (and warning each boot).
+	flags = SS_NO_FIRE
 	var/sealed = FALSE
 
 /datum/controller/subsystem/blackbox/proc/record_feedback(key_type, key_name, increment_by = 1, data = null)

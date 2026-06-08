@@ -157,8 +157,13 @@
 			TEST_NOTICE(src, "TECHWEB DESIGN - [design.type] had a buildpath that directly prints a machine: \"[design.build_path]\"")
 			failed = TRUE
 
-		// Design must be a unique path produced
-		if(design.build_path in used_design_paths)
+		// Design must be a unique path produced — EXCEPT stock parts. This fork
+		// uses rating-based stock parts (a single /obj/item/stock_parts/<type>
+		// with a `rating` var) rather than /tg/'s per-tier subtypes, so the
+		// tiered research ladder (basic/adv/super/hyper/omni) intentionally has
+		// several designs that build the same base stock-part type with distinct
+		// materials and research categories. That is not a duplicate-path bug.
+		if(!(design.build_path in subtypesof(/obj/item/stock_parts)) && (design.build_path in used_design_paths))
 			TEST_NOTICE(src, "TECHWEB DESIGN - [design.type] had a build_path that was already used by another design: \"[design.build_path]\"")
 			failed = TRUE
 

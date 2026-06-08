@@ -10,7 +10,11 @@
 /obj/item/stack/material/exotic_dynamic
 	icon = 'icons/obj/mining.dmi'
 	icon_state = "ore_diamond"
-	default_type = "exotic_mat_0" // placeholder; overridden by caller
+	// Placeholder material for a bare-instantiated stack (e.g. unit-test
+	// subtype enumeration). Real exotic spawns pass _material_name, which
+	// overrides this in Initialize(). Must be a registered material so a
+	// bare stack doesn't runtime — "exotic_mat_0" is never registered.
+	default_type = MAT_STEEL
 	no_variants = TRUE
 	pass_color = TRUE
 	strict_color_stacking = TRUE

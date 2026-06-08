@@ -49,6 +49,10 @@
 	M.icon_colour = M.color
 	M.band = band
 	M.rarity = _dq_rarity_for_band(band)
+	// Exotic materials are sellable; value scales with rarity (common 5,
+	// uncommon 10, rare 15) — comparable to gems. Must be non-null so the
+	// materials_shall_have_sell_prices unit test passes.
+	M.supply_conversion_value = M.rarity * 5
 	M.material_class = _dq_roll_material_class(band)
 	M.stack_type = /obj/item/stack/material/exotic_dynamic
 	// Mechanical
