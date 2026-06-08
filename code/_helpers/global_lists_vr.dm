@@ -2,6 +2,9 @@
  * VOREStation global lists
 */
 
+/// Singleton belly serializer, lazily created by get_belly_serializer().
+GLOBAL_DATUM(belly_serializer, /datum/belly_serializer)
+
 GLOBAL_LIST_EMPTY(hair_accesories_list) // Stores /datum/sprite_accessory/hair_accessory indexed by type
 GLOBAL_LIST_EMPTY(negative_traits)	// Negative custom species traits, indexed by path
 GLOBAL_LIST_EMPTY(neutral_traits)		// Neutral custom species traits, indexed by path
