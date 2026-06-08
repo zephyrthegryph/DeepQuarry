@@ -24,12 +24,10 @@
 /datum/job/centcom_officer/get_access()
 	return SSaccess.get_all_accesses().Copy()
 
-//YW UNCOMMENTINGSTART: INSTATE LOYALTY IMPLANT
 /datum/job/centcom_officer/equip(mob/living/carbon/human/H)
 	. = ..()
 	if(.)
 		H.implant_loyalty()
-//YW UNCOMMENTING END
 
 /*/datum/job/centcom_visitor //For Pleasure // You mean for admin abuse... -Ace
 	title = "CentCom Visitor"

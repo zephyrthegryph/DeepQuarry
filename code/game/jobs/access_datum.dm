@@ -224,12 +224,11 @@
 	id = ACCESS_EXPLORER
 	desc = JOB_EXPLORER
 	region = ACCESS_REGION_GENERAL
-//CHOMP explo keep removed a wide comment field on this line
+
 /datum/access/pathfinder
 	id = ACCESS_PATHFINDER
 	desc = JOB_PATHFINDER
 	region = ACCESS_REGION_GENERAL
-//CHOMP explo keep removed the closing wide comment field on this line. KEEP THE PATHFINDER
 
 /datum/access/surgery
 	id = ACCESS_SURGERY
