@@ -98,6 +98,14 @@
 	update_nearby_tiles()
 	. = ..()
 
+/// Toggles the BROKEN stat flag and refreshes the icon. Defined here to avoid conflicts
+/// with unrelated set_broken procs elsewhere in the codebase that have different semantics.
+/obj/machinery/atmospherics/unary/engine/proc/set_broken(new_state, cause)
+	if(!(stat & BROKEN) == !new_state)
+		return // Nothing changed
+	stat ^= BROKEN
+	update_icon()
+
 /obj/machinery/atmospherics/unary/engine/proc/get_status()
 	. = list()
 	.+= "Location: [get_area(src)]."

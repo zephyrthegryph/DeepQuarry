@@ -207,6 +207,14 @@ Class Procs:
 		return TRUE
 	return ..()
 
+/// Returns the sum of the rating values of all component_parts entries that are instances of part_type.
+/obj/machinery/proc/total_component_rating_of_type(part_type)
+	. = 0
+	for(var/thing in component_parts)
+		if(istype(thing, part_type))
+			var/obj/item/stock_parts/part = thing
+			. += part.rating
+
 /obj/machinery/proc/operable(additional_flags = 0)
 	return !inoperable(additional_flags)
 
