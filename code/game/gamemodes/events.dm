@@ -347,12 +347,12 @@ Would like to add a law like "Law x is _______" where x = a number, and _____ is
 					to_chat(M, span_danger("THE STATION IS [who2pref] [who2]...LAWS UPDATED"))
 					to_chat(M, "<br>")
 					M.add_ion_law("THE STATION IS [who2pref] [who2]")
-/* //VOREStation Edit
+/*
 	if(botEmagChance)
 		for(var/mob/living/bot/bot in GLOB.machines)
 			if(prob(botEmagChance))
 				bot.emag_act(1)
-*/ //VOREStation Edit
+*/
 	/*
 
 	var/apcnum = 0

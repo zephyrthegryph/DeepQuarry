@@ -64,10 +64,6 @@
 		qdel(src)
 		return
 
-	// DQEdit — Talisman rune picker is just a labelled list-of-actions,
-	// which is exactly what tgui_input_list is for. Routes the user's
-	// pick straight to Topic(rune=<choice>) so the existing handler
-	// runs unchanged.
 	var/static/list/rune_options = list(
 		"N'ath reth sh'yro eth d'raggathnor! — summon a new arcane tome" = "newtome",
 		"Sas'so c'arta forbici! — move to a rune with the same last word" = "teleport",

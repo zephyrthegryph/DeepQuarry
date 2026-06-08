@@ -38,8 +38,6 @@
 
 ///////////////////Options for using captured souls///////////////////////////////////////
 
-// DQEdit Start — TGUI migration. attack_self opens Soulstone.tsx; Topic
-// "Summon" handler moves to tgui_act.
 /obj/item/soulstone/attack_self(mob/user)
 	. = ..(user)
 	if(.)
@@ -78,7 +76,6 @@
 				A.cancel_camera()
 				icon_state = "soulstone"
 			return TRUE
-// DQEdit End
 
 ///////////////////////////Transferring to constructs/////////////////////////////////////////////////////
 /obj/structure/constructshell
