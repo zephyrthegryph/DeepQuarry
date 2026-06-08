@@ -15,7 +15,6 @@ SUBSYSTEM_DEF(mapping)
 	flags = SS_NO_FIRE
 
 	var/list/map_templates = list()
-	var/obj/effect/landmark/engine_loader/engine_loader
 	var/list/shelter_templates = list()
 
 	// TODO: Implement Later
@@ -31,7 +30,6 @@ SUBSYSTEM_DEF(mapping)
 	world.max_z_changed() // This is to set up the player z-level list, maxz hasn't actually changed (probably)
 	load_map_templates()
 
-	loadEngine()
 	preloadShelterTemplates() // EDIT: Re-enable Shelter Capsules
 	// Mining generation probably should be here too
 	// TODO - Other stuff related to maps and areas could be moved here too.  Look at /tg
@@ -53,39 +51,6 @@ SUBSYSTEM_DEF(mapping)
 		map_templates[template.name] = template
 	return TRUE
 
-/datum/controller/subsystem/mapping/proc/loadEngine()
-	if(!engine_loader)
-		return // Seems this map doesn't need an engine loaded.
-
-	var/turf/T = get_turf(engine_loader)
-	if(!isturf(T))
-		log_mapping("[log_info_line(engine_loader)] not on a turf! Cannot place engine template.")
-		return
-
-	// Choose an engine type
-	var/datum/map_template/engine/chosen_type = null
-	if (LAZYLEN(CONFIG_GET(str_list/engine_map)))
-		var/chosen_name = pick(CONFIG_GET(str_list/engine_map))
-		chosen_type = map_templates[chosen_name]
-		if(!istype(chosen_type))
-			log_mapping("Configured engine map [chosen_name] is not a valid engine map name!")
-	if(!istype(chosen_type))
-		var/list/engine_types = list()
-		for(var/map in map_templates)
-			var/datum/map_template/engine/MT = map_templates[map]
-			if(istype(MT))
-				engine_types += MT
-		chosen_type = pick(engine_types)
-	log_mapping("Chose Engine Map: [chosen_type.name]")
-	admin_notice(span_danger("Chose Engine Map: [chosen_type.name]"), R_DEBUG)
-
-	// Annihilate movable atoms
-	engine_loader.annihilate_bounds()
-	//CHECK_TICK //Don't let anything else happen for now
-	// Actually load it
-	chosen_type.load(T)
-
-// Enable This
 /datum/controller/subsystem/mapping/proc/loadLateMaps()
 	var/list/deffo_load = using_map.lateload_z_levels
 	var/list/maybe_load = using_map.lateload_gateway

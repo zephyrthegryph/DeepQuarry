@@ -133,7 +133,6 @@
 	supervisors = "the " + JOB_HEAD_OF_PERSONNEL
 	selection_color = "#515151"
 	access = list(ACCESS_JANITOR, ACCESS_MAINT_TUNNELS)
-	minimal_access = list(ACCESS_JANITOR, ACCESS_MAINT_TUNNELS)
 
 	outfit_type = /datum/decl/hierarchy/outfit/job/service/janitor
 	job_description = "A " + JOB_JANITOR + " keeps the station clean, as long as it doesn't interfere with active crime scenes."
@@ -316,7 +315,6 @@
 	supervisors = "the " + JOB_HEAD_OF_PERSONNEL
 	selection_color = "#515151"
 	access = list(ACCESS_ENTERTAINMENT)
-	minimal_access = list(ACCESS_ENTERTAINMENT)
 	pto_type = PTO_CIVILIAN
 
 	outfit_type = /datum/decl/hierarchy/outfit/job/assistant/entertainer

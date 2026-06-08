@@ -162,6 +162,14 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 	if(H.species)
 		H.species.equip_survival_gear(H, flags&OUTFIT_EXTENDED_SURVIVAL, flags&OUTFIT_COMPREHENSIVE_SURVIVAL)
 
+/// Central hook for assigning access to an ID card produced by this outfit.
+/// Override this proc rather than rewriting equip_id() to change what access
+/// a card receives.  The base implementation does nothing; job outfits and
+/// special-role outfits provide their own overrides.
+/// rank is the job title string passed into equip_id(), or null for free-form IDs.
+/datum/decl/hierarchy/outfit/proc/assign_access(obj/item/card/id/C, rank)
+	return
+
 /datum/decl/hierarchy/outfit/proc/equip_id(mob/living/carbon/human/H, rank, assignment)
 	if(!id_slot || !id_type)
 		return
@@ -172,6 +180,7 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 		W.rank = rank
 	if(assignment)
 		W.assignment = assignment
+	assign_access(W, rank)
 	if(H.equip_to_slot_or_del(W, id_slot))
 		return W
 

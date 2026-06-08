@@ -17,10 +17,6 @@
 		return
 	new associated_map_datum(using_map, z)
 
-// Engine template — was defined in southern_cross _engine_submaps.dm.
-// Referenced by code/controllers/subsystems/mapping.dm (active subsystem).
-/datum/map_template/engine
-
 // Dynamic overmap POI template. The real base + 40 POI templates lived in
 // maps/overmap/space_pois/space_pois.dm (areas in space_areas.dm), deleted in the
 // "Tier 2 cleanup" (35c6976694). The dynamic-sector system that consumes them
@@ -43,12 +39,6 @@
 	var/annihilate_bounds = TRUE
 
 /datum/map_template/dynamic_overmap/proc/update_lighting(turf/T)
-	return
-
-// Engine loader landmark — was defined in the same engine submap file.
-/obj/effect/landmark/engine_loader
-
-/obj/effect/landmark/engine_loader/proc/annihilate_bounds()
 	return
 
 // Map z-level base (referenced as associated_map_datum target).

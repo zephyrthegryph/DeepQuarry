@@ -16,13 +16,18 @@
 	headset_alt = /obj/item/radio/headset/alt
 	headset_earbud = /obj/item/radio/headset/earbud
 
+/// For job outfits, access comes from the /datum/job matching the rank string.
+/// Derived outfits can override this proc alone when they need different access
+/// without rewriting the full equip_id() chain.
+/datum/decl/hierarchy/outfit/job/assign_access(obj/item/card/id/C, rank)
+	var/datum/job/J = SSjob.get_job(rank)
+	if(J)
+		C.access = J.get_access()
+
 /datum/decl/hierarchy/outfit/job/equip_id(mob/living/carbon/human/H, rank, assignment)
 	var/obj/item/card/id/C = ..()
 	if(!C)
 		return
-	var/datum/job/J = SSjob.get_job(rank)
-	if(J)
-		C.access = J.get_access()
 	if(H.mind)
 		var/datum/mind/M = H.mind
 		if(M.initial_account)
