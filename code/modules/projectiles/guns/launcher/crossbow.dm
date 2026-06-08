@@ -66,7 +66,7 @@
 	var/release_speed = 5                   // Speed per unit of tension.
 	var/obj/item/cell/cell = null    // Used for firing superheated rods.
 	var/current_user                        // Used to check if the crossbow has changed hands since being drawn.
-	w_class = ITEMSIZE_HUGE //CHOMP Edit.
+	w_class = ITEMSIZE_HUGE //.
 
 	///Var for attack_self chain
 	var/is_bow = FALSE

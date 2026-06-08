@@ -448,7 +448,7 @@ GLOBAL_LIST_EMPTY(forced_ambiance_list)
 			playsound(H, 'sound/effects/tableheadsmash.ogg', 90, TRUE)
 		playsound(mob, "bodyfall", 50, 1)
 
-/area/proc/prison_break(break_lights = TRUE, open_doors = TRUE, open_blast_doors = FALSE) //CHOMP Edit set blast doors to FALSE
+/area/proc/prison_break(break_lights = TRUE, open_doors = TRUE, open_blast_doors = FALSE) //set blast doors to FALSE
 	var/obj/machinery/power/apc/theAPC = get_apc()
 	if(theAPC && theAPC.operating)
 		if(break_lights)

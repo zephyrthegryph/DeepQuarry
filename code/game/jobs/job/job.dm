@@ -213,7 +213,7 @@
 		return TRUE
 	// end
 	return FALSE // Any species can be any job.
-	/* VOREStation Removal
+	/* 
 	if(banned_job_species == null)
 		return
 	if(species_name in banned_job_species)

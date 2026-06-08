@@ -14,7 +14,7 @@
 	charge_cost = 120
 	fire_delay = 8
 	sel_mode = 2
-	w_class = ITEMSIZE_HUGE //CHOMP Edit.
+	w_class = ITEMSIZE_HUGE //.
 
 	firemodes = list(
 		list(mode_name="stun", projectile_type=/obj/item/projectile/beam/stun, fire_delay=null, charge_cost = 120),
@@ -75,7 +75,7 @@
 	slot_flags = SLOT_BELT|SLOT_HOLSTER
 	icon_state = "pulsepistol"
 	charge_cost = 480
-	w_class = ITEMSIZE_NORMAL //CHOMP Edit.
+	w_class = ITEMSIZE_NORMAL //.
 
 /obj/item/gun/energy/pulse_rifle/compact/admin
 	name = "\improper LP4 Mantis Deluxe"

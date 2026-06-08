@@ -155,7 +155,7 @@
 
 	var/output //Output variable to send out in chat after the large if statement.
 	var/winnings = 0 //How much money will be given if any.
-	// var/platinumwin = 0 // CHOMPRemove If you win the platinum chip or not - Ringa ding ding babe! No chips until further notice!
+	// var/platinumwin = 0 // If you win the platinum chip or not - Ringa ding ding babe! No chips until further notice!
 	var/celebrate = 0
 	var/delaytime = 5 SECONDS
 
@@ -211,11 +211,11 @@
 
 		to_chat(user,output) //Output message
 
-		/* CHOMPRemove Start, Disabled until further notice, platinum now more rare
+		/* Disabled until further notice, platinum now more rare
 		if(platinumwin) // Did they win the platinum chip?
 			new /obj/item/casino_platinum_chip(src.loc)
 			playsound(src.loc, 'sound/machines/slotmachine.ogg', 25, 1)
-		*/// CHOMPRemove End
+		*/
 
 		if(winnings) //Did the person win?
 			icon_state = "slotmachine_winning"

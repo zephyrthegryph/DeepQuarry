@@ -1972,7 +1972,7 @@
 	if(alien != IS_DIONA)
 		M.heal_organ_damage(8 * removed * chem_effective, 0)
 
-/*CHOMPStation removal begin
+/*
 /datum/reagent/sleevingcure
 	name = REAGENT_SLEEVINGCURE
 	id = REAGENT_ID_SLEEVINGCURE
@@ -1990,7 +1990,7 @@
 /datum/reagent/sleevingcure/affect_blood(mob/living/carbon/M, alien, removed)
 	M.remove_a_modifier_of_type(/datum/modifier/resleeving_sickness)
 	M.remove_a_modifier_of_type(/datum/modifier/faux_resleeving_sickness)
-*/ //CHOMPStation removal end
+*/
 
 
 /datum/reagent/prussian_blue //We don't have iodine, so prussian blue we go.

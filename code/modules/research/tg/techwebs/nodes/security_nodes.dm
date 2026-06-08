@@ -360,7 +360,7 @@
 		"nsfw_cell_ion",
 		"nsfw_cell_shotstun",
 		"nsfw_cell_xray",
-		// "nsfw_cell_stripper", // CHOMPRemove
+		// "nsfw_cell_stripper",
 	)
 	research_costs = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_4_POINTS)
 	announce_channels = list(CHANNEL_SECURITY)

@@ -28,7 +28,7 @@
 	var/window_type = /obj/structure/window/reinforced/full
 	var/material_to_use = DEFAULT_WALL_MATERIAL // So badmins can make RCDs that print diamond walls.
 	var/make_rwalls = FALSE // If true, when building walls, they will be reinforced.
-/* VOREStation Removal - Unused
+/* Unused
 /obj/item/rcd/Initialize(mapload)
 
 	src.spark_system = new /datum/effect/effect/system/spark_spread
@@ -389,7 +389,7 @@
 		qdel(effects[A])
 		effects -= A
 
-/* CHOMPEdit - moved this block to modular_chomp\code\game\objects\items\weapons\rcd.dm
+/* moved this block to modular_chomp\code\game\objects\items\weapons\rcd.dm
 /obj/item/rcd/attackby(obj/item/W, mob/user)
 	if(istype(W, /obj/item/rcd_ammo))
 		var/obj/item/rcd_ammo/cartridge = W
@@ -433,7 +433,7 @@
 
 	return TRUE
 
-/* CHOMPEdit - moved this block to modular_chomp\code\game\objects\items\weapons\rcd.dm
+/* moved this block to modular_chomp\code\game\objects\items\weapons\rcd.dm
 /obj/item/rcd/attack_self(mob/living/user)
 	. = ..(user)
 	if(.)

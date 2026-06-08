@@ -311,7 +311,7 @@
 		if(H.gloves)
 			var/obj/item/clothing/gloves/G = H.gloves
 			if(G.siemens_coefficient == 0)	return 0		//to avoid spamming with insulated glvoes on
-/*CHOMP Edit: Phorochem removed.
+/*Phorochem removed.
 //Phorochemistry DM: Allows chemicalresistant shocking -Radiantflash
 		for(var/datum/reagent/phororeagent/R in M.reagents.reagent_list)
 			if(R.id == REAGENT_ID_FULGURACIN)

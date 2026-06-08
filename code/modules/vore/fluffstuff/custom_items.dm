@@ -1320,7 +1320,7 @@
 	name = initial(name)
 	desc = initial(desc)
 
-/*Begin CHOMP Removal //Vitoras: Verie
+/*Begin //Vitoras: Verie
 /obj/item/fluff/verie
 	name = "glowy hairbrush"
 	desc = "A pulse of light periodically zips across the top of this blue brush. This... is not an ordinary hair care tool. \
@@ -1368,7 +1368,7 @@
 		to_chat(user, span_warning("\The [src] isn't compatible with your body as it is now."))
 
 
-End CHOMP Removal*/
+End */
 
 // Astra - // Astra
 /obj/item/material/knife/ritual/fluff/astra

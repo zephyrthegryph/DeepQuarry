@@ -1,5 +1,5 @@
 // Phase weapons go here
-//CHOMP Edit: Each phase gun now has the same safety lock as frontier phasers. Every pathname now has "locked" and "unlocked", basically. This code comes from /code/modules/projectiles/guns/energy/laser_vr.dm.
+//Each phase gun now has the same safety lock as frontier phasers. Every pathname now has "locked" and "unlocked", basically. This code comes from /code/modules/projectiles/guns/energy/laser_vr.dm.
 
 /obj/item/gun/energy/locked/phasegun
 	name = "EW26 Artemis"

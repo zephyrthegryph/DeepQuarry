@@ -27,7 +27,7 @@ GLOBAL_LIST_EMPTY(all_waypoints)
 	var/dy		//coordinates
 	var/speedlimit = 1/(20 SECONDS) //top speed for autopilot, 5
 	var/accellimit = 0.001 //manual limiter for acceleration
-	// req_one_access = list(ACCESS_PILOT) // // CHOMPRemove, removed hard access locks.
+	// req_one_access = list(ACCESS_PILOT) // // removed hard access locks.
 	ai_control = FALSE // AI/Borgs shouldn't really be flying off in ships without crew help
 
 // fancy sprite

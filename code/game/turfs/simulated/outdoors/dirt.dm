@@ -3,6 +3,6 @@
 	desc = "Quite dirty!"
 	icon_state = "dirt-dark"
 	edge_blending_priority = 2
-	//turf_layers = list(/turf/simulated/floor/outdoors/rocks) CHOMP Removal
+	//turf_layers = list(/turf/simulated/floor/outdoors/rocks) 
 	initial_flooring = /datum/decl/flooring/dirt
 	flags = TURF_CAN_DIG_SHOVEL

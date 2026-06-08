@@ -162,7 +162,7 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 		return
 	shapeshifter_change_shape(new_species)
 
-/* VOREStation edit - moved to species_shapeshift_vr.dm
+/* moved to species_shapeshift_vr.dm
 /mob/living/carbon/human/proc/shapeshifter_change_shape(new_species = null)
 	if(!new_species)
 		return
@@ -295,7 +295,7 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 
 	spawn(0)
 		regenerate_icons()
-/* VOREStation Edit - Our own trait system, sorry.
+/* Our own trait system, sorry.
 	if(species && mind)
 		apply_traits()
 */

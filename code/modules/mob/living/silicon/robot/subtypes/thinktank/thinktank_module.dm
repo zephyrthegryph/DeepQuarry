@@ -65,7 +65,7 @@
 	modules += bandaid
 	synths += medicine
 
-	modules += new /obj/item/gun/energy/robotic/phasegun(src)  //CHOMP Edit
+	modules += new /obj/item/gun/energy/robotic/phasegun(src)
 
 	emag += new /obj/item/chainsaw(src)
 

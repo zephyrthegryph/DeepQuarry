@@ -738,7 +738,7 @@
 
 
 ///Micromechs...I know downstream is going to disable these from orbit, so feel free to take the line below to add your disable start:
-/* CHOMPEdit: Disable Start */
+/* Disable Start */
 // /datum/design_techweb/mechfab/gopher
 // 	desc = "A part used in the construction of the Gopher micro mech series"
 // 	category = list(
@@ -961,4 +961,4 @@
 // 	materials = list(MAT_STEEL = 7000, MAT_GLASS = 2500)
 
 //End of micromechs.
-/* CHOMPEdit: Disable End */
+/* Disable End */

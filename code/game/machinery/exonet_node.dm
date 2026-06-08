@@ -52,7 +52,7 @@
 // Description: Self explanatory.
 /obj/machinery/exonet_node/update_icon()
 	if(on)
-		/* VOREStation Removal
+		/* 
 		if(!allow_external_PDAs && !allow_external_communicators && !allow_external_newscasters)
 			icon_state = "[initial(icon_state)]_idle"
 		else

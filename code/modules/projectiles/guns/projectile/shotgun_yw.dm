@@ -4,7 +4,7 @@
 	icon = 'icons/obj/gun_yw.dmi'
 	icon_state = "revolvshot"
 	item_state = null
-	w_class = ITEMSIZE_HUGE //CHOMP Edit.
+	w_class = ITEMSIZE_HUGE //.
 	force = 10
 	caliber = "12g"
 	slot_flags = SLOT_BACK|SLOT_BELT|SLOT_HOLSTER

@@ -731,7 +731,7 @@ GLOBAL_LIST_EMPTY(all_objectives)
 
 	var/total_amount = 0
 
-	for(var/obj/item/O in locate(/area/shuttle/skipjack)) //CHOMP Edit: Skipjack area pathname
+	for(var/obj/item/O in locate(/area/shuttle/skipjack)) //Skipjack area pathname
 
 		var/obj/item/stack/material/S
 		if(istype(O,/obj/item/stack/material))

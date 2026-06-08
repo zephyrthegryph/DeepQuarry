@@ -28,7 +28,7 @@
 	minbodytemp = 0
 	maxHealth = 50
 	health = 50
-	taser_kill = TRUE //CHOMP Edit
+	taser_kill = TRUE
 	melee_damage_lower = 15
 	melee_damage_upper = 20
 	see_in_dark = 8

@@ -749,7 +749,7 @@ GLOBAL_LIST_INIT(device_ringtones, list("beep" = 'sound/machines/twobeep.ogg',
 										"spark" = 'sound/effects/sparks4.ogg',
 										"rad" = 'sound/items/geiger/high1.ogg',
 										"servo" = 'sound/machines/rig/rigservo.ogg',
-										// "buh-boop" = 'sound/misc/buh-boop.ogg', // CHOMPRemove
+										// "buh-boop" = 'sound/misc/buh-boop.ogg',
 										"trombone" = 'sound/misc/sadtrombone.ogg',
 										"whistle" = 'sound/misc/boatswain.ogg',
 										"chirp" = 'sound/misc/nymphchirp.ogg',
@@ -2810,7 +2810,7 @@ GLOBAL_LIST_INIT(BUILDABLE_AREA_TYPES, list(
 	/area/mine
 //	/area/surface/outside, 	//SC //CHOMP Comment - Actually these are causing compilation error.
 //	/area/surface/cave,		//SC
-//	/area/tether/surfacebase/outside,	//CHOMP Edit Downstreams, uncomment these if you are using these maps
+// /area/tether/surfacebase/outside,	//Downstreams, uncomment these if you are using these maps
 //	/area/groundbase/unexplored/outdoors,
 //	/area/maintenance/groundbase/level1,
 //	/area/submap/groundbase/wilderness,
@@ -2825,7 +2825,7 @@ GLOBAL_LIST_INIT(blacklisted_areas, typecacheof(list(
 	/area/mine
 //	/area/surface/outside,	//SC //CHOMP Comment - Actually these are causing compilation error.
 //	/area/surface/cave,		//SC
-	//TETHER STUFF BELOW THIS	//CHOMP Edit Downstreams, uncomment these if you are using these maps
+	//TETHER STUFF BELOW THIS	//Downstreams, uncomment these if you are using these maps
 //	/area/tether/surfacebase/outside,
 	//GROUNDBASE STUFF BELOW THIS
 //	/area/groundbase/unexplored/outdoors,

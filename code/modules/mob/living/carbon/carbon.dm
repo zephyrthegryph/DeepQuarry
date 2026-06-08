@@ -29,7 +29,7 @@
 	ingested.clear_reagents()
 	touching.clear_reagents()
 	..()
-/* VOREStation Edit - Duplicated in our code
+/* Duplicated in our code
 /mob/living/carbon/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
 	if(src.nutrition && src.stat != 2)

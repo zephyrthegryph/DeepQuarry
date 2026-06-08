@@ -531,7 +531,7 @@
 				pass = FALSE
 	// end
 
-	//CHOMP Addition Begin
+	//ition Begin
 	// migrated neu_traits
 	if(_neu_traits)
 		for(var/T in _neu_traits)
@@ -542,7 +542,7 @@
 			else if(LAZYLEN(instance.allowed_species) && !(client.prefs.read_preference(/datum/preference/choiced/species) in instance.allowed_species)) //We use else if here, so as to prevent getting two errors for one trait.
 				pass = FALSE
 				to_chat(src,span_warning("One of your traits, [instance.name], is not available for your species! Please fix this conflict and then try again."))
-	//CHOMP Addition End
+	//ition End
 
 	//Went into negatives
 	if(points_left < 0 || traits_left < 0)

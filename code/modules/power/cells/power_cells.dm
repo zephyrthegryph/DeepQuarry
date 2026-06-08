@@ -17,7 +17,7 @@
 	matter = list(MAT_STEEL = 700, MAT_GLASS = 40)
 	robot_durability = 20
 
-/* CHOMPRemove Start
+/* 
 /obj/item/cell/crap/update_icon() //No visible charge indicator
 	return
 */// CHOMPRemve End

@@ -206,7 +206,7 @@
 		if(temporary_form)
 			var/mob/living/L = temporary_form
 			L.resize(new_size/100, uncapped = has_large_resize_bounds(), ignore_prefs = TRUE)
-		// log_admin("[key_name(src)] used the resize command in-game to be [new_size]% size. [src ? ADMIN_JMP(src) : "null"]") // CHOMPRemove
+		// log_admin("[key_name(src)] used the resize command in-game to be [new_size]% size. [src ? ADMIN_JMP(src) : "null"]")
 
 /**
  * Attempt to scoop up this mob up into M's hands, if the size difference is large enough.

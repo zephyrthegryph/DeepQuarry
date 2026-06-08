@@ -23,7 +23,7 @@
 	server_file_path = 'news_articles/space_magazine_1.html'
 */
 
-/* CHOMPedit: commenting out YW articles because they don't make sense here and adding our own.
+/* commenting out YW articles because they don't make sense here and adding our own.
 //YAWN ADDS - All from discord
 /datum/computer_file/data/news_article/archives/vol_gwa_one
 	filename = "Galaxy Wide Archives"

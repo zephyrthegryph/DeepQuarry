@@ -746,7 +746,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		winset(usr, "mainwindow", "on-size=attempt_auto_fit_viewport") // The attempt_auto_fit_viewport() proc is not implemented yet
 	attempt_auto_fit_viewport()
 
-/*CHOMPRemove Start, we use TGPanel
+/*we use TGPanel
 /client/verb/toggle_verb_panel()
 	set name = "Toggle Verbs"
 	set category = "OOC.Client Settings"
@@ -754,7 +754,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	show_verb_panel = !show_verb_panel
 
 	to_chat(src, "Your verbs are now [show_verb_panel ? "on" : "off. To turn them back on, type 'toggle-verbs' into the command bar."].")
-*///CHOMPRemove End
+*/
 
 /*
 /client/verb/toggle_status_bar()

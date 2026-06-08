@@ -50,7 +50,7 @@
 
 /datum/reagent/macrocillin/affect_blood(mob/living/carbon/M, alien, removed)
 	var/new_size = clamp((M.size_multiplier + 0.01), RESIZE_MINIMUM_DORMS, RESIZE_MAXIMUM_DORMS)
-	M.resize(new_size, animate = FALSE, uncapped = M.has_large_resize_bounds()) //Incrrease 1% per tick. //CHOMP Edit: don't do fancy animates. Unnecessary on 1% changes. Laggy.
+	M.resize(new_size, animate = FALSE, uncapped = M.has_large_resize_bounds()) //Incrrease 1% per tick. //don't do fancy animates. Unnecessary on 1% changes. Laggy.
 	return
 
 /datum/reagent/microcillin
@@ -68,7 +68,7 @@
 
 /datum/reagent/microcillin/affect_blood(mob/living/carbon/M, alien, removed)
 	var/new_size = clamp((M.size_multiplier - 0.01), RESIZE_MINIMUM_DORMS, RESIZE_MAXIMUM_DORMS)
-	M.resize(new_size, animate = FALSE, uncapped = M.has_large_resize_bounds()) //Decrease 1% per tick. //CHOMP Edit: don't do fancy animates. Unnecessary on 1% changes. Laggy.
+	M.resize(new_size, animate = FALSE, uncapped = M.has_large_resize_bounds()) //Decrease 1% per tick. //don't do fancy animates. Unnecessary on 1% changes. Laggy.
 	return
 
 
@@ -87,9 +87,9 @@
 
 /datum/reagent/normalcillin/affect_blood(mob/living/carbon/M, alien, removed)
 	if(M.size_multiplier > RESIZE_NORMAL)
-		M.resize(M.size_multiplier-0.01, FALSE) //Decrease by 1% size per tick. //CHOMP Edit: don't do fancy animates. Unnecessary on 1% changes. Laggy.
+		M.resize(M.size_multiplier-0.01, FALSE) //Decrease by 1% size per tick. //don't do fancy animates. Unnecessary on 1% changes. Laggy.
 	else if(M.size_multiplier < RESIZE_NORMAL)
-		M.resize(M.size_multiplier+0.01, FALSE) //Increase 1% per tick.  //CHOMP Edit: don't do fancy animates. Unnecessary on 1% changes. Laggy.
+		M.resize(M.size_multiplier+0.01, FALSE) //Increase 1% per tick. //don't do fancy animates. Unnecessary on 1% changes. Laggy.
 	return
 
 
@@ -171,7 +171,7 @@
 
 ////////////////////////// TF Drugs //////////////////////////
 
-/* CHOMPStation Removal for using Chompstation reagents over upstreams'
+/* for using Chompstation reagents over upstreams'
 /datum/reagent/amorphorovir
 	name = REAGENT_AMORPHOROVIR
 	id = REAGENT_ID_AMORPHOROVIR

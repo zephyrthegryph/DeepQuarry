@@ -107,7 +107,7 @@
 	description = "Choose from a number of toys."
 	path = /obj/item/toy/
 
-/* VOREStation removal
+/* 
 /datum/gear/toy/New()
 	..()
 	var/toytype = list()

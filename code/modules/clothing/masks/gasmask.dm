@@ -201,7 +201,7 @@
 	. = ..()
 	if(type == /obj/item/clothing/mask/gas)
 		flags_inv &= ~HIDEFACE
-*/// CHOMPRemove End
+*/
 
 // Since we changed the gas mask sprite, if we want the old one for some reason use this.
 /obj/item/clothing/mask/gas/wwii

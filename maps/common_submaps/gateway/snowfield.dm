@@ -478,7 +478,7 @@
 	desc = "Upon looking into the scope, you see the word on its center: MAGGOT."
 	icon_state = "rocket"
 	item_state = "rocket"
-	w_class = ITEMSIZE_HUGE //CHOMP Edit.
+	w_class = ITEMSIZE_HUGE //.
 	actions_types = list(/datum/action/item_action/use_scope)
 	scoped_accuracy = 20
 	one_handed_penalty = 150 //Good luck shooting one handed.

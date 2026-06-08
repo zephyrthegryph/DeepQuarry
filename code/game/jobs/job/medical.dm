@@ -22,7 +22,7 @@
 	minimal_access = list(ACCESS_MEDICAL, ACCESS_MEDICAL_EQUIP, ACCESS_MORGUE, ACCESS_GENETICS, ACCESS_HEADS,
 				ACCESS_CHEMISTRY, ACCESS_VIROLOGY, ACCESS_CMO, ACCESS_SURGERY, ACCESS_RC_ANNOUNCE, ACCESS_TELEPORTER,
 				ACCESS_KEYCARD_AUTH, ACCESS_PSYCHIATRIST, ACCESS_EVA, ACCESS_EXTERNAL_AIRLOCKS, ACCESS_MAINT_TUNNELS, ACCESS_GATEWAY)
-	alt_titles = list(JOB_ALT_CHIEF_PHYSICIAN = /datum/alt_title/chief_physician, JOB_ALT_MEDICAL_DIRECTOR = /datum/alt_title/medical_director, /*CHOMPEdit RemovalJOB_ALT_HEALTHCARE_MANAGER = /datum/alt_title/healthcare_manager*/)
+	alt_titles = list(JOB_ALT_CHIEF_PHYSICIAN = /datum/alt_title/chief_physician, JOB_ALT_MEDICAL_DIRECTOR = /datum/alt_title/medical_director, /*JOB_ALT_HEALTHCARE_MANAGER = /datum/alt_title/healthcare_manager*/)
 
 	minimum_character_age = 25
 	min_age_by_species = list(SPECIES_UNATHI = 70, FBP_MECHANICAL = 10, SPECIES_HUMAN_VATBORN = 14)
@@ -270,10 +270,10 @@
 					own. They are capable of keeping a patient stabilized until they reach the hands of someone with more training."
 	title_outfit = /datum/decl/hierarchy/outfit/job/medical/paramedic/emt
 
-/* CHOMPRemove Start, this is an actual job for us
+/* this is an actual job for us
 /datum/alt_title/sar
 	title = JOB_ALT_SEARCH_AND_RESCUE
-*/// CHOMPRemove End
+*/
 
 
 // === merged from medical_ch.dm during hard-fork de-suffix (verified no override-order change) ===

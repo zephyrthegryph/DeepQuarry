@@ -151,7 +151,7 @@
 	return damage
 
 /*
- * CHOMPEdit Start: Pain/etc calculations, but more efficient:tm: - this should work for literally anything that applies to health. Far better than slapping emote("pain") everywhere like scream does.
+ * Pain/etc calculations, but more efficient:tm: - this should work for literally anything that applies to health. Far better than slapping emote("pain") everywhere like scream does.
  * The reason we're doing this here is to enable carbons to handle pain differently if they need to - in this case, we're going to check if we're synthetic here, anyways. Essentially a dupe of human_damage.dm's updatehealth()
  * Human updatehealth() doesn't call parent, so we can safely ignore human checks, but we're going to put sanity in anyways
 */

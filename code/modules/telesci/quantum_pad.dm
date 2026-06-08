@@ -167,7 +167,7 @@
 	src.add_fingerprint(user)
 	doteleport(user)
 
-/*CHOMP Remove. Teleport code changed slightly making this obsolete
+/*. Teleport code changed slightly making this obsolete
 /obj/machinery/power/quantumpad/proc/sparks()
 	var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread()
 	sparks.set_up(5, 1, get_turf(src))
@@ -281,7 +281,7 @@
 		to_chat(user, span_warning("Power is not sufficient to complete a teleport. Teleport aborted."))
 		return
 
-	//sparks() //CHOMPRemove
+	//sparks()
 	to_chat(user, span_warning("You feel yourself pulled in different directions, before ending up not far from where you started."))
 	flick("qpad-beam-out", src)
 	transport_objects(get_turf(dest))

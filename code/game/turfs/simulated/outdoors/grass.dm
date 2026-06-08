@@ -4,23 +4,23 @@
 	edge_blending_priority = 4
 	initial_flooring = /datum/decl/flooring/grass/outdoors
 	flags = TURF_CAN_DIG_SHOVEL
-	/*turf_layers = list( CHOMP Removal Begin
+	/*turf_layers = list( 
 		/turf/simulated/floor/outdoors/rocks,
 		/turf/simulated/floor/outdoors/dirt
-		)CHOMP Removal End*/
+		)*/
 	var/grass_chance = 12
 
 	var/animal_chance = 1
 
 	// Weighted spawn list.
-	/*var/list/animal_types = list( CHOMP Removal begin
+	/*var/list/animal_types = list( 
 		/mob/living/simple_mob/animal/passive/tindalos = 1
 		)
 
 	var/list/grass_types = list(
 		/obj/structure/flora/ausbushes/sparsegrass,
 		/obj/structure/flora/ausbushes/fullgrass
-		) CHOMP Removal End */
+		) */
 
 /datum/category_item/catalogue/flora/sif_grass
 	name = "Sivian Flora - Moss"
@@ -41,7 +41,7 @@
 
 
 	animal_chance = 0.25
-	/* CHOMP Removal Begin
+	/* 
 	animal_types = list(
 		/mob/living/simple_mob/animal/sif/diyaab = 7,
 		/mob/living/simple_mob/animal/sif/glitterfly = 2,
@@ -55,7 +55,7 @@
 		/obj/structure/flora/sif/eyes = 1,
 		/obj/structure/flora/sif/tendrils = 10
 		)
-	CHOMP Removal End*/
+	*/
 	catalogue_data = list(/datum/category_item/catalogue/flora/sif_grass)
 	// catalogue_delay encoded in GLOB.dq_catalogue_delay_by_type
 
@@ -171,10 +171,10 @@ GLOBAL_LIST_INIT(grass_animals,list(
 		/mob/living/simple_mob/mechanical/mecha/mouse_tank/livewire = 2
 		),
 	"seasonalspring" = list(
-		/mob/living/simple_mob/vore/alienanimals/teppi = 10, //CHOMP Edit
-		/mob/living/simple_mob/vore/alienanimals/teppi/mutant = 1, //CHOMP Edit
+		/mob/living/simple_mob/vore/alienanimals/teppi = 10,
+		/mob/living/simple_mob/vore/alienanimals/teppi/mutant = 1,
 		/mob/living/simple_mob/vore/redpanda = 40,
-		/mob/living/simple_mob/vore/redpanda/fae = 2, //CHOMP Edit
+		/mob/living/simple_mob/vore/redpanda/fae = 2,
 		/mob/living/simple_mob/vore/sheep = 20,
 		/mob/living/simple_mob/vore/rabbit/black = 20,
 		/mob/living/simple_mob/vore/rabbit/white = 20,
@@ -193,8 +193,8 @@ GLOBAL_LIST_INIT(grass_animals,list(
 	"seasonalsummer" = list(
 		/mob/living/simple_mob/vore/alienanimals/teppi = 10,
 		/mob/living/simple_mob/vore/alienanimals/teppi/mutant = 1,
-		/mob/living/simple_mob/vore/redpanda = 40, //CHOMP Edit
-		/mob/living/simple_mob/vore/redpanda/fae = 2, //CHOMP Edit
+		/mob/living/simple_mob/vore/redpanda = 40,
+		/mob/living/simple_mob/vore/redpanda/fae = 2,
 		/mob/living/simple_mob/vore/sheep = 20,
 		/mob/living/simple_mob/vore/rabbit/black = 20,
 		/mob/living/simple_mob/vore/rabbit/white = 20,

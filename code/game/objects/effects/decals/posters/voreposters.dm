@@ -100,7 +100,7 @@
 	icon_state = "sbsposter17"
 	name = "DiveIn"
 	desc = "A limited edition holographic poster that seems to feature subliminal suggestions and conditioning."
-/*CHOMP Edit: Remove loss poster
+/*Remove loss poster
 /datum/decl/poster/vore_29
 	icon_state = "sbsposter18"
 	name = "Perdition"

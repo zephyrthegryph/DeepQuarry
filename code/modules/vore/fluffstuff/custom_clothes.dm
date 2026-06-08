@@ -2142,7 +2142,7 @@ Departamental Swimsuits, for general use
 
 		add_attack_logs(user, target, "Teleported [target] with via \the [src]'s [translocator]!")
 	else ..()
-/*CHOMP Removal
+/*
 
 /obj/item/clothing/suit/storage/hooded/fluff
 	name = DEVELOPER_WARNING_NAME
@@ -2513,7 +2513,7 @@ Departamental Swimsuits, for general use
 		item_state = "giantbow_mob"
 	..()
 
-End CHOMP Removal*/
+End */
 
 /obj/item/clothing/head/fluff/giantbow	//Public version
 	name = "Giant Bow"

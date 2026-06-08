@@ -167,7 +167,7 @@
 	using_map.player_levels |= map_z
 	if(!in_space)
 		using_map.sealed_levels |= map_z
-	/* VOREStation Removal - We have a map system that does this already.
+	/* We have a map system that does this already.
 	if(base)
 		using_map.station_levels |= map_z
 		using_map.contact_levels |= map_z
@@ -180,7 +180,7 @@
 	using_map.player_levels -= map_z
 	if(!in_space)
 		using_map.sealed_levels -= map_z
-	/* VOREStation Removal - We have a map system that does this already.
+	/* We have a map system that does this already.
 	if(base)
 		using_map.station_levels -= map_z
 		using_map.contact_levels -= map_z

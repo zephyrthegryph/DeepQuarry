@@ -130,7 +130,7 @@
 	)
 
 
-// Sounds suitable for being inside dark, tight corridors in the underbelly of the station. //CHOMP Edit keeps original maints sounds and adds sounds from the generic pool which I added and are metal scraping sounds. I should really move these to maintenance folder some day...
+// Sounds suitable for being inside dark, tight corridors in the underbelly of the station. //keeps original maints sounds and adds sounds from the generic pool which I added and are metal scraping sounds. I should really move these to maintenance folder some day...
 #define AMBIENCE_MAINTENANCE list(\
 	'sound/ambience/maintenance/maintenance1.ogg',\
 	'sound/ambience/maintenance/maintenance2.ogg',\
@@ -177,7 +177,7 @@
 	'sound/ambience/ghostly/ghostly2.ogg'\
 	)
 
-// Concerning sounds, for when one discovers something horrible happened in a PoI. //CHOMP Edit: Removed foreboding 3-6 as upstream updates just replaced them with maints sounds.
+// Concerning sounds, for when one discovers something horrible happened in a PoI. //Removed foreboding 3-6 as upstream updates just replaced them with maints sounds.
 #define AMBIENCE_FOREBODING list(\
 	'sound/ambience/foreboding/foreboding1.ogg',\
 	'sound/ambience/foreboding/foreboding2.ogg'\
@@ -214,7 +214,7 @@
 	'sound/ambience/expoutpost/expoutpost4.ogg'\
 	)
 
-//CHOMP Edit Sounds for Substation rooms. Just electrical sounds, really.
+//Sounds for Substation rooms. Just electrical sounds, really.
 #define AMBIENCE_SUBSTATION list(\
 	'sound/ambience/substation/substation1.ogg',\
 	'sound/ambience/substation/substation2.ogg',\

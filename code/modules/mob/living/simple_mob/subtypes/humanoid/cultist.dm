@@ -794,7 +794,7 @@
 	vore_pounce_chance = 0 // Beat them into crit before eating.
 	vore_icons = null
 
-	can_be_drop_prey = FALSE //CHOMP Add
+	can_be_drop_prey = FALSE
 
 /mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fireball/Login()
 	. = ..()
@@ -832,7 +832,7 @@
 	vore_pounce_chance = 0 // Beat them into crit before eating.
 	vore_icons = null
 
-	can_be_drop_prey = FALSE //CHOMP Add
+	can_be_drop_prey = FALSE
 
 /mob/living/simple_mob/humanoid/cultist/noodle/Login()
 	. = ..()
@@ -871,7 +871,7 @@
 	vore_pounce_chance = 0 // Beat them into crit before eating.
 	vore_icons = null
 
-	can_be_drop_prey = FALSE //CHOMP Add
+	can_be_drop_prey = FALSE
 
 /mob/living/simple_mob/humanoid/cultist/tesh/Login()
 	. = ..()
@@ -909,7 +909,7 @@
 	vore_pounce_chance = 0 // Beat them into crit before eating.
 	vore_icons = null
 
-	can_be_drop_prey = FALSE //CHOMP Add
+	can_be_drop_prey = FALSE
 
 /mob/living/simple_mob/humanoid/cultist/castertesh/Login()
 	. = ..()

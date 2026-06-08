@@ -8,7 +8,7 @@
 
 /datum/supply_pack/randomised/munitions
 	group = "Munitions"
-/* VOREStation Removal - What? This crate costs 40... the crate with just two eguns costs 50... what??? This crate is also like "the armory" and has OFFICER access?
+/* What? This crate costs 40... the crate with just two eguns costs 50... what??? This crate is also like "the armory" and has OFFICER access?
 /datum/supply_pack/munitions/weapons
 	name = "Weapons - Security basic equipment"
 	contains = list(
@@ -79,7 +79,7 @@
 	containertype = /obj/structure/closet/crate/secure/weapon
 	containername = "Shotgun crate"
 	access = ACCESS_ARMORY
-/* VOREStation edit -- This is a bad idea. -- So is this.
+/* This is a bad idea. -- So is this.
 
 /datum/supply_pack/munitions/shotgunsemi
 	name = "Weapons - Semi-Automatic Shotgun crate"
@@ -341,7 +341,7 @@
 	containertype = /obj/structure/closet/crate/secure
 	containername = "Light machine gun crate"
 
-/datum/supply_pack/munitions/expeditionguns //CHOMP Edit begin: Re-appropriating this whole block. Changing frontier phasers to phaseguns.
+/datum/supply_pack/munitions/expeditionguns //Re-appropriating this whole block. Changing frontier phasers to phaseguns.
 	name = "Exploration phasegun (station-locked) crate"
 	contains = list(
 			/obj/item/gun/energy/locked/phasegun/pistol = 2,
@@ -362,7 +362,7 @@
 	containertype = /obj/structure/closet/crate/secure
 	containername = "phasegun cannon crate"
 	access = ACCESS_EXPLORER
-//CHOMP Edit end
+
 
 /datum/supply_pack/munitions/ofd_charge_emp
 	name = "OFD Charge - EMP"

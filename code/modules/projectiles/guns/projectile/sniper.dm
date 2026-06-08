@@ -20,7 +20,7 @@
 	accuracy = -75
 	scoped_accuracy = 75
 	one_handed_penalty = 90
-	bolt_open = 0 //CHOMP Edit
+	bolt_open = 0
 	special_weapon_handling = TRUE
 
 /obj/item/gun/projectile/heavysniper/update_icon()

@@ -26,7 +26,7 @@
 			//delete_me = TRUE // see above, moving, always use this list with get_turf
 		if("JoinLateGateway")
 			GLOB.latejoin_gateway += loc
-			// GLOB.latejoin += loc // ition // CHOMPRemove
+			// GLOB.latejoin += loc // ition
 			delete_me = TRUE
 		if("JoinLateStationGateway")
 			GLOB.latejoin_gatewaystation += loc

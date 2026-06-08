@@ -521,7 +521,7 @@
 	if(!istype(M))
 		return 0
 
-	/* VOREStation Edit - Don't worry about it. We can put these in regardless, because resleeving might make it useful after.
+	/* Don't worry about it. We can put these in regardless, because resleeving might make it useful after.
 	if(!M.brainmob || !M.brainmob.client || !M.brainmob.ckey || M.brainmob.stat >= DEAD)
 		to_chat(user, span_danger("That brain is not usable."))
 		return SURGERY_FAILURE

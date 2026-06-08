@@ -2,7 +2,7 @@
 	Alternate Appearances! By RemieRichards
 	A framework for replacing an atom (and it's overlays) with an override = 1 image, that's less shit!
 
-	DQEdit — alternate_appearances and viewing_alternate_appearances vars previously
+	alternate_appearances and viewing_alternate_appearances vars previously
 	on /atom have been moved to /datum/component/alt_appearances_owner and
 	/datum/component/alt_appearances_viewer in .../components/.
 	Helpers (dq_get_alt_appearances, etc.) are global procs so we don't bloat

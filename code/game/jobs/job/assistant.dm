@@ -104,7 +104,7 @@
 /datum/alt_title/intern_sci
 	title = JOB_ALT_LAB_ASSISTANT
 	title_blurb = "A " + JOB_ALT_LAB_ASSISTANT + " attempts to provide whatever the Research department needs. They are not proper " + JOB_SCIENTIST + "s, and are \
-					often in training to become a " + JOB_SCIENTIST + ". A " + JOB_ALT_LAB_ASSISTANT + " has no real authority." //CHOMPEdit
+					often in training to become a " + JOB_SCIENTIST + ". A " + JOB_ALT_LAB_ASSISTANT + " has no real authority."
 	title_outfit = /datum/decl/hierarchy/outfit/job/assistant/scientist
 
 /datum/alt_title/intern_sec

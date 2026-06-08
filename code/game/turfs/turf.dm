@@ -377,7 +377,7 @@
 
 /turf/proc/try_graffiti(mob/vandal, obj/item/tool, click_parameters)
 
-	if(!tool || !tool.sharp || !can_engrave()) //CHOMP Edit
+	if(!tool || !tool.sharp || !can_engrave())
 		return FALSE
 
 	if(jobban_isbanned(vandal, JOB_GRAFFITI))
@@ -449,7 +449,7 @@
 	UNSETEMPTY(dangerous_objects) // This nulls the list var if it's empty.
 //	color = "#00FF00"
 
-/* CHOMPEdit - moved this block to modular_chomp\code\game\objects\items\weapons\rcd.dm
+/* moved this block to modular_chomp\code\game\objects\items\weapons\rcd.dm
 // This is all the way up here since its the common ancestor for things that need to get replaced with a floor when an RCD is used on them.
 // More specialized turfs like walls should instead override this.
 // The code for applying lattices/floor tiles onto lattices could also utilize something similar in the future.

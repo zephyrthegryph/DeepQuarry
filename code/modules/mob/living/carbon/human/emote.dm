@@ -180,7 +180,7 @@ GLOBAL_LIST_INIT(human_default_emotes, list(
 	/datum/decl/emote/audible/caw2,
 	/datum/decl/emote/audible/caw_m,
 	/datum/decl/emote/audible/gwah,
-	//CHOMP Add start
+	
 	/datum/decl/emote/audible/wheeze,
 	/datum/decl/emote/audible/prbt2,
 	/datum/decl/emote/audible/pain,
@@ -196,7 +196,7 @@ GLOBAL_LIST_INIT(human_default_emotes, list(
 	/datum/decl/emote/audible/yip,
 	/datum/decl/emote/audible/tailthump,
 	/datum/decl/emote/audible/squeal,
-	//CHOMP Add end
+	
 ))
 
 GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
@@ -342,7 +342,7 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 	/datum/decl/emote/audible/caw2,
 	/datum/decl/emote/audible/caw_m,
 	/datum/decl/emote/audible/gwah,
-	//CHOMP Add start
+	
 	/datum/decl/emote/audible/wheeze,
 	/datum/decl/emote/audible/prbt2,
 	/datum/decl/emote/audible/pain,
@@ -353,7 +353,7 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 	/datum/decl/emote/audible/yip,
 	/datum/decl/emote/audible/tailthump,
 	/datum/decl/emote/audible/squeal,
-	//CHOMP Add end
+	
 	))
 
 /mob/living/carbon/human/get_available_emotes()

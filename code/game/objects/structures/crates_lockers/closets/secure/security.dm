@@ -177,7 +177,7 @@
 		/obj/item/clothing/shoes/boots/winter/security,
 		/obj/item/flashlight/maglight,
 		/obj/item/megaphone,
-		/obj/item/clothing/mask/gas/sechailer/swat/warden, //CHOMP Edit
+		/obj/item/clothing/mask/gas/sechailer/swat/warden,
 		/obj/item/gun/projectile/revolvershotgun,
 		/obj/item/ammo_magazine/m12gdrumjack/beanbag,
 		/obj/item/ammo_magazine/m12gdrumjack/beanbag,
@@ -217,7 +217,7 @@
 		/obj/item/hailer,
 		/obj/item/flashlight/flare,
 		/obj/item/clothing/under/rank/security/corp,
-		/obj/item/ammo_magazine/m45/rubber, // Removal, //CHOMP Edit it has been restored
+		/obj/item/ammo_magazine/m45/rubber, // Removal, //it has been restored
 		/obj/item/gun/energy/taser,
 		/obj/item/cell/device/weapon,
 		/obj/item/holowarrant,				//CHOMPStation addition
@@ -270,8 +270,8 @@
 
 	starts_with = list(
 		/obj/item/clothing/accessory/badge/holo/detective,
-		/obj/item/clothing/gloves/forensic, //CHOMP Edit replaces black gloves
-		/obj/item/gunbox, //CHOMP Edit undoes vorestation removal and adds back gunbox
+		/obj/item/clothing/gloves/forensic, //replaces black gloves
+		/obj/item/gunbox, //undoes vorestation removal and adds back gunbox
 		/obj/item/gunbox/stun,
 		/obj/item/storage/belt/detective,
 		/obj/item/storage/box/evidence,
@@ -388,7 +388,7 @@ GLOBAL_LIST_BOILERPLATE(all_brig_closets, /obj/structure/closet/secure_closet/br
 		/obj/item/storage/belt/security,
 		/obj/item/clothing/accessory/holster/waist,
 		/obj/item/clothing/head/beret/sec/corporate/hos,
-//		/obj/item/clothing/suit/storage/hooded/wintercoat/security, //CHOMP Remove
+// /obj/item/clothing/suit/storage/hooded/wintercoat/security,
 		/obj/item/clothing/suit/storage/hooded/wintercoat/security/hos,
 		/obj/item/clothing/shoes/boots/winter/security,
 		/obj/item/clothing/mask/gas/sechailer/swat/hos,
@@ -421,10 +421,10 @@ GLOBAL_LIST_BOILERPLATE(all_brig_closets, /obj/structure/closet/secure_closet/br
 		/obj/item/gun/energy/x01,
 		/obj/item/cell/device/weapon,
 		/obj/item/melee/telebaton,
-//		/obj/item/clothing/head/beret/sec/corporate/hos, //CHOMP Remove
-//		/obj/item/clothing/suit/storage/hooded/wintercoat/security, //CHOMP Remove
-//		/obj/item/clothing/shoes/boots/winter/security, //CHOMP Remove
-		/obj/item/ticket_printer, //CHOMP Add
+// /obj/item/clothing/head/beret/sec/corporate/hos,
+// /obj/item/clothing/suit/storage/hooded/wintercoat/security,
+// /obj/item/clothing/shoes/boots/winter/security,
+		/obj/item/ticket_printer,
 		/obj/item/gun/energy/taser,
 		/obj/item/flashlight/maglight,
 		/obj/item/personal_shield_generator/security/loaded)

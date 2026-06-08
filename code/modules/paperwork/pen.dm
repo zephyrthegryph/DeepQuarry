@@ -261,7 +261,7 @@
 /obj/item/pen/reagent/sleepy/Initialize(mapload)
 	. = ..()
 	reagents.add_reagent(REAGENT_ID_CHLORALHYDRATE, 22)
-	// reagents.add_reagent(REAGENT_ID_STOXIN, 14)	// CHOMPRemove
+	// reagents.add_reagent(REAGENT_ID_STOXIN, 14)
 
 
 /*

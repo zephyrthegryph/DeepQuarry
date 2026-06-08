@@ -102,7 +102,7 @@
 	reagent_ids = list(REAGENT_ID_INAPROVALINE, REAGENT_ID_TRICORDRAZINE, REAGENT_ID_DEXALIN, REAGENT_ID_BICARIDINE, REAGENT_ID_KELOTANE, REAGENT_ID_ANTITOXIN, REAGENT_ID_SPACEACILLIN, REAGENT_ID_TRAMADOL, REAGENT_ID_ADRANOL) // More chems for Medihound
 	var/datum/matter_synth/water = null
 
-/* CHOMPedit start: Water requirement removal. *
+/* Water requirement removal. *
 
 /obj/item/reagent_containers/borghypo/hound/process() //Recharges in smaller steps and uses the water reserves as well.
 	if(isrobot(loc))
@@ -115,7 +115,7 @@
 					reagent_volumes[T] = min(reagent_volumes[T] + 1, volume)
 	return 1
 
-* CHOMPedit end: Water requirement removal. */
+* Water requirement removal. */
 
 /obj/item/reagent_containers/borghypo/hound/lost
 	name = "Hound hypospray"

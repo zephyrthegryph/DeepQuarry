@@ -44,7 +44,7 @@
 	backpack = /obj/item/storage/backpack
 	satchel_one = /obj/item/storage/backpack/satchel/norm
 	backpack_contents = list(/obj/item/storage/box/evidence = 1)
-	gloves = /obj/item/clothing/gloves/forensic //CHOMP Addition
+	gloves = /obj/item/clothing/gloves/forensic //ition
 
 // More cyberpunky
 /datum/decl/hierarchy/outfit/job/security/detective/forensic

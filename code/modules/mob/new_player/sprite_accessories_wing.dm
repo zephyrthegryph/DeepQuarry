@@ -650,7 +650,7 @@
 	do_colouration = 1
 	color_blend_mode = ICON_MULTIPLY
 
-/* //exclusive wings // CHOMPRemove Start
+/* //exclusive wings
 /datum/sprite_accessory/wing/kara
 	name = "Pterokara wings"
 	desc = ""
@@ -692,4 +692,4 @@
 	desc = ""
 	icon_state = "citheronia_wings"
 	ckeys_allowed = list("kira72")
-*/// CHOMPRemove End
+*/

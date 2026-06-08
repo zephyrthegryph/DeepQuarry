@@ -52,7 +52,7 @@
  * C-20r
  */
 
-/* CHOMPedit remove: Moved to automatic_ch.dm. *
+/* remove: Moved to automatic_ch.dm. *
 
 /obj/item/gun/projectile/automatic/c20r
 	name = "submachine gun"
@@ -87,7 +87,7 @@
 		icon_state = "c20r"
 	return
 
- * CHOMPedit remove: Moved to automatic_ch.dm. */
+ * remove: Moved to automatic_ch.dm. */
 
 /*
  * Assault Carbine (STS-35)
@@ -103,7 +103,7 @@
 	item_state = "arifle"
 	wielded_item_state = "arifle-wielded"
 	item_state = null
-	w_class = ITEMSIZE_HUGE //CHOMP Edit.
+	w_class = ITEMSIZE_HUGE //.
 	force = 10
 	caliber = "5.45mm"
 	slot_flags = SLOT_BACK
@@ -202,7 +202,7 @@
 	icon_state = "carbine" // This isn't a carbine. :T
 	item_state = "z8carbine"
 	wielded_item_state = "z8bulldog-wielded"
-	w_class = ITEMSIZE_HUGE //CHOMP Edit.
+	w_class = ITEMSIZE_HUGE //.
 	force = 10
 	caliber = "7.62mm"
 	slot_flags = SLOT_BACK
@@ -281,7 +281,7 @@
 	icon_state = "l6closed100"
 	item_state = "l6closed"
 	wielded_item_state = "genericLMG-wielded"
-	w_class = ITEMSIZE_HUGE //CHOMP Edit.
+	w_class = ITEMSIZE_HUGE //.
 	force = 10
 	slot_flags = 0
 	max_shells = 50
@@ -365,7 +365,7 @@
 	icon_state = "ashot"
 	item_state = "ashot"
 	wielded_item_state = "ashot-wielded"
-	w_class = ITEMSIZE_HUGE //CHOMP Edit.
+	w_class = ITEMSIZE_HUGE //.
 	force = 10
 	caliber = "12g"
 	slot_flags = SLOT_BACK
@@ -452,7 +452,7 @@
 		transform = transform.Translate(-16,0)
 // end: Uzi tilting
 
-/* CHOMPEDIT Commented out, moved to automatic_ch.dm *
+/* Commented out, moved to automatic_ch.dm *
 /obj/item/gun/projectile/automatic/p90
 	name = "personal defense weapon"
 	desc = "The H90K is a compact, large capacity submachine gun produced by MarsTech. Despite its fierce reputation, it still manages to feel like a toy. Uses 9mm rounds."
@@ -473,7 +473,7 @@
 
 /obj/item/gun/projectile/automatic/p90/update_icon()
 	icon_state = "p90smg-[ammo_magazine ? round(ammo_magazine.stored_ammo.len, 6) : "empty"]"
-* CHOMPEDIT Commented out, moved to automatic_ch.dm */
+* Commented out, moved to automatic_ch.dm */
 
 /*
  * Tommy Gun
@@ -716,7 +716,7 @@
 	icon_override = 'icons/obj/gun.dmi'
 	item_state = "battlerifle_i"
 	item_icons = null
-	w_class = ITEMSIZE_HUGE //CHOMP Edit.
+	w_class = ITEMSIZE_HUGE //.
 	recoil = 2 // The battlerifle was known for its nasty recoil.
 	max_shells = 36
 	caliber = "9.5x40mm"

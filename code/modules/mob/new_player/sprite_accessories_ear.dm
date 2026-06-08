@@ -1242,7 +1242,7 @@
 	do_colouration = 1
 	color_blend_mode = ICON_MULTIPLY
 
-/* // Special snowflake ears go below here. //CHOMPRemove - no they don't
+/* // Special snowflake ears go below here. //no they don't
 
 /datum/sprite_accessory/ears/kara //SatinIsle Fluff Item
 	name = "Pterokara horn"
@@ -1341,7 +1341,7 @@
 	desc = ""
 	icon_state = "pipears"
 	ckeys_allowed = list("phoaly")
-	*/ //CHOMPRemove END
+	*/
 
 
 // === merged from sprite_accessories_ear_ch.dm during hard-fork de-suffix (verified no override-order change) ===

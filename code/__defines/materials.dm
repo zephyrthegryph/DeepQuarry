@@ -99,7 +99,7 @@
 #define MAT_LEATHER			"leather"
 #define MAT_CLOTH			"cloth"
 #define MAT_SYNCLOTH		"syncloth"
-// # define MAT_CARPET			"carpet" // CHOMPRemove
+// # define MAT_CARPET "carpet"
 #define MAT_COTTON			"cotton"
 
 // colours

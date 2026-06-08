@@ -102,7 +102,7 @@ GLOBAL_LIST_EMPTY(turf_edge_cache)
 	outdoors = OUTDOORS_NO
 
 // This proc adds a 'layer' on top of the turf.
-/* CHOMP Removal start
+/* 
 /turf/simulated/floor/outdoors/proc/promote(new_turf_type)
 	var/list/new_turf_layer_list = turf_layers.Copy()
 	var/list/coords = list(x, y, z)
@@ -125,7 +125,7 @@ GLOBAL_LIST_EMPTY(turf_edge_cache)
 	var/turf/simulated/floor/outdoors/T = locate(coords[1], coords[2], coords[3])
 	if(istype(T))
 		T.turf_layers = new_turf_layer_list.Copy()
-CHOMP Removal End */
+*/
 // Called by weather processes, and maybe technomancers in the future.
 /turf/simulated/floor/proc/chill()
 	return

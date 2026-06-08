@@ -986,7 +986,7 @@
 	/*turf_layers = list(
 		/turf/simulated/floor/outdoors/rocks,
 		/turf/simulated/floor/outdoors/dirt
-		) CHOMP Removal */
+		) */
 	grass_chance = 40
 
 	grass = "heavy"

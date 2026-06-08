@@ -185,7 +185,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 	install_done = null
 	update_icon()
 
-/* CHOMPedit Remove: Disabling EMP effect on all Nifs. *
+/* Disabling EMP effect on all Nifs. *
 
 //EMP adds wear and disables all nifsoft
 /obj/item/nif/emp_act(severity, recursive)
@@ -208,7 +208,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 		if (4)
 			wear(rand(1,8))
 
-* CHOMPedit Remove end. */
+* end. */
 
 //Wear update/check proc
 /obj/item/nif/proc/wear(wear = 0)

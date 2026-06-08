@@ -77,7 +77,7 @@
 	humanform = H
 	calculate_health()
 	refactory = locate() in humanform.internal_organs
-	// add_verb(src,/mob/living/proc/ventcrawl) // CHOMPRemove
+	// add_verb(src,/mob/living/proc/ventcrawl)
 	add_verb(src,/mob/living/proc/usehardsuit)
 	add_verb(src,/mob/living/simple_mob/protean_blob/proc/nano_partswap)
 	add_verb(src,/mob/living/simple_mob/protean_blob/proc/nano_regenerate)

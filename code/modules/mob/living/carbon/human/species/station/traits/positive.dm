@@ -131,7 +131,7 @@
 	name = "Darksight"
 	desc = "Allows you to see significantly further in the dark and be 10% more susceptible to flashes."
 	cost = 1
-	var_changes = list("darksight" = 3)  //CHOMP Edit
+	var_changes = list("darksight" = 3)
 	custom_only = FALSE
 	banned_species = list(SPECIES_TAJARAN, SPECIES_SHADEKIN_CREW, SPECIES_SHADEKIN, SPECIES_XENOHYBRID, SPECIES_VULPKANIN, SPECIES_XENO, SPECIES_XENOCHIMERA, SPECIES_VASILISSAN, SPECIES_WEREBEAST) //These species already have strong darksight by default.
 	excludes = list(/datum/trait/positive/darksight_plus)
@@ -140,7 +140,7 @@
 	name = "Darksight, Major"
 	desc = "Allows you to see in the dark for the whole screen and be 20% more susceptible to flashes."
 	cost = 2
-	var_changes = list("darksight" = 6)  //CHOMP Edit
+	var_changes = list("darksight" = 6)
 	custom_only = FALSE
 	banned_species = list(SPECIES_TAJARAN, SPECIES_SHADEKIN_CREW, SPECIES_SHADEKIN, SPECIES_XENOHYBRID, SPECIES_VULPKANIN, SPECIES_XENO, SPECIES_XENOCHIMERA, SPECIES_VASILISSAN, SPECIES_WEREBEAST) //These species already have strong darksight by default.
 	excludes = list(/datum/trait/positive/darksight)
@@ -166,40 +166,40 @@
 
 /datum/trait/positive/minor_brute_resist
 	name = "Brute Resist, Minor"
-	desc = "Adds 10% resistance to brute damage sources." //CHOMP Edit
-	cost = 1 //CHOMP Edit
-	var_changes = list("brute_mod" = 0.9) //CHOMP Edit
+	desc = "Adds 10% resistance to brute damage sources."
+	cost = 1
+	var_changes = list("brute_mod" = 0.9)
 	custom_only = FALSE
 	banned_species = list(SPECIES_TESHARI, SPECIES_UNATHI, SPECIES_XENOCHIMERA, SPECIES_VASILISSAN, SPECIES_WEREBEAST) //Most of these are already this resistant or stronger, or it'd be way too much of a boost for tesh.
 	excludes = list(/datum/trait/positive/brute_resist, /datum/trait/positive/brute_resist_plus)
 
 /datum/trait/positive/brute_resist
 	name = "Brute Resist"
-	desc = "Adds 20% resistance to brute damage sources." //CHOMP Edit
-	cost = 2 //CHOMP Edit
-	var_changes = list("brute_mod" = 0.8) //CHOMP Edit
+	desc = "Adds 20% resistance to brute damage sources."
+	cost = 2
+	var_changes = list("brute_mod" = 0.8)
 	//excludes = list(/datum/trait/positive/minor_burn_resist,/datum/trait/positive/burn_resist) //CHOMP disable, this is already handled in positive_ch.dm
 
 /datum/trait/positive/minor_burn_resist
 	name = "Burn Resist, Minor"
-	desc = "Adds 10% resistance to burn damage sources." //CHOMP Edit
-	cost = 1 //CHOMP Edit
-	var_changes = list("burn_mod" = 0.9) //CHOMP Edit
+	desc = "Adds 10% resistance to burn damage sources."
+	cost = 1
+	var_changes = list("burn_mod" = 0.9)
 
 /datum/trait/positive/burn_resist
 	name = "Burn Resist"
-	desc = "Adds 20% resistance to burn damage sources." //CHOMP Edit
-	cost = 2 //CHOMP Edit
-	var_changes = list("burn_mod" = 0.8) //CHOMP Edit
+	desc = "Adds 20% resistance to burn damage sources."
+	cost = 2
+	var_changes = list("burn_mod" = 0.8)
 	//excludes = list(/datum/trait/positive/minor_brute_resist,/datum/trait/positive/brute_resist) //CHOMP disable, this is already handled in positive_ch.dm
 
 
 
 /datum/trait/positive/photoresistant
 	name = "Photoresistant"
-	desc = "Decreases stun duration from flashes and other light-based stuns and disabilities by 25%" //CHOMP Edit
+	desc = "Decreases stun duration from flashes and other light-based stuns and disabilities by 25%"
 	cost = 1
-	var_changes = list("flash_mod" = 0.75) //CHOMP Edit
+	var_changes = list("flash_mod" = 0.75)
 
 /datum/trait/positive/winged_flight
 	name = "Winged Flight"
@@ -992,7 +992,7 @@
 	name = "Darksight"
 	desc = "Allows you to see a short distance in the dark. (Half the screen)."
 	cost = 1
-	var_changes = list("darksight" = 4)  //CHOMP Edit
+	var_changes = list("darksight" = 4)
 	custom_only = FALSE
 	banned_species = list(SPECIES_TAJARAN, SPECIES_SHADEKIN_CREW, SPECIES_SHADEKIN, SPECIES_XENOHYBRID, SPECIES_VULPKANIN, SPECIES_XENO, SPECIES_XENOCHIMERA, SPECIES_VASILISSAN, SPECIES_WEREBEAST) //These species already have strong darksight by default.
 

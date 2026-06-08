@@ -576,11 +576,11 @@ SUBSYSTEM_DEF(job)
 				else
 					spawn_in_storage += thing
 
-		/* CHOMPRemove Start
+		/* 
 		//Give new players a welcome guide!
 		if(isnum(human_mob.client?.player_age) && human_mob.client.player_age < 10)
 			human_mob.equip_to_slot_or_del(new /obj/item/book/manual/virgo_pamphlet(human_mob), slot_r_hand)
-		*/// CHOMPRemove End
+		*/
 	else
 		to_chat(human_mob, span_filter_notice("Your job is [rank] and the game just can't handle it! Please report this bug to an administrator."))
 

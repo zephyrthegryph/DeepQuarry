@@ -187,9 +187,9 @@ GLOBAL_LIST_EMPTY(event_last_fired)
 	active_with_role[JOB_CYBORG] = 0
 	active_with_role[JOB_JANITOR] = 0
 	active_with_role[JOB_BOTANIST] = 0
-	active_with_role[JOB_HEAD_OF_SECURITY] = 0 //CHOMP Add
-	active_with_role[JOB_WARDEN] = 0 //CHOMP Add
-	active_with_role[DEPARTMENT_CARGO] = 0 //CHOMP Add
+	active_with_role[JOB_HEAD_OF_SECURITY] = 0
+	active_with_role[JOB_WARDEN] = 0
+	active_with_role[DEPARTMENT_CARGO] = 0
 
 	for(var/mob/M in GLOB.player_list)
 		if(!M.mind || !M.client || M.client.is_afk(10 MINUTES)) // longer than 10 minutes AFK counts them as inactive
@@ -239,13 +239,13 @@ GLOBAL_LIST_EMPTY(event_last_fired)
 		if(M.mind.assigned_role == JOB_BOTANIST)
 			active_with_role[JOB_BOTANIST]++
 
-		if(M.mind.assigned_role == JOB_HEAD_OF_SECURITY) //CHOMP Add
-			active_with_role[JOB_HEAD_OF_SECURITY]++ //CHOMP Add
+		if(M.mind.assigned_role == JOB_HEAD_OF_SECURITY)
+			active_with_role[JOB_HEAD_OF_SECURITY]++
 
-		if(M.mind.assigned_role == JOB_WARDEN) //CHOMP Add
-			active_with_role[JOB_WARDEN]++ //CHOMP Add
+		if(M.mind.assigned_role == JOB_WARDEN)
+			active_with_role[JOB_WARDEN]++
 
-		if(M.mind.assigned_role in SSjob.get_job_titles_in_department(DEPARTMENT_CARGO)) //CHOMP Add
-			active_with_role[DEPARTMENT_CARGO]++ //CHOMP Add
+		if(M.mind.assigned_role in SSjob.get_job_titles_in_department(DEPARTMENT_CARGO))
+			active_with_role[DEPARTMENT_CARGO]++
 
 	return active_with_role

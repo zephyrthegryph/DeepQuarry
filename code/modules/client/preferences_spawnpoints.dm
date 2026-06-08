@@ -58,7 +58,7 @@ GLOBAL_LIST_INIT(spawntypes, populate_spawn_points())
 /datum/spawnpoint/gateway/New()
 	..()
 	turfs = GLOB.latejoin_gateway
-/* VOREStation Edit
+/* 
 /datum/spawnpoint/elevator
 	display_name = "Elevator"
 	msg = "has arrived from the residential district"

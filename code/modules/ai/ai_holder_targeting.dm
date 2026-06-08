@@ -129,7 +129,7 @@
 	return closest_targets
 
 /datum/ai_holder/proc/can_attack(atom/movable/the_target, vision_required = TRUE)
-	//CHOMP Removal (optimizing by making most intense check last)
+	//(optimizing by making most intense check last)
 	if(!belly_attack)
 		if(isbelly(holder.loc))
 			return FALSE

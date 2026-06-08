@@ -1,5 +1,5 @@
 /obj/item/radio/intercom
-	listening = 0 //CHOMP Edit: Temporary bandaid fix for comms lag.
+	listening = 0 //Temporary bandaid fix for comms lag.
 	name = "station intercom (General)"
 	desc = "Talk through this."
 	icon = 'icons/obj/radio.dmi'

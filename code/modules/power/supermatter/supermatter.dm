@@ -683,7 +683,7 @@
 	last_event = world.time
 	active = FALSE
 
-// CHOMP Edit Start
+
 /obj/machinery/power/supermatter/station
 	stationcrystal = TRUE
 

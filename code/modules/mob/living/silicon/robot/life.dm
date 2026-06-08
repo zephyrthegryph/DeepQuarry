@@ -84,10 +84,10 @@
 		death()
 
 	if (stat != 2) //Alive.
-		/* CHOMPRemove Start
+		/* 
 		if (src.weakened > 0)	// Do not fullstun on weaken
 			AdjustWeakened(-1)
-		*/// CHOMPRemove End
+		*/
 		if (paralysis || stunned || weakened || !has_power) // Stunned etc. // all states
 			set_stat(UNCONSCIOUS)
 			if (stunned > 0)

@@ -22,7 +22,7 @@
 	applies_material_colour = 0
 	drop_sound = 'sound/items/drop/axe.ogg'
 	pickup_sound = 'sound/items/pickup/axe.ogg'
-/* VOREStation Removal - We have one already
+/* We have one already
 /obj/item/material/knife/machete/hatchet/stone
 	name = "sharp rock"
 	desc = "The secret is to bang the rocks together, guys."

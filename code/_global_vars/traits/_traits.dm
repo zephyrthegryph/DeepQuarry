@@ -17,7 +17,7 @@ GLOBAL_LIST_INIT(radiation_levels, list(
 	IMMUNITY_RADIATION_RESISTANCE  = list("safe" = 10000, "danger_1" = 10001, "danger_2" = 10002, "danger_3" = 10003, "danger_4" = 10004),
 ))
 
-/* CHOMPRemove, see traits.dm
+/* see traits.dm
 GLOBAL_LIST_INIT(traits_by_type, list(
 	/atom = list(
 		"TRAIT_ALT_CLICK_BLOCKER" = TRAIT_ALT_CLICK_BLOCKER,

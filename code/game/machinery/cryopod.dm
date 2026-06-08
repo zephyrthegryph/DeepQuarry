@@ -100,12 +100,12 @@
 	if(allow_items)
 		for(var/F in frozen_items)
 			items.Add(F)
-			/* VOREStation Removal
+			/* 
 			items.Add(list(list(
 				"name" = "[F]",
 				"ref" = REF(F),
 			)))
-			VOREStation Removal End */
+			*/
 	data["items"] = items
 
 	return data
@@ -117,7 +117,7 @@
 	add_fingerprint(ui.user)
 
 	return FALSE // prevent topic exploits
-	/* VOREStation Edit - Unreachable due to above
+	/* Unreachable due to above
 	switch(action)
 		if("item")
 			if(!allow_items)
@@ -212,7 +212,7 @@
 	var/disallow_occupant_types = list()
 
 	var/mob/occupant = null       // Person waiting to be despawned.
-	var/time_till_despawn = 60  // Down to 1 minute to reflect Vorestation respawn times. //CHOMP Edit: Now 6 seconds. Mind the deciseconds.
+	var/time_till_despawn = 60 // Down to 1 minute to reflect Vorestation respawn times. //Now 6 seconds. Mind the deciseconds.
 	var/time_entered = 0          // Used to keep track of the safe period.
 	var/obj/item/radio/intercom/announce //
 
@@ -456,13 +456,13 @@
 			qdel(W)
 		else
 			log_special_item(W,to_despawn)
-			/* VOREStation Removal - We do our own thing.
+			/* We do our own thing.
 			if(control_computer && control_computer.allow_items)
 				control_computer.frozen_items += W
 				W.loc = control_computer
 			else
 				W.forceMove(src.loc)
-			VOREStation Removal End */
+			*/
 	for(var/obj/structure/B in items)
 		if(istype(B,/obj/structure/bed))
 			qdel(B)
@@ -787,7 +787,7 @@
 /obj/machinery/computer/cryopod/gateway
 	name = "teleport oversight console"
 	desc = "An interface between visitors and the teleport oversight systems tasked with keeping track of all visitors who enter or exit from the teleporters."
-/* VOREStation Edit
+/* 
 /obj/machinery/cryopod/robot/door/dorms
 	desc = "A small elevator that goes down to the residential district."
 	on_enter_occupant_message = "The elevator door closes slowly, ready to bring you down to the residential district."

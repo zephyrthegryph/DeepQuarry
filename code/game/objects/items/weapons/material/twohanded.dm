@@ -17,7 +17,7 @@
  * Twohanded
  */
 /obj/item/material/twohanded
-	w_class = ITEMSIZE_HUGE //CHOMP Edit
+	w_class = ITEMSIZE_HUGE
 	var/wielded = 0
 	var/force_wielded = 0
 	var/force_unwielded
@@ -150,7 +150,7 @@
 	name = "spear"
 	desc = "A haphazardly-constructed yet still deadly weapon of ancient design."
 	force = 10
-	w_class = ITEMSIZE_HUGE //CHOMP Edit
+	w_class = ITEMSIZE_HUGE
 	slot_flags = SLOT_BACK
 	force_divisor = 0.5 			// 15 when wielded with hardness 30 (glass)
 	unwielded_force_divisor = 0.375

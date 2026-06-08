@@ -1,4 +1,4 @@
-//CHOMP Edit changed for Southern Cross areas
+//changed for Southern Cross areas
 #define LOC_KITCHEN 0
 #define LOC_ATMOS 1
 #define LOC_CHAPEL 2
@@ -42,24 +42,24 @@
 			// Fixes event
 
 	var/list/spawn_types = list()
-	var/min_number //CHOMP Add
+	var/min_number
 	var/max_number
 	vermin = rand(0,2)
 	switch(vermin)
 		if(VERM_MICE)
 			spawn_types = list(/mob/living/simple_mob/animal/passive/mouse/gray, /mob/living/simple_mob/animal/passive/mouse/brown, /mob/living/simple_mob/animal/passive/mouse/white)
-			min_number = 2 //CHOMP Add
+			min_number = 2
 			max_number = 12
 			vermstring = "mice"
 		if(VERM_LIZARDS)
 			spawn_types = list(/mob/living/simple_mob/animal/passive/lizard)
-			min_number = 2 //CHOMP Add
+			min_number = 2
 			max_number = 6
 			vermstring = "lizards"
 
 		if(VERM_SPIDERS)
 			spawn_types = list(/obj/effect/spider/spiderling)
-			min_number = 4 //CHOMP Add
+			min_number = 4
 			max_number = 8 //CHOMP edit
 			vermstring = "spiders"
 
@@ -123,7 +123,7 @@
 			spawn_area_type = /area/security/nuke_storage
 			locstring = "the vault"
 	return spawn_area_type
-/* CHOMPedit - Upstream Code, not implmeneted here
+/* Upstream Code, not implmeneted here
 /datum/event/infestation/tick()
 	if(activeFor % 5 != 0)
 		return // Only process every 10 seconds.

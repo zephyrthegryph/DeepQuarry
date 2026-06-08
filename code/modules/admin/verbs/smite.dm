@@ -10,7 +10,7 @@
 
 	var/list/smite_types = list(SMITE_BREAKLEGS,SMITE_BLUESPACEARTILLERY,SMITE_SPONTANEOUSCOMBUSTION,SMITE_LIGHTNINGBOLT,
 								SMITE_SHADEKIN_ATTACK,SMITE_SHADEKIN_NOMF,SMITE_AD_SPAM,SMITE_REDSPACE_ABDUCT,SMITE_AUTOSAVE,SMITE_AUTOSAVE_WIDE,SMITE_SPICEREQUEST,SMITE_PEPPERNADE,SMITE_TERROR,
-								SMITE_PIE, SMITE_SPICE, SMITE_HOTDOG) //CHOMP Add pie, spicy air and hot dog
+								SMITE_PIE, SMITE_SPICE, SMITE_HOTDOG) //pie, spicy air and hot dog
 
 	var/smite_choice = tgui_input_list(usr, "Select the type of SMITE for [target]","SMITE Type Choice", smite_types)
 	if(!smite_choice)
@@ -174,13 +174,13 @@
 			spice.loc = target.loc
 			to_chat(target,"A bottle of spices appears at your feet... be careful what you wish for!")
 
-		if(SMITE_PIE) //CHOMP Add
+		if(SMITE_PIE)
 			new/obj/effect/decal/cleanable/pie_smudge(get_turf(target))
 			playsound(target, 'sound/effects/slime_squish.ogg', 100, 1, get_rand_frequency(), falloff = 5)
 			target.Weaken(1)
 			target.visible_message(span_danger("[target] is struck by pie!"))
 
-		if(SMITE_SPICE) //CHOMP Add
+		if(SMITE_SPICE)
 			to_chat(target, span_warning("Spice spice baby!"))
 			target.eye_blurry = max(target.eye_blurry, 25)
 			target.Blind(10)

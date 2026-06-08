@@ -56,14 +56,14 @@ GLOBAL_DATUM(basic_robolimb, /datum/robolimb)
 	company = "Unbranded - Protez"
 	desc = "A simple robotic limb with retro design. Seems rather stiff."
 	icon = 'icons/mob/human_races/cyberlimbs/unbranded/unbranded_alt1.dmi'
-	unavailable_to_build = 0 // CHOMP Edit
+	unavailable_to_build = 0
 	modular_bodyparts = MODULAR_BODYPART_PROSTHETIC // remove the restrictions
 
 /datum/robolimb/unbranded_alt2
 	company = "Unbranded - Mantis Prosis"
 	desc = "This limb has a casing of sleek black metal and repulsive insectile design."
 	icon = 'icons/mob/human_races/cyberlimbs/unbranded/unbranded_alt2.dmi'
-	unavailable_to_build = 0 // CHOMP Edit
+	unavailable_to_build = 0
 	modular_bodyparts = MODULAR_BODYPART_PROSTHETIC // remove the restrictions
 
 /datum/robolimb/unbranded_tajaran
@@ -186,7 +186,7 @@ GLOBAL_DATUM(basic_robolimb, /datum/robolimb)
 	company = "Cyber Solutions"
 	desc = "This limb is grey and rough, with little in the way of aesthetic."
 	icon = 'icons/mob/human_races/cyberlimbs/cybersolutions/cybersolutions_main.dmi'
-	unavailable_to_build = 0 // CHOMP Edit
+	unavailable_to_build = 0
 	modular_bodyparts = MODULAR_BODYPART_PROSTHETIC // remove the restrictions
 
 /datum/robolimb/cybersolutions_alt2
@@ -215,7 +215,7 @@ GLOBAL_DATUM(basic_robolimb, /datum/robolimb)
 	company = "Einstein Engines"
 	desc = "This limb is lightweight with a sleek design."
 	icon = 'icons/mob/human_races/cyberlimbs/einstein/einstein_main.dmi'
-	unavailable_to_build = 0 // CHOMP Edit
+	unavailable_to_build = 0
 	modular_bodyparts = MODULAR_BODYPART_PROSTHETIC // remove the restrictions
 
 /datum/robolimb/grayson
@@ -256,7 +256,7 @@ GLOBAL_DATUM(basic_robolimb, /datum/robolimb)
 	company = "Hephaestus"
 	desc = "This limb has a militaristic black and green casing with gold stripes."
 	icon = 'icons/mob/human_races/cyberlimbs/hephaestus/hephaestus_main.dmi'
-	unavailable_to_build = 0 // CHOMP Edit
+	unavailable_to_build = 0
 	modular_bodyparts = MODULAR_BODYPART_PROSTHETIC // remove the restrictions
 
 /datum/robolimb/hephaestus_alt1
@@ -296,7 +296,7 @@ GLOBAL_DATUM(basic_robolimb, /datum/robolimb)
 	company = "Morpheus"
 	desc = "This limb is simple and functional; no effort has been made to make it look human."
 	icon = 'icons/mob/human_races/cyberlimbs/morpheus/morpheus_main.dmi'
-	unavailable_to_build = 0 // CHOMP Edit
+	unavailable_to_build = 0
 	monitor_styles = STANDARD_MONITOR_STYLES
 	modular_bodyparts = MODULAR_BODYPART_PROSTHETIC // remove the restrictions
 
@@ -350,7 +350,7 @@ GLOBAL_DATUM(basic_robolimb, /datum/robolimb)
 	company = "Ward-Takahashi"
 	desc = "This limb features sleek black and white polymers."
 	icon = 'icons/mob/human_races/cyberlimbs/wardtakahashi/wardtakahashi_main.dmi'
-	unavailable_to_build = 0 // CHOMP Edit
+	unavailable_to_build = 0
 	modular_bodyparts = MODULAR_BODYPART_PROSTHETIC // remove the restrictions
 
 /datum/robolimb/wardtakahashi_alt1
@@ -381,7 +381,7 @@ GLOBAL_DATUM(basic_robolimb, /datum/robolimb)
 	company = "Xion"
 	desc = "This limb has a minimalist black and red casing."
 	icon = 'icons/mob/human_races/cyberlimbs/xion/xion_main.dmi'
-	unavailable_to_build = 0 // CHOMP Edit
+	unavailable_to_build = 0
 	modular_bodyparts = MODULAR_BODYPART_PROSTHETIC // remove the restrictions
 
 /datum/robolimb/xion_alt1
@@ -490,7 +490,7 @@ GLOBAL_DATUM(basic_robolimb, /datum/robolimb)
 	modular_bodyparts = MODULAR_BODYPART_PROSTHETIC
 	parts = list(BP_L_LEG, BP_R_LEG, BP_L_FOOT, BP_R_FOOT)
 
-/* CHOMPRemove Start
+/* 
 /datum/robolimb/digi
 	company = "DSI Digitigrade Legs" //yup that's how I'm fixing this, you NEED to have digi on or else oh god it looks weird
 	desc = "Synthflesh-wrapped robotic digitigrade legs, for the animal in all of us."
@@ -499,7 +499,7 @@ GLOBAL_DATUM(basic_robolimb, /datum/robolimb)
 	unavailable_to_build = 1
 	skin_tone = 1
 	parts = list(BP_L_LEG, BP_R_LEG, BP_L_FOOT, BP_R_FOOT)
-*/// CHOMPRemove End
+*/
 
 /obj/item/disk/limb/Initialize(mapload)
 	. = ..()

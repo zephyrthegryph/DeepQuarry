@@ -11,7 +11,7 @@
 	wielded_item_state = "laser-wielded"
 	fire_delay = 8
 	slot_flags = SLOT_BELT|SLOT_BACK
-	w_class = ITEMSIZE_LARGE //CHOMP Edit - huge was dumb for this.
+	w_class = ITEMSIZE_LARGE //huge was dumb for this.
 	force = 10
 	matter = list(MAT_STEEL = 2000)
 	projectile_type = /obj/item/projectile/beam/midlaser
@@ -274,10 +274,10 @@
 	projectile_type = /obj/item/projectile/beam/heavylaser/cannon
 	battery_lock = 0 // This thing is worthless with this.
 	fire_delay = 20
-	w_class = ITEMSIZE_HUGE //CHOMP Edit. Lol a cannon used to be just large size? Are you kidding me? A CANNON.  Deserves this.
+	w_class = ITEMSIZE_HUGE //. Lol a cannon used to be just large size? Are you kidding me? A CANNON. Deserves this.
 	one_handed_penalty = 90 // The thing's heavy and huge.
 	accuracy = 45
-	charge_cost = 400 //CHOMP Edit. Let's give this thing some more shots, seeing as it needs to be recharged at a charger - Most everything else is cheaper on charge cost now or smaller, this can stay the same, but with replacable batteries.
+	charge_cost = 400 //. Let's give this thing some more shots, seeing as it needs to be recharged at a charger - Most everything else is cheaper on charge cost now or smaller, this can stay the same, but with replacable batteries.
 
 /obj/item/gun/energy/lasercannon/mounted
 	name = "mounted laser cannon"
@@ -302,7 +302,7 @@
 	item_state = "xray"
 	projectile_type = /obj/item/projectile/beam/xray
 	charge_cost = 200
-	w_class = ITEMSIZE_LARGE //CHOMP Edit. - huge is too big, this thing hits for 25
+	w_class = ITEMSIZE_LARGE //. - huge is too big, this thing hits for 25
 
 /*
  * Marksman Rifle
@@ -330,7 +330,7 @@
 	accuracy = -30 //shooting at the hip
 	scoped_accuracy = 100
 	one_handed_penalty = 60 // The weapon itself is heavy, and the long barrel makes it hard to hold steady with just one hand.
-	//End CHOMP Edit.
+	//End .
 
 /obj/item/gun/energy/sniperrifle/ui_action_click(mob/user, actiontype)
 	scope()
@@ -353,8 +353,8 @@
 	desc = "A strange Almachi weapon, utilizing a refracting prism to turn a single laser blast into a diverging cluster."
 
 	projectile_type = /obj/item/projectile/scatter/laser
-	w_class = ITEMSIZE_HUGE //CHOMP Edit.
-	slot_flags = SLOT_BELT|SLOT_BACK //CHOMP Edit because you can still holster it despite it not fitting in a backpack.
+	w_class = ITEMSIZE_HUGE //.
+	slot_flags = SLOT_BELT|SLOT_BACK //because you can still holster it despite it not fitting in a backpack.
 
 
 /*
@@ -427,7 +427,7 @@
 	charge_cost = 2400
 	fire_delay = 20
 	force = 8
-	w_class = ITEMSIZE_HUGE //CHOMP Edit.
+	w_class = ITEMSIZE_HUGE //.
 	accuracy = 10
 	scoped_accuracy = 15
 	charge_meter = FALSE
@@ -538,8 +538,8 @@
 		list(mode_name="burst", burst=3, fire_delay=null, move_delay=4, burst_accuracy=list(0,0,0), dispersion=list(0.0, 0.2, 0.5), projectile_type=/obj/item/projectile/beam/burstlaser, charge_cost = 200),
 		)
 	force = 8
-	w_class = ITEMSIZE_HUGE		//Probably gonna make it a rifle sooner or later //CHOMP Edit, and so I did.
-	slot_flags = SLOT_BELT|SLOT_BACK //CHOMP Edit. Let's make it so that if it doesn't fit in a backpack, it doesn't fit in a holster either.
+	w_class = ITEMSIZE_HUGE //Probably gonna make it a rifle sooner or later //and so I did.
+	slot_flags = SLOT_BELT|SLOT_BACK //. Let's make it so that if it doesn't fit in a backpack, it doesn't fit in a holster either.
 	is64x32_override = TRUE
 	accept_cell_type = /obj/item/cell/vepr
 	cell_type = /obj/item/cell/vepr
@@ -583,8 +583,8 @@
 	fire_delay = 0.5
 	projectile_type = /obj/item/projectile/energy/plasma/vepr
 	force = 8
-	w_class = ITEMSIZE_HUGE		//Probably gonna make it a rifle sooner or later //CHOMP Edit, and so I did.
-	slot_flags = SLOT_BELT|SLOT_BACK //CHOMP Edit. Let's make it so that if it doesn't fit in a backpack, it doesn't fit in a holster either.
+	w_class = ITEMSIZE_HUGE //Probably gonna make it a rifle sooner or later //and so I did.
+	slot_flags = SLOT_BELT|SLOT_BACK //. Let's make it so that if it doesn't fit in a backpack, it doesn't fit in a holster either.
 	var/is64x32_override = TRUE
 	accept_cell_type = /obj/item/cell/vepr
 	cell_type = /obj/item/cell/vepr

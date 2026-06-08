@@ -517,7 +517,7 @@
 #define CHAPLAIN (1<<10)
 #define ASSISTANT (1<<11)
 #define BRIDGE (1<<12)
-// #define PILOT (1<<13) // CHOMPRemove
+// #define PILOT (1<<13)
 #define ENTERTAINER (1<<14)
 #define ENTREPRENEUR (1<<15)
 

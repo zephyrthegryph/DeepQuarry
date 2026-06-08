@@ -56,7 +56,7 @@
 	endWhen = worst_case_end()
 
 /datum/event/meteor_wave/proc/get_wave_size()
-	return severity * rand(2,4) //CHOMP Edit: Increase maximum multipler from 3 to 4.
+	return severity * rand(2,4) //Increase maximum multipler from 3 to 4.
 
 /datum/event/meteor_wave/proc/worst_case_end()
 	return activeFor + ((30 / severity) * waves) + 10

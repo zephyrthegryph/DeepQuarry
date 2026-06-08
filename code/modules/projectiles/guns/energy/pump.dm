@@ -125,7 +125,7 @@
 	var/phase_power = 15
 
 	projectile_type = /obj/item/projectile/beam/phaser
-	//CHOMP Edit: Changed beam type to new phaser beam type.
+	//Changed beam type to new phaser beam type.
 	firemodes = list(
 		list(mode_name="lethal", fire_delay=10, projectile_type=/obj/item/projectile/beam/phaser, charge_cost = 80), // Reduced cost
 		list(mode_name="low-power", fire_delay=5, projectile_type=/obj/item/projectile/beam/phaser/light, charge_cost = 40), // Reduced cost
@@ -184,7 +184,7 @@
 	w_class = ITEMSIZE_LARGE // Should be bigger.
 
 	modifystate = "carbinekill"
-	//CHOMP Edit: Changed beam type to new phaser beam type.
+	//Changed beam type to new phaser beam type.
 	firemodes = list(
 		list(mode_name="lethal", fire_delay=10, projectile_type=/obj/item/projectile/beam/phaser, modifystate="carbinekill", charge_cost = 60), // Reduced cost
 		list(mode_name="low-power", fire_delay=5, projectile_type=/obj/item/projectile/beam/phaser/light, modifystate="carbinestun", charge_cost = 30), // Reduced cost
@@ -216,7 +216,7 @@
 	w_class = ITEMSIZE_SMALL
 	charge_cost = 200 // Reduced cost
 	modifystate = "holdoutkill"
-	//CHOMP Edit: Changed beam type to new phaser beam type.
+	//Changed beam type to new phaser beam type.
 	firemodes = list(
 		list(mode_name="lethal", fire_delay=20, projectile_type=/obj/item/projectile/beam/phaser, modifystate="holdoutkill", charge_cost = 200), // Reduced cost
 		list(mode_name="low-power", fire_delay=10, projectile_type=/obj/item/projectile/beam/phaser/light, modifystate="holdoutstun", charge_cost = 50), // Reduced cost
@@ -247,7 +247,7 @@
 	phase_power = 30 // efficient crank charger
 	projectile_type = /obj/item/projectile/beam/phaser/heavy
 	modifystate = "riflekill"
-	//CHOMP Edit: Changed beam type to new phaser beam type.
+	//Changed beam type to new phaser beam type.
 	firemodes = list(
 		list(mode_name="lethal", fire_delay=12, projectile_type=/obj/item/projectile/beam/phaser, modifystate="riflestun", charge_cost = 60), // Reduced cost
 		list(mode_name="sniper", fire_delay=35, move_delay=4, projectile_type=/obj/item/projectile/beam/phaser/heavy, modifystate="riflekill", charge_cost = 100), // Reduced cost
@@ -289,8 +289,8 @@
 	charge_cost = 200 // Reduced cost
 	modifystate = "handbowkill"
 	firemodes = list(
-		list(mode_name="lethal", fire_delay=12, projectile_type=/obj/item/projectile/energy/phase/bolt/heavy, modifystate="handbowkill", charge_cost = 200), //CHOMP Edit
-		list(mode_name="low-power", fire_delay=8, projectile_type=/obj/item/projectile/energy/phase/bolt, modifystate="handbowstun", charge_cost = 100), //CHOMP Edit
+		list(mode_name="lethal", fire_delay=12, projectile_type=/obj/item/projectile/energy/phase/bolt/heavy, modifystate="handbowkill", charge_cost = 200),
+		list(mode_name="low-power", fire_delay=8, projectile_type=/obj/item/projectile/energy/phase/bolt, modifystate="handbowstun", charge_cost = 100),
 	)
 
 /obj/item/gun/energy/locked/frontier/handbow/unlocked

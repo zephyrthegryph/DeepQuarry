@@ -608,7 +608,7 @@ It's fairly easy to fix if dealing with single letters but not so much with comp
 		threatcount += 4
 
 	if(auth_weapons && !access_obj.allowed(src))
-		if(istype(l_hand, /obj/item/gun) || istype(l_hand, /obj/item/melee) && !istype(l_hand, /obj/item/gun/energy/floragun) && !istype(l_hand, /obj/item/gun/energy/sizegun) && !istype(l_hand, /obj/item/gun/launcher/confetti_cannon) && !istype(l_hand, /obj/item/gun/energy/lasertag)) //CHOMP Edit: Specific guns to the exclusion list.
+		if(istype(l_hand, /obj/item/gun) || istype(l_hand, /obj/item/melee) && !istype(l_hand, /obj/item/gun/energy/floragun) && !istype(l_hand, /obj/item/gun/energy/sizegun) && !istype(l_hand, /obj/item/gun/launcher/confetti_cannon) && !istype(l_hand, /obj/item/gun/energy/lasertag)) //Specific guns to the exclusion list.
 			threatcount += 4
 
 		if(istype(r_hand, /obj/item/gun) || istype(r_hand, /obj/item/melee))

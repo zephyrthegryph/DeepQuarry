@@ -18,7 +18,7 @@
 	icon_state = "shotgun"
 	item_state = "shotgun"
 	max_shells = 4
-	w_class = ITEMSIZE_HUGE //CHOMP Edit.
+	w_class = ITEMSIZE_HUGE //.
 	force = 10
 	slot_flags = SLOT_BACK
 	caliber = "12g"
@@ -123,7 +123,7 @@
 	caliber = "12g"
 	ammo_type = /obj/item/ammo_casing/a12g/beanbag
 
-//	var/unique_reskin CHOMP Remove
+// var/unique_reskin 
 	var/sawn_off = FALSE
 
 	burst_delay = 0
@@ -142,7 +142,7 @@
 
 /obj/item/gun/projectile/shotgun/doublebarrel/unload_ammo(user, allow_dump)
 	..(user, allow_dump=1)
-/*CHOMP Remove start
+/*
 /obj/item/gun/projectile/shotgun/doublebarrel/verb/rename_gun()
 	set name = "Name Gun"
 	set category = "Object"
@@ -180,7 +180,7 @@
 		unique_reskin = options[choice]
 		to_chat(M, "Your gun is now sprited as [choice]. Say hello to your new friend.")
 		return 1
-*/ //CHOMP Remove end
+*/
 //this is largely hacky and bad :(	-Pete //less hacky and bad now :) -Ghost
 /obj/item/gun/projectile/shotgun/doublebarrel/attackby(obj/item/A as obj, mob/user as mob)
 	if(istype(A, /obj/item/surgical/circular_saw) || istype(A, /obj/item/melee/energy) || istype(A, /obj/item/pickaxe/plasmacutter))
@@ -199,10 +199,10 @@
 		if(do_after(user, 3 SECONDS, target = src)) // SHIT IS STEALTHY EYYYYY
 			if(sawn_off)
 				return
-//			if(unique_reskin) //CHOMP Remove
-//				icon_state = "[unique_reskin]_sawn" //CHOMP Remove
-//			else //CHOMP Remove
-//				icon_state = "dshotgun_sawn" //CHOMP Remove
+// if(unique_reskin)
+// icon_state = "[unique_reskin]_sawn"
+// else
+// icon_state = "dshotgun_sawn"
 			item_state = "sawnshotgun"
 			w_class = ITEMSIZE_NORMAL
 			force = 5

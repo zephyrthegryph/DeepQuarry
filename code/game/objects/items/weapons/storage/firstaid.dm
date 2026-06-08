@@ -557,12 +557,12 @@
 	max_w_class = ITEMSIZE_TINY
 	can_hold = list(/obj/item/reagent_containers/pill)
 
-/*CHOMPStation removal begin
+/*
 /obj/item/storage/mrebag/pill/sleevingcure
 	name = "vacuum-sealed pill (" + REAGENT_SLEEVINGCURE + ")"
 	desc = "A small vacuum-sealed package containing a singular pill. For emergencies only."
 	starts_with = list(/obj/item/reagent_containers/pill/sleevingcure)
-*/ //CHOMPStation removal end
+*/
 
 /obj/item/storage/pill_bottle/paracetamol
 	name = "pill bottle (" + REAGENT_PARACETAMOL + ")"

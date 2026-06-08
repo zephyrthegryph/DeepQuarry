@@ -132,15 +132,15 @@
 		qdel(src)
 
 /obj/effect/spider/eggcluster/small
-	spiders_min = 2 //CHOMP Edit
-	spiders_max = 6 //CHOMP Edit
+	spiders_min = 2
+	spiders_max = 6
 
 /obj/effect/spider/eggcluster/small/frost
 	spider_type = /obj/effect/spider/spiderling/frost
 
 /obj/effect/spider/eggcluster/royal
 	spiders_min = 2
-	spiders_max = 6 //CHOMP Edit
+	spiders_max = 6
 	spider_type = /obj/effect/spider/spiderling/varied
 
 /obj/effect/spider/spiderling

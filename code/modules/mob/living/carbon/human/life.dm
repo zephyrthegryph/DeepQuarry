@@ -1837,7 +1837,7 @@
 	if(isturf(loc) && rand(1,1000) == 1)
 		var/turf/T = loc
 		if(T.get_lumcount() <= LIGHTING_SOFT_THRESHOLD)
-			/* CHOMPEdit Start
+			/* 
 			if(text2num(time2text(world.timeofday, "MM")) == 4)
 				if(text2num(time2text(world.timeofday, "DD")) == 1)
 					playsound_local(src,pick(GLOB.scawwysownds),50, 0)

@@ -12,7 +12,7 @@
 	to counter the Unathi war machine. One of many solutions created was the Durand, which was made to be heavy and \
 	well-armored, and be capable of powering the various weapons that could be mounted onto it. Presently, the \
 	Durand now generally serves as corporate asset protection hardware, due to modern militaries moving on to newer, \
-	more advanced war machines." // CHOMPEdit
+	more advanced war machines."
 	value = CATALOGUER_REWARD_HARD
 
 /mob/living/simple_mob/mechanical/mecha/combat/durand
@@ -71,7 +71,7 @@
 
 /mob/living/simple_mob/mechanical/mecha/combat/durand/defensive/mercenary
 	desc = "An aging combat exosuit utilized by many corporations. It was originally developed to fight in the First Contact  War.\
-	This one has been retrofitted into a turret." // CHOMPEdit
+	This one has been retrofitted into a turret."
 
 	projectiletype = /obj/item/projectile/beam/heavylaser/fakeemitter
 

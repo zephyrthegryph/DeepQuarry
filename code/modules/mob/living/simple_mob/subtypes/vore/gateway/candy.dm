@@ -43,7 +43,7 @@
 	vore_pounce_chance = 0 // Beat them into crit before eating.
 	vore_icons = null
 
-	can_be_drop_prey = TRUE //CHOMP Add
+	can_be_drop_prey = TRUE
 
 //bluenom
 /mob/living/simple_mob/vore/candy/bluecabold/Login()

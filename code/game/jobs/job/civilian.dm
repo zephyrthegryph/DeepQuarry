@@ -263,7 +263,7 @@
 /datum/alt_title/ia_investigator
 	title = JOB_ALT_INTERNAL_AFFAIRS_INVESTIGATOR
 
-/*CHOMP Remove Start: because we have our own in maps/southern_cross/southern_cross_jobs.dm
+/*because we have our own in maps/southern_cross/southern_cross_jobs.dm
 //////////////////////////////////
 //		      	Pilot
 //////////////////////////////////
@@ -296,7 +296,7 @@
 
 /datum/alt_title/helmsman
 	title = JOB_ALT_HELMSMAN
-*/ //CHOMP Remove end
+*/
 
 /datum/job/pilot/get_request_reasons()
 	return list("Assembling expedition team")

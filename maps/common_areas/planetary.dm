@@ -318,12 +318,12 @@
 /area/surface/outpost/engineering/smes
 	name = "North Engineering SMES"
 	icon_state = "substation"
-	ambience = AMBIENCE_SUBSTATION //CHOMP Addition
+	ambience = AMBIENCE_SUBSTATION //ition
 
 /area/surface/outpost/engineering/reactor_smes
 	name = "North Engineering Reactor SMES"
 	icon_state = "engine_smes"
-	ambience = AMBIENCE_SUBSTATION //CHOMP Addition
+	ambience = AMBIENCE_SUBSTATION //ition
 
 /area/surface/outpost/engineering/storage
 	name = "North Engineering Storage"
@@ -350,7 +350,7 @@
 	name = "\improper Xenoresearch SMES Maintenance"
 	icon_state = "substation"
 	sound_env = SMALL_ENCLOSED
-	ambience = AMBIENCE_SUBSTATION //CHOMP Addition
+	ambience = AMBIENCE_SUBSTATION //ition
 
 /area/surface/outpost/research/xenoresearch/emergencystorage
 	name = "\improper Xenoresearch Emergency Storage"
@@ -395,7 +395,7 @@
 	name = "\improper Xenoarcheology SMES Maintenance"
 	icon_state = "substation"
 	sound_env = SMALL_ENCLOSED
-	ambience = AMBIENCE_SUBSTATION //CHOMP Addition
+	ambience = AMBIENCE_SUBSTATION //ition
 
 /area/surface/outpost/research/xenoarcheology/emergencystorage
 	name = "\improper Xenoarcheology Emergency Storage"
@@ -460,7 +460,7 @@
 /area/surface/outpost/main/gen_room
 	name = "\improper Main Outpost SMES"
 	icon_state = "substation"
-	ambience = AMBIENCE_SUBSTATION //CHOMP Edit
+	ambience = AMBIENCE_SUBSTATION
 
 /area/surface/outpost/main/gen_room/smes_left
 	name = "\improper Main Outpost Left Wing SMES"

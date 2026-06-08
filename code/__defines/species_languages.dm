@@ -71,4 +71,4 @@
 
 // === merged from species_languages_vr.dm during hard-fork de-suffix (manually verified: no middle override of the affected member) ===
 #define LANGUAGE_SLAVIC "Pan-Slavic" //CHOMP reAdd
-#define LANGUAGE_MARISH "Marish" //CHOMP Add
+#define LANGUAGE_MARISH "Marish"

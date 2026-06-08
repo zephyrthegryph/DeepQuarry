@@ -16,7 +16,7 @@
 		if(in_area.flag_check(AREA_FORBID_EVENTS))
 			continue
 		if(!temp_vent.welded && temp_vent.network && (temp_vent.loc.z in using_map.station_levels)) //No spawns on welded vents
-			if(temp_vent.network.normal_members.len > 10) //CHOMP Edit: Most our networks are 40. SM is 4 and toxins is 2. This needed to change in order to spawn.
+			if(temp_vent.network.normal_members.len > 10) //Most our networks are 40. SM is 4 and toxins is 2. This needed to change in order to spawn.
 				vents += temp_vent
 
 	if(prob(50)) //50/50 chance on spiders or metroids.
@@ -45,7 +45,7 @@
 			if(in_area.flag_check(AREA_FORBID_EVENTS))
 				continue
 			if(!temp_vent.welded && temp_vent.network && (temp_vent.loc.z in using_map.station_levels))
-				if(temp_vent.network.normal_members.len > 10) //CHOMP Edit: Most our networks are 40. SM is 4 and toxins is 2. This needed to change to 10 from 50 in order for spawns to work.
+				if(temp_vent.network.normal_members.len > 10) //Most our networks are 40. SM is 4 and toxins is 2. This needed to change to 10 from 50 in order for spawns to work.
 					var/area/A = get_area(temp_vent)
 					if(!(A.flag_check(AREA_FORBID_EVENTS)))
 						vents += temp_vent

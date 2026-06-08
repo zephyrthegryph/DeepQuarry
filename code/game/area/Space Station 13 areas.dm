@@ -1832,7 +1832,7 @@ NOTE: there are two lists of areas in the end of this file: centcom and station 
 /area/security/riot_control
 	name = "\improper Security - Riot Control"
 	icon_state = "riot_control"
-	flags = RAD_SHIELDED //CHOMP Add
+	flags = RAD_SHIELDED
 
 /area/security/detectives_office
 	name = "\improper Security - Forensic Office"

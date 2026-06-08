@@ -98,15 +98,15 @@
 
 /datum/job/emergency_responder/get_access()
 	return SSaccess.get_all_accesses().Copy()
-/* CHOMPEDIT: Removing Clown/Mime job from being initialized at all (These are alt titles of Entertainer on our codebase)
+/* Removing Clown/Mime job from being initialized at all (These are alt titles of Entertainer on our codebase)
 /datum/job/clown
 	title = JOB_CLOWN
 	flag = CLOWN
 	departments = list(DEPARTMENT_CIVILIAN)
 	department_flag = ENGSEC
 	faction = FACTION_STATION
-	total_positions = -1 //CHOMP Edit: Disable. Change to + integer to enable.
-	spawn_positions = -1 //CHOMP Edit: Disable. Change to + integer to enable.
+	total_positions = -1 //Disable. Change to + integer to enable.
+	spawn_positions = -1 //Disable. Change to + integer to enable.
 	supervisors = "the spirit of laughter"
 	selection_color = "#515151"
 	economic_modifier = 1
@@ -136,8 +136,8 @@
 	departments = list(DEPARTMENT_CIVILIAN)
 	department_flag = ENGSEC
 	faction = FACTION_STATION
-	total_positions = -1 //CHOMP Edit: Disable. Change to + integer to enable.
-	spawn_positions = -1 //CHOMP Edit: Disable. Change to + integer to enable.
+	total_positions = -1 //Disable. Change to + integer to enable.
+	spawn_positions = -1 //Disable. Change to + integer to enable.
 	supervisors = "the spirit of performance"
 	selection_color = "#515151"
 	economic_modifier = 1

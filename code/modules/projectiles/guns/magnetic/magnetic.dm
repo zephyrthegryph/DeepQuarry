@@ -12,7 +12,7 @@
 	item_state = "coilgun"
 	icon = 'icons/obj/railgun.dmi'
 //	one_handed_penalty = 15
-	w_class = ITEMSIZE_HUGE //CHOMP Edit.
+	w_class = ITEMSIZE_HUGE //.
 
 	var/obj/item/cell/cell                              // Currently installed powercell.
 	var/obj/item/stock_parts/capacitor/capacitor        // Installed capacitor. Higher rating == faster charge between shots. Set to a path to spawn with one of that type.

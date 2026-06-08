@@ -155,7 +155,7 @@
 		else
 			message_admins("[key_name_admin(user)] triggered a fueltank explosion with a welding tool.")
 			log_game("[key_name(user)] triggered a fueltank explosion with a welding tool.")
-			to_chat(user, span_danger("You begin welding on the fueltank and with a moment of lucidity you realize... you are doomed.")) //CHOMP Edit: changed yawn edit to just say you are doomed
+			to_chat(user, span_danger("You begin welding on the fueltank and with a moment of lucidity you realize... you are doomed.")) //changed yawn edit to just say you are doomed
 			var/obj/structure/reagent_dispensers/fueltank/tank = O // CHOMPS edit - Readds welderbombing
 			tank.explode()
 			return

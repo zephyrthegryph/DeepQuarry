@@ -244,7 +244,7 @@
 	if(!card)
 		to_chat(user, span_notice("No ID is inserted."))
 		return FALSE
-/* CHOMPedit start. Allows anyone to change people's IDs.
+/* . Allows anyone to change people's IDs.
 	var/mob/living/carbon/human/H = user
 	if(!(istype(H)))
 		to_chat(user, span_warning("Invalid user detected. Access denied."))
@@ -255,7 +255,7 @@
 	else if(H.get_face_name() == "Unknown" || !(H.real_name == card.registered_name))
 		to_chat(user, span_warning("Facial recognition scan failed. Access denied."))
 		return FALSE
-CHOMPedit end. */
+. */
 	else
 		message_admins("[key_name_admin(user)] has modified '[card.registered_name]' 's ID with a timeclock terminal. [ADMIN_JMP(location)]") // Logging
 		log_game("[key_name_admin(user)] has modified '[card.registered_name]' 's ID with a timeclock terminal.") // Logging

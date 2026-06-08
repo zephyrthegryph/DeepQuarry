@@ -266,7 +266,7 @@
 	if((H.getActualBruteLoss() + H.getActualFireLoss()) > H.getMaxHealth()*0.5 && isturf(H.loc)) //So, only if we're not a blob (we're in nullspace) or in someone (or a locker, really, but whatever)
 		return ..() //Any instakill shot runtimes since there are no organs after this. No point to not skip these checks, going to nullspace anyway.
 
-/*CHOMP Station removal start
+/*
 	var/obj/item/organ/internal/nano/refactory/refactory = locate() in H.internal_organs
 	if(refactory && !(refactory.status & ORGAN_DEAD))
 
@@ -287,7 +287,7 @@
 			H.add_modifier(/datum/modifier/protean/silver, origin = refactory)
 
 	return ..()
-CHOMP Station removal end*/
+*/
 
 /datum/species/protean/get_additional_examine_text(mob/living/carbon/human/H)
 	return ..() //Hmm, what could be done here?
@@ -349,7 +349,7 @@ CHOMP Station removal end*/
 	if(!refactory.use_stored_material(material_name,material_use))
 		expire()
 
-/*CHOMP Removal start
+/*
 /datum/modifier/protean/mhydrogen
 	name = "Protean Effect - M.Hydrogen"
 	desc = "You're affected by the presence of metallic hydrogen."
@@ -394,7 +394,7 @@ CHOMP Station removal end*/
 
 	accuracy = 30
 	evasion = 30
-CHOMP Removal end*/
+*/
 
 /datum/modifier/protean/steel
 	name = "Protean Effect - Steel"

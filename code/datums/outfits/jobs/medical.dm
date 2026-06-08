@@ -30,7 +30,7 @@
 	name = OUTFIT_JOB_NAME(JOB_MEDICAL_DOCTOR)
 	uniform = /obj/item/clothing/under/rank/medical
 	suit = /obj/item/clothing/suit/storage/toggle/labcoat
-	l_hand = /obj/item/storage/firstaid/adv //CHOMP Edit
+	l_hand = /obj/item/storage/firstaid/adv
 	r_pocket = /obj/item/flashlight/pen
 	id_type = /obj/item/card/id/medical
 

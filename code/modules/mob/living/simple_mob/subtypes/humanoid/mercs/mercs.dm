@@ -350,7 +350,7 @@
 			return FALSE
 
 	/*
-	 * CHOMP Addition: This section here is (duplicated) special snowflake code because sniper does not call parent. Basically, this is a non-stupid version of the above intended for ranged mobs.
+	 * ition: This section here is (duplicated) special snowflake code because sniper does not call parent. Basically, this is a non-stupid version of the above intended for ranged mobs.
 	 * ranged_attack_delay is stupid because it sleeps the entire mob.
 	 * This new ranged_cooldown_time is smarter in the sense that it is an internalized timer. Try not to confuse the names.
 	*/

@@ -1830,7 +1830,7 @@
 	color_blend_mode = ICON_MULTIPLY
 	extra_overlay = "stripedtail_colorable_w"
 
-/* // Exclusive Tails // CHOMPRemove start
+/* // Exclusive Tails
 /datum/sprite_accessory/tail/peacocktail_red //this is ckey locked for now, but prettiebyrd wants these tails to be unlocked at a later date
 	name = "Peacock tail (vwag)"
 	desc = ""
@@ -1940,7 +1940,7 @@
 	desc = ""
 	icon_state = "tigresstail"
 	ckeys_allowed = list("hoodoo")
-*/// CHOMPRemove End
+*/
 
 /datum/sprite_accessory/tail/longtail/longflufftail
 	name = "Long fluffy tail"

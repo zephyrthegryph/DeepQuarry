@@ -22,7 +22,7 @@
 
 
 	slot_flags = SLOT_BELT|SLOT_BACK
-	w_class = ITEMSIZE_HUGE //CHOMP Edit.
+	w_class = ITEMSIZE_HUGE //.
 
 //Projectile
 /obj/item/projectile/pummel

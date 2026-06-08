@@ -271,7 +271,7 @@
 	active_force = 30
 	active_armourpen = 50
 	active_throwforce = 20
-	active_w_class = ITEMSIZE_HUGE //CHOMP Edit
+	active_w_class = ITEMSIZE_HUGE
 	force = 3
 	throwforce = 5
 	throw_speed = 1

@@ -83,7 +83,7 @@
 	if(result == 37)
 		result = "00"
 	spawn(5 SECONDS)
-		// visible_message(span_notice("The roulette stops spinning, the ball landing on [result], [color].")) //CHOMPRemove
+		// visible_message(span_notice("The roulette stops spinning, the ball landing on [result], [color]."))
 		busy = 0
 		icon_state = initial(icon_state)
 

@@ -7,7 +7,7 @@
 	item_state = "ionrifle"
 	icon_expected_width = 64 // Gun Sprites
 	wielded_item_state = "ionrifle-wielded"
-	w_class = ITEMSIZE_HUGE //CHOMP Edit.
+	w_class = ITEMSIZE_HUGE //.
 	force = 10
 	slot_flags = SLOT_BACK
 	projectile_type = /obj/item/projectile/ion
@@ -140,7 +140,7 @@
 	icon_state = "riotgun"
 	item_state = "c20r"
 	slot_flags = SLOT_BELT|SLOT_BACK
-	w_class = ITEMSIZE_HUGE //CHOMP Edit.
+	w_class = ITEMSIZE_HUGE //.
 	projectile_type = /obj/item/projectile/meteor
 	cell_type = /obj/item/cell/potato
 	charge_cost = 100
@@ -163,7 +163,7 @@
 	desc = "A custom-built weapon of some kind."
 	icon_state = "xray"
 	projectile_type = /obj/item/projectile/beam/mindflayer
-	w_class = ITEMSIZE_HUGE //CHOMP Edit.
+	w_class = ITEMSIZE_HUGE //.
 
 /obj/item/gun/energy/toxgun
 	name = "phoron pistol"
@@ -342,7 +342,7 @@
 // === merged from special_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/gun/energy/ionrifle/pistol
 	projectile_type = /obj/item/projectile/ion/pistol // still packs a punch but no AoE
-	w_class = ITEMSIZE_NORMAL //CHOMP Edit.
+	w_class = ITEMSIZE_NORMAL //.
 	move_delay = 0 // Pistols have move_delay of 0
 
 /obj/item/gun/energy/ionrifle/weak

@@ -302,16 +302,16 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 	var/escaped_on_pod_1 = 0
 	var/escaped_on_pod_2 = 0
 	var/escaped_on_pod_3 = 0
-	var/escaped_on_pod_4 = 0 //CHOMP Add
+	var/escaped_on_pod_4 = 0
 	var/escaped_on_pod_5 = 0
-	var/escaped_on_pod_6 = 0 //CHOMP Add
+	var/escaped_on_pod_6 = 0
 	var/escaped_on_shuttle = 0
-	var/escaped_on_pod_large_1 = 0 //CHOMP Add
-	var/escaped_on_pod_large_2 = 0 //CHOMP Add
-	var/escaped_on_cryopod = 0 //CHOMP Add
+	var/escaped_on_pod_large_1 = 0
+	var/escaped_on_pod_large_2 = 0
+	var/escaped_on_cryopod = 0
 
 	var/list/area/escape_locations = list(/area/shuttle/escape/centcom, /area/shuttle/cryo/centcom, /area/shuttle/escape_pod1/centcom, /area/shuttle/escape_pod2/centcom, /area/shuttle/escape_pod3/centcom, /area/shuttle/escape_pod5/centcom, /area/shuttle/escape_pod6/centcom, /area/shuttle/large_escape_pod1/centcom
-, /area/shuttle/large_escape_pod2/centcom) //CHOMP Edit: Appended /centcom to the escape shuttle again to fix transfer message. Added some escape pods to the list.
+, /area/shuttle/large_escape_pod2/centcom) //Appended /centcom to the escape shuttle again to fix transfer message. Added some escape pods to the list.
 
 	for(var/mob/M in GLOB.player_list)
 		if(M.client)
@@ -336,17 +336,17 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 					escaped_on_pod_2++
 				if(M_area_type == /area/shuttle/escape_pod3/centcom)
 					escaped_on_pod_3++
-				if(M_area_type == /area/shuttle/escape_pod4/centcom) //CHOMP Add
+				if(M_area_type == /area/shuttle/escape_pod4/centcom)
 					escaped_on_pod_4++
 				if(M_area_type == /area/shuttle/escape_pod5/centcom)
 					escaped_on_pod_5++
-				if(M_area_type == /area/shuttle/escape_pod6/centcom) //CHOMP Add
+				if(M_area_type == /area/shuttle/escape_pod6/centcom)
 					escaped_on_pod_6++
-				if(M_area_type == /area/shuttle/large_escape_pod1/centcom) //CHOMP Add
+				if(M_area_type == /area/shuttle/large_escape_pod1/centcom)
 					escaped_on_pod_large_1++
-				if(M_area_type == /area/shuttle/large_escape_pod2/centcom) //CHOMP Add
+				if(M_area_type == /area/shuttle/large_escape_pod2/centcom)
 					escaped_on_pod_large_2++
-				if(M_area_type == /area/shuttle/cryo/centcom) //CHOMP Add
+				if(M_area_type == /area/shuttle/cryo/centcom)
 					escaped_on_cryopod++
 
 
@@ -383,17 +383,17 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 		feedback_set("escaped_on_pod_2",escaped_on_pod_2)
 	if(escaped_on_pod_3 > 0)
 		feedback_set("escaped_on_pod_3",escaped_on_pod_3)
-	if(escaped_on_pod_4 > 0) //CHOMP Add
+	if(escaped_on_pod_4 > 0)
 		feedback_set("escaped_on_pod_4",escaped_on_pod_4)
 	if(escaped_on_pod_5 > 0)
 		feedback_set("escaped_on_pod_5",escaped_on_pod_5)
-	if(escaped_on_pod_6 > 0) //CHOMP Add
+	if(escaped_on_pod_6 > 0)
 		feedback_set("escaped_on_pod_6",escaped_on_pod_6)
-	if(escaped_on_pod_large_1 > 0) //CHOMP Add
+	if(escaped_on_pod_large_1 > 0)
 		feedback_set("escaped_on_pod_large_1",escaped_on_pod_large_1)
-	if(escaped_on_pod_large_2 > 0) //CHOMP Add
+	if(escaped_on_pod_large_2 > 0)
 		feedback_set("escaped_on_pod_large_2",escaped_on_pod_large_2)
-	if(escaped_on_cryopod > 0) //CHOMP Add
+	if(escaped_on_cryopod > 0)
 		feedback_set("escaped_on_cryopod",escaped_on_cryopod)
 
 /datum/game_mode/proc/check_win() //universal trigger to be called at mob death, nuke explosion, etc. To be called from everywhere.

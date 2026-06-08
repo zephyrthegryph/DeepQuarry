@@ -130,7 +130,7 @@
 				<li>In event of ejection failure, "} + span_italics("good luck.") + {"</li>
 				</ol>
 				</body>
-			</html>"}			//CHOMPEdit End - Updated Supermatter Engine Manual
+			</html>"}			// Updated Supermatter Engine Manual
 
 // TESLA Engine
 

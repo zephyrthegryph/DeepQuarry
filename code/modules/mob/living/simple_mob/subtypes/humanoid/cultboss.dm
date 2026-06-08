@@ -134,7 +134,7 @@
 	vore_pounce_chance = 0 // Beat them into crit before eating.
 	vore_icons = SA_ICON_LIVING
 
-	can_be_drop_prey = FALSE //CHOMP Add
+	can_be_drop_prey = FALSE
 
 /mob/living/simple_mob/humanoid/cultist/magus/rift/Login()
 	. = ..()

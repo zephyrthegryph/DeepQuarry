@@ -208,7 +208,7 @@
 			if(import_job && (ui.user.mind.assigned_role != import_job))
 				to_chat(ui.user, span_warning("This option is only available to the job: [import_job]"))
 				return FALSE
-			*/// CHOMPRemove End
+			*/
 			var/list/our_data = params["config"]
 			if(!islist(our_data))
 				return FALSE

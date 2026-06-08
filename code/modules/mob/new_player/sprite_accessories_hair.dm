@@ -340,7 +340,7 @@
 	icon_state = "hair_celebcurls"
 	flags = HAIR_TIEABLE
 
-/* CHOMPRemove Start
+/* 
 /datum/sprite_accessory/hair/citheronia
 	name = "Citheronia Hair (Kira72)"
 	icon = 'icons/mob/human_face_vr.dmi'
@@ -354,7 +354,7 @@
 	icon_state = "maw_hair"
 	ckeys_allowed = list("liquidfirefly")
 	do_colouration = 0
-*/// CHOMPRemove End
+*/
 
 /datum/sprite_accessory/hair/twindrillslong
 	name = "Twin Drills Long"
@@ -1934,7 +1934,7 @@
 	ckeys_allowed = list("verysoft")
 	species_allowed = list(SPECIES_SHADEKIN, SPECIES_SHADEKIN_CREW)
 	gender = NEUTER
-*/// CHOMPRemove End
+*/
 
 /datum/sprite_accessory/hair/slicker
 	name = "Slicker"

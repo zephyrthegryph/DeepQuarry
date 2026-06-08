@@ -49,7 +49,7 @@
 	recoil_mode = 0
 
 /*
-VORESTATION REMOVAL
+REMOVAL
 /obj/item/gun/energy/taser/xeno/sec //NT's corner-cutting option for their on-station security.
 	desc = "An NT Mk30 NL retrofitted to fire beams for subduing non-humanoid slimy xeno life forms."
 	icon_state = "taserblue"

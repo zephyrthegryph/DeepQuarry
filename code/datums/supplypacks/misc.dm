@@ -171,7 +171,7 @@
 	containertype = /obj/structure/closet/crate/thinktronic
 	containername = "Holoplant crate"
 
-/* CHOMPedit, moved to medical.dm in modular folder
+/* moved to medical.dm in modular folder
 /datum/supply_pack/misc/glucose_hypos
 	name = "Glucose Hypoinjectors"
 	desc = "A set of five glucose autoinjectors, for those with blood sugar issues."

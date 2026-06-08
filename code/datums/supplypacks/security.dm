@@ -357,7 +357,7 @@
 	containertype = /obj/structure/closet/crate/secure/heph
 	containername = "Ballistic armor crate"
 	access = ACCESS_ARMORY
-/* VOREStation Removal - Howabout no ERT armor being orderable?
+/* Howabout no ERT armor being orderable?
 
 /datum/supply_pack/security/bullet_resistant_plates
 	name = "Armor - Ballistic plates"

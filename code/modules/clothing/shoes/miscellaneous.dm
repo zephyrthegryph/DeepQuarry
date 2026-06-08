@@ -98,10 +98,10 @@
 	icon_state = "clown"
 	slowdown = SHOES_SLOWDOWN+0.5
 	force = 0
-	//CHOMPRemove - removed built in squeak sounds
+	//removed built in squeak sounds
 	species_restricted = null
 
-/*	CHOMPEdit - Replaced with squeak component
+/* Replaced with squeak component
 /obj/item/clothing/shoes/clown_shoes/handle_movement(turf/walking, running)
 	if(running)
 		if(footstep >= 2)
