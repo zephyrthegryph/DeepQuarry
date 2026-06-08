@@ -74,11 +74,7 @@
 		to_chat(user, "There is no card in \the [src]")
 		return
 
-	if(active_program)
-		active_program.event_idremoved(0)
-
-	for(var/datum/computer_file/program/P in idle_threads)
-		P.event_idremoved(1)
+	broadcast_event(COMPUTER_EVENT_IDREMOVED)
 
 	card_slot.stored_card.forceMove(get_turf(src))
 	card_slot.stored_card = null

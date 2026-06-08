@@ -175,6 +175,12 @@
 #define PROGRAM_STATE_BACKGROUND 1
 #define PROGRAM_STATE_ACTIVE 2
 
+// Event type constants for /obj/item/modular_computer/proc/broadcast_event().
+// Passed as the first argument; programs receive the matching event_*() call.
+#define COMPUTER_EVENT_POWERFAILURE  1
+#define COMPUTER_EVENT_NETWORKFAILURE 2
+#define COMPUTER_EVENT_IDREMOVED     3
+
 #define PROG_MISC  		"Miscellaneous"
 #define PROG_ENG  		"Engineering"
 #define PROG_OFFICE  	"Office Work"

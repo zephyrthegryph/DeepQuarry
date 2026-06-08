@@ -8,6 +8,9 @@
 	var/stored_paper = 5
 	var/max_paper = 10
 
+/obj/item/computer_hardware/nano_printer/get_slot_var()
+	return "nano_printer"
+
 /obj/item/computer_hardware/nano_printer/diagnostics(mob/user)
 	..()
 	to_chat(user, "Paper buffer level: [stored_paper]/[max_paper]")
@@ -85,7 +88,8 @@
 	return
 
 /obj/item/computer_hardware/nano_printer/Destroy()
-	if(holder2 && (holder2.nano_printer == src))
-		holder2.nano_printer = null
+	var/slot = get_slot_var()
+	if(holder2 && (holder2.vars[slot] == src))
+		holder2.vars[slot] = null
 	holder2 = null
 	return ..()

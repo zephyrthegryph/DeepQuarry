@@ -36,7 +36,14 @@
 	power_usage = 75
 	max_idle_programs = 2
 
+/obj/item/computer_hardware/processor_unit/get_slot_var()
+	return "processor_unit"
+
+/obj/item/computer_hardware/processor_unit/is_critical_slot()
+	return TRUE
+
 /obj/item/computer_hardware/processor_unit/Destroy()
-	if(holder2 && (holder2.processor_unit == src))
-		holder2.processor_unit = null
+	var/slot = get_slot_var()
+	if(holder2 && (holder2.vars[slot] == src))
+		holder2.vars[slot] = null
 	return ..()

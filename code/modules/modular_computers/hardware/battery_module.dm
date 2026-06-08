@@ -53,6 +53,9 @@
 /obj/item/computer_hardware/battery_module/lambda/Initialize(mapload)
 	. = ..(mapload, /obj/item/cell/infinite)
 
+/obj/item/computer_hardware/battery_module/get_slot_var()
+	return "battery_module"
+
 /obj/item/computer_hardware/battery_module/diagnostics(mob/user)
 	..()
 	to_chat(user, "Internal battery charge: [battery.charge]/[battery.maxcharge] CU")

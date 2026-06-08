@@ -1,54 +1,29 @@
-// Attempts to install the hardware into apropriate slot.
+// Hardware slot management — data-driven via get_slot_var() virtual dispatch.
+//
+// To add a new hardware type without editing this file:
+//   1. Declare the typed var on /obj/item/modular_computer (variables.dm).
+//   2. Override get_slot_var() on the new /obj/item/computer_hardware subtype
+//      to return that var's name as a string.
+//   3. Override is_critical_slot() on the new type to return TRUE if hot-removing
+//      it while the computer is running should trigger a shutdown.
+//
+// No branches in this file ever need changing for new hardware types.
+
+// Installs hardware into the appropriate named slot, determined by the hardware's
+// get_slot_var() proc. Rejects installation when the slot is already occupied.
 /obj/item/modular_computer/proc/try_install_component(mob/living/user, obj/item/computer_hardware/H, found = 0)
-	// "USB" flash drive.
-	if(istype(H, /obj/item/computer_hardware/hard_drive/portable))
-		if(portable_drive)
-			to_chat(user, "This computer's portable drive slot is already occupied by \the [portable_drive].")
-			return
-		found = 1
-		portable_drive = H
-	else if(istype(H, /obj/item/computer_hardware/hard_drive))
-		if(hard_drive)
-			to_chat(user, "This computer's hard drive slot is already occupied by \the [hard_drive].")
-			return
-		found = 1
-		hard_drive = H
-	else if(istype(H, /obj/item/computer_hardware/network_card))
-		if(network_card)
-			to_chat(user, "This computer's network card slot is already occupied by \the [network_card].")
-			return
-		found = 1
-		network_card = H
-	else if(istype(H, /obj/item/computer_hardware/nano_printer))
-		if(nano_printer)
-			to_chat(user, "This computer's nano printer slot is already occupied by \the [nano_printer].")
-			return
-		found = 1
-		nano_printer = H
-	else if(istype(H, /obj/item/computer_hardware/card_slot))
-		if(card_slot)
-			to_chat(user, "This computer's card slot is already occupied by \the [card_slot].")
-			return
-		found = 1
-		card_slot = H
-	else if(istype(H, /obj/item/computer_hardware/battery_module))
-		if(battery_module)
-			to_chat(user, "This computer's battery slot is already occupied by \the [battery_module].")
-			return
-		found = 1
-		battery_module = H
-	else if(istype(H, /obj/item/computer_hardware/processor_unit))
-		if(processor_unit)
-			to_chat(user, "This computer's processor slot is already occupied by \the [processor_unit].")
-			return
-		found = 1
-		processor_unit = H
-	else if(istype(H, /obj/item/computer_hardware/tesla_link))
-		if(tesla_link)
-			to_chat(user, "This computer's tesla link slot is already occupied by \the [tesla_link].")
-			return
-		found = 1
-		tesla_link = H
+	var/slot = H.get_slot_var()
+	if(!slot)
+		return // Hardware type has no registered slot; cannot be installed.
+
+	var/existing = vars[slot]
+	if(existing)
+		to_chat(user, "This computer's [H.name] slot is already occupied by \the [existing].")
+		return
+
+	vars[slot] = H
+	found = 1
+
 	if(found)
 		to_chat(user, "You install \the [H] into \the [src]")
 		H.holder2 = src
@@ -56,34 +31,32 @@
 		H.forceMove(src)
 		update_verbs()
 
-// Uninstalls component. Found and Critical vars may be passed by parent types, if they have additional hardware.
+// Installs hardware during preset construction (no user interaction).
+// Used by install_default_hardware() overrides and the laptop vendor.
+// Sets holder2 without dropping from inventory or moving the item; callers
+// must ensure the hardware is already inside src (e.g. new/path(src)).
+/obj/item/modular_computer/proc/install_hardware(obj/item/computer_hardware/H)
+	if(!H)
+		return
+	var/slot = H.get_slot_var()
+	if(!slot)
+		return
+	vars[slot] = H
+	H.holder2 = src
+
+// Uninstalls a component. Found and Critical vars may be passed by parent types
+// when they carry additional hardware slots beyond the base set.
 /obj/item/modular_computer/proc/uninstall_component(mob/living/user, obj/item/computer_hardware/H, found = 0, critical = 0)
-	if(portable_drive == H)
-		portable_drive = null
+	var/slot = H.get_slot_var()
+	if(slot && (vars[slot] == H))
+		vars[slot] = null
 		found = 1
-	if(hard_drive == H)
-		hard_drive = null
-		found = 1
-		critical = 1
-	if(network_card == H)
-		network_card = null
-		found = 1
-	if(nano_printer == H)
-		nano_printer = null
-		found = 1
-	if(card_slot == H)
-		card_slot = null
-		found = 1
-	if(battery_module == H)
-		battery_module = null
-		found = 1
-	if(processor_unit == H)
-		processor_unit = null
-		found = 1
-		critical = 1
-	if(tesla_link == H)
-		tesla_link = null
-		found = 1
+		// Processor and hard drive removal shuts down the computer.
+		// is_critical_slot() lets new hardware types declare themselves critical
+		// without requiring a branch here.
+		if(H.is_critical_slot())
+			critical = 1
+
 	if(found)
 		if(user)
 			to_chat(user, "You remove \the [H] from \the [src].")
@@ -97,43 +70,21 @@
 		update_icon()
 
 
-// Checks all hardware pieces to determine if name matches, if yes, returns the hardware piece, otherwise returns null
+// Checks all installed hardware pieces for a name match and returns the first hit.
 /obj/item/modular_computer/proc/find_hardware_by_name(name)
-	if(portable_drive && (portable_drive.name == name))
-		return portable_drive
-	if(hard_drive && (hard_drive.name == name))
-		return hard_drive
-	if(network_card && (network_card.name == name))
-		return network_card
-	if(nano_printer && (nano_printer.name == name))
-		return nano_printer
-	if(card_slot && (card_slot.name == name))
-		return card_slot
-	if(battery_module && (battery_module.name == name))
-		return battery_module
-	if(processor_unit && (processor_unit.name == name))
-		return processor_unit
-	if(tesla_link && (tesla_link.name == name))
-		return tesla_link
+	for(var/obj/item/computer_hardware/H in get_all_components())
+		if(H.name == name)
+			return H
 	return null
 
-// Returns list of all components
+// Returns a list of all currently installed hardware components.
+// This is the single authoritative enumeration used for iteration throughout
+// core.dm, damage.dm, power.dm and interaction.dm.
 /obj/item/modular_computer/proc/get_all_components()
 	var/list/all_components = list()
-	if(hard_drive)
-		all_components.Add(hard_drive)
-	if(network_card)
-		all_components.Add(network_card)
-	if(portable_drive)
-		all_components.Add(portable_drive)
-	if(nano_printer)
-		all_components.Add(nano_printer)
-	if(card_slot)
-		all_components.Add(card_slot)
-	if(battery_module)
-		all_components.Add(battery_module)
-	if(processor_unit)
-		all_components.Add(processor_unit)
-	if(tesla_link)
-		all_components.Add(tesla_link)
+	// Iterate every item currently inside src; only typed computer_hardware counts.
+	// This naturally picks up any hardware slot, including future additions,
+	// without requiring an explicit list here.
+	for(var/obj/item/computer_hardware/H in src)
+		all_components.Add(H)
 	return all_components
