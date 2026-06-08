@@ -4886,7 +4886,17 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 			break
 	TEST_ASSERT_NOTNULL(T, "no floor for overlay test")
 
-	// Snapshot any existing overlay state.
+	// The picked turf is nondeterministic (first floor with air in world) and may
+	// already carry a visible-gas overlay — from ambient atmosphere or a prior
+	// test. update_visuals() only appends overlays not already present (see
+	// LINDA_turf_tile.dm), so on such a turf adding more plasma wouldn't grow
+	// vis_contents and the assertion would spuriously fail. Zero the turf's gases
+	// and refresh visuals first to get a clean, overlay-free baseline.
+	for(var/datum/gas/g as anything in T.air.gases)
+		T.air.gases[g][MOLES] = 0
+	T.update_visuals()
+
+	// Snapshot the (now clean) overlay state.
 	var/list/before_vis = T.vis_contents ? T.vis_contents.Copy() : list()
 
 	// Use the production assume_air path to dump enough plasma to cross the
