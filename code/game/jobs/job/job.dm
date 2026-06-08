@@ -132,7 +132,13 @@
 
 /datum/job/proc/get_access()
 	if(!config || CONFIG_GET(flag/jobs_have_minimal_access))
-		return src.minimal_access.Copy()
+		// Use minimal_access when explicitly populated; otherwise fall through to access.
+		// This allows jobs that define a true minimal subset to restrict access under
+		// the minimal-access config flag without forcing every job to duplicate its
+		// full access list in minimal_access as well.
+		if(src.minimal_access.len)
+			return src.minimal_access.Copy()
+		return src.access.Copy()
 	else
 		return src.access.Copy()
 

@@ -179,4 +179,3 @@
 	requestable = FALSE
 	outfit_type = /datum/decl/hierarchy/outfit/maint_lurker
 	access = list(ACCESS_MAINT_TUNNELS)
-	minimal_access = list(ACCESS_MAINT_TUNNELS)

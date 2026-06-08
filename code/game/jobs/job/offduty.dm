@@ -12,7 +12,6 @@
 	supervisors = "nobody! Enjoy your time off"
 	selection_color = "#9b633e"
 	access = list(ACCESS_MAINT_TUNNELS)
-	minimal_access = list(ACCESS_MAINT_TUNNELS)
 	outfit_type = /datum/decl/hierarchy/outfit/job/assistant/worker
 	job_description = "Off-duty crew has no responsibilities or authority and is just there to spend their well-deserved time off."
 	pto_type = PTO_CIVILIAN
@@ -28,7 +27,6 @@
 	supervisors = "nobody! Enjoy your time off"
 	selection_color = "#9b633e"
 	access = list(ACCESS_MAINT_TUNNELS)
-	minimal_access = list(ACCESS_MAINT_TUNNELS)
 	outfit_type = /datum/decl/hierarchy/outfit/job/assistant/cargo
 	job_description = "Off-duty crew has no responsibilities or authority and is just there to spend their well-deserved time off."
 	pto_type = PTO_CARGO
@@ -60,7 +58,6 @@
 	supervisors = "nobody! Enjoy your time off"
 	selection_color = "#013D3B"
 	access = list(ACCESS_MAINT_TUNNELS, ACCESS_EXTERNAL_AIRLOCKS)
-	minimal_access = list(ACCESS_MAINT_TUNNELS, ACCESS_EXTERNAL_AIRLOCKS)
 	outfit_type = /datum/decl/hierarchy/outfit/job/assistant/medic
 	job_description = "Off-duty crew has no responsibilities or authority and is just there to spend their well-deserved time off."
 	pto_type = PTO_MEDICAL
@@ -76,7 +73,6 @@
 	supervisors = "nobody! Enjoy your time off"
 	selection_color = "#633D63"
 	access = list(ACCESS_MAINT_TUNNELS)
-	minimal_access = list(ACCESS_MAINT_TUNNELS)
 	outfit_type = /datum/decl/hierarchy/outfit/job/assistant/scientist
 	job_description = "Off-duty crew has no responsibilities or authority and is just there to spend their well-deserved time off."
 	pto_type = PTO_SCIENCE
@@ -92,7 +88,6 @@
 	supervisors = "nobody! Enjoy your time off"
 	selection_color = "#601C1C"
 	access = list(ACCESS_MAINT_TUNNELS)
-	minimal_access = list(ACCESS_MAINT_TUNNELS)
 	outfit_type = /datum/decl/hierarchy/outfit/job/assistant/officer
 	job_description = "Off-duty crew has no responsibilities or authority and is just there to spend their well-deserved time off."
 	pto_type = PTO_SECURITY
@@ -108,7 +103,6 @@
 	supervisors = "nobody! Enjoy your time off"
 	selection_color = "#999440"
 	access = list(ACCESS_MAINT_TUNNELS, ACCESS_EXTERNAL_AIRLOCKS)
-	minimal_access = list(ACCESS_MAINT_TUNNELS, ACCESS_EXTERNAL_AIRLOCKS)
 	outfit_type = /datum/decl/hierarchy/outfit/job/assistant/explorer
 	job_description = "Off-duty crew has no responsibilities or authority and is just there to spend their well-deserved time off."
 	pto_type = PTO_EXPLORATION
