@@ -97,7 +97,6 @@
 #define PLANT_PITCHERPLANT "pitcher plant"
 #define PLANT_NULLHARDLIGHT "Type NULL Hardlight Generator"
 
-// CHompAdd Start
 #define PLANT_VOLTATO "voltato"
 #define PLANT_SOLARFLOWER "solarflower"
 #define PLANT_SOULFLOWER "soulflower"

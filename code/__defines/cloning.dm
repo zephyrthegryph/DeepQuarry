@@ -1,1 +1,1 @@
-#define CLONE_BIOMASS 30 //VOREstation Edit
+#define CLONE_BIOMASS 30
