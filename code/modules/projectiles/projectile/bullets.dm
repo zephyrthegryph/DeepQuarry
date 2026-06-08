@@ -689,13 +689,16 @@
 	armor_penetration = -10
 
 /obj/item/projectile/bullet/rifle/a556 //5.56x45mm NATO
+	damage = 30
 	hud_state = "rifle"
 
 /obj/item/projectile/bullet/rifle/a556/ap
+	damage = 20
 	armor_penetration = 25
 	hud_state = "rifle_ap"
 
 /obj/item/projectile/bullet/rifle/a556/hp
+	damage = 40
 	armor_penetration = -10
 	hud_state = "hivelo_iff"
 
@@ -731,6 +734,10 @@
 	embed_chance = 0
 	sharp = FALSE
 	check_armour = "melee"
+
+/obj/item/projectile/bullet/rifle/a10x24 //10x24mm Caseless
+	damage = 30
+	hud_state = "rifle"
 
 /obj/item/projectile/bullet/rifle/a10x24/rubber
 	armor_penetration = -10
