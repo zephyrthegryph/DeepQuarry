@@ -140,6 +140,7 @@
 	if(!alarm_area.main_air_alarm_is_operating()) // select main alarm
 		alarm_area.elect_main_air_alarm()
 	set_initial_TLV()
+	soundloop = new(list(src), FALSE)
 
 /obj/machinery/alarm/Destroy()
 	unregister_radio(src, frequency)
@@ -174,11 +175,6 @@
 	area_uid = "\ref[alarm_area]"
 	if(name == "alarm")
 		name = "[alarm_area.name] Air Alarm \[[rand(9999)]\]" // random number id to help with players locating alarms, cosmetic
-
-/obj/machinery/alarm/Initialize(mapload)
-	. = ..()
-	soundloop = new(list(src), FALSE)
-// ENd
 
 /obj/machinery/alarm/proc/scan_atmo()
 	var/turf/simulated/location = src.loc

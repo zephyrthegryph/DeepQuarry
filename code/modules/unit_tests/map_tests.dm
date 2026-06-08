@@ -149,15 +149,6 @@
 	if(turf_noop_count || area_noop_count)
 		TEST_FAIL("Map contained [turf_noop_count] template turfs and [area_noop_count] template areas at round-start.\n" + log.Join("\n"))
 
-/// Test active edges on all maps
-/datum/unit_test/active_edges
-
-/datum/unit_test/active_edges/Run()
-	// ZAS connection_edge system deleted; LINDA tracks adjacency on
-	// /turf vars, not via /datum/connection_edge. This test is a no-op until
-	// the LINDA equivalent (looking at the active_turfs queue) is written.
-	return
-
 /// Test the ladders on the maps
 /datum/unit_test/ladder_test
 	var/failed = FALSE

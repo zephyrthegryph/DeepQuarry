@@ -27,6 +27,7 @@
 /datum/unit_test/dq_pref_registry_has_keys
 
 /datum/unit_test/dq_pref_registry_has_keys/Run()
+	TEST_ASSERT(length(GLOB.preference_entries) > 0, "preference registry is empty")
 	for(var/pref_type in GLOB.preference_entries)
 		var/datum/preference/pref = GLOB.preference_entries[pref_type]
 		TEST_ASSERT_NOTNULL(pref.savefile_key, "[pref_type] has no savefile_key")
@@ -39,6 +40,7 @@
 	// Force the metadata table init in case the GLOBAL_LIST_INIT lazy-init hasn't run yet.
 	if(!GLOB.pref_metadata_table)
 		init_pref_metadata_table()
+	TEST_ASSERT(length(GLOB.preference_entries) > 0, "preference registry is empty")
 	var/list/orphans = list()
 	for(var/pref_type in GLOB.preference_entries)
 		var/datum/preference/pref = GLOB.preference_entries[pref_type]
@@ -131,6 +133,7 @@
 /datum/unit_test/dq_pref_widget_auto_resolves/Run()
 	// PREF_WIDGET_AUTO should never leak through get_widget() once the resolver runs —
 	// every pref ends up with one of the concrete widget constants.
+	TEST_ASSERT(length(GLOB.preference_entries) > 0, "preference registry is empty")
 	var/list/unresolved = list()
 	for(var/pref_type in GLOB.preference_entries)
 		var/datum/preference/pref = GLOB.preference_entries[pref_type]

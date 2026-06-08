@@ -17,6 +17,7 @@
 /datum/unit_test/dq_medical_every_condition_identifiable
 
 /datum/unit_test/dq_medical_every_condition_identifiable/Run()
+	TEST_ASSERT(length(subtypesof(/datum/medical_issue/condition)) > 0, "no /datum/medical_issue/condition subtypes registered")
 	var/list/failures = list()
 	for(var/T in subtypesof(/datum/medical_issue/condition))
 		var/datum/medical_issue/condition/proto = new T()
@@ -63,6 +64,7 @@
 /datum/unit_test/dq_medical_every_condition_curable
 
 /datum/unit_test/dq_medical_every_condition_curable/Run()
+	TEST_ASSERT(length(subtypesof(/datum/medical_issue/condition)) > 0, "no /datum/medical_issue/condition subtypes registered")
 	var/list/surgical_targets = list()
 	for(var/ST in subtypesof(/datum/dq_surgery))
 		var/datum/dq_surgery/sg = new ST()
@@ -149,17 +151,19 @@
 		REAGENT_ID_SKRELLIMMUNO = "Skrell-only species drug; no general OD pathway",
 	)
 
+	TEST_ASSERT_NOTNULL(SSchemistry?.chemical_reagents, "chemistry subsystem / reagent list not initialized")
+	TEST_ASSERT(length(SSchemistry.chemical_reagents) > 0, "chemistry reagent list is empty")
+
 	var/list/failures = list()
-	if(SSchemistry?.chemical_reagents)
-		for(var/id in medical_reagents)
-			var/datum/reagent/R = SSchemistry.chemical_reagents[id]
-			if(!R || !R.overdose)
-				continue
-			if(has_od_condition[id])
-				continue
-			if(od_opt_out[id])
-				continue
-			failures += "[id] (overdose [R.overdose]u)"
+	for(var/id in medical_reagents)
+		var/datum/reagent/R = SSchemistry.chemical_reagents[id]
+		if(!R || !R.overdose)
+			continue
+		if(has_od_condition[id])
+			continue
+		if(od_opt_out[id])
+			continue
+		failures += "[id] (overdose [R.overdose]u)"
 
 	if(length(failures))
 		TEST_FAIL("medical reagents with upstream OD threshold but no DQ OD condition (would surface generic 'harmful overdose effects' in the book): [jointext(failures, ", ")]")

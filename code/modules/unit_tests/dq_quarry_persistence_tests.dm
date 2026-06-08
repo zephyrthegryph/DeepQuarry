@@ -143,12 +143,15 @@
 	var/list/read_doc = json_decode(file2text(path))
 	TEST_ASSERT(islist(read_doc), "read doc wasn't a list")
 	TEST_ASSERT(islist(read_doc["tiles"]), "read doc had no tiles list")
+	var/reconstructed = 0
 	for(var/list/saved_tile in read_doc["tiles"])
 		var/list/saved_contents = saved_tile["contents"]
 		if(!islist(saved_contents))
 			continue
 		for(var/list/atom_data in saved_contents)
 			list_to_object(atom_data, T)
+			reconstructed++
+	TEST_ASSERT(reconstructed > 0, "no atoms reconstructed from snapshot tiles payload")
 
 	// Verify the two items came back, with their names intact.
 	var/found_wrench = FALSE
@@ -515,6 +518,8 @@
 
 	// Compare. Build human-readable diffs for the first few divergences
 	// so a failure points at exactly what didn't round-trip.
+	TEST_ASSERT(length(before) > 0, "fingerprint 'before' is empty — generate/restore produced nothing")
+	TEST_ASSERT(length(after) > 0, "fingerprint 'after' is empty — generate/restore produced nothing")
 	var/list/mismatches = list()
 	for(var/key in before)
 		var/before_str = before[key]

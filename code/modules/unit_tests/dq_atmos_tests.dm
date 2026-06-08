@@ -1766,16 +1766,21 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 		"nitrogen molar mass wrong: [GLOB.gas_data.molar_mass[GAS_N2]]")
 
 	// /tg/-only gases must have explicit molar masses from the LINDA-only table,
-	// not the crude specific_heat * 0.05 default.
-	if(GLOB.gas_data.molar_mass["water_vapor"])
-		TEST_ASSERT(abs(GLOB.gas_data.molar_mass["water_vapor"] - 0.018) < 0.001, \
-			"water_vapor molar mass wrong: [GLOB.gas_data.molar_mass["water_vapor"]], expected 0.018 (H2O)")
-	if(GLOB.gas_data.molar_mass["tritium"])
-		TEST_ASSERT(abs(GLOB.gas_data.molar_mass["tritium"] - 0.006) < 0.001, \
-			"tritium molar mass wrong: [GLOB.gas_data.molar_mass["tritium"]], expected 0.006")
-	if(GLOB.gas_data.molar_mass["hydrogen"])
-		TEST_ASSERT(abs(GLOB.gas_data.molar_mass["hydrogen"] - 0.002) < 0.001, \
-			"hydrogen molar mass wrong: [GLOB.gas_data.molar_mass["hydrogen"]], expected 0.002")
+	// not the crude specific_heat * 0.05 default. These must be present and
+	// positive unconditionally — a missing/zero entry is the exact regression
+	// this test exists to catch (it silently breaks pump entropy / exhaust mass).
+	TEST_ASSERT(GLOB.gas_data.molar_mass["water_vapor"] > 0, \
+		"water_vapor molar mass missing/zero: [GLOB.gas_data.molar_mass["water_vapor"]]")
+	TEST_ASSERT(abs(GLOB.gas_data.molar_mass["water_vapor"] - 0.018) < 0.001, \
+		"water_vapor molar mass wrong: [GLOB.gas_data.molar_mass["water_vapor"]], expected 0.018 (H2O)")
+	TEST_ASSERT(GLOB.gas_data.molar_mass["tritium"] > 0, \
+		"tritium molar mass missing/zero: [GLOB.gas_data.molar_mass["tritium"]]")
+	TEST_ASSERT(abs(GLOB.gas_data.molar_mass["tritium"] - 0.006) < 0.001, \
+		"tritium molar mass wrong: [GLOB.gas_data.molar_mass["tritium"]], expected 0.006")
+	TEST_ASSERT(GLOB.gas_data.molar_mass["hydrogen"] > 0, \
+		"hydrogen molar mass missing/zero: [GLOB.gas_data.molar_mass["hydrogen"]]")
+	TEST_ASSERT(abs(GLOB.gas_data.molar_mass["hydrogen"] - 0.002) < 0.001, \
+		"hydrogen molar mass wrong: [GLOB.gas_data.molar_mass["hydrogen"]], expected 0.002")
 
 
 // =====================================================================
@@ -2011,8 +2016,6 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 
 	var/obj/machinery/power/supermatter/SM = new(T)
 	TEST_ASSERT_NOTNULL(SM, "supermatter failed to construct")
-	TEST_ASSERT(istype(SM, /obj/machinery/power/supermatter), \
-		"supermatter type wrong: [SM.type]")
 	qdel(SM)
 
 
@@ -3156,17 +3159,27 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 
 	var/obj/machinery/alarm/A = new(T)
 	TEST_ASSERT_NOTNULL(A, "couldn't construct air alarm")
+	// Ensure the alarm's area + threshold-limit-value table are set up, then
+	// drive the production scan path (scan_atmo → overall_danger_level) directly.
+	A.update_area()
+	A.set_initial_TLV()
 
 	// The alarm reads its turf's pressure. ~one atmosphere ≈ 101.3 kPa.
 	var/pressure = turf_air.return_pressure()
 	TEST_ASSERT(abs(pressure - ONE_ATMOSPHERE) < 5, \
 		"turf pressure not standard atmosphere: got [pressure]")
 
-	// Pollute with plasma — danger threshold should now be tripped.
+	// Baseline: standard breathable air should read as safe (danger_level 0).
+	A.scan_atmo()
+	TEST_ASSERT_EQUAL(A.danger_level, 0, \
+		"air alarm flagged danger on a standard breathable atmosphere: [A.danger_level]")
+
+	// Pollute with plasma well past the phoron TLV danger ceiling — the alarm
+	// must now read its turf and raise danger_level above safe.
 	turf_air.adjust_gas(/datum/gas/plasma, 50)
-	A.process()
-	// Alarm should now report unsafe (whether via danger_level var or icon
-	// state — depends on alarm impl). Just verify process() didn't crash.
+	A.scan_atmo()
+	TEST_ASSERT(A.danger_level > 0, \
+		"air alarm did not detect a dangerous (plasma-laden) atmosphere: danger_level stayed [A.danger_level]")
 
 	turf_air.set_moles(/datum/gas/plasma, 0)
 	qdel(A)
@@ -3225,8 +3238,6 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 
 	var/obj/machinery/power/fusion_core/Core = new(T)
 	TEST_ASSERT_NOTNULL(Core, "fusion_core failed to construct")
-	TEST_ASSERT(istype(Core, /obj/machinery/power/fusion_core), \
-		"fusion_core wrong type: [Core.type]")
 	qdel(Core)
 
 	var/obj/item/fuel_assembly/deuterium/D = new(T)
@@ -3257,15 +3268,12 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 /datum/unit_test/dq_atmos_leak_event_type_exists
 
 /datum/unit_test/dq_atmos_leak_event_type_exists/Run()
-	var/event_type = /datum/event/atmos_leak
-	TEST_ASSERT_NOTNULL(event_type, "atmos_leak event type undefined")
-	// gas_leak is a similar gamemaster event.
-	var/list/gas_event_types = list()
-	for(var/datum/event/E_path as anything in subtypesof(/datum/event))
-		if(findtext("[E_path]", "leak") || findtext("[E_path]", "atmos"))
-			gas_event_types += E_path
-	TEST_ASSERT(length(gas_event_types) > 0, \
-		"no atmos/leak event types registered — events directory may have been gutted")
+	// The atmos leak gamemaster event must be a real, registered /datum/event
+	// subtype — not merely a compile-time path. A gutted events directory would
+	// drop it from the type tree and break the scheduler's event_meta wiring.
+	var/list/event_types = subtypesof(/datum/event)
+	TEST_ASSERT(/datum/event/atmos_leak in event_types, \
+		"/datum/event/atmos_leak not present in subtypesof(/datum/event) — atmos leak event was removed")
 
 
 // =====================================================================
@@ -3395,6 +3403,15 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 			break
 	TEST_ASSERT_NOTNULL(T, "no floor for gas-overlay sweep")
 
+	// Count the known visible gases up front, from the SAME source the loop
+	// iterates, so a gutted gas table (visible gases dropped or stripped of
+	// their moles_visible threshold) is caught instead of silently passing.
+	var/visible_gas_count = 0
+	for(var/datum/gas/g_type as anything in subtypesof(/datum/gas))
+		if(!isnull(initial(g_type.moles_visible)))
+			visible_gas_count++
+	TEST_ASSERT(visible_gas_count > 0, "no visible-threshold gases found — meta_gas_info empty?")
+
 	var/gases_tested = 0
 	for(var/datum/gas/g_type as anything in subtypesof(/datum/gas))
 		var/visible_threshold = initial(g_type.moles_visible)
@@ -3414,7 +3431,10 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 		TEST_ASSERT(LAZYLEN(T.atmos_overlay_types) > 0, \
 			"gas [initial(g_type.id)] above visible threshold ([visible_threshold * 10] mol vs threshold [visible_threshold]) produced NO overlay")
 		gases_tested++
-	TEST_ASSERT(gases_tested > 0, "no visible-threshold gases found — meta_gas_info empty?")
+	// Every visible gas must have been exercised — a smaller count means the
+	// registry shrank between the pre-count and the render loop.
+	TEST_ASSERT(gases_tested >= visible_gas_count, \
+		"only [gases_tested] of [visible_gas_count] visible gases rendered overlays")
 
 	// Reset turf.
 	for(var/datum/gas/g as anything in T.air.gases)
@@ -3438,14 +3458,22 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	TEST_ASSERT_NOTNULL(SM, "supermatter construct failed")
 	TEST_ASSERT(SM.explosion_point > 0, "explosion_point not set: [SM.explosion_point]")
 
-	// Force above explosion threshold.
+	// Baseline: a freshly-built, undamaged crystal is not delaminating.
+	TEST_ASSERT(!SM.final_countdown, "fresh supermatter already in final_countdown")
+	TEST_ASSERT(!SM.exploded, "fresh supermatter already flagged exploded")
+	TEST_ASSERT(!SM.causalitywarn, "fresh supermatter already warning of causality failure")
+
+	// Force above explosion threshold and run a tick. process() must enter the
+	// delamination path: countdown() flags causalitywarn unconditionally, then
+	// either arms the on-station causality field (final_countdown) or, off the
+	// station Z, detonates immediately (exploded / grav_pulling). Assert the
+	// observable delamination consequence, not the damage value we just set.
 	SM.damage = SM.explosion_point + 100
 	SM.process()
-	// process() should have started the countdown OR set exploded=TRUE on a
-	// subsequent tick (depending on impl). Either way no crash, and the
-	// damage stays at or above explosion_point.
-	TEST_ASSERT(SM.damage >= SM.explosion_point, \
-		"damage dropped below explosion_point during delam process: [SM.damage] < [SM.explosion_point]")
+	TEST_ASSERT(SM.causalitywarn, \
+		"supermatter past explosion_point did not flag causalitywarn — delamination path never fired")
+	TEST_ASSERT(SM.final_countdown || SM.exploded || SM.grav_pulling, \
+		"supermatter past explosion_point did not enter countdown or detonation state")
 
 	qdel(SM)
 
@@ -3535,16 +3563,25 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	Pump.stat &= ~(BROKEN | NOPOWER)
 	Pump.target_pressure = ONE_ATMOSPHERE * 5 // high target so pump runs
 
+	var/air1_before = Pump.air1.get_moles(/datum/gas/nitrogen)
+	var/air2_before = Pump.air2.get_moles(/datum/gas/nitrogen)
+
 	// Manually satisfy can_pump-equivalent preconditions and call process.
 	for(var/i in 1 to 5)
 		Pump.process()
 
 	var/air1_after = Pump.air1.get_moles(/datum/gas/nitrogen)
 	var/air2_after = Pump.air2.get_moles(/datum/gas/nitrogen)
-	// air1 should have lost SOME gas, air2 gained it. If neither happened the
-	// pump didn't run — either node missing or pressure already at target.
-	TEST_ASSERT(air1_after < 200 || air2_after > 0, \
-		"binary pump didn't transfer ANY moles in 5 ticks: air1=[air1_after], air2=[air2_after] (200 expected drop)")
+	// The pump must actually move gas: source side drops AND sink side rises.
+	TEST_ASSERT(air1_after < air1_before, \
+		"binary pump source (air1) didn't drop: [air1_before] → [air1_after]")
+	TEST_ASSERT(air2_after > air2_before, \
+		"binary pump sink (air2) didn't rise: [air2_before] → [air2_after]")
+	// Conservation: what air1 lost must equal what air2 gained (no creation/loss).
+	var/lost = air1_before - air1_after
+	var/gained = air2_after - air2_before
+	TEST_ASSERT(abs(lost - gained) < 0.01, \
+		"binary pump didn't conserve moles: air1 lost [lost], air2 gained [gained]")
 
 	qdel(Pump)
 
@@ -3671,9 +3708,15 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	qdel(C)
 
 
-/// Items exposed to atmospheric heat take fire damage via temperature_expose
-/// or atom_integrity reduction. This is what "fire melts items on the floor"
-/// translates to in the engine.
+/// Items exposed to atmospheric heat catch fire and take burn damage. In
+/// LINDA this is the fire_act() path: a turf hotspot's perform_exposure() calls
+/// fire_act(temperature, volume) on every atom on the tile (see LINDA_fire.dm).
+/// A flammable item (FLAMMABLE resistance flag) ignites — the burning component
+/// is attached and sets the ON_FIRE resistance flag. This is what "fire on the
+/// floor sets dropped items alight" means in the engine.
+///
+/// Note: /atom/proc/temperature_expose is a no-op stub on this fork; the real
+/// per-atom heat hook is fire_act(), which is what the hotspot actually calls.
 /datum/unit_test/dq_item_takes_atmos_heat
 
 /datum/unit_test/dq_item_takes_atmos_heat/Run()
@@ -3684,21 +3727,31 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 			break
 	TEST_ASSERT_NOTNULL(T, "no floor for item-heat test")
 
-	var/obj/item/I = new /obj/item/paper(T)
+	// Paper is FLAMMABLE and uses the integrity system — the canonical
+	// flammable floor item.
+	var/obj/item/paper/I = new /obj/item/paper(T)
 	TEST_ASSERT_NOTNULL(I, "couldn't alloc paper item")
+	TEST_ASSERT(I.resistance_flags & FLAMMABLE, "test item isn't flammable; can't observe ignition")
+	TEST_ASSERT(!(I.resistance_flags & ON_FIRE), "test item was already on fire before exposure")
 
-	// Heat the turf air to ignition temperature for cardboard.
+	// Drive the production heat hook the hotspot uses: fire_act with very hot
+	// (1000 K) air exposure. potential_damage = 0.02 * 1000 = 20 burn damage,
+	// and the flammable item should catch fire (ON_FIRE flag set by the burning
+	// component's RegisterWithParent).
 	var/datum/gas_mixture/turf_air = T.return_air()
 	turf_air.set_temperature(1000) // very hot
 	turf_air.adjust_gas(/datum/gas/oxygen, 100)
 
-	// temperature_expose is the engine hook items override.
-	I.temperature_expose(turf_air, turf_air.temperature, turf_air.volume)
-	// Verify the call didn't crash. (Cardboard may or may not actually burn —
-	// this is the integration-test layer, not the per-item damage policy.)
-	TEST_ASSERT_NOTNULL(I, "item became invalid after temperature_expose")
+	I.fire_act(turf_air.temperature, turf_air.volume)
 
-	qdel(I)
+	// Observable consequence: a flammable item exposed to ignition-temperature
+	// air must be alight. If fire_act stopped applying heat to floor items, the
+	// ON_FIRE flag would never be set and this assertion would fail.
+	TEST_ASSERT(QDELETED(I) || (I.resistance_flags & ON_FIRE), \
+		"flammable item exposed to 1000 K air neither ignited (ON_FIRE) nor was destroyed — fire_act applied no heat")
+
+	if(!QDELETED(I))
+		qdel(I)
 
 
 /// Gas thruster constructs and reports fuel + thrust without crashing on
@@ -5004,6 +5057,20 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	// was appended to vis_contents (the /tg/-style overlay container).
 	TEST_ASSERT(length(T.vis_contents) > length(before_vis), \
 		"vis_contents didn't grow after assume_air with 50 moles plasma — update_visuals not adding overlays. Players will see empty turfs filled with invisible gas.")
+
+	// Stronger: the PLASMA overlay specifically must be the one that appeared.
+	// atmos_overlay_types holds /obj/effect/overlay/gas instances whose
+	// icon_state is the gas's gas_overlay (plasma → "phoron" on this fork's
+	// tile_effects.dmi). Derive it from the gas datum so the test tracks any
+	// future overlay-asset rename instead of hardcoding the icon_state.
+	var/expected_overlay = /datum/gas/plasma::gas_overlay
+	var/found_plasma_overlay = FALSE
+	for(var/obj/effect/overlay/gas/G in T.atmos_overlay_types)
+		if(G.icon_state == expected_overlay)
+			found_plasma_overlay = TRUE
+			break
+	TEST_ASSERT(found_plasma_overlay, \
+		"no plasma overlay (icon_state '[expected_overlay]') in atmos_overlay_types after assume_air — turf overlays grew but not with the plasma gas overlay")
 
 	// Cleanup
 	for(var/datum/gas/g as anything in T.air.gases)
