@@ -7,7 +7,7 @@
 //
 // These types do nothing at runtime; their map content is just gone.
 
-// Parent class for "late load" maps (common_submaps, dynamic overmap pois, engine subbays).
+// Parent class for "late load" maps (common_submaps, dynamic overmap pois).
 /datum/map_template/common_lateload
 	allow_duplicates = FALSE
 	var/associated_map_datum
@@ -17,11 +17,12 @@
 		return
 	new associated_map_datum(using_map, z)
 
-// Engine template — was defined in southern_cross _engine_submaps.dm.
-// Referenced by code/controllers/subsystems/mapping.dm (active subsystem).
-/datum/map_template/engine
-
 // Dynamic overmap template — was defined in modular_chomp/maps/overmap/space_pois/space_pois.dm.
+// The dynamic-sector system (modular_chomp/code/modules/overmap/dynamic_sector.dm) is intact
+// but its POI templates were removed in the "Tier 2 cleanup" (35c6976694). This stub keeps
+// dynamic_sector.dm compiling. To revive: recover space_pois.dm + space_areas.dm + loot_vr.dm
+// from git history, delete this stub, and re-enable the disabled hook in
+// modular_chomp/code/modules/overmap/sectors.dm.
 /datum/map_template/dynamic_overmap
 	var/scanner_desc = "You should not see this."
 	var/block_size = 0
@@ -37,12 +38,6 @@
 	var/annihilate_bounds = TRUE
 
 /datum/map_template/dynamic_overmap/proc/update_lighting(turf/T)
-	return
-
-// Engine loader landmark — was defined in the same engine submap file.
-/obj/effect/landmark/engine_loader
-
-/obj/effect/landmark/engine_loader/proc/annihilate_bounds()
 	return
 
 // Map z-level base (referenced as associated_map_datum target).
