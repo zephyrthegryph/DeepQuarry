@@ -3,7 +3,6 @@
 	anim_length_before_finalize = 3
 	icon = 'icons/obj/doors/angled/tgmc/generic.dmi'
 
-// CHOMP ADD START
 /obj/machinery/door/airlock/angled_tgmc/update_icon()
 	cut_overlays()
 	if(density)
@@ -32,7 +31,6 @@
 		if((stat & BROKEN) && !(stat & NOPOWER))
 			add_overlay("sparks_open")
 	return
-// CHOMP ADD END
 
 /obj/machinery/door/airlock/angled_tgmc/cell
 	icon = 'icons/obj/doors/angled/tgmc/celldoor.dmi'
