@@ -158,6 +158,7 @@
 
 					if (B)
 						reagents.reagent_list += B
+						reagents.reagent_by_id[B.id] = B  // keep O(1) index in sync with direct list mutation
 						reagents.update_total()
 						on_reagent_change()
 						reagents.handle_reactions()

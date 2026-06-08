@@ -77,4 +77,6 @@ SUBSYSTEM_DEF(chemistry)
 		var/datum/reagent/D = new path()
 		if(!D.name)
 			continue
+		if(D.name == REAGENT_DEVELOPER_WARNING)
+			continue
 		chemical_reagents[D.id] = D
