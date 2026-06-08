@@ -11,6 +11,13 @@ SUBSYSTEM_DEF(processing)
 	var/list/currentrun = list()
 	var/process_proc = /datum/proc/process
 
+	/// Multiplier applied to `wait` before passing it to process().
+	/// 1 = raw deciseconds (default for most subsystems).
+	/// 0.1 = seconds (use when process() expects seconds_per_tick).
+	/// Always pass via SCALE_PROCESS_DELTA(wait, process_wait_scale) so the
+	/// intent is explicit and grep-able.
+	var/process_wait_scale = 1
+
 	var/debug_last_thing
 	var/debug_original_process_proc // initial() does not work with procs
 	var/datum/current_thing
@@ -34,12 +41,13 @@ SUBSYSTEM_DEF(processing)
 	//cache for sanic speed (lists are references anyways)
 	var/list/current_run = currentrun
 
+	var/process_delta = SCALE_PROCESS_DELTA(wait, process_wait_scale)
 	while(length(current_run))
 		current_thing = current_run[length(current_run)]
 		current_run.len--
 		if(QDELETED(current_thing))
 			processing -= current_thing
-		else if(current_thing.process(wait) == PROCESS_KILL)
+		else if(current_thing.process(process_delta) == PROCESS_KILL)
 			// fully stop so that a future START_PROCESSING will work
 			STOP_PROCESSING(src, current_thing)
 		if (MC_TICK_CHECK)
