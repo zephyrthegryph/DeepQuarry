@@ -3,10 +3,6 @@
 // No actual content; the original definitions lived in removed map files.
 
 /area/ai_core_foyer
-/area/crew_quarters/sleep/Dorm_1/holo
-/area/crew_quarters/sleep/Dorm_3/holo
-/area/crew_quarters/sleep/Dorm_5/holo
-/area/crew_quarters/sleep/Dorm_7/holo
 /area/groundbase/level1/centsquare
 /area/groundbase/level1/eastspur
 /area/groundbase/level1/northspur
@@ -32,15 +28,6 @@
 /area/groundbase/level3/sw
 /area/groundbase/level3/sw/open
 /area/hallway/station/upper
-/area/holodeck/holodorm/source_basic
-/area/holodeck/holodorm/source_beach
-/area/holodeck/holodorm/source_boxing
-/area/holodeck/holodorm/source_desert
-/area/holodeck/holodorm/source_garden
-/area/holodeck/holodorm/source_off
-/area/holodeck/holodorm/source_seating
-/area/holodeck/holodorm/source_snow
-/area/holodeck/holodorm/source_space
 /area/maintenance/groundbase/level1/netunnel
 /area/maintenance/groundbase/level1/nwtunnel
 /area/maintenance/groundbase/level1/setunnel
