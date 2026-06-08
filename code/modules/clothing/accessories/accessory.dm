@@ -26,59 +26,26 @@
 	on_removed()
 	return ..()
 
+// Delegate to the global clothing_appearance_handler singleton.
+// The cached inv_overlay / mob_overlay vars remain on the accessory for
+// backward compatibility with code that checks them directly.
 /obj/item/clothing/accessory/proc/get_inv_overlay()
 	if(!inv_overlay)
-		var/tmp_icon_state = "[overlay_state? "[overlay_state]" : "[icon_state]"]"
-		if(icon_override)
-			if(icon_exists(icon_override, "[tmp_icon_state]_tie"))
-				tmp_icon_state = "[tmp_icon_state]_tie"
-			inv_overlay = image(icon = icon_override, icon_state = tmp_icon_state, dir = SOUTH)
-		else
-			inv_overlay = image(icon = INV_ACCESSORIES_DEF_ICON, icon_state = tmp_icon_state, dir = SOUTH)
-
-		inv_overlay.color = src.color
-		inv_overlay.appearance_flags = appearance_flags	// Stops has_suit's color from being multiplied onto the accessory
+		inv_overlay = GLOB.clothing_appearance_handler.build_inv_overlay(src)
 	return inv_overlay
 
 /obj/item/clothing/accessory/proc/get_mob_overlay()
-	if(!istype(loc,/obj/item/clothing/))	//don't need special handling if it's worn as normal item.
-		return
-	var/tmp_icon_state = "[overlay_state? "[overlay_state]" : "[icon_state]"]"
-	if(ishuman(has_suit.loc))
+	if(!istype(loc, /obj/item/clothing))
+		return null
+	// Update wearer weakref before delegating (existing callers expect this side-effect).
+	if(ishuman(has_suit?.loc))
 		wearer = WEAKREF(has_suit.loc)
 	else
 		wearer = null
-
 	var/mob/living/carbon/human/H = wearer?.resolve()
 	if(!ishuman(H))
-		return
-
-	if(istype(loc,/obj/item/clothing/under))
-		var/obj/item/clothing/under/C = loc
-		if(on_rolled["down"] && C.rolled_down > 0)
-			tmp_icon_state = on_rolled["down"]
-		else if(on_rolled["rolled"] && C.rolled_sleeves > 0)
-			tmp_icon_state = on_rolled["rolled"]
-
-	if(icon_override)
-		if(icon_exists(icon_override, "[tmp_icon_state]_mob"))
-			tmp_icon_state = "[tmp_icon_state]_mob"
-		mob_overlay = image("icon" = icon_override, "icon_state" = "[tmp_icon_state]")
-	else if(H && LAZYACCESS(sprite_sheets, H.species.get_bodytype(H))) //Teshari can finally into webbing, too!
-		mob_overlay = image("icon" = sprite_sheets[H.species.get_bodytype(H)], "icon_state" = "[tmp_icon_state]")
-	else
-		mob_overlay = image("icon" = INV_ACCESSORIES_DEF_ICON, "icon_state" = "[tmp_icon_state]")
-	if(addblends)
-		var/icon/base = new/icon("icon" = mob_overlay.icon, "icon_state" = mob_overlay.icon_state)
-		var/addblend_icon = new/icon("icon" = mob_overlay.icon, "icon_state" = src.addblends)
-		if(color)
-			base.Blend(src.color, ICON_MULTIPLY)
-		base.Blend(addblend_icon, ICON_ADD)
-		mob_overlay = image(base)
-	else
-		mob_overlay.color = src.color
-
-	mob_overlay.appearance_flags = appearance_flags	// Stops has_suit's color from being multiplied onto the accessory
+		return null
+	mob_overlay = GLOB.clothing_appearance_handler.build_mob_overlay(src)
 	return mob_overlay
 
 //when user attached an accessory to S
@@ -106,6 +73,8 @@
 	if(istype(has_suit,/obj/item/clothing/gloves))
 		var/obj/item/clothing/gloves/has_gloves = has_suit
 		has_gloves.punch_force = initial(has_gloves.punch_force)
+	// Revert any stat modifiers registered by this accessory on has_suit.
+	GLOB.accessory_slot_registry.remove_modifiers(src, has_suit)
 	has_suit = null
 	if(QDELETED(src))
 		return

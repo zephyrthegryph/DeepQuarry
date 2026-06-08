@@ -98,6 +98,10 @@
 	var/datum/effect/effect/system/spark_spread/spark_system
 	var/datum/mini_hud/rig/minihud
 
+	// Decomposed subsystems — see rig_power_system.dm and rig_component_registry.dm
+	var/datum/rig_power_system/power_system
+	var/datum/rig_component_registry/component_registry
+
 	// Action button
 	actions_types = list(/datum/action/item_action/hardsuit_interface)
 
@@ -121,63 +125,29 @@
 	spark_system.set_up(5, 0, src)
 	spark_system.attach(src)
 
-	if(initial_modules && initial_modules.len)
-		for(var/path in initial_modules)
-			var/obj/item/rig_module/module = new path(src)
-			installed_modules += module
-			module.installed(src)
+	// Instantiate the decomposed subsystems.
+	power_system = new /datum/rig_power_system(src)
+	power_system.cooling_on              = cooling_on
+	power_system.max_cooling             = max_cooling
+	power_system.charge_consumption      = charge_consumption
+	power_system.thermostat              = thermostat
+	power_system.offline                 = offline
+	power_system.offline_slowdown        = offline_slowdown
+	power_system.offline_vision_restriction = offline_vision_restriction
 
-	// Create and initialize our various segments.
-	if(cell_type)
-		cell = new cell_type(src)
-	if(air_type)
-		air_supply = new air_type(src)
-	if(glove_type)
-		gloves = new glove_type(src)
-		verbs |= /obj/item/rig/proc/toggle_gauntlets
-	if(helm_type)
-		helmet = new helm_type(src)
-		verbs |= /obj/item/rig/proc/toggle_helmet
-	if(boot_type)
-		boots = new boot_type(src)
-		verbs |= /obj/item/rig/proc/toggle_boots
-	if(chest_type)
-		chest = new chest_type(src)
-		if(allowed)
-			chest.allowed = allowed
-		verbs |= /obj/item/rig/proc/toggle_chest
-
-	for(var/obj/item/piece in list(gloves,helmet,boots,chest))
-		if(!istype(piece))
-			continue
-		piece.canremove = FALSE
-		piece.name = "[suit_type] [initial(piece.name)]"
-		piece.desc = "It seems to be part of a [src.name]."
-		piece.icon_state = "[suit_state]"
-		piece.min_cold_protection_temperature = min_cold_protection_temperature
-		piece.max_heat_protection_temperature = max_heat_protection_temperature
-		if(piece.siemens_coefficient > siemens_coefficient) //So that insulated gloves keep their insulation.
-			piece.siemens_coefficient = siemens_coefficient
-		piece.permeability_coefficient = permeability_coefficient
-		piece.unacidable = unacidable
-		if(islist(armor)) piece.armor = armor.Copy()
+	component_registry = new /datum/rig_component_registry(src)
+	component_registry.initialize_pieces()
 
 	update_icon(1)
 
 /obj/item/rig/Destroy()
-	for(var/obj/item/piece in list(gloves,boots,helmet,chest,cell,air_supply))
-		var/mob/living/M = piece.loc
-		if(istype(M))
-			M.drop_from_inventory(piece)
-		qdel(piece)
-	gloves = null
-	boots = null
-	helmet = null
-	chest = null
-	cell = null
-	air_supply = null
-	for(var/obj/item/rig_module/module in installed_modules)
-		qdel(module)
+	// Delegate piece teardown to the component registry.
+	if(component_registry)
+		component_registry.destroy_pieces()
+	QDEL_NULL(component_registry)
+	QDEL_NULL(power_system)
+
+	installed_modules = null
 	STOP_PROCESSING(SSobj, src)
 	qdel(wires)
 	wires = null
@@ -442,6 +412,7 @@
 		return
 
 	cooling_on = 1
+	power_system.cooling_on = 1
 	to_chat(user, span_notice("You switch \the [src]'s cooling system on."))
 
 
@@ -451,26 +422,12 @@
 	else
 		to_chat(user, span_notice("You switch \the [src]'s cooling system off."))
 	cooling_on = 0
+	power_system.cooling_on = 0
 
+// Thin wrapper — environment-temperature logic now lives in power_system.
+// Kept here so legacy callers (and subtypes) continue to work unchanged.
 /obj/item/rig/proc/get_environment_temperature()
-	if (ishuman(loc))
-		var/mob/living/carbon/human/H = loc
-		if(istype(H.loc, /obj/mecha))
-			var/obj/mecha/M = H.loc
-			return M.return_temperature()
-		else if(istype(H.loc, /obj/machinery/atmospherics/unary/cryo_cell))
-			var/obj/machinery/atmospherics/unary/cryo_cell/cryo = H.loc
-			return cryo.air_contents.temperature
-
-	var/turf/T = get_turf(src)
-	if(istype(T, /turf/space))
-		return 0	//space has no temperature, this just makes sure the cooling unit works in space
-
-	var/datum/gas_mixture/environment = T.return_air()
-	if (!environment)
-		return 0
-
-	return environment.temperature
+	return power_system.get_environment_temperature()
 
 /obj/item/rig/proc/attached_to_user(mob/M)
 	if (!ishuman(M))
@@ -483,47 +440,13 @@
 
 	return 1
 
+// coolingProcess() delegates to power_system so the logic lives in one place.
+// The cooling_on var on src is the authority; power_system.cooling_on mirrors it.
 /obj/item/rig/proc/coolingProcess()
-	if (!cooling_on || !cell)
+	if(!ismob(loc))
 		return
-
-	if (!ismob(loc))
-		return
-
-	if (!attached_to_user(loc))		//make sure the rig's not just in their hands
-		return
-
-	if (!suit_is_deployed())		//inbuilt systems only work on the suit they're designed to work on
-		return
-
-	var/turf/T = get_turf(src)
-	if(!T)
-		return
-
 	var/mob/living/carbon/human/H = loc
-
-	var/datum/gas_mixture/environment = T.return_air()
-	var/efficiency = 1 - H.get_pressure_weakness(environment.return_pressure())	// You need to have a good seal for effective cooling
-	var/env_temp = get_environment_temperature()						//wont save you from a fire
-	var/temp_adj = min(H.bodytemperature - max(thermostat, env_temp), max_cooling)
-	var/thermal_protection = H.get_heat_protection(env_temp)	// ... unless you've got a good suit.
-
-	if(thermal_protection < 0.99)		//For some reason, < 1 returns false if the value is 1.
-		temp_adj = min(H.bodytemperature - max(thermostat, env_temp), max_cooling)
-	else
-		temp_adj = min(H.bodytemperature - thermostat, max_cooling)
-
-	if (temp_adj < 0.5)	//only cools, doesn't heat, also we don't need extreme precision
-		return
-
-	var/charge_usage = (temp_adj/max_cooling)*charge_consumption
-
-	H.bodytemperature -= temp_adj*efficiency
-
-	cell.use(charge_usage)
-
-	if(cell.charge <= 0)
-		turn_cooling_off(H, 1)
+	power_system.run_cooling(H)
 
 /obj/item/rig/process()
 	// Not on a mob...?
@@ -533,40 +456,22 @@
 		wearer = null
 		return PROCESS_KILL
 
-	// Run through cooling
+	// Run through cooling.
 	coolingProcess()
 
+	// The offline-state machine now lives in power_system.
+	// We only invoke it when the original condition would have triggered
+	// the cell-check path, preserving the original conditional structure.
 	if(!istype(wearer) || loc != wearer || (wearer.back != src && wearer.belt != src) || canremove || !cell || cell.charge <= 0)
-		if(!cell || cell.charge <= 0)
-			if(electrified > 0)
-				electrified = 0
-			if(!offline)
-				if(istype(wearer))
-					if(!canremove)
-						if (offline_slowdown < 1.5)
-							to_chat(wearer, span_danger("Your suit beeps stridently, and suddenly goes dead."))
-						else
-							to_chat(wearer, span_danger("Your suit beeps stridently, and suddenly you're wearing a leaden mass of metal and plastic composites instead of a powered suit."))
-						playsound(src, 'sound/machines/rig/rigdown.ogg', 60, FALSE)
-					if(offline_vision_restriction == 1)
-						to_chat(wearer, span_danger("The suit optics flicker and die, leaving you with restricted vision."))
-					else if(offline_vision_restriction == 2)
-						to_chat(wearer, span_danger("The suit optics drop out completely, drowning you in darkness."))
-			if(!offline)
-				offline = 1
-		else if (offline)
-			offline = 0
-			if(istype(wearer) && !wearer.wearing_rig)
-				wearer.wearing_rig = src
-			if(!istype(src,/obj/item/rig/protean))	// Stupid snowflake protean special check for rig assimilation code
-				slowdown = initial(slowdown)
+		if(power_system.process_offline_state())
+			offline = power_system.offline
+			return
+		offline = power_system.offline
 
+	// If we are still offline (came online this tick but skipped the block above),
+	// sync and bail so we don't run module processing while unpowered.
 	if(offline)
-		if(offline == 1)
-			for(var/obj/item/rig_module/module in installed_modules)
-				module.deactivate()
-			offline = 2
-			slowdown = offline_slowdown
+		offline = power_system.offline
 		return
 
 	if(cell && cell.charge > 0 && electrified > 0)
