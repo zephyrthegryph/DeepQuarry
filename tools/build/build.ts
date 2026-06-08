@@ -315,15 +315,23 @@ export const DmTestTarget = new Juke.Target({
       namedDmVersion: get(DmVersionParameter),
     });
     Juke.rm('data/logs/ci', { recursive: true });
+    // The run-complete marker the DreamDaemon watchdog waits on. RunUnitTests()
+    // writes it once every test has finished (pass OR fail), just before the
+    // world qdels itself. Clear it so the watchdog detects THIS run's marker.
+    Juke.rm('data/unit_tests.json');
     const options = {
       dmbFile: `${DME_NAME}.test.dmb`,
       namedDmVersion: get(DmVersionParameter),
+      // Without this, a zombied dreamdaemon.exe (which Windows leaves behind
+      // after the world ends) would hang the build forever — Juke.exec only
+      // resolves on process exit. The watchdog force-kills the lingering daemon
+      // once the run is done.
+      watchdogFile: 'data/unit_tests.json',
     };
     // DreamDaemon on Windows exits non-zero even on a clean test run
     // (the world qdels itself which BYOND reports as abnormal exit).
     // The authoritative success signal is data/logs/ci/clean_run.lk
-    // written by world.dm:488, so swallow the exit code and check
-    // that file instead.
+    // written by world.dm, so swallow the exit code and check that file instead.
     try {
       await DreamDaemon(
         options,
