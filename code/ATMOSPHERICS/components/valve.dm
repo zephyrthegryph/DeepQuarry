@@ -51,6 +51,10 @@
 	return list(node1, node2)
 
 /obj/machinery/atmospherics/valve/network_expand(datum/pipe_network/new_network, obj/machinery/atmospherics/pipe/reference)
+	// Idempotency guard: check membership before assigning slot vars.
+	if(new_network.normal_members.Find(src))
+		return 0
+
 	if(reference == node1)
 		network_node1 = new_network
 		if(open)
@@ -59,9 +63,6 @@
 		network_node2 = new_network
 		if(open)
 			network_node1 = new_network
-
-	if(new_network.normal_members.Find(src))
-		return 0
 
 	new_network.normal_members += src
 
@@ -76,18 +77,19 @@
 	return null
 
 /obj/machinery/atmospherics/valve/Destroy()
-	// DQEdit Start — disconnect/qdel BEFORE ..() so node derefs are valid.
+	// Disconnect/qdel BEFORE ..() so node derefs are valid.
 	if(node1)
 		node1.disconnect(src)
 		qdel(network_node1)
 	if(node2)
 		node2.disconnect(src)
 		qdel(network_node2)
-	return ..()
-	// DQEdit End
 
 	node1 = null
 	node2 = null
+	network_node1 = null
+	network_node2 = null
+	return ..()
 
 /obj/machinery/atmospherics/valve/proc/open()
 	if(open) return 0
