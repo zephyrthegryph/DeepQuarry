@@ -37,12 +37,22 @@ SUBSYSTEM_DEF(dbcore)
 	/// We are in the process of shutting down and should not allow more DB connections
 	var/shutting_down = FALSE
 
+	/// Per-query execution timeout, in deciseconds. A query that has been in
+	/// queries_active for longer than this without completing is forcibly abandoned
+	/// (its slot freed, a stack trace emitted). Set to 0 to disable.
+	/// Sourced from config/game.txt slow_query_timeout_ms; defaults to 30 seconds.
+	var/slow_query_timeout_ds = 300
 
 	var/connection  // Arbitrary handle returned from rust_g.
 
 	//var/db_daemon_started = FALSE
 
 /datum/controller/subsystem/dbcore/Initialize()
+	// Load slow_query_timeout_ms from config and convert to deciseconds.
+	// CONFIG_GET returns 0 if the entry is missing, which disables the timeout.
+	var/cfg_ms = CONFIG_GET(number/slow_query_timeout_ms)
+	if(cfg_ms > 0)
+		slow_query_timeout_ds = round(cfg_ms / 100) // ms -> deciseconds
 	Connect()
 	if(IsConnected() && CONFIG_GET(flag/database_logging))
 		var/datum/db_query/query_truncate = NewQuery("TRUNCATE erro_dialog")
@@ -71,8 +81,17 @@ SUBSYSTEM_DEF(dbcore)
 			return
 		processing_queries = all_queries.Copy()
 
-	// First handle the already running queries
+	// First handle the already running queries; abandon any that have
+	// exceeded slow_query_timeout_ds to prevent pool exhaustion.
 	for (var/datum/db_query/query in queries_active)
+		if(slow_query_timeout_ds > 0 && (world.time - query.last_activity_time) > slow_query_timeout_ds)
+			// Query has been in-flight too long — mark broken and free the slot.
+			stack_trace("DB query exceeded slow_query_timeout ([slow_query_timeout_ds] ds); freeing slot. SQL: [query.sql]")
+			log_sql("Slow query timeout: \"[query.sql]\" active for [world.time - query.last_activity_time] ds")
+			query.status = DB_QUERY_BROKEN
+			query.last_error = "Slow query timeout"
+			queries_active -= query
+			continue
 		if(!process_query(query))
 			queries_active -= query
 
@@ -352,13 +371,38 @@ SUBSYSTEM_DEF(dbcore)
 
 
 /*
-Takes a list of rows (each row being an associated list of column => value) and inserts them via a single mass query.
-Rows missing columns present in other rows will resolve to SQL NULL
-You are expected to do your own escaping of the data, and expected to provide your own quotes for strings.
-The duplicate_key arg can be true to automatically generate this part of the query
-	or set to a string that is appended to the end of the query
-Ignore_errors instructes mysql to continue inserting rows if some of them have errors.
-	the erroneous row(s) aren't inserted and there isn't really any way to know why or why errored
+Takes a list of rows (each row being an associated list of column => value) and inserts them via a
+single multi-row INSERT. All rows are sent as a single query; the driver either commits all or none
+unless ignore_errors is TRUE (see below).
+
+Rows missing columns present in other rows resolve to SQL NULL.
+Values are passed through the parameterized-query mechanism (:pN placeholders), so no manual
+escaping of value data is required. Column and table names ARE interpolated directly — callers
+are responsible for supplying safe, validated names (use format_table_name() for table names).
+
+Arguments:
+  table          — SQL table name. Use format_table_name() to produce it.
+  rows           — list of assoc lists, each mapping column => value.
+  duplicate_key  — Controls ON DUPLICATE KEY UPDATE behaviour:
+                     FALSE  (default): no duplicate handling; a duplicate primary/unique key causes
+                            the entire INSERT to fail (all rows rolled back).
+                     TRUE:  auto-generates "ON DUPLICATE KEY UPDATE col = VALUES(col), ..." for every
+                            column in the union of all rows. Useful for upserts, but note that MySQL
+                            counts this as 2 affected rows per updated row, not 1.
+                     string: the string is appended verbatim after VALUES(...); use this to supply a
+                            custom ON DUPLICATE KEY UPDATE clause (e.g. targeting only specific
+                            conflict columns).
+  ignore_errors  — If TRUE, uses INSERT IGNORE. Rows that violate constraints are silently skipped;
+                   the rest are inserted. PARTIAL SUCCESS IS POSSIBLE: the proc returns TRUE even if
+                   some rows were dropped. Callers that need per-row status must issue individual
+                   queries instead.
+  warn           — If TRUE, calls warn_execute() which notifies the user on failure.
+  async          — If TRUE (default), the query is queued asynchronously. FALSE blocks until done.
+  special_columns — Assoc list of column => SQL-expression overrides (e.g. list("ts" = "NOW()")).
+                   Expressions containing "?" are treated as placeholders; those without are
+                   interpolated verbatim into the query.
+
+Returns the result of Execute() / warn_execute(): TRUE on success, FALSE on error.
 */
 /datum/controller/subsystem/dbcore/proc/MassInsert(table, list/rows, duplicate_key = FALSE, ignore_errors = FALSE, warn = FALSE, async = TRUE, special_columns = null)
 	if (!table || !rows || !istype(rows))
