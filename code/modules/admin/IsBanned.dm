@@ -51,19 +51,22 @@
 
 		var/ipquery = ""
 		var/cidquery = ""
+		var/list/ban_params = list("ckeytext" = ckeytext)
 		if(address)
 			failedip = 0
-			ipquery = " OR ip = '[sanitizeSQL(address)]' "
+			ipquery = " OR ip = :address "
+			ban_params["address"] = address
 
 		if(computer_id)
 			failedcid = 0
 			if(isnum(text2num(computer_id)))
-				cidquery = " OR computerid = '[computer_id]' "
+				cidquery = " OR computerid = :computer_id "
+				ban_params["computer_id"] = computer_id
 			else
 				log_world("Key [ckeytext] cid not checked. Non-Numeric: [computer_id]")
 				failedcid = 1
 
-		var/datum/db_query/query = SSdbcore.NewQuery("SELECT ckey, ip, computerid, a_ckey, reason, expiration_time, duration, bantime, bantype FROM erro_ban WHERE (ckey = '[ckeytext]' [ipquery] [cidquery]) AND (bantype = 'PERMABAN'  OR (bantype = 'TEMPBAN' AND expiration_time > Now())) AND isnull(unbanned)")
+		var/datum/db_query/query = SSdbcore.NewQuery("SELECT ckey, ip, computerid, a_ckey, reason, expiration_time, duration, bantime, bantype FROM erro_ban WHERE (ckey = :ckeytext [ipquery] [cidquery]) AND (bantype = 'PERMABAN'  OR (bantype = 'TEMPBAN' AND expiration_time > Now())) AND isnull(unbanned)", ban_params)
 
 		query.Execute()
 

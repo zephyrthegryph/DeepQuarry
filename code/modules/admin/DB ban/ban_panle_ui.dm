@@ -146,24 +146,33 @@
 	var/playersearch
 	var/ipsearch
 	var/cidsearch
+	var/list/search_params = list()
 	if(min_search)
 		if(adminckey && length(adminckey) >= 3)
-			adminsearch = "AND a_ckey LIKE '[adminckey]%' "
+			adminsearch = "AND a_ckey LIKE :adminckey "
+			search_params["adminckey"] = "[adminckey]%"
 		if(playerckey && length(playerckey) >= 3)
-			playersearch = "AND ckey LIKE '[playerckey]%' "
+			playersearch = "AND ckey LIKE :playerckey "
+			search_params["playerckey"] = "[playerckey]%"
 		if(playerip && length(playerip) >= 3)
-			ipsearch  = "AND ip LIKE '[playerip]%' "
+			ipsearch  = "AND ip LIKE :playerip "
+			search_params["playerip"] = "[playerip]%"
 		if(playercid && length(playercid) >= 7)
-			cidsearch  = "AND computerid LIKE '[playercid]%' "
+			cidsearch  = "AND computerid LIKE :playercid "
+			search_params["playercid"] = "[playercid]%"
 	else
 		if(adminckey)
-			adminsearch = "AND a_ckey = '[adminckey]' "
+			adminsearch = "AND a_ckey = :adminckey "
+			search_params["adminckey"] = adminckey
 		if(playerckey)
-			playersearch = "AND ckey = '[playerckey]' "
+			playersearch = "AND ckey = :playerckey "
+			search_params["playerckey"] = playerckey
 		if(playerip)
-			ipsearch  = "AND ip = '[playerip]' "
+			ipsearch  = "AND ip = :playerip "
+			search_params["playerip"] = playerip
 		if(playercid)
-			cidsearch  = "AND computerid = '[playercid]' "
+			cidsearch  = "AND computerid = :playercid "
+			search_params["playercid"] = playercid
 
 	var/bantypesearch
 	if(dbbantype)
@@ -180,7 +189,7 @@
 				bantypesearch += "'PERMABAN' "
 
 
-	var/datum/db_query/select_query = SSdbcore.NewQuery("SELECT id, bantime, bantype, reason, job, duration, expiration_time, ckey, a_ckey, unbanned, unbanned_ckey, unbanned_datetime, edits, ip, computerid FROM erro_ban WHERE 1 [playersearch] [adminsearch] [ipsearch] [cidsearch] [bantypesearch] ORDER BY bantime DESC LIMIT 100")
+	var/datum/db_query/select_query = SSdbcore.NewQuery("SELECT id, bantime, bantype, reason, job, duration, expiration_time, ckey, a_ckey, unbanned, unbanned_ckey, unbanned_datetime, edits, ip, computerid FROM erro_ban WHERE 1 [playersearch] [adminsearch] [ipsearch] [cidsearch] [bantypesearch] ORDER BY bantime DESC LIMIT 100", search_params)
 	select_query.Execute()
 
 	var/list/all_bans = list()

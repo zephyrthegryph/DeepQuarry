@@ -10,7 +10,7 @@
 		log_game("SQL ERROR during population polling. Failed to connect.")
 	else
 		var/sqltime = time2text(world.realtime, "YYYY-MM-DD hh:mm:ss")
-		var/datum/db_query/query = SSdbcore.NewQuery("INSERT INTO population (`playercount`, `admincount`, `time`) VALUES ([playercount], [admincount], '[sqltime]')")
+		var/datum/db_query/query = SSdbcore.NewQuery("INSERT INTO population (`playercount`, `admincount`, `time`) VALUES (:playercount, :admincount, :sqltime)", list("playercount" = playercount, "admincount" = admincount, "sqltime" = sqltime))
 		if(!query.Execute())
 			var/err = query.ErrorMsg()
 			log_game("SQL ERROR during population polling. Error : \[[err]\]\n")
@@ -70,7 +70,7 @@
 			var/variable = item.get_variable()
 			var/value = item.get_value()
 
-			var/datum/db_query/query = SSdbcore.NewQuery("INSERT INTO erro_feedback (id, roundid, time, variable, value) VALUES (null, [newroundid], Now(), '[variable]', '[value]')")
+			var/datum/db_query/query = SSdbcore.NewQuery("INSERT INTO erro_feedback (id, roundid, time, variable, value) VALUES (null, :newroundid, Now(), :variable, :value)", list("newroundid" = newroundid, "variable" = variable, "value" = value))
 			if(!query.Execute())
 				var/err = query.ErrorMsg()
 				log_game("SQL ERROR during death reporting. Error : \[[err]\]\n")
