@@ -3,55 +3,11 @@
 // GLOB.map_templates_loaded is populated as /datum/map_template/proc/on_map_preload(z) is called
 // Some Z_NAME ultimately will be indexed under an alias however e.g. Z_NAME_ALIAS_GATEWAY
 
-// Tether
-#define Z_LEVEL_TETHER_SURFACE_LOW			1
-#define Z_LEVEL_TETHER_SURFACE_MID			2
-#define Z_LEVEL_TETHER_SURFACE_HIGH			3
-#define Z_LEVEL_TETHER_TRANSIT				4
-#define Z_LEVEL_TETHER_SPACE_LOW			5
-#define Z_LEVEL_TETHER_SURFACE_MINE			6
-#define Z_LEVEL_TETHER_SOLARS				7
+// Z_NAME/Z_LEVEL constants for Tether, Stellar Delight, and Groundbase maps
+// were removed (those maps are deleted from the build).
 
-#define Z_NAME_TETHER_CENTCOM				"Tether - Centcom" // Aliased to Z_NAME_ALIAS_CENTCOM
-#define Z_NAME_TETHER_MISC					"Tether - Misc" // Aliased to Z_NAME_ALIAS_MISC
-#define Z_NAME_TETHER_UNDERDARK				"Tether - Underdark"
-#define Z_NAME_TETHER_PLAINS				"Tether - Plains"
-#define Z_NAME_TETHER_ROGUEMINE_1			"Asteroid Belt 1"
-#define Z_NAME_TETHER_ROGUEMINE_2			"Asteroid Belt 2"
-
-// Stellar Delight
-#define Z_LEVEL_SHIP_LOW					1
-#define Z_LEVEL_SHIP_MID					2
-#define Z_LEVEL_SHIP_HIGH					3
-
-#define Z_NAME_SHIP_CENTCOM					"Ship - Central Command" // Aliased to Z_NAME_ALIAS_CENTCOM
-#define Z_NAME_SHIP_MISC					"Ship - Misc" // Aliased to Z_NAME_ALIAS_MISC
 #define Z_NAME_SPACE_ROCKS					"V3b Asteroid Field"
 #define Z_NAME_OVERMAP						"Overmap"
-
-// Groundbase
-#define Z_LEVEL_GB_BOTTOM					1
-#define Z_LEVEL_GB_MIDDLE					2
-#define Z_LEVEL_GB_TOP						3
-
-#define Z_NAME_GB_WILDS_N1					"Northern Wilds 1"
-#define Z_NAME_GB_WILDS_N2					"Northern Wilds 2"
-#define Z_NAME_GB_WILDS_S1					"Southern Wilds 1"
-#define Z_NAME_GB_WILDS_S2					"Southern Wilds 2"
-#define Z_NAME_GB_WILDS_S3					"Southern Wilds 3"
-#define Z_NAME_GB_WILDS_E1					"Eastern Wilds 1"
-#define Z_NAME_GB_WILDS_E2					"Eastern Wilds 2"
-#define Z_NAME_GB_WILDS_W1					"Western Wilds 1"
-#define Z_NAME_GB_WILDS_W2					"Western Wilds 2"
-
-#define Z_NAME_GB_CENTCOM					"Groundbase - Central Command" // Aliased to Z_NAME_ALIAS_CENTCOM
-#define Z_NAME_GB_MISC						"Groundbase - Misc" // Aliased to Z_NAME_ALIAS_MISC
-#define Z_NAME_GB_MINING					"V3c Underground"
-
-#define Z_NAME_ALIAS_GB_WILDS_N				"GB WILDS NORTH"
-#define Z_NAME_ALIAS_GB_WILDS_S				"GB WILDS SOUTH"
-#define Z_NAME_ALIAS_GB_WILDS_E				"GB WILDS EAST"
-#define Z_NAME_ALIAS_GB_WILDS_W				"GB WILDS WEST"
 
 // Common
 #define Z_NAME_OFFMAP1						"Offmap Ship - Talon V2"
@@ -107,12 +63,6 @@
 #define Z_NAME_REDGATE_CASINO_CANAL			"Redgate - Casino Canal"
 #define Z_NAME_REDGATE_CASINO_CANAL_LOWER	"Redgate - Casino Canal Lower Level"
 
-/obj/effect/landmark/map_data/groundbase
-	height = 3
-
-/obj/effect/landmark/map_data/stellar_delight
-	height = 3
-
 /obj/effect/overmap/visitable/sector/virgo3b
 	name = "Virgo 3B"
 	desc = "Full of phoron, and home to the NSB Adephagia."
@@ -151,42 +101,6 @@
 
 	initial_generic_waypoints = list("groundbase", "gb_excursion_pad","omship_axolotl")
 	initial_restricted_waypoints = list()
-
-/obj/effect/overmap/visitable/ship/stellar_delight
-	name = "NRV Stellar Delight"
-	icon = 'icons/obj/overmap_vr.dmi'
-	icon_state = "stellar_delight_g"
-	desc = "Spacefaring vessel. Friendly IFF detected."
-	scanner_desc = @{"[i]Registration[/i]: NRV Stellar Delight
-[i]Class[/i]: Nanotrasen Response Vessel
-[i]Transponder[/i]: Transmitting (CIV), non-hostile"
-[b]Notice[/b]: A response vessel registered to Nanotrasen."}
-	vessel_mass = 25000
-	vessel_size = SHIP_SIZE_LARGE
-	initial_generic_waypoints = list("starboard_shuttlepad","port_shuttlepad","sd-1-23-54","sd-1-67-15","sd-1-70-130","sd-1-115-85","sd-2-25-98","sd-2-117-98","sd-3-22-78","sd-3-36-33","sd-3-104-33","sd-3-120-78")
-	initial_restricted_waypoints = list("Exploration Shuttle" = list("sd_explo"), "Mining Shuttle" = list("sd_mining"))
-	levels_for_distress = list(Z_NAME_OFFMAP1, Z_NAME_BEACH, Z_NAME_AEROSTAT, Z_NAME_DEBRISFIELD, Z_NAME_FUELDEPOT)
-	unowned_areas = list(/area/shuttle/sdboat)
-	known = TRUE
-	start_x = 2
-	start_y = 2
-
-	fore_dir = NORTH
-
-	skybox_icon = 'maps/stellar_delight/stelardelightskybox.dmi'
-	skybox_icon_state = "skybox"
-	skybox_pixel_x = 450
-	skybox_pixel_y = 200
-
-GLOBAL_LIST_EMPTY(all_stellar_delights)
-
-/obj/effect/overmap/visitable/ship/stellar_delight/Initialize(mapload)
-	. = ..()
-	GLOB.all_stellar_delights += src
-
-/obj/effect/overmap/visitable/ship/stellar_delight/Destroy()
-	GLOB.all_stellar_delights -= src
-	. = ..()
 
 /obj/effect/overmap/visitable/sector/virgo2
 	name = "Virgo 2"
