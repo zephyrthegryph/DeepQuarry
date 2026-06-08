@@ -1,2 +1,2 @@
-#define LANGUAGE_SLAVIC "Pan-Slavic" //CHOMP reAdd
-#define LANGUAGE_MARISH "Marish" //CHOMP Add
+#define LANGUAGE_SLAVIC "Pan-Slavic"
+#define LANGUAGE_MARISH "Marish"

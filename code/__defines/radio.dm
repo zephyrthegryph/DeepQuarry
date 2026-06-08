@@ -13,7 +13,7 @@
 #define CHANNEL_SCIENCE "Science"
 #define CHANNEL_MEDICAL "Medical"
 #define CHANNEL_MEDICAL_1 "Medical(I)"
-#define CHANNEL_EXPLORATION "Explorer" // was Explorer //CHOMPEdit explo keep
+#define CHANNEL_EXPLORATION "Explorer"
 
 // Special Channels
 #define CHANNEL_RESPONSE_TEAM "Response Team"
@@ -27,7 +27,6 @@
 #define CHANNEL_TALON "Talon"
 #define CHANNEL_CASINO "Casino"
 
-// CHOMPAdd Channels
 #define CHANNEL_BODYCAM "Bodycam"
 #define CHANNEL_OUTSIDER "Outsider"
 
@@ -91,8 +90,8 @@ On the map:
 #define RAID_FREQ 1277
 #define ENT_FREQ 1461 //entertainment frequency. This is not a diona exclusive frequency.
 
-#define BDCM_FREQ 1483 // CHOMPAdd
-#define OUT_FREQ 1367 // CHOMPAdd
+#define BDCM_FREQ 1483
+#define OUT_FREQ 1367
 
 #define LOCKED_COM_FREQ 1481
 

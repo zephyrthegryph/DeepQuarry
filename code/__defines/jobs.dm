@@ -5,12 +5,12 @@
 	#define JOB_ALT_FACILITY_DIRECTOR "Facility Director"
 	#define JOB_ALT_CHIEF_SUPERVISOR "Chief Supervisor"
 	#define JOB_ALT_CAPTAIN "Captain"
-	#define JOB_ALT_COLONY_DIRECTOR "Colony Director" //CHOMPAdd
+	#define JOB_ALT_COLONY_DIRECTOR "Colony Director"
 
 #define JOB_HEAD_OF_PERSONNEL "Head of Personnel"
 	// Head of Personnel alt titles
 	#define JOB_ALT_CREW_RESOURCE_OFFICER "Crew Resources Officer"
-	#define JOB_ALT_DEPUTY_MANAGER "Deputy Director" // CHOMPEdit
+	#define JOB_ALT_DEPUTY_MANAGER "Deputy Director"
 	#define JOB_ALT_STAFF_MANAGER "Staff Manager"
 	#define JOB_ALT_FACILITY_STEWARD "Facility Steward"
 	#define JOB_ALT_FIRST_MATE "First Mate"
@@ -23,7 +23,7 @@
 	#define JOB_ALT_COMMAND_INTERN "Command Intern"
 	#define JOB_ALT_BRIDGE_SECRETARY "Bridge Secretary"
 	#define JOB_ALT_BRIDGE_ASSISTANT "Bridge Assistant"
-	#define JOB_ALT_BRIDGE_OFFICER "Bridge Officer" // CHOMPAdd
+	#define JOB_ALT_BRIDGE_OFFICER "Bridge Officer"
 
 #define JOB_HEAD_OF_SECURITY "Head of Security"
 	// Head of Security alt titles
@@ -56,7 +56,7 @@
 	#define JOB_ALT_LOGISTICS_MANAGER "Logistics Manager"
 	#define JOB_ALT_CARGO_SUPERVISOR "Cargo Supervisor"
 
-#define JOB_PATHFINDER "Pathfinder" // was Pathfinder  //CHOMP explo keep
+#define JOB_PATHFINDER "Pathfinder"
 	// Pathfinder alt titles
 	#define JOB_ALT_EXPEDITION_LEAD "Expedition Lead"
 	#define JOB_ALT_EXPLORATION_MANAGER "Exploration Manager"
@@ -70,7 +70,7 @@
 	#define JOB_ALT_RESEARCH_INTERN "Research Intern"
 	#define JOB_ALT_SECURITY_CADET "Security Cadet"
 	#define JOB_ALT_JR_CARGO_TECH "Jr. Cargo Tech"
-	#define JOB_ALT_JR_EXPLORER "Jr. Explorer" //CHOMP explo keep
+	#define JOB_ALT_JR_EXPLORER "Jr. Explorer"
 	#define JOB_ALT_SERVER "Server"
 	#define JOB_ALT_ASSISTANT "Assistant"
 		//Assistant/Visitor/Whatever
@@ -226,14 +226,14 @@
 
 
 // Station Away Team / Explorer jobs
-#define JOB_EXPLORER "Explorer" // was Explorer //CHOMP explo keep
+#define JOB_EXPLORER "Explorer"
 	// Explorer alt titles
 	#define JOB_ALT_SURVEYOR "Surveyor"
 	#define JOB_ALT_OFFSITE_SCOUT "Offsite Scout"
 	#define JOB_ALT_EXPLORER_MEDIC "Explorer Medic" // Unused
 	#define JOB_ALT_EXPLORERE_TECHNICIAN "Explorer Technician" // Unused
 
-#define JOB_FIELD_MEDIC "Field Medic" // was Field Medic //CHOMP explo keep
+#define JOB_FIELD_MEDIC "Field Medic"
 	// Field Medic alt titles
 	#define JOB_ALT_EXPEDITION_MEDIC "Expedition Medic"
 	#define JOB_ALT_OFFSITE_MEDIC "Offsite Medic"
@@ -270,7 +270,7 @@
 	#define JOB_ALT_EMERGENCY_MEDICAL_TECHNICIAN "Emergency Medical Technician"
 	#define JOB_ALT_MEDICAL_RESPONDER "Medical Responder"
 
-#define JOB_SEARCH_AND_RESCUE "Search and Rescue" // CHOMPEdit, actual JOB here
+#define JOB_SEARCH_AND_RESCUE "Search and Rescue"
 
 #define JOB_GENETICIST "Geneticist" //Disabled atm
 //___________________________________________________________
@@ -342,7 +342,6 @@
 	#define JOB_ALT_SECURITY_CONTRACTOR "Security Contractor"
 	#define JOB_ALT_LOSS_PREVENTION "Loss Prevention Officer"
 
-// CHOMPAdd
 #define JOB_BRIG_PHYSICIAN "Brig Physician"
 	// Brig Physician alt titles
 	#define JOB_ALT_SECURITY_MEDIC "Security Medic"
@@ -350,7 +349,6 @@
 	#define JOB_ALT_SECURITY_PENITENTIARY_MED "Penitentiary Medical Care Unit"
 	#define JOB_ALT_JUNIOR_BRIGPHYS "Junior Brig Physician"
 	#define JOB_ALT_DETENTION_HEALTH_OFFICER "Detention Health Officer"
-// CHOMPAdd End
 
 //___________________________________________________________
 
@@ -365,7 +363,7 @@
 //___________________________________________________________
 
 
-// Station Sepcial jobs	//CHOMPNotice, all of those are used as JOB_ENTERTAINER alts
+// Station Sepcial jobs
 #define JOB_CLOWN "Clown"
 	// Clown alt titles
 	#define JOB_ALT_JESTER "Jester"
@@ -393,7 +391,7 @@
 #define JOB_TALON_GUARD "Talon Guard"
 	// Talon Guard alt titles
 	#define JOB_ALT_TALON_SECURITY "Talon Security"
-	#define JOB_ALT_TALON_MARINE "Talon Marine" //CHOMPAdd
+	#define JOB_ALT_TALON_MARINE "Talon Marine"
 
 #define JOB_TALON_PILOT "Talon Pilot"
 	// Talon Pilot alt titles
@@ -405,11 +403,9 @@
 //___________________________________________________________
 
 
-//  CHOMPAdd Start
-//  Blueshield jobs
+// Blueshield jobs
 #define JOB_BLUESHIELD_GUARD "Blueshield Guard"
 #define JOB_SECURITY_PILOT "Security Pilot"
-// CHOMPAdd End
 
 // Mind jobs
 #define JOB_SLIME "slime"
@@ -482,7 +478,7 @@
 #define ATMOSTECH (1<<7)
 #define AI_DEPT (1<<8)
 #define CYBORG (1<<9)
-#define BRIGPHYS (1<<10) // CHOMPAdd - Brig Physician
+#define BRIGPHYS (1<<10)
 #define CLOWN (1<<13)
 #define MIME (1<<14)
 #define INTERN (1<<15)
@@ -504,7 +500,7 @@
 #define EXPLORER (1<<12)
 #define SAR (1<<13)
 #define XENOBOTANIST (1<<14)
-#define PILOT (1<<15) //ChompEDIT - ours is with the other explo jobs.
+#define PILOT (1<<15)
 
 #define CIVILIAN (1<<2)
 
@@ -521,13 +517,13 @@
 #define CHAPLAIN (1<<10)
 #define ASSISTANT (1<<11)
 #define BRIDGE (1<<12)
-// #define PILOT (1<<13) // CHOMPRemove
+// #define PILOT (1<<13)
 #define ENTERTAINER (1<<14)
 #define ENTREPRENEUR (1<<15)
 
-#define OTHER (1<<10) //VOREStation Note: Unused on VS. Used downstream.
+#define OTHER (1<<10)
 #define NONCREW (1<<0)
-#define ANOMALY (1<<0) //VOREStation Note: Unused on VS. Used downstream.
+#define ANOMALY (1<<0)
 
 #define TALON (1<<3)
 
@@ -546,5 +542,5 @@ GLOBAL_LIST_INIT(command_positions, list(
 	JOB_RESEARCH_DIRECTOR,
 	JOB_CHIEF_MEDICAL_OFFICER,
 	JOB_COMMAND_SECRETARY,
-	JOB_BLUESHIELD_GUARD // CHOMPEnable
+	JOB_BLUESHIELD_GUARD
 ))

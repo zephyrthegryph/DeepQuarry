@@ -20,7 +20,5 @@
 #define EQUIP_WEAPON	"weapon"
 #define EQUIP_UTILITY	"utility"
 #define EQUIP_SPECIAL	"core"
-//VOREStation Addition begin: MICROMECHS
 #define EQUIP_MICRO_UTILITY	"micro_utility"
 #define EQUIP_MICRO_WEAPON	"micro_weapon"
-//VOREStation Addition end: MICROMECHS

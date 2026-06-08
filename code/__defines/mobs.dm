@@ -150,7 +150,7 @@
 #define CLASS_MIDDLE 		"Average"
 #define CLASS_LOWMID		"Underpaid"
 #define CLASS_LOWER			"Poor"
-#define CLASS_BROKE			"Broke"	//VOREStation Add
+#define CLASS_BROKE			"Broke"
 
 #define ECONOMIC_CLASS		list(CLASS_UPPER,CLASS_UPMID,CLASS_MIDDLE,CLASS_LOWMID,CLASS_LOWER,CLASS_BROKE)
 
@@ -531,9 +531,9 @@
 #define EXAMINE_SKIPLEGS			0x0080
 #define EXAMINE_SKIPFEET			0x0100
 
-#define MAX_NUTRITION	6000 //VOREStation Edit
+#define MAX_NUTRITION	6000
 
-#define FAKE_INVIS_ALPHA_THRESHOLD 64 //CHOMPEdit. 25% down from 50% // If something's alpha var is at or below this number, certain things will pretend it is invisible.
+#define FAKE_INVIS_ALPHA_THRESHOLD 64 // If something's alpha var is at or below this number, certain things will pretend it is invisible.
 
 #define DEATHGASP_NO_MESSAGE "no message"
 

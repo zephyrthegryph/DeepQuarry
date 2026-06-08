@@ -66,18 +66,18 @@
 #define NETWORK_SECURITY "Security"
 #define NETWORK_INTERROGATION "Interrogation"
 #define NETWORK_TELECOM "Telecomms"
-#define NETWORK_TCOMMS "Telecommunications"	//YW ADD: needs to be defined here or it freaks out
-#define NETWORK_SUBSTATIONS "Substations"	//YW ADD: and again
+#define NETWORK_TCOMMS "Telecommunications"
+#define NETWORK_SUBSTATIONS "Substations"
 #define NETWORK_EXPLORATION "Exploration"
 #define NETWORK_XENOBIO "Xenobiology"
-#define NETWORK_THUNDER "Entertainment"		//VOREStation Edit: broader definition
-#define NETWORK_BODYCAM "Body Cameras" // CHOMPStation Edit
+#define NETWORK_THUNDER "Entertainment"
+#define NETWORK_BODYCAM "Body Cameras"
 #define NETWORK_COMMUNICATORS "Communicators"
 #define NETWORK_ALARM_ATMOS "Atmosphere Alarms"
 #define NETWORK_ALARM_POWER "Power Alarms"
 #define NETWORK_ALARM_FIRE "Fire Alarms"
-#define NETWORK_TALON_HELMETS "TalonHelmets" //VOREStation Add
-#define NETWORK_TALON_SHIP "TalonShip" //VOREStation Add
+#define NETWORK_TALON_HELMETS "TalonHelmets"
+#define NETWORK_TALON_SHIP "TalonShip"
 
 //Camera networks
 #define NETWORK_TETHER "Tether"
@@ -169,10 +169,6 @@ if (!(DATUM.datum_flags & DF_ISPROCESSING)) {\
 #define START_MACHINE_PROCESSING(Datum) START_PROCESSING_IN_LIST(Datum, SSmachines.processing_machines)
 #define STOP_MACHINE_PROCESSING(Datum) STOP_PROCESSING_IN_LIST(Datum, SSmachines.processing_machines)
 
-// DQEdit — LINDA owns pipenets via SSair, not SSmachines.
-// SSmachines.process_pipenets is a stub; SSair.process_pipenets is the live
-// dispatcher. Without this redirect, /datum/pipe_network/process never runs
-// and reconcile_air is silent — multi-pipeline networks don't equalize.
 #define START_PROCESSING_PIPENET(Datum) START_PROCESSING_IN_LIST(Datum, SSair.networks)
 #define STOP_PROCESSING_PIPENET(Datum) STOP_PROCESSING_IN_LIST(Datum, SSair.networks)
 

@@ -130,7 +130,7 @@
 	)
 
 
-// Sounds suitable for being inside dark, tight corridors in the underbelly of the station. //CHOMP Edit keeps original maints sounds and adds sounds from the generic pool which I added and are metal scraping sounds. I should really move these to maintenance folder some day...
+// Sounds suitable for being inside dark, tight corridors in the underbelly of the station.
 #define AMBIENCE_MAINTENANCE list(\
 	'sound/ambience/maintenance/maintenance1.ogg',\
 	'sound/ambience/maintenance/maintenance2.ogg',\
@@ -164,7 +164,7 @@
 	'sound/ambience/ai/ai3.ogg'\
 	)
 
-// Peaceful sounds when floating in the void. //CHOMPedit, added title2, my nostalgia okay?
+// Peaceful sounds when floating in the void.
 #define AMBIENCE_SPACE list(\
 	'sound/ambience/space/space_serithi.ogg',\
 	'sound/ambience/space/space1.ogg',\
@@ -177,13 +177,13 @@
 	'sound/ambience/ghostly/ghostly2.ogg'\
 	)
 
-// Concerning sounds, for when one discovers something horrible happened in a PoI. //CHOMP Edit: Removed foreboding 3-6 as upstream updates just replaced them with maints sounds.
+// Concerning sounds, for when one discovers something horrible happened in a PoI.
 #define AMBIENCE_FOREBODING list(\
 	'sound/ambience/foreboding/foreboding1.ogg',\
 	'sound/ambience/foreboding/foreboding2.ogg'\
 	)
 
-// Ambience heard when aboveground on Sif and not in a Point of Interest. // CHOMPEdit: Changed to Snowbirds Loops 1-4
+// Ambience heard when aboveground on Sif and not in a Point of Interest.
 #define AMBIENCE_SIF list(\
 	'sound/ambience/snow_and_ice/Snowbirds_loop1.ogg',\
 	'sound/ambience/snow_and_ice/Snowbirds_loop2.ogg',\
@@ -206,7 +206,7 @@
 	'sound/ambience/vaporwave.ogg'\
 	)
 
-//CHOMPedit: Exploration outpost ambience. Current tracks taken from Rainworld and Natural Selection 2.
+// Exploration outpost ambience.
 #define AMBIENCE_OUTPOST list(\
 	'sound/ambience/expoutpost/expoutpost1.ogg',\
 	'sound/ambience/expoutpost/expoutpost2.ogg',\
@@ -214,7 +214,7 @@
 	'sound/ambience/expoutpost/expoutpost4.ogg'\
 	)
 
-//CHOMP Edit Sounds for Substation rooms. Just electrical sounds, really.
+// Sounds for Substation rooms.
 #define AMBIENCE_SUBSTATION list(\
 	'sound/ambience/substation/substation1.ogg',\
 	'sound/ambience/substation/substation2.ogg',\
@@ -242,7 +242,7 @@
 	'sound/ambience/atmospherics/atmospherics1.ogg'\
 	)
 
-// CHOMPEdit: New Planet Ambience
+// New Planet Ambience
 #define AMBIENCE_THOR list(\
 	'sound/ambience/thor/birds_stinger1.ogg',\
 	'sound/ambience/thor/birds_stinger2.ogg',\

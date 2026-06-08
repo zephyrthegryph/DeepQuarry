@@ -14,7 +14,6 @@
 
 #define HAS_VALID_ZONE(T) (T.zone && !T.zone.invalid)
 
-// CHOMPAdd Start
 
 #define NORTHUP (NORTH|UP)
 #define EASTUP (EAST|UP)
@@ -143,4 +142,3 @@ GLOBAL_LIST_INIT(gzn_check, list(
 	}
 #endif
 
-// CHOMPEdit End
