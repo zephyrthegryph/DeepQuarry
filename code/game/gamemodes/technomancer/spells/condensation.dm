@@ -22,19 +22,18 @@
 			var/turf/simulated/T = hit_atom
 
 			for(var/direction in GLOB.alldirs + null) // null is for the center tile.
-				spawn(1)
-					var/turf/desired_turf = get_step(T,direction)
-					if(desired_turf) // This shouldn't fail but...
-						var/obj/effect/effect/water/W = new /obj/effect/effect/water(get_turf(T))
-						W.create_reagents(60)
-						W.reagents.add_reagent(id = REAGENT_ID_WATER, amount = 60, data = null, safety = 0)
-						W.set_color()
-						W.set_up(desired_turf)
-						flick(initial(icon_state),W) // Otherwise pooling causes the animation to stay stuck at the end.
-						if(check_for_scepter())
-							if(istype(desired_turf, /turf/simulated))
-								var/turf/simulated/frozen = desired_turf
-								frozen.freeze_floor()
+				var/turf/desired_turf = get_step(T,direction)
+				if(desired_turf) // This shouldn't fail but...
+					var/obj/effect/effect/water/W = new /obj/effect/effect/water(get_turf(T))
+					W.create_reagents(60)
+					W.reagents.add_reagent(id = REAGENT_ID_WATER, amount = 60, data = null, safety = 0)
+					W.set_color()
+					W.set_up(desired_turf)
+					flick(initial(icon_state),W) // Otherwise pooling causes the animation to stay stuck at the end.
+					if(check_for_scepter())
+						if(istype(desired_turf, /turf/simulated))
+							var/turf/simulated/frozen = desired_turf
+							frozen.freeze_floor()
 			if(check_for_scepter())
 				add_attack_logs(user,hit_atom,"Iced the floor with [src] at [T.x],[T.y],[T.z]")
 			else

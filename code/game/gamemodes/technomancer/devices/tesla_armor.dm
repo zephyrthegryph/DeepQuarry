@@ -43,10 +43,7 @@
 		//Deal with protecting our wearer now.
 		if(ready)
 			ready = 0
-			spawn(cooldown_to_charge)
-				ready = 1
-				update_icon()
-				to_chat(user, span_notice("\The [src] is ready to protect you once more."))
+			addtimer(CALLBACK(src, PROC_REF(recharge_ready), user), cooldown_to_charge)
 			visible_message(span_danger("\The [user]'s [src.name] blocks [attack_text]!"))
 			update_icon()
 			return 1
@@ -77,6 +74,11 @@
 		H.update_inv_wear_suit(0)
 		H.update_mob_action_buttons()
 	..()
+
+/obj/item/clothing/suit/armor/tesla/proc/recharge_ready(mob/user)
+	ready = 1
+	update_icon()
+	to_chat(user, span_notice("\The [src] is ready to protect you once more."))
 
 /obj/item/clothing/suit/armor/tesla/proc/shoot_lightning(mob/target, power)
 	var/obj/item/projectile/beam/lightning/lightning = new(get_turf(src))

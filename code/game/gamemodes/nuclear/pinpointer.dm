@@ -33,12 +33,12 @@
 	if(!active)
 		active = TRUE
 		START_PROCESSING(SSobj, src)
-		to_chat(usr, span_notice("You activate the pinpointer"))
+		to_chat(user, span_notice("You activate the pinpointer"))
 	else
 		active = FALSE
 		STOP_PROCESSING(SSobj, src)
 		icon_state = "pinoff"
-		to_chat(usr, span_notice("You deactivate the pinpointer"))
+		to_chat(user, span_notice("You deactivate the pinpointer"))
 
 /obj/item/pinpointer/process()
 	if(!active)
