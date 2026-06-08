@@ -36,6 +36,14 @@ SUBSYSTEM_DEF(machines)
 
 	// Wait to rebuild powernets
 	VAR_PRIVATE/defering_powernets = FALSE
+	/// world.time when defer_powernet_rebuild() was last called. Used to
+	/// auto-release the defer after powernet_defer_max_age if a matching
+	/// release_powernet_defer() was never called (e.g. shuttle code crashed).
+	VAR_PRIVATE/powernet_defer_started = 0
+	/// Maximum time (deciseconds) a powernet defer may remain active before
+	/// SSmachines auto-releases it.  Default: 5 minutes.  Keeps a missed
+	/// release() from leaving powernets stale indefinitely.
+	VAR_PRIVATE/powernet_defer_max_age = 5 MINUTES
 
 /datum/controller/subsystem/machines/Initialize()
 	makepowernets()
@@ -46,7 +54,17 @@ SUBSYSTEM_DEF(machines)
 /datum/controller/subsystem/machines/fire(resumed = 0)
 	var/timer = TICK_USAGE
 
-	// DQEdit — SSMACHINES_PIPENETS step removed; pipenets dispatch via SSair.
+	// Auto-release stale powernet defers. If a caller called defer_powernet_rebuild()
+	// but never called release_powernet_defer() (e.g. due to an exception in the
+	// shuttling code), powernets stay unbuilt indefinitely.  After
+	// powernet_defer_max_age deciseconds, force a rebuild and log so the
+	// responsible code can be found and fixed.
+	if(defering_powernets && (world.time - powernet_defer_started) >= powernet_defer_max_age)
+		log_game("SSmachines: powernet defer exceeded max age ([powernet_defer_max_age / 10]s); auto-releasing. Check for a missing release_powernet_defer() call.")
+		message_admins("WARNING: Powernet generation defer auto-released after timeout -- check logs.")
+		release_powernet_defer()
+
+	// SSMACHINES_PIPENETS step removed; pipenets dispatch via SSair.
 	INTERNAL_PROCESS_STEP(SSMACHINES_POWER_OBJECTS,FALSE,process_power_objects,cost_power_objects,SSMACHINES_MACHINERY) // Higher priority, damnit
 	INTERNAL_PROCESS_STEP(SSMACHINES_MACHINERY,FALSE,process_machinery,cost_machinery,SSMACHINES_POWERNETS)
 	INTERNAL_PROCESS_STEP(SSMACHINES_POWERNETS,FALSE,process_powernets,cost_powernets,SSMACHINES_POWER_OBJECTS)
@@ -55,9 +73,10 @@ SUBSYSTEM_DEF(machines)
 /datum/controller/subsystem/machines/proc/defer_powernet_rebuild()
 	if(!SSticker.HasRoundStarted())
 		return
-	// Use with responsibility... Must regen the entire power network after deferal is finished.
+	// Use with responsibility... Must regen the entire power network after deferral is finished.
 	if(!defering_powernets)
 		defering_powernets = TRUE
+		powernet_defer_started = world.time
 		message_admins("Powernet generation deferred...")
 
 
