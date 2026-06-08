@@ -29,13 +29,13 @@
 			switch(power)
 				if(0 to 5)
 					next_pain_time = world.time + 300 SECONDS
-					multilimb_pain_time = world.time + 45 SECONDS
+					multilimb_pain_time = world.time + 1 MINUTE
 				if(6 to 20)
-					next_pain_time = world.time + clamp((30 - power) SECONDS, 10 SECONDS, 30 SECONDS)
-					multilimb_pain_time = world.time + clamp((30 - power) SECONDS, 10 SECONDS, 30 SECONDS)
+					next_pain_time = world.time + clamp((100 - power) SECONDS, 80 SECONDS, 95 SECONDS)
+					multilimb_pain_time = world.time + clamp((100 - power) SECONDS, 80 SECONDS, 95 SECONDS)
 				if(21 to INFINITY)
-					next_pain_time = world.time + (100 - power)
-					multilimb_pain_time = world.time + (100 - power)
+					next_pain_time = world.time + clamp((200 - power) SECONDS, 100 SECONDS, 3 MINUTES)
+					multilimb_pain_time = world.time + clamp((200 - power) SECONDS, 100 SECONDS, 3 MINUTES)
 			last_pain_message = message
 			to_chat(src,message)
 			// Emote in pain for custom pain, too
