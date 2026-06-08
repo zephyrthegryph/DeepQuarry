@@ -8,7 +8,7 @@
 		SPECIES_TESHARI = 'icons/mob/species/teshari/id.dmi'
 		)
 
-	var/list/access = list() //CHOMPEdit
+	var/list/access = list()
 	var/registered_name = "Unknown" // The name registered_name on the card
 	slot_flags = SLOT_ID | SLOT_EARS
 
@@ -317,8 +317,8 @@
 	rank = JOB_QUARTERMASTER
 
 /obj/item/card/id/assistant
-	assignment = JOB_ALT_VISITOR //VOREStation Edit - Visitor not Assistant
-	rank = JOB_ALT_VISITOR //VOREStation Edit - Visitor not Assistant
+	assignment = JOB_ALT_VISITOR
+	rank = JOB_ALT_VISITOR
 
 /obj/item/card/id/civilian
 	name = "identification card"
@@ -427,11 +427,11 @@
 		associated_account_number = user.mind.initial_account.account_number
 	if(title_strings.len)
 		var/tempname = pick(title_strings)
-		name = tempname + " ([assignment] Contractor)"//Chompedit: Suffix contractor IDs
+		name = tempname + " ([assignment] Contractor)"
 	else if(polymorphic_type == 2)
 		name = user.name + "'s ITG ID card" + " ([assignment])"
 	else
-		name = user.name + "'s ID card" + " ([assignment] Contractor)"//Chompedit: Suffix contractor IDs
+		name = user.name + "'s ID card" + " ([assignment] Contractor)"
 
 	configured = TRUE
 	to_chat(user, span_notice("Card settings set."))

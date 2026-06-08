@@ -46,14 +46,13 @@
 
 	air_contents.adjust_gas(GAS_O2, ((3*ONE_ATMOSPHERE)*70/(R_IDEAL_GAS_EQUATION*T20C) * O2STANDARD) - LINDA_GAS_AMT(air_contents, GAS_O2))
 	air_contents.adjust_gas(GAS_N2O, ((3*ONE_ATMOSPHERE)*70/(R_IDEAL_GAS_EQUATION*T20C) * N2STANDARD) - LINDA_GAS_AMT(air_contents, GAS_N2O))
-	// DQEdit — update_values() removed; no-op under LINDA.
 
 /*
  * Air
  */
 /obj/item/tank/air
 	name = "air tank"
-	desc = "Mixed. Shaken, not stirred."		// CHOMP EDIT Haha funny? idk I like this description.
+	desc = "Mixed. Shaken, not stirred."
 	icon_state = "oxygen"
 
 /obj/item/tank/air/examine(mob/user)
@@ -98,13 +97,13 @@
 	name = "phoron tank"
 	desc = "Contains dangerous phoron. Do not inhale. Warning: extremely flammable."
 	icon_state = "phoron_vox"
-	gauge_icon = "indicator_bigtank"		// CHOMP EDIT fixes indicator to ensure there's never a buggy outcome
+	gauge_icon = "indicator_bigtank"
 	distribute_pressure = ONE_ATMOSPHERE*O2STANDARD
 	slot_flags = SLOT_BACK	//these ones have straps!
 
 /obj/item/tank/vox/Initialize(mapload)
 	. = ..()
-	air_contents.adjust_gas(GAS_PHORON, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C)) //VOREStation Edit
+	air_contents.adjust_gas(GAS_PHORON, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
 
 /obj/item/tank/phoron/pressurized
 	name = "fuel can"
@@ -123,7 +122,7 @@
 /obj/item/tank/emergency
 	name = "emergency tank"
 	icon_state = "emergency"
-	gauge_icon = "indicator_smalltank"		// CHOMP EDIT fixes indicator to ensure there's never a buggy outcome
+	gauge_icon = "indicator_smalltank"
 	gauge_cap = 4
 	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_SMALL
@@ -135,7 +134,7 @@
 	name = "emergency oxygen tank"
 	desc = "Used for emergencies. Contains very little oxygen, so try to conserve it until you actually need it."
 	icon_state = "emergency"
-	gauge_icon = "indicator_smalltank"		// CHOMP EDIT fixes indicator to ensure there's never a buggy outcome
+	gauge_icon = "indicator_smalltank"
 
 /obj/item/tank/emergency/oxygen/Initialize(mapload)
 	. = ..()
@@ -155,15 +154,15 @@
 /obj/item/tank/emergency/oxygen/double
 	name = "double emergency oxygen tank"
 	icon_state = "emergency_double"
-	gauge_icon = "indicator_double"			// CHOMP EDIT proper gauge icon
-	volume = 12 					// CHOMP EDIT Double Expanded
+	gauge_icon = "indicator_double"
+	volume = 12
 
 /obj/item/tank/stasis/oxygen // Stasis bags need to have initial pressure within safe bounds for human atmospheric pressure (NOT breath pressure)
 	name = "stasis oxygen tank"
 	desc = "Oxygen tank included in most stasis bag designs."
-	icon = 'icons/obj/tank_ch.dmi'			// CHOMP ADD Adds a unique icon to the oxygen tank in stasis bags.
-	icon_state = "stasis_oxygen"			// CHOMP ADD
-	gauge_icon = "indicator_stasis"			// CHOMP ADD
+	icon = 'icons/obj/tank_ch.dmi'
+	icon_state = "stasis_oxygen"
+	gauge_icon = "indicator_stasis"
 	volume = 10
 
 /obj/item/tank/stasis/oxygen/Initialize(mapload)
@@ -172,7 +171,7 @@
 
 /obj/item/tank/emergency/nitrogen
 	name = "emergency nitrogen tank"
-	desc = "An emergency nitrogen tank."			// CHOMP EDIT They get their own :)
+	desc = "An emergency nitrogen tank."
 	icon_state = "emergency_nitrogen"				// :)
 	gauge_icon = "indicator_smalltank"				// :)
 
@@ -182,13 +181,13 @@
 
 /obj/item/tank/emergency/nitrogen/double
 	name = "double emergency nitrogen tank"
-	icon_state = "emergency_double_vox_old"			// CHOMP EDIT Nitrogen double gets its OWN sprite >:3c
-	gauge_icon = "indicator_double"					// <3
-	volume = 12			// CHOMP EDIT Double Expanded
+	icon_state = "emergency_double_vox_old"
+	gauge_icon = "indicator_double"
+	volume = 12
 
 /obj/item/tank/emergency/phoron
 	name = "emergency phoron tank"
-	desc = "An emergency phoron tank."  			// CHOMP EDIT You get a unique sprite!
+	desc = "An emergency phoron tank."
 	icon_state = "emergency_phoron_vox"				// And you get a unique sprite!
 	gauge_icon = "indicator_smalltank"				// Look under your chairs! You all get unique sprites!
 
@@ -198,11 +197,10 @@
 
 /obj/item/tank/emergency/phoron/double
 	name = "double emergency phoron tank"
-	icon_state = "emergency_double_vox"				// CHOMP EDIT Unique sprites. :)
+	icon_state = "emergency_double_vox"
 	gauge_icon = "indicator_double"					// Ensuring unique sprite stuff ig.
 	volume = 10
 
-//CHOMPEdit Start - for CO2 breathers
 /obj/item/tank/carbon_dioxide
 	name = "carbon dioxide tank"
 	desc = "A tank of carbon dioxide"
@@ -233,7 +231,6 @@
 /obj/item/tank/emergency/carbon_dioxide/double/Initialize(mapload)
 	. = ..()
 	src.air_contents.adjust_gas(GAS_CO2, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
-//CHOMPEdit End
 
 /*
  * Nitrogen
@@ -246,7 +243,7 @@
 
 /obj/item/tank/nitrogen/Initialize(mapload)
 	. = ..()
-	src.air_contents.adjust_gas(GAS_N2, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C)) //CHOMPedit
+	src.air_contents.adjust_gas(GAS_N2, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
 
 /obj/item/tank/nitrogen/examine(mob/user)
 	. = ..()
@@ -257,9 +254,9 @@
 /obj/item/tank/stasis/nitro_cryo // Synthmorph bags need to have initial pressure within safe bounds for human atmospheric pressure, but low temperature to stop unwanted degredation.
 	name = "stasis cryogenic nitrogen tank"
 	desc = "Cryogenic Nitrogen tank included in most synthmorph bag designs."
-	icon = 'icons/obj/tank_ch.dmi'		// CHOMP ADD Adds a stasis sprite unique to this icon.
-	icon_state = "stasis_nitrogen"		// CHOMP ADD
-	gauge_icon = "indicator_stasis"		// CHOMP ADD
+	icon = 'icons/obj/tank_ch.dmi'
+	icon_state = "stasis_nitrogen"
+	gauge_icon = "indicator_stasis"
 	volume = 10
 
 /obj/item/tank/stasis/nitro_cryo/Initialize(mapload)

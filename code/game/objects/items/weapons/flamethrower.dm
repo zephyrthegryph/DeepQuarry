@@ -1,8 +1,3 @@
-// DQEdit — LINDA atmospherics rewrite (commit 6fdac16ef1). gas_mixture var accesses (e.g. mix.total_moles) converted to proc calls (mix.total_moles()) for the LINDA engine API. Bulk rewrite by tools/verdigris/linda_rewrite_chomp_atmos.py.
-// Bracketed at file-header rather than per-hunk because the
-// edits are mechanical and span the whole file; the commit SHA
-// is the source of truth for per-line diff context.
-
 #define THROWER_MIN 50
 #define THROWER_MAX 1000
 
@@ -103,7 +98,7 @@
 			update_icon()
 		// prevent spam
 		operating = TRUE
-		addtimer(VARSET_CALLBACK(src, operating, FALSE), 15)
+		addtimer(VARSET_CALLBACK(src, operating, FALSE), 1.5 SECONDS)
 	return
 
 /obj/item/flamethrower/proc/thrower_spew_percent()
@@ -186,7 +181,8 @@
 	return dat
 
 /obj/item/flamethrower/tgui_act(action, params, datum/tgui/ui)
-	if(usr.stat || usr.restrained() || usr.lying)
+	var/mob/user = ui.user
+	if(user.stat || user.restrained() || user.lying)
 		return FALSE
 	if(..())
 		return FALSE
@@ -210,7 +206,7 @@
 		if("remove")
 			if(!ptank)
 				return FALSE
-			usr.put_in_hands(ptank)
+			user.put_in_hands(ptank)
 			ptank = null
 			lit = 0
 			update_icon()

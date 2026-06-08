@@ -22,8 +22,8 @@ GLOBAL_LIST_INIT(robot_glass_options, list(
 	name = "\improper Rapid-Service-Fabricator"
 	desc = "A device used to rapidly deploy service items."
 	description_info = "Control Clicking on the device will allow you to choose the glass it dispenses when in the proper mode."
-	icon = 'icons/obj/tools_vr.dmi' //VOREStation Edit
-	icon_state = "rsf" //VOREStation Edit
+	icon = 'icons/obj/tools_vr.dmi'
+	icon_state = "rsf"
 	opacity = 0
 	density = FALSE
 	anchored = FALSE

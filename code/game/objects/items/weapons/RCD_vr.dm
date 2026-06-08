@@ -64,7 +64,7 @@
 		qdel(effects[A])
 		effects -= A
 
-/* CHOMPEdit - moved this block to modular_chomp\code\game\objects\items\weapons\rcd.dm
+/*
 /obj/item/rcd/attackby(obj/item/W, mob/user)
 	if(istype(W, /obj/item/rcd_ammo))
 		var/obj/item/rcd_ammo/cartridge = W
@@ -108,7 +108,7 @@
 
 	return TRUE
 
-/* CHOMPEdit - moved this block to modular_chomp\code\game\objects\items\weapons\rcd.dm
+/*
 /obj/item/rcd/attack_self(mob/living/user)
 	. = ..(user)
 	if(.)
@@ -197,7 +197,6 @@
 	return "It currently holds [remaining]/[initial(remaining)] matter-units."
 
 //////////////////
-//CHOMPEdit start
 /obj/effect/constructing_effect
 	icon = 'icons/effects/effects_rcd.dmi'
 	icon_state = ""
@@ -227,8 +226,7 @@
 		icon_state = "rcd_end_reverse"
 	else
 		icon_state = "rcd_end"
-	addtimer(CALLBACK(src, PROC_REF(end)), 15)
+	addtimer(CALLBACK(src, PROC_REF(end)), 1.5 SECONDS)
 
 /obj/effect/constructing_effect/proc/end()
 	qdel(src)
-//CHOMPEdit end

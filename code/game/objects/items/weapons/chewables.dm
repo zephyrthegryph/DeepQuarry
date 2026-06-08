@@ -258,14 +258,12 @@
 	icon_state = "lollipop"
 	item_state = "lollipop"
 	wrapped = TRUE
-	var/list/victims = null // CHOMPAdd
+	var/list/victims = null
 
 /obj/item/clothing/mask/chewable/candy/lolli/process()
 	chew()
 	if(chewtime < 1)
 		spitout(0)
-
-// CHOMPAdd Start
 
 /obj/item/clothing/mask/chewable/candy/lolli/container_resist(mob/living/M)
 	if(istype(M, /mob/living/voice)) return
@@ -333,8 +331,6 @@
 	if(Adjacent(user))
 		if(victims && victims.len)
 			. += span_notice("It has [english_list(victims)] stuck on it.")
-
-// CHOMPAdd End
 
 /obj/item/clothing/mask/chewable/candy/lolli/Initialize(mapload)
 	. = ..()

@@ -1,10 +1,4 @@
 // Wiki books that are linked to the configured wiki link.
-//
-// DQEdit Start — TGUI migration. TGUI cannot host external iframes the
-// way BYOND's browser did, so wiki books now open a structured TGUI
-// window showing the book's intro text (if any) and a button that
-// opens the wiki page in the user's default web browser via
-// `client << link(url)`.
 
 // A book that links to the wiki
 /obj/item/book/manual/wiki
@@ -51,7 +45,6 @@
 		if(url && ui.user?.client)
 			ui.user.client << link(url)
 		return TRUE
-// DQEdit End
 
 /obj/item/book/manual/wiki/engineering_construction
 	name = "Station Repairs and Construction"
@@ -98,9 +91,6 @@
 	author = "Medical Department"
 	title = "Medical Diagnostics Manual"
 
-// DQEdit Start — Medical Diagnostics Manual: intro HTML now stored on
-// the type instead of being assembled and shoved into a browse(), and
-// the iframe is replaced by the parent type's wiki link button.
 /obj/item/book/manual/wiki/medical_diagnostics_manual
 	page_link = "Guide_to_Medicine"
 	wiki_intro_html = {"<h2>The Oath</h2>
@@ -117,7 +107,6 @@
 	<li>I will seek to promote the advancement of medical knowledge through teaching and research.</li>
 	<li>I make this declaration solemnly, freely, and upon my honour.</li>
 </ol>"}
-// DQEdit End
 
 /obj/item/book/manual/wiki/engineering_guide
 	name = "Engineering Textbook"

@@ -75,10 +75,8 @@
 		if(!S || S.robotic < ORGAN_ROBOT || S.open == 3)
 			return ..()
 
-		//VOREStation Add - No welding nanoform limbs
 		if(S.robotic > ORGAN_LIFELIKE)
 			return ..()
-		//VOREStation Add End
 
 		if(S.organ_tag == BP_HEAD)
 			if(H.head && istype(H.head,/obj/item/clothing/head/helmet/space))
@@ -320,7 +318,7 @@
 			return
 		if(user.isSynthetic()) //Fixes robots going blind when doing the equivalent of a bruise pack.
 			return
-		if(H.nif && H.nif.flag_check(NIF_V_UVFILTER,NIF_FLAGS_VISION)) return //VOREStation Add - NIF
+		if(H.nif && H.nif.flag_check(NIF_V_UVFILTER,NIF_FLAGS_VISION)) return
 		switch(safety)
 			if(1)
 				to_chat(user, span_warning("Your eyes sting a little."))

@@ -219,7 +219,6 @@
 /obj/item/melee/shock_maul/afterattack(atom/A as mob|obj|turf|area, mob/user as mob, proximity)
 	if(!proximity) return
 	..()
-	//CHOMPEdit start - maul changes
 	if(A && wielded && status)
 		if(istype(A,/obj/structure/window))
 			var/obj/structure/window/W = A
@@ -247,7 +246,6 @@
 		playsound(src, 'sound/weapons/resonator_blast.ogg', 100, 1, -1)
 		update_held_icon()
 		powercheck(hitcost)
-	//CHOMPEdit end
 
 /obj/item/melee/shock_maul/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
 	. = ..()

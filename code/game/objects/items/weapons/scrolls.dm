@@ -21,8 +21,6 @@
 		to_chat(user, span_warning("You stare at the scroll but cannot make sense of the markings!"))
 		return
 
-	// DQEdit — single-action panel; tgui_alert with the existing
-	// uses count is the right primitive.
 	user.set_machine(src)
 	var/choice = tgui_alert(
 		user,

@@ -56,7 +56,6 @@
 	item_state = "book15"
 	author = "Central Engineering Division"
 	title = "Supermatter Engine Operating Manual"
-	//CHOMPEdit Start - Updated Supermatter Engine Manual
 	dat = {"<html>
 				<head>
 				<style>
@@ -130,7 +129,7 @@
 				<li>In event of ejection failure, "} + span_italics("good luck.") + {"</li>
 				</ol>
 				</body>
-			</html>"}			//CHOMPEdit End - Updated Supermatter Engine Manual
+			</html>"}
 
 // TESLA Engine
 
@@ -204,14 +203,13 @@
 			</html>"}
 
 //R-UST port
-/obj/item/book/manual/rust_engine	// CHOMPedit START : Updating the R-UST manual
+/obj/item/book/manual/rust_engine
 	name = "R-UST Operating Manual"
 	icon = 'icons/obj/library_ch.dmi'
-	icon_state = "bookRusty" 				// Chompedit : Changed this to a new unique R-UST manual icon rather than just re-using the Supermatter book cover sprite
+	icon_state = "bookRusty"
 	item_state = "book15"
 	author = "Central Engineering Division"
 	title = "R-UST Operating Manual"
-	//R-UST guide Re-Writen by Gozulio to reflect how the R-UST actually operates. (CHOMPedit, re-written again :3 By Foxglove)
 	dat = {"<html>
 				<head>
 				<style>
@@ -286,7 +284,7 @@
 				<li> Due to the TEG generating such a high amount of power, you can safely go into the SMES chamber and max out the INPUT and OUTPUT to both SMES units. One will ensure that even in the rare event of a TEG shutdown, the R-UST will have enough power to allow engineers to set up different reactions to ensure the outpost stays powered. The other SMES will ensure the outpost has some spare power until the TEG is repaired, or otherwise replaced. </li><br>
 				</ol>
 				</body>
-			</html>"}			// CHOMPedit END : Updating the R-UST manual
+			</html>"}
 
 /obj/item/book/manual/engineering_singularity_safety
 	name = "Singularity Safety in Special Circumstances"

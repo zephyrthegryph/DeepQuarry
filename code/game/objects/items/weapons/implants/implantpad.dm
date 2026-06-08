@@ -47,8 +47,6 @@
 	return
 
 
-// DQEdit Start — TGUI migration. attack_self opens ImplantPad.tsx; the
-// Topic tracking_id stepper moves to tgui_act.
 /obj/item/implantpad/attack_self(mob/user)
 	. = ..(user)
 	if(.)
@@ -76,13 +74,14 @@
 			data["tracking_id"] = T.id
 	return data
 
-/obj/item/implantpad/tgui_act(action, list/params)
+/obj/item/implantpad/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	. = ..()
 	if(.)
 		return
-	if(usr.stat)
+	var/mob/user = ui.user
+	if(user.stat)
 		return TRUE
-	add_fingerprint(usr)
+	add_fingerprint(user)
 	switch(action)
 		if("tracking_id")
 			if(!istype(case?.imp, /obj/item/implant/tracking))
@@ -91,4 +90,3 @@
 			T.id += text2num(params["delta"])
 			T.id = clamp(T.id, 1, 1000)
 			return TRUE
-// DQEdit End

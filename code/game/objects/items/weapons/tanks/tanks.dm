@@ -551,7 +551,6 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 
 	src.air_contents.adjust_gas(GAS_PHORON, (phoron_amt) - LINDA_GAS_AMT(src.air_contents, GAS_PHORON))
 	src.air_contents.adjust_gas(GAS_O2, (oxygen_amt) - LINDA_GAS_AMT(src.air_contents, GAS_O2))
-	// DQEdit — update_values() removed; no-op under LINDA.
 	src.valve_welded = 1
 	src.air_contents.temperature = PHORON_MINIMUM_BURN_TEMPERATURE-1
 

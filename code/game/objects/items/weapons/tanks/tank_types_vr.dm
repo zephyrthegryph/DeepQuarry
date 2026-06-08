@@ -6,7 +6,7 @@
 	icon_state = "emergency_double_vox"
 	gauge_icon = "indicator_double"
 	gauge_cap = 3
-	volume = 12		// CHOMP EDIT double extended
+	volume = 12
 
 /obj/item/tank/emergency/phoron/double/Initialize(mapload)
 	. = ..()
@@ -71,14 +71,14 @@
 	icon = 'icons/obj/tank_vr.dmi'
 	icon_state = "emergency_nitrogen"
 	gauge_icon = "indicator_smalltank"
-	volume = 6			// CHOMP EDIT adds a custom volume to ensure things aren't buggy with changes
+	volume = 6
 	gauge_cap = 3
 
 /obj/item/tank/emergency/nitrogen/double
 	icon = 'icons/obj/tank_vr.dmi'
-	icon_state = "emergency_double_vox_old"		// CHOMP EDIT using the old red double sprite to indicate double nitrogen rather than sharing the phoron tank (cuz why share the phoron tank?)
+	icon_state = "emergency_double_vox_old"
 	gauge_icon = "indicator_double"
-	volume = 12		// CHOMP EDIT double extended
+	volume = 12
 	gauge_cap = 3
 
 /obj/item/tank/emergency/phoron
@@ -94,7 +94,6 @@
 	gauge_icon = "indicator_bigtank"
 	gauge_cap = 3
 
-//CHOMPEdit Start - for CO2 breathers
 /obj/item/tank/carbon_dioxide
 	icon = 'icons/obj/tank_vr.dmi'
 	icon_state = "oxygen_f"
@@ -114,4 +113,3 @@
 	gauge_icon = "indicator_double"
 	volume = 12
 	gauge_cap = 3
-//CHOMPEdit End

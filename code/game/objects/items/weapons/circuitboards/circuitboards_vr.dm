@@ -15,8 +15,6 @@
 	if(hidden) // Notify the player that this board cannot be printed easily, so don't lose it!
 		. += span_danger("It might be hard to find a replacement for a circuit this unique.")
 
-// VOREStation specific circuit boards!
-
 // Board for the parts lathe in partslathe.dm
 /obj/item/circuitboard/partslathe
 	name = T_BOARD("parts lathe")

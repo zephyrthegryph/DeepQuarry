@@ -190,7 +190,7 @@ Protectiveness | Armor %
 		if(!isnull(material.conductivity))
 			siemens_coefficient = between(0, material.conductivity / 10, 10)
 
-		var/slowdownModified = between(0, round(material.density / 10, 0.1), 6) // DQEdit — weight renamed to density.
+		var/slowdownModified = between(0, round(material.density / 10, 0.1), 6)
 
 		var/slowdownUncapped = (material_slowdown_multiplier * slowdownModified) - material_slowdown_modifier
 

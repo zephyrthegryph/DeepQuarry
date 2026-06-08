@@ -1,5 +1,3 @@
-//Vorestation universal translator implant.
-
 /obj/item/implanter/vrlanguage
 	name = "implanter-language"
 
