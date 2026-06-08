@@ -13,7 +13,7 @@
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
-#include "../modules/medical/_defines.dm"
+#include "../medical/_defines.dm"
 
 // --- surgery: registry has entries -------------------------------------
 

@@ -136,7 +136,7 @@ Atomic multi-pref updates use `PREF_TRANSACTION_BEGIN(prefs)` / `PREF_TRANSACTIO
 
 ## Tests
 
-`code/unit_tests/preferences_tests.dm` covers the smoke surface: every pref has a savefile_key + identifier, every visible PREFERENCE_CHARACTER pref has a category, the constraint cascade depth guard holds, batch begin/end nests, composite serialize/deserialize round-trips, `get_widget()` always resolves `PREF_WIDGET_AUTO`.
+`code/modules/unit_tests/dq_preferences_tests.dm` covers the smoke surface: every pref has a savefile_key + identifier, every visible PREFERENCE_CHARACTER pref has a category, the constraint cascade depth guard holds, batch begin/end nests, composite serialize/deserialize round-trips, `get_widget()` always resolves `PREF_WIDGET_AUTO`.
 
 Run with `bin/test.cmd`.
 

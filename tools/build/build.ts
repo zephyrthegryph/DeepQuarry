@@ -158,7 +158,6 @@ export const ValidateDmeTarget = new Juke.Target({
     // deepquarry.dme — exclude them from the "is it wired into the build" check.
     const EXCLUDED_PREFIXES = [
       'code/modules/unit_tests/',
-      'code/unit_tests/',
     ];
 
     const dmFiles = Juke.glob('code/**/*.dm');
