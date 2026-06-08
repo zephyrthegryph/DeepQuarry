@@ -28,7 +28,7 @@
 	if(!chassis)
 		set_ready_state(TRUE)
 		return PROCESS_KILL
-	if(fuel_amount <= 0) // CHOMPEdit - Spam fix
+	if(fuel_amount <= 0)
 		src.mecha_log_message("Deactivated - no fuel.")
 		set_ready_state(TRUE)
 		return PROCESS_KILL

@@ -28,7 +28,7 @@
 	wreckage = /obj/effect/decal/mecha_wreckage/gunpod
 
 	stomp_sound = 'sound/mecha/fighter/engine_mid_fighter_move.ogg'
-	stomp_sound_2 = 'sound/mecha/fighter/engine_mid_fighter_move.ogg' // CHOMPedit: Fix for additional move sound on Chomp mecha.
+	stomp_sound_2 = 'sound/mecha/fighter/engine_mid_fighter_move.ogg'
 	swivel_sound = 'sound/mecha/fighter/engine_mid_boost_01.ogg'
 
 	bound_height = 64
@@ -112,7 +112,7 @@
 	for(var/obj/effect/overmap/visitable/V in range(1, our_ship))
 		choices[V.name] = V
 
-	var/choice = tgui_input_list(usr, "Choose an overmap destination:", "Destination", choices)
+	var/choice = tgui_input_list(occupant, "Choose an overmap destination:", "Destination", choices)
 	if(!choice)
 		var/backwards = turn(what_edge, 180)
 		forceMove(get_step(src,backwards)) //Move them back a step, then.

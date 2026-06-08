@@ -1608,13 +1608,13 @@
 					//6
 					list("key"=/obj/item/stack/material/steel,
 							"backkey"=IS_SCREWDRIVER,
-							"desc"="Translocator is secured"),  //Chompedit, change hand tele to translocator
+							"desc"="Translocator is secured"),
 					//7
 					list("key"=IS_SCREWDRIVER,
 							"backkey"=IS_CROWBAR,
-							"desc"="Translocator is installed"),  //Chompedit, change hand tele to translocator
+							"desc"="Translocator is installed"),
 					//8
-					list("key"=/obj/item/perfect_tele,  //Chompedit, change hand tele to translocator
+					list("key"=/obj/item/perfect_tele,
 							"backkey"=IS_SCREWDRIVER,
 							"desc"="SMES coil is secured"),
 					//9

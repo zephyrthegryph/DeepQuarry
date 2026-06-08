@@ -1,8 +1,8 @@
 
 /obj/mecha/combat/gorilla
-	desc = span_red(span_bold("BLITZKRIEEEEEEEG!")) // CHOMPEdit
-	name = "Sd.Kfz. 269 Mechakampfwagen Gorilla Ausf. A" // CHOMPEdit
-	icon = 'icons/mecha/AxisMech.dmi' // CHOMPEdit
+	desc = span_red(span_bold("BLITZKRIEEEEEEEG!"))
+	name = "Sd.Kfz. 269 Mechakampfwagen Gorilla Ausf. A"
+	icon = 'icons/mecha/AxisMech.dmi'
 	icon_state = "pzrmech"
 	initial_icon = "pzrmech"
 	pixel_x = -16

@@ -16,7 +16,7 @@
 	projectile = /obj/item/projectile/beam/xray
 	fire_sound = 'sound/weapons/eluger.ogg'
 
-/obj/item/mecha_parts/mecha_equipment/weapon/energy/laser/gamma //CHOMPedit begin : adds Gamma Laser as proof of concept
+/obj/item/mecha_parts/mecha_equipment/weapon/energy/laser/gamma
 	equip_cooldown = 5
 	name = "\improper GA-X \"Render\" Experimental Gamma Laser"
 	desc = "A experimental suppression laser that fires blasts of radiation charged photons, extremely effective at punching through armor."

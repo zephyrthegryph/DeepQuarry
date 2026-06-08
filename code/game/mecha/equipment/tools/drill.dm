@@ -44,7 +44,8 @@
 					M1.GetDrilled()
 				src.mecha_log_message("Drilled through [target]")
 				if(locate(/obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp) in chassis.equipment)
-					var/obj/structure/ore_box/ore_box = locate(/obj/structure/ore_box) in chassis:cargo
+					var/obj/mecha/working/ripley/ripley_chassis = chassis
+					var/obj/structure/ore_box/ore_box = locate(/obj/structure/ore_box) in ripley_chassis.cargo
 					if(ore_box)
 						for(var/obj/item/ore/ore in range(chassis,1))
 							if(get_dir(chassis,ore)&chassis.dir)
@@ -124,7 +125,8 @@
 					M.GetDrilled()
 					src.mecha_log_message("Bored through [target]")
 				if(locate(/obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp) in chassis.equipment)
-					var/obj/structure/ore_box/ore_box = locate(/obj/structure/ore_box) in chassis:cargo
+					var/obj/mecha/working/ripley/ripley_chassis = chassis
+					var/obj/structure/ore_box/ore_box = locate(/obj/structure/ore_box) in ripley_chassis.cargo
 					if(ore_box)
 						for(var/obj/item/ore/ore in range(chassis,1))
 							if(get_dir(chassis,ore)&chassis.dir)

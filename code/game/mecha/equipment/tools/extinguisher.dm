@@ -15,14 +15,14 @@
 	. = ..()
 	reagents = new/datum/reagents(max_water)
 	reagents.my_atom = src
-	reagents.add_reagent(REAGENT_ID_FIREFOAM, max_water) //VOREStation Edit
+	reagents.add_reagent(REAGENT_ID_FIREFOAM, max_water)
 
 /obj/item/mecha_parts/mecha_equipment/tool/extinguisher/action(atom/target) //copypasted from extinguisher. TODO: Rewrite from scratch.
 	if(!action_checks(target) || get_dist(chassis, target)>3) return
 	if(get_dist(chassis, target)>2) return
 	set_ready_state(FALSE)
 	if(do_after_cooldown(target))
-		if( istype(target, /obj/structure/reagent_dispensers) && get_dist(chassis,target) <= 1) //VOREStation Edit
+		if( istype(target, /obj/structure/reagent_dispensers) && get_dist(chassis,target) <= 1)
 			var/obj/o = target
 			var/amount = o.reagents.trans_to_obj(src, 200)
 			occupant_message(span_notice("[amount] units transferred into internal tank."))
@@ -55,7 +55,7 @@
 					my_target = T2
 				else
 					my_target = pick(the_targets)
-				W.create_reagents(10) // CHOMPEdit
+				W.create_reagents(10)
 				if(!W || !src)
 					return
 				reagents.trans_to_obj(W, spray_amount)

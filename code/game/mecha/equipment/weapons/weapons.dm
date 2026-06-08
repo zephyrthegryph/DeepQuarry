@@ -59,7 +59,6 @@
 		projectiles = projectiles_per_shot
 //	set_ready_state(FALSE)
 
-//CHOMPedit, redundant code removed. Fixes weapon lock on mob kill.
 	add_attack_logs(chassis.occupant,target, "Fired exosuit weapon [src.name] (MANUAL)")
 
 	do_after_cooldown()
