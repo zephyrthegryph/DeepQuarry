@@ -17,9 +17,8 @@ GLOBAL_DATUM_INIT(no_ceiling_image, /image, new)
 			icon_state = flooring_override
 		else
 			icon_state = flooring.icon_base
-									//VOREStation Addition Start
 			if(flooring.check_season)
-				icon_state = "[icon_state]-[GLOB.world_time_season]"	//VOREStation Addition End
+				icon_state = "[icon_state]-[GLOB.world_time_season]"
 			if(flooring.has_base_range)
 				icon_state = "[icon_state][rand(0,flooring.has_base_range)]"
 				flooring_override = icon_state
@@ -108,7 +107,7 @@ GLOBAL_DATUM_INIT(no_ceiling_image, /image, new)
 		if(istype(T) && T.edge_blending_priority && edge_blending_priority < T.edge_blending_priority && icon_state != T.icon_state && !T.forbid_turf_edge())
 			var/cache_key = "[T.get_edge_icon_state()]-[checkdir]" // Usually [icon_state]-[dirnum]
 			if(!GLOB.turf_edge_cache[cache_key])
-				var/image/I = image(icon = T.icon_edge, icon_state = "[T.get_edge_icon_state()]-edge", dir = checkdir, layer = ABOVE_TURF_LAYER) // VOREStation Edit - icon_edge
+				var/image/I = image(icon = T.icon_edge, icon_state = "[T.get_edge_icon_state()]-edge", dir = checkdir, layer = ABOVE_TURF_LAYER)
 				I.plane = TURF_PLANE
 				GLOB.turf_edge_cache[cache_key] = I
 			add_overlay(GLOB.turf_edge_cache[cache_key])

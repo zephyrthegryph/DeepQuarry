@@ -11,10 +11,10 @@
 		var/mob/living/L = user
 		if(L.a_intent != I_HELP)
 			if(L.a_intent == I_GRAB)
-				try_graffiti(L, C, click_parameters) // back by unpopular demand - CHOMPEdit Add - Click parameters
+				try_graffiti(L, C, click_parameters)
 				return
 			attack_tile(C, L) // Be on help intent if you want to decon something.
-			return	//CHOMPEDIT END
+			return
 
 	// Multi-z roof building
 	if(istype(C, /obj/item/stack/tile/roofing))

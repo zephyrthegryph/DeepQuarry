@@ -49,10 +49,10 @@ GLOBAL_LIST_INIT(grass_animals,list(
 		/mob/living/simple_mob/mechanical/mecha/mouse_tank/livewire = 2
 		),
 	"seasonalspring" = list(
-		/mob/living/simple_mob/vore/alienanimals/teppi = 10, //CHOMP Edit
-		/mob/living/simple_mob/vore/alienanimals/teppi/mutant = 1, //CHOMP Edit
+		/mob/living/simple_mob/vore/alienanimals/teppi = 10,
+		/mob/living/simple_mob/vore/alienanimals/teppi/mutant = 1,
 		/mob/living/simple_mob/vore/redpanda = 40,
-		/mob/living/simple_mob/vore/redpanda/fae = 2, //CHOMP Edit
+		/mob/living/simple_mob/vore/redpanda/fae = 2,
 		/mob/living/simple_mob/vore/sheep = 20,
 		/mob/living/simple_mob/vore/rabbit/black = 20,
 		/mob/living/simple_mob/vore/rabbit/white = 20,
@@ -71,8 +71,8 @@ GLOBAL_LIST_INIT(grass_animals,list(
 	"seasonalsummer" = list(
 		/mob/living/simple_mob/vore/alienanimals/teppi = 10,
 		/mob/living/simple_mob/vore/alienanimals/teppi/mutant = 1,
-		/mob/living/simple_mob/vore/redpanda = 40, //CHOMP Edit
-		/mob/living/simple_mob/vore/redpanda/fae = 2, //CHOMP Edit
+		/mob/living/simple_mob/vore/redpanda = 40,
+		/mob/living/simple_mob/vore/redpanda/fae = 2,
 		/mob/living/simple_mob/vore/sheep = 20,
 		/mob/living/simple_mob/vore/rabbit/black = 20,
 		/mob/living/simple_mob/vore/rabbit/white = 20,

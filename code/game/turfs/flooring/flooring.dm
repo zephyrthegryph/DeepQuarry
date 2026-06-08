@@ -110,7 +110,7 @@ GLOBAL_LIST_INIT(flooring_types, populate_flooring_types())
 	var/list/movable_atom_whitelist = null
 	var/list/movable_atom_blacklist = null
 
-	var/check_season = FALSE	//VOREStation Addition
+	var/check_season = FALSE
 
 /datum/decl/flooring/proc/get_plating_type(turf/T)
 	return plating_type
@@ -141,7 +141,6 @@ GLOBAL_LIST_INIT(flooring_types, populate_flooring_types())
 	build_type = null
 	has_base_range = 1
 
-//CHOMPedit: sif/forest decl. If this ends up upstream just accept the upstream version.
 /datum/decl/flooring/grass/sif/forest
 	name = "thick growth"
 	desc = "A natural moss that has adapted to the sheer cold climate."
@@ -150,7 +149,6 @@ GLOBAL_LIST_INIT(flooring_types, populate_flooring_types())
 	icon_base = "grass_sif_dark"
 	build_type = /obj/item/stack/tile/grass/sif/forest
 	has_base_range = 1
-//CHOMPedit end
 
 /datum/decl/flooring/water
 	name = "water"
@@ -236,12 +234,12 @@ GLOBAL_LIST_INIT(flooring_types, populate_flooring_types())
 	icon_base = "snowyplayingdrift"
 
 /datum/decl/flooring/carpet
-	name = "red carpet" //CHOMPEDIT renamed to red carpet
+	name = "red carpet"
 	desc = "Lush synthetic carpeting, perfectly engineered for easy cleaning."
 	icon = 'icons/turf/flooring/carpet.dmi'
 	icon_base = "carpet"
 	build_type = /obj/item/stack/tile/carpet
-	can_paint = TRUE //ChompEDIT, allow painting carpets
+	can_paint = TRUE
 	damage_temperature = T0C+200
 	flags = TURF_HAS_EDGES | TURF_HAS_CORNERS | TURF_REMOVE_CROWBAR | TURF_CAN_BURN
 
@@ -332,7 +330,7 @@ GLOBAL_LIST_INIT(flooring_types, populate_flooring_types())
 /datum/decl/flooring/tiling
 	name = "floor"
 	desc = "Scuffed from the passage of countless greyshirts."
-	icon = 'icons/turf/flooring/tiles_vr.dmi' // VOREStation Edit - Eris floors. Polaris still hasn't added all of them properly. See: steel_ridged
+	icon = 'icons/turf/flooring/tiles_vr.dmi'
 	icon_base = "tiled"
 	has_damage_range = 2
 	damage_temperature = T0C+1400
@@ -390,7 +388,7 @@ GLOBAL_LIST_INIT(flooring_types, populate_flooring_types())
 
 /datum/decl/flooring/linoleum
 	name = "linoleum"
-	desc = "It's like the 2390's all over again." //CHOMPEDIT - Age
+	desc = "It's like the 2390's all over again."
 	icon = 'icons/turf/flooring/linoleum.dmi'
 	icon_base = "lino"
 	can_paint = 1
@@ -866,12 +864,11 @@ GLOBAL_LIST_INIT(flooring_types, populate_flooring_types())
 	desc = "A flat area of poured concrete flooring."
 	icon = 'icons/turf/concrete.dmi'
 	icon_base = "concrete"
-	is_plating = FALSE 	//VOREStation edit. It's a lot cooler if it's actual tile.
-	can_paint = 1		//VOREStation edit. Let's allow for some fun.
-	can_engrave = 1		//VOREStation edit. Fun.
+	is_plating = FALSE
+	can_paint = 1
+	can_engrave = 1
 	flags = TURF_ACID_IMMUNE | TURF_CAN_BREAK | TURF_REMOVE_CROWBAR
 
-///// Season Time! ///// VOREStation Addition Start
 /datum/decl/flooring/grass/seasonal_grass
 	desc = "It's grass!"
 	icon = 'icons/seasonal/turf.dmi'

@@ -187,11 +187,9 @@ GLOBAL_LIST_EMPTY(flesh_overlay_cache)
 	icon_state = "sifwood"
 	icon = 'icons/turf/wall_masks_vr.dmi'
 
-//CHOMPEdit Start
 /turf/simulated/wall/rsifwood
 	icon_state = "sifwood"
 	icon = 'icons/turf/wall_masks_vr.dmi'
-//CHOMPEdit End
 
 /turf/simulated/wall/silver
 	icon_state = "silver"
@@ -232,6 +230,7 @@ GLOBAL_LIST_EMPTY(flesh_overlay_cache)
 	. = ..()
 
 /turf/simulated/wall/uranium/radiate()
+	SIGNAL_HANDLER
 	if(active)
 		return
 	if(world.time <= last_event + 1.5 SECONDS)

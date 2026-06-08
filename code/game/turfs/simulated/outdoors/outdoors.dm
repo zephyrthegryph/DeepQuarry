@@ -82,7 +82,7 @@ GLOBAL_LIST_EMPTY(turf_edge_cache)
 /turf/simulated/floor/outdoors/mud
 	name = "mud"
 	icon_state = "mud_dark"
-	edge_blending_priority = 4 // CHOMPedit
+	edge_blending_priority = 4
 	initial_flooring = /datum/decl/flooring/mud
 	flags = TURF_CAN_DIG_SHOVEL
 
@@ -101,31 +101,6 @@ GLOBAL_LIST_EMPTY(turf_edge_cache)
 /turf/simulated/floor/outdoors/rocks/caves
 	outdoors = OUTDOORS_NO
 
-// This proc adds a 'layer' on top of the turf.
-/* CHOMP Removal start
-/turf/simulated/floor/outdoors/proc/promote(new_turf_type)
-	var/list/new_turf_layer_list = turf_layers.Copy()
-	var/list/coords = list(x, y, z)
-
-	new_turf_layer_list.Add(src.type)
-
-	ChangeTurf(new_turf_type)
-	var/turf/simulated/floor/outdoors/T = locate(coords[1], coords[2], coords[3])
-	if(istype(T))
-		T.turf_layers = new_turf_layer_list.Copy()
-
-// This proc removes the topmost layer.
-/turf/simulated/floor/outdoors/proc/demote()
-	if(!turf_layers.len)
-		return // Cannot demote further.
-	var/list/new_turf_layer_list = turf_layers.Copy()
-	var/list/coords = list(x, y, z)
-
-	ChangeTurf(pop(new_turf_layer_list))
-	var/turf/simulated/floor/outdoors/T = locate(coords[1], coords[2], coords[3])
-	if(istype(T))
-		T.turf_layers = new_turf_layer_list.Copy()
-CHOMP Removal End */
 // Called by weather processes, and maybe technomancers in the future.
 /turf/simulated/floor/proc/chill()
 	return
@@ -138,7 +113,6 @@ CHOMP Removal End */
 
 /turf/simulated/floor/outdoors/ex_act(severity)
 	switch(severity)
-		//VOREStation Edit - Outdoor turfs less explosion resistant
 		if(1)
 			if(prob(66))
 				ChangeTurf(get_base_turf_by_area(src))
@@ -149,7 +123,6 @@ CHOMP Removal End */
 				return
 			else if(prob(33))
 				demote()
-		//VOREStation Edit End
 		if(3)
 			if(prob(66))
 				return

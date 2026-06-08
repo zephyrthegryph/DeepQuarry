@@ -983,10 +983,6 @@
 	icon_state = "grass-heavy0"
 	edge_blending_priority = 4
 	initial_flooring = /datum/decl/flooring/grass/heavy
-	/*turf_layers = list(
-		/turf/simulated/floor/outdoors/rocks,
-		/turf/simulated/floor/outdoors/dirt
-		) CHOMP Removal */
 	grass_chance = 40
 
 	grass = "heavy"

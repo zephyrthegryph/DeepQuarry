@@ -59,7 +59,7 @@ GLOBAL_LIST_BOILERPLATE(nanite_turfs, /turf/simulated/floor/water/digestive_enzy
 					else
 						to_chat(checker, span_warning("You realize there is no way for the simplistic [src] to ignore your form, if you set it to recycle."))
 					user.visible_message(span_warning("\The [user] inspects \the [src]"), span_warning("You begin to interface with \the [src]."))
-					if(do_after(user, 30, src))
+					if(do_after(user, 3 SECONDS, src))
 						moblink = WEAKREF(user)
 						switch(choice2)
 							if("None")
@@ -81,7 +81,7 @@ GLOBAL_LIST_BOILERPLATE(nanite_turfs, /turf/simulated/floor/water/digestive_enzy
 				if("Off")
 					if(active)
 						user.visible_message(span_warning("\The [user] inspects \the [src]"), span_warning("You begin to interface with \the [src]."))
-						if(do_after(user, 30, src))
+						if(do_after(user, 3 SECONDS, src))
 							toggle_all(FALSE)
 	return ..()
 

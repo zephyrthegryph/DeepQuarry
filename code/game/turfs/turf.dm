@@ -14,7 +14,6 @@
 	var/nitrous_oxide = 0
 	var/methane = 0
 
-	//CHOMPEdit Begin
 	//* Movement / Pathfinding
 	/// How much the turf slows down movement, if any.
 	var/slowdown = 0
@@ -24,7 +23,6 @@
 	var/turf_path_danger = NONE
 	/// pathfinding id - used to avoid needing a big closed list to iterate through every cycle of jps
 	var/pathfinding_cycle
-	//CHOMPEdit End
 
 	//Properties for airtight tiles (/wall)
 	var/thermal_conductivity = 0.05
@@ -113,7 +111,7 @@
 		directional_opacity = ALL_CARDINALS
 
 	//Pathfinding related
-	if(movement_cost && path_weight == 1) // This updates pathweight automatically. //CHOMPEdit
+	if(movement_cost && path_weight == 1) // This updates pathweight automatically.
 		path_weight = movement_cost
 
 	var/turf/Ab = GetAbove(src)
@@ -131,8 +129,6 @@
 		stack_trace("Improper turf qdel. Do not qdel turfs directly.")
 	changing_turf = FALSE
 	GLOB.cleanbot_reserved_turfs -= src
-	// DQEdit — ZAS connections.erase_all() removed. LINDA tracks turf-to-turf
-	// links via atmos_adjacent_turfs (cleared in /turf/open/Destroy already).
 	..()
 	return QDEL_HINT_IWILLGC
 
@@ -335,7 +331,7 @@
 /turf/proc/Distance(turf/t)
 	if(get_dist(src,t) == 1)
 		var/cost = (src.x - t.x) * (src.x - t.x) + (src.y - t.y) * (src.y - t.y)
-		cost *= ((isnull(path_weight)? slowdown : path_weight) + (isnull(t.path_weight)? t.slowdown : t.path_weight))/2 //CHOMPEdit
+		cost *= ((isnull(path_weight)? slowdown : path_weight) + (isnull(t.path_weight)? t.slowdown : t.path_weight))/2
 		return cost
 	else
 		return get_dist(src,t)
@@ -379,7 +375,7 @@
 
 /turf/proc/try_graffiti(mob/vandal, obj/item/tool, click_parameters)
 
-	if(!tool || !tool.sharp || !can_engrave()) //CHOMP Edit
+	if(!tool || !tool.sharp || !can_engrave())
 		return FALSE
 
 	if(jobban_isbanned(vandal, JOB_GRAFFITI))
@@ -451,32 +447,6 @@
 	UNSETEMPTY(dangerous_objects) // This nulls the list var if it's empty.
 //	color = "#00FF00"
 
-/* CHOMPEdit - moved this block to modular_chomp\code\game\objects\items\weapons\rcd.dm
-// This is all the way up here since its the common ancestor for things that need to get replaced with a floor when an RCD is used on them.
-// More specialized turfs like walls should instead override this.
-// The code for applying lattices/floor tiles onto lattices could also utilize something similar in the future.
-/turf/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
-	if(density || !can_build_into_floor)
-		return FALSE
-	if(passed_mode == RCD_FLOORWALL)
-		var/obj/structure/lattice/L = locate() in src
-		// A lattice costs one rod to make. A sheet can make two rods, meaning a lattice costs half of a sheet.
-		// A sheet also makes four floor tiles, meaning it costs 1/4th of a sheet to place a floor tile on a lattice.
-		// Therefore it should cost 3/4ths of a sheet if a lattice is not present, or 1/4th of a sheet if it does.
-		return list(
-			RCD_VALUE_MODE = RCD_FLOORWALL,
-			RCD_VALUE_DELAY = 0,
-			RCD_VALUE_COST = L ? RCD_SHEETS_PER_MATTER_UNIT * 0.25 : RCD_SHEETS_PER_MATTER_UNIT * 0.75
-			)
-	return FALSE
-
-/turf/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
-	if(passed_mode == RCD_FLOORWALL)
-		to_chat(user, span_notice("You build a floor."))
-		ChangeTurf(/turf/simulated/floor/airless, preserve_outdoors = TRUE)
-		return TRUE
-	return FALSE
-*/
 
 /turf/occult_act(mob/living/user)
 	to_chat(user, span_cult("You consecrate the floor."))
