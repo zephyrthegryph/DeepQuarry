@@ -66,13 +66,15 @@ function RefreshingWindow() {
 // Get the component for the current route
 export function getRoutedComponent(name: string) {
   const interfacePathBuilders = [
-    // CHOMPEdit Begin - tgui modularization
-    // interfaces_ch will be routed first, virgo interfaces are fetched when nothing matches
+    // DQEdit — chompstation/ is searched first for fork-only interfaces
+    // (ChemSynthesizer, PrecisionEditor, StarcasterCh, TguiFeedback, Pda extras).
+    // Consolidated interfaces (ChemMaster, Changelog) now live at the canonical
+    // root path; chompstation lookups for those names fall through naturally.
     (name: string) => `./chompstation/${name}.tsx`,
     (name: string) => `./chompstation/${name}.jsx`,
     (name: string) => `./chompstation/${name}/index.tsx`,
     (name: string) => `./chompstation/${name}/index.jsx`,
-    // CHOMPEdit End
+    // Root interfaces (canonical location for all non-chompstation-only UIs)
     (name: string) => `./${name}.tsx`,
     (name: string) => `./${name}.jsx`,
     (name: string) => `./${name}/index.tsx`,

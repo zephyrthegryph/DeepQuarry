@@ -1,9 +1,9 @@
 import { useBackend } from 'tgui/backend';
+import { BeakerContents } from 'tgui/interfaces/common/BeakerContents';
+import { modalOpen } from 'tgui/interfaces/common/ComplexModal';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 
-import { BeakerContents } from '../common/BeakerContents';
-import { modalOpen } from '../common/ComplexModal';
 import { transferAmounts } from './constants';
 import type { reagent } from './types';
 
@@ -17,16 +17,20 @@ export const ChemMasterBuffer = (props: {
     <Section
       title="Buffer"
       buttons={
-        <Box color="label" inline>
-          Transferring to&nbsp;
-          <Button
-            icon={mode ? 'flask' : 'trash'}
-            color={!mode && 'bad'}
-            onClick={() => act('toggle')}
-          >
-            {mode ? 'Beaker' : 'Disposal'}
-          </Button>
-        </Box>
+        <Stack>
+          <Stack.Item>
+            <Box color="label">Transferring to</Box>
+          </Stack.Item>
+          <Stack.Item>
+            <Button
+              icon={mode ? 'flask' : 'trash'}
+              color={!mode && 'bad'}
+              onClick={() => act('toggle')}
+            >
+              {mode ? 'Beaker' : 'Disposal'}
+            </Button>
+          </Stack.Item>
+        </Stack>
       }
     >
       {bufferReagents.length > 0 ? (
