@@ -108,23 +108,17 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 	if (source.total_moles() < MINIMUM_MOLES_TO_FILTER) //if we cant transfer enough gas just stop to avoid further processing
 		return -1
 
-	filtering = filtering & source.gas_ids()	//only filter gasses that are actually there. DO NOT USE &= // DQEdit — source.gas (XGM list) → source.gas_ids() (derived from LINDA gases[])
+	filtering = filtering & source.gas_ids()	//only filter gasses that are actually there. DO NOT USE &=
 
 	//Determine the specific power of each filterable gas type, and the total amount of filterable gas (gasses selected to be scrubbed)
 	var/total_filterable_moles = 0			//the total amount of filterable gas
 	var/list/specific_power_gas = list()	//the power required to remove one mole of pure gas, for each gas type
 	for (var/g in filtering)
 		if (LINDA_GAS_AMT(source, g) < MINIMUM_MOLES_TO_FILTER)
-			//ChompEDIT Start - scrub the remainding trace
-			// DQEdit — under LINDA, `source.gas` is an empty compat stub; the
-			// original `source.gas -= g` was a no-op so the trace stayed in
-			// source AND got added to sink (gas-conservation bug). Pull the
-			// moles out via adjust_gas so the real `gases[]` dict updates.
 			var/trace = LINDA_GAS_AMT(source, g)
 			if (trace > 0.0)
 				sink.adjust_gas(g, trace, update=0)
 				source.adjust_gas(g, -trace, update=0)
-			//ChompEDIT End
 			continue
 
 		var/specific_power = calculate_specific_power_gas(g, source, sink)/ATMOS_FILTER_EFFICIENCY
@@ -173,9 +167,6 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 
 		power_draw += specific_power_gas[g]*transfer_moles
 
-	// DQEdit — sink.update_values() / source.update_values() removed:
-	// LINDA auto-archives on read, so the XGM "remix" step is a no-op.
-
 	return power_draw
 
 //Generalized gas filtering proc.
@@ -188,13 +179,13 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 	if (source.total_moles() < MINIMUM_MOLES_TO_FILTER) //if we cant transfer enough gas just stop to avoid further processing
 		return -1
 
-	filtering = filtering & source.gas_ids()	//only filter gasses that are actually there. DO NOT USE &= // DQEdit — source.gas (XGM list) → source.gas_ids() (derived from LINDA gases[])
+	filtering = filtering & source.gas_ids()	//only filter gasses that are actually there. DO NOT USE &=
 
 	var/total_specific_power = 0		//the power required to remove one mole of input gas
 	var/total_filterable_moles = 0		//the total amount of filterable gas
 	var/total_unfilterable_moles = 0	//the total amount of non-filterable gas
 	var/list/specific_power_gas = list()	//the power required to remove one mole of pure gas, for each gas type
-	for (var/g in source.gas_ids()) // DQEdit — source.gas (XGM) → source.gas_ids() (derived from LINDA gases[])
+	for (var/g in source.gas_ids())
 		if (LINDA_GAS_AMT(source, g) < MINIMUM_MOLES_TO_FILTER)
 			continue
 
@@ -235,7 +226,7 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 
 	var/filtered_power_used = 0		//power used to move filterable gas to sink_filtered
 	var/unfiltered_power_used = 0	//power used to move unfilterable gas to sink_clean
-	for (var/g in removed.gas_ids()) // DQEdit — removed.gas → removed.gas_ids()
+	for (var/g in removed.gas_ids())
 		var/power_used = specific_power_gas[g]*LINDA_GAS_AMT(removed, g)
 
 		if (g in filtering)
@@ -245,8 +236,6 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 			filtered_power_used += power_used
 		else
 			unfiltered_power_used += power_used
-
-	// DQEdit — sink_filtered.update_values() / removed.update_values() removed.
 
 	sink_clean.merge(removed)
 
@@ -259,13 +248,13 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 	if (source.total_moles() < MINIMUM_MOLES_TO_FILTER) //if we cant transfer enough gas just stop to avoid further processing
 		return -1
 
-	filtering = filtering & source.gas_ids()	//only filter gasses that are actually there. DO NOT USE &= // DQEdit — source.gas (XGM list) → source.gas_ids() (derived from LINDA gases[])
+	filtering = filtering & source.gas_ids()	//only filter gasses that are actually there. DO NOT USE &=
 
 	var/total_specific_power = 0		//the power required to remove one mole of input gas
 	var/total_filterable_moles = 0		//the total amount of filterable gas
 	var/total_unfilterable_moles = 0	//the total amount of non-filterable gas
 	var/list/specific_power_gas = list()	//the power required to remove one mole of pure gas, for each gas type
-	for (var/g in source.gas_ids()) // DQEdit — source.gas (XGM) → source.gas_ids()
+	for (var/g in source.gas_ids())
 		if (LINDA_GAS_AMT(source, g) < MINIMUM_MOLES_TO_FILTER)
 			continue
 
@@ -307,7 +296,7 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 
 	var/list/filtered_power_used = list()		//power used to move filterable gas to the filtered gas mixes
 	var/unfiltered_power_used = 0	//power used to move unfilterable gas to sink_clean
-	for (var/g in removed.gas_ids()) // DQEdit — removed.gas → removed.gas_ids()
+	for (var/g in removed.gas_ids())
 		var/power_used = specific_power_gas[g]*LINDA_GAS_AMT(removed, g)
 
 		if (g in filtering)
@@ -319,8 +308,6 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 				filtered_power_used[sink_filtered] = power_used
 		else
 			unfiltered_power_used += power_used
-
-	// DQEdit — removed.update_values() removed.
 
 	var/power_draw = unfiltered_power_used
 	for (var/datum/gas_mixture/sink_filtered in filtered_power_used)
@@ -433,11 +420,8 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 //If set, sink_volume_mod adjusts the effective output volume used in the calculation. This is useful when the output gas_mixture is
 //part of a pipenetwork, and so it's volume isn't representative of the actual volume since the gas will be shared across the pipenetwork when it processes.
 /proc/calculate_transfer_moles(datum/gas_mixture/source, datum/gas_mixture/sink, pressure_delta, sink_volume_mod=0)
-	if(source.temperature == 0 || source.total_moles() == 0) return 0  // DQEdit — XGM var → LINDA proc
+	if(source.temperature == 0 || source.total_moles() == 0) return 0
 
-	// DQEdit — `* sink.group_multiplier` / `* source.group_multiplier`
-	// dropped: group_multiplier was an XGM-era zone scalar (always 1 under
-	// LINDA), so multiplying was a no-op.
 	var/output_volume = sink.volume + sink_volume_mod
 	var/source_total_moles = source.total_moles()
 
@@ -457,7 +441,6 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 	if(source.temperature == 0) return 0
 
 	//Make the approximation that the sink temperature is unchanged after transferring gas
-	// DQEdit — group_multiplier dropped; see above.
 	var/source_volume = source.volume
 	var/sink_volume = sink.volume
 

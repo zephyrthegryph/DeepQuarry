@@ -142,8 +142,6 @@
 	if (power_draw >= 0)
 		last_power_draw = power_draw
 		use_power(power_draw)
-		// DQEdit — pump_gas mutated loc's air directly; re-enroll the turf so
-		// SSair re-processes it and the gas overlay updates.
 		if(isturf(loc))
 			var/turf/open/T = loc
 			if(istype(T))
@@ -246,12 +244,10 @@
 		external_pressure_bound = between(0, text2num(signal.data["set_external_pressure"]), ONE_ATMOSPHERE*50)
 
 	if(signal.data["status"])
-		spawn(2)
-			broadcast_status()
+		addtimer(CALLBACK(src, PROC_REF(broadcast_status)), 2, TIMER_DELETE_ME)
 		return //do not update_icon
 
-	spawn(2)
-		broadcast_status()
+	addtimer(CALLBACK(src, PROC_REF(broadcast_status)), 2, TIMER_DELETE_ME)
 	update_icon()
 
 #undef DEFAULT_PRESSURE_DELTA

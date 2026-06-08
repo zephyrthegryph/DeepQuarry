@@ -163,7 +163,7 @@
 	heating_efficiency = max(initial(heating_efficiency), (laser_rating-1))
 	set_power_level(power_setting)
 
-	dq_apply_material_synergies(src) // DQAdd
+	dq_apply_material_synergies(src)
 /obj/machinery/atmospherics/unary/heater/proc/set_power_level(new_power_setting)
 	power_setting = new_power_setting
 	power_rating = max_power_rating * (power_setting/100)

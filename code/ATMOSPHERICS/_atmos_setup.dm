@@ -143,7 +143,7 @@
 	for(var/state in device.IconStates())
 		if(!state || findtext(state, "map"))
 			continue
-		device_icons["vent" + state] = image('icons/atmos/vent_pump.dmi', icon_state = "retro_" + state) //CHOMPEDIT - Retro vents
+		device_icons["vent" + state] = image('icons/atmos/vent_pump.dmi', icon_state = "retro_" + state)
 
 	device = new('icons/atmos/vent_scrubber.dmi')
 	for(var/state in device.IconStates())
@@ -155,12 +155,12 @@
 	if(!omni_icons)
 		omni_icons = new()
 
-	var/icon/omni = new('icons/atmos/omni_devices_vr.dmi') //VOREStation Edit - New Icons
+	var/icon/omni = new('icons/atmos/omni_devices_vr.dmi')
 
 	for(var/state in omni.IconStates())
 		if(!state || findtext(state, "map"))
 			continue
-		omni_icons[state] = image('icons/atmos/omni_devices_vr.dmi', icon_state = state) //VOREStation Edit - New Icons
+		omni_icons[state] = image('icons/atmos/omni_devices_vr.dmi', icon_state = state)
 
 
 /datum/pipe_icon_manager/proc/gen_underlay_icons()

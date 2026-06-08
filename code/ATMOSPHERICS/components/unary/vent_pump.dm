@@ -16,7 +16,7 @@
 	desc = "Has a valve and pump attached to it"
 	use_power = USE_POWER_OFF
 	idle_power_usage = 150		//internal circuitry, friction losses and stuff
-	power_rating = 30000			//7500 W ~ 10 HP //VOREStation Edit - 30000 W
+	power_rating = 30000			//7500 W ~ 10 HP
 
 	connect_types = CONNECT_TYPE_REGULAR|CONNECT_TYPE_SUPPLY //connects to regular and supply pipes
 	blocks_emissive = EMISSIVE_BLOCK_NONE
@@ -109,7 +109,7 @@
 /obj/machinery/atmospherics/unary/vent_pump/high_volume
 	name = "Large Air Vent"
 	power_channel = EQUIP
-	power_rating = 45000	//15 kW ~ 20 HP //VOREStation Edit - 45000
+	power_rating = 45000	//15 kW ~ 20 HP
 
 /obj/machinery/atmospherics/unary/vent_pump/high_volume/aux
 	icon_state = "map_vent_aux"
@@ -120,7 +120,6 @@
 	. = ..()
 	air_contents.volume = ATMOS_DEFAULT_VOLUME_PUMP + 800
 
-// VOREStation Edit Start - Wall mounted vents
 /obj/machinery/atmospherics/unary/vent_pump/high_volume/wall_mounted
 	name = "Wall Mounted Air Vent"
 
@@ -133,8 +132,6 @@
 	if(isnull(T))
 		return ..()
 	return T.return_air()
-
-// VOREStation Edit End
 
 /obj/machinery/atmospherics/unary/vent_pump/engine
 	name = "Engine Core Vent"
@@ -206,7 +203,7 @@
 	if(!can_pump())
 		return 0
 
-	var/datum/gas_mixture/environment = return_air() // VOREStation Edit - Use our own proc
+	var/datum/gas_mixture/environment = return_air()
 
 	var/power_draw = -1
 
@@ -236,10 +233,6 @@
 	if (power_draw >= 0)
 		last_power_draw = power_draw
 		use_power(power_draw)
-		// DQEdit — pump_gas mutates loc's air mix directly via gas_mixture ref;
-		// it can't tell that the sink is a turf, so it doesn't enroll the turf
-		// in active_turfs or call update_visuals. Without this, the turf never
-		// gets processed by SSair and the gas overlay never updates.
 		if(isturf(loc))
 			var/turf/open/T = loc
 			if(istype(T))

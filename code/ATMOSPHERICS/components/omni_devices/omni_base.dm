@@ -3,7 +3,7 @@
 //--------------------------------------------
 /obj/machinery/atmospherics/omni
 	name = "omni device"
-	icon = 'icons/atmos/omni_devices_vr.dmi' //VOREStation Edit - New Icon
+	icon = 'icons/atmos/omni_devices_vr.dmi'
 	icon_state = "base"
 	use_power = USE_POWER_IDLE
 	initialize_directions = 0
@@ -296,7 +296,6 @@
 
 	return null
 
-//CHOMPEdit Start - Keybinds for EVEEERYTHING
 /obj/machinery/atmospherics/omni/click_ctrl(mob/user)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if(allowed(user))
@@ -312,4 +311,3 @@
 
 	else
 		to_chat(user, span_warning("Access denied."))
-//CHOMPEdit End

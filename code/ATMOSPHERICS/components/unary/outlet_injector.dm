@@ -74,8 +74,6 @@
 	if (power_draw >= 0)
 		last_power_draw = power_draw
 		use_power(power_draw)
-		// DQEdit — pump_gas writes to loc's air via the gas_mixture ref; turf
-		// needs to be re-enrolled in active_turfs and visuals re-evaluated.
 		if(isturf(loc))
 			var/turf/open/T = loc
 			if(istype(T))
@@ -100,7 +98,6 @@
 	if(air_contents.temperature > 0)
 		var/power_used = pump_gas(src, air_contents, environment, air_contents.total_moles(), power_rating)
 		use_power(power_used)
-		// DQEdit — same enroll-turf reason as in process().
 		if(isturf(loc))
 			var/turf/open/T = loc
 			if(istype(T))
@@ -149,7 +146,7 @@
 		update_use_power(!use_power)
 
 	if(signal.data["inject"])
-		spawn inject()
+		INVOKE_ASYNC(src, PROC_REF(inject))
 		return
 
 	if(signal.data["set_volume_rate"])
@@ -157,12 +154,10 @@
 		volume_rate = between(0, number, air_contents.volume)
 
 	if(signal.data["status"])
-		spawn(2)
-			broadcast_status()
+		addtimer(CALLBACK(src, PROC_REF(broadcast_status)), 2, TIMER_DELETE_ME)
 		return //do not update_icon
 
-	spawn(2)
-		broadcast_status()
+	addtimer(CALLBACK(src, PROC_REF(broadcast_status)), 2, TIMER_DELETE_ME)
 	update_icon()
 
 /obj/machinery/atmospherics/unary/outlet_injector/hide(i)
