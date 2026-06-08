@@ -39,11 +39,6 @@
 /area/tether/surfacebase/surface_three_hall
 /area/tether/surfacebase/surface_two_hall
 /area/tether/surfacebase/tram
-/area/turbolift/t_station/level1
-/area/turbolift/t_surface/level1
-/area/turbolift/t_surface/level2
-/area/turbolift/t_surface/level3
-/area/turbolift/tether/transit
 /obj/item/bluespace_harpoon/wand
 /obj/item/clothing/accessory/storage/webbing/pilot1
 /obj/item/clothing/accessory/storage/webbing/pilot2
