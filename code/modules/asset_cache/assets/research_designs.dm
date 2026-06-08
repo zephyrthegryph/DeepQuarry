@@ -71,4 +71,13 @@
 					var/datum/material/material = GET_MATERIAL_REF(mat::default_type)
 					transform = color_transform(material::icon_colour)
 
+		// A design whose build_path has no resolvable icon/state would make the
+		// batched spritesheet generator hard-fail the entire batch ("Could not
+		// find associated icon state for N/A"). Skip the bad entry rather than
+		// taking down RND's whole design spritesheet. log_world (not stack_trace)
+		// so the offending design is findable in dd.log without adding a runtime.
+		if(!icon_file || !icon_state || !icon_exists("[icon_file]", icon_state))
+			log_world("research_designs spritesheet: design [path] (id '[initial(path.id)]') has no resolvable icon (file='[icon_file]', state='[icon_state]'); skipping entry")
+			continue
+
 		insert_icon(sanitize_css_class_name(initial(path.id)), uni_icon(icon_file, icon_state, transform=transform))
