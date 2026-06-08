@@ -68,27 +68,29 @@
 	return list(node)
 
 /obj/machinery/atmospherics/portables_connector/network_expand(datum/pipe_network/new_network, obj/machinery/atmospherics/pipe/reference)
-	if(reference == node)
-		network = new_network
-
+	// Idempotency guard: check membership before assigning slot vars.
 	if(new_network.normal_members.Find(src))
 		return 0
+
+	if(reference == node)
+		network = new_network
 
 	new_network.normal_members += src
 
 	return null
 
 /obj/machinery/atmospherics/portables_connector/Destroy()
-	// disconnect/qdel BEFORE ..() so connected_device/node derefs are valid.
+	// Disconnect/qdel BEFORE ..() so connected_device/node derefs are valid.
 	if(connected_device)
 		connected_device.disconnect()
 
 	if(node)
 		node.disconnect(src)
 		qdel(network)
-	return ..()
 
 	node = null
+	network = null
+	return ..()
 
 /obj/machinery/atmospherics/portables_connector/atmos_init()
 	if(node)

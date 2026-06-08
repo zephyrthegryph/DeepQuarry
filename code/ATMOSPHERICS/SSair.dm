@@ -104,6 +104,15 @@ SUBSYSTEM_DEF(air)
 	gas_reactions = init_gas_reactions()
 	hotspot_reactions = init_hotspot_reactions()
 
+	// Under LINDA, the Rust atmos arena must be told which gases exist before
+	// any turf or pipenet setup runs. auxtools_atmos_init() hands the gas
+	// registry to the Rust side; without it total_moles()/pressure read zero.
+	// This is gated so it has no effect while LINDA is inactive.
+#ifdef USE_LINDA_ATMOS
+	if(!auxtools_atmos_init(gas_reactions))
+		CRASH("auxtools_atmos_init() failed -- Rust atmos arena not initialised. Verify verdigris.dll loaded and byondapi bindings are active.")
+#endif
+
 	setup_allturfs()
 	setup_atmos_machinery()
 	// setup_pipenets() removed: CHOMP pipes call build_network()

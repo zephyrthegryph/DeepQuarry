@@ -206,3 +206,12 @@
 #define SSMACHINES_DT (SSmachines.wait/10)
 #define SSMOBS_DT (SSmobs.wait/10)
 #define SSOBJ_DT (SSobj.wait/10)
+
+// SCALE_PROCESS_DELTA(wait, scale)
+// Converts a processing subsystem's raw wait (in deciseconds) to the scaled
+// delta passed to process(). The standard pattern is:
+//   - scale = 1     -> pass raw deciseconds (most subsystems)
+//   - scale = 0.1   -> pass seconds (1 SECOND = 10 deciseconds, x0.1 = 1.0)
+// Use this macro instead of inline arithmetic so the intent is greppable and
+// so a future wait-unit change updates all call sites together.
+#define SCALE_PROCESS_DELTA(wait, scale) ((wait) * (scale))

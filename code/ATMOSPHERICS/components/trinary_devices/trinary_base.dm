@@ -72,24 +72,23 @@
 	return list(node1, node2, node3)
 
 /obj/machinery/atmospherics/trinary/network_expand(datum/pipe_network/new_network, obj/machinery/atmospherics/pipe/reference)
-	if(reference == node1)
-		network1 = new_network
-
-	else if(reference == node2)
-		network2 = new_network
-
-	else if (reference == node3)
-		network3 = new_network
-
+	// Idempotency guard: check membership before assigning slot vars.
 	if(new_network.normal_members.Find(src))
 		return 0
+
+	if(reference == node1)
+		network1 = new_network
+	else if(reference == node2)
+		network2 = new_network
+	else if(reference == node3)
+		network3 = new_network
 
 	new_network.normal_members += src
 
 	return null
 
 /obj/machinery/atmospherics/trinary/Destroy()
-	// disconnect/qdel BEFORE ..() so node derefs are valid.
+	// Disconnect/qdel BEFORE ..() so node derefs are valid.
 	if(node1)
 		node1.disconnect(src)
 		qdel(network1)
@@ -103,6 +102,9 @@
 	node1 = null
 	node2 = null
 	node3 = null
+	network1 = null
+	network2 = null
+	network3 = null
 	return ..()
 
 // Get the direction each node is facing to connect.
@@ -247,7 +249,7 @@
 		node3_connect = dir
 	return list(node1_connect, node2_connect, node3_connect)
 
-// Keybinds for EVEEERYTHING
+//CHOMPEdit Start - Keybinds for EVEEERYTHING
 /obj/machinery/atmospherics/trinary/click_ctrl(mob/user)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if(allowed(user))
@@ -261,3 +263,4 @@
 
 	else
 		to_chat(user, span_warning("Access denied."))
+//CHOMPEdit End

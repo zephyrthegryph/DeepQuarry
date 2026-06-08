@@ -34,23 +34,25 @@
 	return list(node1, node2)
 
 /obj/machinery/atmospherics/binary/network_expand(datum/pipe_network/new_network, obj/machinery/atmospherics/pipe/reference)
-	if(reference == node1)
-		network1 = new_network
-
-	else if(reference == node2)
-		network2 = new_network
-
+	// Idempotency guard: check membership before assigning slot vars.
+	// This ensures re-entrant walks (two expansion paths reaching the same
+	// device) skip both the redundant assignment and the members append.
 	if(new_network.normal_members.Find(src))
 		return 0
+
+	if(reference == node1)
+		network1 = new_network
+	else if(reference == node2)
+		network2 = new_network
 
 	new_network.normal_members += src
 
 	return null
 
 /obj/machinery/atmospherics/binary/Destroy()
-	// disconnect/qdel BEFORE chaining ..() so node and
-	// network derefs run against still-valid state. /atom/movable/Destroy
-	// queues us into the gc and may flush refs in the parent chain.
+	// Disconnect/qdel BEFORE chaining ..() so node and network derefs run
+	// against still-valid state. /atom/movable/Destroy queues us into the gc
+	// and may flush refs in the parent chain.
 	if(node1)
 		node1.disconnect(src)
 		qdel(network1)
@@ -60,6 +62,8 @@
 
 	node1 = null
 	node2 = null
+	network1 = null
+	network2 = null
 	return ..()
 
 /obj/machinery/atmospherics/binary/atmos_init()
