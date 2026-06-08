@@ -9,12 +9,14 @@
 	if(direction)
 		animation.set_dir(direction)
 	animation.icon = a_icon
-	animation.layer = target:layer+1
+	if(isatom(target))
+		var/atom/A = target
+		animation.layer = A.layer + 1
 	if(a_icon_state)
 		animation.icon_state = a_icon_state
 	else
 		animation.icon_state = "blank"
 		animation.master = target
 		flick(flick_anim, animation)
-	spawn(max(sleeptime, 15))
+	spawn(max(sleeptime, 1.5 SECONDS))
 		qdel(animation)
