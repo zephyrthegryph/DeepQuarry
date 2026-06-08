@@ -214,7 +214,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 
 	to_chat(src,radio_text)
 
-	// Vorestation Edit: Meta Info for AI's. Mostly used for Holograms
+	// Meta Info for AI's. Mostly used for Holograms
 	if (client)
 		ooc_notes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes)
 		ooc_notes_likes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes_likes)

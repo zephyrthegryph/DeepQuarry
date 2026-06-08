@@ -40,7 +40,7 @@ How to use - for mappers:
         Now go to code\controllers\subsystems\overmap_renamer_vr.dm
             copy the if("Debris Field - Z1 Space" in visitable_Z_levels_name_list) and everything belonging to this if statement
             paste it below this if statement and change things as described:
-                change the if("map_template.name goes here" in visitable_z_levels_name_list) (you can get the proper name by going to wherever your /datum/map_template/ for your map is. For Debris field, it's maps\offmap_vr\common_offmaps.dm. Yours is probably there too!)
+                change the if("map_template.name goes here" in visitable_z_levels_name_list) (you can get the proper name by going to wherever your /datum/map_template/ for your map is. For Debris field, it's maps\common_submaps\common_offmap.dm. Yours is probably there too!)
                 change the if(D == "Debris Field") section in your new if statement just like you did for the landmark!
 
         And you're done! Refer to the "How to add a landmark" section on the top from now on.
@@ -69,6 +69,6 @@ Important procs, vars etc. contained within the following files:
         /datum/controller/subsystem/overmap_renamer/proc/update_names() - Checks which Z levels are loaded, modifies them
             To add new Z levels to the renamer, simply copy the if statement and its contents for debris field,
             taking care to change the "Debris Field - Z1 Space" to the name var defined in your lateloaded Z level's map_template datum
-            example: maps\offmap_vr\common_offmaps.dm and then the /datum/map_template/common_lateload/away_debrisfield
+            example: maps\common_submaps\common_offmap.dm and then the /datum/map_template/common_lateload/away_debrisfield
 
 \*/

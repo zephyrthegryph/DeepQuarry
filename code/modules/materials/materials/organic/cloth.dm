@@ -14,7 +14,7 @@
 	stack_type = /obj/item/stack/material/cloth
 
 
-/datum/material/cloth/generate_recipes() //Vorestation Add - adding some funny cool storage pouches to this so botany can do things other than food
+/datum/material/cloth/generate_recipes() // adding some funny cool storage pouches to this so botany can do things other than food
 	recipes = list(
 		new /datum/stack_recipe("woven net", /obj/item/material/fishing_net, 10, time = 30 SECONDS, pass_stack_color = TRUE, supplied_material = "[name]"),
 		new /datum/stack_recipe("bedsheet", /obj/item/bedsheet, 10, time = 30 SECONDS, pass_stack_color = TRUE, recycle_material = "[name]"),

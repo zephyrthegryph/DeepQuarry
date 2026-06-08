@@ -141,7 +141,7 @@
 	containername = "Weretiger crate"
 	access = ACCESS_XENOBIOLOGY
 
-// , enable this
+// enable this
 /datum/supply_pack/sci/otie
 	name = "VARMAcorp adoptable reject (Dangerous!)"
 	cost = 100

@@ -179,9 +179,9 @@ GLOBAL_LIST_INIT(slot_equipment_priority, list(
 
 /// This proc is called after an item has been removed from a mob but before it has been officially deslotted.
 /// equipping = true tells the item we are EQUIPPING it.
-/mob/proc/has_unequipped(obj/item/item, equipping, slot) //, silent = FALSE) //TODO: Add silent some other time.
+/mob/proc/has_unequipped(obj/item/item, equipping, slot) //silent = FALSE) //TODO: Add silent some other time.
 	SHOULD_CALL_PARENT(TRUE)
-	item.dropped(src, equipping, slot) //, silent)
+	item.dropped(src, equipping, slot) //silent)
 	//update_equipment_speed_mods()
 	return TRUE
 

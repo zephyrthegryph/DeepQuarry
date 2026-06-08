@@ -436,8 +436,8 @@ GLOBAL_LIST_INIT(reagent_containers_can_be_placed_into, list(
 		/obj/machinery/computer/pandemic,
 		/obj/machinery/reagent_refinery,
 		/obj/vehicle/train/trolley_tank,
-		/obj/machinery/feeder, // ,
-		/obj/machinery/chemical_synthesizer, // ,
+		/obj/machinery/feeder, // 
+		/obj/machinery/chemical_synthesizer, // 
 		/obj/machinery/food_replicator
 	),
 	REAGENT_CONTAINER_CAN_BE_PLACED_INTO_WATERCOOLER = list(

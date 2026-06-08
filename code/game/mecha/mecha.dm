@@ -1184,7 +1184,7 @@
 				src.visible_message("\The [A] bounces off \the [src] armor")
 				return
 
-			else if(O.armor_penetration < minimum_penetration) // If you don't have enough pen, you won't do full damage // , temp_minimum_penetration -> minimum_penetration
+			else if(O.armor_penetration < minimum_penetration) // If you don't have enough pen, you won't do full damage // temp_minimum_penetration -> minimum_penetration
 				src.occupant_message(span_notice("\The [A] struggles to bypass \the [src] armor."))
 				src.visible_message("\The [A] struggles to bypass \the [src] armor")
 				pass_damage_reduc_mod = temp_fail_penetration_value	//This will apply to reduce damage to 2/3 or 66% by default

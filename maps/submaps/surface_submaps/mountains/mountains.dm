@@ -248,7 +248,7 @@
  * Deep Caves *
  **************/
 
-/* Vorestation Removal
+/* 
 /datum/map_template/surface/mountains/deep/lost_explorer
 	name = "Lost Explorer, Deep"
 	desc = "The remains of an explorer who rotted away ages ago, and their equipment. Again."

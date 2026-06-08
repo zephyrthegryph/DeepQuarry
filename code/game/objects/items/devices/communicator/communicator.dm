@@ -451,7 +451,7 @@
 	communications across different stations, planets, or even star systems. You can wear this one on your wrist!"
 	icon = 'icons/obj/device.dmi'
 	icon_state = "commwatch"
-	slot_flags = SLOT_GLOVES | SLOT_ID | SLOT_BELT // , Commwatches and Wrtist PDAs can go on ID and belt slots
+	slot_flags = SLOT_GLOVES | SLOT_ID | SLOT_BELT // Commwatches and Wrtist PDAs can go on ID and belt slots
 
 /obj/item/communicator/watch/update_icon()
 	if(video_source)

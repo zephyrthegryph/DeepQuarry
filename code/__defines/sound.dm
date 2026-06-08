@@ -164,7 +164,7 @@
 	'sound/ambience/ai/ai3.ogg'\
 	)
 
-// Peaceful sounds when floating in the void. // , added title2, my nostalgia okay?
+// Peaceful sounds when floating in the void. // added title2, my nostalgia okay?
 #define AMBIENCE_SPACE list(\
 	'sound/ambience/space/space_serithi.ogg',\
 	'sound/ambience/space/space1.ogg',\

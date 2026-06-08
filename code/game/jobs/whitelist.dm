@@ -155,7 +155,7 @@ ADMIN_VERB(open_whitelist_editor, R_ADMIN|R_SERVER, "Open Whitelist Editor", "Op
 	GLOB.whitelist = world.file2list(WHITELISTFILE)
 	if(!GLOB.whitelist.len)	GLOB.whitelist = null
 
-/proc/check_whitelist(mob/M /*, rank*/)
+/proc/check_whitelist(mob/M /*rank*/)
 	if(!CONFIG_GET(flag/usewhitelist)) //I guess this is an override for the blanket whitelist system.
 		return 1
 	if(!GLOB.whitelist)

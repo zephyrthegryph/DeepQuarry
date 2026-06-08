@@ -246,7 +246,7 @@
 				prob(8);/obj/item/storage/firstaid/o2,
 				prob(4);/obj/item/storage/firstaid/adv, // 6 to 4
 				prob(8);/obj/item/storage/firstaid/fire,
-				prob(1);/obj/item/denecrotizer/medical, // ,
+				prob(1);/obj/item/denecrotizer/medical, // 
 				prob(1);/obj/item/storage/firstaid/combat,
 				prob(2);/obj/item/storage/firstaid/experimental)
 
@@ -257,7 +257,7 @@
 	spawn_nothing_percentage = 50
 
 /obj/random/contraband/item_to_spawn()
-	return pick(prob(6);/obj/item/storage/pill_bottle/paracetamol, // ,
+	return pick(prob(6);/obj/item/storage/pill_bottle/paracetamol, // 
 				prob(4);/obj/item/storage/pill_bottle/happy,
 				prob(4);/obj/item/storage/pill_bottle/zoom,
 				prob(4);/obj/item/material/butterfly,

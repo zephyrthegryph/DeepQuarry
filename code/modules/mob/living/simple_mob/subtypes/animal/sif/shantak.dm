@@ -94,7 +94,7 @@
 /mob/living/simple_mob/animal/sif/shantak/leader/autofollow/retaliate
 	ai_holder_type = /datum/ai_holder/simple_mob/retaliate
 
-//Vorestation Addition
+// ition
 /mob/living/simple_mob/animal/sif/shantak/scruffy
 	name = "Scruffy"
 	ai_holder_type = /datum/ai_holder/simple_mob/passive

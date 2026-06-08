@@ -126,7 +126,7 @@
 
 	activation_message="Your skin feels strange."
 
-/* // , moving to Positive_ch.dm so it wont be messed with from upstream
+/* // moving to Positive_ch.dm so it wont be messed with from upstream
 /datum/trait/positive/darksight
 	name = "Darksight"
 	desc = "Allows you to see significantly further in the dark and be 10% more susceptible to flashes."

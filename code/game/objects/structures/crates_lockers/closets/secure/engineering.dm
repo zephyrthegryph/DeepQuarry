@@ -37,7 +37,7 @@
 		/obj/item/clothing/head/beret/engineering/ce,
 		/obj/item/clothing/head/beret/engineering/ce/white,
 		/obj/item/tank/emergency/oxygen/double, // chief gets the good shit
-		/obj/item/reagent_containers/spray/windowsealant, // ,
+		/obj/item/reagent_containers/spray/windowsealant, // 
 		/obj/item/holosign_creator/combifan,
 		/obj/item/rcd/advanced/loaded,
 		/obj/item/pipe_dispenser) //YW Add

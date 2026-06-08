@@ -389,7 +389,7 @@
 		qdel(effects[A])
 		effects -= A
 
-/* moved this block to modular_chomp\code\game\objects\items\weapons\rcd.dm
+/* moved this block to code\game\objects\items\weapons\rcd.dm
 /obj/item/rcd/attackby(obj/item/W, mob/user)
 	if(istype(W, /obj/item/rcd_ammo))
 		var/obj/item/rcd_ammo/cartridge = W
@@ -433,7 +433,7 @@
 
 	return TRUE
 
-/* moved this block to modular_chomp\code\game\objects\items\weapons\rcd.dm
+/* moved this block to code\game\objects\items\weapons\rcd.dm
 /obj/item/rcd/attack_self(mob/living/user)
 	. = ..(user)
 	if(.)

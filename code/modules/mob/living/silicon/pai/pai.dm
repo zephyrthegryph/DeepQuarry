@@ -156,7 +156,7 @@
 		last_special = world.time + 100		//Let's give get_character_icon time to work
 		get_character_icon()
 
-	// Vorestation Edit: Meta Info for pAI
+	// Meta Info for pAI
 	if (client.prefs)
 		ooc_notes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes)
 		ooc_notes_likes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes_likes)

@@ -77,7 +77,7 @@
 	id = TECHWEB_NODE_PARTS_HYPER
 	display_name = "Hyper Parts"
 	description = "Integrating the latest in technology, these advanced components not only enhance functionality but also open up new possibilities for the station's technological capabilities."
-	prereq_ids = list(TECHWEB_NODE_PARTS_ADV) //, TECHWEB_NODE_BLUESPACE_TRAVEL)
+	prereq_ids = list(TECHWEB_NODE_PARTS_ADV) //TECHWEB_NODE_BLUESPACE_TRAVEL)
 	design_ids = list(
 		"pbrped",
 		"hyper_mani",

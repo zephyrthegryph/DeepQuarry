@@ -623,7 +623,7 @@
 
 	. = ..()
 
-/obj/machinery/microwave/proc/cookingContents() // , this is a better way to deal with the contents of a microwave, since the previous method is stupid.
+/obj/machinery/microwave/proc/cookingContents() // this is a better way to deal with the contents of a microwave, since the previous method is stupid.
 	var/list/workingList = contents.Copy() // Using the copy proc because otherwise the two lists seem to become soul bonded.
 	workingList -= component_parts
 	workingList -= circuit

@@ -7,7 +7,7 @@
 	pickup_sound = 'sound/items/pickup/gloves.ogg'
 	w_class = ITEMSIZE_TINY
 	light_color = "#E09D37"
-	var/wax = 7200 // , FOUR HOUR burn time, taking into account process only calling once every two seconds or so.
+	var/wax = 7200 // FOUR HOUR burn time, taking into account process only calling once every two seconds or so.
 	var/icon_type = "candle"
 
 /obj/item/flame/candle/Initialize(mapload)

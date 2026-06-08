@@ -155,7 +155,7 @@ They're also cool, and Rykka/Nyria wrote this uwu
 
 /mob/living/simple_mob/animal/hyena/Destroy()
 	if(hat)
-		drop_hat(src) // ;w;
+		drop_hat(src) // w;
 	..()
 
 /mob/living/simple_mob/animal/hyena/update_icon()

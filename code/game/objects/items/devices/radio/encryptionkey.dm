@@ -150,7 +150,7 @@
 /obj/item/encryptionkey/heads/rd
 	name = "research director's encryption key"
 	icon_state = "rd_cypherkey"
-	channels = list(CHANNEL_COMMAND = 1, CHANNEL_SCIENCE = 1, CHANNEL_EXPLORATION = 1) // , adds Exploration
+	channels = list(CHANNEL_COMMAND = 1, CHANNEL_SCIENCE = 1, CHANNEL_EXPLORATION = 1) // adds Exploration
 
 /obj/item/encryptionkey/ert
 	channels = list(CHANNEL_RESPONSE_TEAM = 1, CHANNEL_SCIENCE = 1, CHANNEL_COMMAND = 1, CHANNEL_MEDICAL = 1, CHANNEL_ENGINEERING = 1, CHANNEL_SECURITY = 1, CHANNEL_SUPPLY = 1, CHANNEL_SERVICE = 1, CHANNEL_EXPLORATION = 1)

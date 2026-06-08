@@ -240,7 +240,7 @@
 	desc = "A piece of paper that allows for expansion of the station and creation of new areas. There is a \"For Official Use Only\" stamp on it. NOT to be mistaken with the station blueprints." // purdev (some spelling fixes)
 	station_master = 0
 	uses_charges = 1
-	can_override = 1 // , This will allow easier building on the planets, dont think blueprint grief is too big of a problem. -Lotion
+	can_override = 1 // This will allow easier building on the planets, dont think blueprint grief is too big of a problem. -Lotion
 
 
 

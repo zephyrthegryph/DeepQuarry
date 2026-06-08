@@ -376,7 +376,7 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 				"med" = SSjob.get_job_titles_in_department(DEPARTMENT_MEDICAL),
 				"sci" = SSjob.get_job_titles_in_department(DEPARTMENT_RESEARCH),
 				"car" = SSjob.get_job_titles_in_department(DEPARTMENT_CARGO),
-				"pla" = SSjob.get_job_titles_in_department(DEPARTMENT_PLANET), // ,
+				"pla" = SSjob.get_job_titles_in_department(DEPARTMENT_PLANET), // 
 				"civ" = SSjob.get_job_titles_in_department(DEPARTMENT_CIVILIAN),
 				"bot" = SSjob.get_job_titles_in_department(DEPARTMENT_SYNTHETIC)
 			)

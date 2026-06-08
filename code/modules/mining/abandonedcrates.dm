@@ -18,7 +18,7 @@
 
 	generate_loot()
 
-/* Vorestation edit - see abandonedcrates_vr.dm for virgo version. Keeping legacy proc in comments for reference.
+/* see abandonedcrates_vr.dm for virgo version. Keeping legacy proc in comments for reference.
 
 /obj/structure/closet/crate/secure/loot/proc/generate_loot()
 	var/loot = rand(1, 100)

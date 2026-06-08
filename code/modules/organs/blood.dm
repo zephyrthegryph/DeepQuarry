@@ -97,7 +97,7 @@ BLOOD_VOLUME_SURVIVE = 40
 			else if(heart.is_bruised())
 				blood_volume_raw *= 0.7
 				blood_volume *= 0.7
-			else if(heart.damage > 5) // , // , so 0.00005 heart damage isnt 20% of blood missing, now its 5
+			else if(heart.damage > 5) // // so 0.00005 heart damage isnt 20% of blood missing, now its 5
 				blood_volume_raw *= 0.9 //chompedit from 0.8 to 0.9
 				blood_volume *= 0.9 //chompedit from 0.8 to 0.9
 			else if(heart.damage)
@@ -447,7 +447,7 @@ BLOOD_VOLUME_SURVIVE = 40
 
 /proc/blood_splatter(target,datum/reagent/blood/source,large)
 
-	//Vorestation Edit Start - We're not going to splatter at all because we're in something and that's silly.
+	// We're not going to splatter at all because we're in something and that's silly.
 	if(istype(source,/atom/movable))
 		var/atom/movable/A = source
 		if(!isturf(A.loc))

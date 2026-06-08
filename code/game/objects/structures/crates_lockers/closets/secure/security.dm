@@ -147,7 +147,7 @@
 		/obj/item/clothing/under/rank/warden/corp,
 		/obj/item/clothing/suit/storage/vest/wardencoat,
 		/obj/item/clothing/suit/storage/vest/wardencoat/alt,
-		/obj/item/clothing/suit/storage/vest/wardencoat/alt2, // ,
+		/obj/item/clothing/suit/storage/vest/wardencoat/alt2, // 
 		/obj/item/clothing/head/helmet/dermal,
 		/obj/item/clothing/head/helmet/warden,
 		/obj/item/clothing/head/helmet/warden/hat,

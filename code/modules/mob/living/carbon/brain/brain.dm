@@ -57,7 +57,7 @@
 
 	return loc
 
-// Vorestation edit start
+// start
 
 /mob/living/carbon/brain/verb/backup_ping()
 	set category = "IC.Game"

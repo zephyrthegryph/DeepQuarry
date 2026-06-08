@@ -58,7 +58,7 @@
 				if(!src || !W.isOn()) return
 				to_chat(user, "You sliced the floorweld off the disposal outlet.")
 				SEND_SIGNAL(src, COMSIG_DISPOSAL_UNLINK)
-				var/obj/structure/disposalconstruct/C = new (src.loc/*, null, SOUTH, FALSE, src*/)
+				var/obj/structure/disposalconstruct/C = new (src.loc/*null, SOUTH, FALSE, src*/)
 				src.transfer_fingerprints_to(C)
 				C.set_dir(dir)
 				C.ptype = 7 // 7 =  outlet

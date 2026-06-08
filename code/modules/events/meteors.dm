@@ -22,7 +22,7 @@
 
 /datum/event/meteor_wave/start()
 	affecting_z -= using_map.sealed_levels // Space levels only please!
-	// , fills gaps
+	// fills gaps
 	for(var/obj/machinery/shield_gen/gen in GLOB.machines)
 		gen.fill_diffused()
 	..()
@@ -63,7 +63,7 @@
 
 /datum/event/meteor_wave/end()
 	..()
-	// , fills gaps
+	// fills gaps
 	for(var/obj/machinery/shield_gen/gen in GLOB.machines)
 		gen.fill_diffused()
 	if(!victim)

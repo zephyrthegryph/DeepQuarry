@@ -327,7 +327,7 @@
 /turf/simulated/wall/can_engrave()
 	return (material && material.hardness >= 10 && material.hardness <= 100)
 
-/* moved this block to modular_chomp\code\game\objects\items\weapons\rcd.dm
+/* moved this block to code\game\objects\items\weapons\rcd.dm
 /turf/simulated/wall/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(material.integrity > 1000) // Don't decon things like elevatorium.
 		return FALSE

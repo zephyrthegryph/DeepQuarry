@@ -241,7 +241,7 @@ GLOBAL_LIST_INIT(flooring_types, populate_flooring_types())
 	icon = 'icons/turf/flooring/carpet.dmi'
 	icon_base = "carpet"
 	build_type = /obj/item/stack/tile/carpet
-	can_paint = TRUE // , allow painting carpets
+	can_paint = TRUE // allow painting carpets
 	damage_temperature = T0C+200
 	flags = TURF_HAS_EDGES | TURF_HAS_CORNERS | TURF_REMOVE_CROWBAR | TURF_CAN_BURN
 

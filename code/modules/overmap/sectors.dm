@@ -333,7 +333,7 @@
 	// from git history, drop the stub in code/modules/map_stubs/map_stubs.dm, then
 	// restore the master-creation line below.
 	// if(!GLOB.dynamic_sector_master) // hook dynamic sector generation into overmap gen
-	// new /obj/effect/overmap/visitable/dynamic // , glob var assignment is handled in the object.
+	// new /obj/effect/overmap/visitable/dynamic // glob var assignment is handled in the object.
 
 	testing("Overmap build complete.")
 	return 1

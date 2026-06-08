@@ -359,7 +359,7 @@
 
 // === merged from ai_holder_targeting_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/ai_holder/can_see_target(atom/movable/the_target, view_range = vision_range)
-	if(the_target && !isturf(the_target.loc) && !ismecha(the_target.loc)) // , AI shouldn't be targetting people inside objects of any kind
+	if(the_target && !isturf(the_target.loc) && !ismecha(the_target.loc)) // AI shouldn't be targetting people inside objects of any kind
 		return FALSE
 	return ..()
 

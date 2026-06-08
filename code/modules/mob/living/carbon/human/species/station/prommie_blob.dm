@@ -355,7 +355,7 @@
 	for(var/obj/item/clothing/head/H in things_to_drop)
 		if(H)
 			new_hat = H
-			has_hat = TRUE // , I'd delete the whole section, but this is used below for the slime having a hat.
+			has_hat = TRUE // I'd delete the whole section, but this is used below for the slime having a hat.
 			drop_from_inventory(H)
 			things_to_drop -= H
 //Chompremoval start

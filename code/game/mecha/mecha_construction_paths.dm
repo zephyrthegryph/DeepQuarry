@@ -1608,13 +1608,13 @@
 					//6
 					list("key"=/obj/item/stack/material/steel,
 							"backkey"=IS_SCREWDRIVER,
-							"desc"="Translocator is secured"), // , change hand tele to translocator
+							"desc"="Translocator is secured"), // change hand tele to translocator
 					//7
 					list("key"=IS_SCREWDRIVER,
 							"backkey"=IS_CROWBAR,
-							"desc"="Translocator is installed"), // , change hand tele to translocator
+							"desc"="Translocator is installed"), // change hand tele to translocator
 					//8
-					list("key"=/obj/item/perfect_tele, // , change hand tele to translocator
+					list("key"=/obj/item/perfect_tele, // change hand tele to translocator
 							"backkey"=IS_SCREWDRIVER,
 							"desc"="SMES coil is secured"),
 					//9
@@ -3036,13 +3036,13 @@
 					//6
 					list("key"=/obj/item/stack/material/void_opal,
 							"backkey"=IS_SCREWDRIVER,
-							"desc"="Translocator is secured"), // , change hand tele to translocator
+							"desc"="Translocator is secured"), // change hand tele to translocator
 					//7
 					list("key"=IS_SCREWDRIVER,
 							"backkey"=IS_CROWBAR,
-							"desc"="Translocator is installed"), // , change hand tele to translocator
+							"desc"="Translocator is installed"), // change hand tele to translocator
 					//8
-					list("key"=/obj/item/perfect_tele, // , change hand tele to translocator
+					list("key"=/obj/item/perfect_tele, // change hand tele to translocator
 							"backkey"=IS_SCREWDRIVER,
 							"desc"="SMES coil is secured"),
 					//9

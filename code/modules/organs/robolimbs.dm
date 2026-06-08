@@ -36,7 +36,7 @@ GLOBAL_DATUM(basic_robolimb, /datum/robolimb)
 	var/health_hud_intensity = 1                         // Intensity modifier for the health GUI indicator.
 	var/suggested_species = "Human"                      // If it should make the torso a species
 	var/speech_bubble_appearance = "synthetic"           // What icon_state to use for speech bubbles when talking.  Check talk.dmi for all the icons.
-	var/modular_bodyparts = MODULAR_BODYPART_PROSTHETIC // Whether or not this limb allows attaching/detaching, and whether or not it checks its parent as well. // ; Let's just do full detachment/reattachment by default.
+	var/modular_bodyparts = MODULAR_BODYPART_PROSTHETIC // Whether or not this limb allows attaching/detaching, and whether or not it checks its parent as well. // Let's just do full detachment/reattachment by default.
 	var/robo_brute_mod = 1                               // Multiplier for incoming brute damage.
 	var/robo_burn_mod = 1                                // As above for burn.
 	// Species in this list cannot take these prosthetics.
@@ -319,7 +319,7 @@ GLOBAL_DATUM(basic_robolimb, /datum/robolimb)
 /datum/robolimb/veymed
 	company = "Vey-Med"
 	desc = "This high quality limb is nearly indistinguishable from an organic one."
-	icon = 'icons/mob/human_races/cyberlimbs/veymed/veymed_main_vr.dmi' //Vorestation edit, fixing the color application
+	icon = 'icons/mob/human_races/cyberlimbs/veymed/veymed_main_vr.dmi' // fixing the color application
 	unavailable_to_build = 1
 	lifelike = 1
 	skin_tone = 1

@@ -18,7 +18,7 @@
 	flags = RESTRICTED
 	machine_understands = 0
 	space_chance = 100
-	syllables = list("squeak")	// , "gripes", "oi", "meow")
+	syllables = list("squeak")	// "gripes", "oi", "meow")
 
 /datum/language/teppi
 	name = LANGUAGE_TEPPI

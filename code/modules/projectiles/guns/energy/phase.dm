@@ -54,7 +54,7 @@
 	use_external_power = 1
 
 /obj/item/gun/energy/locked/phasegun/pistol/unlocked/mounted/cyborg
-	charge_cost = 160 // , bringing in line with normal phase weapons
+	charge_cost = 160 // bringing in line with normal phase weapons
 	recharge_time = 7
 
 

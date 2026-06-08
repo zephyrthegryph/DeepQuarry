@@ -461,7 +461,7 @@
 			to_chat(user, span_warning("You need to open the [container] first!"))
 			return
 
-		var/reagentwhitelist = list(REAGENT_ID_BICARIDINE, REAGENT_ID_ANTITOXIN, REAGENT_ID_KELOTANE, REAGENT_ID_DERMALINE)//, "tricordrazine")
+		var/reagentwhitelist = list(REAGENT_ID_BICARIDINE, REAGENT_ID_ANTITOXIN, REAGENT_ID_KELOTANE, REAGENT_ID_DERMALINE)//"tricordrazine")
 
 		for(var/G in container.reagents.reagent_list)
 			var/datum/reagent/R = G

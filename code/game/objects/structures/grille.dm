@@ -248,7 +248,7 @@
 /obj/structure/grille/broken/rustic
 	icon_state = "grillerustic-b"
 
-/* moved this block to modular_chomp\code\game\objects\items\weapons\rcd.dm
+/* moved this block to code\game\objects\items\weapons\rcd.dm
 /obj/structure/grille/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	switch(passed_mode)
 		if(RCD_WINDOWGRILLE)

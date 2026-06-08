@@ -136,7 +136,7 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 	item_state = "cat"
 	named = TRUE
 	holder_type = /obj/item/holder/cat/runtime
-	makes_dirt = 0 //Vorestation Edit
+	makes_dirt = 0
 
 /mob/living/simple_mob/animal/passive/cat/kitten
 	name = "kitten"

@@ -1,4 +1,4 @@
-// , cool tunneling device is cool
+// cool tunneling device is cool
 /obj/item/mecha_parts/mecha_equipment/weapon/phoron_bore
 	auto_rearm = 1
 	equip_cooldown = 15 // half of drill

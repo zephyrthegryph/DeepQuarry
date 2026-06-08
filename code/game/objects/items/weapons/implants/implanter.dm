@@ -170,7 +170,7 @@
 
 
 // === merged from implanter_vr.dm during hard-fork de-suffix (verified no override-order change) ===
-//Vorestation universal translator implant.
+// universal translator implant.
 
 /obj/item/implanter/vrlanguage
 	name = "implanter-language"

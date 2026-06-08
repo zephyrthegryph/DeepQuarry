@@ -44,7 +44,7 @@
 /datum/language
 	var/list/scramble_cache = list()
 
-/* moved to modular_chomp because it was edited so much.
+/* moved to its own file because it was edited so much.
 /datum/language/proc/scramble(input, list/known_languages)
 	var/understand_chance = 0
 	for(var/datum/language/L in known_languages)

@@ -608,7 +608,7 @@
 			stored.update_icon()
 	*/
 	//This is temporary until the above gets used. Or it's permanant if you're reading this 5 years from now.
-	var/obj/structure/disposalconstruct/C = new (src.loc/*, null, SOUTH, FALSE, src*/)
+	var/obj/structure/disposalconstruct/C = new (src.loc/*null, SOUTH, FALSE, src*/)
 	transfer_fingerprints_to(C)
 	C.ptype = 6 // 6 = disposal unit
 	C.update_icon()

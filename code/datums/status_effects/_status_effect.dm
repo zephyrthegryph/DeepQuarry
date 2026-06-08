@@ -199,7 +199,7 @@
 	return 0
 
 /// Signal proc for [COMSIG_LIVING_POST_FULLY_HEAL] to remove us on fullheal
-/datum/status_effect/proc/remove_effect_on_heal(datum/source) //, heal_flags)
+/datum/status_effect/proc/remove_effect_on_heal(datum/source) //heal_flags)
 	SIGNAL_HANDLER
 
 	if(!remove_on_fullheal)

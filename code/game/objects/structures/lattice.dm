@@ -90,7 +90,7 @@
 		icon_state = "lattice[dir_sum]"
 		return
 
-//Vorestation Edit: Moves upgrading lattices to their own proc for other stuff to call. Also makes them instant.
+// Moves upgrading lattices to their own proc for other stuff to call. Also makes them instant.
 /obj/structure/lattice/proc/upgrade(obj/item/stack/rods/R, mob/user)
 	to_chat(user, span_notice("You start connecting \the [R.name] to \the [src.name] ..."))
 	R.use(1)

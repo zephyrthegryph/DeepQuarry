@@ -100,7 +100,7 @@
 /obj/item/pda/syndicate
 	default_cartridge = /obj/item/cartridge/syndicate
 	icon_state = "pda-syn"
-//	name = "Military PDA" // Vorestation Edit
+// name = "Military PDA" //
 //	owner = "John Doe"
 	hidden = 1
 

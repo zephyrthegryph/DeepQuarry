@@ -180,7 +180,7 @@
 	desc = "A tough looking individual armed with an submachine gun."
 	icon_state = "syndicateranged_smg"
 	icon_living = "syndicateranged_smg"
-	projectiletype = /obj/item/projectile/bullet/a10mm // , 20 instead of 35, SMG
+	projectiletype = /obj/item/projectile/bullet/a10mm // 20 instead of 35, SMG
 
 	loot_list = list(/obj/item/gun/projectile/automatic/c20r = 100)
 

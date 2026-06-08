@@ -12,7 +12,7 @@ Every pref is a singleton subtype of `/datum/preference`. Each one declares:
 
 - `savefile_key` — the disk key. Once chosen, don't change it.
 - `savefile_identifier` — `PREFERENCE_CHARACTER` (per-character) or `PREFERENCE_PLAYER` (per-account).
-- `category` — top-level page in the auto-renderer (e.g. `"identity"`, `"appearance"`, `"loadout"`). See `modular_dq/code/modules/client/preferences/_pref_metadata.dm` for the canonical set.
+- `category` — top-level page in the auto-renderer (e.g. `"identity"`, `"appearance"`, `"loadout"`). See `code/modules/client/preferences/_pref_metadata.dm` for the canonical set.
 - `group` — fine sub-section within a category (e.g. category `"appearance"` + group `"hair"`).
 - `widget` — UI control hint. Defaults to `PREF_WIDGET_AUTO`, which `get_widget()` resolves by subtype (toggle → boolean, numeric → slider, color → color picker, choiced → dropdown, text → text). Set explicitly for composites (`PREF_WIDGET_HIDDEN` when owned by an editor, `PREF_WIDGET_LONGTEXT` for multi-line).
 - `apply()` (or per-type `apply_to_human` / `apply_to_client`) — what happens at character spawn / client login.
@@ -51,7 +51,7 @@ When one pref's value invalidates another's (species change → reset hair, orga
 
 Constraints auto-fire from `update_preference()` after the triggering key changes. They're guarded against runaway cascades by `PREF_CONSTRAINT_MAX_DEPTH` (currently 8).
 
-Constraints live in `modular_dq/code/modules/client/preferences/constraints/`.
+Constraints live in `code/modules/client/preferences/constraints/`.
 
 ## Composite UI flows: `/datum/preference_editor`
 
@@ -75,7 +75,7 @@ When a single widget isn't enough (trait picker with budget enforcement, marking
 
 On the React side, register a component in `tgui/packages/tgui/interfaces/deepquarry/PreferencesMenu/editors/index.ts` keyed by `editor.key`. The auto-renderer dispatches by string lookup.
 
-Editors live in `modular_dq/code/modules/client/preferences/editors/`.
+Editors live in `code/modules/client/preferences/editors/`.
 
 ## Cross-pref orchestration at spawn: `/datum/preference_apply_hook`
 
@@ -91,7 +91,7 @@ For mob-side setup that touches multiple prefs and the character mob (species/tr
 
 Hooks fire after every per-pref `apply()` during `copy_to(character)`, in priority order. The `skip_on_preview` flag opts out for mannequin renders.
 
-Hooks live in `modular_dq/code/modules/client/preferences/apply_hooks/`.
+Hooks live in `code/modules/client/preferences/apply_hooks/`.
 
 ## Save / load / sanitize flow
 
@@ -121,22 +121,22 @@ Atomic multi-pref updates use `PREF_TRANSACTION_BEGIN(prefs)` / `PREF_TRANSACTIO
 |---|---|
 | `code/modules/client/preferences/_preference.dm` | TG base `/datum/preference` |
 | `code/modules/client/preferences/types/` | All pref subtype declarations (TG-style) |
-| `modular_dq/code/modules/client/preferences/_preference_dq.dm` | DQ extensions: `group`/`widget`/`depends_on`/`validate`/`sanitize`/`apply`/`get_pref_choices`/`get_widget_props` |
-| `modular_dq/code/modules/client/preferences/_preference_constraint.dm` | Constraint base |
-| `modular_dq/code/modules/client/preferences/_preference_editor.dm` | Editor base |
-| `modular_dq/code/modules/client/preferences/_preference_apply_hook.dm` | Apply-hook base |
-| `modular_dq/code/modules/client/preferences/_pref_metadata.dm` | Category/group/widget for inherited prefs (NEW prefs set these directly on the subtype) |
-| `modular_dq/code/modules/client/preferences/_pref_sanitizers.dm` | `sanitize()` overrides for inherited prefs |
-| `modular_dq/code/modules/client/preferences/_vanity_pref_types.dm` | Pref types copied by `vanity_copy_to` (protean/shapeshift path) |
-| `modular_dq/code/modules/client/preferences/constraints/` | Constraint subtypes |
-| `modular_dq/code/modules/client/preferences/editors/` | Editor subtypes |
-| `modular_dq/code/modules/client/preferences/apply_hooks/` | Apply-hook subtypes |
-| `modular_dq/code/modules/client/preferences/middleware/character_setup.dm` | Middleware that assembles the auto-renderer payload |
+| `code/modules/client/preferences/_preference_dq.dm` | DQ extensions: `group`/`widget`/`depends_on`/`validate`/`sanitize`/`apply`/`get_pref_choices`/`get_widget_props` |
+| `code/modules/client/preferences/_preference_constraint.dm` | Constraint base |
+| `code/modules/client/preferences/_preference_editor.dm` | Editor base |
+| `code/modules/client/preferences/_preference_apply_hook.dm` | Apply-hook base |
+| `code/modules/client/preferences/_pref_metadata.dm` | Category/group/widget for inherited prefs (NEW prefs set these directly on the subtype) |
+| `code/modules/client/preferences/_pref_sanitizers.dm` | `sanitize()` overrides for inherited prefs |
+| `code/modules/client/preferences/_vanity_pref_types.dm` | Pref types copied by `vanity_copy_to` (protean/shapeshift path) |
+| `code/modules/client/preferences/constraints/` | Constraint subtypes |
+| `code/modules/client/preferences/editors/` | Editor subtypes |
+| `code/modules/client/preferences/apply_hooks/` | Apply-hook subtypes |
+| `code/modules/client/preferences/middleware/character_setup.dm` | Middleware that assembles the auto-renderer payload |
 | `tgui/packages/tgui/interfaces/deepquarry/PreferencesMenu/` | TGUI: window, auto-renderer, widget, editor components |
 
 ## Tests
 
-`modular_dq/code/unit_tests/preferences_tests.dm` covers the smoke surface: every pref has a savefile_key + identifier, every visible PREFERENCE_CHARACTER pref has a category, the constraint cascade depth guard holds, batch begin/end nests, composite serialize/deserialize round-trips, `get_widget()` always resolves `PREF_WIDGET_AUTO`.
+`code/unit_tests/preferences_tests.dm` covers the smoke surface: every pref has a savefile_key + identifier, every visible PREFERENCE_CHARACTER pref has a category, the constraint cascade depth guard holds, batch begin/end nests, composite serialize/deserialize round-trips, `get_widget()` always resolves `PREF_WIDGET_AUTO`.
 
 Run with `bin/test.cmd`.
 

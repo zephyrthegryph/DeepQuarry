@@ -1,6 +1,6 @@
 /obj/item/projectile/bullet
 	name = "bullet"
-	icon = 'icons/obj/projectiles_yw.dmi' // , uses our bullet sprites
+	icon = 'icons/obj/projectiles_yw.dmi' // uses our bullet sprites
 	icon_state = "bullet"
 	fire_sound = 'sound/weapons/Gunshot4.ogg'
 	damage = 60
@@ -58,7 +58,7 @@
 		if(D.glass) chance *= 2
 	else if(istype(A, /obj/structure/girder))
 		chance = 100
-	else if(istype(A, /obj/machinery/door/airlock/voidcraft)) // , lets the code see shuttlecraft structures and not treat them as air.
+	else if(istype(A, /obj/machinery/door/airlock/voidcraft)) // lets the code see shuttlecraft structures and not treat them as air.
 		chance = 0
 	else if(istype(A, /turf/simulated/shuttle/wall))
 		chance = 0 // . Yeah, shuttlecraft can handle small arms fire just fine.
@@ -466,7 +466,7 @@
 	desc = "Whose smart idea was it to use toys as crowd control? Ages 18 and up."
 	damage = 0 // It's a damn toy.
 	embed_chance = 0
-	agony = 20 // The riot part of the riot dart // , nerf this >:3 old 50
+	agony = 20 // The riot part of the riot dart // nerf this >:3 old 50
 	nodamage = TRUE
 	sharp = FALSE
 	damage_type = HALLOSS

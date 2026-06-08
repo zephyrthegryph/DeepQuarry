@@ -6,8 +6,8 @@
 	step_in = 1
 	dir_in = 1 //Facing North.
 	step_energy_drain = 3
-	health = 250 // God this is low // , increased it a bit.
-	maxhealth = 250 // Don't forget to update the /old variant if you change this number. // , increased health.
+	health = 250 // God this is low // increased it a bit.
+	maxhealth = 250 // Don't forget to update the /old variant if you change this number. // increased health.
 	deflect_chance = 30
 	max_temperature = 25000
 	infra_luminosity = 3
@@ -28,7 +28,7 @@
 	encumbrance_gap = 2
 
 	starting_components = list(
-		/obj/item/mecha_parts/component/hull, // , normal hull
+		/obj/item/mecha_parts/component/hull, // normal hull
 		/obj/item/mecha_parts/component/actuator,
 		/obj/item/mecha_parts/component/armor/alien,
 		/obj/item/mecha_parts/component/gas,

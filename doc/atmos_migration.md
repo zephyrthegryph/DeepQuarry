@@ -298,13 +298,13 @@ that we actually want. Most upstream atmos PRs will simply not apply.
      (oxygen, phoron, nitrogen, carbon_dioxide, nitrous_oxide, ...). We
      keep CHOMP names; auxmos's gas registry is rebuilt from our list at
      boot.
-7. **CHOMP atmospherics machinery in `modular_chomp/`**: remove the engine
+7. **CHOMP atmospherics machinery in `code/`**: remove the engine
    code, keep the features.
-   - Delete: `modular_chomp/code/ZAS/Fire.dm` (engine code).
+   - Delete: `code/ZAS/Fire.dm` (engine code).
    - Keep & re-implement on LINDA: lingering fire system (subtype of
      `/obj/effect/hotspot`), phoron medical exposure (via medical
      conditions, already in `modular_dq/code/modules/medical/conditions/respiratory.dm`).
-   - Audit `modular_chomp/code/ZAS/Fire_acts.dm` for object burn-reaction
+   - Audit `code/ZAS/Fire_acts.dm` for object burn-reaction
      macros worth keeping.
 8. **Untrack `libverdigris.so` / `verdigris.dll`**: yes. Done in Phase 1.1a.
    `git rm --cached`; CI builds from source. Local Rust development now
@@ -383,7 +383,7 @@ that we actually want. Most upstream atmos PRs will simply not apply.
   - ✅ `code/modules/xgm/xgm_gas_data.dm` and `xgm_gas_mixture.dm`
     gated with `#ifndef USE_LINDA_ATMOS` in `vorestation.dme:5224-5225`.
   - ✅ `code/ZAS/*.dm` (12 files) gated similarly.
-  - ✅ `modular_chomp/code/ZAS/Fire.dm` and `Fire_acts.dm` gated.
+  - ✅ `code/ZAS/Fire.dm` and `Fire_acts.dm` gated.
   - ⏳ **NOT YET**: every CHOMP file that *consumes* ZAS/XGM types
     (mob breath code, fire code, life code, area air handling,
     canister/vent machinery, etc.) still references types like
@@ -439,7 +439,7 @@ User direction: **stop gating, commit to LINDA permanently, no fallback.**
   - `code/controllers/subsystems/air.dm` (CHOMP SSair)
   - `code/controllers/subsystems/airflow.dm` (ZAS airflow processor)
   - `code/defines/gases.dm` (XGM gas decls)
-  - `modular_chomp/code/ZAS/Fire.dm` + `Fire_acts.dm` (CHOMP lingering fire overrides)
+  - `code/ZAS/Fire.dm` + `Fire_acts.dm` (CHOMP lingering fire overrides)
 - `tools/verdigris/apply_linda_dme_edits.py` deleted (re-applied the gating we
   just stripped — harmful).
 - Default-build mode is gone. There is no XGM build. **`dm.exe -o vorestation.dme`

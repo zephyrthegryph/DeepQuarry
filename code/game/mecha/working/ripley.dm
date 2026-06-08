@@ -123,7 +123,6 @@
 	icon_scale_x = 1
 	icon_scale_y = 1
 
-//Vorestation Edit Start
 
 /obj/mecha/working/ripley/Initialize(mapload)
 	. = ..()
@@ -137,7 +136,6 @@
 
 	orescanner.attack_self(usr)
 
-//Vorestation Edit End
 
 //Meant for random spawns.
 /obj/mecha/working/ripley/mining/old

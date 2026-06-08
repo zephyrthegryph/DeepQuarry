@@ -298,9 +298,9 @@
 	industrial_use = REFINERYEXPORT_REASON_WEAPONS
 
 /datum/reagent/paralysis_toxin/affect_blood(mob/living/carbon/M, alien, removed)
-	if(M.weakened < 50 || M.stunned <50 ) // Let's not leave them PERMA stuck, after all. // , stun accounting for crawl
+	if(M.weakened < 50 || M.stunned <50 ) // Let's not leave them PERMA stuck, after all. // stun accounting for crawl
 		M.AdjustWeakened(5) //Stand in for paralyze so you can still talk/emote/see
-		M.AdjustStunned(5) // , stun accounting for crawl
+		M.AdjustStunned(5) // stun accounting for crawl
 
 /datum/reagent/pain_enzyme
 	name = REAGENT_PAINENZYME

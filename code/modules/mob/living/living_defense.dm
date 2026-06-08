@@ -321,7 +321,7 @@
 /mob/living/proc/turf_collision(turf/T, speed)
 	if(SEND_SIGNAL(src, COMSIG_LIVING_TURF_COLLISION, T, speed) & COMPONENT_LIVING_BLOCK_TURF_COLLISION)
 		return
-	src.take_organ_damage(speed * 5) // used to be 5 * speed. That's a default of 25 and I dont see anything ever changing the "speed" value. // , no. We keep the damage values, no reduction to 12
+	src.take_organ_damage(speed * 5) // used to be 5 * speed. That's a default of 25 and I dont see anything ever changing the "speed" value. // no. We keep the damage values, no reduction to 12
 	//src.Weaken(3)				// That is absurdly high so im just setting it to a flat 12 with a bit of stun ontop. //Stun is too dangerous
 	playsound(src, get_sfx("punch"), 50) //ouch sound
 

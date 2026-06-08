@@ -35,7 +35,7 @@
 
 	last_special = world.time + 100
 
-	if(istype(card.loc, /obj/machinery)) // , this statement allows pAIs stuck in a machine to eject themselves.
+	if(istype(card.loc, /obj/machinery)) // this statement allows pAIs stuck in a machine to eject themselves.
 		var/obj/machinery/M = card.loc
 		M.ejectpai()
 	//I'm not sure how much of this is necessary, but I would rather avoid issues.

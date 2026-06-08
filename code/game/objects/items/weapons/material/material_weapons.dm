@@ -26,7 +26,7 @@
 	var/default_material = MAT_STEEL
 	var/datum/material/material
 	var/drops_debris = 1
-	var/named_from_material = 1 // , Does it prepend the material's name to it's name?
+	var/named_from_material = 1 // Does it prepend the material's name to it's name?
 
 /obj/item/material/Initialize(mapload, material_key)
 	. = ..()

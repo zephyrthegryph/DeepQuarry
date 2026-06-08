@@ -490,7 +490,7 @@
 	touch_met = 50 // It's acid!
 	var/power = 5
 	var/meltdose = 10 // How much is needed to melt
-	affects_robots = TRUE // , it's acid! Still eats metal!
+	affects_robots = TRUE // it's acid! Still eats metal!
 	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
 	industrial_use = REFINERYEXPORT_REASON_PRECURSOR
 

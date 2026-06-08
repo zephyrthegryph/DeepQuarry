@@ -949,7 +949,7 @@
 	src.modules += new /obj/item/pickaxe/borgdrill(src)
 	src.modules += new /obj/item/ore_bag(src)
 	src.modules += new /obj/item/storage/bag/sheetsnatcher/borg(src)
-	src.modules += new /obj/item/gun/energy/robotic/phasegun(src) // , makes the mining borg able to defend itself.
+	src.modules += new /obj/item/gun/energy/robotic/phasegun(src) // makes the mining borg able to defend itself.
 	src.emag += new /obj/item/pickaxe/diamonddrill(src)
 
 /obj/item/robot_module/drone/talon

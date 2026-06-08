@@ -15,7 +15,7 @@
 	name = "space heater"
 	desc = "Made by Space Amish using traditional space techniques, this heater is guaranteed not to set the station on fire."
 
-	light_system = STATIC_LIGHT // , runtime cleanup
+	light_system = STATIC_LIGHT // runtime cleanup
 	light_range = 3
 	light_power = 1
 	light_on = FALSE

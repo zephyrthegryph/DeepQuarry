@@ -270,7 +270,7 @@
 	#define JOB_ALT_EMERGENCY_MEDICAL_TECHNICIAN "Emergency Medical Technician"
 	#define JOB_ALT_MEDICAL_RESPONDER "Medical Responder"
 
-#define JOB_SEARCH_AND_RESCUE "Search and Rescue" // , actual JOB here
+#define JOB_SEARCH_AND_RESCUE "Search and Rescue" // actual JOB here
 
 #define JOB_GENETICIST "Geneticist" //Disabled atm
 //___________________________________________________________
