@@ -208,6 +208,10 @@
 /datum/techweb/proc/add_design(datum/design_techweb/design, custom = FALSE, list/add_to)
 	if(!istype(design))
 		return FALSE
+	// Invariant: every design added to a techweb must be a registered global datum.
+	// An unregistered design ID means SSresearch state is inconsistent with what is being unlocked.
+	if(design.id != DESIGN_ID_IGNORE && !SSresearch.techweb_designs[design.id])
+		CRASH("add_design called with unregistered design ID '[design.id]' ([design.type]) on techweb '[id]' — design is not in SSresearch.techweb_designs")
 	SEND_SIGNAL(src, COMSIG_TECHWEB_ADD_DESIGN, design, custom)
 	if(custom)
 		custom_designs[design.id] = TRUE
@@ -217,8 +221,8 @@
 	else
 		researched_designs[design.id] = TRUE
 
-	for(var/list/datum/techweb_node/unlocked_nodes as anything in design.unlocked_by)
-		hidden_nodes -= unlocked_nodes
+	for(var/node_id as anything in design.unlocked_by)
+		hidden_nodes -= node_id
 
 	return TRUE
 
@@ -367,6 +371,10 @@
 /datum/techweb/proc/research_node(datum/techweb_node/node, force = FALSE, auto_adjust_cost = TRUE, get_that_dosh = TRUE, atom/research_source)
 	if(!istype(node))
 		return FALSE
+	// Invariant: every node researched must be a registered global datum.
+	// An unregistered node means SSresearch state is inconsistent — error early.
+	if(node.id != "ERROR" && !SSresearch.techweb_nodes[node.id])
+		CRASH("research_node called with unregistered node '[node.id]' ([node.type]) on techweb '[id]' — node is not in SSresearch.techweb_nodes")
 	update_node_status(node)
 	if(!force)
 		if(!available_nodes[node.id] || (auto_adjust_cost && (!can_afford(node.get_price(src)))) || !have_experiments_for_node(node))

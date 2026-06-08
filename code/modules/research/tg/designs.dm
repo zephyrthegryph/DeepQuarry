@@ -63,6 +63,11 @@ other types of metals and chemistry for reagents).
 	desc = "This usually means something in the database has corrupted. If this doesn't go away automatically, inform Central Command so their techs can fix this ASAP(tm)"
 
 /datum/design_techweb/Destroy()
+	// Designs are immutable global datums registered at startup via SSresearch.
+	// Destroying one at runtime would corrupt every techweb that holds a reference to its ID.
+	// If you hit this crash, something is incorrectly calling qdel() on a design datum.
+	if(id != DESIGN_ID_IGNORE) // Allow the error_design base instance to be deleted normally.
+		CRASH("Attempted to destroy techweb design '[id]' ([type]) at runtime — designs are immutable global datums")
 	SSresearch.techweb_designs -= id
 	return ..()
 

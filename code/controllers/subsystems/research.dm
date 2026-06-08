@@ -222,46 +222,65 @@ SUBSYSTEM_DEF(research)
 	if(islist(techweb_nodes_starting && clearall))
 		techweb_nodes_starting.Cut()
 	var/list/returned = list()
+	// First pass: validate IDs before allocating instances.
+	// A null or duplicate node ID is a hard programming error — crash immediately
+	// so it cannot silently corrupt the techweb graph at runtime.
+	var/list/seen_node_ids = list()
+	for(var/path in subtypesof(/datum/techweb_node))
+		var/datum/techweb_node/TN_check = path
+		var/raw_id = initial(TN_check.id)
+		if(isnull(raw_id))
+			continue // Nodes without IDs (abstract bases) are silently skipped.
+		if(seen_node_ids[raw_id])
+			CRASH("Duplicate techweb node ID '[raw_id]': first defined on [seen_node_ids[raw_id]], redefined on [path]")
+		seen_node_ids[raw_id] = "[path]"
+	// Second pass: instantiate with guaranteed-unique IDs.
 	for(var/path in subtypesof(/datum/techweb_node))
 		var/datum/techweb_node/TN = path
 		if(isnull(initial(TN.id)))
 			continue
 		TN = new path
-		if(returned[initial(TN.id)])
-			stack_trace("WARNING: Techweb node ID clash with ID [initial(TN.id)] detected! Path: [path]")
-			errored_datums[TN] = initial(TN.id)
-			continue
 		returned[initial(TN.id)] = TN
 		if(TN.starting_node)
 			techweb_nodes_starting[TN.id] = TRUE
+	techweb_nodes = returned
+	// Initialize all freshly-created nodes (converts list vars to associative form).
 	for(var/id in techweb_nodes)
 		var/datum/techweb_node/TN = techweb_nodes[id]
 		TN.Initialize()
-	techweb_nodes = returned
-	if (!verify_techweb_nodes()) //Verify all nodes have ids and such.
-		stack_trace("Invalid techweb nodes detected")
+	if(!verify_techweb_nodes()) //Verify all nodes have ids and such.
+		CRASH("Invalid techweb nodes detected after initial registration")
 	calculate_techweb_nodes()
 	calculate_techweb_item_unlocking_requirements()
-	if (!verify_techweb_nodes()) //Verify nodes and designs have been crosslinked properly.
-		CRASH("Invalid techweb nodes detected")
+	if(!verify_techweb_nodes()) //Verify nodes and designs have been crosslinked properly.
+		CRASH("Invalid techweb nodes detected after cross-linking")
 
 /datum/controller/subsystem/research/proc/initialize_all_techweb_designs(clearall = FALSE)
 	if(islist(techweb_designs) && clearall)
 		item_to_design = list()
 		QDEL_LIST(techweb_designs)
 	var/list/returned = list()
+	// First pass: validate every ID before allocating any instances.
+	// Duplicate or null IDs are hard programming errors that must surface immediately
+	// at startup, not silently degrade at runtime with a warning.
+	var/list/seen_ids = list()
+	for(var/path in subtypesof(/datum/design_techweb))
+		var/datum/design_techweb/DN_check = path
+		var/raw_id = initial(DN_check.id)
+		if(isnull(raw_id))
+			CRASH("Techweb design has null ID. Type: [path] — Build path: [initial(DN_check.build_path)]")
+		if(raw_id == DESIGN_ID_IGNORE)
+			continue
+		if(seen_ids[raw_id])
+			CRASH("Duplicate techweb design ID '[raw_id]': first defined on [seen_ids[raw_id]], redefined on [path]")
+		seen_ids[raw_id] = "[path]"
+	// Second pass: instantiate now that every ID is verified unique.
 	for(var/path in subtypesof(/datum/design_techweb))
 		var/datum/design_techweb/DN = path
-		if(isnull(initial(DN.id)))
-			stack_trace("WARNING: Design with null ID detected. Build path: [initial(DN.build_path)]")
-			continue
-		else if(initial(DN.id) == DESIGN_ID_IGNORE)
+		var/raw_id = initial(DN.id)
+		if(isnull(raw_id) || raw_id == DESIGN_ID_IGNORE)
 			continue
 		DN = new path
-		if(returned[initial(DN.id)])
-			stack_trace("WARNING: Design ID clash with ID [initial(DN.id)] detected! Path: [path]")
-			errored_datums[DN] = initial(DN.id)
-			continue
 		var/build_path = initial(DN.build_path)
 		if(!isnull(build_path))
 			if(!(build_path in item_to_design))
@@ -338,15 +357,21 @@ SUBSYSTEM_DEF(research)
 		invalid_design_ids[id] = 1
 
 /datum/controller/subsystem/research/proc/calculate_techweb_nodes()
+	// Clear all unlocked_by lists before recomputing — unlocked_by is a precomputed
+	// read-only cache derived from node.design_ids; it must not be mutated after this proc.
 	for(var/design_id in techweb_designs)
 		var/datum/design_techweb/D = techweb_designs[design_id]
-		D.unlocked_by.Cut()
+		D.unlocked_by = list()
 	for(var/node_id in techweb_nodes)
 		var/datum/techweb_node/node = techweb_nodes[node_id]
 		node.unlock_ids = list()
 		for(var/i in node.design_ids)
 			var/datum/design_techweb/D = techweb_designs[i]
+			if(!D)
+				continue // verify_techweb_nodes() will have already flagged this.
 			node.design_ids[i] = TRUE
+			// unlocked_by is the precomputed reverse-index: design → list of node IDs that unlock it.
+			// After this proc returns, unlocked_by is considered immutable for the lifetime of the round.
 			D.unlocked_by += node.id
 		if(node.hidden)
 			techweb_nodes_hidden[node.id] = TRUE
