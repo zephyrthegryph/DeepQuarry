@@ -44,7 +44,7 @@
 		icon_state = "[icon_base]-off"
 	else
 		icon_state = icon_base
-		switch(contents.len)
+		switch(stored_count())
 			if(0)
 				add_overlay("[icon_base]")
 			if(1 to 3)
