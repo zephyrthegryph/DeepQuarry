@@ -75,7 +75,7 @@ const doModalOpen = (
   id: string,
   args: Record<string, unknown> = {},
 ) => {
-  const newArgs = Object.assign(modal ? modal.args : {}, args);
+  const newArgs = Object.assign({}, modal ? modal.args : {}, args);
   act('modal_open', {
     id: id,
     arguments: JSON.stringify(newArgs),
@@ -92,7 +92,7 @@ const doModalAnswer = (
   if (!modal) {
     return;
   }
-  const newArgs = Object.assign(modal.args || {}, args || {});
+  const newArgs = Object.assign({}, modal.args || {}, args || {});
   act('modal_answer', {
     id: id,
     answer: answer,

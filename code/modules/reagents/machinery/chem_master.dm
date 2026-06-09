@@ -321,7 +321,10 @@
 				if("create_pill_multiple")
 					if(condi || !reagents.total_volume)
 						return
-					tgui_act("modal_open", list("id" = "create_pill", "arguments" = list("num" = answer)), ui, state)
+					var/amount = round(text2num(answer))
+					if(amount < 1) // blank/invalid entry — don't silently fall back to a single pill
+						return
+					tgui_act("modal_open", list("id" = "create_pill", "arguments" = list("num" = amount)), ui, state)
 				if("change_pill_style")
 					var/new_style = CLAMP(text2num(answer) || 0, 0, MAX_PILL_SPRITE)
 					if(!new_style)
@@ -354,7 +357,10 @@
 				if("create_patch_multiple")
 					if(condi || !reagents.total_volume)
 						return
-					tgui_act("modal_open", list("id" = "create_patch", "arguments" = list("num" = answer)), ui, state)
+					var/amount = round(text2num(answer))
+					if(amount < 1) // blank/invalid entry — don't silently fall back to a single patch
+						return
+					tgui_act("modal_open", list("id" = "create_patch", "arguments" = list("num" = amount)), ui, state)
 				if("create_bottle", "create_bottle_two")
 					if(condi || !reagents.total_volume)
 						return
@@ -379,7 +385,10 @@
 				if("create_bottle_multiple")
 					if(condi || !reagents.total_volume)
 						return
-					tgui_act("modal_open", list("id" = "create_bottle", "arguments" = list("num" = answer)), ui, state)
+					var/amount = round(text2num(answer))
+					if(amount < 1) // blank/invalid entry — don't silently fall back to a single bottle
+						return
+					tgui_act("modal_open", list("id" = "create_bottle", "arguments" = list("num" = amount)), ui, state)
 				if("change_bottle_style")
 					var/new_style = CLAMP(text2num(answer) || 0, 0, MAX_BOTTLE_SPRITE)
 					if(!new_style)
