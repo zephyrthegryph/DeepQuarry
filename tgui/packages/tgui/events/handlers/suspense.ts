@@ -1,6 +1,7 @@
 import { focusMap } from '../../focus';
 import { logger } from '../../logging';
 import { suspendRenderer } from '../../renderer';
+import { resetReveal } from '../../reveal';
 import {
   configAtom,
   resetStore,
@@ -17,6 +18,9 @@ let suspendInterval: NodeJS.Timeout | null = null;
 export function suspend(): void {
   suspendRenderer();
   resetStore();
+  // Release the reveal claim: a pooled window may be reused for a different
+  // interface next open, which might rely on the route-level fallback reveal.
+  resetReveal();
 
   if (suspendInterval) clearInterval(suspendInterval);
 
