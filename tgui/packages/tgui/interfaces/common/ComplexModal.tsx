@@ -1,4 +1,4 @@
-import { type KeyboardEvent, useEffect, useState } from 'react';
+import { type KeyboardEvent, useRef, useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { sendAct } from 'tgui/events/act';
 import { backendStateAtom, store } from 'tgui/events/store';
@@ -130,11 +130,20 @@ export const ComplexModal = (props: {
 
   const [curValue, setCurValue] = useState(String(modal?.value ?? ''));
 
-  useEffect(() => {
-    if (modal?.type === 'input') {
-      setCurValue(String(modal.value ?? ''));
-    }
-  }, [modal?.value, modal?.type]);
+  // Reset the working value whenever a *different* modal is shown — tracked by
+  // modal id (with the no-modal state as `null`), not by the modal's default value.
+  // Deriving this during render guarantees the value submitted by Confirm/Enter is
+  // the freshly-opened modal's default, even when the same modal id is reopened with
+  // an identical default (e.g. making "2 bottles" twice in a row). The previous
+  // post-render effect keyed on [value, type] never re-fired when the default was
+  // unchanged, so the handlers submitted a stale value left over from the prior
+  // modal — which the server then silently coerced to a single item.
+  const lastModalId = useRef<string | null>(null);
+  const modalId = modal?.id ?? null;
+  if (modalId !== lastModalId.current) {
+    lastModalId.current = modalId;
+    setCurValue(modal?.type === 'input' ? String(modal?.value ?? '') : '');
+  }
 
   if (!modal) {
     return null;
