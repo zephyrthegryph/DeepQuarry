@@ -46,8 +46,8 @@
 		qdel(network2)
 
 	node1 = null
-	return ..()
 	node2 = null
+	return ..()
 
 /obj/machinery/atmospherics/pipeturbine/process()
 	..()
