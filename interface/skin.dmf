@@ -1269,6 +1269,7 @@ window "mainwindow"
 		anchor2 = -1,-1
 		is-visible = false
 		saved-params = ""
+		inner-background-color = #00000000	// DQ: 516.1680+ WebView2 transparent compositing vs the map (mirrors belly_overlay); pairs with .theme-tooltip .Window in main.scss
 	elem "commandbar_spy"
 		type = BROWSER
 		is-default = false
