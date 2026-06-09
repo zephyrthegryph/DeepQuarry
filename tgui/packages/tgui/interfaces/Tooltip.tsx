@@ -1,34 +1,28 @@
 // In-game atom hover tooltip — TGUI.
 //
-// Hosted in the hidden mapwindow.tooltip BROWSER skin element. Unlike a normal
-// tgui window we SIZE THE BROWSER ELEMENT TO THE TOOLTIP BOX and park it at the
-// cursor via Byond.winset, the way the legacy tooltip.html did.
+// Hosted in the hidden mapwindow.tooltip BROWSER skin element. We SIZE THE
+// BROWSER ELEMENT TO THE TOOLTIP BOX and park it at the cursor via Byond.winset,
+// the way the legacy tooltip.html did. That's the only approach that doesn't
+// block map clicks: a BROWSER control covering the map intercepts all mouse
+// input at the control level (CSS pointer-events can't pass clicks through), so
+// a full-map overlay eats every click. A box-sized element only covers the
+// tooltip (which sits below the hovered tile and hides on MouseExited).
 //
-// This is the only approach that doesn't block map clicks: a BROWSER control
-// covering the map intercepts all mouse input at the control level — CSS
-// pointer-events can't pass clicks through to the map behind it — so a full-map
-// overlay, even a transparent one, eats every click. By shrinking the element to
-// the box it only ever covers the small tooltip (which sits below the hovered
-// tile and hides on MouseExited), leaving the rest of the map clickable.
-//
-// Flow each show: make the element visible at a tiny size FIRST (so its page is
-// laid out and measurable, and so it always appears even if the positioning math
-// below can't run), then measure the rendered box and winset the element to the
-// box's exact size + the cursor position. Positioning is best-effort: any missing
-// winget/param value falls back to the map's top-left rather than hiding.
+// Placement is done in a SINGLE winset (pos + size + is-visible) so the box
+// appears already positioned — no top-left flash, no reposition jump. We measure
+// the rendered box first (while still hidden when the engine allows it); if a
+// hidden measure isn't available we show at the computed position — never the
+// top-left — at a generous size and shrink to fit (the box is pinned to the
+// element's top-left, so shrinking the element doesn't move it).
 //
 // We render a bare <div>, not a tgui <Window> (its Layout chrome paints opaque
-// theme backgrounds). The box fills the element; TOOLTIP_RESET_CSS zeroes body
-// margins so the box sits flush at 0,0.
+// theme backgrounds). TOOLTIP_RESET_CSS zeroes the page so only the box paints.
 
 import { useEffect, useRef } from 'react';
 import { useBackend } from 'tgui/backend';
 import type { BooleanLike } from 'tgui-core/react';
 import { HtmlRenderer } from './common/HtmlRenderer';
 
-// Neutralize the tgui base/theme chrome (opaque backgrounds + body margin) so the
-// box sits flush at the element's 0,0; the element is sized to the box so the
-// page is otherwise not visible.
 const TOOLTIP_RESET_CSS = `
 html, body, #react-root, .TooltipRoot,
 div[class^="theme-"], .Layout, .Layout__content, .Window {
@@ -109,24 +103,12 @@ const parseSemiParams = (s: string): Record<string, string> => {
   return out;
 };
 
-const parseMapSize = (raw: string | undefined): [number, number] => {
-  if (!raw) return [0, 0];
-  // BYOND returns sizes as "WxH"
-  const [w, h] = raw.split('x').map((v) => parseInt(v.trim(), 10));
-  return [w || 0, h || 0];
-};
-
 export const Tooltip = () => {
-  const { data, act } = useBackend<Data>();
+  const { data } = useBackend<Data>();
   const boxRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Prefer the explicit element id from DM; fall back to Byond.windowId.
     const winId = data.control || Byond.windowId;
-
-    act('ttdebug', {
-      m: `enter winId=${winId} vis=${data.visible ? 1 : 0} tlen=${data.title?.length ?? -1}`,
-    });
 
     if (!data.visible) {
       Byond.winset(winId, { 'is-visible': false });
@@ -135,122 +117,138 @@ export const Tooltip = () => {
 
     let cancelled = false;
 
-    // Show immediately (tiny) so the element is visible + its page laid out for
-    // measuring, regardless of whether the positioning math below succeeds.
-    Byond.winset(winId, { size: '8x8', 'is-visible': true });
-
-    // Measure the rendered box and winset the element to it at (posX, posY).
-    const place = (posX: number, posY: number, mapPxH: number, perTileY: number) => {
-      requestAnimationFrame(() => {
-        if (cancelled) return;
-        const box = boxRef.current;
-        const w = Math.ceil(box?.offsetWidth || 0) || 80;
-        const h = Math.ceil(box?.offsetHeight || 0) || 24;
-        let py = posY;
-        if (mapPxH && py + h > mapPxH) {
-          py = Math.max(0, posY - h - Math.round(perTileY) - 4);
-        }
-        const px = Math.max(0, posX);
-        act('ttdebug', { m: `place w=${w} h=${h} px=${px} py=${py}` });
-        Byond.winset(winId, { pos: `${px},${py}`, size: `${w}x${h}` });
-      });
-    };
-
     Promise.all([
+      // Byond.winget returns {x, y} objects (not "WxH" strings):
+      //   size      = the map control's pixel dimensions
+      //   view-size = the rendered map content's pixel size (letterboxed inside
+      //               the control when aspect ratios differ)
       Byond.winget('mapwindow.map', 'size'),
       Byond.winget('mapwindow.map', 'view-size'),
     ])
       .then(([rawSize, rawViewSize]: any[]) => {
         if (cancelled) return;
-        // Byond.winget returns objects with .x/.y (NOT "WxH" strings):
-        //   size      = the map control's pixel dimensions
-        //   view-size = the rendered map content's pixel size (letterboxed inside
-        //               the control when the aspect ratios differ)
-        const mapPxW = Number(rawSize?.x) || 0; // control px
+
+        const mapPxW = Number(rawSize?.x) || 0;
         const mapPxH = Number(rawSize?.y) || 0;
-        const renderedW = Number(rawViewSize?.x) || 0; // rendered map px
+        const renderedW = Number(rawViewSize?.x) || 0;
         const renderedH = Number(rawViewSize?.y) || 0;
         const tilesShownX = data.view_w;
         const tilesShownY = data.view_h;
-        act('ttdebug', {
-          m: `winget ctrl=${mapPxW}x${mapPxH} rendered=${renderedW}x${renderedH} tiles=${tilesShownX}x${tilesShownY}`,
-        });
 
-        // Best-effort: missing metrics -> park at the map's top-left.
-        if (!mapPxW || !mapPxH || !renderedW || !renderedH || !tilesShownX || !tilesShownY) {
-          place(4, 4, mapPxH, 0);
-          return;
-        }
+        // Compute the box's top-left in map pixels. Best-effort: if anything is
+        // missing, fall back to the map's top-left rather than mis-placing.
+        let posX = 4;
+        let posY = 4;
+        let perTileY = 0;
 
-        const realIconSizeX = renderedW / tilesShownX;
-        const realIconSizeY = renderedH / tilesShownY;
-        const resizeRatioX = realIconSizeX / data.tile_size;
-        const resizeRatioY = realIconSizeY / data.tile_size;
+        if (mapPxW && mapPxH && renderedW && renderedH && tilesShownX && tilesShownY) {
+          const realIconSizeX = renderedW / tilesShownX;
+          const realIconSizeY = renderedH / tilesShownY;
+          perTileY = realIconSizeY;
+          const resizeRatioX = realIconSizeX / data.tile_size;
+          const resizeRatioY = realIconSizeY / data.tile_size;
 
-        // Letterbox bars between the control and the rendered map content.
-        let leftOffset = (mapPxW - renderedW) / 2;
-        let topOffset = (mapPxH - renderedH) / 2;
+          // Letterbox bars between the control and the rendered map content.
+          let leftOffset = (mapPxW - renderedW) / 2;
+          let topOffset = (mapPxH - renderedH) / 2;
 
-        const params = parseSemiParams(data.cursor_params);
-        const iconX = parseInt(params['icon-x'] ?? '0', 10);
-        const iconY = parseInt(params['icon-y'] ?? '0', 10);
-        const screenLocRaw = params['screen-loc'] ?? '';
-        const [leftRaw, topRaw] = screenLocRaw.split(',');
-        if (!leftRaw || !topRaw) {
-          place(4, 4, mapPxH, realIconSizeY);
-          return;
-        }
+          // Parse cursor params: "icon-x=NN;icon-y=NN;screen-loc=X:px,Y:py"
+          const params = parseSemiParams(data.cursor_params);
+          const iconX = parseInt(params['icon-x'] ?? '0', 10);
+          const iconY = parseInt(params['icon-y'] ?? '0', 10);
+          const screenLocRaw = params['screen-loc'] ?? '';
+          const [leftRaw, topRaw] = screenLocRaw.split(',');
 
-        const [leftTileStr, enteredXStr] = leftRaw.split(':');
-        const [topTileStr, enteredYStr] = topRaw.split(':');
-        let left = parseInt(leftTileStr ?? '0', 10);
-        let top = parseInt(topTileStr ?? '0', 10);
-        const enteredX = parseInt(enteredXStr ?? '0', 10);
-        const enteredY = parseInt(enteredYStr ?? '0', 10);
+          if (leftRaw && topRaw) {
+            const [leftTileStr, enteredXStr] = leftRaw.split(':');
+            const [topTileStr, enteredYStr] = topRaw.split(':');
+            let left = parseInt(leftTileStr ?? '0', 10);
+            let top = parseInt(topTileStr ?? '0', 10);
+            const enteredX = parseInt(enteredXStr ?? '0', 10);
+            const enteredY = parseInt(enteredYStr ?? '0', 10);
 
-        const oScreenLoc = data.screen_loc.split(',');
-        if (oScreenLoc[0]) {
-          const westParts = oScreenLoc[0].split(':');
-          if (westParts.length > 1) {
-            const westOffset = parseInt(westParts[1], 10);
-            if (westOffset !== 0) {
-              if (iconX + westOffset !== enteredX) {
-                left += westOffset < 0 ? 1 : -1;
-              }
-              leftOffset += westOffset * resizeRatioX;
-            }
-          }
-        }
-        if (oScreenLoc.length > 1) {
-          const northParts = oScreenLoc[1].split(':');
-          if (northParts.length > 1) {
-            const northOffset = parseInt(northParts[1], 10);
-            if (northOffset !== 0) {
-              if (iconY + northOffset === enteredY) {
-                top--;
-                topOffset -= (data.tile_size + northOffset) * resizeRatioY;
-              } else if (northOffset < 0) {
-                topOffset -= (data.tile_size + northOffset) * resizeRatioY;
-              } else {
-                top--;
-                topOffset -= northOffset * resizeRatioY;
+            // The atom's own screen_loc may carry pixel offsets like "WEST+0:6".
+            const oScreenLoc = data.screen_loc.split(',');
+            if (oScreenLoc[0]) {
+              const westParts = oScreenLoc[0].split(':');
+              if (westParts.length > 1) {
+                const westOffset = parseInt(westParts[1], 10);
+                if (westOffset !== 0) {
+                  if (iconX + westOffset !== enteredX) {
+                    left += westOffset < 0 ? 1 : -1;
+                  }
+                  leftOffset += westOffset * resizeRatioX;
+                }
               }
             }
+            if (oScreenLoc.length > 1) {
+              const northParts = oScreenLoc[1].split(':');
+              if (northParts.length > 1) {
+                const northOffset = parseInt(northParts[1], 10);
+                if (northOffset !== 0) {
+                  if (iconY + northOffset === enteredY) {
+                    top--;
+                    topOffset -= (data.tile_size + northOffset) * resizeRatioY;
+                  } else if (northOffset < 0) {
+                    topOffset -= (data.tile_size + northOffset) * resizeRatioY;
+                  } else {
+                    top--;
+                    topOffset -= northOffset * resizeRatioY;
+                  }
+                }
+              }
+            }
+
+            left = Math.max(0, Math.min(tilesShownX, left));
+            top = Math.max(0, Math.min(tilesShownY, top));
+
+            posX = Math.round((left - 1) * realIconSizeX + leftOffset + 2);
+            posY = Math.round(
+              (tilesShownY - top + 1) * realIconSizeY + topOffset + 2,
+            );
           }
         }
 
-        left = Math.max(0, Math.min(tilesShownX, left));
-        top = Math.max(0, Math.min(tilesShownY, top));
+        // Position + size + show in one winset so the box appears already placed.
+        // Box is pinned to the element's top-left, so a later shrink never moves it.
+        const placeAndShow = (w: number, h: number) => {
+          let py = posY;
+          if (mapPxH && py + h > mapPxH) {
+            py = Math.max(0, posY - h - Math.round(perTileY) - 4);
+          }
+          Byond.winset(winId, {
+            pos: `${Math.max(0, posX)},${py}`,
+            size: `${w}x${h}`,
+            'is-visible': true,
+          });
+        };
 
-        const posX = Math.round((left - 1) * realIconSizeX + leftOffset + 2);
-        const posY = Math.round(
-          (tilesShownY - top + 1) * realIconSizeY + topOffset + 2,
-        );
-
-        place(posX, posY, mapPxH, realIconSizeY);
+        const box = boxRef.current;
+        const w0 = Math.ceil(box?.offsetWidth || 0);
+        const h0 = Math.ceil(box?.offsetHeight || 0);
+        if (w0 > 0 && h0 > 0) {
+          // Measured while hidden — appear already positioned and sized.
+          placeAndShow(w0, h0);
+        } else {
+          // Hidden layout unavailable: show at the computed position (NOT the
+          // top-left) at a generous size, then shrink to fit on the next frame.
+          Byond.winset(winId, {
+            pos: `${Math.max(0, posX)},${posY}`,
+            size: '300x340',
+            'is-visible': true,
+          });
+          requestAnimationFrame(() => {
+            if (cancelled) return;
+            const b = boxRef.current;
+            placeAndShow(
+              Math.ceil(b?.offsetWidth || 0) || 80,
+              Math.ceil(b?.offsetHeight || 0) || 24,
+            );
+          });
+        }
       })
       .catch(() => {
-        if (!cancelled) place(4, 4, 0, 0);
+        // winget can fail mid-shutdown; just leave the element hidden.
       });
 
     return () => {
@@ -271,7 +269,7 @@ export const Tooltip = () => {
 
   // The box is always rendered flush at the element's top-left; the effect sizes
   // the element to it. width: max-content keeps its measured size independent of
-  // the (transiently tiny) element viewport.
+  // the element viewport.
   return (
     <div className="TooltipRoot">
       <style>{TOOLTIP_RESET_CSS}</style>

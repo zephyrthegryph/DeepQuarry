@@ -11,7 +11,7 @@
 // explicit logging the dev wired up. Toggle live via the `dq_debug_log` admin verb when
 // you need a trace window for repro, then flip it back.
 
-GLOBAL_VAR_INIT(dq_debug_logging, TRUE) // TEMP: on for tooltip diagnosis — revert to FALSE after
+GLOBAL_VAR_INIT(dq_debug_logging, FALSE)
 
 /proc/dq_log(msg)
 	if(!GLOB.dq_debug_logging)
