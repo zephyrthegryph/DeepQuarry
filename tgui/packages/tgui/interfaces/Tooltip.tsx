@@ -8,12 +8,15 @@
 // a full-map overlay eats every click. A box-sized element only covers the
 // tooltip (which sits below the hovered tile and hides on MouseExited).
 //
-// Placement is done in a SINGLE winset (pos + size + is-visible) so the box
-// appears already positioned — no top-left flash, no reposition jump. We measure
-// the rendered box first (while still hidden when the engine allows it); if a
-// hidden measure isn't available we show at the computed position — never the
-// top-left — at a generous size and shrink to fit (the box is pinned to the
-// element's top-left, so shrinking the element doesn't move it).
+// The positioning math is a faithful port of legacy tooltip.html: tile->pixel
+// via realIconSize/letterbox offsets + the screen_loc pixel-offset handling, the
+// devicePixelRatio scaling and +2 width fudge on the measured box, and the
+// bottom-edge flip. Placement is done in a SINGLE winset (pos + size +
+// is-visible) so the box appears already positioned — no top-left flash, no
+// reposition jump. We measure while still hidden when the engine allows it;
+// otherwise we show at the computed position (never top-left) at a generous size
+// and shrink to fit (the box is pinned to the element's top-left, so shrinking
+// the element doesn't move it).
 //
 // We render a bare <div>, not a tgui <Window> (its Layout chrome paints opaque
 // theme backgrounds). TOOLTIP_RESET_CSS zeroes the page so only the box paints.
@@ -38,6 +41,9 @@ html, body, #react-root, .TooltipRoot {
   inset: 0 !important;
 }
 `;
+
+// Padding constant (px) from the legacy tooltip.html (tooltip.padding = 2).
+const PAD = 2;
 
 type Data = {
   visible: BooleanLike;
@@ -134,115 +140,120 @@ export const Tooltip = () => {
         const renderedH = Number(rawViewSize?.y) || 0;
         const tilesShownX = data.view_w;
         const tilesShownY = data.view_h;
+        // Bail (leave hidden) on missing metrics — legacy returned false here.
+        if (!mapPxW || !mapPxH || !renderedW || !renderedH || !tilesShownX || !tilesShownY) {
+          return;
+        }
 
-        // Compute the box's top-left in map pixels. Best-effort: if anything is
-        // missing, fall back to the map's top-left rather than mis-placing.
-        let posX = 4;
-        let posY = 4;
-        let perTileY = 0;
+        const realIconSizeX = renderedW / tilesShownX;
+        const realIconSizeY = renderedH / tilesShownY;
+        const resizeRatioX = realIconSizeX / data.tile_size;
+        const resizeRatioY = realIconSizeY / data.tile_size;
 
-        if (mapPxW && mapPxH && renderedW && renderedH && tilesShownX && tilesShownY) {
-          const realIconSizeX = renderedW / tilesShownX;
-          const realIconSizeY = renderedH / tilesShownY;
-          perTileY = realIconSizeY;
-          const resizeRatioX = realIconSizeX / data.tile_size;
-          const resizeRatioY = realIconSizeY / data.tile_size;
+        // Letterbox bars between the control and the rendered map content.
+        let leftOffset = (mapPxW - renderedW) / 2;
+        let topOffset = (mapPxH - renderedH) / 2;
 
-          // Letterbox bars between the control and the rendered map content.
-          let leftOffset = (mapPxW - renderedW) / 2;
-          let topOffset = (mapPxH - renderedH) / 2;
+        // Parse cursor params: "icon-x=NN;icon-y=NN;screen-loc=X:px,Y:py"
+        const params = parseSemiParams(data.cursor_params);
+        const iconX = parseInt(params['icon-x'] ?? '0', 10);
+        const iconY = parseInt(params['icon-y'] ?? '0', 10);
+        const screenLocRaw = params['screen-loc'] ?? '';
+        if (!iconX || !iconY || !screenLocRaw) {
+          return;
+        }
+        const [leftRaw, topRaw] = screenLocRaw.split(',');
+        if (!leftRaw || !topRaw) {
+          return;
+        }
 
-          // Parse cursor params: "icon-x=NN;icon-y=NN;screen-loc=X:px,Y:py"
-          const params = parseSemiParams(data.cursor_params);
-          const iconX = parseInt(params['icon-x'] ?? '0', 10);
-          const iconY = parseInt(params['icon-y'] ?? '0', 10);
-          const screenLocRaw = params['screen-loc'] ?? '';
-          const [leftRaw, topRaw] = screenLocRaw.split(',');
+        const [leftTileStr, enteredXStr] = leftRaw.split(':');
+        const [topTileStr, enteredYStr] = topRaw.split(':');
+        let left = parseInt(leftTileStr ?? '0', 10);
+        let top = parseInt(topTileStr ?? '0', 10);
+        const enteredX = parseInt(enteredXStr ?? '0', 10);
+        const enteredY = parseInt(enteredYStr ?? '0', 10);
 
-          if (leftRaw && topRaw) {
-            const [leftTileStr, enteredXStr] = leftRaw.split(':');
-            const [topTileStr, enteredYStr] = topRaw.split(':');
-            let left = parseInt(leftTileStr ?? '0', 10);
-            let top = parseInt(topTileStr ?? '0', 10);
-            const enteredX = parseInt(enteredXStr ?? '0', 10);
-            const enteredY = parseInt(enteredYStr ?? '0', 10);
-
-            // The atom's own screen_loc may carry pixel offsets like "WEST+0:6".
-            const oScreenLoc = data.screen_loc.split(',');
-            if (oScreenLoc[0]) {
-              const westParts = oScreenLoc[0].split(':');
-              if (westParts.length > 1) {
-                const westOffset = parseInt(westParts[1], 10);
-                if (westOffset !== 0) {
-                  if (iconX + westOffset !== enteredX) {
-                    left += westOffset < 0 ? 1 : -1;
-                  }
-                  leftOffset += westOffset * resizeRatioX;
-                }
+        // The atom's own screen_loc may carry pixel offsets like "WEST+0:6".
+        const oScreenLoc = data.screen_loc.split(',');
+        if (oScreenLoc[0]) {
+          const westParts = oScreenLoc[0].split(':');
+          if (westParts.length > 1) {
+            const westOffset = parseInt(westParts[1], 10);
+            if (westOffset !== 0) {
+              if (iconX + westOffset !== enteredX) {
+                left += westOffset < 0 ? 1 : -1;
+              }
+              leftOffset += westOffset * resizeRatioX;
+            }
+          }
+        }
+        if (oScreenLoc.length > 1) {
+          const northParts = oScreenLoc[1].split(':');
+          if (northParts.length > 1) {
+            const northOffset = parseInt(northParts[1], 10);
+            if (northOffset !== 0) {
+              if (iconY + northOffset === enteredY) {
+                top--;
+                topOffset -= (data.tile_size + northOffset) * resizeRatioY;
+              } else if (northOffset < 0) {
+                topOffset -= (data.tile_size + northOffset) * resizeRatioY;
+              } else {
+                top--;
+                topOffset -= northOffset * resizeRatioY;
               }
             }
-            if (oScreenLoc.length > 1) {
-              const northParts = oScreenLoc[1].split(':');
-              if (northParts.length > 1) {
-                const northOffset = parseInt(northParts[1], 10);
-                if (northOffset !== 0) {
-                  if (iconY + northOffset === enteredY) {
-                    top--;
-                    topOffset -= (data.tile_size + northOffset) * resizeRatioY;
-                  } else if (northOffset < 0) {
-                    topOffset -= (data.tile_size + northOffset) * resizeRatioY;
-                  } else {
-                    top--;
-                    topOffset -= northOffset * resizeRatioY;
-                  }
-                }
-              }
-            }
-
-            left = Math.max(0, Math.min(tilesShownX, left));
-            top = Math.max(0, Math.min(tilesShownY, top));
-
-            posX = Math.round((left - 1) * realIconSizeX + leftOffset + 2);
-            posY = Math.round(
-              (tilesShownY - top + 1) * realIconSizeY + topOffset + 2,
-            );
           }
         }
 
-        // Position + size + show in one winset so the box appears already placed.
-        // Box is pinned to the element's top-left, so a later shrink never moves it.
+        left = Math.max(0, Math.min(tilesShownX, left));
+        top = Math.max(0, Math.min(tilesShownY, top));
+
+        const posX = Math.round((left - 1) * realIconSizeX + leftOffset + PAD);
+        const posY = Math.round(
+          (tilesShownY - top + 1) * realIconSizeY + topOffset + PAD,
+        );
+
+        // Convert the measured (CSS-px) box to BYOND device px exactly like the
+        // legacy: +2 width "dumb hack", then floor(x * devicePixelRatio).
+        const pixelRatio = window.devicePixelRatio || 1;
+        const toDeviceW = (cssW: number) => Math.floor((cssW + 2) * pixelRatio);
+        const toDeviceH = (cssH: number) => Math.floor(cssH * pixelRatio);
+
+        // pos + size + show in one winset; box pinned to element top-left so a
+        // later shrink never moves it. Bottom-edge flip matches the legacy.
         const placeAndShow = (w: number, h: number) => {
           let py = posY;
-          if (mapPxH && py + h > mapPxH) {
-            py = Math.max(0, posY - h - Math.round(perTileY) - 4);
+          if (posY + h > mapPxH) {
+            py = posY - h - realIconSizeY - PAD;
           }
           Byond.winset(winId, {
-            pos: `${Math.max(0, posX)},${py}`,
+            pos: `${posX},${py}`,
             size: `${w}x${h}`,
             'is-visible': true,
           });
         };
 
         const box = boxRef.current;
-        const w0 = Math.ceil(box?.offsetWidth || 0);
-        const h0 = Math.ceil(box?.offsetHeight || 0);
-        if (w0 > 0 && h0 > 0) {
+        const rawW = box?.offsetWidth || 0;
+        const rawH = box?.offsetHeight || 0;
+        if (rawW > 0 && rawH > 0) {
           // Measured while hidden — appear already positioned and sized.
-          placeAndShow(w0, h0);
+          placeAndShow(toDeviceW(rawW), toDeviceH(rawH));
         } else {
           // Hidden layout unavailable: show at the computed position (NOT the
-          // top-left) at a generous size, then shrink to fit on the next frame.
+          // top-left) at a generous size, then size to fit on the next frame.
           Byond.winset(winId, {
-            pos: `${Math.max(0, posX)},${posY}`,
-            size: '300x340',
+            pos: `${posX},${posY}`,
+            size: '320x600',
             'is-visible': true,
           });
           requestAnimationFrame(() => {
             if (cancelled) return;
             const b = boxRef.current;
             placeAndShow(
-              Math.ceil(b?.offsetWidth || 0) || 80,
-              Math.ceil(b?.offsetHeight || 0) || 24,
+              toDeviceW(b?.offsetWidth || 80),
+              toDeviceH(b?.offsetHeight || 24),
             );
           });
         }
