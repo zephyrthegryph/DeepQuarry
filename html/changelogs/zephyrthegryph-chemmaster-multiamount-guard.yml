@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "ChemMaster 'make multiple' prompts now ignore a blank or invalid amount instead of silently producing a single pill/patch/bottle."
