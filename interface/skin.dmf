@@ -1261,15 +1261,6 @@ window "mainwindow"
 	// is-visible = false left them taking layout space; full deletion gives
 	// us the freed pixels back. mainvsplit was already resized to 634x440
 	// (above) to fill where they used to be.
-	elem "tooltip"
-		type = BROWSER
-		pos = 0,0
-		size = 999x999
-		anchor1 = -1,-1
-		anchor2 = -1,-1
-		is-visible = false
-		saved-params = ""
-		inner-background-color = #00000000	// DQ: 516.1680+ WebView2 transparent compositing vs the map (mirrors belly_overlay); pairs with .theme-tooltip .Window in main.scss
 	elem "commandbar_spy"
 		type = BROWSER
 		is-default = false
@@ -1327,6 +1318,18 @@ window "mapwindow"
 		is-visible = false
 		inner-background-color = #00000000
 	// DQAdd End
+	// DQ: in-game hover tooltip. Must be a mapwindow child (like belly_overlay
+	// above) — a mainwindow-level BROWSER composites its transparent pixels
+	// against mainwindow's backdrop (grey), not the embedded map pane. As a
+	// mapwindow child anchored over the map it shows the map through instead.
+	elem "tooltip"
+		type = BROWSER
+		pos = 0,0
+		size = 640,480
+		anchor1 = 0,0
+		anchor2 = 100,100
+		is-visible = false
+		inner-background-color = #00000000
 
 window "outputwindow"
 	elem "outputwindow"

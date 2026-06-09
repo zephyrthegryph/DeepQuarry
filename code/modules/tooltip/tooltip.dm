@@ -7,17 +7,20 @@
 // `winget(mapwindow.map, size,view-size)` and absolute-positioned
 // itself via `winset` calls.
 //
-// We host the same skin element as a /datum/tgui_window. Tooltip.tsx
-// queries the map size with Byond.winget, runs the same positioning
-// math, and renders a small absolute-positioned tooltip <div>. The
-// outer BROWSER element stays 999x999 covering the whole window; the
-// React tree uses pointer-events: none so it doesn't eat map clicks.
+// We host the mapwindow.tooltip skin element as a /datum/tgui_window.
+// Tooltip.tsx queries the map size with Byond.winget, runs the positioning
+// math, and renders a small absolute-positioned tooltip <div>. The BROWSER
+// element is a mapwindow child anchored over the map (like belly_overlay) with
+// inner-background-color=transparent, so the page's transparent pixels show the
+// map through; the React tree uses pointer-events: none so it doesn't eat map
+// clicks. A mainwindow-level element composites against mainwindow's backdrop
+// (grey) instead of the map, which is why it must live under mapwindow.
 // Show/hide toggles the skin element's is-visible.
 
 
 /datum/tooltip
 	var/client/owner
-	var/control = "mainwindow.tooltip"
+	var/control = "mapwindow.tooltip"
 	var/showing = 0
 	var/queueHide = 0
 	var/atom/last_target
@@ -115,7 +118,7 @@
 	_view_w = view_size[1]
 	_view_h = view_size[2]
 
-	winset(owner, control, "is-visible=true")
+	winset(owner, control, "is-visible=true;inner-background-color=#00000000")
 	SStgui.update_uis(src)
 
 	showing = 0

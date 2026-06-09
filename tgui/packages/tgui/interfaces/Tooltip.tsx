@@ -1,7 +1,9 @@
 // In-game atom hover tooltip — TGUI.
 //
-// Hosted inside the hidden 999x999 mainwindow.tooltip BROWSER skin
-// element. The element is shown/hidden by DM via winset. While shown
+// Hosted inside the hidden mapwindow.tooltip BROWSER skin element — a
+// map-sized child anchored over the map with inner-background-color
+// transparent, so transparent page pixels composite against the map.
+// The element is shown/hidden by DM via winset. While shown
 // this React tree renders an absolutely-positioned tooltip <div>
 // inside the otherwise transparent (pointer-events: none) layer, so
 // clicks pass straight through to the underlying map.
@@ -121,10 +123,12 @@ export const Tooltip = () => {
         const resizeRatioX = realIconSizeX / data.tile_size;
         const resizeRatioY = realIconSizeY / data.tile_size;
 
-        // Letterboxing offset between the BROWSER element (full
-        // mainwindow) and the actual map content.
-        let leftOffset = (999 - mapPxW) / 2;
-        let topOffset = (999 - mapPxH) / 2;
+        // The tooltip BROWSER element is a mapwindow child anchored over the
+        // map (same rect as mapwindow.map), so element-space == map-space. No
+        // full-window centering offset is needed (it used to be a 999x999
+        // mainwindow overlay, hence the old (999 - mapPx)/2 letterbox term).
+        let leftOffset = 0;
+        let topOffset = 0;
 
         // Parse cursor params: "icon-x=NN;icon-y=NN;screen-loc=X:px,Y:py"
         const params = parseSemiParams(data.cursor_params);
