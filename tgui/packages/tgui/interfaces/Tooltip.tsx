@@ -47,6 +47,9 @@ html, body, #react-root, .TooltipRoot {
 
 type Data = {
   visible: BooleanLike;
+  // Explicit skin element id ("mapwindow.tooltip"). We winset this rather than
+  // Byond.windowId, which may not resolve to the element for this child window.
+  control: string;
   title: string;
   content: string;
   theme: string;
@@ -118,8 +121,11 @@ export const Tooltip = () => {
   const boxRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Prefer the explicit element id from DM; fall back to Byond.windowId.
+    const winId = data.control || Byond.windowId;
+
     if (!data.visible) {
-      Byond.winset(Byond.windowId, { 'is-visible': false });
+      Byond.winset(winId, { 'is-visible': false });
       return;
     }
 
@@ -127,7 +133,7 @@ export const Tooltip = () => {
 
     // Show immediately (tiny) so the element is visible + its page laid out for
     // measuring, regardless of whether the positioning math below succeeds.
-    Byond.winset(Byond.windowId, { size: '8x8', 'is-visible': true });
+    Byond.winset(winId, { size: '8x8', 'is-visible': true });
 
     // Measure the rendered box and winset the element to it at (posX, posY).
     const place = (posX: number, posY: number, mapPxH: number, perTileY: number) => {
@@ -141,7 +147,7 @@ export const Tooltip = () => {
           py = Math.max(0, posY - h - Math.round(perTileY) - 4);
         }
         const px = Math.max(0, posX);
-        Byond.winset(Byond.windowId, { pos: `${px},${py}`, size: `${w}x${h}` });
+        Byond.winset(winId, { pos: `${px},${py}`, size: `${w}x${h}` });
       });
     };
 
@@ -237,6 +243,7 @@ export const Tooltip = () => {
     };
   }, [
     data.visible,
+    data.control,
     data.title,
     data.cursor_params,
     data.screen_loc,

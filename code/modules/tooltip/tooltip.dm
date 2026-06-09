@@ -74,6 +74,7 @@
 /datum/tooltip/tgui_data(mob/user)
 	return list(
 		"visible" = _visible,
+		"control" = control,
 		"title" = _title,
 		"theme" = _theme,
 		"cursor_params" = _cursor_params,
@@ -117,9 +118,11 @@
 	_view_w = view_size[1]
 	_view_h = view_size[2]
 
-	// Don't winset is-visible here — Tooltip.tsx sizes the element to the
-	// rendered box and parks it at the cursor, then sets is-visible=true itself.
-	// Showing it now (before sizing) would flash a full-size element over the map.
+	dq_log("[TT] show ctrl=[control] title_len=[length(_title)] cursor=[params] sloc=[thing.screen_loc]")
+	// Fallback: show at a default size so the tooltip is visible even if the
+	// React-side winset can't resolve its element. Tooltip.tsx then refines the
+	// element to the box's exact size at the cursor (and may move/shrink it).
+	winset(owner, control, "is-visible=true;size=300x90")
 	SStgui.update_uis(src)
 
 	showing = 0
