@@ -27,6 +27,12 @@ SUBSYSTEM_DEF(tgui)
 	var/list/all_uis = list()
 	/// The HTML base used for all UIs.
 	var/basehtml
+	/// interface name -> list of code-split chunk files (`*.chunk.js`/`.css`) that
+	/// must be delivered to render it. Read from tgui-chunk-manifest.json at PreInit;
+	/// consumed by /datum/tgui/proc/send_assets(). Null/empty means the build didn't
+	/// emit a manifest (e.g. an unsplit bundle) — interfaces then rely on whatever is
+	/// already in the main bundle.
+	var/list/chunk_manifest
 
 /datum/controller/subsystem/tgui/PreInit()
 	basehtml = file2text('tgui/public/tgui.html')
@@ -42,6 +48,21 @@ SUBSYSTEM_DEF(tgui)
 	basehtml = replacetextEx(basehtml, "<!-- tgui:ntos-error -->", ntos_error)
 
 	basehtml = replacetextEx(basehtml, "<!-- tgui:nt-copyright -->", "Nanotrasen (c) 2284-[text2num(UTC_YEAR) + STATION_YEAR_OFFSET]") // This can't use the GLOB as it runs before those are populated
+
+	// Load the code-split chunk manifest (interface name -> chunk files) emitted by
+	// the rspack build. Just a file read here, same as basehtml above — safe at PreInit.
+	// The chunk files themselves are registered into the asset cache later, by
+	// SSassets/Initialize() which loads every /datum/asset subtype (including
+	// /datum/asset/simple/tgui_chunks). We must NOT register them here: PreInit runs
+	// before SSassets is ready, and hashing the files that early runtimes ("bad index").
+	load_chunk_manifest()
+
+/datum/controller/subsystem/tgui/proc/load_chunk_manifest()
+	var/manifest_path = "tgui/public/tgui-chunk-manifest.json"
+	if(fexists(manifest_path))
+		var/raw = file2text(manifest_path)
+		if(raw)
+			chunk_manifest = json_decode(raw)
 
 /datum/controller/subsystem/tgui/OnConfigLoad()
 	var/storage_iframe = CONFIG_GET(string/storage_cdn_iframe)

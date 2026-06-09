@@ -145,6 +145,14 @@
 		/datum/asset/json/icon_ref_map))
 	for(var/datum/asset/asset in src_object.ui_assets(user))
 		flush_queue |= window.send_asset(asset)
+	// Ship this interface's code-split chunk(s) before the window receives its
+	// "update" payload, so the React side can lazy-import the interface module the
+	// moment it mounts. Each interface chunk is self-contained (rspack splitChunks is
+	// off), so the single manifest entry is the complete set of files needed — no
+	// dependency closure. No-op when the build emitted no manifest (unsplit bundle).
+	var/list/interface_chunks = LAZYACCESS(SStgui.chunk_manifest, interface)
+	if(interface_chunks)
+		flush_queue |= SSassets.transport.send_assets(user.client, interface_chunks)
 	if (flush_queue)
 		user.client.browse_queue_flush()
 
