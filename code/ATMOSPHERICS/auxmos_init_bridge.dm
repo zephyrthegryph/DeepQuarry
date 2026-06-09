@@ -2,13 +2,21 @@
 //
 // auxmos_bindings.dm has the full call_ext routes for every gas_mixture proc,
 // but including it would re-declare procs already defined in /tg/'s vendored
-// gas_mixture.dm. Instead, byondapi's runtime-swap (#[byondapi::bind]) replaces
-// those proc bodies at DLL-load time — so the DM-side declarations from
-// gas_mixture.dm are kept, and the call_ext routes are not needed for them.
+// gas_mixture.dm (a duplicate-definition compile error).
 //
-// What IS needed: the small set of init/lifecycle FREE procs that aren't on
-// gas_mixture. We declare them here as thin call_ext stubs so SSair.Initialize
-// can hand gas metadata to the Rust side at boot.
+// IMPORTANT — the gas-math backend is NOT live. byondapi does NOT transparently
+// swap DM proc bodies at DLL load (that was auxtools' detour hooking; byondapi is
+// pull-based — a #[byondapi::bind] only exports an FFI symbol reachable via
+// call_ext). So the pure-DM bodies in gas_mixture.dm are what actually run today;
+// gas math is NOT routed through Rust. Making it Rust-backed requires REPLACING
+// those DM bodies with the call_ext routes from auxmos_bindings.dm AND adopting
+// auxmos' Rust gas-arena data model (mixtures live in Rust, the DM datum is a
+// handle) — a core re-architecture, not a drop-in. See doc/atmos_migration.md.
+//
+// What this bridge DOES provide: the small set of init/lifecycle FREE procs
+// (auxtools_atmos_init etc.) declared as thin call_ext stubs. These are wired
+// targets but auxtools_atmos_init() is still not CALLED from SSair, so the Rust
+// gas registry is currently unpopulated (see SSair.Initialize).
 //
 // DO NOT add proc declarations that conflict with gas_mixture.dm here.
 // Generation source: verdigris/atmos/bindings.dm (selected procs only).

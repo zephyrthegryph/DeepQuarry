@@ -5274,10 +5274,13 @@
 // on 2026-05-24 — it depended on /tg/'s framework (signals, components, GAGS,
 // spatial grid, integrated circuits) that CHOMP doesn't have.
 //
-// auxmos_bindings.dm intentionally NOT compiled: /tg/'s gas_mixture.dm defines
-// the proc bodies, and byondapi swaps them out at runtime when libverdigris
-// loads. Compiling bindings.dm here causes duplicate-proc errors. The slim
-// init/lifecycle subset lives in auxmos_init_bridge.dm.
+// auxmos_bindings.dm intentionally NOT compiled: it re-declares the gas_mixture
+// procs already defined (as pure DM) in /tg/'s gas_mixture.dm, which would be a
+// duplicate-proc error. NOTE: byondapi does NOT auto-swap these DM bodies at DLL
+// load — gas math runs in pure DM today. Routing it through Rust means replacing
+// gas_mixture.dm's bodies with these call_ext routes + adopting auxmos' Rust gas
+// arena (a re-architecture, not just an include). The slim init/lifecycle subset
+// lives in auxmos_init_bridge.dm. See doc/atmos_migration.md.
 //#include "code\ATMOSPHERICS\auxmos_bindings.dm"
 #include "code\ATMOSPHERICS\xgm_compat.dm"
 // Slim init/lifecycle FFI bridge — calls into verdigris.dll to register gas
