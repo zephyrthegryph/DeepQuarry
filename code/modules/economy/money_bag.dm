@@ -67,7 +67,7 @@
 				COIN = locate(/obj/item/coin/iron,src.contents)
 			if(MAT_DIAMOND)
 				COIN = locate(/obj/item/coin/diamond,src.contents)
-			if(MAT_URANIUM)
+			if(MAT_PHORON)
 				COIN = locate(/obj/item/coin/phoron,src.contents)
 			if(MAT_URANIUM)
 				COIN = locate(/obj/item/coin/uranium,src.contents)

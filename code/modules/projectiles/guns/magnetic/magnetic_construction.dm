@@ -97,7 +97,7 @@
 				. += span_notice("It has a metal frame duct-taped to the stock.")
 			if(4)
 				. += span_notice("It has a length of pipe attached to the body.")
-			if(4)
+			if(5)
 				. += span_notice("It has a length of pipe welded to the body.")
 			if(6)
 				. += span_notice("It has a cable mount and capacitor jack wired to the frame.")

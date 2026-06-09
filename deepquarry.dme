@@ -4636,7 +4636,6 @@
 #include "code\modules\vore\eating\living.dm"
 #include "code\modules\vore\eating\mob.dm"
 #include "code\modules\vore\eating\vore_state.dm"
-#include "code\modules\vore\eating\belly_serializer.dm"
 #include "code\modules\vore\eating\silicon.dm"
 #include "code\modules\vore\eating\simple_animal.dm"
 #include "code\modules\vore\eating\soulcatcher.dm"
