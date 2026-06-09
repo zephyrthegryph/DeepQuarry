@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Shrank the shared tgui CSS bundle from ~411 KB to ~174 KB (-59%). The Wires interface's cursor/background art (an absurd 178 KB of pixel-art encoded as per-pixel SVG rects, base64-inlined into every window's stylesheet) was rasterized to ~2.4 KB of PNG and moved into the on-demand Wires chunk."

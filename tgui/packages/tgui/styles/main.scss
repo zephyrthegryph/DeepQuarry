@@ -56,7 +56,8 @@
 @include meta.load-css('./interfaces/Turbolift.scss');
 @include meta.load-css('./interfaces/TicketPanel.scss');
 @include meta.load-css('./interfaces/VorePanel.scss');
-@include meta.load-css('./interfaces/Wires.scss');
+// Wires.scss is imported by interfaces/Wires.tsx instead, so its cursor/background
+// art lands in the on-demand Wires chunk rather than this shared bundle.
 @include meta.load-css('./interfaces/PlushEditor.scss');
 @include meta.load-css('./interfaces/ColorMatrixEditor.scss');
 @include meta.load-css('./interfaces/FourInARow.scss');
