@@ -171,21 +171,9 @@
 	if(vore_law)
 		switch(law_class)
 			if("good")
-				var/rng = rand(1,2)
-				switch(rng)
-					if(1)
-						return new /datum/ai_laws/protective_shell()
-					if(2)
-						var/datum/ai_laws/laws = new /datum/ai_laws/guard_dog()
-						var/target_name = "*ERROR*"
-						for(var/mob/living/L in view(src))
-							if(L.stat || !L.client || L == src)
-								continue
-							target_name = L.name
-							break
-
-							laws.set_zeroth_law("[target_name] is your master.")
-							return laws
+				// Lost drones are masterless free agents, so the guard_dog lawset
+				// (its laws all serve "your master") is not drawn for them here.
+				return new /datum/ai_laws/protective_shell()
 			if("neutral")
 				var/rng = rand(1,3)
 				switch(rng)

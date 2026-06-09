@@ -30,7 +30,7 @@
 	icon_state = style
 	item_state = style
 	if(!prize)
-		prize = pick(SHRINKING_CRACKER,GROWING_CRACKER,GROWING_CRACKER,INVISIBLE_CRACKER,FALLING_CRACKER,TELEPORTING_CRACKER,WEALTHY_CRACKER)
+		prize = pick(SHRINKING_CRACKER,GROWING_CRACKER,DRUGGED_CRACKER,INVISIBLE_CRACKER,FALLING_CRACKER,TELEPORTING_CRACKER,WEALTHY_CRACKER)
 	if(!joke)
 		joke = pick("When is a boat just like snow? When it's adrift.",
 					"What happens to naughty elves? Santa gives them the sack.",
@@ -87,7 +87,7 @@
 			winner = target
 			loser = user
 	if(HAS_TRAIT(loser, TRAIT_UNLUCKY) && prob(66))
-		if(prize == (SHRINKING_CRACKER || GROWING_CRACKER || FALLING_CRACKER || TELEPORTING_CRACKER)) //If we're unlucky and the prize is bad, chance for us to get it!
+		if(prize in list(SHRINKING_CRACKER, GROWING_CRACKER, DRUGGED_CRACKER, FALLING_CRACKER, TELEPORTING_CRACKER)) //If we're unlucky and the prize is bad, chance for us to get it!
 			var/former_winner = winner
 			winner = loser
 			loser = former_winner
@@ -102,7 +102,7 @@
 		if(GROWING_CRACKER)
 			winner.resize(2)
 			winner.visible_message(span_bold("\The [winner]") + " grows in height suddenly.")
-		if(GROWING_CRACKER)
+		if(DRUGGED_CRACKER)
 			winner.druggy = max(winner.druggy, 50)
 		if(INVISIBLE_CRACKER)
 			if(!dq_get_cloaked(winner))

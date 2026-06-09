@@ -385,7 +385,8 @@
 		return ITEM_INTERACT_FAILURE
 
 	//First, we call the item's /attack on the MOB TARGET we are clicking on.
-	if(!(wrapped.attack(M, user, target_zone, attack_modifier) == (ITEM_INTERACT_SUCCESS || ITEM_INTERACT_BLOCKING)))
+	var/attack_result = wrapped.attack(M, user, target_zone, attack_modifier)
+	if(!(attack_result == ITEM_INTERACT_SUCCESS || attack_result == ITEM_INTERACT_BLOCKING))
 		//If we don't get a return value of success/failure, that means we didn't hit them with it/do a special interaction with it.
 		if(item_left_gripper(wrapped))
 			update_ref(null)
