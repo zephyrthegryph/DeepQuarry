@@ -12,10 +12,26 @@ import {
   lazy,
   type ReactNode,
   Suspense,
+  useEffect,
 } from 'react';
 import { backendStateAtom } from './events/store';
 import { LoadingScreen } from './interfaces/common/LoadingScreen';
+import { LobbyMenu } from './interfaces/LobbyMenu';
+import { MediaPlayer } from './interfaces/MediaPlayer';
 import { Window } from './layouts';
+import { revealIfUnclaimed } from './reveal';
+
+// EAGER interfaces — kept in the main bundle, never lazy-split. These are the
+// interfaces the DM side opens with `open(preinitialized = TRUE)` (the lobby menu
+// and the media player): persistent windows shown at login on a manually-initialized
+// window. That open path doesn't re-initialize and can deliver its "update" before a
+// lazily-fetched chunk has arrived, so a split version renders empty (just the Layout
+// background). Bundling them eagerly removes the chunk-fetch dependency entirely.
+// Resolved by name below, BEFORE the lazy context.
+const EAGER_INTERFACES: Record<string, ComponentType<any>> = {
+  LobbyMenu,
+  MediaPlayer,
+};
 
 // Lazy context: every interface ENTRY module is emitted as its own async chunk and
 // only fetched when an interface of that name is actually opened. `.keys()` is still
@@ -24,15 +40,16 @@ import { Window } from './layouts';
 //
 // The regex matches ONLY routable entry shapes — `./Name.(tsx|jsx)`,
 // `./Name/index.(tsx|jsx)`, and the `./chompstation/` variants (exactly what the
-// path-builders below request). Nested submodules (e.g. `./PreferencesMenu/preferences/X.tsx`,
-// everything under `./deepquarry/`) are deliberately excluded so they bundle INTO the
-// entry chunk that statically imports them, making each interface chunk self-contained.
-// That's what lets the DM side ship one chunk per opened interface with no dependency
-// closure to track.
+// path-builders below request) — and EXCLUDES the eager interfaces above so they
+// aren't also emitted as (unused) chunks. Nested submodules (e.g.
+// `./PreferencesMenu/preferences/X.tsx`, everything under `./deepquarry/`) are
+// excluded too, so they bundle INTO the entry chunk that statically imports them,
+// making each interface chunk self-contained (one chunk per opened interface, no
+// dependency closure for the DM side to track).
 const requireInterface = require.context(
   './interfaces',
   true,
-  /^\.\/(?!.*\.test\.)(chompstation\/)?[^/]+(\/index)?\.(tsx?|jsx?)$/,
+  /^\.\/(?!.*\.test\.)(?!(?:chompstation\/)?(?:LobbyMenu|MediaPlayer)(?:\/index)?\.(?:tsx?|jsx?)$)(chompstation\/)?[^/]+(\/index)?\.(tsx?|jsx?)$/,
   'lazy',
 );
 
@@ -116,6 +133,12 @@ function resolveInterfacePath(name: string): string | null {
 const componentCache = new Map<string, ComponentType>();
 
 function getRoutedComponent(name: string): ComponentType {
+  // Eager interfaces are in the main bundle — return them directly, no lazy/Suspense.
+  const eager = EAGER_INTERFACES[name];
+  if (eager) {
+    return eager;
+  }
+
   const cached = componentCache.get(name);
   if (cached) {
     return cached;
@@ -141,6 +164,27 @@ function getRoutedComponent(name: string): ComponentType {
 
   componentCache.set(name, Routed);
   return Routed;
+}
+
+// Interfaces that manage their own window visibility (they winset is-visible
+// themselves) and must NOT be auto-revealed by RevealWindow. Currently just the
+// Tooltip — a transparent overlay shown/hidden by Tooltip.tsx based on hover state;
+// revealing it on mount would flash its host element as an empty box over the map.
+const SELF_MANAGED = new Set<string>(['Tooltip']);
+
+// Route-level fallback reveal, run the moment the real interface content mounts
+// (AFTER its lazy chunk has loaded). It reveals only interfaces that do NOT manage
+// their own geometry — Pane-based UIs, the error/refreshing windows, and any
+// interface not rooted in <Window>. A <Window> interface claims the reveal in its
+// own effect (which fires first, child-before-parent) and reveals itself only
+// after applying geometry, so revealIfUnclaimed() here stands down for it — that's
+// what prevents the cold-open flash of the window at default size before it
+// resizes. resume() (events/handlers/update.ts) keeps a delayed failsafe reveal.
+function RevealWindow({ children }: { children: ReactNode }) {
+  useEffect(() => {
+    revealIfUnclaimed();
+  }, []);
+  return <>{children}</>;
 }
 
 // Catches errors thrown while loading or rendering a routed interface — most
@@ -178,7 +222,12 @@ class RouteErrorBoundary extends Component<
 
   render() {
     if (this.state.hasError) {
-      return <RoutingErrorWindow type="unknown" name={this.props.name} />;
+      // Reveal the error window — the failed content never mounted to reveal itself.
+      return (
+        <RevealWindow>
+          <RoutingErrorWindow type="unknown" name={this.props.name} />
+        </RevealWindow>
+      );
     }
     return this.props.children;
   }
@@ -187,11 +236,16 @@ class RouteErrorBoundary extends Component<
 export function RoutedComponent() {
   const { suspended, config, debug } = useAtomValue(backendStateAtom);
 
+  // Suspended → render an empty window and DON'T reveal it (it should stay hidden).
   if (suspended) {
     return <SuspendedWindow />;
   }
   if (config.refreshing) {
-    return <RefreshingWindow />;
+    return (
+      <RevealWindow>
+        <RefreshingWindow />
+      </RevealWindow>
+    );
   }
 
   if (process.env.NODE_ENV !== 'production') {
@@ -201,8 +255,10 @@ export function RoutedComponent() {
         return { default: mod.KitchenSink };
       });
       return (
-        <Suspense fallback={<RefreshingWindow />}>
-          <KitchenSink />
+        <Suspense fallback={null}>
+          <RevealWindow>
+            <KitchenSink />
+          </RevealWindow>
         </Suspense>
       );
     }
@@ -210,16 +266,33 @@ export function RoutedComponent() {
 
   const name = config?.interface?.name;
   if (!name) {
-    return <RoutingErrorWindow type="notFound" name="(undefined)" />;
+    return (
+      <RevealWindow>
+        <RoutingErrorWindow type="notFound" name="(undefined)" />
+      </RevealWindow>
+    );
   }
 
   const Component = getRoutedComponent(name);
 
-  return (
+  // The Suspense fallback is null (not a <Window>): while the interface chunk loads,
+  // nothing is rendered and the host window stays as the DM left it (hidden for pooled
+  // windows). The window is revealed by <RevealWindow> only once the real content
+  // mounts — except for SELF_MANAGED interfaces (Tooltip), which winset their own
+  // is-visible and must not be auto-revealed (doing so flashes an empty overlay box).
+  const content = (
     <RouteErrorBoundary name={name}>
-      <Suspense fallback={<RefreshingWindow />}>
-        <Component />
+      <Suspense fallback={null}>
+        {SELF_MANAGED.has(name) ? (
+          <Component />
+        ) : (
+          <RevealWindow>
+            <Component />
+          </RevealWindow>
+        )}
       </Suspense>
     </RouteErrorBoundary>
   );
+
+  return content;
 }

@@ -64,8 +64,7 @@
 		assets = list(),
 		inline_html = "",
 		inline_js = "",
-		inline_css = "",
-		preload = FALSE)
+		inline_css = "")
 	#ifdef TGUI_DEBUGGING
 	log_tgui(client, "[id]/initiailize ([src])")
 	#endif
@@ -85,12 +84,17 @@
 		options += "titlebar=0;can_resize=0;"
 	else
 		options += "titlebar=1;can_resize=1;"
-	// Preload (pool warming): create the window hidden so the ~1s bundle parse
-	// happens off-screen. The tgui bundle boots in the suspended state
-	// (suspendedAtom defaults truthy), so React renders nothing and keeps the
-	// window invisible until a real UI later acquires this warm slot via open()
-	// — at which point Window.tsx's mount effect flips is-visible back to true.
-	if(preload)
+	// Open pooled (normal interface) windows hidden so BYOND doesn't paint the
+	// freshly-browse()'d window at its default geometry for the window lifetime
+	// before React mounts — that's the "bigger box flashes then resizes" flicker.
+	// The window is revealed tgui-side once content is ready: a <Window> interface
+	// reveals itself AFTER applying geometry (layouts/Window.tsx), the route-level
+	// fallback reveals everything else on mount (routes.tsx), and resume()
+	// (events/handlers/update.ts) is a delayed failsafe. All paths fire for a fresh
+	// (suspended) window regardless of layout, so this can't strand a window hidden.
+	// Scoped to pooled windows only — dedicated windows (lobby, media, tooltip)
+	// manage their own visibility and are left alone.
+	if(pooled)
 		options += "is-visible=0;"
 	// Generate page html
 	var/html = SStgui.basehtml

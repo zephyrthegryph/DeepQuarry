@@ -147,49 +147,6 @@ SUBSYSTEM_DEF(tgui)
 /**
  * public
  *
- * Pre-warms pooled windows for a client by opening them hidden and letting the
- * tgui bundle parse off-screen. A warmed window reaches TGUI_WINDOW_READY in the
- * suspended state, so the next real UI that calls request_pooled_window() reuses
- * it WITHOUT re-running browse()/re-parsing the ~2 MB bundle (see tgui/open():
- * the initialize() branch is skipped for an already-ready window). This removes
- * the ~1s grey-box cold load from the first interfaces a player opens.
- *
- * Safe to call repeatedly: only CLOSED slots are warmed; in-use/already-warm
- * windows are left untouched.
- *
- * required client /client The client whose window pool to warm.
- * optional count int Number of slots to warm (clamped to TGUI_WINDOW_SOFT_LIMIT).
- */
-/datum/controller/subsystem/tgui/proc/preload_windows(client/client, count = TGUI_WINDOW_PRELOAD_COUNT)
-	if(!client)
-		return
-	count = clamp(count, 0, TGUI_WINDOW_SOFT_LIMIT)
-	if(count <= 0)
-		return
-	// Match the warmed windows to the user's fancy preference so the reused slot
-	// has the right titlebar/resize chrome (open() won't re-initialize it later).
-	var/fancy = client.mob?.read_preference(/datum/preference/toggle/tgui_fancy)
-	var/static/list/preload_assets
-	if(isnull(preload_assets))
-		preload_assets = list(get_asset_datum(/datum/asset/simple/tgui))
-	var/list/windows = client.tgui_windows
-	for(var/i in 1 to count)
-		var/window_id = TGUI_WINDOW_ID(i)
-		var/datum/tgui_window/window = windows[window_id]
-		if(!window)
-			window = new(client, window_id, pooled = TRUE)
-		// Never disturb a window that's loading, ready, or locked to a live UI.
-		if(window.status != TGUI_WINDOW_CLOSED || window.locked)
-			continue
-		window.initialize(
-			strict_mode = TRUE,
-			fancy = fancy,
-			assets = preload_assets,
-			preload = TRUE)
-
-/**
- * public
- *
  * Force closes all tgui windows.
  *
  * required user mob

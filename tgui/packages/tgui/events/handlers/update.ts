@@ -2,6 +2,7 @@ import { perf } from 'common/perf';
 import { setupDrag } from '../../drag';
 import { logger } from '../../logging';
 import { resumeRenderer } from '../../renderer';
+import { revealWindow } from '../../reveal';
 import {
   configAtom,
   gameDataAtom,
@@ -28,6 +29,25 @@ export function update(payload: UpdatePayload): void {
 
 /// --------- Helpers -------------------------------------------------------///
 
+/**
+ * Failsafe delay (ms) before resume() reveals the window. The PRIMARY reveal is
+ * done by <RevealWindow> in routes.tsx the moment the real interface content mounts
+ * (after its lazy chunk loads and Window.tsx has set geometry) — that's what makes a
+ * window appear already-sized instead of flashing at default geometry then resizing.
+ * This resume() reveal is kept only as a safety net: if RevealWindow somehow never
+ * fires for a window (an unwrapped routing path), the window still becomes visible
+ * after this delay rather than being stranded hidden.
+ *
+ * It MUST be longer than a worst-case COLD interface load (first use of a chunk in a
+ * given window's runtime: fetch + script execute + mount), or the failsafe wins the
+ * race and reveals the window empty-at-default-geometry before the content mounts —
+ * which is exactly the cold-open flicker. A warm open mounts in a few ms; a cold open
+ * is well under a couple seconds, so this is set generously. The only cost of a large
+ * value is that a genuinely-broken interface (RevealWindow never fires) takes this
+ * long to appear — an acceptable trade for never flickering and never stranding hidden.
+ */
+const RESUME_REVEAL_FAILSAFE_MS = 2500;
+
 /** Resumes the tgui window if suspended */
 function resume(payload: UpdatePayload): void {
   // Show the payload
@@ -36,8 +56,7 @@ function resume(payload: UpdatePayload): void {
   resumeRenderer();
   // Setup drag
   setupDrag();
-  // We schedule this for the next tick here because resizing and unhiding
-  // during the same tick will flash with a white background.
+  // Failsafe reveal — RevealWindow (routes.tsx) is the primary, content-timed reveal.
   setTimeout(() => {
     perf.mark('resume/start');
     // Doublecheck if we are not re-suspended.
@@ -45,16 +64,13 @@ function resume(payload: UpdatePayload): void {
       return;
     }
 
-    Byond.winset(Byond.windowId, {
-      'is-visible': true,
-    });
-    Byond.sendMessage('visible');
+    revealWindow();
     perf.mark('resume/finish');
 
     if (process.env.NODE_ENV !== 'production') {
       logger.log('visible in', perf.measure('render/finish', 'resume/finish'));
     }
-  });
+  }, RESUME_REVEAL_FAILSAFE_MS);
 }
 
 /** Delegates update data to the appropriate store */

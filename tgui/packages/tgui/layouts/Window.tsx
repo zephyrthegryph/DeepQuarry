@@ -29,6 +29,7 @@ import {
 } from '../drag';
 import { suspendStart } from '../events/handlers/suspense';
 import { createLogger } from '../logging';
+import { claimReveal, revealWindow } from '../reveal';
 import { Layout } from './Layout';
 import { TitleBar } from './TitleBar';
 
@@ -77,7 +78,14 @@ export function Window(props: Props) {
 
   useEffect(() => {
     if (!suspended && isReadyToRender) {
-      const updateGeometry = () => {
+      // Claim the reveal synchronously, before any await. This Window owns its
+      // own visibility (it reveals AFTER geometry below), so the route-level
+      // fallback (<RevealWindow>) must not pre-empt it and flash the window at
+      // default size. Effects fire child-first, so this runs before the parent
+      // fallback's revealIfUnclaimed() in the same commit.
+      claimReveal();
+
+      const updateGeometry = async () => {
         const options = {
           ...config.window,
           size: DEFAULT_SIZE,
@@ -89,12 +97,12 @@ export function Window(props: Props) {
         if (config.window?.key) {
           setWindowKey(config.window.key);
         }
+        // Apply size/position BEFORE revealing — awaited so the window never
+        // paints at default geometry first and then resizes (cold-open flicker).
         if (!fitted) {
-          recallWindowGeometry(options);
+          await recallWindowGeometry(options);
         }
-        Byond.winset(Byond.windowId, {
-          'is-visible': true,
-        });
+        revealWindow();
         logger.log('set to visible');
       };
 
