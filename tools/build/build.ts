@@ -484,6 +484,12 @@ export const TguiTarget = new Juke.Target({
     'tgui/public/tgui-panel.bundle.js',
     'tgui/public/tgui-say.bundle.css',
     'tgui/public/tgui-say.bundle.js',
+    // Code-split interface chunks are emitted alongside the entry bundles; the
+    // manifest maps interface name -> chunk file (consumed by SStgui). Tracking the
+    // manifest as an output makes Juke rebuild if it's missing (e.g. a public/ wipe)
+    // and keeps it in sync with rspack.config.ts changes. The individual *.chunk.*
+    // files are content-id'd and numerous, so they aren't listed literally.
+    'tgui/public/tgui-chunk-manifest.json',
   ],
   executes: () => bun('tgui:build'),
 });

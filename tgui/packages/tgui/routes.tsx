@@ -5,16 +5,38 @@
  */
 
 import { useAtomValue } from 'jotai';
-import { KitchenSink } from './debug/KitchenSink';
+import {
+  Component,
+  type ComponentType,
+  type ErrorInfo,
+  lazy,
+  type ReactNode,
+  Suspense,
+} from 'react';
 import { backendStateAtom } from './events/store';
 import { LoadingScreen } from './interfaces/common/LoadingScreen';
 import { Window } from './layouts';
 
+// Lazy context: every interface ENTRY module is emitted as its own async chunk and
+// only fetched when an interface of that name is actually opened. `.keys()` is still
+// resolved synchronously at build time (the context map is static; only the *load*
+// is deferred), so we keep the original chompstation→root path-fallback search.
+//
+// The regex matches ONLY routable entry shapes — `./Name.(tsx|jsx)`,
+// `./Name/index.(tsx|jsx)`, and the `./chompstation/` variants (exactly what the
+// path-builders below request). Nested submodules (e.g. `./PreferencesMenu/preferences/X.tsx`,
+// everything under `./deepquarry/`) are deliberately excluded so they bundle INTO the
+// entry chunk that statically imports them, making each interface chunk self-contained.
+// That's what lets the DM side ship one chunk per opened interface with no dependency
+// closure to track.
 const requireInterface = require.context(
   './interfaces',
   true,
-  /^(?!.*\.test\.(tsx?|jsx?)).*\.(tsx?|jsx?)$/,
+  /^\.\/(?!.*\.test\.)(chompstation\/)?[^/]+(\/index)?\.(tsx?|jsx?)$/,
+  'lazy',
 );
+
+const availableKeys = new Set<string>(requireInterface.keys());
 
 type RoutingErrorProps = {
   type: 'notFound' | 'missingExport' | 'unknown';
@@ -52,7 +74,8 @@ function SuspendedWindow() {
   );
 }
 
-// Displays a loading screen with a spinning icon
+// Displays a loading screen with a spinning icon. Doubles as the Suspense
+// fallback shown for the brief moment an interface's chunk is being fetched.
 function RefreshingWindow() {
   return (
     <Window title="Loading">
@@ -63,47 +86,102 @@ function RefreshingWindow() {
   );
 }
 
-// Get the component for the current route
-export function getRoutedComponent(name: string) {
-  const interfacePathBuilders = [
-    // DQEdit — chompstation/ is searched first for fork-only interfaces
-    // (ChemSynthesizer, PrecisionEditor, StarcasterCh, TguiFeedback, Pda extras).
-    // Consolidated interfaces (ChemMaster, Changelog) now live at the canonical
-    // root path; chompstation lookups for those names fall through naturally.
-    (name: string) => `./chompstation/${name}.tsx`,
-    (name: string) => `./chompstation/${name}.jsx`,
-    (name: string) => `./chompstation/${name}/index.tsx`,
-    (name: string) => `./chompstation/${name}/index.jsx`,
-    // Root interfaces (canonical location for all non-chompstation-only UIs)
-    (name: string) => `./${name}.tsx`,
-    (name: string) => `./${name}.jsx`,
-    (name: string) => `./${name}/index.tsx`,
-    (name: string) => `./${name}/index.jsx`,
-  ];
+const pathBuilders: Array<(name: string) => string> = [
+  // chompstation/ is searched first for fork-only interfaces.
+  (name) => `./chompstation/${name}.tsx`,
+  (name) => `./chompstation/${name}.jsx`,
+  (name) => `./chompstation/${name}/index.tsx`,
+  (name) => `./chompstation/${name}/index.jsx`,
+  // Root interfaces (canonical location for all non-chompstation-only UIs).
+  (name) => `./${name}.tsx`,
+  (name) => `./${name}.jsx`,
+  (name) => `./${name}/index.tsx`,
+  (name) => `./${name}/index.jsx`,
+];
 
-  let esModule;
-  while (!esModule && interfacePathBuilders.length > 0) {
-    const interfacePathBuilder = interfacePathBuilders.shift()!;
-    const interfacePath = interfacePathBuilder(name);
-    try {
-      esModule = requireInterface(interfacePath);
-    } catch (err) {
-      if (err.code !== 'MODULE_NOT_FOUND') {
-        throw new Error('notFound');
+// Resolve an interface name to its context module id (synchronous — keys are known
+// at build time), honoring the same precedence as the old eager loader.
+function resolveInterfacePath(name: string): string | null {
+  for (const build of pathBuilders) {
+    const path = build(name);
+    if (availableKeys.has(path)) {
+      return path;
+    }
+  }
+  return null;
+}
+
+// Cache the lazy component per interface name so React.lazy's identity is stable
+// across re-renders (otherwise React would unmount/remount and re-fetch every time).
+const componentCache = new Map<string, ComponentType>();
+
+function getRoutedComponent(name: string): ComponentType {
+  const cached = componentCache.get(name);
+  if (cached) {
+    return cached;
+  }
+
+  const path = resolveInterfacePath(name);
+  let Routed: ComponentType;
+
+  if (!path) {
+    Routed = () => <RoutingErrorWindow type="notFound" name={name} />;
+  } else {
+    Routed = lazy(async () => {
+      const esModule = await requireInterface(path);
+      const Resolved = esModule[name];
+      if (!Resolved) {
+        return {
+          default: () => <RoutingErrorWindow type="missingExport" name={name} />,
+        };
       }
+      return { default: Resolved };
+    });
+  }
+
+  componentCache.set(name, Routed);
+  return Routed;
+}
+
+// Catches errors thrown while loading or rendering a routed interface — most
+// importantly a failed chunk fetch (e.g. the async chunk hadn't reached the BYOND
+// cache yet) — and shows the standard error window instead of a blank page.
+type RouteBoundaryProps = { name: string; children: ReactNode };
+type RouteBoundaryState = { hasError: boolean };
+
+class RouteErrorBoundary extends Component<
+  RouteBoundaryProps,
+  RouteBoundaryState
+> {
+  constructor(props: RouteBoundaryProps) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(): RouteBoundaryState {
+    return { hasError: true };
+  }
+
+  componentDidUpdate(prevProps: RouteBoundaryProps) {
+    // Reset when routing to a different interface so a prior failure doesn't
+    // pin the error window for the next, unrelated interface.
+    if (prevProps.name !== this.props.name && this.state.hasError) {
+      this.setState({ hasError: false });
     }
   }
 
-  if (!esModule) {
-    throw new Error('notFound');
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    // Surface to the console (picked up by the tgui logging/error pipeline). This is
+    // the path a failed chunk fetch lands on, so make it visible rather than silent.
+    console.error(`Interface "${this.props.name}" failed to load:`, error, info);
   }
 
-  const Component = esModule[name];
-  if (!Component) {
-    throw new Error('missingExport');
+  render() {
+    if (this.state.hasError) {
+      return <RoutingErrorWindow type="unknown" name={this.props.name} />;
+    }
+    return this.props.children;
   }
-
-  return Component;
 }
 
 export function RoutedComponent() {
@@ -118,7 +196,15 @@ export function RoutedComponent() {
 
   if (process.env.NODE_ENV !== 'production') {
     if (debug.kitchenSink) {
-      return <KitchenSink />;
+      const KitchenSink = lazy(async () => {
+        const mod = await import('./debug/KitchenSink');
+        return { default: mod.KitchenSink };
+      });
+      return (
+        <Suspense fallback={<RefreshingWindow />}>
+          <KitchenSink />
+        </Suspense>
+      );
     }
   }
 
@@ -127,18 +213,13 @@ export function RoutedComponent() {
     return <RoutingErrorWindow type="notFound" name="(undefined)" />;
   }
 
-  try {
-    const Component = getRoutedComponent(name);
+  const Component = getRoutedComponent(name);
 
-    return <Component />;
-  } catch (err) {
-    switch (err.message) {
-      case 'notFound':
-        return <RoutingErrorWindow type="notFound" name={name} />;
-      case 'missingExport':
-        return <RoutingErrorWindow type="missingExport" name={name} />;
-      default:
-        return <RoutingErrorWindow type="unknown" name={name} />;
-    }
-  }
+  return (
+    <RouteErrorBoundary name={name}>
+      <Suspense fallback={<RefreshingWindow />}>
+        <Component />
+      </Suspense>
+    </RouteErrorBoundary>
+  );
 }

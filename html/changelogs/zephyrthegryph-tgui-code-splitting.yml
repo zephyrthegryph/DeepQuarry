@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Code-split the tgui bundle: the main interface bundle every window loads dropped from ~2.1 MB to ~352 KB (84% smaller). Each interface is now its own chunk, fetched on demand, so opening a UI no longer pays to parse every other interface."
+  - qol: "TGUI windows open faster and the grey-box flash is dramatically reduced, since the per-window JavaScript parse cost is a fraction of what it was."
