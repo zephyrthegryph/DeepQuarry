@@ -160,27 +160,36 @@ export const Tooltip = () => {
       Byond.winget('mapwindow.map', 'size'),
       Byond.winget('mapwindow.map', 'view-size'),
     ])
-      .then(([rawSize, rawViewSize]) => {
+      .then(([rawSize, rawViewSize]: any[]) => {
         if (cancelled) return;
-        act('ttdebug', { m: `winget size=${rawSize} view=${rawViewSize}` });
-        const [mapPxW, mapPxH] = parseMapSize(rawSize);
-        const [mapTileW, mapTileH] = parseMapSize(rawViewSize);
-        const tilesShownX = data.view_w || mapTileW;
-        const tilesShownY = data.view_h || mapTileH;
+        // Byond.winget returns objects with .x/.y (NOT "WxH" strings):
+        //   size      = the map control's pixel dimensions
+        //   view-size = the rendered map content's pixel size (letterboxed inside
+        //               the control when the aspect ratios differ)
+        const mapPxW = Number(rawSize?.x) || 0; // control px
+        const mapPxH = Number(rawSize?.y) || 0;
+        const renderedW = Number(rawViewSize?.x) || 0; // rendered map px
+        const renderedH = Number(rawViewSize?.y) || 0;
+        const tilesShownX = data.view_w;
+        const tilesShownY = data.view_h;
+        act('ttdebug', {
+          m: `winget ctrl=${mapPxW}x${mapPxH} rendered=${renderedW}x${renderedH} tiles=${tilesShownX}x${tilesShownY}`,
+        });
 
-        // Best-effort: missing map metrics -> park at the map's top-left.
-        if (!mapPxW || !mapPxH || !tilesShownX || !tilesShownY) {
+        // Best-effort: missing metrics -> park at the map's top-left.
+        if (!mapPxW || !mapPxH || !renderedW || !renderedH || !tilesShownX || !tilesShownY) {
           place(4, 4, mapPxH, 0);
           return;
         }
 
-        const realIconSizeX = mapPxW / tilesShownX;
-        const realIconSizeY = mapPxH / tilesShownY;
+        const realIconSizeX = renderedW / tilesShownX;
+        const realIconSizeY = renderedH / tilesShownY;
         const resizeRatioX = realIconSizeX / data.tile_size;
         const resizeRatioY = realIconSizeY / data.tile_size;
 
-        let leftOffset = 0;
-        let topOffset = 0;
+        // Letterbox bars between the control and the rendered map content.
+        let leftOffset = (mapPxW - renderedW) / 2;
+        let topOffset = (mapPxH - renderedH) / 2;
 
         const params = parseSemiParams(data.cursor_params);
         const iconX = parseInt(params['icon-x'] ?? '0', 10);
