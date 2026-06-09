@@ -25,14 +25,9 @@
 	.["level_names"] = using_map.zlevels
 
 /obj/item/destTagger/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = list(
-		"taggerLocs" = GLOB.tagger_locations
-	)
-	return data
-
-/obj/item/destTagger/tgui_data(mob/user, datum/tgui/ui)
 	var/list/data = ..()
 
+	data["taggerLocs"] = GLOB.tagger_locations
 	data["currTag"] = currTag
 
 	return data

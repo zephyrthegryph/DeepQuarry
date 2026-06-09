@@ -1264,11 +1264,12 @@
 		I.exploit_for = WEAKREF(src)
 
 
-/obj/item/Destroy()
+/obj/item/Destroy(force, ...)
 	if(exploit_for)
 		var/mob/exploited = exploit_for.resolve()
 		exploited?.exploit_addons -= src
 		exploit_for = null
+	user_vars_remembered = null
 	. = ..()
 
 
@@ -1729,10 +1730,6 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 /obj/item
 	var/user_vars_to_edit //fun times :3 - pretty much just grabbed from tg immabehonest - list(variable_name = variable_value) eg list("name" = "Wizardly Wizard", "real_name" = "Wizardly Wizard")
 	var/user_vars_remembered //not needed for manual editing, just stores the original vars from the above list to make sure they go back to normal later
-
-/obj/item/Destroy(force, ...)
-	user_vars_remembered = null
-	return ..()
 
 /obj/item/dropped(mob/living/user)
 	. = ..()

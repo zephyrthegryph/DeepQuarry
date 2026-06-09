@@ -523,7 +523,7 @@
 	inherent_verbs = list(/mob/living/carbon/human/proc/tie_hair)
 
 /datum/species/zaddat/equip_survival_gear(mob/living/carbon/human/H)
-	..()
+	. = ..()
 	if(H.wear_suit) //get rid of job labcoats so they don't stop us from equipping the Shroud
 		qdel(H.wear_suit) //if you know how to gently set it in like, their backpack or whatever, be my guest
 	if(H.wear_mask)
@@ -533,6 +533,12 @@
 
 	H.equip_to_slot_or_del(new /obj/item/clothing/mask/gas/zaddat/(H), slot_wear_mask) // mask has to come first or Shroud helmet will get in the way
 	H.equip_to_slot_or_del(new /obj/item/clothing/suit/space/void/zaddat/(H), slot_wear_suit)
+
+	var/obj/item/storage/toolbox/lunchbox/survival/zaddat/L = new(get_turf(H))
+	if(H.backbag == 1)
+		H.equip_to_slot_or_del(L, slot_r_hand)
+	else
+		H.equip_to_slot_or_del(L, slot_in_backpack)
 
 /datum/species/diona
 
@@ -1029,14 +1035,6 @@
 
 	water_breather = TRUE
 	water_movement = -4 //Negates shallow. Halves deep.
-
-/datum/species/zaddat/equip_survival_gear(mob/living/carbon/human/H)
-	.=..()
-	var/obj/item/storage/toolbox/lunchbox/survival/zaddat/L = new(get_turf(H))
-	if(H.backbag == 1)
-		H.equip_to_slot_or_del(L, slot_r_hand)
-	else
-		H.equip_to_slot_or_del(L, slot_in_backpack)
 
 /datum/species/human/vatgrown
 	spawn_flags = SPECIES_IS_RESTRICTED

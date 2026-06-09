@@ -63,8 +63,6 @@
 
 /turf/simulated/wall/iron/Initialize(mapload)
 	. = ..(mapload, MAT_IRON)
-/turf/simulated/wall/uranium/Initialize(mapload)
-	. = ..(mapload, MAT_URANIUM)
 /turf/simulated/wall/diamond/Initialize(mapload)
 	. = ..(mapload, MAT_DIAMOND)
 /turf/simulated/wall/gold/Initialize(mapload)
@@ -1039,7 +1037,7 @@ GLOBAL_LIST_EMPTY(flesh_overlay_cache)
 	var/last_event = 0
 
 /turf/simulated/wall/uranium/Initialize(mapload)
-	. = ..()
+	. = ..(mapload, MAT_URANIUM)
 	RegisterSignal(src, COMSIG_ATOM_PROPAGATE_RAD_PULSE, PROC_REF(radiate))
 
 /turf/simulated/wall/uranium/Destroy()

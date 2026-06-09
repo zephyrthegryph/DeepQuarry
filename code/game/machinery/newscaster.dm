@@ -248,9 +248,6 @@ GLOBAL_LIST_BOILERPLATE(allCasters, /obj/machinery/newscaster)
 			update_icon()
 			return
 
-/obj/machinery/newscaster/attack_ai(mob/user)
-	return attack_hand(user)
-
 /obj/machinery/newscaster/tgui_status(mob/user)
 	if(!ispowered || isbroken)
 		return STATUS_CLOSE

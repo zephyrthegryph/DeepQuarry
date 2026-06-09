@@ -255,9 +255,6 @@
 	. = ..()
 	if(ismob(loc))
 		registered_user = loc
-
-/obj/item/card/id/syndicate/changeling/Initialize(mapload)
-	. = ..()
 	access = null
 
 /obj/item/card/id/syndicate/changeling/verb/shred()

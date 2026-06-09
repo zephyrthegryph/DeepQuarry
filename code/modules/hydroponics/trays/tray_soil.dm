@@ -11,6 +11,12 @@
 	if(istype(O,/obj/item/tank))
 		return
 	if(istype(O,/obj/item/shovel))
+		if(user.a_intent == I_HURT)
+			user.visible_message(span_notice("\The [user] begins filling in \the [src]."))
+			if(do_after(user, 3 SECONDS, target = src) && !QDELETED(src))
+				user.visible_message(span_notice("\The [user] fills in \the [src]."))
+				qdel(src)
+			return
 		if(!seed)
 			var/choice= tgui_alert(user, "Do you want to destroy the growplot?", "Destroy growplot?" , list("Yes", "No"))
 			if(!choice||choice=="No")
@@ -31,16 +37,6 @@
 
 /obj/machinery/portable_atmospherics/hydroponics/soil/CanPass()
 	return 1
-
-/obj/machinery/portable_atmospherics/hydroponics/soil/attackby(obj/item/O, mob/user)
-	if(istype(O, /obj/item/shovel) && user.a_intent == I_HURT)
-		user.visible_message(span_notice("\The [user] begins filling in \the [src]."))
-		if(do_after(user, 3 SECONDS, target = src) && !QDELETED(src))
-			user.visible_message(span_notice("\The [user] fills in \the [src]."))
-			qdel(src)
-		return
-	. = ..()
-
 
 // Holder for vine plants.
 // Icons for plants are generated as overlays, so setting it to invisible wouldn't work.

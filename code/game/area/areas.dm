@@ -59,6 +59,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 	return ..()
 
 /area/Initialize(mapload)
+	apply_ceiling()
 	. = ..()
 	luminosity = !(dynamic_lighting)
 	icon_state = ""
@@ -353,8 +354,13 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 //////////////////////////////////////////////////////////////////
 GLOBAL_LIST_EMPTY(forced_ambiance_list)
 
-/area/Entered(mob/M)
-	if(!istype(M) || !M.ckey)
+/area/Entered(atom/movable/AM, oldLoc)
+	. = ..()
+	if(enter_message && isliving(AM))
+		to_chat(AM, enter_message)
+
+	var/mob/M = AM
+	if(!ismob(M) || !M.ckey)
 		return
 
 	if(!isliving(M))
@@ -582,19 +588,10 @@ GLOBAL_DATUM(spoiler_obfuscation_image, /image)
 
 	var/no_comms = FALSE	//When true, blocks radios from working in the area
 
-/area/Entered(atom/movable/AM, oldLoc)
-	. = ..()
-	if(enter_message && isliving(AM))
-		to_chat(AM, enter_message)
-
 /area/Exited(atom/movable/AM, newLoc)
 	. = ..()
 	if(exit_message && isliving(AM))
 		to_chat(AM, exit_message)
-
-/area/Initialize(mapload)
-	apply_ceiling()
-	. = ..()
 
 /area/proc/apply_ceiling()
 	if(!ceiling_type)

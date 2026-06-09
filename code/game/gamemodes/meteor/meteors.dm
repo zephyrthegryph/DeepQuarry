@@ -135,6 +135,7 @@ GLOBAL_LIST_INIT(meteors_catastrophic, list(
 	. = ..()
 	z_original = z
 	GLOB.meteor_list += src
+	SpinAnimation()
 
 /obj/effect/meteor/Move()
 	if(z != z_original || loc == dest)
@@ -155,10 +156,6 @@ GLOBAL_LIST_INIT(meteors_catastrophic, list(
 	walk(src,FALSE) //this cancels the walk_towards() proc
 	GLOB.meteor_list -= src
 	return ..()
-
-/obj/effect/meteor/Initialize(mapload)
-	. = ..()
-	SpinAnimation()
 
 /obj/effect/meteor/Bump(atom/A)
 	if(!A)
@@ -392,7 +389,7 @@ GLOBAL_LIST_INIT(meteors_catastrophic, list(
 	..()
 	new /obj/effect/decal/cleanable/blood/splatter(get_turf(src))
 
-/obj/effect/meteor/big/meteor_effect(gib)
+/obj/effect/meteor/big/meatyore/meteor_effect(gib)
 	..()
 	if(gib)
 		new /obj/effect/gibspawner/human(get_turf(src))

@@ -107,9 +107,6 @@
 	. = ..()
 	assign_uid()
 	default_apply_parts()
-
-/obj/machinery/ntnet_relay/Initialize(mapload)
-	. = ..()
 	if(GLOB.ntnet_global)
 		GLOB.ntnet_global.relays.Add(src)
 		NTNet = GLOB.ntnet_global

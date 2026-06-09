@@ -97,6 +97,8 @@
 			. += span_notice("The blade is [round(bcell.percent())]% charged.")
 		else
 			. += span_warning("The blade does not have a power source installed.")
+	if(colorable)
+		. += span_notice("Alt-click to recolor it.")
 
 /obj/item/melee/energy/attack_self(mob/living/user)
 	. = ..(user)
@@ -201,11 +203,6 @@
 		update_icon()
 		if(active)
 			set_light(lrange, lpower, lcolor)
-
-/obj/item/melee/energy/examine(mob/user)
-	. = ..()
-	if(colorable)
-		. += span_notice("Alt-click to recolor it.")
 
 /*
  * Energy Axe

@@ -220,10 +220,6 @@
 	slot_flags = SLOT_BELT
 	distribute_pressure = ONE_ATMOSPHERE*O2STANDARD
 
-/obj/item/tank/emergency/carbon_dioxide/Initialize(mapload)
-	. = ..()
-	src.air_contents.adjust_gas(GAS_CO2, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
-
 /obj/item/tank/emergency/carbon_dioxide/double
 	name = "double emergency carbon dioxide tank"
 	desc = "An double tank of carbon dioxide"

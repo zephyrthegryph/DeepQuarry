@@ -32,11 +32,9 @@
 
 /obj/item/implant/backup/Initialize(mapload, db_key)
 	. = ..()
-	db_key = db_key
-
-/obj/item/implant/backup/Initialize(mapload)
-	. = ..()
-	our_db = SStranscore.db_by_key(db_key)
+	if(!isnull(db_key))
+		src.db_key = db_key
+	our_db = SStranscore.db_by_key(src.db_key)
 
 /obj/item/implant/backup/Destroy()
 	our_db.implants -= src

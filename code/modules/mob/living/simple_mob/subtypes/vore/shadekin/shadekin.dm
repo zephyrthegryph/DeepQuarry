@@ -208,6 +208,10 @@
 		else if (non_kin_count && !(comp.in_phase))
 			phase_shift() // shifting out, scaredy
 
+	//They reach nutritional equilibrium (important for blue-eyes healbelly)
+	if(.)
+		comp.handle_comp()
+
 /mob/living/simple_mob/shadekin/update_icon()
 	. = ..()
 
@@ -315,11 +319,6 @@
 			return A
 	. = ..()
 */
-
-//They reach nutritional equilibrium (important for blue-eyes healbelly)
-/mob/living/simple_mob/shadekin/Life()
-	if((. = ..()))
-		comp.handle_comp()
 
 /mob/living/simple_mob/shadekin/proc/set_eye_energy()
 	switch(eye_state)

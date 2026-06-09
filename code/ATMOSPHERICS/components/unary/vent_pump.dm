@@ -387,7 +387,7 @@
 	update_icon()
 	return
 
-/obj/machinery/atmospherics/unary/vent_pump/attackby(obj/item/W, mob/user)
+/obj/machinery/atmospherics/unary/vent_pump/attackby(obj/item/W as obj, mob/user as mob)
 	if(W.has_tool_quality(TOOL_WELDER))
 		var/obj/item/weldingtool/WT = W.get_welder()
 		if (WT.remove_fuel(0,user))
@@ -408,28 +408,10 @@
 		else
 			to_chat(user, span_warning("You need more welding fuel to complete this task."))
 			return 1
+		return
 	if(W.has_tool_quality(TOOL_MULTITOOL))
 		multitool_act(W, user)
 		return TRUE
-	else
-		..()
-
-/obj/machinery/atmospherics/unary/vent_pump/examine(mob/user)
-	. = ..()
-	if(Adjacent(user))
-		. += "A small gauge in the corner reads [round(last_flow_rate, 0.1)] L/s; [round(last_power_draw)] W"
-	else
-		. += "You are too far away to read the gauge."
-	if(welded)
-		. += "It seems welded shut."
-
-/obj/machinery/atmospherics/unary/vent_pump/power_change()
-	var/old_stat = stat
-	..()
-	if(old_stat != stat)
-		update_icon()
-
-/obj/machinery/atmospherics/unary/vent_pump/attackby(obj/item/W as obj, mob/user as mob)
 	if (!W.has_tool_quality(TOOL_WRENCH))
 		return ..()
 	if (!(stat & NOPOWER) && use_power)
@@ -451,6 +433,21 @@
 			span_notice("You have unfastened \the [src]."), \
 			"You hear a ratchet.")
 		atom_deconstruct()
+
+/obj/machinery/atmospherics/unary/vent_pump/examine(mob/user)
+	. = ..()
+	if(Adjacent(user))
+		. += "A small gauge in the corner reads [round(last_flow_rate, 0.1)] L/s; [round(last_power_draw)] W"
+	else
+		. += "You are too far away to read the gauge."
+	if(welded)
+		. += "It seems welded shut."
+
+/obj/machinery/atmospherics/unary/vent_pump/power_change()
+	var/old_stat = stat
+	..()
+	if(old_stat != stat)
+		update_icon()
 
 /obj/machinery/atmospherics/unary/vent_pump/proc/multitool_act(obj/item/W, mob/user)
 	var/list/options = list(

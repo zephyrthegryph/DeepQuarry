@@ -70,19 +70,8 @@
 	handle_leaking()
 	return
 
-/obj/machinery/atmospherics/pipe/simple/heat_exchanging/set_leaking(new_leaking) // They already process, no need for manual processing toggles.
-	if(new_leaking && !leaking)
-		leaking = TRUE
-		if(parent)
-			parent.leaks |= src
-			if(parent.network)
-				parent.network.leaks |= src
-	else if (!new_leaking && leaking)
-		leaking = FALSE
-		if(parent)
-			parent.leaks -= src
-			if(parent.network)
-				parent.network.leaks -= src
+/obj/machinery/atmospherics/pipe/simple/heat_exchanging/set_leaking(new_leaking)
+	return	//Nope - pipe leaking is disabled fork-wide
 
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging/process()
 	if(!parent)
@@ -198,8 +187,3 @@
 	update_icon()
 	handle_leaking()
 	return
-
-
-// === merged from he_pipes_vr.dm during hard-fork de-suffix (verified no override-order change) ===
-/obj/machinery/atmospherics/pipe/simple/heat_exchanging/set_leaking(new_leaking)
-	return	//Nope

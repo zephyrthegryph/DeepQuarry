@@ -151,6 +151,7 @@
 
 // Force uncloaking if attacked.
 /mob/living/simple_mob/vore/demonAI/bullet_act(obj/item/projectile/P)
+	playsound(src, 'sound/misc/demonlaugh.ogg', 50, 1)
 	. = ..()
 	break_cloak()
 
@@ -174,10 +175,6 @@
 
 /mob/living/simple_mob/vore/demonAI/death()
 	playsound(src, 'sound/misc/demondeath.ogg', 50, 1)
-	..()
-
-/mob/living/simple_mob/vore/demonAI/bullet_act()
-	playsound(src, 'sound/misc/demonlaugh.ogg', 50, 1)
 	..()
 
 /mob/living/simple_mob/vore/demonAI/attack_hand()

@@ -129,10 +129,3 @@ ADMIN_VERB(spawn_tanktransferbomb, R_SPAWN, "Instant TTV", "Spawn a tank transfe
 //	var/assembly_type = /obj/item/assembly/signaler
 
 	//Note that the maximum amount of gas you can put in a 70L air tank at 1013.25 kPa and 519K is 16.44 mol.
-/obj/effect/spawner/onetankbomb/full/Initialize(mapload) //just needs an assembly.
-	. = ..()
-
-	var/type = pick(/obj/item/tank/phoron/onetankbomb/full, /obj/item/tank/oxygen/onetankbomb/full)
-	new type(src.loc)
-
-	qdel(src)

@@ -30,11 +30,9 @@
 
 /obj/machinery/pump_relay/on_reagent_change(changetype)
 	. = ..()
+	update_icon()
 	if(prob(2))
 		visible_message(span_infoplain("\The [src] gurgles as it pumps fluid."))
-
-/obj/machinery/pump_relay/on_reagent_change(changetype)
-	update_icon()
 
 /obj/machinery/pump_relay/update_icon()
 	. = ..()

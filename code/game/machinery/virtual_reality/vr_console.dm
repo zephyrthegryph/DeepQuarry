@@ -110,14 +110,6 @@
 
 
 
-/obj/machinery/vr_sleeper/relaymove(mob/user)
-	..()
-	if(user.incapacitated())
-		return
-	go_out()
-
-
-
 /obj/machinery/vr_sleeper/emp_act(severity, recursive)
 	. = ..()
 	if (. & EMP_PROTECT_SELF || stat & (BROKEN|NOPOWER))
@@ -159,6 +151,7 @@
 	add_fingerprint(usr)
 
 /obj/machinery/vr_sleeper/relaymove(mob/user as mob)
+	..()
 	if(user.incapacitated())
 		return 0 //maybe they should be able to get out with cuffs, but whatever
 	perform_exit()

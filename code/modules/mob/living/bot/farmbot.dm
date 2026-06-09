@@ -344,23 +344,16 @@
 		tank = theTank
 		tank.forceMove(src)
 
-/obj/structure/reagent_dispensers/watertank/attackby(obj/item/robot_parts/S, mob/user as mob)
-	if ((!istype(S, /obj/item/robot_parts/l_arm)) && (!istype(S, /obj/item/robot_parts/r_arm)))
-		..()
-		return
+/obj/structure/reagent_dispensers/watertank/attackby(obj/item/S, mob/user as mob)
+	// Accept either a robotic arm part or a robotic external arm organ to build the assembly.
+	var/is_robot_arm = istype(S, /obj/item/robot_parts/l_arm) || istype(S, /obj/item/robot_parts/r_arm)
+	var/is_robotic_organ = FALSE
+	if(istype(S, /obj/item/organ/external/arm))
+		var/obj/item/organ/external/arm/organ_arm = S
+		is_robotic_organ = (organ_arm.robotic == ORGAN_ROBOT)
 
-
-	to_chat(user, "You add the robot arm to [src].")
-
-	user.drop_from_inventory(S)
-	qdel(S)
-
-	new /obj/item/farmbot_arm_assembly(loc, src)
-
-/obj/structure/reagent_dispensers/watertank/attackby(obj/item/organ/external/S, mob/user as mob)
-	if ((!istype(S, /obj/item/organ/external/arm)) || S.robotic != ORGAN_ROBOT)
-		..()
-		return
+	if(!is_robot_arm && !is_robotic_organ)
+		return ..()
 
 	to_chat(user, "You add the robot arm to [src].")
 

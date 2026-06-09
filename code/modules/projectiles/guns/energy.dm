@@ -103,9 +103,6 @@
 			charge_tick = 0
 	return 1
 
-/obj/item/gun/energy/attackby(obj/item/A as obj, mob/user as mob)
-	..()
-
 /obj/item/gun/energy/switch_firemodes(mob/user)
 	if(..())
 		update_icon()

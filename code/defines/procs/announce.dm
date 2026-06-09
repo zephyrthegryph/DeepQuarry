@@ -67,27 +67,6 @@ GLOBAL_DATUM_INIT(command_announcement, /datum/announcement/priority/command, ne
 /datum/announcement/minor/Message(message as text, message_title as text)
 	to_chat(world, span_bold("[message]"))
 
-/datum/announcement/priority/Message(message as text, message_title as text)
-	to_chat(world, "<h1 class='alert'>[message_title]</h1>")
-	to_chat(world, span_alert("[message]"))
-	if(announcer)
-		to_chat(world, span_alert(" -[html_encode(announcer)]"))
-	to_chat(world, span_alert("<br>"))
-
-/datum/announcement/priority/command/Message(message as text, message_title as text, list/zlevels)
-	var/command
-	command += "<h1 class='alert'>[command_name()] Update</h1>"
-	if (message_title)
-		command += "<br><h2 class='alert'>[message_title]</h2>"
-
-	command += "<br>[span_alert(message)]<br>"
-	command += "<br>"
-	for(var/mob/M in GLOB.player_list)
-		if(zlevels && !(get_z(M) in zlevels))
-			continue
-		if(!isnewplayer(M) && !isdeaf(M))
-			to_chat(M, command)
-
 /datum/announcement/priority/Message(message as text, message_title as text, list/zlevels)
 	GLOB.global_announcer.autosay(span_alert("[message_title]:") + " [message]", announcer ? announcer : ANNOUNCER_NAME, channel = "Common", zlevels = zlevels)
 

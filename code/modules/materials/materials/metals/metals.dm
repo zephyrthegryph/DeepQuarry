@@ -21,12 +21,6 @@
 	reflectivity = 0.7 // Not a perfect mirror, but close.
 	supply_conversion_value = 9
 
-/datum/material/durasteel/generate_recipes()
-	..()
-	recipes += list(
-		new /datum/stack_recipe("durasteel hull sheet", /obj/item/stack/material/durasteel/hull, 2, 1, 5, time = 20, one_per_turf = 0, on_floor = 1, recycle_material = "[name]")
-	)
-
 /datum/material/titanium
 	name = MAT_TITANIUM
 	stack_type = /obj/item/stack/material/titanium
@@ -231,16 +225,15 @@
 	density = 10
 
 
-// === merged from metals_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/material/durasteel/generate_recipes()
 	. = ..()
 	recipes += list(
+		new /datum/stack_recipe("durasteel hull sheet", /obj/item/stack/material/durasteel/hull, 2, 1, 5, time = 20, one_per_turf = 0, on_floor = 1, recycle_material = "[name]"),
 		new /datum/stack_recipe("durasteel fishing rod", /obj/item/material/fishing_rod/modern/strong, 2),
 		new /datum/stack_recipe("whetstone", /obj/item/whetstone, 2, time = 30),
 	)
 
 
-// === merged from metals_chomp.dm during hard-fork de-suffix (chain-verified additive) ===
 /datum/material/durasteel //Slightly nerfed protectivness
 	protectiveness = 55
 

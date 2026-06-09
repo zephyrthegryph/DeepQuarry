@@ -97,12 +97,6 @@
 		return chambered.BB
 	return null
 
-/obj/item/gun/projectile/handle_post_fire()
-	..()
-	if(chambered)
-		chambered.expend()
-		process_chambered()
-
 /obj/item/gun/projectile/handle_click_empty()
 	..()
 	if(!manual_chamber) // Manual Chambering
@@ -142,84 +136,6 @@
 	if(istype(M)) // TGMC Ammo HUD
 		M?.hud_used.update_ammo_hud(M, src)
 
-
-// Attempts to load A into src, depending on the type of thing being loaded and the load_method.
-// For magazine and single-casing loads the ammo_provider datum (see ammo_provider.dm)
-// provides an alternative API; this proc remains for all direct-attach paths (storage
-// bulk-loading, speedloader intermediate step) that need the full switch logic.
-/obj/item/gun/projectile/proc/load_ammo(obj/item/A, mob/user)
-	if(istype(A, /obj/item/ammo_magazine))
-		var/obj/item/ammo_magazine/AM = A
-		if(!(load_method & AM.mag_type) || caliber != AM.caliber || allowed_magazines && !is_type_in_list(A, allowed_magazines))
-			to_chat(user, span_warning("[AM] won't load into [src]!"))
-			return
-		switch(AM.mag_type)
-			if(MAGAZINE)
-				if(ammo_magazine)
-					to_chat(user, span_warning("[src] already has a magazine loaded.")) //already a magazine here
-					return
-				if(do_after(user, reload_time * AM.w_class, target = src))
-					user.remove_from_mob(AM)
-					AM.loc = src
-					ammo_magazine = AM
-					user.visible_message("[user] inserts [AM] into [src].", span_notice("You insert [AM] into [src]."))
-					user.hud_used.update_ammo_hud(user, src)
-					playsound(src, 'sound/weapons/flipblade.ogg', 50, 1)
-			if(SPEEDLOADER)
-				if(loaded.len >= max_shells)
-					to_chat(user, span_warning("[src] is full!"))
-					return
-				var/count = 0
-				for(var/obj/item/ammo_casing/C in AM.stored_ammo)
-					if(loaded.len >= max_shells)
-						break
-					if(C.caliber == caliber)
-						C.loc = src
-						loaded += C
-						AM.stored_ammo -= C //should probably go inside an ammo_magazine proc, but I guess less proc calls this way...
-						count++
-						user.hud_used.update_ammo_hud(user, src)
-				if(do_after(user, reload_time * AM.w_class, target = src))
-					if(count)
-						user.visible_message("[user] reloads [src].", span_notice("You load [count] round\s into [src]."))
-						user.hud_used.update_ammo_hud(user, src)
-						playsound(src, 'sound/weapons/empty.ogg', 50, 1)
-		AM.update_icon()
-	else if(istype(A, /obj/item/ammo_casing))
-		var/obj/item/ammo_casing/C = A
-		if(!(load_method & SINGLE_CASING) || caliber != C.caliber)
-			return //incompatible
-		if(loaded.len >= max_shells)
-			to_chat(user, span_warning("[src] is full."))
-			return
-
-		if(do_after(user, reload_time * C.w_class, target = src))
-			user.remove_from_mob(C)
-			C.loc = src
-			loaded.Insert(1, C) //add to the head of the list
-			user.visible_message("[user] inserts \a [C] into [src].", span_notice("You insert \a [C] into [src]."))
-			playsound(src, 'sound/weapons/empty.ogg', 50, 1)
-
-	else if(istype(A, /obj/item/storage))
-		var/obj/item/storage/storage = A
-		if(!(load_method & SINGLE_CASING))
-			return //incompatible
-
-		to_chat(user, span_notice("You start loading \the [src]."))
-		sleep(1 SECOND)
-		for(var/obj/item/ammo_casing/ammo in storage.contents)
-			if(caliber != ammo.caliber)
-				continue
-
-			load_ammo(ammo, user)
-
-			if(loaded.len >= max_shells)
-				to_chat(user, span_warning("[src] is full."))
-				break
-			sleep(1 SECOND)
-
-	update_icon()
-	user.hud_used.update_ammo_hud(user, src)
 
 //attempts to unload src. If allow_dump is set to 0, the speedloader unloading method will be disabled
 /obj/item/gun/projectile/proc/unload_ammo(mob/user, allow_dump=1)
@@ -601,7 +517,10 @@
 	else
 		return FALSE
 
-/obj/item/gun/projectile/load_ammo(obj/item/A, mob/user)
+// Attempts to load A into src, depending on the type of thing being loaded and the load_method.
+// Handles magazine/speedloader/single-casing/storage bulk loads, including the manual-chamber
+// and bolt mechanics keyed off auto_loading_type.
+/obj/item/gun/projectile/proc/load_ammo(obj/item/A, mob/user)
 	if(istype(A, /obj/item/ammo_magazine))
 		var/obj/item/ammo_magazine/AM = A
 		if(!(load_method & AM.mag_type) || caliber != AM.caliber || allowed_magazines && !is_type_in_list(A, allowed_magazines))

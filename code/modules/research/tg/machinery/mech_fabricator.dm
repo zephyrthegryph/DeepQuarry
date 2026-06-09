@@ -71,18 +71,15 @@
 	default_apply_parts()
 	RefreshParts()
 	update_icon()
+	if(!stored_research)
+		CONNECT_TO_RND_SERVER_ROUNDSTART(stored_research, src)
+	if(stored_research)
+		on_connected_techweb()
 
 /obj/machinery/mecha_part_fabricator_tg/Destroy()
 	QDEL_NULL(print_sound)
 	rmat = null
 	return ..()
-
-/obj/machinery/mecha_part_fabricator_tg/Initialize(mapload)
-	. = ..()
-	if(!stored_research)
-		CONNECT_TO_RND_SERVER_ROUNDSTART(stored_research, src)
-	if(stored_research)
-		on_connected_techweb()
 
 /obj/machinery/mecha_part_fabricator_tg/proc/connect_techweb(datum/techweb/new_techweb)
 	if(stored_research)

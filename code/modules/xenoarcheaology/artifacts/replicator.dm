@@ -419,15 +419,6 @@
 					visible_message(fail_message)
 
 
-/obj/machinery/replicator/clothing/tgui_interact(mob/user, datum/tgui/ui) //This creates the menu.
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "XenoarchReplicator_voremob_vr", name)
-		ui.open()
-
-
-
-
 
 //////////////////////////////
 //////CLOTHING REPLICATOR/////

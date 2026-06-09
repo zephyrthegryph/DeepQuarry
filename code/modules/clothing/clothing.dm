@@ -738,23 +738,6 @@
 		return
 	..()
 
-/obj/item/clothing/shoes/attackby(obj/item/I, mob/user)
-	if((can_hold_knife == 1) && (istype(I, /obj/item/material/shard) || \
-		istype(I, /obj/item/material/butterfly) || \
-		istype(I, /obj/item/material/kitchen/utensil) || \
-		istype(I, /obj/item/material/knife/tacknife)))
-		if(holding)
-			to_chat(user, span_warning("\The [src] is already holding \a [holding]."))
-			return
-		user.unEquip(I)
-		I.forceMove(src)
-		holding = I
-		user.visible_message(span_infoplain(span_bold("\The [user]") + " shoves \the [I] into \the [src]."))
-		verbs |= /obj/item/clothing/shoes/proc/draw_knife
-		update_icon()
-	else
-		return ..()
-
 /obj/item/clothing/shoes/verb/toggle_layer()
 	set name = "Switch Shoe Layer"
 	set category = "Object"
@@ -997,11 +980,6 @@
 	if(has_hood_sprite) //If we have a special hood_sprite, great, let's use it! Only used by /obj/item/clothing/suit/storage/hooded atm.
 		icon_state = "[toggleicon][hood_up ? "_t" : ""]"
 
-/obj/item/clothing/suit/equipped(mob/user, slot)
-	if(slot != slot_wear_suit)
-		RemoveHood()
-	..()
-
 /obj/item/clothing/suit/dropped(mob/user, equipping, slot)
 	RemoveHood()
 	..()
@@ -1059,15 +1037,6 @@
 	if (ismob(src.loc))
 		var/mob/M = src.loc
 		M.update_inv_wear_suit()
-
-/obj/item/clothing/suit/equipped(mob/user, slot)
-	if(ishuman(user))
-		var/mob/living/carbon/human/H = user
-		var/taurtail = istaurtail(H.tail_style)
-		if((taurized && !taurtail) || (!taurized && taurtail))
-			taurize(user, taurtail)
-
-	return ..()
 
 /obj/item/clothing/suit/proc/taurize(mob/living/carbon/human/taur, has_taur_tail = FALSE)
 	if(has_taur_tail)
@@ -1453,6 +1422,15 @@
 	handle_digitigrade(user)
 
 /obj/item/clothing/suit/equipped(mob/user, slot)
+	if(slot != slot_wear_suit)
+		RemoveHood()
+
+	if(ishuman(user))
+		var/mob/living/carbon/human/H = user
+		var/taurtail = istaurtail(H.tail_style)
+		if((taurized && !taurtail) || (!taurized && taurtail))
+			taurize(user, taurtail)
+
 	. = ..()
 	handle_digitigrade(user)
 
@@ -1546,8 +1524,22 @@
 				to_chat(M, span_warning("[user] stuffs you into \the [src]!"))
 				M.forceMove(src)
 				to_chat(user, span_notice("You stuff \the [M] into \the [src]!"))
+		return
+	if((can_hold_knife == 1) && (istype(I, /obj/item/material/shard) || \
+		istype(I, /obj/item/material/butterfly) || \
+		istype(I, /obj/item/material/kitchen/utensil) || \
+		istype(I, /obj/item/material/knife/tacknife)))
+		if(holding)
+			to_chat(user, span_warning("\The [src] is already holding \a [holding]."))
+			return
+		user.unEquip(I)
+		I.forceMove(src)
+		holding = I
+		user.visible_message(span_infoplain(span_bold("\The [user]") + " shoves \the [I] into \the [src]."))
+		verbs |= /obj/item/clothing/shoes/proc/draw_knife
+		update_icon()
 	else
-		..()
+		return ..()
 
 /obj/item/clothing/gloves
 	sprite_sheets = list(

@@ -13,7 +13,7 @@
 	desc = "You're on the hook now!"
 	icon_state = "leash_pet"
 
-/atom/movable/screen/alert/leash_dom/Click()
+/atom/movable/screen/alert/leash_pet/Click()
 	var/obj/item/leash/owner = master_ref?.resolve()
 	if(owner)
 		owner.struggle_leash()

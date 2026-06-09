@@ -77,10 +77,3 @@
 	fire_sound = 'sound/weapons/45pistol_vr.ogg'
 	magazine_type = /obj/item/ammo_magazine/m45
 	allowed_magazines = list(/obj/item/ammo_magazine/m45)
-
-/obj/item/gun/projectile/m2024/update_icon()
-	..()
-	if(ammo_magazine)
-		icon_state = "[initial(icon_state)]"
-	else
-		icon_state = "[initial(icon_state)]-empty"

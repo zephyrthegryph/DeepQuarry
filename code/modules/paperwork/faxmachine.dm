@@ -490,40 +490,6 @@ Extracted to its own procedure for easier logic handling with paper bundles.
 
 
 
-/**
- * Call the chat webhook to transmit a notification of an admin fax to the admin chat.
- */
-/obj/machinery/photocopier/faxmachine/proc/message_chat_admins(mob/sender, faxname, obj/item/sent, faxid, font_colour="#006100")
-	if (CONFIG_GET(string/chat_webhook_url))
-		spawn(0)
-			var/query_string = "type=fax"
-			query_string += "&key=[url_encode(CONFIG_GET(string/chat_webhook_key))]"
-			query_string += "&faxid=[url_encode(faxid)]"
-			query_string += "&color=[url_encode(font_colour)]"
-			query_string += "&faxname=[url_encode(faxname)]"
-			query_string += "&sendername=[url_encode(sender.name)]"
-			query_string += "&sentname=[url_encode(sent.name)]"
-			world.Export("[CONFIG_GET(string/chat_webhook_url)]?[query_string]")
-
-
-
-
-/**
- * Call the chat webhook to transmit a notification of a job request
- */
-/obj/machinery/photocopier/faxmachine/proc/message_chat_rolerequest(font_colour="#006100", role_to_ping, reason, jobname)
-	if(CONFIG_GET(string/chat_webhook_url))
-		spawn(0)
-			var/query_string = "type=rolerequest"
-			query_string += "&key=[url_encode(CONFIG_GET(string/chat_webhook_key))]"
-			query_string += "&ping=[url_encode(role_to_ping)]"
-			query_string += "&color=[url_encode(font_colour)]"
-			query_string += "&reason=[url_encode(reason)]"
-			query_string += "&job=[url_encode(jobname)]"
-			world.Export("[CONFIG_GET(string/chat_webhook_url)]?[query_string]")
-
-
-// === merged from faxmachine_chomp.dm during hard-fork de-suffix (manually verified) ===
 /proc/get_role_request_channel()
 	var/channel_tag
 	if(CONFIG_GET(string/role_request_channel_tag))
@@ -603,7 +569,10 @@ Extracted to its own procedure for easier logic handling with paper bundles.
 	return FALSE
 
 
-/obj/machinery/photocopier/faxmachine/message_chat_admins(mob/sender, faxname, obj/item/sent, faxid, font_colour="#006100")
+/**
+ * Transmit a notification of an admin fax to the admin Discord channel.
+ */
+/obj/machinery/photocopier/faxmachine/proc/message_chat_admins(mob/sender, faxname, obj/item/sent, faxid, font_colour="#006100")
 	var/faxmsg
 	if(faxid && fexists("[CONFIG_GET(string/fax_export_dir)]/fax_[faxid].html"))
 		faxmsg = file2text("[CONFIG_GET(string/fax_export_dir)]/fax_[faxid].html")
@@ -614,7 +583,10 @@ Extracted to its own procedure for easier logic handling with paper bundles.
 		fax_discord_message("A fax; '[faxname]' was sent.\nSender: [sender.name]\nFax name: [sent.name]\nFax ID: **[faxid]**")
 
 
-/obj/machinery/photocopier/faxmachine/message_chat_rolerequest(font_colour="#006100", role_to_ping, reason, jobname)
+/**
+ * Transmit a notification of a job request to the role-request Discord channel.
+ */
+/obj/machinery/photocopier/faxmachine/proc/message_chat_rolerequest(font_colour="#006100", role_to_ping, reason, jobname)
 	var/roleid = get_discord_role_id_from_department(role_to_ping)
 
 	if(roleid)

@@ -35,11 +35,13 @@
 		invisibility = INVISIBILITY_MAXIMUM
 		amount = 0
 
-/obj/effect/decal/cleanable/blood/Initialize(mapload)
+/obj/effect/decal/cleanable/blood/Initialize(mapload, _age)
 	. = ..()
 	if(delete_me)
 		return INITIALIZE_HINT_QDEL
 	update_icon()
+	if(!mapload)
+		addtimer(CALLBACK(src, PROC_REF(dry)), DRYING_TIME * (amount+1))
 	if(istype(src, /obj/effect/decal/cleanable/blood/gibs))
 		return
 	if(src.type == /obj/effect/decal/cleanable/blood)
@@ -51,13 +53,6 @@
 						B.delete_me = TRUE
 					else
 						qdel(B)
-
-//VOREstation edit - Moved timer call to Init, and made it not call on mapload
-/obj/effect/decal/cleanable/blood/Initialize(mapload, _age)
-	. = ..()
-	if(!mapload)
-		addtimer(CALLBACK(src, PROC_REF(dry)), DRYING_TIME * (amount+1))
-//VOREstation edit end
 
 /obj/effect/decal/cleanable/blood/update_icon()
 	if(basecolor == "rainbow") basecolor = get_random_colour(1)
@@ -262,10 +257,6 @@
 	var/list/datum/disease/viruses = list()
 	var/dry = 0 // Keeps the lag down
 	var/sampled = FALSE
-
-/obj/effect/decal/cleanable/mucus/mapped/Initialize(mapload)
-	. = ..()
-	VARSET_IN(src, dry, TRUE, DRYING_TIME * 2)
 
 //This version should be used for admin spawns and pre-mapped virus vectors (e.g. in PoIs), this version does not dry
 /obj/effect/decal/cleanable/mucus/mapped/Initialize(mapload)

@@ -157,13 +157,6 @@
 		else
 			embed_chance = max(5, round(force/(w_class*3)))
 
-/obj/item/equipped()
-	..()
-	var/mob/living/M = loc
-	if(!istype(M))
-		return
-	M.update_held_icons()
-
 /obj/item/Destroy()
 	d_stage_overlay = null
 	exploit_for = null

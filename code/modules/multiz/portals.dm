@@ -9,12 +9,6 @@
 	anchored = TRUE
 	var/obj/structure/portal_event/target
 
-/obj/structure/portal_event/Destroy()
-	if(target)
-		target.target = null
-		target = null
-	return ..()
-
 /obj/structure/portal_event/Bumped(mob/M as mob|obj)
 	if(ismob(M) && !(isliving(M)))
 		return	//do not send ghosts, zshadows, ai eyes, etc

@@ -687,9 +687,6 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
 	industrial_use = REFINERYEXPORT_REASON_DIET
 
-/datum/reagent/lipozine/affect_blood(mob/living/carbon/M, alien, removed)
-	M.adjust_nutrition(-10 * removed)
-
 /* Non-food stuff like condiments */
 
 /datum/reagent/sodiumchloride
@@ -5378,9 +5375,6 @@
 /datum/reagent/ethanol/galacticpanic/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
 	M.Stun(2)
-
-/datum/reagent/ethanol/galacticpanic/affect_ingest(mob/living/carbon/M, alien, removed)
-	..()
 
 	if(M.species.robo_ethanol_drunk || !(M.isSynthetic()))
 		if(dose * strength >= strength) // Early warning

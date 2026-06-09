@@ -215,6 +215,9 @@
 
 	AddElement(/datum/element/footstep, FOOTSTEP_MOB_SHOE, 1, -6) // Need to go through all of the mobs to give them proper footsteps...
 
+	add_verb(src,/mob/living/simple_mob/proc/use_headset) // TGPanel
+	add_verb(src,/mob/living/simple_mob/proc/use_pda) // TGPanel
+
 	return ..()
 
 /mob/living/simple_mob/Destroy()
@@ -229,11 +232,18 @@
 
 	if(has_eye_glow)
 		remove_eyes()
+
+	// Release belly contents before being gc'd!
+	if(mob_radio)
+		QDEL_NULL(mob_radio)
+	release_vore_contents()
+	LAZYCLEARLIST(prey_excludes)
 	return ..()
 
 /mob/living/simple_mob/death()
 	update_icon()
-	..()
+	release_vore_contents()
+	. = ..()
 
 //Client attached
 /mob/living/simple_mob/Login()
@@ -534,14 +544,6 @@
 
 	var/voremob_loaded = FALSE // On-demand belly loading.
 
-// Release belly contents before being gc'd!
-/mob/living/simple_mob/Destroy()
-	if(mob_radio)
-		QDEL_NULL(mob_radio)
-	release_vore_contents()
-	LAZYCLEARLIST(prey_excludes)
-	return ..()
-
 //For all those ID-having mobs
 /mob/living/simple_mob/GetIdCard()
 	if(get_active_hand())
@@ -682,10 +684,6 @@
 		// Otherwise we'll be in a possibly infinate loop
 		set_AI_busy(0) // AI TEMPORARY EDIT
 	// stop_automated_movement = 0 // AI TEMPORARY EDIT
-
-/mob/living/simple_mob/death()
-	release_vore_contents()
-	. = ..()
 
 // Make sure you don't call ..() on this one, otherwise you duplicate work.
 /mob/living/simple_mob/init_vore(force)
@@ -1059,11 +1057,3 @@
 	else
 		to_chat(src, span_warning("Your mob does not have a PDA in its ID slot."))
 
-/mob/living/simple_mob/Initialize(mapload)
-	. = ..()
-	add_verb(src,/mob/living/simple_mob/proc/use_headset) // TGPanel
-	add_verb(src,/mob/living/simple_mob/proc/use_pda) // TGPanel
-
-/mob/living/simple_mob/update_icon()
-	. = ..()
-	add_vore_fullness_overlays() // Appends per-belly-class overlays; see living_bellies.dm.

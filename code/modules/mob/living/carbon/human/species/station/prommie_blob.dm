@@ -44,21 +44,6 @@
 		/datum/decl/emote/visible/spin,
 		/datum/decl/emote/visible/floorspin
 	)
-/mob/living/simple_mob/slime/promethean/Initialize(mapload, null)
-	add_verb(src, /mob/living/simple_mob/slime/promethean/proc/prommie_blobform)
-	add_verb(src, /mob/living/proc/set_size)
-	add_verb(src, /mob/living/proc/hide)
-	add_verb(src, /mob/living/simple_mob/proc/animal_nom)
-	add_verb(src, /mob/living/proc/shred_limb)
-	add_verb(src, /mob/living/simple_mob/slime/promethean/proc/toggle_expand)
-	add_verb(src, /mob/living/simple_mob/slime/promethean/proc/prommie_select_colour)
-	add_verb(src, /mob/living/simple_mob/slime/promethean/proc/toggle_shine)
-	update_mood()
-	if(rad_glow)
-		rad_glow = CLAMP(rad_glow,0,250)
-		set_light(max(1,min(5,rad_glow/15)), max(1,min(10,rad_glow/25)), color)
-	return ..()
-
 /mob/living/simple_mob/slime/promethean/update_icon()
 	icon_living = "[icon_state_override ? "[icon_state_override] slime" : "slime"] [is_wide ? "adult" : "baby"][""]"
 	..()
@@ -109,6 +94,19 @@
 
 	humanform = H
 	calculate_health()
+
+	add_verb(src, /mob/living/simple_mob/slime/promethean/proc/prommie_blobform)
+	add_verb(src, /mob/living/proc/set_size)
+	add_verb(src, /mob/living/proc/hide)
+	add_verb(src, /mob/living/simple_mob/proc/animal_nom)
+	add_verb(src, /mob/living/proc/shred_limb)
+	add_verb(src, /mob/living/simple_mob/slime/promethean/proc/toggle_expand)
+	add_verb(src, /mob/living/simple_mob/slime/promethean/proc/prommie_select_colour)
+	add_verb(src, /mob/living/simple_mob/slime/promethean/proc/toggle_shine)
+	update_mood()
+	if(rad_glow)
+		rad_glow = CLAMP(rad_glow,0,250)
+		set_light(max(1,min(5,rad_glow/15)), max(1,min(10,rad_glow/25)), color)
 
 /mob/living/simple_mob/slime/promethean/updatehealth()
 	if(!humanform)
@@ -535,13 +533,6 @@
 		return TRUE
 	else return FALSE
 
-/mob/living/simple_mob/slime/promethean/character_directory_species()
-	if (humanform)
-		return "[humanform.custom_species ? humanform.custom_species : (humanform.species ? humanform.species.name : "Promethean Blob")]"
-	return "Promethean Blob"
-
-
-// === merged from prommie_blob_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /mob/living/simple_mob/slime/promethean/character_directory_species()
 	if (humanform)
 		return "[humanform.custom_species ? humanform.custom_species : (humanform.species ? humanform.species.name : "Promethean Blob")]"

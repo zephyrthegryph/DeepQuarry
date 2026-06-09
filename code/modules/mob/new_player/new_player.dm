@@ -433,9 +433,6 @@
 /mob/new_player/hear_holopad_talk(list/message_pieces, verb = "says", mob/speaker = null)
 	return
 
-/mob/new_player/hear_holopad_talk(list/message_pieces, verb = "says", mob/speaker = null)
-	return
-
 // Prevents lobby players from seeing emotes, even with ghosteyes
 /mob/new_player/show_message(msg, type, alt, alt_type)
 	return

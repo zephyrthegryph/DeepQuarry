@@ -189,7 +189,7 @@
 	result_amount = 1
 	required = /obj/item/slime_extract/dark
 
-/datum/decl/chemical_reaction/instant/slime/dark_liquidfire/on_reaction(datum/reagents/holder)
+/datum/decl/chemical_reaction/instant/slime/dark_liquidlife/on_reaction(datum/reagents/holder)
 	for(var/mob/living/L in range(49, holder.my_atom))
 		L.add_modifier(/datum/modifier/sprinting, 5 MINUTES, src)
 	..()
@@ -214,7 +214,7 @@
 	result_amount = 1
 	required = /obj/item/slime_extract/dark
 
-/datum/decl/chemical_reaction/instant/slime/dark_deathblood/on_reaction(datum/reagents/holder)
+/datum/decl/chemical_reaction/instant/slime/dark_spidertoxin/on_reaction(datum/reagents/holder)
 	new /obj/effect/spider/eggcluster/royal/space(get_turf(holder.my_atom))
 	..()
 

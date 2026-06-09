@@ -19,6 +19,7 @@
 
 /obj/item/radio/intercom/Initialize(mapload)
 	. = ..()
+	circuit = new circuit(src)
 	var/area/A = get_area(src)
 	if(A)
 		RegisterSignal(A, COMSIG_OBSERVER_APC, PROC_REF(on_observer_apc))
@@ -91,10 +92,6 @@
 /obj/item/radio/intercom/omni/Initialize(mapload)
 	channels = GLOB.radiochannels.Copy()
 	return ..()
-
-/obj/item/radio/intercom/Initialize(mapload)
-	. = ..()
-	circuit = new circuit(src)
 
 /obj/item/radio/intercom/department/medbay/Initialize(mapload)
 	. = ..()

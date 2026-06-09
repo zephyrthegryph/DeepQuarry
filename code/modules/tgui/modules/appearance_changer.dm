@@ -731,6 +731,8 @@
 	if(can_change(owner, APPEARANCE_HAIR_COLOR))
 		data["hair_grads"] = valid_gradstyles
 
+	data["mapRef"] = map_name
+
 	return data
 
 /datum/tgui_module/appearance_changer/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -886,11 +888,6 @@
 		data["facial_hair_color"] = rgb(owner.r_facial, owner.g_facial, owner.b_facial)
 	return data
 
-/datum/tgui_module/appearance_changer/tgui_static_data(mob/user)
-	var/list/data = ..()
-	data["mapRef"] = map_name
-	return data
-
 /datum/tgui_module/appearance_changer/proc/update_active_camera_screen()
 	SIGNAL_HANDLER
 	cam_screen.vis_contents = list(owner) // Copied from the vore version.
@@ -1037,11 +1034,6 @@
 	cam_background.icon_state = "clear"
 	cam_background.fill_rect(1, 1, 1, 1)
 	local_skybox.cut_overlays()
-
-/datum/tgui_module/appearance_changer/vore/tgui_close(mob/user)
-	. = ..()
-	if(!QDELETED(src))
-		qdel(src)
 
 /datum/tgui_module/appearance_changer/vore/changed_hook(flag)
 	var/mob/living/carbon/human/M = owner

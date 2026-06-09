@@ -165,9 +165,6 @@
 		total_positions = CONFIG_GET(number/limit_visitors)
 		spawn_positions = CONFIG_GET(number/limit_visitors)
 
-/datum/job/assistant/get_access()
-	return list()
-
 /datum/alt_title/guest
 	title = "Guest"
 

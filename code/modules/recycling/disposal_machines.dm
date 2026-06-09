@@ -72,10 +72,6 @@
 	if(current_size >= STAGE_FIVE)
 		atom_deconstruct(TRUE)
 
-/obj/machinery/disposal/MouseDrop_T(atom/dropping, mob/user, src_location, over_location, src_control, over_control, params)
-	if(Adjacent(user) && Adjacent(dropping) && isobj(dropping) && isturf(dropping.loc))
-		attackby(dropping, user, drag_dropped = TRUE)
-
 // attack by item places it in to disposal
 /obj/machinery/disposal/attackby(obj/item/I, mob/user, attack_modifier, click_parameters, drag_dropped = FALSE)
 	if(stat & BROKEN || !I || !user || !istype(I))
@@ -276,7 +272,7 @@
 /obj/machinery/disposal/MouseDrop_T(atom/dropping, mob/user, src_location, over_location, src_control, over_control, params)
 	if(isliving(dropping))
 		stuff_mob_in(dropping, user)
-	else if(isobj(dropping) && isturf(dropping.loc))
+	else if(Adjacent(user) && Adjacent(dropping) && isobj(dropping) && isturf(dropping.loc))
 		attackby(dropping, user, drag_dropped = TRUE)
 
 /obj/machinery/disposal/proc/stuff_mob_in(mob/living/target, mob/living/user)

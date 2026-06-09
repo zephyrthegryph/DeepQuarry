@@ -33,26 +33,7 @@
 	return level != 2
 
 /obj/machinery/atmospherics/pipe/proc/set_leaking(new_leaking)
-	if(new_leaking && !leaking)
-		if(!speed_process)
-			START_MACHINE_PROCESSING(src)
-		else
-			START_PROCESSING(SSfastprocess, src)
-		leaking = TRUE
-		if(parent)
-			parent.leaks |= src
-			if(parent.network)
-				parent.network.leaks |= src
-	else if (!new_leaking && leaking)
-		if(!speed_process)
-			STOP_MACHINE_PROCESSING(src)
-		else
-			STOP_PROCESSING(SSfastprocess, src)
-		leaking = FALSE
-		if(parent)
-			parent.leaks -= src
-			if(parent.network)
-				parent.network.leaks -= src
+	return // N O P E - pipe leaking is disabled fork-wide
 
 /obj/machinery/atmospherics/pipe/proc/handle_leaking()	// Used specifically to update leaking status on different pipes.
 	return
@@ -195,8 +176,3 @@
 		..()
 	else
 		. = PROCESS_KILL
-
-
-// === merged from pipe_base_vr.dm during hard-fork de-suffix (verified no override-order change) ===
-/obj/machinery/atmospherics/pipe/set_leaking(new_leaking)
-	return // N O P E

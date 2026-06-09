@@ -140,15 +140,6 @@
 	// TODO: Set a max temperature of about 20-30 above room temperatures. Synx don't like the heat.
 
 
-/mob/living/simple_mob/animal/synx/Initialize(mapload)
-	. = ..()
-	src.adjust_nutrition(src.max_nutrition)
-	build_icons(1)
-	if(!voremob_loaded)
-		voremob_loaded = TRUE
-		init_vore()
-	mob_radio = new /obj/item/radio/headset/mob_headset(src)	//We always give radios to spawned mobs anyway
-
 /mob/living/simple_mob/animal/synx/get_available_emotes()
 	. = ..()
 	. |= GLOB.human_default_emotes //Synx are great at mimicking
@@ -215,6 +206,12 @@
 /mob/living/simple_mob/animal/synx/Initialize(mapload, is_pet) //this is really cool. Should be able to ventcrawl canonicaly, contort, and make random speech.
 //some things should be here that arent tho.
 	. = ..()
+	src.adjust_nutrition(src.max_nutrition)
+	build_icons(1)
+	if(!voremob_loaded)
+		voremob_loaded = TRUE
+		init_vore()
+	mob_radio = new /obj/item/radio/headset/mob_headset(src)	//We always give radios to spawned mobs anyway
 	if(is_pet)
 		return
 	add_verb(src,/mob/living/proc/ventcrawl)

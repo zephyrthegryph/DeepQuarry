@@ -554,7 +554,7 @@ ANT STRUCTURES
 /obj/effect/ant_structure/trap/trip
 	icon_state = "trip_trap"
 
-/obj/effect/ant_structure/trap/poison/attack_mob(mob/living/L)
+/obj/effect/ant_structure/trap/trip/attack_mob(mob/living/L)
 	L.Weaken(3)
 
 /obj/effect/ant_structure/wall

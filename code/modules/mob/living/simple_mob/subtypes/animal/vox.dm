@@ -43,27 +43,6 @@
 	explosion(gloc, -1, -1, 3, 5)
 	qdel(src)
 
-/mob/living/simple_mob/vox/armalis/attackby(obj/item/O as obj, mob/user as mob)
-	base_attack_cooldown = 5
-	if(O.force)
-		if(O.force >= 25)
-			var/damage = O.force
-			if (O.damtype == HALLOSS)
-				damage = 0
-			health -= damage
-			for(var/mob/M in viewers(src, null))
-				if ((M.client && !( M.blinded )))
-					M.show_message(span_danger("[src] has been attacked with the [O] by [user]. "))
-		else
-			for(var/mob/M in viewers(src, null))
-				if ((M.client && !( M.blinded )))
-					M.show_message(span_danger("The [O] bounces harmlessly off of [src]. "))
-	else
-		to_chat(usr, span_warning("This weapon is ineffective, it does no damage."))
-		for(var/mob/M in viewers(src, null))
-			if ((M.client && !( M.blinded )))
-				M.show_message(span_warning("[user] gently taps [src] with the [O]. "))
-
 /mob/living/simple_mob/vox/armalis/verb/fire_quill(mob/target as mob in oview())
 
 
@@ -139,7 +118,26 @@
 		visible_message(span_notice("[src] is quickly outfitted in [O] by [user]."),span_notice("You quickly outfit [src] in [O]."))
 		regenerate_icons()
 		return
-	return ..()
+
+	base_attack_cooldown = 5
+	if(O.force)
+		if(O.force >= 25)
+			var/damage = O.force
+			if (O.damtype == HALLOSS)
+				damage = 0
+			health -= damage
+			for(var/mob/M in viewers(src, null))
+				if ((M.client && !( M.blinded )))
+					M.show_message(span_danger("[src] has been attacked with the [O] by [user]. "))
+		else
+			for(var/mob/M in viewers(src, null))
+				if ((M.client && !( M.blinded )))
+					M.show_message(span_danger("The [O] bounces harmlessly off of [src]. "))
+	else
+		to_chat(usr, span_warning("This weapon is ineffective, it does no damage."))
+		for(var/mob/M in viewers(src, null))
+			if ((M.client && !( M.blinded )))
+				M.show_message(span_warning("[user] gently taps [src] with the [O]. "))
 
 /mob/living/simple_mob/vox/armalis/regenerate_icons()
 	..()

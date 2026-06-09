@@ -98,17 +98,3 @@
 /datum/computer_file/data/email_account/service/sysadmin
 	login = EMAIL_SYSADMIN
 
-/datum/computer_file/data/email_account/service/broadcaster/receive_mail(datum/computer_file/data/email_message/received_message, relayed)
-	if(!istype(received_message) || relayed)
-		return 0
-	// Possibly exploitable for user spamming so keep admins informed.
-	if(!received_message.spam)
-		log_and_message_admins("Broadcast email address used by [usr]. Message title: [received_message.title].")
-
-	spawn(0)
-		for(var/datum/computer_file/data/email_account/email_account in GLOB.ntnet_global.email_accounts)
-			var/datum/computer_file/data/email_message/new_message = received_message.clone()
-			send_mail(email_account.login, new_message, 1)
-			sleep(2)
-
-	return 1

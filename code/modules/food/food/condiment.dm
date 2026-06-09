@@ -283,7 +283,7 @@
 	center_of_mass_x = 17
 	center_of_mass_y = 11
 
-/obj/item/reagent_containers/food/condiment/small/peppermill/Initialize(mapload)
+/obj/item/reagent_containers/food/condiment/small/peppergrinder/Initialize(mapload)
 	. = ..()
 	reagents.add_reagent(REAGENT_ID_BLACKPEPPER, 30)
 

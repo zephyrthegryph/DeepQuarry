@@ -660,6 +660,9 @@ About the new airlock wires panel:
 	return TRUE
 
 /obj/machinery/door/airlock/proc/user_allowed(mob/user)
+	var/mob/living/silicon/robot/R = user
+	if(istype(R) && !check_access(R.idcard))
+		return FALSE
 	var/allowed = (issilicon(user) && canAIControl(user))
 	if(!allowed && isobserver(user))
 		var/mob/observer/dead/D = user
@@ -1329,12 +1332,6 @@ About the new airlock wires panel:
 /obj/machinery/turretid/BorgAltClick(mob/living/silicon/robot/user) //turret lethal on/off. Forwards to AI code.
 	if(allowed(user))
 		..()
-
-/obj/machinery/door/airlock/user_allowed(mob/user)
-	var/mob/living/silicon/robot/R = user
-	if(istype(R) && !check_access(R.idcard))
-		return FALSE
-	. = ..()
 
 /obj/machinery/computer/atmoscontrol/attack_robot(mob/user)
 	if(allowed(user))

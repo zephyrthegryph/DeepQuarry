@@ -48,24 +48,6 @@
 	cut_overlay(object_overlays)
 	object_overlays.Cut()
 
-/atom/movable/screen/inventory/proc/add_overlays()
-	if(hud && hud.mymob && slot_id)
-		var/mob/user = hud.mymob
-		var/obj/item/holding = user.get_active_hand()
-
-		if(!holding || user.get_equipped_item(slot_id))
-			return
-
-		var/image/item_overlay = image(holding)
-		item_overlay.alpha = 92
-
-		if(!holding.mob_can_equip(user, slot_id, disable_warning = TRUE))
-			item_overlay.color = "#ff0000"
-		else
-			item_overlay.color = "#00ff00"
-
-		object_overlays += item_overlay
-		add_overlay(object_overlays)
 
 /atom/movable/screen/close
 	name = "close"
@@ -1122,7 +1104,7 @@
 //So yeah this is why we now check if it is type of mob first...
 //Is this pretty? Fuck no, but its how i know to fix it -shark
 //Oh also the swap button on simple mob hands has hud set to null so we also need to catch that.
-/atom/movable/screen/inventory/add_overlays()
+/atom/movable/screen/inventory/proc/add_overlays()
 	if(!hud) //Simplemob swap hands button has this set to null :)
 		return
 	var/mob/user

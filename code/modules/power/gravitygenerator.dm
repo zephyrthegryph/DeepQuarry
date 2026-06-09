@@ -131,11 +131,6 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 	update_list()
 	update_areas()
 
-/obj/machinery/gravity_generator/main/set_fix()
-	. = ..()
-	update_list()
-	update_areas()
-
 /obj/machinery/gravity_generator/main/Destroy() // If we somehow get deleted, remove all of our other parts.
 	investigate_log("was destroyed!", "gravity")
 	on = FALSE
@@ -192,6 +187,8 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 	broken_state = FALSE
 	update_icon()
 	set_power()
+	update_list()
+	update_areas()
 
 // Interaction
 

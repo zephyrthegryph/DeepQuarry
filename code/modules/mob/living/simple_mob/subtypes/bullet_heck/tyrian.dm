@@ -156,7 +156,7 @@
 	health = 4200
 	maxHealth = 4200
 
-/mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/ai_cores/engi_core/do_special_attack(atom/A)
+/mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/ai_cores/ark_core/do_special_attack(atom/A)
 	switch(attackcycle)
 		if(1)
 			specialattackprojectile = /obj/item/projectile/energy/eclipse_boss/tyrjavelin

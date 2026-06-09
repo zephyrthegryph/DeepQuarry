@@ -50,6 +50,16 @@
 	plane_masters[VIS_MOBS]		= new /atom/movable/screen/plane_master/main{plane = MOB_PLANE}
 	plane_masters[VIS_CLOAKED]	= new /atom/movable/screen/plane_master/cloaked								//Cloaked atoms!
 
+	plane_masters[VIS_CH_STATUS_R] 		= new /atom/movable/screen/plane_master{plane = PLANE_CH_STATUS_R}			//Right-side status icon
+	plane_masters[VIS_CH_HEALTH_VR] 	= new /atom/movable/screen/plane_master{plane = PLANE_CH_HEALTH_VR}			//Health bar but transparent at 100
+	plane_masters[VIS_CH_BACKUP] 		= new /atom/movable/screen/plane_master{plane = PLANE_CH_BACKUP}				//Backup implant status
+	plane_masters[VIS_CH_VANTAG] 		= new /atom/movable/screen/plane_master{plane = PLANE_CH_VANTAG}				//Vore Antags
+	plane_masters[VIS_CH_STOMACH] 		= new /atom/movable/screen/plane_master{plane = PLANE_CH_STOMACH}			//Stomach
+	plane_masters[VIS_SOULCATCHER] 		= new /atom/movable/screen/plane_master{plane = PLANE_SOULCATCHER}			// Soulcatcher
+	plane_masters[VIS_EVENT_INVIS] 		= new /atom/movable/screen/plane_master{plane = PLANE_INVIS_EVENT}			//Things only specific players can see at any time.
+
+	plane_masters[VIS_AUGMENTED]		= new /atom/movable/screen/plane_master/augmented(null, my_mob)				//Augmented reality
+
 	..()
 
 /datum/plane_holder/Destroy()
@@ -229,20 +239,6 @@
 	alpha = 255
 	mouse_opacity = 1
 
-
-// === merged from mob_planes_vr.dm during hard-fork de-suffix (verified no override-order change) ===
-/datum/plane_holder/New(mob/this_guy)
-	my_mob = this_guy
-	plane_masters[VIS_CH_STATUS_R] 		= new /atom/movable/screen/plane_master{plane = PLANE_CH_STATUS_R}			//Right-side status icon
-	plane_masters[VIS_CH_HEALTH_VR] 	= new /atom/movable/screen/plane_master{plane = PLANE_CH_HEALTH_VR}			//Health bar but transparent at 100
-	plane_masters[VIS_CH_BACKUP] 		= new /atom/movable/screen/plane_master{plane = PLANE_CH_BACKUP}				//Backup implant status
-	plane_masters[VIS_CH_VANTAG] 		= new /atom/movable/screen/plane_master{plane = PLANE_CH_VANTAG}				//Vore Antags
-	plane_masters[VIS_CH_STOMACH] 		= new /atom/movable/screen/plane_master{plane = PLANE_CH_STOMACH}			//Stomach
-	plane_masters[VIS_SOULCATCHER] 		= new /atom/movable/screen/plane_master{plane = PLANE_SOULCATCHER}			// Soulcatcher
-	plane_masters[VIS_EVENT_INVIS] 		= new /atom/movable/screen/plane_master{plane = PLANE_INVIS_EVENT}			//Things only specific players can see at any time.
-
-	plane_masters[VIS_AUGMENTED]		= new /atom/movable/screen/plane_master/augmented(null, my_mob)				//Augmented reality
-	..()
 
 /////////////////
 //AR planemaster does some special image handling

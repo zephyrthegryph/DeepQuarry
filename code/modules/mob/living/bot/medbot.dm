@@ -471,33 +471,16 @@
 
 /* Construction */
 
-/obj/item/storage/firstaid/attackby(obj/item/robot_parts/S, mob/user as mob)
-	if ((!istype(S, /obj/item/robot_parts/l_arm)) && (!istype(S, /obj/item/robot_parts/r_arm)))
-		..()
-		return
+/obj/item/storage/firstaid/attackby(obj/item/S, mob/user as mob)
+	// Accept either a robotic arm part or a robotic external arm organ to build the assembly.
+	var/is_robot_arm = istype(S, /obj/item/robot_parts/l_arm) || istype(S, /obj/item/robot_parts/r_arm)
+	var/is_robotic_organ = FALSE
+	if(istype(S, /obj/item/organ/external/arm))
+		var/obj/item/organ/external/arm/organ_arm = S
+		is_robotic_organ = (organ_arm.robotic == ORGAN_ROBOT)
 
-	if(contents.len >= 1)
-		to_chat(user, span_notice("You need to empty [src] out first."))
-		return
-
-	var/obj/item/firstaid_arm_assembly/A = new /obj/item/firstaid_arm_assembly
-	if(istype(src, /obj/item/storage/firstaid/fire))
-		A.skin = "ointment"
-	else if(istype(src, /obj/item/storage/firstaid/toxin))
-		A.skin = "tox"
-	else if(istype(src, /obj/item/storage/firstaid/o2))
-		A.skin = "o2"
-
-	qdel(S)
-	user.put_in_hands(A)
-	to_chat(user, span_notice("You add the robot arm to the first aid kit."))
-	user.drop_from_inventory(src)
-	qdel(src)
-
-/obj/item/storage/firstaid/attackby(obj/item/organ/external/S, mob/user as mob)
-	if (!istype(S, /obj/item/organ/external/arm) || S.robotic != ORGAN_ROBOT)
-		..()
-		return
+	if(!is_robot_arm && !is_robotic_organ)
+		return ..()
 
 	if(contents.len >= 1)
 		to_chat(user, span_notice("You need to empty [src] out first."))

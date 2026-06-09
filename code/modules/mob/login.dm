@@ -111,20 +111,6 @@
 		to_chat(src, "<h2 class='alert'>A custom event is taking place. OOC Info:</h2>")
 		to_chat(src, span_alert("[GLOB.custom_event_msg]") + "\n")
 
-
-// === merged from login_ch.dm during hard-fork de-suffix (verified no override-order change) ===
-/mob/Login()
-	. = ..()
-	set_listening(LISTENING_PLAYER)
-	if(GLOB.global_vantag_hud)
-		vantag_hud = TRUE
-		recalculate_vis()
-
-
-// === merged from login_vr.dm during hard-fork de-suffix (chain-verified: prior definer is this file, nothing between) ===
-/mob/Login()
-	. = ..()
-
 	// viewing_alternate_appearances moved to /datum/component/alt_appearances_viewer
 	var/list/viewing = dq_get_viewing_alt_appearances(src)
 	if(viewing && viewing.len)

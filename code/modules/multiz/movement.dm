@@ -758,9 +758,6 @@
 /mob/CheckFall(atom/movable/falling_atom)
 	return falling_atom.fall_impact(src)
 
-/mob/observer/dead/CheckFall()
-	return
-
 /mob/proc/CanZPass(atom/A, direction)
 	if(z == A.z) //moving FROM this turf
 		return direction == UP //can't go below

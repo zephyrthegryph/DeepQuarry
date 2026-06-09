@@ -1,26 +1,3 @@
-/mob/living/Initialize(mapload)
-	. = ..()
-
-	//Prime this list if we need it.
-	if(has_huds)
-		// Note, this should be refactored to drop priority overlays
-		add_overlay(GLOB.backplane,TRUE) //Strap this on here, to block HUDs from appearing in rightclick menus: http://www.byond.com/forum/?post=2336679
-		hud_list = list()
-		hud_list.len = TOTAL_HUDS
-		make_hud_overlays()
-
-	//I'll just hang my coat up over here
-	dsoverlay = image('icons/mob/darksight.dmi',GLOB.global_hud.darksight) //This is a secret overlay! Go look at the file, you'll see.
-	var/mutable_appearance/dsma = new(dsoverlay) //Changing like ten things, might as well.
-	dsma.alpha = 0
-	dsma.plane = PLANE_LIGHTING
-	dsma.blend_mode = BLEND_ADD
-	dsoverlay.appearance = dsma
-
-	selected_image = image(icon = GLOB.buildmode_hud, loc = src, icon_state = "ai_sel")
-
-	AddElement(/datum/element/spontaneous_vore)
-
 /mob/living/proc/get_visible_name()
 	var/list/name_data = list(null)
 	if(SEND_SIGNAL(src, COMSIG_HUMAN_GET_VISIBLE_NAME, name_data) & COMPONENT_VISIBLE_NAME_CHANGED)
@@ -107,6 +84,10 @@
 		qdel(aiming)
 		aiming = null
 	aimed.Cut()
+
+	QDEL_NULL(deaf_loop)
+	QDEL_NULL(firesoundloop)
+	// QDEL_NULL(stunnedloop)
 
 	. = ..()
 
@@ -1570,6 +1551,26 @@
 	if(!ai_holder)
 		initialize_ai_holder()
 
+	//Prime this list if we need it.
+	if(has_huds)
+		// Note, this should be refactored to drop priority overlays
+		add_overlay(GLOB.backplane,TRUE) //Strap this on here, to block HUDs from appearing in rightclick menus: http://www.byond.com/forum/?post=2336679
+		hud_list = list()
+		hud_list.len = TOTAL_HUDS
+		make_hud_overlays()
+
+	//I'll just hang my coat up over here
+	dsoverlay = image('icons/mob/darksight.dmi',GLOB.global_hud.darksight) //This is a secret overlay! Go look at the file, you'll see.
+	var/mutable_appearance/dsma = new(dsoverlay) //Changing like ten things, might as well.
+	dsma.alpha = 0
+	dsma.plane = PLANE_LIGHTING
+	dsma.blend_mode = BLEND_ADD
+	dsoverlay.appearance = dsma
+
+	selected_image = image(icon = GLOB.buildmode_hud, loc = src, icon_state = "ai_sel")
+
+	AddElement(/datum/element/spontaneous_vore)
+
 	deaf_loop = new(list(src), FALSE)
 	firesoundloop = new(list(src), FALSE)
 	// stunnedloop = new(list(src), FALSE)
@@ -1581,13 +1582,6 @@
 				firesoundloop.end_sound = 'sound/effects/mob_effects/on_fire/fire_extinguish3.ogg'
 			else
 				firesoundloop.end_sound = 'sound/effects/mob_effects/on_fire/fire_extinguish4.ogg'
-
-/mob/living/Destroy()
-	. = ..()
-
-	QDEL_NULL(deaf_loop)
-	QDEL_NULL(firesoundloop)
-	// QDEL_NULL(stunnedloop)
 
 /*
 Maybe later, gotta figure out a way to click yourself when in a locker etc.

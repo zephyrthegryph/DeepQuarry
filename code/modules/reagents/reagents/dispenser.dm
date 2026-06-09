@@ -445,10 +445,6 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_RARE
 	industrial_use = REFINERYEXPORT_REASON_PRECURSOR
 
-/datum/reagent/radium/affect_blood(mob/living/carbon/M, alien, removed)
-	if(issmall(M)) removed *= 2
-	M.apply_effect(10 * removed, IRRADIATE, 0)
-
 /datum/reagent/radium/touch_turf(turf/T)
 	..()
 	if(volume >= 3)

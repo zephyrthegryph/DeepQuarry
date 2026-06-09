@@ -82,10 +82,6 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 
 	var/reproduction_cooldown = 0
 
-/mob/living/simple_mob/vore/alienanimals/space_jellyfish/Initialize(mapload)
-	. = ..()
-	AddComponent(/datum/component/swarming)
-
 // Allows this mob to swarm
 /mob/living/simple_mob/vore/alienanimals/space_jellyfish/CanPass(atom/movable/mover, turf/target)
 	if(isliving(mover) && !istype(mover, /mob/living/simple_mob/vore/alienanimals/space_jellyfish) && mover.density == TRUE)
@@ -121,6 +117,7 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 
 /mob/living/simple_mob/vore/alienanimals/space_jellyfish/Initialize(mapload, jellyfish)
 	. = ..()
+	AddComponent(/datum/component/swarming)
 	GLOB.jellyfish_count ++
 	var/mob/living/simple_mob/vore/alienanimals/space_jellyfish/parent = jellyfish
 	if(parent)

@@ -260,7 +260,7 @@
 		/obj/item/stock_parts/scanning_module = 40
 	)
 
-/obj/structure/salvageable/personal/Initialize(mapload)
+/obj/structure/salvageable/console/Initialize(mapload)
 	. = ..()
 	icon_state = "console[rand(0,2)]"
 

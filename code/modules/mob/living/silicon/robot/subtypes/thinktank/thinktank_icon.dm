@@ -1,7 +1,4 @@
 /mob/living/silicon/robot/platform/update_icon()
-	update_icon()
-
-/mob/living/silicon/robot/platform/update_icon()
 
 	cut_overlays()
 	underlays.Cut()

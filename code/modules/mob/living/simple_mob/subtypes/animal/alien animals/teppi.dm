@@ -325,27 +325,6 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 
 ///////////////////////////////////////Other stuff///////////////////////////////////////////
 
-/mob/living/simple_mob/vore/alienanimals/teppi/Initialize(mapload)
-	. = ..()
-
-	if(name == initial(name))
-		name = "[name] ([rand(1, 1000)])"
-		real_name = name
-	if(!teppi_adult)
-		nutrition = 0
-		add_verb(src, /mob/living/proc/ventcrawl)
-		add_verb(src, /mob/living/proc/hide)
-	else
-		add_verb(src, /mob/living/simple_mob/vore/alienanimals/teppi/proc/produce_offspring)
-		add_verb(src, /mob/living/simple_mob/vore/alienanimals/teppi/proc/toggle_producing_offspring)
-
-
-//	teppi_id = rand(1,100000)
-//	if(!dad_id || !mom_id)
-//		dad_id = rand(1,100000)
-//		mom_id = rand(1,100000)
-	teppi_setup()
-
 //Picks colors and allergens for teppi that don't have them set
 /mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_setup()
 	var/static/list/possibleallergens = list(
@@ -766,6 +745,17 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 	else if (teppi1 && teppi2)
 		inherit_from_parents(teppi1, teppi2)
 	. = ..()
+	if(name == initial(name))
+		name = "[name] ([rand(1, 1000)])"
+		real_name = name
+	if(!teppi_adult)
+		nutrition = 0
+		add_verb(src, /mob/living/proc/ventcrawl)
+		add_verb(src, /mob/living/proc/hide)
+	else
+		add_verb(src, /mob/living/simple_mob/vore/alienanimals/teppi/proc/produce_offspring)
+		add_verb(src, /mob/living/simple_mob/vore/alienanimals/teppi/proc/toggle_producing_offspring)
+	teppi_setup()
 
 /mob/living/simple_mob/vore/alienanimals/teppi/Destroy()
 	GLOB.teppi_count --

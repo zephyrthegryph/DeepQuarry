@@ -16,15 +16,6 @@
 	var/author = "unknown"
 
 /obj/effect/decal/writing/Initialize(mapload, _age, _message, _author)
-	. = ..()
-	if(!isnull(_age))
-		graffiti_age = _age
-	if(!isnull(_message))
-		message = _message
-	if(!isnull(author))
-		author = _author
-
-/obj/effect/decal/writing/Initialize(mapload)
 	var/list/random_icon_states = icon_states_fast(icon)
 	for(var/obj/effect/decal/writing/writing in loc)
 		random_icon_states.Remove(writing.icon_state)
@@ -33,6 +24,12 @@
 	if(!mapload || !CONFIG_GET(flag/persistence_ignore_mapload))
 		SSpersistence.track_value(src, /datum/persistent/graffiti)
 	. = ..()
+	if(!isnull(_age))
+		graffiti_age = _age
+	if(!isnull(_message))
+		message = _message
+	if(!isnull(author))
+		author = _author
 
 /obj/effect/decal/writing/Destroy()
 	SSpersistence.forget_value(src, /datum/persistent/graffiti)

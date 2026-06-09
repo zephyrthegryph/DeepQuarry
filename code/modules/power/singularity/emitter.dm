@@ -32,25 +32,11 @@
 
 	var/integrity = 80
 
-/obj/machinery/power/emitter/Initialize(mapload)
-	. = ..()
-	if(state == 2 && anchored)
-		connect_to_network()
-	AddElement(/datum/element/climbable)
-	AddElement(/datum/element/rotatable)
-	AddElement(/datum/element/empprotection, EMP_PROTECT_SELF)
-
 /obj/machinery/power/emitter/Destroy()
 	message_admins("Emitter deleted at ([x],[y],[z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)")
 	log_game("EMITTER([x],[y],[z]) Destroyed/deleted.")
 	investigate_log(span_red("deleted") + " at ([x],[y],[z])","singulo")
 	. = ..()
-
-/obj/machinery/power/emitter/update_icon()
-	if (active && powernet && avail(active_power_usage))
-		icon_state = "emitter_+a"
-	else
-		icon_state = "emitter"
 
 /obj/machinery/power/emitter/attack_hand(mob/user as mob)
 	src.add_fingerprint(user)
@@ -324,6 +310,11 @@
 /obj/machinery/power/emitter/Initialize(mapload)
 	. = ..()
 	previous_state = state
+	if(state == 2 && anchored)
+		connect_to_network()
+	AddElement(/datum/element/climbable)
+	AddElement(/datum/element/rotatable)
+	AddElement(/datum/element/empprotection, EMP_PROTECT_SELF)
 
 /obj/machinery/power/emitter/update_icon()
 	cut_overlays()

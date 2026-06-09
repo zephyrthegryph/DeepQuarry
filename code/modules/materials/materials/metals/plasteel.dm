@@ -14,8 +14,18 @@
 	conductivity = 13 // For the purposes of balance.
 	supply_conversion_value = 6
 
+/datum/material/plasteel/rebar //to give a different reinforced overlay
+	name = MAT_PLASTEELREBAR
+	icon_reinf = "reinf_metal"
+	icon_colour = "#6A6A6A"
+	stack_type = /obj/item/stack/material/plasteel/rebar
+	sheet_singular_name = "rod"
+	sheet_plural_name = "rods"
+	composite_material = list(MAT_PLASTEEL = SHEET_MATERIAL_AMOUNT)
+
+
 /datum/material/plasteel/generate_recipes()
-	..()
+	. = ..()
 	recipes += list(
 		new /datum/stack_recipe("AI core", /obj/structure/AIcore, 4, time = 50, one_per_turf = 1, recycle_material = "[name]"),
 		new /datum/stack_recipe("Metal crate", /obj/structure/closet/crate, 10, time = 50, one_per_turf = 1, recycle_material = "[name]"),
@@ -30,20 +40,6 @@
 			new /datum/stack_recipe("reinforced low wall (eris style)", /obj/structure/low_wall/eris/reinforced, 3, one_per_turf = 1, on_floor = 1, supplied_material = "[name]", recycle_material = "[name]")
 		)),
 	)
-
-/datum/material/plasteel/rebar //to give a different reinforced overlay
-	name = MAT_PLASTEELREBAR
-	icon_reinf = "reinf_metal"
-	icon_colour = "#6A6A6A"
-	stack_type = /obj/item/stack/material/plasteel/rebar
-	sheet_singular_name = "rod"
-	sheet_plural_name = "rods"
-	composite_material = list(MAT_PLASTEEL = SHEET_MATERIAL_AMOUNT)
-
-
-// === merged from plasteel_ch.dm during hard-fork de-suffix (verified no override-order change) ===
-/datum/material/plasteel/generate_recipes()
-	. = ..()
 // recipes += new /datum/stack_recipe("Hammer Head", /obj/item/hammer_head, 2) // Disabled because I had to disable code/game/objects/items/weapons/material/sledgehammer_construction_ch.dm due to lots of errors
 	recipes += new /datum/stack_recipe_list("sofas", list( \
 		new /datum/stack_recipe("sofa middle", /obj/structure/bed/chair/sofa, 1, one_per_turf = 1, on_floor = 1), \

@@ -79,9 +79,6 @@
 /mob/living/simple_mob/vore/hippo/MouseDrop_T(mob/living/M, mob/living/user)
 	return
 
-/mob/living/simple_mob/vore/hippo/MouseDrop_T(mob/living/M, mob/living/user)
-	return
-
 /datum/say_list/hippo
 	speak = list("UUUUUUH")
 	emote_hear = list("grunts","groans", "roars", "snorts")

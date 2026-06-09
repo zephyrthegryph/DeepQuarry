@@ -22,30 +22,6 @@
 	. = ..()
 	base_icon_state = icon_state
 
-// pipe is deleted
-// ensure if holder is present, it is expelled
-/obj/structure/disposalpipe/Destroy()
-	var/obj/structure/disposalholder/H = locate() in src
-	if(H)
-		// holder was present
-		H.active = FALSE
-		var/turf/T = get_turf(src)
-		if(T.density)
-			// deleting pipe is inside a dense turf (wall)
-			// this is unlikely, but just dump out everything into the turf in case
-
-			for(var/atom/movable/AM in H)
-				AM.forceMove(T)
-				AM.pipe_eject(0)
-			qdel(H)
-			..()
-			return
-
-		// otherwise, do normal expel from turf
-		if(H)
-			pipe_expel(H, T, 0)
-	. = ..()
-
 // returns the direction of the next pipe object, given the entrance dir
 // by default, returns the bitmask of remaining directions
 /obj/structure/disposalpipe/proc/nextdir(fromdir)

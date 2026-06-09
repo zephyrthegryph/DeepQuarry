@@ -1392,7 +1392,7 @@
 	spawn_nothing_percentage = 0
 
 
-/obj/random/maintenance/misc/item_to_spawn()
+/obj/random/maintenance/morestuff/item_to_spawn()
 	return pick(prob(10);/obj/random/tool,
 				prob(1);/obj/random/toolbox,
 				prob(2);/obj/random/powercell,
@@ -1666,7 +1666,7 @@
 	icon_state = "chips_1"
 	spawn_nothing_percentage = 0
 
-/obj/random/chips/item_to_spawn()
+/obj/random/chips/better/item_to_spawn()
 	return pick(
 		prob(35);/obj/item/spacecasinocash/c10,
 		prob(15);/obj/item/spacecasinocash/c100,
@@ -1678,7 +1678,7 @@
 	name = "good random chips"
 	icon_state = "chips_2"
 
-/obj/random/chips/item_to_spawn()
+/obj/random/chips/good/item_to_spawn()
 	return pick(
 		prob(45);/obj/item/spacecasinocash/c100,
 		prob(15);/obj/item/spacecasinocash/c200,

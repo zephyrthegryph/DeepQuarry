@@ -656,63 +656,6 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 //This is for getipintel.net.
 //You're welcome to replace this proc with your own that does your own cool stuff.
 //Just set the client's ip_reputation var and make sure it makes sense with your config settings (higher numbers are worse results)
-/client/proc/update_ip_reputation()
-	var/request = "https://check.getipintel.net/check.php?ip=[address]&contact=[CONFIG_GET(string/ipr_email)]"
-	var/http[] = world.Export(request)
-
-	/* Debug
-	to_world_log("Requested this: [request]")
-	for(var/entry in http)
-		to_world_log("[entry] : [http[entry]]")
-	*/
-
-	if(!http || !islist(http)) //If we couldn't check, the service might be down, fail-safe.
-		log_admin("Couldn't connect to getipintel.net to check [address] for [key]")
-		return FALSE
-
-	//429 is rate limit exceeded
-	if(text2num(http["STATUS"]) == 429)
-		log_and_message_admins("getipintel.net reports HTTP status 429. IP reputation checking is now disabled. If you see this, let a developer know.")
-		CONFIG_SET(flag/ip_reputation, FALSE)
-		return FALSE
-
-	var/content = file2text(http["CONTENT"]) //world.Export actually returns a file object in CONTENT
-	var/score = text2num(content)
-	if(isnull(score))
-		return FALSE
-
-	//Error handling
-	if(score < 0)
-		var/fatal = TRUE
-		var/ipr_error = "getipintel.net IP reputation check error while checking [address] for [key]: "
-		switch(score)
-			if(-1)
-				ipr_error += "No input provided"
-			if(-2)
-				fatal = FALSE
-				ipr_error += "Invalid IP provided"
-			if(-3)
-				fatal = FALSE
-				ipr_error += "Unroutable/private IP (spoofing?)"
-			if(-4)
-				fatal = FALSE
-				ipr_error += "Unable to reach database"
-			if(-5)
-				ipr_error += "Our IP is banned or otherwise forbidden"
-			if(-6)
-				ipr_error += "Missing contact info"
-
-		log_and_message_admins(ipr_error)
-		if(fatal)
-			CONFIG_SET(flag/ip_reputation, FALSE)
-			log_and_message_admins("With this error, IP reputation checking is disabled for this shift. Let a developer know.")
-		return FALSE
-
-	//Went fine
-	else
-		ip_reputation = score
-		return TRUE
-
 /client/proc/disconnect_with_message(message = "You have been intentionally disconnected by the server.<br>This may be for security or administrative reasons.")
 	// disconnect overlay via to_chat + window_flash (no browse).
 	// Pre-disconnect popup windows can't reliably use TGUI: the qdel(src)
@@ -911,7 +854,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 
 // === merged from client procs_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 //Uses a couple different services
-/client/update_ip_reputation()
+/client/proc/update_ip_reputation()
 	var/scores[] = list("GII" = ipr_getipintel(), "IPQS" = ipr_ipqualityscore())
 
 	var/log_output = "IP Reputation [key] from [address]"

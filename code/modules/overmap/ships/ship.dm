@@ -56,11 +56,13 @@
 	position_y = ((loc.y - 1) * WORLD_ICON_SIZE) + (WORLD_ICON_SIZE/2) + pixel_y + 1
 	vector = add_vis_overlay("vector", dir = SOUTH, layer = 10, unique = TRUE)
 	vector.vis_flags = (VIS_INHERIT_PLANE|VIS_INHERIT_ID)
+	GLOB.listening_objects += src
 
 /obj/effect/overmap/visitable/ship/Destroy()
 	STOP_PROCESSING(SSprocessing, src)
 	remove_vis_overlay(vector)
 	SSshuttles.ships -= src
+	GLOB.listening_objects -= src
 	return ..()
 
 /obj/effect/overmap/visitable/ship/relaymove(mob/user, direction, accel_limit)
@@ -300,15 +302,6 @@
 #undef SANITIZE_SPEED
 #undef CHANGE_SPEED_BY
 
-
-// === merged from ship_vr.dm during hard-fork de-suffix (verified no override-order change) ===
-/obj/effect/overmap/visitable/ship/Initialize(mapload)
-	. = ..()
-	GLOB.listening_objects += src
-
-/obj/effect/overmap/visitable/ship/Destroy()
-	GLOB.listening_objects -= src
-	return ..()
 
 /obj/effect/overmap/visitable/ship/MouseDrop(atom/over)
 	if(!isliving(over) || !Adjacent(over) || !Adjacent(usr))

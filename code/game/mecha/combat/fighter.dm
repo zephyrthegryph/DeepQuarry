@@ -158,14 +158,6 @@
 /obj/mecha/combat/fighter/can_ztravel()
 	return (landing_gear_raised && has_charge(step_energy_drain))
 
-// No space drifting
-// This doesnt work but I actually dont want it to anyways, so I'm not touching it at all. Space drifting is cool.
-/obj/mecha/combat/fighter/check_for_support()
-	if (landing_gear_raised)
-		return 1
-
-	return ..()
-
 // No falling if we've got our boosters on
 /obj/mecha/combat/fighter/can_fall()
 	if(landing_gear_raised && has_charge(step_energy_drain))

@@ -75,6 +75,3 @@ GLOBAL_DATUM_INIT(tgui_physical_state_bigscreen, /datum/tgui_state/physical_bigs
 
 /mob/living/silicon/physical_can_use_tgui_topic_bigscreen(src_object)
 	return max(STATUS_UPDATE, shared_living_tgui_distance_bigscreen(src_object)) // Silicons can always see.
-
-/mob/living/silicon/ai/physical_can_use_tgui_topic(src_object)
-	return STATUS_UPDATE // AIs are not physical.

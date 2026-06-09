@@ -348,10 +348,3 @@
 	if(modtype)
 		return lowertext(modtype)
 	return "nomod"
-
-
-// === merged from robot_vr.dm during hard-fork de-suffix (verified no override-order change) ===
-/mob/living/silicon/robot/update_hud()
-	if(modtype)
-		hands.icon_state = get_hud_module_icon()
-	..()

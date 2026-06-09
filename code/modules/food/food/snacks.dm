@@ -4452,35 +4452,6 @@
 	nutriment_amt = 4
 	nutriment_desc = list("bun" = 4)
 
-/obj/item/reagent_containers/food/snacks/bun/attackby(obj/item/W as obj, mob/user as mob)
-	// Bun + meatball = burger
-	if(istype(W,/obj/item/reagent_containers/food/snacks/meatball))
-		new /obj/item/reagent_containers/food/snacks/monkeyburger(src)
-		to_chat(user, "You make a burger.")
-		qdel(W)
-		qdel(src)
-
-	// Bun + cutlet = hamburger
-	else if(istype(W,/obj/item/reagent_containers/food/snacks/cutlet))
-		new /obj/item/reagent_containers/food/snacks/monkeyburger(src)
-		to_chat(user, "You make a burger.")
-		qdel(W)
-		qdel(src)
-
-	// Bun + burgerpatty = beefburger
-	else if(istype(W,/obj/item/reagent_containers/food/snacks/burgerpatty))
-		new /obj/item/reagent_containers/food/snacks/monkeyburger(src)
-		to_chat(user, "You make a burger.")
-		qdel(W)
-		qdel(src)
-
-	// Bun + sausage = hotdog
-	else if(istype(W,/obj/item/reagent_containers/food/snacks/sausage))
-		new /obj/item/reagent_containers/food/snacks/hotdog(src)
-		to_chat(user, "You make a hotdog.")
-		qdel(W)
-		qdel(src)
-
 // Burger + cheese wedge = cheeseburger
 /obj/item/reagent_containers/food/snacks/monkeyburger/attackby(obj/item/reagent_containers/food/snacks/cheesewedge/W as obj, mob/user as mob)
 	if(istype(W))// && !istype(src,/obj/item/reagent_containers/food/snacks/cheesewedge))
@@ -4824,11 +4795,6 @@
 	drop_sound = 'sound/items/drop/soda.ogg'
 	pickup_sound = 'sound/items/pickup/soda.ogg'
 	bitesize = 2
-
-/obj/item/reagent_containers/food/snacks/unajerky/Initialize(mapload)
-	. =..()
-	reagents.add_reagent(REAGENT_ID_PROTEIN, 8)
-	reagents.add_reagent(REAGENT_ID_CAPSAICIN, 2)
 
 /obj/item/reagent_containers/food/snacks/sashimi
 	name = "sashimi"
@@ -5813,6 +5779,13 @@
 
 	// Bun + cutlet = hamburger
 	else if(istype(W,/obj/item/reagent_containers/food/snacks/cutlet))
+		result = new /obj/item/reagent_containers/food/snacks/monkeyburger(src)
+		to_chat(user, "You make a burger.")
+		qdel(W)
+		qdel(src)
+
+	// Bun + burgerpatty = beefburger
+	else if(istype(W,/obj/item/reagent_containers/food/snacks/burgerpatty))
 		result = new /obj/item/reagent_containers/food/snacks/monkeyburger(src)
 		to_chat(user, "You make a burger.")
 		qdel(W)
@@ -9150,10 +9123,6 @@
 	nutriment_amt = 1
 	bitesize = 2
 	nutriment_desc = list(REAGENT_ID_CHOCOLATE = 2, PLANT_ORANGE = 4, "cake" = 3)
-
-/obj/item/reagent_containers/food/snacks/bourbon/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_COCO, 2)
 
 /obj/item/storage/box/jaffacake //This is kinda like the donut box.
 	name = "Desatti Jaffa Cakes"

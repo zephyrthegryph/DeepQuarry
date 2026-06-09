@@ -109,12 +109,6 @@ GLOBAL_LIST_INIT(gurgled_overlays, list(
 			O.gurgle_contaminate(item_storage, contamination_flavor, contamination_color)
 	..()
 
-/obj/item/storage/belt/gurgle_contaminate(atom/movable/item_storage = null, contamination_flavor = "Generic", contamination_color = "green")
-	if(contents)
-		for(var/obj/item/O in contents)
-			O.gurgle_contaminate(item_storage, contamination_flavor, contamination_color)
-	..()
-
 /obj/item/clothing/suit/storage/gurgle_contaminate(atom/movable/item_storage = null, contamination_flavor = "Generic", contamination_color = "green")
 	if(pockets)
 		if(pockets.contents)

@@ -665,25 +665,6 @@
 	..()
 	icon_override = icon_previous_override
 
-/obj/item/clothing/accessory/collar/Initialize(mapload)
-	. = ..()
-	icon_previous_override = icon_override
-
-/obj/item/clothing/accessory/collar/equipped() //Solution for race-specific sprites for an accessory which is also a suit. Suit icons break if you don't use icon override which then also overrides race-specific sprites.
-	..()
-	setUniqueSpeciesSprite()
-
-/obj/item/clothing/accessory/collar/on_attached(obj/item/clothing/S, mob/user)
-	if(!istype(S))
-		return
-	has_suit = S
-	setUniqueSpeciesSprite()
-	..(S, user)
-
-/obj/item/clothing/accessory/collar/dropped(mob/user)
-	..()
-	icon_override = icon_previous_override
-
 /obj/item/clothing/accessory/collar/silver
 	name = "Silver tag collar"
 	desc = "A collar for your little pets... or the big ones."

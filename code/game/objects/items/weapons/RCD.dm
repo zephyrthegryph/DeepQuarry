@@ -87,6 +87,7 @@
 	if(!can_afford(amount))
 		return FALSE
 	stored_matter -= amount
+	update_icon()
 	return TRUE
 
 // Useful for testing before actually paying (e.g. before a do_after() ).
@@ -135,15 +136,18 @@
 		// Doing another check in case we lost matter during the delay for whatever reason.
 		if(!can_afford(rcd_results[RCD_VALUE_COST]))
 			to_chat(user, span_warning("\The [src] lacks the required material to finish the operation."))
+			cleanup_effect(A)
 			return FALSE
 		if(A.rcd_act(user, src, rcd_results[RCD_VALUE_MODE]))
 			consume_resources(rcd_results[RCD_VALUE_COST])
 			playsound(A, 'sound/items/deconstruct.ogg', 50, 1)
+			cleanup_effect(A)
 			return TRUE
 
 	// If they moved, kill the beam immediately.
 	qdel(rcd_beam)
 	busy = FALSE
+	cleanup_effect(A)
 	return FALSE
 
 // RCD variants.
@@ -355,10 +359,6 @@
 	. = ..()
 	update_icon()
 
-/obj/item/rcd/consume_resources(amount)
-	. = ..()
-	update_icon()
-
 /obj/item/rcd/update_icon()
 	var/nearest_ten = round((stored_matter/max_stored_matter)*10, 1)
 
@@ -379,10 +379,6 @@
 
 /obj/item/rcd/proc/perform_effect(atom/A, time_taken)
 	effects[A] = new /obj/effect/constructing_effect(get_turf(A), time_taken, modes[mode_index])
-
-/obj/item/rcd/use_rcd(atom/A, mob/living/user)
-	. = ..()
-	cleanup_effect(A)
 
 /obj/item/rcd/proc/cleanup_effect(atom/A)
 	if(A in effects)

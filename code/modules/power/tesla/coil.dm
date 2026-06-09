@@ -50,9 +50,6 @@
 /obj/machinery/power/tesla_coil/Initialize(mapload)
 	. = ..()
 	set_wires(new /datum/wires/tesla_coil(src))
-
-/obj/machinery/power/tesla_coil/Initialize(mapload)
-	. = ..()
 	default_apply_parts()
 
 /obj/machinery/power/tesla_coil/Destroy()

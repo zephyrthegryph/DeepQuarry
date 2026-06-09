@@ -288,17 +288,6 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	var/lamp_shade = 1
 	overlay_color = LIGHT_COLOR_INCANDESCENT_BULB
 
-/obj/machinery/light/flamp/Initialize(mapload, obj/machinery/light_construct/construct = null)
-	. = ..()
-	if(construct)
-		start_with_cell = FALSE
-		lamp_shade = 0
-		update_icon()
-	else
-		if(start_with_cell && !no_emergency)
-			cell = new/obj/item/cell/emergency_light(src)
-
-
 /obj/machinery/light/flamp/flicker
 	auto_flicker = TRUE
 
@@ -324,30 +313,6 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 
 /obj/machinery/light/flamp/noshade
 	lamp_shade = 0
-
-// create a new lighting fixture
-/obj/machinery/light/Initialize(mapload, obj/machinery/light_construct/construct = null)
-	. =..()
-
-	if(start_with_cell && !no_emergency)
-		cell = new/obj/item/cell/emergency_light(src)
-	if(construct)
-		start_with_cell = FALSE
-		status = LIGHT_EMPTY
-		construct_type = construct.type
-		construct.transfer_fingerprints_to(src)
-		set_dir(construct.dir)
-	else
-		installed_light = new light_type(src)
-		if(start_with_cell && !no_emergency)
-			cell = new/obj/item/cell/emergency_light(src)
-		var/obj/item/light/L = get_light_type_instance(light_type) //This is fine, but old code.
-		update_from_bulb(L)
-		if(prob(L.broken_chance))
-			broken(1)
-
-	on = powered()
-	update(0)
 
 /obj/machinery/light/Destroy()
 	var/area/A = get_area(src)
@@ -602,6 +567,14 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	update()
 
 /obj/machinery/light/attackby(obj/item/W, mob/user)
+
+	//Light painter code
+	if(istype(W, /obj/item/lightpainter))
+		var/obj/item/lightpainter/LP = W
+		if(isliving(user))
+			var/mob/living/U = user
+			LP.ColorLight(src, U)
+			return
 
 	//Light replacer code
 	if(istype(W, /obj/item/lightreplacer)) //These will never be modified, so it's fine to use old code.
@@ -1227,23 +1200,6 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 #undef LIGHT_EMERGENCY_POWER_USE
 
 
-// === merged from lighting_ch.dm during hard-fork de-suffix (verified no override-order change) ===
-
-
-/obj/machinery/light/attackby(obj/item/W, mob/user)
-
-	//Light painter code
-	if(istype(W, /obj/item/lightpainter))
-		var/obj/item/lightpainter/LP = W
-		if(isliving(user))
-			var/mob/living/U = user
-			LP.ColorLight(src, U)
-			return
-
-	. = ..()
-
-
-// === merged from lighting_vr.dm during hard-fork de-suffix (chain-verified, vr->ch order preserved) ===
 // I hate the way macros look stupid standing near lights. I don't care how absurd this looks.
 
 /obj/machinery/light_construct
@@ -1253,13 +1209,40 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	layer = BELOW_MOB_LAYER
 
 // ition, to override the New() proc further below, since this is a lamp.
-/obj/machinery/light/flamp/Initialize(mapload, obj/machinery/light_construct/construct)
+/obj/machinery/light/flamp/Initialize(mapload, obj/machinery/light_construct/construct = null)
 	layer = initial(layer)
 	. = ..()
+	if(construct)
+		start_with_cell = FALSE
+		lamp_shade = 0
+		update_icon()
+	else
+		if(start_with_cell && !no_emergency)
+			cell = new/obj/item/cell/emergency_light(src)
 
 // create a new lighting fixture
-/obj/machinery/light/Initialize(mapload, obj/machinery/light_construct/construct)
+/obj/machinery/light/Initialize(mapload, obj/machinery/light_construct/construct = null)
 	. = ..()
+
+	if(start_with_cell && !no_emergency)
+		cell = new/obj/item/cell/emergency_light(src)
+	if(construct)
+		start_with_cell = FALSE
+		status = LIGHT_EMPTY
+		construct_type = construct.type
+		construct.transfer_fingerprints_to(src)
+		set_dir(construct.dir)
+	else
+		installed_light = new light_type(src)
+		if(start_with_cell && !no_emergency)
+			cell = new/obj/item/cell/emergency_light(src)
+		var/obj/item/light/L = get_light_type_instance(light_type) //This is fine, but old code.
+		update_from_bulb(L)
+		if(prob(L.broken_chance))
+			broken(1)
+
+	on = powered()
+	update(0)
 	// ition, so large mobs stop looking stupid in front of lights.
 	if (dir == SOUTH) // Lights are backwards, SOUTH lights face north (they are on south wall)
 		layer = ABOVE_MOB_LAYER

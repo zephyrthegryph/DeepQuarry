@@ -264,24 +264,6 @@
 	new /obj/effect/decal/cleanable/blood/oil(src.loc)
 	qdel(src)
 
-/obj/machinery/media/jukebox/attackby(obj/item/W as obj, mob/user as mob)
-	src.add_fingerprint(user)
-
-	if(default_deconstruction_screwdriver(user, W))
-		return
-	if(default_deconstruction_crowbar(user, W))
-		return
-	if(W.has_tool_quality(TOOL_WRENCH))
-		if(playing)
-			StopPlaying()
-		user.visible_message(span_warning("[user] has [anchored ? "un" : ""]secured \the [src]."), span_notice("You [anchored ? "un" : ""]secure \the [src]."))
-		anchored = !anchored
-		playsound(src, W.usesound, 50, 1)
-		power_change()
-		update_icon()
-		return
-	return ..()
-
 /obj/machinery/media/jukebox/emag_act(remaining_charges, mob/user)
 	if(!emagged)
 		emagged = 1

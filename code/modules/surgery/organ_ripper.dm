@@ -84,12 +84,6 @@
 	affected.createwound(BRUISE, 20)
 	target.emote("scream") //Hope you put them under...
 
-/datum/surgery_step/generic/ripper/tear_vessel/fail_step(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
-	var/obj/item/organ/external/affected = target.get_organ(target_zone)
-	user.visible_message(span_warning("[user]'s hand slips, damaging [target]'s [affected.name] with \the [tool]!"), \
-	span_warning("Your hand slips, damaging [target]'s [affected.name] with \the [tool]!"))
-	affected.createwound(BRUISE, 20)
-
 //Mutilate Organ
 
 /datum/surgery_step/generic/ripper/destroy_organ

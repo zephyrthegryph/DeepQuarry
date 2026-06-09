@@ -613,17 +613,14 @@
 		)
 
 /obj/item/commcard/head/Initialize(mapload)
+	// Have to register the commcard with the Radio controller to receive updates to the status displays
+	SSradio.add_object(src, 1435)
 	. = ..()
 	internal_data["stat_display_line1"] = null
 	internal_data["stat_display_line2"] = null
 	internal_data["stat_display_active1"] = null
 	internal_data["stat_display_active2"] = null
 	internal_data["stat_display_special"] = null
-
-/obj/item/commcard/head/Initialize(mapload)
-	// Have to register the commcard with the Radio controller to receive updates to the status displays
-	SSradio.add_object(src, 1435)
-	. = ..()
 
 /obj/item/commcard/head/Destroy()
 	// Have to unregister the commcard for proper bookkeeping

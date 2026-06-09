@@ -71,19 +71,6 @@
 			message += span_warning(" OVERFILLED")
 		to_chat(user, message)
 
-/obj/machinery/appliance/cooker/fryer/update_icon() // We add our own version of the proc to use the special fryer double-lights.
-	cut_overlays()
-	var/image/light
-	if(use_power == 1 && !stat)
-		light = image(icon, "fryer_light_idle")
-	else if(use_power == 2 && !stat)
-		light = image(icon, "fryer_light_preheating")
-	else
-		light = image(icon, "fryer_light_off")
-	light.pixel_x = light_x
-	light.pixel_y = light_y
-	add_overlay(light)
-
 /obj/machinery/appliance/cooker/fryer/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	. = ..()
 	.["reagents"] = list("name" = oil.get_master_reagent_name(), "volume" = oil.total_volume, "max" = oil.maximum_volume)
@@ -121,7 +108,7 @@
 
 	cooking_power *= oil_efficiency
 
-/obj/machinery/appliance/cooker/fryer/update_icon()
+/obj/machinery/appliance/cooker/fryer/update_icon() // We add our own version of the proc to use the special fryer double-lights.
 	if(!stat)
 		..()
 		if(cooking == TRUE)
@@ -136,7 +123,19 @@
 		icon_state = off_icon
 		if(fry_loop)
 			fry_loop.stop(src)
-	..()
+
+	// Special fryer double-lights overlay.
+	cut_overlays()
+	var/image/light
+	if(use_power == 1 && !stat)
+		light = image(icon, "fryer_light_idle")
+	else if(use_power == 2 && !stat)
+		light = image(icon, "fryer_light_preheating")
+	else
+		light = image(icon, "fryer_light_off")
+	light.pixel_x = light_x
+	light.pixel_y = light_y
+	add_overlay(light)
 
 //Fryer gradually infuses any cooked food with oil. Moar calories
 //This causes a slow drop in oil levels, encouraging refill after extended use

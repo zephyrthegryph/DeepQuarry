@@ -93,10 +93,6 @@
 	if(has_repair_droid)
 		add_overlay(image(icon = 'icons/mecha/mecha_equipment.dmi', icon_state = "repair_droid"))
 
-/mob/living/simple_mob/mechanical/mecha/bullet_act()
-	sparks.start()
-	. = ..()
-
 /mob/living/simple_mob/mechanical/mecha/speech_bubble_appearance()
 	return pilot_type ? "" : ..()
 
@@ -119,6 +115,7 @@
 		visible_message(span_warning("\The [P] is deflected by \the [src]'s armor!"))
 		deflect_sprite()
 		return 0
+	sparks.start()
 	return ..()
 
 /mob/living/simple_mob/mechanical/mecha/proc/deflect_sprite()

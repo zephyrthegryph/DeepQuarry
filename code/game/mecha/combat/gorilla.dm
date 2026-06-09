@@ -62,16 +62,6 @@
 			playsound(src,'sound/mecha/bigmech_rturn.ogg',40,1)
 	return 1
 
-/obj/mecha/combat/gorilla/mechturn(direction)
-	dir = direction
-	var/turnsound = rand(1,2)
-	switch(turnsound)
-		if(1)
-			playsound(src,'sound/mecha/bigmech_lturn.ogg',40,1)
-		if(2)
-			playsound(src,'sound/mecha/bigmech_rturn.ogg',40,1)
-	return 1
-
 /obj/mecha/combat/gorilla/relaymove(mob/user,direction)
 	if(user != src.occupant) //While not "realistic", this piece is player friendly.
 		user.loc = get_turf(src)

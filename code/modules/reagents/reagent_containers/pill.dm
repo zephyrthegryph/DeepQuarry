@@ -208,11 +208,6 @@
 	desc = "Improves the ability to concentrate."
 	icon_state = "pill2"
 
-/obj/item/reagent_containers/pill/methylphenidate/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_METHYLPHENIDATE, 15)
-	color = reagents.get_color()
-
 /obj/item/reagent_containers/pill/citalopram
 	name = REAGENT_CITALOPRAM + " (15u)"
 	desc = "Mild anti-depressant."

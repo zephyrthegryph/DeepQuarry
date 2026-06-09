@@ -68,6 +68,7 @@
 	START_PROCESSING(SSobj, src)
 
 /obj/item/anodevice/Destroy()
+	STOP_PROCESSING(SSobj, src)
 	inserted_battery = null
 	archived_loc = null
 	last_user_touched = null
@@ -236,10 +237,6 @@
 	var/p = (inserted_battery.stored_charge/inserted_battery.capacity)*100
 	p = min(p, 100)
 	icon_state = "anodev[round(p,25)]"
-
-/obj/item/anodevice/Destroy()
-	STOP_PROCESSING(SSobj, src)
-	. = ..()
 
 /obj/item/anodevice/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 

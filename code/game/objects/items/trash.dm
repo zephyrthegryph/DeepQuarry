@@ -236,10 +236,6 @@
 	pickup_sound = 'sound/items/pickup/flesh.ogg'
 	slot_flags = SLOT_EARS | SLOT_MASK
 
-/obj/item/trash/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	return NONE
-
-
 /obj/item/trash/beef
 	name = "empty beef can"
 	icon_state = "beef"
@@ -494,10 +490,9 @@
 	icon_state = "cb10"
 
 
-// === merged from trash_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 // Custom garbage or whatever
 
-/obj/item/trash/attack(mob/living/M as mob, mob/living/user as mob)
+/obj/item/trash/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		if(H.species.trashcan == 1)
@@ -515,7 +510,8 @@
 			R.vore_selected.nom_atom(src)
 			R.balloon_alert_visible("[user] feeds [R] with [src]!", "you feed [R] \the [src]!")
 			return
-	..()
+	// Trash can't be used as a weapon; deal no attack.
+	return NONE
 
 /obj/item/trash/rkibble
 	name = "bowl of Borg-O's"

@@ -169,9 +169,6 @@
 		update_icon()
 
 /mob/living/simple_mob/animal/passive/opossum/update_icon()
-	update_icon()
-
-/mob/living/simple_mob/animal/passive/opossum/update_icon()
 	var/datum/ai_holder/simple_mob/passive/possum/poss_ai = ai_holder
 	var/is_angry = (!client && istype(poss_ai) && poss_ai.is_angry)
 	if(stat == DEAD || (resting && is_angry))

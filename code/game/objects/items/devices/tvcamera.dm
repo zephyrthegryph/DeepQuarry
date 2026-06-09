@@ -14,10 +14,6 @@
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
 
-/obj/item/tvcamera/Initialize(mapload)
-	. = ..()
-	GLOB.listening_objects += src
-
 /obj/item/tvcamera/Destroy()
 	GLOB.listening_objects -= src
 	qdel(camera)
@@ -34,6 +30,7 @@
 
 /obj/item/tvcamera/Initialize(mapload)
 	. = ..()
+	GLOB.listening_objects += src
 	camera = new(src)
 	camera.c_tag = channel
 	camera.status = FALSE
@@ -171,10 +168,6 @@
 	var/showing_name
 	special_handling = TRUE
 
-/obj/item/clothing/accessory/bodycam/Initialize(mapload)
-	. = ..()
-	GLOB.listening_objects += src
-
 /obj/item/clothing/accessory/bodycam/Destroy()
 	GLOB.listening_objects -= src
 	qdel(bcamera)
@@ -190,6 +183,7 @@
 
 /obj/item/clothing/accessory/bodycam/Initialize(mapload)
 	. = ..()
+	GLOB.listening_objects += src
 	bcamera = new(src)
 	bcamera.c_tag = channel
 	bcamera.status = FALSE

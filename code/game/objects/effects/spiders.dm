@@ -98,13 +98,10 @@
 	var/spider_type = /obj/effect/spider/spiderling
 	var/faction = FACTION_SPIDERS
 
-/obj/effect/spider/eggcluster/Initialize(mapload)
+/obj/effect/spider/eggcluster/Initialize(mapload, atom/parent)
 	pixel_x = rand(3,-3)
 	pixel_y = rand(3,-3)
 	START_PROCESSING(SSobj, src)
-	return ..()
-
-/obj/effect/spider/eggcluster/Initialize(mapload, atom/parent)
 	. = ..()
 	get_light_and_color(parent)
 

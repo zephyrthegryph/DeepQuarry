@@ -100,9 +100,6 @@
 	if (!id)
 		assign_uid()
 		id = num2text(uid)
-
-/obj/machinery/button/doorbell/Initialize(mapload)
-	. = ..()
 	update_icon()
 
 /obj/machinery/button/doorbell/power_change()

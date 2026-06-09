@@ -253,6 +253,10 @@
 	var/brand = "\improper Trans-Stellar Duty-free"
 
 /obj/item/storage/fancy/cigarettes/Initialize(mapload)
+	if(!open_state)
+		open_state = "[initial(icon_state)]_open"
+	if(!closed_state)
+		closed_state = "[initial(icon_state)]"
 	. = ..()
 	flags |= NOREACT
 	create_reagents(15 * storage_slots)//so people can inject cigarettes without opening a packet, now with being able to inject the whole one
@@ -261,13 +265,6 @@
 		for(var/obj/item/clothing/mask/smokable/cigarette/C in src)
 			C.brand = brand
 			C.desc += " This one is \a [brand]."
-
-/obj/item/storage/fancy/cigarettes/Initialize(mapload)
-	if(!open_state)
-		open_state = "[initial(icon_state)]_open"
-	if(!closed_state)
-		closed_state = "[initial(icon_state)]"
-	. = ..()
 
 /obj/item/storage/fancy/cigarettes/update_icon()
 	cut_overlays()
@@ -397,6 +394,10 @@
 	starts_with = list(/obj/item/clothing/mask/smokable/cigarette/cigar = 5)
 
 /obj/item/storage/fancy/cigar/Initialize(mapload)
+	if(!open_state)
+		open_state = "[initial(icon_state)]0"
+	if(!closed_state)
+		closed_state = "[initial(icon_state)]"
 	. = ..()
 	flags |= NOREACT
 	create_reagents(15 * storage_slots)
@@ -406,13 +407,6 @@
 	if(!istype(C)) return
 	reagents.trans_to_obj(C, (reagents.total_volume/contents.len))
 	return ..()
-
-/obj/item/storage/fancy/cigar/Initialize(mapload)
-	if(!open_state)
-		open_state = "[initial(icon_state)]0"
-	if(!closed_state)
-		closed_state = "[initial(icon_state)]"
-	. = ..()
 
 /obj/item/storage/fancy/cigar/update_icon()
 	cut_overlays()

@@ -561,16 +561,6 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_COMMON
 	industrial_use = REFINERYEXPORT_REASON_CLEAN
 
-/datum/reagent/space_cleaner/touch_mob(mob/M)
-	..()
-	if(iscarbon(M))
-		var/mob/living/carbon/C = M
-		C.wash(CLEAN_SCRUB)
-
-	if(istype(M, /mob/living/simple_mob/vore/aggressive/macrophage)) // Big ouch for viruses
-		var/mob/living/simple_mob/macrophage = M
-		macrophage.adjustToxLoss(20)
-
 /datum/reagent/space_cleaner/touch_obj(obj/O)
 	..()
 	O.wash(CLEAN_SCRUB)
@@ -631,10 +621,18 @@
 		if(prob(5))
 			M.vomit()
 
-/datum/reagent/space_cleaner/touch_mob(mob/living/L, amount)
+/datum/reagent/space_cleaner/touch_mob(mob/M, amount)
 	..()
-	if(ishuman(L))
-		var/mob/living/carbon/human/H = L
+	if(iscarbon(M))
+		var/mob/living/carbon/C = M
+		C.wash(CLEAN_SCRUB)
+
+	if(istype(M, /mob/living/simple_mob/vore/aggressive/macrophage)) // Big ouch for viruses
+		var/mob/living/simple_mob/macrophage = M
+		macrophage.adjustToxLoss(20)
+
+	if(ishuman(M))
+		var/mob/living/carbon/human/H = M
 		if(H.wear_mask)
 			if(istype(H.wear_mask, /obj/item/clothing/mask/smokable))
 				var/obj/item/clothing/mask/smokable/S = H.wear_mask

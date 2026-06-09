@@ -10,6 +10,8 @@
 
 	AddElement(/datum/element/footstep, custom_footstep, 1, -6)
 
+	cozyloop = new(list(src), FALSE)
+
 /mob/living/carbon/Life()
 	..()
 
@@ -22,6 +24,7 @@
 	QDEL_NULL(touching)
 	// We don't qdel(bloodstr) because it's the same as qdel(reagents)
 	bloodstr = null
+	QDEL_NULL(cozyloop)
 	return ..()
 
 /mob/living/carbon/rejuvenate()
@@ -696,12 +699,3 @@
 	var/datum/looping_sound/mob/cozyloop/cozyloop
 	var/slip_reflex = FALSE
 	var/synth_reag_processing = TRUE
-
-/mob/living/carbon/Initialize(mapload)
-	. = ..()
-
-	cozyloop = new(list(src), FALSE)
-
-/mob/living/carbon/Destroy()
-	. = ..()
-	QDEL_NULL(cozyloop)

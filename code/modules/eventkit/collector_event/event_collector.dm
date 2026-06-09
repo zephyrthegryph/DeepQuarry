@@ -64,8 +64,10 @@ GLOBAL_LIST_INIT(event_collector_blockers,list()) //ditto
 /obj/structure/event_collector/Initialize(mapload)
 	. = ..()
 	GLOB.event_collectors |= src
+	START_PROCESSING(SSobj, src)
 
 /obj/structure/event_collector/Destroy()
+	STOP_PROCESSING(SSobj, src)
 	GLOB.event_collectors -= src
 	. = ..()
 
@@ -147,15 +149,6 @@ GLOBAL_LIST_INIT(event_collector_blockers,list()) //ditto
 			recipe_completed()
 		if(animate_on_recipe_process)
 			jiggle_animation(0.1)
-
-/obj/structure/event_collector/Initialize(mapload)
-	. = ..()
-	START_PROCESSING(SSobj, src)
-
-/obj/structure/event_collector/Destroy()
-	STOP_PROCESSING(SSobj, src)
-	return ..()
-
 
 /obj/structure/event_collector/examine(mob/user)
 	. = ..()

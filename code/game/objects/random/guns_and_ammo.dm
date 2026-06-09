@@ -37,7 +37,7 @@
 	desc = "This is a random, actually good energy weapon."
 	icon_state = "gun_energy_2"
 
-/obj/random/energy/item_to_spawn()
+/obj/random/energy/highend/item_to_spawn()
 	return pick(prob(3);/obj/item/gun/energy/laser,
 				prob(3);/obj/item/gun/energy/laser/sleek,
 				prob(4);/obj/item/gun/energy/gun,
@@ -116,7 +116,7 @@
 	desc = "This is a random shotgun-type weapon."
 	icon_state = "gun_shotgun"
 
-/obj/random/projectile/item_to_spawn()
+/obj/random/projectile/shotgun/item_to_spawn()
 	return pick(prob(4);/obj/item/gun/projectile/shotgun/doublebarrel,
 				prob(3);/obj/item/gun/projectile/shotgun/doublebarrel/sawn,
 				prob(3);/obj/item/gun/projectile/shotgun/pump,

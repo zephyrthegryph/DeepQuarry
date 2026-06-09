@@ -272,9 +272,6 @@
 //Which is enough to trigger byond's recursion level protection
 /obj/item/storage/bag/circuits/basic/Initialize(mapload)
 	AddElement(/datum/element/empprotection, EMP_PROTECT_SELF)
-	. = ..()
-
-/obj/item/storage/bag/circuits/basic/Initialize(mapload)
 	new /obj/item/storage/bag/circuits/mini/arithmetic(src)
 	new /obj/item/storage/bag/circuits/mini/trig(src)
 	new /obj/item/storage/bag/circuits/mini/input(src)

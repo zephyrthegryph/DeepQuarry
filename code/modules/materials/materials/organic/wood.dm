@@ -55,6 +55,12 @@
 		new /datum/stack_recipe("roofing tile", /obj/item/stack/tile/roofing, 3, 4, 20, recycle_material = "[name]"),
 		new /datum/stack_recipe("shovel", /obj/item/shovel/wood, 2, time = 10, on_floor = TRUE, supplied_material = "[name]")
 	)
+	recipes += new/datum/stack_recipe_list("sofas", list( \
+		new /datum/stack_recipe("sofa middle", /obj/structure/bed/chair/sofa, 1, one_per_turf = 1, on_floor = 1, supplied_material = "[name]"), \
+		new /datum/stack_recipe("sofa left", /obj/structure/bed/chair/sofa/left, 1, one_per_turf = 1, on_floor = 1, supplied_material = "[name]"), \
+		new /datum/stack_recipe("sofa right", /obj/structure/bed/chair/sofa/right, 1, one_per_turf = 1, on_floor = 1, supplied_material = "[name]"), \
+		new /datum/stack_recipe("sofa corner", /obj/structure/bed/chair/sofa/corner, 1, one_per_turf = 1, on_floor = 1, supplied_material = "[name]"), \
+		))
 
 /datum/material/wood/sif
 	name = MAT_SIFWOOD
@@ -400,15 +406,3 @@
 		if(r_recipe.title == "wooden standup figure")
 			recipes -= r_recipe
 			continue
-
-
-// === merged from wood_ch.dm during hard-fork de-suffix (verified no override-order change) ===
-
-/datum/material/wood/generate_recipes() //Is a little sad we cant have lovely wooden sofa
-	. = ..()
-	recipes += new/datum/stack_recipe_list("sofas", list( \
-		new /datum/stack_recipe("sofa middle", /obj/structure/bed/chair/sofa, 1, one_per_turf = 1, on_floor = 1, supplied_material = "[name]"), \
-		new /datum/stack_recipe("sofa left", /obj/structure/bed/chair/sofa/left, 1, one_per_turf = 1, on_floor = 1, supplied_material = "[name]"), \
-		new /datum/stack_recipe("sofa right", /obj/structure/bed/chair/sofa/right, 1, one_per_turf = 1, on_floor = 1, supplied_material = "[name]"), \
-		new /datum/stack_recipe("sofa corner", /obj/structure/bed/chair/sofa/corner, 1, one_per_turf = 1, on_floor = 1, supplied_material = "[name]"), \
-		))

@@ -69,6 +69,9 @@
 		unsense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity), center = old_loc)
 	if(isturf(loc))
 		sense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
+	if(a_left && a_right)
+		a_left.holder_movement()
+		a_right.holder_movement()
 
 /obj/item/assembly_holder/HasProximity(turf/T, datum/weakref/WF, old_loc)
 	if(isnull(WF))
@@ -95,12 +98,6 @@
 		a_left.on_found(finder)
 	if(a_right)
 		a_right.on_found(finder)
-
-/obj/item/assembly_holder/Moved(atom/old_loc, direction, forced = FALSE)
-	. = ..()
-	if(a_left && a_right)
-		a_left.holder_movement()
-		a_right.holder_movement()
 
 /obj/item/assembly_holder/attack_hand()//Perhapse this should be a holder_pickup proc instead, can add if needbe I guess
 	if(a_left && a_right)

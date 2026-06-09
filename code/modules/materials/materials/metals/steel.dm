@@ -158,14 +158,7 @@
 		new /datum/stack_recipe("steel kettle", /obj/item/reagent_containers/glass/kettle, 1, on_floor = 1, supplied_material = "[name]"),
 		new /datum/stack_recipe("bunsen burner", /obj/machinery/bunsen_burner, 1, time = 25, on_floor = 1, supplied_material = "[name]"),
 		new /datum/stack_recipe("tanning rack", /obj/structure/tanning_rack, 3, one_per_turf = TRUE, time = 20, on_floor = TRUE, supplied_material = "[name]"),
-		new /datum/stack_recipe("steel hull sheet", /obj/item/stack/material/steel/hull, 2, 1, 5, time = 20, one_per_turf = 0, on_floor = 1, recycle_material = "[name]")
-	)
-
-
-// === merged from steel_vr.dm during hard-fork de-suffix (verified no override-order change) ===
-/datum/material/steel/generate_recipes()
-	. = ..()
-	recipes += list(
+		new /datum/stack_recipe("steel hull sheet", /obj/item/stack/material/steel/hull, 2, 1, 5, time = 20, one_per_turf = 0, on_floor = 1, recycle_material = "[name]"),
 		new /datum/stack_recipe_list("mounted chairs",list(
 			new /datum/stack_recipe("mounted chair", /obj/structure/bed/chair/bay/chair, 2, one_per_turf = 1, on_floor = 1, time = 10),
 			new /datum/stack_recipe("red mounted chair", /obj/structure/bed/chair/bay/chair/padded/red, 2, one_per_turf = 1, on_floor = 1, time = 10),

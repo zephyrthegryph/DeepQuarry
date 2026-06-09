@@ -53,33 +53,6 @@
 		activated = 0
 		return
 
-/obj/item/deadringer/process()
-	if(activated)
-		if(ishuman(src.loc))
-			var/mob/living/carbon/human/H = src.loc
-			watchowner = H
-			if(isbelly(watchowner.loc)) //No spawning people in bellies.
-				return
-			if(H.getBruteLoss() > bruteloss_prev || H.getFireLoss() > fireloss_prev)
-				deathprevent()
-				activated = 0
-				if(watchowner.isSynthetic())
-					to_chat(watchowner, span_blue("You fade into nothingness! [src]'s screen blinks, being unable to copy your synthetic body!"))
-				else
-					to_chat(watchowner, span_blue("You fade into nothingness, leaving behind a fake body!"))
-				icon_state = "deadringer_cd"
-				timer = 50
-				return
-	if(timer > 0)
-		timer--
-	if(timer == 20)
-		reveal()
-		if(corpse)
-			new /obj/effect/effect/smoke/chem(corpse.loc)
-			qdel(corpse)
-	if(timer == 0)
-		icon_state = "deadringer"
-	return
 
 /obj/item/deadringer/proc/deathprevent()
 	for(var/mob/living/simple_mob/D in oviewers(7, src))
@@ -186,6 +159,8 @@
 		if (ismob(src.loc))
 			var/mob/living/carbon/human/H = src.loc
 			watchowner = H
+			if(isbelly(watchowner.loc)) //No spawning people in bellies.
+				return
 			if(H.getBruteLoss() > bruteloss_prev || H.getFireLoss() > fireloss_prev)
 				deathprevent()
 				activated = 0

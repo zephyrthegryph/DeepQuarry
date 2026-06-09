@@ -169,10 +169,6 @@
 	. = ..()
 	// RegisterSignal(owner, COMSIG_ATOM_TOUCHED_SPARKS, PROC_REF(owner_touched_sparks))
 
-/datum/status_effect/fire_handler/fire_stacks/on_remove()
-	// UnregisterSignal(owner, COMSIG_ATOM_TOUCHED_SPARKS)
-	if (cached_state)
-		owner.remove_shared_particles(cached_state)
 
 /datum/status_effect/fire_handler/fire_stacks/tick(seconds_between_ticks)
 	if(stacks <= 0)
@@ -315,6 +311,8 @@
 		extinguish()
 	set_stacks(0)
 	owner.update_fire()
+	if (cached_state)
+		owner.remove_shared_particles(cached_state)
 	// UnregisterSignal(owner, COMSIG_MOB_UPDATE_ICONS)
 	// owner.update_appearance(UPDATE_OVERLAYS)
 	return ..()

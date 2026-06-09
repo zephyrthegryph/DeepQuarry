@@ -184,15 +184,6 @@ INITIALIZE_IMMEDIATE(/obj/effect/fancy_shuttle)
 /**
  * Shuttle Glass
  */
-//OLD GLASS - USE NEW GLASS
-/turf/simulated/wall/fancy_shuttle/window
-	opacity = FALSE
-	icon_state = "hull_transparent"
-
-/turf/simulated/wall/fancy_shuttle/window/attack_generic(mob/user, damage, attack_message)
-	take_damage(damage)
-	return damage
-
 //NEW GLASS
 /obj/structure/window/fancy_shuttle
 	name = "shuttle window"

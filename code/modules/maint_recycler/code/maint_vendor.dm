@@ -72,10 +72,6 @@
 	qdel(monitor_screen)
 	monitor_screen = null
 
-/obj/machinery/maint_vendor/power_change()
-	update_icon()
-	//update icon, remove overlay
-
 /obj/machinery/maint_vendor/attack_hand(mob/user)
 	if(..(user))
 		return

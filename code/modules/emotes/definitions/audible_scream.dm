@@ -4,31 +4,6 @@
 	emote_message_3p = "screams!"
 
 /datum/decl/emote/audible/scream/get_emote_sound(atom/user)
-	if(ishuman(user))
-		var/mob/living/carbon/human/H = user
-		var/vol = H.species.scream_volume
-		return list(
-				"sound" = get_species_sound(get_gendered_sound(H))["scream"],
-				"vol" = vol,
-				"exr" = 20,
-				"volchannel" = VOLUME_CHANNEL_SPECIES_SOUNDS
-			)
-
-/datum/decl/emote/audible/scream/get_emote_message_1p(atom/user, atom/target, extra_params)
-	if(ishuman(user))
-		var/mob/living/carbon/human/H = user
-		return "You [H.species.scream_verb_1p]!"
-	. = ..()
-
-/datum/decl/emote/audible/scream/get_emote_message_3p(atom/user, atom/target, extra_params)
-	if(ishuman(user))
-		var/mob/living/carbon/human/H = user
-		return "[H.species.scream_verb_3p]!"
-	. = ..()
-
-
-// === merged from audible_scream_ch.dm during hard-fork de-suffix (verified no override-order change) ===
-/datum/decl/emote/audible/scream/get_emote_sound(atom/user)
 	..()
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
@@ -62,24 +37,17 @@
 			)
 	*/
 
-/datum/decl/emote/audible/malehumanscream
-	key = "malehumanscream"
-	emote_message_3p = "screams!"
-	emote_sound = 'sound/voice/malescream_2.ogg'
-
-
-// === merged from audible_scream_vr.dm during hard-fork de-suffix (manually verified) ===
-/datum/decl/emote/audible/scream/get_emote_sound(atom/user)
-	..()
+/datum/decl/emote/audible/scream/get_emote_message_1p(atom/user, atom/target, extra_params)
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
-		var/vol = H.species.scream_volume
-		return list(
-				"sound" = get_species_sound(get_gendered_sound(H))["scream"],
-				"vol" = vol,
-				"exr" = 20,
-				"volchannel" = VOLUME_CHANNEL_SPECIES_SOUNDS
-			)
+		return "You [H.species.scream_verb_1p]!"
+	. = ..()
+
+/datum/decl/emote/audible/scream/get_emote_message_3p(atom/user, atom/target, extra_params)
+	if(ishuman(user))
+		var/mob/living/carbon/human/H = user
+		return "[H.species.scream_verb_3p]!"
+	. = ..()
 
 /datum/decl/emote/audible/malehumanscream
 	key = "malehumanscream"

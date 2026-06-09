@@ -1329,6 +1329,21 @@ Note that amputating the affected organ does in fact remove the infection from t
 
 /obj/item/organ/external/robotize(company, skip_prosthetics = 0, keep_organs = 0)
 
+	// Sideways handling for nanoform limbs (ugh): temporarily clear the robotic
+	// flag so the guard below passes, force-keep organs, and restore the
+	// nanoform vars afterwards.
+	var/original_robotic = robotic
+	var/restore_nanoform = (original_robotic >= ORGAN_NANOFORM)
+	var/o_encased
+	var/o_max_damage
+	var/o_min_broken_damage
+	if(restore_nanoform)
+		o_encased = encased
+		o_max_damage = max_damage
+		o_min_broken_damage = min_broken_damage
+		robotic = FALSE
+		keep_organs = TRUE
+
 	if(robotic >= ORGAN_ROBOT)
 		return
 
@@ -1382,6 +1397,13 @@ Note that amputating the affected organ does in fact remove the infection from t
 		while(null in owner.internal_organs)
 			owner.internal_organs -= null
 		owner.refresh_modular_limb_verbs()
+
+	if(restore_nanoform)
+		robotic = original_robotic
+		encased = o_encased
+		max_damage = o_max_damage
+		min_broken_damage = o_min_broken_damage
+
 	return 1
 
 /obj/item/organ/external/proc/mutate()
@@ -1643,23 +1665,6 @@ Note that amputating the affected organ does in fact remove the infection from t
 #undef DROPLIMB_THRESHOLD_EDGE
 #undef DROPLIMB_THRESHOLD_DESTROY
 
-
-// === merged from organ_external_vr.dm during hard-fork de-suffix (verified no override-order change) ===
-//Sideways override for nanoform limbs (ugh)
-/obj/item/organ/external/robotize(company, skip_prosthetics = FALSE, keep_organs = FALSE)
-	var/original_robotic = robotic
-	if(original_robotic >= ORGAN_NANOFORM)
-		var/o_encased = encased
-		var/o_max_damage = max_damage
-		var/o_min_broken_damage = min_broken_damage
-		robotic = FALSE
-		. = ..(company = company, keep_organs = TRUE)
-		robotic = original_robotic
-		encased = o_encased
-		max_damage = o_max_damage
-		min_broken_damage = o_min_broken_damage
-	else
-		return ..()
 
 /obj/item/organ/external/digitize(company, skip_prosthetics = FALSE, keep_organs = FALSE)
 	robotize(company, skip_prosthetics, keep_organs)

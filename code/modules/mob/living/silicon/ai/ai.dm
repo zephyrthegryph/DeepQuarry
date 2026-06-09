@@ -171,6 +171,14 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	add_language(LANGUAGE_ROOTLOCAL, 1)
 	add_language(LANGUAGE_TERMINUS, 1)
 	add_language(LANGUAGE_ZADDAT, 1)
+	add_language(LANGUAGE_BIRDSONG, 1)
+	add_language(LANGUAGE_SAGARU, 1)
+	add_language(LANGUAGE_CANILUNZT, 1)
+	add_language(LANGUAGE_ECUREUILIAN, 1)
+	add_language(LANGUAGE_DAEMON, 1)
+	add_language(LANGUAGE_ENOCHIAN, 1)
+	add_language(LANGUAGE_DRUDAKAR, 1)
+	add_language(LANGUAGE_TAVAN, 1)
 
 	if(!safety)//Only used by AIize() to successfully spawn an AI.
 		if (!B)//If there is no player/brain inside.
@@ -1039,20 +1047,6 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 #undef AI_CHECK_WIRELESS
 #undef AI_CHECK_RADIO
 
-
-// === merged from ai_vr.dm during hard-fork de-suffix. Placed in this file because it
-// is the highest-positioned definer in the override chain for the members it
-// sets, so every override stays after its base definition (resolution preserved). ===
-/mob/living/silicon/ai/Initialize(mapload, is_decoy, datum/ai_laws/L, obj/item/mmi/B, safety = FALSE)
-	. = ..()
-	add_language(LANGUAGE_BIRDSONG,		1)
-	add_language(LANGUAGE_SAGARU,		1)
-	add_language(LANGUAGE_CANILUNZT,	1)
-	add_language(LANGUAGE_ECUREUILIAN,	1)
-	add_language(LANGUAGE_DAEMON,		1)
-	add_language(LANGUAGE_ENOCHIAN,		1)
-	add_language(LANGUAGE_DRUDAKAR,		1)
-	add_language(LANGUAGE_TAVAN,		1)
 
 /mob/AIize(move = TRUE)
 	. = ..()

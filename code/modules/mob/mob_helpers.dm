@@ -711,6 +711,31 @@ GLOBAL_LIST_INIT(organ_rel_size, list(
 
 //Recalculates what planes this mob can see using their plane_holder, for humans this is checking slots, for others, could be whatever.
 /mob/proc/recalculate_vis()
+	if(!plane_holder || !vis_enabled)
+		return
+	var/stomach_vision = client?.prefs.read_preference(/datum/preference/toggle/tummy_sprites)
+	if(stomach_vision && !(VIS_CH_STOMACH in vis_enabled))
+		plane_holder.set_vis(VIS_CH_STOMACH,TRUE)
+		vis_enabled += VIS_CH_STOMACH
+	else if(!stomach_vision && (VIS_CH_STOMACH in vis_enabled))
+		plane_holder.set_vis(VIS_CH_STOMACH,FALSE)
+		vis_enabled -= VIS_CH_STOMACH
+
+	if(vantag_hud)
+		if(!(VIS_CH_VANTAG in vis_enabled))
+			plane_holder.set_vis(VIS_CH_VANTAG,TRUE)
+			vis_enabled += VIS_CH_VANTAG
+	else
+		if(VIS_CH_VANTAG in vis_enabled)
+			plane_holder.set_vis(VIS_CH_VANTAG,FALSE)
+			vis_enabled -= VIS_CH_VANTAG
+
+	if(soulgem?.flag_check(SOULGEM_SEE_SR_SOULS))
+		plane_holder.set_vis(VIS_SOULCATCHER, TRUE)
+		vis_enabled += VIS_SOULCATCHER
+	else
+		plane_holder.set_vis(VIS_SOULCATCHER, FALSE)
+		vis_enabled -= VIS_SOULCATCHER
 	return
 
 /// General HUD updates done regularly (health puppet things, etc). Returns true if the mob has a client and is allowed to update its hud.
@@ -832,38 +857,6 @@ GLOBAL_DATUM_INIT(backplane, /image, generate_backplane())
 			var/partial_end   = copytext(haystack,pos+length(filter),length(haystack)+1)
 			haystack = "[partial_start][pick("BEEP","BLEEP","BOINK","BEEEEEP")][partial_end]"
 	return haystack
-
-
-// === merged from mob_helpers_vr.dm during hard-fork de-suffix (verified no override-order change) ===
-/mob/recalculate_vis()
-	. = ..()
-
-	if(!plane_holder || !vis_enabled)
-		return
-	var/stomach_vision = client?.prefs.read_preference(/datum/preference/toggle/tummy_sprites)
-	if(stomach_vision && !(VIS_CH_STOMACH in vis_enabled))
-		plane_holder.set_vis(VIS_CH_STOMACH,TRUE)
-		vis_enabled += VIS_CH_STOMACH
-	else if(!stomach_vision && (VIS_CH_STOMACH in vis_enabled))
-		plane_holder.set_vis(VIS_CH_STOMACH,FALSE)
-		vis_enabled -= VIS_CH_STOMACH
-
-	if(vantag_hud)
-		if(!(VIS_CH_VANTAG in vis_enabled))
-			plane_holder.set_vis(VIS_CH_VANTAG,TRUE)
-			vis_enabled += VIS_CH_VANTAG
-	else
-		if(VIS_CH_VANTAG in vis_enabled)
-			plane_holder.set_vis(VIS_CH_VANTAG,FALSE)
-			vis_enabled -= VIS_CH_VANTAG
-
-	if(soulgem?.flag_check(SOULGEM_SEE_SR_SOULS))
-		plane_holder.set_vis(VIS_SOULCATCHER, TRUE)
-		vis_enabled += VIS_SOULCATCHER
-	else
-		plane_holder.set_vis(VIS_SOULCATCHER, FALSE)
-		vis_enabled -= VIS_SOULCATCHER
-	return
 
 
 /mob/verb/toggle_stomach_vision()

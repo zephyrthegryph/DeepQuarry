@@ -232,8 +232,9 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 	STOP_PROCESSING(SSobj, src)
 	update_icon()
 
-/obj/item/clothing/mask/smokable/attack(mob/living/carbon/human/H, mob/living/user, target_zone, attack_modifier)
-	if(lit && H == user && ishuman(H))
+/obj/item/clothing/mask/smokable/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
+	if(lit && M == user && ishuman(M))
+		var/mob/living/carbon/human/H = M
 		var/obj/item/blocked = H.check_mouth_coverage()
 		if(blocked)
 			to_chat(H, span_warning("\The [blocked] is in the way!"))
@@ -241,6 +242,10 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 		to_chat(H, span_notice("You take a drag on your [name]."))
 		playsound(src, 'sound/items/cigs_lighters/inhale.ogg', 50, 0, -1)
 		smoke(5)
+		return ITEM_INTERACT_SUCCESS
+	if(istype(M) && M.on_fire)
+		user.do_attack_animation(M)
+		light(span_notice("[user] coldly lights the [name] with the burning body of [M]."))
 		return ITEM_INTERACT_SUCCESS
 	return ..()
 
@@ -262,14 +267,6 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 		text = replacetext(text, "NAME", "[name]")
 		text = replacetext(text, "FLAME", "[W.name]")
 		light(text)
-
-/obj/item/clothing/mask/smokable/attack(mob/living/M, mob/living/user, def_zone)
-	if(istype(M) && M.on_fire)
-		user.do_attack_animation(M)
-		light(span_notice("[user] coldly lights the [name] with the burning body of [M]."))
-		return 1
-	else
-		return ..()
 
 /obj/item/clothing/mask/smokable/water_act(amount)
 	if(amount >= 5)
@@ -685,12 +682,6 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 			return ITEM_INTERACT_SUCCESS
 	else
 		..()
-
-/obj/item/flame/lighter/process()
-	var/turf/location = get_turf(src)
-	if(location)
-		location.hotspot_expose(700, 5)
-	return
 
 /////////
 //ZIPPO//

@@ -822,11 +822,6 @@ GLOBAL_LIST_INIT(obelisk_lure_messages, list(
 				return
 
 
-/mob/living/simple_mob/vore/blackhole_obelisk/death()
-	..()
-	visible_message("[src] flashes brightly, crumbling as its psychic influence suddenly vanishes from the minds of those nearby...")
-	playsound(src, 'sound/effects/monolith_death.ogg', 100)
-
 #undef OBELISK_LURE
 
 ///-------------------------------------------------------------------------------------------------------------------------------------------------------------///
@@ -892,6 +887,8 @@ GLOBAL_LIST_INIT(obelisk_lure_messages, list(
 
 /mob/living/simple_mob/vore/blackhole_obelisk/death()
 	visible_message(span_critical("\\The [src] suddenly destablizes!"))
+	visible_message("[src] flashes brightly, crumbling as its psychic influence suddenly vanishes from the minds of those nearby...")
+	playsound(src, 'sound/effects/monolith_death.ogg', 100)
 	var/delay = rand(explosion_delay_lower, explosion_delay_upper)
 	animate(src, color = "#FFFFFF", time = 0.1 SECONDS, loop = ceil(delay/2))
 	animate(color = "#A663FF", time = 0.1 SECONDS)
