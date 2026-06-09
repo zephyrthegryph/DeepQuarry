@@ -46,7 +46,6 @@
 	// here (at login) binds it to the lobby new_player mob, which is deleted on
 	// spawn — after which update_uis() pushes to a dead user and the frontend
 	// never refreshes (it stays on its initial visible=FALSE/empty data).
-	dq_log("tooltip New: ctrl=[control] window=[tooltip_window ? "ok" : "null"]")
 	..()
 
 
@@ -77,17 +76,6 @@
 		// world.icon_size was overridden, so we ship it directly.
 		"tile_size" = isnum(world.icon_size) ? world.icon_size : 32,
 	)
-
-// TEMP DIAGNOSTIC: React pings here (standard tgui act) -> existing dq_log, so we
-// can see whether the React component runs and what it computes.
-/datum/tooltip/tgui_act(action, list/params, datum/tgui/ui, datum/ui_state/state)
-	. = ..()
-	if(.)
-		return
-	if(action == "ttdebug")
-		dq_log("tooltip REACT [params["m"]]")
-		return TRUE
-
 
 /datum/tooltip/proc/show(atom/movable/thing, params = null, title = null, content = null, theme = "default", special = "none")
 	if(!thing || !params || (!title && !content) || !owner)
@@ -120,20 +108,17 @@
 	_view_w = view_size[1]
 	_view_h = view_size[2]
 
-	dq_log("tooltip show ctrl=[control] title_len=[length(_title)] cursor=[params] sloc=[thing.screen_loc]")
 	// Ensure a ui bound to the CURRENT mob. try_update_ui() finds + refreshes an
 	// existing one; if the mob changed (lobby -> spawned) there's none for the new
-	// user, so we open a fresh ui on the persistent window. This is what actually
-	// pushes the new data to React (and mounts it on first hover).
+	// user, so we open a fresh ui on the persistent window. This pushes the new
+	// data to React (and mounts it on first hover). Tooltip.tsx measures the box,
+	// sizes the element to it at the cursor, and shows it — DM never winsets
+	// is-visible here, so the element only ever appears already positioned.
 	var/datum/tgui/ui = SStgui.try_update_ui(owner.mob, src, null)
 	if(!ui)
 		ui = new(owner.mob, src, "Tooltip", window = tooltip_window)
 		ui.closeable = FALSE
 		ui.open()
-	// Fallback: show at a default size so the tooltip is visible even if the
-	// React-side winset can't resolve its element. Tooltip.tsx then refines the
-	// element to the box's exact size at the cursor (and may move/shrink it).
-	winset(owner, control, "is-visible=true;size=300x90")
 
 	showing = 0
 	if(queueHide)
