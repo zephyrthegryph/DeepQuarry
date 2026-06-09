@@ -92,21 +92,6 @@
 	item_cost = 5
 	path = /obj/item/storage/firstaid/toxin
 
-/datum/uplink_item/item/medical/o2
-	name = "oxygen deprivation medical kit"
-	item_cost = 5
-	path = /obj/item/storage/firstaid/o2
-
-/datum/uplink_item/item/medical/fire
-	name = "fire medical kit"
-	item_cost = 5
-	path = /obj/item/storage/firstaid/fire
-
-/datum/uplink_item/item/medical/adv
-	name = "advanced medical kit"
-	item_cost = 10
-	path = /obj/item/storage/firstaid/adv
-
 /datum/uplink_item/item/medical/combat
 	name = "Combat medical kit"
 	item_cost = 20
@@ -166,11 +151,6 @@
 	name = "Burn injector"
 	item_cost = 5
 	path = /obj/item/reagent_containers/hypospray/autoinjector/biginjector/burn
-
-/datum/uplink_item/item/medical/toxin
-	name = "Toxin injector"
-	item_cost = 5
-	path = /obj/item/reagent_containers/hypospray/autoinjector/biginjector/toxin
 
 /datum/uplink_item/item/medical/oxy
 	name = "Oxy injector"

@@ -161,7 +161,6 @@
 		M.heal_organ_damage(0, 4 * removed * chem_effective)
 
 /datum/reagent/dermaline
-	name = REAGENT_DERMALINE
 	id = REAGENT_ID_DERMALINE
 	name = REAGENT_DERMALINE
 	description = REAGENT_DERMALINE + " is the next step in burn medication. Works twice as good as kelotane and enables the body to restore even the direst heat-damaged tissue."
@@ -1646,18 +1645,6 @@
 		current_addiction = 40
 	return current_addiction
 
-/datum/reagent/tercozolam
-	name = REAGENT_TERCOZOLAM
-	id = REAGENT_ID_TERCOZOLAM
-	color = "#afeb17"
-	metabolism = 0.05
-	scannable = SCANNABLE_BENEFICIAL
-	dermal_absorption = 0.2
-	description = "A well respected drug used for treatment of schizophrenia in specific."
-	overdose = REAGENTS_OVERDOSE * 2
-	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
-	industrial_use = REFINERYEXPORT_REASON_DRUG
-
 
 // === merged from medicine_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 ////////////////////////////////////
@@ -1668,7 +1655,6 @@
 	id = REAGENT_ID_CLARIDYL
 	description = "Claridyl is an advanced medicine that cures all of your problems. Notice: Clarydil does not claim to fix marriages, car loans, student debt or insomnia and may cause severe pain."
 	taste_description = "sugar"
-	scannable = SCANNABLE_BENEFICIAL
 	reagent_state = LIQUID
 	color = "#AAAAFF"
 	overdose = REAGENTS_OVERDOSE * 100
@@ -1761,6 +1747,7 @@
 	scannable = SCANNABLE_BENEFICIAL
 	color = "#afeb17"
 	metabolism = 0.05
+	dermal_absorption = 0.2
 	description = "A well respected drug used for treatment of schizophrenia in specific."
 	overdose = REAGENTS_OVERDOSE * 2
 	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
@@ -1772,7 +1759,6 @@
 /datum/reagent/hannoa
 	name = REAGENT_HANNOA
 	id = REAGENT_ID_HANNOA
-	scannable = SCANNABLE_BENEFICIAL
 	description = "A powerful clotting agent that treats brute damage very quickly but takes a long time to be metabolised. Overdoses easily, reacts badly with other chemicals."
 	taste_description = "paint"
 	reagent_state = LIQUID
@@ -1818,7 +1804,6 @@
 /datum/reagent/bullvalene //This is for the third sap. It converts Brute Oxy and burn into slightly less toxins.
 	name = REAGENT_BULLVALENE
 	id = REAGENT_ID_BULLVALENE
-	scannable = SCANNABLE_BENEFICIAL
 	description = "A catalytic chemical that can treat a wide variety of ailments at the cost of toxifying the host's body."
 	taste_description = "sulfur"
 	reagent_state = LIQUID
@@ -1843,7 +1828,6 @@
 /datum/reagent/serazine
 	name = REAGENT_SERAZINE
 	id = REAGENT_ID_SERAZINE
-	scannable = SCANNABLE_BENEFICIAL
 	description = "A sweet tasting flower extract, it has very mild anti toxic properties, help with hallucinations and drowsyness, and can be used to make potent drugs."
 	taste_description = "sweet nectar"
 	reagent_state = LIQUID
@@ -1863,7 +1847,6 @@
 /datum/reagent/alizene
 	name = REAGENT_ALIZENE
 	id = REAGENT_ID_ALIZENE
-	scannable = SCANNABLE_BENEFICIAL
 	description = "A derivative from bicaridine enhanced by serazine to more effectively mend flesh, but is ineffective against internal hemorrhage."
 	taste_description = "bittersweet"
 	taste_mult = 3
@@ -2056,7 +2039,6 @@
 	description = "A chemical that instantly transforms the consumer into another creature."
 	taste_description = "luck"
 	reagent_state = LIQUID
-	scannable = SCANNABLE_SECRETIVE
 	color = "#a754de"
 	scannable = 1
 	var/tf_type = /mob/living/simple_mob/animal/passive/mouse
@@ -2236,7 +2218,6 @@
 	id = REAGENT_ID_CLEANSINGAGENT
 	description = "An agent that purges one's body of toxins."
 	reagent_state = LIQUID
-	scannable = SCANNABLE_ADVANCED
 	color = "#225722"
 	scannable = 1
 	dermal_absorption = 0.2
@@ -2260,7 +2241,6 @@
 	id = REAGENT_ID_PURIFYINGAGENT
 	description = "An agent that purges one's body of rads and toxins."
 	reagent_state = LIQUID
-	scannable = SCANNABLE_BENEFICIAL
 	color = "#225722"
 	scannable = 1
 	dermal_absorption = 0.2
@@ -2284,7 +2264,6 @@
 	id = REAGENT_ID_BURNCARD
 	description = "A more powerful variation of bicard that also burns the subject."
 	taste_description = "bitterness"
-	scannable = SCANNABLE_BENEFICIAL
 	taste_mult = 3
 	reagent_state = LIQUID
 	color = "#BF0000"
@@ -2325,7 +2304,6 @@
 	id = REAGENT_ID_FLAMECURE
 	description = "Used to rapidly clot internal hemorrhages by burning the wounded areas"
 	reagent_state = LIQUID
-	scannable = SCANNABLE_BENEFICIAL
 	color = "#4246C7"
 	overdose = REAGENTS_OVERDOSE * 0.5
 	dermal_absorption = 0.2
@@ -2361,7 +2339,6 @@
 	description = "An advancement of kelotane that scars and breaks apart the user's flesh to remove the burnt tissue."
 	taste_description = "bitterness"
 	reagent_state = LIQUID
-	scannable = SCANNABLE_BENEFICIAL
 	color = "#FF6600"
 	overdose = REAGENTS_OVERDOSE * 0.2
 	dermal_absorption = 0.2
@@ -2384,7 +2361,6 @@
 	description = "A strange chemical that will stablize bloodflow by burning the subject"
 	taste_description = "bitterness"
 	reagent_state = LIQUID
-	scannable = SCANNABLE_BENEFICIAL
 	dermal_absorption = 0.2
 	color = "#00BFFF"
 	overdose = REAGENTS_OVERDOSE
@@ -2401,7 +2377,6 @@
 /datum/reagent/livingagent
 	name = REAGENT_LIVINGAGENT
 	id = REAGENT_ID_LIVINGAGENT
-	scannable = SCANNABLE_BENEFICIAL
 	description = "Fill the body with life, while making it more senstive to stimulus."
 	taste_description = "bitterness"
 	reagent_state = LIQUID
@@ -2431,7 +2406,6 @@
 	name = REAGENT_PERFORMANCEPEAKER
 	id = REAGENT_ID_PERFORMANCEPEAKER
 	description = "A chemical created to bring a body to peak condition. Highly toxic"
-	scannable = SCANNABLE_ADVANCED
 	taste_description = "bitterness"
 	reagent_state = LIQUID
 	color = "#006666"
@@ -2457,7 +2431,6 @@
 	description = "An experimental drug that solely works upon dead bodies"
 	taste_description = "ash"
 	reagent_state = LIQUID
-	scannable = SCANNABLE_ADVANCED
 	color = "#666699"
 	scannable = 1
 	overdose = REAGENTS_OVERDOSE * 2
@@ -2479,7 +2452,6 @@
 	id = REAGENT_ID_QUADCORD
 	description = "An experimental drug that is meant to further enhance tricord"
 	taste_description = "bitterness"
-	scannable = SCANNABLE_BENEFICIAL
 	reagent_state = LIQUID
 	color = "#FF3399"
 	scannable = 1
@@ -2505,7 +2477,6 @@
 	description = "An experimental that removes many ailments, such as poison and stiffening of muscles via frost"
 	taste_description = "bitterness"
 	reagent_state = LIQUID
-	scannable = SCANNABLE_BENEFICIAL
 	color = "#660066"
 	scannable = 1
 	dermal_absorption = 1
@@ -2535,7 +2506,6 @@
 	description = "An experimental drug that mimics rapid regeneration seen in squishy creatures."
 	taste_description = "sweet"
 	reagent_state = LIQUID
-	scannable = SCANNABLE_BENEFICIAL
 	color = "#00CCFF"
 	scannable = 1
 	overdose = REAGENTS_OVERDOSE * 0.5
@@ -2577,7 +2547,6 @@
 	description = "An experimental chem that will bring those back from the brink, with severe side effects"
 	taste_description = "ash"
 	reagent_state = LIQUID
-	scannable = SCANNABLE_BENEFICIAL
 	color = "#fcac00"
 	scannable = 1
 	overdose = REAGENTS_OVERDOSE
@@ -2595,7 +2564,6 @@
 	description = "A desiccant. Can be used to dry things."
 	taste_description = "dryness"
 	reagent_state = LIQUID
-	scannable = SCANNABLE_ADVANCED
 	color = "#A70FFF"
 	scannable = 1
 	overdose = REAGENTS_OVERDOSE

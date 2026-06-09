@@ -2017,19 +2017,8 @@
 	glass_special = list(DRINK_FIZZ)
 
 /datum/reagent/drink/soda/grapesoda
-	name = REAGENT_GRAPESODA
-	id = REAGENT_ID_GRAPESODA
-	description = "Grapes made into a fine drank."
-	taste_description = "grape soda"
 	nutriment_factor = 1.5
-	color = "#421C52"
-	adj_drowsy = -3
 	cup_prefix = "grape soda"
-
-	glass_name = "grape soda"
-	glass_desc = "Looks like a delicious drink!"
-	glass_special = list(DRINK_FIZZ)
-	allergen_type = ALLERGEN_FRUIT //Made with grape juice
 
 /datum/reagent/drink/soda/tonic
 	name = REAGENT_TONIC
@@ -3532,16 +3521,6 @@
 	allergen_type = ALLERGEN_FRUIT //Made from wine (fruit)
 
 /datum/reagent/ethanol/alliescocktail
-	name = REAGENT_ALLIESCOCKTAIL
-	id = REAGENT_ID_ALLIESCOCKTAIL
-	description = "A drink made from your allies, not as sweet as when made from your enemies."
-	taste_description = "bitter sweetness"
-	color = "#D8AC45"
-	strength = 25
-
-	glass_name = "Allies cocktail"
-	glass_desc = "A drink made from your allies."
-
 	allergen_type = ALLERGEN_GRAINS|ALLERGEN_FRUIT //Made from vodka(grain) as well as martini(vermouth(fruit) and gin(fruit))
 
 /datum/reagent/ethanol/aloe
@@ -3869,16 +3848,6 @@
 	glass_desc = "A fine and cepa drink for Space."
 
 /datum/reagent/ethanol/erikasurprise
-	name = REAGENT_ERIKASURPRISE
-	id = REAGENT_ID_ERIKASURPRISE
-	description = "The surprise is, it's green!"
-	taste_description = "tartness and bananas"
-	color = "#2E6671"
-	strength = 15
-
-	glass_name = REAGENT_ERIKASURPRISE
-	glass_desc = "The surprise is, it's green!"
-
 	allergen_type = ALLERGEN_GRAINS|ALLERGEN_FRUIT //Made from ale (grains), lime juice (fruit), whiskey(grains), banana juice(fruit)
 
 /datum/reagent/ethanol/gargle_blaster
@@ -5169,16 +5138,6 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_UNWANTED
 	industrial_use = REFINERYEXPORT_REASON_FOOD
 
-
-/datum/reagent/drink/teamush
-	name = REAGENT_TEAMUSH
-	id = REAGENT_ID_TEAMUSH
-	description = "Mashed tea leaves, a bit like grass clippings. You can't make proper tea out of this now."
-	taste_description = "overwhelmingly bitter plant"
-	color = "#7db72d"
-
-	glass_name = "blended plant"
-	glass_desc = "Chunky, mashed up plant of some sort. Looks kinda gross."
 
 
 // === merged from food_drinks_vr.dm during hard-fork de-suffix (verified no override-order change) ===

@@ -243,20 +243,6 @@
 	door_color = "#e6ab22"
 	fill_color = "#877242"
 	stripe_color = "#2ebfbd"
-/obj/machinery/door/airlock/angled_bay/standard/glass/atmos
-	name = "Glass Atmospherics Airlock"
-	req_access = list(24)
-	door_color = "#e6ab22"
-	stripe_color = "#2ebfbd"
-/obj/machinery/door/airlock/angled_bay/hatch/atmos
-	name = "maintenance access"
-	req_access = list(24)
-	stripe_color = "#e6ab22"
-/obj/machinery/door/airlock/angled_bay/double/glass/atmos
-	name = "Glass Atmospherics Airlock"
-	req_access = list(24)
-	door_color = "#e6ab22"
-	stripe_color = "#2ebfbd"
 
 /obj/machinery/door/airlock/angled_bay/standard/color/cargo
 	name = "Cargo Airlock"

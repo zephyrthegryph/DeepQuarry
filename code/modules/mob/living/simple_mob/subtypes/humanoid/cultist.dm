@@ -64,14 +64,11 @@
 	response_harm = "hits"
 
 	harm_intent_damage = 5
-	melee_damage_lower = 30	//Cult Sword Damage
-	melee_damage_upper = 30
 	attack_sharp = 1
 	attack_edge = 1
 	attacktext = list("slashed", "stabbed")
 	armor = list(melee = 60, bullet = 50, laser = 30, energy = 80, bomb = 30, bio = 100, rad = 100)	// Same armor are cult armor, may nerf since DAMN THAT IS GOOD ARMOR
 	attack_sound = 'sound/weapons/bladeslice.ogg'
-	movement_cooldown = 3
 
 	ai_holder_type = /datum/ai_holder/simple_mob/melee
 
@@ -218,8 +215,6 @@
 	desc = "A sinister looking hooded Teshari armed with a curved knife."
 	icon_state = "culttesh"
 	icon_living = "culttesh"
-	maxHealth = 75
-	health = 75
 	catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/tesh)
 
 	faction = "cult"
@@ -231,15 +226,12 @@
 	response_harm = "hits"
 
 	harm_intent_damage = 5
-	melee_damage_lower = 15	//Ritual Knife
-	melee_damage_upper = 15
 	attack_armor_pen = 25
 	attack_sharp = 1
 	attack_edge = 1
 	attacktext = list("slashed", "stabbed")
 	armor = list(melee = 45, bullet = 40, laser = 30, energy = 80, bomb = 20, bio = 100, rad = 100)	// Reduced Resistance to Approximate increased Tesh damage.
 	attack_sound = 'sound/weapons/bladeslice.ogg'
-	movement_cooldown = 2
 
 	ai_holder_type = /datum/ai_holder/simple_mob/melee
 
@@ -333,15 +325,11 @@
 	response_harm = "hits"
 
 	harm_intent_damage = 5
-	melee_damage_lower = 15	//Ritual Knife
-	melee_damage_upper = 15
 	attack_sharp = 1
 	attack_edge = 1
 	attacktext = list("slashed", "stabbed")
 	armor = list(melee = 50, bullet = 30, laser = 50, energy = 80, bomb = 25, bio = 100, rad = 100)	//Armor Rebalanced for Cult Robes.
 	attack_sound = 'sound/weapons/rapidslice.ogg'
-	movement_cooldown = 4
-	projectiletype = /obj/item/projectile/beam/inversion
 	projectilesound = 'sound/weapons/spiderlunge.ogg'
 
 	ai_holder_type = /datum/ai_holder/simple_mob/ranged
@@ -419,8 +407,6 @@
 	desc = "This Teshari seems to have forsoken weapons for unfanthomable power."
 	icon_state = "castertesh"
 	icon_living = "castertesh"
-	maxHealth = 75
-	health = 75
 	catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/castertesh)
 
 	faction = "cult"
@@ -432,16 +418,12 @@
 	response_harm = "hits"
 
 	harm_intent_damage = 5
-	melee_damage_lower = 15	//Ritual Knife
-	melee_damage_upper = 15
 	attack_sharp = 1
 	attack_edge = 1
 	attacktext = list("slashed", "stabbed")
 	armor = list(melee = 35, bullet = 20, laser = 35, energy = 60, bomb = 20, bio = 100, rad = 100)	//Rebalanced for Robes and Tesh damage
 	attack_sound = 'sound/weapons/rapidslice.ogg'
-	movement_cooldown = 2
 	base_attack_cooldown = 7.5
-	projectiletype = /obj/item/projectile/beam/inversion
 	projectilesound = 'sound/weapons/spiderlunge.ogg'
 
 	ai_holder_type = /datum/ai_holder/simple_mob/ranged/kiting
@@ -482,14 +464,11 @@
 	response_harm = "hits"
 
 	harm_intent_damage = 5
-	melee_damage_lower = 30	//Cult Sword Damage
-	melee_damage_upper = 30
 	attack_sharp = 1
 	attack_edge = 1
 	attacktext = list("slashed", "stabbed")
 	armor = list(melee = 60, bullet = 50, laser = 30, energy = 80, bomb = 30, bio = 100, rad = 100)	// Same armor are cult armor, may nerf since DAMN THAT IS GOOD ARMOR
 	attack_sound = 'sound/weapons/bladeslice.ogg'
-	movement_cooldown = 3
 
 	ai_holder_type = /datum/ai_holder/simple_mob/melee
 
@@ -544,8 +523,6 @@
 	desc = "A leader of the bloody cult and master of the forbidden arts, wielding powers beyond that of mortal men."
 	icon_state = "magus"
 	icon_living = "magus"
-	maxHealth = 300 //Boss Mobs should be tanky.
-	health = 300
 	catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/magus)
 
 	faction = "cult"
@@ -557,16 +534,12 @@
 	response_harm = "hits"
 
 	harm_intent_damage = 5
-	melee_damage_lower = 30	//Ritual Knife
-	melee_damage_upper = 30
 	attack_sharp = 1
 	attack_edge = 1
 	attacktext = list("slashed", "stabbed")
 	armor = list(melee = 60, bullet = 50, laser = 50, energy = 80, bomb = 30, bio = 100, rad = 100)	//Super Armor since Boss Mob
 	attack_sound = 'sound/weapons/bladeslice.ogg'
-	movement_cooldown = 4
 
-	projectiletype = /obj/item/projectile/beam/inversion
 	base_attack_cooldown = 5
 	projectilesound = 'sound/weapons/spiderlunge.ogg'
 	var/obj/item/shield_projector/shields = null
@@ -583,20 +556,6 @@
 	shields = new /obj/item/shield_projector/rectangle/automatic/magus(src)
 	return ..()
 
-/obj/item/shield_projector/rectangle/automatic/magus
-	name = "cult shield stone"
-	desc = "A stone wielded by only the most powerful of cult leaders. It projects a shield around the user."
-	icon = 'icons/obj/device.dmi'
-	icon_state = "implant_melted"
-	shield_health = 200
-	max_shield_health = 200
-	shield_regen_delay = 10 SECONDS
-	shield_regen_amount = 10
-	size_x = 1
-	size_y = 1
-	color = "#f50202"
-	high_color = "#ff0404"
-	low_color = "#690000"
 ////////////////////////////
 //		Blood Hunter
 ////////////////////////////
@@ -617,8 +576,6 @@
 	desc = "The smell of blood fills the air, how delicious it tastes. Let the hunt begin." // He is a horrifying lovechild of Caleb and a blooborne hunter.
 	icon_state = "hunterb" // He probably shouldn't even have other mobs supporting him.
 	icon_living = "hunterb"
-	maxHealth = 300 //Boss Mobs should be tanky.
-	health = 300
 	catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/hunter)
 
 	faction = "cult"
@@ -630,14 +587,11 @@
 	response_harm = "hits"
 
 	harm_intent_damage = 5
-	melee_damage_lower = 42	//Saw Cleaver Brutality
-	melee_damage_upper = 42
 	attack_sharp = 1
 	attack_edge = 1
 	attacktext = list("slashed", "stabbed")
 	armor = list(melee = 60, bullet = 50, laser = 50, energy = 80, bomb = 30, bio = 100, rad = 100)	//Super Armor since Boss Mob
 	attack_sound = 'sound/weapons/bladeslice.ogg'
-	movement_cooldown = 0 //This is so he can't be kited well
 
 	projectiletype = /obj/item/projectile/bullet/pellet/shotgun
 
@@ -784,6 +738,12 @@
 	shield_health = 100
 	max_shield_health = 100
 	shield_regen_delay = 10 SECONDS
+	shield_regen_amount = 10
+	size_x = 1
+	size_y = 1
+	color = "#f50202"
+	high_color = "#ff0404"
+	low_color = "#690000"
 
 //Nibbler//
 /mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fireball

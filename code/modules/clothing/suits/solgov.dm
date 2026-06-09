@@ -21,8 +21,8 @@
 	restricted_accessory_slots = (ACCESSORY_SLOT_ARMBAND)
 
 /obj/item/clothing/suit/storage/solgov/service/sifguard
-	name = "\improper SifGuard jacket"
-	desc = "A uniform service jacket belonging to the Sif Defense Force."
+	name = "\improper NDF jacket"
+	desc = "A uniform service jacket belonging to the Nanotrasen Defense Force."
 	icon_state = "sgservice_crew"
 
 /obj/item/clothing/suit/storage/solgov/service/sifguard/medical
@@ -70,109 +70,109 @@
 
 /obj/item/clothing/suit/storage/solgov/service/fleet
 	name = "fleet service jacket"
-	desc = "A navy blue SCG Fleet service jacket."
+	desc = "A navy blue USDF Fleet service jacket."
 	icon_state = "blueservice"
 	item_state = "blueservice"
 
 /obj/item/clothing/suit/storage/solgov/service/fleet/snco
 	name = "fleet SNCO service jacket"
-	desc = "A navy blue SCG Fleet service jacket with silver cuffs."
+	desc = "A navy blue USDF Fleet service jacket with silver cuffs."
 	icon_state = "blueservice_snco"
 	item_state = "blueservice_snco"
 
 /obj/item/clothing/suit/storage/solgov/service/fleet/officer
 	name = "fleet officer's service jacket"
-	desc = "A navy blue SCG Fleet dress jacket with silver accents."
+	desc = "A navy blue USDF Fleet dress jacket with silver accents."
 	icon_state = "blueservice_off"
 	item_state = "blueservice_off"
 
 /obj/item/clothing/suit/storage/solgov/service/fleet/command
 	name = "fleet senior officer's service jacket"
-	desc = "A navy blue SCG Fleet dress jacket with gold accents."
+	desc = "A navy blue USDF Fleet dress jacket with gold accents."
 	icon_state = "blueservice_comm"
 	item_state = "blueservice_comm"
 
 /obj/item/clothing/suit/storage/solgov/service/fleet/flag
 	name = "fleet flag officer's service jacket"
-	desc = "A navy blue SCG Fleet dress jacket with red accents."
+	desc = "A navy blue USDF Fleet dress jacket with red accents."
 	icon_state = "blueservice_flag"
 	item_state = "blueservice_flag"
 
 /obj/item/clothing/suit/storage/solgov/service/army
 	name = "marine coat"
-	desc = "An SCG Marine service coat. Green and undecorated."
+	desc = "An USDF Marine service coat. Green and undecorated."
 	icon_state = "greenservice"
 	item_state = "greenservice"
 
 /obj/item/clothing/suit/storage/solgov/service/army/medical
 	name = "marine medical jacket"
-	desc = "An SCG Marine service coat. This one has blue markings."
+	desc = "An USDF Marine service coat. This one has blue markings."
 	icon_state = "greenservice_med"
 	item_state = "greenservice_med"
 
 /obj/item/clothing/suit/storage/solgov/service/army/medical/command
 	name = "marine medical command jacket"
-	desc = "An SCG Marine service coat. This one has blue and gold markings."
+	desc = "An USDF Marine service coat. This one has blue and gold markings."
 	icon_state = "greenservice_medcom"
 	item_state = "greenservice_medcom"
 
 /obj/item/clothing/suit/storage/solgov/service/army/engineering
 	name = "marine engineering jacket"
-	desc = "An SCG Marine service coat. This one has orange markings."
+	desc = "An USDF Marine service coat. This one has orange markings."
 	icon_state = "greenservice_eng"
 	item_state = "greenservice_eng"
 
 /obj/item/clothing/suit/storage/solgov/service/army/engineering/command
 	name = "marine engineering command jacket"
-	desc = "An SCG Marine service coat. This one has orange and gold markings."
+	desc = "An USDF Marine service coat. This one has orange and gold markings."
 	icon_state = "greenservice_engcom"
 	item_state = "greenservice_engcom"
 
 /obj/item/clothing/suit/storage/solgov/service/army/supply
 	name = "marine supply jacket"
-	desc = "An SCG Marine service coat. This one has brown markings."
+	desc = "An USDF Marine service coat. This one has brown markings."
 	icon_state = "greenservice_sup"
 	item_state = "greenservice_sup"
 
 /obj/item/clothing/suit/storage/solgov/service/army/security
 	name = "marine security jacket"
-	desc = "An SCG Marine service coat. This one has red markings."
+	desc = "An USDF Marine service coat. This one has red markings."
 	icon_state = "greenservice_sec"
 	item_state = "greenservice_sec"
 
 /obj/item/clothing/suit/storage/solgov/service/army/security/command
 	name = "marine security command jacket"
-	desc = "An SCG Marine service coat. This one has red and gold markings."
+	desc = "An USDF Marine service coat. This one has red and gold markings."
 	icon_state = "greenservice_seccom"
 	item_state = "greenservice_seccom"
 
 /obj/item/clothing/suit/storage/solgov/service/army/service
 	name = "marine service jacket"
-	desc = "An SCG Marine service coat. This one has green markings."
+	desc = "An USDF Marine service coat. This one has green markings."
 	icon_state = "greenservice_srv"
 	item_state = "greenservice_srv"
 
 /obj/item/clothing/suit/storage/solgov/service/army/service/command
 	name = "marine service command jacket"
-	desc = "An SCG Marine service coat. This one has green and gold markings."
+	desc = "An USDF Marine service coat. This one has green and gold markings."
 	icon_state = "greenservice_srvcom"
 	item_state = "greenservice_srvcom"
 
 /obj/item/clothing/suit/storage/solgov/service/army/exploration
 	name = "marine exploration jacket"
-	desc = "An SCG Marine service coat. This one has purple markings."
+	desc = "An USDF Marine service coat. This one has purple markings."
 	icon_state = "greenservice_exp"
 	item_state = "greenservice_exp"
 
 /obj/item/clothing/suit/storage/solgov/service/army/exploration/command
 	name = "marine exploration command jacket"
-	desc = "An SCG Marine service coat. This one has purple and gold markings."
+	desc = "An USDF Marine service coat. This one has purple and gold markings."
 	icon_state = "greenservice_expcom"
 	item_state = "greenservice_expcom"
 
 /obj/item/clothing/suit/storage/solgov/service/army/command
 	name = "marine command jacket"
-	desc = "An SCG Marine Corps service coat. This one has gold markings."
+	desc = "An USDF Marine Corps service coat. This one has gold markings."
 	icon_state = "greenservice_com"
 	item_state = "greenservice_com"
 
@@ -229,31 +229,31 @@
 */
 /obj/item/clothing/suit/storage/solgov/dress/fleet
 	name = "fleet dress jacket"
-	desc = "A navy blue SCG Fleet dress jacket. Don't get near pasta sauce or vox."
+	desc = "A navy blue USDF Fleet dress jacket. Don't get near pasta sauce or vox."
 	icon_state = "whitedress"
 	item_state = "whitedress"
 
 /obj/item/clothing/suit/storage/solgov/dress/fleet/snco
 	name = "fleet dress SNCO jacket"
-	desc = "A navy blue SCG Fleet dress jacket with silver cuffs. Don't get near pasta sauce or vox."
+	desc = "A navy blue USDF Fleet dress jacket with silver cuffs. Don't get near pasta sauce or vox."
 	icon_state = "whitedress_snco"
 	item_state = "whitedress_snco"
 
 /obj/item/clothing/suit/storage/solgov/dress/fleet/officer
 	name = "fleet officer's dress jacket"
-	desc = "A navy blue SCG Fleet dress jacket with silver accents. Don't get near pasta sauce or vox."
+	desc = "A navy blue USDF Fleet dress jacket with silver accents. Don't get near pasta sauce or vox."
 	icon_state = "whitedress_off"
 	item_state = "whitedress_off"
 
 /obj/item/clothing/suit/storage/solgov/dress/fleet/command
 	name = "fleet senior officer's dress jacket"
-	desc = "A navy blue SCG Fleet dress jacket with gold accents. Don't get near pasta sauce or vox."
+	desc = "A navy blue USDF Fleet dress jacket with gold accents. Don't get near pasta sauce or vox."
 	icon_state = "whitedress_comm"
 	item_state = "whitedress_comm"
 
 /obj/item/clothing/suit/storage/solgov/dress/fleet/flag
 	name = "fleet flag officer's dress jacket"
-	desc = "A navy blue SCG Fleet dress jacket with red accents. Don't get near pasta sauce or vox."
+	desc = "A navy blue USDF Fleet dress jacket with red accents. Don't get near pasta sauce or vox."
 	icon_state = "whitedress_flag"
 	item_state = "whitedress_flag"
 
@@ -275,26 +275,26 @@
 
 /obj/item/clothing/suit/dress/solgov/fleet/sailor
 	name = "fleet dress overwear"
-	desc = "A navy blue SCG Fleet dress suit. Almost looks like a school-girl outfit."
+	desc = "A navy blue USDF Fleet dress suit. Almost looks like a school-girl outfit."
 	icon_state = "sailordress"
 	item_state = "whitedress"
 
 /obj/item/clothing/suit/dress/solgov/army
 	name = "marine dress jacket"
-	desc = "A tailored black SCG Marines dress jacket with red trim. So sexy it hurts."
+	desc = "A tailored black USDF Marines dress jacket with red trim. So sexy it hurts."
 	icon_state = "blackdress"
 	item_state = "blackdress"
 
 /obj/item/clothing/suit/dress/solgov/army/command
 	name = "marine officer's dress jacket"
-	desc = "A tailored black SCG Marines dress jacket with gold trim. Smells like ceremony."
+	desc = "A tailored black USDF Marines dress jacket with gold trim. Smells like ceremony."
 	icon_state = "blackdress_com"
 	item_state = "blackdress_com"
 
 //Misc
 
 /obj/item/clothing/suit/storage/hooded/wintercoat/solgov
-	name = "\improper SifGuard winter coat"
+	name = "\improper NDF winter coat"
 	icon_state = "coatec"
 	icon = 'icons/inventory/suit/item.dmi'
 	icon_override = 'icons/inventory/suit/mob.dmi'
@@ -322,14 +322,22 @@
 
 /obj/item/clothing/suit/storage/toggle/dress/fleet
 	name = "fleet dress jacket"
-	desc = "A crisp white SCG Fleet dress jacket with blue and gold accents. Don't get near pasta sauce or vox."
+	desc = "A crisp white USDF Fleet dress jacket with blue and gold accents. Don't get near pasta sauce or vox."
 
 /obj/item/clothing/suit/storage/toggle/dress/fleet/command
 	name = "fleet command dress jacket"
-	desc = "A crisp white SCG Fleet dress jacket dripping with gold accents. So bright it's blinding."
+	desc = "A crisp white USDF Fleet dress jacket dripping with gold accents. So bright it's blinding."
 	icon_state = "whitedress_com"
 	item_state = "labcoat"
 	blood_overlay_type = "coat"
+
+/obj/item/clothing/suit/storage/marshal_jacket
+	name = "colonial marshal jacket"
+	desc = "A black synthleather jacket. The word 'MARSHAL' is stenciled onto the back in gold lettering."
+	icon_state = "marshal_jacket"
+
+/obj/item/clothing/suit/storage/terran
+	name = DEVELOPER_WARNING_NAME
 
 /obj/item/clothing/suit/storage/eio_jacket
 	name = "EIO jacket"
@@ -375,187 +383,19 @@
 	valid_accessory_slots = (ACCESSORY_SLOT_MEDAL|ACCESSORY_SLOT_RANK)
 
 /obj/item/clothing/suit/dress/terran/navy
-	name = "SAARE dress cloak"
-	desc = "A Stealth Assault Enterprises dress cloak with red detailing. So sexy it hurts."
+	name = "Ares dress cloak"
+	desc = "A black Ares Navy dress cloak with red detailing. So sexy it hurts."
 	icon_state = "terrandress"
 	item_state = "terrandress"
 
 /obj/item/clothing/suit/dress/terran/navy/officer
-	name = "SAARE officer's dress cloak"
-	desc = "A black Stealth Assault Enterprises dress cloak with gold detailing. Smells like ceremony."
+	name = "Ares officer's dress cloak"
+	desc = "A black Ares Navy dress cloak with gold detailing. Smells like ceremony."
 	icon_state = "terrandress_off"
 	item_state = "terrandress_off"
 
 /obj/item/clothing/suit/dress/terran/navy/command
-	name = "SAARE command dress cloak"
-	desc = "A black Stealth Assault Enterprises dress cloak with royal detailing. Smells like ceremony."
-	icon_state = "terrandress_comm"
-	item_state = "terrandress_comm"
-
-
-// === merged from solgov_vr.dm during hard-fork de-suffix (verified no override-order change) ===
-/obj/item/clothing/suit/storage/solgov/service/sifguard
-	name = "\improper NDF jacket"
-	desc = "A uniform service jacket belonging to the Nanotrasen Defense Force."
-
-/obj/item/clothing/suit/storage/solgov/service/fleet
-	name = "fleet service jacket"
-	desc = "A navy blue USDF Fleet service jacket." // TCG to USDF
-
-/obj/item/clothing/suit/storage/solgov/service/fleet/snco
-	name = "fleet SNCO service jacket"
-	desc = "A navy blue USDF Fleet service jacket with silver cuffs." // TCG to USDF
-
-/obj/item/clothing/suit/storage/solgov/service/fleet/officer
-	name = "fleet officer's service jacket"
-	desc = "A navy blue USDF Fleet dress jacket with silver accents." // TCG to USDF
-
-/obj/item/clothing/suit/storage/solgov/service/fleet/command
-	name = "fleet senior officer's service jacket"
-	desc = "A navy blue USDF Fleet dress jacket with gold accents." // TCG to USDF
-
-/obj/item/clothing/suit/storage/solgov/service/fleet/flag
-	name = "fleet flag officer's service jacket"
-	desc = "A navy blue USDF Fleet dress jacket with red accents." // TCG to USDF
-
-/obj/item/clothing/suit/storage/solgov/service/army
-	name = "marine coat"
-	desc = "An USDF Marine service coat. Green and undecorated." // TCG to USDF
-
-/obj/item/clothing/suit/storage/solgov/service/army/medical
-	name = "marine medical jacket"
-	desc = "An USDF Marine service coat. This one has blue markings." // TCG to USDF
-
-/obj/item/clothing/suit/storage/solgov/service/army/medical/command
-	name = "marine medical command jacket"
-	desc = "An USDF Marine service coat. This one has blue and gold markings." // TCG to USDF
-
-/obj/item/clothing/suit/storage/solgov/service/army/engineering
-	name = "marine engineering jacket"
-	desc = "An USDF Marine service coat. This one has orange markings." // TCG to USDF
-
-/obj/item/clothing/suit/storage/solgov/service/army/engineering/command
-	name = "marine engineering command jacket"
-	desc = "An USDF Marine service coat. This one has orange and gold markings." // TCG to USDF
-
-/obj/item/clothing/suit/storage/solgov/service/army/supply
-	name = "marine supply jacket"
-	desc = "An USDF Marine service coat. This one has brown markings." // TCG to USDF
-
-/obj/item/clothing/suit/storage/solgov/service/army/security
-	name = "marine security jacket"
-	desc = "An USDF Marine service coat. This one has red markings." // TCG to USDF
-
-/obj/item/clothing/suit/storage/solgov/service/army/security/command
-	name = "marine security command jacket"
-	desc = "An USDF Marine service coat. This one has red and gold markings." // TCG to USDF
-
-/obj/item/clothing/suit/storage/solgov/service/army/service
-	name = "marine service jacket"
-	desc = "An USDF Marine service coat. This one has green markings." // TCG to USDF
-
-/obj/item/clothing/suit/storage/solgov/service/army/service/command
-	name = "marine service command jacket"
-	desc = "An USDF Marine service coat. This one has green and gold markings." // TCG to USDF
-
-/obj/item/clothing/suit/storage/solgov/service/army/exploration
-	name = "marine exploration jacket"
-	desc = "An USDF Marine service coat. This one has purple markings." // TCG to USDF
-
-/obj/item/clothing/suit/storage/solgov/service/army/exploration/command
-	name = "marine exploration command jacket"
-	desc = "An USDF Marine service coat. This one has purple and gold markings." // TCG to USDF
-
-/obj/item/clothing/suit/storage/solgov/service/army/command
-	name = "marine command jacket"
-	desc = "An USDF Marine Corps service coat. This one has gold markings." // TCG to USDF
-
-/obj/item/clothing/suit/storage/solgov/dress/fleet
-	name = "fleet dress jacket"
-	desc = "A navy blue USDF Fleet dress jacket. Don't get near pasta sauce or vox." // TCG to USDF
-
-/obj/item/clothing/suit/storage/solgov/dress/fleet/snco
-	name = "fleet dress SNCO jacket"
-	desc = "A navy blue USDF Fleet dress jacket with silver cuffs. Don't get near pasta sauce or vox." // TCG to USDF
-
-/obj/item/clothing/suit/storage/solgov/dress/fleet/officer
-	name = "fleet officer's dress jacket"
-	desc = "A navy blue USDF Fleet dress jacket with silver accents. Don't get near pasta sauce or vox." // TCG to USDF
-
-/obj/item/clothing/suit/storage/solgov/dress/fleet/command
-	name = "fleet senior officer's dress jacket"
-	desc = "A navy blue USDF Fleet dress jacket with gold accents. Don't get near pasta sauce or vox." // TCG to USDF
-
-/obj/item/clothing/suit/storage/solgov/dress/fleet/flag
-	name = "fleet flag officer's dress jacket"
-	desc = "A navy blue USDF Fleet dress jacket with red accents. Don't get near pasta sauce or vox." // TCG to USDF
-
-/obj/item/clothing/suit/dress/solgov/fleet/sailor
-	name = "fleet dress overwear"
-	desc = "A navy blue USDF Fleet dress suit. Almost looks like a school-girl outfit." // TCG to USDF
-
-/obj/item/clothing/suit/dress/solgov/army
-	name = "marine dress jacket"
-	desc = "A tailored black USDF Marines dress jacket with red trim. So sexy it hurts." // TCG to USDF
-
-/obj/item/clothing/suit/dress/solgov/army/command
-	name = "marine officer's dress jacket"
-	desc = "A tailored black USDF Marines dress jacket with gold trim. Smells like ceremony." // TCG to USDF
-
-//Misc
-
-/obj/item/clothing/suit/storage/hooded/wintercoat/solgov
-	name = "\improper NDF winter coat"
-
-/obj/item/clothing/suit/storage/hooded/wintercoat/solgov/army
-	name = "marine winter coat"
-
-/obj/item/clothing/suit/storage/hooded/wintercoat/solgov/fleet
-	name = "fleet winter coat"
-
-/obj/item/clothing/suit/storage/toggle/dress
-	name = "clasped dress jacket"
-	desc = "A uniform dress jacket with gold toggles."
-
-/obj/item/clothing/suit/storage/toggle/dress/fleet
-	name = "fleet dress jacket"
-	desc = "A crisp white USDF Fleet dress jacket with blue and gold accents. Don't get near pasta sauce or vox." // TCG to USDF
-
-/obj/item/clothing/suit/storage/toggle/dress/fleet/command
-	name = "fleet command dress jacket"
-	desc = "A crisp white USDF Fleet dress jacket dripping with gold accents. So bright it's blinding." // TCG to USDF
-
-/obj/item/clothing/suit/storage/marshal_jacket
-	name = "colonial marshal jacket"
-	desc = "A black synthleather jacket. The word 'MARSHAL' is stenciled onto the back in gold lettering."
-	icon_state = "marshal_jacket"
-
-//Terrans
-
-//Service
-
-/obj/item/clothing/suit/storage/terran
-	name = DEVELOPER_WARNING_NAME
-
-/* //Could not find the icon_state anywhere.
-/obj/item/clothing/suit/storage/terran/service/navy
-	name = "Ares coat"
-	desc = "A Ares Navy service coat. Black and undecorated."
-*/
-/* //Could not find the icon_state anywhere.
-/obj/item/clothing/suit/storage/terran/service/navy/command
-	name = "Ares command coat"
-	desc = "An Ares Navy service command coat. White and undecorated."
-*/
-//Dress
-/obj/item/clothing/suit/dress/terran/navy
-	name = "Ares dress cloak"
-	desc = "A black Ares Navy dress cloak with red detailing. So sexy it hurts."
-
-/obj/item/clothing/suit/dress/terran/navy/officer
-	name = "Ares officer's dress cloak"
-	desc = "A black Ares Navy dress cloak with gold detailing. Smells like ceremony."
-
-/obj/item/clothing/suit/dress/terran/navy/command
 	name = "Ares command dress cloak"
 	desc = "A black Ares Navy dress cloak with royal detailing. Smells like ceremony."
+	icon_state = "terrandress_comm"
+	item_state = "terrandress_comm"

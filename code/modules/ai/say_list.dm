@@ -45,18 +45,6 @@
 
 // Subtypes.
 
-// This one's pretty dumb, but pirates are dumb anyways and it makes for a good test.
-/datum/say_list/pirate
-	speak = list("Yarr!")
-
-	say_understood = list("Alright, matey.")
-	say_cannot = list("No, matey.")
-	say_maybe_target = list("Eh?")
-	say_got_target = list("Yarrrr!")
-	say_threaten = list("You best leave, this booty is mine.", "No plank to walk on, just walk away.")
-	say_stand_down = list("Good.")
-	say_escalate = list("Yarr! The booty is mine!")
-
 // Mercs!
 /datum/say_list/merc
 	speak = list("When are we gonna get out of this chicken-shit outfit?",
@@ -98,7 +86,6 @@
 
 
 /datum/say_list/crab
-	emote_hear = list("clicks")
 	emote_see = list("clacks")
 
 /datum/say_list/spider
@@ -169,21 +156,6 @@
 	say_threaten = list("Gets out of heres!")
 	say_stand_down = list("Yaya, runs!", "Kikikiki!")
 	say_escalate = list("Skrek!", "Bringings it!", "Takings shot", "Lock claws!")
-
-
-	//Synth Horror Saylist
-
-/datum/say_list/cyber_horror
-	speak = list("H@!#$$P M@!$#",
-					"GHAA!@@#",
-					"KR@!!N",
-					"K!@@##L!@@ %!@#E",
-					"G@#!$ H@!#%",
-					"H!@%%@ @!E")
-	emote_hear = list("emits", "groans", "wails", "pleads")
-	emote_see = list ("stares unblinkingly.", "jitters and twitches.", "emits a synthetic scream.", "rapidly twitches.", "convulses.", "twitches uncontrollably.", "goes stock still.")
-	say_threaten = list ("FR@#DOM","EN@ T#I$-$","N0$ M^> B@!#")
-	say_got_target = list("I *#@ Y@%","!E@#$P","F#RR @I","D0@#$ ##OK %","IT $##TS")
 
 //Roach Saylists Woo Hoo
 /datum/say_list/roach

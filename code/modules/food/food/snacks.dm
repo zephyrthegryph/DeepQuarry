@@ -1079,7 +1079,6 @@
 
 /obj/item/reagent_containers/food/snacks/carpmeat/fish
 	desc = "A fillet of fish meat."
-	toxin_type = null
 
 /obj/item/reagent_containers/food/snacks/carpmeat/fish/sif
 	desc = "A fillet of sivian fish meat."
@@ -1805,11 +1804,6 @@
 	center_of_mass_x = 16
 	center_of_mass_y = 11
 	nutriment_amt = 4
-	nutriment_desc = list("fresh fries" = 4)
-	bitesize = 2
-
-/obj/item/reagent_containers/food/snacks/fries
-	nutriment_amt = 4
 	nutriment_desc = list("fries" = 4)
 	bitesize = 2
 
@@ -2009,7 +2003,6 @@
 	name = "Poppy pretzel"
 	desc = "It's all twisted up!"
 	icon_state = "poppypretzel"
-	bitesize = 2
 	filling_color = "#916E36"
 	center_of_mass_x = 16
 	center_of_mass_y = 10
@@ -2556,9 +2549,6 @@
 	nutriment_amt = 2
 	nutriment_desc = list("bread" = 2)
 	bitesize = 3
-
-/obj/item/reagent_containers/food/snacks/jellysandwich/slime
-	name = "Slime Jelly Sandwich"
 
 /obj/item/reagent_containers/food/snacks/jellysandwich/slime
 	name = "Cherry Jelly Sandwich"
@@ -3153,7 +3143,6 @@
 
 /obj/item/reagent_containers/food/snacks/sliceable/tofubread
 	name = "Tofubread"
-	icon_state = "Like meatbread but for vegetarians. Not guaranteed to give superpowers."
 	icon_state = "tofubread"
 	slice_path = /obj/item/reagent_containers/food/snacks/slice/tofubread
 	slices_num = 5
@@ -3483,7 +3472,7 @@
 	desc = "A big wheel of delcious Cheddar."
 	icon_state = "cheesewheel"
 	slice_path = /obj/item/reagent_containers/food/snacks/cheesewedge
-	slices_num = 5
+	slices_num = 8
 	filling_color = "#FFF700"
 	center_of_mass_x = 16
 	center_of_mass_y = 10
@@ -3537,7 +3526,6 @@
 
 /obj/item/reagent_containers/food/snacks/sliceable/bread
 	name = "Bread"
-	icon_state = "Some plain old Earthen bread."
 	icon_state = "bread"
 	slice_path = /obj/item/reagent_containers/food/snacks/slice/bread
 	slices_num = 5
@@ -4749,20 +4737,6 @@
 	. = ..()
 	reagents.add_reagent(REAGENT_ID_PROTEIN, 15)
 
-/obj/item/reagent_containers/food/snacks/tastybread
-	name = "bread tube"
-	desc = "Bread in a tube. Chewy...and surprisingly tasty."
-	description_fluff = "This is the product that brought Centauri Provisions into the limelight. A product of the earliest extrasolar colony of Heaven, the Bread Tube, while bland, contains all the nutrients a spacer needs to get through the day and is decidedly edible when compared to some of its competitors. Due to the high-fructose corn syrup content of NanoTrasen's own-brand bread tubes, many jurisdictions classify them as a confectionary."
-	icon = 'icons/obj/food_snacks.dmi'
-	icon_state = "tastybread"
-	trash = /obj/item/trash/tastybread
-	filling_color = "#A66829"
-	center_of_mass_x = 17
-	center_of_mass_y = 16
-	nutriment_amt = 6
-	nutriment_desc = list("bread" = 2, "sweetness" = 3)
-	bitesize = 2
-
 /obj/item/reagent_containers/food/snacks/skrellsnacks
 	name = "\improper SkrellSnax"
 	desc = "Cured fungus shipped all the way from Qerr'balak, almost like jerky! Almost."
@@ -4781,20 +4755,6 @@
 	. = ..()
 	reagents.add_reagent(REAGENT_ID_SODIUMCHLORIDE, 1)
 	reagents.add_reagent(REAGENT_ID_FUNGI, 1)
-
-/obj/item/reagent_containers/food/snacks/unajerky
-	name = "Moghes Imported Sissalik Jerky"
-	icon = 'icons/obj/food_snacks.dmi'
-	icon_state = "unathitinred"
-	desc = "An incredibly well made jerky, shipped in all the way from Moghes."
-	description_fluff = "The exact meat and spices used in the curing of Sissalik Jerky are a well-kept secret, and thought to not exist at all outside of Hegemony space. Many have tried to replicate the flavour, but none have come close, so the brand remains a highly prized import. "
-	trash = /obj/item/trash/unajerky
-	filling_color = "#631212"
-	center_of_mass_x = 15
-	center_of_mass_y = 9
-	drop_sound = 'sound/items/drop/soda.ogg'
-	pickup_sound = 'sound/items/pickup/soda.ogg'
-	bitesize = 2
 
 /obj/item/reagent_containers/food/snacks/sashimi
 	name = "sashimi"
@@ -4958,14 +4918,6 @@
 /obj/item/reagent_containers/food/snacks/eggbowl/Initialize(mapload)
 	. = ..()
 	reagents.add_reagent(REAGENT_ID_PROTEIN, 4)
-
-/obj/item/reagent_containers/food/snacks/tortilla
-	name = "tortilla"
-	desc = "The base for all your burritos."
-	icon_state = "tortilla"
-	nutriment_amt = 2
-	nutriment_desc = list("bread" = 2)
-	bitesize = 2
 
 /obj/item/reagent_containers/food/snacks/cubannachos
 	name = "cuban nachos"
@@ -5304,9 +5256,6 @@
 
 /mob/living/simple_mob
 	var/kitchen_tag = "animal" //Used for cooking with animals
-
-/obj/item/reagent_containers/food/snacks/sliceable/cheesewheel
-	slices_num = 8
 
 /obj/item/reagent_containers/food/snacks/sausage/battered
 	name = "battered sausage"
@@ -5754,14 +5703,6 @@
 	center_of_mass_y = 4
 	nutriment_desc = list("ice cream" = 4)
 	nutriment_amt = 4
-
-/obj/item/reagent_containers/food/snacks/honeybun
-	name = "honey bun"
-	desc = "A sticky pastry bun glazed with honey."
-	icon_state = "honeybun"
-	nutriment_desc = list("pastry" = 1)
-	nutriment_amt = 3
-	bitesize = 3
 
 /obj/item/reagent_containers/food/snacks/honeybun/Initialize(mapload)
 	. = ..()
@@ -7941,10 +7882,6 @@
 
 
 /obj/item/reagent_containers/food/snacks/slice/bigbeanburrito
-	name = "Big Bean Burrito"
-	desc = "The BBB. An engorged burrito filled to the brim of what makes Mexico. Beans, cheese and meat that ooze by how stuffed it is"
-	icon = 'icons/obj/food_ch.dmi'
-	icon_state = "bigbeanburrito"
 	nutriment_amt = 15
 	nutriment_desc = list("tortilla" = 2, "meat" = 3, "bean" = 5, REAGENT_ID_CHEESE = 3, "Mexico" = 7)
 
@@ -8177,7 +8114,6 @@
 	bitesize = 5
 
 /obj/item/reagent_containers/food/snacks/slice/sushi/filled
-	name = "stuffed sushi roll"
 	name = "piece of sushi"
 	desc = "A slice of a larger sushi roll, ready to devour."
 	icon = 'icons/obj/food.dmi'
@@ -8541,7 +8477,6 @@
 	desc = "Finally, some food for real men."
 	icon = 'icons/obj/food.dmi'
 	icon_state = "sharkmeat_cooked"
-	trash = /obj/item/trash/small_bowl
 	nutriment_amt = 5
 	trash = /obj/item/trash/plate
 	nutriment_desc = list("manliness" = 1, "fish oil" = 2, "shark" = 2)

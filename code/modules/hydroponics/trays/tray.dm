@@ -98,7 +98,6 @@
 		REAGENT_ID_ADMINORDRAZINE = -5
 		)
 	var/static/list/water_reagents = list(
-		REAGENT_ID_WATER =           1,
 		REAGENT_ID_ADMINORDRAZINE =  1,
 		REAGENT_ID_MILK =            0.9,
 		REAGENT_ID_BEER =            0.7,

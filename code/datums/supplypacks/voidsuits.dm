@@ -333,7 +333,6 @@
 
 // Surplus!
 /datum/supply_pack/voidsuits/solgov_mining
-	name = "Solgov mining voidsuit"
 	desc = "A standard Solgov of Sol-Procyon Mining voidsuit. Requires Mining access."
 	contains = list(
 		/obj/item/clothing/suit/space/void/mining/alt2,
@@ -345,7 +344,6 @@
 	access = ACCESS_MINING
 
 /datum/supply_pack/voidsuits/solgov_anomaly
-	name = "Solgov anomaly suit"
 	desc = "A standard Solgov of Sol-Procyon Anomalous Materials Handling voidsuit. Requires Xenoarchaeology access."
 	contains = list(
 		/obj/item/clothing/suit/space/anomaly/alt,
@@ -357,7 +355,6 @@
 	access = ACCESS_XENOARCH
 
 /datum/supply_pack/voidsuits/solgov_riot
-	name = "Solgov riot voidsuit"
 	desc = "A standard Solgov of Sol-Procyon Riot Control voidsuit. Requires Armory access."
 	contains = list(
 		/obj/item/clothing/suit/space/void/security/riot/alt,
@@ -369,7 +366,6 @@
 	access = ACCESS_BRIG
 
 /datum/supply_pack/voidsuits/solgov_pilot
-	name = "Solgov pilot voidsuit"
 	desc = "A standard Solgov of Sol-Procyon Pilot's voidsuit. Requires Pilot's access."
 	contains = list(
 		/obj/item/clothing/suit/space/void/pilot/alt2,
@@ -381,7 +377,6 @@
 	access = ACCESS_PILOT
 
 /datum/supply_pack/voidsuits/solgov_medical
-	name = "Solgov medical voidsuit"
 	desc = "A standard Solgov of Sol-Procyon Medical voidsuit. Requires Medical access."
 	contains = list(
 		/obj/item/clothing/suit/space/void/medical/alt2,
@@ -393,7 +388,6 @@
 	access = ACCESS_MEDICAL
 
 /datum/supply_pack/voidsuits/solgov_explore
-	name = "Solgov exploration voidsuit"
 	desc = "A standard Solgov of Sol-Procyon Exploration voidsuit. Requires EVA and Exploration access."
 	contains = list(
 		/obj/item/clothing/suit/space/void/exploration/alt2,
@@ -405,7 +399,6 @@
 	access = ACCESS_EXPLORER
 
 /datum/supply_pack/voidsuits/solgov_engineer
-	name = "Solgov engineering voidsuit"
 	desc = "A standard Solgov of Sol-Procyon Engineering voidsuit. Requires Engineering access."
 	contains = list(
 		/obj/item/clothing/suit/space/void/engineering/alt2,
@@ -417,7 +410,6 @@
 	access = ACCESS_ENGINE
 
 /datum/supply_pack/voidsuits/solgov_atmos
-	name = "Solgov atmos voidsuit"
 	desc = "A standard Solgov of Sol-Procyon Atmospherics voidsuit. Requires Atmospherics access."
 	contains = list(
 		/obj/item/clothing/suit/space/void/atmos/alt2,
@@ -429,7 +421,6 @@
 	access = ACCESS_ATMOSPHERICS
 
 /datum/supply_pack/voidsuits/solgov_captain
-	name = "Solgov captain voidsuit"
 	desc = "A standard Solgov of Sol-Procyon Captain's voidsuit. Requires Captain's access."
 	contains = list(
 		/obj/item/clothing/suit/space/void/captain/alt,
@@ -441,7 +432,6 @@
 	access = ACCESS_CAPTAIN
 
 /datum/supply_pack/voidsuits/csc_breaker
-	name = "Shipbreaker's Industrial Suit (inc. jetpack)"
 	desc = "A Coyote Salvage Corporation Shipbreaker's voidsuit. Includes h-fuel jetpack."
 	contains = list(
 		/obj/item/clothing/suit/space/void/salvagecorp_shipbreaker,

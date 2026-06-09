@@ -81,12 +81,10 @@
 
 /obj/item/projectile/bullet/pistol/ap
 	damage = 15
-	armor_penetration = 30
 	hud_state = "pistol_light_ap"
 
 /obj/item/projectile/bullet/pistol/hp
 	damage = 25
-	armor_penetration = -50
 	hud_state = "pistol_ap"
 
 /obj/item/projectile/bullet/pistol/medium // .45 (and maybe .40 if it ever gets added) caliber security pistols. Balance between capacity and power.
@@ -116,7 +114,6 @@
 
 /obj/item/projectile/bullet/pistol/medium/hp
 	damage = 30
-	armor_penetration = -50
 	hud_state = "pistol_ap"
 
 /obj/item/projectile/bullet/pistol/strong // .357 and .44 caliber stuff. High power pistols like the Mateba or Desert Eagle. Sacrifice capacity for power.
@@ -203,7 +200,6 @@
 
 /obj/item/projectile/bullet/rifle
 	fire_sound = 'sound/weapons/gunshot_generic_rifle.ogg'
-	armor_penetration = 15
 	// penetrating = 1 This is the only thing I see that could cause stun and unsure what can be pierced with a penetrating of 1.
 	hud_state = "rifle"
 	hud_state_empty = "rifle_empty"
@@ -220,12 +216,10 @@
 
 /obj/item/projectile/bullet/rifle/a762/ap
 	damage = 30
-	armor_penetration = 50 // At 30 or more armor, this will do more damage than standard rounds.
 	hud_state = "rifle_ap"
 
 /obj/item/projectile/bullet/rifle/a762/hp
 	damage = 40
-	armor_penetration = -50
 	penetrating = 0
 	hud_state = "hivelo_iff"
 
@@ -235,18 +229,15 @@
 	hud_state = "rifle_heavy"
 
 /obj/item/projectile/bullet/rifle/a545
-	fire_sound = 'sound/weapons/gunshot_light.ogg'
 	damage = 25
 	hud_state = "rifle"
 
 /obj/item/projectile/bullet/rifle/a545/ap
 	damage = 20
-	armor_penetration = 50 // At 40 or more armor, this will do more damage than standard rounds.
 	hud_state = "rifle_ap"
 
 /obj/item/projectile/bullet/rifle/a545/hp
 	damage = 35
-	armor_penetration = -50
 	penetrating = 0
 	hud_state = "hivelo_iff"
 
@@ -277,7 +268,6 @@
 	hud_state = "sniper_flak"
 
 /obj/item/projectile/bullet/rifle/a44rifle
-	fire_sound = 'sound/weapons/gunshot4.ogg'
 	damage = 50
 	hud_state = "revolver"
 

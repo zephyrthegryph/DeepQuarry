@@ -129,7 +129,6 @@
 	item_cost = 10 // Discount due to it being LTL.
 
 /datum/uplink_item/item/ammo/cell
-	name = "weapon cell"
 	path = /obj/item/cell/device/weapon
 
 

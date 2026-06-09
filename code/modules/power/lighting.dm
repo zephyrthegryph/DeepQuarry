@@ -22,7 +22,6 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	icon_state = "tube-construct-stage1"
 	anchored = TRUE
 	plane = MOB_PLANE
-	layer = ABOVE_MOB_LAYER
 	var/stage = 1
 	var/fixture_type = /obj/machinery/light
 	var/sheets_refunded = 2
@@ -206,7 +205,6 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	desc = "A lighting fixture."
 	anchored = TRUE
 	plane = MOB_PLANE
-	layer = ABOVE_MOB_LAYER
 	use_power = USE_POWER_ACTIVE
 	idle_power_usage = 2
 	active_power_usage = 10
@@ -980,8 +978,6 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	base_state = "ltube"
 	item_state = "c_tube"
 	matter = list(MAT_GLASS = 100)
-	brightness_range = 7
-	brightness_power = 2
 	init_brightness_range = 7
 	init_brightness_power = 2
 
@@ -990,11 +986,6 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	name = "large light tube"
 	icon_state = "ltube_large"
 	base_state = "ltube_large"
-	brightness_range = 15
-	brightness_power = 4
-
-	nightshift_range = 10
-	nightshift_power = 1.5
 
 	init_brightness_range = 15
 	init_brightness_power = 4
@@ -1008,12 +999,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	base_state = "lbulb"
 	item_state = "contvapour"
 	matter = list(MAT_GLASS = 100)
-	brightness_range = 5
-	brightness_power = 1
 	brightness_color = LIGHT_COLOR_INCANDESCENT_BULB
-
-	nightshift_range = 3
-	nightshift_power = 0.5
 
 	init_brightness_range = 5
 	init_brightness_power = 1
@@ -1025,11 +1011,6 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	name = "large light bulb"
 	icon_state = "lbulb_large"
 	base_state = "lbulb_large"
-	brightness_range = 7
-	brightness_power = 1.5
-
-	nightshift_range = 4
-	nightshift_power = 0.75
 
 	init_brightness_range = 7
 	init_brightness_power = 1.5

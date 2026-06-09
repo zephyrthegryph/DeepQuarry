@@ -170,12 +170,9 @@ The box in your backpack has an oxygen tank and gas mask in it."
 
 
 /atom/movable/screen/alert/fat
-	name = "Full"
-	desc = "You've eaten more than you can handle, maybe you should slow down?"
 	icon_state = "fat"
 
 /atom/movable/screen/alert/fat/vampire
-	desc = "You've had more than enough blood, for now."
 	icon_state = "v_fat"
 
 /atom/movable/screen/alert/fat/synth
@@ -188,7 +185,6 @@ The box in your backpack has an oxygen tank and gas mask in it."
 	icon_state = "hungry"
 
 /atom/movable/screen/alert/hungry/vampire
-	desc = "You could go for a bite right now..."
 	icon_state = "v_hungry"
 
 /atom/movable/screen/alert/hungry/synth
@@ -197,15 +193,12 @@ The box in your backpack has an oxygen tank and gas mask in it."
 
 /atom/movable/screen/alert/starving
 	name = "Very Hungry"
-	desc = "You're starving. You barely have enough energy to move around."
 	icon_state = "starving"
 
 /atom/movable/screen/alert/starving/vampire
-	desc = "You *need* blood; go rip out someone's throat already!"
 	icon_state = "v_starving"
 
 /atom/movable/screen/alert/starving/synth
-	desc = "Your battery is about to die! Charge it ASAP!"
 	icon_state = "c_starving"
 
 /atom/movable/screen/alert/warm
@@ -446,11 +439,9 @@ so as to remain in compliance with the most up-to-date laws."
 
 // TICKETS
 /atom/movable/screen/alert/open_ticket
-	icon = 'icons/logo.dmi'
 	name = "Admin Chat Request"
 	desc = "A Administrator would like to chat with you. \
 	Click here to begin."
-	icon_state = "nt_logo"
 
 /atom/movable/screen/alert/open_ticket/Click()
 	if(!usr || !usr.client) return

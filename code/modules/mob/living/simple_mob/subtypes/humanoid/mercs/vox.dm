@@ -78,21 +78,10 @@
 	value = CATALOGUER_REWARD_MEDIUM
 
 /mob/living/simple_mob/humanoid/merc/voxpirate/boarder
-	name = "vox melee boarder"
-	desc = "A howling Vox with a sword. Run."
-	icon_state = "voxboarder_m"
-	icon_living = "voxboarder_m"
-	icon_dead = "voxboarder_m_dead"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/mercenary/vox/boarder)
-
 	melee_damage_lower = 30		//Energy sword damage
 	melee_damage_upper = 30
 	attack_sharp = 1
 	attack_edge = 1
-
-	ai_holder_type = /datum/ai_holder/simple_mob/melee/evasive
-	corpse = /obj/effect/landmark/mobcorpse/vox/boarder_m
-	loot_list = list(/obj/item/melee/energy/sword = 100)
 
 // They're good with the swords? I dunno. I like the idea they can deflect.
 /mob/living/simple_mob/humanoid/merc/voxpirate/boarder/attackby(obj/item/O, mob/user)

@@ -107,40 +107,6 @@ GLOBAL_DATUM(planet_sif, /datum/planet/sif)
 		return GLOB.planet_sif.current_time
 
 //Weather definitions
-/datum/weather_holder/sif
-	temperature = T0C
-	allowed_weather_types = list(
-		WEATHER_CLEAR		= new /datum/weather/sif/clear(),
-		WEATHER_OVERCAST	= new /datum/weather/sif/overcast(),
-		WEATHER_LIGHT_SNOW	= new /datum/weather/sif/light_snow(),
-		WEATHER_SNOW		= new /datum/weather/sif/snow(),
-		WEATHER_BLIZZARD	= new /datum/weather/sif/blizzard(),
-		WEATHER_RAIN		= new /datum/weather/sif/rain(),
-		WEATHER_STORM		= new /datum/weather/sif/storm(),
-		WEATHER_HAIL		= new /datum/weather/sif/hail(),
-		WEATHER_FOG			= new /datum/weather/sif/fog(),
-		WEATHER_BLOOD_MOON	= new /datum/weather/sif/blood_moon(),
-		WEATHER_EMBERFALL	= new /datum/weather/sif/emberfall(),
-		WEATHER_ASH_STORM	= new /datum/weather/sif/ash_storm(),
-		WEATHER_FALLOUT		= new /datum/weather/sif/fallout(),
-		WEATHER_FALLOUT_TEMP	= new /datum/weather/sif/fallout/temp(), // begin
-		WEATHER_CONFETTI		= new /datum/weather/sif/confetti(),
-		WEATHER_DOWNPOURWARNING = new /datum/weather/sif/downpourwarning(),
-		WEATHER_DOWNPOUR = new /datum/weather/sif/downpour(),
-		WEATHER_DOWNPOURFATAL = new /datum/weather/sif/downpourfatal() // end
-		)
-	roundstart_weather_chances = list(
-		WEATHER_CLEAR		= 30,
-		WEATHER_OVERCAST	= 30,
-		WEATHER_LIGHT_SNOW	= 20,
-		WEATHER_FOG			= 20,
-		WEATHER_SNOW		= 5,
-		WEATHER_BLIZZARD	= 5,
-		WEATHER_RAIN		= 5,
-		WEATHER_STORM		= 2.5,
-		WEATHER_HAIL		= 2.5
-		)
-
 /datum/weather/sif
 	name = "sif base"
 	temp_high = 283.15	// 10c
@@ -245,20 +211,6 @@ GLOBAL_DATUM(planet_sif, /datum/planet/sif)
 */
 
 /datum/weather/sif/blizzard
-	name = "blizzard"
-	icon_state = "snowfall_heavy"
-	temp_high = 243.15 // -30c
-	temp_low = 233.15  // -40c
-	wind_high = 4
-	wind_low = 2
-	light_modifier = 0.3
-	flight_failure_modifier = 10
-	transition_chances = list(
-		WEATHER_SNOW = 45,
-		WEATHER_BLIZZARD = 40,
-		WEATHER_HAIL = 10,
-		WEATHER_OVERCAST = 5
-		)
 	observed_message = "A blizzard blows snow everywhere."
 	transition_messages = list(
 		"Strong winds howl around you as a blizzard appears.",
@@ -445,21 +397,6 @@ GLOBAL_DATUM(planet_sif, /datum/planet/sif)
 			to_chat(H, effect_message)
 
 /datum/weather/sif/fog
-	name = "fog"
-	icon_state = "fog"
-	wind_high = 1
-	wind_low = 0
-	light_modifier = 0.7
-
-	temp_high = T0C		// 0c
-	temp_low = 263.15	// -10c
-
-	transition_chances = list(
-		WEATHER_FOG = 70,
-		WEATHER_OVERCAST = 15,
-		WEATHER_LIGHT_SNOW = 10,
-		WEATHER_RAIN = 5
-		)
 	observed_message = "A fogbank has rolled over the region."
 	transition_messages = list(
 		"Fog rolls in.",
@@ -629,6 +566,17 @@ GLOBAL_DATUM(planet_sif, /datum/planet/sif)
 		WEATHER_DOWNPOUR 		= new /datum/weather/sif/downpour(),
 		WEATHER_DOWNPOURFATAL 	= new /datum/weather/sif/downpourfatal() // end
 		)
+	roundstart_weather_chances = list(
+		WEATHER_CLEAR		= 30,
+		WEATHER_OVERCAST	= 30,
+		WEATHER_LIGHT_SNOW	= 20,
+		WEATHER_FOG			= 20,
+		WEATHER_SNOW		= 5,
+		WEATHER_BLIZZARD	= 5,
+		WEATHER_RAIN		= 5,
+		WEATHER_STORM		= 2.5,
+		WEATHER_HAIL		= 2.5
+		)
 //Weather
 /datum/weather/sif/fog
 	name = "fog"
@@ -649,19 +597,6 @@ GLOBAL_DATUM(planet_sif, /datum/planet/sif)
 		WEATHER_EERIE_WIND = 5
 		)
 	imminent_transition_message = "Fog settles down."
-
-/datum/weather/sif/fallout/temp //fixys firework stars
-	name = "short-term fallout"
-	timer_low_bound = 1
-	timer_high_bound = 3
-	transition_chances = list(
-		WEATHER_FALLOUT = 10,
-		WEATHER_RAIN = 50,
-		WEATHER_FOG = 35,
-		WEATHER_STORM = 20,
-		WEATHER_OVERCAST = 5
-		)
-	imminent_transition_message = "Fireworks begin to fly."
 
 /datum/weather/sif/confetti //fixys firework stars
 	name = "confetti"

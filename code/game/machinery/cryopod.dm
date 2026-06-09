@@ -66,8 +66,6 @@
 	allow_items = 1
 
 /obj/machinery/computer/cryopod/gateway
-	name = "gateway oversight console"
-	desc = "An interface between visitors and the gateway oversight systems tasked with keeping track of all visitors who enter or exit from the gateway."
 	circuit = /obj/item/circuitboard/gatewaycontrol
 
 	storage_type = "visitors"
@@ -277,15 +275,7 @@
 	on_store_visible_message_2 = "to the passenger deck."
 
 /obj/machinery/cryopod/robot/door/gateway
-	name = "Gateway"
-	desc = "The gateway you might've came in from.  You could leave the colony easily using this."
-	icon = 'icons/obj/machines/gateway.dmi'
-	icon_state = "offcenter"
-	base_icon_state = "offcenter"
-	occupied_icon_state = "oncenter"
-	on_store_message = "has departed from the colony."
 	on_store_name = "Travel Oversight"
-	on_enter_occupant_message = "The gateway activates, and you step into the swirling portal."
 	on_store_visible_message_1 = "'s portal disappears just after"
 	on_store_visible_message_2 = "finishes walking across it."
 

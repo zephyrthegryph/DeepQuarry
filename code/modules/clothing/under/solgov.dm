@@ -22,8 +22,8 @@
 	body_parts_covered = CHEST
 
 /obj/item/clothing/under/solgov/pt/sifguard
-	name = "\improper SifGuard pt uniform"
-	desc = "A baggy shirt bearing the seal of the Sif Defense Force and some dorky looking blue shorts."
+	name = "\improper NDF pt uniform"
+	desc = "A baggy shirt bearing the seal of the Nanotrasen Defense Force and some dorky looking blue shorts."
 	icon_state = "expeditionpt"
 	worn_state = "expeditionpt"
 
@@ -77,8 +77,8 @@
 
 //Here's the real ones
 /obj/item/clothing/under/solgov/utility/sifguard
-	name = "\improper SifGuard uniform"
-	desc = "The utility uniform of the Sif Defense Force, made from biohazard resistant material. This one has silver trim."
+	name = "\improper NDF uniform"
+	desc = "The utility uniform of the Nanotrasen Defense Force, made from biohazard resistant material. This one has silver trim."
 	icon_state = "blackutility_crew"
 	worn_state = "blackutility_crew"
 	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 10, rad = 10)
@@ -92,8 +92,8 @@
 	rolled_sleeves = 0
 
 /obj/item/clothing/under/solgov/utility/sifguard_skirt
-	name = "\improper SifGuard skirt"
-	desc = "A black turtleneck and skirt, the elusive ladies' uniform of the Sif Defense Force."
+	name = "\improper NDF skirt"
+	desc = "A black turtleneck and skirt, the elusive ladies' uniform of the Nanotrasen Defense Force."
 	icon_state = "blackservicef"
 	worn_state = "blackservicefem"
 
@@ -128,8 +128,8 @@
 	starting_accessories = list(/obj/item/clothing/accessory/solgov/department/research)
 
 /obj/item/clothing/under/solgov/utility/sifguard/officer
-	name = "\improper Sifguard officer's uniform"
-	desc = "The utility uniform of the Sif Defense Force, made from biohazard resistant material. This one has gold trim."
+	name = "\improper NDF officer's uniform"
+	desc = "The utility uniform of the Nanotrasen Defense Force, made from biohazard resistant material. This one has gold trim."
 	icon_state = "blackutility_com"
 	worn_state = "blackutility_com"
 
@@ -159,7 +159,7 @@
 
 /obj/item/clothing/under/solgov/utility/fleet
 	name = "fleet coveralls"
-	desc = "The utility uniform of the SCG Fleet, made from an insulated material."
+	desc = "The utility uniform of the USDF Fleet, made from an insulated material."
 	icon_state = "navyutility"
 	worn_state = "navyutility"
 	armor = list(melee = 0, bullet = 0, laser = 0,energy = 10, bomb = 0, bio = 0, rad = 0)
@@ -191,7 +191,7 @@
 
 /obj/item/clothing/under/solgov/utility/fleet/combat
 	name = "fleet fatigues"
-	desc = "Alternative utility uniform of the SCG Fleet, for when coveralls are impractical."
+	desc = "Alternative utility uniform of the USDF Fleet, for when coveralls are impractical."
 	icon_state = "navycombat"
 	worn_state = "navycombat"
 
@@ -209,7 +209,7 @@
 
 /obj/item/clothing/under/solgov/utility/fleet/officer
 	name = "fleet officer's coveralls"
-	desc = "Alternative utility uniform of the SCG Fleet, for officers."
+	desc = "Alternative utility uniform of the USDF Fleet, for officers."
 	icon_state = "navyutilityoff"
 	worn_state = "navyutilityoff"
 
@@ -227,7 +227,7 @@
 
 /obj/item/clothing/under/solgov/utility/army
 	name = "marine fatigues"
-	desc = "The utility uniform of the SCG Marines, made from durable material."
+	desc = "The utility uniform of the USDF Marines, made from durable material."
 	icon_state = "greenutility"
 	worn_state = "greenutility"
 
@@ -257,15 +257,27 @@
 
 /obj/item/clothing/under/solgov/utility/army/urban
 	name = "urban fatigues"
-	desc = "An urban version of the SCG Marines utility uniform, made from durable material."
+	desc = "An urban version of the USDF Marines utility uniform, made from durable material."
 	icon_state = "greyutility"
 	worn_state = "greyutility"
 
 /obj/item/clothing/under/solgov/utility/army/tan
 	name = "tan fatigues"
-	desc = "A tan version of the SCG Marines utility uniform, made from durable material."
+	desc = "A tan version of the USDF Marines utility uniform, made from durable material."
 	icon_state = "tanutility"
 	worn_state = "tanutility"
+
+/obj/item/clothing/under/solgov/utility/army/olive
+	name = "olive fatigues"
+	desc = "An olive version of the USDF marine utility uniform, made from durable material."
+	icon_state = "bdu_olive"
+	item_state = "bdu_olive"
+
+/obj/item/clothing/under/solgov/utility/army/desert
+	name = "desert fatigues"
+	desc = "A desert version of the USDF marine utility uniform, made from durable material."
+	icon_state = "bdu_olive"
+	item_state = "bdu_olive"
 
 //Service
 
@@ -279,13 +291,10 @@
 	siemens_coefficient = 0.9
 
 /obj/item/clothing/under/solgov/service/sifguard
-	name = "\improper SifGuard service uniform"
-	desc = "The service uniform of the Sif Defense Force in silver trim."
+	name = "\improper NDF service uniform"
+	desc = "The service uniform of the Nanotrasen Defense Force in silver trim."
 	icon_state = "greydress"
 	worn_state = "greydress"
-
-/obj/item/clothing/under/solgov/service/sifguard/command
-	starting_accessories = list(/obj/item/clothing/accessory/solgov/department/command/jumper)
 
 /obj/item/clothing/under/solgov/service/sifguard/engineering
 	starting_accessories = list(/obj/item/clothing/accessory/solgov/department/engineering/jumper)
@@ -309,8 +318,8 @@
 	starting_accessories = list(/obj/item/clothing/accessory/solgov/department/research/jumper)
 
 /obj/item/clothing/under/solgov/service/sifguard/skirt
-	name = "\improper SifGuard service skirt"
-	desc = "A feminine version of the Sif Defense Force service uniform in silver trim."
+	name = "\improper NDF service skirt"
+	desc = "A feminine version of the Nanotrasen Defense Force service uniform in silver trim."
 	icon_state = "greydressfem"
 	worn_state = "greydressfem"
 
@@ -339,10 +348,11 @@
 	starting_accessories = list(/obj/item/clothing/accessory/solgov/department/research/jumper)
 
 /obj/item/clothing/under/solgov/service/sifguard/command
-	name = "\improper SifGuard officer's service uniform"
-	desc = "The service uniform of the Sif Defense Force in gold trim."
+	name = "\improper NDF officer's service uniform"
+	desc = "The service uniform of the Nanotrasen Defense Force in gold trim."
 	icon_state = "greydress_com"
 	worn_state = "greydress_com"
+	starting_accessories = list(/obj/item/clothing/accessory/solgov/department/command/jumper)
 
 /obj/item/clothing/under/solgov/service/sifguard/command/command
 	starting_accessories = list(/obj/item/clothing/accessory/solgov/department/command/jumper)
@@ -369,8 +379,8 @@
 	starting_accessories = list(/obj/item/clothing/accessory/solgov/department/research/jumper)
 
 /obj/item/clothing/under/solgov/service/sifguard/command/skirt
-	name = "\improper SifGuard officer's service skirt"
-	desc = "A feminine version of the Sif Defense Force service uniform in gold trim."
+	name = "\improper NDF officer's service skirt"
+	desc = "A feminine version of the Nanotrasen Defense Force service uniform in gold trim."
 	icon_state = "greydressfem_com"
 	worn_state = "greydressfem_com"
 
@@ -400,40 +410,40 @@
 
 /obj/item/clothing/under/solgov/service/fleet
 	name = "fleet service uniform"
-	desc = "The service uniform of the SCG Fleet, made from immaculate white fabric."
+	desc = "The service uniform of the USDF Fleet, made from immaculate white fabric."
 	icon_state = "whiteservice"
 	worn_state = "whiteservice"
 	starting_accessories = list(/obj/item/clothing/accessory/tie/navy)
 
 /obj/item/clothing/under/solgov/service/fleet/skirt
 	name = "fleet service skirt"
-	desc = "The service uniform skirt of the SCG Fleet, made from immaculate white fabric."
+	desc = "The service uniform skirt of the USDF Fleet, made from immaculate white fabric."
 	icon_state = "whiteservicefem"
 	worn_state = "whiteservicefem"
 
 /obj/item/clothing/under/solgov/service/army
 	name = "marine service uniform"
-	desc = "The service uniform of the SCG Marines. Slimming."
+	desc = "The service uniform of the USDF Marines. Slimming."
 	icon_state = "greenservice"
 	worn_state = "greenservice"
 	starting_accessories = list(/obj/item/clothing/accessory/tie/darkgreen)
 
 /obj/item/clothing/under/solgov/service/army/skirt
 	name = "marine service skirt"
-	desc = "The service uniform skirt of the SCG Marines. Slimming."
+	desc = "The service uniform skirt of the USDF Marines. Slimming."
 	icon_state = "greenservicefem"
 	worn_state = "greenservicefem"
 
 /obj/item/clothing/under/solgov/service/army/command
 	name = "marine officer's service uniform"
-	desc = "The service uniform of the SCG Marines. Slimming and stylish."
+	desc = "The service uniform of the USDF Marines. Slimming and stylish."
 	icon_state = "greenservice_com"
 	worn_state = "greenservice_com"
 	starting_accessories = list(/obj/item/clothing/accessory/tie/darkgreen)
 
 /obj/item/clothing/under/solgov/service/army/command/skirt
 	name = "marine officer's service skirt"
-	desc = "The service uniform skirt of the SCG Marines. Slimming and stylish."
+	desc = "The service uniform skirt of the USDF Marines. Slimming and stylish."
 	icon_state = "greenservicefem_com"
 	worn_state = "greenservicefem_com"
 
@@ -447,28 +457,39 @@
 
 /obj/item/clothing/under/solgov/mildress/army
 	name = "marine dress uniform"
-	desc = "The dress uniform of the SCG Marines, class given form."
+	desc = "The dress uniform of the TCG Marines, class given form."
 	icon_state = "blackdress"
 	worn_state = "blackdress"
 
 /obj/item/clothing/under/solgov/mildress/army/skirt
 	name = "marine dress skirt"
-	desc = "A  feminine version of the SCG Marines dress uniform, class given form."
+	desc = "A  feminine version of the TCG Marines dress uniform, class given form."
 	icon_state = "blackdressfem"
 	worn_state = "blackdressfem"
 
 /obj/item/clothing/under/solgov/mildress/army/command
 	name = "marine officer's dress uniform"
-	desc = "The dress uniform of the SCG Marines, even classier in gold."
+	desc = "The dress uniform of the TCG Marines, even classier in gold."
 	icon_state = "blackdress"
 	worn_state = "blackdress_com"
 
 /obj/item/clothing/under/solgov/mildress/army/command/skirt
 	name = "marine officer's dress skirt"
-	desc = "A feminine version of the SCG Marines dress uniform, even classier in gold."
+	desc = "A feminine version of the TCG Marines dress uniform, even classier in gold."
 	icon_state = "blackdressfem"
 	worn_state = "blackdressfem_com"
 
+/obj/item/clothing/under/terran/navy/utility
+	name = "Ares utility uniform"
+	desc = "A comfortable black utility jumpsuit. Worn by the Ares Navy."
+
+/obj/item/clothing/under/terran/navy/service
+	name = "Ares service uniform"
+	desc = "The service uniform of the Ares Navy, for low-ranking crew."
+
+/obj/item/clothing/under/terran/navy/service/command
+	name = "Ares command service uniform"
+	desc = "The service uniform of the Ares Navy, for high-ranking crew."
 
 //Misc
 
@@ -535,142 +556,3 @@
 	worn_state = "gsa_work"
 	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 10)
 	rolled_sleeves = 0
-
-
-// === merged from solgov_vr.dm during hard-fork de-suffix (verified no override-order change) ===
-//SolGov Uniforms
-//PT
-/obj/item/clothing/under/solgov/pt/sifguard
-	name = "\improper NDF pt uniform"
-	desc = "A baggy shirt bearing the seal of the Nanotrasen Defense Force and some dorky looking blue shorts."
-
-/obj/item/clothing/under/solgov/pt/fleet
-	name = "fleet pt uniform"
-	desc = "A pair of black shorts and two tank tops, seems impractical. Looks good though."
-
-/obj/item/clothing/under/solgov/pt/army
-	name = "marine pt uniform"
-	desc = "Does NOT leave much to the imagination."
-
-//Utility
-//Here's the real ones
-/obj/item/clothing/under/solgov/utility/sifguard
-	name = "\improper NDF uniform"
-	desc = "The utility uniform of the Nanotrasen Defense Force, made from biohazard resistant material. This one has silver trim."
-
-/obj/item/clothing/under/solgov/utility/sifguard_skirt
-	name = "\improper NDF skirt"
-	desc = "A black turtleneck and skirt, the elusive ladies' uniform of the Nanotrasen Defense Force."
-
-
-
-/obj/item/clothing/under/solgov/utility/sifguard/officer
-	name = "\improper NDF officer's uniform"
-	desc = "The utility uniform of the Nanotrasen Defense Force, made from biohazard resistant material. This one has gold trim."
-
-/obj/item/clothing/under/solgov/utility/fleet
-	name = "fleet coveralls"
-	desc = "The utility uniform of the USDF Fleet, made from an insulated material." // TCG to USDF
-
-/obj/item/clothing/under/solgov/utility/fleet/combat
-	name = "fleet fatigues"
-	desc = "Alternative utility uniform of the USDF Fleet, for when coveralls are impractical." // TCG to USDF
-
-/obj/item/clothing/under/solgov/utility/fleet/officer
-	name = "fleet officer's coveralls"
-	desc = "Alternative utility uniform of the USDF Fleet, for officers." // TCG to USDF
-
-/obj/item/clothing/under/solgov/utility/army
-	name = "marine fatigues"
-	desc = "The utility uniform of the USDF Marines, made from durable material." // TCG to USDF
-
-/obj/item/clothing/under/solgov/utility/army/urban
-	name = "urban fatigues"
-	desc = "An urban version of the USDF Marines utility uniform, made from durable material." // TCG to USDF
-
-/obj/item/clothing/under/solgov/utility/army/tan
-	name = "tan fatigues"
-	desc = "A tan version of the USDF Marines utility uniform, made from durable material." // TCG to USDF
-
-/obj/item/clothing/under/solgov/utility/army/olive
-	name = "olive fatigues"
-	desc = "An olive version of the USDF marine utility uniform, made from durable material." // TCG to USDF
-	icon_state = "bdu_olive"
-	item_state = "bdu_olive"
-
-/obj/item/clothing/under/solgov/utility/army/desert
-	name = "desert fatigues"
-	desc = "A desert version of the USDF marine utility uniform, made from durable material." // TCG to USDF
-	icon_state = "bdu_olive"
-	item_state = "bdu_olive"
-
-//Service
-/obj/item/clothing/under/solgov/service/sifguard
-	name = "\improper NDF service uniform"
-	desc = "The service uniform of the Nanotrasen Defense Force in silver trim."
-
-/obj/item/clothing/under/solgov/service/sifguard/skirt
-	name = "\improper NDF service skirt"
-	desc = "A feminine version of the Nanotrasen Defense Force service uniform in silver trim."
-
-/obj/item/clothing/under/solgov/service/sifguard/command
-	name = "\improper NDF officer's service uniform"
-	desc = "The service uniform of the Nanotrasen Defense Force in gold trim."
-
-/obj/item/clothing/under/solgov/service/sifguard/command/skirt
-	name = "\improper NDF officer's service skirt"
-	desc = "A feminine version of the Nanotrasen Defense Force service uniform in gold trim."
-
-/obj/item/clothing/under/solgov/service/fleet
-	name = "fleet service uniform"
-	desc = "The service uniform of the USDF Fleet, made from immaculate white fabric." // TCG to USDF
-
-/obj/item/clothing/under/solgov/service/fleet/skirt
-	name = "fleet service skirt"
-	desc = "The service uniform skirt of the USDF Fleet, made from immaculate white fabric." // TCG to USDF
-
-/obj/item/clothing/under/solgov/service/army
-	name = "marine service uniform"
-	desc = "The service uniform of the USDF Marines. Slimming." // TCG to USDF
-
-/obj/item/clothing/under/solgov/service/army/skirt
-	name = "marine service skirt"
-	desc = "The service uniform skirt of the USDF Marines. Slimming." // TCG to USDF
-
-/obj/item/clothing/under/solgov/service/army/command
-	name = "marine officer's service uniform"
-	desc = "The service uniform of the USDF Marines. Slimming and stylish." // TCG to USDF
-
-/obj/item/clothing/under/solgov/service/army/command/skirt
-	name = "marine officer's service skirt"
-	desc = "The service uniform skirt of the USDF Marines. Slimming and stylish." // TCG to USDF
-
-//Dress
-/obj/item/clothing/under/solgov/mildress/army
-	name = "marine dress uniform"
-	desc = "The dress uniform of the TCG Marines, class given form." // TCG to USDF
-
-/obj/item/clothing/under/solgov/mildress/army/skirt
-	name = "marine dress skirt"
-	desc = "A  feminine version of the TCG Marines dress uniform, class given form." // TCG to USDF
-
-/obj/item/clothing/under/solgov/mildress/army/command
-	name = "marine officer's dress uniform"
-	desc = "The dress uniform of the TCG Marines, even classier in gold." // TCG to USDF
-
-/obj/item/clothing/under/solgov/mildress/army/command/skirt
-	name = "marine officer's dress skirt"
-	desc = "A feminine version of the TCG Marines dress uniform, even classier in gold." // TCG to USDF
-
-//Terrans
-/obj/item/clothing/under/terran/navy/utility
-	name = "Ares utility uniform"
-	desc = "A comfortable black utility jumpsuit. Worn by the Ares Navy."
-
-/obj/item/clothing/under/terran/navy/service
-	name = "Ares service uniform"
-	desc = "The service uniform of the Ares Navy, for low-ranking crew."
-
-/obj/item/clothing/under/terran/navy/service/command
-	name = "Ares command service uniform"
-	desc = "The service uniform of the Ares Navy, for high-ranking crew."
