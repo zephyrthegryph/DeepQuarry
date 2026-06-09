@@ -42,19 +42,13 @@
 		return
 	owner = C
 	tooltip_window = new(C, control)
-	tooltip_window.initialize(
-		assets = list(get_asset_datum(/datum/asset/simple/tgui)),
-	)
-	winset(C, control, "is-disabled=false;is-visible=false")
-	// Spin up a TGUI on the window so the React side is mounted and
-	// ready to receive show() calls. The state datum is the always
-	// state since this is a per-client overlay; tgui_act has no
-	// privileged operations.
-	var/datum/tgui/ui = SStgui.try_update_ui(C.mob, src, null)
-	if(!ui)
-		ui = new(C.mob, src, "Tooltip", window = tooltip_window)
-		ui.closeable = FALSE
-		ui.open(preinitialized = TRUE)
+	// Mirror belly_overlay's working setup: create the tgui bound to the window
+	// and open() it normally — that loads the bundle and mounts React. The old
+	// initialize() + open(preinitialized = TRUE) path left React unmounted, so
+	// show() pushed data to a frontend that was never running.
+	var/datum/tgui/ui = new(C.mob, src, "Tooltip", window = tooltip_window)
+	ui.closeable = FALSE
+	ui.open()
 	dq_log("tooltip New: ctrl=[control] window=[tooltip_window ? "ok" : "null"] ui=[ui ? "ok" : "null"]")
 	..()
 
