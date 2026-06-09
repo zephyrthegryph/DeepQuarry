@@ -1,0 +1,161 @@
+# Generated from syndie_wide.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 21
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "openpanel_nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wreck-overlay"
+dirs = 1
+frames = 18
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 40]
+
+[[state]]
+name = "borgi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borgi"
+dirs = 4
+frames = 6
+delays = [1]
+movement = true
+
+[[state]]
+name = "borgi-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "borgi-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borgi-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borgi-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borgi-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borgi-sleeper-1"
+dirs = 4
+frames = 6
+delays = [1]
+movement = true
+
+[[state]]
+name = "borgi-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borgi-lights"
+dirs = 4
+frames = 6
+delays = [1]
+movement = true
+
+[[state]]
+name = "drake"
+dirs = 4
+frames = 10
+delays = [10, 1]
+
+[[state]]
+name = "drake"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "drake-eyes"
+dirs = 4
+frames = 10
+delays = [10, 1]
+
+[[state]]
+name = "drake-eyes"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "drake-wreck"
+dirs = 1
+frames = 10
+delays = [10, 1, 5, 2, 2, 2, 1]
+
+[[state]]
+name = "drake-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "drake-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "drake-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "drake-sleeper-1"
+dirs = 4
+frames = 10
+delays = [10, 1]
+
+[[state]]
+name = "drake-sleeper-1"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "drake-sleeper-1-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "drake-sleeper-1-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "drake-sleeper-1-bellyup"
+dirs = 4
+frames = 1

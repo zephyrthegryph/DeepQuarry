@@ -1,0 +1,190 @@
+# Generated from modular_tablet.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 10
+
+[[state]]
+name = "tablet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tabletsol"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "__MASK__"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "game"
+dirs = 1
+frames = 13
+delays = [5, 5, 5, 5, 5, 2, 2, 2, 5, 2, 2, 2, 5]
+
+[[state]]
+name = "crew"
+dirs = 1
+frames = 7
+delays = [3]
+
+[[state]]
+name = "command"
+dirs = 1
+frames = 2
+delays = [10]
+
+[[state]]
+name = "comm_logs"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "comm_monitor"
+dirs = 1
+frames = 3
+delays = [5]
+
+[[state]]
+name = "hostile"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "generic"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "atmos_control"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alert-green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alert-red"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "power_monitor"
+dirs = 1
+frames = 5
+delays = [3]
+
+[[state]]
+name = "power_monitor_warn"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "menu"
+dirs = 1
+frames = 2
+delays = [4]
+
+[[state]]
+name = "id"
+dirs = 1
+frames = 5
+delays = [15, 1, 15, 1, 15]
+
+[[state]]
+name = "cameras"
+dirs = 1
+frames = 7
+delays = [3, 3, 8, 8, 3]
+
+[[state]]
+name = "smmon_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smmon_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smmon_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smmon_3"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "smmon_4"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "bsod"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smmon_5"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "smmon_6"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "warrant"
+dirs = 1
+frames = 6
+delays = [6, 6, 7, 8, 7, 6]
+
+[[state]]
+name = "supply"
+dirs = 1
+frames = 3
+delays = [18, 10, 24]
+
+[[state]]
+name = "request"
+dirs = 1
+frames = 3
+delays = [4, 4, 10]
+
+[[state]]
+name = "word"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rugged"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "elite"
+dirs = 1
+frames = 9
+delays = [1]
+
+[[state]]
+name = "hybrid"
+dirs = 1
+frames = 1

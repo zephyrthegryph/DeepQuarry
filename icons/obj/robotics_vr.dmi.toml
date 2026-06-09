@@ -1,0 +1,75 @@
+# Generated from robotics_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 10
+
+[[state]]
+name = "mechfab-active"
+dirs = 1
+frames = 22
+delays = [15, 1, 1, 1, 1, 1, 1, 0.5, 1, 3, 1, 0.5, 1, 3, 1, 0.5, 1, 3, 1]
+
+[[state]]
+name = "mechfab"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mechfab-idle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mechfab-o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mechfab-load-metal"
+dirs = 1
+frames = 9
+delays = [1, 1, 1, 1, 1, 1, 1, 2, 3]
+
+[[state]]
+name = "fab-active"
+dirs = 1
+frames = 22
+delays = [15, 1, 1, 1, 1, 1, 1, 0.5, 1, 3, 1, 0.5, 1, 3, 1, 0.5, 1, 3, 1]
+
+[[state]]
+name = "fab"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fab-idle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fab-o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fab-load-metal"
+dirs = 1
+frames = 9
+delays = [1, 1, 1, 1, 1, 1, 1, 2, 3]
+
+[[state]]
+name = "prosfab-active"
+dirs = 1
+frames = 17
+delays = [1, 0.5, 1, 0.5, 1, 0.5, 1, 0.5, 1, 0.5, 1, 0.5, 1, 0.5, 1, 0.5, 1]
+rewind = true
+
+[[state]]
+name = "prosfab"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prosfab-o"
+dirs = 1
+frames = 1

@@ -1,0 +1,24 @@
+# Generated from library_ch.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 2
+
+[[state]]
+name = "bookRusty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cooked_book"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cooked_book-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "book16"
+dirs = 1
+frames = 1

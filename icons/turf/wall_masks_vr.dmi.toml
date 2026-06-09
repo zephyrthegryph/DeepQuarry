@@ -1,0 +1,189 @@
+# Generated from wall_masks_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "rwall-plastitanium"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wall-plastitanium"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hull-plastitanium"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rhull-plastitanium"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "log_sif"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dungeon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "elevator"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "iron"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "log"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snowbrick"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phoron"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "durasteel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "golddiamond"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ironphoron"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sandstonediamond"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "silver"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "silvergold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "resin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sandstone"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "solidrock"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "virgo2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "titanium"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "uranium"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sifwood"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skipjack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "diamond"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stonebrick"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stonelogs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "acaciawood"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "birchwood"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hardwood"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oakwood"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinewood"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redwood"
+dirs = 1
+frames = 1

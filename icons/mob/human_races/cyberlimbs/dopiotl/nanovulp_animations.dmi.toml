@@ -1,0 +1,76 @@
+# Generated from nanovulp_animations.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 24
+
+[[state]]
+name = "idle"
+dirs = 4
+frames = 7
+delays = [1]
+
+[[state]]
+name = "emptyinput"
+dirs = 4
+frames = 14
+delays = [1]
+
+[[state]]
+name = "eyeidle"
+dirs = 4
+frames = 7
+delays = [1]
+
+[[state]]
+name = "rainbow"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "snow"
+dirs = 4
+frames = 22
+delays = [1.2]
+
+[[state]]
+name = "idle-head"
+dirs = 4
+frames = 7
+delays = [1]
+
+[[state]]
+name = "emptyinput-head"
+dirs = 4
+frames = 14
+delays = [1]
+
+[[state]]
+name = "eyeidle-head"
+dirs = 4
+frames = 7
+delays = [1]
+
+[[state]]
+name = "rainbow2-head"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "snow-head"
+dirs = 4
+frames = 22
+delays = [1.2]
+
+[[state]]
+name = "rainbowcop"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "robocop"
+dirs = 4
+frames = 12
+delays = [1.4, 1.4, 1.4, 1.4, 1.4, 1.4, 1.4, 1.4, 1]

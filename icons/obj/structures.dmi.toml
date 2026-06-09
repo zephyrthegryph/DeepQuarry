@@ -1,0 +1,736 @@
+# Generated from structures.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 22
+
+[[state]]
+name = "girder"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "girder_resin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "displaced"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinforced"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "melted"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grille"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grillecult"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grillerustic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grille-b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grillecult-b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grillerustic-b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brokengrille"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "latticefull"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "window"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rwindow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "twindow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "twindowold"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "fwindow"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "window-full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwindow-full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "unwall"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "ungirder"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "unr_girder"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "r_girder"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "window1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "window2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "window3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "window4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "window5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "window6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "window7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "window0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rwindow0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rwindow1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rwindow2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rwindow3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rwindow4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rwindow5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rwindow6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rwindow7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "twindow0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "twindow1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "twindow2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "twindow3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "twindow4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "twindow5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "twindow6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "twindow7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phoronrwindow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phoronwindow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phoronwindow-full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phoronrwindow-full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phoronwindow0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phoronrwindow1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phoronrwindow2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phoronrwindow3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phoronrwindow4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phoronrwindow5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phoronrwindow6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phoronrwindow7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phoronwindow0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phoronwindow1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phoronwindow2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phoronwindow3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phoronwindow4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phoronwindow5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phoronwindow6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phoronwindow7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "safe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "safe-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floorsafe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floorsafe-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "linenbin-full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "linenbin-half"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "linenbin-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hatchdown"
+dirs = 1
+frames = 1
+loop = 1600745077
+
+[[state]]
+name = "hatchdown-open"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "hatchdown-close"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "red-ladderlight"
+dirs = 1
+frames = 1
+loop = 1600745077
+
+[[state]]
+name = "green-ladderlight"
+dirs = 1
+frames = 1
+loop = 1600745077
+
+[[state]]
+name = "open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "down"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "down-f"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "up"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "up-f"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "down-supply"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "down-f-supply"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "up-supply"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "up-f-supply"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "down-scrubbers"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "down-f-scrubbers"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "up-scrubbers"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "up-f-scrubbers"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "down-aux"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "down-f-aux"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "up-aux"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "up-f-aux"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "down-fuel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "down-f-fuel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "up-fuel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "up-f-fuel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wingrille"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pr-wingrille"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "r-wingrille"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "p-wingrille"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phoronrwindow0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "droppod_door_closed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "damage25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "damage50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "damage75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "borg_pod_opened"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "borg_pod_closed"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "gravemarker"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gravemarker_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gravemarker_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gravemarker_3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bonfire"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bonfire_warm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bonfire_hot"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "bonfire_intense"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "bonfire_rod"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bonfire_grill"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fireplace"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fireplace_hot"
+dirs = 4
+frames = 3
+delays = [1]
+
+[[state]]
+name = "fireplace_warm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fireplace_intense"
+dirs = 4
+frames = 5
+delays = [1]
+
+[[state]]
+name = "corgirune-inert"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "corgirune"
+dirs = 1
+frames = 3
+delays = [2, 3, 5]
+rewind = true
+
+[[state]]
+name = "soulblade-released"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "soulblade-embedded"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "barrelfire"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "barrelfire1"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "barricade"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "barricade_planks"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "thickgrille-b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brokenthickgrille"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "thickgrille"
+dirs = 1
+frames = 1
+movement = true
+
+[[state]]
+name = "ladder00"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ladder10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ladder01"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ladder11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ladderdown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ladderup"
+dirs = 1
+frames = 1

@@ -1,0 +1,14 @@
+# Generated from hydroponics_misc.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 2
+
+[[state]]
+name = "fruit_slice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fruit_rind"
+dirs = 1
+frames = 1

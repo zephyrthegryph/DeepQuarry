@@ -1,0 +1,69 @@
+# Generated from projectiles_yw.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "bullet"
+dirs = 1
+frames = 2
+delays = [0.5]
+
+[[state]]
+name = "bullet_chonk"
+dirs = 1
+frames = 2
+delays = [0.5]
+
+[[state]]
+name = "bullet_alt"
+dirs = 1
+frames = 2
+delays = [0.5]
+
+[[state]]
+name = "gauss_silenced"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "s-spark"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "plasmablast"
+dirs = 4
+frames = 3
+delays = [1]
+
+[[state]]
+name = "electricarc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "SpearFlight"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "MSpearFlight"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dart"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flechette"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bullet_old"
+dirs = 1
+frames = 1

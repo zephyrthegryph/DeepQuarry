@@ -1,0 +1,549 @@
+# Generated from modular_armor.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 17
+
+[[state]]
+name = "pcarrier"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pcarrier_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pcarrier_navy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pcarrier_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pcarrier_tan"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pcarrier_press"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "riot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ablative"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ballistic"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pouches"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pouches_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pouches_navy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pouches_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pouches_tan"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lpouches"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lpouches_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lpouches_navy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lpouches_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lpouches_tan"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "armguards"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "armguards_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "armguards_navy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "armguards_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "armguards_tan"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "armguards_material"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "armguards_merc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "armguards_riot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "armguards_ablative"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "armguards_ballistic"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "legguards"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "legguards_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "legguards_navy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "legguards_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "legguards_tan"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "legguards_material"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "legguards_merc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "legguards_riot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "legguards_ablative"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "legguards_ballistic"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pouches_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pouches_blue_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pouches_navy_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pouches_green_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pouches_tan_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lpouches_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lpouches_blue_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lpouches_navy_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lpouches_green_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lpouches_tan_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armguards_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armguards_blue_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armguards_navy_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armguards_green_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armguards_tan_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armguards_material_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armguards_merc_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armguards_riot_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armguards_ablative_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armguards_ballistic_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "legguards_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "legguards_blue_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "legguards_navy_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "legguards_green_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "legguards_tan_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "legguards_material_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "legguards_merc_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "legguards_riot_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "legguards_ablative_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "legguards_ballistic_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nanotag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pcrctag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "saaretag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "presstag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nanotag_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pcrctag_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "saaretag_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "presstag_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sectag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "comtag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sectag_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "comtag_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medictag_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medictag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "agenttag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "agenttag_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "helmcover_blue_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "helmcover_navy_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "helmcover_green_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "helmcover_tan_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "helmcover_nt_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "helmcover_pcrc_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "helmcover_saare_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "helmcover_blue_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "helmcover_navy_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "helmcover_green_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "helmcover_tan_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "helmcover_nt_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "helmcover_pcrc_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "helmcover_saare_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "explorer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "explorer_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "armguards_sec_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "legguards_sec_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nanotag_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "helmcover_ntblack_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nanotag_white_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "helmcover_ntblack_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armguards_sec_white_tie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "legguards_sec_white_tie"
+dirs = 1
+frames = 1

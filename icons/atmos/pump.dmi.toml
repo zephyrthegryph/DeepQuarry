@@ -1,0 +1,67 @@
+# Generated from pump.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 10
+
+[[state]]
+name = "pump-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pump-on"
+dirs = 4
+frames = 5
+delays = [1]
+
+[[state]]
+name = "map_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "map_on"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pump-fuel-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pump-fuel-on"
+dirs = 4
+frames = 5
+delays = [1]
+
+[[state]]
+name = "map_off-fuel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "map_on-fuel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pump-aux-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pump-aux-on"
+dirs = 4
+frames = 5
+delays = [1]
+
+[[state]]
+name = "map_off-aux"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "map_on-aux"
+dirs = 4
+frames = 1

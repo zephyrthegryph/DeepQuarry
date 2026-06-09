@@ -1,0 +1,159 @@
+# Generated from hats.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "rig0-syndie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig1-syndie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig0-engineering"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig1-engineering"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig0-mining"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig1-mining"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig0-medical"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig1-medical"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig0-atmos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig1-atmos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig0-sec"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig1-sec"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig0-secalt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig0-engineering_rad"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig1-engineering_rad"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig0-engineering_con"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig1-engineering_con"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig0-medical_bio"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig1-medical_bio"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig0-sec_riot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig1-sec_riot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig0-medical_emt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig1-medical_emt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig0-firebug"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig1-firebug"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig0-pilot2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig0-pilot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "helm_explorer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig0_pilot2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig0_pilot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rad_fitted"
+dirs = 1
+frames = 1

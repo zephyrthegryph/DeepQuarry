@@ -1,0 +1,64 @@
+# Generated from underwaterflora.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "plant-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "seaweed-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "seaweed-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "seaweed-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plant-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plant-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plant-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plant-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-3"
+dirs = 1
+frames = 1

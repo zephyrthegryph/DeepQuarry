@@ -1,0 +1,9 @@
+# Generated from VBO_darkslit.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 480
+height = 480
+cols = 1
+
+[[state]]
+name = "VBO_darkslit"
+dirs = 1
+frames = 1

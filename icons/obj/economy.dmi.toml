@@ -1,0 +1,54 @@
+# Generated from economy.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "spacecash1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacecash5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacecash10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacecash20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacecash50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacecash100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacecash200"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacecash500"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacecash1000"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "efundcard"
+dirs = 1
+frames = 1

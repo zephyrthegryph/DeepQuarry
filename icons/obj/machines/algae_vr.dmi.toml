@@ -1,0 +1,27 @@
+# Generated from algae_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "algae-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "algae-pipe-overlay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "algae-on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "algae-full"
+dirs = 1
+frames = 6
+delays = [2]
+rewind = true
+hotspots = [{ frame = 1, x = 21, y = 14 }]

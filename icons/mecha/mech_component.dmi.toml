@@ -1,0 +1,44 @@
+# Generated from mech_component.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "blank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "component"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "motor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "board"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hull"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lifesupport"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armor"
+dirs = 1
+frames = 1

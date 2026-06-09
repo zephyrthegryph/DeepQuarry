@@ -1,0 +1,208 @@
+# Generated from tool.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 10
+
+[[state]]
+name = "multitool"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "multitool_yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "multitool_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "multitool_circuit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "multitool_circuit_flick"
+dirs = 1
+frames = 27
+delays = [1, 1, 1, 1, 0.5, 0.5, 1, 1, 1, 1, 1, 1, 1, 0.5, 0.5, 1, 1, 1, 1, 1, 1, 1, 0.5, 0.5, 1]
+loop = 1
+
+[[state]]
+name = "marked_overlay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paint_sprayer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "decal_sprayer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "decal_sprayer_ex"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_sprayer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "signmaker"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "signmaker_sec"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "signmaker_engi"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "signmaker_service"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "signmaker_med"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "signmaker_forcefield"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "signmaker_atmos"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "cargo tagger"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "implantpad-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "implantpad-1"
+dirs = 1
+frames = 4
+delays = [5]
+
+[[state]]
+name = "autosurgeon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "autosurgeon_syndicate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "autosurgeon_loaded_overlay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "autosurgeon_syndicate_loaded_overlay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "musicaltuner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "quantum_keycard"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "quantum_keycard_on"
+dirs = 1
+frames = 5
+delays = [3]
+
+[[state]]
+name = "electropack0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "electropack1"
+dirs = 1
+frames = 3
+delays = [3]
+rewind = true
+
+[[state]]
+name = "ai-slipper0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pressureplate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ai-slipper1"
+dirs = 1
+frames = 6
+delays = [5]
+
+[[state]]
+name = "binoculars"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "neutralyzer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "quantum_wrapper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rcs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sci_releaser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sci_releaser_used"
+dirs = 1
+frames = 1

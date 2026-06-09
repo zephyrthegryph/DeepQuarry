@@ -1,0 +1,74 @@
+# Generated from robots_thinktank.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "tachi_stripe"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tachi_stripe_vertical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tachi_cross"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tachi_eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tachi_pupils"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tachi_armour"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tachi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tachi-open-wires"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tachi-open-cell"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tachi-open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tachi-wires"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tachi-cell"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tachi-nowires"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blank"
+dirs = 1
+frames = 1

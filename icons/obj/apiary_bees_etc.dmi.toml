@@ -1,0 +1,90 @@
+# Generated from apiary_bees_etc.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "apiary"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "apiary_item"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bees1"
+dirs = 1
+frames = 6
+delays = [2]
+
+[[state]]
+name = "bees2"
+dirs = 1
+frames = 9
+delays = [2]
+
+[[state]]
+name = "bees3"
+dirs = 1
+frames = 6
+delays = [2]
+
+[[state]]
+name = "bees4"
+dirs = 1
+frames = 6
+delays = [2]
+
+[[state]]
+name = "bees5"
+dirs = 1
+frames = 6
+delays = [2]
+
+[[state]]
+name = "bees_swarm"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "unknown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bee_net"
+dirs = 1
+frames = 1

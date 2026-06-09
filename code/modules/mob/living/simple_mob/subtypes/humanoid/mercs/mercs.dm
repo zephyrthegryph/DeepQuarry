@@ -1,0 +1,797 @@
+///////////////////////////////
+//		Merc Mobs Go Here
+///////////////////////////////
+
+// Probably shouldn't use this directly, there are a bunch of sub-classes that are more complete.
+/mob/living/simple_mob/humanoid/merc
+	name = "mercenary"
+	desc = "A tough looking individual armed with only a knife."
+	tt_desc = "E Homo sapiens"
+	icon_state = "syndicate"
+	icon_living = "syndicate"
+	icon_dead = "syndicate_dead"
+	icon_gib = "syndicate_gib"
+	icon= 'icons/mob/mercenaries.dmi'
+
+	faction = FACTION_SYNDICATE
+	movement_cooldown = 1
+
+	status_flags = 0
+
+	response_help = "pokes"
+	response_disarm = "shoves"
+	response_harm = "hits"
+
+	harm_intent_damage = 5
+	melee_damage_lower = 15		//Tac Knife damage
+	melee_damage_upper = 15
+	attack_armor_pen = 20
+	attack_sharp = TRUE
+	attack_edge = 1
+	attacktext = list("slashed", "stabbed")
+	armor = list(melee = 40, bullet = 30, laser = 30, energy = 10, bomb = 10, bio = 100, rad = 100)	// Same armor values as the vest they drop, plus simple mob immunities
+
+	corpse = /obj/effect/landmark/mobcorpse/syndicatesoldier
+	loot_list = list(/obj/item/material/knife/tacknife = 100)	// Might as well give it the knife
+
+	ai_holder_type = /datum/ai_holder/simple_mob/merc
+	say_list_type = /datum/say_list/merc
+
+	// Grenade special attack vars
+	var/grenade_type = /obj/item/grenade/concussion
+	special_attack_cooldown = 45 SECONDS
+	var/grenade_timer = 50
+	special_attack_min_range = 2
+	special_attack_max_range = 7
+
+////////////////////////////////
+//		Grenade Attack
+////////////////////////////////
+
+// Any merc can use this, just set special_attack_charges to a positive value
+
+// Check if we should bother with the grenade
+/mob/living/simple_mob/humanoid/merc/should_special_attack(atom/A)
+	var/mob_count = 0				// Are there enough mobs to consider grenading?
+	var/turf/T = get_turf(A)
+	for(var/mob/M in range(T, 2))
+		if(M.faction == faction) 	// Don't grenade our friends
+			return FALSE
+		if(M!=src && can_see(M)) // And lets check if we can actually see at least two people before we throw a grenade // dear god
+			if(!M.stat)			// Dead things don't warrant a grenade
+				mob_count ++
+	if(mob_count < 2)
+		return FALSE
+	else
+		return TRUE
+
+// Yes? Throw the grenade
+/mob/living/simple_mob/humanoid/merc/do_special_attack(atom/A)
+	set waitfor = FALSE
+	set_AI_busy(TRUE)
+
+	var/obj/item/grenade/G = new grenade_type(get_turf(src))
+	if(istype(G))
+		G.throw_at(A, G.throw_range, G.throw_speed, src)
+		G.det_time = grenade_timer
+		G.activate(src)
+		special_attack_charges = max(special_attack_charges-1, 0)
+
+	set_AI_busy(FALSE)
+
+
+////////////////////////////////
+//		Merc AI Types
+////////////////////////////////
+/datum/ai_holder/simple_mob/merc
+	threaten = TRUE
+	returns_home = TRUE		// Stay close to the base...
+	wander = TRUE			// ... but "patrol" a little.
+	intelligence_level = AI_SMART // Also knows not to walk while confused if it risks death.
+	threaten_delay = 30 SECONDS // Mercs will give you 30 seconds to leave or get shot.
+	use_astar = TRUE
+
+/datum/ai_holder/simple_mob/merc/guard_limit
+	guard_limit = TRUE
+
+/datum/ai_holder/simple_mob/merc/ranged
+	pointblank = TRUE		// They get close? Just shoot 'em!
+	firing_lanes = TRUE		// But not your buddies!
+	conserve_ammo = TRUE	// And don't go wasting bullets!
+
+/datum/ai_holder/simple_mob/merc/ranged/guard_limit
+	guard_limit = TRUE
+
+/datum/ai_holder/simple_mob/merc/ranged/sniper
+	vision_range = 14	// We're a person with a long-ranged gun.
+
+/datum/ai_holder/simple_mob/merc/ranged/sniper/guard_limit
+	guard_limit = TRUE
+
+/datum/ai_holder/simple_mob/merc/ranged/sniper/max_range(atom/movable/AM)
+	return holder.ICheckRangedAttack(AM) ? 14 : 1
+
+////////////////////////////////
+//			Melee
+////////////////////////////////
+/mob/living/simple_mob/humanoid/merc/melee	// Defined in case we add non-sword-and-board mercs
+	loot_list = list(/obj/item/material/knife/tacknife = 100)
+
+// Sword and Shield Merc
+/mob/living/simple_mob/humanoid/merc/melee/sword
+	icon_state = "syndicatemelee"
+	icon_living = "syndicatemelee"
+
+	melee_damage_lower = 30
+	melee_damage_upper = 30
+	attack_armor_pen = 50
+	attack_sharp = TRUE
+	attack_edge = 1
+	attacktext = list("slashed")
+
+	loot_list = list(/obj/item/melee/energy/sword = 100, /obj/item/shield/energy = 100)
+
+// They have a shield, so they try to block
+/mob/living/simple_mob/humanoid/merc/melee/sword/attackby(obj/item/O as obj, mob/user as mob)
+	if(O.force)
+		if(prob(20))
+			visible_message(span_danger("\The [src] blocks \the [O] with its shield!"))
+			if(user)
+				ai_holder.react_to_attack(user)
+			return
+		else
+			..()
+	else
+		to_chat(user, span_warning("This weapon is ineffective, it does no damage."))
+		visible_message(span_warning("\The [user] gently taps [src] with \the [O]."))
+
+/mob/living/simple_mob/humanoid/merc/melee/sword/bullet_act(obj/item/projectile/Proj)
+	if(!Proj)	return
+	if(prob(35))
+		visible_message(span_bolddanger("[src] blocks [Proj] with its shield!"))
+		if(Proj.firer)
+			ai_holder.react_to_attack(Proj.firer)
+		return
+	else
+		..()
+
+
+////////////////////////////////
+//			Ranged
+////////////////////////////////
+
+// Base Ranged Merc, so we don't have to redefine a million vars for every subtype. Uses a pistol.
+/mob/living/simple_mob/humanoid/merc/ranged
+	desc = "A tough looking individual armed with an pistol."
+	icon_state = "syndicateranged"
+	icon_living = "syndicateranged"
+	projectiletype = /obj/item/projectile/bullet/pistol/medium
+//	casingtype = /obj/item/ammo_casing/spent	//Makes infinite stacks of bullets when put in PoIs.
+	projectilesound = 'sound/weapons/gunshot_light.ogg'
+	loot_list = list(/obj/item/gun/projectile/colt = 100)
+
+	needs_reload = TRUE
+	reload_max = 7		// Not the best default, but it fits the pistol
+	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged
+
+// C20r SMG
+/mob/living/simple_mob/humanoid/merc/ranged/smg
+	name = "mercenary soldier"
+	desc = "A tough looking individual armed with an submachine gun."
+	icon_state = "syndicateranged_smg"
+	icon_living = "syndicateranged_smg"
+	projectiletype = /obj/item/projectile/bullet/a10mm // 20 instead of 35, SMG
+
+	loot_list = list(/obj/item/gun/projectile/automatic/c20r = 100)
+
+	projectile_dispersion = 7
+	projectile_accuracy = -20
+	base_attack_cooldown = 5 // Two attacks a second or so.
+	reload_max = 20
+
+/mob/living/simple_mob/humanoid/merc/ranged/smg/sol
+	icon_state = "bluforranged_smg"
+	icon_living = "bluforranged_smg" // Fixes typo that makes smg mercs invis sometimes
+
+	corpse = /obj/effect/landmark/mobcorpse/solarpeacekeeper
+	loot_list = list(/obj/item/gun/projectile/automatic/c20r = 100)
+
+	base_attack_cooldown = 5 // Two attacks a second or so.
+	reload_max = 20
+	catalogue_data = list(/datum/category_item/catalogue/fauna/mercenary/human/peacekeeper)
+
+// Rifles
+/mob/living/simple_mob/humanoid/merc/ranged/rifle
+	icon_state = "syndicateranged_rifle"
+	icon_living = "syndicateranged_rifle"
+
+	loot_list = list(/obj/item/gun/projectile/automatic/z8 = 100)
+
+	projectilesound = 'sound/weapons/gunshot_heavy.ogg'
+	projectiletype = /obj/item/projectile/bullet/rifle/a762
+	projectile_dispersion = 8
+	projectile_accuracy = -15
+	base_attack_cooldown = 5
+	reload_max = 30
+
+/mob/living/simple_mob/humanoid/merc/ranged/rifle/mag
+	loot_list = list(/obj/item/gun/magnetic/railgun/flechette = 100)
+	projectiletype = /obj/item/projectile/bullet/magnetic/flechette/rapid // Who thought rapid fire 20 damage with 100% armor pen was a good idea?
+
+	projectilesound = 'sound/weapons/rapidslice.ogg'
+	projectile_dispersion = 5
+	projectile_accuracy = -20
+	base_attack_cooldown = 15
+	reload_max = 10
+
+// Laser Rifle
+/mob/living/simple_mob/humanoid/merc/ranged/laser
+	name = "mercenary marksman"
+	desc = "A tough looking individual armed with an laser rifle."
+	icon_state = "syndicateranged_laser"
+	icon_living = "syndicateranged_laser"
+	projectiletype = /obj/item/projectile/beam/midlaser
+	projectilesound = 'sound/weapons/Laser.ogg'
+
+	loot_list = list(/obj/item/gun/energy/laser = 100)
+
+	projectile_dispersion = 5
+	projectile_accuracy = -20
+	reload_max = 10
+
+// Ion Rifle
+/mob/living/simple_mob/humanoid/merc/ranged/ionrifle
+	name = "mercenary anti-technical"
+	desc = "A tough looking individual armed with an ion rifle."
+	icon_state = "syndicateranged_ionrifle"
+	icon_living = "syndicateranged_ionrifle"
+	projectiletype = /obj/item/projectile/ion
+	projectilesound = 'sound/weapons/Laser.ogg'
+
+	loot_list = list(/obj/item/gun/energy/ionrifle = 100)
+
+	reload_max = 10
+
+// Grenadier, Basically a miniboss
+/mob/living/simple_mob/humanoid/merc/ranged/grenadier
+	name = "mercenary grenadier"
+	desc = "A tough looking individual armed with a shotgun and a belt of grenades."
+	catalogue_data = list(/datum/category_item/catalogue/fauna/mercenary/human/grenadier)
+	icon_state = "syndicateranged_shotgun"
+	icon_living = "syndicateranged_shotgun"
+	projectiletype = /obj/item/projectile/bullet/pellet/shotgun		// Buckshot
+	projectilesound = 'sound/weapons/gunshot_shotgun.ogg'
+
+	loot_list = list(/obj/item/gun/projectile/shotgun/pump = 100)
+
+	reload_max = 4
+	reload_time = 1.5 SECONDS	// It's a shotgun, it takes a moment
+
+	projectile_dispersion = 8
+	projectile_accuracy = -40
+	special_attack_charges = 5
+
+// Technician, also kind of a miniboss. Carries a dartgun and manhack launcher.
+/mob/living/simple_mob/humanoid/merc/ranged/technician
+	icon_state = "syndicateranged_technician"
+	icon_living = "syndicateranged_technician"
+	projectiletype = /obj/item/projectile/fake_syringe/poison	// Toxin dart.
+	projectilesound = 'sound/weapons/gunshot_old.ogg'
+
+	loot_list = list(/obj/item/gun/projectile/dartgun = 100,
+		/obj/item/gun/launcher/grenade = 100,
+		/obj/item/grenade/spawnergrenade/manhacks/mercenary = 30
+		)
+
+	reload_max = 5
+	reload_time = 1 SECOND
+
+	// Manhacks.
+	grenade_type = /obj/item/grenade/spawnergrenade/manhacks/mercenary
+
+	projectile_dispersion = 8
+	projectile_accuracy = -40
+	special_attack_charges = 5
+
+// Sniper, definitely a miniboss, based on its massive range advantage, and method of battle.
+// Creates a beam for 2 seconds, fire after another .5, then a 5 second reload.
+/mob/living/simple_mob/humanoid/merc/ranged/sniper
+	icon_state = "syndicateranged_sniper"
+	icon_living = "syndicateranged_sniper"
+	projectiletype = /obj/item/projectile/bullet/rifle/a145/highvel // Really scary bullet.
+	projectilesound = 'sound/weapons/gunshot_cannon.ogg'
+
+	projectile_accuracy = 75
+
+	reload_max = 1
+	reload_time = 5 SECONDS
+
+	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged/sniper
+
+	ranged_attack_delay = 2.5 SECONDS
+
+	loot_list = list(/obj/item/sniper_rifle_part/barrel = 50,
+		/obj/item/sniper_rifle_part/stock = 50,
+		/obj/item/sniper_rifle_part/trigger_group = 50,
+		/obj/item/grenade/spawnergrenade/manhacks/mercenary = 90
+		)
+
+	// Babyfrags.
+	grenade_type = /obj/item/grenade/explosive/mini
+	// Babyfrags go a long way.
+	special_attack_min_range = 6
+	special_attack_max_range = 10
+
+/mob/living/simple_mob/humanoid/merc/ranged/sniper/ranged_pre_animation(atom/A)
+	Beam(get_turf(A), icon_state = "sniper_beam", time = 2 SECONDS, maxdistance = 15)
+	. = ..()
+
+/mob/living/simple_mob/humanoid/merc/ranged/sniper/shoot_target(atom/A)
+	set waitfor = FALSE
+
+	if(!istype(A) || QDELETED(A))
+		return
+
+	setClickCooldown(get_attack_speed())
+
+	face_atom(A)
+
+	var/atom/orig_targ = A
+
+	if(ranged_attack_delay)
+		A = get_turf(orig_targ)
+		ranged_pre_animation(A)
+		handle_attack_delay(A, ranged_attack_delay) // This will sleep this proc for a bit, which is why waitfor is false.
+
+	if(needs_reload)
+		if(reload_count >= reload_max)
+			try_reload()
+			return FALSE
+
+	/*
+	 * ition: This section here is (duplicated) special snowflake code because sniper does not call parent. Basically, this is a non-stupid version of the above intended for ranged mobs.
+	 * ranged_attack_delay is stupid because it sleeps the entire mob.
+	 * This new ranged_cooldown_time is smarter in the sense that it is an internalized timer. Try not to confuse the names.
+	*/
+	if(ranged_cooldown_time) //If you have a non-zero number in a mob's variables, this pattern begins.
+		if(ranged_cooldown <= world.time) //Further down, a timer keeps adding to the ranged_cooldown variable automatically.
+			visible_message(span_danger(span_bold("\The [src]") + " fires at \the [A]!")) //Leave notice of shooting.
+			shoot(A) //Perform the shoot action
+			if(casingtype) //If the mob is designated to leave casings...
+				new casingtype(loc) //... leave the casing.
+			ranged_cooldown = world.time + ranged_cooldown_time + ((injury_level / 2) SECONDS) //Special addition here. This is a timer. Keeping updating the time after shooting. Add that ranged cooldown time specified in the mob to the world time.
+		return TRUE	//End these commands here.
+	// ition End
+
+	visible_message(span_danger(span_bold("\The [src]") + " fires at \the [orig_targ]!"))
+	shoot(A)
+	if(casingtype)
+		new casingtype(loc)
+
+	if(ranged_attack_delay)
+		ranged_post_animation(A)
+
+	return TRUE
+
+//Garand
+/mob/living/simple_mob/humanoid/merc/ranged/garand
+	name = "mercenary rifleman"
+	desc = "A tough looking individual armed with a semiautomatic rifle."
+	icon_state = "syndicateranged_veteran"
+	icon_living = "syndicateranged_veteran"
+	projectiletype = /obj/item/projectile/bullet/rifle/a762
+	projectilesound = 'sound/weapons/Gunshot_heavy.ogg'
+	loot_list = list(/obj/item/gun/projectile/garand = 100)
+	reload_max = 8
+	reload_time = 2 // It takes a bit to jam a stripper clip into the rifle.
+
+//Hand Cannon
+/mob/living/simple_mob/humanoid/merc/ranged/deagle
+	name = "mercenary officer"
+	desc = "A tough looking individual armed with an handcannon."
+	icon_state = "syndicate_handcannon"
+	icon_living = "syndicate_handcannon"
+	projectiletype = /obj/item/projectile/bullet/pistol/strong
+	projectilesound = 'sound/weapons/Gunshot_deagle.ogg'
+	loot_list = list(/obj/item/gun/projectile/deagle = 100)
+	needs_reload = TRUE
+	reload_max = 7		// Deagle Reload
+
+////////////////////////////////
+//		Space Mercs
+////////////////////////////////
+
+// Sword Space Merc
+/mob/living/simple_mob/humanoid/merc/melee/sword/space
+	name = "mercenary commando"
+	desc = "A tough looking individual, armred with an energy sword and shield."
+	icon_state = "syndicatespace-melee"
+	icon_living = "syndicatespace-melee"
+	catalogue_data = list(/datum/category_item/catalogue/fauna/mercenary/human/space)
+
+	movement_cooldown = -1
+
+	armor = list(melee = 60, bullet = 50, laser = 30, energy = 15, bomb = 35, bio = 100, rad = 100)	// Same armor as their voidsuit
+
+	min_oxy = 0
+	max_oxy = 0
+	min_tox = 0
+	max_tox = 0
+	min_co2 = 0
+	max_co2 = 0
+	min_n2 = 0
+	max_n2 = 0
+	minbodytemp = 0
+
+	corpse = /obj/effect/landmark/mobcorpse/syndicatecommando
+
+/mob/living/simple_mob/humanoid/merc/melee/sword/space/Process_Spacemove(check_drift = 0)
+	return
+
+// Ranged Space Merc
+/mob/living/simple_mob/humanoid/merc/ranged/space
+	name = "armored mercenary"
+	desc = "A tough looking individual, armed with a submachine gun."
+	icon_state = "syndicatespace-ranged"
+	icon_living = "syndicatespceace-ranged"
+	armor = list(melee = 60, bullet = 50, laser = 30, energy = 15, bomb = 35, bio = 100, rad = 100)	// Same armor as their voidsuit.
+	base_attack_cooldown = 5 // Two attacks a second or so.
+	reload_max = 20
+	loot_list = list(/obj/item/gun/projectile/automatic/c20r = 100)
+
+	movement_cooldown = -1
+
+	min_oxy = 0
+	max_oxy = 0
+	min_tox = 0
+	max_tox = 0
+	min_co2 = 0
+	max_co2 = 0
+	min_n2 = 0
+	max_n2 = 0
+	minbodytemp = 0
+
+	projectile_dispersion = 7
+	projectile_accuracy = -20
+
+	corpse = /obj/effect/landmark/mobcorpse/syndicatecommando
+
+//Combat Shotgun Merc
+/mob/living/simple_mob/humanoid/merc/ranged/space/shotgun
+	name = "mercenary tactical"
+	desc = "A tough looking individual armed with a combat shotgun."
+	icon_state = "syndicatespace-shotgun"
+	icon_living = "syndicatespace-shotgun"
+	base_attack_cooldown = 10
+	reload_max = 7
+	reload_time = 2 SECONDS //Takes a While to load all those shells.
+	projectiletype = /obj/item/projectile/bullet/pellet/shotgun		// Buckshot
+	projectilesound = 'sound/weapons/Gunshot_shotgun.ogg'
+	loot_list = list(/obj/item/gun/projectile/shotgun/pump/combat = 100)
+
+//Auto-Shotgun Space Merc
+/mob/living/simple_mob/humanoid/merc/ranged/space/shotgun/auto
+	name = "mercenary sweeper"
+	desc = "A tough looking individual armed with an automatic shotgun."
+	icon_state = "syndicatespace-ashotgun"
+	icon_living = "syndicatespace-ashotgun"
+	base_attack_cooldown = 5 // Two attacks a second or so.
+	reload_max = 24
+	projectiletype = /obj/item/projectile/bullet/pellet/shotgun		// Buckshot
+	projectilesound = 'sound/weapons/Gunshot_shotgun.ogg'
+	loot_list = list(/obj/item/gun/projectile/automatic/as24 = 100)
+	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged/suppressor
+
+//Machine Gun Merc
+/mob/living/simple_mob/humanoid/merc/ranged/space/heavy
+	name = "mercenary heavy gunner"
+	desc = "A tough looking individual armed with an light machinegun."
+	icon_state = "syndicatespace-heavy"
+	icon_living = "syndicatespace-heavy"
+	base_attack_cooldown = 2.5 // Four Attacks a Second. MOAR DAKKA
+	reload_max = 50
+	projectiletype = /obj/item/projectile/bullet/rifle/a545
+	projectilesound = 'sound/weapons/Gunshot_light.ogg'
+	loot_list = list(/obj/item/gun/projectile/automatic/l6_saw = 100)
+	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged/suppressor
+
+//Tommy-Las Merc
+/mob/living/simple_mob/humanoid/merc/ranged/space/tommylas
+	name = "mercenary light burster"
+	desc = "A tough looking individual armed with an automatic laser."
+	icon_state = "syndicatespace-tommylas"
+	icon_living = "syndicatespace-tommylas"
+	base_attack_cooldown = 2.5 // Four Attacks a Second. MOAR DAKKA
+	reload_max = 3
+	reload_time = 0.5  // Meant to Simulate controlled Supressive Bursts
+	projectiletype = /obj/item/projectile/beam/weaklaser
+	projectilesound = 'sound/weapons/Laser.ogg'
+	// loot_list = list(/obj/item/gun/energy/tommylaser = 100) // Downstream
+	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged/suppressor
+
+/mob/living/simple_mob/humanoid/merc/ranged/space/fal
+	name = "mercenary commando"
+	desc = "A tough looking individual armed with a assault rifle."
+	icon_state = "syndicatespace-commando"
+	icon_living = "syndicatespace-commando"
+	projectiletype = /obj/item/projectile/bullet/rifle/a762
+	projectilesound = 'sound/weapons/Gunshot_heavy.ogg'
+	// loot_list = list(/obj/item/gun/projectile/automatic/fal = 100)// Downstream
+	reload_max = 20
+
+/mob/living/simple_mob/humanoid/merc/ranged/space/suppressor // adminspawn only, and also Probably Going To Kill The Unprepared
+	name = "mercenary suppressor"
+	desc = "Geeze, weren't shotgun ops bad enough? At least when you fade these jerks you get a flashbang to the face."
+	icon_state = "syndi-ranged-space-sup"
+	icon_living = "syndi-ranged-space-sup"
+	armor = list(melee = 80, bullet = 65, laser = 50, energy = 15, bomb = 80, bio = 100, rad = 100) // this is the merc rig's stats
+	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged/suppressor
+	say_list_type = /datum/say_list/merc/elite
+	projectiletype = /obj/item/projectile/bullet/pistol/medium/ap/suppressor // it's high velocity
+	projectilesound = 'sound/weapons/doompistol.ogg' // converted from .wavs extracted from doom 2
+	base_attack_cooldown = 3 // three? attacks a second
+	reload_max = 30 // extended mags
+	special_attack_charges = 5
+	loot_list = list() // oh, you killed him?
+	corpse = null // well, sorry, buddy, he doesn't drop shit
+	catalogue_data = list(/datum/category_item/catalogue/fauna/mercenary/human/space/suppressor)
+
+/mob/living/simple_mob/humanoid/merc/ranged/space/suppressor/elite // really reconsider why you're spawning this dude
+	name = "mercenary elite suppressor"
+	desc = "Geeze, weren't normal suppressors bad enough? At least if you fade this jerk, you'll have an awful time anyway."
+	icon_state = "syndi-ranged-space-sup-elite"
+	icon_living = "syndi-ranged-space-sup-elite"
+	armor = list(melee = 80, bullet = 70, laser = 55, energy = 15, bomb = 80, bio = 100, rad = 100) // see code for military hardsuit
+	projectiletype = /obj/item/projectile/bullet/pistol/medium/ap/suppressor/turbo // fuck it, fast bullets
+	grenade_type = /obj/item/grenade/shooter/rubber // don't group up
+	grenade_timer = 30 // well, look what you've done, you've grouped up
+
+// being Actual Professionals, they have better (read: player-level) blocking chances
+/mob/living/simple_mob/humanoid/merc/ranged/space/suppressor/attackby(obj/item/O, mob/user)
+	if(O.force)
+		if(prob(50))
+			visible_message(span_danger("\The [src] blocks \the [O] with its shield!"))
+			if(user)
+				ai_holder.react_to_attack(user)
+			return
+		else
+			..()
+	else
+		visible_message(span_warning("\The [user] gently taps [src] with \the [O]."))
+
+/mob/living/simple_mob/humanoid/merc/ranged/space/suppressor/bullet_act(obj/item/projectile/Proj)
+	if(!Proj)	return
+	if(prob(50))
+		visible_message(span_warning("[src] blocks [Proj] with its shield!"))
+		if(Proj.firer)
+			ai_holder.react_to_attack(Proj.firer)
+		return
+	else
+		..()
+
+/mob/living/simple_mob/humanoid/merc/ranged/space/Process_Spacemove(check_drift = 0)
+	return
+
+////////////////////////////////
+//			PoI Mercs
+////////////////////////////////
+
+// Most likely to drop a broken weapon matching them, if it's a gun.
+/mob/living/simple_mob/humanoid/merc/melee/poi
+	loot_list = list(/obj/item/material/knife/tacknife/combatknife = 100)
+
+/mob/living/simple_mob/humanoid/merc/melee/sword/poi
+	loot_list = list(/obj/item/melee/energy/sword = 20,
+		/obj/item/shield/energy = 40
+		)
+
+/mob/living/simple_mob/humanoid/merc/ranged/poi
+	loot_list = list(/obj/random/projectile/scrapped_pistol = 100)
+
+/mob/living/simple_mob/humanoid/merc/ranged/smg/poi
+	loot_list = list(/obj/random/projectile/scrapped_smg = 100)
+
+/mob/living/simple_mob/humanoid/merc/ranged/laser/poi
+	loot_list = list(/obj/random/projectile/scrapped_laser = 100)
+
+/mob/living/simple_mob/humanoid/merc/ranged/ionrifle/poi
+	loot_list = list(/obj/random/projectile/scrapped_ionrifle = 100)
+
+/mob/living/simple_mob/humanoid/merc/ranged/grenadier/poi
+	loot_list = list(/obj/random/projectile/scrapped_shotgun = 100)
+
+/mob/living/simple_mob/humanoid/merc/ranged/rifle/poi
+	loot_list = list(/obj/random/projectile/scrapped_bulldog = 100)
+
+/mob/living/simple_mob/humanoid/merc/ranged/rifle/mag/poi
+	loot_list = list(/obj/random/projectile/scrapped_flechette = 100)
+
+/mob/living/simple_mob/humanoid/merc/ranged/technician/poi
+	loot_list = list(/obj/random/projectile/scrapped_dartgun = 100,
+		/obj/random/projectile/scrapped_grenadelauncher = 100,
+		/obj/item/grenade/spawnergrenade/manhacks/mercenary = 30
+		)
+
+
+////////////////////////////////
+//		Stealth Mission Mercs
+////////////////////////////////
+
+// Most likely to drop a broken weapon matching them, if it's a gun.
+/mob/living/simple_mob/humanoid/merc/melee/poi/guard_limit
+	ai_holder_type = /datum/ai_holder/simple_mob/merc/guard_limit
+
+/mob/living/simple_mob/humanoid/merc/melee/sword/poi/guard_limit
+	ai_holder_type = /datum/ai_holder/simple_mob/merc/guard_limit
+
+/mob/living/simple_mob/humanoid/merc/ranged/poi/guard_limit
+	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged/guard_limit
+
+/mob/living/simple_mob/humanoid/merc/ranged/smg/poi/guard_limit
+	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged/guard_limit
+
+/mob/living/simple_mob/humanoid/merc/ranged/laser/poi/guard_limit
+	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged/guard_limit
+
+/mob/living/simple_mob/humanoid/merc/ranged/ionrifle/poi/guard_limit
+	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged/guard_limit
+
+/mob/living/simple_mob/humanoid/merc/ranged/grenadier/poi/guard_limit
+	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged/guard_limit
+
+/mob/living/simple_mob/humanoid/merc/ranged/rifle/poi/guard_limit
+	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged/guard_limit
+
+/mob/living/simple_mob/humanoid/merc/ranged/rifle/mag/poi/guard_limit
+	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged/guard_limit
+
+/mob/living/simple_mob/humanoid/merc/ranged/technician/poi/guard_limit
+	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged/guard_limit
+
+/mob/living/simple_mob/humanoid/merc/ranged/sniper/guard_limit
+	ai_holder_type = /datum/ai_holder/simple_mob/merc/ranged/sniper/guard_limit
+
+
+// === merged from mercs_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/datum/say_list/merc/unknown_ind
+	speak = list("One day the'll fix that damn engine..","Next time, We're hidding on the tropical beach planet.","Wish I had better equipment...","I knew I should have been a line chef...","Fuckin' helmet keeps fogging up.","Hate this blocky ass ship.")
+	say_got_target = list("Looks like trouble!","Contact!","We've got company!","Perimeter Breached!!")
+
+/mob/living/simple_mob/humanoid/merc/melee/sword/space
+	name = "mercenary commando"
+
+	maxbodytemp = 700
+
+/mob/living/simple_mob/humanoid/merc/ranged/space
+	name = "mercenary commando"
+
+	maxbodytemp = 700
+
+/mob/living/simple_mob/humanoid/merc/ranged/virgo
+	name = "suspicious individual"
+	min_oxy = 0
+	max_oxy = 0
+	min_tox = 0
+	max_tox = 0
+	min_co2 = 0
+	max_co2 = 0
+	min_n2 = 0
+	max_n2 = 0
+	minbodytemp = 0
+
+/datum/say_list/merc/drone
+	speak = list("Area patrol in progress.",
+				"All systems nominal.",
+				"Situation analysis finalized. No hostiles detected.",
+				"Reporting status: all functions normal.",
+				"Location under control.")
+	emote_see = list("beeps", "pings", "twitches erratically", "looks around")
+
+	say_understood = list("Command acknowledged.")
+	say_cannot = list("Command error.")
+	say_maybe_target = list("Please come out.", "Where did you go?", "Scanning...")
+	say_got_target = list("Engaging.", "Targeting.", "Combat initiated.", "Following protocol. Eliminating hostile.")
+	say_threaten = list("This location is under control. You have %UNDEFINED% seconds to depart.", "Your presence at these premises must be terminated.")
+	say_stand_down = list("Your compliance is welcome.")
+	say_escalate = list("Combat initiated.", "Your termination is inevitable.")
+
+	threaten_sound = 'sound/weapons/targeton.ogg'
+	stand_down_sound = 'sound/weapons/targetoff.ogg'
+
+/mob/living/simple_mob/humanoid/merc/drone
+	name = "combat droid"
+	desc = "A set of prosthetics, piloted by simplistic combat algorhithm and dressed in combat armor."
+	tt_desc = null
+	say_list_type = /datum/say_list/merc/drone
+	corpse = /obj/effect/landmark/mobcorpse/syndicatesoldier/drone
+
+/mob/living/simple_mob/humanoid/merc/melee/drone
+	name = "combat droid"
+	desc = "A set of prosthetics, piloted by simplistic combat algorhithm and dressed in combat armor."
+	tt_desc = null
+	say_list_type = /datum/say_list/merc/drone
+	corpse = /obj/effect/landmark/mobcorpse/syndicatesoldier/drone
+
+/mob/living/simple_mob/humanoid/merc/melee/sword/drone
+	name = "combat droid"
+	desc = "A set of prosthetics, piloted by simplistic combat algorhithm and dressed in combat armor."
+	tt_desc = null
+	say_list_type = /datum/say_list/merc/drone
+	corpse = /obj/effect/landmark/mobcorpse/syndicatesoldier/drone
+
+/mob/living/simple_mob/humanoid/merc/ranged/drone
+	name = "combat droid"
+	desc = "A set of prosthetics, piloted by simplistic combat algorhithm and dressed in combat armor."
+	tt_desc = null
+	say_list_type = /datum/say_list/merc/drone
+	corpse = /obj/effect/landmark/mobcorpse/syndicatesoldier/drone
+
+/mob/living/simple_mob/humanoid/merc/ranged/smg/drone
+	name = "combat droid"
+	desc = "A set of prosthetics, piloted by simplistic combat algorhithm and dressed in combat armor."
+	tt_desc = null
+	say_list_type = /datum/say_list/merc/drone
+	corpse = /obj/effect/landmark/mobcorpse/syndicatesoldier/drone
+
+/mob/living/simple_mob/humanoid/merc/ranged/rifle/drone
+	name = "combat droid"
+	desc = "A set of prosthetics, piloted by simplistic combat algorhithm and dressed in combat armor."
+	tt_desc = null
+	say_list_type = /datum/say_list/merc/drone
+	corpse = /obj/effect/landmark/mobcorpse/syndicatesoldier/drone
+
+/mob/living/simple_mob/humanoid/merc/ranged/rifle/mag/drone
+	name = "combat droid"
+	desc = "A set of prosthetics, piloted by simplistic combat algorhithm and dressed in combat armor."
+	tt_desc = null
+	say_list_type = /datum/say_list/merc/drone
+	corpse = /obj/effect/landmark/mobcorpse/syndicatesoldier/drone
+
+/mob/living/simple_mob/humanoid/merc/ranged/laser/drone
+	name = "combat droid"
+	desc = "A set of prosthetics, piloted by simplistic combat algorhithm and dressed in combat armor."
+	tt_desc = null
+	say_list_type = /datum/say_list/merc/drone
+	corpse = /obj/effect/landmark/mobcorpse/syndicatesoldier/drone
+
+/mob/living/simple_mob/humanoid/merc/ranged/ionrifle/drone
+	name = "combat droid"
+	desc = "A set of prosthetics, piloted by simplistic combat algorhithm and dressed in combat armor."
+	tt_desc = null
+	say_list_type = /datum/say_list/merc/drone
+	corpse = /obj/effect/landmark/mobcorpse/syndicatesoldier/drone
+
+/mob/living/simple_mob/humanoid/merc/ranged/grenadier/drone
+	name = "combat droid"
+	desc = "A set of prosthetics, piloted by simplistic combat algorhithm and dressed in combat armor."
+	tt_desc = null
+	say_list_type = /datum/say_list/merc/drone
+	corpse = /obj/effect/landmark/mobcorpse/syndicatesoldier/drone
+
+/mob/living/simple_mob/humanoid/merc/ranged/technician/drone
+	name = "combat droid"
+	desc = "A set of prosthetics, piloted by simplistic combat algorhithm and dressed in combat armor."
+	tt_desc = null
+	say_list_type = /datum/say_list/merc/drone
+	corpse = /obj/effect/landmark/mobcorpse/syndicatesoldier/drone
+
+/mob/living/simple_mob/humanoid/merc/ranged/sniper/drone
+	name = "combat droid"
+	desc = "A set of prosthetics, piloted by simplistic combat algorhithm and dressed in combat armor."
+	tt_desc = null
+	say_list_type = /datum/say_list/merc/drone
+	corpse = /obj/effect/landmark/mobcorpse/syndicatesoldier/drone
+
+/mob/living/simple_mob/humanoid/merc/melee/sword/space/drone
+	name = "combat droid"
+	desc = "A set of prosthetics, piloted by simplistic combat algorhithm and dressed in combat spacesuit."
+	tt_desc = null
+	say_list_type = /datum/say_list/merc/drone
+	corpse = /obj/effect/landmark/mobcorpse/syndicatecommando/drone
+
+/mob/living/simple_mob/humanoid/merc/ranged/space/drone
+	name = "combat droid"
+	desc = "A set of prosthetics, piloted by simplistic combat algorhithm and dressed in combat spacesuit."
+	tt_desc = null
+	say_list_type = /datum/say_list/merc/drone
+	corpse = /obj/effect/landmark/mobcorpse/syndicatecommando/drone

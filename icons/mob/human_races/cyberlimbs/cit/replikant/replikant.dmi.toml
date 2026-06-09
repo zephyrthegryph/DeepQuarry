@@ -1,0 +1,29 @@
+# Generated from replikant.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = ""
+dirs = 4
+frames = 1
+
+[[state]]
+name = "r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "l_foot"
+dirs = 4
+frames = 1

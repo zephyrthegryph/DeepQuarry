@@ -1,0 +1,114 @@
+# Generated from tiles.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 10
+
+[[state]]
+name = "tiles"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tiles_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "tiles_corners"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "monofloor_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "reinforced"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinforced_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "reinforced_corners"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "cafe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cafe_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "cafe_corners"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "techmaint"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "techmaint_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "techmaint_corners"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "techmaint_perforated"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "techmaint_perforated_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "techmaint_perforated_corners"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "broken0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "broken1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "broken2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "burned0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "burned1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "burned2"
+dirs = 1
+frames = 1

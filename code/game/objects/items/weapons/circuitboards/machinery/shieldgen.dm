@@ -1,0 +1,68 @@
+#ifndef T_BOARD
+#error T_BOARD macro is not defined but we need it!
+#endif
+
+//
+// New shield generator
+//
+
+/obj/item/circuitboard/shield_generator
+	name = T_BOARD("advanced shield generator")
+	board_type = new /datum/frame/frame_types/machine
+	build_path = /obj/machinery/power/shield_generator
+	req_components = list(
+		/obj/item/stock_parts/capacitor = 1,
+		/obj/item/stock_parts/micro_laser = 1,
+		/obj/item/smes_coil = 1,
+		/obj/item/stock_parts/console_screen = 1,
+		/obj/item/stock_parts/subspace/amplifier = 1,
+		/obj/item/stack/cable_coil = 5)
+
+/obj/item/circuitboard/shield_diffuser
+	name = T_BOARD("shield diffuser")
+	board_type =  new /datum/frame/frame_types/machine
+	build_path = /obj/machinery/shield_diffuser
+	req_components = list(
+		/obj/item/stock_parts/capacitor = 1,
+		/obj/item/stock_parts/micro_laser = 1,
+		/obj/item/stock_parts/console_screen = 1)
+
+//
+// Legacy shield generators
+//
+
+/obj/item/circuitboard/shield_gen_ex
+	name = T_BOARD("hull shield generator")
+	board_type = new /datum/frame/frame_types/machine
+	build_path = /obj/machinery/shield_gen/external
+	req_components = list(
+							/obj/item/stock_parts/manipulator = 2,
+							/obj/item/stock_parts/subspace/transmitter = 1,
+							/obj/item/stock_parts/subspace/crystal = 1,
+							/obj/item/stock_parts/subspace/amplifier = 1,
+							/obj/item/stock_parts/console_screen = 1,
+							/obj/item/stack/cable_coil = 5)
+
+/obj/item/circuitboard/shield_gen
+	name = T_BOARD("bubble shield generator")
+	board_type = new /datum/frame/frame_types/machine
+	build_path = /obj/machinery/shield_gen
+	req_components = list(
+							/obj/item/stock_parts/manipulator = 2,
+							/obj/item/stock_parts/subspace/transmitter = 1,
+							/obj/item/stock_parts/subspace/crystal = 1,
+							/obj/item/stock_parts/subspace/amplifier = 1,
+							/obj/item/stock_parts/console_screen = 1,
+							/obj/item/stack/cable_coil = 5)
+
+/obj/item/circuitboard/shield_cap
+	name = T_BOARD("shield capacitor")
+	board_type = new /datum/frame/frame_types/machine
+	build_path = /obj/machinery/shield_capacitor
+	req_components = list(
+							/obj/item/stock_parts/manipulator = 2,
+							/obj/item/stock_parts/subspace/sub_filter = 1,
+							/obj/item/stock_parts/subspace/treatment = 1,
+							/obj/item/stock_parts/subspace/analyzer = 1,
+							/obj/item/stock_parts/console_screen = 1,
+							/obj/item/stack/cable_coil = 5)

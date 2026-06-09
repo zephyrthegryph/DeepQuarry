@@ -1,0 +1,31 @@
+# Generated from food_replicator.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "food_replicator"
+dirs = 1
+frames = 4
+delays = [6, 1]
+
+[[state]]
+name = "printing"
+dirs = 1
+frames = 9
+delays = [2, 2, 2, 2, 3]
+
+[[state]]
+name = "poweroff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "panel_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "destroyed"
+dirs = 1
+frames = 1

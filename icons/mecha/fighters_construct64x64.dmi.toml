@@ -1,0 +1,174 @@
+# Generated from fighters_construct64x64.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 7
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinnace_wings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pinnace_wings2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinnace_wings2_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinnace_chassis"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinnace_core"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinnace_core+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinnace_r_wing"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinnace_r_wing+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinnace_l_wing"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinnace_l_wing+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinnace_r_engine"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinnace_r_engine+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinnace_m_engine"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinnace_m_engine+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinnace_l_engine"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinnace_l_engine+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinnace_cockpit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinnace_cockpit+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baron_chassis"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baron_core"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baron_core+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baron_r_wing"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baron_r_wing+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baron_l_wing"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baron_l_wing+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baron_r_engine"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baron_r_engine+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baron_m_engine"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baron_m_engine+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baron_l_engine"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baron_l_engine+o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baron_cockpit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baron_cockpit+o"
+dirs = 1
+frames = 1

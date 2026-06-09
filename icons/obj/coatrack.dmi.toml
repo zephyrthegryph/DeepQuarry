@@ -1,0 +1,29 @@
+# Generated from coatrack.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "coatrack0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coatrack1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coat_det"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coat_lab"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coat_cmo"
+dirs = 1
+frames = 1

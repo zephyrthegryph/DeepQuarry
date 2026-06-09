@@ -1,0 +1,36 @@
+# Generated from apc_repair.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "apc0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "apc_frame"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 18, y = 23 }]
+
+[[state]]
+name = "apc1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oldapc0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oldapc_frame"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 18, y = 23 }]
+
+[[state]]
+name = "oldapc1"
+dirs = 1
+frames = 1

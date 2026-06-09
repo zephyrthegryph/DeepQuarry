@@ -1,0 +1,575 @@
+//A system to manage and display alerts on screen without needing you to do it yourself
+
+//PUBLIC - call these wherever you want
+
+/** Proc to create or update an alert. Returns the alert if the alert is new or updated, 0 if it was thrown already
+ * category is a text string. Each mob may only have one alert per category; the previous one will be replaced
+ * path is a type path of the actual alert type to throw
+ * severity is an optional number that will be placed at the end of the icon_state for this alert
+ * For example, high pressure's icon_state is "highpressure" and can be serverity 1 or 2 to get "highpressure1" or "highpressure2"
+ * new_master is optional and sets the alert's icon state to "template" in the ui_style icons with the master as an overlay.
+ * Clicks are forwarded to master
+ */
+/mob/proc/throw_alert(category, type, severity, obj/new_master)
+	if(!category)
+		return
+
+	var/atom/movable/screen/alert/alert
+	if(LAZYACCESS(alerts, category))
+		alert = alerts[category]
+		var/obj/master = alert.master_ref?.resolve()
+		if(new_master && new_master != master)
+			WARNING("[src] threw alert [category] with new_master [new_master] while already having that alert with master [master]")
+			clear_alert(category)
+			return .()
+		else if(alert.type != type)
+			clear_alert(category)
+			return .()
+		else if(!severity || severity == alert.severity)
+			if(alert.timeout)
+				clear_alert(category)
+				return .()
+			else //no need to update
+				return 0
+	else
+		alert = new type
+
+	if(new_master)
+		alert.icon_state = "itembased"
+		var/image/I = image(icon = new_master.icon, icon_state = new_master.icon_state, dir = SOUTH)
+		I.plane = PLANE_PLAYER_HUD_ABOVE
+		I.color = new_master.color
+		alert.add_overlay(I)
+		alert.master_ref = WEAKREF(new_master)
+	else
+		alert.icon_state = "[initial(alert.icon_state)][severity]"
+		alert.severity = severity
+
+	LAZYSET(alerts, category, alert)
+	if(client && hud_used)
+		hud_used.reorganize_alerts()
+	alert.transform = matrix(32, 6, MATRIX_TRANSLATE)
+	animate(alert, transform = matrix(), time = 2.5, easing = CUBIC_EASING)
+
+	if(alert.timeout)
+		addtimer(CALLBACK(src, PROC_REF(alert_timeout), alert, category), alert.timeout)
+		alert.timeout = world.time + alert.timeout - world.tick_lag
+	return alert
+
+/mob/proc/alert_timeout(atom/movable/screen/alert/alert, category)
+	if(alert.timeout && LAZYACCESS(alerts, category) == alert && world.time >= alert.timeout)
+		clear_alert(category)
+
+// Proc to clear an existing alert.
+/mob/proc/clear_alert(category)
+	var/atom/movable/screen/alert/alert = LAZYACCESS(alerts, category)
+	if(!alert)
+		return 0
+
+	LAZYREMOVE(alerts, category)
+	if(client && hud_used)
+		hud_used.reorganize_alerts()
+		client.screen -= alert
+	qdel(alert)
+
+/atom/movable/screen/alert
+	icon = 'icons/mob/screen_alert.dmi'
+	icon_state = "default"
+	name = "Alert"
+	desc = "Something seems to have gone wrong with this alert, so report this bug please"
+	mouse_opacity = 1
+	var/timeout = 0 //If set to a number, this alert will clear itself after that many deciseconds
+	var/severity = 0
+	var/alerttooltipstyle = ""
+	var/no_underlay // Don't underlay the UI style's blank template icon under this
+
+
+/atom/movable/screen/alert/MouseEntered(location,control,params)
+	openToolTip(usr, src, params, title = name, content = desc, theme = alerttooltipstyle)
+
+
+/atom/movable/screen/alert/MouseExited()
+	closeToolTip(usr)
+
+
+//Gas alerts
+/atom/movable/screen/alert/not_enough_oxy
+	name = "Choking (No O2)"
+	desc = "You're not getting enough oxygen. Find some good air before you pass out! \
+The box in your backpack has an oxygen tank and breath mask in it."
+	icon_state = "not_enough_oxy"
+
+/atom/movable/screen/alert/too_much_oxy
+	name = "Choking (O2)"
+	desc = "There's too much oxygen in the air, and you're breathing it in! Find some good air before you pass out!"
+	icon_state = "too_much_oxy"
+
+/atom/movable/screen/alert/not_enough_nitro
+	name = "Choking (No N)"
+	desc = "You're not getting enough nitrogen. Find some good air before you pass out!"
+	icon_state = "not_enough_nitro"
+
+/atom/movable/screen/alert/too_much_nitro
+	name = "Choking (N)"
+	desc = "There's too much nitrogen in the air, and you're breathing it in! Find some good air before you pass out!"
+	icon_state = "too_much_nitro"
+
+/atom/movable/screen/alert/not_enough_co2
+	name = "Choking (No CO2)"
+	desc = "You're not getting enough carbon dioxide. Find some good air before you pass out!"
+	icon_state = "not_enough_co2"
+
+/atom/movable/screen/alert/too_much_co2
+	name = "Choking (CO2)"
+	desc = "There's too much carbon dioxide in the air, and you're breathing it in! Find some good air before you pass out!"
+	icon_state = "too_much_co2"
+
+/atom/movable/screen/alert/too_much_co2/plant
+	name = "Livin' the good life"
+	desc = "There's so much carbon dioxide in the air, you're in fucking heaven. Watch out for passed out fleshies, though."
+	icon_state = "too_much_co2"
+
+/atom/movable/screen/alert/not_enough_tox
+	name = "Choking (No Phoron)"
+	desc = "You're not getting enough phoron. Find some good air before you pass out!"
+	icon_state = "not_enough_tox"
+
+// Oxygen is toxic to phoron breathers and nitrogen breathers. I'm tired of seeing "You're choking on phoron!" when it's not phoron.
+/atom/movable/screen/alert/tox_in_air
+	name = "Choking (Toxic)"
+	desc = "There's a dangerous toxin in the air and you're breathing it in. Find some fresh air. \
+Your emergency supply kit should have an air tank and gas mask in it!"
+	icon_state = "too_much_tox"
+
+/atom/movable/screen/alert/not_enough_fuel
+	name = "Choking (No Volatile fuel)"
+	desc = "You're not getting enough volatile fuel. Find some good air before you pass out!"
+	icon_state = "not_enough_tox"
+
+/atom/movable/screen/alert/not_enough_n2o
+	name = "Choking (No Sleeping Gas)"
+	desc = "You're not getting enough sleeping gas. Find some good air before you pass out!"
+	icon_state = "not_enough_tox"
+
+/atom/movable/screen/alert/not_enough_atmos
+	name = "Choking (No Breath)"
+	desc = "The atmosphere around you lacks any form of breathable air! Find some good air before you pass out!"
+	icon_state = "not_enough_oxy"
+
+/atom/movable/screen/alert/methane_in_air
+	name = "Choking (Methane)"
+	desc = "There's highly flammable methane in the air, making it hard to breathe. Find some fresh air. \
+The box in your backpack has an oxygen tank and gas mask in it."
+	icon_state = "not_enough_oxy"
+
+/atom/movable/screen/alert/not_enough_methane
+	name = "Choking (No Methane)"
+	desc = "You're not getting enough methane. Find some good air before you pass out!"
+	icon_state = "not_enough_tox"
+//End gas alerts
+
+
+/atom/movable/screen/alert/fat
+	icon_state = "fat"
+
+/atom/movable/screen/alert/fat/vampire
+	icon_state = "v_fat"
+
+/atom/movable/screen/alert/fat/synth
+	desc = "Your battery is full! Don't overvolt it."
+	icon_state = "c_fat"
+
+/atom/movable/screen/alert/hungry
+	name = "Hungry"
+	desc = "Some food would be good right about now."
+	icon_state = "hungry"
+
+/atom/movable/screen/alert/hungry/vampire
+	icon_state = "v_hungry"
+
+/atom/movable/screen/alert/hungry/synth
+	desc = "Battery's running a bit low, could use a topoff."
+	icon_state = "c_hungry"
+
+/atom/movable/screen/alert/starving
+	name = "Very Hungry"
+	icon_state = "starving"
+
+/atom/movable/screen/alert/starving/vampire
+	icon_state = "v_starving"
+
+/atom/movable/screen/alert/starving/synth
+	icon_state = "c_starving"
+
+/atom/movable/screen/alert/warm
+	name = "Too Warm"
+	desc = "You're uncomfortably warm. Take off some clothes or tweak the thermostat a few degrees cooler."
+	icon_state = "mildhot"
+
+/atom/movable/screen/alert/hot
+	name = "Too Hot"
+	desc = "You're flaming hot! Get somewhere cooler and take off any insulating clothing like a fire suit."
+	icon_state = "hot"
+
+/atom/movable/screen/alert/hot/robot
+	desc = "The air around you is too hot for a humanoid. Be careful to avoid exposing them to this enviroment."
+
+/atom/movable/screen/alert/chilly
+	name = "Too Chilly"
+	desc = "You're uncomfortably cold. Rug up or tweak the thermostat a few degrees higher."
+	icon_state = "mildcold"
+
+/atom/movable/screen/alert/cold
+	name = "Too Cold"
+	desc = "You're freezing cold! Get somewhere warmer and take off any insulating clothing like a space suit."
+	icon_state = "cold"
+
+/atom/movable/screen/alert/cold/robot
+	desc = "The air around you is too cold for a humanoid. Be careful to avoid exposing them to this enviroment."
+
+/atom/movable/screen/alert/lowpressure
+	name = "Low Pressure"
+	desc = "The air around you is hazardously thin. A space suit would protect you."
+	icon_state = "lowpressure"
+
+/atom/movable/screen/alert/highpressure
+	name = "High Pressure"
+	desc = "The air around you is hazardously thick. A fire suit would protect you."
+	icon_state = "highpressure"
+
+/atom/movable/screen/alert/blind
+	name = "Blind"
+	desc = "You can't see! This may be caused by a genetic defect, eye trauma, being unconscious, \
+or something covering your eyes."
+	icon_state = "blind"
+
+/atom/movable/screen/alert/stunned
+	name = "Stunned"
+	desc = "You're temporarily stunned! You'll have trouble moving or performing actions, but it should clear up on it's own."
+	icon_state = "stun"
+
+/atom/movable/screen/alert/paralyzed
+	name = "Paralyzed"
+	desc = "You're paralyzed! This could be due to drugs or serious injury. You'll be unable to move or perform actions."
+	icon_state = "paralysis"
+
+/atom/movable/screen/alert/weakened
+	name = "Weakened"
+	desc = "You're weakened! This could be a temporary issue due to injury or the result of drugs or drinking."
+	icon_state = "weaken"
+
+/atom/movable/screen/alert/confused
+	name = "Confused"
+	desc = "You're confused, and may stumble into things! This may be from concussive effects, drugs, or dizzyness. Walking will help reduce incidents."
+	icon_state = "confused"
+
+/atom/movable/screen/alert/high
+	name = "High"
+	desc = "Whoa, you're tripping balls!"
+	icon_state = "high"
+
+/atom/movable/screen/alert/embeddedobject
+	name = "Embedded Object"
+	desc = "Something got lodged into your flesh and is causing major bleeding. It might fall out with time, but surgery is the safest way. \
+If you're feeling frisky, right click on yourself and select \"Remove embedded object\" to pull the object out."
+	icon_state = "embeddedobject"
+
+/atom/movable/screen/alert/embeddedobject/Click()
+	if(isliving(usr))
+		var/mob/living/carbon/human/M = usr
+		return M.help_shake_act(M)
+
+/atom/movable/screen/alert/asleep
+	name = "Asleep"
+	desc = "You've fallen asleep. Wait a bit and you should wake up. Unless you don't, considering how helpless you are."
+	icon_state = "asleep"
+
+/atom/movable/screen/alert/weightless
+	name = "Weightless"
+	desc = "Gravity has ceased affecting you, and you're floating around aimlessly. You'll need something large and heavy, like a \
+wall or lattice, to push yourself off if you want to move. A jetpack would enable free range of motion. A pair of \
+magboots would let you walk around normally on the floor. Barring those, you can throw things, use a fire extinguisher, \
+or shoot a gun to move around via Newton's 3rd Law of Motion."
+	icon_state = "weightless"
+
+/atom/movable/screen/alert/fire
+	name = "On Fire"
+	desc = "You're on fire. Stop, drop and roll to put the fire out or move to a vacuum area."
+	icon_state = "fire"
+
+/atom/movable/screen/alert/fire/Click()
+	if(isliving(usr))
+		var/mob/living/L = usr
+		return L.resist()
+
+/atom/movable/screen/alert/irradiated
+	name = "Irradiated"
+	desc = "You're irradiated! Heal your radiation quick, and stand under a shower to wash some radiation off from yourself!"
+//	use_user_hud_icon = TRUE
+	icon_state = "irradiated"
+
+//ALIENS
+
+/atom/movable/screen/alert/alien_tox
+	name = "Phoron"
+	desc = "There's flammable phoron in the air. If it lights up, you'll be toast."
+	icon_state = "alien_tox"
+	alerttooltipstyle = "alien"
+
+/atom/movable/screen/alert/alien_fire
+// This alert is temporarily gonna be thrown for all hot air but one day it will be used for literally being on fire
+	name = "Too Hot"
+	desc = "It's too hot! Flee to space or at least away from the flames. Standing on weeds will heal you."
+	icon_state = "alien_fire"
+	alerttooltipstyle = "alien"
+
+/atom/movable/screen/alert/alien_vulnerable
+	name = "Severed Matriarchy"
+	desc = "Your queen has been killed, you will suffer movement penalties and loss of hivemind. A new queen cannot be made until you recover."
+	icon_state = "alien_noqueen"
+	alerttooltipstyle = "alien"
+
+//BLOBS
+
+/atom/movable/screen/alert/nofactory
+	name = "No Factory"
+	desc = "You have no factory, and are slowly dying!"
+	icon_state = "blobbernaut_nofactory"
+	alerttooltipstyle = "blob"
+
+//SILICONS
+
+/atom/movable/screen/alert/nocell
+	name = "Missing Power Cell"
+	desc = "Unit has no power cell. No modules available until a power cell is reinstalled. Robotics may provide assistance."
+	icon_state = "nocell"
+
+/atom/movable/screen/alert/emptycell
+	name = "Out of Power"
+	desc = "Unit's power cell has no charge remaining. No modules available until power cell is recharged. \
+Recharging stations are available in robotics, the dormitory bathrooms, and the AI satellite."
+	icon_state = "emptycell"
+
+/atom/movable/screen/alert/lowcell
+	name = "Low Charge"
+	desc = "Unit's power cell is running low. Recharging stations are available in robotics, the dormitory bathrooms, and the AI satellite."
+	icon_state = "lowcell"
+
+//Need to cover all use cases - emag, illegal upgrade module, malf AI hack, traitor cyborg
+/atom/movable/screen/alert/hacked
+	name = "Hacked"
+	desc = "Hazardous non-standard equipment detected. Please ensure any usage of this equipment is in line with unit's laws, if any."
+	icon_state = "hacked"
+	no_underlay = TRUE
+
+/atom/movable/screen/alert/locked
+	name = "Locked Down"
+	desc = "Unit has been remotely locked down. Usage of a Robotics Control Console like the one in the " + JOB_RESEARCH_DIRECTOR + "'s \
+office by your AI master or any qualified human may resolve this matter. Robotics may provide further assistance if necessary."
+	icon_state = "locked"
+	no_underlay = TRUE
+
+/atom/movable/screen/alert/newlaw
+	name = "Law Update"
+	desc = "Laws have potentially been uploaded to or removed from this unit. Please be aware of any changes \
+so as to remain in compliance with the most up-to-date laws."
+	icon_state = "newlaw"
+	timeout = 300
+	no_underlay = TRUE
+
+//MECHS
+
+/atom/movable/screen/alert/low_mech_integrity
+	name = "Mech Damaged"
+	desc = "Mech integrity is low."
+	icon_state = "low_mech_integrity"
+
+
+//GHOSTS
+//TODO: expand this system to replace the pollCandidates/CheckAntagonist/"choose quickly"/etc Yes/No messages
+/atom/movable/screen/alert/notify_cloning
+	name = "Revival"
+	desc = "Someone is trying to revive you. Re-enter your corpse if you want to be revived!"
+	icon_state = "template"
+	timeout = 300
+
+/atom/movable/screen/alert/notify_cloning/Click()
+	if(!usr || !usr.client) return
+	var/mob/observer/dead/G = usr
+	G.reenter_corpse()
+
+// /atom/movable/screen/alert/notify_jump
+// 	name = "Body created"
+// 	desc = "A body was created. You can enter it."
+// 	icon_state = "template"
+// 	timeout = 300
+// 	var/atom/jump_target = null
+// 	var/attack_not_jump = null
+
+// /atom/movable/screen/alert/notify_jump/Click()
+// 	if(!usr || !usr.client) return
+// 	if(!jump_target) return
+// 	var/mob/observer/dead/G = usr
+// 	if(!istype(G)) return
+// 	if(attack_not_jump)
+// 		jump_target.attack_ghost(G)
+// 	else
+// 		var/turf/T = get_turf(jump_target)
+// 		if(T && isturf(T))
+// 			G.loc = T
+
+//OBJECT-BASED
+
+/atom/movable/screen/alert/restrained/buckled
+	name = "Buckled"
+	desc = "You've been buckled to something. Click the alert to unbuckle unless you're handcuffed."
+
+/atom/movable/screen/alert/restrained/handcuffed
+	name = "Handcuffed"
+	desc = "You're handcuffed and can't act. If anyone drags you, you won't be able to move. Click the alert to free yourself."
+
+/atom/movable/screen/alert/restrained/legcuffed
+	name = "Legcuffed"
+	desc = "You're legcuffed, which slows you down considerably. Click the alert to free yourself."
+
+/atom/movable/screen/alert/restrained/Click()
+	if(isliving(usr))
+		var/mob/living/L = usr
+		return L.resist()
+
+// TICKETS
+/atom/movable/screen/alert/open_ticket
+	name = "Admin Chat Request"
+	desc = "A Administrator would like to chat with you. \
+	Click here to begin."
+
+/atom/movable/screen/alert/open_ticket/Click()
+	if(!usr || !usr.client) return
+
+	// Open a new chat with the user
+	var/datum/ticket_chat/TC = new()
+	TC.T = usr.client.current_ticket
+	TC.tgui_interact(usr.client.mob)
+
+// PRIVATE = only edit, use, or override these if you're editing the system as a whole
+
+// Re-render all alerts - also called in /datum/hud/show_hud() because it's needed there
+/datum/hud/proc/reorganize_alerts()
+	var/list/alerts = mymob.alerts
+	if(!hud_shown)
+		for(var/i in 1 to length(alerts))
+			mymob?.client?.screen -= alerts[alerts[i]]
+		return TRUE
+	for(var/i in 1 to length(alerts))
+		var/atom/movable/screen/alert/alert = alerts[alerts[i]]
+
+		if(icon_exists(ui_style, alert.icon_state))
+			alert.icon = ui_style
+
+		else if(!alert.no_underlay)
+			var/image/I = image(icon = ui_style, icon_state = "template")
+			I.color = ui_color
+			I.alpha = ui_alpha
+			alert.underlays = list(I)
+
+		switch(i)
+			if(1)
+				. = ui_alert1
+			if(2)
+				. = ui_alert2
+			if(3)
+				. = ui_alert3
+			if(4)
+				. = ui_alert4
+			if(5)
+				. = ui_alert5 // Right now there's 5 slots
+			else
+				. = ""
+		alert.screen_loc = .
+		mymob?.client?.screen |= alert
+	return 1
+
+/mob
+	var/list/alerts = null // contains /atom/movable/screen/alert only // On /mob so clientless mobs will throw alerts properly
+
+/atom/movable/screen/alert/Click(location, control, params)
+	if(!usr || !usr.client)
+		return
+	var/paramslist = params2list(params)
+	if(paramslist["shift"]) // screen objects don't do the normal Click() stuff so we'll cheat
+		to_chat(usr,span_boldnotice(name) + " - " + span_info(desc))
+		return
+	var/obj/master = master_ref?.resolve()
+	if(master)
+		return usr.client.Click(master, location, control, params)
+	..() // Pass through to click_vr
+
+/atom/movable/screen/alert/Destroy()
+	..()
+	severity = 0
+	master_ref = null
+	screen_loc = ""
+	return QDEL_HINT_QUEUE
+
+
+// === merged from alert_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/atom/movable/screen/alert/fat
+	name = "Full"
+	desc = "You overate! If you don't exercise soon, you might find yourself gaining weight."
+
+/atom/movable/screen/alert/fat/vampire
+	desc = "You overdrank! If you don't exercise soon, you might find yourself gaining weight."
+
+/atom/movable/screen/alert/fat/synth
+	name = "Overcharged"
+
+/atom/movable/screen/alert/hungry/vampire
+	desc = "You could use a bloodpack or two."
+
+/atom/movable/screen/alert/hungry/synth
+	name = "Undercharged"
+
+/atom/movable/screen/alert/starving
+	desc = "You're extremely hungry. The hunger pains make moving around a chore."
+
+/atom/movable/screen/alert/starving/vampire
+	desc = "You are starving! Without some blood, moving around is a pain."
+
+/atom/movable/screen/alert/starving/synth
+	name = "Low Power"
+	desc = "Your battery is very low! Low power mode makes all movements slower."
+
+/atom/movable/screen/alert/xenochimera/reconstitution
+	name = "Reconstructing Form"
+	desc = "You're still rebuilding your body! Click the alert to find out how long you have left."
+	icon_state = "regenerating"
+
+/* // Commenting this out for now, will revisit later once I can figure out how to override Click() appropriately.
+/atom/movable/screen/alert/xenochimera/reconstitution/Click(mob/usr)
+	var/mob/living/carbon/human/H = usr
+	var/datum/component/xenochimera/xc = H.get_xenochimera_component()
+	if(xc) // If you're somehow able to click this while not a chimera, this should prevent weird runtimes. Will need changing if regeneration is ever opened to non-chimera using the same alert.
+		if(xc.revive_ready == REVIVING_NOW)
+			to_chat(usr, "We are currently reviving, and will be done in [(xc.revive_finished - world.time) / 10] seconds.")
+		else if(xc.revive_ready == REVIVING_DONE)
+			to_chat(usr, "You should have a notification + alert for this! Bug report that this is still here!")
+*/
+
+/atom/movable/screen/alert/xenochimera/readytohatch
+	name = "Ready to Hatch"
+	desc = "You're done reconstructing your cells! Click me to Hatch!"
+	icon_state = "hatch_ready"
+
+/*	// Commenting this out for now, will revisit later once I can figure out how to override Click() appropriately.
+/atom/movable/screen/alert/xenochimera/readytohatch/Click(mob/usr)
+	var/mob/living/carbon/human/H = usr
+	if(H.get_xenochimera_component()) // If you're somehow able to click this while not a chimera, this should prevent weird runtimes. Will need changing if regeneration is ever opened to non-chimera using the same alert.
+		if(H.revive_ready == REVIVING_DONE) // Sanity check.
+			H.hatch() // Hatch.
+*/
+
+
+// === merged from alert_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
+/atom/movable/screen/alert/open_ticket
+	icon = 'icons/logo.dmi'
+	icon_state = "32x32"

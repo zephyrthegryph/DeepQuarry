@@ -1,0 +1,62 @@
+# Generated from ecig.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "ecigon"
+dirs = 1
+frames = 4
+delays = [1, 1, 1, 15, 23]
+
+[[state]]
+name = "ecigoff1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ecigoff2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pcigoff1"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 14, y = 12 }]
+
+[[state]]
+name = "pcigoff2"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 14, y = 12 }]
+
+[[state]]
+name = "pcigon"
+dirs = 1
+frames = 8
+delays = [1]
+hotspots = [{ frame = 1, x = 14, y = 12 }]
+
+[[state]]
+name = "ccigon"
+dirs = 1
+frames = 8
+delays = [1]
+hotspots = [{ frame = 1, x = 14, y = 12 }]
+
+[[state]]
+name = "ccigoff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ecartridge"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart1-15"
+dirs = 1
+frames = 2
+delays = [1]

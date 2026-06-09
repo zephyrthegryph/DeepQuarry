@@ -1,0 +1,14 @@
+# Generated from wolfpelt_ch.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 35
+cols = 3
+
+[[state]]
+name = "wolfpelt_gray"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolfpelt_brown"
+dirs = 4
+frames = 1

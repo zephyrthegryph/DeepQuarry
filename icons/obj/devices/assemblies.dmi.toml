@@ -1,0 +1,531 @@
+# Generated from assemblies.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 15
+
+[[state]]
+name = "shock_kit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armor-igniter-analyzer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "infra-igniter0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "infra-igniter1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "infra-igniter-tank0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "infra-igniter-tank1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "infrared-radio0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "infrared-radio1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "prox-igniter0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prox-igniter1"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "prox-igniter2"
+dirs = 1
+frames = 2
+delays = [5, 1]
+
+[[state]]
+name = "prox-multitool0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prox-multitool1"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "prox-multitool2"
+dirs = 1
+frames = 2
+delays = [5, 1]
+
+[[state]]
+name = "prox-radio0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prox-radio1"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "prox-radio2"
+dirs = 1
+frames = 2
+delays = [1, 5]
+
+[[state]]
+name = "prox-igniter-tank0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prox-igniter-tank1"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "prox-igniter-tank2"
+dirs = 1
+frames = 2
+delays = [5, 1]
+
+[[state]]
+name = "radio-igniter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radio-igniter-tank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radio-multitool"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radio-radio"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "timer-igniter0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "timer-igniter1"
+dirs = 1
+frames = 2
+delays = [9, 1]
+
+[[state]]
+name = "timer-igniter2"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "timer-igniter-tank0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "timer-igniter-tank1"
+dirs = 1
+frames = 2
+delays = [9, 1]
+
+[[state]]
+name = "timer-igniter-tank2"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "timer-multitool0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "timer-multitool1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "timer-multitool2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "timer-radio0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "timer-radio1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "timer-radio2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mmi_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mmi_alive"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mmi_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mmi_brain"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mmi_brain_alien"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "valve_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "valve"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "valve_cables"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "device"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "proxy_beam"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "plasma"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "generic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plasmaman_tank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plasmaman_tank_belt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oxygen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "anesthetic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emergency"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emergency_sleep"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oxygen_fr"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oxygen_f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emergency_engi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emergency_double"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emergency_double_b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jetpack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jetpack-void"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jetpack-black"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jetpack-mini"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jetpack-mining"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jetpack-captain"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jetpack-sec"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jetpack-improvised"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndicate-bomb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndicate-bomb-inactive"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndicate-bomb-active"
+dirs = 1
+frames = 3
+delays = [3, 1]
+
+[[state]]
+name = "syndicate-bomb-inactive-wires"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndicate-bomb-active-wires"
+dirs = 1
+frames = 3
+delays = [3, 1]
+
+[[state]]
+name = "bombcore"
+dirs = 1
+frames = 3
+delays = [6]
+
+[[state]]
+name = "chemcore"
+dirs = 1
+frames = 3
+delays = [6]
+
+[[state]]
+name = "bigred"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bigyellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "training-bomb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "training-bomb-inactive"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "training-bomb-active"
+dirs = 1
+frames = 3
+delays = [3, 1]
+
+[[state]]
+name = "training-bomb-inactive-wires"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "training-bomb-active-wires"
+dirs = 1
+frames = 3
+delays = [3, 1]
+
+[[state]]
+name = "base-bomb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "base-bomb-inactive"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "base-bomb-active"
+dirs = 1
+frames = 3
+delays = [3, 1]
+
+[[state]]
+name = "base-bomb-inactive-wires"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "base-bomb-active-wires"
+dirs = 1
+frames = 3
+delays = [3, 1]
+
+[[state]]
+name = "clown-bomb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clown-bomb-inactive"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clown-bomb-active"
+dirs = 1
+frames = 3
+delays = [3, 1]
+
+[[state]]
+name = "clown-bomb-inactive-wires"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clown-bomb-active-wires"
+dirs = 1
+frames = 3
+delays = [3, 1]
+
+[[state]]
+name = "posibrain"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "posibrain-occupied"
+dirs = 1
+frames = 20
+delays = [1]
+
+[[state]]
+name = "posibrain-searching"
+dirs = 1
+frames = 16
+delays = [1]
+
+[[state]]
+name = "pizzabomb_inactive"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pizzabomb_active"
+dirs = 1
+frames = 3
+delays = [3, 1]
+
+[[state]]
+name = "spheribrain"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spheribrain-occupied"
+dirs = 1
+frames = 22
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 10, 1]
+
+[[state]]
+name = "spheribrain-searching"
+dirs = 1
+frames = 6
+delays = [1]

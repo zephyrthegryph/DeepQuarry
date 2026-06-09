@@ -1,0 +1,10 @@
+# Generated from tail.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 2
+
+[[state]]
+name = "tail"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 15, y = 28 }]

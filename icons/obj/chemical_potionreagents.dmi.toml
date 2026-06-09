@@ -1,0 +1,136 @@
+# Generated from chemical_potionreagents.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "blood_ruby"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ruby_eye"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "golden_scale"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "frozen_dew"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "living_coral"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rare_horn"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "moldy_bread"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glowing_gem"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "giant_toe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flesh_of_the_stars"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spinning_poppy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "salt_mage"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "golden_grapes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fairy_house"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "thorny_bulb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ancient_egg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crown_stem"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red_ingot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "soft_diamond"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "solid_mist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spider_leg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aqua_regia"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ichor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alkahest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "folded_dark"
+dirs = 1
+frames = 8
+delays = [50, 3, 3, 3, 40, 3]
+
+[[state]]
+name = "glamour_shard"
+dirs = 1
+frames = 5
+delays = [400]

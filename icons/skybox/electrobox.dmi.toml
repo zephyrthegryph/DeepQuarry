@@ -1,0 +1,10 @@
+# Generated from electrobox.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 736
+height = 736
+cols = 5
+
+[[state]]
+name = "lightning"
+dirs = 1
+frames = 19
+delays = [2, 4, 2, 8, 4, 4, 4, 8, 4, 4, 4, 8, 4, 4, 4, 8, 4]

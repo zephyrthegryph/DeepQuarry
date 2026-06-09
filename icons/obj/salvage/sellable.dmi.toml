@@ -1,0 +1,49 @@
+# Generated from sellable.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "research_doc"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndie_doc"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ussp_manual"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pirate_treasure"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dragon_scales"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weapon_crate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lego_brick"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stone_tablet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "barrel"
+dirs = 1
+frames = 1

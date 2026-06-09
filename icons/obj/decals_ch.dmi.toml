@@ -1,0 +1,24 @@
+# Generated from decals_ch.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "metal_stairs"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wood_stairs"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wood_stairs2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dark_stairs"
+dirs = 4
+frames = 1

@@ -1,0 +1,75 @@
+# Generated from crisis_large.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 10
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "openpanel_nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptor-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptor-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "raptor-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptor-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptor-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptor"
+dirs = 4
+frames = 4
+delays = [2]
+movement = true
+
+[[state]]
+name = "raptor-eyes"
+dirs = 4
+frames = 4
+delays = [2]
+movement = true
+
+[[state]]
+name = "raptor-sleeper-1"
+dirs = 4
+frames = 4
+delays = [2]
+movement = true

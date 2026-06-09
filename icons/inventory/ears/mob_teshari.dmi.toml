@@ -1,0 +1,183 @@
+# Generated from mob_teshari.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 13
+
+[[state]]
+name = "earmuffs"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hairflower"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "headset"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "headphones_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "headphones_on"
+dirs = 4
+frames = 7
+delays = [2]
+
+[[state]]
+name = "bow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hairflower_blue"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 17, y = 3 }]
+
+[[state]]
+name = "hairflower_yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hairflower_pink"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "headset_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eng_headset_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndie_headset"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sec_headset_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "com_headset_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "med_headset_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargo_headset_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sar_headset_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pilot_headset_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mine_headset_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cent_headset_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "srv_headset_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "exp_headset_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rob_headset_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "earset"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hairflower_white"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 17, y = 3 }]
+
+[[state]]
+name = "hairflower_white_a"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 17, y = 3 }]
+
+[[state]]
+name = "ear_stud"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ear_dangle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "headset_earbud"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sec_earbud"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eng_earbud"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "med_earbud"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "com_earbud"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargo_earbud"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "srv_earbud"
+dirs = 4
+frames = 1

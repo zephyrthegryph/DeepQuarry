@@ -1,0 +1,375 @@
+# Generated from pets.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 18
+
+[[state]]
+name = "corgi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "corgi_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lisa"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lisa_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "puppy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "puppy_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "corgi_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "corgi_dead_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lisa_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lisa_dead_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "puppy_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "puppy_dead_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cat_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cat_rest"
+dirs = 4
+frames = 4
+delays = [1, 2, 1, 2]
+rewind = true
+
+[[state]]
+name = "cat_sit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cat2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cat2_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cat2_rest"
+dirs = 4
+frames = 4
+delays = [1, 2, 1, 2]
+rewind = true
+
+[[state]]
+name = "cat2_sit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kitten"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kitten_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kitten_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cat3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cat3_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cat3_rest"
+dirs = 4
+frames = 4
+delays = [1, 2, 1, 2]
+rewind = true
+
+[[state]]
+name = "cat3_sit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bscat"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "brittany"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "brittany_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "possum"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tamaskan"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tamaskan_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "possum_sleep"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "possum_aaa"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "possum_dead"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "poppy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "poppy_sleep"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "poppy_aaa"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "poppy_dead"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fox"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fox_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fox2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fox2_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fox2_rest"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "syndifox"
+dirs = 4
+frames = 4
+delays = [1]
+rewind = true
+
+[[state]]
+name = "syndifox_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndifox_rest"
+dirs = 4
+frames = 12
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3]
+
+[[state]]
+name = "cak"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cak_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cak_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cak_sit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "void_puppy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "void_puppy_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacecat"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 6, y = 15 }]
+
+[[state]]
+name = "spacecat_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacecat_rest"
+dirs = 1
+frames = 4
+delays = [1, 2, 1, 2]
+rewind = true
+
+[[state]]
+name = "spacecat_sit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "original"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "original_sit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "original_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "original_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "narsian"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "narsian_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "narsian_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bullterrier"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bullterrier_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "breadcat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "breadcat_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "breadcat_rest"
+dirs = 1
+frames = 4
+delays = [1, 2, 1, 2]
+rewind = true
+
+[[state]]
+name = "breadcat_sit"
+dirs = 1
+frames = 1

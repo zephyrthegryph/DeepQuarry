@@ -1,0 +1,204 @@
+# Generated from tools_robot.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "Engineering tools:"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toolkit_engiborg_multitool"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "toolkit_engiborg_wrench"
+dirs = 1
+frames = 3
+delays = [2]
+rewind = true
+
+[[state]]
+name = "toolkit_engiborg_cutters"
+dirs = 1
+frames = 3
+delays = [2]
+hotspots = [{ frame = 1, x = 31, y = 31 }]
+
+[[state]]
+name = "toolkit_engiborg_screwdriver"
+dirs = 1
+frames = 3
+delays = [1]
+rewind = true
+
+[[state]]
+name = "toolkit_engiborg_crowbar"
+dirs = 1
+frames = 2
+delays = [10]
+hotspots = [{ frame = 1, x = 31, y = 4 }]
+
+[[state]]
+name = "indwelder_cyborg"
+dirs = 1
+frames = 3
+delays = [2]
+
+[[state]]
+name = "indwelder_cyborg-old-on"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "indwelder_cyborg-on"
+dirs = 1
+frames = 3
+delays = [0.75]
+
+[[state]]
+name = "toolkit_engiborg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Surgical Tools:"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toolkit_medborg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toolkit_medborg_cautery"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toolkit_medborg_scalpel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toolkit_medborg_hemostat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toolkit_medborg_saw"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toolkit_medborg_drill"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toolkit_medborg_bonesetter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toolkit_medborg_retractor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toolkit_medborg_surgicaldrapes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Botany"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sili_secateur"
+dirs = 1
+frames = 3
+delays = [6, 1.5]
+
+[[state]]
+name = "sili_hatchet"
+dirs = 1
+frames = 4
+delays = [6, 1, 1.6, 1]
+
+[[state]]
+name = "sili_cultivator"
+dirs = 1
+frames = 3
+delays = [2]
+
+[[state]]
+name = "sili_shovel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Service"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sili_knife"
+dirs = 1
+frames = 4
+delays = [1]
+rewind = true
+
+[[state]]
+name = "sili_rolling_pin"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "Misc"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toolkit_material"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sili"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "laser_cyborg"
+dirs = 1
+frames = 5
+delays = [2]
+
+[[state]]
+name = "knife_cyborg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fingerblades"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "taser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "claymore_cyborg"
+dirs = 1
+frames = 6
+delays = [1]

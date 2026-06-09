@@ -1,0 +1,62 @@
+# Generated from papershredder.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "shredder-on"
+dirs = 1
+frames = 5
+delays = [3]
+
+[[state]]
+name = "shredder-shredding"
+dirs = 1
+frames = 13
+delays = [2, 2, 2, 2, 2, 2, 1.75]
+
+[[state]]
+name = "shredder-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "panel_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shredder-0"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 3, y = 8 }]
+
+[[state]]
+name = "shredder-1"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 3, y = 8 }]
+
+[[state]]
+name = "shredder-2"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 3, y = 8 }]
+
+[[state]]
+name = "shredder-3"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 3, y = 8 }]
+
+[[state]]
+name = "shredder-4"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 3, y = 8 }]
+
+[[state]]
+name = "shredder-5"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 3, y = 8 }]

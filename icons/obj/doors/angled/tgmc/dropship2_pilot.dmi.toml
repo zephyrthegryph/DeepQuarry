@@ -1,0 +1,69 @@
+# Generated from dropship2_pilot.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "door_closed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_opening"
+dirs = 1
+frames = 6
+delays = [2]
+loop = 1
+
+[[state]]
+name = "door_deny"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "door_closing"
+dirs = 1
+frames = 6
+delays = [2]
+loop = 1
+
+[[state]]
+name = "door_spark"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "panel_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "welded"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_locked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "o_door_opening"
+dirs = 1
+frames = 6
+delays = [2]
+loop = 1
+
+[[state]]
+name = "o_door_closing"
+dirs = 1
+frames = 6
+delays = [2]
+loop = 1

@@ -1,0 +1,184 @@
+# Generated from species.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 11
+
+[[state]]
+name = "tajaran_m_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tajaran_m_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tajaran_f_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tajaran_f_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tajears_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tajtail_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tajtail_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lizard_m_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lizard_m_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lizard_f_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lizard_f_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sogtail_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sogtail_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skrell_m_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_m_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skrell_f_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_f_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lizardfat_m_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lizardfat_m_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lizardfat_f_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lizardfat_f_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lizard_m_s_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lizard_m_l_full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lizard_f_s_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lizard_f_l_full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armalis_tail_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "armalis_tail_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stoktail_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chimptail_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "farwatail_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "seromitail_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "seromitail_feathers"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xenos_drone_tail_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xenos_hunter_tail_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xenos_queen_tail_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xenos_sentinel_tail_s"
+dirs = 4
+frames = 1

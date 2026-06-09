@@ -1,0 +1,34 @@
+# Generated from shuttle_orange.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "orange"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orange0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orange5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orange20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orange65"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orange80"
+dirs = 1
+frames = 1

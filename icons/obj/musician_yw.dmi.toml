@@ -1,0 +1,14 @@
+# Generated from musician_yw.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "keyboard"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xylophone"
+dirs = 4
+frames = 1

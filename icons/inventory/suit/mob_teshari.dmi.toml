@@ -1,0 +1,1812 @@
+# Generated from mob_teshari.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 40
+
+[[state]]
+name = "tesh_cloak_bn"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_cloak_br"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_cloak_bo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_cloak_by"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_cloak_bgr"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_cloak_bbl"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_cloak_bp"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_cloak_bpi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_cloak_bbr"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_cloak_bg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_cloak_bw"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_cloak_wn"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_cloak_wg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_cloak_rg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_cloak_og"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_cloak_yg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_cloak_gg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_cloak_blug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_cloak_pg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_cloak_pig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_cloak_brg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_cloak_rainbow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_cloak_on"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_cloak_dretrowave"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_cloak_bglowing"
+dirs = 4
+frames = 13
+delays = [1]
+
+[[state]]
+name = "tesh_cloak_cap"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_cloak_qm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_cloak_car"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_cloak_mine"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_cloak_ce"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_cloak_engie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_cloak_atmos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_cloak_cmo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_cloak_doc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_cloak_chem"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_cloak_viro"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_cloak_para"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_cloak_psych"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_cloak_rd"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_cloak_sci"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_cloak_robo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_cloak_hos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_cloak_sec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_cloak_iaa"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_cloak_hop"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_cloak_serv"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_labcoat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_labcoat_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesharicoat_open"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 18, y = 27 }]
+
+[[state]]
+name = "tesharicoat"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 18, y = 27 }]
+
+[[state]]
+name = "tesharicoatwhite_open"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 18, y = 27 }]
+
+[[state]]
+name = "tesharicoatwhite"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 18, y = 27 }]
+
+[[state]]
+name = "tesh_hcloak_bo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bo_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_bo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bg_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_bg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bmg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bmg_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_bmg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_blg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_blg_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_blg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bw"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bw_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_bw"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_br"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_br_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_br"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bn"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bn_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_bn"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_by"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_by_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_by"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bgr"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bgr_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_bgr"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bbl"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bbl_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_bbl"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bp"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bp_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_bp"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bpi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bpi_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_bpi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bbr"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bbr_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_bbr"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_og"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_og_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_og"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_lgg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_lgg_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_lgg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_wg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_wg_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_wg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_rg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_rg_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_rg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_on"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_on_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_on"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_yg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_yg_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_yg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_gg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_gg_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_gg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_blug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_blug_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_blug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_pg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_pg_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_pg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_pig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_pig_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_pig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_brg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_brg_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_hood_brg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_bo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_bg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_bmg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_blg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_bw"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_br"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_bn"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_by"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_bgr"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_bbl"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_bp"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_bpi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_bbr"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_og"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_rainbow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_lgg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_wg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_rg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_on"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_yg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_gg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_blug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_pg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_pig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_brg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_car"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_mine"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_comm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_ce"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_engie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_atmos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_cmo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_doc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_chem"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_viro"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_para"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_sci"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_robo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_sec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_qm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_serv"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_iaa"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_wrdn"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_hos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_jani"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bio"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bio_general"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bio_virology"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bio_security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bio_janitor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bio_scientist"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bio_cmo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cultrobesalt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nymph"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bomber"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bomber_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "armor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grey_hoodie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grey_hoodie_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "black_hoodie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "black_hoodie_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "redponcho"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blueponcho"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greenponcho"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "purpleponcho"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leather_jacket"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leather_jacket_nt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate-orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "straight_jacket"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mantle-unathi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "capjacket"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "captunic"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "caparmor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chef"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ia_jacket"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ia_jacket_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hazard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "labcoat_cmo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "labcoat_cmo_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "labcoat_chem"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "labcoat_chem_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "labcoat_tox"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "labcoat_tox_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "labcoat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "labcoat_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fr_jacket"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fr_jacket_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "detective"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apron"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apron_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lingspacesuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lingarmor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lingarmor2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lingchameleon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "space_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-engineering"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-medicalalt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-atmos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-sec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-secalt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-mining"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-syndie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "carp_suit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hostrench"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "warden_jacket"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "detective2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "detective-armor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bulletproof"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "detvest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kvest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "webvest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "secvest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mercwebvest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wardenvest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hosvest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "officervest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reactive"
+dirs = 4
+frames = 7
+delays = [1]
+
+[[state]]
+name = "reactiveoff"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pcrcvest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-engineering_rad"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-engineering_con"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-medical_bio"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-sec_riot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-medical_emt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ninja_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ninja_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ce_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ce_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-firebug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-pilot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-pilot2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "explorer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "explorer_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kamishimo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engineering_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engineering_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eva_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eva_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "science_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "science_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medical_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medical_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "void_explorer2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "void_explorer2_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ianshirt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cespace_suit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engspace_suit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "classicponcho"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "secponcho"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medponcho"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engiponcho"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargoponcho"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sciponcho"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "towel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tdgreen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tdred"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chaplain_hoodie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sweater_pink"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sweater_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sweater_blueheart"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sweater_mint"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sweater_nt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "void_explorer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rad_fitted"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "psyamp"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "psyamp_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "autoloksuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "space"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rad"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatwinter"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatwinter_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "taloncoat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "taloncoat_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatnarsie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatnarsie_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatratvar"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatratvar_t"
+dirs = 4
+frames = 4
+delays = [2, 2, 2, 6]
+rewind = true
+
+[[state]]
+name = "coatce"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatce_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatengineer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatengineer_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatatmos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatatmos_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatcargo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatcargo_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatpara"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatpara_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatchemist"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatchemist_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatsar"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatsar_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatcmo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatcmo_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatmedical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatmedical_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatscience"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatscience_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatrd"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatrd_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatviro"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatviro_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatmedicalalt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatmedicalalt_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coataformal"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coataformal_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatsecurity"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatsecurity_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatrobotics"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatrobotics_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coathop"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coathop_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatcaptain"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatcaptain_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coathos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coathos_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatcentcom"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatcentcom_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coathydro"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coathydro_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatbar"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatbar_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatjanitor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatjanitor_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatminer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatminer_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatqm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatqm_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatcosmic"
+dirs = 4
+frames = 6
+delays = [2]
+rewind = true
+
+[[state]]
+name = "coatcosmic_t"
+dirs = 4
+frames = 6
+delays = [2]
+rewind = true
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pursuit_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pursuit_rig_sealed"
+dirs = 4
+frames = 2
+delays = [5, 4]

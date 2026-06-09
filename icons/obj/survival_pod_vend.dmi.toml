@@ -1,0 +1,29 @@
+# Generated from survival_pod_vend.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 36
+cols = 3
+
+[[state]]
+name = "donkvendor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donkvendor-deny"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donkvendor-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donkvendor-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donkvendor-vend"
+dirs = 1
+frames = 1

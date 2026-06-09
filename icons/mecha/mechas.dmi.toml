@@ -1,0 +1,26 @@
+# Generated from mechas.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 10
+
+[[state]]
+name = "alt_unfinished_animation"
+dirs = 4
+frames = 14
+delays = [1]
+
+[[state]]
+name = "hades"
+dirs = 4
+frames = 8
+delays = [5]
+
+[[state]]
+name = "hades_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hades_broken"
+dirs = 1
+frames = 1

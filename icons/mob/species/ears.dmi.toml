@@ -1,0 +1,30 @@
+# Generated from ears.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "earmuffs"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hairflower"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "headset"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "headphones_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "headphones_on"
+dirs = 4
+frames = 7
+delays = [2]

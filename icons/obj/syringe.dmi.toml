@@ -1,0 +1,119 @@
+# Generated from syringe.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "borghypo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hypo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "advhypo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "advhypo_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "autoinjector1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "autoinjector2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "autoinjector0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purple1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purple0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "black1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "black0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "autoinjector"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "black"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "allergy1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "allergy0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "allergy"
+dirs = 1
+frames = 1

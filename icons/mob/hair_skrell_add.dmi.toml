@@ -1,0 +1,74 @@
+# Generated from hair_skrell_add.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "skrell_very_short_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_short_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_long_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_very_long_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_long_tied_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_very_long_tied_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_long_scarf_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_very_long_scarf_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_long_wavy_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_very_long_wavy_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_short_pullback_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_long_pullback_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_very_long_pullback_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_split_s"
+dirs = 4
+frames = 1

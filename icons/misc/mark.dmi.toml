@@ -1,0 +1,199 @@
+# Generated from mark.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "b1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "b2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "b3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "b4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "X"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "up"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dn"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fdn"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "frt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ydn"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ylf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yrt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rdn"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rlf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rrt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "-"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "."
+dirs = 1
+frames = 1
+
+[[state]]
+name = "*"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "C"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "x3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "x4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blocker"
+dirs = 1
+frames = 1

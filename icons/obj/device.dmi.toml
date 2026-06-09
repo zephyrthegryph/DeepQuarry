@@ -1,0 +1,1341 @@
+# Generated from device.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 29
+
+[[state]]
+name = "atmos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "forensic0-old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "forensic1-old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spectrometer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spectrometer_s"
+dirs = 1
+frames = 3
+delays = [4]
+rewind = true
+
+[[state]]
+name = "adv_spectrometer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "adv_spectrometer_s"
+dirs = 1
+frames = 3
+delays = [4]
+
+[[state]]
+name = "locator"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "flash"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flash2"
+dirs = 1
+frames = 3
+delays = [1, 1, 3]
+
+[[state]]
+name = "sflash"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sflash2"
+dirs = 1
+frames = 3
+delays = [1, 1, 3]
+
+[[state]]
+name = "sflashburnt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flashburnt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shield0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shield1"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "hand_tele"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "motion0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "motion1"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "motion2"
+dirs = 1
+frames = 2
+delays = [1, 5]
+
+[[state]]
+name = "motion3"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "t-ray0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "t-ray1"
+dirs = 1
+frames = 2
+delays = [1, 10]
+
+[[state]]
+name = "emp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "empar"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "powersink0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "powersink1"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "pinoff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinonfar"
+dirs = 8
+frames = 2
+delays = [2]
+
+[[state]]
+name = "pinonmedium"
+dirs = 8
+frames = 2
+delays = [2]
+
+[[state]]
+name = "pinonclose"
+dirs = 8
+frames = 2
+delays = [2]
+
+[[state]]
+name = "pinondirect"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "pinonnull"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "pinonalert"
+dirs = 8
+frames = 2
+delays = [2]
+
+[[state]]
+name = "syndbeacon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "multitool"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "multitool_no_camera"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "multitool_ref_scan"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "multitool_yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "multitool_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "multitool_tracking"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "multitool_tracking_fail"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "multitool_modified"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "multitool_suspicious"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "voice0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tonercartridge"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mindflash"
+dirs = 1
+frames = 6
+delays = [2]
+rewind = true
+
+[[state]]
+name = "mindflash2"
+dirs = 1
+frames = 3
+delays = [1, 2, 5]
+rewind = true
+
+[[state]]
+name = "mindflashburnt"
+dirs = 1
+frames = 1
+rewind = true
+
+[[state]]
+name = "batterer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "battererburnt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "implant"
+dirs = 1
+frames = 2
+delays = [10, 1]
+
+[[state]]
+name = "implant_evil"
+dirs = 1
+frames = 2
+delays = [10, 1]
+
+[[state]]
+name = "implant_melted"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eftpos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bunsen0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bunsen1"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "solution_tray"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "forensic0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "forensic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "forensic1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "forensic_neo0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "forensic_neo1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "forensic_neo2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "megaphone"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gigaphone"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "modkit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dest_tagger"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gripper-old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gripper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gripper-medical"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gripper-sci"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gripper-mining"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gripper-omni"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "decompiler"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "decompiler_swarm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gripper-sec"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gripper-sheet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gripper-mech"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gripper-circ"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gripper-flesh"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "binoculars_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sunflower"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "uv_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "uv_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sampler0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sampler1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "robotanalyzer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "taperecorder_idle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "taperecorder_recording"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "taperecorder_playing"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "taperecorder_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tape_white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tape_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tape_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tape_yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tape_purple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "camcorder"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "camcorder_on"
+dirs = 1
+frames = 2
+delays = [8, 5]
+
+[[state]]
+name = "communicator"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "communicator-active"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "communicator-video"
+dirs = 1
+frames = 5
+delays = [4]
+
+[[state]]
+name = "communicator-called"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "translator"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "translator1"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "translator2"
+dirs = 1
+frames = 7
+delays = [1, 1, 1, 30, 3, 2, 8]
+
+[[state]]
+name = "geiger_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "geiger_on_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "geiger_on_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "geiger_on_emag"
+dirs = 1
+frames = 8
+delays = [10, 1]
+
+[[state]]
+name = "geiger_on_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "geiger_on_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "geiger_on_5"
+dirs = 1
+frames = 2
+delays = [2, 1]
+
+[[state]]
+name = "jammer1"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "jammer0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jammer_overlay_100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jammer_overlay_75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jammer_overlay_50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jammer_overlay_25"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "jammer_overlay_0"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "suitcooler0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitcooler1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitcooler2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "retail_idle"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "retail_approve"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "retail_scan"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "spyglass_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "signmaker"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "signmaker_sec"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "signmaker_engi"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "signmaker_med"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "commwatch"
+dirs = 1
+frames = 8
+delays = [30, 1, 1, 1, 30, 1]
+
+[[state]]
+name = "commwatch-called"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "commwatch-active"
+dirs = 1
+frames = 6
+delays = [2]
+
+[[state]]
+name = "commwatch-video"
+dirs = 1
+frames = 6
+delays = [1, 1, 1, 1, 1, 20]
+
+[[state]]
+name = "pointer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pointer_red_laser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pointer_blue_laser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pointer_green_laser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pointer_purple_laser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "earpiece"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "earpiece1"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "earpiece2"
+dirs = 1
+frames = 7
+delays = [1, 1, 1, 30, 3, 2, 8]
+
+[[state]]
+name = "adv_cataloguer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "adv_cataloguer_active"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "cataloguer_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cataloguer_active_old"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "debug_cataloguer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "debug_cataloguer_active"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "adv_cataloguer_active_glow"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "deep_scan_device"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holowarrant"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holowarrant_filled"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holowarrant_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holowarrant_filled_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "health"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "health-scan"
+dirs = 1
+frames = 12
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 5]
+loop = 1
+
+[[state]]
+name = "health1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "health1-scan"
+dirs = 1
+frames = 12
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 5]
+
+[[state]]
+name = "health2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "health2-scan"
+dirs = 1
+frames = 12
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 5]
+
+[[state]]
+name = "health3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "health3-scan"
+dirs = 1
+frames = 12
+delays = [1]
+
+[[state]]
+name = "health_scroll"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "health_scroll-scan"
+dirs = 1
+frames = 3
+delays = [4]
+
+[[state]]
+name = "hydro_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xenobio_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hydro_old2"
+dirs = 1
+frames = 4
+delays = [1.6]
+hotspots = [{ frame = 1, x = 30, y = 25 }]
+
+[[state]]
+name = "xenobio_old2"
+dirs = 1
+frames = 4
+delays = [1.6]
+hotspots = [{ frame = 1, x = 30, y = 25 }]
+
+[[state]]
+name = "hydro"
+dirs = 1
+frames = 12
+delays = [1]
+
+[[state]]
+name = "xenobio"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "liquid_dispenser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "liquid_dispenser_on"
+dirs = 1
+frames = 6
+delays = [5]
+
+[[state]]
+name = "bluflare"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluflare_on"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "esuitcooler"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mapping_unit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mapping_unit_ert"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mapping_unit_ds"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mapping_unit_op"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holochip"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holochip_ds"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holochip_op"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holochip_ert"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holochip_raid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holochip_syndi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holochip_on"
+dirs = 1
+frames = 2
+delays = [50, 3]
+
+[[state]]
+name = "holochip_ds_on"
+dirs = 1
+frames = 2
+delays = [50, 3]
+
+[[state]]
+name = "holochip_op_on"
+dirs = 1
+frames = 2
+delays = [50, 3]
+
+[[state]]
+name = "holochip_ert_on"
+dirs = 1
+frames = 2
+delays = [50, 3]
+
+[[state]]
+name = "holochip_raid_on"
+dirs = 1
+frames = 2
+delays = [50, 3]
+
+[[state]]
+name = "holochip_syndi_on"
+dirs = 1
+frames = 2
+delays = [50, 3]
+
+[[state]]
+name = "geiger_wall"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "geiger_wall-p"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "geiger_level_5"
+dirs = 4
+frames = 16
+delays = [1]
+
+[[state]]
+name = "geiger_level_4"
+dirs = 4
+frames = 8
+delays = [2, 2, 2, 2, 1, 1, 1, 2]
+
+[[state]]
+name = "geiger_level_3"
+dirs = 4
+frames = 8
+delays = [2, 2, 2, 1, 2]
+
+[[state]]
+name = "geiger_level_2"
+dirs = 4
+frames = 8
+delays = [2, 2, 2, 1, 1, 2, 1, 2]
+
+[[state]]
+name = "geiger_level_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "defib_kit0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "defib_kit1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "defib_kit2"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "defib_kit3"
+dirs = 1
+frames = 2
+delays = [10, 5]
+
+[[state]]
+name = "jumper_kit0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jumper_kit1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jumper_kit2"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "jumper_kit3"
+dirs = 1
+frames = 2
+delays = [10, 5]
+
+[[state]]
+name = "health-g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "health-g-scan"
+dirs = 1
+frames = 12
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 5]
+loop = 1
+
+[[state]]
+name = "translator_small"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "translator_small1"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "translator_small2"
+dirs = 1
+frames = 7
+delays = [1, 1, 1, 30, 3, 2, 8]
+
+[[state]]
+name = "extrapolator_scan"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "extrapolator_sample"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "binoculars"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spyglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rifle_scope"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cataloguer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cataloguer_active"
+dirs = 1
+frames = 6
+delays = [2]
+
+[[state]]
+name = "compact"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "compact_closed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "compact_s"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "pathcat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pathcat_closed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pathcat_s"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "podzu"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "podzu_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "headpods"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "zuman"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "zuman_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bspeaker"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bspeaker_ready"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bspeaker_playing"
+dirs = 1
+frames = 14
+delays = [1]
+
+[[state]]
+name = "handset"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radiopack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "denecrotizer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "denecrotizer-o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m-denecrotizer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m-denecrotizer-o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "antibody"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "antibody-scan"
+dirs = 1
+frames = 12
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 5]
+
+[[state]]
+name = "hacktool"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sec_ticket_printer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "e_beacon_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "e_beacon_active"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "train_ticket_printer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gold_star_printer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "anom_scanner"
+dirs = 1
+frames = 1

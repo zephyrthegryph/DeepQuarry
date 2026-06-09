@@ -1,0 +1,1125 @@
+# Generated from wall_masks.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 28
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "solid0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solid1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solid2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solid3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solid4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solid5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solid6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solid7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solidfwall_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "solidfwall_opening"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "solidfwall_closing"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "stone0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stone1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stone2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stone3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stone4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stone5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stone6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stone7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stonefwall_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stonefwall_opening"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "stonefwall_closing"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "metal0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "metal1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "metal2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "metal3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "metal4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "metal5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "metal6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "metal7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "metalfwall_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metalfwall_opening"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "metalfwall_closing"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "cult0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cult1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cult2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cult3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cult4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cult5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cult6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cult7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "generic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rgeneric"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cult"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_cult"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_over"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_metal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_stone0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reinf_stone1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reinf_stone2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reinf_stone3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reinf_stone4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reinf_stone5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reinf_ston6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reinf_stone7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reinf_construct-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_construct-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_construct-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_construct-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_construct-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_construct-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "debug0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "debug1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "debug2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "debug3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "debug4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "debug5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "debug6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "debug7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rdebug"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "diona0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "diona1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "diona2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "diona3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "diona4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "diona5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "diona6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "diona7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dionafwall_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dionafwall_opening"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dionafwall_closing"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wood1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wood2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wood3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wood4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wood5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wood6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wood7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "woodfwall_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "woodfwall_opening"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "woodfwall_closing"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "log0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "log1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "log2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "log3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "log4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "log5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "log6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "log7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "logfwall_opening"
+dirs = 1
+frames = 10
+delays = [1]
+
+[[state]]
+name = "logfwall_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "logfwall_closing"
+dirs = 1
+frames = 10
+delays = [1]
+
+[[state]]
+name = "dungeon0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dungeon1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dungeon2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dungeon3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dungeon4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dungeon5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dungeon6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dungeon7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dungeon_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dungeon_opening"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "dungeon_closing"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "rock_side"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rock_side_w"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_side_e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_side_n"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_side_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rock2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rock3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rock4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rock5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rock6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rock7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rock0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rock_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_opening"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "rock_closing"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "bedrock"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hull"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hull0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hull1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hull2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hull3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hull4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hull5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hull6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hull7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hullfwall_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hullfwall_opening"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "hullfwall_closing"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "reinf_mesh"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hull_corner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hull_corner_reinf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "curvy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "curvy0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "curvy1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "curvy2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "curvy3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "curvy4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "curvy5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "curvy6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "curvy7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "curvyfwall_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "curvyfwall_opening"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "curvyfwall_closing"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "brick"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brick0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "brick1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "brick2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "brick3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "brick4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "brick5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "brick6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "brick7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "brickfwall_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brickfwall_opening"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "brickfwall_closing"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "jaggy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jaggy0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jaggy1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jaggy2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jaggy3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jaggy4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jaggy5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jaggy6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jaggy7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jaggyfwall_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jaggyfwall_opening"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "jaggyfwall_closing"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "resin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "resin0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "resin1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "resin2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "resin3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "resin4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "resin5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "resin6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "resin7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "resin_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "resin_opening"
+dirs = 1
+frames = 6
+delays = [1]
+loop = 1
+
+[[state]]
+name = "resin_closing"
+dirs = 1
+frames = 5
+delays = [1]
+loop = 1
+
+[[state]]
+name = "mossyrock0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mossyrock1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mossyrock2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mossyrock3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mossyrock4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mossyrock5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mossyrock6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mossyrock7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mossyrock_side"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mossyrock_side_w"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mossyrock_side_e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mossyrock_side_n"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mossyrock_side_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hull-titanium"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hull-r_titanium"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hull-plasteel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hull-r_plasteel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hull-durasteel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hull-r_durasteel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hull-steel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hull-r_steel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rbrick"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rockvault"
+dirs = 1
+frames = 1

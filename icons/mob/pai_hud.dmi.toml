@@ -1,0 +1,277 @@
+# Generated from pai_hud.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "unfolded"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "folded"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "health0"
+dirs = 1
+frames = 2
+delays = [0.5]
+
+[[state]]
+name = "health1"
+dirs = 1
+frames = 2
+delays = [25, 5]
+
+[[state]]
+name = "health2"
+dirs = 1
+frames = 2
+delays = [25, 5]
+
+[[state]]
+name = "health3"
+dirs = 1
+frames = 2
+delays = [25, 5]
+
+[[state]]
+name = "health4"
+dirs = 1
+frames = 2
+delays = [25, 5]
+
+[[state]]
+name = "health5"
+dirs = 1
+frames = 3
+delays = [10, 2.5, 1]
+
+[[state]]
+name = "health6"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "health7"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "vore"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "character"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "act_resist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pull1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "running"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "walking"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "zone_sel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "choose_chassis"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pull0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "intent_none"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "intent_all"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "intent_help-s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "intent_help-n"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "intent_disarm-s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "intent_disarm-n"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "intent_grab-s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "intent_grab-n"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "intent_harm-s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "intent_harm-n"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "software_interface"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radio_configuration"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "language"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "communicator"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "med_records"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sec_records"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_jack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "translator"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "manifest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "atmos_sensor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "directives"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "signaller"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "software"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ar_hud"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "med_records_o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sec_records_o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_jack_o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "translator_o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "atmos_sensor_o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "signaller_o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ar_hud_o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "death_alarm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "death_alarm_o"
+dirs = 1
+frames = 1

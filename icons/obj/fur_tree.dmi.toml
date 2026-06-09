@@ -1,0 +1,14 @@
+# Generated from fur_tree.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 64
+cols = 2
+
+[[state]]
+name = "tallfur1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tallfur2"
+dirs = 1
+frames = 1

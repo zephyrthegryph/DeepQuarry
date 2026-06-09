@@ -1,0 +1,49 @@
+# Generated from wheelchair.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "wheelchair"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wheelchair_folded"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wheelchair_overlay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshchair"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshchair_overlay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshchair_folded"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "motorchair"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "motorchair_overlay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "motorchair_folded"
+dirs = 1
+frames = 1

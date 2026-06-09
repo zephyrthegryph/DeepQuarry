@@ -1,0 +1,355 @@
+/obj/machinery/power/emitter
+	name = "emitter"
+	desc = "It is a heavy duty industrial laser."
+	icon = 'icons/obj/singularity.dmi'
+	icon_state = "emitter"
+	anchored = FALSE
+	density = TRUE
+	unacidable = TRUE
+	req_access = list(ACCESS_ENGINE_EQUIP)
+	var/id = null
+
+	use_power = USE_POWER_OFF	//uses powernet power, not APC power
+	active_power_usage = 30000	//30 kW laser. I guess that means 30 kJ per shot.
+
+	var/active = 0
+	var/powered = 0
+	var/fire_delay = 100
+	var/max_burst_delay = 100
+	var/min_burst_delay = 20
+	var/burst_shots = 3
+	var/last_shot = 0
+	var/shot_number = 0
+	var/state = 0
+	var/locked = 0
+
+	// Anomaly harvesting stuff
+	var/anomalous = FALSE
+	var/particle = ANOMALY_PARTICLE_SIGMA
+
+	var/burst_delay = 2
+	var/initial_fire_delay = 100
+
+	var/integrity = 80
+
+/obj/machinery/power/emitter/Destroy()
+	message_admins("Emitter deleted at ([x],[y],[z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)")
+	log_game("EMITTER([x],[y],[z]) Destroyed/deleted.")
+	investigate_log(span_red("deleted") + " at ([x],[y],[z])","singulo")
+	. = ..()
+
+/obj/machinery/power/emitter/attack_hand(mob/user as mob)
+	src.add_fingerprint(user)
+	activate(user)
+
+/obj/machinery/power/emitter/proc/activate(mob/user as mob)
+	if(state == 2)
+		if(!powernet)
+			to_chat(user, "\The [src] isn't connected to a wire.")
+			return 1
+		if(!src.locked)
+			if(src.active==1)
+				src.active = 0
+				balloon_alert_visible("turned off")
+				message_admins("Emitter turned off by [key_name(user, user.client)](<A href='byond://?_src_=holder;[HrefToken()];adminmoreinfo=\ref[user]'>?</A>) in ([x],[y],[z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)",0,1)
+				log_game("EMITTER([x],[y],[z]) OFF by [key_name(user)]")
+				investigate_log("turned " + span_red("off") + " by [user.key]","singulo")
+			else
+				src.active = 1
+				balloon_alert_visible("turned on")
+				src.shot_number = 0
+				src.fire_delay = get_initial_fire_delay()
+				message_admins("Emitter turned on by [key_name(user, user.client)](<A href='byond://?_src_=holder;[HrefToken()];adminmoreinfo=\ref[user]'>?</A>) in ([x],[y],[z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)")
+				log_game("EMITTER([x],[y],[z]) ON by [key_name(user)]")
+				investigate_log("turned " + span_green("on") + " by [user.key]","singulo")
+			update_icon()
+		else
+			to_chat(user, span_warning("The controls are locked!"))
+	else
+		to_chat(user, span_warning("\The [src] needs to be firmly secured to the floor first."))
+		return 1
+
+/obj/machinery/power/emitter/process()
+	if(stat & (BROKEN))
+		return
+	if(src.state != 2 || (!powernet && active_power_usage))
+		src.active = 0
+		update_icon()
+		return
+	if(((src.last_shot + src.fire_delay) <= world.time) && (src.active == 1))
+
+		var/actual_load = draw_power(active_power_usage)
+		if(actual_load >= active_power_usage) //does the laser have enough power to shoot?
+			if(!powered)
+				powered = 1
+				update_icon()
+				log_game("EMITTER([x],[y],[z]) Regained power and is ON.")
+				investigate_log("regained power and turned " + span_green("on"),"singulo")
+		else
+			if(powered)
+				powered = 0
+				update_icon()
+				log_game("EMITTER([x],[y],[z]) Lost power and was ON.")
+				investigate_log("lost power and turned" + span_red("off"),"singulo")
+			return
+
+		src.last_shot = world.time
+		if(src.shot_number < burst_shots)
+			src.fire_delay = get_burst_delay() //R-UST port
+			src.shot_number ++
+		else
+			src.fire_delay = get_rand_burst_delay() //R-UST port
+			src.shot_number = 0
+
+		//need to calculate the power per shot as the emitter doesn't fire continuously.
+		var/burst_time = (min_burst_delay + max_burst_delay)/2 + 2*(burst_shots-1)
+		var/power_per_shot = active_power_usage * (burst_time/10) / burst_shots
+
+		playsound(src, 'sound/weapons/emitter.ogg', 25, 1)
+		if(prob(35))
+			var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
+			s.set_up(5, 1, src)
+			s.start()
+
+		var/obj/item/projectile/beam/emitter/A = get_emitter_beam()
+		A.damage = round(power_per_shot/EMITTER_DAMAGE_POWER_TRANSFER)
+		A.firer = src
+		A.fire(dir2angle(dir))
+
+/obj/machinery/power/emitter/attackby(obj/item/W, mob/user)
+
+	if(W.has_tool_quality(TOOL_WRENCH))
+		if(active)
+			to_chat(user, "Turn off [src] first.")
+			return
+		switch(state)
+			if(0)
+				state = 1
+				playsound(src, W.usesound, 75, 1)
+				user.visible_message("[user.name] secures [src] to the floor.", \
+					"You secure the external reinforcing bolts to the floor.", \
+					"You hear a ratchet.")
+				src.anchored = TRUE
+			if(1)
+				state = 0
+				playsound(src, W.usesound, 75, 1)
+				user.visible_message("[user.name] unsecures [src] reinforcing bolts from the floor.", \
+					"You undo the external reinforcing bolts.", \
+					"You hear a ratchet.")
+				src.anchored = FALSE
+				disconnect_from_network()
+			if(2)
+				to_chat(user, span_warning("\The [src] needs to be unwelded from the floor."))
+		update_icon()
+		return
+
+	if(W.has_tool_quality(TOOL_WELDER))
+		var/obj/item/weldingtool/WT = W.get_welder()
+		if(active)
+			to_chat(user, "Turn off [src] first.")
+			return
+		switch(state)
+			if(0)
+				to_chat(user, span_warning("\The [src] needs to be wrenched to the floor."))
+			if(1)
+				if (WT.remove_fuel(0,user))
+					playsound(src, WT.usesound, 50, 1)
+					user.visible_message("[user.name] starts to weld [src] to the floor.", \
+						"You start to weld [src] to the floor.", \
+						"You hear welding")
+					if (do_after(user, 2 SECONDS * WT.toolspeed, target = src))
+						if(!src || !WT.isOn()) return
+						state = 2
+						to_chat(user, "You weld [src] to the floor.")
+						connect_to_network()
+				else
+					to_chat(user, span_warning("You need more welding fuel to complete this task."))
+			if(2)
+				if (WT.remove_fuel(0,user))
+					playsound(src, WT.usesound, 50, 1)
+					user.visible_message("[user.name] starts to cut [src] free from the floor.", \
+						"You start to cut [src] free from the floor.", \
+						"You hear welding")
+					if (do_after(user, 2 SECONDS * WT.toolspeed, target = src))
+						if(!src || !WT.isOn()) return
+						state = 1
+						to_chat(user, "You cut [src] free from the floor.")
+						disconnect_from_network()
+				else
+					to_chat(user, span_warning("You need more welding fuel to complete this task."))
+		update_icon()
+		return
+
+	if(istype(W, /obj/item/stack/material) && W.get_material_name() == MAT_STEEL)
+		var/amt = CEILING(( initial(integrity) - integrity)/10, 1)
+		if(!amt)
+			to_chat(user, span_notice("\The [src] is already fully repaired."))
+			return
+		var/obj/item/stack/P = W
+		if(!P.can_use(amt))
+			to_chat(user, span_warning("You don't have enough sheets to repair this! You need at least [amt] sheets."))
+			return
+		to_chat(user, span_notice("You begin repairing \the [src]..."))
+		if(do_after(user, 3 SECONDS, target = src))
+			if(P.use(amt))
+				to_chat(user, span_notice("You have repaired \the [src]."))
+				integrity = initial(integrity)
+				return
+			else
+				to_chat(user, span_warning("You don't have enough sheets to repair this! You need at least [amt] sheets."))
+				return
+
+	if(istype(W, /obj/item/card/id) || istype(W, /obj/item/pda))
+		if(emagged)
+			to_chat(user, span_warning("The lock seems to be broken."))
+			return
+		if(src.allowed(user))
+			src.locked = !src.locked
+			to_chat(user, "The controls are now [src.locked ? "locked." : "unlocked."]")
+			update_icon()
+		else
+			to_chat(user, span_warning("Access denied."))
+		return
+	if(istype(W, /obj/item/anomaly_scanner))
+		anomalous = !anomalous
+		burst_delay = anomalous ? 3 : 8
+		to_chat(user, span_notice("The beam is now set to [anomalous ? "anomalous." : "normal."]"))
+		if(anomalous)
+			description_info = "Use a multitool to change the particle type."
+		else
+			description_info = initial(description_info)
+		return
+	if(W.has_tool_quality(TOOL_MULTITOOL) && anomalous)
+		var/chosen_particle = tgui_input_list(user, "Select particle type", "Particle Selection", ANOMALY_PARTICLE_ALL)
+		if(!chosen_particle)
+			return
+		particle = chosen_particle
+		balloon_alert_visible("changed to [chosen_particle]")
+		return
+	..()
+	return
+
+/obj/machinery/power/emitter/emag_act(remaining_charges, mob/user)
+	if(!emagged)
+		locked = 0
+		emagged = 1
+		user.visible_message("[user.name] emags [src].",span_warning("You short out the lock."))
+		return 1
+
+/obj/machinery/power/emitter/bullet_act(obj/item/projectile/P)
+	if(!P || !P.damage || P.get_structure_damage() <= 0 )
+		return
+
+	adjust_integrity(-P.get_structure_damage())
+
+/obj/machinery/power/emitter/blob_act()
+	adjust_integrity(-1000) // This kills the emitter.
+
+/obj/machinery/power/emitter/proc/adjust_integrity(amount)
+	integrity = between(0, integrity + amount, initial(integrity))
+	if(integrity == 0)
+		if(powernet && avail(active_power_usage)) // If it's powered, it goes boom if killed.
+			visible_message(src, span_danger("\The [src] explodes violently!"), span_danger("You hear an explosion!"))
+			explosion(get_turf(src), 1, 2, 4)
+		else
+			src.visible_message(span_danger("\The [src] crumples apart!"), span_warning("You hear metal collapsing."))
+		if(src)
+			qdel(src)
+
+/obj/machinery/power/emitter/examine(mob/user)
+	. = ..()
+	switch(state)
+		if(0)
+			. += span_warning("It is not secured in place!")
+		if(1)
+			. += span_warning("It has been bolted down securely, but not welded into place.")
+		if(2)
+			. += span_notice("It has been bolted down securely and welded down into place.")
+	var/integrity_percentage = round((integrity / initial(integrity)) * 100)
+	switch(integrity_percentage)
+		if(0 to 30)
+			. += span_danger("It is close to falling apart!")
+		if(31 to 70)
+			. += span_danger("It is damaged.")
+		if(77 to 99)
+			. += span_warning("It is slightly damaged.")
+
+//R-UST port
+/obj/machinery/power/emitter/proc/get_initial_fire_delay()
+	return initial_fire_delay
+
+/obj/machinery/power/emitter/proc/get_rand_burst_delay()
+	return rand(min_burst_delay, max_burst_delay)
+
+/obj/machinery/power/emitter/proc/get_burst_delay()
+	return burst_delay
+
+/obj/machinery/power/emitter/proc/get_emitter_beam()
+	if(anomalous)
+		var/obj/item/projectile/energy/anomaly/projectile = new /obj/item/projectile/energy/anomaly(get_turf(src))
+		projectile.particle_type = particle
+		return projectile
+	return new /obj/item/projectile/beam/emitter(get_turf(src))
+
+/obj/machinery/power/emitter/pre_mapped
+	anchored = TRUE
+	state = 2
+
+/obj/machinery/power/emitter/pre_mapped/Initialize(mapload)
+	. = ..()
+	connect_to_network()
+	update_icon()
+
+
+// === merged from emitter_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/machinery/power/emitter
+	icon = 'icons/obj/singularity_vr.dmi' // New emitter sprite
+	icon_state = "emitter0"
+	var/previous_state = 0
+
+/obj/machinery/power/emitter/Initialize(mapload)
+	. = ..()
+	previous_state = state
+	if(state == 2 && anchored)
+		connect_to_network()
+	AddElement(/datum/element/climbable)
+	AddElement(/datum/element/rotatable)
+	AddElement(/datum/element/empprotection, EMP_PROTECT_SELF)
+
+/obj/machinery/power/emitter/update_icon()
+	cut_overlays()
+	icon_state = "emitter[state]"
+	if (state != previous_state)
+		flick("emitterflick-[previous_state][state]",src)
+		previous_state = state
+
+	if(powered && powernet && avail(active_power_usage) && active)
+		var/image/emitterbeam = image(icon,"emitter-beam")
+		emitterbeam.plane = PLANE_LIGHTING_ABOVE
+		add_overlay(emitterbeam)
+
+	if(locked)
+		var/image/emitterlock = image(icon,"emitter-lock")
+		emitterlock.plane = PLANE_LIGHTING_ABOVE
+		add_overlay(emitterlock)
+
+// The old emitter sprite
+/obj/machinery/power/emitter/antique
+	name = "antique emitter"
+	desc = "An old fashioned heavy duty industrial laser."
+	icon_state = "emitter"
+
+/obj/machinery/power/emitter/antique/update_icon()
+	if(powered && powernet && avail(active_power_usage) && active)
+		icon_state = "emitter_+a"
+	else
+		icon_state = "emitter"
+
+/obj/machinery/power/emitter/antique/pre_mapped
+	anchored = TRUE
+	state = 2
+
+/obj/machinery/power/emitter/antique/pre_mapped/Initialize(mapload)
+	. = ..()
+	connect_to_network()
+	update_icon()

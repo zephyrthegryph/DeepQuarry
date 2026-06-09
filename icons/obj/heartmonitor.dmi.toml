@@ -1,0 +1,86 @@
+# Generated from heartmonitor.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "base"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "screen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brain_ok"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "brain_bad"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "brain_verybad"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "brain_warning"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "pulse_thready"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "pulse_veryfast"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "pulse_normal"
+dirs = 1
+frames = 2
+delays = [5, 6]
+
+[[state]]
+name = "pulse_flatline"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pulse_warning"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "breathing_normal"
+dirs = 1
+frames = 3
+delays = [4, 1, 4]
+rewind = true
+
+[[state]]
+name = "breathing_shallow"
+dirs = 1
+frames = 2
+delays = [4]
+
+[[state]]
+name = "breathing_warning"
+dirs = 1
+frames = 2
+delays = [5]

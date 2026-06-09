@@ -1,0 +1,668 @@
+# Generated from fluff_wide.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 42
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "openpanel_nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wreck-overlay"
+dirs = 1
+frames = 18
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 40]
+
+[[state]]
+name = "jademanique-kingside"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jademanique-kingside"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "jademanique-kingside-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jademanique-kingside-eyes"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "jademanique-kingside-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jademanique-kingside-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jademanique-kingside-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jademanique-kingside-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jademanique-kingside-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jademanique-kingside-sleeper-1"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "jademanique-kingside-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jademanique-kingside-lights"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "jademanique-kingside-laser"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jademanique-kingside-taser"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lunarfleet-cleanor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lunarfleet-cleanor"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "lunarfleet-cleanor-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lunarfleet-cleanor-eyes"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "lunarfleet-cleanor-wreck"
+dirs = 1
+frames = 11
+delays = [4]
+
+[[state]]
+name = "lunarfleet-cleanor-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lunarfleet-cleanor-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lunarfleet-cleanor-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lunarfleet-cleanor-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lunarfleet-cleanor-sleeper-1"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "lunarfleet-cleanor-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lunarfleet-cleanor-lights"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-russ-sec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-sec"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-russ-sec-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-sec-eyes"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-russ-sec-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "argonne-russ-sec-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-sec-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-sec-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-sec-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-sec-sleeper-1"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-russ-sec-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-sec-lights"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-russ-crisis"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-crisis"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-russ-crisis-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-crisis-eyes"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-russ-crisis-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "argonne-russ-crisis-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-crisis-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-crisis-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-crisis-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-crisis-sleeper-1"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-russ-crisis-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-crisis-lights"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-russ-surg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-surg"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-russ-surg-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-surg-eyes"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-russ-surg-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "argonne-russ-surg-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-surg-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-surg-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-surg-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-surg-sleeper-1"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-russ-surg-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-surg-lights"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-russ-eng"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-eng"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-russ-eng-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-eng-eyes"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-russ-eng-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "argonne-russ-eng-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-eng-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-eng-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-eng-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-eng-sleeper-1"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-russ-eng-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-eng-lights"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-russ-sci"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-sci"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-russ-sci-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-sci-eyes"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-russ-sci-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "argonne-russ-sci-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-sci-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-sci-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-sci-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-sci-sleeper-1"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-russ-sci-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-sci-lights"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-russ-mine"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-mine"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-russ-mine-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-mine-eyes"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-russ-mine-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "argonne-russ-mine-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-mine-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-mine-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-mine-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-mine-sleeper-1"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-russ-mine-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-mine-lights"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-russ-serv"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-serv"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-russ-serv-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-serv-eyes"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-russ-serv-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "argonne-russ-serv-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-serv-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-serv-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-serv-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-serv-sleeper-1"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-russ-serv-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-russ-serv-lights"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "-wreck"
+dirs = 4
+frames = 1

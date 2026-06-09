@@ -1,0 +1,24 @@
+# Generated from structures_yw.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 2
+
+[[state]]
+name = "NT_sign_test"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "NT_sign"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hephaestus_test"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Hephaestus_sign"
+dirs = 1
+frames = 1

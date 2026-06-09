@@ -1,0 +1,14 @@
+# Generated from 64x64_righthand_ch.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 3
+
+[[state]]
+name = "cleaving_saw"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cleaving_saw_open"
+dirs = 4
+frames = 1

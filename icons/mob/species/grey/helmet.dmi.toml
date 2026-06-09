@@ -1,0 +1,590 @@
+# Generated from helmet.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 23
+
+[[state]]
+name = "spacenew"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "helmet"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "helmetsyndi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "capspace"
+dirs = 4
+frames = 7
+delays = [1]
+
+[[state]]
+name = "hardsuit0-deathsquad"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hardsuit1-deathsquad"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hardsuit0-hos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hardsuit1-hos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hardsuit0-syndi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "merc_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "merc_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "redtaghelm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bluetaghelm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "riot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swat-alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate-helm-black-red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate-helm-black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate-helm-black-blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate-helm-black-engie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate-helm-black-engie1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate-helm-black-green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate-helm-green-dark"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate-helm-black-med"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hardsuit0-wiz"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate-helm-black-orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate-helm-green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate-helm-orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate-helm-blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ert_commander_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ert_security_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ert_medical_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ert_engineer_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ert_commander_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ert_security_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hardsuit1-wiz"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ert_medical_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ert_engineer_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-engineering"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engineering_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engineering_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-mining"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mining_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mining_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-sec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-sec_riot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "security_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "security_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ce_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ce_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig1-atmos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig1-engineering"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-atmos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hardhat0_atmos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hardhat1_atmos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medical_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medical_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig1-medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig1-white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig1-mining"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hardsuit1-ert_commander"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hardsuit1-ert_engineer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hardsuit1-ert_medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hardsuit1-ert_security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hardsuit0-ert_janitor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hardsuit1-ert_janitor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "thunderdome"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "paramedic-eva-helmet"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cult_helmet"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "justice"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "justiceup"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "justice2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "justice2up"
+dirs = 4
+frames = 2
+delays = [2]
+
+[[state]]
+name = "knight_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "knight_yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "knight_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "knight_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "knight_templar"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "welding"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "weldingup"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "helmetmasons"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "helmetmaterials"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "helmetthermals"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "helmetgoggles"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "helmetNVG"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "durathread"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "void-red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "void-green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "void-ntblue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "void-captian"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "void-purple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "void-yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "void-light_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "void-syndi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hardsuit0-inquisitor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hardsuit1-inquisitor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "military_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "military_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hardsuit1-syndielite"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hardsuit1-berserker"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hardsuit0-berserker"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hardsuit0-ert_paranormal"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hardsuit1-ert_paranormal"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "breacher_rig_cheap"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "breacher_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "breacher_rig_cheap_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "breacher_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ninja_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ninja_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hacker_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hacker_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pilot_helm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pilot_helm2"
+dirs = 4
+frames = 1

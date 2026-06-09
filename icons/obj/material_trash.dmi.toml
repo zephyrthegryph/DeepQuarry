@@ -1,0 +1,69 @@
+# Generated from material_trash.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "metal0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "circuit0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "circuit1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "circuit2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "circuit3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "device0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "device1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "device2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "device3"
+dirs = 1
+frames = 1

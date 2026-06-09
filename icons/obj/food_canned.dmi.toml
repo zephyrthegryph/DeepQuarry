@@ -1,0 +1,124 @@
+# Generated from food_canned.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "blank-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beef-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beans-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tomato-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spinach-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "appleberry-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beef"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beans"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tomato"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spinach"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "appleberry"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fisheggs-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fisheggs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carpeggs-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carpeggs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maps-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maps"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ntbeans"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ntbeans-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brainzsnax-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brainzsnaxred-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brainzsnax"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brainzsnaxred"
+dirs = 1
+frames = 1

@@ -1,0 +1,59 @@
+# Generated from nullsuits.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "nullsuit_cargo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nullsuit_cmd"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nullsuit_ce"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nullsuit_civ"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nullsuit_cmo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nullsuit_eng"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nullsuit_hos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nullsuit_med"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nullsuit_rd"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nullsuit_sci"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nullsuit_sec"
+dirs = 4
+frames = 1

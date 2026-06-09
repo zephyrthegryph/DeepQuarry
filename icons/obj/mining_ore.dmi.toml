@@ -1,0 +1,154 @@
+# Generated from mining_ore.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore_clown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore_hydrogen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore_lead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore_verdantium"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore_marble"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Green lump"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore_phazon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore_glass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore_diamond"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore_platinum"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore_silver"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore_coal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore_iron"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore_uranium"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore_phoron"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore_gold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore_copper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore_tin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore_bauxite"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore_rutile"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore_void_opal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore_quartz"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore_painite"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boulder1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boulder2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boulder3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boulder4"
+dirs = 1
+frames = 1

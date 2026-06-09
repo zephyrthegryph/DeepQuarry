@@ -1,0 +1,34 @@
+# Generated from lleill_hud.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lleill-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lleill-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lleill-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lleill-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lleill-4"
+dirs = 1
+frames = 1

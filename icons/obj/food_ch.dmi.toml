@@ -1,0 +1,207 @@
+# Generated from food_ch.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "gelbowl"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sauerkraut"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bigos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "concha"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pandenata"
+dirs = 1
+frames = 8
+delays = [1.5]
+
+[[state]]
+name = "tocino"
+dirs = 1
+frames = 20
+delays = [0.5, 0.75]
+
+[[state]]
+name = "garlicbread"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tealeafsteam"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tealeafsteamroll"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "greentealeaf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tencha"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "matchaleaf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "icecream_matcha"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tamales"
+dirs = 1
+frames = 11
+delays = [1]
+
+[[state]]
+name = "thecake_layer-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "thecake_layer-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "thecake_layer-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "thecake_layer-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "thecake_layer-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "thecake_layer-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "thecakeslice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bigbeanburrito"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "supremoburrito"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wataur"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plumpburger"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "butts_pie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cinnamon_roll"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "butterscotch"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spicy_boys"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "butts_pie_slice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "welders_original"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hotbuttericecream"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chaoscake_slice-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chaoscake_slice-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chaoscake_slice-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chaoscake_slice-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chaoscake_slice-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chaoscake_slice-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blondies"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blondiesslice"
+dirs = 1
+frames = 1

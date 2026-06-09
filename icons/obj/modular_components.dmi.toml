@@ -1,0 +1,171 @@
+# Generated from modular_components.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "cardreader"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teslalink"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "printer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hdd_micro"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hdd_small"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hdd_normal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hdd_advanced"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hdd_super"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hdd_cluster"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "netcard_basic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "netcard_advanced"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "netcard_ethernet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "netproc"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "netproc_adv"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "led"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "led_adv"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "battery_nano"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "battery_micro"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "battery_normal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "battery_advanced"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "battery_super"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "battery_ultra"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "battery_lambda"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cpu_small"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cpu_normal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cpu_small_photonic"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "cpu_normal_photonic"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "gps_basic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aislot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scanner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flashdrive_super"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flashdrive_advanced"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flashdrive_basic"
+dirs = 1
+frames = 1

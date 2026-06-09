@@ -1,0 +1,54 @@
+# Generated from crate.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sparks"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "welded"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lock"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "light"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lock_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "light_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "interior"
+dirs = 4
+frames = 1

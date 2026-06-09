@@ -1,0 +1,55 @@
+# Generated from vent_scrubber.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "onold"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "inold"
+dirs = 4
+frames = 2
+delays = [2]
+
+[[state]]
+name = "offold"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hin"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "hon"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "hoff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "on"
+dirs = 4
+frames = 5
+delays = [1]
+
+[[state]]
+name = "in"
+dirs = 4
+frames = 5
+delays = [1]

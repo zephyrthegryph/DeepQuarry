@@ -1,0 +1,59 @@
+# Generated from screen1_popups.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 128
+height = 96
+cols = 5
+
+[[state]]
+name = "popup1"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "popup2"
+dirs = 1
+frames = 4
+delays = [3]
+
+[[state]]
+name = "popup3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "popup4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "popup5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "popup6"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "popup7"
+dirs = 1
+frames = 2
+delays = [50, 1]
+
+[[state]]
+name = "popup8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "popup9"
+dirs = 1
+frames = 2
+delays = [99, 1, 1, 20, 1, 1, 1, 1, 1, 20, 1]
+
+[[state]]
+name = "popup10"
+dirs = 1
+frames = 1

@@ -1,0 +1,86 @@
+# Generated from animal.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 12
+
+[[state]]
+name = "shark"
+dirs = 4
+frames = 5
+delays = [9]
+rewind = true
+
+[[state]]
+name = "shark_rest"
+dirs = 1
+frames = 3
+delays = [12, 1]
+rewind = true
+
+[[state]]
+name = "shark_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ray"
+dirs = 4
+frames = 5
+delays = [3]
+rewind = true
+
+[[state]]
+name = "ray_rest"
+dirs = 1
+frames = 3
+delays = [15, 7]
+rewind = true
+
+[[state]]
+name = "ray_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ray_gib"
+dirs = 1
+frames = 8
+delays = [2, 1, 1, 1, 1, 1, 1, 25]
+
+[[state]]
+name = "babycarp"
+dirs = 4
+frames = 10
+delays = [1]
+
+[[state]]
+name = "babycarp_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "babycarp_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cosmozoan"
+dirs = 1
+frames = 17
+delays = [1]
+
+[[state]]
+name = "cosmozoan_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gnat"
+dirs = 1
+frames = 5
+delays = [0.9, 0.9, 0.5, 0.9, 0.5]
+
+[[state]]
+name = "gnat_dead"
+dirs = 1
+frames = 1

@@ -1,0 +1,49 @@
+# Generated from vore96x96.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 96
+height = 96
+cols = 6
+
+[[state]]
+name = "ddraig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ddraig-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ddraig-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ddraig-3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ddraig_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ddraig_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ddraig_rest-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ddraig_rest-3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ddraig-dead"
+dirs = 1
+frames = 1

@@ -1,0 +1,34 @@
+# Generated from buildingobject.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "switchblade1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "switchblade2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "switchbladestep1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "butterfly1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "butterfly2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "butterflystep1"
+dirs = 1
+frames = 1

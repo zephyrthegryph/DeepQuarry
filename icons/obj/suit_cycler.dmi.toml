@@ -1,0 +1,64 @@
+# Generated from suit_cycler.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "color_base"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "decon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suit_cycler"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_cycler"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pilot_cycler"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cap_cycler"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sec_cycler"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "med_cycler"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "explo_cycler"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engi_cycler"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "industrial_cycler"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red_cycler"
+dirs = 1
+frames = 1

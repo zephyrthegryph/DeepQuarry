@@ -1,0 +1,47 @@
+# Generated from mainframe.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "left"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "aimainframe"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "right-closed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "left0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aimainframe0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "right-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "leftb"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "aimainframeb"
+dirs = 1
+frames = 1

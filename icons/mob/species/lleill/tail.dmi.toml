@@ -1,0 +1,34 @@
+# Generated from tail.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "tail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tail_marking"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tail2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tail2_marking"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tail3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tail3_marking"
+dirs = 4
+frames = 1

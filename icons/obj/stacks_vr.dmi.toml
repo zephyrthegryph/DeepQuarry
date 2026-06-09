@@ -1,0 +1,269 @@
+# Generated from stacks_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "sheet-titanium"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-titanium_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-titanium_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-plastitanium"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-plastitanium_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-plastitanium_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-titaniumglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-titaniumglass_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-titaniumglass_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-plastitaniumglass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-plastitaniumglass_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-plastitaniumglass_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nanopaste"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nanopaste_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nanopaste_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "adv_nanopaste"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "adv_nanopaste_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "adv_nanopaste_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "burnkit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "burnkit_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "burnkit_6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "burnkit_8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "burnkit_9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "burnkit_10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "traumakit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "traumakit_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "traumakit_6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "traumakit_8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "traumakit_9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "traumakit_10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clotkit_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clotkit_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clotkit_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clotkit_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clotkit_5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-wood-gs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-wood-gs_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-wood-gs_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-wood-gs_parquet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-wood-gs_parquet_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-wood-gs_parquet_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-wood-gs_tile"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-wood-gs_tile_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-wood-gs_tile_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-wood-gs_large"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-wood-gs_large_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-wood-gs_large_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-wood-vert-gs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-wood-vert-gs_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-wood-vert-gs_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-wood-vert-gs_large"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-wood-vert-gs_large_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-wood-vert-gs_large_3"
+dirs = 1
+frames = 1

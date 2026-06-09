@@ -1,0 +1,29 @@
+# Generated from taursuits_lizard.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 5
+
+[[state]]
+name = "hasd_suit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apron"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apron_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "surgical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "poncho"
+dirs = 4
+frames = 1

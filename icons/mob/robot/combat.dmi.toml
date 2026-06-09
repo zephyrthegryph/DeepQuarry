@@ -1,0 +1,239 @@
+# Generated from combat.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 17
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "openpanel_nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "default"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "default-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marina"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marina-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marina-roll"
+dirs = 4
+frames = 6
+delays = [3, 1]
+
+[[state]]
+name = "marina-shield"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "droid"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "droid-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "droid-roll"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "droid-roll"
+dirs = 4
+frames = 4
+delays = [1]
+movement = true
+
+[[state]]
+name = "droid-shield"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "insekt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "insekt-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "insekt-shield"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "decapod"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "decapod-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "decapod-shield"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "decapod-openpanel_nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "decapod-openpanel_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "decapod-openpanel_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mechoid"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mechoid-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mechoid-roll"
+dirs = 4
+frames = 6
+delays = [1, 1, 2, 1, 1, 2]
+
+[[state]]
+name = "mechoid-shield"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zoomba"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zoomba"
+dirs = 4
+frames = 2
+delays = [5, 1]
+movement = true
+
+[[state]]
+name = "zoomba-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zoomba-eyes"
+dirs = 4
+frames = 2
+delays = [5, 1]
+movement = true
+
+[[state]]
+name = "zoomba-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "zoomba-roll"
+dirs = 4
+frames = 4
+delays = [15, 1, 15, 1]
+
+[[state]]
+name = "zoomba-roll"
+dirs = 4
+frames = 6
+delays = [1]
+movement = true
+
+[[state]]
+name = "zoomba-shield"
+dirs = 4
+frames = 2
+delays = [5, 1]
+
+[[state]]
+name = "worm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-shield"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-openpanel_nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-openpanel_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-openpanel_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "uptall"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "uptall-eyes"
+dirs = 4
+frames = 1

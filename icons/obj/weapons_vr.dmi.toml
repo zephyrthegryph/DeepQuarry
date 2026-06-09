@@ -1,0 +1,192 @@
+# Generated from weapons_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "impshield"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "impshield_blade"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "impsword"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "impsword_blade"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wolfgirlsword"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wolfgirlsword_sharp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wolfgirlshield"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "machetedx"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lance"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "explorer_shield"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "explorer_shield_lighted"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "explorer_shield_P"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "explorer_shield_P_lighted"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rapier"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stone_blade"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stone_wood_knife"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stone_bone_knife"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stone_wood_axe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stone_bone_axe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "longsword"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "longsword0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "longsword1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian-cutter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian-cutter_active"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian-cutter_blade"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "altevian-cutter_active_blade"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "altevian-wrench"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian-crowbar"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian-wirecutter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian-screwdriver"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian-pulser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian-welder-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian-welder-on"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "mat_staff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mat_staff0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mat_staff1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "confetti_cannon"
+dirs = 1
+frames = 1

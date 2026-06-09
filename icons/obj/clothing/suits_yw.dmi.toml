@@ -1,0 +1,294 @@
+# Generated from suits_yw.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 10
+
+[[state]]
+name = "vox-pressure"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox-carapace"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armalis_armour"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox-pressure-specops"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox-pressure-engineer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox-pressure-medical"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox-pressure-normal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox-pressure-science"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox-pressure-security"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox-medic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox-stealth"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox-civ-security"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox-civ-assistant"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox-civ-bartender"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox-civ-chef"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox-civ-medical"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox-civ-engineer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox-civ-librarian"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox-civ-science"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox-civ-rd"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox-civ-chaplain"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox-civ-atmos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox-civ-ce"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox-civ-chemist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox-civ-cmo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox-civ-geneticist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox-civ-paramedic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox-civ-virologist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox-civ-janitor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox-civ-botanist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox-civ-cargo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox-civ-mining"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox-civ-roboticist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox-civ-mechanic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blackservice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blackservice_crew"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blackservice_med"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blackservice_medcom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blackservice_eng"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blackservice_engcom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blackservice_sup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blackservice_sec"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blackservice_seccom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blackservice_com"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snowsuit_command"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snowsuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snowsuit_science"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snowsuit_security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snowsuit_engineering"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snowsuit_medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snowsuit_cargo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snowsuit_command_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snowsuit_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snowsuit_science_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snowsuit_security_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snowsuit_engineering_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snowsuit_medical_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snowsuit_cargo_t"
+dirs = 4
+frames = 1

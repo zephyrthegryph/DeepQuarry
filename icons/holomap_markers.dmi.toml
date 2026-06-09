@@ -1,0 +1,334 @@
+# Generated from holomap_markers.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 16
+height = 16
+cols = 9
+
+[[state]]
+name = "generic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ds1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ds2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ds3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mar1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mar0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ser1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ser0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "op1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "op2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "op3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ertc1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ertc2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ertc3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "erte1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "erte2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "erte3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ertm1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ertm2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ertm3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "erts1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "erts2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "erts3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ert1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ert2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ert3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndi1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndi2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndi3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndileader1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndileader2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndileader3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mau1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mau0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "raid1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "raid2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "raid3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "raidpress1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "raidpress2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "raidpress3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chicka1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chicka2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chicka3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chickb1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chickb2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chickb3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chickc1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chickc2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chickc3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "you"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "basic1"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "basic2"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "basic3"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "beacon"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "bar"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "diskspawn"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armory"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ai"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tcomms"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bridge"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "med"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engi"
+dirs = 1
+frames = 1

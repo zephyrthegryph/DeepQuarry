@@ -1,0 +1,84 @@
+# Generated from moretrees_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 160
+height = 192
+cols = 4
+
+[[state]]
+name = "bigtree1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bigtree2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bigtree3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bigtree4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree1-b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree2-b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree3-b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree4-b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree1_stump"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree2_stump"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree3_stump"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree4_stump"
+dirs = 1
+frames = 1

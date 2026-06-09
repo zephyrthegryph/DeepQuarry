@@ -1,0 +1,154 @@
+# Generated from manifold.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "map"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "core"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "4way"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "map_4way"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clamps"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "clamps_4way"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "map-supply"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "core-supply"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "4way-supply"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "map_4way-supply"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clamps-supply"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "clamps_4way-supply"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "map-scrubbers"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "core-scrubbers"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "4way-scrubbers"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "map_4way-scrubbers"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clamps-scrubbers"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "clamps_4way-scrubbers"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "map-fuel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "core-fuel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "4way-fuel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "map_4way-fuel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clamps-fuel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "clamps_4way-fuel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "map-aux"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "core-aux"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "4way-aux"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "map_4way-aux"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clamps-aux"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "clamps_4way-aux"
+dirs = 1
+frames = 1

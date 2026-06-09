@@ -1,0 +1,55 @@
+/obj/item/circuitboard/fusion_core_control
+	name = T_BOARD("fusion core controller")
+	build_path = /obj/machinery/computer/fusion_core_control
+
+/obj/item/circuitboard/fusion_fuel_compressor
+	name = T_BOARD("fusion fuel compressor")
+	build_path = /obj/machinery/fusion_fuel_compressor
+	board_type = new /datum/frame/frame_types/machine
+	req_components = list(
+							/obj/item/stock_parts/manipulator = 2,
+							/obj/item/stock_parts/matter_bin = 2,
+							/obj/item/stock_parts/console_screen = 1,
+							/obj/item/stack/cable_coil = 5
+							)
+
+/obj/item/circuitboard/fusion_fuel_control
+	name = T_BOARD("fusion fuel controller")
+	build_path = /obj/machinery/computer/fusion_fuel_control
+
+/obj/item/circuitboard/gyrotron_control
+	name = T_BOARD("gyrotron controller")
+	build_path = /obj/machinery/computer/gyrotron_control
+
+/obj/item/circuitboard/fusion_core
+	name = "internal circuitry (fusion core)"
+	build_path = /obj/machinery/power/fusion_core
+	board_type = new /datum/frame/frame_types/machine
+	req_components = list(
+							/obj/item/stock_parts/manipulator = 2,
+							/obj/item/stock_parts/micro_laser = 1,
+							/obj/item/stock_parts/console_screen = 1,
+							/obj/item/stack/cable_coil = 5
+							)
+
+/obj/item/circuitboard/fusion_injector
+	name = "internal circuitry (fusion fuel injector)"
+	build_path = /obj/machinery/fusion_fuel_injector
+	board_type = new /datum/frame/frame_types/machine
+	req_components = list(
+							/obj/item/stock_parts/manipulator = 2,
+							/obj/item/stock_parts/scanning_module = 1,
+							/obj/item/stock_parts/matter_bin = 1,
+							/obj/item/stock_parts/console_screen = 1,
+							/obj/item/stack/cable_coil = 5
+							)
+
+/obj/item/circuitboard/gyrotron
+	name = T_BOARD("gyrotron")
+	build_path = /obj/machinery/power/emitter/gyrotron
+	board_type = new /datum/frame/frame_types/machine
+	req_components = list(
+							/obj/item/stock_parts/scanning_module = 1,
+							/obj/item/stock_parts/micro_laser = 3,
+							/obj/item/stock_parts/capacitor = 1
+							)

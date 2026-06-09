@@ -1,0 +1,56 @@
+# Generated from lg_origin.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "origin_center"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "origin_arrow"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "origin_optional_arrow"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "origin"
+dirs = 1
+frames = 14
+delays = [5, 3, 5, 3, 5, 3, 5, 3, 5, 3, 5, 3, 5, 8]
+
+[[state]]
+name = "origin_switching"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "origin_active"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ol1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ol2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ol4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ol8"
+dirs = 1
+frames = 1

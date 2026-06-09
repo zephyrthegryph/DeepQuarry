@@ -1,0 +1,69 @@
+# Generated from dam_mask_monkey.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "blank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "r_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "l_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "r_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "l_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "groin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mouth"
+dirs = 4
+frames = 1

@@ -1,0 +1,99 @@
+ADMIN_VERB(admin_lightning_strike, R_FUN, "Lightning Strike", "Causes lightning to strike on your tile. This can be made to hurt things on or nearby it severely.", ADMIN_CATEGORY_FUN_DO_NOT)
+	var/result = tgui_alert(user, "Really strike your tile with lightning?", "Confirm Badmin" , list("No", "Yes (Cosmetic)", "Yes (Real)"))
+
+	if(!result || result == "No")
+		return
+	var/fake_lightning = result == "Yes (Cosmetic)"
+
+	var/mob/user_mob = user.mob
+	lightning_strike(get_turf(user_mob), fake_lightning)
+	log_and_message_admins("has caused [fake_lightning ? "cosmetic":"harmful"] lightning to strike at their position ([user_mob.x], [user_mob.y], [user_mob.z]). \
+	(<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[user_mob.x];Y=[user_mob.y];Z=[user_mob.z]'>JMP</a>)", user)
+
+#define LIGHTNING_REDIRECT_RANGE 28 // How far in tiles certain things draw lightning from.
+#define LIGHTNING_ZAP_RANGE 1 // How far the tesla effect zaps, as well as the bad effects from a direct strike.
+#define LIGHTNING_POWER 20000 // How much 'zap' is in a strike, used for tesla_zap().
+
+// The real lightning proc.
+// This is global until I can figure out a better place for it.
+// T is the turf that is being struck. If cosmetic is true, the lightning won't actually hurt anything.
+/proc/lightning_strike(turf/T, cosmetic = FALSE)
+	// First, visuals.
+
+	// Do a lightning flash for the whole planet, if the turf belongs to a planet.
+	var/datum/planet/P = null
+	P = LAZYACCESS(SSplanets.z_to_planet, T.z)
+	if(P)
+		var/datum/weather_holder/holder = P.weather_holder
+		flick("lightning_flash", holder.special_visuals)
+
+	// Before we do the other visuals, we need to see if something is going to hijack our intended target.
+	var/obj/machinery/power/grounding_rod/ground = null // Most of the bad effects of lightning will get negated if a grounding rod is nearby.
+	var/obj/machinery/power/tesla_coil/coil = null // However a tesla coil has higher priority and the strike will bounce.
+
+	for(var/obj/machinery/power/thing in range(LIGHTNING_REDIRECT_RANGE, T))
+		if(istype(thing, /obj/machinery/power/tesla_coil))
+			var/turf/simulated/coil_turf = get_turf(thing)
+			if(istype(coil_turf) && thing.anchored && coil_turf.is_outdoors())
+				coil = thing
+				break
+
+		if(istype(thing, /obj/machinery/power/grounding_rod))
+			var/turf/simulated/rod_turf = get_turf(thing)
+			if(istype(rod_turf) && thing.anchored && rod_turf.is_outdoors())
+				ground = thing
+
+	if(coil) // Coil gets highest priority.
+		T = coil.loc
+	else if(ground)
+		T = ground.loc
+
+	// Now make the lightning strike sprite. It will fade and delete itself in a second.
+	new /obj/effect/temporary_effect/lightning_strike(T)
+
+	// For those close up.
+	playsound(T, 'sound/effects/lightningbolt.ogg', 100, 1)
+
+	// And for those far away. If the strike happens on a planet, everyone on the planet will hear it.
+	// Otherwise only those on the current z-level will hear it.
+	var/sound = get_sfx("thunder")
+	for(var/mob/M in GLOB.player_list)
+		if( (P && (M.z in P.expected_z_levels)) || M.z == T.z)
+			if(M.check_sound_preference(/datum/preference/toggle/weather_sounds))
+				M.playsound_local(get_turf(M), soundin = sound, vol = 70, vary = FALSE, is_global = TRUE)
+
+	// Prevent lightning on central command level from being simulated
+	if(T.z in using_map.admin_levels)
+		return
+
+	if(cosmetic) // Everything beyond here involves potentially damaging things. If we don't want to do that, stop now.
+		return
+
+	if(ground) // All is well.
+		ground.tesla_act(LIGHTNING_POWER, FALSE, current_jumps = 1)
+		return
+
+	else if(coil) // Otherwise lets bounce off the tesla coil.
+		coil.tesla_act(LIGHTNING_POWER, TRUE, current_jumps = 1)
+
+	else // Striking the turf directly.
+		tesla_zap(T, zap_range = LIGHTNING_ZAP_RANGE, power = LIGHTNING_POWER, explosive = FALSE, stun_mobs = TRUE, current_jumps = MAXIMUM_TESLA_JUMPS - 1) //This ensures it can only jump to the closest thing and that's it. No more jumps after that.
+
+	// Some extra effects.
+	// Some apply to those within zap range, others if they were a bit farther away.
+	for(var/mob/living/L in view(5, T))
+		if(get_dist(L, T) <= LIGHTNING_ZAP_RANGE) // They probably got zapped.
+			L.lightning_act()
+
+		// Deafen them.
+		if(L.get_ear_protection() < 2)
+			L.AdjustSleeping(-100)
+			if(iscarbon(L))
+				var/mob/living/carbon/C = L
+				C.ear_deaf += 10
+				C.deaf_loop.start() // Ear Ringing/Deafness
+			to_chat(L, span_danger("Lightning struck nearby, and the thunderclap is deafening!"))
+
+#undef LIGHTNING_REDIRECT_RANGE
+#undef LIGHTNING_ZAP_RANGE
+#undef LIGHTNING_POWER

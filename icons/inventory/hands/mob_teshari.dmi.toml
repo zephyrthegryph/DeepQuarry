@@ -1,0 +1,131 @@
+# Generated from mob_teshari.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 10
+
+[[state]]
+name = ""
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "latex"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leather"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "purple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gray"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lightbrown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "brown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rainbow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ninja_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ninja_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medical_rig"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "medical_rig_sealed"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "science_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "science_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "circuitry"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "captain"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wedring_g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wedring_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "diamond_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "heavy_engi"
+dirs = 4
+frames = 1

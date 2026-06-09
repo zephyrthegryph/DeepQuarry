@@ -1,0 +1,324 @@
+# Generated from mecha_equipment.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 11
+
+[[state]]
+name = "mecha_equip"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_mousetrapmrtr"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_bananamrtr"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_scatter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_grenadelnchr"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_fraglnchr"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_missilerack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_uac2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_honker"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_taser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_pulse"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_xray"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_laser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_phase"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_teleport"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_inflatables"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_exting"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_drill"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_bore"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_clamp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_wire"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_crowbar"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_screwdriver"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_wrench"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_cablecutter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_rcd"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_analyzer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_analyzer_adv"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_wholegen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "repair_droid_a"
+dirs = 1
+frames = 21
+delays = [1]
+
+[[state]]
+name = "repair_droid"
+dirs = 1
+frames = 3
+delays = [3, 2, 3]
+rewind = true
+
+[[state]]
+name = "mecha_abooster_ccw"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_abooster_proj"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_diamond_drill"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesla"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_ion"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_flaregun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_drac3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_cremate"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "mecha_jetpack"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "mecha_coil"
+dirs = 1
+frames = 6
+delays = [1, 0.8, 0.8, 0.8, 1.2, 1]
+
+[[state]]
+name = "mecha_mortar"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_cremate-rig"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "mecha_laser-rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_emitter"
+dirs = 1
+frames = 6
+delays = [5, 1]
+
+[[state]]
+name = "mecha_missilerack-rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_grenadelnchr-rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_uac2-rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_scatter-rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_taser-rig"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "mecha_ion-rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_xray-rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shield"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shield_droid"
+dirs = 1
+frames = 3
+delays = [3, 2, 3]
+rewind = true
+
+[[state]]
+name = "mecha_dronebay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_dronebay_rad"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "med_droid"
+dirs = 1
+frames = 3
+delays = [3, 2, 3]
+rewind = true
+
+[[state]]
+name = "rad_droid"
+dirs = 1
+frames = 3
+delays = [3, 2, 3]
+rewind = true
+
+[[state]]
+name = "mecha_analyzer_health"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_passenger"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_runningboard"
+dirs = 1
+frames = 1

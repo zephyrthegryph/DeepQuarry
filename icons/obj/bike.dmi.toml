@@ -1,0 +1,95 @@
+# Generated from bike.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "bike_on"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bike_on-open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bike_on_overlay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bike_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bike_off-open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bike_off_overlay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bike_on_a"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bike_on_overlay_a"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bike_off_a"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bike_off_overlay_a"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bike-frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bike-frame0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bike-frame1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bike-frame2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bike-frame3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bike-frame4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bike-frame5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bike-frame6"
+dirs = 1
+frames = 2
+delays = [1, 5, 1]

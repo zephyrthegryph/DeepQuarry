@@ -1,0 +1,28 @@
+# Generated from aliencoins.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "triangle-p"
+dirs = 1
+frames = 8
+delays = [300, 1]
+
+[[state]]
+name = "triangle-g"
+dirs = 1
+frames = 8
+delays = [300, 1]
+
+[[state]]
+name = "triangle-s"
+dirs = 1
+frames = 8
+delays = [300, 1]
+
+[[state]]
+name = "triangle"
+dirs = 1
+frames = 8
+delays = [300, 1]

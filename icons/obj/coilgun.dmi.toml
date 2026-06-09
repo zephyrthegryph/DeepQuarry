@@ -1,0 +1,49 @@
+# Generated from coilgun.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "coilgun_construction_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coilgun_construction_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coilgun_construction_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coilgun_construction_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coilgun_construction_5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coilgun_construction_6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coilgun_construction_7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coilgun_construction_8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coilgun_construction_9"
+dirs = 1
+frames = 1

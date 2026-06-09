@@ -1,0 +1,79 @@
+# Generated from mob_werebeast.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 64
+cols = 8
+
+[[state]]
+name = "blank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sun"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sunhud"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sunSecHud"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "glasses"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sunMedHud"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "welding-g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "welding-gup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "3d"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "degoggles"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "plaingoggles"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sec_hud"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meson"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "aviator"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "purple"
+dirs = 4
+frames = 1

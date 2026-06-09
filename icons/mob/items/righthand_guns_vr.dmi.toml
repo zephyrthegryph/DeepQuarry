@@ -1,0 +1,196 @@
+# Generated from righthand_guns_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 13
+
+[[state]]
+name = "phaser"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phaser100"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phaser75"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phaser50"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phaser25"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phaser0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phaser_pump"
+dirs = 4
+frames = 3
+delays = [1]
+rewind = true
+
+[[state]]
+name = "kineticgun"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holdoutkill"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holdoutkill100"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holdoutkill75"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holdoutkill50"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holdoutkill25"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holdoutkill0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holdoutshock"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holdoutshock100"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holdoutshock75"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holdoutshock50"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holdoutshock25"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holdoutshock0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holdoutstun"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holdoutstun100"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holdoutstun75"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holdoutstun50"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holdoutstun25"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holdoutstun0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medbeam"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boltaction_p"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "premiumgun"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sizegun-shrink"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sizegun-old-shrink"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sizegun-abductor-shrink"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sizegun_admin-shrink"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sizegun-grow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sizegun-old-grow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sizegun-abductor-grow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sizegun_admin-grow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mouseray"
+dirs = 4
+frames = 1

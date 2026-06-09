@@ -1,0 +1,385 @@
+# Generated from alienanimals_x64.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 14
+
+[[state]]
+name = "teppi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teppi_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teppi_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "body_base"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "horn_base0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eye_base"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skin_base"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "body_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "horn_rest0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eye_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skin_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "body_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "horn_dead0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eye_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skin_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "marking_base-0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marking_rest-0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marking_dead-0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marking_base1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marking_rest1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "marking_dead1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "marking_base2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marking_rest2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "marking_dead2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "marking_base3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marking_rest3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "marking_dead3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "marking_base4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marking_rest4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "marking_dead4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "marking_base5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marking_rest5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "marking_dead5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "marking_base6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marking_rest6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "marking_dead6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "marking_base7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marking_rest7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "marking_dead7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "marking_base8"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marking_rest8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "marking_dead8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "marking_base9"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marking_rest9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "marking_dead9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "body_base-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "body_base-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "body_base-3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wool_base"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wool_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wool_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "marking_base10"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marking_rest10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "marking_dead10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "marking_base11"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marking_rest11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "marking_read11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "marking_base12"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marking_rest12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "marking_dead12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "marking_base13"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marking_rest13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "marking_dead13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "horn_base1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "horn_rest1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "horn_dead1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "collar_base"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "abyss_lurker"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "abyss_lurker-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cube"
+dirs = 1
+frames = 2
+delays = [10, 1]
+
+[[state]]
+name = "cube-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "filter"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "filter-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "filter-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "filter-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "filter-eyes"
+dirs = 4
+frames = 1

@@ -1,0 +1,757 @@
+# Generated from screen_ammo.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 16
+
+[[state]]
+name = "blank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ammo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "empty_flash"
+dirs = 1
+frames = 4
+delays = [5]
+
+[[state]]
+name = "o0_flash"
+dirs = 1
+frames = 4
+delays = [5]
+
+[[state]]
+name = "o0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "o1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "o2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "o3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "o4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "o5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "o6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "o7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "o8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "o9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "t0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "t1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "t2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "t3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "t4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "t5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "t6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "t7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "t8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "t9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "h0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "h1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "h2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "h3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "h4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "h5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "h6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "h7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "h8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "h9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rifle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rifle_ap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rifle_fire"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rifle_special"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rifle_heavy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rifle_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rifle_empty_flash"
+dirs = 1
+frames = 4
+delays = [5]
+
+[[state]]
+name = "hivelo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hivelo_fire"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hivelo_impact"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hivelo_iff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hivelo_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hivelo_empty_flash"
+dirs = 1
+frames = 4
+delays = [5]
+
+[[state]]
+name = "smg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smg_light"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smg_ap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smg_fire"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smg_special"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smg_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smg_empty_flash"
+dirs = 1
+frames = 4
+delays = [5]
+
+[[state]]
+name = "pistol"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pistol_lightap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pistol_light"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pistol_tranq"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pistol_hollow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pistol_ap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pistol_heavy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pistol_fire"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pistol_special"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pistol_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pistol_empty_flash"
+dirs = 1
+frames = 4
+delays = [5]
+
+[[state]]
+name = "monkey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "monkey_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "monkey_empty_flash"
+dirs = 1
+frames = 4
+delays = [5]
+
+[[state]]
+name = "revolver"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "revolver_small"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "revolver_slim"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "revolver_heavy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "revolver_impact"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "revolver_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "revolver_empty_flash"
+dirs = 1
+frames = 4
+delays = [5]
+
+[[state]]
+name = "smartgun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartgun_radioactive"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "minigun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartgun_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smartgun_empty_flash"
+dirs = 1
+frames = 4
+delays = [5]
+
+[[state]]
+name = "flame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flame_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "water"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "water_empty"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "flame_green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flame_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flame_empty_flash"
+dirs = 1
+frames = 4
+delays = [5]
+
+[[state]]
+name = "sniper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sniper_fire"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sniper_flak"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sniper_crude"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sniper_supersonic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sniper_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sniper_empty_flash"
+dirs = 1
+frames = 4
+delays = [5]
+
+[[state]]
+name = "shell_he"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shell_le"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shell_heat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shell_apcr"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shell_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shell_empty_flash"
+dirs = 1
+frames = 4
+delays = [5]
+
+[[state]]
+name = "rocket_fire"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rocket_thermobaric"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rocket_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rocket_empty_flash"
+dirs = 1
+frames = 4
+delays = [5]
+
+[[state]]
+name = "rocket_he"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rocket_ap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "taser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alloy_spike"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shotgun_beanbag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shotgun_buckshot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shotgun_flechette"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shotgun_fire"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shotgun_ion"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shotgun_slug"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shotgun_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shotgun_empty_flash"
+dirs = 1
+frames = 4
+delays = [5]
+
+[[state]]
+name = "grenade_he"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grenade_fire"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grenade_frag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grenade_smoke"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grenade_hide"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grenade_dummy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grenade_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grenade_empty_flash"
+dirs = 1
+frames = 4
+delays = [5]
+
+[[state]]
+name = "laser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "laser_overcharge"
+dirs = 1
+frames = 16
+delays = [1]
+
+[[state]]
+name = "laser_spread"
+dirs = 1
+frames = 9
+delays = [1]
+
+[[state]]
+name = "laser_sniper"
+dirs = 1
+frames = 13
+delays = [1]
+
+[[state]]
+name = "laser_heat"
+dirs = 1
+frames = 14
+delays = [1]
+
+[[state]]
+name = "laser_disabler"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "plasma_pistol"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plasma"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plasma_blast"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plasma_sphere"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plasma_rifle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plasma_rifle_blast"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pulse"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "battery_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "battery_empty_flash"
+dirs = 1
+frames = 4
+delays = [5]
+
+[[state]]
+name = "unknown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "electrothermal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "electrothermal_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "electrothermal_empty_flash"
+dirs = 1
+frames = 4
+delays = [5]

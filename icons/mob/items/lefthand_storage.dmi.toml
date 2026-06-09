@@ -1,0 +1,563 @@
+# Generated from lefthand_storage.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 22
+
+[[state]]
+name = "satchel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel_grey"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel_purple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel_orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel_botanical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel_captain"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel_industrial"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 9, y = 15 }]
+
+[[state]]
+name = "satchel_medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel_security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel_ironhammer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel_fanch"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backpack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backpack_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backpack_purple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backpack_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backpack_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backpack_orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backpack_hydro"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backpack_captain"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backpack_industrial"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 9, y = 15 }]
+
+[[state]]
+name = "backpack_medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backpack_military"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backpack_security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backpack_ironhammer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backpack_fancy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backpack_clown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backsport"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backsport_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backsport_purple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backsport_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backsport_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backsport_orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backsport_hydro"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backsport_ironhammer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backsport_fancy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holdingpack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holdingduffle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "giftbag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffle_syndie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffle_syndiemed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffle_syndieammo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffle_captain"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffle_security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffle_industrial"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffle_medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffle_emt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffel_science"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffel_drone"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffel_curse"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "electropack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jetpack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jetpack-black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jetpack-void"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "firstaid"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "firstaid-ointment"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "firstaid-toxin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "firstaid-o2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "firstaid-advanced"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "firstaid-surgery"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "toolbox_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "toolbox_yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "toolbox_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "toolbox_syndi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "toolbox_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "toolbox_pink"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "briefcase"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sec-case"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "painted_secure"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "trashbag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "plasticbag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "contsolid"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bible"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scrapbook"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "koran"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "daederic"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kingyellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scientology"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ithaqua"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "melted"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "necronomicon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syringe_kit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cigpacket"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "laundry"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "case"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "utility"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "soulstone"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "champion"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ems"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandolier"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "janitor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smpurse"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lgpurse"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "inf_box"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "circuit_kit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "heartbox"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "RPED"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "DBRPED"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "RPED_old"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "DBRPED_old"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "waterbackpack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "waterbackpackjani"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "waterbackpackatmos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "waterbackpackop"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pepperbackpacksec"
+dirs = 4
+frames = 1

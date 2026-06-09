@@ -1,0 +1,16 @@
+# Generated from energy_ball.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 96
+height = 96
+cols = 5
+
+[[state]]
+name = "energy_ball"
+dirs = 1
+frames = 12
+delays = [1.2, 0.4, 1.2, 0.8, 0.4, 1.2, 0.4, 1.2, 0.8, 0.4, 1.2, 0.4]
+
+[[state]]
+name = "energy_ball_fast"
+dirs = 1
+frames = 12
+delays = [0.5, 0.8]

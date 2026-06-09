@@ -1,0 +1,31 @@
+# Generated from fakemagic.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "cultstaff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smokewand"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "forcewand"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smokewall"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "forcewall"
+dirs = 1
+frames = 4
+delays = [1]

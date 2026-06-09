@@ -1,0 +1,355 @@
+# Generated from screen1_construct.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "fire0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fire1"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "artificer_health0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "artificer_health1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "artificer_health2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "artificer_health3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "artificer_health4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "artificer_health5"
+dirs = 1
+frames = 2
+delays = [4]
+
+[[state]]
+name = "artificer_health6"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "artificer_health7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wraith_health0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wraith_health1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wraith_health2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wraith_health3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wraith_health4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wraith_health5"
+dirs = 1
+frames = 2
+delays = [4]
+
+[[state]]
+name = "wraith_health6"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "wraith_health7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "juggernaut_health0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "juggernaut_health1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "juggernaut_health2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "juggernaut_health3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "juggernaut_health4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "juggernaut_health5"
+dirs = 1
+frames = 2
+delays = [4]
+
+[[state]]
+name = "juggernaut_health6"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "juggernaut_health7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "harvester_health0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "harvester_health1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "harvester_health2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "harvester_health3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "harvester_health4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "harvester_health5"
+dirs = 1
+frames = 2
+delays = [4]
+
+[[state]]
+name = "harvester_health6"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "harvester_health7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shade_health0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shade_health1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shade_health2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shade_health3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shade_health4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shade_health5"
+dirs = 1
+frames = 2
+delays = [4]
+
+[[state]]
+name = "shade_health6"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "shade_health7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pull0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pull1_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "zone_sel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "template"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "templatesmall"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pull1"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "act_resist"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "act_throw_off"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "act_throw_on"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "act_drop"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "act_equip"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "hand1"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "hand2"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "l_hand_inactive"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "r_hand_inactive"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "l_hand_active"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "r_hand_active"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "intent_all"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "intent_help"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "intent_disarm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "intent_grab"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "intent_harm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "walking"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "running"
+dirs = 1
+frames = 1
+loop = 1

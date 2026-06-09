@@ -1,0 +1,183 @@
+# Generated from back.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 15
+
+[[state]]
+name = "backpack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medicalpack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engiepack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel-eng"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel-med"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel-sec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "oxygen_f"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "oxygen_fr"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "anesthetic"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jetpack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jetpack_on"
+dirs = 4
+frames = 2
+delays = [2]
+
+[[state]]
+name = "jetpack_black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jetpack_black_on"
+dirs = 4
+frames = 2
+delays = [2]
+
+[[state]]
+name = "brokenpack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holdingpack"
+dirs = 4
+frames = 7
+delays = [1]
+
+[[state]]
+name = "cultpack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "welderpack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "captainpack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel-cap"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "securitypack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "toxpack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chempack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "technomancer_core"
+dirs = 4
+frames = 10
+delays = [15, 1]
+
+[[state]]
+name = "ninja_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ce_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "science_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medical_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engineering_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eva_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "void_explorer2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel-tox"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel-norm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "oxygen"
+dirs = 4
+frames = 1

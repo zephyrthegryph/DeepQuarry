@@ -1,0 +1,71 @@
+/obj/structure/stasis_cage
+	name = "stasis cage"
+	desc = "A high-tech animal cage, designed to keep contained fauna docile and safe."
+	icon = 'icons/obj/storage_vr.dmi'
+	icon_state = "critteropen"
+	density = TRUE
+	unacidable = TRUE
+
+	var/mob/living/simple_mob/contained
+
+/obj/structure/stasis_cage/Initialize(mapload)
+	. = ..()
+
+	var/mob/living/simple_mob/A = locate() in loc
+	if(A)
+		contain(A)
+
+/obj/structure/stasis_cage/attack_hand(mob/user)
+	release()
+
+/obj/structure/stasis_cage/attack_robot(mob/user)
+	if(Adjacent(user))
+		release()
+
+/obj/structure/stasis_cage/proc/contain(mob/living/simple_mob/animal)
+	if(contained || !istype(animal))
+		return
+
+	contained = animal
+	animal.forceMove(src)
+	animal.in_stasis = 1
+	if(animal.buckled && istype(animal.buckled, /obj/effect/energy_net))
+		animal.buckled.forceMove(animal.loc)
+	icon_state = "critter"
+	desc = initial(desc) + " \The [contained] is kept inside."
+
+/obj/structure/stasis_cage/proc/release()
+	if(!contained)
+		return
+
+	contained.dropInto(src)
+	if(contained.buckled && istype(contained.buckled, /obj/effect/energy_net))
+		contained.buckled.dropInto(src)
+	contained.in_stasis = 0
+	contained = null
+	icon_state = "critteropen"
+	underlays.Cut()
+	desc = initial(desc)
+
+/obj/structure/stasis_cage/Destroy()
+	release()
+
+	return ..()
+
+/mob/living/simple_mob/MouseDrop(obj/structure/stasis_cage/over_object)
+	var/mob/user = usr
+	if(!istype(user))
+		return
+	if(istype(over_object) && Adjacent(over_object) && CanMouseDrop(over_object, user))
+
+		if(!src.buckled || !istype(src.buckled, /obj/effect/energy_net))
+			to_chat(user, "It's going to be difficult to convince \the [src] to move into \the [over_object] without capturing it in a net.")
+			return
+
+		user.visible_message("[user] begins stuffing \the [src] into \the [over_object].", "You begin stuffing \the [src] into \the [over_object].")
+		Bumped(user)
+		if(do_after(user, 2 SECONDS, target = over_object))
+			user.visible_message("[user] has stuffed \the [src] into \the [over_object].", "You have stuffed \the [src] into \the [over_object].")
+			over_object.contain(src)
+	else
+		return ..()

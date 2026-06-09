@@ -1,0 +1,48 @@
+// Bluespace crystals, used in telescience and when crushed it will blink you to a random turf.
+
+/obj/item/bluespace_crystal
+	name = "bluespace crystal"
+	desc = "A glowing bluespace crystal, not much is known about how they work. It looks very delicate."
+	icon = 'icons/obj/telescience.dmi'
+	icon_state = "bluespace_crystal"
+	w_class = ITEMSIZE_TINY
+	var/blink_range = 8 // The teleport range when crushed/thrown at someone.
+
+/obj/item/bluespace_crystal/Initialize(mapload)
+	. = ..()
+	pixel_x = rand(-5, 5)
+	pixel_y = rand(-5, 5)
+
+/obj/item/bluespace_crystal/attack_self(mob/user)
+	. = ..(user)
+	if(.)
+		return TRUE
+	user.balloon_alert_visible("[user] crushes [src]!", "Crushed [src]!") // Balloon alert
+	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread()
+	s.set_up(5, 1, get_turf(src))
+	s.start()
+	blink_mob(user)
+	user.unEquip(src)
+	qdel(src)
+
+/obj/item/bluespace_crystal/proc/blink_mob(mob/living/L)
+	do_teleport(L, get_turf(L), blink_range, asoundin = 'sound/effects/phasein.ogg')
+
+/obj/item/bluespace_crystal/throw_impact(atom/hit_atom)
+	if(!..()) // not caught in mid-air
+		balloon_alert_visible("[src] fizzles and disappears upon impact!") // Balloon alert
+		var/turf/T = get_turf(hit_atom)
+		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread()
+		s.set_up(5, 1, T)
+		s.start()
+		if(isliving(hit_atom))
+			blink_mob(hit_atom)
+		dephase_shadekin() // mess with shadekins
+		qdel(src)
+
+// Artifical bluespace crystal, doesn't give you much research.
+
+/obj/item/bluespace_crystal/artificial
+	name = "artificial bluespace crystal"
+	desc = "An artificially made bluespace crystal, it looks delicate."
+	blink_range = 4 // Not as good as the organic stuff!

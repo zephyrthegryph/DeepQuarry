@@ -1,0 +1,192 @@
+# Generated from mercenaries.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 13
+
+[[state]]
+name = "syndicate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicateranged_machinegun"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate_beret"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate_handcannon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicateranged_veteran"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicatemelee"
+dirs = 4
+frames = 2
+delays = [2]
+
+[[state]]
+name = "syndicateranged"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicateranged_smg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bluforranged_smg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicateranged_laser"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicateranged_ionrifle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicateranged_shotgun"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicateranged_rifle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicateranged_technician"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicateranged_sniper"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicatespace"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicatespace-shotgun"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicatespace-commando"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicatespace-tommylas"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicatespace-ranged"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicatespace-heavy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicatespace-ashotgun"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicatespace-melee"
+dirs = 4
+frames = 2
+delays = [2]
+
+[[state]]
+name = "syndi-ranged-space-sup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndi-ranged-space-sup-elite"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "voxpirate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "voxpirate_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "voxboarder_m"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "voxboarder_m_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "voxboarder_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "voxboarder_r_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "voxboarder_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "voxboarder_t_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "voxsuppressor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "voxsuppressor_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "voxcaptain"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "voxcaptain_dead"
+dirs = 1
+frames = 1

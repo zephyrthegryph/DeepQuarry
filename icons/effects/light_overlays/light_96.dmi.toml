@@ -1,0 +1,9 @@
+# Generated from light_96.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 96
+height = 96
+cols = 1
+
+[[state]]
+name = "light"
+dirs = 1
+frames = 1

@@ -1,0 +1,490 @@
+# Generated from markings_digi.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 20
+
+[[state]]
+name = "longsock-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "longsock-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "longsock-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "longsock-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medsock-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medsock-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medsock-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medsock-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shortsock-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shortsock-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "toes-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "toes-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stripes-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stripes-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stripes-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stripes-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bigspots-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bigspots-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bigspots-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bigspots-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smallspots-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smallspots-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smallspots-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smallspots-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "full-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "full-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "full-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "full-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tyranid-r_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tyranid-l_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tyranid-r_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tyranid-l_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tyranid-groin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tyranid-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tyranid-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tyranid-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tyranid-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tyranid-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tyranid-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tyranidarmor-r_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tyranidarmor-l_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tyranidarmor-r_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tyranidarmor-l_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tyranidarmor-groin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tyranidarmor-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tyranidarmor-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tyranidarmor-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tyranidarmor-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tyranidarmor-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tyranidarmor-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hawktalon-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hawktalon-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hawktalon-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hawktalon-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "deerhoof-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "deerhoof-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fox-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fox-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fox-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fox-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gradient-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gradient-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gradient-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gradient-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tiger-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tiger-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tiger-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tiger-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "guilmon-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "guilmon-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "guilmon-l_leg"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "guilmon-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hellscout_p-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hellscout_p-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hellscout_p-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hellscout_p-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hellscout_r-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hellscout_r-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hellscout_r-groin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hellscout_r-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hellscout_r-full_ref"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeno_digi-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeno_digi-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gloss-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gloss-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gloss-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gloss-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "digi_inner-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "digi_inner-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "digigradient-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "digigradient-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "digigradient-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "digigradient-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bonyplatesdigitigrade-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bonyplatesdigitigrade-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bonyplatesdigitigrade-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bonyplatesdigitigrade-l_foot"
+dirs = 4
+frames = 1

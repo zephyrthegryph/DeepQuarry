@@ -1,0 +1,315 @@
+# Generated from turrets.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 19
+
+[[state]]
+name = "tesla2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesla1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesla3"
+dirs = 1
+frames = 5
+delays = [15, 1]
+
+[[state]]
+name = "tesla3_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesla5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesla5_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesla4"
+dirs = 1
+frames = 5
+delays = [15, 1]
+
+[[state]]
+name = "tesla6_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesla6_nomove"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesla6_1"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "tesla6_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gun_turret"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "turret_frame"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "turret_frame2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "destroyed_target_prism_industrial"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "grey_target_prism_industrial"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "orange_target_prism_industrial"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "green_target_prism_industrial"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "red_target_prism_industrial"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "popup_industrial"
+dirs = 1
+frames = 11
+delays = [1]
+loop = 1
+
+[[state]]
+name = "turret_cover_industrial"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "open_industrial"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "popdown_industrial"
+dirs = 1
+frames = 11
+delays = [1]
+loop = 1
+
+[[state]]
+name = "turret_cover_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "destroyed_target_prism_alien"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "grey_target_prism_alien"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "turret_cover_normal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "open_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red_target_prism_normal"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "blue_target_prism_industrial"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "popup_alien"
+dirs = 1
+frames = 11
+delays = [1]
+loop = 1
+
+[[state]]
+name = "grey_target_prism_red"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "green_target_prism_normal"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "grey_target_prism_blue"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "popup_normal"
+dirs = 1
+frames = 11
+delays = [1]
+loop = 1
+
+[[state]]
+name = "orange_target_prism_blue"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "turret_cover_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orange_target_prism_normal"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "popup_blue"
+dirs = 1
+frames = 11
+delays = [1]
+loop = 1
+
+[[state]]
+name = "open_alien"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "blue_target_prism_normal"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "popdown_blue"
+dirs = 1
+frames = 11
+delays = [1]
+loop = 1
+
+[[state]]
+name = "destroyed_target_prism_blue"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "blue_target_prism_red"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "grey_target_prism_normal"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "orange_target_prism_red"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "blue_target_prism_alien"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "destroyed_target_prism_normal"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "open_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "popdown_red"
+dirs = 1
+frames = 11
+delays = [1]
+loop = 1
+
+[[state]]
+name = "destroyed_target_prism_red"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "blue_target_prism_blue"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "popup_red"
+dirs = 1
+frames = 11
+delays = [1]
+loop = 1
+
+[[state]]
+name = "popdown_normal"
+dirs = 1
+frames = 11
+delays = [1]
+loop = 1
+
+[[state]]
+name = "popdown_alien"
+dirs = 1
+frames = 11
+delays = [1]
+loop = 1
+
+[[state]]
+name = "turret_cover_alien"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "open_normal"
+dirs = 1
+frames = 1

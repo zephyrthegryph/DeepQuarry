@@ -1,0 +1,381 @@
+# Generated from mob_fox.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 25
+
+[[state]]
+name = "glasses_thin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sun_thin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meson"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "thermal"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "material"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "plaingoggles"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "purple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "degoggles"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blindfold"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyepatch_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyepatch"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "monocle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "thermoncle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "laforge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gglasses_thin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "night"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "grav"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "denight"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "glasses"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sun"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gglasses"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "healthhud"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "securityhud"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "janhud"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "healthhudpresc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sechudpresc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "janhudpresc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sunhud"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sunSecHud"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sunMedHud"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "thermalimplants"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hipster_glasses"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jensenshades"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bigsunglasses"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "welding-g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "welding-gup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "uzenwa_sissra_1"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "rwelding-g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rwelding-gup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "arjun_chopra"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "book_berner_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swatgoggles"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "3d"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tape_cross"
+dirs = 4
+frames = 1
+
+[[state]]
+name = ""
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lingchameleon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sec_hud"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sec_flash"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "aviator"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "aviator_sec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "aviator_eng"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "aviator_med"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "glasses_rimless"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyepatch_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyepatch_white_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "artist"
+dirs = 4
+frames = 2
+delays = [4, 0.5]
+
+[[state]]
+name = "salesman"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "salesman_fzz"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "mantle_HUD"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tajblind"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tajblind_sec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tajblind_med"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tajblind_meson"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medgravpatch"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sec_eyepatch"
+dirs = 4
+frames = 6
+delays = [3]
+
+[[state]]
+name = "sec_eyepatch_1"
+dirs = 4
+frames = 6
+delays = [3]
+
+[[state]]
+name = "visor_CIV"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tacsecvis1"
+dirs = 4
+frames = 14
+delays = [1]
+
+[[state]]
+name = "tacsecvis2"
+dirs = 4
+frames = 7
+delays = [1]
+
+[[state]]
+name = "tacsecvis3"
+dirs = 4
+frames = 37
+delays = [0.5]
+
+[[state]]
+name = "tacsecvis4"
+dirs = 4
+frames = 8
+delays = [1, 1, 1, 3, 1, 1, 1, 3]
+
+[[state]]
+name = "bigroundglasses"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "proton_goggles"
+dirs = 4
+frames = 3
+delays = [1]

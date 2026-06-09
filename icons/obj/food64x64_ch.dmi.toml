@@ -1,0 +1,38 @@
+# Generated from food64x64_ch.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 6
+
+[[state]]
+name = "thecake_onelayer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "thecake_stage-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "thecake_stage-3"
+dirs = 1
+frames = 8
+delays = [1.5]
+
+[[state]]
+name = "thecake_stage-4"
+dirs = 1
+frames = 8
+delays = [1.5]
+
+[[state]]
+name = "thecake_stage-5"
+dirs = 1
+frames = 8
+delays = [1.5]
+
+[[state]]
+name = "thecake_finished"
+dirs = 1
+frames = 8
+delays = [1.5]

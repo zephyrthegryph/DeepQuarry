@@ -1,0 +1,94 @@
+# Generated from trash_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "fancyplate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian_cheese_block-trash"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian_veggies-trash"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian_juice-trash"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian_fruitcake-trash"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian_pack_burger-trash"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian_pack_cheese-trash"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian_pack_turkey-trash"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian_pack_ramen_standard-trash"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian_pack_ramen_lacquer1-trash"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian_pack_ramen_lacquer2-trash"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian_pack_ramen_lacquer3-trash"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian_pack_ramen_fleet-trash"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian_pack_ramen_trans-trash"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian_pack_ramen_ace-trash"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian_pack_taco-trash"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian_pack_cake-trash"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "altevian_pack_meat-trash"
+dirs = 1
+frames = 1

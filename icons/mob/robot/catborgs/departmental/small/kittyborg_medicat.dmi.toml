@@ -1,0 +1,239 @@
+# Generated from kittyborg_medicat.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 19
+
+[[state]]
+name = "medicat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medicat"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "medicat-glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medicat-glow"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "medicat-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medicat-eyes"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "medicat-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medicat-lights"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "medicat-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medicat-sleeper-1"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "medicat-sleeper-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medicat-sleeper-2"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "medicat-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medicat-bellyup-glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medicat-sleeper-1-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medicat-sleeper-2-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medicat-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medicat-sit-glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medicat-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medicat-rest-glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medicat-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medicat-gun"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medicat-gun"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "openpanel-nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel-nc"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "openpanel-c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel-c"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "openpanel-w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel-w"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "medicat-shield"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "SPRITES-PAST-HERE-ARE-NOT-IMPLEMENTED"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medicat-sleeper-1-default"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medicat-sleeper-1-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medicat-throat-1-default"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medicat-throat-1-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medicat-throat-1-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medicat-sleeper-2-default"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medicat-sleeper-2-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medicat-throat-2-default"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medicat-throat-2-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medicat-throat-2-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medicat-sleeper-1-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medicat-sleeper-2-rest"
+dirs = 4
+frames = 1

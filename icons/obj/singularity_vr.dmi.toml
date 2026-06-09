@@ -1,0 +1,89 @@
+# Generated from singularity_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 13
+
+[[state]]
+name = "emitter"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "emitter_+a"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "emitter0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "emitter0"
+dirs = 4
+frames = 3
+delays = [1]
+movement = true
+
+[[state]]
+name = "emitter1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "emitter2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "emitterflick-01"
+dirs = 4
+frames = 5
+delays = [1, 1, 1, 1, 3]
+
+[[state]]
+name = "emitterflick-12"
+dirs = 4
+frames = 3
+delays = [1, 1, 3]
+
+[[state]]
+name = "emitterflick-02"
+dirs = 4
+frames = 3
+delays = [1, 1, 3]
+
+[[state]]
+name = "emitterflick-21"
+dirs = 4
+frames = 3
+delays = [1, 1, 3]
+
+[[state]]
+name = "emitterflick-10"
+dirs = 4
+frames = 5
+delays = [1, 1, 1, 1, 3]
+
+[[state]]
+name = "emitterflick-20"
+dirs = 4
+frames = 5
+delays = [1, 1, 1, 1, 3]
+
+[[state]]
+name = "emitter-beam"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "emitter-beam-constant"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "emitter-lock"
+dirs = 4
+frames = 1

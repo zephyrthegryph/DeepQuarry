@@ -1,0 +1,1570 @@
+# Generated from gun2.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 19
+
+[[state]]
+name = "senergy"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "senergystun100"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "senergystun75"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "senergystun50"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "senergystun25"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "senergystun0"
+dirs = 1
+frames = 2
+delays = [1]
+loop = 1
+
+[[state]]
+name = "senergykill100"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "senergykill75"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "senergykill50"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "senergykill25"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "senergykill0"
+dirs = 1
+frames = 2
+delays = [1]
+loop = 1
+
+[[state]]
+name = "plasmapistol"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 23, y = 8 }]
+
+[[state]]
+name = "plasmapistol100"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 23, y = 8 }]
+
+[[state]]
+name = "plasmapistol75"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 23, y = 8 }]
+
+[[state]]
+name = "plasmapistol50"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 23, y = 8 }]
+
+[[state]]
+name = "plasmapistol25"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 23, y = 8 }]
+
+[[state]]
+name = "plasmapistol0"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 23, y = 8 }]
+
+[[state]]
+name = "alienpistol0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smgloaded"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smgunloaded"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smgmagazine"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "laser100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "laser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "laser75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "laser50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "laser25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "laser0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "umbrellagun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gunbang"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "knight45"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "knight45-empty"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "psniper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "psniper100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "psniper75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "psniper50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "psniper25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "psniper0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pulse_pistol"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pulse_pistol100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pulse_pistol75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pulse_pistol50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pulse_pistol25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pulse_pistol0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pulse_cannon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pulse_cannon100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pulse_cannon0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pulse_cannon75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pulse_cannon25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pulse_cannon50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "SVD"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "SVD-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "7.62mm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "7.62mm-10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "7.62mm-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "KH50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "KH50-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "12.7x54mm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "12.7x54mm-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "12.7x54mm-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boltrifle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boltriflescope"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boltriflesawn"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sclip"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sclip_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ballistic_rifle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "railgun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "railauto"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "railpistol"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coilgun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "railheavy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M40"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M40-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M3-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M2F"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M2F-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M60closed75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M60closed60"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M60closed45"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M60closed30"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M60closed15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M60closed0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M60closed-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M60open75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M60open60"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M60open50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M60open45"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M60open30"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M60open25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M60open15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M60open0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M60open-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "COLT45"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "COLT45-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M79_GL"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M14MAG-15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M14MAG-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M14MAG"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M40_AMMOBOX"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M40_ROUND"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M40_ROUND_SPENT"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M3MAG-32"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M3MAG-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M3MAG"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M60MAG-75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M60MAG"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M60MAG-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M2FCANISTER"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "COLT45MAG-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "COLT45MAG"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "COLT45MAG-7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "COLT45MAG-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "COLT45MAG-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "COLT45MAG-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "COLT45MAG-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "COLT45MAG-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "COLT45MAG-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "COLT45MAG-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "COLT45MAG-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "SHOTGUNBOX-7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "SHOTGUNBOX-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "SHOTGUNBOX-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "SHOTGUNBOX-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "SHOTGUNBOX-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "SHOTGUNBOX-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "SHOTGUNBOX-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "SHOTGUNBOX-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "40MM_LOADED"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "40MM_SPENT"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grenade_box"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grenade_box2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grenade_box-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grenade_box2-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "308bolt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "308bolt_alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "308boltframe0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "308boltframe1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "308boltframe2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "308boltframe3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "308boltframe4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "308boltframe5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "308boltframe6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "308boltframe7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "308boltframe8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "308boltframe9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "308boltsawed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "308boltsawed_alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kar98"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kar98_alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "g43"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "g43-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mp40_stock"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mp40_stock-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "p38"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "p38-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mg42closed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mg42open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mg42closed-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mg42open-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stg44"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stg44-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "g43mag-10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "g43mag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "g43mag-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mpmag-32"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mpmag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mpmag-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "p38mag-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "p38mag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "p38mag-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mg42belt-250"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mg42belt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mg42belt-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stg44mag-30"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stg44mag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stg44mag-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripper-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripper-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripper-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripper-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripper-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripper-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mosin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mosin_alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "svt40"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "svt40-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ppsh41"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ppsh41-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tt33"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tt33-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nagant"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nagant-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tt33mag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tt33mag-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tt33mag-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ppsh_drum"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ppsh_drum-71"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ppsh_drum-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bar_mag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bar_mag-20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bar_mag-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bar"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bar-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "svtmag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "svtmag-10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "svtmag-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "DT"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "DT-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "DTmag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "DTmag-60"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "DTmag-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M16"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M16-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M16-GL"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M16-GL-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M14-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ithaca"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brownhp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brownhp-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M16MAG-25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M16MAG-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "M16MAG"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "BROWNHPMAG-15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "BROWNHPMAG-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "BROWNHPMAG"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bow_nocked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bow_drawn"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arrow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "huntrifle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "huntrifle_alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scopedhuntrifle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scopedhuntrifle_alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "huntriflescope"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "improvarrow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "winchester"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "winchester_alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coltnavy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coltnavy_alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coltSAA"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coltSAA_alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lematt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lematt_alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "db10ga"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "db10ga_alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "db10ga_alt2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "c96"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "c96_alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "7.63mm_clip10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "7.63mm_clip9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "7.63mm_clip8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "7.63mm_clip7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "7.63mm_clip6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "7.63mm_clip5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "7.63mm_clip4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "7.63mm_clip3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "7.63mm_clip2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "7.63mm_clip1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "7.63mm_clip0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = ".45colt_live"
+dirs = 1
+frames = 1
+
+[[state]]
+name = ".45colt_spent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = ".44-40_live"
+dirs = 1
+frames = 1
+
+[[state]]
+name = ".44-40_spent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "10ga_buck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "10ga_slug"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "antiquerevolver"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "antiquerevolver_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sexyrifle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sexyrifle_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sexyrifle-mag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sexyrifle-mag-30"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sexyrifle-mag-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rifle-casing"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "rifle-casing_e"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "smg10mm-fo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smg10mm-fo-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pistol10mm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pistol10mm-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "laser-pistol-FO"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smg10mm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smg10mm-24"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smg10mm-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "10mmadv"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "10mmadv-12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "10mmadv-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xeno-pistol"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xeno-pistol-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xeno-carbine"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xeno-carbine-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xeno-rifle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xeno-rifle-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xeno-hmg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xeno-hmg-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m1911-p"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m1911-p_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m1911-p0"
+dirs = 1
+frames = 2
+delays = [1, 3]
+
+[[state]]
+name = "m1911-p25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m1911-p50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m1911-p75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m1911-p100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lemat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "combatSMG-mag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "combatSMG-mag-40"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "combatSMG-mag-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gravwhip"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gravwhip_open"
+dirs = 1
+frames = 1

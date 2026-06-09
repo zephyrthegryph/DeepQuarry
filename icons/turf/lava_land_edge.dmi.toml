@@ -1,0 +1,19 @@
+# Generated from lava_land_edge.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "ash-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ashrock-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "basalt0-edge"
+dirs = 4
+frames = 1

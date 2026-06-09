@@ -1,0 +1,394 @@
+# Generated from item_teshari.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "seromi_grey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "seromi_white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "seromi_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "seromi_yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "seromi_medical"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teshari_science"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "seromi_rainbow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "seromi_dress_cap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_dress_science"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_dress_security"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_dress_engine"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_dress_medical"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "seromi_captain"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "seromi_captain_formal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teshari_blackutility_com"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teshari_greydress"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teshari_blackutility"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teshari_bluegreydress"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teshari_black_red_worksuit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teshari_black_purple_worksuit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teshari_black_orange_worksuit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teshari_black_blue_worksuit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teshari_black_green_worksuit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teshari_white_red_worksuit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teshari_white_purple_worksuit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teshari_white_orange_worksuit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teshari_white_blue_worksuit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teshari_white_green_worksuit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_bo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_bg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_bw"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_br"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_bn"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_by"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_bgr"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_bbl"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_bp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_bpi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_bbr"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_og"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_rainbow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_lgg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_wg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_rg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_yg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_gg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_blug"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_pg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_pig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_brg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_cap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_hop"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_ce"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_hos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_rd"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_engie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_atmos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_cmo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_qm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_car"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_mine"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_doc"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_chem"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_viro"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_psych"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_para"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_sci"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_robo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_sec"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_serv"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_iaa"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "officer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "unused ->"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_ce_w"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_comm_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_uniform_comm"
+dirs = 1
+frames = 1

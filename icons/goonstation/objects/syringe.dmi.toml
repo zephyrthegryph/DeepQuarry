@@ -1,0 +1,104 @@
+# Generated from syringe.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "capped"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "i0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "i5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "i10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "i15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "i50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "inject"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "draw"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "1"
+dirs = 1
+frames = 1

@@ -1,0 +1,455 @@
+# Generated from crayondecal.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 10
+
+[[state]]
+name = "rune1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rune2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rune3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rune4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rune5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rune6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "guy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "end"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "amyjon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "matt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "revolution"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "face"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "a"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "c"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "h"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "i"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "j"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "k"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "n"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "p"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "q"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "r"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "t"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "u"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "v"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "w"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "x"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "y"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "z"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rune1s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rune2s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rune3s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rune4s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rune5s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rune6s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engies"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "guys"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ends"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 16, y = 22 }]
+
+[[state]]
+name = "amyjons"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "matts"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "revolutions"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "faces"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "as"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ds"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "es"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "is"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "js"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ks"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ls"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ms"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ns"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "os"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ps"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "qs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ss"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ts"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "us"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ws"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ys"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "zs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dwarf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dwarfs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "uboa"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "uboas"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "down"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "left"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "right"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "up"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ups"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "downs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lefts"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rights"
+dirs = 1
+frames = 1

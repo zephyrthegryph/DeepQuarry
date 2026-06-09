@@ -1,0 +1,369 @@
+# Generated from decals_directions.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 24
+
+[[state]]
+name = "direction"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_eng"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_core"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_solar"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_atmos"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_grav"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_engeqp"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_sec"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_armory"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_brig"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_seceqp"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_intaff"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_forensics"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_lab"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_interrogation"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_sci"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_rnd"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_toxins"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_robotics"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_xeno"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_xenoarch"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_xbio"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_xflora"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_explo"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_med"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_chemlab"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_surgery"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_op1"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_op2"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_viro"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_medeqp"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_morgue"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_cloning"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_resleeve"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_evac"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_eva"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_ai_core"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_bridge"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_command"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_teleport"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_tcomms"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_crg"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_mining"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_refinery"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "roomnum"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_cry"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_elv"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_bar"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_bay"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_kitchen"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_tram"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_janitor"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_chapel"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_dorms"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_library"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_dock"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_gym"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_pool"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "direction_recreation"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "stairwell"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "stairs_up"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "stairs_down"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "ladderwell"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "ladder_up"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "ladder_down"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "exit_sign"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vines"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vines_top"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vines_mid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vines_bottom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snowy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rusted"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floornums"
+dirs = 8
+frames = 1

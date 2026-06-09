@@ -1,0 +1,139 @@
+# Generated from beekeeping.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "empty1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "empty2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "empty3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "empty4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "empty5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "full1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "full2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "full3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "full4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "full5"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "beehive"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beehive_full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bees1"
+dirs = 1
+frames = 6
+delays = [1.25]
+
+[[state]]
+name = "bees2"
+dirs = 1
+frames = 6
+delays = [1.25]
+
+[[state]]
+name = "bees3"
+dirs = 1
+frames = 6
+delays = [1.25]
+
+[[state]]
+name = "beepack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beepack-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beepack-full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "honeyframe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "honeycomb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wax"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "centrifuge"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "centrifuge_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "centrifuge_moving"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "centrifuge_panel"
+dirs = 1
+frames = 1

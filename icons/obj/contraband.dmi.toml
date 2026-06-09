@@ -1,0 +1,492 @@
+# Generated from contraband.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 12
+
+[[state]]
+name = "rolled_poster"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "poster_being_set"
+dirs = 1
+frames = 28
+delays = [1]
+
+[[state]]
+name = "poster_ripped"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rolled_poster_nt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "poster1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "poster2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "poster3"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "poster4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "poster5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "poster6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "poster7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "poster8"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "poster9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "poster10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter16"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter17"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter18"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter19"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter21"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter22"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter23"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter24"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter26"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter27"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter28"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter29"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter38"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter39"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter40"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter41"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter42"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter43"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter44"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter45"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter46"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter47"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter48"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter49"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter30"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter31"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter32"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter33"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter34"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter35"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter36"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter37"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter51"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter52"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter53"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter54"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter55"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter56"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter57"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsposter58"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polposter1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polposter2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polposter3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polposter4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polposter5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polposter6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polposter7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polposter8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polposter9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ntposter01"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ntposter02"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ntposter03"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ntposter04"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ntposter05"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ntposter06"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ntposter07"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ntposter08"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ntposter09"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ntposter10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polposter10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polposter11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polposter12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polposter14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polposter13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polposter15"
+dirs = 1
+frames = 1

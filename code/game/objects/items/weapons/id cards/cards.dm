@@ -1,0 +1,314 @@
+/* Cards
+ * Contains:
+ *		DATA CARD
+ *		ID CARD
+ *		FINGERPRINT CARD HOLDER
+ *		FINGERPRINT CARD
+ */
+
+
+
+/*
+ * DATA CARDS - Used for the teleporter
+ */
+/obj/item/card
+	name = "card"
+	desc = "A tiny plaque of plastic. Does card things."
+	icon = 'icons/obj/card_new.dmi'
+	w_class = ITEMSIZE_TINY
+	slot_flags = SLOT_EARS
+	var/associated_account_number = 0
+
+	var/list/initial_sprite_stack = list("")
+	var/base_icon = 'icons/obj/card_new.dmi'
+	var/list/sprite_stack
+
+	var/list/files = list(  )
+	drop_sound = 'sound/items/drop/card.ogg'
+	pickup_sound = 'sound/items/pickup/card.ogg'
+
+/obj/item/card/Initialize(mapload)
+	. = ..()
+	reset_icon()
+
+/obj/item/card/proc/reset_icon()
+	sprite_stack = initial_sprite_stack
+	update_icon()
+
+/obj/item/card/update_icon()
+	if(!sprite_stack || !istype(sprite_stack) || sprite_stack == list(""))
+		icon = base_icon
+		icon_state = initial(icon_state)
+
+	var/icon/I = null
+	for(var/iconstate in sprite_stack)
+		if(!iconstate)
+			iconstate = icon_state
+		if(I)
+			var/icon/IC = new(base_icon, iconstate)
+			I.Blend(IC, ICON_OVERLAY)
+		else
+			I = new/icon(base_icon, iconstate)
+	if(I)
+		icon = I
+
+/obj/item/card/data
+	name = "data card"
+	desc = "A solid-state storage card, used to back up or transfer information. What knowledge could it contain?"
+	icon_state = "data"
+	var/function = "storage"
+	var/data = "null"
+	var/special = null
+	item_state = "card-id"
+	drop_sound = 'sound/items/drop/disk.ogg'
+	pickup_sound = 'sound/items/pickup/disk.ogg'
+
+/obj/item/card/data/verb/label(t as text)
+	set name = "Label Card"
+	set category = "Object"
+	set src in usr
+
+	if (t)
+		src.name = text("data card- '[]'", t)
+	else
+		src.name = "data card"
+	src.add_fingerprint(usr)
+	return
+
+/obj/item/card/data/clown
+	name = "\proper the coordinates to clown planet"
+	icon_state = "rainbow"
+	item_state = "card-id"
+	level = 2
+	desc = "This card contains coordinates to the fabled Clown Planet. Handle with care."
+	function = "teleporter"
+	data = "Clown Land"
+
+/*
+ * ID CARDS
+ */
+
+/obj/item/card/emag_broken
+	desc = "It's a card with a magnetic strip attached to some circuitry. It looks too busted to be used for anything but salvage."
+	name = "broken cryptographic sequencer"
+	icon_state = "emag-spent"
+	item_state = "card-id"
+
+/obj/item/card/emag
+	desc = "It's a card with a magnetic strip attached to some circuitry."
+	name = "cryptographic sequencer"
+	icon_state = "emag"
+	item_state = "card-id"
+	var/uses = 10
+
+/obj/item/card/emag/resolve_attackby(atom/A, mob/user, attack_modifier, click_parameters)
+	var/used_uses = A.emag_act(uses, user, src)
+	if(used_uses < 0)
+		return ..(A, user, click_parameters)
+
+	uses -= used_uses
+	A.add_fingerprint(user)
+	// Because some things (read lift doors) don't get emagged
+	if(used_uses)
+		log_and_message_admins("emagged \an [A].")
+	else
+		log_and_message_admins("attempted to emag \an [A].")
+	// End of Edit
+
+	if(uses<1)
+		user.visible_message(span_warning("\The [src] fizzles and sparks - it seems it's been used once too often, and is now spent."))
+		user.drop_item()
+		var/obj/item/card/emag_broken/junk = new(user.loc)
+		junk.add_fingerprint(user)
+		qdel(src)
+
+	return 1
+
+/obj/item/card/emag/attackby(obj/item/O as obj, mob/user as mob)
+	if(istype(O, /obj/item/stack/telecrystal))
+		var/obj/item/stack/telecrystal/T = O
+		if(T.get_amount() < 1)
+			to_chat(user, span_notice("You are not adding enough telecrystals to fuel \the [src]."))
+			return
+		uses += T.get_amount()*0.5 //Gives 5 uses per 10 TC
+		uses = CEILING(uses, 1) //Ensures no decimal uses nonsense, rounds up to be nice
+		to_chat(user, span_notice("You add \the [O] to \the [src]. Increasing the uses of \the [src] to [uses]."))
+		qdel(O)
+
+
+/obj/item/card/emag/borg
+	uses = 12
+	var/burnt_out = FALSE
+
+/obj/item/card/emag/borg/afterattack(atom/A, mob/user, proximity, click_parameters)
+	if(!proximity || burnt_out) return
+	var/used_uses = A.emag_act(uses, user, src)
+	if(used_uses < 0)
+		return ..(A, user, proximity, click_parameters)
+
+	uses -= used_uses
+	A.add_fingerprint(user)
+	// Because some things (read lift doors) don't get emagged
+	if(used_uses)
+		log_and_message_admins("emagged \an [A].")
+	else
+		log_and_message_admins("attempted to emag \an [A].")
+	// End of Edit
+
+	if(uses<1)
+		user.visible_message(span_warning("\The [src] fizzles and sparks - it seems it's been used once too often, and is now spent."))
+		burnt_out = TRUE
+
+	return 1
+
+/// FLUFF PERMIT
+
+/obj/item/card_fluff
+	name = "fluff card"
+	desc = "A tiny plaque of plastic. Purely decorative?"
+	description_fluff = "This permit was not issued by any branch of NanoTrasen, and as such it is not formally recognized at any NanoTrasen-operated installations. The bearer is not - under any circumstances - entitled to ownership of any items or allowed to perform any acts that would normally be restricted or illegal for their current position, regardless of what they or this permit may claim."
+	icon = 'icons/obj/card_fluff.dmi'
+	w_class = ITEMSIZE_TINY
+	slot_flags = SLOT_EARS
+
+	var/list/initial_sprite_stack = list("")
+	var/base_icon = 'icons/obj/card_fluff.dmi'
+	var/list/sprite_stack = list("")
+
+	drop_sound = 'sound/items/drop/card.ogg'
+	pickup_sound = 'sound/items/pickup/card.ogg'
+
+/obj/item/card_fluff/proc/reset_icon()
+	sprite_stack = list("")
+	update_icon()
+
+/obj/item/card_fluff/update_icon()
+	if(!sprite_stack || !istype(sprite_stack) || sprite_stack == list(""))
+		icon = base_icon
+		icon_state = initial(icon_state)
+
+	var/icon/I = null
+	for(var/iconstate in sprite_stack)
+		if(!iconstate)
+			iconstate = icon_state
+		if(I)
+			var/icon/IC = new(base_icon, iconstate)
+			I.Blend(IC, ICON_OVERLAY)
+		else
+			I = new/icon(base_icon, iconstate)
+	if(I)
+		icon = I
+
+/obj/item/card_fluff/attack_self(mob/user)
+	. = ..(user)
+	if(.)
+		return TRUE
+	var/choice = tgui_input_list(user, "What element would you like to customize?", "Customize Card", list("Band","Stamp","Reset"))
+	if(!choice) return
+
+	if(choice == "Band")
+		var/bandchoice = tgui_input_list(user, "Select colour", "Band colour", list("red","orange","green","dark green","medical blue","dark blue","purple","tan","pink","gold","white","black"))
+		if(!bandchoice) return
+
+		if(bandchoice == "red")
+			sprite_stack.Add("bar-red")
+		else if(bandchoice == "orange")
+			sprite_stack.Add("bar-orange")
+		else if(bandchoice == "green")
+			sprite_stack.Add("bar-green")
+		else if(bandchoice == "dark green")
+			sprite_stack.Add("bar-darkgreen")
+		else if(bandchoice == "medical blue")
+			sprite_stack.Add("bar-medblue")
+		else if(bandchoice == "dark blue")
+			sprite_stack.Add("bar-blue")
+		else if(bandchoice == "purple")
+			sprite_stack.Add("bar-purple")
+		else if(bandchoice == "ran")
+			sprite_stack.Add("bar-tan")
+		else if(bandchoice == "pink")
+			sprite_stack.Add("bar-pink")
+		else if(bandchoice == "gold")
+			sprite_stack.Add("bar-gold")
+		else if(bandchoice == "white")
+			sprite_stack.Add("bar-white")
+		else if(bandchoice == "black")
+			sprite_stack.Add("bar-black")
+
+		update_icon()
+		return
+	else if(choice == "Stamp")
+		var/stampchoice = tgui_input_list(user, "Select image", "Stamp image", list("ship","cross","big ears","shield","circle-cross","target","smile","frown","peace","exclamation"))
+		if(!stampchoice) return
+
+		if(stampchoice == "ship")
+			sprite_stack.Add("stamp-starship")
+		else if(stampchoice == "cross")
+			sprite_stack.Add("stamp-cross")
+		else if(stampchoice == "big ears")
+			sprite_stack.Add("stamp-bigears")	//get 'em outta the caption, wiseguy!!
+		else if(stampchoice == "shield")
+			sprite_stack.Add("stamp-shield")
+		else if(stampchoice == "circle-cross")
+			sprite_stack.Add("stamp-circlecross")
+		else if(stampchoice == "target")
+			sprite_stack.Add("stamp-target")
+		else if(stampchoice == "smile")
+			sprite_stack.Add("stamp-smile")
+		else if(stampchoice == "frown")
+			sprite_stack.Add("stamp-frown")
+		else if(stampchoice == "peace")
+			sprite_stack.Add("stamp-peace")
+		else if(stampchoice == "exclamation")
+			sprite_stack.Add("stamp-exclaim")
+
+		update_icon()
+		return
+	else if(choice == "Reset")
+		reset_icon()
+		return
+	return
+
+/obj/item/card/id/synthetic/borg
+	var/mob/living/silicon/robot/robot_owner
+	var/last_robot_loc
+
+/obj/item/card/id/synthetic/borg/Initialize(mapload)
+	. = ..()
+	if(isrobot(loc))
+		robot_owner = loc
+		registered_name = robot_owner.braintype
+		RegisterSignal(src, COMSIG_MOVABLE_ATTEMPTED_MOVE, PROC_REF(check_loc))
+
+/obj/item/card/id/synthetic/borg/proc/check_loc(atom/movable/mover, atom/old_loc, atom/new_loc)
+	SIGNAL_HANDLER
+	if(old_loc == robot_owner || old_loc == robot_owner.module)
+		last_robot_loc = old_loc
+	if(!istype(loc, /obj/machinery) && loc != robot_owner && loc != robot_owner.module)
+		if(last_robot_loc)
+			forceMove(last_robot_loc)
+			last_robot_loc = null
+		else
+			forceMove(robot_owner)
+		if(loc == robot_owner)
+			hud_layerise()
+
+/obj/item/card/id/synthetic/borg/Destroy()
+	if(robot_owner)
+		UnregisterSignal(src, COMSIG_MOVABLE_ATTEMPTED_MOVE)
+		robot_owner = null
+		last_robot_loc = null
+	. = ..()
+
+
+// === merged from cards_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/item/card/emag/examine(mob/user)
+	. = ..()
+	. += "[uses] uses remaining."
+
+/obj/item/card/emag/used
+	uses = 1
+
+/obj/item/card/emag/used/Initialize(mapload)
+	. = ..()
+	uses = rand(1, 5)

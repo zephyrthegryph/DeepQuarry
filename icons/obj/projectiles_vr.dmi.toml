@@ -1,0 +1,121 @@
+# Generated from projectiles_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 11
+
+[[state]]
+name = "particle"
+dirs = 8
+frames = 5
+delays = [1]
+
+[[state]]
+name = "particle-heavy"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "ka_tracer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kinetic_blast"
+dirs = 1
+frames = 4
+delays = [1]
+loop = 1
+
+[[state]]
+name = "red_laser"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "green_laser"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "blue_laser"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "purple_laser"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "muzzle_medbeam"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "impact_medbeam"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medbeam"
+dirs = 1
+frames = 16
+delays = [1]
+
+[[state]]
+name = "beam_pointdef"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "muzzle_pointdef"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "impact_pointdef"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "minitesla"
+dirs = 1
+frames = 12
+delays = [1]
+
+[[state]]
+name = "impact_appendage_a"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "impact_appendage_c"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "impact_appendage_b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "impact_appendage_combined"
+dirs = 1
+frames = 3
+delays = [2, 2, 20]
+loop = 1
+
+[[state]]
+name = "muzzle_appendage"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "appendage_beam"
+dirs = 1
+frames = 1

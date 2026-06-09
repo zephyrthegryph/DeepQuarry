@@ -1,0 +1,219 @@
+# Generated from tail_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 55
+
+[[state]]
+name = "sogtail_loop"
+dirs = 4
+frames = 13
+delays = [1, 1, 1, 1, 2, 30, 2, 1, 1, 1, 1, 1, 50]
+
+[[state]]
+name = "sogtail_master"
+dirs = 4
+frames = 22
+delays = [99, 99, 99, 99, 99, 1, 1, 1, 1, 2, 20, 2, 1, 1, 1, 1, 1, 99]
+
+[[state]]
+name = "sogtail_once"
+dirs = 4
+frames = 13
+delays = [1, 1, 1, 1, 2, 5, 2, 1, 1, 1, 1, 1, 5]
+
+[[state]]
+name = "sogtail_loop"
+dirs = 4
+frames = 13
+delays = [1, 1, 1, 1, 2, 20, 2, 1, 1, 1, 1, 1, 100]
+
+[[state]]
+name = "sogtail_static"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sogtail_idle"
+dirs = 4
+frames = 16
+delays = [99, 99, 99, 1, 1, 1, 1, 2, 30, 2, 1, 1, 1, 99]
+
+[[state]]
+name = "sogtail_idle0"
+dirs = 4
+frames = 22
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 20, 2, 1, 1, 1, 1, 1, 240]
+
+[[state]]
+name = "sogtail_idle1"
+dirs = 4
+frames = 22
+delays = [120, 1, 1, 1, 1, 1, 1, 1, 1, 2, 20, 2, 1, 1, 1, 1, 1, 240, 240, 240, 240, 120]
+
+[[state]]
+name = "sogtail_idle2"
+dirs = 4
+frames = 22
+delays = [240, 1, 1, 1, 1, 1, 1, 1, 1, 2, 20, 2, 1, 1, 1, 1, 1, 240, 240, 240, 240, 1]
+
+[[state]]
+name = "sogtail_idle3"
+dirs = 4
+frames = 22
+delays = [240, 120, 1, 1, 1, 1, 1, 1, 1, 2, 20, 2, 1, 1, 1, 1, 1, 240, 240, 240, 120, 1]
+
+[[state]]
+name = "sogtail_idle4"
+dirs = 4
+frames = 22
+delays = [240, 240, 1, 1, 1, 1, 1, 1, 1, 2, 20, 2, 1, 1, 1, 1, 1, 240, 240, 240, 1]
+
+[[state]]
+name = "sogtail_idle5"
+dirs = 4
+frames = 22
+delays = [240, 240, 120, 1, 1, 1, 1, 1, 1, 2, 20, 2, 1, 1, 1, 1, 1, 240, 240, 120, 1]
+
+[[state]]
+name = "sogtail_idle6"
+dirs = 4
+frames = 22
+delays = [240, 240, 240, 1, 1, 1, 1, 1, 1, 2, 20, 2, 1, 1, 1, 1, 1, 240, 240, 1]
+
+[[state]]
+name = "sogtail_idle7"
+dirs = 4
+frames = 22
+delays = [240, 240, 240, 120, 1, 1, 1, 1, 1, 2, 20, 2, 1, 1, 1, 1, 1, 240, 120, 1]
+
+[[state]]
+name = "sogtail_idle8"
+dirs = 4
+frames = 22
+delays = [240, 240, 240, 240, 1, 1, 1, 1, 1, 2, 20, 2, 1, 1, 1, 1, 1, 240, 1]
+
+[[state]]
+name = "sogtail_idle9"
+dirs = 4
+frames = 22
+delays = [240, 240, 240, 240, 120, 1, 1, 1, 1, 2, 20, 2, 1, 1, 1, 1, 1, 120, 1]
+
+[[state]]
+name = "sogtail_slow0"
+dirs = 4
+frames = 22
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 20, 2, 1, 1, 1, 1, 1, 24]
+
+[[state]]
+name = "sogtail_slow1"
+dirs = 4
+frames = 22
+delays = [12, 1, 1, 1, 1, 1, 1, 1, 1, 2, 20, 2, 1, 1, 1, 1, 1, 12, 24]
+
+[[state]]
+name = "sogtail_slow2"
+dirs = 4
+frames = 22
+delays = [24, 1, 1, 1, 1, 1, 1, 1, 1, 2, 20, 2, 1, 1, 1, 1, 1, 1, 24]
+
+[[state]]
+name = "sogtail_slow3"
+dirs = 4
+frames = 22
+delays = [24, 12, 1, 1, 1, 1, 1, 1, 1, 2, 20, 2, 1, 1, 1, 1, 1, 1, 12, 24]
+
+[[state]]
+name = "sogtail_slow4"
+dirs = 4
+frames = 22
+delays = [24, 24, 1, 1, 1, 1, 1, 1, 1, 2, 20, 2, 1, 1, 1, 1, 1, 1, 1, 24]
+
+[[state]]
+name = "sogtail_slow5"
+dirs = 4
+frames = 22
+delays = [24, 24, 12, 1, 1, 1, 1, 1, 1, 2, 20, 2, 1, 1, 1, 1, 1, 1, 1, 12, 24]
+
+[[state]]
+name = "sogtail_slow6"
+dirs = 4
+frames = 22
+delays = [24, 24, 24, 1, 1, 1, 1, 1, 1, 2, 20, 2, 1, 1, 1, 1, 1, 1, 1, 1, 24]
+
+[[state]]
+name = "sogtail_slow7"
+dirs = 4
+frames = 22
+delays = [24, 24, 24, 12, 1, 1, 1, 1, 1, 2, 20, 2, 1, 1, 1, 1, 1, 1, 1, 1, 12, 24]
+
+[[state]]
+name = "sogtail_slow8"
+dirs = 4
+frames = 22
+delays = [24, 24, 24, 24, 1, 1, 1, 1, 1, 2, 20, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 24]
+
+[[state]]
+name = "sogtail_slow9"
+dirs = 4
+frames = 22
+delays = [24, 24, 24, 24, 12, 1, 1, 1, 1, 2, 20, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 12]
+
+[[state]]
+name = "sogtail_loop0"
+dirs = 4
+frames = 22
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 20, 2, 1, 1, 1, 1, 1, 8]
+
+[[state]]
+name = "sogtail_loop1"
+dirs = 4
+frames = 22
+delays = [4, 1, 1, 1, 1, 1, 1, 1, 1, 2, 20, 2, 1, 1, 1, 1, 1, 8, 8, 8, 8, 4]
+
+[[state]]
+name = "sogtail_loop2"
+dirs = 4
+frames = 22
+delays = [8, 1, 1, 1, 1, 1, 1, 1, 1, 2, 20, 2, 1, 1, 1, 1, 1, 8, 8, 8, 8, 1]
+
+[[state]]
+name = "sogtail_loop3"
+dirs = 4
+frames = 22
+delays = [8, 4, 1, 1, 1, 1, 1, 1, 1, 2, 20, 2, 1, 1, 1, 1, 1, 8, 8, 8, 4, 1]
+
+[[state]]
+name = "sogtail_loop4"
+dirs = 4
+frames = 22
+delays = [8, 8, 1, 1, 1, 1, 1, 1, 1, 2, 20, 2, 1, 1, 1, 1, 1, 8, 8, 8, 1]
+
+[[state]]
+name = "sogtail_loop5"
+dirs = 4
+frames = 22
+delays = [8, 8, 4, 1, 1, 1, 1, 1, 1, 2, 20, 2, 1, 1, 1, 1, 1, 8, 8, 4, 1]
+
+[[state]]
+name = "sogtail_loop6"
+dirs = 4
+frames = 22
+delays = [8, 8, 8, 1, 1, 1, 1, 1, 1, 2, 20, 2, 1, 1, 1, 1, 1, 8, 8, 1]
+
+[[state]]
+name = "sogtail_loop7"
+dirs = 4
+frames = 22
+delays = [8, 8, 8, 4, 1, 1, 1, 1, 1, 2, 20, 2, 1, 1, 1, 1, 1, 8, 4, 1]
+
+[[state]]
+name = "sogtail_loop8"
+dirs = 4
+frames = 22
+delays = [8, 8, 8, 8, 1, 1, 1, 1, 1, 2, 20, 2, 1, 1, 1, 1, 1, 8, 1]
+
+[[state]]
+name = "sogtail_loop9"
+dirs = 4
+frames = 22
+delays = [8, 8, 8, 8, 4, 1, 1, 1, 1, 2, 20, 2, 1, 1, 1, 1, 1, 4, 1]

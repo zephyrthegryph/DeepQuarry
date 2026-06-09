@@ -1,0 +1,325 @@
+# Generated from tiles_white.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 18
+
+[[state]]
+name = "tiles"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tiles_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "tiles_corners"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "panels"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "panels_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "panels_corners"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "techfloor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "techfloor_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "techfloor_corners"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "techfloor_grid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "techfloor_grid_edges"
+dirs = 8
+frames = 2
+delays = [1]
+
+[[state]]
+name = "techfloor_grid_corners"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "brown_perforated"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brown_perforated_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "brown_perforated_corners"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "gray_perforated"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray_perforated_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "gray_perforated_corners"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "cargo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cargo_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "cargo_corners"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "brown_platform"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brown_platform_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "brown_platform_corners"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "gray_platform"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray_platform_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "gray_platform_corners"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "danger"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "danger_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "danger_corners"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "golden"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "golden_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "golden_corners"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "bluecorner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluecorner_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "bluecorner_corners"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "orangecorner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orangecorner_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "orangecorner_corners"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "cyancorner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyancorner_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "cyancorner_corners"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "violetcorener"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "violetcorener_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "violetcorener_corners"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "monofloor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "monofloor0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "monofloor1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "monofloor2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "monofloor3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "monofloor4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "monofloor5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "monofloor6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "monofloor7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "monofloor8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "monofloor9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "monofloor10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "monofloor11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "monofloor12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "monofloor13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "monofloor14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "monofloor15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "monofloor_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "monofloor_corners"
+dirs = 8
+frames = 1

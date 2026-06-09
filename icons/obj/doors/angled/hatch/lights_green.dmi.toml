@@ -1,0 +1,18 @@
+# Generated from lights_green.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "opening"
+dirs = 4
+frames = 6
+delays = [2]
+loop = 1
+
+[[state]]
+name = "closing"
+dirs = 4
+frames = 6
+delays = [2]
+loop = 1

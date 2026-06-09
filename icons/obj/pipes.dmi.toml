@@ -1,0 +1,450 @@
+# Generated from pipes.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 24
+
+[[state]]
+name = "intact"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "intact-db"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "intact-f"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "intact-f-lb"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "intact-f-db"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "exposed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "exposed-db"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "exposed-f"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "exposed-f-db"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "exposed-f-lb"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "one-way"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "one-way-db"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "connector"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "connector-f"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "high_capacity"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "high>low"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meterX"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "meter0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meter1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meter2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meter3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meter4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meter5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meter6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meter7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meter8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meter9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meter10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meter11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meter12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meter13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meter14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meter15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meter16"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "meter17"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meter18"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "manifold"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "manifold-db"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "manifold-f"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "manifold-f-db"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vent"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vent-db"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "inlet"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "trunk"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "compressor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "turbine"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "comp-o1"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "comp-o2"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "comp-o3"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "comp-o4"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "turb-o"
+dirs = 1
+frames = 2
+delays = [3, 2]
+
+[[state]]
+name = "inlet_filter-4"
+dirs = 4
+frames = 5
+delays = [1]
+
+[[state]]
+name = "inlet_filter-3"
+dirs = 4
+frames = 5
+delays = [2, 2, 2, 2, 1]
+
+[[state]]
+name = "inlet_filter-2"
+dirs = 4
+frames = 5
+delays = [3, 3, 3, 3, 1]
+
+[[state]]
+name = "inlet_filter-1"
+dirs = 4
+frames = 5
+delays = [4, 4, 4, 4, 1]
+
+[[state]]
+name = "inlet_filter-0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vent_filter-0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vent_filter-4"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "vent_filter-3"
+dirs = 4
+frames = 8
+delays = [2]
+
+[[state]]
+name = "vent_filter-2"
+dirs = 4
+frames = 8
+delays = [3]
+
+[[state]]
+name = "vent_filter-1"
+dirs = 4
+frames = 8
+delays = [4]
+
+[[state]]
+name = "discon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "intact-y"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "intact-y-f"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "intact-g"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "intact-g-f"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "intact-r"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "intact-r-f"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "intact-b"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "intact-b-f"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "intact-c"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "intact-c-f"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "intact-p"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "intact-p-f"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "exposed10"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "exposed01"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "cap"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cap-f"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cap-supply"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cap-f-supply"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cap-scrubbers"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cap-f-scrubbers"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cap-fuel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cap-f-fuel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cap-aux"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cap-f-aux"
+dirs = 4
+frames = 1

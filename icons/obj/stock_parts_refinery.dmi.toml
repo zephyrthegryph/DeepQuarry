@@ -1,0 +1,224 @@
+# Generated from stock_parts_refinery.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 10
+
+[[state]]
+name = "industrial_chemical_grinder_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "industrial_chemical_grinder_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "industrial_chemical_grinder_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "industrial_chemical_grinder_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "industrial_chemical_pump_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "industrial_chemical_pump_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "industrial_chemical_pump_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "industrial_chemical_pump_3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "industrial_chemical_vat_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "industrial_chemical_vat_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "industrial_chemical_vat_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "industrial_chemical_vat_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "industrial_chemical_filter_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "industrial_chemical_filter_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "industrial_chemical_filter_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "industrial_chemical_filter_3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "industrial_chemical_pipe_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "industrial_chemical_pipe_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "industrial_chemical_pipe_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "industrial_chemical_pipe_3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "industrial_chemical_waste_processor_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "industrial_chemical_waste_processor_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "industrial_chemical_waste_processor_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "industrial_chemical_waste_processor_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "industrial_chemical_hub_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "industrial_chemical_hub_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "industrial_chemical_hub_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "industrial_chemical_hub_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "industrial_chemical_reactor_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "industrial_chemical_reactor_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "industrial_chemical_reactor_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "industrial_chemical_reactor_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "industrial_chemical_sintering_furnace_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "industrial_chemical_sintering_furnace_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "industrial_chemical_sintering_furnace_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "industrial_chemical_sintering_furnace_3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "industrial_chemical_mixer_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "industrial_chemical_mixer_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "industrial_chemical_mixer_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "industrial_chemical_mixer_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "industrial_chemical_splitter_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "industrial_chemical_splitter_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "industrial_chemical_splitter_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "industrial_chemical_splitter_3"
+dirs = 1
+frames = 1

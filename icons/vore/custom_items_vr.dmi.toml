@@ -1,0 +1,814 @@
+# Generated from custom_items_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 21
+
+[[state]]
+name = "Empty State"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "joanzip"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "joanzipon"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "joanaria"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 11, y = 18 }]
+
+[[state]]
+name = "harmonymjollnir"
+dirs = 1
+frames = 7
+delays = [20, 1]
+
+[[state]]
+name = "joanbadge"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-joan"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-andy"
+dirs = 1
+frames = 2
+delays = [25, 1]
+
+[[state]]
+name = "pda-sapphina"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-lucina"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-warbrand"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "harmony_kit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "modkit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Flag_Nanotrasen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flag_federation"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nehiphones"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radiopack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holochain"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "headphones_mob"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 19, y = 6 }]
+
+[[state]]
+name = "joanariamob_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "joanariamob_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chain_l"
+dirs = 4
+frames = 12
+delays = [1]
+
+[[state]]
+name = "chain_r"
+dirs = 4
+frames = 12
+delays = [1]
+
+[[state]]
+name = "swat43-bag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "swat43-bag-bloodied"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "swat43-bag_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scisword"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aro_hypo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flag_advent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flag_xcom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "khlife0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "khlife1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "khlife2"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "khlife3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "khlife_overlay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "khlifebox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tempesthud"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "browncane"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "browncanemob_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "browncanemob_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lexipraymat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pen_holo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ivyholoid"
+dirs = 1
+frames = 4
+delays = [20, 1, 1, 50]
+rewind = true
+
+[[state]]
+name = "capsule"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "temphypo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "temphypo_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tempestbag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tempestbag-amb"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "tempestsaddlebag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tempestsaddlebag-amb"
+dirs = 4
+frames = 2
+delays = [3]
+
+[[state]]
+name = "cmoemergency"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kamina"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "joanbag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dragor_dot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tricorder"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tricorder_closed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tricorder_s"
+dirs = 1
+frames = 3
+delays = [4]
+rewind = true
+
+[[state]]
+name = "tricorder_med"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tricorder_med_s"
+dirs = 1
+frames = 3
+delays = [4]
+rewind = true
+
+[[state]]
+name = "tricorder_med_closed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "backup_implant"
+dirs = 1
+frames = 2
+delays = [10, 1]
+
+[[state]]
+name = "projector-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "projector"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "arohud"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arohud_on"
+dirs = 1
+frames = 16
+delays = [1]
+
+[[state]]
+name = "duffle_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffle_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffle_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "amayarahlwahID"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 24, y = 23 }]
+
+[[state]]
+name = "mouse_brown"
+dirs = 1
+frames = 2
+delays = [15]
+
+[[state]]
+name = "mouse_brown-old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mouse_brown_head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "egg_roiz"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "friedegg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chocolateegg_roiz"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hisstective_badge"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_roiz_yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_roiz_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_roiz_green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_roiz_orange"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_roiz_purple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_roiz_rainbow1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_roiz_rainbow2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_roiz_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_roiz_rainbow3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_roiz_rainbow4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spiffygogs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spiffygogsup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tronket"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "headbando"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alexiswand"
+dirs = 1
+frames = 16
+delays = [1]
+
+[[state]]
+name = "alexiswandmob_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alexiswandmob_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "riding_crop"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "riding_crop0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "riding_crop1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flops"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gntop"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gnshorts"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holster_stunstaff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stunstaff00"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stunstaff01"
+dirs = 1
+frames = 2
+delays = [0.2]
+
+[[state]]
+name = "stunstaff10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stunstaff11"
+dirs = 1
+frames = 2
+delays = [0.2]
+
+[[state]]
+name = "tesh_egg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_egg_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wolfgirlshield"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolfgirlsword"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "penlightlynn"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "penlightlynn-on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kenziehypo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kenziehypo_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bracer_xander_sthasha"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "goldenstring"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tiemgogs"
+dirs = 1
+frames = 2
+delays = [10, 5]
+
+[[state]]
+name = "tiemgogsup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "azuracollar"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bombersec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bombersec_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blindshades"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shadowlaptop-closed"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "shadowlaptop-open"
+dirs = 1
+frames = 13
+delays = [5, 0.5, 0.5, 0.5, 1, 1, 1, 1, 1, 0.5]
+
+[[state]]
+name = "claraflask15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "claraflask30"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "claraflask50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "claraflask60"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "claraflask80"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "claraflask100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "claraflask"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "verie_brush"
+dirs = 1
+frames = 8
+delays = [10, 1, 1, 0.7, 0.5, 0.5, 0.7, 1]
+
+[[state]]
+name = "charlotte"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "charlottebox8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "charlottebox7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "charlottebox6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "charlottebox5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "charlottebox4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "charlottebox3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "charlottebox2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "charlottebox1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "charlottebox0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-midhorror"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_stamp-midhorror"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "paperplane_stamp-midhorror"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "claws"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "revclaymore"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "revclaymoremob_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "revclaymoremob_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lemonplush"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kyuholotar"
+dirs = 1
+frames = 2
+delays = [10]
+
+[[state]]
+name = "pandorba"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pandorba_d"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pandorba_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pandorba_h"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "evelynn"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "evelynn_purple_laser"
+dirs = 1
+frames = 4
+delays = [1]

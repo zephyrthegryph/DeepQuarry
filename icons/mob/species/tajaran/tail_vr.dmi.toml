@@ -1,0 +1,206 @@
+# Generated from tail_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 46
+
+[[state]]
+name = "tajtail_master"
+dirs = 4
+frames = 18
+delays = [99, 99, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 2, 99]
+
+[[state]]
+name = "tajtail_once"
+dirs = 4
+frames = 12
+delays = [1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1]
+
+[[state]]
+name = "tajtail_static"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tajtail_idle0"
+dirs = 4
+frames = 18
+delays = [1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 2, 150]
+
+[[state]]
+name = "tajtail_idle1"
+dirs = 4
+frames = 18
+delays = [1, 30, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 2, 150, 120]
+
+[[state]]
+name = "tajtail_idle2"
+dirs = 4
+frames = 18
+delays = [1, 60, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 2, 150, 90]
+
+[[state]]
+name = "tajtail_idle3"
+dirs = 4
+frames = 18
+delays = [1, 90, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 2, 150, 60]
+
+[[state]]
+name = "tajtail_idle4"
+dirs = 4
+frames = 18
+delays = [1, 120, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 2, 150, 30]
+
+[[state]]
+name = "tajtail_idle5"
+dirs = 4
+frames = 18
+delays = [1, 150, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 2, 150, 1]
+
+[[state]]
+name = "tajtail_idle6"
+dirs = 4
+frames = 18
+delays = [30, 150, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 2, 120, 1]
+
+[[state]]
+name = "tajtail_idle7"
+dirs = 4
+frames = 18
+delays = [60, 150, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 2, 90, 1]
+
+[[state]]
+name = "tajtail_idle8"
+dirs = 4
+frames = 18
+delays = [90, 150, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 2, 60, 1]
+
+[[state]]
+name = "tajtail_idle9"
+dirs = 4
+frames = 18
+delays = [120, 150, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 2, 30, 1]
+
+[[state]]
+name = "tajtail_loop0"
+dirs = 4
+frames = 12
+delays = [1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1]
+
+[[state]]
+name = "tajtail_loop1"
+dirs = 4
+frames = 12
+delays = [1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1]
+
+[[state]]
+name = "tajtail_loop2"
+dirs = 4
+frames = 12
+delays = [1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1]
+
+[[state]]
+name = "tajtail_loop3"
+dirs = 4
+frames = 12
+delays = [1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1]
+
+[[state]]
+name = "tajtail_loop4"
+dirs = 4
+frames = 12
+delays = [1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1]
+
+[[state]]
+name = "tajtail_loop5"
+dirs = 4
+frames = 12
+delays = [1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1]
+
+[[state]]
+name = "tajtail_loop6"
+dirs = 4
+frames = 12
+delays = [1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1]
+
+[[state]]
+name = "tajtail_loop7"
+dirs = 4
+frames = 12
+delays = [1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1]
+
+[[state]]
+name = "tajtail_loop8"
+dirs = 4
+frames = 12
+delays = [1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1]
+
+[[state]]
+name = "tajtail_loop9"
+dirs = 4
+frames = 12
+delays = [1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1]
+
+[[state]]
+name = "tajtail_slow0"
+dirs = 4
+frames = 18
+delays = [1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 2, 1, 30]
+
+[[state]]
+name = "tajtail_slow1"
+dirs = 4
+frames = 18
+delays = [3, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 2, 1, 27]
+
+[[state]]
+name = "tajtail_slow2"
+dirs = 4
+frames = 18
+delays = [6, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 2, 1, 24]
+
+[[state]]
+name = "tajtail_slow3"
+dirs = 4
+frames = 18
+delays = [9, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 2, 1, 21]
+
+[[state]]
+name = "tajtail_slow4"
+dirs = 4
+frames = 18
+delays = [12, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 2, 1, 18]
+
+[[state]]
+name = "tajtail_slow5"
+dirs = 4
+frames = 18
+delays = [15, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 2, 1, 15]
+
+[[state]]
+name = "tajtail_slow6"
+dirs = 4
+frames = 18
+delays = [18, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 2, 1, 12]
+
+[[state]]
+name = "tajtail_slow7"
+dirs = 4
+frames = 18
+delays = [21, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 2, 1, 9]
+
+[[state]]
+name = "tajtail_slow8"
+dirs = 4
+frames = 18
+delays = [24, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 2, 1, 6]
+
+[[state]]
+name = "tajtail_slow9"
+dirs = 4
+frames = 18
+delays = [27, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 2, 1, 3]
+
+[[state]]
+name = "_I truely hope that someday BYOND will implement a frame offset and then most of this will be unnecessary"
+dirs = 1
+frames = 1

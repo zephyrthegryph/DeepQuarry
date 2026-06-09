@@ -1,0 +1,382 @@
+# Generated from disposal.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 24
+
+[[state]]
+name = "trashcan"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toilet"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "toilet-flush"
+dirs = 4
+frames = 9
+delays = [1]
+loop = 1
+
+[[state]]
+name = "toilet-ready"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "toilet-handle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "toilet-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "outlet"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "outlet-open"
+dirs = 4
+frames = 8
+delays = [5, 5, 5, 5, 5, 1, 15, 1]
+
+[[state]]
+name = "intake"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "intake-flush"
+dirs = 4
+frames = 8
+delays = [5, 1]
+
+[[state]]
+name = "pipe-s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pipe-sf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pipe-c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pipe-cf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pipe-j1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pipe-j1f"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pipe-j2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pipe-j2f"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pipe-y"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pipe-yf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pipe-t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pipe-tf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pipe-b"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pipe-bf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pipe-j1s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pipe-j1sf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pipe-j2s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pipe-j2sf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "conpipe-s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "conpipe-c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "conpipe-j1"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "conpipe-j2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "conpipe-y"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "conpipe-t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "conpipe-j1s"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "conpipe-j2s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pipe-d"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pipe-u"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pipe-tagger"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pipe-tagger-partial"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "disposal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "disposal-flush"
+dirs = 1
+frames = 9
+delays = [1, 1, 1, 1, 1, 5, 1]
+
+[[state]]
+name = "disposal-charge"
+dirs = 1
+frames = 2
+delays = [4]
+
+[[state]]
+name = "disposal-ready"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "disposal-charge-glow"
+dirs = 1
+frames = 2
+delays = [4]
+
+[[state]]
+name = "disposal-ready-glow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "disposal-full"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "disposal-handle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wall"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wall-flush"
+dirs = 4
+frames = 9
+delays = [1, 1, 1, 1, 6, 1]
+
+[[state]]
+name = "wall-handle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wall-charge"
+dirs = 4
+frames = 2
+delays = [4]
+
+[[state]]
+name = "wall-ready"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "condisposal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pipe-j1s-open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pipe-j2s-open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue-flush"
+dirs = 1
+frames = 9
+delays = [1, 1, 1, 1, 1, 5, 1]
+
+[[state]]
+name = "bluewall"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bluewallwall-flush"
+dirs = 4
+frames = 9
+delays = [1, 1, 1, 1, 6, 1]
+
+[[state]]
+name = "red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red-flush"
+dirs = 1
+frames = 9
+delays = [1, 1, 1, 1, 1, 5, 1]
+
+[[state]]
+name = "redwall"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "redwall-flush"
+dirs = 4
+frames = 9
+delays = [1, 1, 1, 1, 6, 1]
+
+[[state]]
+name = "green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green-flush"
+dirs = 1
+frames = 9
+delays = [1, 1, 1, 1, 1, 5, 1]
+
+[[state]]
+name = "greenwall"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greenwall-flush"
+dirs = 4
+frames = 9
+delays = [1, 1, 1, 1, 6, 1]
+
+[[state]]
+name = "white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white-flush"
+dirs = 1
+frames = 9
+delays = [1, 1, 1, 1, 1, 5, 1]
+
+[[state]]
+name = "whitewall"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "whitewall-flush"
+dirs = 4
+frames = 9
+delays = [1, 1, 1, 1, 6, 1]

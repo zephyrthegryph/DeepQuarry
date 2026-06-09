@@ -1,0 +1,10 @@
+# Generated from loot_piles.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 96
+height = 176
+cols = 4
+
+[[state]]
+name = "festivetree"
+dirs = 1
+frames = 16
+delays = [1.5]

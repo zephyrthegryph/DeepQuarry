@@ -1,0 +1,29 @@
+# Generated from custom_remote_scene_tools.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "collar"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "collar_inactive"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "doll"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "doll_inactive"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "on_mob_collar"
+dirs = 4
+frames = 1

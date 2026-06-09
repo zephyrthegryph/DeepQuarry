@@ -1,0 +1,239 @@
+# Generated from wormborg.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 13
+
+[[state]]
+name = "worm-standard-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-engineering-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-janitor-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-crisis-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-miner-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-security-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-combat-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-combat-shield"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-surgeon-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-service-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-science-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-openpanel_nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-openpanel_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-openpanel_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-standard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-standard-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "worm-standard-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-engineering"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-engineering-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "worm-engineering-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-janitor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-janitor-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "worm-janitor-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-crisis"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-crisis-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "worm-crisis-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-surgeon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-surgeon-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "worm-surgeon-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-miner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-miner-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "worm-miner-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-security-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "worm-security-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-combat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-combat-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "worm-combat-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-service"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-service-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "worm-service-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-hotpink"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-hotpink-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "worm-hotpink-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-science"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "worm-science-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "worm-science-sleeper-1"
+dirs = 4
+frames = 1

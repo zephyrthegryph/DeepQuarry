@@ -1,0 +1,64 @@
+# Generated from tiles_maint.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "techmaint"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "techmaint_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "techmaint_corners"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "techmaint_perforated"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "techmaint_perforated_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "techmaint_perforated_corners"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "techmaint_panels"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "techmaint_panels_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "techmaint_panels_corners"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "techmaint_cargo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "techmaint_cargo_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "techmaint_cargo_corners"
+dirs = 8
+frames = 1

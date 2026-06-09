@@ -1,0 +1,60 @@
+# Generated from vent_scrubber.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 11
+
+[[state]]
+name = "map_scrubber_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "map_scrubber_on"
+dirs = 4
+frames = 5
+delays = [1]
+
+[[state]]
+name = "off_new"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "in_new"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "on_new"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "on"
+dirs = 4
+frames = 6
+delays = [0.8]
+
+[[state]]
+name = "off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "weld"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "on1"
+dirs = 4
+frames = 6
+delays = [0.8]
+
+[[state]]
+name = "in"
+dirs = 4
+frames = 6
+delays = [0.4]

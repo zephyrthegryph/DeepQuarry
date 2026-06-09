@@ -1,0 +1,587 @@
+# Generated from trash.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 11
+
+[[state]]
+name = "4no_raisins"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "candy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chips"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chips_bbq"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chips_snv"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "popcorn"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndi_cakes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "waffles"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snack_bowl"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "asian_bowl"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "small_bowl"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "turkeybones"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pistachios_pack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "semki_pack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "unathitinred"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tray"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "trashbag0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "trashbag1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "trashbag2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "trashbag3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "liquidfood"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "liquidprotein"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "liquidvitamin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plasticbag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "corncob"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tastybread"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "proteinbar"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "space_twinkie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "can-used"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cbeef-used"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maps-used"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skrellsnacks"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "koisbar"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 1, y = 29 }]
+
+[[state]]
+name = "kokobar"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 1, y = 29 }]
+
+[[state]]
+name = "cookiesnack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "admint_pack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gum_pack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meatsnack-used"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tuna"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "liquidveg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brownies"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snacktray"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grease"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dipbowl"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chipbasket_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "useless_plastic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shards"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ash"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "banana_peel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "steak"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coffee_vended"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ramen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "candy_bowl"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dionaebitesempty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "candy_gums"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sosjerky"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cheesie_honkers"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fruitbar"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pigfat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "driedfish"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "squid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jupiter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tidegobs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "saturn0s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pluto"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "venus"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oort"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mars"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weebonuts"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fisheggs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carpeggs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maps"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ntbeans"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beef"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beans"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tomato"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spinach"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "appleberry"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brainzsnax"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brainzsnaxred"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baseration"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "genration"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meatration"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vegration"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cakewrap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mochicakewrap"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 18, y = 21 }]
+
+[[state]]
+name = "mooncakewrap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sun_snax"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wasabi_peas"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "namagashi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pocky"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacercake_wrap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stick"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pretzel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hakarl"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tgmc_mre_trash"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smolburger"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smolhotdog"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smolburrito"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "croutons"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cb01"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cb02"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cb03"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cb04"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cb05"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cb06"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cb07"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cb08"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cb09"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cb10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pasty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sausageroll"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scotchegg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "porkpie"
+dirs = 1
+frames = 1

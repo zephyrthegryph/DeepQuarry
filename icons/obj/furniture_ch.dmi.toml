@@ -1,0 +1,79 @@
+# Generated from furniture_ch.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "sofaend_leftOLD"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sofamiddleOLD"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "sofaend_rightOLD"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sofacornerOLD"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sofaend_left"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sofamiddle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sofaend_right"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sofacorner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sofaend_left_padding"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sofamiddle_padding"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sofaend_right_padding"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sofacorner_padding"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "comfychair"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "comfychair_padding"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "comfychair_preview"
+dirs = 4
+frames = 1

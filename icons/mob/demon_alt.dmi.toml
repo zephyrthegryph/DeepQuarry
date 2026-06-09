@@ -1,0 +1,68 @@
+# Generated from demon_alt.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 48
+height = 64
+cols = 15
+
+[[state]]
+name = "brutola"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "brutola-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "brutola-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "brutola_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brutola_rest-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brutola_rest-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brutola_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ignia"
+dirs = 4
+frames = 16
+delays = [1]
+
+[[state]]
+name = "ignia-1"
+dirs = 4
+frames = 16
+delays = [1]
+
+[[state]]
+name = "ignia-2"
+dirs = 4
+frames = 16
+delays = [1]
+
+[[state]]
+name = "ignia_rest"
+dirs = 1
+frames = 16
+delays = [1]
+
+[[state]]
+name = "ignia_dead"
+dirs = 1
+frames = 1

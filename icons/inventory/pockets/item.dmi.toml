@@ -1,0 +1,135 @@
+# Generated from item.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "ammo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engineering_tool"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engineering_supply"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engineering_supply_orig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "part_pouch"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "part_pouch_orig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medical_supply"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medical_supply_orig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "large_generic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "large_generic_orig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medium_generic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medium_generic_orig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "small_generic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "small_generic_orig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flare"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flare_14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flare_12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flare_9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flare_6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flare_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pistol_holster"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pistol_layer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baton_holster"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baton_layer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holdingpouch"
+dirs = 1
+frames = 7
+delays = [50, 1]
+
+[[state]]
+name = "random"
+dirs = 1
+frames = 1

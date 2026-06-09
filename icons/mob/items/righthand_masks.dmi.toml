@@ -1,0 +1,120 @@
+# Generated from righthand_masks.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 11
+
+[[state]]
+name = "gas"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "muzzle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "surgical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gas_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "owl"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cig_burnt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cig_on"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "breath"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "clown_hat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mime"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandblack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandred"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandblue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandgreen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandgold"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandskull"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sterile"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sterilew"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cloth"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dust"
+dirs = 4
+frames = 1

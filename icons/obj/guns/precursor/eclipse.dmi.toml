@@ -1,0 +1,133 @@
+# Generated from eclipse.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "animationparts"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cryogun"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "cryogun100"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "cryogun75"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "cryogun50"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "cryogun25"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "cryogun0"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "cryogun_open"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "flamegun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flamegun100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flamegun75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flamegun50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flamegun25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flamegun0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flamegun_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "databreach"
+dirs = 1
+frames = 2
+delays = [3, 1]
+
+[[state]]
+name = "crystal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "laser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "javelin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ice_wind"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal_sphere"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spear"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fire"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "dagger"
+dirs = 1
+frames = 1

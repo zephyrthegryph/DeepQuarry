@@ -1,0 +1,1039 @@
+# Generated from storage.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 16
+
+[[state]]
+name = "box"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "idOld"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bodybags"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glasses"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pillbox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "firstaid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ointment"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "firefirstaid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "antitoxin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "antitoxfirstaid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "antitoxfirstaid2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "antitoxfirstaid3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radfirstaid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radfirstaid2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radfirstaid3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purplefirstaid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "o2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bezerk"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syringe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flashbang"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "frag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "handcuff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "latex"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sterile"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "implant"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mousetraps"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beaker"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "light"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lighttube"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lightmixed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clutch"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bookbag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lockbox+l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lockbox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lockbox+b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "briefcase"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secure"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gunbox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secure0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secureb"
+dirs = 1
+frames = 2
+delays = [15]
+
+[[state]]
+name = "securespark"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "securecrateemag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "securecratesparks"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "securecrater"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "securecrateg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crateopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medicalcrate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medicalcrateopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radiation"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radiationopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secgearcrate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secgearcrateopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "o2crate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "o2crateopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "securecrate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "securecrateopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "largebins"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "largebin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "largebinopenfs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "largebinopenf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "largebinopenb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "largebing"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "largebinr"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "largebinemag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "largebinsparks"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "freezer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "freezeropen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weaponcrate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weaponcrateopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phoroncrate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phoroncrateopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "largebinsopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "largebinopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "disk_kit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "safe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "safe0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "safeb"
+dirs = 1
+frames = 2
+delays = [15]
+
+[[state]]
+name = "safespark"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "bible"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "koran"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scrapbook"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holylight"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "athiest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tome"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "guru"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donk_kit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hydrocrate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hydrocrateopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hydrosecurecrate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hydrosecurecrateopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "miningcar"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "miningcaropen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "moneybag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deliverycrate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deliverycloset"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deliverycrateSmall"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deliverycrate5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deliverycrate4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deliverycrate3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deliverycrate2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deliverycrate1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "delivery_label"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "delivery_tag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "trashcart"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "trashcartopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "trashcartweld"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndicate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "trashbag_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "trashbag_small"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "trashbag_mid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "trashbag_full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kingyellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ithaqua"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scientology"
+dirs = 1
+frames = 18
+delays = [1]
+
+[[state]]
+name = "melted"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "necronomicon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "trashbag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "giftbag0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "giftbag1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "giftbag2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "box_of_doom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "evidence"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "evidenceobj"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "welderpack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "welderpack-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "circuit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "densecrate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mulecrate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lisacrate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vehiclecrate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "critter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "critteropen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "largemetal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "largemetalopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "largermetal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "largermetalopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phoron_crate_large"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phoron_crate_large_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "largemetalr"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "largemetalg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "excavation"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "solution_trays"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plasticcrate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plasticcrateopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "advfirstaid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cashbag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "inf_box"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "RPED"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "RPED_old"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "beanshot_box"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lethalslug_box"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stunshot_box"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "empshot_box"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blankshot_box"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "illumshot_box"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lethalshellshot_box"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lunchbox_lovelyhearts"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "lunchbox_sciencecatshow"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "lunchbox_nanotrasen"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "lunchbox_marsuniversity"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lunchbox_cti"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lunchbox_rainbow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lunchbox_dionanymph"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lunchbox_syndie"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "scicrate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scicrateopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scisecurecrate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scisecurecrateopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engi_secure_crate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engi_secure_crateopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engi_crate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engi_crateopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engi_e_crate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engi_e_crateopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "inf_deployer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chembag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orthodoxy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shadows"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "torah"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "foodbag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "surgerykit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "biohazard"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "biohazardopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "survival"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "survivalvox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "survivaleng"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syringe_case"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vehicle_cage"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vehicle_cage_a"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bun_box"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medbriefcase"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "detbag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crittercrate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "portafreezer"
+dirs = 1
+frames = 4
+delays = [1.5]
+
+[[state]]
+name = "portafreezer_red"
+dirs = 1
+frames = 4
+delays = [1.5]
+
+[[state]]
+name = "expirmentalaid"
+dirs = 1
+frames = 1

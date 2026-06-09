@@ -1,0 +1,955 @@
+# Generated from item_teshari.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 15
+
+[[state]]
+name = "tesh_cloak_bn"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_cloak_br"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_cloak_bo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_cloak_by"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_cloak_bgr"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_cloak_bbl"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_cloak_bp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_cloak_bpi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_cloak_bbr"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_cloak_bg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_cloak_bw"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_cloak_wn"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_cloak_wg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_cloak_rg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_cloak_og"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_cloak_yg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_cloak_gg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_cloak_blug"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_cloak_pg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_cloak_pig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_cloak_brg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_cloak_rainbow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_cloak_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_cloak_dretrowave"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_cloak_bglowing"
+dirs = 1
+frames = 13
+delays = [1]
+
+[[state]]
+name = "tesh_cloak_cap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_cloak_qm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_cloak_car"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_cloak_mine"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_cloak_ce"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_cloak_engie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_cloak_atmos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_cloak_cmo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_cloak_doc"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_cloak_chem"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_cloak_viro"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_cloak_para"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_cloak_psych"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_cloak_rd"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_cloak_sci"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_cloak_robo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_cloak_hos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_cloak_sec"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_cloak_iaa"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_cloak_hop"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_cloak_serv"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "labcoat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "labcoat_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesharicoat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesharicoat_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesharicoatwhite"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesharicoatwhite_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bo_t"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hood_bo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bg_t"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hood_bg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bmg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bmg_t"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hood_bmg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_blg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_blg_t"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hood_blg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bw"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bw_t"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hood_bw"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_br"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_br_t"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hood_br"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bn"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bn_t"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hood_bn"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_by"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_by_t"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hood_by"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bgr"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bgr_t"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hood_bgr"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bbl"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bbl_t"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hood_bbl"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bp_t"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hood_bp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bpi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bpi_t"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hood_bpi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bbr"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_bbr_t"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hood_bbr"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_og"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_og_t"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hood_og"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_lgg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_lgg_t"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hood_lgg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_wg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_wg_t"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hood_wg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_rg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_rg_t"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hood_rg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_on_t"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hood_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_yg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_yg_t"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hood_yg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_gg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_gg_t"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hood_gg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_blug"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_blug_t"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hood_blug"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_pg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_pg_t"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hood_pg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_pig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_pig_t"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hood_pig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_brg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hcloak_brg_t"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hood_brg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_bo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_bg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_bmg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_blg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_bw"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_br"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_bn"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_by"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_bgr"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_bbl"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_bp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_bpi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_bbr"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_og"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_rainbow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_lgg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_wg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_rg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_yg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_gg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_blug"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_pg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_pig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_brg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_car"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_mine"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_comm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_ce"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_engie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_atmos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_cmo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_doc"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_chem"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_viro"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_para"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_sci"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_robo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_sec"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_qm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_serv"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_iaa"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_wrdn"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_hos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_beltcloak_jani"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig-syndie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig-engineering"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig-medical"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig-medicalalt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig-sec"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig-secalt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig-mining"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig-atmos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig-engineering_rad"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig-engineering_con"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig-medical_bio"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig-sec_riot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig-medical_emt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig-firebug"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig-pilot2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig-pilot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ce_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ce_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "void_explorer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rad_fitted"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tesh_hood_rainbow"
+dirs = 4
+frames = 1

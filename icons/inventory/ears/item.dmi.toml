@@ -1,0 +1,134 @@
+# Generated from item.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "skrell_cloth_male"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skrell_cloth_female"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skrell_band"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skrell_chain"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skrell_cloth_black_male"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skrell_cloth_black_female"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skrell_cloth_blue_male"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skrell_cloth_blue_female"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skrell_cloth_green_male"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skrell_cloth_green_female"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skrell_cloth_pink_male"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skrell_cloth_pink_female"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skrell_chain_rjewel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skrell_chain_ebony"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skrell_band_rjewel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skrell_band_ebony"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skrell_chain_bjewel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skrell_band_bjewel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skrell_chain_sil"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skrell_band_sil"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skrell_cloth_lblue_male"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skrell_cloth_lblue_female"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "circuitry"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "circuitry-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ear_stud"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ear_dangle"
+dirs = 1
+frames = 1

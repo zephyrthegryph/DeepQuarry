@@ -1,0 +1,49 @@
+# Generated from dullahansigns.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "Decals"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Metalshell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Eyes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Import"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Export"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bodypart"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Lights"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Clothes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Head"
+dirs = 1
+frames = 1

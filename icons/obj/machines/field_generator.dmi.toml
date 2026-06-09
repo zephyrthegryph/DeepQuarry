@@ -1,0 +1,66 @@
+# Generated from field_generator.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "Field_Gen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "+on"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "+a1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "+a2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "+a3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "+p1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "+p2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "+p3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "+p4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "+p5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "+p6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Contain_F"
+dirs = 4
+frames = 6
+delays = [1]

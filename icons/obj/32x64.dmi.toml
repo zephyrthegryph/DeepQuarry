@@ -1,0 +1,34 @@
+# Generated from 32x64.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 64
+cols = 3
+
+[[state]]
+name = "lightpost_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lightpost"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lightpost-festive"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lightpost-glow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hoop"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crystalexperimenter"
+dirs = 1
+frames = 1

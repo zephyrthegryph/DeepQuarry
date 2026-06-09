@@ -1,0 +1,242 @@
+# Generated from ProjectMyomerSyndi.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 21
+
+[[state]]
+name = "base"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "base-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base-eyes"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "base-glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base-glow"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "standardoverlays"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "base-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base-lights"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "base-panel-nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base-panel-nc"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "base-panel-c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base-panel-c"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "base-panel-w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base-panel-w"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "base-disabler"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base-disabler"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "base-laser"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base-laser"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "base-shield"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base-shield"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "vornyoverlays"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "base-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base-sleeper-1"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "base-sleeper-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base-sleeper-2"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "base-sleeper-3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base-sleeper-3"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "base-throat-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base-throat-1"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "base-throat-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base-throat-2"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "sitting"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "base-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base-sit-glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "base-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base-rest-glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "departmental"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "base-melee"
+dirs = 4
+frames = 2
+delays = [1.5]
+
+[[state]]
+name = "base-melee"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true

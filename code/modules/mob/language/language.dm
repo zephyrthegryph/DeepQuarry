@@ -1,0 +1,453 @@
+#define SCRAMBLE_CACHE_LEN 20
+
+/*
+	Datum based languages. Easily editable and modular.
+*/
+
+/datum/language
+	var/name = "an unknown language"  // Fluff name of language if any.
+	var/desc = "A language."          // Short description for 'Check Languages'.
+	var/speech_verb = "says"          // 'says', 'hisses', 'farts'.
+	var/ask_verb = "asks"             // Used when sentence ends in a ?
+	var/exclaim_verb = "exclaims"     // Used when sentence ends in a !
+	var/whisper_verb                  // Optional. When not specified speech_verb + quietly/softly is used instead.
+	var/signlang_verb = list("signs", "gestures") // list of emotes that might be displayed if this language has NONVERBAL or SIGNLANG flags
+	var/signlang_verb_understood = list("signs")  // snowflake bs, used only for echo
+	var/colour = "body"               // CSS style to use for strings in this language.
+	var/key = "x"                     // Character used to speak in language eg. :o for Unathi.
+	var/flags = NONE                     // Various language flags.
+	var/native                        // If set, non-native speakers will have trouble speaking.
+	var/list/syllables                // Used when scrambling text for a non-speaker.
+	var/list/space_chance = 55        // Likelihood of getting a space in the random scramble string
+	var/machine_understands = 1		  // Whether machines can parse and understand this language
+	var/list/partial_understanding	  // List of languages that can /somehwat/ understand it, format is: name = chance of understanding a word
+	var/ignore_adverb = FALSE 		  // For inaudible languages that we dont want adverb for
+
+/datum/language/proc/get_random_name(gender, name_count=2, syllable_count=4, syllable_divisor=2)
+	if(!syllables || !syllables.len)
+		if(gender==FEMALE)
+			return capitalize(pick(GLOB.first_names_female)) + " " + capitalize(pick(GLOB.last_names))
+		else
+			return capitalize(pick(GLOB.first_names_male)) + " " + capitalize(pick(GLOB.last_names))
+
+	var/full_name = ""
+	var/new_name = ""
+
+	for(var/i = 0;i<name_count;i++)
+		new_name = ""
+		for(var/x = rand(FLOOR(syllable_count/syllable_divisor, 1),syllable_count);x>0;x--)
+			new_name += pick(syllables)
+		full_name += " [capitalize(lowertext(new_name))]"
+
+	return "[trim(full_name)]"
+
+/datum/language
+	var/list/scramble_cache = list()
+
+/* moved to its own file because it was edited so much.
+/datum/language/proc/scramble(input, list/known_languages)
+	var/understand_chance = 0
+	for(var/datum/language/L in known_languages)
+		if(partial_understanding && partial_understanding[L.name])
+			understand_chance += partial_understanding[L.name]
+		if(L.partial_understanding && L.partial_understanding[name])
+			understand_chance += L.partial_understanding[name] * 0.5
+	var/scrambled_text = ""
+	var/list/words = splittext(input, " ")
+	for(var/w in words)
+		if(prob(understand_chance))
+			scrambled_text += " [w] "
+		else
+			var/nword = scramble_word(w)
+			var/ending = copytext(scrambled_text, length(scrambled_text)-1)
+			if(findtext(ending,"."))
+				nword = capitalize(nword)
+			else if(findtext(ending,"!"))
+				nword = capitalize(nword)
+			else if(findtext(ending,"?"))
+				nword = capitalize(nword)
+			scrambled_text += nword
+	scrambled_text = replacetext(scrambled_text,"  "," ")
+	scrambled_text = capitalize(scrambled_text)
+	scrambled_text = trim(scrambled_text)
+	var/ending = copytext(scrambled_text, length(scrambled_text))
+	if(ending == ".")
+		scrambled_text = copytext(scrambled_text,1,length(scrambled_text)-1)
+
+	var/input_ending = copytext(input, length(input))
+	if(input_ending in list("!","?","."))
+		scrambled_text += input_ending
+
+	return scrambled_text
+
+/datum/language/proc/scramble_word(input)
+	if(!syllables || !syllables.len)
+		return stars(input)
+
+	// If the input is cached already, move it to the end of the cache and return it
+	if(input in scramble_cache)
+		var/n = scramble_cache[input]
+		scramble_cache -= input
+		scramble_cache[input] = n
+		return n
+
+	var/input_size = length(input)
+	var/scrambled_text = ""
+	var/capitalize = 0
+
+	while(length(scrambled_text) < input_size)
+		var/next = pick(syllables)
+		if(capitalize)
+			next = capitalize(next)
+			capitalize = 0
+		scrambled_text += next
+		var/chance = rand(100)
+		if(chance <= 5)
+			scrambled_text += ". "
+			capitalize = 1
+		else if(chance > 5 && chance <= space_chance)
+			scrambled_text += " "
+
+	// Add it to cache, cutting old entries if the list is too long
+	scramble_cache[input] = scrambled_text
+	if(scramble_cache.len > SCRAMBLE_CACHE_LEN)
+		scramble_cache.Cut(1, scramble_cache.len-SCRAMBLE_CACHE_LEN-1)
+
+	return scrambled_text
+*/
+
+/datum/language/proc/format_message(message, verb)
+	return span_message("<span class='[colour]'>[message]</span>")
+
+/datum/language/proc/format_message_plain(message, verb)
+	return "[capitalize(message)]"
+
+/datum/language/proc/format_message_radio(message, verb)
+	return "<span class='[colour]'>[capitalize(message)]</span>"
+
+/datum/language/proc/get_talkinto_msg_range(message)
+	// if you yell, you'll be heard from two tiles over instead of one
+	return (copytext(message, length(message)) == "!") ? 2 : 1
+
+/datum/language/proc/broadcast(mob/living/speaker,message,speaker_mask)
+	speaker.log_talk("(HIVE) [message]", LOG_SAY)
+
+	add_verb(speaker, /mob/proc/adjust_hive_range)
+
+	if(!speaker_mask) speaker_mask = speaker.real_name
+	message = "[get_spoken_verb(message)], \"[format_message(message, get_spoken_verb(message))]\""
+	if(speaker.hive_lang_range == -1)
+		var/turf/t = get_turf(speaker)
+		for(var/mob/player in GLOB.player_list)
+			var/turf/b = get_turf(player)
+			if (t.z == b.z)
+				player.hear_broadcast(src, speaker, speaker_mask, message)
+	else if(speaker.hive_lang_range)
+		var/turf/t = get_turf(speaker)
+		for(var/mob/player in GLOB.player_list)
+			var/turf/b = get_turf(player)
+			if(get_dist(t,b) <= speaker.hive_lang_range)
+				player.hear_broadcast(src, speaker, speaker_mask, message)
+	else
+		for(var/mob/player in GLOB.player_list)
+			player.hear_broadcast(src, speaker, speaker_mask, message)
+
+/mob/proc/hear_broadcast(datum/language/language, mob/speaker, speaker_name, message)
+	if((language in languages) && language.check_special_condition(src))
+		var/msg = span_hivemind("[language.name], " + span_name("[speaker_name]") + " [message]")
+		to_chat(src,msg)
+
+/mob/new_player/hear_broadcast(datum/language/language, mob/speaker, speaker_name, message)
+	return
+
+/mob/observer/dead/hear_broadcast(datum/language/language, mob/speaker, speaker_name, message)
+	if(speaker.name == speaker_name || antagHUD)
+		to_chat(src, span_hivemind("[language.name], " + span_name("[speaker_name]") + " ([ghost_follow_link(speaker, src)]) [message]"))
+	else
+		to_chat(src, span_hivemind("[language.name], " + span_name("[speaker_name]") + " [message]"))
+
+/datum/language/proc/check_special_condition(mob/other)
+	return 1
+
+/datum/language/proc/get_spoken_verb(msg_end)
+	switch(msg_end)
+		if("!")
+			return exclaim_verb
+		if("?")
+			return ask_verb
+	return speech_verb
+
+/datum/language/proc/can_speak_special(mob/speaker)
+	. = TRUE
+	if(name != "Noise")	// Audible Emotes
+		if(ishuman(speaker))
+			var/mob/living/carbon/human/H = speaker
+			if(H.species.has_organ[O_VOICE] && !(flags & SIGNLANG) && !(flags & NONVERBAL)) // Does the species need a voicebox? Is the language even spoken?
+				var/obj/item/organ/internal/voicebox/vocal = H.internal_organs_by_name[O_VOICE]
+				if(!vocal || vocal.is_broken() || vocal.mute)
+					return FALSE
+
+			if(src.name in H.species.assisted_langs)
+				. = FALSE
+				var/obj/item/organ/internal/voicebox/vox = locate() in H.internal_organs	// Only voiceboxes for now. Maybe someday it'll include other organs, but I'm not that clever
+				if(vox)
+					if(!vox.is_broken() && (src in vox.assists_languages))
+						. = TRUE
+
+// Language handling.
+/mob/proc/add_language(language)
+
+	var/datum/language/new_language = GLOB.all_languages[language]
+
+	if(!istype(new_language) || (new_language in languages))
+		return 0
+
+	languages.Add(new_language)
+	if(new_language.flags & HIVEMIND)
+		add_verb(src, /mob/proc/adjust_hive_range)
+
+	return 1
+
+/mob/proc/remove_language(rem_language)
+	var/datum/language/L = GLOB.all_languages[rem_language]
+	. = (L in languages)
+	var/prefix = get_custom_prefix_by_lang(src, L)
+	if(prefix)
+		language_keys.Remove(prefix)
+	languages.Remove(L)
+
+/mob/living/remove_language(rem_language)
+	var/datum/language/L = GLOB.all_languages[rem_language]
+	if(default_language == L)
+		default_language = null
+	return ..()
+
+// Can we speak this language, as opposed to just understanding it?
+/mob/proc/can_speak(datum/language/speaking)
+//Prevents someone from speaking a null language.
+	if(!speaking)
+		log_runtime("[src] attempted to speak a null language.")
+		return 0
+
+	if(speaking == GLOB.all_languages["Noise"])
+		return 1
+
+	if (only_species_language && speaking != GLOB.all_languages[species_language])
+		return 0
+
+	if(speaking.can_speak_special(src))
+		if(universal_speak)
+			return 1
+		if(speaking && (speaking.flags & INNATE))
+			return 1
+		if(speaking in src.languages)
+			return 1
+	return 0
+
+/mob/proc/get_language_prefix()
+	// migrated language_prefixes
+	var/list/_lang_prefixes = client?.prefs?.read_preference(/datum/preference/language_prefixes)
+	if(_lang_prefixes && _lang_prefixes.len)
+		return _lang_prefixes[1]
+
+	return CONFIG_GET(str_list/language_prefixes)[1]
+
+/mob/proc/is_language_prefix(prefix)
+	// migrated language_prefixes
+	var/list/_lang_prefixes = client?.prefs?.read_preference(/datum/preference/language_prefixes)
+	if(_lang_prefixes && _lang_prefixes.len)
+		return prefix in _lang_prefixes
+
+	return prefix in CONFIG_GET(str_list/language_prefixes)
+
+//TBD
+/mob/proc/check_lang_data()
+	. = ""
+
+	for(var/datum/language/L in languages)
+		if(!(L.flags & NONGLOBAL))
+			var/lang_key = get_custom_prefix_by_lang(src, L)
+			. += span_bold("[L.name] ([get_language_prefix()][L.key][lang_key ? " [get_language_prefix()][lang_key]" : ""])") + "<br/>[L.desc]<br/><br/>"
+
+/mob/living/check_lang_data()
+	. = ""
+
+	if(default_language)
+		. += "Current default language: [default_language] - <a href='byond://?src=\ref[src];default_lang=reset'>reset</a><br/><br/>"
+
+	for(var/datum/language/L in languages)
+		if(!(L.flags & NONGLOBAL))
+			var/lang_key = get_custom_prefix_by_lang(src, L)
+			if(L == default_language)
+				. += span_bold("[L.name] ([get_language_prefix()][L.key][lang_key ? " [get_language_prefix()][lang_key]" : ""])") + " <a href='byond://?src=\ref[src];set_lang_key=\ref[L]'>Edit Custom Key</a> - default - <a href='byond://?src=\ref[src];default_lang=reset'>reset</a><br/>[L.desc]<br/><br/>"
+			else if (can_speak(L))
+				. += span_bold("[L.name] ([get_language_prefix()][L.key][lang_key ? " [get_language_prefix()][lang_key]" : ""])") + " <a href='byond://?src=\ref[src];set_lang_key=\ref[L]'>Edit Custom Key</a> - <a href='byond://?src=\ref[src];default_lang=\ref[L]'>set default</a><br/>[L.desc]<br/><br/>"
+			else
+				. += span_bold("[L.name] ([get_language_prefix()][L.key][lang_key ? " [get_language_prefix()][lang_key]" : ""])") + " <a href='byond://?src=\ref[src];set_lang_key=\ref[L]'>Edit Custom Key</a> - cannot speak!<br/>[L.desc]<br/><br/>"
+
+// check_languages verb body relocated to code/modules/mob/language/language_panel.dm (structured TGUI).
+
+/mob/living/Topic(href, href_list)
+	if(href_list["default_lang"])
+		if(href_list["default_lang"] == "reset")
+			if (species_language)
+				apply_default_language(GLOB.all_languages[species_language])
+			else
+				apply_default_language(GLOB.all_languages[LANGUAGE_GIBBERISH])
+		else
+			var/datum/language/L = locate(href_list["default_lang"])
+			if(L && (L in languages))
+				apply_default_language(L)
+		check_languages()
+		return 1
+	else if(href_list["set_lang_key"])
+		var/datum/language/L = locate(href_list["set_lang_key"])
+		if(L && (L in languages))
+			var/old_key = get_custom_prefix_by_lang(src, L)
+			var/custom_key = tgui_input_text(src, "Input a new key for [L.name]", "Language Key", old_key)
+			if(custom_key && length(custom_key) == 1)
+				if(contains_az09(custom_key))
+					language_keys[custom_key] = L
+					if(old_key && old_key != custom_key)
+						language_keys.Remove(old_key)
+				else if(custom_key == " ")
+					if(old_key && old_key != custom_key)
+						language_keys.Remove(old_key)
+				else
+					tgui_alert_async(src, "Improper language key. Rejected.", "Error")
+		check_languages()
+	else
+		return ..()
+
+/proc/transfer_languages(mob/source, mob/target, except_flags)
+	for(var/datum/language/L in source.languages)
+		if(L.flags & except_flags)
+			continue
+		target.add_language(L.name)
+		for(var/key in source.language_keys)
+			if(L == source.language_keys[key])
+				if(!(key in target.language_keys))
+					target.language_keys[key] = L
+
+/proc/get_custom_prefix_by_lang(mob/our_mob, language)
+	if(!our_mob || !our_mob.language_keys.len || !language)
+		return
+
+	for(var/key in our_mob.language_keys)
+		if(our_mob.language_keys[key] == language)
+			return key
+
+#undef SCRAMBLE_CACHE_LEN
+
+
+// === merged from language_chomp.dm during hard-fork de-suffix (manually verified: all-new types / new defines, no base re-open) ===
+#define SCRAMBLE_CACHE_LEN 40
+//basically, how many words can it store that it remembers to use? Upped from 20 to 40, because 20 is very s m a l l
+
+/datum/language/proc/partial_scramble(input, capitalize = FALSE)
+	if(!syllables || !syllables.len)
+		return capitalize ? capitalize(input) : input
+
+	var/static/regex/punctuation = new/regex(@"([.,?!-]+)$")
+	var/static/regex/prefixpunct = new/regex(@"^([.,?!-]+)")
+	var/found = punctuation.Find(input)
+	var/input_ending = ""
+	if (found)
+		input_ending = punctuation.match
+		input = copytext_char(input, 1, found)
+	var/foundprefix = prefixpunct.Find(input)
+	var/input_start = ""
+	if (foundprefix)
+		input_start = prefixpunct.match
+		input = copytext_char(input, 1+length(prefixpunct.match))
+
+	var/input_size = length(input)
+	var/picked = pick(syllables)
+
+	if (length(picked) < input_size)
+		var/pos = rand(1, input_size-length(picked))
+		input = splicetext_char(input, pos, pos+length(picked), picked)
+
+	if (capitalize)
+		input = capitalize(input)
+
+	return input_start + input + input_ending
+
+/datum/language/proc/scramble(input, list/known_languages)
+	var/understand_chance = 0
+	for(var/datum/language/L in known_languages)
+		if(partial_understanding && partial_understanding[L.name])
+			understand_chance += partial_understanding[L.name]
+		if(L.partial_understanding && L.partial_understanding[name])
+			understand_chance += L.partial_understanding[name] * 0.5
+	var/scrambled_text = ""
+	var/list/words = splittext(input, " ")
+	for(var/w in words)
+		if(w == "") continue
+		var/nword = w
+		var/ending = copytext(scrambled_text, length(scrambled_text)-1)
+		var/capitalize = FALSE
+		if(findtext(ending,".") || findtext(ending,"!") || findtext(ending,"?"))
+			capitalize = TRUE
+		if(prob(understand_chance))
+			if (prob(100-(understand_chance*1.5)))
+				nword = partial_scramble(w, capitalize)
+		else
+			nword = scramble_word(w, capitalize)
+		scrambled_text += " " + nword
+	var/static/regex/commadrift = new/regex(@"(\w) +([,?!.]+[^\w]*)", "g") //basically captures two groups- the last letter of a word, and any punctuation that comes after [one or more] grammatically incorrect spaces. Such as "Once  ?", it captures "e" and "?"
+	var/static/regex/multispace = new/regex(@" +", "g")
+	scrambled_text = multispace.Replace(scrambled_text, " ")
+	scrambled_text = trim(scrambled_text)
+	scrambled_text = capitalize(scrambled_text)
+	scrambled_text = commadrift.Replace(scrambled_text, "$1$2") //with the above example, "Once  ?" will be turned into "Once?" with this replacement - this is here because of weird issues that happen when scrambling sometimes
+
+	return scrambled_text
+
+/datum/language/proc/scramble_word(input, capitalize = FALSE)
+	if(!syllables || !syllables.len)
+		return capitalize ? capitalize(stars(input)) : stars(input)
+
+	var/static/regex/punctuation = new/regex(@"([.,?!-]+)$")
+	var/static/regex/prefixpunct = new/regex(@"^([.,?!-]+)")
+	var/found = punctuation.Find(input)
+	var/input_ending = ""
+	if (found)
+		input_ending = punctuation.match
+		input = copytext_char(input, 1, found)
+	var/foundprefix = prefixpunct.Find(input)
+	var/input_start = ""
+	if (foundprefix)
+		input_start = prefixpunct.match
+		input = copytext_char(input, 1+length(prefixpunct.match))
+
+	// If the input is cached already, move it to the end of the cache and return it
+	var/k = lowertext(input)
+	if(k in scramble_cache)
+		var/n = scramble_cache[k]
+		scramble_cache -= input
+		scramble_cache[k] = n
+		if (capitalize)
+			n = capitalize(n)
+		return input_start + n + input_ending
+
+	var/input_size = length(input)
+	var/scrambled_text = ""
+
+	while(length(scrambled_text) < input_size)
+		var/next = pick(syllables)
+		scrambled_text += next
+		if(rand(1,100) <= space_chance && length(scrambled_text) + 1 < input_size)
+			scrambled_text += " "
+
+	// Add it to cache, cutting old entries if the list is too long
+	scramble_cache[k] = scrambled_text
+	if(scramble_cache.len > SCRAMBLE_CACHE_LEN)
+		scramble_cache.Cut(1, scramble_cache.len-SCRAMBLE_CACHE_LEN+1)
+
+	if (capitalize)
+		scrambled_text = capitalize(scrambled_text)
+
+	return input_start + scrambled_text + input_ending
+
+#undef SCRAMBLE_CACHE_LEN

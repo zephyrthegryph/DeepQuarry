@@ -1,0 +1,14 @@
+# Generated from deadringer.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 2
+
+[[state]]
+name = "deadringer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deadringer_cd"
+dirs = 1
+frames = 1

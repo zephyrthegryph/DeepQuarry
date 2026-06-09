@@ -1,0 +1,74 @@
+# Generated from hair_gradients.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "none"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fadeup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fadedown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vsplit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bottomflat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fadeup_low"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fadedown_low"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reflected"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reflected_inverse"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reflected_high"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reflected_inverse_high"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wavy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "striped"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "striped_vertical"
+dirs = 1
+frames = 1

@@ -1,0 +1,419 @@
+# Generated from mob_vox.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 23
+
+[[state]]
+name = "___template___"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "__template__"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "balaclava"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "voxmask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "voxmaskdown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "balaclava_up"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandblack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandblue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandbotany"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandgold"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandgreen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandred"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandorange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandpurple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandskull"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandcamo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "banddurathread"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bee"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 15, y = 6 }]
+
+[[state]]
+name = "breath"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "breath_up"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "clown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mime"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sexyclown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sexymime"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wizzclown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "death"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "death_commando_mask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fake-moustache"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "voice_modulator"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gas_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "explorer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fullgas"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swat"
+dirs = 4
+frames = 3
+delays = [3]
+rewind = true
+
+[[state]]
+name = "explorerdown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "luchador"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "luchag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "luchar"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medicaldown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "monkeymask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "muzzle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "owl"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "plaguedoctor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "s-ninja"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sterile"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "steriledown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "weldingmask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "weldingmask_up"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hosmask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "officermask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wardenmask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cig_burnt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cig_on"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "cigar"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cigar_burnt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cigar_on"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "cigar2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cigar2_burnt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cigar2_on"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "cobpipe"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cobpipe_burnt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cobpipe_on"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "pipe"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pipe_burnt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pipe_on"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "spliffoff"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spliffon"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "hr_cigoff"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hr_cigon"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "tape_cross"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spartan_mask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kiamask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "muzzle_secure"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kikerimask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yahiyamask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "OLD"
+dirs = 1
+frames = 1
+
+[[state]]
+name = ""
+dirs = 4
+frames = 1
+
+[[state]]
+name = "respirator"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "halfgas"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gas_clear"
+dirs = 4
+frames = 1

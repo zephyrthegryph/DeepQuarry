@@ -1,0 +1,27 @@
+# Generated from cameravis.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "dim"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "black"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "white"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "skull"
+dirs = 1
+frames = 12
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 10]

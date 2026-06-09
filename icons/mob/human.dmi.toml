@@ -1,0 +1,813 @@
+# Generated from human.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 27
+
+[[state]]
+name = "rippedpantyhose"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "onesleeve"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "thinpanties"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "body_m_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "body_f_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fatbody_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "husk_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ghost"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "briefs"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boxers_loveheart"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boxers"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boxers_green_and_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "panties"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lacy_thong"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "panties_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lacy_thong_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bra"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lacy_bra"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sports_bra"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sports_bra_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lacy_bra_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lacy_bra_alt_stripe"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "halterneck_bra"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "compression_shorts"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "thong"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lover_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ilovent_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bluepolo_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "redpolo_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grayyellowpolo_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tank_fire_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shirt_stripes_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shirt_nano_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shirt_tiedye_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greenshirtsport_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "redshirtsport_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blueshirtsport_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fishnet"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pantyhose"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pantyhose-stir"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rainbow_knee"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rainbow_thigh"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "socks_norm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "socks_short"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "socks_knee"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "socks_thigh"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "thin_knee"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "thin_thigh"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "undershirt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tanktop"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tanktop_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shortsleeve"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "polo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "striped_knee"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "striped_thigh"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fishnet_lower"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fishnet_body"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fishnet_sleeves"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fishnet_gloves"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fishnet_simple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fishnet_body_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fishnet_sleeves_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bowling"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bowlingp"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bowlinga"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bowlingw"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tubetop"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "striped_bra"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "striped_panties"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tanktop_alt_fem"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tanktop_alt_fem_vneck"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tanktop_cropped_vneck"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lover_fem_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "undershirt_fem"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shortsleeve_fem"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "undershirt_long_fem"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shortsleeve_fem_vneck"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ilovent_fem_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tank_fire_fem_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tank_stripes_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tank_rainbow_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tank_sun_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ljonb"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "undershirt_long"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ljont"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "longstripe"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "longstripe_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shirt_long_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shirt_long_female_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tiedye"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wing_shirt_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "longstripe_pink_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "binder_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "straplessbinder_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pinkblack_tshirt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leggings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "turtleneck_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "turtleneck_sleeveless_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "turtleneck"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "turtleneck_sleeveless"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "leotard_turtleneck"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leotard_turtleneck_sleeveless"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "turtleneck_smooth"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "undershirt_dress_fem"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "undershirt_dress"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "white_norm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "white_short"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "white_knee"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "white_thigh"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "black_norm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "black_short"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "black_knee"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "black_thigh"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "assblastusa_knee"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "assblastusa_thigh"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "uk_knee"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "uk_thigh"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "commie_knee"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "commie_thigh"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stockings_lpink"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stockings_purple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stockings_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stockings_cyan"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stockings_orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stockings_yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stockings_dpink"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stockings_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bee_thigh"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bee_knee"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "thocks"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ace_thigh"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ace_knee"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "trans_knee"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "trans_thigh"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leggings-stir-black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "socks_thigh-stir"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "socks_knee-stir"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "socks_norm-stir"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shibari"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandages"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pasties_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "panties_neko"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bra_neko"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tank_midriff_short"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tank_midriff"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leotard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "onepiece"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swim_onepiece"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swim_strapless_onepiece"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swimtop"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swimbottom"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hyper_briefs"
+dirs = 4
+frames = 4
+delays = [3]
+
+[[state]]
+name = "hyper_boxers"
+dirs = 4
+frames = 4
+delays = [3]
+
+[[state]]
+name = "hyper_binder"
+dirs = 4
+frames = 4
+delays = [3]
+
+[[state]]
+name = "t-shirt_midriff"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "t-shirt_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "t-shirt_midriff_shoulders"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "t-shirt_full_shoulders"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "t-shirt_midriff_shoulders_text"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "t-shirt_full_shoulders_text"
+dirs = 4
+frames = 1

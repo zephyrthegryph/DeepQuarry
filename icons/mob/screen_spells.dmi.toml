@@ -1,0 +1,828 @@
+# Generated from screen_spells.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 16
+
+[[state]]
+name = "cult_spell_base"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cult_spell_ready"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wiz_spell_base"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wiz_spell_ready"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nano_spell_base"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nano_spell_ready"
+dirs = 1
+frames = 55
+delays = [0.1]
+
+[[state]]
+name = "ninja_spell_base"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ninja_spell_ready"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grey_spell_base"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grey_spell_ready"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ling_spell_base"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ling_spell_ready"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purge0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purge1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "silence"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "master_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "master_closed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "const_wall"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "const_floor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "const_shift"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "const_pylon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "const_rune"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "const_knock"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "const_stone"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "const_shell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "const_juggwall"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "const_harvest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "const_fist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "const_ambush"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "const_fortify"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "const_grille"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "const_door"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "const_beam"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "const_mend"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "const_repairaura"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wiz_butt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wiz_horse"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wiz_mime"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wiz_tech_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wiz_jaunt_old"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "wiz_charge"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wiz_smoke_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wiz_carp"
+dirs = 1
+frames = 1
+rewind = true
+
+[[state]]
+name = "wiz_ed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wiz_creature"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wiz_disint_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mime_wall"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wiz_fireball"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wiz_blink"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wiz_jaunt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wiz_mobile"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wiz_statue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wiz_shield"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "artificer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wiz_mm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wiz_knock"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wiz_tech"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wiz_disint"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wiz_smoke"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wiz_blind"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wiz_mindswap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wiz_hulk"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wiz_subj"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wiz_tele"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gen_eat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gen_ice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gen_project"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gen_rmind"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gen_hulk"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gen_immolate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gen_dissolve"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gen_leap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "genetics_open"
+dirs = 1
+frames = 13
+delays = [0.4]
+
+[[state]]
+name = "genetics_closed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tech_mendburns"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tech_mendsynth"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tech_purify"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tech_purify2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tech_oxygenate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tech_mend_template"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tech_mendwounds"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tech_biomedaura"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tech_unstableaura"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tech_frostaura"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tech_fireaura"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tech_shockaura"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tech_shield"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tech_shield_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tech_reflect"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tech_passwall"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tech_audibledeception"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tech_overload"
+dirs = 1
+frames = 8
+delays = [1]
+rewind = true
+
+[[state]]
+name = "tech_dispelold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tech_dispel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tech_flametongue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tech_repelmissilesold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tech_repelmissiles"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tech_haste"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tech_mark"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tech_recall"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tech_warpstrike"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tech_resurrect"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tech_instabilitytapold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tech_instabilitytap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tech_energysiphon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tech_corona"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tech_forcemissile"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tech_illusion"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tech_condensation"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tech_targetingmatrix"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tech_beam"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tech_gambit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tech_chain_lightning"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tech_phaseshift"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tech_control"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tech_blink"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tech_track"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "ling_anatomic_panacea"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ling_armblade"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ling_armor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ling_augmented_eyesight"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ling_bioelectrogenesis"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ling_camoflage"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ling_digital_camo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ling_epinepherine_overdose"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ling_fabricate_clothing"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ling_fleshmend"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ling_mimic_voice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ling_rapid_regeneration"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ling_recursive_enhancement"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ling_regenerative_stasis"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ling_respec"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ling_revive"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ling_dissonant_shriek"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ling_resonant_shriek"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ling_sting_blind"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ling_sting_boost_range"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ling_sting_cryo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ling_sting_deafen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ling_sting_death"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ling_sting_del_toxin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ling_sting_enfeeble"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ling_sting_extract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ling_sting_mute"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ling_sting_transform"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ling_sting_base"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ling_transform"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ling_space_suit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ling_electric_lockpick"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ling_absorb_dna"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ling_toggle_breath"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ling_claw"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ling_escape_restraints"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ling_berserk"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "swarm_closed"
+dirs = 1
+frames = 12
+delays = [1]
+
+[[state]]
+name = "swarm_open"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "swarm_replicate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "swarm_warp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "swarm_zeropoint"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "swarm_barricade"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "minion0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_maw_ic"
+dirs = 1
+frames = 1

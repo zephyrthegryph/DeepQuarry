@@ -1,0 +1,60 @@
+# Generated from feeder.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "feeding"
+dirs = 1
+frames = 8
+delays = [2.5]
+
+[[state]]
+name = "beakerlarge100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reagent100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reagent90"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reagent75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reagent60"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reagent45"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reagent20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reagent10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reagent0"
+dirs = 1
+frames = 1

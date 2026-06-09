@@ -1,0 +1,481 @@
+# Generated from computer3.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 20
+
+[[state]]
+name = "frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "frame-med"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "frame-rnd"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "frame-eng"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "frame-sec"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "serverframe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rackframe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wallframe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "laptop"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "adv-laptop"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kb0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kb1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kb2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kb3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kb4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kb5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kb6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kb7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kb9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kb9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kb10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kb11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kb12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kb13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kb14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kb15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ntos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "osod"
+dirs = 1
+frames = 3
+delays = [4, 2, 1]
+rewind = true
+
+[[state]]
+name = "command"
+dirs = 1
+frames = 70
+delays = [5, 5, 5, 5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 5, 5, 5, 5, 5, 5, 5, 5, 1, 1, 1, 1, 1, 1, 1, 5, 5, 5, 5, 5, 5, 5, 5, 5, 1, 1, 1, 1, 1, 1, 5, 5, 5, 5, 1, 1, 1, 5, 5, 5, 5, 1, 1, 1, 5, 5, 5, 5, 5, 5, 5, 5, 1]
+
+[[state]]
+name = "ai-fixer-404"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ai-fixer-empty"
+dirs = 1
+frames = 2
+delays = [7]
+
+[[state]]
+name = "ai-fixer-full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aiupload"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "atmos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "area_atmos"
+dirs = 1
+frames = 2
+delays = [10]
+
+[[state]]
+name = "area_atmos2"
+dirs = 1
+frames = 5
+delays = [3, 1]
+
+[[state]]
+name = "alert:0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alert:1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alert:2"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "comm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "generic"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "crew"
+dirs = 1
+frames = 20
+delays = [1]
+
+[[state]]
+name = "dna_no"
+dirs = 1
+frames = 3
+delays = [4]
+
+[[state]]
+name = "dna_old"
+dirs = 1
+frames = 6
+delays = [2]
+
+[[state]]
+name = "dna"
+dirs = 1
+frames = 22
+delays = [2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 8, 1, 1, 1, 1, 2]
+
+[[state]]
+name = "engine"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engine1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engine2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "escape"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medcomp"
+dirs = 1
+frames = 28
+delays = [5, 1, 1, 1, 1, 1, 1, 1, 1, 5, 1, 1, 1, 1, 1, 1, 1, 1, 5, 1]
+
+[[state]]
+name = "miningcameras"
+dirs = 1
+frames = 8
+delays = [10, 1, 10, 1, 10, 1, 10, 1]
+
+[[state]]
+name = "operating"
+dirs = 1
+frames = 10
+delays = [1]
+
+[[state]]
+name = "powerold"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "power"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "old_security"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shuttle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "solarold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "solar"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "teleport"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "security"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cameras"
+dirs = 1
+frames = 8
+delays = [18, 1, 18, 1, 18, 1, 18, 1]
+
+[[state]]
+name = "camera-static"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "supply"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "request"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "explosive"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndishuttle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rdcomp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rdcomp-inuse"
+dirs = 1
+frames = 9
+delays = [1]
+
+[[state]]
+name = "recharge_comp_on"
+dirs = 1
+frames = 9
+delays = [1]
+
+[[state]]
+name = "recharge_comp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "robot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dummy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "comm_monitor"
+dirs = 1
+frames = 3
+delays = [4]
+rewind = true
+
+[[state]]
+name = "comm_logs"
+dirs = 1
+frames = 8
+delays = [1, 2, 1, 2, 1, 2, 1, 2]
+
+[[state]]
+name = "forensic"
+dirs = 1
+frames = 15
+delays = [2]
+
+[[state]]
+name = "holocontrol"
+dirs = 1
+frames = 8
+delays = [10, 1, 10, 1, 10, 1, 10, 1]
+
+[[state]]
+name = "entertainment"
+dirs = 1
+frames = 35
+delays = [2]
+
+[[state]]
+name = "old-frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old-server"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old-laptop"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "laptop-closed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "adv-laptop-closed"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "laptop-gun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "laptop-inhand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "adv-laptop-inhand todo"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "laptop-gun-inhands todo"
+dirs = 4
+frames = 1

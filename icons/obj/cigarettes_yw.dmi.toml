@@ -1,0 +1,39 @@
+# Generated from cigarettes_yw.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "MauserPacket1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "MauserPacket2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "MauserPacket3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "MauserPacket4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "MauserPacket5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "MauserPacket6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "MauserPacket"
+dirs = 1
+frames = 1

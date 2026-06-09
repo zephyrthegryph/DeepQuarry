@@ -1,0 +1,122 @@
+# Generated from meter.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "meterX"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "meter0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meter1_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meter1_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meter1_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meter1_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meter1_5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meter1_6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meter2_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meter2_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meter2_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meter2_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meter2_5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meter2_6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meter3_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meter3_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meter3_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meter3_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meter3_5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meter3_6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meter_4"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meter4"
+dirs = 1
+frames = 3
+delays = [1]

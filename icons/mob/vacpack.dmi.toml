@@ -1,0 +1,75 @@
+# Generated from vacpack.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "sucker-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sucker-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sucker-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sucker-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sucker-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sucker-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sucker-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sucker-7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sucker_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sucker_nobag_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sucker_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sucker_nobag_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sucker_drop"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sucker-8"
+dirs = 1
+frames = 2
+delays = [5]

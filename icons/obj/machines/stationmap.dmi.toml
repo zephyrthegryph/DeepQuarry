@@ -1,0 +1,60 @@
+# Generated from stationmap.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "station_map_frame_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "station_map_frame_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "station_map_frame_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "station_map_frame_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "station_map_frame_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "station_map"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "station_map_activate"
+dirs = 1
+frames = 3
+delays = [0.75]
+
+[[state]]
+name = "station_mapb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "station_map0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "station_map-panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "decal_station_map"
+dirs = 4
+frames = 1

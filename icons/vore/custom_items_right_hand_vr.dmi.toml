@@ -1,0 +1,52 @@
+# Generated from custom_items_right_hand_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "Empty State"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "riding_crop1"
+dirs = 4
+frames = 8
+delays = [1, 1, 1, 1, 5, 1]
+
+[[state]]
+name = "riding_crop0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stunstaff10"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stunstaff11"
+dirs = 4
+frames = 2
+delays = [0.2]
+
+[[state]]
+name = "stunstaff00"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stunstaff01"
+dirs = 4
+frames = 2
+delays = [0.2]
+
+[[state]]
+name = "holster_stunstaff"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kyuholotar"
+dirs = 4
+frames = 1

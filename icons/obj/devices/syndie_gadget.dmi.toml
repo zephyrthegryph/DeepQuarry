@@ -1,0 +1,86 @@
+# Generated from syndie_gadget.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "anomaly_releaser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "anomaly_releaser_used"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "powersink0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "powersink1"
+dirs = 1
+frames = 3
+delays = [2, 1]
+
+[[state]]
+name = "batterer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "battererburnt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jammer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reverse_bear_trap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rbt_ticking"
+dirs = 1
+frames = 8
+delays = [10]
+
+[[state]]
+name = "doorCharge"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "contacts"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "desynchronizer-on"
+dirs = 1
+frames = 5
+delays = [1]
+rewind = true
+
+[[state]]
+name = "desynchronizer"
+dirs = 1
+frames = 2
+delays = [5]
+rewind = true
+
+[[state]]
+name = "shield0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shield1"
+dirs = 1
+frames = 5
+delays = [1]

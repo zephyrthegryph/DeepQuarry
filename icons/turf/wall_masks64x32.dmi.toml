@@ -1,0 +1,14 @@
+# Generated from wall_masks64x32.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 4
+
+[[state]]
+name = "hull_corner"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "hull_corner_reinf"
+dirs = 8
+frames = 1

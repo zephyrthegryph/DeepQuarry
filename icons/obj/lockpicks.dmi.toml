@@ -1,0 +1,19 @@
+# Generated from lockpicks.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 2
+
+[[state]]
+name = "lockpicks"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pick_gun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mag_sequencer"
+dirs = 1
+frames = 1

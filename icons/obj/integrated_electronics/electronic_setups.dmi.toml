@@ -1,0 +1,699 @@
+# Generated from electronic_setups.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 15
+
+[[state]]
+name = "setup_small"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_small-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_small-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_small-open-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_small_calc"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_small_calc-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_small_calc-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_small_calc-open-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_small_clam"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_small_clam-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_small_clam-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_small_clam-open-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_small_simple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_small_simple-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_small_simple-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_small_simple-open-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_small_hook"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_small_hook-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_small_hook-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_small_hook-open-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_small_pda"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_small_pda-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_small_pda-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_small_pda-open-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_medium"
+dirs = 1
+frames = 4
+delays = [10, 1]
+
+[[state]]
+name = "setup_medium-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_medium-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_medium-open-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_medium_box"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_medium_box-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_medium_box-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_medium_box-open-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_medium_clam"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_medium_clam-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_medium_clam-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_medium_clam-open-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_medium_med"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "setup_medium_med-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_medium_med-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_medium_med-open-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_medium_gun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_medium_gun-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_medium_gun-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_medium_gun-open-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_medium_radio"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_medium_radio-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_medium_radio-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_medium_radio-open-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_large"
+dirs = 1
+frames = 5
+delays = [5, 4, 3, 2, 1]
+rewind = true
+
+[[state]]
+name = "setup_large-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_large-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_large-open-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_large_scope"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "setup_large_scope-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_large_scope-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_large_scope-open-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_large_terminal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_large_terminal-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_large_terminal-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_large_terminal-open-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_large_arm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_large_arm-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_large_arm-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_large_arm-open-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_large_tall"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_large_tall-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_large_tall-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_large_tall-open-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_large_industrial"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_large_industrial-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_large_industrial-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_large_industrial-open-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_drone"
+dirs = 4
+frames = 4
+delays = [1, 10, 1]
+
+[[state]]
+name = "setup_drone-color"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "setup_drone"
+dirs = 4
+frames = 2
+delays = [1]
+movement = true
+
+[[state]]
+name = "setup_drone-open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "setup_drone-open-color"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "setup_drone_arms"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "setup_drone_arms-color"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "setup_drone_arms-open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "setup_drone_arms-open-color"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "setup_drone_secbot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_drone_secbot-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_drone_secbot-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_drone_secbot-open-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_drone_medbot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_drone_medbot-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_drone_medbot-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_drone_medbot-open-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_drone_genbot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_drone_genbot-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_drone_genbot-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_drone_genbot-open-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_drone_android"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "setup_drone_android-color"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "setup_drone_android-open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "setup_drone_android-open-color"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "setup_wallmount_small"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_wallmount_small-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_wallmount_small-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_wallmount_small-open-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_wallmount_tiny"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_wallmount_tiny-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_wallmount_tiny-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_wallmount_tiny-open-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_wallmount_medium"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_wallmount_medium-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_wallmount_medium-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_wallmount_medium-open-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_wallmount_large"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_wallmount_large-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_wallmount_large-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_wallmount_large-open-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_stationary"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "setup_stationary-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_implant"
+dirs = 1
+frames = 2
+delays = [10, 1]
+
+[[state]]
+name = "setup_implant-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_device"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_device-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_device-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_device-open-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_device_cylinder"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_device_cylinder-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_device_cylinder-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_device_cylinder-open-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_device_scanner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_device_scanner-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_device_scanner-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_device_scanner-open-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_device_hook"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_device_hook-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_device_hook-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_device_hook-open-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_device_box"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_device_box-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_device_box-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "setup_device_box-open-color"
+dirs = 1
+frames = 1

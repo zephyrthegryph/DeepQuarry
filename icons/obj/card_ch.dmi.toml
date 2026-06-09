@@ -1,0 +1,56 @@
+# Generated from card_ch.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "ch_casino"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ch_casino_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ch_casino_manager"
+dirs = 1
+frames = 11
+delays = [10, 1, 1, 1, 1, 1, 1, 1, 1, 1, 5]
+rewind = true
+
+[[state]]
+name = "ch_casino_manager_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ch_casino_eng"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ch_casino_eng_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ch_casino_med"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ch_casino_med_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ch_casino_sec"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ch_casino_sec_digested"
+dirs = 1
+frames = 1

@@ -1,0 +1,27 @@
+# Generated from ties_ch.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "vorebadge"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "casinoslave"
+dirs = 1
+frames = 26
+delays = [2.5]
+
+[[state]]
+name = "casinoslave_available"
+dirs = 1
+frames = 26
+delays = [2.5]
+
+[[state]]
+name = "casinoslave_owned"
+dirs = 1
+frames = 26
+delays = [2.5]

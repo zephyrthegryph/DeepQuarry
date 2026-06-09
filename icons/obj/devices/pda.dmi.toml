@@ -1,0 +1,224 @@
+# Generated from pda.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-clear"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-clown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-library"
+dirs = 1
+frames = 4
+delays = [3]
+
+[[state]]
+name = "pda_screen_borders"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 11, y = 22 }]
+
+[[state]]
+name = "pda_base"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda_buttons"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda_stripe_thick"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda_stripe_split"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda_stripe_clown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda_stripe_head"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda_stripe_mime"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda_cross"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-r"
+dirs = 1
+frames = 2
+delays = [8]
+
+[[state]]
+name = "pda-r-library"
+dirs = 1
+frames = 2
+delays = [8]
+
+[[state]]
+name = "id_overlay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pai_overlay_library"
+dirs = 1
+frames = 2
+delays = [4]
+
+[[state]]
+name = "pai_off_overlay_library"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pai_overlay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pai_off_overlay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "light_overlay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "insert_overlay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-m"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-chem"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-c"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-h"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-clown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-a"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-j"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-q"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-ord"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-tear"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-lib"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-eye"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-mi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-hos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-ce"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-cmo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-rd"
+dirs = 1
+frames = 1

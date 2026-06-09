@@ -1,0 +1,91 @@
+# Generated from survival_pod.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 12
+
+[[state]]
+name = "sleeper_cover"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fans"
+dirs = 1
+frames = 4
+delays = [0.1]
+
+[[state]]
+name = "bed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "table"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tubes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fan_tiny"
+dirs = 1
+frames = 4
+delays = [0.1]
+
+[[state]]
+name = "sleeper"
+dirs = 1
+frames = 6
+delays = [1.5, 1, 1, 1, 1.5]
+
+[[state]]
+name = "pwindow"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "windoor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "windooropening"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "windoorclosing"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "windoordeny"
+dirs = 4
+frames = 3
+delays = [1, 2, 1]
+
+[[state]]
+name = "windoorsparks"
+dirs = 4
+frames = 5
+delays = [1]
+
+[[state]]
+name = "windooropen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "survival"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ntpod"
+dirs = 1
+frames = 1

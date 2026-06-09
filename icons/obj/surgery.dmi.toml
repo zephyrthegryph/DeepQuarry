@@ -1,0 +1,873 @@
+# Generated from surgery.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 17
+
+[[state]]
+name = ""
+dirs = 1
+frames = 4
+delays = [1.2]
+
+[[state]]
+name = "core"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "core_assisted"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "roboprinter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "roboprinter_panel_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "roboprinter_working"
+dirs = 1
+frames = 23
+delays = [15, 1, 1, 1, 1, 1, 1, 0.5, 1, 3, 1, 0.5, 1, 3, 1, 0.5, 1, 3, 1]
+
+[[state]]
+name = "bioprinter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bioprinter_working"
+dirs = 1
+frames = 13
+delays = [1]
+
+[[state]]
+name = "bioprinter_panel_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "table1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "table2-idle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "table2-active"
+dirs = 1
+frames = 4
+delays = [3, 3, 3, 5]
+
+[[state]]
+name = "table2-dead"
+dirs = 1
+frames = 2
+delays = [3, 10]
+
+[[state]]
+name = "table2-sleep"
+dirs = 1
+frames = 4
+delays = [3, 3, 3, 5]
+
+[[state]]
+name = "scalpel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scalpel_laser1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scalpel_laser2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scalpel_laser3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scalpel_manager"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "organ_ripper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cautery"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "retractor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hemostat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "saw"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "adv_saw"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "bone_clamp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bone_setter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bioregen"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "drill"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bone-gel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fixovein"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyborg_scalpel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyborg_cautery"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyborg_retractor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyborg_hemostat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyborg_setter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyborg_bioregen"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "cyborg_drill"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyborg_saw"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "autoclave"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "saw3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "innards"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "roro core"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bone-gel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "heart-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "heart-on"
+dirs = 1
+frames = 3
+delays = [6, 1]
+
+[[state]]
+name = "heart_grey-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "heart_grey-on"
+dirs = 1
+frames = 3
+delays = [6, 1]
+
+[[state]]
+name = "stabslash"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fixovein_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fixovein"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scalpel_laser1_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scalpel_laser1_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scalpel_laser2_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scalpel_laser2_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scalpel_laser3_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scalpel_laser3_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scalpel_manager_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scalpel_manager_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "intestine"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "intestine_assisted"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "intestine_prosthetic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "heart-off_assisted"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "heart-on_assisted"
+dirs = 1
+frames = 3
+delays = [6, 1]
+
+[[state]]
+name = "camera_broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scell_prosthetic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "larynx"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "larynx_assisted"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "larynx_prosthetic"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "eyes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eyes_grey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tajaran_eyes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "unathi_eyes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eyes_assisted"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "acidgland"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "acidgland_grey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plasma"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plasma_grey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sac"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sac_grey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xenode"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xenode_grey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "immunehub"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "immunehub_assisted"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "immunehub_prosthetic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sac_slime"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spleen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spleen_assisted"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "augment_laser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spleen_prosthetic"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "augment_dart"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "augment_taser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "augment_hybrid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "augment_hybrid_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pump-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pump-on"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "cycler"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "heatsink"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "diagnostic"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "brain1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brain2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brain2_assisted"
+dirs = 1
+frames = 2
+delays = [1, 2]
+
+[[state]]
+name = "brain_grey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brain_grey_assisted"
+dirs = 1
+frames = 2
+delays = [1, 2]
+
+[[state]]
+name = "appendix"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "appendixinflamed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lungs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lungs_grey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lungs_assisted"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "kidneys"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kidneys_grey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kidneys_assisted"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stomach"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stomach_assisted"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "liver"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "liver_grey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "liver_assisted"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "heart-on_prosthetic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "heart-off_prosthetic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lungs_prosthetic"
+dirs = 1
+frames = 4
+delays = [10, 1]
+
+[[state]]
+name = "eyes_prosthetic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox_heart"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox_lung"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cortical-stack"
+dirs = 1
+frames = 5
+delays = [15, 1, 1, 10, 1]
+
+[[state]]
+name = "cell_bay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cell_bork_bay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "liver_prosthetic"
+dirs = 1
+frames = 4
+delays = [3]
+
+[[state]]
+name = "kidneys_prosthetic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "voicebox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "augment_armblade"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "augment_handblade"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armor-chest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "augment_armframe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "augment_toolkit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "augment_medkit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "augment_box"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Base_Fingers"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "booster"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "augment_shades"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "augment_shades_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eye_medical"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brain_prosthetic"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "stomach_prosthetic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "unathi_liver"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "unathi_heart-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "unathi_heart-on"
+dirs = 1
+frames = 3
+delays = [6, 1]
+
+[[state]]
+name = "tajaran_heart-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tajaran_heart-on"
+dirs = 1
+frames = 3
+delays = [5, 1]
+
+[[state]]
+name = "tajaran_lungs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tajaran_liver"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tajaran_stomach"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skrell_heart-on"
+dirs = 1
+frames = 3
+delays = [6, 1]
+rewind = true
+
+[[state]]
+name = "skrell_heart-off"
+dirs = 1
+frames = 1
+rewind = true
+
+[[state]]
+name = "skrell_lungs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skrell_kidney"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skrell_eyes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skrell_liver"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brain_skrell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skrell_larynx"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skrell_intestine"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skrell_spleen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skrell_appendix"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skrell_appendixinflamed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "heart"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "anomalock_heart-core"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "anomalock_heart"
+dirs = 1
+frames = 1

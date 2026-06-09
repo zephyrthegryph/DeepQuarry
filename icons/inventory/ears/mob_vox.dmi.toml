@@ -1,0 +1,60 @@
+# Generated from mob_vox.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "headset"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "earset"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "headset_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "earmuffs"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "med_headset_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sec_headset_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndie_headset"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tribblemuffs"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "headphones_on"
+dirs = 4
+frames = 7
+delays = [2]
+
+[[state]]
+name = "headphones_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "headset_alt"
+dirs = 4
+frames = 1

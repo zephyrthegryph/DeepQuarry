@@ -1,0 +1,84 @@
+# Generated from dam_human.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "00"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "10"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "20"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "30"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "01"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "11"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "21"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "31"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "02"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "12"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "22"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "32"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "03"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "13"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "23"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "33"
+dirs = 4
+frames = 1

@@ -1,0 +1,9 @@
+# Generated from synth_flesh_mono_hole.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 480
+height = 480
+cols = 1
+
+[[state]]
+name = "synth_flesh_mono_hole"
+dirs = 1
+frames = 1

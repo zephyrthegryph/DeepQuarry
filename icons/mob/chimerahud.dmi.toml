@@ -1,0 +1,27 @@
+# Generated from chimerahud.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "danger00"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "danger01"
+dirs = 1
+frames = 2
+delays = [4]
+
+[[state]]
+name = "danger10"
+dirs = 1
+frames = 2
+delays = [4]
+
+[[state]]
+name = "danger11"
+dirs = 1
+frames = 2
+delays = [1]

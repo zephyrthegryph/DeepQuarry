@@ -1,0 +1,164 @@
+# Generated from rapid_pdoor.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 22
+
+[[state]]
+name = "pdoorc1_old"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "pdoorc0_old"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "pdoor0_old"
+dirs = 4
+frames = 5
+delays = [1]
+rewind = true
+
+[[state]]
+name = "pdoor1_old"
+dirs = 4
+frames = 5
+delays = [1]
+rewind = true
+
+[[state]]
+name = "shutterc1"
+dirs = 4
+frames = 8
+delays = [1, 1, 1, 1, 1, 1, 1, 4]
+
+[[state]]
+name = "shutterc0"
+dirs = 4
+frames = 8
+delays = [1, 1, 1, 1, 1, 1, 1, 4]
+
+[[state]]
+name = "shutter0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shutter1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pdoorc1"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "pdoorc0"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "pdoor0"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "pdoor1"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "shutter2_c0"
+dirs = 4
+frames = 8
+delays = [1, 1, 1, 1, 1, 1, 1, 4]
+
+[[state]]
+name = "shutter2_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shutter2_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shutter2_c1"
+dirs = 4
+frames = 8
+delays = [1, 1, 1, 1, 1, 1, 1, 4]
+
+[[state]]
+name = "tshutterc0"
+dirs = 4
+frames = 8
+delays = [1, 1, 1, 1, 1, 1, 1, 4]
+
+[[state]]
+name = "tshutter0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tshutter1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tshutterc1"
+dirs = 4
+frames = 8
+delays = [1, 1, 1, 1, 1, 1, 1, 4]
+
+[[state]]
+name = "bars_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bars_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bars_c1"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "bars_c0"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "bookcase1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bookcase0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bookcasec0"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "bookcasec1"
+dirs = 4
+frames = 6
+delays = [1]

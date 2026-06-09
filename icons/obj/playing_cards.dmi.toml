@@ -1,0 +1,725 @@
+# Generated from playing_cards.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 14
+
+[[state]]
+name = "card_holder"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "card_holder_cardemon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "joker"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "black_col"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red_col"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red_num"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "black_num"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "card_pack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "card_back"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "card_pack_cardemon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "card_back_spaceball"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "card_back_cardemon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "card_cardemon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "card_cardemon_Silver"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "card_cardemon_Platinum"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "card_cardemon_Plasteel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "card_pack_spaceball"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spaceball_standard"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spaceball_jones"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deck_tarot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "card_back_tarot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tarot_major"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tarot_wands"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tarot_cups"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tarot_swords"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tarot_pentacles"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cag_white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cag_white_card"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cag_white_card_back"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cag_black"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cag_black_card"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cag_black_card_back"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "casino_deck"
+dirs = 1
+frames = 2
+delays = [10]
+
+[[state]]
+name = "casino_card_back"
+dirs = 1
+frames = 2
+delays = [10]
+
+[[state]]
+name = "casino_black_num"
+dirs = 1
+frames = 10
+delays = [1]
+
+[[state]]
+name = "casino_black_col"
+dirs = 1
+frames = 10
+delays = [1]
+
+[[state]]
+name = "casino_red_num"
+dirs = 1
+frames = 10
+delays = [1]
+
+[[state]]
+name = "casino_red_col"
+dirs = 1
+frames = 10
+delays = [1]
+
+[[state]]
+name = "wizoff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wizoff_card"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wizoff_card_back"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wizoff_guide"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "acorn_num"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "acorn_col"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "leaf_col"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "leaf_num"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bell_col"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bell_num"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egypacket"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deck1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deck3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "colorswap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "+4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue_reverse"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue_+2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue_skip"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue_9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue_8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue_7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue_6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue_5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow_reverse"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow_+2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow_skip"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow_9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow_8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow_7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow_6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow_5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red_reverse"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red_+2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red_skip"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red_9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red_8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red_7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red_6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red_5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green_reverse"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green_+2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green_skip"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green_9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green_8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green_7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green_6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green_5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_tarot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_back_tarot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_fool"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_magician"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_high_priestess"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_empress"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_emperor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_hierophant"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_lovers"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_chariot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_strength"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_hermit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_wheel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_justice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_hanged"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_death"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_temperance"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_devil"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_tower"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_star"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_moon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_sun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_judgement"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_world"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_wands"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_cups"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_swords"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_pentacles"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_dragon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_lizard"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_lotus"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_bash"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_reverse"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_rules"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_acid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_abyss"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_maw"
+dirs = 1
+frames = 1

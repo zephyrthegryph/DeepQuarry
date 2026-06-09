@@ -1,0 +1,395 @@
+# Generated from catborg_cameron.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 25
+
+[[state]]
+name = "borb"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borb"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "borb-robe"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borb-robe"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "borb-tiara"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borb-tiara"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "borb-decals"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borb-decals"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "borb-glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borb-glow"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "borb-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borb-eyes"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "borb-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borb-lights"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "borb-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borb-sleeper-1"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "borb-sleeper-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borb-sleeper-2"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "borb-sleeper-3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borb-sleeper-3"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "borb-throat-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borb-throat-1"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "borb-throat-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borb-throat-2"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "borb-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borb-bellyup-glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borb-sleeper-1-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borb-sleeper-2-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borb-sleeper-3-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borb-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borb-sit-glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borb-sleeper-1-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borb-sleeper-2-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borb-sleeper-3-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borb-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borb-rest-glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borb-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "openpanel-nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel-nc"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "openpanel-c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel-c"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "openpanel-w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel-w"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "borb-disabler"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borb-disabler"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "borb-taser"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borb-taser"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "borb-laser"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borb-laser"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "sleeper-g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sleeper-g"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "sleeper-r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sleeper-r"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "borb-shield"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wreck-overlay"
+dirs = 1
+frames = 18
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 40]
+
+[[state]]
+name = "SPRITES-PAST-HERE-ARE-NOT-IMPLEMENTED"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borb-sleeper-1-default"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borb-throat-1-default"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borb-throat-1-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borb-throat-1-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borb-sleeper-2-default"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borb-throat-2-default"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borb-throat-2-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borb-throat-2-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borb-sleeper-3-default"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borb-sleeper-1-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borb-sleeper-2-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borb-sleeper-3-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borb-throat-1-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borb-throat-2-rest"
+dirs = 4
+frames = 1

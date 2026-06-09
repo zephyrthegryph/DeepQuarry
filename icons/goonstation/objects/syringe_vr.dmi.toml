@@ -1,0 +1,69 @@
+# Generated from syringe_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "capped"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "inject"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "draw"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "filler15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "filler10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "filler5"
+dirs = 1
+frames = 1

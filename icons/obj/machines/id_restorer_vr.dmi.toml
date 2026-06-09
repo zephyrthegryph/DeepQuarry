@@ -1,0 +1,59 @@
+# Generated from id_restorer_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 16
+
+[[state]]
+name = "restorer_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "restorer_broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "restorer_b0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "restorer_b1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "restorer_b2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "restorer_b3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "restorer_b4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "restorer"
+dirs = 4
+frames = 28
+delays = [1, 1, 1, 1, 1, 1, 5, 5, 5, 5, 5, 5, 5, 1]
+
+[[state]]
+name = "restorer_success"
+dirs = 4
+frames = 12
+delays = [1]
+loop = 1
+
+[[state]]
+name = "restorer_fail"
+dirs = 4
+frames = 11
+delays = [1]
+loop = 1

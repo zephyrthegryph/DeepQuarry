@@ -1,0 +1,14 @@
+# Generated from security_preview.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 576
+height = 576
+cols = 3
+
+[[state]]
+name = "walls"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floors"
+dirs = 4
+frames = 1

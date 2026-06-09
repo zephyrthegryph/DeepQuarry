@@ -1,0 +1,229 @@
+# Generated from crate.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 14
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hazard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hazard_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crate_radiation_left"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crate_radiation_left_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crate_radiation_right"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crate_radiation_right_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crate_reticle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crate_reticle_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "toxin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "toxin_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crate_bracing"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crate_bracing_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crate_cross"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crate_oxy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crate_stripe"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crate_stripe_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crate_stripe_left"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crate_stripe_left_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crate_stripe_right"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crate_stripe_right_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crate_stripes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crate_stripes_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lid_stripes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lid_stripes_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hedberg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gilthari"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "heph"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lawson"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "aether"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nano"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "focal"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "einstein"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xion"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "centauri"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grayson"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zenghu"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "oculum"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "toptext"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bishop"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "galaksi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "full_lid"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "full_lid_open"
+dirs = 4
+frames = 1

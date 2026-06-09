@@ -1,0 +1,127 @@
+# Generated from dullahan_sec.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 64
+cols = 11
+
+[[state]]
+name = "dullahansec"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahansec-rest"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahansec-sit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullahansec-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "openpanel_nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahansec-rest-eyes"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahansec-rest-lights"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahansec-eyes"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahansec-lights"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahansec-loincloth"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahansec-loincloth-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahansec-breastplate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahansec-breastplate-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahansec-loinclothbreastplate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahansec-loinclothbreastplate-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahansec-eyecover"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahansec-eyecover-rest"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahansec-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahansec-sleeper-1-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahansec-sit-lights"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullahansec-sit-eyes"
+dirs = 1
+frames = 1

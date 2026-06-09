@@ -1,0 +1,59 @@
+# Generated from vialbox.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "led0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "led1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ledb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cover"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vialbox6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vialbox5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vialbox4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vialbox3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vialbox2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vialbox1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vialbox0"
+dirs = 1
+frames = 1

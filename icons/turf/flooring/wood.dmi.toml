@@ -1,0 +1,164 @@
+# Generated from wood.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "wood"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood-broken0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood-broken1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood-broken2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood-broken3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood-broken4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood-broken5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood-broken6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sifwood"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sifwood-broken0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sifwood-broken1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sifwood-broken2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sifwood-broken3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sifwood-broken4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sifwood-broken5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sifwood-broken6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood_parquet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood_parquet-broken0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood_parquet-broken1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood_parquet-broken2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood_parquet-broken3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood_parquet-broken4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood_parquet-broken5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood_parquet-broken6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood_tile"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood_tile-broken0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood_tile-broken1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood_tile-broken2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood_panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood_panel-broken0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood_panel-broken1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood_panel-broken2"
+dirs = 1
+frames = 1

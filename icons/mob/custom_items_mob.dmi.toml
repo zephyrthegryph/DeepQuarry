@@ -1,0 +1,26 @@
+# Generated from custom_items_mob.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "kphaseout"
+dirs = 4
+frames = 8
+delays = [1]
+loop = 1
+
+[[state]]
+name = "kitten"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kitten_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kitten_sit"
+dirs = 1
+frames = 1

@@ -1,0 +1,898 @@
+# Generated from effects.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 36
+
+[[state]]
+name = "sparks"
+dirs = 4
+frames = 7
+delays = [1]
+loop = 1
+
+[[state]]
+name = "shieldsparkles"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "smoke"
+dirs = 4
+frames = 4
+delays = [3]
+
+[[state]]
+name = "mustard"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "extinguish"
+dirs = 8
+frames = 4
+delays = [2]
+loop = 1
+
+[[state]]
+name = "ion_fade"
+dirs = 4
+frames = 3
+delays = [2]
+
+[[state]]
+name = "ion_trails"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "empdisable"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "emppulse"
+dirs = 1
+frames = 8
+delays = [1]
+loop = 1
+
+[[state]]
+name = "greenshatter"
+dirs = 1
+frames = 5
+delays = [2]
+loop = 1
+
+[[state]]
+name = "greenshatter2"
+dirs = 1
+frames = 5
+delays = [2]
+loop = 1
+
+[[state]]
+name = "blueshatter"
+dirs = 1
+frames = 4
+delays = [2]
+loop = 1
+
+[[state]]
+name = "blueshatter2"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "light"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "explosionOLD"
+dirs = 1
+frames = 14
+delays = [1]
+loop = 1
+
+[[state]]
+name = "nothing"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "explosion"
+dirs = 1
+frames = 9
+delays = [1]
+loop = 1
+
+[[state]]
+name = "thermite"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "foam"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "foam-disolve"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "mfoam"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mfoam-disolve"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "metalfoam"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ironfoam"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "greenglow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "explosion_particle"
+dirs = 8
+frames = 4
+delays = [1]
+loop = 1
+
+[[state]]
+name = "shieldwall"
+dirs = 8
+frames = 3
+delays = [2]
+rewind = true
+
+[[state]]
+name = "test"
+dirs = 8
+frames = 3
+delays = [2]
+rewind = true
+
+[[state]]
+name = "dirt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flour"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cobweb1"
+dirs = 1
+frames = 15
+delays = [255, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 3, 1]
+
+[[state]]
+name = "cobweb2"
+dirs = 1
+frames = 35
+delays = [150, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 10, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 50, 1, 1, 1, 1, 1, 1, 1, 1, 150]
+
+[[state]]
+name = "stickyweb1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stickyweb2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cocoon_large1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cocoon_large2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cocoon_large3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cocoon1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cocoon2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cocoon3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eggs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tendrils"
+dirs = 1
+frames = 5
+delays = [4]
+
+[[state]]
+name = "tendril_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spiderling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "energynet"
+dirs = 1
+frames = 10
+delays = [1, 1, 3, 1, 1, 3, 5, 1]
+
+[[state]]
+name = "shrinkenergynet"
+dirs = 1
+frames = 10
+delays = [1, 1, 3, 1, 1, 3, 5, 1]
+
+[[state]]
+name = "electricity"
+dirs = 1
+frames = 12
+delays = [1, 1, 15, 1, 1, 15, 1, 1, 15, 1, 1, 15]
+
+[[state]]
+name = "wave1"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "wave2"
+dirs = 1
+frames = 8
+delays = [2]
+
+[[state]]
+name = "wave3"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "wave4"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "scanline"
+dirs = 1
+frames = 16
+delays = [1]
+
+[[state]]
+name = "shield-old"
+dirs = 1
+frames = 7
+delays = [1]
+rewind = true
+
+[[state]]
+name = "shield"
+dirs = 1
+frames = 9
+delays = [1]
+
+[[state]]
+name = "m_shield"
+dirs = 1
+frames = 8
+delays = [1, 1, 1, 1, 1, 1, 3, 1]
+loop = 1
+
+[[state]]
+name = "shield1"
+dirs = 1
+frames = 7
+delays = [1, 1, 1, 1, 1, 1, 3]
+rewind = true
+
+[[state]]
+name = "shield2"
+dirs = 1
+frames = 7
+delays = [1]
+rewind = true
+
+[[state]]
+name = "at_shield1"
+dirs = 1
+frames = 7
+delays = [1, 1, 1, 1, 2, 1]
+
+[[state]]
+name = "at_shield2"
+dirs = 1
+frames = 7
+delays = [1, 1, 1, 1, 2, 1]
+
+[[state]]
+name = "scorch"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "light_scorch"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bhole"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fuel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "confetti"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_gradient"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "white_inner"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "white_outer"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "white_cee"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "exhaust"
+dirs = 4
+frames = 2
+delays = [1]
+rewind = true
+
+[[state]]
+name = "m_shield_cult"
+dirs = 1
+frames = 23
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 181, 1]
+loop = 1
+
+[[state]]
+name = "cultwall"
+dirs = 1
+frames = 10
+delays = [0.7]
+loop = 1
+
+[[state]]
+name = "cultfloor"
+dirs = 1
+frames = 8
+delays = [0.7]
+loop = 1
+
+[[state]]
+name = "rune_sac"
+dirs = 1
+frames = 14
+delays = [0.5]
+loop = 1
+
+[[state]]
+name = "rune_imbue"
+dirs = 1
+frames = 9
+delays = [0.5]
+loop = 1
+
+[[state]]
+name = "rune_convert"
+dirs = 1
+frames = 12
+delays = [0.5]
+loop = 1
+
+[[state]]
+name = "rune_teleport"
+dirs = 1
+frames = 10
+delays = [0.7, 0.7, 0.7, 1, 1, 1, 0.7, 1, 1.3, 0.7]
+loop = 1
+
+[[state]]
+name = "summoning"
+dirs = 1
+frames = 6
+delays = [0.8]
+
+[[state]]
+name = "breakdoor"
+dirs = 1
+frames = 9
+delays = [1]
+loop = 1
+
+[[state]]
+name = "rift"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rift_glow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "directional_shield_old"
+dirs = 8
+frames = 4
+delays = [1]
+
+[[state]]
+name = "directional_shield"
+dirs = 8
+frames = 4
+delays = [1]
+
+[[state]]
+name = "blob_attack"
+dirs = 4
+frames = 12
+delays = [3]
+loop = 1
+
+[[state]]
+name = "shuttle_warning"
+dirs = 1
+frames = 5
+delays = [10]
+loop = 1
+
+[[state]]
+name = "shuttle_warning_still"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "slash"
+dirs = 8
+frames = 3
+delays = [1]
+loop = 1
+
+[[state]]
+name = "red_static"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "drain"
+dirs = 8
+frames = 6
+delays = [1]
+
+[[state]]
+name = "red_static_sphere"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "boop"
+dirs = 1
+frames = 4
+delays = [1, 1, 1, 2]
+
+[[state]]
+name = "gravisphere"
+dirs = 1
+frames = 9
+delays = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 1]
+
+[[state]]
+name = "tunnel_hole_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tunneling"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "disarm"
+dirs = 1
+frames = 5
+delays = [1]
+loop = 1
+
+[[state]]
+name = "rocks_moving"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "punch"
+dirs = 1
+frames = 5
+delays = [1]
+loop = 1
+
+[[state]]
+name = "deflect_static"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tunnel_hole"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "claw"
+dirs = 1
+frames = 4
+delays = [1]
+loop = 1
+
+[[state]]
+name = "kick"
+dirs = 1
+frames = 4
+delays = [1]
+loop = 1
+
+[[state]]
+name = "bite"
+dirs = 1
+frames = 4
+delays = [1]
+loop = 1
+
+[[state]]
+name = "deflect"
+dirs = 1
+frames = 7
+delays = [1, 1, 2, 2, 2, 1]
+loop = 1
+
+[[state]]
+name = "smash"
+dirs = 1
+frames = 3
+delays = [1]
+loop = 1
+
+[[state]]
+name = "stripes"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "arrow"
+dirs = 1
+frames = 3
+delays = [2]
+
+[[state]]
+name = "firing_effect"
+dirs = 4
+frames = 2
+delays = [1]
+loop = 1
+
+[[state]]
+name = "impact_bullet"
+dirs = 1
+frames = 5
+delays = [1]
+loop = 1
+
+[[state]]
+name = "firing_effect_energy"
+dirs = 4
+frames = 2
+delays = [1]
+loop = 1
+
+[[state]]
+name = "impact_energy"
+dirs = 1
+frames = 6
+delays = [1]
+loop = 1
+
+[[state]]
+name = "impact_laser"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "impact_laser_green"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "impact_laser_blue"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "impact_laser_monochrome"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "impact_laser_purple"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "impact_laser_wall"
+dirs = 1
+frames = 11
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 10]
+
+[[state]]
+name = "arrow_omni"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "blue_static"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "holomap_ping_b"
+dirs = 1
+frames = 20
+delays = [1]
+
+[[state]]
+name = "holomap_ping"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glitch"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "confuse"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "pre_confuse"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "drop_marker"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "redgate_hole"
+dirs = 1
+frames = 5
+delays = [3]
+
+[[state]]
+name = "info"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "info_hovered"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "confetti2"
+dirs = 1
+frames = 32
+delays = [1]
+
+[[state]]
+name = "wet_turf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teleport_greyscale"
+dirs = 1
+frames = 11
+delays = [1]
+loop = 1
+
+[[state]]
+name = "blue_static_sphere"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "holosign"
+dirs = 1
+frames = 12
+delays = [1]
+
+[[state]]
+name = "holo_firelock"
+dirs = 1
+frames = 8
+delays = [20, 1]
+
+[[state]]
+name = "holosign_sec"
+dirs = 1
+frames = 4
+delays = [2, 2, 1, 7]
+
+[[state]]
+name = "holosign_engi"
+dirs = 1
+frames = 4
+delays = [2, 2, 1, 7]
+
+[[state]]
+name = "holo_medical"
+dirs = 1
+frames = 7
+delays = [10, 1]
+
+[[state]]
+name = "holo_medical-deny"
+dirs = 1
+frames = 2
+delays = [8, 3]
+
+[[state]]
+name = "arrow2"
+dirs = 1
+frames = 4
+delays = [10, 2]
+
+[[state]]
+name = "arrow3"
+dirs = 1
+frames = 4
+delays = [10, 2]
+
+[[state]]
+name = "thought_bubble"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "motion_echo"
+dirs = 1
+frames = 7
+delays = [1, 1, 1, 1, 1, 2, 5]
+loop = 1
+
+[[state]]
+name = "lightning"
+dirs = 4
+frames = 5
+delays = [1]
+
+[[state]]
+name = "purplesparkles"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "purplecrack"
+dirs = 1
+frames = 3
+delays = [3, 2, 1]

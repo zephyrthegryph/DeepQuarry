@@ -1,0 +1,26 @@
+# Generated from 1x3blast_hor.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 96
+height = 32
+cols = 4
+
+[[state]]
+name = "open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "closed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "opening"
+dirs = 1
+frames = 6
+delays = [1.6]
+
+[[state]]
+name = "closing"
+dirs = 1
+frames = 6
+delays = [1.6]

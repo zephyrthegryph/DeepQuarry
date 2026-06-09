@@ -1,0 +1,17 @@
+# Generated from space_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "bluespace"
+dirs = 1
+frames = 24
+delays = [1]
+
+[[state]]
+name = "bluespacify"
+dirs = 1
+frames = 11
+delays = [1]
+loop = 1

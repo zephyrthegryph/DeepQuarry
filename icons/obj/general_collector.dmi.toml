@@ -1,0 +1,21 @@
+# Generated from general_collector.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blocker_on"
+dirs = 1
+frames = 2
+delays = [10, 3]
+
+[[state]]
+name = "blocker_off"
+dirs = 1
+frames = 7
+delays = [3]

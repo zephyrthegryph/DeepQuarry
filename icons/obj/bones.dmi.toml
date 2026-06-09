@@ -1,0 +1,54 @@
+# Generated from bones.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "tajskull"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bonepile"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "leg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ribs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "headstone"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bone"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "unaskull"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skull"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xenoskull"
+dirs = 1
+frames = 1

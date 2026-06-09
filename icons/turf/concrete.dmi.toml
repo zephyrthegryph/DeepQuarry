@@ -1,0 +1,24 @@
+# Generated from concrete.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 2
+
+[[state]]
+name = "concrete"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hexacrete"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hexacrete_dark"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "concrete_dark"
+dirs = 1
+frames = 1

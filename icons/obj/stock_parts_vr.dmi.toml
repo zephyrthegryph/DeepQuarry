@@ -1,0 +1,654 @@
+# Generated from stock_parts_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 17
+
+[[state]]
+name = "computer_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "computer_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "computer_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "computer_3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "computer_4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "machine_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "machine_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "machine_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "machine_3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "machine (unused state)"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vbox_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vbox_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vbox_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vbox_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "display_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "display_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "display_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "display_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "display_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fire_alarm_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fire_alarm_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fire_alarm_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fire_alarm_3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "frame_bitem"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "newscaster_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "newscaster_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "newscaster_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "newscaster_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "newscaster_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "air_alarm_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "air_alarm_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "air_alarm_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "air_alarm_3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "atm_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "atm_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "atm_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "atm_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "atm_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "guest_pass_console_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "guest_pass_console_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "guest_pass_console_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "guest_pass_console_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "guest_pass_console_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "intercom_0"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "intercom_1"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "intercom_2"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "intercom_3"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "holopad_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holopad_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holopad_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holopad_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holopad_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "photocopier_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "photocopier_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "photocopier_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "photocopier_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fax_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fax_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fax_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fax_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "microwave_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "microwave_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "microwave_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "microwave_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "keycard_authenticator_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "keycard_authenticator_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "keycard_authenticator_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "keycard_authenticator_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vending_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vending_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vending_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vending_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "recharger_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "recharger_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "recharger_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "recharger_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wall_charger_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wall_charger_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wall_charger_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wall_charger_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "heavy-duty_cell_charger_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "heavy-duty_cell_charger_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "heavy-duty_cell_charger_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "heavy-duty_cell_charger_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "washing_machine_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "washing_machine_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "washing_machine_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "washing_machine_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grinder_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grinder_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grinder_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grinder_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "conveyor_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "conveyor_1"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "conveyor_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "conveyor_3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mass_driver_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mass_driver_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mass_driver_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mass_driver_3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medical_console_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medical_console_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medical_console_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medical_console_3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medical_console_4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medical_pod_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medical_pod_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medical_pod_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medical_pod_3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "supply_request_console_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "supply_request_console_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "supply_request_console_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "supply_request_console_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "supply_request_console_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teleporter_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teleporter_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teleporter_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teleporter_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dna_analyzer_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dna_analyzer_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dna_analyzer_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dna_analyzer_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "distillery_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "distillery_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "distillery_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "distillery_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "button_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "button_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "button_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "button_3"
+dirs = 1
+frames = 1

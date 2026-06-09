@@ -1,0 +1,49 @@
+# Generated from multiz.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "ladder00"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ladder10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ladder01"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ladder11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ladderdown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ladderup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stair_u"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stair_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stair"
+dirs = 4
+frames = 1

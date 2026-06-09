@@ -1,0 +1,73 @@
+# Generated from vore32x64.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 64
+cols = 9
+
+[[state]]
+name = "gaslamp"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "gaslamp-1"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "gaslamp-2"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "gaslamp-dead"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "placeholder_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "placeholder"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gaslamp_snow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gaslamp_snow-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gaslamp_snow-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gaslamp_snow-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lizardman"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lizardman-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lizardman-dead"
+dirs = 1
+frames = 1

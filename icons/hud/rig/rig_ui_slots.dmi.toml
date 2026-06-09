@@ -1,0 +1,29 @@
+# Generated from rig_ui_slots.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "head"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "body"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gloves"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boots"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "base"
+dirs = 1
+frames = 1

@@ -1,0 +1,286 @@
+# Generated from lighters.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 13
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blackzippo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blackzippoon"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "bluezippo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluezippoon"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "zippo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "zippoon"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "zippo1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "zippoclick"
+dirs = 1
+frames = 3
+delays = [1, 3, 1]
+
+[[state]]
+name = "engravedzippo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engravedzippoon"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "damelighter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "damelighteron"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "13lighter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "13lighteron"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "snakelighter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snakelighteron"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "goldzippo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "goldzippoon"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "moffzippo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "moffzippoon"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "redzippo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redzippoon"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "cappiezippo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cappiezippoon"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "commiezippo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "commiezippoon"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "rainbowzippo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rainbowzippoon"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "gonzozippo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gonzozippoon"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "royalzippo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "royalzippoon"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "ironiczippo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ironiczippoon"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "skullzippo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skullzippoon"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "zippofire1"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "zippofire2"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "zippofire3"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "lighter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lighteron"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "lighter-trans"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lighter-tall"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lighter-matte"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "SMzippoon"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "SMzippo"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "SyndiSMzippoon"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "SyndiSMzippo"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "ExpSMzippoon"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "ExpSMzippo"
+dirs = 1
+frames = 1

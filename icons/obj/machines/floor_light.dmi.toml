@@ -1,0 +1,44 @@
+# Generated from floor_light.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "base"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flicker1"
+dirs = 1
+frames = 16
+delays = [122, 1]
+
+[[state]]
+name = "flicker2"
+dirs = 1
+frames = 16
+delays = [100, 1]
+
+[[state]]
+name = "flicker4"
+dirs = 1
+frames = 16
+delays = [87, 1]
+
+[[state]]
+name = "flicker4"
+dirs = 1
+frames = 16
+delays = [70, 1]
+
+[[state]]
+name = "on"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "item"
+dirs = 1
+frames = 1

@@ -1,0 +1,479 @@
+/turf/simulated/floor/diona
+	name = "biomass flooring"
+	icon_state = "diona"
+
+/turf/simulated/floor/diona/attackby()
+	return
+
+//Shuttle Floors
+/obj/landed_holder
+	name = "landed turf holder"
+	desc = "holds all the info about the turf this turf 'landed on'"
+	var/turf/turf_type
+	var/turf/simulated/shuttle/my_turf
+	var/image/turf_image
+	var/list/decals
+
+/obj/landed_holder/Initialize(mapload)
+	. = ..()
+	if(loc)
+		my_turf = get_turf(src)
+		moveToNullspace()
+
+/obj/landed_holder/proc/land_on(turf/T)
+	//Gather destination information
+	var/obj/landed_holder/new_holder = new(null)
+	T.lighting_clear_overlay()
+	new_holder.turf_type = T.type
+	new_holder.dir = T.dir
+	new_holder.icon = T.icon
+	new_holder.icon_state =  T.icon_state
+	new_holder.copy_overlays(T, TRUE)
+	new_holder.underlays = T.underlays.Copy()
+	new_holder.decals = T.decals ? T.decals.Copy() : null
+
+	//Set the destination to be like us
+	var/turf/simulated/shuttle/new_dest = T.ChangeTurf(my_turf.type,,1)
+	my_turf.lighting_clear_overlay()
+	new_dest.set_dir(my_turf.dir)
+	new_dest.icon_state = my_turf.icon_state
+	new_dest.icon = my_turf.icon
+	new_dest.copy_overlays(my_turf, TRUE)
+	new_dest.underlays = my_turf.underlays.Copy()
+	new_dest.decals = my_turf.decals
+	//Shuttle specific stuff
+	new_dest.interior_corner = my_turf.interior_corner
+	new_dest.takes_underlays = my_turf.takes_underlays
+	new_dest.under_turf = my_turf.under_turf
+	new_dest.join_flags = my_turf.join_flags
+	new_dest.join_group = my_turf.join_group
+	new_dest.lighting_build_overlay()
+
+	// Associate the holder with the new turf.
+	new_holder.my_turf = new_dest
+	new_dest.landed_holder = new_holder
+
+	//Update underlays if necessary (interior corners won't have changed).
+	if(new_dest.takes_underlays && !new_dest.interior_corner)
+		new_dest.underlay_update()
+
+	return new_dest
+
+/obj/landed_holder/proc/leave_turf(turf/base_turf = null)
+	var/turf/new_source
+	//Change our source to whatever it was before
+	if(turf_type)
+		new_source = my_turf.ChangeTurf(turf_type,,1)
+		new_source.lighting_clear_overlay()
+		new_source.set_dir(dir)
+		new_source.icon_state = icon_state
+		new_source.icon = icon
+		new_source.copy_overlays(src, TRUE)
+		new_source.underlays = underlays.Copy()
+		new_source.decals = decals
+		new_source.lighting_build_overlay()
+	else
+		new_source = my_turf.ChangeTurf(base_turf ? base_turf : get_base_turf_by_area(my_turf),,1)
+
+	return new_source
+
+/turf/simulated/shuttle
+	name = "shuttle"
+	icon = 'icons/turf/shuttle_white.dmi'
+	thermal_conductivity = 0.05
+	heat_capacity = 0
+	flags = TURF_ACID_IMMUNE
+
+	var/obj/landed_holder/landed_holder
+	var/interior_corner = 0
+	var/takes_underlays = 0
+	var/turf/under_turf //Underlay override turf path.
+	var/join_flags = 0 //Bitstring to represent adjacency of joining walls
+	var/join_group = "shuttle" //A tag for what other walls to join with. Null if you don't want them to.
+	var/static/list/antilight_cache
+	rad_insulation = RAD_MEDIUM_INSULATION
+
+/turf/simulated/shuttle/Initialize(mapload)
+	. = ..()
+	if(!antilight_cache)
+		antilight_cache = list()
+		for(var/diag in GLOB.cornerdirs)
+			var/image/I = image(LIGHTING_ICON, null, icon_state = "diagonals", layer = 10, dir = diag)
+			I.plane = PLANE_LIGHTING
+			antilight_cache["[diag]"] = I
+
+	if(takes_underlays)
+		underlay_update()
+
+/turf/simulated/shuttle/Destroy()
+	landed_holder = null
+	return ..()
+
+// For joined corners touching static lighting turfs, add an overlay to cancel out that part of our lighting overlay.
+/turf/simulated/shuttle/proc/update_breaklights()
+	cut_overlay(antilight_cache["[join_flags]"])
+	if(!(join_flags in GLOB.cornerdirs)) //We're not joined at an angle
+		return
+	//Dynamic lighting dissolver
+	var/turf/T = get_step(src, turn(join_flags,180))
+	if(!T || !T.dynamic_lighting || !get_area(T).dynamic_lighting)
+		add_overlay(antilight_cache["[join_flags]"])
+
+/turf/simulated/shuttle/proc/underlay_update()
+	if(!takes_underlays)
+		//Basically, if it's not forced, and we don't care, don't do it.
+		return
+
+	var/turf/under //May be a path or a turf
+	var/mutable_appearance/us = new(src) //We'll use this for changes later
+	us.underlays.Cut()
+
+	//Mapper wanted something specific
+	if(under_turf)
+		under = under_turf
+
+	//Well if this isn't our first rodeo, we know EXACTLY what we landed on, and it looks like this.
+	if(landed_holder && !interior_corner)
+		//Space gets special treatment
+		if(ispath(landed_holder.turf_type, /turf/space))
+			var/image/spaceimage = image(landed_holder.icon, landed_holder.icon_state)
+			spaceimage.plane = SPACE_PLANE
+			underlays = list(spaceimage)
+		else
+			var/mutable_appearance/landed_on = new(landed_holder)
+			landed_on.layer = FLOAT_LAYER //Not turf
+			landed_on.plane = FLOAT_PLANE //Not turf
+			us.underlays = list(landed_on)
+			appearance = us
+
+		spawn update_breaklights() //So that we update the breaklight overlays only after turfs are connected
+		return
+
+	if(!under)
+		var/turf/T1
+		var/turf/T2
+		var/turf/T3
+
+		T1 = get_step(src, turn(join_flags,135)) // 45 degrees before opposite
+		T2 = get_step(src, turn(join_flags,225)) // 45 degrees beyond opposite
+		T3 = get_step(src, turn(join_flags,180)) // Opposite from the diagonal
+
+		if(isfloor(T1) && ((T1.type == T2.type) || (T1.type == T3.type)))
+			under = T1
+		else if(isfloor(T2) && T2.type == T3.type)
+			under = T2
+		else if(isfloor(T3) || istype(T3,/turf/space/transit))
+			under = T3
+		else
+			under = get_base_turf_by_area(src)
+
+	if(istype(under,/turf/simulated/shuttle))
+		interior_corner = 1 //Prevents us from 'landing on grass' and having interior corners update.
+
+	var/mutable_appearance/under_ma
+
+	if(ispath(under)) //It's just a mapper-specified path
+		under_ma = new()
+		under_ma.icon = initial(under.icon)
+		under_ma.icon_state = initial(under.icon_state)
+		under_ma.color = initial(under.color)
+
+	else //It's a real turf
+		under_ma = new(under)
+
+	if(under_ma)
+		if(ispath(under,/turf/space) || istype(under,/turf/space)) //Space gets weird treatment
+			under_ma.icon_state = "white"
+			under_ma.plane = SPACE_PLANE
+		us.underlays = list(under_ma)
+
+	appearance = us
+
+	spawn update_breaklights() //So that we update the breaklight overlays only after turfs are connected
+
+	return under
+
+/turf/simulated/shuttle/floor
+	name = "floor"
+	icon = 'icons/turf/flooring/shuttle.dmi'
+	icon_state = "floor_blue"
+
+/turf/simulated/shuttle/floor/red
+	icon_state = "floor_red"
+
+/turf/simulated/shuttle/floor/yellow
+	icon_state = "floor_yellow"
+
+/turf/simulated/shuttle/floor/darkred
+	icon_state = "floor_dred"
+
+/turf/simulated/shuttle/floor/purple
+	icon_state = "floor_purple"
+
+/turf/simulated/shuttle/floor/white
+	icon_state = "floor_white"
+
+/turf/simulated/shuttle/floor/black
+	icon_state = "floor_black"
+
+/turf/simulated/shuttle/floor/glass
+	icon_state = "floor_glass"
+	takes_underlays = 1
+
+/turf/simulated/shuttle/floor/alien
+	icon_state = "alienpod1"
+	light_range = 3
+	light_power = 0.6
+	light_color = "#66ffff" // Bright cyan.
+	light_on = TRUE
+	block_tele = TRUE
+
+/turf/simulated/shuttle/floor/alien/Initialize(mapload)
+	. = ..()
+	icon_state = "alienpod[rand(1, 9)]"
+	update_light()
+
+/turf/simulated/shuttle/floor/alienplating
+	icon_state = "alienplating"
+	block_tele = TRUE
+
+/turf/simulated/shuttle/floor/alienplating/external // For the outer rim of the UFO, to avoid active edges.
+// The actual temperature adjustment is defined if the SC or other future map is compiled.
+
+/turf/simulated/shuttle/plating
+	name = "plating"
+	icon = 'icons/turf/floors.dmi'
+	icon_state = "plating"
+
+/turf/simulated/shuttle/plating/airless
+	oxygen = 0
+	nitrogen = 0
+
+//For 'carrying' otherwise empty turfs or stuff in space turfs with you or having holes in the floor or whatever.
+/turf/simulated/shuttle/plating/carry
+	name = "carry turf"
+	icon = 'icons/turf/shuttle_parts.dmi'
+	icon_state = "carry"
+	takes_underlays = 1
+	blocks_air = 1 //I'd make these unsimulated but it just fucks with so much stuff so many other places.
+
+/turf/simulated/shuttle/plating/carry/Initialize(mapload)
+	. = ..()
+	icon_state = "carry_ingame"
+
+/turf/simulated/shuttle/plating/airless/carry
+	name = "airless carry turf"
+	icon = 'icons/turf/shuttle_parts.dmi'
+	icon_state = "carry"
+	takes_underlays = 1
+	blocks_air = 1
+
+/turf/simulated/shuttle/plating/airless/carry/Initialize(mapload)
+	. = ..()
+	icon_state = "carry_ingame"
+
+/turf/simulated/shuttle/plating/skipjack //Skipjack plating
+	oxygen = 0
+	nitrogen = MOLES_N2STANDARD + MOLES_O2STANDARD
+
+/turf/simulated/shuttle/floor/skipjack //Skipjack floors
+	name = "skipjack floor"
+	icon_state = "floor_dred"
+	oxygen = 0
+	nitrogen = MOLES_N2STANDARD + MOLES_O2STANDARD
+
+/turf/simulated/shuttle/floor/voidcraft
+	name = "voidcraft tiles"
+	icon_state = "void"
+
+/turf/simulated/shuttle/floor/voidcraft/dark
+	name = "voidcraft tiles"
+	icon_state = "void_dark"
+
+/turf/simulated/shuttle/floor/voidcraft/light
+	name = "voidcraft tiles"
+	icon_state = "void_light"
+
+/turf/simulated/shuttle/floor/voidcraft/external // For avoiding active edges.
+// The actual temperature adjustment is defined if the SC or other future map is compiled.
+
+/turf/simulated/shuttle/floor/voidcraft/external/dark
+
+/turf/simulated/shuttle/floor/voidcraft/external/light
+
+/turf/simulated/floor/tiled/material
+	icon = 'icons/turf/floors.dmi'
+
+/datum/decl/flooring/tiling/material
+	name = "material floor"
+	icon_base = "steel"
+	icon = 'icons/turf/floors.dmi'
+	flags = TURF_REMOVE_CROWBAR | TURF_CAN_BREAK
+
+/turf/simulated/floor/tiled/material/uranium
+	icon_state = "uranium"
+	initial_flooring = /datum/decl/flooring/tiling/material/uranium
+	var/last_event = 0
+	/// Mutex to prevent infinite recursion when propagating radiation pulses
+	var/active = null
+
+/turf/simulated/floor/tiled/material/uranium/Initialize(mapload)
+	. = ..()
+	RegisterSignal(src, COMSIG_ATOM_PROPAGATE_RAD_PULSE, PROC_REF(radiate))
+
+/turf/simulated/floor/tiled/material/uranium/Destroy()
+	UnregisterSignal(src, COMSIG_ATOM_PROPAGATE_RAD_PULSE)
+	. = ..()
+
+/turf/simulated/floor/tiled/material/uranium/proc/radiate()
+	SIGNAL_HANDLER
+	if(active)
+		return
+	if(world.time <= last_event + 1.5 SECONDS)
+		return
+	active = TRUE
+	radiation_pulse(
+		src,
+		max_range = 1,
+		threshold = RAD_LIGHT_INSULATION,
+		chance = URANIUM_IRRADIATION_CHANCE,
+		minimum_exposure_time = URANIUM_RADIATION_MINIMUM_EXPOSURE_TIME,
+		strength = 1
+	)
+	propagate_radiation_pulse()
+	last_event = world.time
+	active = FALSE
+
+/datum/decl/flooring/tiling/material/uranium
+	name = "uranium floor"
+	icon_base = "uranium"
+	build_type = /obj/item/stack/tile/floor/uranium
+
+/turf/simulated/floor/tiled/material/phoron
+	icon_state = "phoron"
+	initial_flooring = /datum/decl/flooring/tiling/material/phoron
+
+/datum/decl/flooring/tiling/material/phoron
+	name = "phoron floor"
+	icon_base = "phoron"
+	build_type = /obj/item/stack/tile/floor/phoron
+
+/turf/simulated/floor/tiled/material/gold
+	icon_state = "gold"
+	initial_flooring = /datum/decl/flooring/tiling/material/gold
+
+/datum/decl/flooring/tiling/material/gold
+	name = "gold floor"
+	icon_base = "gold"
+	build_type = /obj/item/stack/tile/floor/gold
+
+/turf/simulated/floor/tiled/material/silver
+	icon_state = "silver"
+	initial_flooring = /datum/decl/flooring/tiling/material/silver
+
+/datum/decl/flooring/tiling/material/silver
+	name = "silver floor"
+	icon_base = "silver"
+	build_type = /obj/item/stack/tile/floor/silver
+
+/turf/simulated/floor/tiled/material/diamond
+	icon_state = "diamond"
+	initial_flooring = /datum/decl/flooring/tiling/material/diamond
+
+/datum/decl/flooring/tiling/material/diamond
+	name = "diamond floor"
+	icon_base = "diamond"
+	build_type = /obj/item/stack/tile/floor/diamond
+
+
+// === merged from floor_types_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/turf/simulated/shuttle/floor/alienplating/blue
+	icon = 'icons/turf/shuttle_alien_blue.dmi'
+	icon_state = "alienplating"
+
+/turf/simulated/shuttle/floor/alienplating/blue/half
+	icon_state = "alienplatinghalf"
+
+/turf/simulated/shuttle/floor/alien/blue
+	icon = 'icons/turf/shuttle_alien_blue.dmi'
+	icon_state = "alienpod1"
+	light_range = 4
+	light_power = 0.8
+	light_color = "#66ffff" // Bright cyan.
+
+/turf/simulated/shuttle/floor/alienplating/vacuum
+	oxygen = 0
+	nitrogen = 0
+	temperature = TCMB
+
+/turf/simulated/floor/flesh
+	name = "flesh"
+	desc = "This slick flesh ripples and squishes under your touch"
+	icon_state = "flesh_floor"
+	icon = 'icons/turf/stomach_vr.dmi'
+
+/turf/simulated/floor/flesh/colour
+	name = "flesh"
+	desc = "This slick flesh ripples and squishes under your touch"
+	icon_state = "c_flesh_floor"
+	icon = 'icons/turf/stomach_vr.dmi'
+
+/turf/simulated/floor/flesh/attackby()
+	return
+
+/turf/simulated/floor/flesh/ex_act(severity)
+	return
+
+/turf/simulated/floor/flock
+	icon = 'icons/goonstation/featherzone.dmi'
+	icon_state = "floor"
+
+/turf/simulated/floor/flock/Crossed(atom/movable/AM)
+	. = ..()
+	if(isliving(AM))
+		icon_state = "floor-on"
+		set_light(3,3,"#26c5a9")
+		spawn(5 SECONDS)
+			icon_state = "floor"
+			set_light(0,0,"#ffffff")
+
+/turf/simulated/shuttle/plating/airless/carry/attackby(obj/item/C, mob/user) //this is gross
+	if (istype(C, /obj/item/stack/rods))
+		var/obj/structure/lattice/L = locate(/obj/structure/lattice, src)
+		if(L)
+			return
+		var/obj/item/stack/rods/R = C
+		if (R.use(1))
+			to_chat(user, span_notice("Constructing support lattice ..."))
+			playsound(src, 'sound/weapons/genhit.ogg', 50, 1)
+			new/obj/structure/lattice(src)
+		return
+
+	if (istype(C, /obj/item/stack/tile/floor))
+		var/obj/structure/lattice/L = locate(/obj/structure/lattice, src)
+		if(L)
+			var/obj/item/stack/tile/floor/S = C
+			if (S.get_amount() < 1)
+				return
+			qdel(L)
+			playsound(src, 'sound/weapons/genhit.ogg', 50, 1)
+			S.use(1)
+			ChangeTurf(/turf/simulated/floor/airless)
+			return
+		else
+			to_chat(user, span_warning("The plating is going to need some support."))
+
+/turf/simulated/shuttle/plating/airless/carry/is_solid_structure()
+	return locate(/obj/structure/lattice, src)
+
+/turf/simulated/floor/gorefloor
+	name = "infected tile"
+	desc = "Slick, sickly-squirming meat has grown in and out of cracks once empty. It pulsates intermittently, and with every beat, blood seeps out of pores."
+	icon_state = "bloodfloor_1"
+	icon = 'icons/goonstation/turf/meatland.dmi'
+
+/turf/simulated/floor/gorefloor2
+	name = "putrid mass"
+	desc = "It is entirely made of sick, gurgling flesh. It is releasing a sickly odour."
+	icon_state = "bloodfloor_2"
+	icon = 'icons/goonstation/turf/meatland.dmi'

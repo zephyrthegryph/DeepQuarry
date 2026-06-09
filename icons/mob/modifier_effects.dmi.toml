@@ -1,0 +1,134 @@
+# Generated from modifier_effects.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 16
+
+[[state]]
+name = "corona"
+dirs = 4
+frames = 3
+delays = [2, 1]
+rewind = true
+
+[[state]]
+name = "cyan_sparkles"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "green_sparkles"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "pink_sparkles"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "electricity"
+dirs = 1
+frames = 12
+delays = [1, 1, 15, 1, 1, 15, 1, 1, 15, 1, 1, 15]
+
+[[state]]
+name = "electricity_constant"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "blue_electricity_constant"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "purple_electricity_constant"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "red_electricity_constant"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "repel_missiles"
+dirs = 4
+frames = 3
+delays = [5, 1]
+
+[[state]]
+name = "haste"
+dirs = 4
+frames = 4
+delays = [1]
+movement = true
+
+[[state]]
+name = "haste"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "berserk"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "cult_aura"
+dirs = 1
+frames = 3
+delays = [2, 3, 4]
+rewind = true
+
+[[state]]
+name = "on_fire"
+dirs = 4
+frames = 5
+delays = [1]
+
+[[state]]
+name = "on_fire_intense"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "signal_blue"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "chilled"
+dirs = 1
+frames = 16
+delays = [1]
+
+[[state]]
+name = "poisoned"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "ace"
+dirs = 1
+frames = 3
+delays = [3]
+rewind = true
+
+[[state]]
+name = "redspace_aura"
+dirs = 1
+frames = 4
+delays = [5, 5, 5, 5, 4]
+rewind = true

@@ -1,0 +1,546 @@
+# Generated from card.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 11
+
+[[state]]
+name = "lifetime"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 25, y = 11 }]
+
+[[state]]
+name = "car"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carGold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "greenGold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clownGold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "civ"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "civGold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "med"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medGold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mime"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mimeGold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sci"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sciGold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sec"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secGold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyan"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyanGold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pink"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinkGold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndieGold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "centcomNew"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "centcomGold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eng"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engGold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "permit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blank_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "data_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "silver_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gold_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "centcom_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "car_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carGold_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "civ_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "civGold_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "med_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medGold_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mime_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mimeGold_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sci_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sciGold_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sec_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secGold_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyan_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyanGold_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pink_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinkGold_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndie_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndieGold_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "centcomNew_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "centcomGold_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eng_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engGold_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "greenGold_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clown_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clownGold_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lifetime_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cargo_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cargoGold_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndicate_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "centcom_old_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "goldNew_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "guest_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "guest_invalid_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nanotrasen_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nanotrasenGold_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "itg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "itg_green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "itg_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "itg_purple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "itg_white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "itg_orange"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "itg_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "itg_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "itg_green_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "itg_red_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "itg_purple_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "itg_white_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "itg_orange_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "itg_blue_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ch_casino_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ch_casino_manager_digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "data"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id-robot"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "silver"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "centcom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cargo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cargoGold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndicate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "centcom_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "goldNew"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fingerprint0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fingerprint1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "guest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "guest_invalid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "permit_drone"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nanotrasen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nanotrasenGold"
+dirs = 1
+frames = 1

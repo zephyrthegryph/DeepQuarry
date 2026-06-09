@@ -1,0 +1,517 @@
+# Generated from monitor_icons.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 37
+
+[[state]]
+name = "ipc_blank-colored"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ipc_pink-colored"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "ipc_green-colored"
+dirs = 4
+frames = 2
+delays = [6]
+
+[[state]]
+name = "ipc_red-colored"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "ipc_blue-colored"
+dirs = 4
+frames = 6
+delays = [24]
+
+[[state]]
+name = "ipc_shower-colored"
+dirs = 4
+frames = 12
+delays = [8]
+
+[[state]]
+name = "ipc_orange-colored"
+dirs = 4
+frames = 6
+delays = [8]
+
+[[state]]
+name = "ipc_nature-colored"
+dirs = 4
+frames = 12
+delays = [100, 1, 1, 1, 1, 1, 100, 1]
+
+[[state]]
+name = "ipc_eight-colored"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "ipc_goggles-colored"
+dirs = 4
+frames = 2
+delays = [2, 40]
+
+[[state]]
+name = "ipc_heart-colored"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "ipc_monoeye-colored"
+dirs = 4
+frames = 4
+delays = [40, 1]
+
+[[state]]
+name = "ipc_breakout-colored"
+dirs = 4
+frames = 8
+delays = [8]
+
+[[state]]
+name = "ipc_yellow-colored"
+dirs = 4
+frames = 2
+delays = [20]
+
+[[state]]
+name = "ipc_static-colored"
+dirs = 4
+frames = 12
+delays = [8]
+
+[[state]]
+name = "ipc_purple-colored"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "ipc_scroll"
+dirs = 4
+frames = 5
+delays = [1]
+
+[[state]]
+name = "ipc_console"
+dirs = 4
+frames = 2
+delays = [10]
+
+[[state]]
+name = "ipc_rgb-colored"
+dirs = 4
+frames = 3
+delays = [20]
+
+[[state]]
+name = "ipc_gol_glider"
+dirs = 4
+frames = 4
+delays = [3]
+
+[[state]]
+name = "ipc_rainbow-colored"
+dirs = 4
+frames = 7
+delays = [1]
+
+[[state]]
+name = "ipc_smiley-colored"
+dirs = 4
+frames = 2
+delays = [15, 3]
+
+[[state]]
+name = "ipc_database-colored"
+dirs = 4
+frames = 3
+delays = [1]
+
+[[state]]
+name = "hesphiastos_alt_off-colored"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hesphiastos_alt_pink-colored"
+dirs = 4
+frames = 4
+delays = [40, 1]
+
+[[state]]
+name = "hesphiastos_alt_orange-colored"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "hesphiastos_alt_goggles-colored"
+dirs = 4
+frames = 2
+delays = [2, 40]
+
+[[state]]
+name = "hesphiastos_alt_scroll"
+dirs = 4
+frames = 7
+delays = [1]
+
+[[state]]
+name = "hesphiastos_alt_rgb-colored"
+dirs = 4
+frames = 3
+delays = [5]
+
+[[state]]
+name = "hesphiastos_alt_rainbow-colored"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "grayson_alt_off-colored"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grayson_alt_green-colored"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grayson_alt_rgb-colored"
+dirs = 4
+frames = 3
+delays = [20]
+
+[[state]]
+name = "grayson_alt_scroll-colored"
+dirs = 4
+frames = 7
+delays = [1]
+
+[[state]]
+name = "grayson_alt_rainbow-colored"
+dirs = 4
+frames = 7
+delays = [1]
+
+[[state]]
+name = "grayson_off-colored"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grayson_green-colored"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "grayson_red-colored"
+dirs = 4
+frames = 2
+delays = [20]
+
+[[state]]
+name = "grayson_blue-colored"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "grayson_rgb-colored"
+dirs = 4
+frames = 3
+delays = [20]
+
+[[state]]
+name = "xion_off-colored"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xion_green-colored"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "xion_red-colored"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "xion_blue-colored"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "xion_rgb-colored"
+dirs = 4
+frames = 3
+delays = [20]
+
+[[state]]
+name = "monitor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "athena_red-colored"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "athena_off-colored"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "YR3_blank"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "YR3_foureyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "YR3_evileyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "YR3_bigeyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "YR3_sliteyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "YR3_eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "YR3_talleyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "YR3_hypno"
+dirs = 4
+frames = 3
+delays = [1]
+
+[[state]]
+name = "YR3_loading"
+dirs = 4
+frames = 8
+delays = [3]
+
+[[state]]
+name = "YR3_monoeye"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "YR3_blindeye"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cyber_default"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cyber_happ"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cyber_unhapp"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cyber_idle"
+dirs = 4
+frames = 7
+delays = [1]
+
+[[state]]
+name = "cyber_sad"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cyber_nwn"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yr3cyber_owo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cyber_uwu"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cyber_flat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cyber_heart"
+dirs = 4
+frames = 7
+delays = [1]
+loop = 1
+
+[[state]]
+name = "cyber_cross"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "cyber_question"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "yr3cyber_static"
+dirs = 4
+frames = 8
+delays = [0.75]
+
+[[state]]
+name = "cyber_alert"
+dirs = 4
+frames = 8
+delays = [2.5]
+
+[[state]]
+name = "cyber_lowpower"
+dirs = 4
+frames = 4
+delays = [10, 10, 10, 12000]
+loop = 1
+
+[[state]]
+name = "YR3_bsod-colored"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "YR3_interrogative-colored"
+dirs = 4
+frames = 2
+delays = [5]
+
+[[state]]
+name = "YR3_danger-colored"
+dirs = 4
+frames = 2
+delays = [5]
+
+[[state]]
+name = "YR3_safe-colored"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "YR3_surprise-colored"
+dirs = 4
+frames = 2
+delays = [4]
+
+[[state]]
+name = "YR3_query-colored"
+dirs = 4
+frames = 2
+delays = [4]
+
+[[state]]
+name = "YR3_safebar-colored"
+dirs = 4
+frames = 12
+delays = [1]
+
+[[state]]
+name = "YR3_processing-colored"
+dirs = 4
+frames = 8
+delays = [8]
+
+[[state]]
+name = "YR3_assimilating-colored"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "YR3_processed-colored"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "YR3_cracked-colored"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "YR3_broken-colored"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "YR3_crackedopen-colored"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "YR3_crackedopenbloody-colored"
+dirs = 4
+frames = 20
+delays = [1]
+
+[[state]]
+name = "template"
+dirs = 4
+frames = 1
+
+[[state]]
+name = ""
+dirs = 4
+frames = 7
+delays = [1]
+loop = 1

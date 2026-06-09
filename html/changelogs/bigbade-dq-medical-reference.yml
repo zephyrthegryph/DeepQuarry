@@ -1,0 +1,9 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - rscadd: "Added the Doctor's Encyclopedia — a TGUI reference book that lists every cascading medical condition, symptom, and treatment reagent with searchable tabs and qualitative descriptions."
+  - rscadd: "Added a Surgery tab to the Doctor's Encyclopedia documenting each procedure's steps, tools, and the conditions it treats."
+  - rscadd: "Completing the corresponding surgery now cures matching cascading conditions (fractures, bleeds, severed tendons, necrosis, brain damage, etc.)."
+  - balance: "Cascading conditions now always carry at least one publicly observable or scanner-detectable symptom — nerve damage, tissue necrosis, radiation sickness, and genetic damage included."
+  - balance: "Body scanner output reworked. Damage and per-organ injury are now reported qualitatively (mild / moderate / severe / critical) rather than as exact numbers. The new 'Scanner Findings' panel surfaces the scanner-detectable symptoms a doctor would actually read from a diagnostic console. Vitals (temperature, blood volume) and reagent readouts remain precise."
+  - rscadd: "New surgical step `/datum/surgery_step/fix_tendon` for tendon repair, using a FixOVein tool."

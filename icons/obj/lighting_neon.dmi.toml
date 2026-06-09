@@ -1,0 +1,407 @@
+# Generated from lighting_neon.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 31
+height = 31
+cols = 16
+
+[[state]]
+name = "Booze1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Booze0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Booze-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Booze-empty"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "BoozeWord1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "BoozeWord0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "BoozeWord-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "BoozeWord-empty"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "LookTouchEat1"
+dirs = 4
+frames = 3
+delays = [10, 10, 15]
+
+[[state]]
+name = "LookTouchEat0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "LookTouchEat-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "LookTouchEat-empty"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Pharmacy1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Pharmacy0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Pharmacy-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Pharmacy-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Altevian1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Altevian-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Altevian-empty"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Altevian0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "NIF1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "NIF0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "NIF-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "NIF-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "NIFpic1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "NIFpic0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "NIFpic-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "NIFpic-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "GenericBlue0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "GenericBlue-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "GenericBlue-empty"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "GenericBlue1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "GenericPink1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "GenericPink0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "GenericPink-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "GenericPink-empty"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "GenericYellow1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "GenericYellow0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "GenericYellow-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "GenericYellow-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "GenericGreen1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "GenericGreen0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "GenericGreen-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "GenericGreen-empty"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "GenericRed1"
+dirs = 4
+frames = 2
+delays = [18, 1]
+
+[[state]]
+name = "GenericRed0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "GenericRed-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "GenericRed-empty"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "GenericOrange1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "GenericOrange0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "GenericOrange-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "GenericOrange-empty"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "GenericPurple1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "GenericPurple0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "GenericPurple-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "GenericPurple-empty"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "GreenCross1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "GreenCross0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "GreenCross-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "GreenCross-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Unclothe1"
+dirs = 1
+frames = 2
+delays = [30]
+
+[[state]]
+name = "Unclothe0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Unclothe-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Unclothe-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Bar1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Bar0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Bar-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Bar-empty"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Import1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Import0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Import-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Import-empty"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Police1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Police0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Police-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Police-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Dice1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Dice0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Dice-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Dice-empty"
+dirs = 1
+frames = 1

@@ -1,0 +1,101 @@
+# Generated from gps.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "gps-borg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gps-syndie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emp"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "working"
+dirs = 1
+frames = 12
+delays = [1]
+
+[[state]]
+name = "internal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gps-gen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gps-com"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gps-med"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gps-med-cmo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gps-sec"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gps-sec-hos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gps-sci"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gps-sci-rd"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gps-eng"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gps-eng-atm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gps-eng-ce"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gps-mine"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gps-exp"
+dirs = 1
+frames = 1

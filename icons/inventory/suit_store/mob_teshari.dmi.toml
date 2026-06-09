@@ -1,0 +1,104 @@
+# Generated from mob_teshari.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "handcuff"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "legcuff"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "oxygen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "oxygen_f"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "oxygen_fr"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gun"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gun2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "anesthetic"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "emergency_engi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "emergency_double"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "emergency_nitro"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holobadge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marshalbadge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holobadge-cord"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "goldbadge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "silverbadge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "permit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "utility"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "emsbelt"
+dirs = 4
+frames = 1

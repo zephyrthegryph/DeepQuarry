@@ -1,0 +1,69 @@
+# Generated from nailpolish_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "l_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "r_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nailpolish-old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nailpolish-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "top"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "top-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nailpolish"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "color-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nailpolishremover"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nailpolishremover-open"
+dirs = 1
+frames = 1

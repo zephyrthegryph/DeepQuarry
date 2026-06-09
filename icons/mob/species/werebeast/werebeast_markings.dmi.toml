@@ -1,0 +1,69 @@
+# Generated from werebeast_markings.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 64
+cols = 7
+
+[[state]]
+name = "blank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "werewolf_nose-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "werewolf-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "werewolf-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "werewolf-groin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "werewolf-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "werewolf-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "werewolf-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "werewolf-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "werewolf-l_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "werewolf-r_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "werewolf-l_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "werewolf-r_hand"
+dirs = 4
+frames = 1

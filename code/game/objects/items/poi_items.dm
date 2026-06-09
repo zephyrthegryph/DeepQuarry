@@ -1,0 +1,306 @@
+
+/obj/item/poi
+	icon = 'icons/obj/objects.dmi'
+	desc = "This is definitely something cool."
+
+/datum/category_item/catalogue/information/objects/pascalb
+	name = "Object - Pascal B Steel Shaft Cap"
+	desc = "In the year 1957, the United States of America - an Earth nation - performed a series \
+	of earth nuclear weapons tests codenamed 'Operation Plumbbob', which remain the largest and \
+	longest running nuclear test series performed on the American continent. Test data included \
+	various altitude detonations, effects on several materials and structures at various \
+	distances, and the effects of radiation on military hardware and the human body. \
+	<br><br>\
+	On the 27th of August that year, in a test named 'Pascal-B' a 300t nuclear payload \
+	was buried in a shaft capped by a 900kg steel plate cap. The test was intended to \
+	verify the safety of underground detonation, but the shaft was not sufficient to \
+	contain the shockwave. According to experiment designer Robert Brownlee, the steel \
+	cap was propelled upwards at a velocity of 240,000km/h - over six times Earth's \
+	escape velocity. The cap appeared in only one frame of high-speed camera recording. \
+	<br><br>\
+	It had been theorized that the cap had exited earth's atmosphere and entered orbit. \
+	It would seem the cap traveled farther than had been possibly imagined."
+	value = CATALOGUER_REWARD_MEDIUM
+
+/obj/item/poi/pascalb
+	icon_state = "pascalb"
+	name = "misshapen manhole cover"
+	desc = "The top of this twisted chunk of metal is faintly stamped with a five pointed star. 'Property of US Army, Pascal B - 1957'."
+	catalogue_data = list(/datum/category_item/catalogue/information/objects/pascalb)
+	var/last_event = 0
+	/// Mutex to prevent infinite recursion when propagating radiation pulses
+	var/active = null
+
+/obj/item/poi/pascalb/Initialize(mapload)
+	. = ..()
+	START_PROCESSING(SSobj, src)
+
+/obj/item/poi/pascalb/process()
+	radiate()
+	..()
+
+/obj/item/poi/pascalb/proc/radiate()
+	SIGNAL_HANDLER
+	if(active)
+		return
+	if(world.time <= last_event + 1.5 SECONDS)
+		return
+	active = TRUE
+	radiation_pulse(
+		src,
+		max_range = 3,
+		threshold = RAD_MEDIUM_INSULATION,
+		chance = URANIUM_IRRADIATION_CHANCE,
+		minimum_exposure_time = URANIUM_RADIATION_MINIMUM_EXPOSURE_TIME,
+		strength = 25
+	)
+	last_event = world.time
+	active = FALSE
+
+/obj/item/poi/pascalb/Destroy()
+	STOP_PROCESSING(SSobj, src)
+	return ..()
+
+/obj/item/poi/pascalb/deadly //For testing purposes, mainly.
+
+/obj/item/poi/pascalb/deadly/radiate()
+	if(active)
+		return
+	if(world.time <= last_event + 1.5 SECONDS)
+		return
+	active = TRUE
+	radiation_pulse(
+		src,
+		max_range = 3,
+		threshold = RAD_MEDIUM_INSULATION,
+		chance = 100,
+		strength = 250
+	)
+	last_event = world.time
+	active = FALSE
+
+/datum/category_item/catalogue/information/objects/oldreactor
+	name = "Object - 24th Century Fission Reactor Rack"
+	desc = "Prior to the discovery of Phoron in 2380, and the development of the hydrophoron \
+	supermatter reactor, most spacecraft operated on nuclear fission reactors, using processed \
+	radioactive material as fuel. While the design had been near-perfected by the 24th century, \
+	with some models capable of holding hundreds of fuel rods at one time and operating almost \
+	unsupervised for weeks at a time.\
+	<br><br>\
+	However, as accidents were not uncommon due to the inherent dangers of space travel and the \
+	nature of reactor racks such as this one fully containing the unstable fuel material, many \
+	fission vessels were built capable of jettisoning their entire engine sections as it was seen \
+	as preferable to evacuating a ship's crew and potentially losing the entire craft and its cargo. \
+	<br><br>\
+	VifGov records indicate that the colony ship ICV Kauai declared a major onboard emergency in Sif orbit \
+	on the 14th April 2353, citing major systems malfunction following a fire in the engine compartment. \
+	Due to the relatively sparse population of the planet, it was deemed safe to jettison both engine \
+	blocks, and the colonists were safely towed to port with no hands lost."
+	value = CATALOGUER_REWARD_MEDIUM
+
+/obj/structure/closet/crate/oldreactor
+	name = "fission reactor rack"
+	desc = "Used in older models of nuclear reactors, essentially a cooling rack for high volumes of radioactive material."
+	icon = 'icons/obj/closets/poireactor.dmi'
+	closet_appearance = null
+	catalogue_data = list(/datum/category_item/catalogue/information/objects/oldreactor)
+
+	starts_with = list(
+		/obj/item/fuel_assembly/deuterium = 6)
+
+/obj/structure/closet/crate/oldreactor/Initialize(mapload)
+	. = ..()
+	// Not climbable!
+	RemoveElement(/datum/element/climbable)
+
+/obj/item/poi/brokenoldreactor
+	icon_state = "poireactor_broken"
+	name = "ruptured fission reactor rack"
+	desc = "This broken hunk of machinery looks extremely dangerous."
+	catalogue_data = list(/datum/category_item/catalogue/information/objects/oldreactor)
+	var/last_event = 0
+	/// Mutex to prevent infinite recursion when propagating radiation pulses
+	var/active = null
+
+/obj/item/poi/brokenoldreactor/Initialize(mapload)
+	. = ..()
+	START_PROCESSING(SSobj, src)
+
+/obj/item/poi/brokenoldreactor/process()
+	radiate()
+	..()
+
+/obj/item/poi/brokenoldreactor/proc/radiate()
+	SIGNAL_HANDLER
+	if(active)
+		return
+	if(world.time <= last_event + 1.5 SECONDS)
+		return
+	active = TRUE
+	radiation_pulse(
+		src,
+		max_range = 5,
+		threshold = RAD_MEDIUM_INSULATION,
+		chance = URANIUM_IRRADIATION_CHANCE,
+		minimum_exposure_time = URANIUM_RADIATION_MINIMUM_EXPOSURE_TIME,
+		strength = 50
+	)
+	last_event = world.time
+	active = FALSE
+
+/obj/item/poi/brokenoldreactor/Destroy()
+	UnregisterSignal(src, COMSIG_ATOM_PROPAGATE_RAD_PULSE)
+	STOP_PROCESSING(SSobj, src)
+	return ..()
+
+/datum/category_item/catalogue/information/objects/growthcanister
+	name = "Object - Growth Inhibitor 78-1"
+	desc = "The production of Vatborn humans is a process which involves the synthesis of over two hundred \
+	distinct chemical compounds. While most Vatborn are 'produced' as infants and merely genetically modified \
+	to encourage rapid early maturation, the specific development of the controversial 'Expedited' Vatborn calls for \
+	a far more intensive process.\
+	<br><br>\
+	Growth Inhibitor Type 78-1 is used in the rapid artificial maturation process to prevent the 'overdevelopment' of\
+	particular cell structures in the Vatborn's body, halting the otherwise inevitable development of aggressive cancerous\
+	growths which would be detrimental or lethal to the subject. Exposure to the compound in its pure form can cause\
+	devastating damage to living tissue, ceasing all regenerative activity in an organism's cells. While immediate effects\
+	can be halted by recent medical innovations, exposure can severely shorten a sapient's life expectancy.\
+	<br><br>\
+	In early 2564, the NanoTrasen corporation was implicated in the accidental spillage of over a dozen full cargo containers\
+	of Growth Inhibitor 78-1 in the Ullran Expanse of Sif, and were charged by the Sif Environmental Agency with extreme \
+	environmental damage and neglect."
+	value = CATALOGUER_REWARD_MEDIUM
+
+/obj/structure/prop/poicanister
+	name = "Ruptured Chemical Canister"
+	desc = "A cracked open chemical canister labelled 'Growth Inhibitor 78-1'"
+	icon = 'icons/obj/atmos.dmi'
+	icon_state = "yellow-1"
+	catalogue_data = list(/datum/category_item/catalogue/information/objects/growthcanister)
+	anchored = FALSE
+	density = TRUE
+
+
+/obj/item/poi/broken_drone_circuit
+	name = "Central Processing Strata"	//Ideally we spawn this as loot for robotic enemies
+	desc = "The pinnacle of artifical intelligence which can be achieved using classical computer science. \n \
+	This one seems somewhat damaged. Perhaps a trained roboticist could extract its memories?"
+	catalogue_data = list(/datum/category_item/catalogue/technology/drone/drones)
+	icon = 'icons/obj/module.dmi'
+	icon_state = "mainboard"
+	w_class = ITEMSIZE_NORMAL
+	var/drone_name = ""	//Randomly picked unless pre-defined. Used by tool examines
+	var/examine_multitool = "TEST_multi - CONTACT DEV"	//Read by attacking with multitool
+	var/examine_canalyzer = "TEST_canalyzer spoken - CONTACT DEV"	//Read by attacking with cyborg analyzer. Define in New() if using vars
+	var/examine_canalyzer_printed = ""	//If we want different formatting or more detals for printed. By default unused
+	var/wirecutted = FALSE
+	var/unscrewed = FALSE
+	var/unlocked = FALSE
+	var/fried = FALSE
+	var/has_paper = FALSE
+
+
+/obj/item/poi/broken_drone_circuit/Initialize(mapload)
+	. = ..()
+	drone_name = "[pick(list("ADA","DOS","GNU","MAC","WIN","NJS","SKS","DRD","IOS","CRM","IBM","TEX","LVM","BSD",))]-[rand(1000, 9999)]]"
+	var/new_canalyzer = "[drone_name] [examine_canalyzer]"	//Only way I could think to dynamically insert drone name here
+	examine_canalyzer = new_canalyzer
+
+/obj/item/poi/broken_drone_circuit/attackby(obj/item/I as obj, mob/living/user as mob)
+	if(!istype(user))
+		return FALSE
+	if(fried)
+		to_chat(user, span_warning("[src] is covered in black marks. You feel there's nothing more you can do..."))
+		return FALSE
+
+	var/turf/message_turf = get_turf(user)	//We use this to ensure everyone can see it!
+	if(istype(I, /obj/item/tool/screwdriver))
+		unscrewed = !unscrewed
+		to_chat(user, "You screw the blackbox panel [unscrewed ? "off" : "on"]")
+
+	if(istype(I, /obj/item/tool/wirecutters))
+		wirecutted = !wirecutted
+		to_chat(user, "You [wirecutted ? "cut" : "mend"] the power wire to the blackbox")
+
+	if(istype(I, /obj/item/paper) && unscrewed)
+		if(!has_paper)
+			to_chat(user, "You feed the debug printer some paper")
+			has_paper = TRUE
+			qdel(I)
+		else
+			to_chat(user, span_notice("[src] cannot hold more than 1 sheet of paper."))
+
+	if(istype(I, /obj/item/multitool))
+		if(!unscrewed && !wirecutted)
+			to_chat(user, span_notice("You cannot access the debug interface with the panel screwed on!"))
+		else if(unscrewed && !wirecutted)
+			message_turf.audible_message(message = examine_multitool,
+			deaf_message = span_bold("[src]") + " flashes red repeatedly", runemessage= "Beep! Beep!")
+			to_chat(user, span_warning("The components spark from the multitool's unregulated pulse. \
+			Perhaps it'd been better to use more sophisticated tools..."))
+			fried = TRUE
+			message_turf.visible_message(message = span_bold("[src]") + " FLASHES VIOLENTLY!",
+			blind_message = "ZAP!", runemessage = "CRACKLE!")
+			var/used_hand = user.get_organ(user.get_active_hand())
+			user.electrocute_act(10,def_zone = used_hand)
+		else if(wirecutted)	//The security circuit is accessible outside the special panel, so we don't care for screwdrivers
+			to_chat(user, span_notice("You modify the security settings."))
+			unlocked = TRUE
+
+	if(istype(I, /obj/item/robotanalyzer))
+		if(!unscrewed)
+			to_chat(user, span_notice("You cannot access the debug interface with the panel screwed on!"))
+		else if(wirecutted)
+			to_chat(user, span_notice("You only receive garbled data. Perhaps you should reconnect the wires?"))
+		else if(!unlocked)
+			to_chat(user, span_danger("Security protocols seemingly engage, purging and bricking the circuit!\n \
+			Perhaps, it would've been a good idea to disconnect some wires while pulsing the security circuit..."))
+		else
+			if(!has_paper)
+				message_turf.visible_message(message = span_bold("[src]") + " displays, 'PAPER NOT BIN'",
+				blind_message = "you hear VERY ANGRY beeping.", runemessage = "BEEP BEEP!")
+				message_turf.audible_message(message = span_bold("[src]") + " recites, \n '[examine_canalyzer]'",
+				deaf_message = span_bold("[src]") + " flashes green!", runemessage= "Ping!")
+			else
+				message_turf.audible_message(message = span_bold("[src]") + " rattles loudly as it prints",
+				deaf_message = span_bold("[src]") + " flashes green!", runemessage= "RATTLE RATTLE")
+				var/obj/item/paper/P = new /obj/item/paper(get_turf(src))
+				P.name = "[drone_name] blackbox transcript"
+				P.info = "[examine_canalyzer_printed ? examine_canalyzer_printed : examine_canalyzer]"
+				has_paper = FALSE
+
+
+	return ..()
+
+/obj/item/poi/broken_drone_circuit/attack_self(mob/user)
+	. = ..(user)
+	if(.)
+		return TRUE
+
+	user.visible_message(message = "[user] is studiously examining [src]", self_message = "You take your time to analyze the circuit...")
+	var/message = ""
+	if(fried)
+		message += "Amidst the scorch mark, you barely make out [drone_name] stenciled on the board... \n"
+		to_chat(user, message)
+		return FALSE
+	else
+		message += "You see [drone_name] stenciled onto the board on close inspection! This looks like a secure drone intelligence strata. \n"
+
+
+	if(unlocked)
+		message += "The power logic to the blackbox is scorched. Whatever secrets lie in the blackbox are yours for taking! \n"
+	else if(wirecutted)
+		message += "The power wire to the blackbox has been cut. It's safe to pulse the circuit with power, the blackbox won't fry. \n"
+
+	else if(!unscrewed && !wirecutted)
+		message += "The blackbox is intact, it seems to have a direct wire into the PSU. Strange... \n"
+
+	else if(unscrewed && !wirecutted)
+		message += "Some manner of hardwired logic seems to connect the PSU into the databanks. There is no step-down circuit. \n \
+		It looks like a single pulse will fry this system for good\n"
+	if(unscrewed && !has_paper)
+		message += "Looks like there's a printer without any paper in it."
+
+
+	if(do_after(user, delay = 5 SECONDS, target = src))
+		to_chat(user, message)

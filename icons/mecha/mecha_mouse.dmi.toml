@@ -1,0 +1,29 @@
+# Generated from mecha_mouse.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "all"
+dirs = 1
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "over"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "drag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "drop"
+dirs = 1
+frames = 1

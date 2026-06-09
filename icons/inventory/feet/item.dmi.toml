@@ -1,0 +1,1122 @@
+# Generated from item.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 16
+
+[[state]]
+name = "detective"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boots"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chef"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jackboots"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kneeboots"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "thighboots"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "swat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jackboots_knife"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kneeboots_knife"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "thighboots_knife"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "galoshes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orange"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orange1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "black"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rain_bow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "magboots-old0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "magboots-old1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "magboots0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "magboots1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "s-ninja"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cult"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secshoes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "laceups"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slippers_worn"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slippers"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oxford_black"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oxford_grey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oxford_brown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boots-vox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flippers"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boots-armalis"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ninja_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ninja_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hacker_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hacker_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ert_commander_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ert_engineer_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ert_medical_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ert_security_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ert_security_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ert_commander_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ert_engineer_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ert_medical_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ce_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ce_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "breacher_rig_cheap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "breacher_rig_cheap_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "breacher_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "breacher_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medical_rig"
+dirs = 1
+frames = 1
+rewind = true
+
+[[state]]
+name = "medical_rig_sealed"
+dirs = 1
+frames = 1
+rewind = true
+
+[[state]]
+name = "engineering_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engineering_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "security_rig_sealed"
+dirs = 1
+frames = 1
+rewind = true
+
+[[state]]
+name = "security_rig"
+dirs = 1
+frames = 1
+rewind = true
+
+[[state]]
+name = "hazard_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hazard_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "merc_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "merc_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "science_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "science_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "asset_protection_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "asset_protection_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eva_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eva_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "digiboots"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "digikneeboots"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "digithighboots"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "digiboots_knife"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "digikneeboots_knife"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "digithighboots_knife"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "workboots"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stealth_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stealth_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flatsblue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flatsred"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flatsbrown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ert_janitor_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "winterboots"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "workboots_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jackboots_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "workboots_knife"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flatswhite"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ert_janitor_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "swat_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lingchameleon"
+dirs = 1
+frames = 4
+delays = [5]
+
+[[state]]
+name = "lingspacesuit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lingarmor"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "flatsorange"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flatspurple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flatsblack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "leg_guards_laser_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "leg_guards_laser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "leg_guards_riot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "leg_guards_bullet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "leg_guards_combat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sportshoe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skatershoe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "workbootstoeless"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jungle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "duty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whitedress"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "voxstealth_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "voxstealth_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redhi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orangehi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellowhi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "greenhi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluehi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purplehi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brownhi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blackhi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whitehi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clothwrap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "heels"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "winterboots_sec"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "winterboots_sci"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "winterboots_med"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "winterboots_eng"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "winterboots_atmos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "winterboots_sup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "winterboots_hydro"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "winterboots_cap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "winterboots_mining"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "explorer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "circuitry"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "circuitry-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pmc_commandergrey_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pmc_commandergrey_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pmc_commandergreen_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pmc_commandergreen_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pmc_securitygrey_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pmc_securitygrey_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pmc_securitygreen_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pmc_securitygreen_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pmc_medicalgrey_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pmc_medicalgrey_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pmc_medicalgreen_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pmc_medicalgreen_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pmc_engineergrey_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pmc_engineergrey_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pmc_engineergreen_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pmc_engineergreen_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "military_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "military_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "climbing_boots"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "leg_guards_flexitac"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clogs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "biochem"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chemist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "psych"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "doctor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "surgeon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "trauma"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scientist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cowboy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cowboy_snakeskin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cowboy_classic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cowboy_brown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cowboy_black"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cowboy_white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cowboy_fancy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lizardboots_green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lizardboots_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "thongsandal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wizard"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tourist_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tourist_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cookflops"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "winterboots_christmasg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "winterboots_christmasr"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sneakerspurple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sneakersblue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sneakersred"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tribal_sandals"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bsing"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ysing"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "neo_jack_silver"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "neo_jack_white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ballet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "half_moon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boots_recolor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sandals_recolor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nanomachine_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nanomachine_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ge_boots"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "griffinboots"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jetboots"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "advmag0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "advmag1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "knight_boots2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "knight_boots1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hoofboots"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "techno_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "techno_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ihs_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ihs_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medical_rig_bay"
+dirs = 1
+frames = 1
+rewind = true
+
+[[state]]
+name = "medical_rig__baysealed"
+dirs = 1
+frames = 1
+rewind = true
+
+[[state]]
+name = "engineering_rig_bay_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engineering_rig_bay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pathfinder_rig_bay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pathfinder_rig_bay_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "antediluvian"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flatsalt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sandals_elegant"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox_engineer_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox_engineer_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox_sec_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vox_sec_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "galoshes_dry"
+dirs = 1
+frames = 1

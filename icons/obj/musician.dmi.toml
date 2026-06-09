@@ -1,0 +1,141 @@
+# Generated from musician.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "piano"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "minimoog"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "minimoogbroken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pianobroken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "violin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "guitar"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eguitar"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "golden_violin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "synth"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xylophone"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xylophone-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "accordion"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "saxophone"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glockenspiel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "recorder"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "trombone"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "harmonica"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bike_horn"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "trumpet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "banjo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spectral_trumpet"
+dirs = 1
+frames = 12
+delays = [1]
+hotspots = [{ frame = 1, x = 7, y = 6 }]
+
+[[state]]
+name = "mothsician"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "headphones"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "headphones_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacepods"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacepods_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flute_tief"
+dirs = 1
+frames = 1

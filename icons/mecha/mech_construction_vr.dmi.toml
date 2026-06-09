@@ -1,0 +1,292 @@
+# Generated from mech_construction_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "gopher0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gopher1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gopher2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gopher3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gopher4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gopher5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gopher6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gopher7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gopher8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gopher9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gopher10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gopher11"
+dirs = 1
+frames = 4
+delays = [2]
+loop = 1
+
+[[state]]
+name = "gopher12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gopher13"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gopher14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polecat0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polecat1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polecat2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polecat3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polecat4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polecat5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polecat6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polecat7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polecat8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polecat9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polecat10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polecat11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polecat12"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "polecat13"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "polecat14"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "polecat15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polecat16"
+dirs = 1
+frames = 4
+delays = [2]
+loop = 1
+
+[[state]]
+name = "polecat17"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polecat18"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "polecat19"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weasel0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weasel1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weasel2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weasel3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weasel4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weasel5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weasel6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weasel7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weasel8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weasel9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weasel10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weasel11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weasel12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weasel13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weasel14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weasel15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weasel16"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weasel17"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "weasel18"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weasel19"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weasel20"
+dirs = 1
+frames = 1

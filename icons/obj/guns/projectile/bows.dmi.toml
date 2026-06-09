@@ -1,0 +1,94 @@
+# Generated from bows.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "bow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bow_loaded"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bow_firing"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bow_hardlight"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bow_hardlight_loaded"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bow_hardlight_firing"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bow_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bow_hardlight_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bow_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bow_hardlight_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "arrow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hardlight"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gbow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gbow_loaded"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gbow_firing"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gbow_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gbow_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "garrow"
+dirs = 1
+frames = 1

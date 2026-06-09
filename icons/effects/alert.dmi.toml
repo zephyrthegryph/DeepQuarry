@@ -1,0 +1,86 @@
+# Generated from alert.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "red2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue-red2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue-red-d"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue-red"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "invi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blueold"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "_red"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "dark"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark160"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark128"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "party"
+dirs = 1
+frames = 8
+delays = [2, 2, 2, 2, 2, 1]
+
+[[state]]
+name = "blue"
+dirs = 1
+frames = 4
+delays = [3, 2]
+
+[[state]]
+name = "bluenew"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "red"
+dirs = 1
+frames = 4
+delays = [2]

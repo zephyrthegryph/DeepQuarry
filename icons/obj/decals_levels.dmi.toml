@@ -1,0 +1,299 @@
+# Generated from decals_levels.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 22
+
+[[state]]
+name = "level"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_eng"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_core"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_solar"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_atmos"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_grav"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_engeqp"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_sec"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_armory"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_brig"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_seceqp"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_intaff"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_forensics"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_lab"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_interrogation"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_sci"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_rnd"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_toxins"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_robotics"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_xeno"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_xenoarch"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_xbio"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_xflora"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_explo"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_med"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_chemlab"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_surgery"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_op1"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_op2"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_viro"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_medeqp"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_morgue"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_cloning"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_resleeve"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_evac"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_eva"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_ai_core"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_bridge"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_command"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_teleport"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_tcomms"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_crg"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_mining"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_refinery"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_cry"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_elv"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_bar"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_bay"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_kitchen"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_tram"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_janitor"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_chapel"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_dorms"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_library"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_dock"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_gym"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_pool"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "level_recreation"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "floornums"
+dirs = 8
+frames = 1

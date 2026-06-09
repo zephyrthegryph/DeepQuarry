@@ -1,0 +1,37 @@
+# Generated from turbolift.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "button"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "button_pri"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "button_fire"
+dirs = 4
+frames = 2
+delays = [2, 10]
+
+[[state]]
+name = "button_lit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "panel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "panel_fire"
+dirs = 4
+frames = 2
+delays = [2, 10]

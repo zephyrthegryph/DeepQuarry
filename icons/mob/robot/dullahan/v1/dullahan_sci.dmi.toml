@@ -1,0 +1,122 @@
+# Generated from dullahan_sci.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 64
+cols = 11
+
+[[state]]
+name = "dullahansci"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahansci-rest"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahansci-sit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullahansci-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "openpanel_nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahansci-breastplate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahansci-breastplate-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahansci-eyes"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahansci-lights"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahansci-rest-eyes"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahansci-rest-lights"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "heads"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullahansci-loincloth"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahansci-loincloth-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahansci-eyecover"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahansci-eyecover-rest"
+dirs = 4
+frames = 2
+delays = [8]
+
+[[state]]
+name = "dullahansci-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahansci-sleeper-1-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dullahansci-sit-lights"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dullahansci-sit-eyes"
+dirs = 1
+frames = 1

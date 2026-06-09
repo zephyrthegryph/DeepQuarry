@@ -1,0 +1,193 @@
+// reparent /turf/simulated → /turf/open so it inherits LINDA's
+// full gas-spread + visuals + adjacency + spacewind machinery. The atmos
+// migration plan (doc/atmos_migration.md §"map turf types") always
+// targeted this shape; without it, /turf/simulated tiles never enter LINDA's
+// turf graph so gases stay where vents push them and never render. Floors
+// get air via /turf/open/Initialize (because blocks_air defaults FALSE);
+// walls keep their existing blocks_air=1 and remain inert.
+/turf/simulated
+	parent_type = /turf/open
+	name = "station"
+	var/wet = TURFSLIP_DRY
+	var/image/wet_overlay = null
+
+	//Mining resources (for the large drills).
+	var/turf_resource_types
+	var/list/resources
+
+	var/thermite = 0
+	oxygen = MOLES_O2STANDARD
+	nitrogen = MOLES_N2STANDARD
+	var/to_be_destroyed = 0 //Used for fire, if a melting temperature was reached, it will be destroyed
+	var/max_fire_temperature_sustained = 0 //The max temperature of the fire which it was subjected to
+	var/can_dirty = TRUE	// If false, tile never gets dirty
+	var/can_start_dirty = TRUE	// If false, cannot start dirty roundstart
+	var/dirty_prob = 2	// Chance of being dirty roundstart
+	var/dirt = 0
+	var/special_temperature //Used for turf HE-Pipe interaction
+	var/climbable = FALSE //Adds proc to wall if set to TRUE on its initialization, defined here since not all walls are subtypes of wall
+
+	var/icon_edge = 'icons/turf/outdoors_edge.dmi'	//Allows for alternative edge icon files
+	var/wet_cleanup_timer
+
+// This is not great.
+/turf/simulated/proc/wet_floor(wet_val = 1)
+	if(wet >= TURFSLIP_ICE)	//Can't mop up ice
+		return
+	wet = wet_val
+	if(wet_overlay)
+		cut_overlay(wet_overlay)
+	wet_overlay = image('icons/effects/water.dmi', icon_state = "wet_floor")
+	add_overlay(wet_overlay)
+	if(wet_cleanup_timer)
+		deltimer(wet_cleanup_timer)
+		wet_cleanup_timer = null
+	if(wet == TURFSLIP_LUBE)
+		wet_cleanup_timer = addtimer(CALLBACK(src, PROC_REF(wet_floor_finish)), 160 SECONDS, TIMER_STOPPABLE)
+	else
+		wet_cleanup_timer = addtimer(CALLBACK(src, PROC_REF(wet_floor_finish)), 40 SECONDS, TIMER_STOPPABLE)
+
+/turf/simulated/proc/wet_floor_finish()
+	wet = TURFSLIP_DRY
+	if(wet_cleanup_timer)
+		deltimer(wet_cleanup_timer)
+		wet_cleanup_timer = null
+	if(wet_overlay)
+		cut_overlay(wet_overlay)
+		wet_overlay = null
+
+/turf/simulated/proc/freeze_floor()
+	if(!wet) // Water is required for it to freeze.
+		return
+	wet = TURFSLIP_ICE
+	if(wet_overlay)
+		cut_overlay(wet_overlay)
+		wet_overlay = null
+	wet_overlay = image('icons/turf/overlays.dmi',src,"snowfloor")
+	add_overlay(wet_overlay)
+	spawn(5 MINUTES)
+		wet = TURFSLIP_DRY
+		if(wet_overlay)
+			cut_overlay(wet_overlay)
+			wet_overlay = null
+
+/turf/simulated/Initialize(mapload)
+	. = ..()
+	if(istype(loc, /area/chapel))
+		holy = 1
+	levelupdate()
+	if(climbable)
+		verbs += /turf/simulated/proc/climb_wall
+	if(is_outdoors())
+		SSplanets.addTurf(src)
+
+/turf/simulated/examine(mob/user)
+	. = ..()
+	if(climbable)
+		. += "This [src] looks climbable."
+
+
+/turf/simulated/proc/AddTracks(typepath,bloodDNA,comingdir,goingdir,bloodcolor="#A10808")
+	var/obj/effect/decal/cleanable/blood/tracks/tracks = locate(typepath) in src
+	if(!tracks)
+		tracks = new typepath(src)
+	tracks.AddTracks(bloodDNA,comingdir,goingdir,bloodcolor)
+
+/turf/simulated/proc/update_dirt()
+	if(can_dirty)
+		dirt = min(dirt+1, 101)
+		var/obj/effect/decal/cleanable/dirt/dirtoverlay = locate(/obj/effect/decal/cleanable/dirt, src)
+		if (dirt > 50)
+			if (!dirtoverlay)
+				dirtoverlay = new/obj/effect/decal/cleanable/dirt(src)
+			dirtoverlay.alpha = min((dirt - 50) * 5, 255)
+
+/turf/simulated/Entered(atom/A, atom/OL)
+	var/dirtslip = FALSE
+	if (isliving(A))
+		var/mob/living/M = A
+		if(M.lying || M.flying || M.is_incorporeal() || !(M.flags & ATOM_INITIALIZED)) // Also ignore newly spawning mobs
+			return ..()
+
+		if(M.dirties_floor())
+			// Dirt overlays.
+			update_dirt()
+
+		if(ishuman(M))
+			var/mob/living/carbon/human/H = M
+			dirtslip = H.species.dirtslip
+			if(H.species.mudking)
+				dirt = min(dirt+2, 101)
+				update_dirt()
+			// Tracking blood
+			var/list/bloodDNA = null
+			var/bloodcolor=""
+			if(H.shoes)
+				var/obj/item/clothing/shoes/S = H.shoes
+				if(istype(S))
+					S.handle_movement(src,(H.m_intent == I_RUN ? 1 : 0), H) // handle_movement now needs to know who is moving, for inshoe steppies
+					if(S.track_blood)
+						bloodDNA = S.forensic_data?.get_blooddna()
+						bloodcolor = dq_get_blood_color(S)
+						S.track_blood--
+			else
+				if(H.track_blood && H.feet_blood_DNA)
+					bloodDNA = H.feet_blood_DNA
+					bloodcolor = H.feet_blood_color
+					H.track_blood--
+
+			if (bloodDNA)
+				src.AddTracks(H.species.get_move_trail(H),bloodDNA,H.dir,0,bloodcolor) // Coming
+				var/turf/simulated/from = get_step(H,reverse_direction(H.dir))
+				if(istype(from) && from)
+					from.AddTracks(H.species.get_move_trail(H),bloodDNA,0,H.dir,bloodcolor) // Going
+
+				bloodDNA = null
+
+		if(check_slipping(M,dirtslip))
+			var/datum/component/turfslip/TSC = M.LoadComponent(/datum/component/turfslip)
+			TSC.start_slip(src,dirtslip)
+	..()
+
+//returns 1 if made bloody, returns 0 otherwise
+/turf/simulated/add_blood(mob/living/carbon/human/M as mob)
+	if (!..())
+		return FALSE
+
+	if(istype(M))
+		for(var/obj/effect/decal/cleanable/blood/B in contents)
+			var/fresh = B.init_forensic_data().add_blooddna(M.dna,M)
+			if(fresh && M.IsInfected())
+				B.viruses = M.GetViruses()
+			return TRUE //we bloodied the floor
+		blood_splatter(src,M.get_blood(M.vessel),1)
+		return TRUE //we bloodied the floor
+	return FALSE
+
+// Only adds blood on the floor -- Skie
+/turf/simulated/proc/add_blood_floor(mob/living/carbon/M as mob)
+	if( istype(M, /mob/living/carbon/alien ))
+		var/obj/effect/decal/cleanable/blood/xeno/this = new /obj/effect/decal/cleanable/blood/xeno(src)
+		this.init_forensic_data().add_blooddna(M.dna,M)
+	else if( istype(M, /mob/living/silicon/robot ))
+		new /obj/effect/decal/cleanable/blood/oil(src)
+	else if(ishuman(M))
+		add_blood(M)
+
+
+// === merged from simulated_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/turf/simulated
+	can_start_dirty = FALSE	// We have enough premapped dirt where needed
+
+
+
+/turf/simulated/floor/plating
+	can_start_dirty = TRUE	// But let maints and decrepit areas have some randomness
+
+
+/turf/simulated/proc/toggle_climbability() //Again, b
+	if(climbable)
+		verbs -= /turf/simulated/proc/climb_wall
+	else
+		verbs += /turf/simulated/proc/climb_wall
+	climbable = !climbable

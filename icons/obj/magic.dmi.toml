@@ -1,0 +1,19 @@
+# Generated from magic.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 30
+cols = 2
+
+[[state]]
+name = "1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "3"
+dirs = 1
+frames = 1

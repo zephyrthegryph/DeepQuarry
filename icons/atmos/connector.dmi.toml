@@ -1,0 +1,34 @@
+# Generated from connector.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "connector"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "map_connector"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "connector-aux"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "map_connector-aux"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "connector-fuel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "map_connector-fuel"
+dirs = 4
+frames = 1

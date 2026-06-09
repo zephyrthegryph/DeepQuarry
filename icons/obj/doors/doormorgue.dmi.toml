@@ -1,0 +1,36 @@
+# Generated from doormorgue.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 12
+
+[[state]]
+name = "door1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "doorc0"
+dirs = 4
+frames = 15
+delays = [1]
+
+[[state]]
+name = "doorc1"
+dirs = 4
+frames = 15
+delays = [1]
+
+[[state]]
+name = "door0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "door_deny"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "door_spark"
+dirs = 4
+frames = 1

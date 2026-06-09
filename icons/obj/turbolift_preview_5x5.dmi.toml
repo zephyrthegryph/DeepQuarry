@@ -1,0 +1,9 @@
+# Generated from turbolift_preview_5x5.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 160
+height = 160
+cols = 2
+
+[[state]]
+name = ""
+dirs = 4
+frames = 1

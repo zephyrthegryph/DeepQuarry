@@ -1,0 +1,134 @@
+# Generated from preview.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 31
+height = 32
+cols = 6
+
+[[state]]
+name = "Akula"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Alraune"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Altevian"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Black-Eyed Shadekin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Diona"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Gamma Replicant"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Hanner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Human"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Lleill"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Nevrean"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Promethean"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Rapala"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Sergal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Shadekin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Skrell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Sparkle Dog"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Tajara"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Teshari"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Unathi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Vasilissan"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Vox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Vulpkanin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Werebeast"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Xenochimera"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Zaddat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Zorren"
+dirs = 1
+frames = 1

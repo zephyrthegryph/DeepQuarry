@@ -1,0 +1,28 @@
+# Generated from 1x4blast_vert_sec.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 128
+cols = 6
+
+[[state]]
+name = "open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "closed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "opening"
+dirs = 1
+frames = 14
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 4]
+loop = 1
+
+[[state]]
+name = "closing"
+dirs = 1
+frames = 14
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 4]
+loop = 1

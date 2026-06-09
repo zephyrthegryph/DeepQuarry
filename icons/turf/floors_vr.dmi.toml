@@ -1,0 +1,181 @@
+# Generated from floors_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plating"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bcircuit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gcircuit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "freezerfloor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "asteroid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hydrofloor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carpet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "showroomfloor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "elevatorshaft"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vault"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "rockvault"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sandstonevault"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alienvault"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cult"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lava"
+dirs = 1
+frames = 8
+delays = [3]
+
+[[state]]
+name = "wood"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "asteroidplating"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "asteroidfloor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cult-narsie"
+dirs = 1
+frames = 4
+delays = [3]
+
+[[state]]
+name = "steel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "monofloor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "techmaint"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bcarpet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "steel_dirty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "freezer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lino"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinforced"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "diona"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "black_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fit_mat"
+dirs = 1
+frames = 1

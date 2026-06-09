@@ -1,0 +1,690 @@
+# Generated from furniture.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 23
+
+[[state]]
+name = "shuttlechair"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shuttlechair_armrest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chair2_padding"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "armchair_preview"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chai2r_armrest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "psychbed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "psychbed_padding"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wooden_chair_wings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "comfychair"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "comfychair_padding"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "comfychair_armrest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chair_copy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "doublebed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "doublebed_padding"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dogbed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dirtybed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chair_padding"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "NEW-stool_base"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "NEW-stool_preview"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "NEW-stool_padded_preview"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shuttlechair2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "NEW-bar_stool_base"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "NEW-bar_stool_base_padding"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "NEW-bar_stool_preview"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "NEW-bar_stool_padded_preview"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "NEW-chair"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "NEW-chair_preview"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "onestar_chair_grey"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "onestar_chair_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "modern_chair"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "modern_chair_over"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "modern_stool"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "NEW-wooden_chair"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "NEW-wooden_chair_preview"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "NEW-wooden_chair_wings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "NEW-wooden_chair_wings_preview"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "NEW-comfychair_preview"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "NEW-comfychair_padding"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "NEW-comfychair_padding_over"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "NEW-comfychair_padding_armrest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "NEW-comfychair"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "NEW-comfychair_over"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "NEW-comfychair_armrest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "roundedchair_preview"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "roundedchair_padding"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "roundedchair_padding_over"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "roundedchair_padding_armrest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "roundedchair"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "roundedchair_over"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "roundedchair_armrest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bath"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bath1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bath2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bath3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stool_base"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stool_base_padding"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stool_preview"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stool_padded_preview"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chair"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chair_preview"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wheelchair"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sofacorner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sofaend_left"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sofaend_right"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sofamiddle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sofaend_old_left"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sofaend_old_right"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sofamiddle_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sofacorner_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "officechair_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "officechair_dark"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wooden_chair"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "comfychair_preview"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chair_padding_over"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "w_overlay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bed"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 2, y = 22 }]
+
+[[state]]
+name = "bed_padding"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bar_stool_base"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bar_stool_base_padding"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bar_stool_preview"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bar_stool_padded_preview"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bay_chair"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bay_chair_preview"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bay_chair_over"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bay_chair_padding"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bay_chair_padding_over"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bay_comfychair"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bay_comfychair_preview"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bay_comfychair_over"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bay_comfychair_armrest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bay_comfychair_padding"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bay_comfychair_padding_over"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bay_comfychair_padding_armrest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "capchair"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "capchair_preview"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "capchair_over"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "capchair_special"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "capchair_armrest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "capchair_padding"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "capchair_padding_over"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shuttle_chair"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shuttle_chair_preview"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shuttle_chair_over"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shuttle_chair_padding"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shuttle_chair_special"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shuttle_chair-b"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shuttle_chair-b_over"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shuttle_chair-b_padding"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shuttle_chair-b_armrest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nest_chair"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nest_chair_padding"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nest_chair_large"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nest_chair_large_padding"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sofaend_left_armrest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sofaend_right_armrest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sofacorner_armrest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pewmiddle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pewend_left"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pewend_right"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pewend_left_armrest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pewend_right_armrest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "corp_sofacorner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "corp_sofaend_right"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "corp_sofamiddle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "corp_sofaend_left"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "corp_sofacorner_armrest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "corp_sofaend_left_armrest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "corp_sofaend_right_armrest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bench_right"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "benchmiddle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bench_left"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "benchcorner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "obench_right"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "obenchmiddle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "obench_left"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "obenchcorner"
+dirs = 4
+frames = 1

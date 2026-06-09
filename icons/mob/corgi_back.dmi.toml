@@ -1,0 +1,24 @@
+# Generated from corgi_back.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "armor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "armor2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "walkietalkie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "walkietalkie2"
+dirs = 1
+frames = 1

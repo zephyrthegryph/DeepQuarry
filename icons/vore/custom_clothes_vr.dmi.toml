@@ -1,0 +1,1662 @@
+# Generated from custom_clothes_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 31
+
+[[state]]
+name = "Empty State"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sh_kimono"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sh_kimono_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kilanodress"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kilanogloves"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kilanodress_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kilanogloves_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "joanasuna"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "joanasuna_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "miqote"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "miqote_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "joannightgown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "joannightgown_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "brittrenchcoat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greatcoat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "greatcoat_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fedcoat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fedcoat_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fedblue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fedblue_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fedeng"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fedeng_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fedcapt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fedcapt_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gogyellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gogyellowup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gogblue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gogblueup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "harmspace"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "harmspace_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "harmarmor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "harmcaptain"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "harmcaptain_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "harmcaptain_mob_d"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smilepin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "heartpin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tasaldsuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tasaldsuit_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tasaldsuit_mob_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tasaldcoat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tasaldcoat_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "freddysuit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bonniesuit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chicasuit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "foxysuit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "molenar"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "molenar_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-hos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig1-hos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig-hos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scree-spess"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scree-spess_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scree-helm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scree-helm_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "screesuit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "screesuit_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "freddysuit_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chicasuit_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bonniesuit_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "foxysuit_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-hos_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-hos_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig1-hos_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "foxyhead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "freddyhead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chicahead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bonniehead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chicahead_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "freddyhead_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bonniehead_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "foxyhead_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tasvest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pom-on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pom_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pom-on_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vulpine_belt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vulpine_belt_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solara_dress"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tempesthud"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "arosuit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arosuit_mob"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 4, y = 20 }]
+
+[[state]]
+name = "arohelm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arohelm_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "joansuit"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 4, y = 20 }]
+
+[[state]]
+name = "joansuit_mob"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 4, y = 20 }]
+
+[[state]]
+name = "joanhelm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "joanhelm_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "serdyhelm_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "serdyhelm_old_mob"
+dirs = 4
+frames = 5
+delays = [1, 1, 1, 1, 20]
+rewind = true
+
+[[state]]
+name = "octavgentlecoat_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "octavgentlesuit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "octavgentlecoat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "octavgentlesuit_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bowler"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bowler_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "octplaguedoctor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hairflowerpin_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hairflowerpin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fluffearthenbreath"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fluffearthenbreath_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Whitelongclosed2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Whitelongopen2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jemli_hat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jemli_hat_mob"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 18, y = 3 }]
+
+[[state]]
+name = "verin_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "verin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fedcapsec"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fedcapsec_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fedcapsci"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fedcapsci_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fedcapeng"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fedcapeng_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fedcapofficer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fedcapofficer_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "policecover"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "policecover_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fedmodern"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fedmodernblue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fedmoderneng"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fedmodernsec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "emspouch"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emspouch_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swimsuit_engineering"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "swimsuit_engineering_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swimsuit_science"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "swimsuit_science_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swimsuit_security"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "swimsuit_security_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swimsuit_medical"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "swimsuit_medical_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swimsuit_penelope"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "swimsuit_penelope_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kamina"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vinjjdanaup_mob"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "vinjjdana_mob"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "vinjjdana_mob_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vinjjdana_mob_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vinjjdanaup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vinjjdana"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chococoat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chococoat_on"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "joanuniform"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "joanuniform_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "joanuniform_mob_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "projector-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "projector"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "serkiskirt_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "serkiskirt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arohud"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "arohud_on"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "taigaff_on"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "taigaff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gildedcuffs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluecuffs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redcuffs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "silvergildedcuffs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clockworkgoggle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clockworkgoggle_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "batter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "batter_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "batter_suit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lilithhelmet"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alfonso_visor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fjacket"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fjacket_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "acjacket"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "acjacket_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "afjacket"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "afjacket_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "navyjacket"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "navyjacket_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sfjacket"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sfjacket_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fjacket_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fjacket_mob_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "acjacket_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "acjacket_mob_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "afjacket_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "afjacket_mob_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "navyjacket_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "navyjacket_mob_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sfjacket_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sfjacket_mob_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ketraibearpelt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bearpelt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coatroiz"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatroiz_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatroiz_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatroiz_mob_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alurane-vines"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alurane-vines_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alurane-vines_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alurane-vines_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "web_bindings"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "web_bindings_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spiffygogs"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spiffygogsup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tronket"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "headbando"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "loincloth"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "loincloth_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kilanosuit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kilanosuit_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kilanovest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kilanovest_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kilanocoat_t"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kilanocoat_mob_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kilanocoat_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kilanocoat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kilanoboots_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kilanoboots"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kilanobelt_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kilanobelt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spiffygogs_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spiffygogsup_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolfgirlhat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wolfgirlsandals"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wolfgirluni"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wolfgirluni_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolfgirluni_mob_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolfgirluni_mob_d"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "morunder"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "morsleeves"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "morthighs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "morunder_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "morsleeves_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "morthighs_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flops"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gntop"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gnshorts"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phi_ring"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "latexmaid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "latexmaid_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "winterboots_cap_p_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "winterboots_cap_p"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kilanosuit_p"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kilanogloves_p"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kilanogloves_p_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kilanosuit_p_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tronsiren"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tronsiren_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tronsiren_mob_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tronsiren_gloves"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tronsiren_gloves_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tronsiren_shoes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hasd_helm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zao_cap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "zao_cap_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sweater_annie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "aika_coat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aika_coat_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "aika_coat_mob_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "aika_coat_mob_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tiemgogs"
+dirs = 4
+frames = 2
+delays = [10, 5]
+
+[[state]]
+name = "tiemgogsup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackutility_med"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blackutility_med_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackutility_med_mob_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackutility_med_mob_d"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "melanie_skeleton"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "melanie_skeleton_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nanovest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nanovest_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "star_hoodie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "latex_clothes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "latex_clothes_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pipcloak"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pipcloak_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "serdyhelm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "serdyhelm_mob"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "blindshades_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zenasuit_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zenasuit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "zenahelmet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "zenahelmet_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flintlock_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flintlock"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nikki-hat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nikkicape_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nikkicape"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nikki_outfit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nikki_boots"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "verie_hood"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "verie_hoodie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "veriesuit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rgb"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "rgbd"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "evelyncoat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "evelyncoat_t"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "evelynhood"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mechaoveralls"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mechacoat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mechacoat_t"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "luck"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "airjordans"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "avidahat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "avidadress"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fifi_hat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fifi_jumpsuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fifi_socks"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "foxflightsuit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "foxflightsuit_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "foxflightsuit_mob_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "foxflightsuit_mob_d"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greek_dress"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greek_dress_d"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "freyrmask"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "perrinshoes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "perrinrobes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "zera_labcloak_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zera_labcloak"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zera_weld"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "zera_weld_up"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "zera_weld_up_onmob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zera_weld_onmob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grand_purple_cloak_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grand_purple_cloak"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grand_purple_cloak_hat_onmob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grand_purple_cloak_hat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dessabow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dessabow_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "giantbow_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "valkhorns"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "valkhorns_onmob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "memorycrown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "memorycrown_onmob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kintacts"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kintacts_mob"
+dirs = 4
+frames = 1

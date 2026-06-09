@@ -1,0 +1,59 @@
+# Generated from misc.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "wall_thermite"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hydrofloor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "showroomfloor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "elevatorshaft"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vault"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "rockvault"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sandstonevault"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alienvault"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "freezerfloor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkmarble"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lightmarble"
+dirs = 1
+frames = 1

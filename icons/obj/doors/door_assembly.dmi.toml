@@ -1,0 +1,954 @@
+# Generated from door_assembly.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 14
+
+[[state]]
+name = "door_electronics"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_electronics_smoked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_maisec0"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "door_as_maisec1"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "door_as_maisec2"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "door_as_maisec3"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "door_as_maimin0"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "door_as_maimin1"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "door_as_maimin2"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "door_as_maimin3"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "door_as_maicom0"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "door_as_maicom1"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "door_as_maicom2"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "door_as_maicom3"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "door_as_maieng0"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "door_as_maieng1"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "door_as_maieng2"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "door_as_maieng3"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "door_as_maiint0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_maiint1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_maiint2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_maiint3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_maicon0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_maicon1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_maicon2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_maicon3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_maimed0"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "door_as_maimed1"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "door_as_maimed2"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "door_as_maimed3"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "door_as_maires0"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "door_as_maires1"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "door_as_maires2"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "door_as_maires3"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "door_as_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_g0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_g1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_g2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_g3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_com0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_com1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_com2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_come3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_gcom0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_gcom1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_gcom2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_gcom3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_eng0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_eng1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_eng2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_eng3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_geng0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_geng1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_geng2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_geng3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_eat0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_eat1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_eat2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_eat3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_geat0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_geat1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_geat2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_geat3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_atmo0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_atmo1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_atmo2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_atmo3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_gatmo0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_gatmo1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_gatmo2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_gatmo3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_min0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_min1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_min2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_min3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_gmin0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_gmin1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_gmin2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_gmin3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_med0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_med1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_med2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_med3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_gmed0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_gmed1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_gmed2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_gmed3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_ext0"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "door_as_ext1"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "door_as_ext2"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "door_as_ext3"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "door_as_gext0"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "door_as_gext1"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "door_as_gext2"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "door_as_gext3"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "door_as_sec0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_sec1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_sec2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_sec3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_gsec0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_gsec1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_gsec2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_gsec3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_fre0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_fre1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_fre2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_fre3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_hatch0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_hatch1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_hatch2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_hatch3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_mhatch0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_mhatch1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_mhatch2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_mhatch3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_res0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_res1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_res2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_res3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_gres0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_gres1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_gres2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_gres3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_sci0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_sci1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_sci2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_sci3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_gsci0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_gsci1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_gsci2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_gsci3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_diamond0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_diamond1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_diamond2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_diamond3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_gold0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_gold1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_gold2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_gold3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_silver0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_silver1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_silver2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_silver3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_uranium0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_uranium1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_uranium2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_uranium3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_clown0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_clown1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_clown2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_clown3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_plasma0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_plasma1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_plasma2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_plasma3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_sandstone0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_sandstone1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_sandstone2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_sandstone3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_highsec0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_highsec1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_highsec2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_highsec3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_voidcraft0"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "door_as_voidcraft1"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "door_as_voidcraft2"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "door_as_voidcraft3"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "door_as_voidcraft_vertical0"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "door_as_voidcraft_vertical1"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "door_as_voidcraft_vertical2"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "door_as_voidcraft_vertical3"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "door_as_mai0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_alien0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_alien1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_alien2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_alien3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_mai3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_mai1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_as_mai2"
+dirs = 1
+frames = 1

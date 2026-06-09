@@ -1,0 +1,16 @@
+# Generated from 224x224.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 224
+height = 224
+cols = 4
+
+[[state]]
+name = "singularity_s7"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "emfield_s7"
+dirs = 1
+frames = 4
+delays = [1]

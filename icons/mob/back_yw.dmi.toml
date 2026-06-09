@@ -1,0 +1,34 @@
+# Generated from back_yw.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "gaussrifle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gaussrifle100"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gaussrifle75"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gaussrifle50"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gaussrifle25"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gaussrifle0"
+dirs = 4
+frames = 1

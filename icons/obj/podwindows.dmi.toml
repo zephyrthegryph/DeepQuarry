@@ -1,0 +1,114 @@
+# Generated from podwindows.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "No State (These are windowjoints_walljoints in bitflags)"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "0_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "0_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "0_12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "0_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "0_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "0_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "0_8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "3_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "12_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "1_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "2_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "8_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "4_8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "4_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "1_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "2_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "8_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "9_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "5_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "6_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "10_0"
+dirs = 1
+frames = 1

@@ -1,0 +1,877 @@
+# Generated from computer.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 39
+
+[[state]]
+name = ""
+dirs = 4
+frames = 1
+
+[[state]]
+name = "computer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "computer_broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wallframe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wallframe_broken"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "generic"
+dirs = 4
+frames = 2
+delays = [2]
+
+[[state]]
+name = "generic_key"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "generic_key_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "error"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ai-fixer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tech_key"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tech_key_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ai-fixer-empty"
+dirs = 4
+frames = 2
+delays = [7]
+
+[[state]]
+name = "ai-fixer-404"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ai-fixer-full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ai-fixer-on"
+dirs = 4
+frames = 5
+delays = [1]
+
+[[state]]
+name = "turbinecomp"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tank"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "area_atmos"
+dirs = 4
+frames = 2
+delays = [10]
+
+[[state]]
+name = "alert:0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alert:1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alert:2"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "atmos_key"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "atmos_key_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "comm"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "crew"
+dirs = 4
+frames = 20
+delays = [1]
+
+[[state]]
+name = "med_key"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "med_key_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dna"
+dirs = 4
+frames = 22
+delays = [2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 8, 1, 1, 1, 1, 2]
+
+[[state]]
+name = "id"
+dirs = 4
+frames = 2
+delays = [2]
+
+[[state]]
+name = "id_key"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "id_key_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medcomp"
+dirs = 4
+frames = 15
+delays = [2]
+
+[[state]]
+name = "mining"
+dirs = 4
+frames = 8
+delays = [10, 1, 10, 1, 10, 1, 10, 1]
+
+[[state]]
+name = "mining_key"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mining_key_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "power_monitor"
+dirs = 4
+frames = 4
+delays = [6]
+
+[[state]]
+name = "power_monitor_warn"
+dirs = 4
+frames = 2
+delays = [2]
+
+[[state]]
+name = "shuttle"
+dirs = 4
+frames = 3
+delays = [1]
+
+[[state]]
+name = "solar_screen"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "power_key"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "power_key_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solcon-o"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "teleport"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "teleport_key"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teleport_key_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cameras"
+dirs = 4
+frames = 8
+delays = [18, 1, 18, 1, 18, 1, 18, 1]
+
+[[state]]
+name = "explosive"
+dirs = 4
+frames = 9
+delays = [10, 1, 1, 10, 1, 1, 10, 1]
+
+[[state]]
+name = "security_key"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "security_key_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "supply"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "request"
+dirs = 4
+frames = 6
+delays = [3]
+
+[[state]]
+name = "rdcomp"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rd_key"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rd_key_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "recharge_comp"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "recharge_comp_on"
+dirs = 4
+frames = 7
+delays = [2, 1, 1, 1, 1, 1, 2]
+
+[[state]]
+name = "robot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mecha"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "command"
+dirs = 4
+frames = 2
+delays = [2]
+
+[[state]]
+name = "comm_monitor"
+dirs = 4
+frames = 3
+delays = [4]
+rewind = true
+
+[[state]]
+name = "comm_logs"
+dirs = 4
+frames = 8
+delays = [1, 2, 1, 2, 1, 2, 1, 2]
+
+[[state]]
+name = "forensic"
+dirs = 4
+frames = 15
+delays = [2]
+
+[[state]]
+name = "holocontrol"
+dirs = 4
+frames = 8
+delays = [10, 1, 10, 1, 10, 1, 10, 1]
+
+[[state]]
+name = "syndishuttle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tcboss"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndie_key"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "syndie_key_off"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "tcstation"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tcstation_broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tcstation_key"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tcstation_key_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tcstation-closed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "laptop"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "laptop_broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "laptop_key"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "laptop_key_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medlaptop"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "atmoslaptop"
+dirs = 4
+frames = 5
+delays = [2]
+
+[[state]]
+name = "oldcomp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oldcomp_broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "library"
+dirs = 1
+frames = 2
+delays = [5, 2]
+
+[[state]]
+name = "arcade"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arcade_broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "invaders"
+dirs = 1
+frames = 6
+delays = [3]
+
+[[state]]
+name = "television"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "television_broken"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "detective_tv"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "guest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "guest_broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pass"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "telesci_key"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "telesci_key_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "telesci"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "engie_cams"
+dirs = 4
+frames = 8
+delays = [18, 1, 18, 1, 18, 1, 18, 1]
+
+[[state]]
+name = "mass_driver"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "entertainment"
+dirs = 1
+frames = 35
+delays = [2]
+
+[[state]]
+name = "aiupload"
+dirs = 4
+frames = 2
+delays = [2]
+
+[[state]]
+name = "aiupload_key"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "account_computer"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "helm"
+dirs = 4
+frames = 2
+delays = [10]
+
+[[state]]
+name = "engines"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fuel_screen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tele_nav"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tele_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "computer_L"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "computer_R"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "computer_L_R"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "computer_L_broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "computer_R_broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "computer_L_R_broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "thick"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "power"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "solar"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "old_arcade"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "core_control"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flightcomp_left"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flight_left"
+dirs = 4
+frames = 5
+delays = [1]
+
+[[state]]
+name = "flight_left_broken"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "flightcomp_center"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flight_center"
+dirs = 4
+frames = 2
+delays = [5]
+
+[[state]]
+name = "flight_center_key"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flight_center_key_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medlaptop_closed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clawmachine"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "clawmachine_play"
+dirs = 1
+frames = 12
+delays = [1]
+
+[[state]]
+name = "clawmachine_win"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "clawmachine_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clawmachine_broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clawmachine_new"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clawmachine_new_move"
+dirs = 1
+frames = 16
+delays = [3, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.4, 1.4, 1.7, 1.7, 1.7, 1.7, 1.2]
+
+[[state]]
+name = "arcade1_broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "arcade2_broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "arcade1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "arcade2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "orion"
+dirs = 4
+frames = 7
+delays = [2]
+
+[[state]]
+name = "battler"
+dirs = 4
+frames = 8
+delays = [2]
+
+[[state]]
+name = "adv_engines"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "adv_helm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "adv_sensors"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "adv_engines_screen"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "adv_helm_screen"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "adv_sensors_screen"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "adv_engines_broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "adv_helm_broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "adv_sensors_broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shuttle_intercom"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pcu"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pcu_med"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pcu_engi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pcu_key"
+dirs = 4
+frames = 3
+delays = [6, 6, 4]
+
+[[state]]
+name = "pcu_key_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pcu_atmo"
+dirs = 4
+frames = 3
+delays = [4]
+
+[[state]]
+name = "pcu_broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pcu_generic"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stockmarket_broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stockmarket"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stocks"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "stockmarket_key"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stockmarket_key_off"
+dirs = 4
+frames = 1

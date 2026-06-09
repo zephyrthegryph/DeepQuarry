@@ -1,0 +1,248 @@
+# Generated from custom_items_yw.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 16
+
+[[state]]
+name = "paytonknife"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "zekewatch"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eravikblade"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "davidbottle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lord_zippo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lord_zippoon"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "madokaspear0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "madokaspear1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ragnafork"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bonestome"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "madokaspear1_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "madokaspear0_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ragnafork_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "madokaspear0_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "madokaspear1_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ragnafork_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "madokaspear0_mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bloodredzippo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bloodredzippoon"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "melzippo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "melzippoon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chew"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fancycane"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fidgetspinner-s"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "fidgetspinner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "squeezetoy-s"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "squeezetoy"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "infinitycube0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "infinitycube1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fidgetspinnerr-s"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "fidgetspinnerr"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fidgetspinnery-s"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "fidgetspinnery"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chemset"
+dirs = 1
+frames = 22
+delays = [1]
+
+[[state]]
+name = "scanner_mk3"
+dirs = 1
+frames = 140
+delays = [50, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 50, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 50, 1]
+
+[[state]]
+name = "scanner_mk2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scanner_mk1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "strixwhistle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "strix_headset"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "goz_whitecane_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "goz_whitecane_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cryothermos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "domine_retro"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kaithknife"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kaithduffelbag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jeans_lockbox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jeans_eiliplush"
+dirs = 1
+frames = 1

@@ -1,0 +1,37 @@
+# Generated from clamp.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "map_vclamp0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "map_vclamp1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vclamp0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vclamp1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pclamp1"
+dirs = 4
+frames = 15
+delays = [0.5]
+hotspots = [{ frame = 1, x = 15, y = 15 }]
+
+[[state]]
+name = "pclamp0"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 15, y = 15 }]

@@ -1,0 +1,104 @@
+# Generated from worm.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "spaceworm3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spaceworm5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spaceworm6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spaceworm9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spaceworm10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spaceworm12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacewormtail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spacewormhead1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spacewormhead0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spacewormhead1_hunt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spacewormhead0_hunt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spaceworm3_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spaceworm5_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spaceworm6_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spaceworm9_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spaceworm10_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spaceworm12_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacewormtail_dead"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spacewormhead0_dead"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spacewormhead1_dead"
+dirs = 4
+frames = 1

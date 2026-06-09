@@ -1,0 +1,174 @@
+# Generated from pipe-item.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 13
+
+[[state]]
+name = "simple"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "he"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "connector"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "manifold"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "junction"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "uvent"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "passive_vent"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mvalve"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dvalve"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "pump"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scrubber"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "insulated"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "meter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "filter_control"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "filter"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "mixer"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "passivegate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "volumepump"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "heunary"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mtvalve"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "mtvalvem"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dtvalve"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "dtvalvem"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "manifold4w"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cap"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cap-f"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "filterm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "t_mixer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mixerm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "omni_filter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "omni_mixer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "universal"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "injector"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vclamp"
+dirs = 4
+frames = 1

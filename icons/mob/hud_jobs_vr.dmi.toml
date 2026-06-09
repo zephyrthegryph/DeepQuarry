@@ -1,0 +1,521 @@
+# Generated from hud_jobs_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 11
+
+[[state]]
+name = "hudill"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "huddead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudxeno"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudbrainworm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudwanted"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudprisoner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudsitemanager"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudcentcom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudcommandsecretary"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudheadofpersonnel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudchiefengineer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudresearchdirector"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudchiefmedicalofficer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudheadofsecurity"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudinternalaffairsagent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudscientist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudroboticist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudxenobiologist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudxenobotanist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudatmospherictechnician"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudengineer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudelectrician"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudfirefighter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudsecurityofficer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "huddetective"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudwarden"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudbotanist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudlibrarian"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudchaplain"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudbartender"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudbarista"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudchef"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudjanitor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudentertainer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudentrepreneur"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudclown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudmime"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudquartermaster"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudcargotechnician"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudshaftminer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudassistant"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudunknown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudninja"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudalien"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudchangeling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "huddeathsquad"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudoperative"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudwizard"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudmalborg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudmalai"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudtraitor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudinfiltrator"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudunknown1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hud_imp_loyal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hud_imp_unknown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hud_imp_tracking"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "hudparolled"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudreleased"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hud_imp_chem"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "hudrevolutionary"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudheadrevolutionary"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudsyndicate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudcultist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudblank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudmutineer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudloyalist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudborer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudemergencyresponder"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudemergencyresponseteam"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudrobo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudhealthy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudvirologist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudgeneticist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudmedicaldoctor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudparamedic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudpsychiatrist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudchemist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudvisitor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudintern"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudapprenticeengineer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudmedicalintern"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudresearchintern"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudsecuritycadet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudjrcargotech"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudjrexplorer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudserver"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudexplorer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudfieldmedic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudpathfinder"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudpilot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudoffdutyscientist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudoffdutyengineer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudoffdutyofficer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudoffdutyworker"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudoffdutycargo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudoffdutymedic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudoffdutyexplorer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudtaloncaptain"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudtalonengineer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudtalonguard"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudtalondoctor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudtalonpilot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hudtalonminer"
+dirs = 1
+frames = 1

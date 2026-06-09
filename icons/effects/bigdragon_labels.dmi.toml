@@ -1,0 +1,34 @@
+# Generated from bigdragon_labels.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "Underbelly"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Body"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Ears"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Mane"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Horns"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Eyes"
+dirs = 1
+frames = 1

@@ -1,0 +1,197 @@
+# Generated from tank_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "oxygen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oxygen_f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oxygen_fr"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "anesthetic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "indicator_bigtank2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "indicator_bigtank1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "indicator_bigtank0"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "phoron"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emergency"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emergency_nitrogen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emergency_p"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "indicator_smalltank2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "indicator_smalltank1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "indicator_smalltank0"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "emergency_engi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "indicator_engi2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "indicator_engi1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "indicator_engi0"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "emergency_tst"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emergency_double"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emergency_double_vox_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "indicator_double2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "indicator_double1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "indicator_double0"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "emergency_double_vox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emergency_phoron_vox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phoron_vox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jetpack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jetpack-on"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "jetpack-black"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jetpack-black-on"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "jetpack-void"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jetpack-void-on"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "jetpack-breaker"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jetpack-breaker-on"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "emergency_methane"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "methane"
+dirs = 1
+frames = 1

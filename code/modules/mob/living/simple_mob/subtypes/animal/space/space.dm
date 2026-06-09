@@ -1,0 +1,21 @@
+// 'Space' mobs don't care about atmos (like carp)
+/mob/living/simple_mob/animal/space
+	min_oxy = 0
+	max_oxy = 0
+	min_tox = 0
+	max_tox = 0
+	min_co2 = 0
+	max_co2 = 0
+	min_n2 = 0
+	max_n2 = 0
+	minbodytemp = 0
+
+// They can also, you know, move around, in space
+/mob/living/simple_mob/animal/space/Process_Spacemove(check_drift = 0)
+	return TRUE
+
+
+// === merged from space_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+// Fix for Virgo 2's Surface
+/mob/living/simple_mob/animal/space
+	maxbodytemp = 700

@@ -1,0 +1,109 @@
+# Generated from wall_double.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stripe_inner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stripe_outer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cross"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vent"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vent_lower"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "glass"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tool"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mining"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "electric"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fire"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stripe_inner_lower"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stripe_inner_middle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stripe_inner_upper"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vertical_stripe_left_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vertical_stripe_left_m"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vertical_stripe_left_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holes_right"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "thaler"
+dirs = 1
+frames = 1

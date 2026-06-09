@@ -1,0 +1,26 @@
+# Generated from nanitegoo.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "reinforced"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "composite"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "goo_inactive"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "goo_active"
+dirs = 1
+frames = 3
+delays = [4, 4, 4, 1]
+rewind = true

@@ -1,0 +1,39 @@
+# Generated from large.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 5
+
+[[state]]
+name = "omega_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "omega"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "omega-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "omega-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zeta_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "zeta"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zeta-1"
+dirs = 4
+frames = 1

@@ -1,0 +1,523 @@
+
+////////////////////////////////////////////////////////////////////////////////
+/// (Mixing)Glass.
+////////////////////////////////////////////////////////////////////////////////
+/obj/item/reagent_containers/glass
+	name = " "
+	var/base_name = " "
+	desc = " "
+	var/base_desc = " "
+	icon = 'icons/obj/chemical.dmi'
+	icon_state = "null"
+	item_state = "null"
+	amount_per_transfer_from_this = 10
+	min_transfer_amount = 1
+	max_transfer_amount = 60
+	volume = 60
+	w_class = ITEMSIZE_SMALL
+	flags = OPENCONTAINER | NOCONDUCT
+	unacidable = TRUE //glass doesn't dissolve in acid
+	drop_sound = 'sound/items/drop/bottle.ogg'
+	pickup_sound = 'sound/items/pickup/bottle.ogg'
+	description_info = "Clicking on a venomous animal (or person) with the lid closed will express their venom into the beaker!"
+	resistance_flags = ACID_PROOF
+
+	var/label_text = ""
+
+	var/container_can_be_placed_into = REAGENT_CONTAINER_CAN_BE_PLACED_INTO_DEFAULT
+	var/list/prefill = null	//Reagents to fill the container with on New(), formatted as "reagentID" = quantity
+
+	///Var for attack_self chain
+	var/special_handling = FALSE
+
+/obj/item/reagent_containers/glass/Initialize(mapload)
+	. = ..()
+	if(LAZYLEN(prefill))
+		for(var/R in prefill)
+			reagents.add_reagent(R,prefill[R])
+		prefill = null
+		update_icon()
+	base_name = name
+	base_desc = desc
+
+/obj/item/reagent_containers/glass/examine(mob/user)
+	. = ..()
+	if(get_dist(user, src) <= 2)
+		if(reagents && reagents.reagent_list.len)
+			. += span_notice("It contains [reagents.total_volume] units of liquid.")
+		else
+			. += span_notice("It is empty.")
+		if(!is_open_container())
+			. += span_notice("Airtight lid seals it completely.")
+
+/obj/item/reagent_containers/glass/attack_self(mob/user)
+	. = ..(user)
+	if(.)
+		return TRUE
+	if(special_handling)
+		return FALSE
+	if(is_open_container())
+		balloon_alert(user, "lid put on \the [src]")
+		flags ^= OPENCONTAINER
+	else
+		balloon_alert(user, "lid removed off \the [src]")
+		flags |= OPENCONTAINER
+	update_icon()
+
+/obj/item/reagent_containers/glass/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
+	if(force && !(flags & NOBLUDGEON) && user.a_intent == I_HURT)
+		return	..()
+
+	// If the container is *closed* we do snake milking!~
+	if(!is_open_container() && isliving(M))
+		return attempt_snake_milking(user, M)
+
+	if(standard_feed_mob(user, M))
+		return ITEM_INTERACT_SUCCESS
+
+	return ITEM_INTERACT_FAILURE
+
+/obj/item/reagent_containers/glass/standard_feed_mob(mob/user, mob/target)
+	if(user.a_intent == I_HURT)
+		return FALSE
+	return ..()
+
+/obj/item/reagent_containers/glass/self_feed_message(mob/user)
+	balloon_alert(user, "swallowed from \the [src]")
+
+/obj/item/reagent_containers/glass/proc/attempt_snake_milking(mob/living/user, mob/living/target)
+	var/reagent
+	var/amount
+
+	if(target.trait_injection_selected)
+		reagent = target.trait_injection_selected
+		amount = target.trait_injection_amount
+	else if(istype(target, /mob/living/simple_mob/animal/giant_spider))
+		var/mob/living/simple_mob/animal/giant_spider/spider = target
+		reagent = spider.poison_type
+		amount = spider.poison_per_bite
+
+	if(!reagent || !amount)
+		to_chat(user, span_warning("[target] does not have venom you can express. Open the beaker to drink from it."))
+		return ITEM_INTERACT_FAILURE
+
+	if(TIMER_COOLDOWN_RUNNING(target, COOLDOWN_VENOM_MILKING))
+		user.visible_message(span_warning("[user] attempts to express venom from [target], but nothing happens."), span_warning("[target] had their venom expressed too recently, try again later."))
+		return ITEM_INTERACT_FAILURE
+
+	TIMER_COOLDOWN_START(target, COOLDOWN_VENOM_MILKING, 30 SECONDS)
+	user.visible_message(span_notice("[user] expresses venom from [target]."))
+	reagents.add_reagent(reagent, amount)
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/reagent_containers/glass/afterattack(obj/target, mob/user, proximity)
+	if(!proximity || !is_open_container()) //Is the container open & are they next to whatever they're clicking?
+		return 1 //If not, do nothing.
+	for(var/type in GLOB.reagent_containers_can_be_placed_into[container_can_be_placed_into]) //Is it something it can be placed into?
+		if(istype(target, type))
+			return 1
+	if(standard_dispenser_refill(user, target)) //Are they clicking a water tank/some dispenser?
+		return 1
+	if(standard_pour_into(user, target)) //Pouring into another beaker?
+		return
+	if(user.a_intent == I_HURT)
+		if(standard_splash_mob(user,target))
+			return 1
+		if(reagents && reagents.total_volume)
+			balloon_alert(user, "splashed the solution onto [target]")
+			reagents.splash(target, reagents.total_volume)
+			return 1
+	..()
+
+/obj/item/reagent_containers/glass/attackby(obj/item/W as obj, mob/user as mob)
+	if(istype(W, /obj/item/pen) || istype(W, /obj/item/flashlight/pen))
+		var/tmp_label = sanitizeSafe(tgui_input_text(user, "Enter a label for [name]", "Label", label_text, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
+		if(length(tmp_label) > 50)
+			to_chat(user, span_notice("The label can be at most 50 characters long."))
+		else if(length(tmp_label) > 10)
+			balloon_alert(user, "label set")
+			label_text = tmp_label
+			update_name_label()
+		else
+			balloon_alert(user, "label set to \"[tmp_label]\"")
+			label_text = tmp_label
+			update_name_label()
+	if(istype(W,/obj/item/storage/bag))
+		..()
+	if(W && W.w_class <= w_class && (flags & OPENCONTAINER) && user.a_intent != I_HELP)
+		balloon_alert(user, "[W] dipped into \the [src].")
+		reagents.touch_obj(W, reagents.total_volume)
+	attempt_changeling_test(W,user)
+
+/obj/item/reagent_containers/glass/proc/update_name_label()
+	if(label_text == "")
+		name = base_name
+	else if(length(label_text) > 20)
+		var/short_label_text = copytext(label_text, 1, 21)
+		name = "[base_name] ([short_label_text]...)"
+	else
+		name = "[base_name] ([label_text])"
+	desc = "[base_desc] It is labeled \"[label_text]\"."
+	update_icon()
+
+/obj/item/reagent_containers/glass/beaker
+	name = "beaker"
+	desc = "A beaker."
+	icon = 'icons/obj/chemical.dmi'
+	icon_state = "beaker"
+	item_state = "beaker"
+	center_of_mass_x = 15
+	center_of_mass_y = 11
+	matter = list(MAT_GLASS = 500)
+	drop_sound = 'sound/items/drop/glass.ogg'
+	pickup_sound = 'sound/items/pickup/glass.ogg'
+	var/rating = 1
+
+/obj/item/reagent_containers/glass/beaker/get_rating()
+	return rating
+
+/obj/item/reagent_containers/glass/beaker/Initialize(mapload)
+	. = ..()
+	desc += " Can hold up to [volume] units."
+
+/obj/item/reagent_containers/glass/beaker/on_reagent_change()
+	update_icon()
+
+/obj/item/reagent_containers/glass/beaker/pickup(mob/user)
+	..()
+	update_icon()
+
+/obj/item/reagent_containers/glass/beaker/dropped(mob/user, equipping, slot)
+	..()
+	update_icon()
+
+/obj/item/reagent_containers/glass/beaker/attack_hand()
+	..()
+	update_icon()
+
+/obj/item/reagent_containers/glass/beaker/update_icon()
+	cut_overlays()
+
+	if(reagents.total_volume)
+		var/image/filling = image('icons/obj/reagentfillings.dmi', src, "[icon_state]10")
+
+		var/percent = round((reagents.total_volume / volume) * 100)
+		switch(percent)
+			if(0.1 to 20)	filling.icon_state = "[icon_state]-10"
+			if(20 to 40) 	filling.icon_state = "[icon_state]-20"
+			if(40 to 60)	filling.icon_state = "[icon_state]-40"
+			if(60 to 80)	filling.icon_state = "[icon_state]-60"
+			if(80 to 100)	filling.icon_state = "[icon_state]-80"
+			if(100 to INFINITY)	filling.icon_state = "[icon_state]-100"
+
+		filling.color = reagents.get_color()
+		add_overlay(filling)
+
+	if (!is_open_container())
+		add_overlay("lid_[initial(icon_state)]")
+
+	if (label_text)
+		add_overlay("label_[initial(icon_state)]")
+
+/obj/item/reagent_containers/glass/beaker/large
+	name = "large beaker"
+	desc = "A large beaker."
+	icon_state = "beakerlarge"
+	center_of_mass_x = 16
+	center_of_mass_y = 11
+	matter = list(MAT_GLASS = 5000)
+	volume = 120
+	amount_per_transfer_from_this = 10
+	max_transfer_amount = 120
+	flags = OPENCONTAINER
+	rating = 3
+
+/obj/item/reagent_containers/glass/beaker/noreact
+	name = "cryostasis beaker"
+	desc = "A cryostasis beaker that allows for chemical storage without reactions."
+	icon_state = "beakernoreact"
+	center_of_mass_x = 16
+	center_of_mass_y = 13
+	matter = list(MAT_GLASS = 500)
+	volume = 60
+	amount_per_transfer_from_this = 10
+	flags = OPENCONTAINER | NOREACT
+
+/obj/item/reagent_containers/glass/beaker/bluespace
+	name = "bluespace beaker"
+	desc = "A bluespace beaker, powered by experimental bluespace technology."
+	icon_state = "beakerbluespace"
+	center_of_mass_x = 16
+	center_of_mass_y = 11
+	matter = list(MAT_GLASS = 5000)
+	volume = 300
+	amount_per_transfer_from_this = 10
+	max_transfer_amount = 300
+	flags = OPENCONTAINER
+	rating = 5
+
+/obj/item/reagent_containers/glass/beaker/vial
+	name = "vial"
+	desc = "A small glass vial."
+	icon_state = "vial"
+	center_of_mass_x = 15
+	center_of_mass_y = 9
+	matter = list(MAT_GLASS = 250)
+	volume = 30
+	w_class = ITEMSIZE_TINY
+	amount_per_transfer_from_this = 10
+	max_transfer_amount = 30
+	flags = OPENCONTAINER
+
+/obj/item/reagent_containers/glass/beaker/cryoxadone
+	name = "beaker (cryoxadone)"
+	prefill = list(REAGENT_ID_CRYOXADONE = 30)
+
+/obj/item/reagent_containers/glass/beaker/sulphuric
+	prefill = list(REAGENT_ID_SACID = 60)
+
+/obj/item/reagent_containers/glass/beaker/stopperedbottle
+	name = "stoppered bottle"
+	desc = "A stoppered bottle for keeping beverages fresh."
+	icon_state = "stopperedbottle"
+	center_of_mass_x = 16
+	center_of_mass_y = 13
+	volume = 120
+	amount_per_transfer_from_this = 10
+	max_transfer_amount = 120
+	flags = OPENCONTAINER
+
+/obj/item/reagent_containers/glass/bucket
+	desc = "It's a bucket."
+	name = "bucket"
+	icon = 'icons/obj/janitor.dmi'
+	icon_state = "bucket"
+	item_state = "bucket"
+	center_of_mass_x = 16
+	center_of_mass_y = 10
+	matter = list(MAT_STEEL = 200)
+	w_class = ITEMSIZE_NORMAL
+	amount_per_transfer_from_this = 20
+	max_transfer_amount = 120
+	volume = 120
+	flags = OPENCONTAINER
+	unacidable = FALSE
+	drop_sound = 'sound/items/drop/helm.ogg'
+	pickup_sound = 'sound/items/pickup/helm.ogg'
+
+/obj/item/reagent_containers/glass/bucket/attackby(obj/item/D, mob/user as mob)
+	if(isprox(D))
+		to_chat(user, "You add [D] to [src].")
+		qdel(D)
+		user.put_in_hands(new /obj/item/bucket_sensor)
+		user.drop_from_inventory(src)
+		qdel(src)
+		return
+	else if(D.has_tool_quality(TOOL_WIRECUTTER))
+		to_chat(user, span_notice("You cut a big hole in \the [src] with \the [D]. It's kinda useless as a bucket now."))
+		user.put_in_hands(new /obj/item/clothing/head/helmet/bucket)
+		user.drop_from_inventory(src)
+		qdel(src)
+		return
+	else if(istype(D, /obj/item/stack/material) && D.get_material_name() == MAT_STEEL)
+		var/obj/item/stack/material/M = D
+		if (M.use(1))
+			var/obj/item/secbot_assembly/edCLN_assembly/B = new /obj/item/secbot_assembly/edCLN_assembly
+			B.loc = get_turf(src)
+			to_chat(user, span_notice("You armed the robot frame."))
+			if (user.get_inactive_hand()==src)
+				user.remove_from_mob(src)
+				user.put_in_inactive_hand(B)
+			qdel(src)
+		else
+			to_chat(user, span_warning("You need one sheet of metal to arm the robot frame."))
+	else if(istype(D, /obj/item/mop) || istype(D, /obj/item/soap) || istype(D, /obj/item/reagent_containers/glass/rag))
+		if(reagents.total_volume < 1)
+			to_chat(user, span_warning("\The [src] is empty!"))
+		else
+			reagents.trans_to_obj(D, 5)
+			to_chat(user, span_notice("You wet \the [D] in \the [src]."))
+			playsound(src, 'sound/effects/slosh.ogg', 25, 1)
+	else
+		return ..()
+
+/obj/item/reagent_containers/glass/bucket/update_icon()
+	cut_overlays()
+	if (!is_open_container())
+		add_overlay("lid_[initial(icon_state)]")
+
+/obj/item/reagent_containers/glass/bucket/wood
+	desc = "An old wooden bucket."
+	name = "wooden bucket"
+	icon = 'icons/obj/janitor.dmi'
+	icon_state = "woodbucket"
+	item_state = "woodbucket"
+	center_of_mass_x = 16
+	center_of_mass_y = 8
+	matter = list(MAT_WOOD = 50)
+	w_class = ITEMSIZE_LARGE
+	amount_per_transfer_from_this = 20
+	max_transfer_amount = 120
+	volume = 120
+	flags = OPENCONTAINER
+	unacidable = FALSE
+	drop_sound = 'sound/items/drop/wooden.ogg'
+	pickup_sound = 'sound/items/pickup/wooden.ogg'
+
+/obj/item/reagent_containers/glass/bucket/wood/attackby(obj/D, mob/user as mob)
+	if(isprox(D))
+		to_chat(user, "This wooden bucket doesn't play well with electronics.")
+		return
+	else if(istype(D, /obj/item/material/knife/machete/hatchet))
+		to_chat(user, span_notice("You cut a big hole in \the [src] with \the [D].  It's kinda useless as a bucket now."))
+		user.put_in_hands(new /obj/item/clothing/head/helmet/bucket/wood)
+		user.drop_from_inventory(src)
+		qdel(src)
+		return
+	else if(istype(D, /obj/item/mop))
+		if(reagents.total_volume < 1)
+			to_chat(user, span_warning("\The [src] is empty!"))
+		else
+			reagents.trans_to_obj(D, 5)
+			to_chat(user, span_notice("You wet \the [D] in \the [src]."))
+			playsound(src, 'sound/effects/slosh.ogg', 25, 1)
+		return
+	else
+		return ..()
+
+/obj/item/reagent_containers/glass/cooler_bottle
+	desc = "A bottle for a water-cooler."
+	name = "water-cooler bottle"
+	icon = 'icons/obj/vending.dmi'
+	icon_state = "water_cooler_bottle"
+	matter = list(MAT_PLASTIC = 2000)
+	w_class = ITEMSIZE_NO_CONTAINER
+	amount_per_transfer_from_this = 20
+	max_transfer_amount = 120
+	volume = 2000
+	slowdown = 2
+	container_can_be_placed_into = REAGENT_CONTAINER_CAN_BE_PLACED_INTO_WATERCOOLER
+
+/obj/item/reagent_containers/glass/pint_mug
+	desc = "A rustic pint mug designed for drinking ale."
+	name = "pint mug"
+	icon = 'icons/obj/drinks.dmi'
+	icon_state = "pint_mug"
+	matter = list(MAT_WOOD = 50)
+	drop_sound = 'sound/items/drop/wooden.ogg'
+	pickup_sound = 'sound/items/pickup/wooden.ogg'
+
+/obj/item/reagent_containers/glass/beaker/vial/sustenance
+	name = "vial (artificial sustenance)"
+	prefill = list(REAGENT_ID_ASUSTENANCE = 30)
+
+/obj/item/reagent_containers/glass/kettle
+	name = "kettle"
+	desc = "A simple kettle for brewing drinks."
+	icon_state = "kettle"
+	amount_per_transfer_from_this = 10
+	max_transfer_amount = 20
+	volume = 60
+	w_class = ITEMSIZE_SMALL
+	flags = OPENCONTAINER
+	matter = list(MAT_STEEL = 50)
+	drop_sound = 'sound/items/drop/crowbar.ogg'
+	pickup_sound = 'sound/items/pickup/drinkglass.ogg'
+
+
+// === merged from glass_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/item/reagent_containers/glass/beaker/neurotoxin
+	prefill = list(REAGENT_ID_NEUROTOXIN = 50)
+
+/obj/item/reagent_containers/glass/beaker/vial/bicaridine
+	name = "vial (" + REAGENT_ID_BICARIDINE + ")"
+	prefill = list(REAGENT_ID_BICARIDINE = 30)
+
+/obj/item/reagent_containers/glass/beaker/vial/dylovene
+	name = "vial (" + REAGENT_ID_ANTITOXIN + ")"
+	prefill = list(REAGENT_ID_ANTITOXIN = 30)
+
+/obj/item/reagent_containers/glass/beaker/vial/dermaline
+	name = "vial (" + REAGENT_ID_DERMALINE + ")"
+	prefill = list(REAGENT_ID_DERMALINE = 30)
+
+/obj/item/reagent_containers/glass/beaker/vial/kelotane
+	name = "vial (" + REAGENT_ID_KELOTANE + ")"
+	prefill = list(REAGENT_ID_KELOTANE = 30)
+
+/obj/item/reagent_containers/glass/beaker/vial/inaprovaline
+	name = "vial (" + REAGENT_ID_INAPROVALINE + ")"
+	prefill = list(REAGENT_ID_INAPROVALINE = 30)
+
+/obj/item/reagent_containers/glass/beaker/vial/dexalin
+	name = "vial (" + REAGENT_ID_DEXALIN + ")"
+	prefill = list(REAGENT_ID_DEXALIN = 30)
+
+/obj/item/reagent_containers/glass/beaker/vial/dexalinplus
+	name = "vial (" + REAGENT_ID_DEXALINP + ")"
+	prefill = list(REAGENT_ID_DEXALINP = 30)
+
+/obj/item/reagent_containers/glass/beaker/vial/tricordrazine
+	name = "vial (" + REAGENT_ID_TRICORDRAZINE + ")"
+	prefill = list(REAGENT_ID_TRICORDRAZINE = 30)
+
+/obj/item/reagent_containers/glass/beaker/vial/alkysine
+	name = "vial (" + REAGENT_ID_ALKYSINE + ")"
+	prefill = list(REAGENT_ID_ALKYSINE = 30)
+
+/obj/item/reagent_containers/glass/beaker/vial/imidazoline
+	name = "vial (" + REAGENT_ID_IMIDAZOLINE + ")"
+	prefill = list(REAGENT_ID_IMIDAZOLINE = 30)
+
+/obj/item/reagent_containers/glass/beaker/vial/peridaxon
+	name = "vial (" + REAGENT_ID_PERIDAXON + ")"
+	prefill = list(REAGENT_ID_PERIDAXON = 30)
+
+/obj/item/reagent_containers/glass/beaker/vial/hyronalin
+	name = "vial (" + REAGENT_ID_HYRONALIN +")"
+	prefill = list(REAGENT_ID_HYRONALIN = 30)
+
+/obj/item/reagent_containers/glass/beaker/vial/amorphorovir
+	name = "vial (" + REAGENT_ID_AMORPHOROVIR + ")"
+	prefill = list(REAGENT_ID_AMORPHOROVIR = 1)
+
+/obj/item/reagent_containers/glass/beaker/vial/androrovir
+	name = "vial (" + REAGENT_ID_ANDROROVIR + ")"
+	prefill = list(REAGENT_ID_ANDROROVIR = 1)
+
+/obj/item/reagent_containers/glass/beaker/vial/gynorovir
+	name = "vial (" + REAGENT_ID_GYNOROVIR + ")"
+	prefill = list(REAGENT_ID_GYNOROVIR = 1)
+
+/obj/item/reagent_containers/glass/beaker/vial/androgynorovir
+	name = "vial (" + REAGENT_ID_ANDROGYNOROVIR + ")"
+	prefill = list(REAGENT_ID_ANDROGYNOROVIR = 1)
+
+/obj/item/reagent_containers/glass/beaker/vial/macrocillin
+	name = "vial (" + REAGENT_ID_MACROCILLIN + ")"
+	prefill = list(REAGENT_ID_MACROCILLIN = 1)
+
+/obj/item/reagent_containers/glass/beaker/vial/microcillin
+	name = "vial (" + REAGENT_ID_MICROCILLIN + ")"
+	prefill = list(REAGENT_ID_MICROCILLIN = 1)
+
+/obj/item/reagent_containers/glass/beaker/vial/normalcillin
+	name = "vial (" + REAGENT_ID_NORMALCILLIN + ")"
+	prefill = list(REAGENT_ID_NORMALCILLIN = 1)
+
+/obj/item/reagent_containers/glass/beaker/vial/supermatter
+	name = "vial (" + REAGENT_ID_SUPERMATTER + ")"
+	desc = "A glass vial containing the extremely dangerous results of grinding a shard of supermatter down to a fine powder."
+	prefill = list(REAGENT_ID_SUPERMATTER = 5)
+
+/obj/item/reagent_containers/glass/beaker/measuring_cup
+	name = "measuring cup"
+	desc = "A measuring cup."
+	icon_state = "measure_cup"
+	item_state = "measure_cup"
+
+/obj/item/reagent_containers/glass/beaker/lichpowder
+	prefill = list(REAGENT_ID_LICHPOWDER = 50)
+
+/obj/item/reagent_containers/glass/beaker/zombiepowder
+	prefill = list(REAGENT_ID_ZOMBIEPOWDER = 50)

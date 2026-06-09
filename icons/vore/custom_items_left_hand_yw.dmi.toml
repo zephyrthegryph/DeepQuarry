@@ -1,0 +1,45 @@
+# Generated from custom_items_left_hand_yw.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "Empty State"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chew"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fancycane"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "saur_duffle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "goz_whitecane"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "RPED"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "jeans_lockbox"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jeans_eiliplush"
+dirs = 4
+frames = 1

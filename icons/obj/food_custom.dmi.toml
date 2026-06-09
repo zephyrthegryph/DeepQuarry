@@ -1,0 +1,450 @@
+# Generated from food_custom.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 10
+
+[[state]]
+name = "personal_pizza"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "personal_pizza_filling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cakecustom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cakecustom_filling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "piecustom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "piecustom_filling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "breadcustom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "breadcustom_filling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "breadcustom_filling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "breadslicecustom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "breadslicecustom_filling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kabob"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kabob_filling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_waffles"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_waffles_filling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cookie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cookie_filling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donut"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donut_filling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donk"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donk_filling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_bar"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_bar_filling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sucker"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sucker_filling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jellycustom_filling"
+dirs = 1
+frames = 1
+rewind = true
+
+[[state]]
+name = "jellycustom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jawbreaker"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jawbreaker_filling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donkcustom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donkcustom_filling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donutcustom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donutcustom_filling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "saladcustom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "saladcustom_filling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kababcustom_filling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kababcustom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fullycustom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cookiecustom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cookiecustom_filling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wafflecustom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wafflecustom_filling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "barcustom_filling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "barcustom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suckercustom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suckercustom_filling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coincustom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coincustom_filling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cashcustom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cashcustom_filling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gummybearcustom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gummybearcustom_filling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cottoncandycustom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cottoncandycustom_filling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "candycanecustom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "candycanecustom_filling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jellybeancustom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jellybeancustom_filling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gummywormcustom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jawbreakercustom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gumcustom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gummywormcustom_filling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jawbreakercustom_filling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gumcustom_filling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "soup_filling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pasta_bot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pasta_bot_filling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_cereal_box"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deepfried_holder_icon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cakeslicecustom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cakeslicecustom_filling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "soup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mask"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "waffles"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "waffles_filling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cookie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cookie_filling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bar"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bar_filling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cereal_box"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "batter_raw"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "batter_cooked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "c_burger_top"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "c_burger"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "c_burger_filling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cburger"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "c_sandwich"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "c_sandwich_top"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "c_sandwich_filling"
+dirs = 1
+frames = 1

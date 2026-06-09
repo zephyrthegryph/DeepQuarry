@@ -1,0 +1,554 @@
+# Generated from mob.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 30
+
+[[state]]
+name = "h2monkey"
+dirs = 1
+frames = 22
+delays = [1]
+
+[[state]]
+name = "monkey2h"
+dirs = 1
+frames = 22
+delays = [1]
+
+[[state]]
+name = "blank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "handcuff1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "handcuff2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "legcuff1"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "legcuff2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "id2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m-none"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m-none"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "loyalist"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 23, y = 5 }]
+
+[[state]]
+name = "mutineer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "synd"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cultOLD"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "liquify"
+dirs = 1
+frames = 12
+delays = [1]
+loop = 1
+
+[[state]]
+name = "liquifybckup"
+dirs = 1
+frames = 12
+delays = [1]
+loop = 1
+
+[[state]]
+name = "reappear"
+dirs = 1
+frames = 5
+delays = [1]
+loop = 1
+
+[[state]]
+name = "cloak"
+dirs = 4
+frames = 8
+delays = [1]
+loop = 1
+
+[[state]]
+name = "uncloak"
+dirs = 4
+frames = 7
+delays = [1]
+loop = 1
+
+[[state]]
+name = "shadow"
+dirs = 4
+frames = 8
+delays = [1]
+loop = 1
+
+[[state]]
+name = "phaseout"
+dirs = 4
+frames = 8
+delays = [1]
+loop = 1
+
+[[state]]
+name = "phasein"
+dirs = 4
+frames = 7
+delays = [1]
+loop = 1
+
+[[state]]
+name = "blspell"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cult_s"
+dirs = 4
+frames = 3
+delays = [2, 1]
+rewind = true
+
+[[state]]
+name = "cult_l"
+dirs = 1
+frames = 3
+delays = [2, 1]
+rewind = true
+
+[[state]]
+name = "ghost"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ghostian"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ghostian2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ghostking"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baby roro"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "baby roro eat"
+dirs = 1
+frames = 2
+delays = [6, 10]
+rewind = true
+
+[[state]]
+name = "baby roro dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baby roro dead-nocore"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "adult roro"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "adult roro eat"
+dirs = 1
+frames = 2
+delays = [6, 10]
+
+[[state]]
+name = "phazon metroid"
+dirs = 1
+frames = 5
+delays = [2]
+rewind = true
+
+[[state]]
+name = "phazon metroid glow"
+dirs = 1
+frames = 5
+delays = [2]
+rewind = true
+
+[[state]]
+name = "gibbed-h"
+dirs = 1
+frames = 14
+delays = [1]
+
+[[state]]
+name = "gibbed-m"
+dirs = 1
+frames = 13
+delays = [1]
+
+[[state]]
+name = "gibbed-r"
+dirs = 1
+frames = 12
+delays = [1]
+
+[[state]]
+name = "gibbed-a"
+dirs = 1
+frames = 12
+delays = [1]
+
+[[state]]
+name = "dust-a"
+dirs = 1
+frames = 13
+delays = [1]
+
+[[state]]
+name = "dust-h"
+dirs = 1
+frames = 13
+delays = [1]
+
+[[state]]
+name = "dust-m"
+dirs = 1
+frames = 11
+delays = [1]
+
+[[state]]
+name = "dust-r"
+dirs = 1
+frames = 13
+delays = [1]
+
+[[state]]
+name = "s-ninja"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "s-ninjaf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "horror"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nim"
+dirs = 4
+frames = 4
+delays = [1, 3, 5, 1]
+
+[[state]]
+name = "god"
+dirs = 4
+frames = 10
+delays = [1]
+
+[[state]]
+name = "ghost2"
+dirs = 1
+frames = 3
+delays = [5]
+rewind = true
+
+[[state]]
+name = "ghost1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "roro egg-growing"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "roro egg-grown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cult"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shade"
+dirs = 1
+frames = 10
+delays = [1]
+
+[[state]]
+name = "ghost-narsie"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "shade_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armour"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "artificer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "behemoth"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "harvester"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phase_shift"
+dirs = 4
+frames = 13
+delays = [1]
+loop = 1
+
+[[state]]
+name = "phase_shift2"
+dirs = 4
+frames = 12
+delays = [1]
+loop = 1
+
+[[state]]
+name = "floating"
+dirs = 4
+frames = 4
+delays = [10]
+
+[[state]]
+name = "artificer-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "behemoth-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floating-eyes"
+dirs = 4
+frames = 4
+delays = [10]
+
+[[state]]
+name = "harvester-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "brainworm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rev"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rev_head"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "loyal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "loyal_head"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "technomancer_golem_old"
+dirs = 4
+frames = 6
+delays = [3]
+
+[[state]]
+name = "golem_sword"
+dirs = 4
+frames = 2
+delays = [3]
+
+[[state]]
+name = "golem_spell"
+dirs = 4
+frames = 2
+delays = [3]
+
+[[state]]
+name = "golem_sword_attack"
+dirs = 4
+frames = 4
+delays = [1, 5, 1, 3]
+
+[[state]]
+name = "golem_spell_attack"
+dirs = 4
+frames = 6
+delays = [1, 2, 2, 2, 3]
+
+[[state]]
+name = "golem_sword_attack_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "golem_sword_attack_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "golem_sword_attack_3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "golem_sword_attack_4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "golem_spell_attack_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "golem_spell_attack_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "golem_spell_attack_3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "golem_spell_attack_4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "golem_spell_attack_5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "golem_spell_attack_6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "golem"
+dirs = 4
+frames = 6
+delays = [3]
+
+[[state]]
+name = "golem_pre_melee"
+dirs = 4
+frames = 2
+delays = [1]
+loop = 1
+
+[[state]]
+name = "golem_post_melee"
+dirs = 4
+frames = 3
+delays = [2, 3, 1]
+loop = 1
+
+[[state]]
+name = "golem_pre_ranged"
+dirs = 4
+frames = 3
+delays = [1, 3, 1]
+loop = 1
+
+[[state]]
+name = "golem_post_ranged"
+dirs = 4
+frames = 3
+delays = [3, 2, 1]

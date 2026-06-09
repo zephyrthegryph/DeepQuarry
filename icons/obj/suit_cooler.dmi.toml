@@ -1,0 +1,55 @@
+# Generated from suit_cooler.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "suitcooler0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitcooler1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitcooler2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "battery-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "battery-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "battery-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "battery-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "battery-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "battery-5"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "esuitcooler"
+dirs = 1
+frames = 1

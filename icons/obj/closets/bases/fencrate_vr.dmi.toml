@@ -1,0 +1,19 @@
+# Generated from fencrate_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 2
+
+[[state]]
+name = "base"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "welded"
+dirs = 1
+frames = 1

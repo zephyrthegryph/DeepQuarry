@@ -1,0 +1,255 @@
+# Generated from salvageable.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "autolathe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "implant_container0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "implant_container1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bliss0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bliss1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "os-machine"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "os-computer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "os_console"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "os_console_broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "os-container"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "os-data"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "os-server"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "machine0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "machine1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "machine2"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "machine3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "machine4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "machine5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "machine6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "computer0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "computer1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "computer2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "computer3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "computer4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "computer5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "computer6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "computer7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "data0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "data1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "server0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "server1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "personal0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "personal1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "personal2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "personal3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "personal4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "personal5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "personal6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "personal7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "personal8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "personal9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "personal10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "personal11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "personal12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slot1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slot2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shuttle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "console0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "console1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "console2"
+dirs = 4
+frames = 1

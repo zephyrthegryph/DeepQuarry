@@ -1,0 +1,64 @@
+# Generated from protector.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "openpanel_nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bloodhound"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bloodhound-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "treadhound"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "treadhound-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "squats"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "squats-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "heavy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "heavy-eyes"
+dirs = 4
+frames = 1

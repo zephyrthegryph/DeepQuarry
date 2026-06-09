@@ -1,0 +1,9 @@
+# Generated from light_128.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 128
+height = 128
+cols = 1
+
+[[state]]
+name = "light"
+dirs = 1
+frames = 1

@@ -1,0 +1,212 @@
+# Generated from tail.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 31
+
+[[state]]
+name = "voxtail_master"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "voxtailw_s"
+dirs = 4
+frames = 7
+delays = [2]
+
+[[state]]
+name = "voxtail_delay"
+dirs = 4
+frames = 7
+delays = [2]
+
+[[state]]
+name = "voxtail_static"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "voxtail_once"
+dirs = 4
+frames = 7
+delays = [2]
+
+[[state]]
+name = "voxtail_idle0"
+dirs = 4
+frames = 7
+delays = [2, 2, 2, 2, 2, 2, 150]
+
+[[state]]
+name = "voxtail_idle1"
+dirs = 4
+frames = 7
+delays = [2, 2, 2, 2, 2, 2, 150]
+
+[[state]]
+name = "voxtail_idle2"
+dirs = 4
+frames = 7
+delays = [2, 2, 2, 2, 2, 2, 150]
+
+[[state]]
+name = "voxtail_idle3"
+dirs = 4
+frames = 7
+delays = [2, 2, 2, 2, 2, 2, 150]
+
+[[state]]
+name = "voxtail_idle4"
+dirs = 4
+frames = 7
+delays = [2, 2, 2, 2, 2, 2, 150]
+
+[[state]]
+name = "voxtail_idle5"
+dirs = 4
+frames = 7
+delays = [2, 2, 2, 2, 2, 2, 150]
+
+[[state]]
+name = "voxtail_idle6"
+dirs = 4
+frames = 7
+delays = [2, 2, 2, 2, 2, 2, 150]
+
+[[state]]
+name = "voxtail_idle7"
+dirs = 4
+frames = 7
+delays = [2, 2, 2, 2, 2, 2, 150]
+
+[[state]]
+name = "voxtail_idle8"
+dirs = 4
+frames = 7
+delays = [2, 2, 2, 2, 2, 2, 150]
+
+[[state]]
+name = "voxtail_idle9"
+dirs = 4
+frames = 7
+delays = [2, 2, 2, 2, 2, 2, 150]
+
+[[state]]
+name = "voxtail_loop0"
+dirs = 4
+frames = 7
+delays = [2, 2, 2, 2, 2, 2, 5]
+
+[[state]]
+name = "voxtail_loop1"
+dirs = 4
+frames = 7
+delays = [2, 2, 2, 2, 2, 2, 5]
+
+[[state]]
+name = "voxtail_loop2"
+dirs = 4
+frames = 7
+delays = [2, 2, 2, 2, 2, 2, 5]
+
+[[state]]
+name = "voxtail_loop3"
+dirs = 4
+frames = 7
+delays = [2, 2, 2, 2, 2, 2, 5]
+
+[[state]]
+name = "voxtail_loop4"
+dirs = 4
+frames = 7
+delays = [2, 2, 2, 2, 2, 2, 5]
+
+[[state]]
+name = "voxtail_loop5"
+dirs = 4
+frames = 7
+delays = [2, 2, 2, 2, 2, 2, 5]
+
+[[state]]
+name = "voxtail_loop6"
+dirs = 4
+frames = 7
+delays = [2, 2, 2, 2, 2, 2, 5]
+
+[[state]]
+name = "voxtail_loop7"
+dirs = 4
+frames = 7
+delays = [2, 2, 2, 2, 2, 2, 5]
+
+[[state]]
+name = "voxtail_loop8"
+dirs = 4
+frames = 7
+delays = [2, 2, 2, 2, 2, 2, 5]
+
+[[state]]
+name = "voxtail_loop9"
+dirs = 4
+frames = 7
+delays = [2, 2, 2, 2, 2, 2, 5]
+
+[[state]]
+name = "voxtail_slow0"
+dirs = 4
+frames = 7
+delays = [2, 2, 2, 2, 2, 2, 30]
+
+[[state]]
+name = "voxtail_slow1"
+dirs = 4
+frames = 7
+delays = [2, 2, 2, 2, 2, 2, 30]
+
+[[state]]
+name = "voxtail_slow2"
+dirs = 4
+frames = 7
+delays = [2, 2, 2, 2, 2, 2, 30]
+
+[[state]]
+name = "voxtail_slow3"
+dirs = 4
+frames = 7
+delays = [2, 2, 2, 2, 2, 2, 30]
+
+[[state]]
+name = "voxtail_slow4"
+dirs = 4
+frames = 7
+delays = [2, 2, 2, 2, 2, 2, 30]
+
+[[state]]
+name = "voxtail_slow5"
+dirs = 4
+frames = 7
+delays = [2, 2, 2, 2, 2, 2, 30]
+
+[[state]]
+name = "voxtail_slow6"
+dirs = 4
+frames = 7
+delays = [2, 2, 2, 2, 2, 2, 30]
+
+[[state]]
+name = "voxtail_slow7"
+dirs = 4
+frames = 7
+delays = [2, 2, 2, 2, 2, 2, 30]
+
+[[state]]
+name = "voxtail_slow8"
+dirs = 4
+frames = 7
+delays = [2, 2, 2, 2, 2, 2, 30]
+
+[[state]]
+name = "voxtail_slow9"
+dirs = 4
+frames = 7
+delays = [2, 2, 2, 2, 2, 2, 30]

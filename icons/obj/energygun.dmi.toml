@@ -1,0 +1,59 @@
+# Generated from energygun.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "scatter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scatter_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scatter100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scatter75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scatter50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scatter25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scatter0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mono"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mono_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cmono"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cmono_open"
+dirs = 1
+frames = 1

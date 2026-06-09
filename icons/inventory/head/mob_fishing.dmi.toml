@@ -1,0 +1,389 @@
+# Generated from mob_fishing.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 48
+cols = 18
+
+[[state]]
+name = "greensoft0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greensoft1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greensoft2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greensoft3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greensoft4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greensoft5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greensoft6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greensoft7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greensoft8"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greensoft9"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greensoft10"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "redsoft0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "redsoft1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "redsoft2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "redsoft3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "redsoft4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "redsoft5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "redsoft6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "redsoft7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "redsoft8"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "redsoft9"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "redsoft10"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bluesoft0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bluesoft1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bluesoft2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bluesoft3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bluesoft4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bluesoft5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bluesoft6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bluesoft7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bluesoft8"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bluesoft9"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bluesoft10"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yellowsoft0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yellowsoft1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yellowsoft2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yellowsoft3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yellowsoft4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yellowsoft5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yellowsoft6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yellowsoft7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yellowsoft8"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yellowsoft9"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yellowsoft10"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "purplesoft0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "purplesoft1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "purplesoft2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "purplesoft3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "purplesoft4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "purplesoft5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "purplesoft6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "purplesoft7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "purplesoft8"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "purplesoft9"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "purplesoft10"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "orangesoft0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "orangesoft1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "orangesoft2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "orangesoft3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "orangesoft4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "orangesoft5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "orangesoft6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "orangesoft7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "orangesoft8"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "orangesoft9"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "orangesoft10"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greysoft0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greysoft1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greysoft2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greysoft3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greysoft4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greysoft5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greysoft6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greysoft7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greysoft8"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greysoft9"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greysoft10"
+dirs = 4
+frames = 1

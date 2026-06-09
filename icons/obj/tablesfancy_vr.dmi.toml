@@ -1,0 +1,49 @@
+# Generated from tablesfancy_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 34
+cols = 6
+
+[[state]]
+name = "fancyblack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fancyblack_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fancyblack_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fancyblack_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fancyblack_3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fancyblack_4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fancyblack_5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fancyblack_6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fancyblack_7"
+dirs = 4
+frames = 1

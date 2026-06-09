@@ -1,0 +1,125 @@
+/atom/proc/stumble_into(mob/living/M)
+	playsound(src, "punch", 25, 1, -1)
+	visible_message(span_warning("[M] [pick("ran", "slammed")] into \the [src]!"))
+	to_chat(M, span_warning("You just [pick("ran", "slammed")] into \the [src]!"))
+	M.apply_damage(5, BRUTE)
+	M.Weaken(2)
+	M.stop_flying()
+
+/obj/structure/table/stumble_into(mob/living/M)
+	var/obj/occupied = can_climb_turf(src)
+	if(occupied)
+		return ..()
+	if(material)
+		playsound(src, material.tableslam_noise, 25, 1, -1)
+	else
+		playsound(src, 'sound/weapons/tablehit1.ogg', 25, 1, -1)
+	visible_message(span_warning("[M] flopped onto \the [src]!"))
+	M.apply_damage(5, BRUTE)
+	M.Weaken(2)
+	M.forceMove(get_turf(src))
+	M.stop_flying()
+
+/obj/machinery/disposal/stumble_into(mob/living/M)
+	playsound(src, 'sound/effects/clang.ogg', 25, 1, -1)
+	visible_message(span_warning("[M] [pick("tripped", "stumbled")] into \the [src]!"))
+	log_and_message_admins("stumbled into \the [src]", M)
+	M.apply_damage(5, BRUTE)
+	M.Weaken(2)
+	M.forceMove(src)
+	M.stop_flying()
+	update_icon()
+
+/obj/structure/inflatable/stumble_into(mob/living/M)
+	playsound(src, "sound/effects/Glasshit.ogg", 25, 1, -1)
+	visible_message(span_warning("[M] [pick("ran", "slammed")] into \the [src]!"))
+	M.Weaken(1)
+	M.stop_flying()
+
+/obj/structure/kitchenspike/stumble_into(mob/living/M)
+	playsound(src, "sound/weapons/pierce.ogg", 25, 1, -1)
+	visible_message(span_warning("[M] [pick("ran", "slammed")] into the spikes on \the [src]!"))
+	M.apply_damage(15, BRUTE, sharp = TRUE)
+	M.Weaken(5)
+	M.stop_flying()
+
+/obj/structure/m_tray/stumble_into(mob/living/M)
+	playsound(src, 'sound/weapons/tablehit1.ogg', 25, 1, -1)
+	visible_message(span_warning("[M] flopped onto \the [src]!"))
+	M.apply_damage(5, BRUTE)
+	M.Weaken(2)
+	M.forceMove(get_turf(src))
+	M.stop_flying()
+
+/obj/structure/c_tray/stumble_into(mob/living/M)
+	playsound(src, 'sound/weapons/tablehit1.ogg', 25, 1, -1)
+	visible_message(span_warning("[M] flopped onto \the [src]!"))
+	M.apply_damage(5, BRUTE)
+	M.Weaken(2)
+	M.forceMove(get_turf(src))
+	M.stop_flying()
+
+/obj/structure/window/stumble_into(mob/living/M)
+	visible_message(span_warning("[M] [pick("ran", "slammed")] into \the [src]!"))
+	M.apply_damage(5, BRUTE)
+	M.Weaken(2)
+	hitby(M)
+	M.stop_flying()
+
+/obj/structure/railing/stumble_into(mob/living/M)
+	var/obj/occupied = can_climb_turf(src)
+	if(occupied)
+		return ..()
+	playsound(src, 'sound/misc/slip.ogg', 25, 1, -1)
+	visible_message(span_warning("[M] [pick("tripped", "stumbled")] over \the [src]!"))
+	M.Weaken(2)
+	M.stop_flying()
+	if(get_turf(M) == get_turf(src))
+		var/turf/T = get_step(src, src.dir)
+		if(T?.Enter(M, get_turf(src)))
+			M.forceMove(T)
+	else
+		M.forceMove(get_turf(src))
+
+/obj/machinery/door/window/stumble_into(mob/living/M)
+	..()
+	bumpopen(M)
+
+/obj/machinery/door/airlock/stumble_into(mob/living/M)
+	..()
+	bumpopen(M)
+
+/obj/machinery/appliance/cooker/fryer/stumble_into(mob/living/M)
+	visible_message(span_warning("[M] [pick("ran", "slammed")] into \the [src]!"))
+	M.apply_damage(15, BURN)
+	M.Weaken(5)
+	M.emote("scream")
+	M.stop_flying()
+
+// cryo_cell deleted with ZAS unary atmos machinery; stumble override removed.
+
+/obj/machinery/porta_turret/stumble_into(mob/living/M)
+	..()
+	if(!attacked && !emagged)
+		attacked = TRUE
+		VARSET_IN(src, attacked, FALSE, 6 SECONDS)
+
+// space_heater (spaceheater.dm) deleted with ZAS atmos machinery;
+// stumble override removed.
+
+/obj/machinery/suit_storage_unit/stumble_into(mob/living/M)
+	if(!ishuman(M) || !isopen || !ispowered || isbroken || OCCUPANT || HELMET || SUIT)
+		return ..()
+	playsound(src, 'sound/effects/clang.ogg', 25, 1, -1)
+	visible_message(span_warning("[M] [pick("tripped", "stumbled")] into \the [src]!"))
+	M.forceMove(src)
+	OCCUPANT = M
+	isopen = 0
+	update_icon()
+	add_fingerprint(M)
+	M.stop_flying()
+
+/obj/machinery/vending/stumble_into(mob/living/M)
+	..()
+	if(prob(2))
+		throw_item()

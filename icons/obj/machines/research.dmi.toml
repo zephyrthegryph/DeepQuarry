@@ -1,0 +1,190 @@
+# Generated from research.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 15
+
+[[state]]
+name = "structural _analyzer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "circuit_imprinter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "circuit_imprinter_t"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "circuit_imprinter_ani"
+dirs = 1
+frames = 25
+delays = [0.8]
+loop = 1
+
+[[state]]
+name = "protolathe_glass"
+dirs = 1
+frames = 9
+delays = [0.88]
+loop = 1
+
+[[state]]
+name = "protolathe_metal"
+dirs = 1
+frames = 9
+delays = [0.88]
+loop = 1
+
+[[state]]
+name = "protolathe_gold"
+dirs = 1
+frames = 9
+delays = [0.88]
+loop = 1
+
+[[state]]
+name = "protolathe_silver"
+dirs = 1
+frames = 9
+delays = [0.88]
+loop = 1
+
+[[state]]
+name = "protolathe_diamond"
+dirs = 1
+frames = 9
+delays = [0.88]
+loop = 1
+
+[[state]]
+name = "protolathe_uranium"
+dirs = 1
+frames = 9
+delays = [0.88]
+loop = 1
+
+[[state]]
+name = "protolathe_phoron"
+dirs = 1
+frames = 9
+delays = [0.88]
+loop = 1
+
+[[state]]
+name = "protolathe_bananium"
+dirs = 1
+frames = 9
+delays = [0.88]
+loop = 1
+
+[[state]]
+name = "protolathe_adamantine"
+dirs = 1
+frames = 9
+delays = [0.88]
+loop = 1
+
+[[state]]
+name = "server"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "server_o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "server-nopower"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "server-on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "server-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "protolathe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "protolathe_work"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "protolathe_pause"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "protolathe_finish"
+dirs = 1
+frames = 13
+delays = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 2, 0.5]
+
+[[state]]
+name = "protolathe_load"
+dirs = 1
+frames = 8
+delays = [1]
+loop = 1
+
+[[state]]
+name = "protolathe_load_m"
+dirs = 1
+frames = 8
+delays = [1]
+loop = 1
+
+[[state]]
+name = "protolathe_panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "protolathe_loading"
+dirs = 1
+frames = 9
+delays = [0.88]
+
+[[state]]
+name = "d_analyzer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d_analyzer_t"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d_analyzer_process"
+dirs = 1
+frames = 27
+delays = [0.9]
+
+[[state]]
+name = "d_analyzer_la"
+dirs = 1
+frames = 10
+delays = [1]
+loop = 1
+
+[[state]]
+name = "d_analyzer_l"
+dirs = 1
+frames = 1

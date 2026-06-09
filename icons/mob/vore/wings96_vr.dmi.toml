@@ -1,0 +1,44 @@
+# Generated from wings96_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 96
+height = 34
+cols = 6
+
+[[state]]
+name = "megamoth_front"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "megamoth_back"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "megamoth_open_front"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "megamoth_open_back"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "megacolor_open_back"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "megacolor_open_front"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "megacolor_back"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "megacolor_front"
+dirs = 4
+frames = 1

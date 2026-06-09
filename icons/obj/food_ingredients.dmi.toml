@@ -1,0 +1,74 @@
+# Generated from food_ingredients.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "dough"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flat dough"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "doughslice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rawcutlet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rawmeatball"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rawsticks"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cutlet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sausage"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flatbread"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flavor-red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flavor-blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sunflowerseed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "frostbelle"
+dirs = 1
+frames = 1

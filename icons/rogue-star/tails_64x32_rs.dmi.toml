@@ -1,0 +1,64 @@
+# Generated from tails_64x32_rs.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 7
+
+[[state]]
+name = "flagtail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flagtail-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flagtail-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bnytr"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bnytr-m1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bnytr-m2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bnytr-f"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bnytr-f-m2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chonksqrl"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chonksqrl-m1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chonksqrl-m2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "taur_clip_mask_def"
+dirs = 4
+frames = 1

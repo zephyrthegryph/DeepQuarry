@@ -1,0 +1,1241 @@
+# Generated from power_cells.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 17
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "random"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "random_device"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "_power"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "device_crap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "em_light"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m_st"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m_st_0"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "m_st_25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m_st_50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m_st_75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m_st_100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m_hi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m_hi_0"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "m_hi_25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m_hi_50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m_hi_75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m_hi_100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m_sup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m_sup_0"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "m_sup_25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m_sup_50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m_sup_75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m_sup_100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m_hy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m_hy_0"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "m_hy_25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m_hy_50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m_hy_75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "m_hy_100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "s_st"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "s_st_0"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "s_st_25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "s_st_50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "s_st_75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "s_st_100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "s_hi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "s_hi_0"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "s_hi_25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "s_hi_50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "s_hi_75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "s_hi_100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "s_sup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "s_sup_0"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "s_sup_25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "s_sup_50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "s_sup_75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "s_sup_100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "s_hy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "s_hy_0"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "s_hy_25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "s_hy_50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "s_hy_75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "s_hy_100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "b_st"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "b_st_0"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "b_st_25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "b_st_50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "b_st_75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "b_st_100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "b_hi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "b_hi_0"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "b_hi_25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "b_hi_50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "b_hi_75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "b_hi_100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "b_sup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "b_sup_0"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "b_sup_25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "b_sup_50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "b_sup_75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "b_sup_100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "b_hy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "b_hy_0"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "b_hy_25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "b_hy_50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "b_hy_75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "b_hy_100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_m_st"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_m_st_0"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "meb_m_st_25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_m_st_50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_m_st_75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_m_st_100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_m_hi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_m_hi_0"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "meb_m_hi_25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_m_hi_50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_m_hi_75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_m_hi_100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_m_sup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_m_sup_0"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "meb_m_sup_25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_m_sup_50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_m_sup_75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_m_sup_100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_m_hy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_m_hy_0"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "meb_m_hy_25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_m_hy_50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_m_hy_75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_m_hy_100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "infinite_m"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "infinite_m_0"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "infinite_m_25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "infinite_m_50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "infinite_m_75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "infinite_m_100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_s_st"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_s_st_0"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "meb_s_st_25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_s_st_50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_s_st_75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_s_st_100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_s_hi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_s_hi_0"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "meb_s_hi_25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_s_hi_50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_s_hi_75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_s_hi_100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_s_sup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_s_sup_0"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "meb_s_sup_25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_s_sup_50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_s_sup_75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_s_sup_100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_s_hy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_s_hy_0"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "meb_s_hy_25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_s_hy_50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_s_hy_75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_s_hy_100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "infinite_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "infinite_s_0"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "infinite_s_25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "infinite_s_50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "infinite_s_75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "infinite_s_100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_b_st"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_b_st_0"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "meb_b_st_25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_b_st_50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_b_st_75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_b_st_100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_b_hi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_b_hi_0"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "meb_b_hi_25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_b_hi_50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_b_hi_75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_b_hi_100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_b_sup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_b_sup_0"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "meb_b_sup_25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_b_sup_50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_b_sup_75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_b_sup_100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_b_hy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_b_hy_0"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "meb_b_hy_25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_b_hy_50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_b_hy_75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_b_hy_100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "infinite_b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "infinite_b_0"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "infinite_b_25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "infinite_b_50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "infinite_b_75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "infinite_b_100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_m_nu"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_m_nu_0"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "meb_m_nu_25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_m_nu_50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_m_nu_75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_m_nu_100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_b_nu"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_b_nu_0"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "meb_b_nu_25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_b_nu_50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_b_nu_75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_b_nu_100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_s_nu"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_s_nu_0"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "meb_s_nu_25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_s_nu_50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_s_nu_75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_s_nu_100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_pda"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_pda_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_pda_25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_pda_50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_pda_75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meb_pda_100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "exs_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "exs_s_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "exs_s_25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "exs_s_50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "exs_s_75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "exs_s_100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "exs_m"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "exs_m_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "exs_m_25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "exs_m_50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "exs_m_75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "exs_m_100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "exs_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "exs_l_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "exs_l_25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "exs_l_50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "exs_l_75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "exs_l_100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "martycharge"
+dirs = 1
+frames = 3
+delays = [3]
+
+[[state]]
+name = "stripe template"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crap_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crap_25"
+dirs = 1
+frames = 2
+delays = [2.5]
+
+[[state]]
+name = "crap_50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crap_75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crap_100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secborg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secborg_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secborg_25"
+dirs = 1
+frames = 2
+delays = [2.5]
+
+[[state]]
+name = "secborg_50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secborg_75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secborg_100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "potato"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "potato_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "potato_25"
+dirs = 1
+frames = 2
+delays = [2.5]
+
+[[state]]
+name = "potato_50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "potato_75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "potato_100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "apc"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "apc_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "apc_25"
+dirs = 1
+frames = 2
+delays = [2.5]
+
+[[state]]
+name = "apc_50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "apc_75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "apc_100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fc_spent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fc_charged"
+dirs = 1
+frames = 3
+delays = [10, 2]
+
+[[state]]
+name = "fc_unstable"
+dirs = 1
+frames = 3
+delays = [4, 1]

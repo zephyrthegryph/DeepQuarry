@@ -1,0 +1,387 @@
+# Generated from tools_lefthand.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 19
+
+[[state]]
+name = "multitool"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hypertool"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "oldrcd"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rcd"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ircd"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cercd"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rcdammo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "analyzer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "miniwelder"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "miniwelder1"
+dirs = 4
+frames = 3
+delays = [1]
+
+[[state]]
+name = "welder"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "welder1"
+dirs = 4
+frames = 3
+delays = [1]
+
+[[state]]
+name = "indwelder"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "indwelder1"
+dirs = 4
+frames = 3
+delays = [1]
+
+[[state]]
+name = "upindwelder"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "upindwelder1"
+dirs = 4
+frames = 3
+delays = [1]
+
+[[state]]
+name = "exwelder"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "exwelder1"
+dirs = 4
+frames = 3
+delays = [1]
+
+[[state]]
+name = "brasswelder"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "brasswelder1"
+dirs = 4
+frames = 2
+delays = [2, 1]
+
+[[state]]
+name = "abductorwelder"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "abductorwelder1"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "crowbar"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crowbar_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crowbar_brass"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mechremoval0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mechremoval1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "screwdriver"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "screwdriver_head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "screwdriver_nuke"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "screwdriver_brass"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cutters_yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cutters"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cutters_cutty_thingy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cutters_brass"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wrench"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wrench_combat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wrench_combat_on"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "wrench_medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wrench_brass"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bolter_wrench"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coil_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coil_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coil_yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coil_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coil_pink"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coil_orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coil_cyan"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coil_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jawsoflife"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jawsparamedic"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rld"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rld-5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rld-4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rld-3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rld-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rld-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rld-0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rld-empty"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "inducer-engi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "inducer-sci"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "inducer-syndi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "drill"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rcl"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rcl-0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rpd"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "plumberer_sci"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "plumberer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rsf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rtd"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rwd-layer2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rwd-layer1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rwd-layer4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spess_knife"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spess_knife_unfolded"
+dirs = 4
+frames = 1

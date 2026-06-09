@@ -1,0 +1,1705 @@
+# Generated from righthand.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 38
+
+[[state]]
+name = "DONGS"
+dirs = 4
+frames = 3
+delays = [1]
+rewind = true
+
+[[state]]
+name = "nothing"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "template"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "atoxinbottle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blindfold"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "broken_beer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "c_tube"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "earmuffs"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "glasses"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "headset"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medibottle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rejuvbottle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sunglasses"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "toxinbottle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "contliquid"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "contvapour"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beaker"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "candy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chips"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coffee"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "brain2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "burger"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cola"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "donut1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "donut2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "faggot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kobskull"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "plasticx"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sodawater"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tonic"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "purple_can"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ice_tea_can"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "energy_drink"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "thirteen_loko"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "space_mountain_wind"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dr_gibb"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "starkist"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "space-up"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lemon-lime"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "carton"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "welding-g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "farwaplush"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teapot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "oxygen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "generic"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "oxygen_f"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "oxygen_fr"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "air"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "anesthetic"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "plasma"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "plasma-c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "oxygen-c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coolant-c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "emergency"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "emergency_engi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "emergency_double"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "canister"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "assembly"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "brutepack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "card-id"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cell"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "clipboard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coil"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coil-wire"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dropper"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "miniFE"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fire_extinguisher"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "atmos_extinguisher"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flashlight"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flashlight-on"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flashlight_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flashlight_blue-on"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flashlight_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flashlight_green-on"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flashlight_purple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flashlight_purple-on"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flashlight_orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flashlight_orange-on"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flashlight_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flashlight_red-on"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flashlight_yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flashlight_yellow-on"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lamp"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lamp-on"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lampgreen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lampgreen-on"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bananalamp"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bananalamp-on"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gift"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "handcuff"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "healthanalyzer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xenobio"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "implantcase"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "multitool"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ointment"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "paintcan"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "paper"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pill"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "radio"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "signaler"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syringe_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syringe_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syringe_5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syringe_10"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syringe_15"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tile"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wrap_paper"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dnainjector"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cleaner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mop"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bucket"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "caution"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "egg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "egg1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "egg2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "egg3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "egg4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "egg5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "egg6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rcd"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rcdammo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "buildpipe"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "analyzer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "electronic"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "welder"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "welder1"
+dirs = 4
+frames = 2
+delays = [2]
+
+[[state]]
+name = "ewelder"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ewelder1"
+dirs = 4
+frames = 2
+delays = [2]
+
+[[state]]
+name = "gold_id"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "silver_id"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bike_horn"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vialgreen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vialblue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scalpel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zippoon"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "zippo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stamp"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "brick"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mousetrap"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lipstick"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lipstickopen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "plantbgone"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nettle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "deathnettle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spraycan"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spade"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blueprints"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pickaxe"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shovel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spickaxe"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "upickaxe"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ppickaxe"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gpickaxe"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dpickaxe"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jackhammer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "plasmacutter"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "revballoon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rev_headballoon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndballoon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ntballoon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "newspaper"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beachball"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheet-card"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "balloon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "balloon-empty"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nullrod"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rubberducky"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crowbar"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crowbar_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "screwdriver"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "screwdriver_brass"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "screwdriver_black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "screwdriver_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "screwdriver_purple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "screwdriver_brown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "screwdriver_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "screwdriver_cyan"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "screwdriver_yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cutters"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cutters_yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cutters_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wrench"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wrench_brass"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pipe_wrench"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "basketball"
+dirs = 4
+frames = 5
+delays = [1]
+
+[[state]]
+name = "saw"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "violin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flare"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stool"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "autoinjector"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "RPED"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "maglight"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "maglight-on"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "glowstick"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "glowstick_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "glowstick_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "glowstick_orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "glowstick_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "glowstick_yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "glowstick_isotope"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "towel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "emp"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flash"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flashbang"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "quarrel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grenade"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "briefcase"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flashtool"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "empgrenade"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rack_parts"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "table_parts"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "staffofchange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "focus"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "focus"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scepter"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "camera"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheet"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetblue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetorange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetred"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetpurple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetgreen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetyellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetrainbow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetbrown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetcaptain"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheethop"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetce"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheethos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetmedical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetrd"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetmime"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sheetian"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "meson"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wo_wallet"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smpurse"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lgpurse"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "camcorder"
+dirs = 4
+frames = 2
+delays = [7, 4]
+
+[[state]]
+name = "camcorder_on"
+dirs = 4
+frames = 2
+delays = [7, 4]
+
+[[state]]
+name = "megaphone"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gigaphone"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "binoculars"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "powersink0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "suitcooler0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "suitcooler1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "suitcooler2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "powersink1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "labeler0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "labeler1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lightreplacer0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lightreplacer1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lantern"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lantern-on"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bodybag_folded"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "adv_spectrometer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "adv_spectrometer_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medical_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stethoscope"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bodybag_cryo_folded"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "defib_kit0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bloodpack_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bloodpack_half"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bloodpack_empty"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hypo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "autopsy_scanner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "surgery_drill"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fixovein"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hemostat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "retractor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bone-gel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bone setter"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cautery"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "burnkit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "traumakit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spectrometer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spectrometer_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "aicard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "id_mod"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "door_electronics"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "woodcirclet"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "debugger"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "welderpack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "t-ray"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "std_mod"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "arcwelder"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "arcwelder1"
+dirs = 4
+frames = 2
+delays = [2]
+
+[[state]]
+name = "wirer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cyborg_upgrade"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mcontroller"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ce_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mainboard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smes_coil"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jumper_kit0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "folded"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "defibunit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "defibpaddles"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "drill"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jawsoflife"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wheelchair"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "advfolded"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "oar"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chainsaw0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chainsaw1"
+dirs = 4
+frames = 2
+delays = [0.4]
+
+[[state]]
+name = "banner-red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "banner-blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "banner-green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "banner-nt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "banner-solgov"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "banner-virgov"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bone"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bouquet"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stickhorse"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hedget"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tickets"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holochip"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holochip_ds"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holochip_op"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holochip_ert"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holochip_raid"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holochip_syndi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mister"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "misterjani"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nozzleatmos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "misterop"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mistersec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blahaj"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "selfie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rubberducky_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rubberducky_black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rubberducky_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rubberducky_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rubberducky_grey"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rubberducky_pink"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rubberducky_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "adv_mop"
+dirs = 4
+frames = 1

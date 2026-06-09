@@ -1,0 +1,189 @@
+
+/*
+	apply_damage(a,b,c)
+	args
+	a:damage - How much damage to take
+	b:damage_type - What type of damage to take, brute, burn
+	c:def_zone - Where to take the damage if its brute or burn
+	Returns
+	standard 0 if fail
+*/
+/mob/living/proc/apply_damage(damage = 0, damagetype = BRUTE, def_zone = null, blocked = 0, sharp = FALSE, edge = FALSE, obj/used_weapon = null, projectile = 0)
+	SEND_SIGNAL(src, COMSIG_MOB_APPLY_DAMAGE, damage, damagetype, def_zone, blocked, sharp, edge, used_weapon, projectile)
+	if(GLOB.Debug2)
+		log_world("## DEBUG: apply_damage() was called on [src], with [damage] damage, and an armor value of [blocked].")
+	if(!damage || (blocked >= 100))
+		return 0
+	for(var/datum/modifier/M in modifiers) //MODIFIER STUFF. It's best to do this RIGHT before armor is calculated, so it's done here! This is the 'forcefield' defence.
+		if(damagetype == BRUTE && (!isnull(M.effective_brute_resistance)))
+			if(M.energy_based)
+				M.energy_source.use(M.damage_cost * damage)
+			damage = damage * M.effective_brute_resistance
+			continue
+		if((damagetype == BURN || damagetype == ELECTROCUTE)&& (!isnull(M.effective_fire_resistance)))
+			if(M.energy_based)
+				M.energy_source.use(M.damage_cost * damage)
+			damage = damage * M.effective_fire_resistance
+			continue
+		if(damagetype == TOX && (!isnull(M.effective_tox_resistance)))
+			if(M.energy_based)
+				M.energy_source.use(M.damage_cost * damage)
+			damage = damage * M.effective_tox_resistance
+			continue
+		if(damagetype == OXY && (!isnull(M.effective_oxy_resistance)))
+			if(M.energy_based)
+				M.energy_source.use(M.damage_cost * damage)
+			damage = damage * M.effective_oxy_resistance
+			continue
+		if(damagetype == CLONE && (!isnull(M.effective_clone_resistance)))
+			if(M.energy_based)
+				M.energy_source.use(M.damage_cost * damage)
+			damage = damage * M.effective_clone_resistance
+			continue
+		if(damagetype == HALLOSS && (!isnull(M.effective_hal_resistance)))
+			if(M.energy_based)
+				M.energy_source.use(M.damage_cost * damage)
+			damage = damage * M.effective_hal_resistance
+			continue
+		if(damagetype == SEARING && (!isnull(M.effective_fire_resistance) || !isnull(M.effective_brute_resistance)))
+			if(M.energy_based)
+				M.energy_source.use(M.damage_cost * damage)
+			var/damage_mitigation = 0//Used for dual calculations.
+			if(!isnull(M.effective_fire_resistance))
+				damage_mitigation += round((1/3)*damage * M.effective_fire_resistance)
+			if(!isnull(M.effective_brute_resistance))
+				damage_mitigation += round((2/3)*damage * M.effective_brute_resistance)
+			damage -= damage_mitigation
+			continue
+		if(damagetype == BIOACID && (isSynthetic() && (!isnull(M.effective_fire_resistance))) || (!isSynthetic() && M.effective_tox_resistance))
+			if(isSynthetic())
+				damage = damage * M.effective_fire_resistance
+			else
+				damage = damage * M.effective_tox_resistance
+			continue
+
+	var/initial_blocked = blocked
+
+	blocked = (100-blocked)/100
+	switch(damagetype)
+		if(BRUTE)
+			adjustBruteLoss(damage * blocked)
+		if(BURN)
+			if(COLD_RESISTANCE in mutations)
+				damage = 0
+			adjustFireLoss(damage * blocked)
+			attempt_multishock(SHOCKFLAG_BURNDAMAGE)
+		if(SEARING)
+			apply_damage(round(damage / 3), BURN, def_zone, initial_blocked, sharp, edge, used_weapon)
+			apply_damage(round(damage / 3 * 2), BRUTE, def_zone, initial_blocked, sharp, edge, used_weapon)
+		if(TOX)
+			adjustToxLoss(damage * blocked)
+		if(OXY)
+			adjustOxyLoss(damage * blocked)
+		if(CLONE)
+			adjustCloneLoss(damage * blocked)
+		if(HALLOSS)
+			adjustHalLoss(damage * blocked)
+		if(ELECTROCUTE)
+			electrocute_act(damage, used_weapon, 1.0, def_zone)
+		if(BIOACID)
+			if(isSynthetic())
+				apply_damage(damage, BURN, def_zone, initial_blocked, sharp, edge, used_weapon)	// Handle it as normal burn.
+			else
+				adjustToxLoss(damage * blocked)
+		if(ELECTROMAG)
+			damage = damage * blocked
+			switch(round(damage))
+				if(91 to INFINITY)
+					emp_act(EMP_HEAVY)
+				if(76 to 90)
+					if(prob(50))
+						emp_act(EMP_HEAVY)
+					else
+						emp_act(EMP_MEDIUM)
+				if(61 to 75)
+					emp_act(EMP_MEDIUM)
+				if(46 to 60)
+					if(prob(50))
+						emp_act(EMP_MEDIUM)
+					else
+						emp_act(EMP_LIGHT)
+				if(31 to 45)
+					emp_act(EMP_LIGHT)
+				if(16 to 30)
+					if(prob(50))
+						emp_act(EMP_LIGHT)
+					else
+						emp_act(EMP_HARMLESS)
+				if(0 to 15)
+					emp_act(EMP_HARMLESS)
+	flash_weak_pain()
+	updatehealth()
+	SEND_SIGNAL(src, COMSIG_MOB_AFTER_APPLY_DAMAGE, damage, damagetype, def_zone, blocked, sharp, edge, used_weapon, projectile)
+	return 1
+
+
+/mob/living/proc/apply_damages(brute = 0, burn = 0, tox = 0, oxy = 0, clone = 0, halloss = 0, def_zone = null, blocked = 0)
+	if(blocked >= 100)
+		return 0
+	// INSERT MODIFIER CODE HERE... But no, really, only two things in the game use it, quad and viruses. The former is admin-only and the latter wouldn't be affected logically, but would if shield code was inerted here. If you really want, you can copy&paste the above and modify it to adjust brute/burn/etc. I do not advise this however.
+	if(brute)	apply_damage(brute, BRUTE, def_zone, blocked)
+	if(burn)	apply_damage(burn, BURN, def_zone, blocked)
+	if(tox)		apply_damage(tox, TOX, def_zone, blocked)
+	if(oxy)		apply_damage(oxy, OXY, def_zone, blocked)
+	if(clone)	apply_damage(clone, CLONE, def_zone, blocked)
+	if(halloss) apply_damage(halloss, HALLOSS, def_zone, blocked)
+	return 1
+
+
+
+/mob/living/proc/apply_effect(effect = 0,effecttype = STUN, blocked = 0, check_protection = 1)
+	if(GLOB.Debug2)
+		log_world("## DEBUG: apply_effect() was called.  The type of effect is [effecttype].  Blocked by [blocked].")
+	if(!effect || (blocked >= 100))
+		return 0
+	blocked = (100-blocked)/100
+
+	switch(effecttype)
+		if(STUN)
+			Stun(effect * blocked)
+		if(WEAKEN)
+			Weaken(effect * blocked)
+		if(PARALYZE)
+			Paralyse(effect * blocked)
+		if(AGONY)
+			halloss += max((effect * blocked), 0) // Useful for objects that cause "subdual" damage. PAIN!
+		if(IRRADIATE)
+			var/rad_protection = getarmor(null, "rad")
+			rad_protection = (100-rad_protection)/100
+			if(!(SEND_SIGNAL(src, COMSIG_LIVING_IRRADIATE_EFFECT, effect, effecttype, blocked, check_protection, rad_protection) & COMPONENT_BLOCK_IRRADIATION))
+				radiation += max((effect * rad_protection), 0)
+		if(STUTTER)
+			if(status_flags & CANSTUN) // stun is usually associated with stutter
+				stuttering = max(stuttering,(effect * blocked))
+		if(EYE_BLUR)
+			eye_blurry = max(eye_blurry,(effect * blocked))
+		if(DROWSY)
+			drowsyness = max(drowsyness,(effect * blocked))
+	updatehealth()
+	return 1
+
+
+/mob/living/proc/apply_effects(stun = 0, weaken = 0, paralyze = 0, irradiate = 0, stutter = 0, eyeblur = 0, drowsy = 0, agony = 0, blocked = 0, ignite = 0, flammable = 0)
+	if(SEND_SIGNAL(src, COMSIG_TAKING_APPLY_EFFECT) & COMSIG_CANCEL_EFFECT)
+		return 0	// Cancelled by a component
+	if(blocked >= 100)
+		return 0
+	if(stun)		apply_effect(stun, STUN, blocked)
+	if(weaken)		apply_effect(weaken, WEAKEN, blocked)
+	if(paralyze)	apply_effect(paralyze, PARALYZE, blocked)
+	if(irradiate)	apply_effect(irradiate, IRRADIATE, blocked)
+	if(stutter)		apply_effect(stutter, STUTTER, blocked)
+	if(eyeblur)		apply_effect(eyeblur, EYE_BLUR, blocked)
+	if(drowsy)		apply_effect(drowsy, DROWSY, blocked)
+	if(agony)		apply_effect(agony, AGONY, blocked)
+	if(flammable)	adjust_fire_stacks(flammable)
+	if(ignite)
+		adjust_fire_stacks(ignite)
+		ignite_mob()
+	return 1

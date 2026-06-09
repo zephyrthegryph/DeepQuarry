@@ -1,0 +1,129 @@
+# Generated from bureaucracy_yw.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "folder_hop"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "folder_hos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "folder_rd"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "folder_captain"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "folder_cmo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "folder_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "folder_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "folder_yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "folder_white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "folder"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "folder_paper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-hos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-hop"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-cap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-qm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-deny"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-ce"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-rd"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-clown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-cmo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-cent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-intaff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-cargo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-sg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-ward"
+dirs = 1
+frames = 1

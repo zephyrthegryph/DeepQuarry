@@ -1,0 +1,184 @@
+# Generated from windoor.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 22
+
+[[state]]
+name = "l_windoor_assembly02"
+dirs = 4
+frames = 2
+delays = [3]
+
+[[state]]
+name = "l_windoor_assembly01"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "left"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leftclosing"
+dirs = 4
+frames = 7
+delays = [2, 1, 1, 1, 1, 1, 2]
+
+[[state]]
+name = "leftopen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leftopening"
+dirs = 4
+frames = 7
+delays = [2, 1, 1, 1, 1, 1, 2]
+
+[[state]]
+name = "leftdeny"
+dirs = 4
+frames = 3
+delays = [1, 2, 1]
+
+[[state]]
+name = "leftspark"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "r_windoor_assembly02"
+dirs = 4
+frames = 2
+delays = [3]
+
+[[state]]
+name = "r_windoor_assembly01"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "right"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rightclosing"
+dirs = 4
+frames = 7
+delays = [2, 1, 1, 1, 1, 1, 2]
+
+[[state]]
+name = "rightopen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rightopening"
+dirs = 4
+frames = 7
+delays = [2, 1, 1, 1, 1, 1, 2]
+
+[[state]]
+name = "rightdeny"
+dirs = 4
+frames = 3
+delays = [1, 2, 1]
+
+[[state]]
+name = "rightspark"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "l_secure_windoor_assembly02"
+dirs = 4
+frames = 3
+delays = [3]
+
+[[state]]
+name = "l_secure_windoor_assembly01"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leftsecure"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leftsecureclosing"
+dirs = 4
+frames = 7
+delays = [2, 1, 1, 1, 1, 1, 2]
+
+[[state]]
+name = "leftsecureopen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leftsecureopening"
+dirs = 4
+frames = 7
+delays = [2, 1, 1, 1, 1, 1, 2]
+
+[[state]]
+name = "leftsecuredeny"
+dirs = 4
+frames = 3
+delays = [1]
+
+[[state]]
+name = "leftsecurespark"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "r_secure_windoor_assembly02"
+dirs = 4
+frames = 3
+delays = [3]
+
+[[state]]
+name = "r_secure_windoor_assembly01"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rightsecure"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rightsecureclosing"
+dirs = 4
+frames = 7
+delays = [2, 1, 1, 1, 1, 1, 2]
+
+[[state]]
+name = "rightsecureopen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rightsecureopening"
+dirs = 4
+frames = 7
+delays = [2, 1, 1, 1, 1, 1, 2]
+
+[[state]]
+name = "rightsecuredeny"
+dirs = 4
+frames = 3
+delays = [1]
+
+[[state]]
+name = "rightsecurespark"
+dirs = 4
+frames = 6
+delays = [1]

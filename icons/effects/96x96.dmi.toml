@@ -1,0 +1,61 @@
+# Generated from 96x96.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 96
+height = 96
+cols = 8
+
+[[state]]
+name = "explosion"
+dirs = 1
+frames = 7
+delays = [1]
+loop = 1
+
+[[state]]
+name = "smoke2"
+dirs = 1
+frames = 3
+delays = [2]
+rewind = true
+
+[[state]]
+name = "smoke"
+dirs = 4
+frames = 3
+delays = [2]
+rewind = true
+
+[[state]]
+name = "singularity_s3"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emfield_s3"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "technomancer_AOE"
+dirs = 1
+frames = 2
+delays = [2]
+rewind = true
+
+[[state]]
+name = "cleave"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "explosionfast"
+dirs = 1
+frames = 8
+delays = [0.6]
+loop = 1

@@ -1,0 +1,386 @@
+# Generated from walls.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 12
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "riveted"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "riveted1"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "riveted2"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "fakewindows"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "fakewindows2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rock"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock-dark"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_Archaeo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rockvault"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sandstonevault"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alienvault"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cult-narsie"
+dirs = 1
+frames = 4
+delays = [3]
+
+[[state]]
+name = "overlay_archaeo1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "overlay_archaeo2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "overlay_archaeo3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "overlay_excv1_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "overlay_excv1_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "overlay_excv1_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "overlay_excv2_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "overlay_excv2_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "overlay_excv2_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "overlay_excv3_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "overlay_excv3_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "overlay_excv3_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "overlay_excv4_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "overlay_excv4_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "overlay_excv4_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "overlay_excv5_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "overlay_excv5_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "overlay_excv5_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "overlay_damage"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "overlay_damage"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_side"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rock_side_w"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_side_e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_side_n"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_side_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock-light"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rock-light-old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rock_side-light-old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rock_side-light_w-old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_side-light_e-old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_side-light_n-old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_side-light"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rock_side-light_w"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_side-light_e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_side-light_n"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_side-light_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_side-light_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock-icey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_side-icey"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rock_side-icey_w"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_side-icey_e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_side-icey_n"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_side-icey_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock-alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_side-alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rock_side-alt_w"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_side-alt_e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_side-alt_n"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_side-alt_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock-crystal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_side-crystal"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rock_side-crystal_w"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_side-crystal_e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_side-crystal_n"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_side-crystal_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock-crystal-shiny"
+dirs = 1
+frames = 6
+delays = [20, 1, 1, 10, 1]
+
+[[state]]
+name = "icerock"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "icerock_side"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "icerock_side_w"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "icerock_side_e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "icerock_side_n"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "icerock_side_s"
+dirs = 1
+frames = 1

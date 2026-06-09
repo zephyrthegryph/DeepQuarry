@@ -1,0 +1,136 @@
+# Generated from eclipse.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 10
+
+[[state]]
+name = "engi_spider"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "orb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "squishblob"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orb-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mine-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fleetsci"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "purity"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "noodle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "taur"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "breacher"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zaddat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shield_mecha"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "UPshield_mecha"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mecha_top"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "astral_janus"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blade_tosser"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "breaker"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "clock_cat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "clock_sergal"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "space"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flamer"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clock_cat_shield"
+dirs = 4
+frames = 1

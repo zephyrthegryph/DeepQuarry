@@ -1,0 +1,31 @@
+# Generated from decor96x96.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 96
+height = 96
+cols = 4
+
+[[state]]
+name = "comm_tower_on"
+dirs = 1
+frames = 4
+delays = [5]
+
+[[state]]
+name = "comm_tower"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vault"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "shinto"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "big_skeleton"
+dirs = 1
+frames = 1

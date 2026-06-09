@@ -1,0 +1,346 @@
+# Generated from egg.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "egg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_unathi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_unathi_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_nevrean"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_nevrean_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_human"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_human_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_tajaran"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_tajaran_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_skrell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_skrell_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_akula"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_akula_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_sergal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_sergal_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_slime"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_slime_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_unique"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_unique_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_scree"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_scree_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_xenomorph"
+dirs = 1
+frames = 5
+delays = [35, 2]
+
+[[state]]
+name = "egg_xenomorph_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_badrecipe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_chocolate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_pellet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_rock"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_chicken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_slimeglob"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_synthetic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_escapepod"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_cocoon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_bugcocoon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_orange"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_purple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_rainbow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_pinkspots"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_honeycomb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_floppy"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "egg_file"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_cd"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_badrecipe_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_chocolate_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_pellet_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_rock_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_chicken_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_slimeglob_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_synthetic_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_escapepod_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_cocoon_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_bugcocoon_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_yellow_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_blue_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_green_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_orange_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_purple_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_red_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_rainbow_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_pinkspots_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_honeycomb_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_floppy_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_file_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_cd_open"
+dirs = 1
+frames = 1

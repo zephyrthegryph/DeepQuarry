@@ -1,0 +1,9 @@
+# Generated from guns_back_ch.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 2
+
+[[state]]
+name = "clockrifle"
+dirs = 4
+frames = 1

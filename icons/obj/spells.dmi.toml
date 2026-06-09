@@ -1,0 +1,305 @@
+# Generated from spells.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 20
+
+[[state]]
+name = "toggled_old"
+dirs = 1
+frames = 22
+delays = [0.6, 0.2]
+
+[[state]]
+name = "toggled"
+dirs = 1
+frames = 55
+delays = [0.1]
+
+[[state]]
+name = "toggled_old"
+dirs = 1
+frames = 55
+delays = [0.1]
+
+[[state]]
+name = "instability"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "controlled"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "generic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "apportation"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "blink"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "darkness"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "radiance"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "destablize"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "control"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "purify"
+dirs = 1
+frames = 5
+delays = [2]
+
+[[state]]
+name = "mend_wounds"
+dirs = 1
+frames = 5
+delays = [2]
+
+[[state]]
+name = "mend_life"
+dirs = 1
+frames = 5
+delays = [2]
+
+[[state]]
+name = "mend_synthetic"
+dirs = 1
+frames = 5
+delays = [2]
+
+[[state]]
+name = "mend_all"
+dirs = 1
+frames = 7
+delays = [2]
+
+[[state]]
+name = "shield"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "flame_tongue"
+dirs = 1
+frames = 3
+delays = [2]
+
+[[state]]
+name = "warp_strike"
+dirs = 1
+frames = 5
+delays = [2]
+
+[[state]]
+name = "aspect_bolt"
+dirs = 1
+frames = 10
+delays = [2]
+
+[[state]]
+name = "gambit"
+dirs = 1
+frames = 10
+delays = [2]
+
+[[state]]
+name = "fire_bolt"
+dirs = 1
+frames = 3
+delays = [2]
+
+[[state]]
+name = "fire_blast"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "illusion"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "audible_deception"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "haste"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "energy_siphon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "energy_siphon_drain"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "condensation"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "targeting_matrix"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "beam"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "track"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "track_direct"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "track_close"
+dirs = 8
+frames = 2
+delays = [2]
+
+[[state]]
+name = "track_medium"
+dirs = 8
+frames = 2
+delays = [2]
+
+[[state]]
+name = "track_far"
+dirs = 8
+frames = 2
+delays = [2]
+
+[[state]]
+name = "track_unknown"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "cooldown_template"
+dirs = 1
+frames = 9
+delays = [5, 5, 5, 5, 5, 5, 5, 5, 1]
+loop = 1
+
+[[state]]
+name = "cooldown_5"
+dirs = 1
+frames = 9
+delays = [0.625, 0.625, 0.625, 0.625, 0.625, 0.625, 0.625, 0.625, 1]
+loop = 1
+
+[[state]]
+name = "cooldown_10"
+dirs = 1
+frames = 9
+delays = [1.25, 1.25, 1.25, 1.25, 1.25, 1.25, 1.25, 1.25, 1]
+loop = 1
+
+[[state]]
+name = "cooldown_15"
+dirs = 1
+frames = 9
+delays = [1.875, 1.875, 1.875, 1.875, 1.875, 1.875, 1.875, 1.875, 1]
+loop = 1
+
+[[state]]
+name = "cooldown_20"
+dirs = 1
+frames = 9
+delays = [2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 1]
+loop = 1
+
+[[state]]
+name = "cooldown_25"
+dirs = 1
+frames = 9
+delays = [3.125, 3.125, 3.125, 3.125, 3.125, 3.125, 3.125, 3.125, 1]
+loop = 1
+
+[[state]]
+name = "cooldown_30"
+dirs = 1
+frames = 9
+delays = [3.75, 3.75, 3.75, 3.75, 3.75, 3.75, 3.75, 3.75, 1]
+loop = 1
+
+[[state]]
+name = "target"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chain_lightning"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "force_missile"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "overload"
+dirs = 1
+frames = 2
+delays = [5]

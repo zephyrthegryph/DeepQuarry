@@ -1,0 +1,79 @@
+# Generated from electronic_tools.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "circuit_printer"
+dirs = 1
+frames = 3
+delays = [1]
+rewind = true
+
+[[state]]
+name = "upgrade_disk"
+dirs = 1
+frames = 9
+delays = [1]
+
+[[state]]
+name = "upgrade_disk_clone"
+dirs = 1
+frames = 10
+delays = [1]
+
+[[state]]
+name = "analyzer"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "debugger"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "wirer-wire"
+dirs = 1
+frames = 5
+delays = [1]
+rewind = true
+
+[[state]]
+name = "wirer-unwire"
+dirs = 1
+frames = 5
+delays = [1]
+rewind = true
+
+[[state]]
+name = "wirer-wiring"
+dirs = 1
+frames = 5
+delays = [1]
+rewind = true
+
+[[state]]
+name = "wirer-unwiring"
+dirs = 1
+frames = 5
+delays = [1]
+rewind = true
+
+[[state]]
+name = "detailer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "detailer-color"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "upgrade_disk_illegal"
+dirs = 1
+frames = 9
+delays = [1]

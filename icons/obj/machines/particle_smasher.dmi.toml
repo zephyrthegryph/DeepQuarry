@@ -1,0 +1,34 @@
+# Generated from particle_smasher.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "smasher"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smasher-o"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "smasher-reagent"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "smasher-material"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "smasher-material-glow"
+dirs = 1
+frames = 3
+delays = [3, 2, 5, 60]
+rewind = true

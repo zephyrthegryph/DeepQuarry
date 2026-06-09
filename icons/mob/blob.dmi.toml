@@ -1,0 +1,198 @@
+# Generated from blob.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 26
+
+[[state]]
+name = "blob_old"
+dirs = 1
+frames = 12
+delays = [3]
+
+[[state]]
+name = "blob_damaged_old"
+dirs = 1
+frames = 12
+delays = [3]
+
+[[state]]
+name = "blob_idle_old"
+dirs = 1
+frames = 12
+delays = [3]
+
+[[state]]
+name = "blob_spore_temp"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blob_core_old"
+dirs = 1
+frames = 12
+delays = [2]
+
+[[state]]
+name = "blob_node_old"
+dirs = 1
+frames = 12
+delays = [3]
+
+[[state]]
+name = "blob_factory_old"
+dirs = 1
+frames = 12
+delays = [3]
+
+[[state]]
+name = "blob_damaged2_old"
+dirs = 1
+frames = 12
+delays = [3]
+
+[[state]]
+name = "blobpod_old"
+dirs = 1
+frames = 4
+delays = [10, 3, 5, 3]
+
+[[state]]
+name = "blobpod"
+dirs = 1
+frames = 4
+delays = [10, 3, 5, 3]
+
+[[state]]
+name = "marker"
+dirs = 1
+frames = 2
+delays = [10]
+
+[[state]]
+name = "blob_head_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blob_head"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blob"
+dirs = 4
+frames = 12
+delays = [3]
+
+[[state]]
+name = "blob_damaged"
+dirs = 4
+frames = 12
+delays = [3]
+
+[[state]]
+name = "blob_shield"
+dirs = 4
+frames = 12
+delays = [3]
+
+[[state]]
+name = "blob_shield_damaged"
+dirs = 4
+frames = 12
+delays = [3]
+
+[[state]]
+name = "blob_core"
+dirs = 1
+frames = 12
+delays = [2]
+
+[[state]]
+name = "blob_node"
+dirs = 1
+frames = 12
+delays = [3]
+
+[[state]]
+name = "blob_factory"
+dirs = 4
+frames = 12
+delays = [3]
+
+[[state]]
+name = "blob_resource"
+dirs = 4
+frames = 12
+delays = [3]
+
+[[state]]
+name = "blob_glow"
+dirs = 1
+frames = 12
+delays = [3]
+loop = 1
+
+[[state]]
+name = "blob_damaged_glow"
+dirs = 1
+frames = 12
+delays = [3]
+loop = 1
+
+[[state]]
+name = "blob_idle_glow"
+dirs = 1
+frames = 12
+delays = [3]
+loop = 1
+
+[[state]]
+name = "blob_core_glow"
+dirs = 1
+frames = 12
+delays = [2]
+loop = 1
+
+[[state]]
+name = "blob_node_glow"
+dirs = 1
+frames = 12
+delays = [3]
+loop = 1
+
+[[state]]
+name = "blob_factory_glow"
+dirs = 4
+frames = 12
+delays = [3]
+loop = 1
+
+[[state]]
+name = "blob_resource_glow"
+dirs = 4
+frames = 12
+delays = [3]
+loop = 1
+
+[[state]]
+name = "blob_core_overlay"
+dirs = 4
+frames = 12
+delays = [2]
+
+[[state]]
+name = "blob_node_overlay"
+dirs = 4
+frames = 12
+delays = [3]
+
+[[state]]
+name = "blank_blob"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blobcore"
+dirs = 1
+frames = 1

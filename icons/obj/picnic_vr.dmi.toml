@@ -1,0 +1,19 @@
+# Generated from picnic_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "picnic_central"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "picnic_sides"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "picnic_carried"
+dirs = 1
+frames = 1

@@ -1,0 +1,134 @@
+# Generated from tank.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "air_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "o2_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "n2_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "co2_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "n2o_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phoron_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "air_map_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "o2_map_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "n2_map_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "co2_map_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "n2o_map_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phoron_map_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "air"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "o2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "n2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "co2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "n2o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phoron"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ch4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "air_map"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "o2_map"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "n2_map"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "co2_map"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "n2o_map"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phoron_map"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ch4_map"
+dirs = 4
+frames = 1

@@ -1,0 +1,149 @@
+# Generated from knights_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 10
+
+[[state]]
+name = "galahad"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "galahad_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bedevere"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lancelot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lancelot_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "robin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "robin_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crusader"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bedevere_folded"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "robin_folded"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "galahad_folded"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lancelot_folded"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crusader_folded"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crusader_blank"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crusader_explo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crusader_explo/FM"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lezzy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lezzy_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pink"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "black_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "black_white_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chain"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chain_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "quizzler"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pink_folded"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chain_folded"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lezzy_folded"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "black_white_folded"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "quizzler_folded"
+dirs = 1
+frames = 1

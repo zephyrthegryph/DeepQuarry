@@ -1,0 +1,44 @@
+# Generated from blood_human.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "bloodyhands"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "uniformblood"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "armorblood"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "helmetblood"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "suitblood"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "maskblood"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shoeblood"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatblood"
+dirs = 4
+frames = 1

@@ -1,0 +1,587 @@
+# Generated from electronic_components.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 14
+
+[[state]]
+name = "template"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "addition"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "subtraction"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "multiplication"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "division"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "exponent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sign"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "modulo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "square_root"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sine"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cosine"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tangent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cosecant"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cotangent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secant"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "round"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "absolute"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "average"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "random"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "memory1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "memory2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "memory4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "memory8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "memory16"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "equal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "not_equal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "less_than"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "greater_than"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "less_than_or_equal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "greater_than_or_equal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "not"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "and"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "or"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "splitter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "splitter4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "splitter8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "numberpad"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "textpad"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "button"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "listpad"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "colorpad"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "screen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "manipulator"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "screen_medium"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "screen_large"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "circuit_kit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "internalbm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smoke"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "gps"
+dirs = 1
+frames = 6
+delays = [5]
+
+[[state]]
+name = "recorder"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "medscan"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medscan_adv"
+dirs = 1
+frames = 2
+delays = [5, 1]
+
+[[state]]
+name = "signal"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "signal_illegal"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "speaker"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "locomotion"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "video_camera"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mux2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mux4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mux8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mux16"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dmux2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dmux4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dmux8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dmux16"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "led"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toggle_button"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "card_reader"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tick-f"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "tick-m"
+dirs = 1
+frames = 3
+delays = [1]
+rewind = true
+
+[[state]]
+name = "tick-s"
+dirs = 1
+frames = 5
+delays = [1]
+rewind = true
+
+[[state]]
+name = "clock"
+dirs = 1
+frames = 4
+delays = [15]
+
+[[state]]
+name = "delay"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "delay-50"
+dirs = 1
+frames = 6
+delays = [8.3]
+
+[[state]]
+name = "delay-20"
+dirs = 1
+frames = 6
+delays = [3.3]
+
+[[state]]
+name = "delay-10"
+dirs = 1
+frames = 6
+delays = [1.6]
+
+[[state]]
+name = "delay-5"
+dirs = 1
+frames = 6
+delays = [0.83]
+
+[[state]]
+name = "delay-1"
+dirs = 1
+frames = 6
+delays = [0.16]
+
+[[state]]
+name = "uppercase"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lowercase"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "num-string"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "string-num"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ref-string"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hsv-hex"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rgb-hex"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "light"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "light_adv"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "injector"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reagent_pump"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reagent_storage"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reagent_storage_cryo"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "solar_cell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "power_transmitter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "power_relay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grenade"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluespace"
+dirs = 1
+frames = 4
+delays = [5]
+
+[[state]]
+name = "shocker"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pressure_plate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grabber"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reagent_scan"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reagent_filter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chemical_cell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "externalbm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reagent_storage_big"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sr_nor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jklatch"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gated_d"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holo_projector"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "powernet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "listpad"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "implant_power"
+dirs = 1
+frames = 2
+delays = [10, 1]

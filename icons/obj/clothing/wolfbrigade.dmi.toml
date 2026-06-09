@@ -1,0 +1,54 @@
+# Generated from wolfbrigade.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "wbhelmet-mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wbmask-mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wbsuit-mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wbsuit2-mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wbboots-mob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wbhelmet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wbmask"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wbsuit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wbsuit2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wbboots"
+dirs = 1
+frames = 1

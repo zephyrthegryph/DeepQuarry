@@ -1,0 +1,19 @@
+# Generated from hoists.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "hoist_hook"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hoist_case"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hoist_base"
+dirs = 4
+frames = 1

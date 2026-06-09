@@ -1,0 +1,67 @@
+# Generated from stoatborg.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 13
+
+[[state]]
+name = "stoatclown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stoatclown-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stoatclown-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stoatclown-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stoatclown"
+dirs = 4
+frames = 8
+delays = [1]
+movement = true
+
+[[state]]
+name = "stoatclown-eyes"
+dirs = 4
+frames = 8
+delays = [1]
+movement = true
+
+[[state]]
+name = "stoatclown-lights"
+dirs = 4
+frames = 8
+delays = [1]
+movement = true
+
+[[state]]
+name = "stoatclown-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stoatclown-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stoatclown-sleeper-1"
+dirs = 4
+frames = 8
+delays = [1]
+movement = true
+
+[[state]]
+name = "stoatclown-sleeper-1-rest"
+dirs = 4
+frames = 1

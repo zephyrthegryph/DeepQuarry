@@ -1,0 +1,27 @@
+# Generated from other.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "petrification"
+dirs = 4
+frames = 9
+delays = [5]
+
+[[state]]
+name = "petrifier"
+dirs = 1
+frames = 2
+delays = [1, 5]
+
+[[state]]
+name = "cronchy_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cronchy_active"
+dirs = 1
+frames = 6
+delays = [2.5]

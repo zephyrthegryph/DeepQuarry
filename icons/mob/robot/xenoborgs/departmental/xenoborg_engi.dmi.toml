@@ -1,0 +1,49 @@
+# Generated from xenoborg_engi.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 6
+
+[[state]]
+name = "xenoborg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xenoborg-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xenoborg-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xenoborg-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xenoborg-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "openpanel -c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xenoborg-eyes"
+dirs = 4
+frames = 1

@@ -1,0 +1,80 @@
+# Generated from syndieweapons.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "OLDc-4small_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "OLDc-4small_1"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "OLDc-4detonator_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "OLDc-4detonator_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "OLDc-4detonator_click"
+dirs = 1
+frames = 3
+delays = [1, 3, 1]
+
+[[state]]
+name = "c4-wall"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "c4-armed"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "c-4large_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "c-4large_1"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "c-4small_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "c-4small_1"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "c-4detonator_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "c-4detonator_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "c-4detonator_click"
+dirs = 1
+frames = 3
+delays = [1, 3, 1]

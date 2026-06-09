@@ -1,0 +1,39 @@
+# Generated from screen1_health.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "softcrit"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "hardcrit"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "fullhealth"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "burning_old"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "burning"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "burning_small"
+dirs = 4
+frames = 4
+delays = [1]

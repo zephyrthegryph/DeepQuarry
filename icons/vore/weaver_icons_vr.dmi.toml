@@ -1,0 +1,69 @@
+# Generated from weaver_icons_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "floorweb1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floorweb2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floorweb3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floorweb4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floorweb5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floorweb6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floorweb7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floorweb8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wallweb1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wallweb2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wallweb3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "trap"
+dirs = 1
+frames = 1

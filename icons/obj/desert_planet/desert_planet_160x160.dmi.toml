@@ -1,0 +1,139 @@
+# Generated from desert_planet_160x160.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 160
+height = 160
+cols = 6
+
+[[state]]
+name = "palmtreeb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "palmtreeb1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "palmtree"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "palmtree1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mpalmtreeb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mpalmtreeb1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mpalmtree"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mpalmtree1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spalmtree"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spalmtree1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spalmtree3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spalmtree4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "desert_tree"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "desert_tree1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "desert_tree3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "large_boulder"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tall_boulder"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boulder"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lcactus"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lcactus1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lcactus2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lcactus3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "palmrs_stump"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "palmls_stump"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "palml_stump"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "palmr_stump"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "desert_stump"
+dirs = 1
+frames = 1

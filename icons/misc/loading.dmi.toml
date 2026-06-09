@@ -1,0 +1,22 @@
+# Generated from loading.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 480
+height = 480
+cols = 6
+
+[[state]]
+name = "loading(old)"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "loading(oldb)"
+dirs = 1
+frames = 8
+delays = [0.7]
+
+[[state]]
+name = "loading"
+dirs = 1
+frames = 16
+delays = [1]

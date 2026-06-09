@@ -1,0 +1,11 @@
+# Generated from am_engine.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 64
+cols = 3
+
+[[state]]
+name = "core"
+dirs = 1
+frames = 7
+delays = [3, 3, 3, 3, 3, 3, 3, 1]
+rewind = true

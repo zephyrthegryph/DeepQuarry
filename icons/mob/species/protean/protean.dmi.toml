@@ -1,0 +1,807 @@
+# Generated from protean.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 24
+
+[[state]]
+name = "SLEM"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "permit_pan"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "refactory"
+dirs = 1
+frames = 10
+delays = [1]
+
+[[state]]
+name = "orchestrator"
+dirs = 1
+frames = 5
+delays = [15, 1]
+
+[[state]]
+name = "posi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "posi1"
+dirs = 1
+frames = 13
+delays = [5, 1]
+
+[[state]]
+name = "reboot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "primary"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "highlight"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "to_puddle"
+dirs = 1
+frames = 12
+delays = [1]
+loop = 1
+
+[[state]]
+name = "from_puddle"
+dirs = 1
+frames = 7
+delays = [1]
+loop = 1
+
+[[state]]
+name = "hide"
+dirs = 1
+frames = 7
+delays = [1]
+loop = 1
+
+[[state]]
+name = "wake"
+dirs = 1
+frames = 7
+delays = [1]
+loop = 1
+
+[[state]]
+name = "puddle0"
+dirs = 1
+frames = 5
+delays = [5, 1]
+
+[[state]]
+name = "puddle0-eyes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "puddle0-1"
+dirs = 1
+frames = 5
+delays = [5, 1]
+
+[[state]]
+name = "puddle0-1-eyes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "puddle0_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "puddle0_rest-eyes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "puddle0_rest-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "puddle0_rest-1-eyes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "puddle1"
+dirs = 1
+frames = 5
+delays = [5, 1]
+
+[[state]]
+name = "puddle1-eyes"
+dirs = 1
+frames = 5
+delays = [5, 1]
+
+[[state]]
+name = "puddle1-1"
+dirs = 1
+frames = 5
+delays = [5, 1]
+
+[[state]]
+name = "puddle1-1-eyes"
+dirs = 1
+frames = 5
+delays = [5, 1]
+
+[[state]]
+name = "puddle1_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "puddle1_rest-eyes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "puddle1_rest-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "puddle1_rest-1-eyes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "puddle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "catslug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catslug-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catslug-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catslug-1-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catslug_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "catslug_rest-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cat-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cat-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cat-1-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cat_rest"
+dirs = 4
+frames = 4
+delays = [3]
+
+[[state]]
+name = "cat_rest-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cat_rest-1"
+dirs = 4
+frames = 4
+delays = [3]
+
+[[state]]
+name = "cat_rest-1-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mouse"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mouse-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mouse-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mouse-1-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mouse_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mouse_rest-eyes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mouse_rest-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mouse_rest-1-eyes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rabbit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rabbit-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rabbit-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rabbit-1-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rabbit_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rabbit_rest-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rabbit_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rabbit_rest-1-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bear"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bear-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bear-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bear-1-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bear_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bear_rest-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bear_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bear_rest-1-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fen-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fen_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fen_rest-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fen-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fen-1-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fen_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fen_rest-1-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fox"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "fox-eyes"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "fox-1"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "fox-1-eyes"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "fox_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fox_rest-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fox_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fox_rest-1-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptor-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptor_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptor_rest-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptor-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptor-1-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptor_rest-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raptor_rest-1-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shadow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shadow-eyes"
+dirs = 1
+frames = 5
+delays = [30, 1]
+
+[[state]]
+name = "shadow-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shadow-1-eyes"
+dirs = 1
+frames = 5
+delays = [30, 1]
+
+[[state]]
+name = "shadow_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shadow_rest-eyes"
+dirs = 1
+frames = 5
+delays = [30, 1]
+
+[[state]]
+name = "shadow_rest-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shadow_rest-1-eyes"
+dirs = 1
+frames = 5
+delays = [30, 1]
+
+[[state]]
+name = "clean"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clean"
+dirs = 4
+frames = 1
+movement = true
+
+[[state]]
+name = "clean-eyes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clean-eyes"
+dirs = 4
+frames = 1
+movement = true
+
+[[state]]
+name = "clean-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clean-1"
+dirs = 4
+frames = 1
+movement = true
+
+[[state]]
+name = "clean-1-eyes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clean-1-eyes"
+dirs = 4
+frames = 1
+movement = true
+
+[[state]]
+name = "clean_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clean_rest"
+dirs = 4
+frames = 1
+movement = true
+
+[[state]]
+name = "clean_rest-eyes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clean_rest-eyes"
+dirs = 4
+frames = 1
+movement = true
+
+[[state]]
+name = "clean_rest-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clean_rest-1"
+dirs = 4
+frames = 1
+movement = true
+
+[[state]]
+name = "clean_rest-1-eyes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clean_rest-1-eyes"
+dirs = 4
+frames = 1
+movement = true
+
+[[state]]
+name = "swarm"
+dirs = 1
+frames = 8
+delays = [2]
+
+[[state]]
+name = "swarm-eyes"
+dirs = 1
+frames = 8
+delays = [2]
+
+[[state]]
+name = "swarm-1"
+dirs = 1
+frames = 8
+delays = [2]
+
+[[state]]
+name = "swarm-1-eyes"
+dirs = 1
+frames = 8
+delays = [2]
+
+[[state]]
+name = "swarm_rest"
+dirs = 1
+frames = 8
+delays = [2]
+
+[[state]]
+name = "swarm_rest-eyes"
+dirs = 1
+frames = 8
+delays = [2]
+
+[[state]]
+name = "swarm_rest-1"
+dirs = 1
+frames = 8
+delays = [2]
+
+[[state]]
+name = "swarm_rest-1-eyes"
+dirs = 1
+frames = 8
+delays = [2]
+
+[[state]]
+name = "slime"
+dirs = 1
+frames = 2
+delays = [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3]
+
+[[state]]
+name = "slime-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "slime-1"
+dirs = 1
+frames = 2
+delays = [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3]
+
+[[state]]
+name = "slime-1-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "slime_rest"
+dirs = 1
+frames = 2
+delays = [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3]
+
+[[state]]
+name = "slime_rest-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "slime_rest-1"
+dirs = 1
+frames = 2
+delays = [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3]
+
+[[state]]
+name = "slime_rest-1-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chaos"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "chaos-eyes"
+dirs = 1
+frames = 3
+delays = [30, 3]
+
+[[state]]
+name = "chaos-1"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "chaos-1-eyes"
+dirs = 1
+frames = 3
+delays = [30, 3]
+
+[[state]]
+name = "chaos_rest"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "chaos_rest-eyes"
+dirs = 1
+frames = 3
+delays = [30, 3]
+
+[[state]]
+name = "chaos_rest-1"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "chaos_rest-1-eyes"
+dirs = 1
+frames = 3
+delays = [30, 3]
+
+[[state]]
+name = "cloud"
+dirs = 1
+frames = 4
+delays = [7, 7, 7, 7, 1]
+
+[[state]]
+name = "cloud-eyes"
+dirs = 1
+frames = 4
+delays = [7]
+
+[[state]]
+name = "cloud-1"
+dirs = 1
+frames = 4
+delays = [7, 7, 7, 7, 1]
+
+[[state]]
+name = "cloud-1-eyes"
+dirs = 1
+frames = 4
+delays = [7]
+
+[[state]]
+name = "cloud_rest"
+dirs = 1
+frames = 4
+delays = [7, 7, 7, 7, 1]
+
+[[state]]
+name = "cloud_rest-eyes"
+dirs = 1
+frames = 4
+delays = [7]
+
+[[state]]
+name = "cloud_rest-1"
+dirs = 1
+frames = 4
+delays = [7, 7, 7, 7, 1]
+
+[[state]]
+name = "cloud_rest-1-eyes"
+dirs = 1
+frames = 4
+delays = [7]

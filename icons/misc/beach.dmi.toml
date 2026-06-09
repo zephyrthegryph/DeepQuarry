@@ -1,0 +1,192 @@
+# Generated from beach.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 12
+
+[[state]]
+name = "sand"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crab"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "crab2"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "coconuts"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "palm1a"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "palm1b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "water"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "water2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beachball"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "water3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "water4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "water5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "desert"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "desert_dug"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "desert0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "desert1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "desert2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "desert3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "desert4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "desert5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "desert6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "desert7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dgrass0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dgrass1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dgrass2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dgrass3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dgrass4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fullgrass0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fullgrass1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fullgrass2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fullgrass3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fullgrass4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "seadeep"
+dirs = 1
+frames = 3
+delays = [3]
+rewind = true
+
+[[state]]
+name = "seashallow"
+dirs = 1
+frames = 3
+delays = [3]
+rewind = true
+
+[[state]]
+name = "beach"
+dirs = 8
+frames = 8
+delays = [3]
+
+[[state]]
+name = "beachcorner"
+dirs = 4
+frames = 8
+delays = [3]

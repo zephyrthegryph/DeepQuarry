@@ -1,0 +1,2976 @@
+# Generated from head.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 50
+
+[[state]]
+name = "cake0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cake1"
+dirs = 4
+frames = 3
+delays = [1]
+
+[[state]]
+name = "wizard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wizard-fake"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "redwizard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "violetwizard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "magus"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "amp"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "witch"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marisa"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "initiate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apprentice"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "technomancer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "santahat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "santahatnorm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "santahatgreen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pwig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "philosopher_wig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "paper"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hardhat0_yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hardhat0_orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hardhat0_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hardhat0_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hardhat0_dblue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pirate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hgpiratecap"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandana"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "orange_bandana"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greenbandana"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandblue_up"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bluebandana"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandskull_up"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandblack_up"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandgreen_up"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandred_up"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandgold_up"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "goldbandana"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "welding"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "weldingup"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "demonwelding"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "demonweldingup"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "knightwelding"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "knightweldingup"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "fancywelding"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "fancyweldingup"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "engiewelding"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "engieweldingup"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "alice_mccrea_1"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "alice_mccrea_1up"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "yuki_matsuda_1"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "yuki_matsuda_1up"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "norah_briggs_1"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "norah_briggs_1up"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "paintedwelding"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "paintedweldingup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "enos_adlai_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "edvin_telephosphor_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "krinn_hat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "brucehachert"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "neilpatterson0_hat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "neilpatterson1_hat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "s-ninja"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chaplain_hood"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nun_hood"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cult_helmet"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cult_hoodalt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "culthood"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nursehat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cueball"
+dirs = 4
+frames = 8
+delays = [1, 1, 1, 1, 1, 1, 1, 56]
+
+[[state]]
+name = "hasturhood"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "redcoat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dermal"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gladiator"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cardborg_h"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "capcap"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "policehelm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hoscap"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hopcap"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "officercap"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mailman"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "customshat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargosoft"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargosoft_flipped"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "redsoft"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "redsoft_flipped"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bluesoft"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bluesoft_flipped"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greensoft"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greensoft_flipped"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yellowsoft"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yellowsoft_flipped"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greysoft"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greysoft_flipped"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "orangesoft"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "orangesoft_flipped"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "purplesoft"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "purplesoft_flipped"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mimesoft"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mimesoft_flipped"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medsoft"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medsoft_flipped"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blacksoft"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blacksoft_flipped"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rainbowsoft"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rainbowsoft_flipped"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "secsoft"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "secsoft_flipped"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "corpsoft"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "corpsoft_flipped"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mbillsoft"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solsoft"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solsoft_flipped"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sifguardsoft"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sifguardsoft_flipped"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sifguardcomsoft"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sifguardcomsoft_flipped"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fleetsoft"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fleetsoft_flipped"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tophat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "centcom"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "captain"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chefhat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cowboyhat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cowboy_black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cowboy_wide"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bowler"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "petehat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gentcap"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fez"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "feather_trilby"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boater_hat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beaver_hat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bowler_hat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fedora"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "detective"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "detective2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "plaguedoctor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sombrero"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xmashat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "surgcap_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "surgcap_purple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "surgcap_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "surgcap_black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "surgcap_navyblue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hairflower"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hairflower_yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hairflower_blue"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 17, y = 3 }]
+
+[[state]]
+name = "hairflower_pink"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hairflower_violet"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hairflower_orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hairflower_white"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 17, y = 3 }]
+
+[[state]]
+name = "hairflower_white_a"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zhan_scarf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "v62"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lingspacehelmet"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lingarmorhelmet"
+dirs = 4
+frames = 2
+delays = [5]
+
+[[state]]
+name = "lingchameleon"
+dirs = 4
+frames = 4
+delays = [5]
+
+[[state]]
+name = "beret"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_lightblue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_g_a"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_grey"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_officer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_purpleyellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_whiterim"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_whiterim_com"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_black_security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_black_medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_black_engineering"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_black_supply"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_black_service"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_black_exploration"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_black_command"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_navy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_navy_security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_navy_medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_navy_engineering"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_navy_supply"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_navy_service"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_navy_exploration"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_navy_command"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "navyutility"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greyutility"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greenutility"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tanutility"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cap_veteran"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greenwheelcap"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greenwheelcap_com"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greengarrisoncap"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greengarrisoncap_com"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greendrill"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greydresscap"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greydresscap_com"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sifguarddresscap"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sifguarddresscap_ofcr"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sifguarddresscap_capt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "whitepeakcap"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "whitepeakcap_com"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "whitewheelcap"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "whitewheelcap_com"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greydresscap_senior"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_navy_officer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_navy_warden"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_navy_hos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_corporate_officer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_corporate_warden"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_corporate_hos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_centcom_officer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_centcom_captain"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "whitegarrisoncap"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_redgold"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_graysilver"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_tan"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_greensilver"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_navy_fifth"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_navy_first"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_navy_fourth"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_navy_third"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_navy_second"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_black_pcrc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beret_black_patrol"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "almachhat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "almachhat_comm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hijab"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hijab_a"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kippa"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kippa_a"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "turban"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "turban_a"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "taqiyah"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "taqiyah_a"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "towel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "towel_a"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bio"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bio_general"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 15, y = 21 }]
+
+[[state]]
+name = "bio_virology"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bio_security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bio_janitor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bio_scientist"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bio_cmo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bombsuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bombsuit_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bombsuitOld"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bombsuitsecold"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bombsuitsec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rad"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "deathsquad"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "capspace"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "space_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "space"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate-helm-green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate-helm-green-dark"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate-helm-orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate-helm-orange_light"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate-helm-orange_light1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate-helm-blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate-helm-black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate-helm-black-green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate-helm-black-blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate-helm-black-med"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate-helm-black-orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate-helm-black-red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate-helm-black-engie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate-helm-black-engie1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "emergencyhelm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "helmet"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "helmet_new"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "helmet_security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "helmet_command"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "helmet_nt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "helmet_pcrc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "helmet_sol"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "helmet_tac"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "helmet_merc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "helmet_reflec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "helmet_bulletproof"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "helmet_combat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swat_new"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swathelm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "riot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "riotup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "erthelmet_cmd"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "erthelmet_med"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "erthelmet_sec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "erthelmet_eng"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "thunderdome"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "viking"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig-old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "void"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engspace_helmet"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cespace_helmet"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-engineering"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-engineeringalt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-engineeringsav"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-atmos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-atmosalt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-mining"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-miningalt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-secTG"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-sec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-secalt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-medicalalt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-engineering-alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig1-engineering-alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-sec-alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig1-sec-alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-ert_commander"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-ert_security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-ert_medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-ert_engineer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_helmet_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_helmet_black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-wiz"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-syndie_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-syndie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-hazardhardsuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ce_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ce_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engineering_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engineering_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "security_rig"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "security_rig_sealed"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "medical_rig"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "medical_rig_sealed"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "science_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "science_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ninja_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ninja_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hacker_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hacker_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stealth_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stealth_rig_sealed"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "ert_commander_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ert_commander_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ert_security_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ert_security_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ert_medical_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ert_medical_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ert_engineer_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ert_engineer_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ert_janitor_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ert_janitor_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "asset_protection_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "asset_protection_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "breacher_rig_cheap"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "breacher_rig_cheap_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "breacher_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "breacher_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "merc_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "merc_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eva_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eva_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hazard_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hazard_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "headslime"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bunny"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kitty"
+dirs = 4
+frames = 5
+delays = [1]
+
+[[state]]
+name = "kittyinner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xenom"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xenos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "metroid"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hardhat0_pumpkin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hardhat1_pumpkin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bearpelt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chickenhead"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "richard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ian"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "carp_helm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "carp_casual"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nymph"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cat2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kitten"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cat3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fennec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mouse_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mouse_gray"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mouse_brown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "monkey"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "farwa"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stok"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "neara"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-cat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-mouse"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-monkey"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-repairbot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-borgi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-rabbit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-parrot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-fox"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "repairbot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "constructiondrone"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "brainslug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "possum"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "poppy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beanie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beanie_a"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beanie_hang"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beanie_hang_a"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flat_cap"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flat_capw"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flat_capw_a"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bow_a"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-engineering_rad"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-engineering_con"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-medical_bio"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-sec_riot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-medical_emt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "woodcirclet"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "poppy_crown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sunflower_crown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lavender_crown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "material_armor_makeshift"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bucket"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "woodbucket"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "whiteout_hood"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 9, y = 16 }]
+
+[[state]]
+name = "rig0-firebug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "explorer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "explorer_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alienhelmet"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "helm_explorer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "helm_exp_medic"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "void_explorer2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "void_explorer2_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "helm_explorer2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pilot_helm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pilot_helm2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "maid"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cloverpin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "whiteribbon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "magnetpin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pinkpin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pin_a"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "redribbon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "butterflypin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wrathcrown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gluttonycrown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cowboy_small"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greensquid"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mintsquid"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bluesquid"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "orangesquid"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yellowsquid"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pinksquid"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "circuitry"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pmc_commandergrey_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pmc_commandergrey_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pmc_commandergreen_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pmc_commandergreen_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pmc_securitygrey_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pmc_securitygrey_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pmc_securitygreen_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pmc_securitygreen_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pmc_medicalgrey_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pmc_medicalgrey_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pmc_medicalgreen_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pmc_medicalgreen_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pmc_engineergrey_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pmc_engineergrey_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pmc_engineergreen_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pmc_engineergreen_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "military_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "military_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "capvoid"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hosproto"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "maangtikka"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jingasa"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zaddat_engie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zaddat_spacer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zaddat_fashion"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zaddat_bishop"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zaddat_hegemony"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zaddat_knight"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zaddat_rugged"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zaddat_soft"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flexitac"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-vintagecrew"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-vintageengi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-vintagemarine"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-vintagemedic"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-vintageofficer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-vintagepilot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-vintagepilotalt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-vintagescientist"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig0-vintagemerc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cone"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackngoldheaddress"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "plaguedoctor2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "winterhood_captain"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "winterhood_hop"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "winterhood_qm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "winterhood_cargo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "winterhood_ce"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "winterhood_engineer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "winterhood_janitor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "winterhood_aformal"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "winterhood"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "winterhood_hydro"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "winterhood_chemist"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "winterhood_cmo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "winterhood_medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "winterhood_miner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "winterhood_rd"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "winterhood_medicalalt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "winterhood_viro"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "winterhood_robotics"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "winterhood_science"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "winterhood_bar"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "winterhood_hos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "winterhood_security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "winterhood_atmos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "winterhood_ratvar"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "winterhood_narsie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "winterhood_cosmic"
+dirs = 4
+frames = 6
+delays = [2]
+
+[[state]]
+name = "winterhood_durathread"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "panama"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fishskull"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ushankadown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ushankaup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blkushankadown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blkushankaup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sovushankadown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sovushankaup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sifguardushankadown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sifguardushankaup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hedbergushankadown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hedbergushankaup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flushankadown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flushankaup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mar1ushankadown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mar1ushankaup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mar2ushankadown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mar2ushankaup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "siffet"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marine"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "headphones_on"
+dirs = 4
+frames = 7
+delays = [2]
+
+[[state]]
+name = "headphones"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hairnet"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zaddat_clockwork"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zaddat_healer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zaddat_retro"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zaddat_ancient"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wahcap"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wahcap_flipped"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pursuit_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pursuit_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wki_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kwi_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "goose_king"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "goose_queen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bearpelt_black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bearpelt_brown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tigerpelt_shiny"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tigerpelt_snow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tigerpelt_pink"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nanomachine_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nanomachine_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nanomachine_rig-helm-active-light"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "armadillo_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "puddle2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "puddle1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "puddle0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "clockwork_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "clockwork_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "precursor_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "precursor_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "aegis_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "aegis_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mailman2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crystal_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crystal_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mothroach"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mothroach_dead"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "barroach"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "barroach_dead"
+dirs = 4
+frames = 1

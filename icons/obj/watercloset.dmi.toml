@@ -1,0 +1,192 @@
+# Generated from watercloset.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 11
+
+[[state]]
+name = "urinal"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "toilet"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "toilet00"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "toilet10"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "toilet01"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "toilet11"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "toilet2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "toilet200"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "toilet210"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "toilet201"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "toilet211"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shower"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shower_frame"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "water"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "mist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rubberducky"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sink"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sink_greyscale"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sink_frame"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sink2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sink3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "puddle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "puddle-splash"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "mirror"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mirror_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mirror_broke"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toilet3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rubberducky_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rubberducky_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rubberducky_white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rubberducky_black"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rubberducky_grey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rubberducky_green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rubberducky_pink"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rubberducky_gold"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "rubberducky_viking"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rubberducky_galaxy"
+dirs = 1
+frames = 1

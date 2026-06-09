@@ -1,0 +1,1721 @@
+# Generated from uniform.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 38
+
+[[state]]
+name = "darkblue_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blue_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lightblue_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "aqua_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "green_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lightgreen_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yellowgreen_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yellow_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lightbrown_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "brown_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "orange_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "prison_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lightred_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "red_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkred_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "maroon_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pink_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lightpurple_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "purple_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "black_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackf_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackjumpskirt_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grey_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jumpsuitdown_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "white_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rainbow_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "captain_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "captain_formal_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dress_cap_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hop2_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hop_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dress_hop_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hopwhimsy_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "huresource_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cmo_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cmoj_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cmojf_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medical_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medicalj_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medicaljf_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medical_short_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "genetics_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "geneticsj_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "geneticsjf_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "geneticist_new_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chemistry_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chemistryj_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chemistryjf_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chemist_new_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "virology_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "virologyj_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "virologyjf_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "virologist_new_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "psych_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "psyche_s"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "psychturtle_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "turtleneck_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nurse_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nursesuit_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scrubsblue_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scrubsgreen_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scrubspurple_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scrubsblack_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scrubsnavyblue_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "orderly_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sterile_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chief_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chiefjf_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engine_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "enginej_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "enginejf_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "focal_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hazard_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "atmos_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "atmosj_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "atmosjf_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "aether_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "qm_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "qmj_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "qmjf_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargo_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargoj_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargojf_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargotech_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mbill_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "miner_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "director_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dress_rd_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rdalt_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "robotics_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "robotics2_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "science_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sciencej_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sciencejf_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scientist_new_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chef_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hydroponics_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "assistant_formal_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "waiter_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "janitor_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chaplain_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "officer_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "centcom_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ert_uniform_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swatunder_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "combat_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jensen_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tactifool_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndicate_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hos_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hosred_old_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hos_corporate_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hosdnavyclothes_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hosblueclothes_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hostanclothes_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hos_formal_male_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hos_formal_fem_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "warden_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "warden_corporate_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wardendnavyclothes_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wardenblueclothes_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wardentanclothes_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "security_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sec_corporate_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "officerdnavyclothes_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "officerblueclothes_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "officertanclothes_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "redshirt2_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "heph_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pcrc_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "saare_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "forensicsred_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "detective_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "detective_waistcoat_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "detective2_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "detective2_waistcoat_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "detective3_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "det_corporate_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "internalaffairs_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ba_suit_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sl_suit_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lawyer_black_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lawyer_red_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lawyer_blue_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lawyer_purp_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "really_black_suit_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "green_suit_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "red_suit_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teal_suit_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "black_suit_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "black_suit_fem_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "black_formal_skirt_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "white_suit_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blue_blazer_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scratch_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "captain_fly_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "callum_suit_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "oldman_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gentlesuit_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gentlesuit_s_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "charcoal_suit_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "navy_suit_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "burgundy_suit_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "checkered_suit_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bluesuit_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blacksuit_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tan_suit_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greensuit_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cuttop_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cuttop_red_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "croptop_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "croptop_grey_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "croptop_red_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stripper_g_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stripper_p_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mankini_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swim_black_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swim_blue_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swim_green_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swim_purp_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swim_red_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swim_striped_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swim_earth_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swim_white_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "purple_cheer_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yellow_cheer_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "white_cheer_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bride_orange_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bride_blue_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bride_purple_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bride_red_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "red_evening_gown_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkreddress_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tian_dress_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bridesmaid_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dress_yellow_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dress_fire_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dress_orange_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dress_green_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dress_pink_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dress_saloon_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bride_white_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solara_dress_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sundress_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sundress_white_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "black_tango_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "black_tango_alt_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "whitedress1_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "whitedress2_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "whitedress3_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "whitedress4_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "whitedress2_a"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "whitedress3_a"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "whitedress4_a"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "striped_dress_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sailor_dress_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cheongsam-blue_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cheongsam-black_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cheongsam-red_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cheongsam-white_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cheongsam-darkred_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cheongsam-darkblue_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cheongsam-green_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cheongsam-purple_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "schoolgirl_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sexyclown_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sexymime_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "owl_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "clown_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "johnny_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "overalls_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "frontier_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tourist_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dispatch_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pirate_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mime_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "soviet_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "confed_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mailman_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vice_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "redcoat_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gladiator_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blue_pyjamas_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "red_pyjamas_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "golem_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "psysuit_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mechanic_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "punpun_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "towel_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gear_harness_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lingchameleon_s"
+dirs = 4
+frames = 4
+delays = [3]
+
+[[state]]
+name = "cdc_jumpsuit_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "olddressuniform_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "retpoluniform_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jeremy_wolf_1_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wyatt_uniform_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ana_uniform_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lilith_uniform_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "milohachert_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sasha_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "parker_eliza_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "saaland_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "initiate_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apprentice_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "technomancer_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cu_suit_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cu_suit_kh_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kilt_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blackutility_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "navyutility_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greyutility_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "detective_skirt_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "internalaffairs_skirt_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ba_suit_skirt_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lawyer_black_skirt_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lawyer_red_skirt_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lawyer_blue_skirt_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lawyer_purp_skirt_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "really_black_suit_skirt_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "green_suit_skirt_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "red_suit_skirt_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teal_suit_skirt_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "white_suit_skirt_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blue_blazer_skirt_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "oldwoman_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gentlesuit_skirt_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "charcoal_suit_skirt_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "navy_suit_skirt_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "burgundy_suit_skirt_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "checkered_suit_skirt_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bluesuit_skirt_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blacksuit_skirt_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tan_suit_skirt_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "greensuit_skirt_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scratch_skirt_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "black_corset_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flower_dress_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "red_swept_dress_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medicalgown_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bathrobe_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "explorer_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cohesionsuit_striped_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cohesionsuit_decal_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cohesionsuit_pattern_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cohesionsuit_hazard_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cohesionsuit_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flamenco_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "westernbustle_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "circuitry_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "overalls_sleek_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sari_red_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sari_green_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ascetic_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "moderncoat_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "turtle_sci_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "turtle_sec_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "turtle_eng_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "turtle_med_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lilacdress_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "white_ranger_uniform_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "black_ranger_uniform_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "green_ranger_uniform_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pink_ranger_uniform_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cyan_ranger_uniform_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "orange_ranger_unifom_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yellow_ranger_uniform_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "polka_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "twistfront_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cropdress_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "haltertop_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vneckdress_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bluedress_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wench_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "littleblackdress_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pinktutu_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "festivedress_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sexybunny_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sexybunny_black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vrsuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "puddle0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "puddle1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "puddle2"
+dirs = 4
+frames = 1

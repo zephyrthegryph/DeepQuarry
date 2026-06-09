@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Preferences text prefs now route through a single sanitize_input() entry point instead of duplicating STRIP_HTML_SIMPLE logic per subtype"
+  - code_imp: "Removed bay_act() indirection layer; slot/persistence actions (load, save, reload, resetslot, copy, refresh_character_preview, cycle_background) are now handled directly in the tgui_act switch"

@@ -1,0 +1,101 @@
+# Generated from Doormaint_rnd.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "door_closed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_locked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_opening"
+dirs = 1
+frames = 6
+delays = [2, 1, 1, 1, 1, 6]
+loop = 1
+
+[[state]]
+name = "door_deny"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "door_closing"
+dirs = 1
+frames = 6
+delays = [2, 1, 1, 1, 1, 6]
+loop = 1
+
+[[state]]
+name = "door_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_spark"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "o_door_opening"
+dirs = 1
+frames = 6
+delays = [2, 1, 1, 1, 1, 6]
+loop = 1
+
+[[state]]
+name = "o_door_closing"
+dirs = 1
+frames = 6
+delays = [2, 1, 1, 1, 1, 6]
+loop = 1
+
+[[state]]
+name = "door_opening_stat"
+dirs = 1
+frames = 6
+delays = [2, 1, 1, 1, 1, 6]
+loop = 1
+
+[[state]]
+name = "door_closing_stat"
+dirs = 1
+frames = 6
+delays = [2, 1, 1, 1, 1, 6]
+loop = 1
+
+[[state]]
+name = "panel_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "welded"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sparks_damaged"
+dirs = 1
+frames = 7
+delays = [1, 1, 1, 1, 1, 1, 17]
+
+[[state]]
+name = "sparks_broken"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "sparks_open"
+dirs = 1
+frames = 6
+delays = [1]

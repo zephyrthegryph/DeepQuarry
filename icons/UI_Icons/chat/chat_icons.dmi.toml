@@ -1,0 +1,14 @@
+# Generated from chat_icons.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 9
+height = 9
+cols = 2
+
+[[state]]
+name = "radio"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emote"
+dirs = 1
+frames = 1

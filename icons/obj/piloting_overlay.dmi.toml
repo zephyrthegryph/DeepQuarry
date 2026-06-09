@@ -1,0 +1,75 @@
+# Generated from piloting_overlay.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 480
+height = 480
+cols = 12
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dimmer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "left_bar"
+dirs = 1
+frames = 24
+delays = [1]
+
+[[state]]
+name = "right_bar"
+dirs = 1
+frames = 24
+delays = [1]
+
+[[state]]
+name = "top_dots"
+dirs = 1
+frames = 24
+delays = [1]
+
+[[state]]
+name = "words_discon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "words_standby"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "words_flying"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "words_spool"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flyboxes"
+dirs = 1
+frames = 24
+delays = [1]
+
+[[state]]
+name = "charging"
+dirs = 1
+frames = 18
+delays = [2]
+loop = 1
+
+[[state]]
+name = "top_bar"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "horizon"
+dirs = 1
+frames = 1

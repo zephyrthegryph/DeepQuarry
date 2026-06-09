@@ -1,0 +1,20 @@
+# Generated from beach2.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 64
+cols = 4
+
+[[state]]
+name = "sandwater"
+dirs = 1
+frames = 11
+delays = [2]
+
+[[state]]
+name = "palm1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "palm2"
+dirs = 1
+frames = 1

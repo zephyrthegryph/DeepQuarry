@@ -1,0 +1,185 @@
+# Generated from item.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "utility"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "utilitybelt_ce"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "janitor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "soulstone"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medical"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ems"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "security"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "assault"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "swat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gear"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "champion"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lingchameleon"
+dirs = 1
+frames = 4
+delays = [3]
+
+[[state]]
+name = "fannypack_leather"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fannypack_white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fannypack_black"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fannypack_yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fannypack_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fannypack_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fannypack_cyan"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fannypack_green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fannypack_orange"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fannypack_pink"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fannypack_purple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "med_holding"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "utility_holding"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "inflatable"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bandolier1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dbandolier"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bandolier2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suspenders"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suspenders_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suspenders_grey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "explo_belt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pathfinder_belt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mining"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plantbelt"
+dirs = 1
+frames = 1

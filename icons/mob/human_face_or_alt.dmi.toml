@@ -1,0 +1,1247 @@
+# Generated from human_face_or_alt.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 32
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eyes_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_a_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_b_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_c_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facial_watson_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facial_chaplin_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facial_fullbeard_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facial_vandyke_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facial_elvis_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facial_abe_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facial_chin_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facial_gt_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facial_hip_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facial_hogan_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_d_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_e_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_f_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facial_selleck_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facial_neckbeard_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facial_longbeard_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facial_wise_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facial_dwarf_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_bedhead_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_dreads_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_vlong_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_jensen_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facial_jensen_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_skinhead_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_halfbang_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_kusanagi_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_ponytail_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_pa_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_ponytail3_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_halfbang_alt_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_bedheadv2_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_longfringe_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_flair_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_curls_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_himecut_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_bedheadv3_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_vlongfringe_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_longest_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_spikey_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_bigafro_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_afro_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_braid_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_gelled_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_sargeant_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_kagami_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_gentle_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_hbraid_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_stail_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bald_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_afro2_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_beehive_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_bobcurl_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_bobcut_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_bowlcut_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_buzzcut_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_combover_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_crewcut_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_devilock_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_emo_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_feather_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_hitop_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_odango_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_ombre_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_parted_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_pompadour_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_quiff_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_updo_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_longovereye_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_shortovereye_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "soghun_longspines_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "soghun_longfrills_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "soghun_shortspines_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "soghun_shortfrills_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "soghun_horns_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_eyes_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_eyes_s_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_longbraid_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_shortbraid_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_shortquills_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_kingly_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_mohawk_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lips_red_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lips_purple_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lips_jade_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lips_black_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blank_eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ears_plain_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_straight_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_clean_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_shaggy_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_mohawk_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_plait_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_long_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_rattail_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_tajspiky_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_messy_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_bangs_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_tbraid_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facial_sideburns_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facial_mutton_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facial_pencilstache_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facial_moustache_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facial_goatee_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facial_smallstache_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_thefamilyman_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_drillruru_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_dandypompadour_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_poofy_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_toriyama_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_toriyama2_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_cia_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_mulder_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_scully_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_nitori_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_joestar_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_ponytail4_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_ponytail5_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_beehive2_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_shortbraid_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_reversemohawk_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_father_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_emolong_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_eyes_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_shorthair3_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facial_volaju_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_volaju_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_bun2_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_shortbangs_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_halfshaved_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_longeralt2_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_bun_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_doublebun_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_sleeze_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_rows1_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_rows2_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_twintail_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_emo2_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_lowfade_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_medfade_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_highfade_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_baldfade_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_nofade_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_trimflat_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_shaved_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_trimmed_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_tightbun_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facial_3oclock_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facial_3oclockmoustache_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facial_5oclock_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facial_5oclockmoustache_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facial_7oclock_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facial_7oclockmoustache_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_coffeehouse_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_shavedpart_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facial_walrus_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facial_muttonmus_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_curly_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_victory_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_ponytail6_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_undercut3_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "unathi_bighorn_s"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "skrell_hair_average_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "unathi_ramhorn_s"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "teshari_spiky_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_mohawk_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_modern_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_hair_short_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_oneshoulder_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_long_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_tight_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_veryshortovereye_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_hair_veryshort_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_bobcutalt_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "unathi_smallhorn_s"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "teshari_spike_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_undercut1_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_ears_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_hair_verylong_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facial_dorsalfrill_s"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "hair_fingerwave_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_gap_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_mane_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_tressshoulder_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_unkept_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_oxton_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facial_hornadorns_s"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "hair_wife_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_droopy_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_burst_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_pointy_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_chin_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_ponytailf_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_scraggly_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_ziegler_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_emofringe_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facial_spikes_s"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "hair_nia_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facial_chinhorns_s"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "eyes_seromi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_mushroom_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_poofy2_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_fringetail_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_bun3_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "unathi_sidefrills_s"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "teshari_burst_short_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_upright_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_wisp_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_veryshortovereyealternate_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_undercut2_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_80s_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_tbob_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_default_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_spikyponytail_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_bobcutalt_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_shorthime_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_hightight_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_grande_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_fringetail_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_rowbun_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_rowdualtail_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_rowbraid_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facial_croppedfullbeard_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facial_chinlessbeard_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_shavedmohawk_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_topknot_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_ronin_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_bowlcut2_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_thinningrear_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_thinningfront_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_thinning_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_manbun_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facial_martialartist_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facial_moonshiner_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facial_tribeard_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_unshaven_mohawk_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_country_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_dave_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_shy_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_jade_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_long_bedhead_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_rosa_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facial_neckfluff_s"
+dirs = 4
+frames = 1

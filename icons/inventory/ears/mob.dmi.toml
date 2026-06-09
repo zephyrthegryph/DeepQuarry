@@ -1,0 +1,433 @@
+# Generated from mob.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 20
+
+[[state]]
+name = "headset"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndie_headset"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sec_headset"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eng_headset"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rob_headset"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "med_headset"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mine_headset"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargo_headset"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "srv_headset"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "com_headset"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pilot_headset"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "exp_headset"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sar_headset"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "headset_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eng_headset_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rob_headset_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cent_headset_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndie_headset_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sec_headset_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "srv_headset_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "com_headset_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "med_headset_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargo_headset_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mine_headset_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pilot_headset_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "exp_headset_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sar_headset_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "headset_earbud"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndie_earbud"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sec_earbud"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eng_earbud"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "med_earbud"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "com_earbud"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargo_earbud"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "srv_earbud"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hairflower_pink"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "headphones_on"
+dirs = 4
+frames = 7
+delays = [2]
+
+[[state]]
+name = "headphones_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_cloth_blue_female"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_cloth_black_male"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_cloth_green_male"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_cloth_pink_female"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_cloth_black_female"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_cloth_black_female"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_cloth_blue_male"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_cloth_pink_male"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_cloth_green_female"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_chain_rjewel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_band_rjewel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_chain_bjewel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_band_bjewel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_cloth_lblue_female"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_cloth_lblue_male"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_chain_ebony"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_band_ebony"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_chain_sil"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_band_sil"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "earmuffs"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "earset"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_chain"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_band"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_cloth_female"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skrell_cloth_male"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hairflower"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hairflower_blue"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 17, y = 3 }]
+
+[[state]]
+name = "hairflower_yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hairflower_violet"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hairflower_orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hairflower_white"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 17, y = 3 }]
+
+[[state]]
+name = "hairflower_white_a"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 17, y = 3 }]
+
+[[state]]
+name = "cloverpin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "whiteribbon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "magnetpin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pinkpin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "redribbon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "butterflypin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "circuitry"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ear_stud"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ear_dangle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mouse_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mouse_brown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mouse_gray"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mouse_rat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mouse_black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mouse_operative"
+dirs = 4
+frames = 1

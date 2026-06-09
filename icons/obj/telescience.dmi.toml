@@ -1,0 +1,130 @@
+# Generated from telescience.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "pad-beam"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "pad-idle"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "qpad-idle_old"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "qpad-beam_old"
+dirs = 1
+frames = 5
+delays = [4, 1]
+
+[[state]]
+name = "gps-c"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gps-s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emp"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "gps-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "working"
+dirs = 1
+frames = 12
+delays = [1]
+
+[[state]]
+name = "rcs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pad-idle-o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gps-m"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gps-b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluespace_crystal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "telecrystal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polycrystal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "qpad"
+dirs = 1
+frames = 7
+delays = [1]
+rewind = true
+
+[[state]]
+name = "qpad-o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "qpad-panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "qpad-b"
+dirs = 1
+frames = 2
+delays = [10]
+
+[[state]]
+name = "qpad-beam-out"
+dirs = 1
+frames = 8
+delays = [0.5]
+
+[[state]]
+name = "qpad-beam-in"
+dirs = 1
+frames = 8
+delays = [0.5]

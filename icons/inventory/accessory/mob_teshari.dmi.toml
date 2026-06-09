@@ -1,0 +1,328 @@
+# Generated from mob_teshari.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 26
+
+[[state]]
+name = "pilot_webbing1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pilot_webbing2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "webbing"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vest_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vest_brown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vest_black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "thigh_brown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "thigh_black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "thigh_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "whitescarf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "med"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medblue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medicband"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hydro"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sweater_pink"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sweater_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sweater_blueheart"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sweater_mint"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sweater_nt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bluecliptie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "det_vest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "det_vest_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_neckscarf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tan_jacket"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tan_jacket_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "charcoal_jacket"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "charcoal_jacket_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "navy_jacket"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "navy_jacket_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "burgundy_jacket"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "burgundy_jacket_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "checkered_jacket"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "checkered_jacket_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "iron"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "iron_star"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bronze"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "iron_sol"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bronze_heart"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bronze_sol"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "silver"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "silver_sword"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "silver_sol"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gold"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gold_star"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gold_sun"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gold_crest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gold_sol"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "collar_blk"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "collar_shk"
+dirs = 4
+frames = 15
+delays = [1]
+hotspots = [{ frame = 4, x = 0, y = 0 }]
+
+[[state]]
+name = "collar_gld"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "collar_bell"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "collar_pnk"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "collar_holo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "collar_spik"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "choker_cst"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "casinoslave"
+dirs = 4
+frames = 26
+delays = [2.5]
+hotspots = [{ frame = 1, x = 13, y = 9 }, { frame = 4, x = 0, y = 0 }]
+
+[[state]]
+name = "casinoslave_available"
+dirs = 4
+frames = 26
+delays = [2.5]
+hotspots = [{ frame = 1, x = 13, y = 9 }, { frame = 4, x = 0, y = 0 }]
+
+[[state]]
+name = "casinoslave_owned"
+dirs = 4
+frames = 26
+delays = [2.5]
+hotspots = [{ frame = 1, x = 13, y = 9 }, { frame = 4, x = 0, y = 0 }]
+
+[[state]]
+name = "casino_armband"
+dirs = 4
+frames = 6
+delays = [5]

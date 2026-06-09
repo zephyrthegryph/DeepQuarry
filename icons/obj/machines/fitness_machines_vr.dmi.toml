@@ -1,0 +1,57 @@
+# Generated from fitness_machines_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "fitnesslifter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fitnesslifter2"
+dirs = 1
+frames = 13
+delays = [1, 1, 1, 5, 1, 1, 1, 1, 1, 5, 1]
+loop = 4
+
+[[state]]
+name = "punchingbag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "punchingbag2"
+dirs = 1
+frames = 11
+delays = [1]
+loop = 3
+rewind = true
+
+[[state]]
+name = "bopbag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bopbag2"
+dirs = 1
+frames = 11
+delays = [1]
+loop = 1
+
+[[state]]
+name = "scale"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "treadmill"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "treadmill2"
+dirs = 1
+frames = 24
+delays = [1]

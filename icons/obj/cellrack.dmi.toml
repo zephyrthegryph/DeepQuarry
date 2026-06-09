@@ -1,0 +1,186 @@
+# Generated from cellrack.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "rack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cell1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cell2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cell3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cell4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cell5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cell6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cell7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cell8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cell9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cell1e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cell2e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cell3e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cell4e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cell5e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cell6e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cell7e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cell8e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cell9e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cell1f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cell2f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cell3f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cell4f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cell5f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cell6f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cell7f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cell8f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cell9f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "charge0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "charge1"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "charge2"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "charge3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "charge4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "charge5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "charge6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "charge7"
+dirs = 1
+frames = 1

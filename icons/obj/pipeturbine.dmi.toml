@@ -1,0 +1,34 @@
+# Generated from pipeturbine.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "turbine"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "motor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "low-turb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "med-turb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hi-turb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "moto-turb"
+dirs = 1
+frames = 1

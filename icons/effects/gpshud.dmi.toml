@@ -1,0 +1,56 @@
+# Generated from gpshud.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 100
+height = 128
+cols = 4
+
+[[state]]
+name = "frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "frame_ert"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "frame_ds"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "frame_op"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "frame_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "powlight"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "powbutton"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "powClick"
+dirs = 1
+frames = 2
+delays = [1, 3]
+
+[[state]]
+name = "mapbutton"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mapClick"
+dirs = 1
+frames = 2
+delays = [1, 3]

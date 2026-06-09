@@ -1,0 +1,39 @@
+# Generated from pipe_vent.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "intactold"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "exposedold"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "intact"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "intact-f"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "exposed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "exposed-f"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hvent"
+dirs = 4
+frames = 1

@@ -1,0 +1,199 @@
+# Generated from hull.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "hull0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hullcenter0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hullcenter_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "hullcenter_corners"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "hullcenter1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hullcenter2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hullcenter3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hullcenter4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hullcenter5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hullcenter6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hullcenter7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hullcenter8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hullcenter9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hullcenter10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hullcenter11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hullcenter12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hullcenter13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hullcenter14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hullcenter15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hullcenter16"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hullcenter17"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hullcenter18"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hullcenter19"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hullcenter20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hullcenter21"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hullcenter22"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hullcenter23"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hullcenter24"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hullcenter25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hullcenter26"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hullcenter27"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hullcenter28"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hullcenter29"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hullcenter30"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hullcenter31"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hullcenter32"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hullcenter33"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hullcenter34"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hullcenter35"
+dirs = 1
+frames = 1

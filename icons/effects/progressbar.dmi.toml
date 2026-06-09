@@ -1,0 +1,229 @@
+# Generated from progressbar.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "prog_bar_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prog_bar_5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prog_bar_5_fail"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "prog_bar_10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prog_bar_10_fail"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "prog_bar_15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prog_bar_15_fail"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "prog_bar_20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prog_bar_20_fail"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "prog_bar_25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prog_bar_25_fail"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "prog_bar_30"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prog_bar_30_fail"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "prog_bar_35"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prog_bar_35_fail"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "prog_bar_40"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prog_bar_40_fail"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "prog_bar_45"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prog_bar_45_fail"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "prog_bar_50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prog_bar_50_fail"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "prog_bar_55"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prog_bar_55_fail"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "prog_bar_60"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prog_bar_60_fail"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "prog_bar_65"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prog_bar_65_fail"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "prog_bar_70"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prog_bar_70_fail"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "prog_bar_75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prog_bar_75_fail"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "prog_bar_80"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prog_bar_80_fail"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "prog_bar_85"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prog_bar_85_fail"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "prog_bar_90"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prog_bar_90_fail"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "prog_bar_95"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prog_bar_95_fail"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "prog_bar_100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cog"
+dirs = 1
+frames = 4
+delays = [1]

@@ -1,0 +1,36 @@
+# Generated from mining_drill.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 48
+cols = 4
+
+[[state]]
+name = "mining_drill"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mining_drill_braced"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mining_drill_active"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "mining_drill_error"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "mining_brace"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mining_brace_active"
+dirs = 4
+frames = 1

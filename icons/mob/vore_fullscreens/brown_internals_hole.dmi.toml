@@ -1,0 +1,9 @@
+# Generated from brown_internals_hole.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 480
+height = 480
+cols = 1
+
+[[state]]
+name = "brown_internals_hole"
+dirs = 1
+frames = 1

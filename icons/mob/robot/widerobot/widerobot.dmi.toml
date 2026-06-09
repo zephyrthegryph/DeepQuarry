@@ -1,0 +1,465 @@
+# Generated from widerobot.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 31
+
+[[state]]
+name = "openpanel_nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wreck-overlay"
+dirs = 1
+frames = 18
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 40]
+
+[[state]]
+name = "blade-laser"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blade-disabler"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blade"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blade-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blade-dagger"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blade-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "oldblade-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "oldblade-sleeper-1-g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vale2"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 28, y = 11 }]
+
+[[state]]
+name = "vale2-rest"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "vale2-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vale2-lights"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "vale2-eyes"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "vale2-sleeper-1-r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vale2-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boozeborg"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 28, y = 11 }]
+
+[[state]]
+name = "boozeborg-rest"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "boozeborg-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boozeborg-eyes"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "boozeborg-sleeper-1-r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boozeborg-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "secvale"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 28, y = 11 }]
+
+[[state]]
+name = "secvale-rest"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "secvale-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secvale-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "secvale-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "secvale-sleeper-1-r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "secvale-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "servborg"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "servborg-lights"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "servborg-sleeper-1-r"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "servborg-eyes"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "servborg-sleeper-1"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "servborg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "servborg-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "servborg-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "servborg-sleeper-1-r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "servborg-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "servborg-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "servborg-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kcom"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "kcom-eyes"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "kcom-sleeper-1"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "kcom-sleeper-1-r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kcom-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kcom"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kcom-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kcom-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kcom-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kcom-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kcom-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kcom-sleeper-1-r"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "kcom-lights"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "kcom-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "honkborg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "honkborg"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "honkborg-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "honkborg-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "honkborg-eyes"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "honkborg-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "honkborg-lights"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "honkborg-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "honkborg-sleeper-1"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "honkborg-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "honkborg-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "honkborg-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borgi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borgi"
+dirs = 4
+frames = 6
+delays = [1]
+movement = true
+
+[[state]]
+name = "borgi-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borgi-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borgi-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borgi-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "borgi-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borgi-sleeper-1-r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borgi-sleeper-1"
+dirs = 4
+frames = 6
+delays = [1]
+movement = true
+
+[[state]]
+name = "borgi-sleeper-1-r"
+dirs = 4
+frames = 6
+delays = [1]
+movement = true
+
+[[state]]
+name = "borgi-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "borgi-lights"
+dirs = 4
+frames = 6
+delays = [1]
+movement = true
+
+[[state]]
+name = "borgi-eyes"
+dirs = 4
+frames = 1

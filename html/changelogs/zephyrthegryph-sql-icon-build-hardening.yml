@@ -1,0 +1,14 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Parameterize all remaining string-interpolated SQL queries in library machines and statistics polling"
+  - code_imp: "Add per-query slow_query_timeout enforcement to SSdbcore to prevent pool exhaustion from hung queries"
+  - code_imp: "Clarify MassInsert duplicate_key/partial-failure semantics in doc comment"
+  - code_imp: "Deduplicate icon path resolvers into single canonical resolve_icon_dmi_path() with icons/gen fallback"
+  - code_imp: "Add invalidate_icon_cache() API to atomically clear all four tightly-coupled icon caches"
+  - code_imp: "Declare IconRepackTarget inputs/outputs so Juke can skip unchanged icon repacks"
+  - code_imp: "Add CleanIconsTarget (clean-icons) to remove icons/gen/ for forced repack"
+  - code_imp: "Add ValidateDmeTarget build step that fails with helpful error when a code/ .dm is missing from deepquarry.dme"
+  - code_imp: "Add VerdigrisTarget to build.ts with hard-fail when cargo is absent and no prebuilt lib exists"
+  - code_imp: "Add DreamCheckerTarget (best-effort SpacemanDMM lint before DM compile if binary is on PATH)"
+  - code_imp: "Include modular_dq/ code and maps in CI grep-check scans"

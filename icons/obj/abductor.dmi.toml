@@ -1,0 +1,436 @@
+# Generated from abductor.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 21
+
+[[state]]
+name = "console-c_alt"
+dirs = 4
+frames = 6
+delays = [2]
+
+[[state]]
+name = "experiment_alt-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "experiment_alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bed_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dispenser_2way"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pod_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pod_g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "implantchair_on"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "implantchair"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "pod_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "implant"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vest_stealth"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vest_combat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "silencer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gizmo_mark"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gizmo_scan"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "health"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spider"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slime"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "species"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mindshock"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "viral"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gland"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wonderprod"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wonderprodStun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wonderprodCuff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wonderprodSleep"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wonderprodProbe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "teleport"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "camera_target"
+dirs = 1
+frames = 2
+delays = [10]
+
+[[state]]
+name = "console"
+dirs = 4
+frames = 6
+delays = [2]
+
+[[state]]
+name = "console-c"
+dirs = 4
+frames = 6
+delays = [2]
+
+[[state]]
+name = "alienpaper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alienpaper_words"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "camera"
+dirs = 4
+frames = 24
+delays = [2, 1, 0.5, 0.5, 1, 2, 2, 1, 0.5, 0.5, 1, 2, 2, 1, 0.5, 0.5, 1, 2, 2, 1, 0.5, 0.5, 1, 2]
+
+[[state]]
+name = "camera_flipped"
+dirs = 4
+frames = 24
+delays = [2, 1, 0.5, 0.5, 1, 2, 2, 1, 0.5, 0.5, 1, 2, 2, 1, 0.5, 0.5, 1, 2, 2, 1, 0.5, 0.5, 1, 2]
+
+[[state]]
+name = "experiment-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "experiment"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coil"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "saw"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "drill"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fixovein"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cautery"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scalpel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hemostat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "retractor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bone_clamp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien-pad-idle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien-pad-c"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien-pad"
+dirs = 1
+frames = 8
+delays = [3, 1, 1, 2, 1]
+
+[[state]]
+name = "dispenser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bed_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheet-abductor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_abductor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile-abductor_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "core"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "core-open"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "cell"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "welder"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "welder-on"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "screwdriver_a"
+dirs = 1
+frames = 7
+delays = [10, 0.5]
+
+[[state]]
+name = "wrench"
+dirs = 1
+frames = 2
+delays = [8]
+
+[[state]]
+name = "crowbar"
+dirs = 1
+frames = 10
+delays = [15, 1]
+
+[[state]]
+name = "cutters"
+dirs = 1
+frames = 3
+delays = [15, 2]
+
+[[state]]
+name = "multitool"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "multitool_ref_scan"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "belt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "abductor_headset"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien_locker_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien_locker"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "circuit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "circuit_damaged"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "circuit_phase"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "cutters_magic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crowbar_sentient"
+dirs = 1
+frames = 3
+delays = [5]
+rewind = true
+
+[[state]]
+name = "screwdriver_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bellows"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pliers"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bone_boneclamp"
+dirs = 1
+frames = 1

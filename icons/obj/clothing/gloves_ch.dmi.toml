@@ -1,0 +1,64 @@
+# Generated from gloves_ch.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "nanomachine_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nanomachine_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pursuit_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pursuit_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kwi_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kwi_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clockwork_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clockwork_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "precursor_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "precursor_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aegis_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aegis_rig_sealed"
+dirs = 1
+frames = 1

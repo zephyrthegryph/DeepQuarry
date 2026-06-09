@@ -1,0 +1,324 @@
+# Generated from seeds.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "berry"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chili"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cabbage"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lettuce"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carrot2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "corn"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "diona"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stalk"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nettles"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cash"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vine"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vine2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bean"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eggplant"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flowers"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nuts"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grapes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spore-mask"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bananas"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tomato"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "unknown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "potato"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wheat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flower5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flower3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flower4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mushroom11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flower2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "seed-mask"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ambrosia"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "treefruit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lemon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carrot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cherry"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tobacco"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "apple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flower6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "onion"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pineapple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spinefruit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gnomes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eyepod"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pod"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tea"
+dirs = 1
+frames = 1

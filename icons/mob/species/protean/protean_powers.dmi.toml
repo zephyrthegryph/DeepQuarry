@@ -1,0 +1,55 @@
+# Generated from protean_powers.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "blob"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "body"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "limb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "volume"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "switch"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "latch"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "copy_form"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "assimilate"
+dirs = 1
+frames = 1

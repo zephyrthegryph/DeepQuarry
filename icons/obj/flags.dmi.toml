@@ -1,0 +1,246 @@
+# Generated from flags.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 11
+
+[[state]]
+name = "flag_boxed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ripped"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flag_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flag_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solgov"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "solgov_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solgov_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nanotrasen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nanotrasen_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nanotrasen_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vir"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vir_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vir_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "almach_a"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "almach_a_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "almach_a_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "almach_p"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "almach_p_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "almach_p_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vystholm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vystholm_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vystholm_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fivearrows"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fivearrows_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fivearrows_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "icarus"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shadowcoalition"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "seo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pirate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pirate_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pirate_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catpirate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "catpirate_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catpirate_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flag_base"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue_flag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red_flag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hyperball_stand"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hyperball_goal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hyperball_goal_red"
+dirs = 1
+frames = 3
+delays = [3]
+
+[[state]]
+name = "hyperball_goal_blue"
+dirs = 1
+frames = 3
+delays = [3]
+
+[[state]]
+name = "hyperball"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hyperball_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hyperball_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue_flag_deco"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red_flag_deco"
+dirs = 1
+frames = 1

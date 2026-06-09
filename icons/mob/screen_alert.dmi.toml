@@ -1,0 +1,721 @@
+# Generated from screen_alert.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 14
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "silicon_template"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "itembased"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien_fire"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien_noqueen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien_oxy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien_template"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien_tox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arrow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arrow0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arrow1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arrow2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arrow3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arrow4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arrow5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arrow6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "arrow7"
+dirs = 1
+frames = 2
+delays = [7]
+
+[[state]]
+name = "arrow8"
+dirs = 1
+frames = 2
+delays = [6]
+
+[[state]]
+name = "runed_sense0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "runed_sense1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "runed_sense2"
+dirs = 1
+frames = 2
+delays = [7]
+
+[[state]]
+name = "blobbernaut_nofactory"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blood"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blooddrunk"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "his_grace"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cult_sense"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "default"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 25, y = 9 }]
+
+[[state]]
+name = "frozen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gross"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gross2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gross3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "guardian_canstealth"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "guardian_charge"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "guardian_instealth"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wish_granter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mini_nar"
+dirs = 1
+frames = 9
+delays = [1]
+
+[[state]]
+name = "regenerative_core"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 6, y = 24 }]
+
+[[state]]
+name = "emptycell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lowcell1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lowcell2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lowcell3"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "nocell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "power_regen"
+dirs = 1
+frames = 5
+delays = [2]
+
+[[state]]
+name = "vanguard"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wraithspecs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clockinfo"
+dirs = 1
+frames = 2
+delays = [6]
+
+[[state]]
+name = "belligerent"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "inathneqs_endowment"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ichoral_stain"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fleshmend"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fleshmend_fire"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "slime_rainbowshield"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slime_stoneskin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slime_bluespace_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slime_bluespace_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ethereal_overcharge2"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "ethereal_overcharge1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "etherealcharge1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "etherealcharge2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "etherealcharge3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "newlaw"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hacked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hackingapc"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "locked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shadow_mend"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lightexposure"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nolight"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "well_fed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hungry"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "starving"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nymph"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "v_fat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "v_full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "v_well_fed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "v_fed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "v_hungry"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "v_starving"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "c_fat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "c_hungry"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "c_starving"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shoealert"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mildcold1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cold1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cold2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cold3"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "cold"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "mildhot1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hot1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hot2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hot3"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "fire"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "asleep"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hypnosis"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "high"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "drunk2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "embeddedobject"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paralysis"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "convulsing"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weaken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weightless"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "confused"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blind"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "buckled"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "drugged"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bloodchill"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mind_control"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slime_clone"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "in_love"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "drunk"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "highpressure1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "highpressure2"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "lowpressure1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lowpressure2"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "not_enough_co2"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "not_enough_nitro"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "not_enough_oxy"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "too_much_co2"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "too_much_nitro"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "too_much_oxy"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "not_enough_tox"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "too_much_tox"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "low_mech_integrity1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "low_mech_integrity2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "low_mech_integrity3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mech_port"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mech_port_x"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dna_melt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stasis"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aimed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "regenerating"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hatch_ready"
+dirs = 1
+frames = 5
+delays = [35, 2]
+
+[[state]]
+name = "irradiated"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radioactive_area"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radiation_shield"
+dirs = 1
+frames = 1

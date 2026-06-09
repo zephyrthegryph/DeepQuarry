@@ -1,0 +1,323 @@
+# Generated from wizard.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 14
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scroll"
+dirs = 1
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "magicm"
+dirs = 1
+frames = 4
+delays = [1]
+rewind = true
+
+[[state]]
+name = "fireball"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "arrow"
+dirs = 8
+frames = 3
+delays = [1]
+rewind = true
+
+[[state]]
+name = "magicmd"
+dirs = 1
+frames = 5
+delays = [1]
+rewind = true
+
+[[state]]
+name = "staff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "soulstone"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "soulstone2"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "ectoplasm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ectoplasm2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "construct"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "construct-cult"
+dirs = 1
+frames = 4
+delays = [5]
+
+[[state]]
+name = "render"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "broom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "focus"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "necrostaff"
+dirs = 1
+frames = 16
+delays = [1]
+
+[[state]]
+name = "rift"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "staffofchange"
+dirs = 1
+frames = 5
+delays = [4]
+rewind = true
+
+[[state]]
+name = "staffofanimation"
+dirs = 1
+frames = 4
+delays = [5]
+rewind = true
+
+[[state]]
+name = "staffofhealing"
+dirs = 1
+frames = 16
+delays = [1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 2, 1]
+
+[[state]]
+name = "staffofnothing"
+dirs = 1
+frames = 4
+delays = [5]
+
+[[state]]
+name = "staffofchaos"
+dirs = 1
+frames = 4
+delays = [5]
+
+[[state]]
+name = "staffofdoor"
+dirs = 1
+frames = 4
+delays = [20]
+rewind = true
+
+[[state]]
+name = "honker"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "staffofstorms"
+dirs = 1
+frames = 5
+delays = [2, 2, 2, 2, 12]
+
+[[state]]
+name = "staffoffire"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "revivewand"
+dirs = 1
+frames = 4
+delays = [3]
+
+[[state]]
+name = "nothingwand"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deathwand"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "polywand"
+dirs = 1
+frames = 4
+delays = [5]
+
+[[state]]
+name = "telewand"
+dirs = 1
+frames = 4
+delays = [3]
+
+[[state]]
+name = "doorwand"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "firewand"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "revivewand-drained"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deathwand-drained"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polywand-drained"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "telewand-drained"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "doorwand-drained"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "firewand-drained"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nothingwand-drained"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hook"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spellblade"
+dirs = 1
+frames = 7
+delays = [8, 1, 1, 5, 1, 1, 4]
+
+[[state]]
+name = "pharoah_sceptre"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "locker"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "locker-drained"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "staffofflight"
+dirs = 1
+frames = 2
+delays = [10]
+
+[[state]]
+name = "staffofnecropotence"
+dirs = 1
+frames = 2
+delays = [35, 3]
+
+[[state]]
+name = "staffofsapping"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "staffofwipe"
+dirs = 1
+frames = 1

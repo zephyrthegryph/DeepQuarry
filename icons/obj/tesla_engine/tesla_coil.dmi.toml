@@ -1,0 +1,186 @@
+# Generated from tesla_coil.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "coil_open0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coil_open1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coil0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coil1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coilhit"
+dirs = 1
+frames = 6
+delays = [1, 0.8, 0.8, 0.8, 1.2, 1]
+
+[[state]]
+name = "relay_open0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "relay_open1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "relay0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "relay1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "relayhit"
+dirs = 1
+frames = 6
+delays = [1, 0.8, 0.8, 0.8, 1.2, 1]
+
+[[state]]
+name = "prism_open0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prism_open1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prism0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prism1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prismhit"
+dirs = 1
+frames = 6
+delays = [1, 0.8, 0.8, 0.8, 1.2, 1]
+
+[[state]]
+name = "amp_open0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "amp_open1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "amp0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "amp1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "amphit"
+dirs = 1
+frames = 6
+delays = [1, 0.8, 0.8, 0.8, 1.2, 1]
+
+[[state]]
+name = "collector_open0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "collector_open1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "collector0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "collector1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "collectorhit"
+dirs = 1
+frames = 6
+delays = [1, 0.8, 0.8, 0.8, 1.2, 1]
+
+[[state]]
+name = "recaster_open0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "recaster_open1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "recaster0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "recaster1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "recasterhit"
+dirs = 1
+frames = 6
+delays = [1, 0.8, 0.8, 0.8, 1.2, 1]
+
+[[state]]
+name = "grounding_rod_open0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grounding_rod_open1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grounding_rod0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grounding_rod1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grounding_rodhit"
+dirs = 1
+frames = 5
+delays = [1]

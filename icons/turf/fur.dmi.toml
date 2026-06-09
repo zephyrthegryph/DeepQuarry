@@ -1,0 +1,103 @@
+# Generated from fur.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "fur0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fur1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fur2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fur3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fur4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fur5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fur6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fur7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fur8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fur9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fur10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fur11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fur12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fur13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fur14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fur15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "submerged"
+dirs = 1
+frames = 16
+delays = [1]
+movement = true
+
+[[state]]
+name = "submerged o"
+dirs = 1
+frames = 16
+delays = [1]
+movement = true
+
+[[state]]
+name = "furX"
+dirs = 1
+frames = 1

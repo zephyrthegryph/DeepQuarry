@@ -1,0 +1,99 @@
+# Generated from durg.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "blankdurg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "durg_fur"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "double_h_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "double_h_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "classic_h_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "classic_h_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "durg_underbelly"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "classic_w_misc"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "durg_spines"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "thick_h_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "thick_h_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "angular_w_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "angular_w_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "classic_w_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "classic_w_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fairy_w_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fairy_w_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fairy_w_misc"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "angular_w_misc"
+dirs = 1
+frames = 1

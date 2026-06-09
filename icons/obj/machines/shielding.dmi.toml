@@ -1,0 +1,77 @@
+# Generated from shielding.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "shieldsparkles"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "shield"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shield_broken"
+dirs = 1
+frames = 3
+delays = [2]
+
+[[state]]
+name = "shield_edge"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "fdiffuser_on"
+dirs = 1
+frames = 2
+delays = [10, 2]
+
+[[state]]
+name = "hdiffuser_on"
+dirs = 1
+frames = 2
+delays = [10, 2]
+
+[[state]]
+name = "fdiffuser_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fdiffuser_emergency"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "hdiffuser_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shield_impact"
+dirs = 1
+frames = 8
+delays = [1]
+loop = 1
+
+[[state]]
+name = "generator0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "generator1"
+dirs = 1
+frames = 10
+delays = [1]
+
+[[state]]
+name = "capacitor"
+dirs = 4
+frames = 1

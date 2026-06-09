@@ -1,0 +1,22 @@
+# Generated from projectiles_tracer_ch.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "muzzle_volt_ray"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "volt_ray"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "impact_volt_ray"
+dirs = 1
+frames = 3
+delays = [1]

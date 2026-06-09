@@ -1,0 +1,942 @@
+# Generated from decals.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 17
+
+[[state]]
+name = "bio"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fire"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fire_small"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nosmoking2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nosmoking2_burnt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nosmoking"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nosmoking_small"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smoking_small"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "securearea"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "warning_small"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "securearea2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "securearea2_small"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shock"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shock_small"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "server"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "server_small"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "movingparts"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "caution_small"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blast"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armory_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "turrets"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "falling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lava"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "acid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radiation_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radiation_small"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "atmos_co2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "atmos_n2o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "atmos_phoron"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "atmos_o2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "atmos_air"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "atmos_n2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "atmos_waste"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "space"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deathsposal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pods"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "examroom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xenobio"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "science1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "science2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chemistry1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chemistry2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hydro1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hydro2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hydro3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xenobio2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xenobio3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hikpa"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "evac"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "custodian"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engine_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cargo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "security"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "restroom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "doors"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mail"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deck-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deck-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deck-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deck-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hangar-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hangar-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hangar-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "level-b"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "level-b-large"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "level-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "level-1-large"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "level-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "level-2-large"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "level-3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "level-3-large"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "level-4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "level-4-large"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "level-g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "level-g-large"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "space_small"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pods_small"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "emerg_small"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 16, y = 15 }]
+
+[[state]]
+name = "bluecross"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluecross2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lifestar"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "goldenplaque"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "atmosplaque"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kiddieplaque"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "monkey_painting"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "frame-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "frame-overlay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "frame-hidden"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "map-left"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "map-right"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "periodic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "explosives"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chemdiamond"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rogueai"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maltesefalcon-left"
+dirs = 1
+frames = 23
+delays = [6, 6, 6, 6, 6, 2, 2, 6, 6, 4, 1, 4, 4, 4, 4, 4, 4, 4, 1, 4, 1, 4]
+
+[[state]]
+name = "maltesefalcon-right"
+dirs = 1
+frames = 23
+delays = [6, 6, 6, 6, 6, 2, 2, 6, 6, 4, 1, 4, 4, 4, 4, 4, 4, 4, 1, 4, 1, 4]
+
+[[state]]
+name = "calendar"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clock"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "poi_engine1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "poi_engine2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cyno_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyno_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyno_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyno_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyno_5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyno_6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyno_7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ca"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "da"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "es"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "em"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sa"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pr"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gu"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "direction_cmd"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "direction_elv"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "deck1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deck2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deck3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deck4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "biohazard"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "corrosives"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "explosives"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flammable"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "laser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "danger"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "magnetics"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "optical"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radiation"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secure"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "electrical"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cryogenics"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "canisters"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oxidants"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "memetic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "NT"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bio-danger"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sec1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sec2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sec3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sec4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medbay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "virology"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chem"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gene"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "morgue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "operational"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sci"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "xenolab"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "anomaly"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dock"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rnd"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "robo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toxins"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "toxin_res"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eva"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bar"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "biblio"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chapel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bridge"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "telecoms"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "conference_room"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ai"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cargo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mail"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "miner_dock"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cargo_dock"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eng"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engine"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gravi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "atmos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shield"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "drones"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "interrogation"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "commander"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armory"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prison"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ironhammer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pisoff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "maintenance_panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "itg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "atmos_ch4"
+dirs = 1
+frames = 1

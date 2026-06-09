@@ -1,0 +1,14 @@
+# Generated from shark.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 120
+height = 50
+cols = 3
+
+[[state]]
+name = "measelshark"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "measelshark-dead"
+dirs = 4
+frames = 1

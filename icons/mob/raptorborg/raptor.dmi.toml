@@ -1,0 +1,410 @@
+# Generated from raptor.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 45
+cols = 18
+
+[[state]]
+name = "medraptor-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-medraptor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-medraptor-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medraptor-sleeper-1-r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medraptor-sleeper-1-g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "secraptor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "secraptor-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "secraptor-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "secraptor-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-secraptor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-secraptor-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "secraptor-sleeper-1-r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "secraptor-sleeper-1-g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sciraptor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sciraptor-rest"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "sciraptor-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sciraptor-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sciraptor-sleeper-1-r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sciraptor-sleeper-1-g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-sciraptor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-sciraptor-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medraptor-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "serviraptor-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fancyraptor-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "traumaraptor-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secraptor-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "janiraptor-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engiraptor-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mineraptor-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sciraptor-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medraptor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medraptor-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medraptor-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engiraptor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engiraptor-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engiraptor-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engiraptor-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-engiraptor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-engiraptor-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engiraptor-sleeper-1-r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engiraptor-sleeper-1-g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mineraptor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mineraptor-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mineraptor-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mineraptor-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-mineraptor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-mineraptor-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mineraptor-sleeper-1-r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mineraptor-sleeper-1-g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "traumaraptor-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-traumaraptor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-traumaraptor-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "traumaraptor-sleeper-1-r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "traumaraptor-sleeper-1-g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "traumaraptor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "traumaraptor-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "traumaraptor-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "janiraptor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "janiraptor-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "janiraptor-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "janiraptor-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-janiraptor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-janiraptor-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "janiraptor-sleeper-1-r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "janiraptor-sleeper-1-g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "serviraptor-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-serviraptor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-serviraptor-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "serviraptor-sleeper-1-r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "serviraptor-sleeper-1-g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "serviraptor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "serviraptor-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "serviraptor-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fancyraptor-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-fancyraptor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-fancyraptor-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fancyraptor-sleeper-1-r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fancyraptor-sleeper-1-g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fancyraptor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fancyraptor-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fancyraptor-bellyup"
+dirs = 4
+frames = 1

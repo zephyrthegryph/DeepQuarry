@@ -1,0 +1,291 @@
+# Generated from mob_vox.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 17
+
+[[state]]
+name = "BODY_PREVIEW"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "backpack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "captainpack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "clownpack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "defibunit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engiepack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engiepackOLD"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "brokenpack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holdingpack"
+dirs = 4
+frames = 7
+delays = [1]
+
+[[state]]
+name = "mimepack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "botpack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medicalpack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chempack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "genepack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "toxpack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "viropack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "giftbag0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cultpack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "securitypack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "atmospack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel-flipped"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel-atmos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel-blueshield"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel-cap"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel-chem"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel-eng"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel-flat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel-gen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel-med"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel-norm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel-sec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel-tox"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel-vir"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel-hyd"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ert_commander"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ert_engineering"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ert_janitor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ert_medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ert_security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffel-atmos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffel-syndimed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffel-captain"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffel-security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffel-med"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffel-toxins"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffel-gene"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffel-viro"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffel-chemistry"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffel-hydro"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffel-eng"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffel-clown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffel-syndiammo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "voxcaster_fluff"
+dirs = 4
+frames = 7
+delays = [1]
+
+[[state]]
+name = "blueshieldpack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffel-blueshield"
+dirs = 4
+frames = 1

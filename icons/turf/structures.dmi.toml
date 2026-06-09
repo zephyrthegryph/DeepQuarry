@@ -1,0 +1,19 @@
+# Generated from structures.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "stage_stairs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ramptop"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rampbottom"
+dirs = 4
+frames = 1

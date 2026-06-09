@@ -1,0 +1,40 @@
+# Generated from anomaly.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 736
+height = 736
+cols = 4
+
+[[state]]
+name = "dark"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_star"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "seven"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shimmer_b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shimmer_r"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "space_dog"
+dirs = 1
+frames = 4
+delays = [100, 1, 10, 1]
+
+[[state]]
+name = "space_whale"
+dirs = 1
+frames = 1

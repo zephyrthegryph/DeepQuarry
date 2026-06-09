@@ -1,0 +1,91 @@
+# Generated from food64x64.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 5
+
+[[state]]
+name = "chaoscake_unfinished-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chaoscake_unfinished-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chaoscake_unfinished-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chaoscake_unfinished-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chaoscake_unfinished-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chaoscake_unfinished-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chaoscake_unfinished-7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chaoscake_unfinished-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chaoscake-6"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "chaoscake-5"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "chaoscake-4"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "chaoscake-3"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "chaoscake-2"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "chaoscake-1"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "chaoscake-0"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "theonepizza"
+dirs = 1
+frames = 1

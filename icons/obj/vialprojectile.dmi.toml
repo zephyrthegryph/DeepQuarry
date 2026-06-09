@@ -1,0 +1,24 @@
+# Generated from vialprojectile.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 2
+
+[[state]]
+name = "blue_vial"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green_vial"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red_vial"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orange_vial"
+dirs = 1
+frames = 1

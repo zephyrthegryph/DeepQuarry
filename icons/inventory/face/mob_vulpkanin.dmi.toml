@@ -1,0 +1,489 @@
+# Generated from mob_vulpkanin.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 26
+
+[[state]]
+name = "__template__"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "balaclava"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "balaclava_up"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandblack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandblack_up"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandblue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandblue_up"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandbotany"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandbotany_up"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandgold"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandgold_up"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandgreen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandgreen_up"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandred"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandred_up"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandorange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandorange_up"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandpurple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandpurple_up"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandskull"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandskull_up"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "breath"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "breath_up"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "breath_down"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "clown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "death"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "death_commando_mask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fake-moustache"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gas_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "luchador"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "luchag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "luchar"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medical_up"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medical_down"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mime"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "owl"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "plaguedoctor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "s-ninja(norm)"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sechailer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sechailer_up"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sexyclown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sexymime"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sterile"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sterile_up"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sterile_down"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swat"
+dirs = 4
+frames = 3
+delays = [3]
+rewind = true
+
+[[state]]
+name = "weldingmask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "weldingmaskup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hosmask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "officermask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wardenmask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cigar2_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cigar2_on"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "cigar_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cigar_on"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "cig_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cig_on"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "cobpipe_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cobpipe_on"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "pipe_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pipe_on"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "spliff_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spliff_on"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "hr_cigoff"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hr_cigon"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "tapegag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swatclava"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gas_clear"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "explorer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "explorerdown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shark"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "dolphin"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "demon"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "goblin"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "cig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cig_burnt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cigar_burnt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cigar2_burnt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cigar"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pipe"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cobpipe"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "joint"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "joint_burnt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "joint_on"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "breathdown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cigar2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cobpipe_burnt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pipe_burnt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spliffoff"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spliffon"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "halfgas"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "halfgas_up"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gas_alt"
+dirs = 4
+frames = 1

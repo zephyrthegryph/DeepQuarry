@@ -1,0 +1,600 @@
+# Generated from areas_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 12
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "unknown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shuttle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dk_yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue-red2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue-red-d"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blue-red"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "invi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blueold"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "dark"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark160"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark128"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "party"
+dirs = 1
+frames = 8
+delays = [2, 2, 2, 2, 2, 1]
+
+[[state]]
+name = "blue"
+dirs = 1
+frames = 4
+delays = [3, 2]
+
+[[state]]
+name = "bluenew"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "red"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "center"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "north"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "northeast"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "northwest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "south"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "southeast"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "southwest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "east"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "west"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "outside1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "outside1unex"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "outside2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "outside2unex"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "outside3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "outside3unex"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tether1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tether2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tether3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tether4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tether5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "outpost_mine_main"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medical"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "security"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "elevator"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emergencystorage"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "debrisexplored"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "debrisunexplored"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blublacir"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blublasqu"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blublatri"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyablacir"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyablasqu"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyablatri"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "greblacir"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "greblatri"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "greblasqu"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "magblacir"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "magblasqu"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "magblatri"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orablacir"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orablasqu"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orablatri"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purblacir"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purblasqu"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purblatri"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redblacir"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redblasqu"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redblatri"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yelblacir"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yelblasqu"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yelblatri"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluwhicir"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluwhisqu"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluwhitri"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyawhicir"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyawhisqu"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyawhitri"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grewhicir"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grewhitri"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grewhisqu"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "magwhicir"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "magwhisqu"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "magwhitri"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orawhicir"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orawhisqu"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orawhitri"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purwhicir"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purwhisqu"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purwhitri"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redwhicir"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redwhisqu"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redwhitri"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yelwhicir"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yelwhisqu"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yelwhitri"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deck1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deck2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deck3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deckmaint1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deckmaint2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deckmaint3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dorm1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dorm2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dorm3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dorm4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dorm5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dorm6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dorm7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dorm8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dorm9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dorm10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dorm11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dorm12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dorm13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dorm14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dorm15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dorm16"
+dirs = 1
+frames = 1

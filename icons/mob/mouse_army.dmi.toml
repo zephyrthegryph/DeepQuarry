@@ -1,0 +1,168 @@
+# Generated from mouse_army.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 11
+
+[[state]]
+name = "mouse_ammo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mouse_ammo_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mouse_ammo_splat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mouse_ammo_sleep"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mouse_stealth"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mouse_stealth-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mouse_stealth-splat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mouse_stealth-sleep"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weasel-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whisker"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "whisker"
+dirs = 4
+frames = 4
+delays = [1.5, 1.2, 2, 1.5]
+movement = true
+
+[[state]]
+name = "whisker-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whisker-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "livewire"
+dirs = 4
+frames = 4
+delays = [1.5]
+
+[[state]]
+name = "livewire"
+dirs = 4
+frames = 4
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "livewire-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "livewire-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eraticator"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eraticator"
+dirs = 4
+frames = 2
+delays = [2]
+movement = true
+
+[[state]]
+name = "eraticator-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eraticator-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mouse_brown_splat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mouse_brown_sleep"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mouse_operative"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mouse_operative_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mouse_operative_splat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mouse_operative_sleep"
+dirs = 1
+frames = 2
+delays = [15]
+
+[[state]]
+name = "mouse_pyro"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mouse_pyro-dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mouse_pyro-splat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mouse_pyro-sleep"
+dirs = 1
+frames = 2
+delays = [15]

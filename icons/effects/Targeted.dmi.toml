@@ -1,0 +1,27 @@
+# Generated from Targeted.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "locked"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "locking"
+dirs = 1
+frames = 10
+delays = [1]
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = ""
+dirs = 4
+frames = 3
+delays = [1]

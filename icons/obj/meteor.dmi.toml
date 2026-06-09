@@ -1,0 +1,59 @@
+# Generated from meteor.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "small"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "large"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flaming"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glowing"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dust"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glowing_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meaty_medium"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meaty_big"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meaty_flaming"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meaty_glowing"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meaty_dust"
+dirs = 1
+frames = 1

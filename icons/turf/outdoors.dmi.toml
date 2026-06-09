@@ -1,0 +1,421 @@
+# Generated from outdoors.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 24
+
+[[state]]
+name = ""
+dirs = 8
+frames = 1
+
+[[state]]
+name = "rockwall3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "abyss"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "seafloor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mud_dark"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mud_dark_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mud_light"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_brown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_grey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_dark"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metalwall"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sand"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dirt-dark"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dirt-dark_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-dark0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-dark1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass_sif0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass_sif1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass_sif_dark0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass_sif_dark1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snow_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snow_older"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ice_dark"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ice_dark_smooth"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass0_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass1_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass2_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass3_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-heavy0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-heavy1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-heavy2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass-heavy3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "seadeep"
+dirs = 1
+frames = 3
+delays = [3]
+rewind = true
+
+[[state]]
+name = "seashallow"
+dirs = 1
+frames = 3
+delays = [3]
+rewind = true
+
+[[state]]
+name = "water_shallow"
+dirs = 1
+frames = 3
+delays = [3]
+rewind = true
+
+[[state]]
+name = "snow_footprints"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snow_footprints_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "footprint1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "footprint2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pool"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beachcorner"
+dirs = 4
+frames = 8
+delays = [3]
+
+[[state]]
+name = "beach"
+dirs = 8
+frames = 8
+delays = [3]
+
+[[state]]
+name = "shoreline"
+dirs = 8
+frames = 1
+rewind = true
+
+[[state]]
+name = "shorelinecorner"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "shoreline_old"
+dirs = 8
+frames = 8
+delays = [3]
+
+[[state]]
+name = "shoreline_subtract"
+dirs = 8
+frames = 8
+delays = [3]
+
+[[state]]
+name = "shorelinecorner_subtract"
+dirs = 4
+frames = 8
+delays = [3]
+
+[[state]]
+name = "shorelinecorner_subtract_old"
+dirs = 4
+frames = 8
+delays = [3]
+
+[[state]]
+name = "shoreline_a"
+dirs = 8
+frames = 8
+delays = [3]
+
+[[state]]
+name = "shoreline_water"
+dirs = 8
+frames = 8
+delays = [3]
+
+[[state]]
+name = "some_wave"
+dirs = 4
+frames = 8
+delays = [3]
+
+[[state]]
+name = "basalt0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "basalt1"
+dirs = 1
+frames = 4
+delays = [20]
+
+[[state]]
+name = "basalt2"
+dirs = 1
+frames = 4
+delays = [20]
+
+[[state]]
+name = "basalt3"
+dirs = 1
+frames = 4
+delays = [20]
+
+[[state]]
+name = "basalt4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "basalt5"
+dirs = 1
+frames = 4
+delays = [20]
+
+[[state]]
+name = "basalt6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "basalt7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "basalt8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "basalt9"
+dirs = 1
+frames = 4
+delays = [20]
+
+[[state]]
+name = "basalt10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "basalt11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "basalt12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "basalt_dug"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "basalt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Lava Color Palette"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lava"
+dirs = 1
+frames = 4
+delays = [20]
+
+[[state]]
+name = "underwater"
+dirs = 1
+frames = 3
+delays = [3]
+rewind = true
+
+[[state]]
+name = "bloodshallow"
+dirs = 1
+frames = 3
+delays = [3]
+rewind = true
+
+[[state]]
+name = "dug_overlay"
+dirs = 1
+frames = 1

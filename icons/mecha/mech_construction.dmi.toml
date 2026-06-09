@@ -1,0 +1,925 @@
+# Generated from mech_construction.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 15
+
+[[state]]
+name = "gygax0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gygax1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gygax2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gygax3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gygax4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gygax5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gygax6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gygax7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gygax8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gygax9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gygax10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gygax11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gygax12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gygax13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gygax14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gygax15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gygax16"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gygax17"
+dirs = 1
+frames = 4
+delays = [2]
+loop = 1
+
+[[state]]
+name = "gygax18"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gygax19"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gygax20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ripley0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ripley1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ripley2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ripley3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ripley4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ripley5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ripley6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ripley7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ripley8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ripley9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ripley10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ripley11"
+dirs = 1
+frames = 4
+delays = [2]
+loop = 1
+
+[[state]]
+name = "ripley12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ripley13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ripley14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fireripley0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fireripley1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fireripley2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fireripley3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fireripley4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fireripley5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fireripley6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fireripley7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fireripley8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fireripley9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fireripley10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fireripley11"
+dirs = 1
+frames = 4
+delays = [2]
+loop = 1
+
+[[state]]
+name = "fireripley12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fireripley13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fireripley14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fireripley15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fireripley16"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "odysseus0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "odysseus1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "odysseus2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "odysseus3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "odysseus4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "odysseus5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "odysseus6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "odysseus7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "odysseus8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "odysseus9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "odysseus10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "odysseus11"
+dirs = 1
+frames = 4
+delays = [2]
+loop = 1
+
+[[state]]
+name = "odysseus12"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "odysseus13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "odysseus14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgygax0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgygax1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgygax2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgygax3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgygax4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgygax5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgygax6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgygax7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgygax8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgygax9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgygax10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgygax11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgygax12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgygax13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgygax14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgygax15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgygax16"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgygax17"
+dirs = 1
+frames = 4
+delays = [2]
+loop = 1
+
+[[state]]
+name = "darkgygax18"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "darkgygax19"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkgygax20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_durand0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_durand1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_durand2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_durand3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_durand4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_durand5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_durand6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_durand7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_durand8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_durand9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_durand10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_durand11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_durand12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_durand13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_durand14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_durand15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_durand16"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_durand17"
+dirs = 1
+frames = 4
+delays = [2]
+loop = 1
+
+[[state]]
+name = "old_durand18"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_durand19"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_durand20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "durand0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "durand1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "durand2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "durand3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "durand4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "durand5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "durand6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "durand7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "durand8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "durand9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "durand10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "durand11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "durand12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "durand13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "durand14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "durand15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "durand16"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "durand17"
+dirs = 1
+frames = 6
+delays = [5, 1, 1, 2, 1]
+
+[[state]]
+name = "durand18"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "durand19"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "durand20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phazon0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phazon1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phazon2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phazon3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phazon4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phazon5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phazon6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phazon7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phazon8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phazon9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phazon10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phazon11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phazon12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phazon13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phazon14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phazon15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phazon16"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phazon17"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phazon18"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phazon19"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phazon20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phazon21"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phazon22"
+dirs = 1
+frames = 5
+delays = [2]
+loop = 1
+
+[[state]]
+name = "phazon23"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phazon24"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "janus0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "janus1"
+dirs = 1
+frames = 2
+delays = [10, 1]
+
+[[state]]
+name = "janus2"
+dirs = 1
+frames = 2
+delays = [10, 1]
+
+[[state]]
+name = "janus3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "janus4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "janus5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "janus6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "janus7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "janus8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "janus9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "janus10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "janus11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "janus12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "janus13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "janus14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "janus15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "janus16"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "janus17"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "janus18"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "janus19"
+dirs = 1
+frames = 5
+delays = [5, 1]
+loop = 1
+
+[[state]]
+name = "janus20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "janus21"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "janus22"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gygax19-s"
+dirs = 4
+frames = 1

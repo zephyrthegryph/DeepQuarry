@@ -1,0 +1,269 @@
+# Generated from bench.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 15
+
+[[state]]
+name = "frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plain_preview"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "padded_preview"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pad"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stone_preview"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solid_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solid_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solid_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solid_3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solid_4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solid_5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solid_6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solid_7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "metal_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "metal_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "metal_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "metal\u001F_3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "metal_4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "metal_5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "metal_6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "metal_7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "carpet_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "carpet_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "carpet_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "carpet_3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "carpet_4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "carpet_5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "carpet_6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "carpet_7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wood_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wood_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wood_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wood_3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wood_4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wood_5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wood_6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wood_7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stone_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stone_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stone_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stone_3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stone_4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stone_5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stone_6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stone_7"
+dirs = 4
+frames = 1

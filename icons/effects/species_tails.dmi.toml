@@ -1,0 +1,179 @@
+# Generated from species_tails.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 12
+
+[[state]]
+name = "sogtail_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "armalis_tail_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xenos_drone_tail_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xenos_sentinel_tail_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xenos_hunter_tail_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xenos_queen_tail_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stoktail_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chimptail_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "farwatail_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "seromitail_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "seromitail_feathers_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sergtail_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sharktail_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nevreantail_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tajtail_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "armalis_tail_humanoid_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sogtail_hc_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "armalis_tail_hc_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xenos_drone_tail_hc_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xenos_sentinel_tail_hc_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xenos_hunter_tail_hc_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xenos_queen_tail_hc_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stoktail_hc_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chimptail_hc_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "farwatail_hc_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "seromitail_hc_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "seromitail_feathers_hc_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sergtail_hc_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sharktail_hc_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nevreantail_hc_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tajtail_hc_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "armalis_tail_humanoid_hc_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "foxtail_hc_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fentail_hc_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vulptail_s"
+dirs = 4
+frames = 1

@@ -1,0 +1,10 @@
+# Generated from clockworkwarrior.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "clockM"
+dirs = 4
+frames = 8
+delays = [0.7]

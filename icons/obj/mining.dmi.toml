@@ -1,0 +1,598 @@
+# Generated from mining.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 16
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "satchel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sheetsnatcher"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "satchel_bspace"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "sheetsnatcher_bspace"
+dirs = 1
+frames = 7
+delays = [2]
+
+[[state]]
+name = "orebox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orepile"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chute"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chute_active"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "bin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bin_partial"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bin_full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deploycrate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rail"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "rail_intersection"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "rail_intersection_NSE"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "rail_intersection_SEW"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "rail_intersection_NSW"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "rail_intersection_NEW"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "gigadrill_mov"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "gigadrill"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ore_clown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore_hydrogen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore_lead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore_verdantium"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore_marble"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Green lump"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore_phazon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore_glass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore_diamond"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore_platinum"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore_silver"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore_coal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore_iron"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore_uranium"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore_phoron"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore_gold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore_copper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore_tin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore_bauxite"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore_rutile_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore_void_opal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore_quartz"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore_painite"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orebox0_alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orebox1_alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orebox0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "orebox1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crystal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crystal2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crystal3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boulder1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boulder2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boulder3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boulder4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blueflag_open"
+dirs = 1
+frames = 4
+delays = [5]
+
+[[state]]
+name = "redflag_open"
+dirs = 1
+frames = 4
+delays = [5]
+
+[[state]]
+name = "yellowflag_open"
+dirs = 1
+frames = 4
+delays = [5]
+
+[[state]]
+name = "greenflag_open"
+dirs = 1
+frames = 4
+delays = [5]
+
+[[state]]
+name = "blueflag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redflag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellowflag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "greenflag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_hematite"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_gold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_diamond"
+dirs = 1
+frames = 12
+delays = [60, 1, 1, 1, 60, 1, 1, 1, 60, 1]
+
+[[state]]
+name = "rock_silver"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_phoron"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_platinum"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_carbon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_marble"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_lead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_verdantium"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_void opal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_tin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_copper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_bauxite"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_rutile_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_quartz"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_painite"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mineral_common"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mineral_uncommon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mineral_rare"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crystal_sm"
+dirs = 1
+frames = 4
+delays = [20, 2, 20, 2]
+
+[[state]]
+name = "icecrystal1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "icecrystal2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "resonator"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "resonator_u"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mining_voucher"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lavacrystal1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grey_crystal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grey_crystal2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_rutile"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ore_rutile"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rock_uranium"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crusher"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crusher_lit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crusher_uncharged"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "crusher-glaive"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crusher-glaive_lit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crusher-glaive_uncharged"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "glaive-dagger"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glaive-dagger_lit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glaive-machete"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glaive-machete_lit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glaive-machete_uncharged"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "crusher-hands"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crusher-hands_uncharged"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "bluetrail_light"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellowtrail_light"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redtrail_light"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluetrail_light_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yellowtrail_light_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "redtrail_light_on"
+dirs = 1
+frames = 1

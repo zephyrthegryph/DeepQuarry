@@ -1,0 +1,242 @@
+# Generated from suitdispenser.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 17
+
+[[state]]
+name = "suitdispenser-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitdispenser-fill"
+dirs = 1
+frames = 6
+delays = [1, 1, 1, 1, 1, 3]
+
+[[state]]
+name = "suitdispenser-resupply"
+dirs = 1
+frames = 14
+delays = [1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 3]
+
+[[state]]
+name = "suitdispenser-once"
+dirs = 1
+frames = 14
+delays = [1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 3]
+
+[[state]]
+name = "suitdispenser-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "geardispenser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "geardispenser-scan"
+dirs = 1
+frames = 15
+delays = [1]
+
+[[state]]
+name = "geardispenser-dispense"
+dirs = 1
+frames = 16
+delays = [1]
+loop = 1
+
+[[state]]
+name = "suitdispenser"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitdispenser-flick"
+dirs = 1
+frames = 17
+delays = [1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 3, 1]
+
+[[state]]
+name = "suitdispenser2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitdispenser2-scan"
+dirs = 1
+frames = 14
+delays = [1]
+
+[[state]]
+name = "suitdispenser2-dispense"
+dirs = 1
+frames = 15
+delays = [1, 1, 1, 1, 3, 1]
+loop = 1
+
+[[state]]
+name = "suitdispenserERT"
+dirs = 1
+frames = 1
+rewind = true
+
+[[state]]
+name = "suitdispenserERT-scan"
+dirs = 1
+frames = 14
+delays = [1]
+
+[[state]]
+name = "suitdispenserERT-dispense"
+dirs = 1
+frames = 15
+delays = [1, 1, 1, 1, 3, 1]
+loop = 1
+
+[[state]]
+name = "suitdispenserAL"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitdispenserAL-scan"
+dirs = 1
+frames = 14
+delays = [1]
+
+[[state]]
+name = "suitdispenserAL-dispense"
+dirs = 1
+frames = 15
+delays = [1, 1, 1, 1, 3, 1]
+loop = 1
+
+[[state]]
+name = "suitdispenserMB"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suitdispenserMB-scan"
+dirs = 1
+frames = 14
+delays = [1]
+
+[[state]]
+name = "suitdispenserMB-dispense"
+dirs = 1
+frames = 15
+delays = [1, 1, 1, 1, 3, 1]
+loop = 1
+
+[[state]]
+name = "scan bits"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suit_storage"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suit_storage_map"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "frame_gold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "frame_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "frame_lightblue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "frame_grey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "frame_purple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "working"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "nopower"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "helmet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fullsuit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "closed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "anim_open"
+dirs = 1
+frames = 21
+delays = [0.5]
+
+[[state]]
+name = "anim_close"
+dirs = 1
+frames = 21
+delays = [0.5]
+
+[[state]]
+name = "light1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "light2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1

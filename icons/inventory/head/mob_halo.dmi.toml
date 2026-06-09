@@ -1,0 +1,10 @@
+# Generated from mob_halo.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 64
+cols = 8
+
+[[state]]
+name = "halo"
+dirs = 1
+frames = 61
+delays = [1]

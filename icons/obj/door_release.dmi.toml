@@ -1,0 +1,36 @@
+# Generated from door_release.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "doorctrl0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "doorctrl1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "doorctrl2"
+dirs = 4
+frames = 1
+loop = 5
+
+[[state]]
+name = "doorctrl-denied"
+dirs = 4
+frames = 1
+loop = 5
+
+[[state]]
+name = "doorctrl-p"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "doorctrl-open"
+dirs = 4
+frames = 1

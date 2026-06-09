@@ -1,0 +1,84 @@
+/mob/living/silicon/pai/Initialize(mapload)
+	. = ..()
+	software = GLOB.default_pai_software.Copy()
+
+/mob/living/silicon/pai/verb/paiInterface()
+	set category = "Abilities.pAI Commands"
+	set name = "Software Interface"
+
+	tgui_interact(src)
+
+/mob/living/silicon/pai/tgui_state(mob/user)
+	return GLOB.tgui_self_state
+
+/mob/living/silicon/pai/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui)
+	ui = SStgui.try_update_ui(user, src, ui)
+	if(!ui)
+		ui = new(user, src, "pAIInterface", "pAI Software Interface")
+		ui.open()
+
+/mob/living/silicon/pai/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = ..()
+
+	// Software we have bought
+	var/list/bought_software = list()
+	// Software we have not bought
+	var/list/not_bought_software = list()
+
+	for(var/key in GLOB.pai_software_by_key)
+		var/datum/pai_software/S = GLOB.pai_software_by_key[key]
+		var/software_data[0]
+		software_data["name"] = S.name
+		software_data["id"] = S.id
+		if(key in software)
+			software_data["on"] = S.is_active(src)
+			bought_software.Add(list(software_data))
+		else
+			software_data["ram"] = S.ram_cost
+			not_bought_software.Add(list(software_data))
+
+	data["bought"] = bought_software
+	data["not_bought"] = not_bought_software
+	data["available_ram"] = ram
+
+	// Emotions
+	var/list/emotions = list()
+	for(var/name in GLOB.pai_emotions)
+		var/list/emote = list(
+			"displayText" = name,
+			"value" = GLOB.pai_emotions[name]
+		)
+		UNTYPED_LIST_ADD(emotions, emote)
+
+	data["emotions"] = emotions
+	data["current_emotion"] = card.current_emotion
+
+	return data
+
+/mob/living/silicon/pai/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
+	if(..())
+		return TRUE
+
+	switch(action)
+		if("software")
+			var/soft = params["software"]
+			var/datum/pai_software/S = software[soft]
+			if(S.toggle)
+				S.toggle(src)
+			else
+				S.tgui_interact(src, parent_ui = ui)
+			return TRUE
+
+		if("purchase")
+			var/soft = params["purchase"]
+			var/datum/pai_software/S = GLOB.pai_software_by_key[soft]
+			if(S && (ram >= S.ram_cost))
+				ram -= S.ram_cost
+				software[S.id] = S
+			return TRUE
+
+		if("image")
+			var/img = text2num(params["image"])
+			if(1 <= img && img <= length(GLOB.pai_emotions))
+				card.setEmotion(img)
+			return TRUE

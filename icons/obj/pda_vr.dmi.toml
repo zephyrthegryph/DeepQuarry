@@ -1,0 +1,504 @@
+# Generated from pda_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 17
+
+[[state]]
+name = "pdabox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "pda-hop"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "pda-h"
+dirs = 1
+frames = 4
+delays = [2]
+hotspots = [{ frame = 1, x = 0, y = 0 }]
+
+[[state]]
+name = "pda-holy"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "pda-chef"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "pda-bar"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "pda-q"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "pda-cargo"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "pda-miner"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "pda-hydro"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "pda-libc"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "pda-libb"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "pda-j"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "pda-cmo"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "pda-m"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "pda-chem"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "pda-gene"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "pda-v"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "pda-rd"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "pda-tox"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "pda-robot"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "pda-hos"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "pda-warden"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "pda-s"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "pda-det"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "pda-ce"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "pda-e"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "pda-atmo"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "pda-syn"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "pda-lawyer-old"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "pda-lawyer"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "pda-clown"
+dirs = 1
+frames = 5
+delays = [0.5]
+
+[[state]]
+name = "pda-mime"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-explore"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "pda-sar"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "pda-pilot"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "cart"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-m"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-chem"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-c"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-h"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-clown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-a"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-j"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-tox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-q"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-tear"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-eye"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-mi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-hos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-ce"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-cmo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-rd"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cart-lib"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aicard"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aicard-full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aicard-404"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aicard-on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pai"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pai-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pai-what"
+dirs = 1
+frames = 4
+delays = [20, 1, 1, 50]
+rewind = true
+
+[[state]]
+name = "pai-sad"
+dirs = 1
+frames = 16
+delays = [1]
+
+[[state]]
+name = "pai-laugh"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "pai-happy"
+dirs = 1
+frames = 4
+delays = [10, 1, 1, 100]
+rewind = true
+
+[[state]]
+name = "pai-face"
+dirs = 1
+frames = 4
+delays = [50, 1, 1, 100]
+rewind = true
+
+[[state]]
+name = "pai-extremely-happy"
+dirs = 1
+frames = 3
+delays = [10, 1, 50]
+rewind = true
+
+[[state]]
+name = "pai-cat"
+dirs = 1
+frames = 4
+delays = [10, 1, 1, 100]
+rewind = true
+
+[[state]]
+name = "pai-angry"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "pai-neutral"
+dirs = 1
+frames = 6
+delays = [50, 1, 1, 1, 40, 1]
+
+[[state]]
+name = "pai-silly"
+dirs = 1
+frames = 8
+delays = [50, 1, 1, 1, 1, 1, 5, 1]
+
+[[state]]
+name = "pai-nose"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pai-smirk"
+dirs = 1
+frames = 8
+delays = [20, 5, 5, 5, 5, 5, 5, 50]
+
+[[state]]
+name = "pai-exclamation"
+dirs = 1
+frames = 4
+delays = [10, 5, 10, 5]
+
+[[state]]
+name = "pai-question"
+dirs = 1
+frames = 4
+delays = [10, 5, 10, 5]
+
+[[state]]
+name = "crap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "morecrap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-r"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "pai-ghostalert"
+dirs = 1
+frames = 5
+delays = [3, 1, 1, 1, 3]
+rewind = true
+
+[[state]]
+name = "light-o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-pen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-id"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda-c"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "pda-transp"
+dirs = 1
+frames = 5
+delays = [2]
+
+[[state]]
+name = "pda-neko"
+dirs = 1
+frames = 8
+delays = [2]

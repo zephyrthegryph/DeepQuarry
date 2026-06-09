@@ -1,0 +1,367 @@
+# Generated from kitchen.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "spike"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spikebloodygreen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spikebloody"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rolling_pin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spoon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fork"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "knife"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "knife_table"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "foon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spork"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sharpener"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cleaver"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chef_knife"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "butch_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "survivalknife"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "machete"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mw"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mwo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mw1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mw0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mwb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mwbloodyo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mwbloody1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mwbloody0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grinder"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grbloody"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grjam"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gruse"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gridle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fridge"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fridgeopen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fridgeg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fridger"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "processor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "processor1"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "blender_d"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blender_e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blender_jug_e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blender_h"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blender_f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blender_jug_h"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blender_jug_f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blender_h_tan"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blender_f_tan"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blender_jug_h_tan"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blender_jug_f_tan"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blender_jug_f_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blender_h_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blender_f_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blender_jug_h_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "juicer0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "juicer1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "loadedfood"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hook_knife"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "icecream_vat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "foodcart"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "leather_wet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "leather_dry"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cookingpot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cookingpot0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cookingpot1"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "cookingpoto"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cookingpotb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cookingpotbloody0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cookingpotbloody1"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "cookingpotbloodyo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "foodcart-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "foodcart-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "foodcart-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "foodcart-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "foodcart-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "foodcart-5"
+dirs = 1
+frames = 1

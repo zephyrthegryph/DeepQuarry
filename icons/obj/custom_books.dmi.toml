@@ -1,0 +1,377 @@
+# Generated from custom_books.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 10
+
+[[state]]
+name = "bookTesla"
+dirs = 1
+frames = 6
+delays = [20, 1, 1, 1, 1, 2]
+hotspots = [{ frame = 1, x = 20, y = 25 }]
+
+[[state]]
+name = "codex"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "corp_regs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "codex_robutt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "book"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "book1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "book6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "book2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "book10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "book8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "book3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "book11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "book5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "book9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "book4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "book7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "book12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "book13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "book14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "book15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "book16"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bookEngineeringSingularitySafety"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bookSupermatter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cqcmanual"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rulebook"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "borgbook"
+dirs = 1
+frames = 8
+delays = [90, 2, 60, 2, 30, 2]
+
+[[state]]
+name = "bookParticleAccelerator"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bookNTSL"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bookHacking"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bookDetective"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "corporate-procedure"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hadii-manifesto"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chefbook"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "battlemonsters"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bookEngineering"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bookEngineering2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pipingbook"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bookNuclear"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bookHydroponicsPodPeople"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bookbee"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bookCloning"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "evabook"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "barbook"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rdbook"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bookMedical"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tcfl_book"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bookSpaceLaw"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "excavation"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "analysis"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "anomaly"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "triangulate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chemistry"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stasis"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cooked_book"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holybook"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bible"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "quran"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scrapbook"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "creeper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "book_integrated_circuits"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holylight"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "atheist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kojiki"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "torah"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scroll"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tome"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kingyellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ithaqua"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scientology"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "necronomicon"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "melted"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "skrellbible"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pamphlet"
+dirs = 1
+frames = 1

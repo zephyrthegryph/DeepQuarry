@@ -1,0 +1,265 @@
+# Generated from vehicles.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 12
+
+[[state]]
+name = "paddywagon-on"
+dirs = 4
+frames = 7
+delays = [1]
+
+[[state]]
+name = "paddywagon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medicalbus"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "securikey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medikey"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paddy_trailer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paddy_trailer_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medical_trailer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medical_trailer_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secitemcarrierbot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargo_engine"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargo_engine_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargo_engine_overlay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargo_trailer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargo_trailer_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pussywagon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pussywagon_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pussywagon_overlay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargo_tank"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargo_tank_c"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cargo_tank_r_100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cargo_tank_r_90"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cargo_tank_r_80"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cargo_tank_r_70"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cargo_tank_r_60"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cargo_tank_r_50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cargo_tank_r_40"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cargo_tank_r_30"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cargo_tank_r_20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cargo_tank_r_10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engineering_pod"
+dirs = 4
+frames = 2
+delays = [25, 2]
+
+[[state]]
+name = "keys"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "train_keys"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "quad_keys"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sno_keys"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oar"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snowmobile"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snowmobile"
+dirs = 4
+frames = 2
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "snowmobile_overlay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snowmobile_overlay"
+dirs = 4
+frames = 2
+delays = [1]
+movement = true
+
+[[state]]
+name = "snowmobile_a"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snowmobile_overlay_a"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snowmobile-frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snowmobile-frame0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snowmobile-frame1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snowmobile-frame2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snowmobile-frame3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snowmobile-frame4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snowmobile-frame5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snowmobile-frame6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snowmobile-frame7"
+dirs = 1
+frames = 1

@@ -1,0 +1,181 @@
+# Generated from items.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "old_handheld"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_handheld_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "switch"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "switch_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chalice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "staffofnothing"
+dirs = 1
+frames = 4
+delays = [5]
+
+[[state]]
+name = "staffofchange"
+dirs = 1
+frames = 5
+delays = [4]
+rewind = true
+
+[[state]]
+name = "staffofanimation"
+dirs = 1
+frames = 4
+delays = [5]
+rewind = true
+
+[[state]]
+name = "staffofchaos"
+dirs = 1
+frames = 4
+delays = [5]
+
+[[state]]
+name = "scroll_rolledup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scroll_blank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scroll_text"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scroll_textseal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scroll_rolledupseal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "revolver"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "universal_id"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "universal_id_glow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "partypopper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "partypopper_e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "screwdriver"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "screwdriver_glow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crystal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crystal_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_phone"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "old_phone_on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flash"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flash_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flash_burnt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "techball_green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "techball_yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "techball_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "techball_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fleshorb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fleshorb_moving"
+dirs = 1
+frames = 3
+delays = [6, 4]

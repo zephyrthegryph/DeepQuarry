@@ -1,0 +1,44 @@
+# Generated from refill_cartridges.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "rc_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rc_blank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rc_generic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rc_clothes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rc_food"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rc_drink"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rc_mechanical"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rc_mystery"
+dirs = 1
+frames = 1

@@ -1,0 +1,354 @@
+# Generated from ammo_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "battlerifle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "battlerifle-20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "battlerifle-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stg_30rnd"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smg-30"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smg-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "a357-spent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "a357"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rubber357-spent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rubber357"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "r357-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "r357-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "r357-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "r357-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "r357-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "r357-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "r357-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "r357"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stun357-spent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stun357"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "s357-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "s357-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "s357-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "s357-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "s357-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "s357-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "s357-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "s357"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flash357-spent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flash357"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "f357-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "f357-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "f357-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "f357-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "f357-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "f357-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "f357-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "f357"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cell_mag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cell_mag_extended"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nsfw_batt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nsfw_batt_ends"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nsfw_mag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nsfw_mag_prototype"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nsfw_mag_cap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nsfw_mag_charge-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nsfw_mag_charge-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nsfw_mag_charge-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nsfw_mag_charge-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gclip"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gclip-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gclip-7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gclip-6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gclip-5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gclip-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gclip-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gclip-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gclip-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gclip-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nerd_mag_extended"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nerd_mag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nerd_batt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nerd_batt_ends"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "macrobat_stabilize"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "macrobat_uber"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "macrobat_purifier"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "macrobat_ouchie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "macrobat_inverseouchie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "macrobat_wtf"
+dirs = 1
+frames = 1

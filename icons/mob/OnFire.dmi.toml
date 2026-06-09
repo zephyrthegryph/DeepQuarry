@@ -1,0 +1,34 @@
+# Generated from OnFire.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 10
+
+[[state]]
+name = "Standing_old"
+dirs = 4
+frames = 5
+delays = [1]
+
+[[state]]
+name = "generic"
+dirs = 4
+frames = 5
+delays = [1]
+
+[[state]]
+name = "humanoid"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "monkey"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "small"
+dirs = 4
+frames = 4
+delays = [1]

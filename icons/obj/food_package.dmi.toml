@@ -1,0 +1,154 @@
+# Generated from food_package.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "mooncake_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mochicake_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lunacake_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mooncake"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mochicake"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lunacake"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacercake_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spacercake"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baseration_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baseration"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "genration_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "genration"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meatration_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "meatration"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vegration_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vegration"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smolburger_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smolburger"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smolhotdog_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smolhotdog"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smolburrito_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smolburrito"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pasty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pasty_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sausageroll_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sausageroll"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scotchegg_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scotchegg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "porkpie_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "porkpie"
+dirs = 1
+frames = 1

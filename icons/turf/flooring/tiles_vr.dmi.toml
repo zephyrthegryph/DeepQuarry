@@ -1,0 +1,245 @@
+# Generated from tiles_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "steel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinforced"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "steel_dirty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "freezer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tile_full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cargo_one_full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kafel_full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "monotile"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "steel_grid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "steel_ridged"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "techmaint"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "broken0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "broken1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "broken2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "burned0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "burned1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "burned2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "asteroidfloor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "neutral"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hydrofloor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tiled"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tiled2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "milspec"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "milspec-burnt1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "milspec-burnt2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "milspec-damaged1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "milspec-damaged3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "milspec-damaged2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "milspec-damaged4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "milspec-damaged5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark_sterile"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "milspec_outerhull"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "milspec_outerhull_dir"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "milspec_outerhull_gray"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "milspec_outerhull_gray_dir"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "milspec_ai_floors"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "milspec_office_tile"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "milspec_tcomms"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "containment_floor_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "containment_floor_2"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "containment_corner_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "containment_corner_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "containment_corner_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "containment_corner_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "purple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "monotile-purple"
+dirs = 1
+frames = 1

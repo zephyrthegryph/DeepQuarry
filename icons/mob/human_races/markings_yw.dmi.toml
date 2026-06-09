@@ -1,0 +1,129 @@
+# Generated from markings_yw.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 10
+
+[[state]]
+name = "singlehorn-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "preg_tummy_humanoid-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "preg_tummy_humanoid-groin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "preg_tummy_humanoid-r_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "preg_tummy_humanoid-l_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "preg_tummy_humanoid-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "preg_tummy_humanoid-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "preg_tummy_teshari-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "preg_tummy_teshari-groin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "preg_tummy_teshari-r_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "preg_tummy_teshari-l_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "preg_tummy_teshari-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "preg_tummy_teshari-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lizard_snout_sharp-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lizard_snout_round-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lizard_snout_sharp_light-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lizard_snout_round_light-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolf_ears"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolf_snout_light_round-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_coat-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_coat-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_coat-l_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_coat-r_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_coat-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tesh_coat-r_leg"
+dirs = 4
+frames = 1

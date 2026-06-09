@@ -1,0 +1,50 @@
+# Generated from fluidtracks.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "human1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "human2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "paw1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "paw2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "claw1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "claw2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wheels"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "snake1"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 15, y = 9 }]
+
+[[state]]
+name = "snake2"
+dirs = 4
+frames = 1

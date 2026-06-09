@@ -1,0 +1,284 @@
+# Generated from taursuits_horse.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 15
+
+[[state]]
+name = "rig-syndie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-secalt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-sec_riot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-engineering"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-atmos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-sec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-mining"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rig-rigmedicalalt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rad"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bombsuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ce_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ce_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engineering_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engineering_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medical_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medical_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "breacher_rig_cheap_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "breacher_rig_cheap"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "science_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "science_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apron"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apron_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "surgical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "poncho"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Mason_barding"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Agatha_barding"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Agatha_barding_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "black_formal_skirt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "whitedress1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "robotics2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatsecurity_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatsecurity"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatcargo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatcargo_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatscience"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatscience_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatengineer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatengineer_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatatmos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatatmos_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatminer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatminer_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatmedical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatmedical_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatcaptain"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatcaptain_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatwinter"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coatwinter_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nun"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "warden_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "russofurcoat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pirate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skirt_colorable"
+dirs = 4
+frames = 1

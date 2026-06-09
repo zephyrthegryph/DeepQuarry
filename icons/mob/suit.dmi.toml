@@ -1,0 +1,39 @@
+# Generated from suit.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "blk_jacket"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blk_jacket_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "santacoat_t"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "santacoat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "puddle0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "puddle1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "puddle2"
+dirs = 4
+frames = 1

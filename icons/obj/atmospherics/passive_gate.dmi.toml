@@ -1,0 +1,59 @@
+# Generated from passive_gate.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "exposed_1_off_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "exposed_2_off_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "exposed_3_off_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "intact_on_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "intact_off_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "intact_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "intact_on"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "exposed_3_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "exposed_2_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "exposed_1_off"
+dirs = 4
+frames = 1

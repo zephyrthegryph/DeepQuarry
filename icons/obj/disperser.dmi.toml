@@ -1,0 +1,19 @@
+# Generated from disperser.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "front"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "middle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "back"
+dirs = 4
+frames = 1

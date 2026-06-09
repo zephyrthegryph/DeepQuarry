@@ -1,0 +1,355 @@
+# Generated from service_wide.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 32
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "openpanel_nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wreck-overlay"
+dirs = 1
+frames = 18
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 40]
+
+[[state]]
+name = "hound"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hound"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "hound-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hound-eyes"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "hound-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hound-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hound-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hound-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hound-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hound-lights"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "houndpink"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "houndpink"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "houndpink-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "houndpink-eyes"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "houndpink-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "houndpink-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "houndpink-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "houndpink-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "houndpink-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "houndpink-lights"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "vale"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vale"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "vale-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vale-sleeper-1"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "vale-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vale-eyes"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "vale-wreck"
+dirs = 1
+frames = 11
+delays = [10, 1, 1, 1, 1, 1, 4, 1]
+
+[[state]]
+name = "vale-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vale-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vale-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vale-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vale-lights"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "valedark"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "valedark"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "valedark-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "valedark-sleeper-1"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "valedark-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "valedark-eyes"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "valedark-wreck"
+dirs = 1
+frames = 11
+delays = [10, 1, 1, 1, 1, 1, 4, 1]
+
+[[state]]
+name = "valedark-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "valedark-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "valedark-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "valedark-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "valedark-lights"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "drake"
+dirs = 4
+frames = 10
+delays = [10, 1]
+
+[[state]]
+name = "drake"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "drake-eyes"
+dirs = 4
+frames = 10
+delays = [10, 1]
+
+[[state]]
+name = "drake-eyes"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "drake-wreck"
+dirs = 1
+frames = 10
+delays = [10, 1, 5, 2, 2, 2, 1]
+
+[[state]]
+name = "drake-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "drake-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "drake-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "drake-sleeper-1"
+dirs = 4
+frames = 10
+delays = [10, 1]
+
+[[state]]
+name = "drake-sleeper-1"
+dirs = 4
+frames = 10
+delays = [1]
+movement = true
+
+[[state]]
+name = "drake-sleeper-1-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "drake-sleeper-1-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "drake-sleeper-1-bellyup"
+dirs = 4
+frames = 1

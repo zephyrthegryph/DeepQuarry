@@ -1,0 +1,619 @@
+# Generated from card_new.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 12
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "base-stamp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "base-stamp-silver"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "base-stamp-gold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "base-stamp-dark"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "base-full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "base-full-gold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "base-full-dark"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "base-full-data"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-silhouette"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-n"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-g"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-cross"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "top-generic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "top-red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "top-orange"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "top-green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "top-darkgreen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "top-medblu"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "top-blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "top-purple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "top-brown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "top-pink"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "top-gold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "top-syndicate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "top-dark"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "top-white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "top-olive"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pips-generic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pips-red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pips-orange"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pips-green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pips-darkgreen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pips-medblu"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pips-blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pips-purple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pips-brown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pips-pink"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pips-gold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pips-darkred"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pips-dark"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pips-white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pips-olive"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripe-generic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripe-red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripe-orange"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripe-green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripe-darkgreen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripe-medblu"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripe-blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripe-purple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripe-brown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripe-pink"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripe-gold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripe-darkred"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripe-black"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripe-white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripe-olive"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dept-science"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dept-security"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dept-medical"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dept-engineering"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dept-exploration"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dept-pilot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dept-cargo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dept-internal-affairs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dept-civilian"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dept-secretary"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dept-command"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dept-press"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dept-clown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dept-nanotrasen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dept-ert"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dept-hop"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dept-vip"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dept-vip-gold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clip"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stripe-rainbow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "top-rainbow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "digested"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "generic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "generic-nt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "generic-s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id-robot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id-robot-n"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id-robot-s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "data"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "standard-id"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "security-id"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engineering-id"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "press-id"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "civilian-id"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medical-id"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "science-id"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cargo-id"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "silver-id"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gold-id"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gold-id-alternate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cc-id"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ert-id"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "deathsquad"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vip-id"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndicate-id"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rainbow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "changeling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "admin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emag-spent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emag-chip"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emag-old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "guest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "guest-invalid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "permit-generic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "permit-security"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "permit-science"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "permit-drone"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "permit-pan"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "keycard-red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "keycard-blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "keycard-green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "permit-nude"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "generic-old"
+dirs = 1
+frames = 1

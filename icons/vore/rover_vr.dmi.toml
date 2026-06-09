@@ -1,0 +1,24 @@
+# Generated from rover_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 48
+height = 48
+cols = 4
+
+[[state]]
+name = "rover"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dunebug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rover_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dunebug_open"
+dirs = 1
+frames = 1

@@ -1,0 +1,717 @@
+# Generated from mob.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 23
+
+[[state]]
+name = "template"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "suspenders"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "suspenders_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "suspenders_grey"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "utility"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "utility_ce"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gear"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "janitor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "soulstone"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ems"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "assault"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "champion"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "med_holding"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "utility_holding"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fannypack_leather"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fannypack_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fannypack_black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fannypack_yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fannypack_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fannypack_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fannypack_cyan"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fannypack_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fannypack_orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fannypack_pink"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fannypack_purple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "defibcompact"
+dirs = 4
+frames = 5
+delays = [2]
+
+[[state]]
+name = "inflatable"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandolier1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dbandolier"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandolier2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lingchameleon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gun"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stunrevolver"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "energy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "laser"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "taser0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "taser25"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "taser50"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "taser75"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "taser100"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "taser"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "energystun0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "energystun25"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "energystun50"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "energystun75"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "energystun100"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "energystun"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "energykill0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "energykill25"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "energykill50"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "energykill75"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "energykill100"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "energykill"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "baton"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flash"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flashbang"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pepperspray"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "handcuff"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "legcuff"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "healthanalyzer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "electronic"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "classic_baton"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gun_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gun_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gun_3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "handcuff_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "handcuff_5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "handcuff_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "handcuff_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "handcuff_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "electronic_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "electronic_5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "electronic_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "electronic_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "electronic_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "healthanalyzer_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "healthanalyzer_5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "healthanalyzer_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "healthanalyzer_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "healthanalyzer_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pen_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pen_5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pen_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pen_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pen_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emergency"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "emergency_engi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "emergency_nitro"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "emergency_double"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "screwdriver"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "screwdriver_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "screwdriver_purple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "screwdriver_brown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "screwdriver_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "screwdriver_cyan"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "screwdriver_yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wrench"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "welder"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crowbar"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cutters"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coil"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pickaxe"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spickaxe"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gpickaxe"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dpickaxe"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jackhammer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "katana"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holobadge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marshalbadge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holobadge-cord"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "goldbadge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "silverbadge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "towel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "camcorder_on"
+dirs = 4
+frames = 2
+delays = [7, 4]
+
+[[state]]
+name = "camcorder"
+dirs = 4
+frames = 2
+delays = [7, 4]
+
+[[state]]
+name = "permit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "permit_drone"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "machete"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tasercarbine"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phasecarbine"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ranger_belt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ppistol"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "particle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "injector"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "explorer_belt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "explorer_belt_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "explorer_belt_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pathfinder_belt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mining"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "plantbelt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "emergency_double_vox"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "emergency_phoron_vox"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phaser"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phaser100"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phaser75"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phaser50"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phaser25"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "phaser0"
+dirs = 4
+frames = 1

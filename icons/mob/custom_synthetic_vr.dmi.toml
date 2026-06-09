@@ -1,0 +1,771 @@
+# Generated from custom_synthetic_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 47
+
+[[state]]
+name = "ov-openpanel -c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ov-openpanel +c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ov-openpanel +w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wreck-overlay"
+dirs = 1
+frames = 18
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 40]
+
+[[state]]
+name = "lunarfleet-Clea-Nor-Pupdozer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lunarfleet-Clea-Nor-Pupdozer"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "lunarfleet-Clea-Nor-Pupdozer-wreck"
+dirs = 1
+frames = 11
+delays = [4]
+
+[[state]]
+name = "lunarfleet-Clea-Nor-Pupdozer-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lunarfleet-Clea-Nor-Pupdozer-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lunarfleet-Clea-Nor-Pupdozer-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-lunarfleet-Clea-Nor-Pupdozer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-lunarfleet-Clea-Nor-Pupdozer"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "lunarfleet-Clea-Nor-Pupdozer-sleeper_g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lunarfleet-Clea-Nor-Pupdozer-sleeper_g"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "lunarfleet-Clea-Nor-Pupdozer-sleeper_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lunarfleet-Clea-Nor-Pupdozer-sleeper_r"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "eyes-lunarfleet-Clea-Nor-Pupdozer-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-lunarfleet-Clea-Nor-Pupdozer-lights"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "laser_big"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "disabler_big"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jademanique-B.A.U-Kingside-K9"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jademanique-B.A.U-Kingside-K9"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "jademanique-B.A.U-Kingside-K9-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jademanique-B.A.U-Kingside-K9-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jademanique-B.A.U-Kingside-K9-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jademanique-B.A.U-Kingside-K9-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-jademanique-B.A.U-Kingside-K9"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-jademanique-B.A.U-Kingside-K9"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "eyes-jademanique-B.A.U-Kingside-K9-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-jademanique-B.A.U-Kingside-K9-lights"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "jademanique-B.A.U-Kingside-K9-sleeper_g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jademanique-B.A.U-Kingside-K9-sleeper_g"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "jademanique-B.A.U-Kingside-K9-sleeper_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jademanique-B.A.U-Kingside-K9-sleeper_r"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "laser"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "disabler"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "taser"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-RUSS-K9"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-RUSS-K9"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-RUSS-K9-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "argonne-RUSS-K9-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-RUSS-K9-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-RUSS-K9-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-argonne-RUSS-K9"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-argonne-RUSS-K9"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "eyes-argonne-RUSS-K9-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-argonne-RUSS-K9-lights"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-RUSS-K9-sleeper_g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-RUSS-K9-sleeper_g"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-RUSS-K9-sleeper_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-RUSS-K9-sleeper_r"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-RUSS-Medihound"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-RUSS-Medihound"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-RUSS-Medihound-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "argonne-RUSS-Medihound-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-RUSS-Medihound-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-RUSS-Medihound-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-argonne-RUSS-Medihound"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-argonne-RUSS-Medihound"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "eyes-argonne-RUSS-Medihound-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-argonne-RUSS-Medihound-lights"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-RUSS-Medihound-sleeper_g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-RUSS-Medihound-sleeper_g"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-RUSS-Medihound-sleeper_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-RUSS-Medihound-sleeper_r"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-RUSS-KMine"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-RUSS-KMine"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-RUSS-KMine-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "argonne-RUSS-KMine-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-RUSS-KMine-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-RUSS-KMine-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-argonne-RUSS-KMine"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-argonne-RUSS-KMine"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "eyes-argonne-RUSS-KMine-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-argonne-RUSS-KMine-lights"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-RUSS-KMine-sleeper_g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-RUSS-KMine-sleeper_g"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-RUSS-KMine-sleeper_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-RUSS-KMine-sleeper_r"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-RUSS-Pupdozer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-RUSS-Pupdozer"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-RUSS-Pupdozer-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "argonne-RUSS-Pupdozer-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-RUSS-Pupdozer-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-RUSS-Pupdozer-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-argonne-RUSS-Pupdozer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-argonne-RUSS-Pupdozer"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "eyes-argonne-RUSS-Pupdozer-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-argonne-RUSS-Pupdozer-lights"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-RUSS-Pupdozer-sleeper_g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-RUSS-Pupdozer-sleeper_g"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-RUSS-Pupdozer-sleeper_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-RUSS-Pupdozer-sleeper_r"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-RUSS-Sci-borg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-RUSS-Sci-borg"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-RUSS-Sci-borg-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "argonne-RUSS-Sci-borg-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-RUSS-Sci-borg-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-RUSS-Sci-borg-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-argonne-RUSS-Sci-borg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-argonne-RUSS-Sci-borg"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "eyes-argonne-RUSS-Sci-borg-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-argonne-RUSS-Sci-borg-lights"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-RUSS-Sci-borg-sleeper_g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-RUSS-Sci-borg-sleeper_g"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-RUSS-Sci-borg-sleeper_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-RUSS-Sci-borg-sleeper_r"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-RUSS-Service-Hound"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-RUSS-Service-Hound"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-RUSS-Service-Hound-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "argonne-RUSS-Service-Hound-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-RUSS-Service-Hound-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-RUSS-Service-Hound-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-argonne-RUSS-Service-Hound"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-argonne-RUSS-Service-Hound"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "eyes-argonne-RUSS-Service-Hound-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-argonne-RUSS-Service-Hound-lights"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-RUSS-Service-Hound-sleeper_g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-RUSS-Service-Hound-sleeper_g"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-RUSS-Service-Hound-sleeper_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-RUSS-Service-Hound-sleeper_r"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-RUSS-TraumaHound"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-RUSS-TraumaHound"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-RUSS-TraumaHound-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "argonne-RUSS-TraumaHound-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-RUSS-TraumaHound-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-RUSS-TraumaHound-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-argonne-RUSS-TraumaHound"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-argonne-RUSS-TraumaHound"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "eyes-argonne-RUSS-TraumaHound-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-argonne-RUSS-TraumaHound-lights"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-RUSS-TraumaHound-sleeper_g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-RUSS-TraumaHound-sleeper_g"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true
+
+[[state]]
+name = "argonne-RUSS-TraumaHound-sleeper_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "argonne-RUSS-TraumaHound-sleeper_r"
+dirs = 4
+frames = 10
+delays = [0.7]
+movement = true

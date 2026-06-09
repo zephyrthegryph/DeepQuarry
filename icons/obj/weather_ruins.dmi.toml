@@ -1,0 +1,118 @@
+# Generated from weather_ruins.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 10
+
+[[state]]
+name = "base"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "star_door"
+dirs = 1
+frames = 27
+delays = [8, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 8]
+
+[[state]]
+name = "open_door"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fog_door"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "storm_door"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blizzard_door"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "final_door"
+dirs = 1
+frames = 30
+delays = [1]
+
+[[state]]
+name = "ultra_blast_door"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "disc_mono"
+dirs = 1
+frames = 10
+delays = [2.5]
+
+[[state]]
+name = "old_disc_eclipse"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "neon_disc"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sec_disc"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medi_disc"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engi_disc"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sci_disc"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "disc_janus"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "disc_eclipse"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "disc_stolen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "disc_bonus"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "disc_alter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gigapower_core"
+dirs = 1
+frames = 1

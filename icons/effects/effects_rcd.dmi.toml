@@ -1,0 +1,79 @@
+# Generated from effects_rcd.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 14
+
+[[state]]
+name = "rcd_full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rcd"
+dirs = 1
+frames = 37
+delays = [1]
+loop = 1
+
+[[state]]
+name = "rcd_short"
+dirs = 1
+frames = 20
+delays = [1]
+loop = 1
+
+[[state]]
+name = "rcd_shorter"
+dirs = 1
+frames = 11
+delays = [1]
+loop = 1
+
+[[state]]
+name = "rcd_shortest"
+dirs = 1
+frames = 5
+delays = [1]
+loop = 1
+
+[[state]]
+name = "rcd_end"
+dirs = 1
+frames = 12
+delays = [1]
+loop = 1
+
+[[state]]
+name = "rcd_end_reverse"
+dirs = 1
+frames = 12
+delays = [1]
+loop = 1
+
+[[state]]
+name = "rcd_shortest_reverse"
+dirs = 1
+frames = 6
+delays = [1]
+loop = 1
+
+[[state]]
+name = "rcd_shorter_reverse"
+dirs = 1
+frames = 12
+delays = [1]
+loop = 1
+
+[[state]]
+name = "rcd_short_reverse"
+dirs = 1
+frames = 21
+delays = [1]
+loop = 1
+
+[[state]]
+name = "rcd_reverse"
+dirs = 1
+frames = 38
+delays = [1]
+loop = 1

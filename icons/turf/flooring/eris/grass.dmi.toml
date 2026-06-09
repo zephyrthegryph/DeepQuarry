@@ -1,0 +1,39 @@
+# Generated from grass.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "grass0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "grass_corners"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "grass_edge_corner"
+dirs = 8
+frames = 1

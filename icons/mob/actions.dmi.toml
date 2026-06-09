@@ -1,0 +1,336 @@
+# Generated from actions.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "default"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "show"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hide"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_default"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_mime"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spell_default"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mime"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fireball"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "magicm"
+dirs = 1
+frames = 1
+rewind = true
+
+[[state]]
+name = "jaunt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shield"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emp"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "mindswap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gib"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "statue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "statue-TG"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "knock"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blind"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mutate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "artificer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blink"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lightning"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "smoke"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "barn"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "summons"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "repulse"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_spell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bg_alien"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien_neurotoxin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien_egg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien_resin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien_plant"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien_whisper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien_transfer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien_acid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien_barf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien_evolve_larva"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien_evolve_drone"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien_hide"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flashlight"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spell_blind"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spell_teleport"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spell_blink"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spell_fireball"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spell_knock"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spell_missile"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spell_mind"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spell_horse"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spell_tech"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spell_disintegrate"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spell_forcewall"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spell_smoke"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ability_mimespeech"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ability_spiderweb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ability_facehug"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "genetic_hulk"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "genetic_jump"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "genetic_cryo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "genetic_eat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "genetic_incendiary"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "genetic_morph"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "genetic_poly"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "genetic_view"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "genetic_empath"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "genetic_project"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spell_greytide"
+dirs = 1
+frames = 1

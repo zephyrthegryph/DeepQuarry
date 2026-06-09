@@ -1,0 +1,41 @@
+# Generated from mecha_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "cluwne"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "cluwne-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cluwne-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scuttlebug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scuttlebug-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phazon-phase"
+dirs = 4
+frames = 5
+delays = [1]
+
+[[state]]
+name = "scuttlebug-broken"
+dirs = 1
+frames = 1

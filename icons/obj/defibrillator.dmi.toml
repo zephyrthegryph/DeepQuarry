@@ -1,0 +1,332 @@
+# Generated from defibrillator.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 12
+
+[[state]]
+name = "defibunit-charge100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "defibunit-charge75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "defibunit-charge50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "defibunit-charge25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "defibunit-nocell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "defibunit-powered"
+dirs = 1
+frames = 4
+delays = [4]
+
+[[state]]
+name = "defibunit-combat"
+dirs = 1
+frames = 4
+delays = [4]
+
+[[state]]
+name = "defibunit-emagged"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "defibpaddles0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "defibpaddles1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "defibpaddles_"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "defibpaddles0_cooldown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "defibpaddles1_cooldown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "defibpaddles__cooldown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "defibcompact"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "defibcompact_complete"
+dirs = 1
+frames = 10
+delays = [6, 1]
+
+[[state]]
+name = "defibcompactnoscreen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "defibcompact-paddles"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "defibcompact-nocell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "defibcompact-powered"
+dirs = 1
+frames = 10
+delays = [6, 1]
+
+[[state]]
+name = "defibcompact-combat"
+dirs = 1
+frames = 10
+delays = [6, 1]
+
+[[state]]
+name = "defibcompact-emagged"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "defibcompact-charge100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "defibcompact-charge75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "defibcompact-charge50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "defibcompact-charge25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "defibpaddlesold1__cooldown"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "defibunitold-nocell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "defibunitold-charge50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "defibunitold-powered"
+dirs = 1
+frames = 10
+delays = [1]
+
+[[state]]
+name = "defibunitold-emagged"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "defibunitold-paddles"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "defibpaddlesold0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "defibpaddlesold1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "defibpaddlesold_"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "defibunitold-charge25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "defibunit_complete"
+dirs = 1
+frames = 4
+delays = [4]
+
+[[state]]
+name = "defibunitnoscreen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "defibunit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "defibunit-paddles"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "defibunitold-charge75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "defibunitold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "defibpaddlesold0_cooldown"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "defibpaddlesold1_cooldown"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "defibunit-charge0"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "defibunitold-charge100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jumperunit_complete"
+dirs = 1
+frames = 4
+delays = [4]
+
+[[state]]
+name = "jumperunitnoscreen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jumperunit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jumperpaddles0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jumperpaddles1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jumperpaddles0_cooldown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jumperpaddles1_cooldown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jumperunit-nocell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jumperunit-powered"
+dirs = 1
+frames = 4
+delays = [4]
+
+[[state]]
+name = "jumperunit-charge100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jumperunit-charge75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jumperunit-charge50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jumperunit-charge25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jumperunit-emagged"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "jumperunit-paddles"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jumperunit-charge0"
+dirs = 1
+frames = 2
+delays = [2]

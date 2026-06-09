@@ -1,0 +1,200 @@
+# Generated from drinks_mugs.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "coffeecup_spawner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coffeecup_vapor"
+dirs = 1
+frames = 8
+delays = [3]
+
+[[state]]
+name = "coffeecup40"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coffeecup80"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coffeecup100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glasscoffeecup40"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glasscoffeecup80"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glasscoffeecup100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coffeecup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coffeecup_pawn"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glasscoffeecup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coffeecup_oculum"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coffeecup_NT"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coffeecup_sol"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coffeecup_fivearrows"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coffeecup_fleet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coffeecup_psc"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coffeecup_wulf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coffeecup_almp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coffeecup_alma"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coffeecup_black"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coffeecup_heart"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coffeecup_brit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coffeecup_one"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coffeecup_puni"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coffeecup_rainbow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coffeecup_metal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coffeecup_diona"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coffeecup_green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coffeecup_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coffeecup_corp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coffeecup_zeng"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coffeecup_gilth"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coffeecup_wt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coffeecup_aether"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coffeecup_flame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coffeecup_bishop"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coffeecup_xion"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "coffeecup_talon"
+dirs = 1
+frames = 1

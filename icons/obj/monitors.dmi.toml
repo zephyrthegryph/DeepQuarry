@@ -1,0 +1,253 @@
+# Generated from monitors.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 21
+
+[[state]]
+name = "camera"
+dirs = 8
+frames = 7
+delays = [3]
+rewind = true
+
+[[state]]
+name = "cameraemp"
+dirs = 8
+frames = 4
+delays = [2, 2, 1]
+
+[[state]]
+name = "camera1"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "camerax"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "cameracase"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alarm0"
+dirs = 4
+frames = 6
+delays = [5, 1, 1, 10, 2, 1]
+
+[[state]]
+name = "alarm1"
+dirs = 4
+frames = 2
+delays = [5]
+
+[[state]]
+name = "alarmp"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alarmx"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fire"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fire0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fire1"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "firep"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "firex"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "overlay_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "overlay_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "overlay_yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "overlay_violet"
+dirs = 4
+frames = 2
+delays = [5]
+
+[[state]]
+name = "overlay_orange"
+dirs = 4
+frames = 2
+delays = [5]
+
+[[state]]
+name = "overlay_red"
+dirs = 4
+frames = 2
+delays = [5]
+
+[[state]]
+name = "overlay_delta"
+dirs = 4
+frames = 2
+delays = [3]
+
+[[state]]
+name = "alarm2"
+dirs = 4
+frames = 2
+delays = [5]
+
+[[state]]
+name = "airpump1_1"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "airpump0_1"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "airpump1_2"
+dirs = 1
+frames = 4
+delays = [2, 1]
+
+[[state]]
+name = "airpump0_2"
+dirs = 1
+frames = 4
+delays = [2, 1]
+
+[[state]]
+name = "airpump1_3"
+dirs = 1
+frames = 4
+delays = [2, 1]
+
+[[state]]
+name = "airpump0_3"
+dirs = 1
+frames = 4
+delays = [2, 1]
+
+[[state]]
+name = "airpump1_4"
+dirs = 1
+frames = 5
+delays = [2, 1]
+
+[[state]]
+name = "airpump0_4"
+dirs = 1
+frames = 5
+delays = [2, 1]
+
+[[state]]
+name = "airpump1_5"
+dirs = 1
+frames = 6
+delays = [2, 1]
+
+[[state]]
+name = "airpump0_5"
+dirs = 1
+frames = 6
+delays = [2, 1]
+
+[[state]]
+name = "airpump1_6"
+dirs = 1
+frames = 7
+delays = [2, 1]
+
+[[state]]
+name = "airpump0_6"
+dirs = 1
+frames = 7
+delays = [2, 1]
+
+[[state]]
+name = "airpump1_7"
+dirs = 1
+frames = 10
+delays = [2, 1]
+
+[[state]]
+name = "airpump0_7"
+dirs = 1
+frames = 10
+delays = [2, 1]
+
+[[state]]
+name = "pipeterm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pipeterm_f"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "auth_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "auth_on"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "xraycam"
+dirs = 8
+frames = 7
+delays = [3]
+rewind = true
+
+[[state]]
+name = "xraycamemp"
+dirs = 8
+frames = 4
+delays = [2, 2, 1]
+
+[[state]]
+name = "xraycam1"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "xraycamx"
+dirs = 8
+frames = 1

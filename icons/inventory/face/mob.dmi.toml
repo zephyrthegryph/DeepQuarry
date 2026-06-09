@@ -1,0 +1,847 @@
+# Generated from mob.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 31
+
+[[state]]
+name = "muzzle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gas_mask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cloth"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "clothdown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sterile"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "steriledown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sterilew"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sterilewdown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dust"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dustdown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swat"
+dirs = 4
+frames = 3
+delays = [3]
+rewind = true
+
+[[state]]
+name = "gas_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "owl"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "clown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "death"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "breath"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cig_burnt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cig_on"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "cigar"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cigar_burnt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cigar_on"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "cigar2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cigar2_burnt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cigar2_on"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "facehugger"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facehugger_inactive"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facehugger_dead"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facehugger_corgi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "facehugger_corgipuppy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "plaguedoctor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "plaguedoctor2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mime"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "s-ninja"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "horsehead"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fake-moustache"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sexyclown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "monkeymask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sexymime"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "balaclava"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "luchador"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "luchag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "luchar"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "breathdown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ty_necklace"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tooth-necklace"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pipe"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pipe_burnt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pipe_on"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "cobpipe-old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cobpipe-old_burnt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cobpipe-old_on"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "cobpipe"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cobpipe_burnt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cobpipe_on"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "bonepipe"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bonepipe_burnt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bonepipeon"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "holomask-cord"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "konaahirano"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snorkel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "michael_guess_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swatclava"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandgold"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandblack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tape_cross"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lingchameleon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandskull"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandgreen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandred"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bandblue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flashbang"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flashbang_active"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "emp"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "emp_active"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "frggrenade"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "frggrenade_active"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "large_grenade"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "large_grenade_active"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "chemg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chemg_active"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "guyfawkes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "halfgas"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "halfgas_up"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fullgas"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "explorer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "explorerdown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gas_clear"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shark"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "dolphin"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "demon"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "goblin"
+dirs = 4
+frames = 1
+loop = 1
+
+[[state]]
+name = "joint"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "joint_burnt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "joint_on"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "vax_mask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "papermask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "neutralmask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyemask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sleepingmask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "heartmask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "coremask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "plusmask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "squaremask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bullseyemask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "verticalmask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "horizontalmask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xmask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bugmask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "doublemask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "markmask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "linemask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "minusmask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fourmask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "diamondmask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catmask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bigeyemask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "goodmask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "badmask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "happymask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sadmask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "joy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pensive"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "angry"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flushed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pocky"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mouthwheat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gaiter_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gaiter_green_up"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gaiter_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gaiter_red_up"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gaiter_tan"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gaiter_tan_up"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gaiter_gray"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gaiter_gray_up"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gaiter_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gaiter_blue_up"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gaiter_purple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gaiter_purple_up"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gaiter_orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gaiter_orange_up"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gaiter_charcoal"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gaiter_charcoal_up"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gaiter_snow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gaiter_snow_up"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "half_mask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "half_mask_up"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bubble"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mantle_HUD"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beartrap0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ballgag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ringgag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "altevian-mask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lace_mask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wrestler"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "officermask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wardenmask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hosmask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "masquerade"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "masquerade_feather"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "masquerade_twotone"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "masquerade_twotonefeather"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ghost"
+dirs = 4
+frames = 1

@@ -1,0 +1,119 @@
+# Generated from righthand_magic.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 15
+
+[[state]]
+name = "staff"
+dirs = 4
+frames = 4
+delays = [5]
+
+[[state]]
+name = "staff"
+dirs = 4
+frames = 4
+delays = [5]
+
+[[state]]
+name = "broom"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "staffofchange"
+dirs = 4
+frames = 5
+delays = [4]
+
+[[state]]
+name = "staffofanimation"
+dirs = 4
+frames = 4
+delays = [5]
+rewind = true
+
+[[state]]
+name = "staffofhealing"
+dirs = 4
+frames = 12
+delays = [2, 2, 1, 2, 2, 1, 2, 2, 1, 2, 2, 1]
+hotspots = [{ frame = 3, x = 17, y = 13 }]
+
+[[state]]
+name = "staffofchaos"
+dirs = 4
+frames = 4
+delays = [5]
+
+[[state]]
+name = "staffofdoor"
+dirs = 4
+frames = 4
+delays = [20]
+
+[[state]]
+name = "godstaff-red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "godstaff-blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "honker"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "staffofstorms"
+dirs = 4
+frames = 2
+delays = [16, 4]
+
+[[state]]
+name = "bostaff1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bostaff0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pharoah_sceptre"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "locker"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gohei"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "staffofchange_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "focus"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "focus"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scepter"
+dirs = 4
+frames = 1

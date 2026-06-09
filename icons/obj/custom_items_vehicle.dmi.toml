@@ -1,0 +1,9 @@
+# Generated from custom_items_vehicle.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 1
+
+[[state]]
+name = "holder"
+dirs = 1
+frames = 1

@@ -1,0 +1,159 @@
+# Generated from uniforms_yw.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "blueshield"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wardenformal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "securityformal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hosformal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brigphysicianf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brigphysician"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "robotics2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blackutility"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blackutility_crew"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blackutility_med"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blackutility_medcom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blackutility_eng"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blackutility_engcom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blackutility_sup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blackutility_sec"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blackutility_seccom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blackutility_com"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "navyutility"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "navyutility_med"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "navyutility_eng"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "navyutility_sup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "navyutility_sec"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "navyutility_com"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "greenutility"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tanutility"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "greyutility"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "greyutility_eng"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "greyutility_med"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "greyutility_sup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "greyutility_sec"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "greyutility_com"
+dirs = 1
+frames = 1

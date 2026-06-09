@@ -1,0 +1,64 @@
+# Generated from alienanimals_96x64.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 96
+height = 64
+cols = 6
+
+[[state]]
+name = "squirrel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "squirrel_eye"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "squirrel-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "squirrel-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "squirrel-3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "squirrel-1_eye"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "squirrel-2_eye"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "squirrel-3_eye"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "squirrel_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "squirrel_rest_eye"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "squirrel_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "squirrel_dead_eye"
+dirs = 1
+frames = 1

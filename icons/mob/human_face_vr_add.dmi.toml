@@ -1,0 +1,455 @@
+# Generated from human_face_vr_add.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 19
+
+[[state]]
+name = "none"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "serg_plain_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "serg_medicore_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "serg_tapered_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "serg_fairytail_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "adhara_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "anita_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "apollo_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "belle_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bun_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crescent_moon_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "curl_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hawk_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jagged_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kajam_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "keid_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kleeia_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mizar_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "short_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spike_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vulp_facial_blaze_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vulp_facial_earfluff_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vulp_facial_kita_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vulp_facial_mask_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vulp_facial_patch_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vulp_facial_ruff_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vulp_facial_swift_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vulp_facial_vulpine_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "soghun_hood_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "soghun_dubhorns"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_braid_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "inkling-colorable"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_ponytail6_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes_sergal"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blank_eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeno_drone"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeno_unused"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeno_hunter"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeno_queen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeno_sentinel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeno_praetorian"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bxeno_drone"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bxeno_unused"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bxeno_hunter"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bxeno_queen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bxeno_sentinel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bxeno_praetorian"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cxeno_drone_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cxeno_sentinel_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cxeno_hunter_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cxeno_queen_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cxeno_sentinel_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cxeno_praetorian_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeno_drone mask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeno_sentinelmask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeno_huntermask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeno_queenmask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeno_sentinelmask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xeno_praetorianmask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "citheronia_hair_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "citheronia_hair_c_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "momijihair_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_spiky_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_mohawk_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_long_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_tight_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_spike_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_ears_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_mane_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_droopy_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_burst_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_pointy_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_mushroom_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_burst_short_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_upright_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_default_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_twincurl_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_fluffymohawk_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_astolfo_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shadekin_short_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shadekin_poofy_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shadekin_long_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shadekin_rivyr_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_backstrafe_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_longway_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_tree_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_twies_s"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 13, y = 18 }]
+
+[[state]]
+name = "hair_slicker_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "unathi_quintiple_horns_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hair_twincurllong_s"
+dirs = 4
+frames = 1

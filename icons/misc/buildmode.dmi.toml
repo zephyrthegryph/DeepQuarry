@@ -1,0 +1,177 @@
+# Generated from buildmode.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "build"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "buildmode1"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "buildmode2"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "buildmode3"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "buildmode4"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "buildmode5"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "buildmode6"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "buildmode7"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "buildmode8"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "buildmode9"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "buildmode10"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "buildhelp"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "buildquit"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "template"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "ai_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ai_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ai_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ais_0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ais_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ais_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ais_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ais_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ais_5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ais_6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ais_7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ais_8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ais_9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ais_10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ai_sel"
+dirs = 1
+frames = 2
+delays = [10]
+
+[[state]]
+name = "ai_turforder"
+dirs = 1
+frames = 4
+delays = [2]
+loop = 1
+
+[[state]]
+name = "ai_targetorder"
+dirs = 1
+frames = 4
+delays = [2]
+loop = 1

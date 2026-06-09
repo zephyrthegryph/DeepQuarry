@@ -1,0 +1,89 @@
+# Generated from airlock_machines.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 11
+
+[[state]]
+name = "airlock_control_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "airlock_control_standby"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "airlock_control_process"
+dirs = 4
+frames = 4
+delays = [1.5]
+
+[[state]]
+name = "airlock_control_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "airlock_sensor_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "airlock_sensor_standby"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "airlock_sensor_cycle"
+dirs = 4
+frames = 2
+delays = [2]
+
+[[state]]
+name = "airlock_sensor_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "airlock_sensor_alert"
+dirs = 4
+frames = 2
+delays = [3]
+
+[[state]]
+name = "access_button_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "access_button_standby"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "access_button_cycle"
+dirs = 4
+frames = 2
+delays = [3]
+
+[[state]]
+name = "access_button_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "access_control_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "access_control_standby"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "access_control_process"
+dirs = 4
+frames = 5
+delays = [3, 5]

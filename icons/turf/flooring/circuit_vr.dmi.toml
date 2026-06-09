@@ -1,0 +1,25 @@
+# Generated from circuit_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "rcircuit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rcircuit_broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rcircuitanim"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "rcircuitanim_broken"
+dirs = 1
+frames = 1

@@ -1,0 +1,74 @@
+# Generated from flora.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "florayield100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "florayield75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "florayield50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "florayield25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "florayield0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floramut100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floramut75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floramut50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floramut25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floramut0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "righthand-yield"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand-mut"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand-yield"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand-mut"
+dirs = 4
+frames = 1

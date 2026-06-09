@@ -1,0 +1,441 @@
+# Generated from jungle.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 17
+
+[[state]]
+name = "grass1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass_impenetrable"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass_clear"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass_path"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grass4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "water"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "water_deep"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bush1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "panther"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "panther_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stump1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stump2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "area"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "temple1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "temple2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "temple3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "temple4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "temple5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "temple6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "trap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "faketrap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fiftytrap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snake"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snake_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dart1"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "dart2"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "dart3"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "sawblade"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "flameburst"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "throw"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "throw1"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "throw2"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "throw4"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "throw8"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plant1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plant2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plant3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plant4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plant5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plant6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plant7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chocolateegg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "boiledrorocore"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "badrecipe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "grapes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reishi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kudzupod"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lime"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fruit0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fruit1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fruit2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fruit3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fruit4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fruit5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crash"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "native1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "native1_act"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "native1_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "native2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "native2_act"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "native2_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "native3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "native3_act"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "native3_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "native4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "native4_act"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "native4_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "native5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "native5_act"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "native5_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "campfire"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "savik"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "savik_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "diyaab"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "diyaab_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shantak"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shantak_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "yithian"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yithian_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tindalos"
+dirs = 4
+frames = 2
+delays = [15, 1]
+
+[[state]]
+name = "tindalos_dead"
+dirs = 1
+frames = 1

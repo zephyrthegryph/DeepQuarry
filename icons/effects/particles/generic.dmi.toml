@@ -1,0 +1,29 @@
+# Generated from generic.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cross"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "curl"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "drop"
+dirs = 1
+frames = 1

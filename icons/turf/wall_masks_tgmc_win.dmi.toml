@@ -1,0 +1,1044 @@
+# Generated from wall_masks_tgmc_win.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 15
+
+[[state]]
+name = "darkwall_window0_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkwall_window1_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkwall_window2_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkwall_window3_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkwall_window4_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkwall_window8_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkwall_window12_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkwall_window0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkwall_window1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkwall_window2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkwall_window3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkwall_window4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkwall_window8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkwall_window12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkwall_rwindow0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkwall_rwindow1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkwall_rwindow2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkwall_rwindow3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkwall_rwindow4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkwall_rwindow8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkwall_rwindow12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_window0_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_window1_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_window2_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_window3_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_window4_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_window8_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_window12_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_window0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_window1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_window2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_window3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_window4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_window8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_window12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_rwindow0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_rwindow1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_rwindow2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_rwindow3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_rwindow4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_rwindow8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "white_rwindow12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal_window0_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal_window1_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal_window2_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal_window3_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal_window4_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal_window5_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal_window6_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal_window8_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal_window9_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal_window10_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal_window12_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal_window0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal_window1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal_window2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal_window3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal_window4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal_window5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal_window6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal_window8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal_window9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal_window10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal_window12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall_window0_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall_window1_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metal_rwindow2_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall_window3_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall_window4_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall_window5_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall_window6_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall_window8_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall_window9_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall_window12_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall_window10_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall_rwindow0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall_rwindow1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall_rwindow2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall_rwindow3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall_rwindow4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall_rwindow5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall_rwindow6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall_rwindow8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall_rwindow9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall_rwindow10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rwall_rwindow12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chigusa_window0_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chigusa_window1_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chigusa_window2_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chigusa_window3_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chigusa_window4_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chigusa_window8_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chigusa_window12_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chigusa_rwindow0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chigusa_rwindow1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chigusa_rwindow2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chigusa_rwindow3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chigusa_rwindow4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chigusa_rwindow8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chigusa_rwindow12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper_window0_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper_window1_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper_window2_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper_window3_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper_window4_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper_window5_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper_window6_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper_window8_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper_window9_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper_window10_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper_window12_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper_rwindow0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper_rwindow1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper_rwindow2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper_rwindow3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper_rwindow4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper_rwindow5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper_rwindow6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper_rwindow8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper_rwindow9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper_rwindow10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper_rwindow12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper_window0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper_window1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper_window2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper_window3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper_window4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper_window5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper_window6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper_window8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper_window9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper_window10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "predstriper_window12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray_window0_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray_window1_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray_window2_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray_window3_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray_window4_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray_window5_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray_window6_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray_window8_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray_window9_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray_window10_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray_window12_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray_window0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray_window1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray_window2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray_window3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray_window4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray_window5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray_window6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray_window8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray_window9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray_window10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray_window12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray_rwindow0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray_rwindow1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray_rwindow2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray_rwindow3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray_rwindow4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray_rwindow5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray_rwindow6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray_rwindow8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray_rwindow9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray_rwindow10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gray_rwindow12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood_window0_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood_window1_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood_window2_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood_window3_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood_window4_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood_window8_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood_window12_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood_window0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood_window1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood_window2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood_window3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood_window4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood_window8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood_window12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood_rwindow0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood_rwindow1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood_rwindow2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood_rwindow3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood_rwindow4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood_rwindow8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wood_rwindow12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "youngwood_window0_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "youngwood_window1_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "youngwood_window2_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "youngwood_window3_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "youngwood_window4_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "youngwood_window8_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "youngwood_window12_frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "youngwood_window0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "youngwood_window1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "youngwood_window2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "youngwood_window3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "youngwood_window4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "youngwood_window8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "youngwood_window12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "youngwood_rwindow0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "youngwood_rwindow1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "youngwood_rwindow2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "youngwood_rwindow3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "youngwood_rwindow4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "youngwood_rwindow8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "youngwood_rwindow12"
+dirs = 1
+frames = 1

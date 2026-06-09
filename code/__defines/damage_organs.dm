@@ -1,0 +1,113 @@
+// Damage things. TODO: Merge these down to reduce on defines.
+// Way to waste perfectly good damage-type names (BRUTE) on this... If you were really worried about case sensitivity, you could have just used lowertext(damagetype) in the proc.
+#define BRUTE     "brute"
+#define BURN      "fire"
+#define TOX       "tox"
+#define OXY       "oxy"
+#define CLONE     "clone"
+#define HALLOSS   "halloss"
+#define ELECTROCUTE "electrocute"
+#define BIOACID   "bioacid"
+#define SEARING   "searing"
+#define ELECTROMAG "electromagnetic"
+
+#define CUT       "cut"
+#define BRUISE    "bruise"
+#define PIERCE    "pierce"
+
+#define STUN      "stun"
+#define WEAKEN    "weaken"
+#define PARALYZE  "paralize"
+#define IRRADIATE "irradiate"
+#define AGONY     "agony"     // Added in PAIN!
+#define SLUR      "slur"
+#define STUTTER   "stutter"
+#define EYE_BLUR  "eye_blur"
+#define DROWSY    "drowsy"
+
+// I hate adding defines like this but I'd much rather deal with bitflags than lists and string searches.
+#define BRUTELOSS 0x1
+#define FIRELOSS  0x2
+#define TOXLOSS   0x4
+#define OXYLOSS   0x8
+
+#define FIRE_DAMAGE_MODIFIER 0.0215 // Higher values result in more external fire damage to the skin. (default 0.0215)
+#define  AIR_DAMAGE_MODIFIER 2.025  // More means less damage from hot air scalding lungs, less = more damage. (default 2.025)
+
+// Organ defines.
+#define ORGAN_CUT_AWAY   (1<<0)
+#define ORGAN_BLEEDING   (1<<1)
+#define ORGAN_BROKEN     (1<<2)
+#define ORGAN_DESTROYED  (1<<3)
+#define ORGAN_DEAD       (1<<4)
+#define ORGAN_MUTATED    (1<<5)
+
+#define DROPLIMB_EDGE 0
+#define DROPLIMB_BLUNT 1
+#define DROPLIMB_BURN 2
+#define DROPLIMB_ACID 3
+
+// Damage above this value must be repaired with surgery.
+#define ROBOLIMB_REPAIR_CAP 60 // bumping it up to 60 to keep consistency with our global cap of 60
+
+#define ORGAN_FLESH    0 // Normal organic organs.
+#define ORGAN_ASSISTED 1 // Like an LVAD - No pulse, but still organic.
+#define ORGAN_ROBOT    2 // Fully robotic, no organic parts
+#define ORGAN_LIFELIKE 3 // Robotic, made to appear organic
+#define ORGAN_NANOFORM 4 // Fully nanoswarm organ
+
+//Germs and infections.
+#define GERM_LEVEL_AMBIENT  110 // Maximum germ level you can reach by standing still.
+#define GERM_LEVEL_MOVE_CAP 200 // Maximum germ level you can reach by running around.
+
+#define INFECTION_LEVEL_ONE   100
+#define INFECTION_LEVEL_TWO   500
+#define INFECTION_LEVEL_THREE 1000
+#define INFECTION_LEVEL_MAX   1500
+
+#define MODULAR_BODYPART_INVALID    0 // Cannot be detached or reattached.
+#define MODULAR_BODYPART_PROSTHETIC 1 // Can be detached or reattached freely.
+#define MODULAR_BODYPART_CYBERNETIC 2 // Can be detached or reattached to compatible parent organs.
+
+//CitRP Port
+#define CYBERBEAST_MONITOR_STYLES "blank=cyber_blank;\
+	default=cyber_default;\
+	eyes=eyes;\
+	static=cyber_static;\
+	alert=cyber_alert;\
+	happy=cyber_happ;\
+	unhappy=cyber_unhapp;\
+	flat=cyber_flat;\
+	sad=cyber_sad;\
+	heart=cyber_heart;\
+	cross=cyber_cross;\
+	wave=cyber_wave;\
+	uwu=cyber_uwu;\
+	question=cyber_question;\
+	lowpower=cyber_lowpower;\
+	idle=cyber_idle;\
+	nwn=cyber_nwn"
+
+//Ending a monitor style with [-colored] will override eye coloration. If you have custom colors on a monitor icon, you should do this.
+#define STANDARD_MONITOR_STYLES "blank=ipc_blank;\
+	pink=ipc_pink-colored;\
+	green=ipc_green-colored;\
+	red=ipc_red-colored;\
+	blue=ipc_blue-colored;\
+	shower=ipc_shower-colored;\
+	orange=ipc_orange-colored;\
+	nature=ipc_nature-colored;\
+	eight=ipc_eight-colored;\
+	goggles=ipc_goggles-colored;\
+	heart=ipc_heart-colored;\
+	monoeye=ipc_monoeye-colored;\
+	breakout=ipc_breakoutv-colored;\
+	yellow=ipc_yellow-colored;\
+	static=ipc_static-colored;\
+	purple=ipc_purple-colored;\
+	scroll=ipc_scroll;\
+	console=ipc_console;\
+	glider=ipc_gol_glider;\
+	rainbow=ipc_rainbow-colored;\
+	smiley=ipc_smiley-colored;\
+	database=ipc_database-colored"

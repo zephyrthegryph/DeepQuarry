@@ -1,0 +1,51 @@
+# Generated from clockwork_righthand.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "replica_fabricator"
+dirs = 4
+frames = 3
+delays = [1]
+
+[[state]]
+name = "ratvarian_spear"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "clockwork_slab"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "slab_overlay_template"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "slab_geis"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "slab_compromise"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "slab_volt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ratvarian_sword"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "ratvarian_hammer"
+dirs = 4
+frames = 1

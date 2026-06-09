@@ -1,0 +1,604 @@
+# Generated from tables.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 22
+
+[[state]]
+name = "frame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "reinf_preview"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plain_preview"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holo_preview"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stone_preview"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gamble_preview"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien_preview"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flip0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flip1+"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flip1-"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flip2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stone_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stone_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stone_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stone_3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stone_4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stone_5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stone_6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stone_7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solid_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solid_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solid_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solid_3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solid_4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solid_5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solid_6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solid_7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solid_flip0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solid_flip1+"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solid_flip1-"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "solid_flip2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reinf_over_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reinf_over_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reinf_over_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reinf_over_3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reinf_over_4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reinf_over_5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reinf_over_6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reinf_over7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "metal_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "metal_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "metal_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "metal_3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "metal_4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "metal_5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "metal_6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "metal_7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "metal_flip0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "metal_flip1+"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "metal_flip1-"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "metal_flip2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wood_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wood_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wood_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wood_3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wood_4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wood_5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wood_6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wood_7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wood_flip0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wood_flip1+"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wood_flip1-"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wood_flip2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reinf_metal_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reinf_metal_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reinf_metal_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reinf_metal_3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reinf_metal_4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reinf_metal_5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reinf_metal_6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reinf_metal_7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "carpet_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "carpet_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "carpet_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "carpet_3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "carpet_4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "carpet_5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "carpet_6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "carpet_7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "carpet_flip0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "carpet_flip1-"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "carpet_flip1+"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "carpet_flip2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "debugium"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "debug_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "debug_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "debug_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "debug_3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "debug_4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "debug_5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "debug_6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "debug_7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "debug_flip1+"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "debug_flip1-"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "debug_flip0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "debug_flip2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rdebug_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rdebug_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rdebug_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rdebug_3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rdebug_4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rdebug_5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rdebug_6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rdebug_7"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alien_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alien_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alien_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alien_3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alien_4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alien_5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alien_6"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alien_7"
+dirs = 4
+frames = 1

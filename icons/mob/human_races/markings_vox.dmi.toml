@@ -1,0 +1,239 @@
+# Generated from markings_vox.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 14
+
+[[state]]
+name = "vox_talons-r_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_talons-l_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_talons-r_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_talons-l_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_talons-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_talons-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_talons-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_talons-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_beak-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_two_tone"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bay_vox"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bay_vox-r_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bay_vox-l_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bay_vox-r_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bay_vox-l_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bay_vox-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bay_vox-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bay_vox-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bay_vox-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bay_vox-groin"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bay_vox-torso"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bay_vox-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bay_vox_eyes-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_two_tone-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_two_tone-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_two_tone-r_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_two_tone-l_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_two_tone-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_two_tone-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_two_tone-r_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_two_tone-l_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_two_tone-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Voxscales-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Voxscales-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Voxscales-r_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Voxscales-l_leg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Voxscales-l_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Voxscales-r_arm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Voxscales-r_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Voxscales-l_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Voxclaws-l_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Voxclaws-r_hand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Voxclaws-r_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Voxclaws-l_foot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "--Voxscales-head--"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_muzzle-head"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_underbeak-head"
+dirs = 4
+frames = 1

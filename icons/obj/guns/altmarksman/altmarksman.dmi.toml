@@ -1,0 +1,29 @@
+# Generated from altmarksman.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "righthand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ukr"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ukr_o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "in-holster"
+dirs = 4
+frames = 1

@@ -1,0 +1,79 @@
+# Generated from ironsand_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "ironsand1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ironsand2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ironsand3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ironsand4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ironsand5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ironsand6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ironsand7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ironsand8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ironsand9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ironsand10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ironsand11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ironsand12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ironsand13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ironsand14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ironsand15"
+dirs = 1
+frames = 1

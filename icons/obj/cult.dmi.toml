@@ -1,0 +1,55 @@
+# Generated from cult.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "pylon"
+dirs = 1
+frames = 12
+delays = [2]
+
+[[state]]
+name = "pylon-surge"
+dirs = 1
+frames = 12
+delays = [1]
+loop = 1
+
+[[state]]
+name = "pylon-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "forge"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "talismanaltar"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tomealtar"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "hole"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "cultgirder"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "displaced"
+dirs = 1
+frames = 1

@@ -1,0 +1,15 @@
+# Generated from eye.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "default-eye"
+dirs = 1
+frames = 25
+delays = [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 1, 1, 1, 2]
+
+[[state]]
+name = "AI-eye"
+dirs = 1
+frames = 1

@@ -1,0 +1,118 @@
+# Generated from decor32x64.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 64
+cols = 11
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nothing"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eotp"
+dirs = 1
+frames = 6
+delays = [1.75]
+
+[[state]]
+name = "nt_pod_mappreview"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nt_pod"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nt_pod_over"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nt_pod_mask"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nt_pod_glass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nt_pod_opening"
+dirs = 1
+frames = 9
+delays = [1]
+loop = 1
+
+[[state]]
+name = "nt_pod_closing"
+dirs = 1
+frames = 9
+delays = [1]
+loop = 1
+
+[[state]]
+name = "nt_pod_liquid"
+dirs = 1
+frames = 15
+delays = [1]
+
+[[state]]
+name = "nt_pod_filling"
+dirs = 1
+frames = 16
+delays = [0.5]
+
+[[state]]
+name = "nt_pod_emptying"
+dirs = 1
+frames = 16
+delays = [0.5]
+
+[[state]]
+name = "nt_pod_top_on"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "nt_pod_under"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nt_pod_panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tube_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tube_down"
+dirs = 1
+frames = 12
+delays = [1]
+loop = 1
+
+[[state]]
+name = "tube_up"
+dirs = 1
+frames = 12
+delays = [1]
+loop = 1
+
+[[state]]
+name = "tube_on"
+dirs = 1
+frames = 2
+delays = [1]

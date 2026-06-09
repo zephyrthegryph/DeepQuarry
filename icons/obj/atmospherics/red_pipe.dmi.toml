@@ -1,0 +1,49 @@
+# Generated from red_pipe.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "intact"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "intact-f"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "exposed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "exposed-f"
+dirs = 4
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "exposed01"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "exposed10"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "exposed01-f"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "exposed10-f"
+dirs = 8
+frames = 1

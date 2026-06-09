@@ -1,0 +1,834 @@
+# Generated from bureaucracy.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 16
+
+[[state]]
+name = "clipboard"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clipboard_over"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clipboard_pen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "labeler0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "labeler1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "folder_paper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "folder"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "folder_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "folder_cyan"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "folder_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "folder_yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "folder_white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "folder_hop"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "folder_rd"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "folder_cmo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "folder_ce"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "folder_hos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "folder_captain"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-qm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_stamp-qm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-ward"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_stamp-ward"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-cap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_stamp-cap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-hop"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_stamp-hop"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-tal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_stamp-tal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-ce"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_stamp-ce"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-hos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_stamp-hos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-rd"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_stamp-rd"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-cmo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_stamp-cmo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-clown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_stamp-clown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-deny"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_stamp-deny"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-ok"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_stamp-ok"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-cent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_stamp-cent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-intaff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_stamp-intaff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-cargo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_stamp-cargo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-sg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_stamp-sg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-sol"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_stamp-sol"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-zenghu"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_stamp-zenghu"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-einstein"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_stamp-einstein"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-heph"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_stamp-heph"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_stamp-circle"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_stamp-square"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_stamp-dots"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_stamp-x"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_stamp-check"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_stamp-law"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pen-x"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "pen_blue-x"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "pen_red-x"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "pen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pen_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pen_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pen_fountain"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pen_fountain-x"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "pen_fountain2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red_fountain"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "command_fountain"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blues_fountain"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blueg_fountain"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gold_fountain"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "black_fountain"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mime_fountain"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "filingcabinet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "filingcabinet-open"
+dirs = 1
+frames = 6
+delays = [1, 1, 1, 4, 1]
+loop = 1
+
+[[state]]
+name = "employmentcabinetzUnimplemented"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "employmentcabinet-openzUnimplemented"
+dirs = 1
+frames = 6
+delays = [1, 1, 1, 4, 1]
+loop = 1
+
+[[state]]
+name = "chestdrawer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chestdrawer-open"
+dirs = 1
+frames = 7
+delays = [1, 1, 1, 4, 1]
+loop = 1
+
+[[state]]
+name = "tallcabinet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tallcabinet-open"
+dirs = 1
+frames = 6
+delays = [1, 1, 1, 4, 1]
+loop = 1
+
+[[state]]
+name = "newspaper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clip"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tape"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_bin0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_bin1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_bin1_unimplemented"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_bin2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_bin2_unimplemented"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_words"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scrap"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scrap_bloodied"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_talisman"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cpaper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cpaper_words"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_stack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_stack_words"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pamphlet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "photo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_taped"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_words_taped"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scrap_taped"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scrap_bloodied_taped"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_talisman_taped"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cpaper_taped"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cpaper_words_taped"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_stack_taped"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_stack_words_taped"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pamphlet_taped"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "photo_taped"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paperplane"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "paperplane_stamp-cargo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paperplane_stamp-sg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paperplane_stamp-cap"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "paperplane_stamp-hos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "paperplane_stamp-ce"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "paperplane_stamp-cmo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "paperplane_stamp-clown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "paperplane_stamp-hop"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "paperplane_stamp-tal"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "paperplane_stamp-rd"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "paperplane_stamp-qm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "paperplane_stamp-cent"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "paperplane_stamp-intaff"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "paperplane_stamp-deny"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "paperplane_stamp-ok"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shredp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "taperoll"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tape_cross"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "greetingcard_smile"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "greetingcard"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "greetingcard_cat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "greetingcard_flower"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "greetingcard_heart"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "doc_printer_mod_pre"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "doc_printer_mod__post"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "doc_printer_mod_printing"
+dirs = 1
+frames = 4
+delays = [3, 3, 3, 12]
+
+[[state]]
+name = "doc_printer_mod_ejecting"
+dirs = 1
+frames = 4
+delays = [3, 3, 3, 12]
+
+[[state]]
+name = "joke"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "joke_words"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mail_small"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mail_large"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mailbag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "postmark"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp_5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp_6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp_7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp_8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mail_scanner"
+dirs = 1
+frames = 5
+delays = [2]
+
+[[state]]
+name = "sec_ticket"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "permit_ticket"
+dirs = 1
+frames = 1

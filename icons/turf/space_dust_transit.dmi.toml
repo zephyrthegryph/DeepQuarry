@@ -1,0 +1,184 @@
+# Generated from space_dust_transit.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 22
+
+[[state]]
+name = "speedspace_ns_0"
+dirs = 1
+frames = 15
+delays = [1]
+
+[[state]]
+name = "speedspace_ns_1"
+dirs = 1
+frames = 15
+delays = [1]
+
+[[state]]
+name = "speedspace_ns_2"
+dirs = 1
+frames = 15
+delays = [1]
+
+[[state]]
+name = "speedspace_ns_3"
+dirs = 1
+frames = 15
+delays = [1]
+
+[[state]]
+name = "speedspace_ns_4"
+dirs = 1
+frames = 15
+delays = [1]
+
+[[state]]
+name = "speedspace_ns_5"
+dirs = 1
+frames = 15
+delays = [1]
+
+[[state]]
+name = "speedspace_ns_6"
+dirs = 1
+frames = 15
+delays = [1]
+
+[[state]]
+name = "speedspace_ns_7"
+dirs = 1
+frames = 15
+delays = [1]
+
+[[state]]
+name = "speedspace_ns_8"
+dirs = 1
+frames = 15
+delays = [1]
+
+[[state]]
+name = "speedspace_ns_9"
+dirs = 1
+frames = 15
+delays = [1]
+
+[[state]]
+name = "speedspace_ns_10"
+dirs = 1
+frames = 15
+delays = [1]
+
+[[state]]
+name = "speedspace_ns_11"
+dirs = 1
+frames = 15
+delays = [1]
+
+[[state]]
+name = "speedspace_ns_12"
+dirs = 1
+frames = 15
+delays = [1]
+
+[[state]]
+name = "speedspace_ns_13"
+dirs = 1
+frames = 15
+delays = [1]
+
+[[state]]
+name = "speedspace_ns_14"
+dirs = 1
+frames = 15
+delays = [1]
+
+[[state]]
+name = "speedspace_ew_0"
+dirs = 1
+frames = 15
+delays = [1]
+
+[[state]]
+name = "speedspace_ew_1"
+dirs = 1
+frames = 15
+delays = [1]
+
+[[state]]
+name = "speedspace_ew_2"
+dirs = 1
+frames = 15
+delays = [1]
+
+[[state]]
+name = "speedspace_ew_3"
+dirs = 1
+frames = 15
+delays = [1]
+
+[[state]]
+name = "speedspace_ew_4"
+dirs = 1
+frames = 15
+delays = [1]
+
+[[state]]
+name = "speedspace_ew_5"
+dirs = 1
+frames = 15
+delays = [1]
+
+[[state]]
+name = "speedspace_ew_6"
+dirs = 1
+frames = 15
+delays = [1]
+
+[[state]]
+name = "speedspace_ew_7"
+dirs = 1
+frames = 15
+delays = [1]
+
+[[state]]
+name = "speedspace_ew_8"
+dirs = 1
+frames = 15
+delays = [1]
+
+[[state]]
+name = "speedspace_ew_9"
+dirs = 1
+frames = 15
+delays = [1]
+
+[[state]]
+name = "speedspace_ew_10"
+dirs = 1
+frames = 15
+delays = [1]
+
+[[state]]
+name = "speedspace_ew_11"
+dirs = 1
+frames = 15
+delays = [1]
+
+[[state]]
+name = "speedspace_ew_12"
+dirs = 1
+frames = 15
+delays = [1]
+
+[[state]]
+name = "speedspace_ew_13"
+dirs = 1
+frames = 15
+delays = [1]
+
+[[state]]
+name = "speedspace_ew_14"
+dirs = 1
+frames = 15
+delays = [1]

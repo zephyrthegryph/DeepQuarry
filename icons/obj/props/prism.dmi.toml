@@ -1,0 +1,44 @@
+# Generated from prism.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "prism"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prism+glow"
+dirs = 1
+frames = 5
+delays = [3, 2, 1, 2, 3]
+loop = 1
+
+[[state]]
+name = "prism-fixed"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "prism-fixed+glow"
+dirs = 8
+frames = 5
+delays = [3, 2, 1, 2, 3]
+loop = 1
+
+[[state]]
+name = "dial"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "lock"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lock-active"
+dirs = 1
+frames = 1

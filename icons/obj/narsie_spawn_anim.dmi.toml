@@ -1,0 +1,11 @@
+# Generated from narsie_spawn_anim.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 504
+height = 532
+cols = 4
+
+[[state]]
+name = "narsie_spawn_anim"
+dirs = 1
+frames = 11
+delays = [0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 2]
+loop = 1

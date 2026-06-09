@@ -1,0 +1,434 @@
+# Generated from new_assemblies.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 13
+
+[[state]]
+name = "blank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prox_scanning"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "prox_timing"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "prox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "assembly_holder"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prox_scanning_l"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "prox_timing_l"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "prox_left"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "igniter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "igniter_left"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "freezer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "freezer_left"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "timer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "timer_light"
+dirs = 1
+frames = 2
+delays = [3, 7]
+
+[[state]]
+name = "timer_timing_l"
+dirs = 1
+frames = 2
+delays = [3, 7]
+
+[[state]]
+name = "timer_left"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "infrared"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "infrared_left"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "infrared_right"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "infrared_on"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "infrared_on_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "infrared_on_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "infrared_visible"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "infrared_visible_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "infrared_visible_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wiremod"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wiremod_left"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "signaller"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "signaller_left"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mousetrap"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mousetraparmed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mousetrap_left"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mousetraparmed_left"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "voice"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "voice_left"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radio"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radio_left"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bombcore"
+dirs = 1
+frames = 3
+delays = [6]
+
+[[state]]
+name = "bombcore_left"
+dirs = 1
+frames = 3
+delays = [6]
+
+[[state]]
+name = "anomaly_core"
+dirs = 1
+frames = 3
+delays = [6, 1]
+rewind = true
+
+[[state]]
+name = "anomaly_core_left"
+dirs = 1
+frames = 3
+delays = [8, 0.5, 1]
+rewind = true
+
+[[state]]
+name = "control"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "control_left"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "health"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "health_left"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flux_core"
+dirs = 1
+frames = 3
+delays = [6, 1]
+rewind = true
+
+[[state]]
+name = "flux_core_left"
+dirs = 1
+frames = 3
+delays = [6, 1]
+rewind = true
+
+[[state]]
+name = "pyro_core"
+dirs = 1
+frames = 3
+delays = [6, 1]
+rewind = true
+
+[[state]]
+name = "pyro_core_left"
+dirs = 1
+frames = 3
+delays = [6, 1]
+rewind = true
+
+[[state]]
+name = "grav_core"
+dirs = 1
+frames = 3
+delays = [6, 1]
+rewind = true
+
+[[state]]
+name = "grav_core_left"
+dirs = 1
+frames = 3
+delays = [6, 1]
+rewind = true
+
+[[state]]
+name = "vortex_core"
+dirs = 1
+frames = 3
+delays = [6, 1]
+rewind = true
+
+[[state]]
+name = "vortex_core_left"
+dirs = 1
+frames = 3
+delays = [6, 1]
+rewind = true
+
+[[state]]
+name = "broken_state"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rawcore_bluespace"
+dirs = 1
+frames = 1
+rewind = true
+
+[[state]]
+name = "rawcore_flux"
+dirs = 1
+frames = 3
+delays = [6, 1]
+rewind = true
+
+[[state]]
+name = "rawcore_pyro"
+dirs = 1
+frames = 3
+delays = [6, 1]
+rewind = true
+
+[[state]]
+name = "rawcore_grav"
+dirs = 1
+frames = 3
+delays = [6, 1]
+rewind = true
+
+[[state]]
+name = "rawcore_vortex"
+dirs = 1
+frames = 3
+delays = [6, 1]
+rewind = true
+
+[[state]]
+name = "rawcore_hallucination"
+dirs = 1
+frames = 1
+rewind = true
+
+[[state]]
+name = "trapdoor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "trapdoor_left"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hallucination_core"
+dirs = 1
+frames = 3
+delays = [6, 1]
+rewind = true
+
+[[state]]
+name = "hallucination_core_left"
+dirs = 1
+frames = 3
+delays = [8, 0.5, 1]
+rewind = true
+
+[[state]]
+name = "bioscrambler_core"
+dirs = 1
+frames = 3
+delays = [6, 1]
+rewind = true
+
+[[state]]
+name = "bioscrambler_core_left"
+dirs = 1
+frames = 3
+delays = [8, 0.5, 1]
+rewind = true
+
+[[state]]
+name = "rawcore_bioscrambler"
+dirs = 1
+frames = 1
+rewind = true
+
+[[state]]
+name = "dimensional_core"
+dirs = 1
+frames = 3
+delays = [6, 1]
+rewind = true
+
+[[state]]
+name = "dimensional_core_left"
+dirs = 1
+frames = 3
+delays = [8, 0.5, 1]
+rewind = true
+
+[[state]]
+name = "rawcore_dimensional"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "motion0"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "motion1"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "motion2"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "motion3"
+dirs = 1
+frames = 2
+delays = [3]
+
+[[state]]
+name = "rawcore_inert"
+dirs = 1
+frames = 1

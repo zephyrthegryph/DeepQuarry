@@ -1,0 +1,31 @@
+# Generated from thermoregulator_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "lasergen-orig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lasergen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lasergen-on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lasergen-heat"
+dirs = 1
+frames = 7
+delays = [5, 1]
+
+[[state]]
+name = "lasergen-cool"
+dirs = 1
+frames = 7
+delays = [5, 1]

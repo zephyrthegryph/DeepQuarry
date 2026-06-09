@@ -1,0 +1,10 @@
+# Generated from 352x352.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 352
+height = 352
+cols = 4
+
+[[state]]
+name = "singularity_s11"
+dirs = 1
+frames = 16
+delays = [1]

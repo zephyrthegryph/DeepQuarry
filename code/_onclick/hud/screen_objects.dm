@@ -1,0 +1,1131 @@
+/*
+	Screen objects
+	Todo: improve/re-implement
+
+	Screen objects are only used for the hud and should not appear anywhere "in-game".
+	They are used with the client/screen list and the screen_loc var.
+	For more information, see the byond documentation on the screen_loc and screen vars.
+*/
+/atom/movable/screen
+	name = ""
+	icon = 'icons/mob/screen1.dmi'
+	appearance_flags = TILE_BOUND|PIXEL_SCALE|NO_CLIENT_COLOR
+	layer = LAYER_HUD_BASE
+	plane = PLANE_PLAYER_HUD
+	/// A reference to the object in the slot. Grabs or items, generally, but any datum will do.
+	var/datum/weakref/master_ref = null
+	/// A reference to the owner HUD, if any.
+	//VAR_PRIVATE/datum/hud/hud = null //This SHOULD be converted to private eventually, but we're not there yet.
+	var/datum/hud/hud = null // A reference to the owner HUD, if any.
+
+/atom/movable/screen/Destroy()
+	master_ref = null
+	hud = null
+	return ..()
+
+/atom/movable/screen/proc/component_click(atom/movable/screen/component_button/component, params)
+	return
+
+/atom/movable/screen/text
+	icon = null
+	icon_state = null
+	mouse_opacity = 0
+	screen_loc = "CENTER-7,CENTER-7"
+	maptext_height = 480
+	maptext_width = 480
+
+
+/atom/movable/screen/inventory
+	var/slot_id	//The indentifier for the slot. It has nothing to do with ID cards.
+	var/list/object_overlays = list() // Required for inventory/screen overlays.
+
+/atom/movable/screen/inventory/MouseEntered()
+	..()
+	add_overlays()
+
+/atom/movable/screen/inventory/MouseExited()
+	..()
+	cut_overlay(object_overlays)
+	object_overlays.Cut()
+
+
+/atom/movable/screen/close
+	name = "close"
+
+/atom/movable/screen/close/Click()
+	var/obj/master = master_ref?.resolve()
+	if(master)
+		if(istype(master, /obj/item/storage))
+			var/obj/item/storage/S = master
+			S.close(usr)
+	return 1
+
+
+/atom/movable/screen/item_action
+	var/obj/item/owner
+
+/atom/movable/screen/item_action/Destroy()
+	. = ..()
+	owner = null
+
+/atom/movable/screen/item_action/Click()
+	if(!usr || !owner)
+		return 1
+	if(!usr.checkClickCooldown())
+		return
+
+	if(usr.stat || usr.restrained() || usr.stunned || usr.lying)
+		return 1
+
+	if(!(owner in usr))
+		return 1
+
+	owner.ui_action_click()
+	return 1
+
+/atom/movable/screen/grab
+	name = "grab"
+
+/atom/movable/screen/grab/Click()
+	var/obj/master = master_ref?.resolve()
+	var/obj/item/grab/G = master
+	G.s_click(src)
+	return 1
+
+/atom/movable/screen/grab/attack_hand()
+	return
+
+/atom/movable/screen/grab/attackby()
+	return
+
+
+/atom/movable/screen/storage
+	name = "storage"
+
+/atom/movable/screen/storage/Click()
+	if(!usr.checkClickCooldown())
+		return 1
+	if(usr.stat || usr.paralysis || usr.stunned || usr.weakened)
+		return 1
+	if (istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech
+		return 1
+	var/obj/master = master_ref?.resolve()
+	if(master)
+		var/obj/item/I = usr.get_active_hand()
+		if(I)
+			usr.ClickOn(master)
+	return 1
+
+/atom/movable/screen/zone_sel
+	name = "damage zone"
+	icon_state = "zone_sel"
+	screen_loc = ui_zonesel
+	var/selecting = BP_TORSO
+	var/static/list/hover_overlays_cache = list()
+	var/hovering_choice
+	var/mutable_appearance/selecting_appearance
+
+/atom/movable/screen/zone_sel/Click(location, control,params)
+	if(isobserver(usr))
+		return
+
+	var/list/PL = params2list(params)
+	var/icon_x = text2num(PL["icon-x"])
+	var/icon_y = text2num(PL["icon-y"])
+	var/choice = get_zone_at(icon_x, icon_y)
+	if(!choice)
+		return 1
+
+	return set_selected_zone(choice, usr)
+
+/atom/movable/screen/zone_sel/MouseEntered(location, control, params)
+	MouseMove(location, control, params)
+
+/atom/movable/screen/zone_sel/MouseMove(location, control, params)
+	if(isobserver(usr))
+		return
+
+	var/list/PL = params2list(params)
+	var/icon_x = text2num(PL["icon-x"])
+	var/icon_y = text2num(PL["icon-y"])
+	var/choice = get_zone_at(icon_x, icon_y)
+
+	if(hovering_choice == choice)
+		return
+	vis_contents -= hover_overlays_cache[hovering_choice]
+	hovering_choice = choice
+
+	if(!choice)
+		return
+
+	var/obj/effect/overlay/zone_sel/overlay_object = hover_overlays_cache[choice]
+	if(!overlay_object)
+		overlay_object = new
+		overlay_object.icon_state = "[choice]"
+		hover_overlays_cache[choice] = overlay_object
+	vis_contents += overlay_object
+
+/obj/effect/overlay/zone_sel
+	icon = 'icons/mob/zone_sel.dmi'
+	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
+	alpha = 128
+	anchored = TRUE
+	layer = LAYER_HUD_ABOVE
+	plane = PLANE_PLAYER_HUD_ABOVE
+
+/atom/movable/screen/zone_sel/MouseExited(location, control, params)
+	if(!isobserver(usr) && hovering_choice)
+		vis_contents -= hover_overlays_cache[hovering_choice]
+		hovering_choice = null
+
+/atom/movable/screen/zone_sel/proc/get_zone_at(icon_x, icon_y)
+	switch(icon_y)
+		if(1 to 3) //Feet
+			switch(icon_x)
+				if(10 to 15)
+					return BP_R_FOOT
+				if(17 to 22)
+					return BP_L_FOOT
+		if(4 to 9) //Legs
+			switch(icon_x)
+				if(10 to 15)
+					return BP_R_LEG
+				if(17 to 22)
+					return BP_L_LEG
+		if(10 to 13) //Hands and groin
+			switch(icon_x)
+				if(8 to 11)
+					return BP_R_HAND
+				if(12 to 20)
+					return BP_GROIN
+				if(21 to 24)
+					return BP_L_HAND
+		if(14 to 22) //Chest and arms to shoulders
+			switch(icon_x)
+				if(8 to 11)
+					return BP_R_ARM
+				if(12 to 20)
+					return BP_TORSO
+				if(21 to 24)
+					return BP_L_ARM
+		if(23 to 30) //Head, but we need to check for eye or mouth
+			if(icon_x in 12 to 20)
+				switch(icon_y)
+					if(23 to 24)
+						if(icon_x in 15 to 17)
+							return O_MOUTH
+					if(26) //Eyeline, eyes are on 15 and 17
+						if(icon_x in 14 to 18)
+							return O_EYES
+					if(25 to 27)
+						if(icon_x in 15 to 17)
+							return O_EYES
+				return BP_HEAD
+
+/atom/movable/screen/zone_sel/proc/set_selected_zone(choice, mob/user)
+	if(isobserver(user))
+		return
+	if(choice != selecting)
+		selecting = choice
+		update_icon()
+
+/atom/movable/screen/zone_sel/update_icon()
+	cut_overlays()
+	selecting_appearance = mutable_appearance('icons/mob/zone_sel.dmi', "[selecting]")
+	add_overlay(selecting_appearance)
+
+/atom/movable/screen/Click(location, control, params)
+	..() // why the FUCK was this not called before
+	if(!usr)	return 1
+	switch(name)
+		if("toggle")
+			if(usr.hud_used.inventory_shown)
+				usr.hud_used.inventory_shown = 0
+				usr.client.screen -= usr.hud_used.other
+			else
+				usr.hud_used.inventory_shown = 1
+				usr.client.screen += usr.hud_used.other
+
+			usr.hud_used.hidden_inventory_update()
+
+		if("equip")
+			if (istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech
+				return 1
+			if(ishuman(usr))
+				var/mob/living/carbon/human/H = usr
+				H.quick_equip()
+
+		if("resist")
+			if(isliving(usr))
+				var/mob/living/L = usr
+				L.resist()
+
+		if("control_vtec")
+			if(isrobot(usr))
+				var/mob/living/silicon/robot/R = usr
+				if(R.speed == 0 && R.vtec_active)
+					R.speed = -0.5
+					R.hud_used.control_vtec.icon_state = "speed_1"
+				else if(R.speed == -0.5 && R.vtec_active)
+					R.speed = -1
+					R.hud_used.control_vtec.icon_state = "speed_2"
+				else
+					R.speed = 0
+					R.hud_used.control_vtec.icon_state = "speed_0"
+
+		if("mov_intent")
+			if(isliving(usr))
+				if(iscarbon(usr))
+					var/mob/living/carbon/C = usr
+					if(C.legcuffed)
+						to_chat(C, span_notice("You are legcuffed! You cannot run until you get [C.legcuffed] removed!"))
+						C.m_intent = I_WALK	//Just incase
+						C.hud_used.move_intent.icon_state = "walking"
+						return 1
+				var/mob/living/L = usr
+				switch(L.m_intent)
+					if(I_RUN)
+						L.m_intent = I_WALK
+						L.hud_used.move_intent.icon_state = "walking"
+					if(I_WALK)
+						L.m_intent = I_RUN
+						L.hud_used.move_intent.icon_state = "running"
+		if("m_intent")
+			if(!usr.m_int)
+				switch(usr.m_intent)
+					if(I_RUN)
+						usr.m_int = "13,14"
+					if(I_WALK)
+						usr.m_int = "14,14"
+					if("face")
+						usr.m_int = "15,14"
+			else
+				usr.m_int = null
+		if(I_WALK)
+			usr.m_intent = I_WALK
+			usr.m_int = "14,14"
+		if("face")
+			usr.m_intent = "face"
+			usr.m_int = "15,14"
+		if(I_RUN)
+			usr.m_intent = I_RUN
+			usr.m_int = "13,14"
+		if("Reset Machine")
+			usr.unset_machine()
+		if("internal") //dear god this entire thing needs to be rewritten this is literally assaulting my eyes with how awful it is. FUCK.
+			if(iscarbon(usr))
+				var/mob/living/carbon/C = usr
+				if(!C.stat && !C.stunned && !C.paralysis && !C.restrained())
+					if(C.internal)
+						C.internal = null
+						to_chat(C, span_notice("No longer running on internals."))
+						if(C.internals)
+							C.internals.icon_state = "internal0"
+					else
+
+						var/no_mask
+						if(!(C.wear_mask && C.wear_mask.item_flags & AIRTIGHT))
+							var/mob/living/carbon/human/H = C
+							if(!(H.head && H.head.item_flags & AIRTIGHT))
+								no_mask = 1
+
+						if(no_mask)
+							to_chat(C, span_notice("You are not wearing a suitable mask or helmet."))
+							return 1
+						else
+							var/list/nicename = null
+							var/list/tankcheck = null
+							var/breathes = GAS_O2    //default, we'll check later
+							var/list/contents = list()
+							var/from = "on"
+
+							if(ishuman(C))
+								var/mob/living/carbon/human/H = C
+								breathes = H.species.breath_type
+								nicename = list ("suit", "back", "belt", "right hand", "left hand", "left pocket", "right pocket")
+								tankcheck = list (H.s_store, C.back, H.belt, C.r_hand, C.l_hand, H.l_store, H.r_store)
+							else
+								nicename = list("right hand", "left hand", "back")
+								tankcheck = list(C.r_hand, C.l_hand, C.back)
+
+							// Rigs are a fucking pain since they keep an air tank in nullspace.
+							var/obj/item/rig/Rig = C.get_rig()
+							if(Rig)
+								if(Rig.air_supply && !Rig.offline)
+									from = "in"
+									nicename |= "hardsuit"
+									tankcheck |= Rig.air_supply
+
+							var/obj/item/clothing/suit/space/void/Void = C.get_voidsuit()
+							if(Void && Void.tank)
+								from = "in"
+								nicename |= "hardsuit"
+								tankcheck |= Void.tank
+
+							for(var/i=1, i<tankcheck.len+1, ++i)
+								if(istype(tankcheck[i], /obj/item/tank))
+									var/obj/item/tank/t = tankcheck[i]
+									if (!isnull(t.manipulated_by) && t.manipulated_by != C.real_name && findtext(t.desc,breathes))
+										contents.Add(t.air_contents.total_moles())	//Someone messed with the tank and put unknown gasses
+										continue					//in it, so we're going to believe the tank is what it says it is
+									switch(breathes)
+																		//These tanks we're sure of their contents
+										if(GAS_N2) 							//So we're a bit more picky about them.
+
+											if(LINDA_GAS_AMT(t.air_contents, GAS_N2) && !LINDA_GAS_AMT(t.air_contents, GAS_O2))
+												contents.Add(LINDA_GAS_AMT(t.air_contents, GAS_N2))
+											else
+												contents.Add(0)
+
+										if (GAS_O2)
+											if(LINDA_GAS_AMT(t.air_contents, GAS_O2) && !LINDA_GAS_AMT(t.air_contents, GAS_PHORON))
+												contents.Add(LINDA_GAS_AMT(t.air_contents, GAS_O2))
+											else
+												contents.Add(0)
+
+										// No races breath this, but never know about downstream servers.
+										if (GAS_CO2)
+											if(LINDA_GAS_AMT(t.air_contents, GAS_CO2) && !LINDA_GAS_AMT(t.air_contents, GAS_PHORON))
+												contents.Add(LINDA_GAS_AMT(t.air_contents, GAS_CO2))
+											else
+												contents.Add(0)
+
+										// And here's for the Vox
+										if (GAS_PHORON)
+											if(LINDA_GAS_AMT(t.air_contents, GAS_PHORON) && !LINDA_GAS_AMT(t.air_contents, GAS_O2))
+												contents.Add(LINDA_GAS_AMT(t.air_contents, GAS_PHORON))
+											else
+												contents.Add(0)
+
+										// Grunts rejoice!
+										if (GAS_CH4)
+											if(LINDA_GAS_AMT(t.air_contents, GAS_CH4) && !LINDA_GAS_AMT(t.air_contents, GAS_O2))
+												contents.Add(LINDA_GAS_AMT(t.air_contents, GAS_CH4))
+											else
+												contents.Add(0)
+
+								else
+									//no tank so we set contents to 0
+									contents.Add(0)
+
+							//Alright now we know the contents of the tanks so we have to pick the best one.
+
+							var/best = 0
+							var/bestcontents = 0
+							for(var/i=1, i <  contents.len + 1 , ++i)
+								if(!contents[i])
+									continue
+								if(contents[i] > bestcontents)
+									best = i
+									bestcontents = contents[i]
+
+
+							//We've determined the best container now we set it as our internals
+
+							if(best)
+								to_chat(C, span_notice("You are now running on internals from [tankcheck[best]] [from] your [nicename[best]]."))
+								C.internal = tankcheck[best]
+
+
+							if(C.internal)
+								if(C.internals)
+									C.internals.icon_state = "internal1"
+							else
+								to_chat(C, span_notice("You don't have a[breathes==GAS_O2 ? "n " + GAS_O2 : addtext(" ",breathes)] tank."))
+		if("act_intent")
+			usr.a_intent_change("right")
+		if(I_HELP)
+			usr.a_intent = I_HELP
+			if(ispAI(usr))
+				usr.a_intent_change(I_HELP)
+			else
+				usr.hud_used.action_intent.icon_state = "intent_help"
+		if(I_HURT)
+			usr.a_intent = I_HURT
+			if(ispAI(usr))
+				usr.a_intent_change(I_HURT)
+			else
+				usr.hud_used.action_intent.icon_state = "intent_harm"
+		if(I_GRAB)
+			usr.a_intent = I_GRAB
+			if(ispAI(usr))
+				usr.a_intent_change(I_GRAB)
+			else
+				usr.hud_used.action_intent.icon_state = "intent_grab"
+		if(I_DISARM)
+			usr.a_intent = I_DISARM
+			if(ispAI(usr))
+				usr.a_intent_change(I_DISARM)
+			else
+				usr.hud_used.action_intent.icon_state = "intent_disarm"
+
+		if("pull")
+			usr.stop_pulling()
+		if("throw")
+			if(!usr.stat && isturf(usr.loc) && !usr.restrained())
+				usr:toggle_throw_mode()
+		if("drop")
+			if(usr.client)
+				usr.client.drop_item()
+		if("autowhisper")
+			if(isliving(usr))
+				var/mob/living/u = usr
+				u.toggle_autowhisper()
+		if("autowhisper mode")
+			if(isliving(usr))
+				var/mob/living/u = usr
+				u.autowhisper_mode()
+		if("check known languages")
+			usr.check_languages()
+		if("set pose")
+			if(ishuman(usr))
+				var/mob/living/carbon/human/u = usr
+				u.pose()
+			else if (issilicon(usr))
+				var/mob/living/silicon/u = usr
+				u.pose()
+
+		if("move upwards")
+			usr.up()
+		if("Move Up") // AI version
+			usr.zMove(UP)
+
+		if("move downwards")
+			usr.down()
+		if("Move Down") // AI version
+			usr.zMove(DOWN)
+
+		if("use held item on self")
+			var/atom/movable/screen/useself/s = src
+			if(ishuman(usr))
+				var/mob/living/carbon/human/u = usr
+				var/obj/item/i = u.get_active_hand()
+				if(i)
+					s.can_use(u,i)
+				else
+					to_chat(usr, span_notice("You're not holding anything to use. You need to have something in your active hand to use it."))
+
+		if("module")
+			if(isrobot(usr))
+				var/mob/living/silicon/robot/R = usr
+//				if(R.module)
+//					R.hud_used.toggle_show_robot_modules()
+//					return 1
+				R.pick_module()
+
+		if("inventory")
+			if(isrobot(usr))
+				var/mob/living/silicon/robot/R = usr
+				if(R.module)
+					R.hud_used.toggle_show_robot_modules()
+					return 1
+				else
+					to_chat(R, "You haven't selected a module yet.")
+
+		if("radio")
+			if(issilicon(usr))
+				usr:radio_menu()
+		if("panel")
+			if(issilicon(usr))
+				usr:installed_modules()
+
+		if("store")
+			if(isrobot(usr))
+				var/mob/living/silicon/robot/R = usr
+				if(R.module)
+					R.uneq_active()
+				else
+					to_chat(R, "You haven't selected a module yet.")
+
+		if("module1")
+			if(isrobot(usr))
+				usr:toggle_module(1)
+
+		if("module2")
+			if(isrobot(usr))
+				usr:toggle_module(2)
+
+		if("module3")
+			if(isrobot(usr))
+				usr:toggle_module(3)
+
+		if("AI Core")
+			if(isAI(usr))
+				var/mob/living/silicon/ai/ai_user = usr
+				ai_user.view_core()
+
+		if("Show Camera List")
+			if(isAI(usr))
+				var/mob/living/silicon/ai/ai_user = usr
+				var/camera = tgui_input_list(ai_user, "Pick Camera:", "Camera Choice", ai_user.get_camera_list())
+				ai_user.ai_camera_list(camera)
+
+		if("Track With Camera")
+			if(isAI(usr))
+				var/mob/living/silicon/ai/ai_user = usr
+				var/target_name = tgui_input_list(ai_user, "Pick Mob:", "Mob Choice", ai_user.trackable_mobs())
+				ai_user.ai_camera_track(target_name)
+
+		if("Toggle Camera Light")
+			if(isAI(usr))
+				var/mob/living/silicon/ai/ai_user = usr
+				ai_user.toggle_camera_light()
+
+		if("Crew Monitoring")
+			if(isAI(usr))
+				var/mob/living/silicon/ai/ai_user = usr
+				ai_user.subsystem_crew_monitor()
+
+		if("Show Crew Manifest")
+			if(isAI(usr))
+				var/mob/living/silicon/ai/ai_user = usr
+				ai_user.subsystem_crew_manifest()
+
+		if("Show Alerts")
+			if(isAI(usr))
+				var/mob/living/silicon/ai/ai_user = usr
+				ai_user.subsystem_alarm_monitor()
+
+		if("Announcement")
+			if(isAI(usr))
+				var/mob/living/silicon/ai/ai_user = usr
+				ai_user.ai_announcement()
+
+		if("Call Emergency Shuttle")
+			if(isAI(usr))
+				var/mob/living/silicon/ai/ai_user = usr
+				ai_user.ai_call_shuttle()
+
+		if("State Laws")
+			if(isAI(usr))
+				var/mob/living/silicon/ai/ai_user = usr
+				ai_user.ai_checklaws()
+
+		if("PDA - Messenger")
+			if(isAI(usr))
+				var/mob/living/silicon/ai/ai_user = usr
+				ai_user.aiPDA.start_program(ai_user.aiPDA.find_program(/datum/data/pda/app/messenger))
+				ai_user.aiPDA.cmd_pda_open_ui(usr)
+
+		if("Take Image")
+			if(isAI(usr))
+				var/mob/living/silicon/ai/ai_user = usr
+				ai_user.take_image()
+
+		if("View Images")
+			if(isAI(usr))
+				var/mob/living/silicon/ai/ai_user = usr
+				ai_user.view_images()
+
+		if("Multicamera Mode")
+			if(isAI(usr))
+				var/mob/living/silicon/ai/ai_user = usr
+				ai_user.toggle_multicam()
+
+		if("New Camera")
+			if(isAI(usr))
+				var/mob/living/silicon/ai/ai_user = usr
+				ai_user.drop_new_multicam()
+
+		if("shadekin status")
+			var/turf/T = get_turf(usr)
+			if(T)
+				var/darkness = round(1 - T.get_lumcount(),0.1)
+				to_chat(usr,span_notice(span_bold("Darkness:") + " [darkness]"))
+			var/mob/living/H = usr
+			if(ismob(H))
+				var/datum/component/shadekin/SK = H.get_shadekin_component()
+				if(SK)
+					to_chat(usr,span_notice(span_bold("Energy:") + " [SK.shadekin_get_energy()]"))
+
+		if("glamour")
+			var/mob/living/carbon/human/H = usr
+			if(istype(H))
+				to_chat(usr,span_notice(span_bold("Energy:") + " [H.species.lleill_energy]/[H.species.lleill_energy_max]"))
+
+		if("danger level")
+			var/mob/living/carbon/human/H = usr
+			var/datum/component/xenochimera/xc = H.get_xenochimera_component()
+			if(xc)
+				if(xc.feral > 50)
+					to_chat(usr, span_warning("You are currently <b>completely feral.</b>"))
+				else if(xc.feral > 10)
+					to_chat(usr, span_warning("You are currently <b>crazed and confused.</b>"))
+				else if(xc.feral > 0)
+					to_chat(usr, span_warning("You are currently <b>acting on instinct.</b>"))
+				else
+					to_chat(usr, span_notice("You are currently <b>calm and collected.</b>"))
+				if(xc.feral > 0)
+					var/feral_passing = TRUE
+					if(H.traumatic_shock > min(60, H.nutrition/10))
+						to_chat(usr, span_warning("Your pain prevents you from regaining focus."))
+						feral_passing = FALSE
+					if(xc.feral + H.nutrition < 150)
+						to_chat(usr, span_warning("Your hunger prevents you from regaining focus."))
+						feral_passing = FALSE
+					if(H.get_jittery() >= 100)
+						to_chat(usr, span_warning("Your jitterness prevents you from regaining focus."))
+						feral_passing = FALSE
+					if(feral_passing)
+						var/turf/T = get_turf(H)
+						if(T.get_lumcount() <= 0.1)
+							to_chat(usr, span_notice("You are slowly calming down in darkness' safety..."))
+						else if(isbelly(H.loc)) // Safety message for if inside a belly.
+							to_chat(usr, span_notice("You are slowly calming down within the darkness of something's belly, listening to their body as it moves around you. ...safe..."))
+						else
+							to_chat(usr, span_notice("You are slowly calming down... But safety of darkness is much preferred."))
+				else
+					if(H.nutrition < 150)
+						to_chat(usr, span_warning("Your hunger is slowly making you unstable."))
+
+		if("Reconstructing Form") // Allow Viewing Reconstruction Timer + Hatching for 'chimera
+			var/mob/living/carbon/human/H = usr
+			var/datum/component/xenochimera/xc = H.get_xenochimera_component()
+			if(xc) // If you're somehow able to click this while not a chimera, this should prevent weird runtimes. Will need changing if regeneration is ever opened to non-chimera using the same alert.
+				if(xc.revive_ready == REVIVING_NOW)
+					to_chat(usr, span_notice("We are currently reviving, and will be done in [round((xc.revive_finished - world.time) / 10)] seconds, or [round(((xc.revive_finished - world.time) * 0.1) / 60)] minutes."))
+				else if(xc.revive_ready == REVIVING_DONE)
+					to_chat(usr, span_warning("You should have a notification + alert for this! Bug report that this is still here!"))
+
+		if("Ready to Hatch") // Allow Viewing Reconstruction Timer + Hatching for 'chimera
+			var/mob/living/carbon/human/H = usr
+			var/datum/component/xenochimera/xc = H.get_xenochimera_component()
+			if(xc) // If you're somehow able to click this while not a chimera, this should prevent weird runtimes. Will need changing if regeneration is ever opened to non-chimera using the same alert.
+				if(xc.revive_ready == REVIVING_DONE) // Sanity check.
+					H.hatch() // Hatch.
+	return 1
+
+/atom/movable/screen/inventory/Click()
+	// At this point in client Click() code we have passed the 1/10 sec check and little else
+	// We don't even know if it's a middle click
+	if(!usr.checkClickCooldown())
+		return 1
+	if(usr.stat || usr.paralysis || usr.stunned || usr.weakened)
+		return 1
+	if (istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech
+		return 1
+	switch(name)
+		if("r_hand")
+			if(iscarbon(usr))
+				var/mob/living/carbon/C = usr
+				C.activate_hand("r")
+		if("l_hand")
+			if(iscarbon(usr))
+				var/mob/living/carbon/C = usr
+				C.activate_hand("l")
+		if("swap")
+			usr:swap_hand()
+		if("hand")
+			usr:swap_hand()
+		else
+			if(usr.attack_ui(slot_id))
+				usr.update_inv_l_hand(0)
+				usr.update_inv_r_hand(0)
+	return 1
+
+// Hand slots are special to handle the handcuffs overlay
+/atom/movable/screen/inventory/hand
+	var/image/handcuff_overlay
+
+/atom/movable/screen/inventory/hand/update_icon()
+	..()
+	if(!hud)
+		return
+	if(!handcuff_overlay)
+		var/state = (hud.l_hand_hud_object == src) ? "l_hand_hud_handcuffs" : "r_hand_hud_handcuffs"
+		handcuff_overlay = image("icon"='icons/mob/screen_gen.dmi', "icon_state"=state)
+	cut_overlays()
+	if(hud.mymob && iscarbon(hud.mymob))
+		var/mob/living/carbon/C = hud.mymob
+		if(C.handcuffed)
+			add_overlay(handcuff_overlay)
+
+// PIP stuff
+/atom/movable/screen/component_button
+	var/atom/movable/screen/parent
+
+/atom/movable/screen/component_button/Initialize(mapload, atom/movable/screen/new_parent)
+	. = ..()
+	parent = new_parent
+
+/atom/movable/screen/component_button/Click(params)
+	if(parent)
+		parent.component_click(src, params)
+
+// Character setup stuff
+/atom/movable/screen/setup_preview
+
+	var/datum/preferences/pref
+
+/atom/movable/screen/setup_preview/Destroy()
+	pref = null
+	return ..()
+
+// Background 'floor'
+/atom/movable/screen/setup_preview/pm_helper
+	icon = null
+	icon_state = null
+	appearance_flags = PLANE_MASTER
+	plane = PLANE_EMISSIVE
+	alpha = 0
+
+/atom/movable/screen/setup_preview/bg
+	mouse_over_pointer = MOUSE_HAND_POINTER
+
+/atom/movable/screen/setup_preview/bg/Click(params)
+	// migrated bgstate
+	if(pref)
+		// bgstate_options moved onto the pref subtype as bgstate_choices.
+		// Cast through the typed local rather than reaching the subtype member with `:`;
+		// the `:` operator skips compile-time validation (CLAUDE.md §6b).
+		var/datum/preference/text/human/bgstate/bg_pref = GLOB.preference_entries[/datum/preference/text/human/bgstate]
+		var/list/options = bg_pref?.bgstate_choices
+		pref.update_preference_by_type(/datum/preference/text/human/bgstate, next_in_list(pref.read_preference(/datum/preference/text/human/bgstate), options))
+		pref.update_preview_icon()
+/**
+ * This object holds all the on-screen elements of the mapping unit.
+ * It has a decorative frame and onscreen buttons. The map itself is drawn
+ * using a white mask and multiplying the mask against it to crop it to the
+ * size of the screen. This is not ideal, as filter() is faster, and has
+ * alpha masks, but the alpha masks it has can't be animated, so the 'ping'
+ * mode of this device isn't possible using that technique.
+ *
+ * The markers use that technique, though, so at least there's that.
+ */
+/atom/movable/screen/movable/mapper_holder
+	name = "gps unit"
+	icon = null
+	icon_state = ""
+	screen_loc = "CENTER,CENTER"
+	alpha = 255
+	appearance_flags = KEEP_TOGETHER
+	mouse_opacity = 1
+	plane = PLANE_HOLOMAP
+
+	var/running = FALSE
+
+	var/atom/movable/screen/mapper/mask_full/mask_full
+	var/atom/movable/screen/mapper/mask_ping/mask_ping
+	var/atom/movable/screen/mapper/bg/bg
+
+	var/atom/movable/screen/mapper/frame/frame
+	var/atom/movable/screen/mapper/powbutton/powbutton
+	var/atom/movable/screen/mapper/mapbutton/mapbutton
+
+	var/obj/item/mapping_unit/owner
+	var/atom/movable/screen/mapper/extras_holder/extras_holder
+
+/atom/movable/screen/movable/mapper_holder/Initialize(mapload, newowner)
+	. = ..()
+	owner = newowner
+
+	mask_full = new(src) // Full white square mask
+	mask_ping = new(src) // Animated 'pinging' mask
+	bg = new(src) // Background color, holds map in vis_contents, uses mult against masks
+
+	frame = new(src) // Decorative frame
+	powbutton = new(src) // Clickable button
+	mapbutton = new(src) // Clickable button
+
+	frame.icon_state = initial(frame.icon_state)+owner.hud_frame_hint
+
+	/**
+	 * The vis_contents layout is: this(frame,extras_holder,mask(bg(map)))
+	 * bg is set to BLEND_MULTIPLY against the mask to crop it.
+	 */
+
+	mask_full.vis_contents.Add(bg)
+	mask_ping.vis_contents.Add(bg)
+	frame.vis_contents.Add(powbutton,mapbutton)
+	vis_contents.Add(frame)
+
+
+/atom/movable/screen/movable/mapper_holder/Destroy()
+	QDEL_NULL(mask_full)
+	QDEL_NULL(mask_ping)
+	QDEL_NULL(bg)
+
+	QDEL_NULL(frame)
+	QDEL_NULL(powbutton)
+	QDEL_NULL(mapbutton)
+
+	extras_holder = null
+	owner = null
+	return ..()
+
+/atom/movable/screen/movable/mapper_holder/proc/update(atom/movable/screen/mapper/map, atom/movable/screen/mapper/extras_holder/extras, ping = FALSE)
+	if(!running)
+		running = TRUE
+		if(ping)
+			vis_contents.Add(mask_ping)
+		else
+			vis_contents.Add(mask_full)
+
+	bg.vis_contents.Cut()
+	bg.vis_contents.Add(map)
+
+	if(extras && !extras_holder)
+		extras_holder = extras
+		vis_contents += extras_holder
+	if(!extras && extras_holder)
+		vis_contents -= extras_holder
+		extras_holder = null
+
+/atom/movable/screen/movable/mapper_holder/proc/powerClick()
+	if(running)
+		off()
+	else
+		on()
+
+/atom/movable/screen/movable/mapper_holder/proc/mapClick()
+	if(owner)
+		if(running)
+			off()
+		owner.pinging = !owner.pinging
+		on()
+
+/atom/movable/screen/movable/mapper_holder/proc/off(inform = TRUE)
+	frame.cut_overlay("powlight")
+	bg.vis_contents.Cut()
+	vis_contents.Remove(mask_ping, mask_full, extras_holder)
+	extras_holder = null
+	running = FALSE
+	if(inform)
+		owner.stop_updates()
+
+/atom/movable/screen/movable/mapper_holder/proc/on(inform = TRUE)
+	frame.add_overlay("powlight")
+	if(inform)
+		owner.start_updates()
+
+// Prototype
+/atom/movable/screen/mapper
+	plane = PLANE_HOLOMAP
+	mouse_opacity = 0
+	var/atom/movable/screen/movable/mapper_holder/parent
+
+/atom/movable/screen/mapper/Initialize(mapload)
+	. = ..()
+	parent = loc
+
+/atom/movable/screen/mapper/Destroy()
+	parent = null
+	return ..()
+
+// Holds the actual map image
+/atom/movable/screen/mapper/map
+	var/offset_x = 32
+	var/offset_y = 32
+
+// I really wish I could use filters for this instead of this multiplication-masking technique
+// but alpha filters can't be animated, which means I can't use them for the 'sonar ping' mode.
+// If filters start supporting animated icons in the future (for the alpha mask filter),
+// you should definitely replace these with that technique instead.
+/atom/movable/screen/mapper/mask_full
+	icon = 'icons/effects/64x64.dmi'
+	icon_state = "mapper_mask"
+
+/atom/movable/screen/mapper/mask_ping
+	icon = 'icons/effects/64x64.dmi'
+	icon_state = "mapper_ping"
+
+/atom/movable/screen/mapper/bg
+	icon = 'icons/effects/64x64.dmi'
+	icon_state = "mapper_bg"
+
+	blend_mode = BLEND_MULTIPLY
+	appearance_flags = KEEP_TOGETHER
+
+// Frame/deco components
+/atom/movable/screen/mapper/frame
+	icon = 'icons/effects/gpshud.dmi'
+	icon_state = "frame"
+	plane = PLANE_HOLOMAP_FRAME
+	pixel_x = -18
+	pixel_y = -29
+	mouse_opacity = 1
+	vis_flags = VIS_INHERIT_ID
+
+/atom/movable/screen/mapper/powbutton
+	icon = 'icons/effects/gpshud.dmi'
+	icon_state = "powbutton"
+	plane = PLANE_HOLOMAP_FRAME
+	mouse_opacity = 1
+
+/atom/movable/screen/mapper/powbutton/Click()
+	if(!usr.checkClickCooldown())
+		return TRUE
+	if(usr.stat || usr.paralysis || usr.stunned || usr.weakened)
+		return TRUE
+	if(istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech
+		return TRUE
+	parent.powerClick()
+	flick("powClick",src)
+	usr << get_sfx("button")
+	return TRUE
+
+/atom/movable/screen/mapper/mapbutton
+	icon = 'icons/effects/gpshud.dmi'
+	icon_state = "mapbutton"
+	plane = PLANE_HOLOMAP_FRAME
+	mouse_opacity = 1
+
+/atom/movable/screen/mapper/mapbutton/Click()
+	if(!usr.checkClickCooldown())
+		return TRUE
+	if(usr.stat || usr.paralysis || usr.stunned || usr.weakened)
+		return TRUE
+	if(istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech
+		return TRUE
+	parent.mapClick()
+	flick("mapClick",src)
+	usr << get_sfx("button")
+	return TRUE
+
+// Markers are 16x16, people have apparently settled on centering them on the 8,8 pixel
+/atom/movable/screen/mapper/marker
+	icon = 'icons/holomap_markers.dmi'
+	plane = PLANE_HOLOMAP_ICONS
+
+	var/offset_x = -8
+	var/offset_y = -8
+
+// Holds markers in its vis_contents. It uses an alpha filter to crop them to the HUD screen size
+/atom/movable/screen/mapper/extras_holder
+	icon = null
+	icon_state = null
+	plane = PLANE_HOLOMAP_ICONS
+	appearance_flags = KEEP_TOGETHER
+
+// Begin TGMC Ammo HUD Port
+/atom/movable/screen/ammo
+	name = "ammo"
+	icon = 'icons/mob/screen_ammo.dmi'
+	icon_state = "ammo"
+	screen_loc = ui_ammo_hud1
+	var/warned = FALSE
+	var/static/list/ammo_screen_loc_list = list(ui_ammo_hud1, ui_ammo_hud2, ui_ammo_hud3 ,ui_ammo_hud4)
+	var/datum/weakref/our_gun
+
+/atom/movable/screen/ammo/Destroy()
+	. = ..()
+	our_gun = null
+
+/atom/movable/screen/ammo/Click()
+	var/mob/user = usr
+	if(!user.checkClickCooldown())
+		return TRUE
+	if(user.stat || user.paralysis || user.stunned || user.weakened)
+		return TRUE
+	if(istype(user.loc,/obj/mecha)) // stops inventory actions in a mech
+		return TRUE
+	var/obj/item/gun/gun = our_gun.resolve()
+	if(!gun)
+		return TRUE
+	gun.switch_firemodes(user)
+	return TRUE
+
+/atom/movable/screen/ammo/proc/add_hud(mob/living/user, obj/item/gun/G)
+
+	if(!user?.client)
+		return
+
+	if(!G)
+		CRASH("/atom/movable/screen/ammo/proc/add_hud() has been called from [src] without the required param of G")
+
+	// start
+	if(!G.hud_enabled)
+		return
+
+	if(!G.has_ammo_counter())
+		return
+
+	user.client.screen += src
+
+/atom/movable/screen/ammo/proc/remove_hud(mob/living/user)
+	user?.client?.screen -= src
+
+/atom/movable/screen/ammo/proc/update_hud(mob/living/user, obj/item/gun/G)
+	if(!user?.client?.screen.Find(src))
+		return
+
+	if(!G || !istype(G) || !G.has_ammo_counter() || !G.get_ammo_type() || isnull(G.get_ammo_count()))
+		remove_hud()
+		return
+
+	var/list/ammo_type = G.get_ammo_type()
+	var/rounds = G.get_ammo_count()
+
+	var/hud_state = ammo_type[1]
+	var/hud_state_empty = ammo_type[2]
+
+	overlays.Cut()
+
+	var/empty = image('icons/mob/screen_ammo.dmi', src, "[hud_state_empty]")
+
+	if(rounds == 0)
+		if(warned)
+			overlays += empty
+		else
+			warned = TRUE
+			var/atom/movable/screen/ammo/F = new /atom/movable/screen/ammo(src)
+			F.icon_state = "frame"
+			user.client.screen += F
+			flick("[hud_state_empty]_flash", F)
+			spawn(20)
+				user.client.screen -= F
+				qdel(F)
+				overlays += empty
+	else
+		warned = FALSE
+		overlays += image('icons/mob/screen_ammo.dmi', src, "[hud_state]")
+
+	rounds = num2text(rounds)
+	//Handle the amount of rounds
+	switch(length(rounds))
+		if(1)
+			overlays += image('icons/mob/screen_ammo.dmi', src, "o[rounds[1]]")
+		if(2)
+			overlays += image('icons/mob/screen_ammo.dmi', src, "o[rounds[2]]")
+			overlays += image('icons/mob/screen_ammo.dmi', src, "t[rounds[1]]")
+		if(3)
+			overlays += image('icons/mob/screen_ammo.dmi', src, "o[rounds[3]]")
+			overlays += image('icons/mob/screen_ammo.dmi', src, "t[rounds[2]]")
+			overlays += image('icons/mob/screen_ammo.dmi', src, "h[rounds[1]]")
+		else //"0" is still length 1 so this means it's over 999
+			overlays += image('icons/mob/screen_ammo.dmi', src, "o9")
+			overlays += image('icons/mob/screen_ammo.dmi', src, "t9")
+			overlays += image('icons/mob/screen_ammo.dmi', src, "h9")
+
+
+// === merged from screen_objects_ch.dm during hard-fork de-suffix (verified no override-order change) ===
+//Invesitgating a runtime made me discover that all simplemobs have HUD on hands set to themselves
+//Which cause this original code to die because the mob does not have a mymob var...
+//So yeah this is why we now check if it is type of mob first...
+//Is this pretty? Fuck no, but its how i know to fix it -shark
+//Oh also the swap button on simple mob hands has hud set to null so we also need to catch that.
+/atom/movable/screen/inventory/proc/add_overlays()
+	if(!hud) //Simplemob swap hands button has this set to null :)
+		return
+	var/mob/user
+	if(ismob(hud)) //Simplemob hands directly reference the mob in hud, dont ask me.
+		user = hud
+	else
+		user = hud.mymob //original intended behaviour
+	if(hud && user && slot_id)
+
+		var/obj/item/holding = user.get_active_hand()
+
+		if(!holding || user.get_equipped_item(slot_id))
+			return
+
+		var/image/item_overlay = image(holding)
+		item_overlay.alpha = 92
+
+		if(!holding.mob_can_equip(user, slot_id, disable_warning = TRUE))
+			item_overlay.color = "#ff0000"
+		else
+			item_overlay.color = "#00ff00"
+
+		object_overlays += item_overlay
+		add_overlay(object_overlays)

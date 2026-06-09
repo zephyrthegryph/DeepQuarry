@@ -1,0 +1,146 @@
+# Generated from transit_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 35
+
+[[state]]
+name = "riveted"
+dirs = 1
+frames = 8
+delays = [0.25]
+
+[[state]]
+name = "maglevup"
+dirs = 1
+frames = 8
+delays = [0.25]
+
+[[state]]
+name = "techfloor_grid"
+dirs = 1
+frames = 8
+delays = [0.25]
+
+[[state]]
+name = "transit_techfloororange_edges"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rock"
+dirs = 1
+frames = 8
+delays = [0.25]
+
+[[state]]
+name = "tube-ns-0"
+dirs = 4
+frames = 16
+delays = [16, 0.5]
+
+[[state]]
+name = "tube1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tube1-2-0"
+dirs = 4
+frames = 17
+delays = [16, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 16]
+
+[[state]]
+name = "tube1-2-1"
+dirs = 4
+frames = 17
+delays = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 16, 0.5]
+
+[[state]]
+name = "tube1-2-2"
+dirs = 4
+frames = 17
+delays = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 16, 0.5]
+
+[[state]]
+name = "tube1-2-3"
+dirs = 4
+frames = 17
+delays = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 16, 0.5]
+
+[[state]]
+name = "tube1-2-4"
+dirs = 4
+frames = 17
+delays = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 16, 0.5]
+
+[[state]]
+name = "tube1-2-5"
+dirs = 4
+frames = 17
+delays = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 16, 0.5]
+
+[[state]]
+name = "tube1-2-6"
+dirs = 4
+frames = 17
+delays = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 16, 0.5]
+
+[[state]]
+name = "tube1-2-7"
+dirs = 4
+frames = 17
+delays = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 16, 0.5]
+
+[[state]]
+name = "tube1-2-8"
+dirs = 4
+frames = 17
+delays = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 16, 0.5]
+
+[[state]]
+name = "tube1-2-9"
+dirs = 4
+frames = 17
+delays = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 16, 0.5]
+
+[[state]]
+name = "tube1-2-10"
+dirs = 4
+frames = 17
+delays = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 16, 0.5]
+
+[[state]]
+name = "tube1-2-11"
+dirs = 4
+frames = 17
+delays = [0.5, 0.5, 0.5, 0.5, 0.5, 16, 0.5]
+
+[[state]]
+name = "tube1-2-12"
+dirs = 4
+frames = 17
+delays = [0.5, 0.5, 0.5, 0.5, 16, 0.5]
+
+[[state]]
+name = "tube1-2-13"
+dirs = 4
+frames = 17
+delays = [0.5, 0.5, 0.5, 16, 0.5]
+
+[[state]]
+name = "tube1-2-14"
+dirs = 4
+frames = 17
+delays = [0.5, 0.5, 16, 0.5]
+
+[[state]]
+name = "tube1-2-15"
+dirs = 4
+frames = 17
+delays = [0.5, 16, 0.5]
+
+[[state]]
+name = "desert_ns"
+dirs = 1
+frames = 4
+delays = [1]

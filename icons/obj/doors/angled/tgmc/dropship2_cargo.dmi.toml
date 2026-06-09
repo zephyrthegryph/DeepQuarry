@@ -1,0 +1,37 @@
+# Generated from dropship2_cargo.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 96
+height = 32
+cols = 5
+
+[[state]]
+name = "door_closed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_opening"
+dirs = 1
+frames = 7
+delays = [2]
+
+[[state]]
+name = "door_deny"
+dirs = 1
+frames = 3
+delays = [2]
+
+[[state]]
+name = "door_locked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "door_closing"
+dirs = 1
+frames = 7
+delays = [2]

@@ -1,0 +1,169 @@
+# Generated from snowflora.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "snowgrass1bb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snowgrass2bb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snowgrass3bb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snowgrass1gb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snowgrass2gb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snowgrass3gb"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snowgrassall1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snowgrassall2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snowgrassall3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snowgrass_e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snowgrass_ne"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snowgrass_esw"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snowgrass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snowgrass_n"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snowgrass_nws"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snowgrass_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snowgrass_se"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snowgrass_sw"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snowgrass_swe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snowgrass3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snowgrass2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snowgrass_w"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snowgrass_nw"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snowgrass_nws"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snowbush1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snowbush2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snowbush3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snowbush4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snowbush5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snowbush6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dead_sapling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "snowy_dead_sapling"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dead_sapling2"
+dirs = 1
+frames = 1

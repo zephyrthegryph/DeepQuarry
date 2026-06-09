@@ -1,0 +1,368 @@
+# Generated from gooborg_standard.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 24
+
+[[state]]
+name = "base"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base"
+dirs = 4
+frames = 4
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "base-glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base-glow"
+dirs = 4
+frames = 4
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "base-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base-eyes"
+dirs = 4
+frames = 4
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "base-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "OVERLAYS"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "base-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base-lights"
+dirs = 4
+frames = 4
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "base-panel-nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base-panel-nc"
+dirs = 4
+frames = 4
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "base-panel-c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base-panel-c"
+dirs = 4
+frames = 4
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "base-panel-w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base-panel-w"
+dirs = 4
+frames = 4
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "STANDING"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "base-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base-sleeper-1"
+dirs = 4
+frames = 4
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "base-sleeper-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base-sleeper-2"
+dirs = 4
+frames = 4
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "base-throat-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base-throat-1"
+dirs = 4
+frames = 4
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "base-throat-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base-throat-2"
+dirs = 4
+frames = 4
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "STRUGGLE"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "base-sleeper-1-struggle"
+dirs = 4
+frames = 5
+delays = [2, 2, 2, 2, 5]
+
+[[state]]
+name = "base-sleeper-2-struggle"
+dirs = 4
+frames = 5
+delays = [2, 2, 2, 2, 5]
+
+[[state]]
+name = "base-throat-1-struggle"
+dirs = 4
+frames = 5
+delays = [2, 2, 2, 2, 5]
+
+[[state]]
+name = "base-throat-2-struggle"
+dirs = 4
+frames = 5
+delays = [2, 2, 2, 2, 5]
+
+[[state]]
+name = "REST"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "base-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base-rest-glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base-sleeper-1-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base-sleeper-2-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base-throat-1-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base-throat-2-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "SIT"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "base-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base-sit-glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base-sleeper-1-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base-sleeper-2-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base-throat-1-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base-throat-2-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "SIT STRUGGLE"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "base-sleeper-1-sit-struggle"
+dirs = 4
+frames = 5
+delays = [2, 2, 2, 2, 5]
+
+[[state]]
+name = "base-sleeper-2-sit-struggle"
+dirs = 4
+frames = 5
+delays = [2, 2, 2, 2, 5]
+
+[[state]]
+name = "base-throat-1-sit-struggle"
+dirs = 4
+frames = 5
+delays = [2, 2, 2, 2, 5]
+
+[[state]]
+name = "base-throat-2-sit-struggle"
+dirs = 4
+frames = 5
+delays = [2, 2, 2, 2, 5]
+
+[[state]]
+name = "BELLYUP"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "base-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base-bellyup-glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base-sleeper-1-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base-sleeper-2-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base-throat-1-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base-throat-2-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "BELLYUP STRUGGLE"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "base-sleeper-1-bellyup-struggle"
+dirs = 4
+frames = 5
+delays = [2, 2, 2, 2, 5]
+
+[[state]]
+name = "base-sleeper-2-bellyup-struggle"
+dirs = 4
+frames = 5
+delays = [2, 2, 2, 2, 5]
+
+[[state]]
+name = "base-throat-1-bellyup-struggle"
+dirs = 4
+frames = 5
+delays = [2, 2, 2, 2, 5]
+
+[[state]]
+name = "base-throat-2-bellyup-struggle"
+dirs = 4
+frames = 5
+delays = [2, 2, 2, 2, 5]
+
+[[state]]
+name = "NOT-IMPLEMENTED"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "base-sleeper-1-rest-struggle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base-sleeper-2-rest-struggle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base-throat-1-rest-struggle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "base-throat-2-rest-struggle"
+dirs = 4
+frames = 1

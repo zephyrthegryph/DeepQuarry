@@ -1,0 +1,64 @@
+# Generated from ammo_yw.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "c12g-3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "c12g-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "c12g-0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "c12g-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "c12g-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scattershell-spent"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scattershell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scattershot_box"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "12gclipscatter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "12gclipscatter-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "12gclipscatter-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "12gclipscatter-0"
+dirs = 1
+frames = 1

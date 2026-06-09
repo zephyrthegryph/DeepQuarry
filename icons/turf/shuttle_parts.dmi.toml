@@ -1,0 +1,79 @@
+# Generated from shuttle_parts.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "carry"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "carry_ingame"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "platform"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "burst_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "burst_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "burst_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "router"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "heater"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "propulsion_l"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "propulsion"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "propulsion_r"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fuel_port"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fuel_port_empty"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fuel_port_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nozzle"
+dirs = 4
+frames = 1

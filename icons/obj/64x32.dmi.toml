@@ -1,0 +1,19 @@
+# Generated from 64x32.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 4
+
+[[state]]
+name = "dragon_boat_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dragon_boat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dragon_boat_underlay"
+dirs = 4
+frames = 1

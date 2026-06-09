@@ -1,0 +1,27 @@
+# Generated from grenade_ch.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = "casino"
+dirs = 1
+frames = 2
+delays = [10]
+
+[[state]]
+name = "casino_active"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "clustaur"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clustaur_active"
+dirs = 1
+frames = 2
+delays = [1]

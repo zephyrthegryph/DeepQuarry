@@ -1,0 +1,379 @@
+# Generated from mob_vox.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 18
+
+[[state]]
+name = ""
+dirs = 4
+frames = 1
+
+[[state]]
+name = "magboots0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "magboots1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "advmag0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "advmag1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "atmosmagboots0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "atmosmagboots1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndiemag0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndiemag1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gravboots0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gravboots1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "power_armour_boots"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boots-armalis"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boots-vox"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "boots"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "orange1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "brown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "purple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rain_bow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chef"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "clown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mime"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cowboy_classic"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cowboy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cowboy_brown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cowboy_black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cowboy_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cowboy_fancy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lizardboots_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lizardboots_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cult"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "detective"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "explorer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "galoshes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "griffinboots"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jackboots"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "digithighboots"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "digikneeboots"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jacksandal"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "laceups"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leather"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "noble_boot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "roman"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "s-ninja"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "secshoes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "slippers"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "slippers_worn"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tourist"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wizard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fancysandal"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medsandal"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "workboots"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "workbootstoeless"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "winterboots"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "digiboots"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "clothwrap"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "clogs"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ducky"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "OLD"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cowboy_pink"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_sec_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_sec_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "voxstealth_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_engineer_rig"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "voxstealth_rig_sealed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vox_engineer_rig_sealed"
+dirs = 4
+frames = 1

@@ -1,0 +1,1331 @@
+# Generated from stationobjs.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 33
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "doorctrl0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "doorctrl1"
+dirs = 4
+frames = 2
+delays = [2]
+
+[[state]]
+name = "doorctrl2"
+dirs = 4
+frames = 1
+loop = 5
+
+[[state]]
+name = "doorctrl-denied"
+dirs = 4
+frames = 2
+delays = [2]
+loop = 5
+
+[[state]]
+name = "doorctrl-p"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "doorctrl-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mechfab1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mechfab2"
+dirs = 1
+frames = 9
+delays = [1, 1, 1, 1, 1, 1, 1, 2, 3]
+
+[[state]]
+name = "mechfab3"
+dirs = 1
+frames = 22
+delays = [15, 1, 1, 1, 1, 1, 1, 0.5, 1, 3, 1, 0.5, 1, 3, 1, 0.5, 1, 3, 1]
+
+[[state]]
+name = "partslathe_n"
+dirs = 1
+frames = 9
+delays = [1.5]
+
+[[state]]
+name = "partslathe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "partslathe_t"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "partslathe_r"
+dirs = 1
+frames = 9
+delays = [1]
+
+[[state]]
+name = "partslathe_o"
+dirs = 1
+frames = 9
+delays = [1]
+
+[[state]]
+name = "autolathe_n"
+dirs = 1
+frames = 9
+delays = [1.5]
+
+[[state]]
+name = "autolathe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "autolathe_t"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "autolathe_r"
+dirs = 1
+frames = 9
+delays = [1]
+
+[[state]]
+name = "autolathe_o"
+dirs = 1
+frames = 9
+delays = [1]
+
+[[state]]
+name = "recharger0"
+dirs = 1
+frames = 2
+delays = [5, 1]
+
+[[state]]
+name = "recharger1"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "recharger2"
+dirs = 1
+frames = 2
+delays = [2, 1]
+
+[[state]]
+name = "Shield_Gen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Shield_Gen_on"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "bspacerelay"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "bspacerelay_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "portalgateway"
+dirs = 1
+frames = 40
+delays = [1]
+
+[[state]]
+name = "sensors"
+dirs = 4
+frames = 3
+delays = [1]
+rewind = true
+
+[[state]]
+name = "sensors_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "broadcast receiver"
+dirs = 1
+frames = 4
+delays = [10, 2, 2, 4]
+rewind = true
+
+[[state]]
+name = "broadcast receiver_off"
+dirs = 1
+frames = 1
+rewind = true
+
+[[state]]
+name = "broadcast receiver_o"
+dirs = 1
+frames = 4
+delays = [10, 2, 2, 4]
+rewind = true
+
+[[state]]
+name = "broadcast receiver_o_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "broadcaster"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "broadcaster_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "broadcaster_send"
+dirs = 1
+frames = 6
+delays = [10, 1, 3, 1, 5, 1]
+
+[[state]]
+name = "broadcaster_o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "broadcaster_o_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "relay_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "relay"
+dirs = 1
+frames = 16
+delays = [1]
+
+[[state]]
+name = "relay_o"
+dirs = 1
+frames = 16
+delays = [1]
+
+[[state]]
+name = "relay_o_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "processor"
+dirs = 1
+frames = 12
+delays = [1]
+
+[[state]]
+name = "processor_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "processor_o"
+dirs = 1
+frames = 12
+delays = [1]
+
+[[state]]
+name = "processor_o_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bus"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "bus_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bus_o"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "bus_o_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hub"
+dirs = 1
+frames = 6
+delays = [3]
+
+[[state]]
+name = "hub_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hub_o"
+dirs = 1
+frames = 6
+delays = [3]
+
+[[state]]
+name = "hub_o_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "allinone"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "allinone_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "allinone_o"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "allinone_o_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Light_Green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Light_Red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Light_Pink"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "comm_server"
+dirs = 1
+frames = 10
+delays = [1]
+
+[[state]]
+name = "comm_server_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "comm_server_o"
+dirs = 1
+frames = 10
+delays = [1]
+
+[[state]]
+name = "comm_server_o_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pdamulti"
+dirs = 1
+frames = 6
+delays = [3]
+
+[[state]]
+name = "pdamulti_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "exonet"
+dirs = 1
+frames = 12
+delays = [1]
+
+[[state]]
+name = "exonet_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ntnet"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "ntnet_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tele-wires"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "controller-wires"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "telecomp-wires"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holopad0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holopadload"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "holopad1"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "light-p"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "light0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "light1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "type-a-blue-portal"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "type-a-blue-portal-b"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "type-a-blue-portal-c"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "type-a-red-portal"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "type-a-red-portal-b"
+dirs = 1
+frames = 30
+delays = [1]
+
+[[state]]
+name = "type-b-portal"
+dirs = 1
+frames = 9
+delays = [1]
+
+[[state]]
+name = "type-c-red-portal"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "type-c-mix-portal"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "type-c-blue-portal"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "type-c-white-portal"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "type-c-yellow-portal"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "type-d-portal"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "item_bank"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "item_bank_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "item_bank_o"
+dirs = 4
+frames = 4
+delays = [5, 1, 5, 1]
+
+[[state]]
+name = "igniter1"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "igniter0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mass_driver"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mass_driver1"
+dirs = 4
+frames = 5
+delays = [1]
+
+[[state]]
+name = "sec_lock"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nuclearbomb1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nuclearbomb2"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "nuclearbomb3"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "nuclearbomb0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nuclearbombc"
+dirs = 1
+frames = 3
+delays = [10, 3]
+
+[[state]]
+name = "npanel_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gsensor1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gsensor0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "filter_control"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "filter_control1"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "filter_control0"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "filter_control-nopower"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "filter_control-o2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "filter_control-n2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "filter_control-co2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "filter_control-tox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "filter_control10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "filter_control00"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "filter_control-unlocked"
+dirs = 1
+frames = 4
+delays = [2]
+
+[[state]]
+name = "filter_control-wirecut"
+dirs = 1
+frames = 4
+delays = [3]
+
+[[state]]
+name = "tele-o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tele1"
+dirs = 1
+frames = 41
+delays = [1, 4, 1, 2, 2, 1]
+
+[[state]]
+name = "tele0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "controller"
+dirs = 1
+frames = 4
+delays = [2]
+rewind = true
+
+[[state]]
+name = "controller-p"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "controller-o"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "controller-c"
+dirs = 1
+frames = 4
+delays = [2]
+rewind = true
+
+[[state]]
+name = "controller_old"
+dirs = 1
+frames = 4
+delays = [2]
+rewind = true
+
+[[state]]
+name = "controller-p_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "trashcan"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "trashcan1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "trashmelt"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "telescreen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "telescreenb"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "mflash1"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "mflash_flash"
+dirs = 1
+frames = 3
+delays = [1, 1, 3]
+
+[[state]]
+name = "mflash1-p"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wooden_tv_unpowered"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wooden_tv"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wooden_tv_broken"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "pflash1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pflash_flash"
+dirs = 1
+frames = 3
+delays = [1, 1, 3]
+
+[[state]]
+name = "pflash1-p"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pflash-s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nboard00"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nboard01"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nboard02"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nboard03"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nboard04"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nboard05"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "deskclutter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "plasticflaps"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crema0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crema1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crema2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crema_active"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cremat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "morgue1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "morgue0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "morguet"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "morgue2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "morgue3"
+dirs = 4
+frames = 2
+delays = [5]
+hotspots = [{ frame = 1, x = 18, y = 22 }]
+
+[[state]]
+name = "morgue4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "migniter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "migniter-p"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "migniter-d"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "migniter-b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "migniter-spark"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "portal"
+dirs = 1
+frames = 14
+delays = [1]
+
+[[state]]
+name = "portal1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glassbox0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glassbox1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glassboxb1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glassboxb0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "doortimer0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "doortimer2"
+dirs = 1
+frames = 2
+delays = [4]
+
+[[state]]
+name = "doortimer-p"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "doortimer1"
+dirs = 1
+frames = 2
+delays = [4]
+
+[[state]]
+name = "doortimer-b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "labcageb0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "labcage0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "labcage1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holopad0_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "holopad1_old"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "register_idle"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "register_approve"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "register_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "register_cash"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shield_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shieldA_old"
+dirs = 1
+frames = 3
+delays = [1]
+
+[[state]]
+name = "showcase_1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "showcase_2"
+dirs = 1
+frames = 2
+delays = [255, 1]
+
+[[state]]
+name = "showcase_3"
+dirs = 1
+frames = 2
+delays = [255, 1]
+
+[[state]]
+name = "showcase_4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "showcase_5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wilderness1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wilderness2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wilderness3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "signpost"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pipe_d"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pipe_d_l"
+dirs = 1
+frames = 16
+delays = [3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3]
+
+[[state]]
+name = "coinpress0"
+dirs = 1
+frames = 1
+loop = 1
+
+[[state]]
+name = "coinpress1"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "wrecharger0"
+dirs = 1
+frames = 2
+delays = [5, 1]
+
+[[state]]
+name = "wrecharger1"
+dirs = 1
+frames = 5
+delays = [4, 2]
+
+[[state]]
+name = "wrecharger2"
+dirs = 1
+frames = 2
+delays = [3, 1]
+
+[[state]]
+name = "exonet_node"
+dirs = 1
+frames = 12
+delays = [1]
+
+[[state]]
+name = "exonet_node_idle"
+dirs = 1
+frames = 12
+delays = [1]
+
+[[state]]
+name = "exonet_node_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "punchingbag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "punchingbag_hit"
+dirs = 1
+frames = 12
+delays = [1, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 1, 1.2]
+
+[[state]]
+name = "weightlifter"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weightlifter_1"
+dirs = 1
+frames = 7
+delays = [5, 5, 5, 10, 2, 2, 1]
+loop = 1
+
+[[state]]
+name = "weightlifter_2"
+dirs = 1
+frames = 7
+delays = [5, 5, 10, 15, 2, 2, 1]
+loop = 1
+
+[[state]]
+name = "weightlifter_3"
+dirs = 1
+frames = 7
+delays = [5, 10, 15, 15, 2, 2, 1]
+loop = 1
+
+[[state]]
+name = "handrail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "doppler"
+dirs = 1
+frames = 3
+delays = [1]
+rewind = true
+
+[[state]]
+name = "doppler_off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "autolathe_loading"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "autolathe_load_m"
+dirs = 1
+frames = 8
+delays = [1]
+loop = 1
+
+[[state]]
+name = "autolathe_panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "autolathe_load"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "autolathe_work"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "autolathe_finish"
+dirs = 1
+frames = 8
+delays = [1, 1, 1, 1, 1, 1, 1, 2]
+
+[[state]]
+name = "autolathe_pause"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "blackbox"
+dirs = 1
+frames = 3
+delays = [2]
+
+[[state]]
+name = "blackbox_off"
+dirs = 1
+frames = 2
+delays = [4]
+
+[[state]]
+name = "signpostwood"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sign_event_green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sign_event_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sign_event_yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sign_event_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stuffedbear"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "slab1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slab1-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slab2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slab2-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slab3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slab3-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slab4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slab4-off"
+dirs = 1
+frames = 1

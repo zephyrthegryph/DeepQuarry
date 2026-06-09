@@ -1,0 +1,84 @@
+# Generated from chattags.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 10
+cols = 4
+
+[[state]]
+name = "ooc"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mentor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "looc"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rlooc"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "admin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mod"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "body"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pm_in"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pm_out"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pm_out_alt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pm_other"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "help"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aooc"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "event"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "event_dead"
+dirs = 1
+frames = 1

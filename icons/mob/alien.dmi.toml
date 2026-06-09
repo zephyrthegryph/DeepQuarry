@@ -1,0 +1,685 @@
+# Generated from alien.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 19
+
+[[state]]
+name = "alien_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alien_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "larva0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "larva0"
+dirs = 4
+frames = 6
+delays = [1]
+movement = true
+
+[[state]]
+name = "larva0_sleep"
+dirs = 1
+frames = 2
+delays = [10]
+
+[[state]]
+name = "larva0_stun"
+dirs = 4
+frames = 2
+delays = [7]
+
+[[state]]
+name = "larva0_cuff"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "larva0_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "larva1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "larva1"
+dirs = 4
+frames = 6
+delays = [1]
+movement = true
+
+[[state]]
+name = "larva1_sleep"
+dirs = 1
+frames = 2
+delays = [10]
+
+[[state]]
+name = "larva1_stun"
+dirs = 4
+frames = 2
+delays = [7]
+
+[[state]]
+name = "larva1_cuff"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "larva1_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "larva2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "larva2"
+dirs = 4
+frames = 6
+delays = [1]
+movement = true
+
+[[state]]
+name = "larva2_sleep"
+dirs = 1
+frames = 2
+delays = [10]
+
+[[state]]
+name = "larva2_stun"
+dirs = 4
+frames = 2
+delays = [7]
+
+[[state]]
+name = "larva2_cuff"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "larva2_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "acid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aliend_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "aliend_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aliend_sleep"
+dirs = 1
+frames = 2
+delays = [15]
+
+[[state]]
+name = "aliend_running"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "aliend_unconscious"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aliend_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aliend_husked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aliens_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "aliens_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aliens_sleep"
+dirs = 1
+frames = 2
+delays = [10]
+
+[[state]]
+name = "aliens_running"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "aliens_unconscious"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aliens_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aliens_husked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alienh_s_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alienh_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alienh_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alienh_sleep"
+dirs = 1
+frames = 2
+delays = [10]
+
+[[state]]
+name = "alienh_running"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alienh_unconscious"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alienh_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alienh_husked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alienq_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alienq_l"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alienq_sleep"
+dirs = 1
+frames = 2
+delays = [15]
+
+[[state]]
+name = "alienq_running"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alienq_unconscious"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alienq_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alienq_husked"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alienother"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Hunter Stalking"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Hunter Front Half"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Hunter Back Half"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Drone Front Half"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Drone Back Half"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Sentinel Front Half"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Sentinel Back Half"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Praetorian Front Half"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Praetorian Back Half"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Stand"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Crawl"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chitin"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "claw"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nymph"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nymph"
+dirs = 4
+frames = 7
+delays = [1]
+movement = true
+
+[[state]]
+name = "nymph_sleep"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nymph_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weed_extract"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_growing"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "egg_opening"
+dirs = 1
+frames = 10
+delays = [1]
+
+[[state]]
+name = "egg_opened"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "resin door"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "resin blob"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "resin membrane"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "resin wall"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weeds_side_w"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weeds_side_e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weeds_side_n"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weeds_side_s"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weeds"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weeds1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weeds2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weeds3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weeds4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weeds5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weeds6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weeds7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weeds8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weeds9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weeds10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weeds11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weeds12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weeds13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weeds14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weeds15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weednode"
+dirs = 1
+frames = 7
+delays = [3]
+
+[[state]]
+name = "weednode-glow"
+dirs = 1
+frames = 7
+delays = [3]
+
+[[state]]
+name = "wall0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wall1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wall2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wall3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wall4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wall5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wall6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wall7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wall8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wall9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wall10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wall11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wall12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wall13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wall14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wall15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "membrane0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "membrane1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "membrane2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "membrane3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "membrane4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "membrane5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "membrane6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "membrane7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "membrane8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "membrane9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "membrane10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "membrane11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "membrane12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "membrane13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "membrane14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "membrane15"
+dirs = 1
+frames = 1

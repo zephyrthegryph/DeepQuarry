@@ -1,0 +1,38 @@
+# Generated from open_space.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 3
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "black_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "no_ceiling_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "no_ceiling"
+dirs = 1
+frames = 2
+delays = [10]
+rewind = true
+
+[[state]]
+name = "no_ceiling_mechoid"
+dirs = 1
+frames = 3
+delays = [3, 1, 3]
+rewind = true
+
+[[state]]
+name = "black_open_lighter"
+dirs = 1
+frames = 1

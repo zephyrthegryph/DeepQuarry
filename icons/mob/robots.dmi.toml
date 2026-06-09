@@ -1,0 +1,2607 @@
+# Generated from robots.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 65
+
+[[state]]
+name = "d1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "d2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "d3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "b1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "b2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "b3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "b1+o"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "b2+o"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "b3+o"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "robot+o+c"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "robot+o-c"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "robot+we"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "d1+o"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "d2+o"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "d3+o"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "robot_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "emag"
+dirs = 1
+frames = 6
+delays = [1]
+loop = 2
+rewind = true
+
+[[state]]
+name = "eyes-robot_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gib1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gibdown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gibup"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gib2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gib3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gib4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gib5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gib6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gibbl1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gib7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gibleg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gibarm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Engineering"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Miner_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Miner+j_old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Brobot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "floor1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floor2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floor3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floor4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floor5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floor6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "floor7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "streak1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "streak2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "streak3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "streak4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "streak5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "remainsrobot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Service"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Service2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Hydrobot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Medbot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "secborg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "maximillion"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "JanBot2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ov-openpanel -c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ov-openpanel +c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ov-openpanel +w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "landmate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-landmate"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mopgearrex"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "mopgearrex"
+dirs = 4
+frames = 4
+delays = [1]
+movement = true
+
+[[state]]
+name = "eyes-mopgearrex"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "robot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Miner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Miner"
+dirs = 4
+frames = 2
+delays = [1]
+movement = true
+
+[[state]]
+name = "Miner+j"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-robot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-Miner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "droid-miner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-droid-miner"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "droid-medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-droid-medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spiderbot-chassis"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spiderbot-chassis-posi"
+dirs = 4
+frames = 22
+delays = [1]
+
+[[state]]
+name = "spiderbot-chassis-mmi"
+dirs = 4
+frames = 30
+delays = [1]
+
+[[state]]
+name = "spiderbot-smashed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "securityrobot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medicalrobot"
+dirs = 4
+frames = 2
+delays = [10]
+
+[[state]]
+name = "engineerrobot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "janitorrobot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-Engineering"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rowtree-lucy"
+dirs = 4
+frames = 2
+delays = [20, 5]
+hotspots = [{ frame = 2, x = 20, y = 15 }]
+
+[[state]]
+name = "rowtree-medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rowtree-security"
+dirs = 4
+frames = 8
+delays = [5]
+hotspots = [{ frame = 2, x = 20, y = 15 }]
+
+[[state]]
+name = "rowtree-engineering"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "droid"
+dirs = 4
+frames = 20
+delays = [1]
+
+[[state]]
+name = "eyes-droid"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "droid-combat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-droid-combat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "droid-combat-shield"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "droid-combat-roll"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "droid-combat-roll"
+dirs = 4
+frames = 4
+delays = [1]
+movement = true
+
+[[state]]
+name = "drone-standard"
+dirs = 4
+frames = 4
+delays = [3, 8, 3, 8]
+
+[[state]]
+name = "eyes-drone-standard"
+dirs = 4
+frames = 4
+delays = [3, 8, 3, 8]
+
+[[state]]
+name = "drone-engineer"
+dirs = 4
+frames = 4
+delays = [3, 8, 3, 8]
+
+[[state]]
+name = "eyes-drone-engineer"
+dirs = 4
+frames = 4
+delays = [3, 8, 3, 8]
+
+[[state]]
+name = "drone-miner"
+dirs = 4
+frames = 4
+delays = [3, 8, 3, 8]
+
+[[state]]
+name = "eyes-drone-miner"
+dirs = 4
+frames = 4
+delays = [3, 8, 3, 8]
+
+[[state]]
+name = "drone-janitor"
+dirs = 4
+frames = 4
+delays = [3, 8, 3, 8]
+
+[[state]]
+name = "eyes-drone-janitor"
+dirs = 4
+frames = 4
+delays = [3, 8, 3, 8]
+
+[[state]]
+name = "drone-medical"
+dirs = 4
+frames = 4
+delays = [3, 8, 3, 8]
+
+[[state]]
+name = "eyes-drone-medical"
+dirs = 4
+frames = 4
+delays = [3, 8, 3, 8]
+
+[[state]]
+name = "drone-surgery"
+dirs = 4
+frames = 4
+delays = [3, 8, 3, 8]
+
+[[state]]
+name = "eyes-drone-surgery"
+dirs = 4
+frames = 4
+delays = [3, 8, 3, 8]
+
+[[state]]
+name = "drone-sec"
+dirs = 4
+frames = 4
+delays = [3, 8, 3, 8]
+
+[[state]]
+name = "eyes-drone-sec"
+dirs = 4
+frames = 4
+delays = [3, 8, 3, 8]
+
+[[state]]
+name = "drone-service"
+dirs = 4
+frames = 4
+delays = [3, 8, 3, 8]
+
+[[state]]
+name = "eyes-drone-service"
+dirs = 4
+frames = 4
+delays = [3, 8, 3, 8]
+
+[[state]]
+name = "drone-lost"
+dirs = 4
+frames = 4
+delays = [3, 8, 3, 8]
+
+[[state]]
+name = "eyes-drone-lost"
+dirs = 4
+frames = 4
+delays = [3, 8, 3, 8]
+
+[[state]]
+name = "drone-lost-shield_old"
+dirs = 4
+frames = 4
+delays = [3, 8, 3, 8]
+
+[[state]]
+name = "drone-lost-shield"
+dirs = 4
+frames = 22
+delays = [1]
+
+[[state]]
+name = "drone-openpanel -c"
+dirs = 4
+frames = 9
+delays = [3, 2, 1, 1, 1, 1, 3, 3, 9]
+
+[[state]]
+name = "drone-openpanel +c"
+dirs = 4
+frames = 8
+delays = [3, 4, 1, 4, 3, 4, 1, 4]
+
+[[state]]
+name = "drone-openpanel +w"
+dirs = 4
+frames = 4
+delays = [3, 9, 3, 9]
+
+[[state]]
+name = "centcomborg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engiborg+tread"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-engiborg+tread"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "drone-chemistry"
+dirs = 4
+frames = 4
+delays = [3, 8, 3, 8]
+
+[[state]]
+name = "drone-science"
+dirs = 4
+frames = 4
+delays = [3, 8, 3, 8]
+
+[[state]]
+name = "eyes-droid-science"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "droid-science"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-drone-chemistry"
+dirs = 4
+frames = 4
+delays = [3, 8, 3, 8]
+
+[[state]]
+name = "drone-hydro"
+dirs = 4
+frames = 4
+delays = [3, 8, 3, 8]
+
+[[state]]
+name = "eyes-drone-hydro"
+dirs = 4
+frames = 4
+delays = [3, 8, 3, 8]
+
+[[state]]
+name = "eyes-drone-science"
+dirs = 4
+frames = 4
+delays = [3, 8, 3, 8]
+
+[[state]]
+name = "drone-blu"
+dirs = 4
+frames = 4
+delays = [3, 8, 3, 8]
+
+[[state]]
+name = "eyes-drone-blu"
+dirs = 4
+frames = 4
+delays = [3, 8, 3, 8]
+
+[[state]]
+name = "eyebot-engineering"
+dirs = 4
+frames = 4
+delays = [5, 3, 5, 3]
+
+[[state]]
+name = "eyebot-janitor"
+dirs = 4
+frames = 4
+delays = [5, 3, 5, 3]
+
+[[state]]
+name = "eyebot-medical"
+dirs = 4
+frames = 4
+delays = [5, 3, 5, 3]
+
+[[state]]
+name = "eyebot-miner"
+dirs = 4
+frames = 4
+delays = [5, 3, 5, 3]
+
+[[state]]
+name = "eyebot-science"
+dirs = 4
+frames = 4
+delays = [5, 3, 5, 3]
+
+[[state]]
+name = "eyebot-security"
+dirs = 4
+frames = 4
+delays = [5, 3, 5, 3]
+
+[[state]]
+name = "eyebot-standard"
+dirs = 4
+frames = 4
+delays = [5, 3, 5, 3]
+
+[[state]]
+name = "eyes-eyebot-engineering"
+dirs = 4
+frames = 4
+delays = [5, 3, 5, 3]
+
+[[state]]
+name = "eyes-eyebot-janitor"
+dirs = 4
+frames = 4
+delays = [5, 3, 5, 3]
+
+[[state]]
+name = "eyes-eyebot-medical"
+dirs = 4
+frames = 4
+delays = [5, 3, 5, 3]
+
+[[state]]
+name = "eyes-eyebot-miner"
+dirs = 4
+frames = 4
+delays = [5, 3, 5, 3]
+
+[[state]]
+name = "eyes-eyebot-science"
+dirs = 4
+frames = 4
+delays = [5, 3, 5, 3]
+
+[[state]]
+name = "eyes-eyebot-security"
+dirs = 4
+frames = 4
+delays = [5, 3, 5, 3]
+
+[[state]]
+name = "eyes-eyebot-standard"
+dirs = 4
+frames = 4
+delays = [5, 3, 5, 3]
+
+[[state]]
+name = "heavyMed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "heavyServ"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "heavySec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "heavyEng"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "heavyMiner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "heavyRes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "heavyStandard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndi-heavy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-syndi-heavy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-heavyStandard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-heavyMed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-heavyServ"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-heavySec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-heavyEng"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-heavyMiner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-heavyRes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marinaMD"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marinaSV"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marinaMN"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marinaSC"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marinaENG"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marinaJN"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marinaSD"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marinaSCI"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marinaCB"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-marinaCB"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-marinaCB-roll"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "marinaCB-roll"
+dirs = 4
+frames = 6
+delays = [3, 1]
+
+[[state]]
+name = "marinaCB-shield"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "eyes-marinaSV"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-marinaMN"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-marinaSC"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-marinaENG"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-marinaJN"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-marinaSD"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-marinaSCI"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-marinaMD"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sleekstandard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sleekjanitor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sleekmedic"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sleeksecurity"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sleekminer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sleekservice"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sleekscience"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sleekclerical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sleekce"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sleekcmo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sleekhos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-sleekhos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-sleekcmo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-sleekce"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-sleekclerical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-sleekscience"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-sleekstandard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-sleekservice"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-sleekjanitor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-sleekmedic"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-sleeksecurity"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-sleekminer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "robotSecy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "robotMedi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "robotEngi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "robotJani"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "robotServ"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "robotMine"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "robotCler"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-robotSecy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-robotMedi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-robotEngi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-robotJani"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-robotServ"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-robotCler"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spider"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spidereng"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spidermining"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spidersec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spidercom"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spidersyndi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-spidersyndi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-spidersec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-spidersec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-spider"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-spidereng"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-spidermining"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-spidersec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-spidercom"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "arachne"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-arachne"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "omoikane"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "omoikane"
+dirs = 4
+frames = 3
+delays = [1]
+movement = true
+
+[[state]]
+name = "eyes-omoikane"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-omoikane"
+dirs = 1
+frames = 1
+movement = true
+
+[[state]]
+name = "peaceborg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-peaceborg"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tallblue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tallyellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tallflower"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tallgreen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tallred"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tallwhite"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-tallblue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-tallyellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-tallflower"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-tallgreen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-tallred"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-tallwhite"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tall2miner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tall2engineer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tall2service"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tall2janitor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tall2security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tall2medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tall2standard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tall2peace"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tall2clown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-tall2miner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-tall2engineer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-tall2service"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-tall2janitor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-tall2security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-tall2medical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-tall2standard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-tall2peace"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-tall2clown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "toiletbot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "toiletbotminer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "toiletbotmedical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "toiletbotsurgeon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "toiletbotsecurity"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "toiletbotengineering"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "toiletbotjanitor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "toiletbotantag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-toiletbotantag"
+dirs = 4
+frames = 3
+delays = [1, 2, 1]
+
+[[state]]
+name = "eyes-toiletbot"
+dirs = 4
+frames = 3
+delays = [1, 2, 1]
+
+[[state]]
+name = "eyes-toiletbotminer"
+dirs = 4
+frames = 3
+delays = [1, 2, 1]
+
+[[state]]
+name = "eyes-toiletbotengineering"
+dirs = 4
+frames = 3
+delays = [1, 2, 1]
+
+[[state]]
+name = "eyes-toiletbotmedical"
+dirs = 4
+frames = 3
+delays = [1, 2, 1]
+
+[[state]]
+name = "eyes-toiletbotsecurity"
+dirs = 4
+frames = 3
+delays = [1, 2, 1]
+
+[[state]]
+name = "eyes-toiletbotjanitor"
+dirs = 4
+frames = 3
+delays = [1, 2, 1]
+
+[[state]]
+name = "eyes-toiletbotsurgeon"
+dirs = 4
+frames = 3
+delays = [1, 2, 1]
+
+[[state]]
+name = "syndie_treadhound"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndie_bloodhound"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bloodhound"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "treadhound"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-syndie_treadhound"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-syndie_bloodhound"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-bloodhound"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-secborg+tread"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "squats"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-squats"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "treadwell"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-treadwell"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "whitespider"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-whitespider"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crawler"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-crawler"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "maidbot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-maidbot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "handy-med"
+dirs = 4
+frames = 3
+delays = [4]
+rewind = true
+
+[[state]]
+name = "handy-engineer"
+dirs = 4
+frames = 3
+delays = [4]
+rewind = true
+
+[[state]]
+name = "handy-science"
+dirs = 4
+frames = 3
+delays = [4]
+rewind = true
+
+[[state]]
+name = "eyes-handy-engineer"
+dirs = 4
+frames = 3
+delays = [4]
+rewind = true
+
+[[state]]
+name = "eyes-handy-med"
+dirs = 4
+frames = 3
+delays = [4]
+rewind = true
+
+[[state]]
+name = "eyes-handy-science"
+dirs = 4
+frames = 3
+delays = [4]
+rewind = true
+
+[[state]]
+name = "drone-gravekeeper"
+dirs = 4
+frames = 4
+delays = [3, 8, 3, 8]
+
+[[state]]
+name = "eyes-drone-gravekeeper"
+dirs = 4
+frames = 4
+delays = [3, 8, 3, 8]
+
+[[state]]
+name = "drone-gravekeeper-shield"
+dirs = 4
+frames = 22
+delays = [1]
+
+[[state]]
+name = "sleek-gravekeeper"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-sleek-gravekeeper"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sleek-gravekeeper-shield"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "insekt-Combat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "insekt-Default"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "insekt-Med"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "insekt-Sec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-insekt-Combat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-insekt-Sec"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "insekt-Sci"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-insekt-Default"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-insekt-Sci"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-insekt-Med"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "insekt-Combat-shield"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "Glitterfly-Standard"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "eyes-Glitterfly-Standard"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "Glitterfly-Service"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "eyes-Glitterfly-Service"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "Glitterfly-Surgeon"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "eyes-Glitterfly-Surgeon"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "Glitterfly-Crisis"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "eyes-Glitterfly-Crisis"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "Glitterfly-Engineering"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "eyes-Glitterfly-Engineering"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "Glitterfly-Janitor"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "eyes-Glitterfly-Janitor"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "Glitterfly-Miner"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "eyes-Glitterfly-Miner"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "Glitterfly-Research"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "eyes-Glitterfly-Research"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "Glitterfly-Security"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "eyes-Glitterfly-Security"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "Glitterfly-Clerical"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "eyes-Glitterfly-Clerical"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "Glitterfly-openpanel +c"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "Glitterfly-openpanel -c"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "Glitterfly-openpanel +w"
+dirs = 4
+frames = 4
+delays = [2]
+
+[[state]]
+name = "decapod-Standard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-decapod-Standard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "decapod-Research"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-decapod-Research"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "decapod-Surgeon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-decapod-Surgeon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "decapod-Crisis"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-decapod-Crisis"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "decapod-Engineering"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-decapod-Engineering"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "decapod-Janitor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-decapod-Janitor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "decapod-Miner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-decapod-Miner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "decapod-Security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-decapod-Security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "decapod-Service"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-decapod-Service"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "decapod-Clerical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-decapod-Clerical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "decapod-Combat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "decapod-Combat-roll"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-decapod-Combat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-decapod-roll"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "decapod-shield"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "decapod-openpanel -c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "decapod-openpanel +c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "decapod-openpanel +w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "constructiondrone"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "constructiondrone"
+dirs = 4
+frames = 2
+delays = [1]
+movement = true
+
+[[state]]
+name = "eyes-constructiondrone"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-constructiondrone-ai"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "miningdrone"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "miningdrone"
+dirs = 4
+frames = 2
+delays = [1]
+movement = true
+
+[[state]]
+name = "eyes-miningdrone"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-miningdrone-ai"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "repairbot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "repairbot"
+dirs = 4
+frames = 2
+delays = [1]
+movement = true
+
+[[state]]
+name = "repairbot-eyes-blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "repairbot-eyes-green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "repairbot-eyes-red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "repairbot-eyes-orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "repairbot-eyes-violet"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "maintbot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "maintbot"
+dirs = 4
+frames = 4
+delays = [1]
+movement = true
+
+[[state]]
+name = "maintbot-shell-blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "maintbot-shell-blue"
+dirs = 4
+frames = 4
+delays = [1]
+movement = true
+
+[[state]]
+name = "maintbot-shell-red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "maintbot-shell-red"
+dirs = 4
+frames = 4
+delays = [1]
+movement = true
+
+[[state]]
+name = "maintbot-shell-brown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "maintbot-shell-brown"
+dirs = 4
+frames = 4
+delays = [1]
+movement = true
+
+[[state]]
+name = "maintbot-shell-orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "maintbot-shell-orange"
+dirs = 4
+frames = 4
+delays = [1]
+movement = true
+
+[[state]]
+name = "maintbot-shell-green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "maintbot-shell-green"
+dirs = 4
+frames = 4
+delays = [1]
+movement = true
+
+[[state]]
+name = "maintbot-eyes-blue"
+dirs = 4
+frames = 2
+delays = [4]
+
+[[state]]
+name = "maintbot-eyes-red"
+dirs = 4
+frames = 2
+delays = [4]
+
+[[state]]
+name = "maintbotbot-eyes-orange"
+dirs = 4
+frames = 2
+delays = [4]
+
+[[state]]
+name = "maintbot-eyes-green"
+dirs = 4
+frames = 2
+delays = [4]
+
+[[state]]
+name = "maintbot-eyes-violet"
+dirs = 4
+frames = 2
+delays = [4]
+
+[[state]]
+name = "blitzshell"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blitzshell"
+dirs = 4
+frames = 4
+delays = [1]
+movement = true
+
+[[state]]
+name = "pneuma-Standard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-pneuma-Standard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pneuma-Research"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-pneuma-Research"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pneuma-Surgeon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-pneuma-Surgeon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pneuma-Crisis"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-pneuma-Crisis"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pneuma-Engineering"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-pneuma-Engineering"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pneuma-Janitor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-pneuma-Janitor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pneuma-Miner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-pneuma-Miner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pneuma-Security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-pneuma-Security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pneuma-Service"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-pneuma-Service"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pneuma-Clerical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-pneuma-Clerical"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pneuma-openpanel -c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pneuma-openpanel +c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pneuma-openpanel +w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eyes-drider-Standard"
+dirs = 4
+frames = 5
+delays = [1.3]
+rewind = true
+
+[[state]]
+name = "eyes-drider-Standard"
+dirs = 4
+frames = 5
+delays = [1.3]
+rewind = true
+movement = true
+
+[[state]]
+name = "drider-Standard"
+dirs = 4
+frames = 5
+delays = [1.3]
+rewind = true
+
+[[state]]
+name = "drider-Standard"
+dirs = 4
+frames = 5
+delays = [1.3]
+rewind = true
+movement = true
+
+[[state]]
+name = "eyes-drider-Clerical"
+dirs = 4
+frames = 5
+delays = [1.3]
+rewind = true
+
+[[state]]
+name = "eyes-drider-Clerical"
+dirs = 4
+frames = 5
+delays = [1.3]
+rewind = true
+movement = true
+
+[[state]]
+name = "drider-Clerical"
+dirs = 4
+frames = 5
+delays = [1]
+rewind = true
+
+[[state]]
+name = "drider-Clerical"
+dirs = 4
+frames = 5
+delays = [1.3]
+rewind = true
+movement = true
+
+[[state]]
+name = "eyes-drider-Security"
+dirs = 4
+frames = 5
+delays = [1.3]
+rewind = true
+
+[[state]]
+name = "eyes-drider-Security"
+dirs = 4
+frames = 5
+delays = [1.3]
+rewind = true
+movement = true
+
+[[state]]
+name = "drider-Security"
+dirs = 4
+frames = 5
+delays = [1.3]
+rewind = true
+
+[[state]]
+name = "drider-Security"
+dirs = 4
+frames = 5
+delays = [1.3]
+rewind = true
+movement = true
+
+[[state]]
+name = "eyes-drider-Miner"
+dirs = 4
+frames = 5
+delays = [1.3]
+rewind = true
+
+[[state]]
+name = "eyes-drider-Miner"
+dirs = 4
+frames = 5
+delays = [1.3]
+rewind = true
+movement = true
+
+[[state]]
+name = "drider-Miner"
+dirs = 4
+frames = 5
+delays = [1.3]
+rewind = true
+
+[[state]]
+name = "drider-Miner"
+dirs = 4
+frames = 5
+delays = [1.3]
+rewind = true
+movement = true
+
+[[state]]
+name = "eyes-drider-Surgeon"
+dirs = 4
+frames = 5
+delays = [1.3]
+rewind = true
+
+[[state]]
+name = "eyes-drider-Surgeon"
+dirs = 4
+frames = 6
+delays = [1.3]
+rewind = true
+movement = true
+
+[[state]]
+name = "drider-Surgeon"
+dirs = 4
+frames = 5
+delays = [1.3]
+rewind = true
+
+[[state]]
+name = "drider-Surgeon"
+dirs = 4
+frames = 5
+delays = [1.3]
+rewind = true
+movement = true
+
+[[state]]
+name = "eyes-drider-Crisis"
+dirs = 4
+frames = 5
+delays = [1.3]
+rewind = true
+
+[[state]]
+name = "eyes-drider-Crisis"
+dirs = 4
+frames = 5
+delays = [1.3]
+rewind = true
+movement = true
+
+[[state]]
+name = "drider-Crisis"
+dirs = 4
+frames = 5
+delays = [1.3]
+rewind = true
+
+[[state]]
+name = "drider-Crisis"
+dirs = 4
+frames = 5
+delays = [1.3]
+rewind = true
+movement = true
+
+[[state]]
+name = "eyes-drider-Engineering"
+dirs = 4
+frames = 5
+delays = [1.3]
+
+[[state]]
+name = "eyes-drider-Engineering"
+dirs = 4
+frames = 5
+delays = [1.3]
+movement = true
+
+[[state]]
+name = "drider-Engineering"
+dirs = 4
+frames = 5
+delays = [1.3]
+
+[[state]]
+name = "drider-Engineering"
+dirs = 4
+frames = 5
+delays = [1.3]
+movement = true
+
+[[state]]
+name = "eyes-drider-Janitor"
+dirs = 4
+frames = 5
+delays = [1.3]
+
+[[state]]
+name = "eyes-drider-Janitor"
+dirs = 4
+frames = 5
+delays = [1.3]
+movement = true
+
+[[state]]
+name = "drider-Janitor"
+dirs = 4
+frames = 5
+delays = [1.3]
+
+[[state]]
+name = "drider-Janitor"
+dirs = 4
+frames = 5
+delays = [1.3]
+movement = true
+
+[[state]]
+name = "eyes-drider-Research"
+dirs = 4
+frames = 5
+delays = [1.3]
+
+[[state]]
+name = "eyes-drider-Research"
+dirs = 4
+frames = 5
+delays = [1.3]
+movement = true
+
+[[state]]
+name = "drider-Research"
+dirs = 4
+frames = 5
+delays = [1.3]
+
+[[state]]
+name = "drider-Research"
+dirs = 4
+frames = 5
+delays = [1.3]
+movement = true
+
+[[state]]
+name = "eyes-drider-Service"
+dirs = 4
+frames = 5
+delays = [1.3]
+
+[[state]]
+name = "eyes-drider-Service"
+dirs = 4
+frames = 5
+delays = [1.3]
+movement = true
+
+[[state]]
+name = "drider-Service"
+dirs = 4
+frames = 5
+delays = [1.3]
+
+[[state]]
+name = "drider-Service"
+dirs = 4
+frames = 5
+delays = [1.3]
+movement = true
+
+[[state]]
+name = "drider-openpanel -c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "drider-openpanel +c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "drider-openpanel +w"
+dirs = 4
+frames = 1

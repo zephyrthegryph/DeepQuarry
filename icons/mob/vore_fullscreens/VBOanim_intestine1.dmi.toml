@@ -1,0 +1,10 @@
+# Generated from VBOanim_intestine1.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 480
+height = 480
+cols = 6
+
+[[state]]
+name = "VBOanim_intestine1"
+dirs = 1
+frames = 33
+delays = [0.9]

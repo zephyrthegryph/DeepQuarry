@@ -1,0 +1,108 @@
+# Generated from stomach_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "flesh-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flesh-closed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flesh-opening"
+dirs = 1
+frames = 4
+delays = [1]
+loop = 1
+
+[[state]]
+name = "flesh-closing"
+dirs = 1
+frames = 4
+delays = [1]
+loop = 1
+
+[[state]]
+name = "colorable-closed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "colorable-opening"
+dirs = 1
+frames = 4
+delays = [1]
+loop = 1
+
+[[state]]
+name = "colorable-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "colorable-closing"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "flesh_floor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flesh"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "c_flesh_floor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "colorable-wall"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flesh_floor_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "c_flesh_floor_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "flesh_side"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "enzyme_shallow"
+dirs = 1
+frames = 3
+delays = [3]
+rewind = true
+
+[[state]]
+name = "composite"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flesh_floor_mover"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "fleshdoor"
+dirs = 1
+frames = 1

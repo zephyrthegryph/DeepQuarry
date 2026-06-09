@@ -1,0 +1,75 @@
+# Generated from rig_modules_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "sizegun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "techno_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ihs_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medical_rig_bay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engineering_rig_bay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "null_rig"
+dirs = 1
+frames = 1
+hotspots = [{ frame = 1, x = 13, y = 13 }]
+
+[[state]]
+name = "pathfinder_rig_bay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nanomachine_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "kwi_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pursuit_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clockwork_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "precursor_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "aegis_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "crystal_rig"
+dirs = 1
+frames = 1

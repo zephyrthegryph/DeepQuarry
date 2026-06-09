@@ -1,0 +1,372 @@
+# Generated from tools_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 11
+
+[[state]]
+name = "prybar"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prybar_green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prybar_aubergine"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prybar_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prybar_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rcd"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rcd_empty"
+dirs = 1
+frames = 3
+delays = [3]
+
+[[state]]
+name = "rcd_charge1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rcd_charge2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rcd_charge3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rcd_charge4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rcd_charge5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rcd_charge6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rcd_charge7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rcd_charge8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rcd_charge9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rcd_charge10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ircd"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ircd_empty"
+dirs = 1
+frames = 3
+delays = [3]
+
+[[state]]
+name = "ircd_charge1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ircd_charge2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ircd_charge3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ircd_charge4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ircd_charge5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ircd_charge6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ircd_charge7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ircd_charge8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ircd_charge9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ircd_charge10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "swrcd"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "swrcd_empty"
+dirs = 1
+frames = 3
+delays = [3]
+
+[[state]]
+name = "swrcd_charge1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "swrcd_charge2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "swrcd_charge3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "swrcd_charge4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "swrcd_charge5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "swrcd_charge6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "swrcd_charge7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "swrcd_charge8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "swrcd_charge9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "swrcd_charge10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "adv_rcd"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "adv_rcd_empty"
+dirs = 1
+frames = 6
+delays = [1, 1, 3, 1, 1, 3]
+
+[[state]]
+name = "adv_rcd_charge1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "adv_rcd_charge2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "adv_rcd_charge3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "adv_rcd_charge4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "adv_rcd_charge5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "adv_rcd_charge6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "adv_rcd_charge7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "adv_rcd_charge8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "adv_rcd_charge9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "adv_rcd_charge10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "inducer-sci"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "inducer-engi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "inducer-syndi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "inducer-hybrid"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "inducer-bat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "inducer-nobat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rcdammo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rsf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rsf_empty"
+dirs = 1
+frames = 3
+delays = [3]
+
+[[state]]
+name = "debug_rcd"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "electric_rcd"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rpd"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rms"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rms_charge0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rms_charge1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rms_charge2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rms_charge3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rms_charge4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ratchet"
+dirs = 1
+frames = 1

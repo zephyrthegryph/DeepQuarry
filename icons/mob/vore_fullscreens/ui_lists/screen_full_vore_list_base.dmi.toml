@@ -1,0 +1,299 @@
+# Generated from screen_full_vore_list_base.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 120
+height = 120
+cols = 8
+
+[[state]]
+name = "dark"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "base"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brown_internals"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brown_internals_hole"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "synth_flesh_mono"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "synth_flesh_mono_hole"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "a_tumby"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "another_tumby"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "da_tumby"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_belly8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_belly9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBOanim_belly1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBOanim_belly2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBOanim_belly3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBOanim_belly4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBOanim_belly5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBOanim_belly6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBOanim_belly7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBOanim_belly8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBOanim_belly9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBOanim_belly10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBOanim_taurbelly1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBOanim_snakebelly1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBOanim_synthbelly1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_breast"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_breast1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_coils"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_coils1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_darkslit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_fleshs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_fleshs1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBOanim_intestine1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBOanim_intestine2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBOanim_gullet1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_intestines9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_maw13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_maw14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_maw15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_maw16"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_maw17"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_maw18"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_maw19"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_maw20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_maw21"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_maw22"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_maw23"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_maw24"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_maw25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_maw26"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_maw27"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_synth1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_vines"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_wriggly"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_foot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_paw"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_gematically_angular"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_notbelly"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_belly9_fluidless"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "VBO_intestines9_fluidless"
+dirs = 1
+frames = 1

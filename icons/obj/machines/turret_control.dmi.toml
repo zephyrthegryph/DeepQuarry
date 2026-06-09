@@ -1,0 +1,31 @@
+# Generated from turret_control.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "control_off"
+dirs = 1
+frames = 1
+rewind = true
+
+[[state]]
+name = "control_standby"
+dirs = 1
+frames = 4
+delays = [1]
+rewind = true
+
+[[state]]
+name = "control_stun"
+dirs = 1
+frames = 4
+delays = [1]
+rewind = true
+
+[[state]]
+name = "control_kill"
+dirs = 1
+frames = 4
+delays = [1]
+rewind = true

@@ -1,0 +1,276 @@
+# Generated from item_altevian.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "rig0-heartbreaker"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig0-sec"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig1-sec"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig0-engineering"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig1-engineering"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ceHELMETworld"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig0-atmos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig1-atmos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig0-medical"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig1-medical"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig0-medical_emt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scienceHELMETworld"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "capvoid"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig0-syndie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig1-syndie"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig0-mining"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig1-mining"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "helm_explorer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "helm_exp_medic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig0_pilot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engineering_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engineering_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ninja_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ninja_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medical_rig"
+dirs = 1
+frames = 1
+rewind = true
+
+[[state]]
+name = "medical_rig_sealed"
+dirs = 1
+frames = 1
+rewind = true
+
+[[state]]
+name = "hacker_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hacker_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ert_commander_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ert_security_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ert_medical_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ert_engineer_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ert_commander_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ert_security_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ert_medical_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ert_engineer_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ce_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "ce_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "merc_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "merc_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "science_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "science_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hazard_rig_sealed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hazard_rig"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig0-vintagecrew"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig0-vintageengi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig0-vintagemedic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig0-vintagemarine"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig0-vintageofficer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig0-vintagepilot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig0-vintagepilotalt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig0-vintagemerc"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig0-vintageminer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "rig0-vintagescientist"
+dirs = 1
+frames = 1

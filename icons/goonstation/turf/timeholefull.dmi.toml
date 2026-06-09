@@ -1,0 +1,16 @@
+# Generated from timeholefull.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 12
+
+[[state]]
+name = "timehole"
+dirs = 1
+frames = 16
+delays = [0.75]
+
+[[state]]
+name = "timehole_edge"
+dirs = 8
+frames = 16
+delays = [0.75]

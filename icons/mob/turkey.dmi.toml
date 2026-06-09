@@ -1,0 +1,39 @@
+# Generated from turkey.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "turkeygirl"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "turkeygirl-resting"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "turkeygirl-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "turkeygirl-1-resting"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "turkeygirl-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "turkeygirl-2-resting"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "turkeygirl-dead"
+dirs = 1
+frames = 1

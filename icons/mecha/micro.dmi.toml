@@ -1,0 +1,49 @@
+# Generated from micro.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 5
+
+[[state]]
+name = "polecat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "polecat-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "polecat-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gopher"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gopher-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gopher-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weasel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "weasel-open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weasel-broken"
+dirs = 1
+frames = 1

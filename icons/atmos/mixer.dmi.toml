@@ -1,0 +1,52 @@
+# Generated from mixer.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 10
+
+[[state]]
+name = "on"
+dirs = 4
+frames = 5
+delays = [2]
+
+[[state]]
+name = "off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "map"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mon"
+dirs = 4
+frames = 5
+delays = [2]
+
+[[state]]
+name = "moff"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mmap"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ton"
+dirs = 4
+frames = 5
+delays = [2]
+
+[[state]]
+name = "toff"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tmap"
+dirs = 4
+frames = 1

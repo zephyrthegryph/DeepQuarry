@@ -1,0 +1,239 @@
+# Generated from kittyborg_jani.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 19
+
+[[state]]
+name = "jani"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jani"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "jani-glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jani-glow"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "jani-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jani-eyes"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "jani-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jani-lights"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "jani-sleeper-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jani-sleeper-1"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "jani-sleeper-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jani-sleeper-2"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "jani-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jani-bellyup-glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jani-sleeper-1-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jani-sleeper-2-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jani-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jani-sit-glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jani-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jani-rest-glow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jani-wreck"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jani-gun"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jani-gun"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "openpanel-nc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel-nc"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "openpanel-c"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel-c"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "openpanel-w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openpanel-w"
+dirs = 4
+frames = 5
+delays = [1.5]
+movement = true
+
+[[state]]
+name = "jani-shield"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "SPRITES-PAST-HERE-ARE-NOT-IMPLEMENTED"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jani-sleeper-1-default"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jani-sleeper-1-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jani-throat-1-default"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jani-throat-1-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jani-throat-1-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jani-sleeper-2-default"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jani-sleeper-2-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jani-throat-2-default"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jani-throat-2-bellyup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jani-throat-2-sit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jani-sleeper-1-rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jani-sleeper-2-rest"
+dirs = 4
+frames = 1

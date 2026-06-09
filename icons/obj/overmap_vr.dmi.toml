@@ -1,0 +1,57 @@
+# Generated from overmap_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 11
+
+[[state]]
+name = "portal"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "fueldepot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "guttersite"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shimmer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "virgo3b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stellar_delight_g"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stellar_delight"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vector"
+dirs = 4
+frames = 6
+delays = [20, 1]
+
+[[state]]
+name = "abductor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "virgo5"
+dirs = 1
+frames = 60
+delays = [1.7]

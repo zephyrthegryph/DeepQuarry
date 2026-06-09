@@ -1,0 +1,412 @@
+# Generated from screen1_robot_minimalist.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 12
+
+[[state]]
+name = ""
+dirs = 8
+frames = 1
+
+[[state]]
+name = "module1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "module2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "module3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "charge0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "charge1"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "charge2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "charge3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "charge4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "charge-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "temp0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "temp1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "temp2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "temp-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "temp-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "health7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "health6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "health5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "health4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "health3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "health2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "health1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "health0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scanlines"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "security old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medical"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "janitor"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "engineer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nomod"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brobot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "standard"
+dirs = 1
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hydroponics"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "security"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "black"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blackanimate"
+dirs = 1
+frames = 4
+delays = [250, 1]
+
+[[state]]
+name = "malf"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "s_arrow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "service"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "miner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "noise"
+dirs = 1
+frames = 40
+delays = [1]
+
+[[state]]
+name = "template"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "template_active"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "template_small"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "template2_small"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "template2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "template2_active"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "inv1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "inv2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "inv3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "inv1 +a"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "inv2 +a"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "inv3 +a"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "zone_sel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "inventory"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "store"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "radio"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "panel"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "harm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "help"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pull0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pull1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blankhud"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fire0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fire1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oxy0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oxy1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "no_radio1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "no_radio0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "no_walk1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "no_walk0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "no_run1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "no_run0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "no_item1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "no_item0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gun0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gun1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "default"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "vore"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "character"
+dirs = 1
+frames = 1

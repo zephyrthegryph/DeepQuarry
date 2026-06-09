@@ -1,0 +1,138 @@
+# Generated from fighters64x64.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 12
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baron"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "baron-open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "baron-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "baron"
+dirs = 4
+frames = 2
+delays = [1]
+movement = true
+
+[[state]]
+name = "scoralis"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scoralis"
+dirs = 4
+frames = 1
+movement = true
+
+[[state]]
+name = "scoralis-open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scoralis-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pinnace"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pinnace"
+dirs = 4
+frames = 2
+delays = [1]
+movement = true
+
+[[state]]
+name = "pinnace-open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pinnace-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pinnace_wings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pinnace_wings2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "welder-on"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "allure"
+dirs = 4
+frames = 2
+delays = [10]
+
+[[state]]
+name = "allure"
+dirs = 4
+frames = 4
+delays = [1]
+rewind = true
+movement = true
+
+[[state]]
+name = "allure-open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "allure-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gunpod"
+dirs = 4
+frames = 4
+delays = [10, 1, 10, 1]
+
+[[state]]
+name = "gunpod-open"
+dirs = 4
+frames = 4
+delays = [30, 1]
+
+[[state]]
+name = "gunpod-broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gunpod"
+dirs = 4
+frames = 4
+delays = [1]
+rewind = true
+movement = true

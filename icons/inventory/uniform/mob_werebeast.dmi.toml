@@ -1,0 +1,99 @@
+# Generated from mob_werebeast.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 64
+cols = 9
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "whitepants"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "whiteshorts"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yogapants"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grey"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "robotics"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engine"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skirt_swept"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "janitor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nursesuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "clown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "oldman"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jeansblack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "heph"
+dirs = 4
+frames = 1

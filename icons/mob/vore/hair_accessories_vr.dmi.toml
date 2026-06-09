@@ -1,0 +1,10 @@
+# Generated from hair_accessories_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "verie_hair_glow"
+dirs = 4
+frames = 9
+delays = [5, 1]

@@ -1,0 +1,199 @@
+# Generated from modular_armor.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 12
+
+[[state]]
+name = "pcarrier"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pcarrierG"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pcarrierB"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pcarrierT"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pcarrierU"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "armguards"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "armguardsG"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "armguardsB"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "armguardsT"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "armguardsU"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "armguards_item"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "armguards_material"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "armguards_material_item"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "legguards"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "legguardsG"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "legguardsB"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "legguardsT"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "legguardsU"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "legguards_item"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "legguards_material"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "legguards_material_item"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "footguards"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "footguards_item"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "footguards_material"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "footguards_material_item"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "handguards"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "handguards_item"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "handguards_material"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "handguards_item_material"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "groinpad"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "groinpadG"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "groinpadB"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "groinpadT"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "groinpadU"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "groinpad_item"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "modhelm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "modhelmup"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "modhelm_killa"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "modhelm_killaup"
+dirs = 4
+frames = 1

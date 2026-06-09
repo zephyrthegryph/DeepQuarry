@@ -1,0 +1,1013 @@
+# Generated from pai.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 41
+
+[[state]]
+name = "pai-repairbot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-repairbot_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-repairbot"
+dirs = 4
+frames = 2
+delays = [1]
+movement = true
+
+[[state]]
+name = "pai-repairbot_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-repairbot_rest_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-repairbot_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pai-repairbot-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-repairbot_full-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-repairbot-eyes"
+dirs = 4
+frames = 1
+movement = true
+
+[[state]]
+name = "pai-repairbot_rest-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-repairbot_rest_full-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-mouse"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-mouse_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-mouse_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pai-mouse_rest_full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pai-mouse_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pai-mouse-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-mouse_full-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-mouse_rest-eyes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pai-mouse_rest_full-eyes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pai-monkey"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-monkey_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-monkey_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-monkey_rest_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-monkey_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pai-monkey-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-monkey_full-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-monkey_rest-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-monkey_rest_full-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-cat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-cat_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-cat_rest"
+dirs = 4
+frames = 4
+delays = [3]
+
+[[state]]
+name = "pai-cat_rest_full"
+dirs = 4
+frames = 4
+delays = [3]
+
+[[state]]
+name = "pai-cat_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pai-cat-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-cat_full-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-cat_rest-eyes"
+dirs = 4
+frames = 4
+delays = [3]
+
+[[state]]
+name = "pai-cat_rest_full-eyes"
+dirs = 4
+frames = 4
+delays = [3]
+
+[[state]]
+name = "pai-borgi"
+dirs = 4
+frames = 12
+delays = [1]
+
+[[state]]
+name = "pai-borgi_full"
+dirs = 4
+frames = 12
+delays = [1]
+
+[[state]]
+name = "pai-borgi_rest"
+dirs = 4
+frames = 7
+delays = [2]
+rewind = true
+
+[[state]]
+name = "pai-borgi_rest_full"
+dirs = 4
+frames = 7
+delays = [2]
+rewind = true
+
+[[state]]
+name = "pai-borgi_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pai-rabbit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-rabbit_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-rabbit_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-rabbit_rest_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-rabbit_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pai-parrot"
+dirs = 4
+frames = 12
+delays = [1]
+
+[[state]]
+name = "pai-parrot_full"
+dirs = 4
+frames = 12
+delays = [1]
+
+[[state]]
+name = "pai-parrot_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pai-parrot_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-parrot_rest_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-fox"
+dirs = 4
+frames = 4
+delays = [1]
+rewind = true
+
+[[state]]
+name = "pai-fox_full"
+dirs = 4
+frames = 4
+delays = [1]
+rewind = true
+
+[[state]]
+name = "pai-fox_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pai-fox_rest"
+dirs = 4
+frames = 14
+delays = [1, 2, 1, 5, 1, 2, 1, 1, 1, 1, 2, 1, 2, 1]
+
+[[state]]
+name = "pai-fox_rest_full"
+dirs = 4
+frames = 14
+delays = [1, 2, 1, 5, 1, 2, 1, 1, 1, 1, 2, 1, 2, 1]
+
+[[state]]
+name = "pai-bear"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-bear_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-bear_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-bear_rest_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-bear_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pai-bear-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-bear_full-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-bear_rest-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-bear_rest_full-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-fen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-fen_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-fen_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pai-fen_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-fen-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-fen_rest-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-fen_full-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-typezero"
+dirs = 4
+frames = 3
+delays = [1]
+movement = true
+
+[[state]]
+name = "pai-typezero_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pai-typezero_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-typezero_full"
+dirs = 4
+frames = 3
+delays = [1]
+movement = true
+
+[[state]]
+name = "pai-typezero_rest_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-typezero"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-typezero_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-typezero-eyes"
+dirs = 4
+frames = 3
+delays = [1]
+movement = true
+
+[[state]]
+name = "pai-typezero_rest-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-typezero_full-eyes"
+dirs = 4
+frames = 3
+delays = [1]
+movement = true
+
+[[state]]
+name = "pai-typezero_rest_full-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-typezero-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-typezero_full-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-raccoon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-raccoon"
+dirs = 4
+frames = 4
+delays = [1.25]
+movement = true
+
+[[state]]
+name = "pai-raccoon_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-raccoon_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-raccoon_full"
+dirs = 4
+frames = 4
+delays = [1.25]
+movement = true
+
+[[state]]
+name = "pai-raccoon_rest_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-raccoon_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pai-raccoon-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-raccoon-eyes"
+dirs = 4
+frames = 4
+delays = [1.25]
+movement = true
+
+[[state]]
+name = "pai-raccoon_rest-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-raccoon_full-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-raccoon_full-eyes"
+dirs = 4
+frames = 4
+delays = [1.25]
+movement = true
+
+[[state]]
+name = "pai-raccoon_rest_full-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-raptor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-raptor_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-raptor_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-raptor_rest_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-raptor_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pai-raptor-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-raptor_full-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-raptor_rest-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-raptor_rest_full-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-corgi"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-corgi_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-corgi_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-corgi_rest_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-corgi_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pai-bat"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "pai-bat_full"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "pai-bat_rest"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "pai-bat_rest_full"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "pai-bat_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pai-bat-eyes"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "pai-bat_full-eyes"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "pai-bat_rest-eyes"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "pai-bat_rest_full-eyes"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "pai-butterfly"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "pai-butterfly_full"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "pai-butterfly_rest"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "pai-butterfly_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pai-butterfly-eyes"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "pai-butterfly_full-eyes"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "pai-butterfly_rest-eyes"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "pai-hawk"
+dirs = 4
+frames = 12
+delays = [1]
+hotspots = [{ frame = 1, x = 15, y = 17 }, { frame = 7, x = 22, y = 8 }]
+
+[[state]]
+name = "pai-hawk_full"
+dirs = 4
+frames = 12
+delays = [1]
+hotspots = [{ frame = 1, x = 15, y = 17 }, { frame = 7, x = 22, y = 8 }]
+
+[[state]]
+name = "pai-hawk_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-hawk_rest_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-hawk_dead"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-duffel"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "pai-duffel_full"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "pai-duffel_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-duffel_rest_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pai-duffel_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cyberelf"
+dirs = 4
+frames = 5
+delays = [1]
+rewind = true
+
+[[state]]
+name = "cyberelf-eyes"
+dirs = 4
+frames = 5
+delays = [1]
+rewind = true
+
+[[state]]
+name = "cyberelf_rest"
+dirs = 4
+frames = 4
+delays = [2, 1, 2, 1]
+
+[[state]]
+name = "cyberelf_rest-eyes"
+dirs = 4
+frames = 4
+delays = [2, 1, 2, 1]
+
+[[state]]
+name = "cyberelf_full"
+dirs = 4
+frames = 5
+delays = [1]
+rewind = true
+
+[[state]]
+name = "cyberelf_full-eyes"
+dirs = 4
+frames = 5
+delays = [1]
+rewind = true
+
+[[state]]
+name = "cyberelf_full_rest"
+dirs = 4
+frames = 4
+delays = [2, 1, 2, 1]
+
+[[state]]
+name = "cyberelf_rest_full-eyes"
+dirs = 4
+frames = 4
+delays = [2, 1, 2, 1]
+
+[[state]]
+name = "cyberelf_dead"
+dirs = 4
+frames = 5
+delays = [1]
+rewind = true
+
+[[state]]
+name = "catslug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catslug_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catslug_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "catslug_full_rest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "catslug_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "catslug-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catslug_full-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "catslug_rest-eyes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "catslug_full_rest-eyes"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "car"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "car-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "car"
+dirs = 4
+frames = 2
+delays = [5, 1]
+movement = true
+
+[[state]]
+name = "car-eyes"
+dirs = 4
+frames = 2
+delays = [5, 1]
+movement = true
+
+[[state]]
+name = "car_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "car_full-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "car_full"
+dirs = 4
+frames = 2
+delays = [5, 1]
+movement = true
+
+[[state]]
+name = "car_full-eyes"
+dirs = 4
+frames = 2
+delays = [5, 1]
+movement = true
+
+[[state]]
+name = "car_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "car_rest-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "car_rest_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "car_rest_full-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "car_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "typeone"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "typeone-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "typeone_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "typeone_full-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "typeone_rest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "typeone_rest-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "typeone_rest_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "typeone_rest_full-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "typeone_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "type13"
+dirs = 4
+frames = 15
+delays = [1]
+hotspots = [{ frame = 1, x = 14, y = 15 }]
+
+[[state]]
+name = "type13-eyes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "syndifox"
+dirs = 4
+frames = 4
+delays = [1]
+rewind = true
+
+[[state]]
+name = "syndifox_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndifox_rest"
+dirs = 4
+frames = 12
+delays = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3]

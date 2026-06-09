@@ -1,0 +1,134 @@
+# Generated from card_fluff.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "generic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-starship"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-cross"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-mugshot"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-bigears"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-shield"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-circlecross"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-peace"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-target"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-smile"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-frown"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-fist"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stamp-exclaim"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bar-red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bar-orange"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bar-green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bar-darkgreen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bar-medblue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bar-blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bar-purple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bar-tan"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bar-pink"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bar-gold"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bar-black"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bar-white"
+dirs = 1
+frames = 1

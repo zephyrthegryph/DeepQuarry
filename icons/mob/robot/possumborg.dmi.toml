@@ -1,0 +1,52 @@
+# Generated from possumborg.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 32
+cols = 13
+
+[[state]]
+name = "possjani"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "possjani-eyes"
+dirs = 4
+frames = 8
+delays = [2, 1, 1, 1, 2, 1]
+
+[[state]]
+name = "possjani-lights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "possjani"
+dirs = 4
+frames = 8
+delays = [1]
+movement = true
+
+[[state]]
+name = "possjani-eyes"
+dirs = 4
+frames = 8
+delays = [1]
+movement = true
+
+[[state]]
+name = "possjani-lights"
+dirs = 4
+frames = 8
+delays = [1]
+movement = true
+
+[[state]]
+name = "possjani-rest"
+dirs = 4
+frames = 8
+delays = [10, 3, 2, 1, 2, 2, 2, 3]
+
+[[state]]
+name = "possjani-wreck"
+dirs = 1
+frames = 1

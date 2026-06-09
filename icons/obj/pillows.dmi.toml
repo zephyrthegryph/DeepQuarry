@@ -1,0 +1,204 @@
+# Generated from pillows.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "pillow_teal_square"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pillow_teal_round"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pillow_pink_square"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pillow_pink_round"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pillow_teal_square_placed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pillow_teal_round_placed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pillow_pink_square_placed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pillow_pink_round_placed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pillowpile_small_pink"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pillowpile_small_pink_overlay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pillowpile_large_pink"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pillowpile_large_pink_overlay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pillowpile_small_teal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pillowpile_small_teal_overlay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pillowpile_large_teal"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pillowpile_large_teal_overlay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pillow_yellow_square"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pillow_yellow_square_placed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pillowpile_large_yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pillowpile_large_yellow_overlay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pillow_white_square"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pillow_white_square_placed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pillowpile_large_white"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pillowpile_large_white_overlay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pillow_green_square"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pillow_green_square_placed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pillowpile_large_green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pillowpile_large_green_overlay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pillow_black_square"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pillow_black_square_placed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pillowpile_large_black"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pillowpile_large_black_overlay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pillow_red_square"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pillow_red_square_placed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pillowpile_large_red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pillowpile_large_red_overlay"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pillow_orange_square"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pillow_orange_square_placed"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pillowpile_large_orange"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pillowpile_large_orange_overlay"
+dirs = 1
+frames = 1

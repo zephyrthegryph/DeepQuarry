@@ -1,0 +1,84 @@
+# Generated from power_cond_heavy.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "node"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "0-1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "0-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "0-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "0-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "1-2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "1-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "1-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "2-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "2-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "4-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "1-2-4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "1-4-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "2-4-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "1-2-8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "1-2-4-8"
+dirs = 1
+frames = 1

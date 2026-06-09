@@ -1,0 +1,389 @@
+# Generated from outdoors_edge.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 20
+
+[[state]]
+name = ""
+dirs = 8
+frames = 1
+
+[[state]]
+name = "seafloor-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mud_light-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mud_dark-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "asteroid-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rock-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rock_brown-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rock_old-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rock-dark-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openspace_edges"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "abyss_border"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "metalwall-fadeout"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rockwall-fadeout"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass0-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass1-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass_sif0-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass_sif1-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-heavy0-edge"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "grass-heavy1-edge"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "grass-heavy2-edge"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "grass-heavy3-edge"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "UNUSEDgrass_corners"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "UNUSEDgrass_edge_corner"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "dirt-dark-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sand-edge"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "grass-dark0-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass-dark1-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass_sif_dark0-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grass_sif_dark1-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "concrete-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "asphalt-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mask"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "openspace"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "seashallow-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snow-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snow-edge-old"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "water_shallow-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dirt0-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dirt1-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dirt2-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dirt3-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dirt4-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dirt5-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dirt6-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dirt7-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dirt8-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dirt9-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bloodshallow-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sidewalk-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sidewalk1-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sidewalk2-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sidewalk3-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sidewalk4-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sidewalk5-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sidewalk6-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sidewalk7-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sidewalk8-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sidewalk9-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sidewalk10-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "slab-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "slab1-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "slab2-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "slab3-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "slab4-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "slab5-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "slab6-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "slab7-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "slab8-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "slab9-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "slab10-edge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "gravel-edge"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "mud-edge"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "deep_grass-edge"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "grass-edge"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "deep_water-edge"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "water-edge"
+dirs = 8
+frames = 1
+
+[[state]]
+name = "stonewall-edge"
+dirs = 8
+frames = 1

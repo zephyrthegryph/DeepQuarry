@@ -1,0 +1,54 @@
+# Generated from flesh_machines.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 4
+
+[[state]]
+name = "control_node0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "control_node1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eye_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "eye_closed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mouth"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "exita"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "exit_b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nose"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "exit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "screen_eye"
+dirs = 1
+frames = 1

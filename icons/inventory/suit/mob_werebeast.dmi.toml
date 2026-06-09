@@ -1,0 +1,99 @@
+# Generated from mob_werebeast.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 64
+cols = 9
+
+[[state]]
+name = "blank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "labcoat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "labcoat_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hazard_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hazard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "varsity"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "varsity_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "varsity_brown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "varsity_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bomber"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bomber_open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "militaryjacket_nobadge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "militaryjacket_badge"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "militaryjacket_navy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "militaryjacket_grey"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "militaryjacket_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "militaryjacket_tan"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "militaryjacket_black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "militaryjacket_green"
+dirs = 4
+frames = 1

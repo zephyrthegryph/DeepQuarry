@@ -1,0 +1,15 @@
+# Generated from transit_128.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 128
+cols = 12
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tube1-2"
+dirs = 4
+frames = 32
+delays = [0.1]

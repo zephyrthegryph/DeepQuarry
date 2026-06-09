@@ -1,0 +1,92 @@
+# Generated from status_indicators.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 16
+height = 16
+cols = 8
+
+[[state]]
+name = "test"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stunned_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "weakened_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paralysis_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "confused_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blinded_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sleeping_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blinded"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "sleeping"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "afk"
+dirs = 1
+frames = 3
+delays = [10]
+
+[[state]]
+name = "confused"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "paralysis"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "weakened"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "stunned"
+dirs = 1
+frames = 7
+delays = [1]
+
+[[state]]
+name = "dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "posing"
+dirs = 1
+frames = 3
+delays = [5]

@@ -1,0 +1,392 @@
+/* Types of tanks!
+ * Contains:
+ *		Oxygen
+ *		Anesthetic
+ *		Air
+ *		Phoron
+ *		Emergency Oxygen
+ */
+
+/*
+ * Oxygen
+ */
+/obj/item/tank/oxygen
+	name = "oxygen tank"
+	desc = "A tank of oxygen."
+	distribute_pressure = ONE_ATMOSPHERE*O2STANDARD
+
+/obj/item/tank/oxygen/Initialize(mapload)
+	. = ..()
+	air_contents.adjust_gas(GAS_O2, (6*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
+
+/obj/item/tank/oxygen/examine(mob/user)
+	. = ..()
+	if(loc == user && (LINDA_GAS_AMT(air_contents, GAS_O2) < 10))
+		. += span_warning("The meter on \the [src] indicates you are almost out of oxygen!")
+
+/obj/item/tank/oxygen/yellow
+	desc = "A tank of oxygen, this one is yellow."
+	icon_state = "oxygen_f"
+
+/obj/item/tank/oxygen/red
+	desc = "A tank of oxygen, this one is red."
+	icon_state = "oxygen_fr"
+
+/*
+ * Anesthetic
+ */
+/obj/item/tank/anesthetic
+	name = "anesthetic tank"
+	desc = "A tank with an N2O/O2 gas mix."
+
+/obj/item/tank/anesthetic/Initialize(mapload)
+	. = ..()
+
+	air_contents.adjust_gas(GAS_O2, ((3*ONE_ATMOSPHERE)*70/(R_IDEAL_GAS_EQUATION*T20C) * O2STANDARD) - LINDA_GAS_AMT(air_contents, GAS_O2))
+	air_contents.adjust_gas(GAS_N2O, ((3*ONE_ATMOSPHERE)*70/(R_IDEAL_GAS_EQUATION*T20C) * N2STANDARD) - LINDA_GAS_AMT(air_contents, GAS_N2O))
+	// update_values() removed; no-op under LINDA.
+
+/*
+ * Air
+ */
+/obj/item/tank/air
+	name = "air tank"
+	desc = "Mixed. Shaken, not stirred."		// CHOMP EDIT Haha funny? idk I like this description.
+
+/obj/item/tank/air/examine(mob/user)
+	. = ..()
+	if(loc == user && (LINDA_GAS_AMT(air_contents, GAS_O2) < 1))
+		. += span_warning("The meter on \the [src] indicates you are almost out of air!")
+		user << sound('sound/effects/alert.ogg')
+
+/obj/item/tank/air/Initialize(mapload)
+	. = ..()
+	src.air_contents.adjust_multi(GAS_O2, (6*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C) * O2STANDARD, GAS_N2, (6*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C) * N2STANDARD)
+
+/*
+ * Phoron
+ */
+/obj/item/tank/phoron
+	name = "phoron tank"
+	desc = "Contains dangerous phoron. Do not inhale. Warning: extremely flammable."
+	gauge_icon = null
+	slot_flags = null	//they have no straps!
+
+/obj/item/tank/phoron/Initialize(mapload)
+	. = ..()
+	src.air_contents.adjust_gas(GAS_PHORON, (3*ONE_ATMOSPHERE)*70/(R_IDEAL_GAS_EQUATION*T20C))
+
+/obj/item/tank/phoron/attackby(obj/item/W as obj, mob/user as mob)
+	..()
+
+	if (istype(W, /obj/item/flamethrower))
+		var/obj/item/flamethrower/F = W
+		if ((!F.status)||(F.ptank))
+			return
+		master = F
+		F.ptank = src
+		user.remove_from_mob(src)
+		forceMove(F)
+		F.update_icon()
+	return
+
+/obj/item/tank/vox	//Can't be a child of phoron or the gas amount gets screwey.
+	name = "phoron tank"
+	desc = "Contains dangerous phoron. Do not inhale. Warning: extremely flammable."
+	distribute_pressure = ONE_ATMOSPHERE*O2STANDARD
+	slot_flags = SLOT_BACK	//these ones have straps!
+
+/obj/item/tank/vox/Initialize(mapload)
+	. = ..()
+	air_contents.adjust_gas(GAS_PHORON, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
+
+/obj/item/tank/phoron/pressurized
+	name = "fuel can"
+	icon_state = "phoron_vox"
+	w_class = ITEMSIZE_NORMAL
+
+/obj/item/tank/phoron/pressurized/Initialize(mapload)
+	. = ..()
+	adjust_scale(0.8)
+	air_contents.adjust_gas(GAS_PHORON, (7*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
+
+/*
+ * Emergency Oxygen
+ */
+
+/obj/item/tank/emergency
+	name = "emergency tank"
+	slot_flags = SLOT_BELT
+	w_class = ITEMSIZE_SMALL
+	force = 4
+	distribute_pressure = ONE_ATMOSPHERE*O2STANDARD
+	volume = 2 //Tiny. Real life equivalents only have 21 breaths of oxygen in them. They're EMERGENCY tanks anyway -errorage (dangercon 2011)
+
+/obj/item/tank/emergency/oxygen
+	name = "emergency oxygen tank"
+	desc = "Used for emergencies. Contains very little oxygen, so try to conserve it until you actually need it."
+
+/obj/item/tank/emergency/oxygen/Initialize(mapload)
+	. = ..()
+	src.air_contents.adjust_gas(GAS_O2, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
+
+/obj/item/tank/emergency/oxygen/examine(mob/user)
+	. = ..()
+	if(loc == user && (LINDA_GAS_AMT(air_contents, GAS_O2) < 0.2))
+		. += span_danger("The meter on the [src.name] indicates you are almost out of air!")
+		user << sound('sound/effects/alert.ogg')
+
+/obj/item/tank/emergency/oxygen/engi
+	name = "extended-capacity emergency oxygen tank"
+	volume = 6
+
+/obj/item/tank/emergency/oxygen/double
+	name = "double emergency oxygen tank"
+	volume = 12 					// CHOMP EDIT Double Expanded
+
+/obj/item/tank/stasis/oxygen // Stasis bags need to have initial pressure within safe bounds for human atmospheric pressure (NOT breath pressure)
+	name = "stasis oxygen tank"
+	desc = "Oxygen tank included in most stasis bag designs."
+	icon = 'icons/obj/tank_ch.dmi'			// CHOMP ADD Adds a unique icon to the oxygen tank in stasis bags.
+	icon_state = "stasis_oxygen"			// CHOMP ADD
+	gauge_icon = "indicator_stasis"			// CHOMP ADD
+	volume = 10
+
+/obj/item/tank/stasis/oxygen/Initialize(mapload)
+	. = ..()
+	src.air_contents.adjust_gas(GAS_O2, (3*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
+
+/obj/item/tank/emergency/nitrogen
+	name = "emergency nitrogen tank"
+	desc = "An emergency nitrogen tank."			// CHOMP EDIT They get their own :)
+
+/obj/item/tank/emergency/nitrogen/Initialize(mapload)
+	. = ..()
+	src.air_contents.adjust_gas(GAS_N2, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
+
+/obj/item/tank/emergency/nitrogen/double
+	name = "double emergency nitrogen tank"
+
+/obj/item/tank/emergency/phoron
+	name = "emergency phoron tank"
+	desc = "An emergency phoron tank."  			// CHOMP EDIT You get a unique sprite!
+
+/obj/item/tank/emergency/phoron/Initialize(mapload)
+	. = ..()
+	src.air_contents.adjust_gas(GAS_PHORON, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
+
+// for CO2 breathers
+/obj/item/tank/carbon_dioxide
+	name = "carbon dioxide tank"
+	desc = "A tank of carbon dioxide"
+	distribute_pressure = ONE_ATMOSPHERE*O2STANDARD
+
+/obj/item/tank/carbon_dioxide/Initialize(mapload)
+	. = ..()
+	src.air_contents.adjust_gas(GAS_CO2, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
+
+/obj/item/tank/emergency/carbon_dioxide
+	slot_flags = SLOT_BELT
+	distribute_pressure = ONE_ATMOSPHERE*O2STANDARD
+
+/obj/item/tank/emergency/carbon_dioxide/double
+	name = "double emergency carbon dioxide tank"
+	desc = "An double tank of carbon dioxide"
+	distribute_pressure = ONE_ATMOSPHERE*O2STANDARD
+
+/obj/item/tank/emergency/carbon_dioxide/double/Initialize(mapload)
+	. = ..()
+	src.air_contents.adjust_gas(GAS_CO2, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
+
+/*
+ * Nitrogen
+ */
+/obj/item/tank/nitrogen
+	name = "nitrogen tank"
+	desc = "A tank of nitrogen."
+	distribute_pressure = ONE_ATMOSPHERE*O2STANDARD
+
+/obj/item/tank/nitrogen/Initialize(mapload)
+	. = ..()
+	src.air_contents.adjust_gas(GAS_N2, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
+
+/obj/item/tank/nitrogen/examine(mob/user)
+	. = ..()
+	if(loc == user && (LINDA_GAS_AMT(air_contents, GAS_N2) < 10))
+		. += span_danger("The meter on \the [src] indicates you are almost out of nitrogen!")
+		//playsound(user, 'sound/effects/alert.ogg', 50, 1)
+
+/obj/item/tank/stasis/nitro_cryo // Synthmorph bags need to have initial pressure within safe bounds for human atmospheric pressure, but low temperature to stop unwanted degredation.
+	name = "stasis cryogenic nitrogen tank"
+	desc = "Cryogenic Nitrogen tank included in most synthmorph bag designs."
+	icon = 'icons/obj/tank_ch.dmi'		// CHOMP ADD Adds a stasis sprite unique to this icon.
+	icon_state = "stasis_nitrogen"		// CHOMP ADD
+	gauge_icon = "indicator_stasis"		// CHOMP ADD
+	volume = 10
+
+/obj/item/tank/stasis/nitro_cryo/Initialize(mapload)
+	. = ..()
+	src.air_contents.adjust_gas_temp(GAS_N2, (3*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*TN60C), TN60C)
+
+/*
+ * Methane
+ */
+/obj/item/tank/methane
+	name = "methane tank"
+	desc = "A tank of methane."
+	icon_state = "methane"
+	distribute_pressure = ONE_ATMOSPHERE*O2STANDARD
+
+/obj/item/tank/methane/Initialize(mapload)
+	. = ..()
+	src.air_contents.adjust_gas(GAS_CH4, (3*ONE_ATMOSPHERE)*70/(R_IDEAL_GAS_EQUATION*T20C))
+
+/obj/item/tank/methane/examine(mob/user)
+	. = ..()
+	if(loc == user && (LINDA_GAS_AMT(air_contents, GAS_CH4) < 10))
+		. += span_danger("The meter on \the [src] indicates you are almost out of methane!")
+		//playsound(user, 'sound/effects/alert.ogg', 50, 1)
+
+/*
+ * Emergency CO2
+ */
+/obj/item/tank/emergency/carbon_dioxide
+	name = "emergency carbon dioxide tank"
+	desc = "An emergency air tank hastily painted yellow."
+
+/obj/item/tank/emergency/carbon_dioxide/Initialize(mapload)
+	. = ..()
+	src.air_contents.adjust_gas(GAS_CO2, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
+
+/*
+ * Emergency Methane
+ */
+/obj/item/tank/emergency/methane
+	name = "emergency methane tank"
+	desc = "An emergency air tank hastily painted green."
+	icon_state = "emergency_methane"
+	gauge_icon = "indicator_emergency"
+	gauge_cap = 3
+
+/obj/item/tank/emergency/methane/Initialize(mapload)
+	. = ..()
+	src.air_contents.adjust_gas(GAS_CH4, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
+
+
+// === merged from tank_types_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+/obj/item/tank/emergency/phoron/double
+	name = "double emergency phoron tank"
+	desc = "Contains dangerous phoron. Do not inhale. Warning: extremely flammable."
+	icon = 'icons/obj/tank_vr.dmi'
+	icon_override = 'icons/inventory/belt/mob.dmi'
+	icon_state = "emergency_double_vox"
+	gauge_icon = "indicator_double"
+	gauge_cap = 3
+	volume = 12		// CHOMP EDIT double extended
+
+/obj/item/tank/emergency/phoron/double/Initialize(mapload)
+	. = ..()
+	air_contents.adjust_gas(GAS_PHORON, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
+
+//New icons
+/obj/item/tank/oxygen
+	icon = 'icons/obj/tank_vr.dmi'
+	icon_state = "oxygen"
+	gauge_cap = 3
+	gauge_icon = "indicator_bigtank"
+// /obj/item/tank/oxygen/yellow
+// /obj/item/tank/oxygen/red
+
+/obj/item/tank/anesthetic
+	icon = 'icons/obj/tank_vr.dmi'
+	icon_state = "anesthetic"
+	gauge_cap = 3
+	gauge_icon = "indicator_bigtank"
+
+/obj/item/tank/air
+	icon = 'icons/obj/tank_vr.dmi'
+	icon_state = "oxygen"
+	gauge_cap = 3
+	gauge_icon = "indicator_bigtank"
+
+/obj/item/tank/phoron
+	icon = 'icons/obj/tank_vr.dmi'
+	icon_state = "phoron"
+
+/obj/item/tank/vox	//Can't be a child of phoron or the gas amount gets screwey.
+	icon = 'icons/obj/tank_vr.dmi'
+	icon_state = "phoron_vox"
+	gauge_cap = 3
+	gauge_icon = "indicator_double"
+
+/obj/item/tank/emergency
+	icon = 'icons/obj/tank_vr.dmi'
+	icon_state = "emergency"
+	gauge_icon = "indicator_smalltank"
+	gauge_cap = 3
+
+/obj/item/tank/emergency/oxygen
+	icon = 'icons/obj/tank_vr.dmi'
+	icon_state = "emergency"
+	gauge_icon = "indicator_smalltank"
+	gauge_cap = 3
+
+/obj/item/tank/emergency/oxygen/engi
+	icon = 'icons/obj/tank_vr.dmi'
+	icon_state = "emergency_engi"
+	gauge_icon = "indicator_engi"
+	gauge_cap = 3
+
+/obj/item/tank/emergency/oxygen/double
+	icon = 'icons/obj/tank_vr.dmi'
+	icon_state = "emergency_double"
+	gauge_icon = "indicator_double"
+	gauge_cap = 3
+
+/obj/item/tank/emergency/nitrogen
+	icon = 'icons/obj/tank_vr.dmi'
+	icon_state = "emergency_nitrogen"
+	gauge_icon = "indicator_smalltank"
+	volume = 6			// CHOMP EDIT adds a custom volume to ensure things aren't buggy with changes
+	gauge_cap = 3
+
+/obj/item/tank/emergency/nitrogen/double
+	icon = 'icons/obj/tank_vr.dmi'
+	icon_state = "emergency_double_vox_old"		// CHOMP EDIT using the old red double sprite to indicate double nitrogen rather than sharing the phoron tank (cuz why share the phoron tank?)
+	gauge_icon = "indicator_double"
+	volume = 12		// CHOMP EDIT double extended
+	gauge_cap = 3
+
+/obj/item/tank/emergency/phoron
+	icon = 'icons/obj/tank_vr.dmi'
+	icon_state = "emergency_phoron_vox"
+	gauge_icon = "indicator_smalltank"
+	volume = 6
+	gauge_cap = 3
+
+/obj/item/tank/nitrogen
+	icon = 'icons/obj/tank_vr.dmi'
+	icon_state = "oxygen_fr"
+	gauge_icon = "indicator_bigtank"
+	gauge_cap = 3
+
+// for CO2 breathers
+/obj/item/tank/carbon_dioxide
+	icon = 'icons/obj/tank_vr.dmi'
+	icon_state = "oxygen_f"
+	gauge_icon = "indicator_bigtank"
+	gauge_cap = 3
+
+/obj/item/tank/emergency/carbon_dioxide
+	icon = 'icons/obj/tank_vr.dmi'
+	icon_state = "emergency_tst"
+	gauge_icon = "indicator_smalltank"
+	volume = 6
+	gauge_cap = 3
+
+/obj/item/tank/emergency/carbon_dioxide/double
+	icon = 'icons/obj/tank_vr.dmi'
+	icon_state = "emergency_double"
+	gauge_icon = "indicator_double"
+	volume = 12
+	gauge_cap = 3

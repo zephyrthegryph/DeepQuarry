@@ -1,0 +1,209 @@
+# Generated from food_donuts.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "donut"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jelly"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donut_pink"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jelly_pink"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donut_homer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jelly_homer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donut_purple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jelly_purple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donut_green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jelly_green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donut_beige"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jelly_beige"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donut_choc"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jelly_choc"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donut_choc_sprinkles"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jelly_choc_sprinkles"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donut_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jelly_blue"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donut_yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jelly_yellow"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donut_olive"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jelly_olive"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donut_chaos"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donut_meat"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donut_laugh"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jelly_laugh"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donut_inbox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donut_meat_inbox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donut_purple_inbox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donut_laugh_inbox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donut_green_inbox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donut_beige_inbox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donut_choc_inbox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donut_blue_inbox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donut_yellow_inbox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donut_olive_inbox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donut_chaos_inbox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donut_choc_sprinkles_inbox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donut_homer_inbox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donut_pink_inbox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donutbox"
+dirs = 1
+frames = 1

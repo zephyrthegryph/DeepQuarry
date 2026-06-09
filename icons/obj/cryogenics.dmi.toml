@@ -1,0 +1,45 @@
+# Generated from cryogenics.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 64
+cols = 5
+
+[[state]]
+name = "cell-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cell-on"
+dirs = 1
+frames = 5
+delays = [2]
+
+[[state]]
+name = "cell-occupied"
+dirs = 1
+frames = 5
+delays = [2]
+
+[[state]]
+name = "cellold0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cellold1"
+dirs = 1
+frames = 4
+delays = [5, 3, 3, 5]
+rewind = true
+
+[[state]]
+name = "cellold2"
+dirs = 1
+frames = 4
+delays = [5, 3, 3, 5]
+rewind = true
+
+[[state]]
+name = "pod_preview"
+dirs = 1
+frames = 1

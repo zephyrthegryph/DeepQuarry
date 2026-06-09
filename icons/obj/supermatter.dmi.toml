@@ -1,0 +1,55 @@
+# Generated from supermatter.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 64
+cols = 5
+
+[[state]]
+name = "darkmatter"
+dirs = 1
+frames = 3
+delays = [4, 4, 8]
+rewind = true
+
+[[state]]
+name = "darkmatter_glow"
+dirs = 1
+frames = 4
+delays = [1, 0.5, 0.1, 1]
+
+[[state]]
+name = "darkmatter_shard"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "darkmatter_shard_glow"
+dirs = 1
+frames = 2
+delays = [0.5, 1]
+
+[[state]]
+name = "darkmatter_broken"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "causality_field_unused"
+dirs = 1
+frames = 4
+delays = [10, 1]
+
+[[state]]
+name = "psy_unused"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "psy_shielded_unused"
+dirs = 1
+frames = 4
+delays = [10, 1]
+
+[[state]]
+name = "psy_shard_unused"
+dirs = 1
+frames = 1

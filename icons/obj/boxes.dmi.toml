@@ -1,0 +1,339 @@
+# Generated from boxes.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "basebox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluebox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "hugbox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "secbox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syndiebox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alien"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "box"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "box_of_doom"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "survival"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "survival_extended"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "survival_synth"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "survival_comp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "survival_comp2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "survival_comp3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "id"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pda"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bodybags"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glasses"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pillbox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beaker"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "solution_trays"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syringe"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dna"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "auto"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "latex"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "sterile"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mask"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "syringe2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "flashbang"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "frag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "handcuff"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "implant"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mousetraps"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "light"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lighttube"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lightmixed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "disk_kit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "circuit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bun_box"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "food"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "condiment"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cups"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "glass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nifsoft_kit_mining"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nifsoft_kit_med"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nifsoft_kit_eng"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "nifsoft_kit_sec"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "clownbox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donk_kit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "brainzsnax_box"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "balls"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donkpocket_spawner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donkpocketbox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donkpocketboxbanana"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donkpocketboxberry"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donkpocketboxgondola"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donkpocketboxpizza"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donkpocketboxteriyaki"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "donkpocketboxspicy"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "beanshot_box"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lethalslug_box"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "stunshot_box"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "empshot_box"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blankshot_box"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "illumshot_box"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lethalshellshot_box"
+dirs = 1
+frames = 1

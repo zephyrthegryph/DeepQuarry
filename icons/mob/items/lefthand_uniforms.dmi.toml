@@ -1,0 +1,439 @@
+# Generated from lefthand_uniforms.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 19
+
+[[state]]
+name = "blackskirt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blue_blazer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kilt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "owl"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scratch"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nazi1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "centcom"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "holidaypriest"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xenos_suit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "captain"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cargo"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chef"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "clown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "janitor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lawyer_black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lawyer_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lawyer_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "hop"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mime"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "miner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chief"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "atmos"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "engine"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "robotics"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lightbrown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "prison"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pink"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "purple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "grey"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rainbow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nursesuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "psyche"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "director"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "detective"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sl_suit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ba_suit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jensen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "waiter"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "johnny"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tan_suit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "black_tango"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stripeddress"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "red_evening_gown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dress_fire"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dress_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dress_pink"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dress_orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dress_yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bride_orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bride_purple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bride_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bride_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bride_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dress_cap"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dress_hop"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "huresource"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dress_rd"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cheongsam-white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cheongsam-red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cheongsam-blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cheongsam-black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "darkreddress"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dress_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sundress"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sundress_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yogapants"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "black_corset"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flower_dress"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "red_swept_dress"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "swim_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cohesionsuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cohesionsuit_striped"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cohesionsuit_hazard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cohesionsuit_pattern"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cohesionsuit_decal"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "flamenco"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "westernbustle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "maid"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "janimaid"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tribalwear"
+dirs = 4
+frames = 1

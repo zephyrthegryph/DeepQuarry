@@ -1,0 +1,34 @@
+# Generated from queen.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 96
+height = 96
+cols = 5
+
+[[state]]
+name = "queen_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "queen"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "queen-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "queen-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "queen-3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "queen-4"
+dirs = 4
+frames = 1

@@ -1,0 +1,20 @@
+# Generated from bubbles.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 480
+height = 480
+cols = 4
+
+[[state]]
+name = "calm"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bubbles"
+dirs = 1
+frames = 12
+delays = [1.8]
+
+[[state]]
+name = "mush"
+dirs = 1
+frames = 1

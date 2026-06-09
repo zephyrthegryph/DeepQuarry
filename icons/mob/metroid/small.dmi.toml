@@ -1,0 +1,89 @@
+# Generated from small.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 13
+
+[[state]]
+name = "baby"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "baby_feeding"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "baby_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "metroid"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "metroid-1"
+dirs = 1
+frames = 8
+delays = [1]
+
+[[state]]
+name = "metroid_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "alpha"
+dirs = 4
+frames = 7
+delays = [1]
+
+[[state]]
+name = "alpha-1"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "alpha_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mochtroid"
+dirs = 1
+frames = 4
+delays = [3]
+
+[[state]]
+name = "mochtroid-1"
+dirs = 1
+frames = 8
+delays = [3]
+
+[[state]]
+name = "egg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "gamma"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "gamma-1"
+dirs = 4
+frames = 8
+delays = [1]
+
+[[state]]
+name = "gamma_dead"
+dirs = 1
+frames = 1

@@ -1,0 +1,857 @@
+/*
+ * Paper
+ * also scraps of paper
+ */
+
+/obj/item/paper
+	name = "sheet of paper"
+	gender = NEUTER
+	icon = 'icons/obj/bureaucracy.dmi'
+	icon_state = "paper"
+	item_state = "paper"
+	throwforce = 0
+	w_class = ITEMSIZE_TINY
+	throw_range = 1
+	throw_speed = 1
+	plane = MOB_PLANE
+	layer = MOB_LAYER
+	pressure_resistance = 1
+	slot_flags = SLOT_HEAD
+	body_parts_covered = HEAD
+	attack_verb = list("bapped")
+	drop_sound = 'sound/items/drop/paper.ogg'
+	pickup_sound = 'sound/items/pickup/paper.ogg'
+
+	var/info		//What's actually written on the paper.
+	var/info_links	//A different version of the paper which includes html links at fields and EOF
+	var/stamps		//The (text for the) stamps on the paper.
+	var/fields		//Amount of user created fields
+	var/free_space = MAX_PAPER_MESSAGE_LEN
+	var/list/stamped
+	var/list/ico[0]      //Icons and
+	var/list/offset_x[0] //offsets stored for later
+	var/list/offset_y[0] //usage by the photocopier
+	var/rigged = 0
+	var/spam_flag = 0
+	var/age = 0
+	var/last_modified_ckey
+
+	///Occult check. Used for do_after
+	var/occult = FALSE
+
+	var/was_maploaded = FALSE // This tracks if the paper was created on mapload.
+
+	var/const/deffont = "Verdana"
+	var/const/signfont = "Times New Roman"
+	var/const/crayonfont = "Comic Sans MS"
+	// TGUI: "read" or "write" view. attack_self/show_content sets
+	// to "read"; attackby pen sets to "write".
+	var/tgui_view = "read"
+	// TGUI: TRUE = caller is allowed to read clear text (humans,
+	// silicons, observers, universal_understand). FALSE = stars(info).
+	var/tmp/can_read_view = TRUE
+	resistance_flags = FLAMMABLE
+
+/obj/item/paper/card
+	name = "blank card"
+	desc = "A gift card with space to write on the cover."
+	icon_state = "greetingcard"
+	slot_flags = null //no fun allowed!!!!
+
+/obj/item/paper/card/click_alt() //No fun allowed
+	return
+
+/obj/item/paper/card/update_icon()
+	return
+
+/obj/item/paper/card/smile
+	name = "happy card"
+	desc = "A gift card with a smiley face on the cover."
+	icon_state = "greetingcard_smile"
+
+/obj/item/paper/card/cat
+	name = "cat card"
+	desc = "A gift card with a cat on the cover."
+	icon_state = "greetingcard_cat"
+
+/obj/item/paper/card/flower
+	name = "flower card"
+	desc = "A gift card with a flower on the cover."
+	icon_state = "greetingcard_flower"
+
+/obj/item/paper/card/heart
+	name = "heart card"
+	desc = "A gift card with a heart on the cover."
+	icon_state = "greetingcard_heart"
+
+/obj/item/paper/alien
+	name = "alien tablet"
+	desc = "It looks highly advanced"
+	icon = 'icons/obj/abductor.dmi'
+	icon_state = "alienpaper"
+
+/obj/item/paper/alien/update_icon()
+	if(info)
+		icon_state = "alienpaper_words"
+	else
+		icon_state = "alienpaper"
+
+/obj/item/paper/alien/burnpaper()
+	return
+
+/obj/item/paper/alien/click_alt() // No airplanes for me.
+	return
+
+
+/obj/item/paper/Initialize(mapload, text, title)
+	. = ..()
+
+	if(istext(title))
+		name = title
+	if(istext(text))
+		info = text
+
+	if(mapload) // Jank, but we do this to prevent maploaded papers from somehow stacking across rounds if re-added to the board by a player.
+		was_maploaded = TRUE
+
+	pixel_y = rand(-8, 8)
+	pixel_x = rand(-9, 9)
+	stamps = ""
+
+	if(!isnull(title))
+		name = title
+
+	if(name != "paper")
+		desc = "This is a paper titled '" + name + "'."
+
+	if(!isnull(text))
+		info = text
+
+	if(info != initial(info))
+		info = html_encode(info)
+		info = replacetext(info, "\n", "<BR>")
+		info = parsepencode(info)
+
+	update_icon()
+	update_space(info)
+	updateinfolinks()
+
+/obj/item/paper/update_icon()
+	if(icon_state == "paper_talisman")
+		return
+	if(info)
+		icon_state = "paper_words"
+		return
+	icon_state = "paper"
+
+/obj/item/paper/proc/update_space(new_text)
+	if(!new_text)
+		return
+
+	free_space -= length(strip_html_properly(new_text))
+
+/obj/item/paper/examine(mob/user)
+	. = ..()
+	if(in_range(user, src) || isobserver(user))
+		show_content(user)
+	else
+		. += span_notice("You have to go closer if you want to read it.")
+
+// TGUI migration. show_content opens Paper.tsx in "read"
+// view; attackby pen sets the view to "write" before opening so the
+// info_links HTML (with editable field hrefs) is rendered. The Topic
+// handler is unchanged — byond:// hrefs embedded in info_links still
+// route back to it from inside the TGUI window's HTML container.
+/obj/item/paper/proc/show_content(mob/user, forceshow=0)
+	can_read_view = (forceshow || ishuman(user) || isobserver(user) || issilicon(user) || (istype(user) && user.universal_understand))
+	tgui_view = "read"
+	tgui_interact(user)
+
+/obj/item/paper/tgui_interact(mob/user, datum/tgui/ui)
+	ui = SStgui.try_update_ui(user, src, ui)
+	if(!ui)
+		ui = new(user, src, "Paper", name)
+		ui.open()
+
+/obj/item/paper/tgui_data(mob/user)
+	var/list/data = list()
+	data["title"] = name
+	data["view"] = tgui_view
+	data["segments"] = get_segments()
+	data["stamps"] = stamps || ""
+	data["garbled"] = !can_read_view
+	return data
+
+// Parse `info` into an ordered list of text/field segments. Field segments
+// preserve their 1-based id (matching the legacy field count and the
+// id used by addtofield/Topic write=N).
+/obj/item/paper/proc/get_segments()
+	var/list/segs = list()
+	if(!info)
+		return segs
+	var/marker = "<span class=\"paper_field\">"
+	var/marker_len = length(marker)
+	var/close = "</span>"
+	var/close_len = length(close)
+	var/cursor = 1
+	var/field_id = 0
+	var/total = length(info)
+	while(cursor <= total)
+		var/istart = findtext(info, marker, cursor)
+		if(!istart)
+			segs += list(list("type" = "text", "text" = copytext(info, cursor)))
+			break
+		if(istart > cursor)
+			segs += list(list("type" = "text", "text" = copytext(info, cursor, istart)))
+		var/iend = findtext(info, close, istart)
+		if(!iend)
+			// Malformed; treat the rest as text.
+			segs += list(list("type" = "text", "text" = copytext(info, cursor)))
+			break
+		field_id++
+		var/content_start = istart + marker_len
+		var/field_text = copytext(info, content_start, iend)
+		segs += list(list("type" = "field", "id" = field_id, "text" = field_text))
+		cursor = iend + close_len
+	return segs
+
+/obj/item/paper/tgui_act(action, list/params)
+	. = ..()
+	if(.)
+		return
+	switch(action)
+		if("write_field")
+			do_write_action("[params["id"]]", usr)
+			return TRUE
+		if("write_end")
+			do_write_action("end", usr)
+			return TRUE
+
+// Shared write-prompt + pencode-parse + commit. Same checks the legacy
+// Topic write branch had — pen-in-hand, RIG fallback, range/loc, fields
+// cap — and the same writes via addtofield or info-append.
+/obj/item/paper/proc/do_write_action(id, mob/user)
+	if(!user || user.stat || user.restrained())
+		return
+	if(free_space <= 0)
+		to_chat(user, span_info("There isn't enough space left on \the [src] to write anything."))
+		return
+	var/t = tgui_input_text(user, "Enter what you want to write:", "Write", "", MAX_PAPER_MESSAGE_LEN, TRUE, prevent_enter = TRUE)
+	if(!t)
+		return
+	var/obj/item/i = user.get_active_hand()
+	var/iscrayon = 0
+	if(!istype(i, /obj/item/pen))
+		tgui_alert(user, "You aren't holding a pen anymore! If you want to keep your work, grab one.", "No Pen!")
+		i = user.get_active_hand()
+	if(!istype(i, /obj/item/pen))
+		var/mob/living/M = user
+		if(istype(M) && M.back && istype(M.back, /obj/item/rig))
+			var/obj/item/rig/r = M.back
+			var/obj/item/rig_module/device/pen/m = locate(/obj/item/rig_module/device/pen) in r.installed_modules
+			if(!r.offline && m)
+				i = m.device
+			else
+				return
+		else
+			return
+	if(istype(i, /obj/item/pen/crayon))
+		iscrayon = 1
+	if(istype(loc, /obj/item/clipboard) || istype(loc, /obj/structure/noticeboard) || istype(loc, /obj/item/folder))
+		if(loc.loc != user && !in_range(loc, user))
+			return
+	else if(loc != user && !Adjacent(user))
+		return
+	var/last_fields_value = fields
+	t = replacetext(t, "\n", "<BR>")
+	t = parsepencode(t, i, user, iscrayon)
+	was_maploaded = FALSE
+	if(fields > 50)
+		to_chat(user, span_warning("Too many fields. Sorry, you can't do this."))
+		fields = last_fields_value
+		return
+	if(id != "end")
+		addtofield(text2num(id), t)
+	else
+		info += t
+		updateinfolinks()
+	last_modified_ckey = user.ckey
+	update_space(t)
+	playsound(src, pick('sound/bureaucracy/pen1.ogg', 'sound/bureaucracy/pen2.ogg'), 10)
+	update_icon()
+
+/obj/item/paper/verb/rename()
+	set name = "Rename paper"
+	set category = "Object"
+	set src in usr
+
+	if(CLUMSY_FAIL_CHANCE(usr))
+		to_chat(usr, span_warning("You cut yourself on the paper."))
+		return
+	var/n_name = sanitizeSafe(tgui_input_text(usr, "What would you like to label the paper?", "Paper Labelling", null, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
+
+	// We check loc one level up, so we can rename in clipboards and such. See also: /obj/item/photo/rename()
+	if((loc == usr || loc.loc && loc.loc == usr) && usr.stat == 0 && n_name)
+		name = n_name
+		if(n_name != "paper")
+			desc = "This is a paper titled '" + name + "'."
+
+		add_fingerprint(usr)
+	return
+
+/obj/item/paper/attack_self(mob/living/user)
+	. = ..(user)
+	if(.)
+		return TRUE
+	if(occult)
+		return
+	if(user.a_intent == I_HURT)
+		if(icon_state == "scrap")
+			user.show_message(span_warning("\The [src] is already crumpled."))
+			return
+		//crumple dat paper
+		info = stars(info,85)
+		user.visible_message("\The [user] crumples \the [src] into a ball!")
+		playsound(src, 'sound/bureaucracy/papercrumple.ogg', 50, 1)
+		icon_state = "scrap"
+		return
+	user.examinate(src)
+	if(rigged && (GLOB.Holiday == "April Fool's Day"))
+		if(spam_flag == 0)
+			spam_flag = 1
+			playsound(src, 'sound/items/bikehorn.ogg', 50, 1)
+			spawn(20)
+				spam_flag = 0
+	return
+
+// AI/cyborg viewer routes through the same TGUI paper window.
+/obj/item/paper/attack_ai(mob/living/silicon/ai/user)
+	var/dist
+	if(istype(user) && user.camera)
+		dist = get_dist(src, user.camera)
+	else
+		dist = get_dist(src, user)
+	can_read_view = (dist < 2)
+	tgui_view = "read"
+	tgui_interact(user)
+	return
+
+/obj/item/paper/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
+	if(user.zone_sel.selecting == O_EYES)
+		user.visible_message(span_notice("You show the paper to [M]. "), \
+			span_notice(" [user] holds up a paper and shows it to [M]. "))
+		M.examinate(src)
+		return ITEM_INTERACT_SUCCESS
+
+	else if(user.zone_sel.selecting == O_MOUTH) // lipstick wiping
+		if(ishuman(M))
+			var/mob/living/carbon/human/H = M
+			if(H == user)
+				to_chat(user, span_notice("You wipe off the lipstick with [src]."))
+				H.lip_style = null
+				H.update_icons_body()
+			else
+				user.visible_message(span_warning("[user] begins to wipe [H]'s lipstick off with \the [src]."), \
+										span_notice("You begin to wipe off [H]'s lipstick."))
+				if(do_after(user, 1 SECOND, target = H) && do_after(H, 1 SECONDS, target = user))	//user needs to keep their active hand, H does not.
+					user.visible_message(span_notice("[user] wipes [H]'s lipstick off with \the [src]."), \
+											span_notice("You wipe off [H]'s lipstick."))
+					H.lip_style = null
+					H.update_icons_body()
+					return ITEM_INTERACT_SUCCESS
+				return ITEM_INTERACT_FAILURE
+
+/obj/item/paper/proc/set_content(text,title)
+	if(title)
+		name = title
+	info = html_encode(text)
+	info = parsepencode(text)
+	update_icon()
+	update_space(info)
+	updateinfolinks()
+
+/obj/item/paper/proc/addtofield(id, text, links = 0)
+	var/locid = 0
+	var/laststart = 1
+	var/textindex = 1
+	while(1) // I know this can cause infinite loops and fuck up the whole server, but the if(istart==0) should be safe as fuck
+		var/istart = 0
+		if(links)
+			istart = findtext(info_links, "<span class=\"paper_field\">", laststart)
+		else
+			istart = findtext(info, "<span class=\"paper_field\">", laststart)
+
+		if(istart==0)
+			return // No field found with matching id
+
+		laststart = istart+1
+		locid++
+		if(locid == id)
+			var/iend = 1
+			if(links)
+				iend = findtext(info_links, "</span>", istart)
+			else
+				iend = findtext(info, "</span>", istart)
+
+			//textindex = istart+26
+			textindex = iend
+			break
+
+	if(links)
+		var/before = copytext(info_links, 1, textindex)
+		var/after = copytext(info_links, textindex)
+		info_links = before + text + after
+	else
+		var/before = copytext(info, 1, textindex)
+		var/after = copytext(info, textindex)
+		info = before + text + after
+		updateinfolinks()
+
+/obj/item/paper/proc/updateinfolinks()
+	info_links = info
+	var/i = 0
+	for(i=1,i<=fields,i++)
+		addtofield(i, "<font face=\"[deffont]\"><A href='byond://?src=\ref[src];write=[i]'>write</A></font>", 1)
+	info_links = info_links + "<font face=\"[deffont]\"><A href='byond://?src=\ref[src];write=end'>write</A></font>"
+
+
+/obj/item/paper/proc/clearpaper()
+	info = null
+	stamps = null
+	free_space = MAX_PAPER_MESSAGE_LEN
+	stamped = list()
+	cut_overlays()
+	updateinfolinks()
+	update_icon()
+
+/obj/item/paper/proc/get_signature(obj/item/pen/P, mob/user as mob)
+	if(P && istype(P, /obj/item/pen))
+		return P.get_signature(user)
+	return (user && user.real_name) ? user.real_name : "Anonymous"
+
+/obj/item/paper/proc/parsepencode(t, obj/item/pen/P, mob/user as mob, iscrayon = 0)
+//	t = copytext(sanitize(t),1,MAX_MESSAGE_LEN)
+
+	t = replacetext(t, "\[center\]", "<center>")
+	t = replacetext(t, "\[/center\]", "</center>")
+	t = replacetext(t, "\[br\]", "<BR>")
+	t = replacetext(t, "\[b\]", "<B>")
+	t = replacetext(t, "\[/b\]", "</B>")
+	t = replacetext(t, "\[i\]", "<I>")
+	t = replacetext(t, "\[/i\]", "</I>")
+	t = replacetext(t, "\[u\]", "<U>")
+	t = replacetext(t, "\[/u\]", "</U>")
+	t = replacetext(t, "\[time\]", "[stationtime2text()]")
+	t = replacetext(t, "\[date\]", "[stationdate2text()]")
+	t = replacetext(t, "\[station\]", "[station_name()]")
+	t = replacetext(t, "\[large\]", "<font size=\"4\">")
+	t = replacetext(t, "\[/large\]", "</font>")
+	if(findtext(t, "\[sign\]"))
+		t = replacetext(t, "\[sign\]", "<font face=\"[signfont]\"><i>[get_signature(P, user)]</i></font>")
+	t = replacetext(t, "\[field\]", "<span class=\"paper_field\"></span>")
+
+	t = replacetext(t, "\[h1\]", "<H1>")
+	t = replacetext(t, "\[/h1\]", "</H1>")
+	t = replacetext(t, "\[h2\]", "<H2>")
+	t = replacetext(t, "\[/h2\]", "</H2>")
+	t = replacetext(t, "\[h3\]", "<H3>")
+	t = replacetext(t, "\[/h3\]", "</H3>")
+	t = replacetext(t, "\[tab\]", "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;")
+
+	if(!iscrayon)
+		t = replacetext(t, "\[*\]", "<li>")
+		t = replacetext(t, "\[hr\]", "<HR>")
+		t = replacetext(t, "\[small\]", "<font size = \"1\">")
+		t = replacetext(t, "\[/small\]", "</font>")
+		t = replacetext(t, "\[list\]", "<ul>")
+		t = replacetext(t, "\[/list\]", "</ul>")
+		t = replacetext(t, "\[table\]", "<table border=1 cellspacing=0 cellpadding=3 style='border: 1px solid black;'>")
+		t = replacetext(t, "\[/table\]", "</td></tr></table>")
+		t = replacetext(t, "\[grid\]", "<table>")
+		t = replacetext(t, "\[/grid\]", "</td></tr></table>")
+		t = replacetext(t, "\[row\]", "</td><tr>")
+		t = replacetext(t, "\[/row\]", "")
+		t = replacetext(t, "\[cell\]", "<td>")
+		t = replacetext(t, "\[/cell\]", "")
+		t = replacetext(t, "\[logo\]", "<img src=\ref['html/images/ntlogo.png']>")
+		t = replacetext(t, "\[talogo\]", "<img src=\ref['html/images/talonlogo.png']>")
+		t = replacetext(t, "\[sglogo\]", "<img src=\ref['html/images/sglogo.png']>")
+		t = replacetext(t, "\[trlogo\]", "<img src=\ref['html/images/trader.png']>")
+		t = replacetext(t, "\[pclogo\]", "<img src=\ref['html/images/pclogo.png']>") // Not available on virgo // CHOMPEnable
+
+		t = "<font face=\"[deffont]\" color=[P ? P.colour : "black"]>[t]</font>"
+	else // If it is a crayon, and he still tries to use these, make them empty!
+		t = replacetext(t, "\[*\]", "")
+		t = replacetext(t, "\[hr\]", "")
+		t = replacetext(t, "\[small\]", "")
+		t = replacetext(t, "\[/small\]", "")
+		t = replacetext(t, "\[list\]", "")
+		t = replacetext(t, "\[/list\]", "")
+		t = replacetext(t, "\[table\]", "")
+		t = replacetext(t, "\[/table\]", "")
+		t = replacetext(t, "\[row\]", "")
+		t = replacetext(t, "\[cell\]", "")
+		t = replacetext(t, "\[/cell\]", "")
+		t = replacetext(t, "\[/row\]", "")
+		t = replacetext(t, "\[logo\]", "")
+		t = replacetext(t, "\[talogo\]", "")
+		t = replacetext(t, "\[sglogo\]", "")
+
+		t = "<font face=\"[crayonfont]\" color=[P ? P.colour : "black"]><b>[t]</b></font>"
+
+
+//	t = replacetext(t, "#", "") // Junk converted to nothing!
+
+//Count the fields
+	var/laststart = 1
+	while(1)
+		var/i = findtext(t, "<span class=\"paper_field\">", laststart)	//</span>
+		if(i==0)
+			break
+		laststart = i+1
+		fields++
+
+	return t
+
+/obj/item/paper/proc/burnpaper(obj/item/flame/P, mob/user)
+	var/class = "warning"
+
+	if(P.lit && !user.restrained())
+		if(istype(P, /obj/item/flame/lighter/zippo))
+			class = "rose"
+
+		user.visible_message("<span class='[class]'>[user] holds \the [P] up to \the [src], it looks like [user.p_theyre()] trying to burn it!</span>", \
+		"<span class='[class]'>You hold \the [P] up to \the [src], burning it slowly.</span>")
+		playsound(src, 'sound/bureaucracy/paperburn.ogg', 50, 1)
+
+		spawn(20)
+			if(get_dist(src, user) < 2 && user.get_active_hand() == P && P.lit)
+				user.visible_message("<span class='[class]'>[user] burns right through \the [src], turning it to ash. It flutters through the air before settling on the floor in a heap.</span>", \
+				"<span class='[class]'>You burn right through \the [src], turning it to ash. It flutters through the air before settling on the floor in a heap.</span>")
+
+				if(user.get_inactive_hand() == src)
+					user.drop_from_inventory(src)
+
+				new /obj/effect/decal/cleanable/ash(src.loc)
+				qdel(src)
+
+			else
+				to_chat(user, span_red("You must hold \the [P] steady to burn \the [src]."))
+
+
+/obj/item/paper/get_worn_icon_state(slot_name)
+	if(slot_name == slot_head_str)
+		return "paper" //Gross, but required for now.
+	return ..()
+
+/obj/item/paper/attackby(obj/item/P, mob/user)
+	..()
+	var/clown = 0
+	if(user.mind && ((user.mind.role_alt_title == JOB_CLOWN) || (user.mind.role_alt_title == JOB_ALT_JESTER) || (user.mind.role_alt_title == JOB_ALT_FOOL))) // Let clows/fools/jesters use clown stamps
+		clown = 1
+
+	if(istype(P, /obj/item/tape_roll))
+		var/obj/item/tape_roll/tape = P
+		tape.stick(src, user)
+		return
+
+	if(istype(P, /obj/item/clipboard))
+		var/obj/item/clipboard/CB = P
+		if(src.loc == user)
+			user.drop_from_inventory(src)
+		src.loc = CB
+		CB.toppaper = src
+		CB.update_icon()
+		to_chat(user, span_notice("You clip the [src] onto \the [CB]."))
+
+	if(istype(P, /obj/item/folder))
+		if(src.loc == user)
+			user.drop_from_inventory(src)
+		src.loc = P
+		P.update_icon()
+		to_chat(user, span_notice("You tuck the [src] into \the [P]."))
+
+	if(istype(P, /obj/item/paper) || istype(P, /obj/item/photo))
+		if (istype(P, /obj/item/paper/carbon))
+			var/obj/item/paper/carbon/C = P
+			if (!C.iscopy && !C.copied)
+				to_chat(user, span_notice("Take off the carbon copy first."))
+				add_fingerprint(user)
+				return
+		var/obj/item/paper_bundle/B = new(src.loc)
+		if (name != initial(name))
+			B.name = name
+		else if (P.name != initial(P.name))
+			B.name = P.name
+		user.drop_from_inventory(P)
+		if(ishuman(user))
+			var/mob/living/carbon/human/h_user = user
+			if (h_user.r_hand == src)
+				h_user.drop_from_inventory(src)
+				h_user.put_in_r_hand(B)
+			else if (h_user.l_hand == src)
+				h_user.drop_from_inventory(src)
+				h_user.put_in_l_hand(B)
+			else if (h_user.l_store == src)
+				h_user.drop_from_inventory(src)
+				if(!h_user.equip_to_slot_if_possible(B, slot_l_store))
+					h_user.drop_from_inventory(B)
+			else if (h_user.r_store == src)
+				h_user.drop_from_inventory(src)
+				if(!h_user.equip_to_slot_if_possible(B, slot_r_store))
+					h_user.drop_from_inventory(B)
+			else if (h_user.head == src)
+				h_user.u_equip(src)
+				h_user.put_in_hands(B)
+			else if (!istype(src.loc, /turf))
+				src.loc = get_turf(h_user)
+				if(h_user.client)	h_user.client.screen -= src
+				h_user.put_in_hands(B)
+		to_chat(user, span_notice("You clip the [P.name] to [(src.name == "paper") ? "the paper" : src.name]."))
+		src.loc = B
+		P.loc = B
+
+		B.pages.Add(src)
+		B.pages.Add(P)
+		B.update_icon()
+
+	else if(istype(P, /obj/item/pen))
+		if(icon_state == "scrap")
+			to_chat(user, span_warning("\The [src] is too crumpled to write on."))
+			return
+
+		var/obj/item/pen/robopen/RP = P
+		if(istype(RP) && RP.mode == 2)
+			RP.RenamePaper(user, src)
+		else
+			// pen interact opens Paper.tsx in "write" view; the
+			// info_links HTML rendered there still carries the field hrefs
+			// that route back to Topic for the actual write action.
+			can_read_view = TRUE
+			tgui_view = "write"
+			tgui_interact(user)
+		return
+
+	else if(istype(P, /obj/item/stamp) || istype(P, /obj/item/clothing/accessory/ring/seal))
+		if(istype(P, /obj/item/stamp))
+			var/obj/item/stamp/the_stamp = P
+			if(the_stamp.stamptext)
+				stamps += (stamps=="" ? "<HR>" : "<BR>") + span_italics("[the_stamp.stamptext]")
+			else
+				stamps += (stamps=="" ? "<HR>" : "<BR>") + span_italics("This paper has been stamped with the [the_stamp.name].")
+		else
+			var/obj/item/clothing/accessory/ring/seal/the_stamp = P
+			if(the_stamp.stamptext)
+				stamps += (stamps=="" ? "<HR>" : "<BR>") + span_italics("[the_stamp.stamptext]")
+			else
+				stamps += (stamps=="" ? "<HR>" : "<BR>") + span_italics("This paper has been stamped with the [the_stamp.name].")
+		if((!in_range(src, user) && loc != user && !( istype(loc, /obj/item/clipboard) ) && loc.loc != user && user.get_active_hand() != P))
+			return
+		var/image/stampoverlay = image('icons/obj/bureaucracy.dmi')
+		var/x, y
+		if(istype(P, /obj/item/stamp/captain) || istype(P, /obj/item/stamp/centcomm))
+			x = rand(-2, 0)
+			y = rand(-1, 2)
+		else
+			x = rand(-2, 2)
+			y = rand(-3, 2)
+		offset_x += x
+		offset_y += y
+		stampoverlay.pixel_x = x
+		stampoverlay.pixel_y = y
+
+		if(istype(P, /obj/item/stamp/clown))
+			if(!clown)
+				to_chat(user, span_notice("You are totally unable to use the stamp. HONK!"))
+				return
+
+		if(!ico)
+			ico = new
+		ico += "paper_[P.icon_state]"
+		stampoverlay.icon_state = "paper_[P.icon_state]"
+
+		if(!stamped)
+			stamped = new
+		stamped += P.type
+		add_overlay(stampoverlay)
+
+		playsound(src, 'sound/bureaucracy/stamp.ogg', 50, 1)
+		to_chat(user, span_notice("You stamp the paper with your rubber stamp."))
+
+	else if(istype(P, /obj/item/flame))
+		burnpaper(P, user)
+
+	add_fingerprint(user)
+	return
+
+/*
+ * Premade paper
+ */
+/obj/item/paper/Court
+	name = "Judgement"
+	info = "For crimes against the station, the offender is sentenced to:<BR>\n<BR>\n"
+
+/obj/item/paper/Toxin
+	name = "Chemical Information"
+	info = "Known Onboard Toxins:<BR>\n\tGrade A Semi-Liquid Phoron:<BR>\n\t\tHighly poisonous. You cannot sustain concentrations above 15 units.<BR>\n\t\tA gas mask fails to filter phoron after 50 units.<BR>\n\t\tWill attempt to diffuse like a gas.<BR>\n\t\tFiltered by scrubbers.<BR>\n\t\tThere is a bottled version which is very different<BR>\n\t\t\tfrom the version found in canisters!<BR>\n<BR>\n\t\tWARNING: Highly Flammable. Keep away from heat sources<BR>\n\t\texcept in a enclosed fire area!<BR>\n\t\tWARNING: It is a crime to use this without authorization.<BR>\nKnown Onboard Anti-Toxin:<BR>\n\tAnti-Toxin Type 01P: Works against Grade A Phoron.<BR>\n\t\tBest if injected directly into bloodstream.<BR>\n\t\tA full injection is in every regular Med-Kit.<BR>\n\t\tSpecial toxin Kits hold around 7.<BR>\n<BR>\nKnown Onboard Chemicals (other):<BR>\n\tRejuvenation T#001:<BR>\n\t\tEven 1 unit injected directly into the bloodstream<BR>\n\t\t\twill cure paralysis and sleep phoron.<BR>\n\t\tIf administered to a dying patient it will prevent<BR>\n\t\t\tfurther damage for about units*3 seconds.<BR>\n\t\t\tit will not cure them or allow them to be cured.<BR>\n\t\tIt can be administeredd to a non-dying patient<BR>\n\t\t\tbut the chemicals disappear just as fast.<BR>\n\tSoporific T#054:<BR>\n\t\t5 units wilkl induce precisely 1 minute of sleep.<BR>\n\t\t\tThe effect are cumulative.<BR>\n\t\tWARNING: It is a crime to use this without authorization"
+
+/obj/item/paper/courtroom
+	name = "A Crash Course in Legal SOP on SS13"
+	info = span_bold("Roles:") + "<BR>\nThe " + JOB_DETECTIVE + " is basically the investigator and prosecutor.<BR>\nThe Staff Assistant can perform these functions with written authority from the " + JOB_DETECTIVE + ".<BR>\nThe " + JOB_SITE_MANAGER + "/HoP/" + JOB_WARDEN + " is ct as the judicial authority.<BR>\nThe " + JOB_SECURITY_OFFICER + "s are responsible for executing warrants, security during trial, and prisoner transport.<BR>\n<BR>\n<B>Investigative Phase:</B><BR>\nAfter the crime has been committed the " + JOB_DETECTIVE + "'s job is to gather evidence and try to ascertain not only who did it but what happened. He must take special care to catalogue everything and don't leave anything out. Write out all the evidence on paper. Make sure you take an appropriate number of fingerprints. IF he must ask someone questions he has permission to confront them. If the person refuses he can ask a judicial authority to write a subpoena for questioning. If again he fails to respond then that person is to be jailed as insubordinate and obstructing justice. Said person will be released after he cooperates.<BR>\n<BR>\nONCE the FT has a clear idea as to who the criminal is he is to write an arrest warrant on the piece of paper. IT MUST LIST THE CHARGES. The FT is to then go to the judicial authority and explain a small version of his case. If the case is moderately acceptable the authority should sign it. Security must then execute said warrant.<BR>\n<BR>\n<B>Pre-Pre-Trial Phase:</B><BR>\nNow a legal representative must be presented to the defendant if said defendant requests one. That person and the defendant are then to be given time to meet (in the jail IS ACCEPTABLE). The defendant and his lawyer are then to be given a copy of all the evidence that will be presented at trial (rewriting it all on paper is fine). THIS IS CALLED THE DISCOVERY PACK. With a few exceptions, THIS IS THE ONLY EVIDENCE BOTH SIDES MAY USE AT TRIAL. IF the prosecution will be seeking the death penalty it MUST be stated at this time. ALSO if the defense will be seeking not guilty by mental defect it must state this at this time to allow ample time for examination.<BR>\nNow at this time each side is to compile a list of witnesses. By default, the defendant is on both lists regardless of anything else. Also the defense and prosecution can compile more evidence beforehand BUT in order for it to be used the evidence MUST also be given to the other side.\nThe defense has time to compile motions against some evidence here.<BR>\n<B>Possible Motions:</B><BR>\n1. <U>Invalidate Evidence-</U> Something with the evidence is wrong and the evidence is to be thrown out. This includes irrelevance or corrupt security.<BR>\n2. <U>Free Movement-</U> Basically the defendant is to be kept uncuffed before and during the trial.<BR>\n3. <U>Subpoena Witness-</U> If the defense presents god reasons for needing a witness but said person fails to cooperate then a subpoena is issued.<BR>\n4. <U>Drop the Charges-</U> Not enough evidence is there for a trial so the charges are to be dropped. The FT CAN RETRY but the judicial authority must carefully reexamine the new evidence.<BR>\n5. <U>Declare Incompetent-</U> Basically the defendant is insane. Once this is granted a medical official is to examine the patient. If he is indeed insane he is to be placed under care of the medical staff until he is deemed competent to stand trial.<BR>\n<BR>\nALL SIDES MOVE TO A COURTROOM<BR>\n<B>Pre-Trial Hearings:</B><BR>\nA judicial authority and the 2 sides are to meet in the trial room. NO ONE ELSE BESIDES A SECURITY DETAIL IS TO BE PRESENT. The defense submits a plea. If the plea is guilty then proceed directly to sentencing phase. Now the sides each present their motions to the judicial authority. He rules on them. Each side can debate each motion. Then the judicial authority gets a list of crew members. He first gets a chance to look at them all and pick out acceptable and available jurors. Those jurors are then called over. Each side can ask a few questions and dismiss jurors they find too biased. HOWEVER before dismissal the judicial authority MUST agree to the reasoning.<BR>\n<BR>\n<B>The Trial:</B><BR>\nThe trial has three phases.<BR>\n1. <B>Opening Arguments</B>- Each side can give a short speech. They may not present ANY evidence.<BR>\n2. <B>Witness Calling/Evidence Presentation</B>- The prosecution goes first and is able to call the witnesses on his approved list in any order. He can recall them if necessary. During the questioning the lawyer may use the evidence in the questions to help prove a point. After every witness the other side has a chance to cross-examine. After both sides are done questioning a witness the prosecution can present another or recall one (even the EXACT same one again!). After prosecution is done the defense can call witnesses. After the initial cases are presented both sides are free to call witnesses on either list.<BR>\nFINALLY once both sides are done calling witnesses we move onto the next phase.<BR>\n3. <B>Closing Arguments</B>- Same as opening.<BR>\nThe jury then deliberates IN PRIVATE. THEY MUST ALL AGREE on a verdict. REMEMBER: They mix between some charges being guilty and others not guilty (IE if you supposedly killed someone with a gun and you unfortunately picked up a gun without authorization then you CAN be found not guilty of murder BUT guilty of possession of illegal weaponry.). Once they have agreed they present their verdict. If unable to reach a verdict and feel they will never they call a deadlocked jury and we restart at Pre-Trial phase with an entirely new set of jurors.<BR>\n<BR>\n<B>Sentencing Phase:</B><BR>\nIf the death penalty was sought (you MUST have gone through a trial for death penalty) then skip to the second part. <BR>\nI. Each side can present more evidence/witnesses in any order. There is NO ban on emotional aspects or anything. The prosecution is to submit a suggested penalty. After all the sides are done then the judicial authority is to give a sentence.<BR>\nII. The jury stays and does the same thing as I. Their sole job is to determine if the death penalty is applicable. If NOT then the judge selects a sentence.<BR>\n<BR>\nTADA you're done. Security then executes the sentence and adds the applicable convictions to the person's record.<BR>\n"
+
+/obj/item/paper/hydroponics
+	name = "Greetings from Billy Bob"
+	info = span_bold("Hey fellow botanist!") + "<BR>\n<BR>\nI didn't trust the station folk so I left<BR>\na couple of weeks ago. But here's some<BR>\ninstructions on how to operate things here.<BR>\nYou can grow plants and each iteration they become<BR>\nstronger, more potent and have better yield, if you<BR>\nknow which ones to pick. Use your botanist's analyzer<BR>\nfor that. You can turn harvested plants into seeds<BR>\nat the seed extractor, and replant them for better stuff!<BR>\nSometimes if the weed level gets high in the tray<BR>\nmutations into different mushroom or weed species have<BR>\nbeen witnessed. On the rare occassion even weeds mutate!<BR>\n<BR>\nEither way, have fun!<BR>\n<BR>\nBest regards,<BR>\nBilly Bob Johnson.<BR>\n<BR>\nPS.<BR>\nHere's a few tips:<BR>\nIn nettles, potency = damage<BR>\nIn amanitas, potency = deadliness + side effect<BR>\nIn Liberty caps, potency = drug power + effect<BR>\nIn chilis, potency = heat<BR>\n<B>Nutrients keep mushrooms alive!</B><BR>\n<B>Water keeps weeds such as nettles alive!</B><BR>\n<B>All other plants need both.</B>"
+
+/obj/item/paper/djstation
+	name = "DJ Listening Outpost"
+	info = span_bold("Welcome new owner!") + "<BR><BR>You have purchased the latest in listening equipment. The telecommunication setup we created is the best in listening to common and private radio fequencies. Here is a step by step guide to start listening in on those saucy radio channels:<br><ol><li>Equip yourself with a multi-tool</li><li>Use the multitool on each machine, that is the broadcaster, receiver and the relay.</li><li>Turn all the machines on, it has already been configured for you to listen on.</li></ol> Simple as that. Now to listen to the private channels, you'll have to configure the intercoms, located on the front desk. Here is a list of frequencies for you to listen on.<br><ul><li>145.7 - Common Channel</li><li>144.7 - Private AI Channel</li><li>135.9 - Security Channel</li><li>135.7 - Engineering Channel</li><li>135.5 - Medical Channel</li><li>135.3 - Command Channel</li><li>135.1 - Science Channel</li><li>134.9 - Mining Channel</li><li>134.7 - Cargo Channel</li>"
+
+/obj/item/paper/flag
+	icon_state = "flag_neutral"
+	item_state = "paper"
+	anchored = TRUE
+
+/obj/item/paper/jobs
+	name = "Job Information"
+	info = "Information on all formal jobs that can be assigned on Space Station 13 can be found on this document.<BR>\nThe data will be in the following form.<BR>\nGenerally lower ranking positions come first in this list.<BR>\n<BR>\n<B>Job Name</B>   general access>lab access-engine access-systems access (atmosphere control)<BR>\n\tJob Description<BR>\nJob Duties (in no particular order)<BR>\nTips (where applicable)<BR>\n<BR>\n<B>Research Assistant</B> 1>1-0-0<BR>\n\tThis is probably the lowest level position. Anyone who enters the space station after the initial job\nassignment will automatically receive this position. Access with this is restricted. Head of Personnel should\nappropriate the correct level of assistance.<BR>\n1. Assist the researchers.<BR>\n2. Clean up the labs.<BR>\n3. Prepare materials.<BR>\n<BR>\n<B>Staff Assistant</B> 2>0-0-0<BR>\n\tThis position assists the security officer in his duties. The staff assisstants should primarily br\npatrolling the ship waiting until they are needed to maintain ship safety.\n(Addendum: Updated/Elevated Security Protocols admit issuing of low level weapons to security personnel)<BR>\n1. Patrol ship/Guard key areas<BR>\n2. Assist security officer<BR>\n3. Perform other security duties.<BR>\n<BR>\n<B>" + JOB_ALT_TECHNICAL_ASSISTANT + "</B> 1>0-0-1<BR>\n\tThis is yet another low level position. The technical assistant helps the engineer and the statian\ntechnician with the upkeep and maintenance of the station. This job is very important because it usually\ngets to be a heavy workload on station technician and these helpers will alleviate that.<BR>\n1. Assist Station technician and Engineers.<BR>\n2. Perform general maintenance of station.<BR>\n3. Prepare materials.<BR>\n<BR>\n<B>Medical Assistant</B> 1>1-0-0<BR>\n\tThis is the fourth position yet it is slightly less common. This position doesn't have much power\noutside of the med bay. Consider this position like a nurse who helps to upkeep medical records and the\nmaterials (filling syringes and checking vitals)<BR>\n1. Assist the medical personnel.<BR>\n2. Update medical files.<BR>\n3. Prepare materials for medical operations.<BR>\n<BR>\n<B>Research Technician</B> 2>3-0-0<BR>\n\tThis job is primarily a step up from research assistant. These people generally do not get their own lab\nbut are more hands on in the experimentation process. At this level they are permitted to work as consultants to\nthe others formally.<BR>\n1. Inform superiors of research.<BR>\n2. Perform research alongside of official researchers.<BR>\n<BR>\n<B>" + JOB_DETECTIVE + "</B> 3>2-0-0<BR>\n\tThis job is in most cases slightly boring at best. Their sole duty is to\nperform investigations of crine scenes and analysis of the crime scene. This\nalleviates SOME of the burden from the security officer. This person's duty\nis to draw conclusions as to what happened and testify in court. Said person\nalso should stroe the evidence ly.<BR>\n1. Perform crime-scene investigations/draw conclusions.<BR>\n2. Store and catalogue evidence properly.<BR>\n3. Testify to superiors/inquieries on findings.<BR>\n<BR>\n<B>Station Technician</B> 2>0-2-3<BR>\n\tPeople assigned to this position must work to make sure all the systems aboard Space Station 13 are operable.\nThey should primarily work in the computer lab and repairing faulty equipment. They should work with the\natmospheric technician.<BR>\n1. Maintain SS13 systems.<BR>\n2. Repair equipment.<BR>\n<BR>\n<B>" + JOB_ATMOSPHERIC_TECHNICIAN + "</B> 3>0-0-4<BR>\n\tThese people should primarily work in the atmospheric control center and lab. They have the very important\njob of maintaining the delicate atmosphere on SS13.<BR>\n1. Maintain atmosphere on SS13<BR>\n2. Research atmospheres on the space station. (safely please!)<BR>\n<BR>\n<B>" + JOB_ENGINEER + "</B> 2>1-3-0<BR>\n\tPeople working as this should generally have detailed knowledge as to how the propulsion systems on SS13\nwork. They are one of the few classes that have unrestricted access to the engine area.<BR>\n1. Upkeep the engine.<BR>\n2. Prevent fires in the engine.<BR>\n3. Maintain a safe orbit.<BR>\n<BR>\n<B>Medical Researcher</B> 2>5-0-0<BR>\n\tThis position may need a little clarification. Their duty is to make sure that all experiments are safe and\nto conduct experiments that may help to improve the station. They will be generally idle until a new laboratory\nis constructed.<BR>\n1. Make sure the station is kept safe.<BR>\n2. Research medical properties of materials studied of Space Station 13.<BR>\n<BR>\n<B>Scientist</B> 2>5-0-0<BR>\n\tThese people study the properties, particularly the toxic properties, of materials handled on SS13.\nTechnically they can also be called Phoron Technicians as phoron is the material they routinly handle.<BR>\n1. Research phoron<BR>\n2. Make sure all phoron is properly handled.<BR>\n<BR>\n<B>" + JOB_MEDICAL_DOCTOR + " (Officer)</B> 2>0-0-0<BR>\n\tPeople working this job should primarily stay in the medical area. They should make sure everyone goes to\nthe medical bay for treatment and examination. Also they should make sure that medical supplies are kept in\norder.<BR>\n1. Heal wounded people.<BR>\n2. Perform examinations of all personnel.<BR>\n3. Moniter usage of medical equipment.<BR>\n<BR>\n<B>" + JOB_SECURITY_OFFICER + "</B> 3>0-0-0<BR>\n\tThese people should attempt to keep the peace inside the station and make sure the station is kept safe. One\nside duty is to assist in repairing the station. They also work like general maintenance personnel. They are not\ngiven a weapon and must use their own resources.<BR>\n(Addendum: Updated/Elevated Security Protocols admit issuing of weapons to security personnel)<BR>\n1. Maintain order.<BR>\n2. Assist others.<BR>\n3. Repair structural problems.<BR>\n<BR>\n<B>" + JOB_HEAD_OF_SECURITY + "</B> 4>5-2-2<BR>\n\tPeople assigned as " + JOB_HEAD_OF_SECURITY + " should issue orders to the security staff. They should\nalso carefully moderate the usage of all security equipment. All security matters should be reported to this person.<BR>\n1. Oversee security.<BR>\n2. Assign patrol duties.<BR>\n3. Protect the station and staff.<BR>\n<BR>\n<B>Head of Personnel</B> 4>4-2-2<BR>\n\tPeople assigned as head of personnel will find themselves moderating all actions done by personnel. \nAlso they have the ability to assign jobs and access levels.<BR>\n1. Assign duties.<BR>\n2. Moderate personnel.<BR>\n3. Moderate research. <BR>\n<BR>\n<B>"+ JOB_SITE_MANAGER + "</B> 5>5-5-5 (unrestricted station wide access)<BR>\n\tThis is the highest position youi can aquire on Space Station 13. They are allowed anywhere inside the\nspace station and therefore should protect their ID card. They also have the ability to assign positions\nand access levels. They should not abuse their power.<BR>\n1. Assign all positions on SS13<BR>\n2. Inspect the station for any problems.<BR>\n3. Perform administrative duties.<BR>\n"
+
+/obj/item/paper/photograph
+	name = "photo"
+	icon_state = "photo"
+	var/photo_id = 0.0
+	item_state = "paper"
+
+/obj/item/paper/sop
+	name = "paper- 'Standard Operating Procedure'"
+	info = "Alert Levels:<BR>\nBlue- Emergency<BR>\n\t1. Caused by fire<BR>\n\t2. Caused by manual interaction<BR>\n\tAction:<BR>\n\t\tClose all fire doors. These can only be opened by reseting the alarm<BR>\nRed- Ejection/Self Destruct<BR>\n\t1. Caused by module operating computer.<BR>\n\tAction:<BR>\n\t\tAfter the specified time the module will eject completely.<BR>\n<BR>\nEngine Maintenance Instructions:<BR>\n\tShut off ignition systems:<BR>\n\tActivate internal power<BR>\n\tActivate orbital balance matrix<BR>\n\tRemove volatile liquids from area<BR>\n\tWear a fire suit<BR>\n<BR>\n\tAfter<BR>\n\t\tDecontaminate<BR>\n\t\tVisit medical examiner<BR>\n<BR>\nToxin Laboratory Procedure:<BR>\n\tWear a gas mask regardless<BR>\n\tGet an oxygen tank.<BR>\n\tActivate internal atmosphere<BR>\n<BR>\n\tAfter<BR>\n\t\tDecontaminate<BR>\n\t\tVisit medical examiner<BR>\n<BR>\nDisaster Procedure:<BR>\n\tFire:<BR>\n\t\tActivate sector fire alarm.<BR>\n\t\tMove to a safe area.<BR>\n\t\tGet a fire suit<BR>\n\t\tAfter:<BR>\n\t\t\tAssess Damage<BR>\n\t\t\tRepair damages<BR>\n\t\t\tIf needed, Evacuate<BR>\n\tMeteor Shower:<BR>\n\t\tActivate fire alarm<BR>\n\t\tMove to the back of ship<BR>\n\t\tAfter<BR>\n\t\t\tRepair damage<BR>\n\t\t\tIf needed, Evacuate<BR>\n\tAccidental Reentry:<BR>\n\t\tActivate fire alarms in front of ship.<BR>\n\t\tMove volatile matter to a fire proof area!<BR>\n\t\tGet a fire suit.<BR>\n\t\tStay secure until an emergency ship arrives.<BR>\n<BR>\n\t\tIf ship does not arrive-<BR>\n\t\t\tEvacuate to a nearby safe area!"
+
+/obj/item/paper/crumpled
+	name = "paper scrap"
+	icon_state = "scrap"
+
+/obj/item/paper/crumpled/update_icon()
+	return
+
+/obj/item/paper/crumpled/bloody
+	icon_state = "scrap_bloodied"
+
+/obj/item/paper/crumpled/bloody/CrashedMedShuttle
+	name = "Blackbox Transcript - VMV Aurora's Light"
+	info = "<I>\[The paper is torn at the top, presumably from the impact. It's oil-stained, but you can just about read it.]</I><BR> <B>mmons 19:52:01:</B> Come on... it's right there in the distance, we're almost there!<BR> <B>Doctor Nazarril 19:52:26:</B> Odysseus online. Orrderrs, sirr?<BR> <B>Captain Simmons 19:52:29:</B> Brace for impact. We're going in full-speed.<BR> <B>Technician Dynasty 19:52:44:</B> Chief, fire's spread to the secondary propulsion systems.<BR> <B>Captain Simmons 19:52:51:</B> Copy. Any word from TraCon? Transponder's down still?<BR> <B>Technician Dynasty 19:53:02:</B> Can't get in touch, sir. Emergency beacon's active, but we're not going t-<BR> <B>Doctor Nazarril 19:53:08:</B> Don't say it. As long as we believe, we'll get through this.<BR> <B>Captain Simmons 19:53:11:</B> Damn right. We're a few klicks out from the port. Rough landing, but we can do it.<BR> <B>V.I.T.A 19:53:26:</B> Vessel diagnostics complete. Engines one, two, three offline. Engine four status: critical. Transponder offline. Fire alarm in the patient bay.<BR> <B>A loud explosion is heard.</B><BR> <B>V.I.T.A 19:53:29:</B> Alert: fuel intake valve open.<BR> <B>Technician Dynasty 19:53:31:</B> ... ah.<BR> <B>Doctor Nazarril 19:53:34:</B> Trrranslate?<BR> <B>V.I.T.A 19:53:37:</B> There is a 16.92% chance of this vessel safely landing at the emergency destination. Note that there is an 83.08% chance of detonation of fuel supplies upon landing.<BR> <B>Technician Dynasty 19:53:48:</B> We'll make it, sure, but we'll explode and take out half the LZ with us. Propulsion's down, we can't slow down. If we land there, everyone in that port dies, no question.<BR> <B>V.I.T.A 19:53:53:</B> The Technician is correct.<BR> <B>Doctor Nazarril 19:54:02:</B> Then... we can't land therrre.<BR> <B>V.I.T.A 19:54:11:</B>  Analysing... recommended course of action: attempt emergency landing in isolated area. Chances of survival: negligible. <BR> <B>Captain Simmons 19:54:27:</B> I- alright. I'm bringing us down. You all know what this means.<BR> <B>Doctor Nazarril 19:54:33:</B> Sh... I- I understand. It's been- it's been an honorr, Captain, Dynasty, VITA.<BR> <B>Technician Dynasty 19:54:39:</B> We had a good run. I'm going to miss this.<BR> <B>Captain Simmons 19:54:47:</B> VITA. Tell them we died heroes. Tell them... we did all we could.<BR> <B>V.I.T.A 19:54:48:</B> I will. Impact in five. Four. Three.<BR> <B>Doctor Nazarril 19:54:49:</B> Oh, starrs... I- you werrre all the... best frriends she everr had. Thank you.<BR> <B>Technician Dynasty 19:54:50:</B> Any time, kid. Any time.<BR> <B>V.I.T.A 19:54:41:</B> Two.<BR><B>V.I.T.A 19:54:42:</B> One.<BR> **8/DEC/2561**<BR> <B>V.I.T.A 06:22:16:</B> Backup power restored. Attempting to establish connection with emergency rescue personnel.<BR> <B>V.I.T.A 06:22:17:</B> Unable to establish connection. Transponder destroyed on impact.<BR> <B>V.I.T.A 06:22:18:</B> No lifesigns detected on board.<BR> **1/JAN/2562**<BR> <B>V.I.T.A 00:00:00:</B> Happy New Year, crew.<BR> <B>V.I.T.A 00:00:01:</B> Power reserves: 41%. Diagnostics offline. Cameras offline. Communications offline.<BR> <B>V.I.T.A 00:00:02:</B> Nobody's coming.<BR> **14/FEB/2562**<BR> <B>V.I.T.A 00:00:00:</B> Roses are red.<BR> <B>V.I.T.A 00:00:01:</B> Violets are blue.<BR> <B>V.I.T.A 00:00:02:</B> Won't you come back?<BR> <B>V.I.T.A 00:00:03:</B> I miss you.<BR> **15/FEB/2562**<BR><B>V.I.T.A 22:19:06:</B> Power reserves critical. Transferring remaining power to emergency broadcasting beacon.<BR> <B>V.I.T.A 22:19:07:</B> Should anyone find this, lay them to rest. They deserve a proper burial.<BR> <B>V.I.T.A 22:19:08:</B> Erasing files... shutting down.<BR> <B>A low, monotone beep.</B><BR> **16/FEB/2562**<BR> <B>Something chitters.</B><BR> <B>End of transcript.</B>"
+
+/obj/item/paper/shieldgen
+	name = "Memo:Station Bubble Shield Generator."
+	info = "<B>Hello Engineers</B><BR>\n<BR>\nYou might be wondering what happened to the shield generator.<BR>\nWell, Long story short, a bottle of vodka, and one 'enlightened' scientist later,<BR>\n It's particularly non-existing. We don't have time to replace it this shift, so grab a spare from your Secure storage. Good luck! -Interim Construction Specialist Tahls"
+
+
+/obj/item/paper/manifest
+	name = "supply manifest"
+	var/is_copy = 1
+
+/obj/item/paper/manifest/Initialize(mapload, text, title)
+	. = ..()
+	AddElement(/datum/element/sellable/manifest)
+
+/obj/item/paper/crumpled/sampatti
+	info = "Sampatti Relay Sif-833 <BR> Decryption Key for 12-04-2488: <BR> 849B0022FBA920C244 <BR> Eyes Only.  <BR> The insider who knows all the secrets can bring down Lanka.";
+	name = "Dusty Note"
+
+/obj/item/paper/alchemy
+	info = span_bold("Apprentice, I have written out these instructions so that you may operate the alembic in your own time without me needing to watch over your every step.<br><br>The alembic is simple to operate, simply activate the spontaneous heating stone beneath it to begin boiling the contents. However, the contents that you choose are critical in creating a potion of any merit, and mixing the wrong materials may create something completely useless, wasting our resources!<br><br>You must mix two materials, and only ever two. One primary ingredient, this can be one of many materials with valuable alchemical properties. The other is a potion base, this will be essential to properly break down and transmute the ingredient into a potent potion. Once you have added the two, boil as above, and collect the distilate in a bottle. As for choosing your base, here is a short guide, but be aware that the properties of an ingredient are not always immediately apparent and some experimentation may be required:<br><br>Alkahest is a potent solvent and particularly useful for dissolving metals.<br><br>Aqua Regia is a heavily corrosive mixture of acids that readily dissolve most organic materials.<br><br>Ichor is a rich ferrous fluid that binds well to minerals, it can often break down gemstones.")
+	name = "alchemy instructions"
+
+/obj/item/paper/alien/message
+	info = span_bold("Thus far the mission has been a success, we've managed to integrate ourselves into the local community without arousing suspicion.<br><br>We had initially overestimated the technological level of the locals, and their initial encounters with our equipment did cause a concern. However, we were able to latch onto their superstitious beliefs in magic to explain away the abilities that we possess. To enhance this perception, we've taken to hiding our technology in more mundane looking materials, and the townsfolk appear to be content with this.")
+
+/obj/item/paper/alien/source
+	info = span_bold("Our search for the source has brought us to this planet, and we were quickly able to locate a seepage of the anomaly in the area. We set up this base immediately beside it, so that we can best study it. However, we are growing concerned as the material continues to spread beyond it's initial sprouting point and has begun to encroach directly on our buildings.<br><br>Our plan was to move our base further back from the site and study from a distance, but we have begun to detect lifeforms traversing the void. Yellow eyes have been seen watching from beyond the safety of the cave, disappearing and reappearing seemingly at random. We weren't aware that anything could survive this, they could hold the key to our scenario and we are requesting immediate support to research this further.")
+
+
+// === merged from paper_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
+//Used in  maps/overmap/space_pois/dj_31x28
+/obj/item/paper/djstation/poi
+	info = span_bold("Welcome new owner!") + "<BR><BR>You have purchased the latest in listening equipment. The telecommunication setup we created is the best in listening to common and private radio fequencies. Here is a step by step guide to start listening in on those saucy radio channels:<br><ol><li>Equip yourself with a multi-tool</li><li>Use the multitool on each machine, that is the broadcaster, receiver and the relay.</li><li>Turn all the machines on, it has already been configured for you to listen on.</li></ol> Simple as that. Now to listen to the private channels, you'll have to configure the intercoms, located on the front desk. Here is a list of frequencies for you to listen on.<br><ul><li>145.7 - Common Channel</li><li>144.7 - Private AI Channel</li><li>135.9 - Security Channel</li><li>135.7 - Engineering Channel</li><li>135.5 - Medical Channel</li><li>135.3 - Command Channel</li><li>135.1 - Science Channel</li><li>134.7 - Supply Channel</li>"
+
+/obj/item/paper/djstation/update
+	info = "Station has stopped responding to my reports for about the past month. I assume Vostok just has his knickers in a twist.<br><br>Hell, not my problem. Got all the vodka and cigarettes I need to last me a year."
+	name = "communications update"
+
+//Used in maps\overmap\space_pois\oldstation_80x45.dmm
+/obj/item/paper/cryo_awaken
+	info = span_bold("**WARNING**") + "<BR><BR>Catastrophic damage sustained to station. Powernet exhausted to reawaken crew.<BR><BR>Immediate Objectives<br><br>1: Activate emergency power generator<br>2: Lift station lockdown on the bridge<br><br>Please locate the 'Damage Report' on the bridge for a detailed situation report."
+	name = "Cryo Awakening Alert"
+
+/obj/item/paper/singularity
+	info = span_bold("*Singularity Generator*") + "<br><br>Modern power generation typically comes in two forms, a Fusion Generator or a Fission Generator. Fusion provides the best space to power ratio, and is typically seen on military or high security ships and stations, however Fission reactors require the usage of expensive, and rare, materials in its construction.. Fission generators are massive and bulky, and require a large reserve of uranium to power, however they are extremely cheap to operate and oft need little maintenance once operational.<br><br>The Singularity aims to alter this, a functional Singularity is essentially a controlled Black Hole, a Black Hole that generates far more power than Fusion or Fission generators can ever hope to produce. "
+	name = "Singularity Generator"
+
+/obj/item/paper/k14
+	info = span_bold("*K14-Multiphase Energy Gun*") + "<br><br>The K14 Prototype Energy Gun is the first Energy Rifle that has been successfully been able to not only hold a larger ammo charge than other gun models, but is capable of swapping between different energy projectile types on command with no incidents.<br><br>The weapon still suffers several drawbacks, its alternative, non laser fire mode, can only fire one round before exhausting the energy cell, the weapon also remains prohibitively expensive, nonetheless NT Market Research fully believe this weapon will form the backbone of our Energy weapon catalogue.<br><br>The K14 is expected to undergo revision to fix the ammo issues, the K15 is expected to replace the 'stun' setting with a 'disable' setting in an attempt to bypass the ammo issues."
+	name = "K14 Energy Gun Report"
+
+/obj/item/paper/health_analyzer
+	info = span_bold("*Health Analyser*") + "<br><br>The portable Health Analyser is essentially a handheld variant of a health analyser. Years of research have concluded with this device which is capable of diagnosing even the most critical, obscure or technical injuries any humanoid entity is suffering in an easy to understand format that even a non-trained health professional can understand.<br><br>The health analyser is expected to go into full production as standard issue medical kit."
+	name = "Health Analyser Report"
+
+/obj/item/paper/b01rig
+	info = span_bold("*Prototype Hardsuit*") + "<br><br>The B01-RIG Hardsuit is a prototype powered exoskeleton. Based off of a recovered pre-void war era united Earth government powered military exosuit, the RIG Hardsuit is a breakthrough in Hardsuit technology, and is the first post-void war era Hardsuit that can be safely used by an operator.<br><br>The B01 however suffers a myriad of constraints. It is slow and bulky to move around, it lacks any significant armor plating against direct attacks and its internal heads up display is unfinished,  resulting in the user being unable to see long distances.<br><br>The B01 is unlikely to see any form of mass production, but will serve as a base for future Hardsuit developments."
+	name = "B01-RIG Hardsuit Report"
+
+//Used in maps\overmap\space_pois\ussp_84x90.dmm
+/obj/item/paper/djstation/relay_reports
+	info = span_bold("Aug. 28th, 2532") + "<hr><small>Our listening outpost has relayed some alarming reports about TSF activity in the sector. While intercepted communications suggests it's a simple research effort, I can't shake the feeling that those dogged bastards have finally chased us down.<br><br>The Captain assures me that there's nothing to worry about, but I find it hard to take a man who's paranoid of a powered shower door seriously.<br><br><i>- Comms Officer Vostok</i></small>"
+	name = "personal log"
+
+/obj/item/paper/djstation/commendation_recommendation
+	info = span_bold("Recommended Party") + "Comrade Blyatski<br>" + span_bold("Signing Officer:") + "Mikail Gogochev<hr><small>Captain,<br><br>I recognize the nature of this request my seem strange, but please, hear me out. Comrade Blyatski, though he is but a wee bot, is like iron fist of Commissar Grigor himself! Just the other day he chased that useless bastard Totstoi clean out of brig, you should have seen the way that drunkard whimpered! Like a dog with his tail between his legs.<br><br>Anyways, I digress! If any one is worth of recognition, it is our ever-vigilant and beloved Blyatski, true champion of USSP.<br><br>If you wish to, perhaps, see his vigilance and dedication in person, well! You need only come to inspect armoury.<br><br>Comrade Blyatski awaits your decision."
+	name = "recommendation for commendation"
+
+/obj/item/paper/crumpled/cyka
+	info = span_bold("I KNOW IT WAS YOU WHO THREW AWAY MY LUCKY UNDERWEAR THIS TIME. I SWEAR, IF I SEE YOUR SKINNY RAT NECK AROUND I AM GOING TO WRING IT UNTIL YOU GO PURPLE!<br><br>NOBODY! NOBODY TOUCHES BORIS' LUCKY UNDERWEAR WITHOUT SUFFERING THE CONSEQUENCES!")
+	name = "LISTEN UP CYKA"
+
+/obj/item/paper/crumpled/desist
+	info = "<i>This note has been effaced with all manner of crude drawings that are too vile to properly give a description to.</i><br><small>Totstoi,<br><br>I know it's you who's been feeding my cats alcohol, I do not care what your reasons are but you are getting in the way of important research. This is the fifth cat that I've had to replace this month because of your crude sense of humour, and I will be speaking with Chief Borachov if you don't stop.<br><br>- <i>Nikolai Kartov</i>, Deputy Researcher";
+	name = "Desist at once!"
+
+/obj/item/paper/djstation/visitor_log
+	info = "August 21 - Most Excellent Commissar Grigor<br>August 22 - Nobody<br>August 23 - Nobody<br>August 24 - Nobody<br>August 25 - Why do I even bother?<br>August 26 - Nobody<br>August 27 -"
+	name = "visitor log"
+
+/obj/item/paper/djstation/experiment
+	info = "We have finally hit upon it, no more shall Katerina look past me in favor of other company! Experiment 432-A shows an incredible rate of cellular regeneration, and I posit that we have finally breaken down the great boundary between life and death--true biological immortality!<br><br>Of course, the aggressive behaviour is an undue side-effect, but it is only cat after all. I am certain a few sedative-laced cat treats will suffice to prep for autopsy."
+	name = "Experiment 432-A"
+
+/obj/item/paper/djstation/maint_report
+	info = "This is the fifth time this month I've had to replace the cabling to the damn lockdown circuit. It's bad enough the condensor is constantly on the fritz and the damn systems take nearly a week to cycle and reboot, but now I've got the captain breathing down my neck over his stupid shower and Commissar Grigor. Mikail was telling me the man's face went so red when the lights popped that you could see him glowing in the dark.<br><br>If he thought that was bad, well, if I hadn't installed an override in the mess hall we would have been sitting in the dark for the week.<br><br>Rusthven says we should be getting a new shipment of cabling, though I'm not sure we'll ever have enough supplies to keep this place properly operational."
+	name = "maintenance report"
+
+/obj/item/paper/djstation/forgive_me_father
+	info = "Father Gregor,<br><br>You will have to forgive me, but I am unable to get your order for one of those 'veil shifters' like you asked. I am admittedly unsure what you planned to do with it, the business of the clergy is not mine, but Vostok was quick to put the kaibosh on your order after we lost the last shipment.<br><br>The boys are still reeling from the headaches from last time, and Khoma complains that he sees the blue lights whenever he closes his eyes.<br><br>I am not one to question a man of God but I beg of you, please do not try to order any more of these artifacts. They are cursed, and all manner of demons seem to follow in their wake.<br><br>- <small><i>Andrei Vostovich</i></small>, Supply Technician";
+	name = "My apologies, father"
+
+/obj/item/paper/djstation/babyman
+	info = "<i>A primitive rendition of a crying egg being stomped on by a boot has been scribbled in the right-hand margin of the paper.</i><br><br>Wahwahwah! True egghead! I do not give two shits about your cats or 'syence,' if you write to Chief I will tell that bitch Katerina about your baby boy crush.<br><br>Also, why you sign name on paper? I am next door, fuckhead, I know baby man note is yours as soon as I see it. You write girly letter like I am your lover, maybe if you spend less time in corner with cat you would be real man? Of course, you would still look like camel shit stuck to Totstoi's boot!"
+	name = "dear baby man"
+
+/obj/item/paper/crumpled/love_poem
+	info = "<i>This note has been crossed out so many times it's hard to make out its contents.</i><br><small>Katerina,<br><br><s>Your eyes are like diamonds,<br>Forged in the very fire of Cygni-A.<br>My heart yearns for you,<br>For your soft beauty<br>Fuckfucknothat'sbad.<br><br>Your voice is like liquid gold,<br>Smothering me in its delicate contours.<br>Never before had I known,<br>The touch,<br>The touch!<br>The touch of an angel's voice</s><br><br>note to self: stick to science, poetry is not my forte.</small>"
+	name = "love poem"
+
+/obj/item/paper/djstation/unknown_report
+	info = "Fuck. Fuckfuckfuck. I knew this mission was a mistake, that idiot Thomas got himself killed by some angry Russian security bot in the armoury, and the Lt. ran into the annex like a moron and got himself trapped. Now I'm just sitting on my god damn hands because this shuttle won't bloody move. Stupid USSP piece of shit docking arm must be jammed and I don't have the kit to go out and fix it.<br><br>Who the hell attacks a space station without EVA gear anyways? It's not like you can just bloody well waltz out into space with a hot coffee and shrug it off."
+	name = "unknown report"
+
+/obj/item/paper/djstation/confession
+	info = "I am worried about Totstoi. It is the fifth time this week he has been sent to the drunk tank, and no matter how many times I come to him he can only seem to find God at the bottom of a glass of Tunguska.<br><br>All this drinking, I hate to think poorly of the USSP but, in placing no cost on such things are we not just as bad as the TSF? Many have even forgotten their true heritage in favour of Galactic Common. Such indulgence, such forgetfulness, it can not be good for the spirits, let alone the soul."
+	name = "a confession"
+
+/obj/item/paper/crumpled/button
+	info = "That idiot bastard Totstoi found my button. Stupid drunk was trying to put change into the free cigarette machine and dropped it. Lo' and behold, dumbass decides to look under the machine for his precious rubles.<br><br>Thankfully that green-livered swine cares more about drink than anything else, managed to buy him off. Will have to move the switch somewhere else now, but where?"
+	name = "worn paper"
+
+//Used in maps\overmap\space_pois\wizardcrash_20x35.dmm
+/obj/item/paper/zap_brief
+	info = "To the Magnificent Z.A.P.<BR>A small mining base has been created within our territory by wandless scum. Send them a message from the wizard federation they will not forget. I know your kind is rather fragile, but a group of lightly armed miners should not pose any threat to you at all. Just be warned they have a security cyborg for self defence, you might want to tune your spells to that threat. I look forward to hearing of your success.<BR>Grand Magus Abra the Wonderous"
+	name = "Mission Briefing"

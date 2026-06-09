@@ -1,0 +1,60 @@
+# Generated from giantclowns.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 96
+height = 96
+cols = 10
+
+[[state]]
+name = "c_mayor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "honk_elemental"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "c_egg"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "he_lay"
+dirs = 1
+frames = 16
+delays = [2]
+
+[[state]]
+name = "mayor_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tp_in"
+dirs = 4
+frames = 8
+delays = [1]
+loop = 1
+
+[[state]]
+name = "tp_out"
+dirs = 4
+frames = 7
+delays = [1]
+loop = 1
+
+[[state]]
+name = "he_dead"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "generic_gib"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "c_egg_opened"
+dirs = 1
+frames = 1

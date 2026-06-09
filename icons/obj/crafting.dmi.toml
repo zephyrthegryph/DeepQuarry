@@ -1,0 +1,54 @@
+# Generated from crafting.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "wisp"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wisp_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "wisp_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scale"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scale_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "scale_3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shell"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shell_2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "shell_3"
+dirs = 1
+frames = 1

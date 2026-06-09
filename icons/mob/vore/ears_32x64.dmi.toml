@@ -1,0 +1,224 @@
+# Generated from ears_32x64.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 64
+cols = 14
+
+[[state]]
+name = "bnnuy"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bnnuy-inner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bnnuy-tips"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sandfox"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sandfox-inner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shadekin-round"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shadekin-round-inner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teppi_ears"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teppi_ears_inner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teppi_horns"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "deer"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "antlers-wide"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jackalope"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "jackalope-antlers"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bunny-tall"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bunny-tall-inner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bnnuy2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bnnuy-tips2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rabbit-swept"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "antlers-large"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zaprat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zaprat-tips"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "feather_horns"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "feather_horns-fluff"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "party_plume"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "party_plume-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "party_plume-2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lleill"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lleill-antlers"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lleill2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lleill2-antlers"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lleill3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lleill3-antlers"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tallbunny"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tallbunny-inner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tallbunny-tips"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "antlerstall"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "paintedpoints"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "whoshorns"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "highrisehorns"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "axehorn"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "axehornalt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mizutsune_ears"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mizutsune_ears_inner"
+dirs = 4
+frames = 1

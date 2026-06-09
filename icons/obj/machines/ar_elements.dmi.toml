@@ -1,0 +1,61 @@
+# Generated from ar_elements.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 13
+
+[[state]]
+name = "proj"
+dirs = 4
+frames = 15
+delays = [25, 1]
+
+[[state]]
+name = "proj-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "proj-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "proj-panel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "proj-broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bun"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bun_beacon"
+dirs = 1
+frames = 8
+delays = [7, 1]
+
+[[state]]
+name = "beacon"
+dirs = 1
+frames = 42
+delays = [20, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 20, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 20, 1]
+
+[[state]]
+name = "beacon_yes"
+dirs = 1
+frames = 11
+delays = [1]
+loop = 1
+
+[[state]]
+name = "beacon_no"
+dirs = 1
+frames = 13
+delays = [1]
+loop = 1

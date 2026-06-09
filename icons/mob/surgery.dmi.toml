@@ -1,0 +1,139 @@
+# Generated from surgery.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 10
+
+[[state]]
+name = "male"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "male"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "male"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "groin1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "groin2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "r_arm1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "r_arm2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "l_arm1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "l_arm2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chest1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chest2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chest3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "l_hand1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "l_hand2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "r_hand1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "r_hand2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "r_leg1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "r_leg2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "l_leg1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "l_leg2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "r_foot1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "r_foot2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "l_foot1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "l_foot2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "head1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "head2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "head3"
+dirs = 4
+frames = 1

@@ -1,0 +1,78 @@
+# Generated from digital_tvalve.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 11
+
+[[state]]
+name = "tvalve0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tvalve1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tvalve01"
+dirs = 4
+frames = 5
+delays = [2]
+
+[[state]]
+name = "tvalve10"
+dirs = 4
+frames = 5
+delays = [2]
+
+[[state]]
+name = "tvalvenopower"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tvalvem0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tvalvem1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tvalvem01"
+dirs = 4
+frames = 5
+delays = [2]
+
+[[state]]
+name = "tvalvem10"
+dirs = 4
+frames = 5
+delays = [2]
+
+[[state]]
+name = "tvalvemnopower"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "map_tvalve0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "map_tvalve1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "map_tvalvem0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "map_tvalvem1"
+dirs = 4
+frames = 1

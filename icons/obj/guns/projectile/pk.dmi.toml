@@ -1,0 +1,124 @@
+# Generated from pk.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "pkopen-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pkopen100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pkclosed100"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pkopen75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pkclosed75"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pkopen50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pkclosed50"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pkopen25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pkclosed25"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pkclosed0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pkopen0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pkclosed-empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lefthand_doble_mag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand_doble"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand_doble_mag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand_doble"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "onsuit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "back"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "onsuit-empty"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "back-empty"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "righthand-empty"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lefthand-empty"
+dirs = 4
+frames = 1

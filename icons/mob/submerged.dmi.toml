@@ -1,0 +1,41 @@
+# Generated from submerged.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "water_template"
+dirs = 1
+frames = 3
+delays = [3]
+rewind = true
+
+[[state]]
+name = "human_swimming_1"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "human_swimming_2"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "mob_swimming_1"
+dirs = 1
+frames = 1
+rewind = true
+
+[[state]]
+name = "mob_swimming_2"
+dirs = 1
+frames = 1
+rewind = true
+
+[[state]]
+name = "mob_submerged"
+dirs = 1
+frames = 1
+rewind = true

@@ -1,0 +1,399 @@
+# Generated from modular_console.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 33
+
+[[state]]
+name = "standby_key"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "generic_key"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tech_key"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "atmos_key"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "med_key"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "id_key"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mining_key"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "power_key"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "security_key"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rd_key"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "console_off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "console"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "console_broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "__MASK__"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "command"
+dirs = 4
+frames = 2
+delays = [2]
+
+[[state]]
+name = "ai-fixer-empty"
+dirs = 4
+frames = 2
+delays = [7]
+
+[[state]]
+name = "ai-fixer-full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "upload"
+dirs = 4
+frames = 2
+delays = [2]
+
+[[state]]
+name = "alert-green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alert-red"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "comm"
+dirs = 4
+frames = 2
+delays = [1]
+
+[[state]]
+name = "medical"
+dirs = 4
+frames = 15
+delays = [2]
+
+[[state]]
+name = "dna"
+dirs = 4
+frames = 22
+delays = [2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 8, 1, 1, 1, 1, 2]
+
+[[state]]
+name = "engine"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "id"
+dirs = 4
+frames = 2
+delays = [2]
+
+[[state]]
+name = "medcomp"
+dirs = 4
+frames = 15
+delays = [2]
+
+[[state]]
+name = "operating"
+dirs = 4
+frames = 15
+delays = [2]
+
+[[state]]
+name = "shuttle"
+dirs = 4
+frames = 3
+delays = [1]
+
+[[state]]
+name = "solar"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "teleport"
+dirs = 4
+frames = 4
+delays = [1]
+
+[[state]]
+name = "security"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "warrant"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cameras"
+dirs = 4
+frames = 8
+delays = [18, 1, 18, 1, 18, 1, 18, 1]
+
+[[state]]
+name = "explosive"
+dirs = 4
+frames = 9
+delays = [10, 1, 1, 10, 1, 1, 10, 1]
+
+[[state]]
+name = "hostile"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "supply"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "request"
+dirs = 4
+frames = 6
+delays = [3]
+
+[[state]]
+name = "research"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "robot"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dummy"
+dirs = 4
+frames = 8
+delays = [10, 1, 10, 1, 10, 1, 10, 1]
+
+[[state]]
+name = "mecha"
+dirs = 4
+frames = 6
+delays = [1]
+
+[[state]]
+name = "comm_monitor"
+dirs = 4
+frames = 3
+delays = [4]
+rewind = true
+
+[[state]]
+name = "comm_logs"
+dirs = 4
+frames = 8
+delays = [1, 2, 1, 2, 1, 2, 1, 2]
+
+[[state]]
+name = "forensic"
+dirs = 4
+frames = 15
+delays = [2]
+
+[[state]]
+name = "holocontrol"
+dirs = 4
+frames = 8
+delays = [10, 1, 10, 1, 10, 1, 10, 1]
+
+[[state]]
+name = "entertainment"
+dirs = 4
+frames = 3
+delays = [4]
+rewind = true
+
+[[state]]
+name = "game"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crew"
+dirs = 4
+frames = 20
+delays = [1]
+
+[[state]]
+name = "generic"
+dirs = 4
+frames = 2
+delays = [2]
+
+[[state]]
+name = "menu"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "power_monitor"
+dirs = 4
+frames = 4
+delays = [6]
+
+[[state]]
+name = "power_monitor_warn"
+dirs = 4
+frames = 2
+delays = [2]
+
+[[state]]
+name = "alarm_monitor"
+dirs = 4
+frames = 2
+delays = [10]
+
+[[state]]
+name = "atmos_control"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "standby"
+dirs = 4
+frames = 7
+delays = [1, 1, 1, 1, 1, 1, 60]
+
+[[state]]
+name = "bsod"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "word"
+dirs = 4
+frames = 2
+delays = [2]
+
+[[state]]
+name = "shield"
+dirs = 4
+frames = 2
+delays = [2]
+
+[[state]]
+name = "smmon_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smmon_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smmon_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smmon_3"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smmon_4"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smmon_5"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smmon_6"
+dirs = 4
+frames = 2
+delays = [3]
+
+[[state]]
+name = "crew-red"
+dirs = 4
+frames = 20
+delays = [1]
+
+[[state]]
+name = "console_L"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "console_R"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "console_L_R"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "console_L_broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "console_R_broken"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "console_L_R_broken"
+dirs = 4
+frames = 1

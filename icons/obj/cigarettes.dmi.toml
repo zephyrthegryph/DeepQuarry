@@ -1,0 +1,416 @@
+# Generated from cigarettes.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 10
+
+[[state]]
+name = "cigpacket"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cigpacket_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cigpacket_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Apacket"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Apacket_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Apacket_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Jpacket"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Jpacket_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Jpacket0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Dpacket"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Dpacket_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Dpacket_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "LSpacket"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "LSpacket_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "LSpacket_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "TMpacket"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "TMpacket_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "TMpacket_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "P100packet"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "P100packet_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "P100packet_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prapacket"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prapacket_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "prapacket_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "CApacket"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "CApacket_open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "CApacket_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cig6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cig5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cig4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cig3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cig2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cig1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cigarcase"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cigarcase0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cigarcase1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cigarcase2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cigarcase3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cigarcase4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cigarcase5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cohibacase"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cohibacase0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cohibacase1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cohibacase2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cohibacase3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cohibacase4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cohibacase5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "havanacase"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "havanacase0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "havanacase1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "havanacase2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "havanacase3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "havanacase4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "havanacase5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chew_nico"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chew_nico6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chew_nico5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chew_nico4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chew_nico3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chew_nico2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chew_nico1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chew_nico0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chew_nico_empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "match_lit"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "match_unlit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "match_burnt"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "matchbox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "matchbox1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "matchbox_almostfull"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "matchbox_almostempty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "matchbox_e"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chew_generic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "chew_fine"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paperbox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cig paper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bluntbox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blunt paper"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "blunt_full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "paper_onfire"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "cigfilters_generic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cigfilter"
+dirs = 1
+frames = 1

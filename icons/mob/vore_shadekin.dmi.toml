@@ -1,0 +1,220 @@
+# Generated from vore_shadekin.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 17
+
+[[state]]
+name = "map_example"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "spawner"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dark"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "brown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rivyr"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "e_blue"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "e_purple"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "e_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "e_yellow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "e_green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "e_orange"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "e_orange2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "e_white"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dark-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "brown-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "white-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rivyr-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tp_out"
+dirs = 4
+frames = 5
+delays = [1]
+loop = 1
+
+[[state]]
+name = "tp_in"
+dirs = 4
+frames = 5
+delays = [1]
+loop = 1
+
+[[state]]
+name = "tp_in2"
+dirs = 1
+frames = 5
+delays = [1]
+
+[[state]]
+name = "luna-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "luna"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zylas-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zylas"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dark-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zylashoody"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zylashoody-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "muninn"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "muninn-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "anno"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "anno-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "e_rakshasa"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rakshasa"
+dirs = 4
+frames = 4
+delays = [5]
+
+[[state]]
+name = "rakshasa-1"
+dirs = 4
+frames = 4
+delays = [5]
+
+[[state]]
+name = "roti"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "roti-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "soft"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "soft-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "yrmir"
+dirs = 4
+frames = 7
+delays = [30, 2, 2, 2, 2, 2, 10]
+rewind = true
+
+[[state]]
+name = "yrmir-1"
+dirs = 4
+frames = 7
+delays = [30, 2, 2, 2, 2, 2, 10]
+rewind = true

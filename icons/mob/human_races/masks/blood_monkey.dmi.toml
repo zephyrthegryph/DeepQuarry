@@ -1,0 +1,24 @@
+# Generated from blood_monkey.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bloodyhands"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "maskblood"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shoeblood"
+dirs = 4
+frames = 1

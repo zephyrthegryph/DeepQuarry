@@ -1,0 +1,269 @@
+# Generated from fighters_construction64x64.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 8
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "Pinnaceraw"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinnace_wings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "pinnace_wings2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinnace_wings2_old"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinnace0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinnace1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinnace2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinnace3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinnace4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinnace5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinnace6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinnace7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinnace8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinnace9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinnace10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinnace11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinnace12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinnace13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinnace14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinnace15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinnace16"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinnace17"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinnace18"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinnace19"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinnace20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinnace21"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinnace22"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "pinnace23"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baron0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baron1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baron2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baron3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baron4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baron5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baron6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baron7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baron8"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baron9"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baron10"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baron11"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baron12"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baron13"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baron14"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baron15"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baron16"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baron17"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baron18"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baron19"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baron20"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baron21"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baron22"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "baron23"
+dirs = 1
+frames = 1

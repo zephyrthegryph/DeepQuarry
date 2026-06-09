@@ -1,0 +1,539 @@
+/obj/item/communicator/proc/analyze_air()
+	return get_gas_mixture_default_scan_data(get_turf(src.loc))
+
+// Proc - compile_news()
+// Parameters - none
+// Description - Returns the list of newsfeeds, compiled for template processing
+/obj/item/communicator/proc/compile_news()
+	var/list/feeds = list()
+	for(var/datum/feed_channel/channel in GLOB.news_network.network_channels)
+		var/list/messages = list()
+		if(!channel.censored && channel.channel_name != "Vir News Network") //Do not load the 'IC news' channel as it is simply too long.
+			var/index = 0
+			for(var/datum/feed_message/FM in channel.messages)
+				index++
+				if(FM.img)
+					usr << browse_rsc(FM.img, "pda_news_tmp_photo_[feeds["channel"]]_[index].png")
+				// News stories are HTML-stripped but require newline replacement to be properly displayed in NanoUI
+				var/body = replacetext(FM.body, "\n", "<br>")
+				messages[++messages.len] = list(
+						"author" = FM.author,
+						"body" = body,
+						"message_type" = FM.message_type,
+						"time_stamp" = FM.time_stamp,
+						"has_image" = (FM.img != null),
+						"caption" = FM.caption,
+						"index" = index
+					)
+
+		feeds[++feeds.len] = list(
+					"name" = channel.channel_name,
+					"censored" = channel.censored,
+					"author" = channel.author,
+					"messages" = messages,
+					"index" = feeds.len + 1 // actually align them, since I guess the population of the list doesn't occur until after the evaluation of the new entry's contents
+					)
+	return feeds
+
+// Proc - get_recent_news()
+// Parameters - none
+// Description - Returns the latest three newscasts, compiled for template processing
+/obj/item/communicator/proc/get_recent_news()
+	var/list/news = list()
+
+	// Compile all the newscasts
+	for(var/datum/feed_channel/channel in GLOB.news_network.network_channels)
+		if(!channel.censored)
+			for(var/datum/feed_message/FM in channel.messages)
+				var/body = replacetext(FM.body, "\n", "<br>")
+				news[++news.len] = list(
+							"channel" = channel.channel_name,
+							"author" = FM.author,
+							"body" = body,
+							"message_type" = FM.message_type,
+							"time_stamp" = FM.time_stamp,
+							"has_image" = (FM.img != null),
+							"caption" = FM.caption,
+							"time" = FM.post_time
+							)
+
+	// Cut out all but the youngest three
+	if(news.len > 3)
+		sortByKey(news, "time")
+		news.Cut(1, news.len - 2) // Last three have largest timestamps, youngest posts
+		news.Swap(1, 3) // List is sorted in ascending order of timestamp, we want descending
+
+	return news
+
+
+
+// Putting the commcard data harvesting helpers here
+// Not ideal to put all the procs on the base type
+// but it may open options for adminbus,
+// And it saves duplicated code
+
+
+// Medical records
+/obj/item/commcard/proc/get_med_records()
+	var/med_records[0]
+	for(var/datum/data/record/M in sortRecord(GLOB.data_core.medical))
+		var/record[0]
+		record[++record.len] = list("tab" = "Name", "val" = M.fields["name"])
+		record[++record.len] = list("tab" = "ID", "val" = M.fields["id"])
+		record[++record.len] = list("tab" = "Blood Type", "val" = M.fields["b_type"])
+		record[++record.len] = list("tab" = "DNA #", "val" = M.fields["b_dna"])
+		record[++record.len] = list("tab" = "Gender", "val" = M.fields["id_gender"])
+		record[++record.len] = list("tab" = "Entity Classification", "val" = M.fields["brain_type"])
+		record[++record.len] = list("tab" = "Minor Disorders", "val" = M.fields["mi_dis"])
+		record[++record.len] = list("tab" = "Major Disorders", "val" = M.fields["ma_dis"])
+		record[++record.len] = list("tab" = "Allergies", "val" = M.fields["alg"])
+		record[++record.len] = list("tab" = "Condition", "val" = M.fields["cdi"])
+		record[++record.len] = list("tab" = "Notes", "val" = M.fields["notes"])
+
+		med_records[++med_records.len] = list("name" = M.fields["name"], "record" = record)
+	return med_records
+
+
+// Employment records
+/obj/item/commcard/proc/get_emp_records()
+	var/emp_records[0]
+	for(var/datum/data/record/G in sortRecord(GLOB.data_core.general))
+		var/record[0]
+		record[++record.len] = list("tab" = "Name", "val" = G.fields["name"])
+		record[++record.len] = list("tab" = "ID", "val" = G.fields["id"])
+		record[++record.len] = list("tab" = "Rank", "val" = G.fields["rank"])
+		record[++record.len] = list("tab" = "Fingerprint", "val" = G.fields["fingerprint"])
+		record[++record.len] = list("tab" = "Entity Classification", "val" = G.fields["brain_type"])
+		record[++record.len] = list("tab" = "Sex", "val" = G.fields["sex"])
+		record[++record.len] = list("tab" = "Species", "val" = G.fields["species"])
+		record[++record.len] = list("tab" = "Age", "val" = G.fields["age"])
+		record[++record.len] = list("tab" = "Notes", "val" = G.fields["notes"])
+
+		emp_records[++emp_records.len] = list("name" = G.fields["name"], "record" = record)
+	return emp_records
+
+
+// Security records
+/obj/item/commcard/proc/get_sec_records()
+	var/sec_records[0]
+	for(var/datum/data/record/G in sortRecord(GLOB.data_core.general))
+		var/record[0]
+		record[++record.len] = list("tab" = "Name", "val" = G.fields[""])
+		record[++record.len] = list("tab" = "Sex", "val" = G.fields[""])
+		record[++record.len] = list("tab" = "Species", "val" = G.fields[""])
+		record[++record.len] = list("tab" = "Age", "val" = G.fields[""])
+		record[++record.len] = list("tab" = "Rank", "val" = G.fields[""])
+		record[++record.len] = list("tab" = "Fingerprint", "val" = G.fields[""])
+		record[++record.len] = list("tab" = "Physical Status", "val" = G.fields[""])
+		record[++record.len] = list("tab" = "Mental Status", "val" = G.fields[""])
+		record[++record.len] = list("tab" = "Criminal Status", "val" = G.fields[""])
+		record[++record.len] = list("tab" = "Major Crimes", "val" = G.fields[""])
+		record[++record.len] = list("tab" = "Minor Crimes", "val" = G.fields[""])
+		record[++record.len] = list("tab" = "Notes", "val" = G.fields["notes"])
+
+		sec_records[++sec_records.len] = list("name" = G.fields["name"], "record" = record)
+	return sec_records
+
+
+// Status of all secbots
+// Weaker than what PDAs appear to do, but as of 7/1/2018 PDA secbot access is nonfunctional
+/obj/item/commcard/proc/get_sec_bot_access()
+	var/sec_bots[0]
+	for(var/mob/living/bot/secbot/S in GLOB.mob_list)
+		// Get new bot
+		var/status[0]
+		status[++status.len] = list("tab" = "Name", "val" = sanitize(S.name))
+
+		// If it's turned off, then it shouldn't be broadcasting any further info
+		if(!S.on)
+			status[++status.len] = list("tab" = "Power", "val" = span_red("Off")) // Encoding the span classes here so I don't have to do complicated switches in the ui template
+			continue
+		status[++status.len] = list("tab" = "Power", "val" = span_green("On"))
+
+		// -- What it's doing
+		// If it's engaged, then say who it thinks it's engaging
+		if(S.target)
+			status[++status.len] = list("tab" = "Status", "val" = span_red("Apprehending Target"))
+			status[++status.len] = list("tab" = "Target", "val" = S.target_name(S.target))
+		// Else if it's patrolling
+		else if(S.will_patrol)
+			status[++status.len] = list("tab" = "Status", "val" = span_green("Patrolling"))
+		// Otherwise we don't know what it's doing
+		else
+			status[++status.len] = list("tab" = "Status", "val" = span_yellow("Idle"))
+
+		// Where it is
+		status[++status.len] = list("tab" = "Location", "val" = sanitize("[get_area(S.loc)]"))
+
+		// Append bot to the list
+		sec_bots[++sec_bots.len] = list("bot" = S.name, "status" = status)
+	return sec_bots
+
+
+// Code and frequency of stored signalers
+// Supports multiple signalers within the device
+/obj/item/commcard/proc/get_int_signalers()
+	var/signalers[0]
+	for(var/obj/item/assembly/signaler/S in internal_devices)
+		var/unit[0]
+		unit[++unit.len] = list("tab" = "Code", "val" = S.code)
+		unit[++unit.len] = list("tab" = "Frequency", "val" = S.frequency)
+
+		signalers[++signalers.len] = list("ref" = "\ref[S]", "status" = unit)
+
+	return signalers
+
+// Returns list of all powernet sensors currently visible to the commcard
+/obj/item/commcard/proc/find_powernet_sensors()
+	var/grid_sensors[0]
+
+	// Find all the powernet sensors we need to pull data from
+	// Copied from /datum/nano_module/power_monitor/proc/refresh_sensors(),
+	// located in '/code/modules/nano/modules/power_monitor.dm'
+	// Minor tweaks for efficiency and cleanliness
+	var/turf/T = get_turf(src)
+	if(T)
+		var/list/levels = using_map.get_map_levels(T.z, FALSE)
+		for(var/obj/machinery/power/sensor/S in GLOB.machines)
+			if((S.long_range) || (S.loc.z in levels) || (S.loc.z == T.z)) // Consoles have range on their Z-Level. Sensors with long_range var will work between Z levels.
+				if(S.name_tag == "#UNKN#") // Default name. Shouldn't happen!
+					warning("Powernet sensor with unset ID Tag! [S.x]X [S.y]Y [S.z]Z")
+				else
+					grid_sensors += S
+	return grid_sensors
+
+// List of powernets
+/obj/item/commcard/proc/get_powernet_monitoring_list()
+	// Fetch power monitor data
+	var/sensors[0]
+
+	for(var/obj/machinery/power/sensor/S in internal_data["grid_sensors"])
+		var/list/focus = S.return_reading_data()
+
+		sensors[++sensors.len] = list(
+				"name" = S.name_tag,
+				"alarm" = focus["alarm"]
+			)
+
+	return sensors
+
+// Information about the targeted powernet
+/obj/item/commcard/proc/get_powernet_target(target_sensor)
+	if(!target_sensor)
+		return
+
+	var/powernet_target[0]
+
+	for(var/obj/machinery/power/sensor/S in internal_data["grid_sensors"])
+		var/list/focus = S.return_reading_data()
+
+		// Packages the span class here so it doesn't need to be interpreted w/in the for loop in the ui template
+		var/load_stat = span_green("Optimal")
+		if(focus["load_percentage"] >= 95)
+			load_stat = span_red("DANGER: Overload")
+		else if(focus["load_percentage"] >= 85)
+			load_stat = span_yellow("WARNING: High Load")
+
+		var/alarm_stat = focus["alarm"] ? span_red("WARNING: Abnormal activity detected!") : span_green("Secure")
+
+		if(target_sensor == S.name_tag)
+			powernet_target = list(
+				"name" = S.name_tag,
+				"alarm" = focus["alarm"],
+				"error" = focus["error"],
+				"apc_data" = focus["apc_data"],
+				"status" = list(
+						list("field" = "Network Load Status", "statval" = load_stat),
+						list("field" = "Network Security Status", "statval" = alarm_stat),
+						list("field" = "Load Percentage", "statval" = focus["load_percentage"]),
+						list("field" = "Available Power", "statval" = focus["total_avail"]),
+						list("field" = "APC Power Usage", "statval" = focus["total_used_apc"]),
+						list("field" = "Other Power Usage", "statval" = focus["total_used_other"]),
+						list("field" = "Total Usage", "statval" = focus["total_used_all"])
+					)
+			)
+
+	return powernet_target
+
+// Compiles the locations of all janitorial paraphernalia, as used by janitorialLocator.tmpl
+/obj/item/commcard/proc/get_janitorial_locations()
+	// Fetch janitorial locator
+	var/janidata[0]
+	var/list/cleaningList = list()
+	cleaningList += GLOB.all_mops + GLOB.all_mopbuckets + GLOB.all_janitorial_carts
+
+	// User's location
+	var/turf/userloc = get_turf(src)
+	if(isturf(userloc))
+		janidata[++janidata.len] = list("field" = "Current Location", "val" = span_green("[userloc.x], [userloc.y], [using_map.get_zlevel_name(userloc.z)]"))
+	else
+		janidata[++janidata.len] = list("field" = "Current Location", "val" = span_red("Unknown"))
+		return janidata // If the user isn't on a valid turf, then it shouldn't be able to find anything anyways
+
+	// Mops, mop buckets, janitorial carts.
+	for(var/obj/C in cleaningList)
+		var/turf/T = get_turf(C)
+		if(isturf(T) )//&& T.z in using_map.get_map_levels(userloc, FALSE))
+			if(T.z == userloc.z)
+				janidata[++janidata.len] = list("field" = apply_text_macros("\proper [C.name]"), "val" = span_green("[T.x], [T.y], [using_map.get_zlevel_name(T.z)]"))
+			else
+				janidata[++janidata.len] = list("field" = apply_text_macros("\proper [C.name]"), "val" = span_yellow("[T.x], [T.y], [using_map.get_zlevel_name(T.z)]"))
+
+	// Cleanbots
+	for(var/mob/living/bot/cleanbot/B in GLOB.living_mob_list)
+		var/turf/T = get_turf(B)
+		if(isturf(T) )//&& T.z in using_map.get_map_levels(userloc, FALSE))
+			var/textout = ""
+			if(B.on)
+				textout += "Status: <span class='good'>Online</span><br>"
+				if(T.z == userloc.z)
+					textout += span_green("[T.x], [T.y], [using_map.get_zlevel_name(T.z)]")
+				else
+					textout += span_yellow("[T.x], [T.y], [using_map.get_zlevel_name(T.z)]")
+			else
+				textout += "Status: <span class='bad'>Offline</span>"
+
+			janidata[++janidata.len] = list("field" = "[B.name]", "val" = textout)
+
+	return janidata
+
+// Compiles the three lists used by GPS_access.tmpl
+// The contents of the three lists are inherently related, so separating them into different procs would be largely redundant
+/obj/item/commcard/proc/get_GPS_lists()
+	// GPS Access
+	var/list/intgps = list() // Gps devices within the commcard -- Allow tag edits, turning on/off, etc
+	var/list/extgps = list() // Gps devices not inside the commcard -- Print locations if a gps is on
+	var/list/stagps = list() // Gps net status, location, whether it's on, if it's got long range
+	var/obj/item/gps/cumulative = new(src)
+	cumulative.tracking = FALSE
+	cumulative.local_mode = TRUE // Won't detect long-range signals automatically
+	cumulative.long_range = FALSE
+	var/list/toggled_gps = list() // List of GPS units that are turned off before display_list() is called
+
+	for(var/obj/item/gps/G in internal_devices)
+		var/gpsdata[0]
+		if(G.tracking && !G.emped)
+			cumulative.tracking = TRUE // Turn it on
+			if(G.long_range)
+				cumulative.long_range = TRUE // It can detect long-range
+				if(!G.local_mode)
+					cumulative.local_mode = FALSE // It is detecting long-range
+
+		gpsdata["ref"] = "\ref[G]"
+		gpsdata["tag"] = G.gps_tag
+		gpsdata["power"] = G.tracking
+		gpsdata["local_mode"] = G.local_mode
+		gpsdata["long_range"] = G.long_range
+		gpsdata["hide_signal"] = G.hide_signal
+		gpsdata["can_hide"] = G.can_hide_signal
+
+		intgps[++intgps.len] = gpsdata // Add it to the list
+
+		if(G.tracking)
+			G.tracking = FALSE // Disable the internal gps units so they don't show up in the report
+			toggled_gps += G
+
+	for(var/obj/item/gps/G in toggled_gps) // Reenable any internal GPS units
+		G.tracking = TRUE
+
+	stagps["enabled"] = cumulative.tracking
+	stagps["long_range_en"] = (cumulative.long_range && !cumulative.local_mode)
+
+	var/turf/curr = get_turf(cumulative)
+	var/area/my_area = get_area(cumulative)
+	stagps["my_area_name"] = strip_improper(my_area.name)
+	stagps["curr_x"] = curr.x
+	stagps["curr_y"] = curr.y
+	stagps["curr_z"] = curr.z
+	stagps["curr_z_name"] = strip_improper(using_map.get_zlevel_name(curr.z))
+
+	var/list/gps_list = list()
+	var/z_level_det = using_map.get_map_levels(curr.z, cumulative.long_range)
+	for(var/obj/item/gps/G in GLOB.GPS_list - cumulative)
+
+		if(!cumulative.can_track(G, z_level_det))
+			continue
+
+		var/list/gps_data = list()
+		gps_data["ref"] = G
+		gps_data["gps_tag"] = G.gps_tag
+
+		var/area/A = get_area(G)
+		gps_data["area_name"] = strip_improper(A.get_name())
+
+		var/turf/T = get_turf(G)
+		gps_data["z_name"] = strip_improper(using_map.get_zlevel_name(T.z))
+		gps_data["direction"] = get_adir(curr, T)
+		gps_data["degrees"] = round(Get_Angle(curr,T))
+		gps_data["distX"] = T.x - curr.x
+		gps_data["distY"] = T.y - curr.y
+		gps_data["distance"] = get_dist(curr, T)
+		gps_data["local"] = (curr.z == T.z)
+		gps_data["x"] = T.x
+		gps_data["y"] = T.y
+
+		UNTYPED_LIST_ADD(gps_list, gps_data)
+
+	extgps = gps_list // Compiled by the GPS
+
+	qdel(cumulative) // Don't want spare GPS units building up in the contents
+
+	return list(
+			intgps,
+			extgps,
+			stagps
+		)
+
+// Collects the current status of the supply shuttle
+// Copied from /obj/machinery/computer/supplycomp/ui_interact(),
+// code\game\machinery\computer\supply.dm, starting at line 55
+/obj/item/commcard/proc/get_supply_shuttle_status()
+	var/list/shuttle_status = list()
+	var/datum/shuttle/autodock/ferry/supply/shuttle = SSsupply.shuttle
+
+	if(shuttle)
+		if(shuttle.has_arrive_time())
+			shuttle_status["location"] = "In transit"
+			shuttle_status["mode"] = SUP_SHUTTLE_TRANSIT
+			shuttle_status["time"] = shuttle.eta_minutes()
+
+		else
+			shuttle_status["time"] = 0
+			if(shuttle.at_station())
+				if(shuttle.shuttle_docking_controller)
+					switch(shuttle.shuttle_docking_controller.get_docking_status())
+						if("docked")
+							shuttle_status["location"] = "Docked"
+							shuttle_status["mode"] = SUP_SHUTTLE_DOCKED
+						if("undocked")
+							shuttle_status["location"] = "Undocked"
+							shuttle_status["mode"] = SUP_SHUTTLE_UNDOCKED
+						if("docking")
+							shuttle_status["location"] = "Docking"
+							shuttle_status["mode"] = SUP_SHUTTLE_DOCKING
+							shuttle_status["force"] = shuttle.can_force()
+						if("undocking")
+							shuttle_status["location"] = "Undocking"
+							shuttle_status["mode"] = SUP_SHUTTLE_UNDOCKING
+							shuttle_status["force"] = shuttle.can_force()
+
+				else
+					shuttle_status["location"] = "Station"
+					shuttle_status["mode"] = SUP_SHUTTLE_DOCKED
+
+			else
+				shuttle_status["location"] = "Away"
+				shuttle_status["mode"] = SUP_SHUTTLE_AWAY
+
+			if(shuttle.can_launch())
+				shuttle_status["launch"] = 1
+			else if(shuttle.can_cancel())
+				shuttle_status["launch"] = 2
+			else
+				shuttle_status["launch"] = 0
+
+		switch(shuttle.moving_status)
+			if(SHUTTLE_IDLE)
+				shuttle_status["engine"] = "Idle"
+			if(SHUTTLE_WARMUP)
+				shuttle_status["engine"] = "Warming up"
+			if(SHUTTLE_INTRANSIT)
+				shuttle_status["engine"] = "Engaged"
+
+	else
+		shuttle_status["mode"] = SUP_SHUTTLE_ERROR
+
+	return shuttle_status
+
+// Compiles the list of supply orders
+// Copied from /obj/machinery/computer/supplycomp/ui_interact(),
+// code\game\machinery\computer\supply.dm, starting at line 130
+/obj/item/commcard/proc/get_supply_orders()
+	var/orders[0]
+	for(var/datum/supply_order/S in SSsupply.order_history)
+		orders[++orders.len] = list(
+				"ref" = "\ref[S]",
+				"status" = S.status,
+				"entries" = list(
+						list("field" = "Supply Pack", "entry" = S.name),
+						list("field" = "Cost", "entry" = S.cost),
+						list("field" = "Index", "entry" = S.index),
+						list("field" = "Reason", "entry" = S.comment),
+						list("field" = "Ordered by", "entry" = S.ordered_by),
+						list("field" = "Ordered at", "entry" = S.ordered_at),
+						list("field" = "Approved by", "entry" = S.approved_by),
+						list("field" = "Approved at", "entry" = S.approved_at)
+					)
+			)
+
+	return orders
+
+// Compiles the list of supply export receipts
+// Copied from /obj/machinery/computer/supplycomp/ui_interact(),
+// code\game\machinery\computer\supply.dm, starting at line 147
+/obj/item/commcard/proc/get_supply_receipts()
+	var/receipts[0]
+	for(var/datum/exported_crate/E in SSsupply.exported_crates)
+		receipts[++receipts.len] = list(
+				"ref" = "\ref[E]",
+				"contents" = E.contents,
+				"error" = E.contents["error"],
+				"title" = list(
+						list("field" = "Name", "entry" = E.name),
+						list("field" = "Value", "entry" = E.value)
+					)
+			)
+	return receipts
+
+
+// Compiles the list of supply packs for the category currently stored in internal_data["supply_category"]
+// Copied from /obj/machinery/computer/supplycomp/ui_interact(),
+// code\game\machinery\computer\supply.dm, starting at line 147
+/obj/item/commcard/proc/get_supply_pack_list()
+	var/supply_packs[0]
+	for(var/pack_name in SSsupply.supply_pack)
+		var/datum/supply_pack/P = SSsupply.supply_pack[pack_name]
+		if(P.group == internal_data["supply_category"])
+			var/list/pack = list(
+					"name" = P.name,
+					"cost" = P.cost,
+					"contraband" = P.contraband,
+					"manifest" = uniqueList(P.manifest),
+					"random" = P.num_contained,
+					"expand" = 0,
+					"ref" = "\ref[P]"
+				)
+
+			if(P in internal_data["supply_pack_expanded"])
+				pack["expand"] = 1
+
+			supply_packs[++supply_packs.len] = pack
+
+	return supply_packs
+
+
+// Compiles miscellaneous data and permissions used by the supply template
+/obj/item/commcard/proc/get_misc_supply_data()
+	return list(
+			"shuttle_auth" = (internal_data["supply_controls"] & SUP_SEND_SHUTTLE),
+			"order_auth" = (internal_data["supply_controls"] & SUP_ACCEPT_ORDERS),
+			"supply_points" = SSsupply.points,
+			"supply_categories" = GLOB.all_supply_groups
+		)
+
+/obj/item/commcard/proc/get_status_display()
+	return list(
+			"line1" = internal_data["stat_display_line1"],
+			"line2" = internal_data["stat_display_line2"],
+			"active_line1" = internal_data["stat_display_active1"],
+			"active_line2" = internal_data["stat_display_active2"],
+			"active" = internal_data["stat_display_special"]
+		)
+
+/obj/item/commcard/proc/find_blast_doors()
+	var/target_doors[0]
+	for(var/obj/machinery/door/blast/B in GLOB.machines)
+		if(B.id == internal_data["shuttle_door_code"])
+			target_doors += B
+
+	return target_doors

@@ -1,0 +1,239 @@
+# Generated from tank.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "oxygen"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "anesthetic"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phoron"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emergency"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emergency_engi"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emergency_double"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emergency_tst"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oxygen_f"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "oxygen_fr"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "canister"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jetpack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jetpack-on"
+dirs = 1
+frames = 2
+delays = [1]
+
+[[state]]
+name = "jetpack-void"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jetpack-void-on"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "jetpack-black"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jetpack-black-on"
+dirs = 1
+frames = 2
+delays = [2]
+
+[[state]]
+name = "jetpack-breaker"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "jetpack-breaker-on"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "bomb_assembly"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emergency_nitro"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emergency_double_nitro"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "indicator_tank0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "indicator_tank1"
+dirs = 1
+frames = 2
+delays = [10]
+
+[[state]]
+name = "indicator_tank2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "indicator_tank3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "indicator_tank4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "indicator_tank5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "indicator_tank6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "indicator_emergency0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "indicator_emergency1"
+dirs = 1
+frames = 2
+delays = [10]
+
+[[state]]
+name = "indicator_emergency2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "indicator_emergency3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "indicator_emergency4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "indicator_emergency_double0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "indicator_emergency_double1"
+dirs = 1
+frames = 2
+delays = [10]
+
+[[state]]
+name = "indicator_emergency_double2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "indicator_emergency_double3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "indicator_emergency_double4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "indicator_emergency_doubleoverload"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "indicator_emergencyoverload"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "indicator_tankoverload"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "phoron-purple"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "phoron_vox"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "emergency_methane"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "methane"
+dirs = 1
+frames = 1

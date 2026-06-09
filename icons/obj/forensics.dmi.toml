@@ -1,0 +1,173 @@
+# Generated from forensics.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 8
+
+[[state]]
+name = "luminol"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "uv"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dust"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dnakit"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "swab"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "swab_used"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "card1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "card2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "card3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "card4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "card5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "card6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "card7"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slide"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slideblood"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slideswab"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "slidefiber"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "csivest"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "csivest_worn"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "m_glass"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "unused_forensics_tool"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fiberbag"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fiber"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "case"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "printer"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "printeractive"
+dirs = 1
+frames = 6
+delays = [1]
+
+[[state]]
+name = "microscope"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "microscopeslide"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dnaworking"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "dnaclosed"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "dnaopen"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "dnaunpowered"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dnaopenunpowered"
+dirs = 1
+frames = 1

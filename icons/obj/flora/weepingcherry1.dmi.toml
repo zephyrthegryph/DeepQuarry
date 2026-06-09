@@ -1,0 +1,24 @@
+# Generated from weepingcherry1.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 96
+height = 128
+cols = 2
+
+[[state]]
+name = "tree1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "tree_stump"
+dirs = 1
+frames = 1

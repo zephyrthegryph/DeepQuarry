@@ -1,0 +1,53 @@
+# Generated from capture_crystal_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 6
+
+[[state]]
+name = "full-b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "empty-b"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "full"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "inactive"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "inactive-busy"
+dirs = 1
+frames = 4
+delays = [15, 1, 15, 1]
+
+[[state]]
+name = "empty"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "animation"
+dirs = 1
+frames = 11
+delays = [1]
+
+[[state]]
+name = "empty-busy"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "full-busy"
+dirs = 1
+frames = 4
+delays = [1]

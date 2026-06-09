@@ -1,0 +1,59 @@
+# Generated from desert_props_64x64.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 64
+height = 64
+cols = 4
+
+[[state]]
+name = "palmuria"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "palmuria1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lribs"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lribs1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lskull"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lbone"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lrock"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lrock1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lrock2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lrock3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "lrock4"
+dirs = 1
+frames = 1

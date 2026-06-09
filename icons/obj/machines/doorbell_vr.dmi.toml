@@ -1,0 +1,67 @@
+# Generated from doorbell_vr.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 7
+
+[[state]]
+name = "doorbell-standby"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "doorbell-active"
+dirs = 1
+frames = 3
+delays = [1, 8, 1]
+
+[[state]]
+name = "doorbell-off"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "dbchime-standby"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dbchime-off"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dbchime-red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dbchime-active"
+dirs = 4
+frames = 2
+delays = [2, 3]
+loop = 6
+
+[[state]]
+name = "dbchime-open"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "doorbell_chime_0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "doorbell_chime_1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "doorbell_chime_2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "doorbell_chime_3"
+dirs = 4
+frames = 1

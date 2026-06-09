@@ -1,0 +1,24 @@
+# Generated from bodybag.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 2
+
+[[state]]
+name = "base"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "open"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bodybag_folded"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "bodybag_label"
+dirs = 1
+frames = 1

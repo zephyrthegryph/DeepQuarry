@@ -1,0 +1,1663 @@
+# Generated from tails.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 52
+
+[[state]]
+name = "squirrel-orange"
+dirs = 4
+frames = 4
+delays = [100, 1]
+
+[[state]]
+name = "squirrel-red"
+dirs = 4
+frames = 4
+delays = [100, 1]
+
+[[state]]
+name = "squirrel"
+dirs = 4
+frames = 4
+delays = [100, 1]
+
+[[state]]
+name = "kittydown"
+dirs = 4
+frames = 5
+delays = [1]
+
+[[state]]
+name = "kittyup"
+dirs = 4
+frames = 5
+delays = [1]
+
+[[state]]
+name = "tiger"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stripeytail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stripeytail-brown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tigerinnerwhite"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bunny"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bear-brown"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bear"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolf-grey"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolf-green"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wisewolf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolf"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolfinner"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "crossfox"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mouse-pink"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mouse"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "molenar-deathclaw"
+dirs = 4
+frames = 4
+delays = [40, 0.3, 40, 0.5]
+
+[[state]]
+name = "molenar-kitsune"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "runac"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rosey_three"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "scree"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "aronai"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "moth"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "triplekitsune_tips"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "triplekitsune"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ninekitsune-tips"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ninekitsune"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "moth_full"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "redpanda"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ringtail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tigresstail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tailmaw"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zenghu_taj"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "reika"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spadetail-black"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "miria-fluffdragontail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "miria-kitsunetail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "dragon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "curltail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "curltail_w"
+dirs = 4
+frames = 8
+delays = [2]
+
+[[state]]
+name = "straighttail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "straighttail_w"
+dirs = 4
+frames = 8
+delays = [2]
+
+[[state]]
+name = "tigertail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tigertail_w"
+dirs = 4
+frames = 7
+delays = [1]
+rewind = true
+
+[[state]]
+name = "vulptail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vulptail_w"
+dirs = 4
+frames = 9
+delays = [2]
+
+[[state]]
+name = ""
+dirs = 1
+frames = 1
+
+[[state]]
+name = "fantail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wagtail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wagtail_dc_tail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wagtail2_dc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wagtail2_dc_mark"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nevreantail_dc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nevreantail_dc_tail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cow"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "horse"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "liquidfirefly-eyestalks"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "doublekitsune"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beethorax"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rosey_five"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "otie"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "otie_w"
+dirs = 4
+frames = 4
+delays = [6, 2]
+
+[[state]]
+name = "ztail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "curltail_mark"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "curltail_mark_w"
+dirs = 4
+frames = 8
+delays = [2]
+
+[[state]]
+name = "vulptail_mark"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vulptail_mark_w"
+dirs = 4
+frames = 9
+delays = [2]
+
+[[state]]
+name = "stripeytail_mark"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tigertail_mark"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tigertail_mark_w"
+dirs = 4
+frames = 7
+delays = [1]
+rewind = true
+
+[[state]]
+name = "ringtail_mark"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snaketail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fennec_tail_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fox_tail_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ketraitailnew"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ketraitail_w"
+dirs = 4
+frames = 9
+delays = [2]
+
+[[state]]
+name = "ketraitail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "ketraitailnew_w"
+dirs = 4
+frames = 35
+delays = [6, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 6, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 6]
+
+[[state]]
+name = "sergal"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sergal_mark"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eboop"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "eboop_mark"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "newtailmaw"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "newtailmaw_w"
+dirs = 4
+frames = 5
+delays = [10, 3, 10, 2, 4]
+rewind = true
+
+[[state]]
+name = "skunktail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "skunktail_mark"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "deertail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "deertail_mark"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vulptail_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_fluffytail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_fluffytail_mark"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satyr"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "buggo_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "buggobee_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "buggobeefull_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "buggounder_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "buggofirefly_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "buggofat_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "buggofatbee_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "buggofatbeefull_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "buggofatunder_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "buggofatfirefly_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "buggo_vass_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "buggobee_vass_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "buggobeefull_vass_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "buggounder_vass_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "buggofirefly_vass_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "buggofat_vass_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "buggofatbee_vass_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "buggofatbeefull_vass_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "buggofatunder_vass_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "buggofatfirefly_vass_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "chameleon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xenotail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tail_smooth"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tail_smooth_w"
+dirs = 4
+frames = 9
+delays = [1]
+rewind = true
+
+[[state]]
+name = "tail_smooth_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sneptail_w"
+dirs = 4
+frames = 7
+delays = [2.5]
+rewind = true
+
+[[state]]
+name = "sneptail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sneptail_mark_w"
+dirs = 4
+frames = 7
+delays = [2.5]
+rewind = true
+
+[[state]]
+name = "sneptail_mark"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sneptail_new_w"
+dirs = 4
+frames = 7
+delays = [2.5]
+rewind = true
+
+[[state]]
+name = "sneptail_new"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sneptail_new_mark_w"
+dirs = 4
+frames = 7
+delays = [2.5]
+rewind = true
+
+[[state]]
+name = "sneptail_new_mark"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "shadekin-short"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "frosted_tips"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "featherfluff_tail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "cabletail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "nightstalker"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "OG_wardtakahashi_vulp"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wardtakahashi_vulp"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wardtakahashi_vulp_dc"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wardtakahashi_vulp_dc_mark"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "doublekitsunealt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "doublekitsunealt-tips"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sevenkitsune"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sevenkitsune-tips"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_fluff"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "zorgoia_fluff_top"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "OG_wardtakahashi_vulp"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshtail_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshtail_feathers_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshpattern_fem_tail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshpattern_fem_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshpattern_male_tail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshpattern_male_alt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xenotail_fullcolour"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "fox_tail_plain_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xenotailalt_fullcolour"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lizard_tail_smooth"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lizard_tail_dark_tiger"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lizard_tail_light_tiger"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "lizard_tail_spiked"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "EasterntailColorTip"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Easterntail_w"
+dirs = 4
+frames = 11
+delays = [3, 1.5]
+
+[[state]]
+name = "Easterntail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "EasterntailColorTip_w"
+dirs = 4
+frames = 11
+delays = [3, 1.5]
+
+[[state]]
+name = "synthtail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synthtail_w"
+dirs = 4
+frames = 9
+delays = [2]
+rewind = true
+
+[[state]]
+name = "Segmentedtail_w"
+dirs = 4
+frames = 8
+delays = [15, 1.5, 1.5, 1.5, 5, 1.5]
+
+[[state]]
+name = "Segmentedlights_w"
+dirs = 4
+frames = 8
+delays = [15, 1.5, 1.5, 1.5, 5, 1.5]
+
+[[state]]
+name = "Segmentedlights"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Segmentedtailmarking_w"
+dirs = 4
+frames = 8
+delays = [15, 1.5, 1.5, 1.5, 5, 1.5]
+
+[[state]]
+name = "Segmentedtailmarking"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Segmentedtail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Plugtail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "PlugtailMarking"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "PlugtailMarking2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "peacocktail_red"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "peacocktail_red_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "peacocktail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "peacocktail_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tentacle"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "tentacle_w"
+dirs = 4
+frames = 5
+delays = [1]
+rewind = true
+
+[[state]]
+name = "foxtail"
+dirs = 4
+frames = 1
+hotspots = [{ frame = 1, x = 16, y = 20 }]
+
+[[state]]
+name = "foxtail-tips"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "foxtail_w"
+dirs = 4
+frames = 5
+delays = [2]
+rewind = true
+
+[[state]]
+name = "foxtail-tips_w"
+dirs = 4
+frames = 5
+delays = [2]
+rewind = true
+
+[[state]]
+name = "altevian"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sharktail_finless"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "perrintentacles"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshbug_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshbee_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshbeefull_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshunder_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshfirefly_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshbugfat_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshfatbee_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshfatbeefull_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshfatunder_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshfatfirefly_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beethorax_tesh"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synth_stilts"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "synth_stilts_marking"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alien_slug"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "alien_slug_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "blade-like-tail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sectdrone_tail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sectdrone_tail_mark"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "kara_tail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "turkey"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sharktail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sharktail_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sharktail_tipmarkings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "sharktail_stripemarkings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wah_w"
+dirs = 4
+frames = 6
+delays = [10, 3, 4, 2]
+
+[[state]]
+name = "wah-stripes_w"
+dirs = 4
+frames = 6
+delays = [10, 3, 4, 2]
+
+[[state]]
+name = "wah"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wah-stripes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raccoon_w"
+dirs = 4
+frames = 5
+delays = [2]
+rewind = true
+
+[[state]]
+name = "raccoon-stripes_w"
+dirs = 4
+frames = 5
+delays = [2]
+rewind = true
+
+[[state]]
+name = "raccoon"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raccoon-stripes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "narrowtail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "narrowtail_2color"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "narrowtail_2color-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "clubtail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "clubtail-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spiketail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "spiketail-1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bigsnaketail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bigsnaketail_w"
+dirs = 4
+frames = 3
+delays = [1, 1, 10]
+rewind = true
+
+[[state]]
+name = "bigsnaketailstripes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bigsnaketailstripes-tips"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bigsnaketailstripes_w"
+dirs = 4
+frames = 3
+delays = [1, 1, 10]
+rewind = true
+
+[[state]]
+name = "bigsnaketailstripes-tips_w"
+dirs = 4
+frames = 3
+delays = [1, 1, 10]
+rewind = true
+
+[[state]]
+name = "bigsnaketaildual_w"
+dirs = 4
+frames = 3
+delays = [1, 1, 10]
+rewind = true
+
+[[state]]
+name = "bigsnaketaildual-tips_w"
+dirs = 4
+frames = 3
+delays = [1, 1, 10]
+rewind = true
+
+[[state]]
+name = "bigsnaketaildual"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bigsnaketaildual-tips"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bigsnaketailstripesalt_w"
+dirs = 4
+frames = 3
+delays = [1, 1, 10]
+rewind = true
+
+[[state]]
+name = "bigsnaketailstripesalt-tips_w"
+dirs = 4
+frames = 3
+delays = [1, 1, 10]
+rewind = true
+
+[[state]]
+name = "bigsnaketailstripesalt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bigsnaketailstripesalt-tips"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bigsnaketailunder_w"
+dirs = 4
+frames = 3
+delays = [1, 1, 10]
+rewind = true
+
+[[state]]
+name = "bigsnaketailunder-tips_w"
+dirs = 4
+frames = 3
+delays = [1, 1, 10]
+rewind = true
+
+[[state]]
+name = "bigsnaketailunder"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bigsnaketailunder-tips"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "deeralt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "deeralt_w"
+dirs = 4
+frames = 10
+delays = [1.5]
+
+[[state]]
+name = "rabbit"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "rabbit_w"
+dirs = 4
+frames = 2
+delays = [10, 1]
+
+[[state]]
+name = "rabbitalt"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "rabbitalt-tips"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "rabbitalt_w"
+dirs = 4
+frames = 3
+delays = [3, 1, 3]
+rewind = true
+
+[[state]]
+name = "rabbitalt-tips_w"
+dirs = 4
+frames = 3
+delays = [3, 1, 3]
+rewind = true
+
+[[state]]
+name = "tigeralt"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tigeralt-tips"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tigeralt-tips2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tigeralt_w"
+dirs = 4
+frames = 7
+delays = [3, 3, 3, 3, 3, 3, 2]
+rewind = true
+
+[[state]]
+name = "tigeralt-tips_w"
+dirs = 4
+frames = 7
+delays = [3, 3, 3, 3, 3, 3, 2]
+rewind = true
+
+[[state]]
+name = "tigeralt-tips2_w"
+dirs = 4
+frames = 7
+delays = [3, 3, 3, 3, 3, 3, 2]
+rewind = true
+
+[[state]]
+name = "twocat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "twocat_w"
+dirs = 4
+frames = 5
+delays = [1]
+
+[[state]]
+name = "threecat"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "threecat_w"
+dirs = 4
+frames = 5
+delays = [1]
+
+[[state]]
+name = "twotiger"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "twotiger-tips"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "twotiger-tips2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "twotiger_w"
+dirs = 4
+frames = 7
+delays = [1]
+rewind = true
+
+[[state]]
+name = "twotiger-tips_w"
+dirs = 4
+frames = 7
+delays = [1]
+rewind = true
+
+[[state]]
+name = "twotiger-tips2_w"
+dirs = 4
+frames = 7
+delays = [1]
+rewind = true
+
+[[state]]
+name = "kururak"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "demi-tesh-kit-tail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "demi-tesh-kit-tail_floof"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smallbug1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "smallbug2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "midbug1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "midbug2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bigbug1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "bigbug2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "Succubustail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leaf_tail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snaketail_stripes"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "valetail_mark_w"
+dirs = 4
+frames = 7
+delays = [1]
+rewind = true
+
+[[state]]
+name = "valetail_mark"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "valetail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "valetail_w"
+dirs = 4
+frames = 7
+delays = [1]
+rewind = true
+
+[[state]]
+name = "anthrovirustail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "anthrovirustail_mark"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "tyranid"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leopard"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leopard_spots"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "leopard_w"
+dirs = 4
+frames = 7
+delays = [2.5, 2.5, 2.5, 4, 2.5]
+rewind = true
+
+[[state]]
+name = "leopard_spots_w"
+dirs = 4
+frames = 7
+delays = [2.5, 2.5, 2.5, 4, 2.5]
+rewind = true
+
+[[state]]
+name = "orca_tail_f"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "orca_tail_markings"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "snaketailteshari"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "feathered_raptor"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "feather_raptor-overlay"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "wolf_tail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vulpkanin_alt_color"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vulpkanin_alt_color_tips"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "raccoon_tail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "vulpkanin_alt_color_w"
+dirs = 4
+frames = 9
+delays = [10, 2, 2, 2, 2, 2, 2, 2, 5]
+
+[[state]]
+name = "vulpkanin_alt_color_tips_w"
+dirs = 4
+frames = 9
+delays = [10, 2, 2, 2, 2, 2, 2, 2, 5]
+
+[[state]]
+name = "stripedtail_colorable"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "stripedtail_colorable_w"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "seromitail_s"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "teshari_fluffytail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "triplekitsune"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xenotail_fullcolouralt"
+dirs = 4
+frames = 1
+rewind = true
+
+[[state]]
+name = "bigsnaketail"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "xenotail_fullcolouralt_w"
+dirs = 4
+frames = 4
+delays = [1, 1, 1, 3.5]
+rewind = true

@@ -1,0 +1,50 @@
+# Generated from cult.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 4
+
+[[state]]
+name = "cult"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cult_broken0"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cult_broken1"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cult_broken2"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cult_broken3"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cult_broken4"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cult_broken5"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cult_broken6"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "cult-narsie"
+dirs = 1
+frames = 4
+delays = [3]

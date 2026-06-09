@@ -1,0 +1,164 @@
+# Generated from borkmedigun.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 9
+
+[[state]]
+name = "item_sprites"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mg-backpack"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mg-backpack_cmo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mg-backpack-deployed"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medblaster"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medblaster_cmo"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "onmob_sprites"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "mg-backpack-onmob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mg-backpack-deployed-onmob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "mg-backpack_cmo-onmob"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medblaster_RIGHT"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medblaster_LEFT"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medblaster-doble_RIGHT"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medblaster-doble_LEFT"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medblaster_cmo_RIGHT"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "medblaster_cmo_LEFT"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "beams"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "medbeam_basic"
+dirs = 1
+frames = 4
+delays = [1]
+
+[[state]]
+name = "medbeam_muzzle"
+dirs = 1
+frames = 4
+delays = [1.5]
+
+[[state]]
+name = "medbeam_middle"
+dirs = 1
+frames = 4
+delays = [1.5]
+
+[[state]]
+name = "medbeam_impact"
+dirs = 1
+frames = 4
+delays = [1.5]
+
+[[state]]
+name = "plussy"
+dirs = 1
+frames = 6
+delays = [1.5]
+
+[[state]]
+name = "redstrike-blink"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "orangestrike-blink"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "greenstrike-blink"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "green"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "red"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "low_battery"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "no_battery"
+dirs = 1
+frames = 2
+delays = [5]
+
+[[state]]
+name = "orange"
+dirs = 1
+frames = 1

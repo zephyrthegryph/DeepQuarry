@@ -1,0 +1,54 @@
+# Generated from mob_werebeast.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 64
+cols = 7
+
+[[state]]
+name = "blank"
+dirs = 1
+frames = 1
+
+[[state]]
+name = "backpack"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "satchel-norm"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffle"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "courierbag"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "giftbag0"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "giftbag1"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "giftbag2"
+dirs = 4
+frames = 1
+
+[[state]]
+name = "duffle_syndie"
+dirs = 4
+frames = 1

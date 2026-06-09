@@ -1,0 +1,25 @@
+# Generated from mob_ch_teshari.dmi — edit the .png and regenerate the .dmi via tools/dq_icons/repack.py.
+width = 32
+height = 32
+cols = 18
+
+[[state]]
+name = "casinoslave"
+dirs = 4
+frames = 26
+delays = [2.5]
+hotspots = [{ frame = 1, x = 13, y = 9 }, { frame = 4, x = 0, y = 0 }]
+
+[[state]]
+name = "casinoslave_available"
+dirs = 4
+frames = 26
+delays = [2.5]
+hotspots = [{ frame = 1, x = 13, y = 9 }, { frame = 4, x = 0, y = 0 }]
+
+[[state]]
+name = "casinoslave_owned"
+dirs = 4
+frames = 26
+delays = [2.5]
+hotspots = [{ frame = 1, x = 13, y = 9 }, { frame = 4, x = 0, y = 0 }]
