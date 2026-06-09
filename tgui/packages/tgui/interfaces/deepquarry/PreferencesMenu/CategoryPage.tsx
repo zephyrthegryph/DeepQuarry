@@ -77,7 +77,6 @@ const PREF_KEY_LABELS: Record<string, string> = {
   tail_color2: 'Tail Color (Secondary)',
   tail_color3: 'Tail Color (Tertiary)',
   tail_alpha: 'Tail Opacity',
-  tail_layering: 'Tail Layering',
   wing_style: 'Wing Style',
   wing_color1: 'Wing Color (Primary)',
   wing_color2: 'Wing Color (Secondary)',

@@ -18,9 +18,8 @@
 	var/identifier = "statue"
 	var/material = "stone"
 	var/adjective = "hardens"
-	var/list/tail_lower_dirs = list(SOUTH, EAST, WEST)
+	var/list/tail_lower_dirs = list(NORTH, SOUTH)
 	var/image/tail_image
-	var/tail_layering = TAIL_UPPER_LAYER
 
 	var/can_revert = TRUE
 	var/was_rayed = FALSE
@@ -62,7 +61,6 @@
 		tail_lower_dirs.Cut()
 	else if(H.tail_style)
 		tail_lower_dirs = H.tail_style.lower_layer_dirs.Copy()
-	tail_layering = H.tail_layering ? TAIL_UPPER_LAYER_HIGH : TAIL_UPPER_LAYER
 
 	max_integrity = H.getMaxHealth() + 100
 	obj_integrity = H.health + 100
@@ -282,7 +280,7 @@
 	. = ..()
 	if(. && tail_image)
 		cut_overlay(tail_image)
-		tail_image.layer = BODY_LAYER + ((dir in tail_lower_dirs) ? TAIL_LOWER_LAYER : tail_layering)
+		tail_image.layer = BODY_LAYER + ((dir in tail_lower_dirs) ? TAIL_LOWER_LAYER : TAIL_UPPER_LAYER)
 		add_overlay(tail_image)
 
 /obj/structure/gargoyle/hitby(atom/movable/source, datum/thrownthing/throwingdatum)

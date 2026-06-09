@@ -871,7 +871,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 		suit_sprite = INV_SUIT_DEF_ICON
 
 	var/icon/c_mask = null
-	var/tail_is_rendered = overlays_standing[TAIL_LOWER_LAYER] || overlays_standing[tail_layering]
+	var/tail_is_rendered = overlays_standing[TAIL_LOWER_LAYER] || overlays_standing[TAIL_UPPER_LAYER]
 	var/valid_clip_mask = tail_style?.clip_mask
 
 	if(tail_is_rendered && valid_clip_mask && !(istype(suit) && suit.taurized)) //Clip the lower half of the suit off using the tail's clip mask for taurs since taur bodies aren't hidden.
@@ -990,9 +990,13 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 	apply_layer(L_HAND_LAYER)
 
 /mob/living/carbon/human/proc/get_tail_layer()
-	var/list/lower_layer_dirs = list(SOUTH, EAST, WEST) //Tail below clothing on side views too.
+	// Layer follows facing direction automatically: the tail sits behind the body
+	// when facing toward or away from the viewer (north/south), and on the middle
+	// layer (over clothing) when facing to the side (east/west). Individual tail
+	// sprites may override which dirs render behind the body via lower_layer_dirs.
+	var/list/lower_layer_dirs = list(NORTH, SOUTH)
 	if(tail_style)
-		lower_layer_dirs = tail_style.lower_layer_dirs.Copy()
+		lower_layer_dirs = tail_style.lower_layer_dirs
 
 	if(dir in lower_layer_dirs)
 		return TAIL_LOWER_LAYER
@@ -1011,8 +1015,6 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 	var/tail_layer = get_tail_layer()
 	if(src.tail_style && src.tail_style.clip_mask_state)
 		tail_layer = TAIL_UPPER_LAYER		// Use default, let clip mask handle everything
-	if(tail_layer == TAIL_UPPER_LAYER)
-		tail_layer = tail_layering
 
 	update_vore_tail_sprite()
 
@@ -1060,8 +1062,6 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 	var/tail_layer = get_tail_layer()
 	if(src.tail_style && src.tail_style.clip_mask_state)
 		tail_layer = TAIL_UPPER_LAYER		// Use default, let clip mask handle everything
-	if(tail_layer == TAIL_UPPER_LAYER)
-		tail_layer = tail_layering
 	var/image/tail_overlay = overlays_standing[tail_layer]
 
 	remove_layer(TAIL_UPPER_LAYER)
