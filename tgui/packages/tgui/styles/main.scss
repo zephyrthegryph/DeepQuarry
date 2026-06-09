@@ -81,17 +81,6 @@
   background-repeat: no-repeat;
 }
 
-// Tooltip overlay theme. The in-game hover tooltip (Tooltip.tsx) is hosted in the
-// mapwindow.tooltip BROWSER element (overlaid on the map, inner-background-color
-// transparent). The standard .Window background would paint that element opaque,
-// hiding the map; make the outer Window transparent so the page composites against
-// the map and only the inner positioned tooltip box is visible. The inner box keeps
-// its own colors (themeStyles keyed by the user's tooltip_style).
-.theme-tooltip .Window {
-  background-color: transparent;
-  background-image: none;
-}
-
 // A default, in case someone uses the vp() function outside of a <Window>
 :root {
   --scaling-amount: 1;

@@ -3,10 +3,16 @@
 // Hosted inside the hidden mapwindow.tooltip BROWSER skin element — a
 // map-sized child anchored over the map with inner-background-color
 // transparent, so transparent page pixels composite against the map.
-// The element is shown/hidden by DM via winset. While shown
-// this React tree renders an absolutely-positioned tooltip <div>
-// inside the otherwise transparent (pointer-events: none) layer, so
-// clicks pass straight through to the underlying map.
+// The element is shown/hidden by DM via winset.
+//
+// IMPORTANT: we render a bare <div>, NOT a tgui <Window>. The Window/Layout
+// chrome paints theme-driven backgrounds (.Window gradient, NT-logo SVG on
+// .Layout__content, etc.) that are opaque and would fill the whole map-sized
+// element grey, defeating the BROWSER's transparency. Instead we inject
+// TOOLTIP_RESET_CSS to force every document layer transparent and render only
+// an absolutely-positioned tooltip box. This mirrors BellyOverlay.tsx, the
+// other working over-map transparent overlay. The box catches pointer events;
+// the rest of the layer is pointer-events: none so clicks reach the map.
 //
 // Ports the positioning math from the legacy tooltip.html JS: query
 // the live map element pixel size via Byond.winget, then map the
@@ -14,9 +20,30 @@
 
 import { useEffect, useState } from 'react';
 import { useBackend } from 'tgui/backend';
-import { Window } from 'tgui/layouts';
 import type { BooleanLike } from 'tgui-core/react';
 import { HtmlRenderer } from './common/HtmlRenderer';
+
+// Force every document layer transparent so the BROWSER element (which has
+// inner-background-color=#00000000 on the BYOND side) composites against the
+// map instead of painting grey. Without this the tgui base styles
+// (html/body/#react-root/.Layout/.Window) leave opaque pixels.
+const TOOLTIP_RESET_CSS = `
+html, body, #react-root, .TooltipRoot,
+div[class^="theme-"], .Layout, .Layout__content, .Window {
+  background: transparent !important;
+  background-image: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  overflow: hidden !important;
+}
+html, body, #react-root, .TooltipRoot {
+  width: 100% !important;
+  height: 100% !important;
+  position: fixed !important;
+  inset: 0 !important;
+}
+`;
 
 type Data = {
   visible: BooleanLike;
@@ -209,43 +236,42 @@ export const Tooltip = () => {
     data.tile_size,
   ]);
 
-  // theme="tooltip" makes the outer Window transparent (see main.scss). Without
-  // it the standard .Window grey background fills the full-window 999x999 browser
-  // element and paints a grey box over the viewport whenever the element is shown.
-  if (!data.visible || !position) {
-    return <Window fitted theme="tooltip" />;
-  }
-
   const themeStyle = themeStyles[data.theme] ?? themeStyles.default;
 
+  // Always render the bare transparent root (+ reset CSS). The tooltip box only
+  // renders once visible and positioned; until then the layer is fully
+  // transparent, so showing the element never flashes a grey backdrop.
   return (
-    <Window fitted theme="tooltip">
-      <div
-        // Root layer is transparent and passes clicks through to the
-        // map underneath; only the inner tooltip box catches events.
-        style={{
-          position: 'fixed',
-          inset: 0,
-          pointerEvents: 'none',
-        }}
-      >
+    <div className="TooltipRoot">
+      <style>{TOOLTIP_RESET_CSS}</style>
+      {data.visible && position && (
         <div
+          // Root layer is transparent and passes clicks through to the
+          // map underneath; only the inner tooltip box catches events.
           style={{
-            position: 'absolute',
-            left: position.x,
-            top: position.y,
-            maxWidth: 298,
-            padding: 8,
-            border: `2px solid ${themeStyle.borderColor}`,
-            color: themeStyle.color,
-            backgroundColor: themeStyle.backgroundColor,
-            font: 'bold 12px Arial, "Helvetica Neue", Helvetica, sans-serif',
-            pointerEvents: 'auto',
+            position: 'fixed',
+            inset: 0,
+            pointerEvents: 'none',
           }}
         >
-          <HtmlRenderer html={data.title} />
+          <div
+            style={{
+              position: 'absolute',
+              left: position.x,
+              top: position.y,
+              maxWidth: 298,
+              padding: 8,
+              border: `2px solid ${themeStyle.borderColor}`,
+              color: themeStyle.color,
+              backgroundColor: themeStyle.backgroundColor,
+              font: 'bold 12px Arial, "Helvetica Neue", Helvetica, sans-serif',
+              pointerEvents: 'auto',
+            }}
+          >
+            <HtmlRenderer html={data.title} />
+          </div>
         </div>
-      </div>
-    </Window>
+      )}
+    </div>
   );
 };
