@@ -61,9 +61,7 @@
 	// ZAS portable machinery was deleted.
 	var/obj/item/tank/internal_tank
 	var/datum/gas_mixture/cabin_air
-	// connected_port was an /obj/machinery/atmospherics/portables_connector
-	// (ZAS). Untyped while LINDA portables_connector is wired in.
-	var/obj/connected_port = null
+	var/obj/machinery/atmospherics/portables_connector/connected_port = null
 
 	var/obj/item/radio/radio = null
 
@@ -1773,17 +1771,46 @@
 			. = t_air.temperature
 	return
 
-// connect/disconnect plumbed a mecha into a ZAS portables_connector +
-// pipe_network. Both types deleted in the LINDA migration. Stub returns 0 (not
-// connected) until the LINDA equivalent (vendored under code/atmospherics/
-// machinery/components/unary_devices/portables_connector.dm) is wired into the build.
-/obj/mecha/proc/connect(obj/new_port)
-	return 0
+// connect/disconnect plumb the mecha cabin atmosphere into a LINDA
+// portables_connector's pipe network, mirroring the canonical portable
+// atmospherics device (code/game/machinery/atmoalter/portable_atmospherics.dm).
+/obj/mecha/proc/connect(obj/machinery/atmospherics/portables_connector/new_port)
+	// Already connected, or the port is missing/occupied.
+	if(connected_port || !new_port || new_port.connected_device)
+		return 0
+	// Must share a tile with the port, and have a cabin atmosphere to share.
+	if(!(new_port.loc in locs) || !cabin_air)
+		return 0
+
+	connected_port = new_port
+	connected_port.connected_device = src
+	connected_port.on = 1
+
+	// Inject cabin_air into the port's pipe network so an external supply can
+	// equalise with it. connected_device is set first so return_network()
+	// recognises src as the reference.
+	var/datum/pipe_network/network = connected_port.return_network(src)
+	if(network && !network.gases.Find(cabin_air))
+		network.gases += cabin_air
+		network.update = 1
+
+	playsound(src, 'sound/mecha/gasconnected.ogg', 50, 1)
+	mecha_log_message("Connected to gas port.")
+	return 1
 
 /obj/mecha/proc/disconnect()
-	return 0
+	if(!connected_port)
+		return 0
+
+	var/datum/pipe_network/network = connected_port.return_network(src)
+	if(network)
+		network.gases -= cabin_air
+
+	connected_port.connected_device = null
+	connected_port = null
+
 	playsound(src, 'sound/mecha/gasdisconnected.ogg', 50, 1)
-	src.mecha_log_message("Disconnected from gas port.")
+	mecha_log_message("Disconnected from gas port.")
 	return 1
 
 
@@ -1808,10 +1835,8 @@
 	if(!GC)
 		return
 
-	// portables_connector type deleted; loop is a no-op until LINDA
-	// portables_connector is wired in.
 	for(var/turf/T in locs)
-		var/obj/possible_port = null
+		var/obj/machinery/atmospherics/portables_connector/possible_port = locate() in T
 		if(possible_port)
 			if(connect(possible_port))
 				occupant_message(span_notice("\The [name] connects to the port."))
