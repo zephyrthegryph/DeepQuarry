@@ -55,6 +55,7 @@
 		ui = new(C.mob, src, "Tooltip", window = tooltip_window)
 		ui.closeable = FALSE
 		ui.open(preinitialized = TRUE)
+	dq_log("tooltip New: ctrl=[control] window=[tooltip_window ? "ok" : "null"] ui=[ui ? "ok" : "null"]")
 	..()
 
 
