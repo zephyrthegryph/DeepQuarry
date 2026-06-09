@@ -443,7 +443,7 @@
 
 	corpse = /obj/effect/landmark/mobcorpse/pirate/ranged
 
-	loot_list = list(/obj/item/gun/energy/zip = 100, /obj/item/gun/energy/zip = 100, /obj/item/gun/energy/zip = 100, /obj/item/gun/energy/zip = 100) //Belt of pistols
+	loot_list = list(/obj/item/gun/energy/zip = 100) //Belt of pistols
 
 	var/obj/item/shield_projector/shields = null
 

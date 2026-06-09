@@ -14,8 +14,7 @@
 
 	var/obj/item/shield_projector/shields = null
 
-	loot_list = list(/obj/item/prop/alien/junk = 20,
-			/obj/item/prop/alien/junk = 20
+	loot_list = list(/obj/item/prop/alien/junk = 20
 			)
 
 /mob/living/simple_mob/mechanical/hivebot/precusor/Initialize(mapload)

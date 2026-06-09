@@ -49,7 +49,6 @@
 
 	corpse = /obj/effect/landmark/mobcorpse/vox/pirate
 	loot_list = list(/*/obj/item/gun/projectile/shotgun/pump/rifle/vox_hunting = 100, Downstream */
-					/obj/item/ammo_magazine/clip/c762 = 30,
 					/obj/item/ammo_magazine/clip/c762 = 30
 					)
 
@@ -125,7 +124,6 @@
 	ai_holder_type = /datum/ai_holder/simple_mob/ranged/aggressive
 	corpse = /obj/effect/landmark/mobcorpse/vox/boarder_r
 	loot_list = list(/obj/item/gun/projectile/shotgun/pump/combat = 100,
-					/obj/item/ammo_magazine/m12gdrum = 30,
 					/obj/item/ammo_magazine/m12gdrum = 30
 					)
 

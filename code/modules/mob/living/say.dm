@@ -3,7 +3,6 @@ GLOBAL_LIST_INIT(department_radio_keys, list(
 	":l" = "left ear",	".l" = "left ear",
 	":i" = "intercom",	".i" = "intercom",
 	":h" = "department",	".h" = "department",
-	":+" = "special",		".+" = "special", //activate radio-specific special functions
 	":c" = CHANNEL_COMMAND,		".c" = CHANNEL_COMMAND,
 	":n" = CHANNEL_SCIENCE,		".n" = CHANNEL_SCIENCE,
 	":m" = CHANNEL_MEDICAL,		".m" = CHANNEL_MEDICAL,

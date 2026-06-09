@@ -299,7 +299,6 @@
 	build_path = /obj/machinery/reagent_refinery/filter
 	board_type = new /datum/frame/frame_types/industrial_reagent_filter
 	req_components = list(
-							/obj/item/stock_parts/motor = 1,
 							/obj/item/stock_parts/scanning_module = 1,
 							/obj/item/stock_parts/motor = 1,
 							/obj/item/stock_parts/gear = 1,

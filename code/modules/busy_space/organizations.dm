@@ -501,7 +501,7 @@
 			"NanoTrasen - Join for the Medical, stay for the Company.",
 			"NanoTrasen - Advancing Humanity."
 			)
-	ship_prefixes = list("NTV" = "a general operations", "NEV" = "an exploration", "NGV" = "a hauling", "NDV" = "a patrol", "NRV" = "an emergency response", "NDV" = "an asset protection")
+	ship_prefixes = list("NTV" = "a general operations", "NEV" = "an exploration", "NGV" = "a hauling", "NRV" = "an emergency response", "NDV" = "an asset protection")
 	//Scientist naming scheme
 	ship_names = list(
 			"Bardeen",
@@ -585,7 +585,7 @@
 			"+Hephaestus Arms!+ - Don't be caught +firing blanks+.",
 			"+Hephaestus Arms!+ - If in doubt, give 'em +both barrels!+"
 			)
-	ship_prefixes = list("HCV" = "a general operations", "HTV" = "a freight", "HLV" = "a munitions resupply", "HDV" = "an asset protection", "HDV" = "a preemptive deployment")
+	ship_prefixes = list("HCV" = "a general operations", "HTV" = "a freight", "HLV" = "a munitions resupply", "HDV" = "a preemptive deployment")
 	//War God Theme, updated
 	append_ship_names = TRUE
 	added_ship_names = list(
@@ -1196,7 +1196,7 @@
 			"Major Bill's - Private Couriers - General Shipping!",
 			"Major Bill's got you covered, now get out there!"
 			)
-	ship_prefixes = list("TTV" = "a general operations", "TTV" = "a transport", "TTV" = "a luxury transit", "TTV" = "a priority transit", "TTV" = "a secure data courier")
+	ship_prefixes = list("TTV" = "a secure data courier")
 	//ship names: big rivers
 	append_ship_names = TRUE
 	added_ship_names = list (
@@ -1463,7 +1463,7 @@
 			"StarFlight - bringing you to new horizons.",
 			"StarFlight - getting you where you need to be since 2137."
 			)
-	ship_prefixes = list("SFI-X" = "a VIP liner", "SFI-L" = "a luxury liner", "SFI-B" = "a business liner", "SFI-E" = "an economy liner", "SFI-M" = "a mixed class liner", "SFI-S" = "a sightseeing", "SFI-M" = "a wedding", "SFI-O" = "a marketing", "SFI-S" = "a safari", "SFI-A" = "an aquatic adventure")
+	ship_prefixes = list("SFI-X" = "a VIP liner", "SFI-L" = "a luxury liner", "SFI-B" = "a business liner", "SFI-E" = "an economy liner", "SFI-M" = "a wedding", "SFI-O" = "a marketing", "SFI-S" = "a safari", "SFI-A" = "an aquatic adventure")
 	flight_types = list(		//no military-sounding ones here
 			"flight",
 			"route",
@@ -1530,7 +1530,7 @@
 			"Oculum - Nothing But The Truth.",
 			"Oculum - Your Eye On The Galaxy."
 			)
-	ship_prefixes = list("OBV" = "an investigation", "OBV" = "a distribution", "OBV" = "a journalism", "OBV" = "a general operations")
+	ship_prefixes = list("OBV" = "a general operations")
 	destination_names = list(
 			"Oculus HQ"
 			)
@@ -1702,7 +1702,7 @@
 			"Coyote Salvage Corp. 'cause one man's trash is another man's treasure.",
 			"Coyote Salvage Corp. We'll take your scrap - but not your crap."
 			)
-	ship_prefixes = list("CSV" = "a salvage", "CRV" = "a recovery", "CTV" = "a transport", "CSV" = "a shipbreaking", "CHV" = "a towing")
+	ship_prefixes = list("CRV" = "a recovery", "CTV" = "a transport", "CSV" = "a shipbreaking", "CHV" = "a towing")
 	//mostly-original, maybe some references, and more than a few puns
 	append_ship_names = TRUE
 	added_ship_names = list(
@@ -1779,7 +1779,7 @@
 			"Chimera Genetics. Bring us your genes and we'll clean them right up.",
 			"Chimera Genetics. Better bodies for a better tomorrow."
 			)
-	ship_prefixes = list("CGV" = "a general operations", "CGT" = "a transport", "CGT" = "a delivery", "CGH" = "a medical")
+	ship_prefixes = list("CGV" = "a general operations", "CGT" = "a delivery", "CGH" = "a medical")
 	//edgy mythological critters!
 	ship_names = list(
 			"Bandersnatch",
@@ -1883,7 +1883,7 @@
 	autogenerate_destination_names = FALSE //don't add extra destinations to our pool, or else we leave the system which makes no sense
 
 	org_type = "system defense"
-	ship_prefixes = list ("SDB" = "a patrol", "SDF" = "a patrol", "SDV" = "a patrol", "SDB" = "an escort", "SDF" = "an escort", "SDV" = "an escort", "SAR" = "a search and rescue", "SDT" = "a logistics", "SDT" = "a resupply", "SDJ" = "a prisoner transport") //b = boat, f = fleet (generic), v = vessel, t = tender
+	ship_prefixes = list ("SDB" = "an escort", "SDF" = "an escort", "SDV" = "an escort", "SAR" = "a search and rescue", "SDT" = "a resupply", "SDJ" = "a prisoner transport") //b = boat, f = fleet (generic), v = vessel, t = tender
 	//ship names: weapons, particularly medieval and renaissance melee and pre-gunpowder ranged weapons
 	ship_names = list(
 			"Sword",
@@ -2390,7 +2390,7 @@
 	motto = ""
 
 	org_type = "government"
-	ship_prefixes = list("ECS-M" = "a military", "ECS-T" = "a transport", "ECS-T" = "a special transport", "ECS-D" = "a diplomatic")	//The Special Transport is SLAAAAVES. but let's not advertise that openly.
+	ship_prefixes = list("ECS-M" = "a military", "ECS-T" = "a special transport", "ECS-D" = "a diplomatic")	//The Special Transport is SLAAAAVES. but let's not advertise that openly.
 	ship_names = list(
 			"Bring Me Wine!",
 			"I Can't Believe You",
@@ -2456,7 +2456,7 @@
 	motto = ""
 
 	org_type = "government"
-	ship_prefixes = list("SFM-M" = "a military", "SFM-M" = "a patrol")	 // The Salthans don't do anything else.
+	ship_prefixes = list("SFM-M" = "a patrol")	 // The Salthans don't do anything else.
 	flight_types = list(
 			"mission",
 			"operation",
@@ -2561,7 +2561,7 @@
 
 	org_type = "government"
 	//its more or less a civilian fleet of ships that have a few armed ones sprinkled in to deter pirates when needed. They call in the Skrell for anything heavier.
-	ship_prefixes = list("TUV" = "a diplomatic", "TUV" = "a peacekeeping", "TUV" = "an escort", "TUV" = "an exploration", "TUV" = "a survey", "TUV" = "an expeditionary", "TUV" = "a pioneering")
+	ship_prefixes = list("TUV" = "a pioneering")
 	//TODO: better ship names? I just took a bunch of random teshnames from the Random Name button and added a word.
 	ship_names = list()
 	destination_names = list(
@@ -2635,7 +2635,7 @@
 	motto = ""
 	org_type = "spacer"
 
-	ship_prefixes = list("AH-DV" = "a diplomatic", "AH-EV" = "an exploration", "AH-FV" = "a fueling", "AH-FV" = "a cargo", "AH-SV" = "a research", "AH-TV" = "a colony-transporter", "AH-RV" = "an emergency response", "AH-RV" = "a response", "AH-MV" = "a medical")
+	ship_prefixes = list("AH-DV" = "a diplomatic", "AH-EV" = "an exploration", "AH-FV" = "a cargo", "AH-SV" = "a research", "AH-TV" = "a colony-transporter", "AH-RV" = "a response", "AH-MV" = "a medical")
 	ship_names = list(
 			"Platinum",
 			"Warson",
@@ -2692,7 +2692,7 @@
 	autogenerate_destination_names = TRUE
 
 	org_type = "military"
-	ship_prefixes = list ("USDF" = "a logistical", "USDF" = "a training", "USDF" = "a patrol", "USDF" = "a piracy suppression", "USDF" = "a peacekeeping", "USDF" = "a relief", "USDF" = "an escort", "USDF" = "a search and rescue", "USDF" = "a classified")
+	ship_prefixes = list ("USDF" = "a classified")
 	flight_types = list(
 			"mission",
 			"operation",
@@ -2791,7 +2791,7 @@
 	autogenerate_destination_names = TRUE
 
 	org_type = "military"
-	ship_prefixes = list("PCRC" = "a risk control", "PCRC" = "a private security")
+	ship_prefixes = list("PCRC" = "a private security")
 	flight_types = list(
 			"flight",
 			"mission",
@@ -2940,7 +2940,7 @@
 	autogenerate_destination_names = TRUE
 
 	org_type = "military"
-	ship_prefixes = list("SAARE" = "a secure freight", "SAARE" = "a training", "SAARE" = "a logistics", "SAARE" = "a patrol", "SAARE" = "a security", "SAARE" = "an experimental", "SAARE" = "a command", "SAARE" = "a classified")
+	ship_prefixes = list("SAARE" = "a classified")
 	flight_types = list(
 			"flight",
 			"mission",

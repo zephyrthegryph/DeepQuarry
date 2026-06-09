@@ -40,7 +40,6 @@
 		O_KIDNEYS =		/obj/item/organ/internal/kidneys,
 		O_BRAIN =		/obj/item/organ/internal/brain,
 		O_APPENDIX = 	/obj/item/organ/internal/appendix,
-		O_SPLEEN =		/obj/item/organ/internal/spleen,
 		O_SPLEEN = 		/obj/item/organ/internal/spleen,
 		O_EYES =		/obj/item/organ/internal/eyes,
 		O_STOMACH =		/obj/item/organ/internal/stomach,

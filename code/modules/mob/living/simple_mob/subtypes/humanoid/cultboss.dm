@@ -33,8 +33,6 @@
 			/obj/item/clothing/gloves/tactical/void = 100,
 			/obj/item/melee/voidblade = 25,
 			/obj/item/soulstone = 25,
-			/obj/item/soulstone = 25,
-			/obj/item/soulstone = 25,
 			/obj/item/capture_crystal/demon = 25,
 			/obj/item/capture_crystal/wendigo = 25
 			)

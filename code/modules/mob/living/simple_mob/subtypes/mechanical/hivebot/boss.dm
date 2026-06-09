@@ -29,15 +29,8 @@
 	loot_list = list(/obj/item/clothing/suit/armor/alien = 30,
 			/obj/item/clothing/suit/armor/alien/tank = 30,
 			/obj/item/prop/alien/junk = 50,
-			/obj/item/prop/alien/junk = 50,
-			/obj/item/prop/alien/junk = 50,
-			/obj/item/prop/alien/junk = 50,
-			/obj/item/prop/alien/junk = 50,
-			/obj/item/gun/energy/alien = 30,
 			/obj/item/gun/energy/alien = 30,
 			/obj/random/tool/alien = 30,
-			/obj/random/tool/alien = 30,
-			/obj/item/cell/device/weapon/recharge/alien = 30,
 			/obj/item/cell/device/weapon/recharge/alien = 30
 			)
 

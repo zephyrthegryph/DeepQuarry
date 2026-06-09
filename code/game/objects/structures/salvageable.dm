@@ -39,16 +39,6 @@
 		/obj/item/stack/cable_coil{amount = 5} = 80,
 		/obj/item/trash/material/circuit = 60,
 		/obj/item/trash/material/metal = 60,
-		/obj/item/stock_parts/capacitor = 40,
-		/obj/item/stock_parts/capacitor = 40,
-		/obj/item/stock_parts/scanning_module = 40,
-		/obj/item/stock_parts/scanning_module = 40,
-		/obj/item/stock_parts/manipulator = 40,
-		/obj/item/stock_parts/manipulator = 40,
-		/obj/item/stock_parts/micro_laser = 40,
-		/obj/item/stock_parts/micro_laser = 40,
-		/obj/item/stock_parts/matter_bin = 40,
-		/obj/item/stock_parts/matter_bin = 40,
 		/obj/item/stock_parts/capacitor = 20,
 		/obj/item/stock_parts/scanning_module = 20,
 		/obj/item/stock_parts/manipulator = 20,
@@ -69,13 +59,8 @@
 		/obj/item/stack/material/glass{amount = 5} = 90,
 		/obj/item/trash/material/circuit = 60,
 		/obj/item/trash/material/metal = 60,
-		/obj/item/stock_parts/capacitor = 60,
-		/obj/item/stock_parts/capacitor = 60,
-		/obj/item/computer_hardware/network_card = 40,
 		/obj/item/computer_hardware/network_card = 40,
 		/obj/item/computer_hardware/processor_unit = 40,
-		/obj/item/computer_hardware/processor_unit = 40,
-		/obj/item/computer_hardware/card_slot = 40,
 		/obj/item/computer_hardware/card_slot = 40,
 		/obj/item/stock_parts/capacitor = 30,
 		/obj/item/computer_hardware/network_card/advanced = 20
@@ -92,20 +77,10 @@
 		/obj/item/stack/cable_coil{amount = 5} = 80,
 		/obj/item/trash/material/circuit = 60,
 		/obj/item/trash/material/metal = 60,
-		/obj/item/stock_parts/capacitor = 40,
 		/obj/item/stock_parts/scanning_module = 40,
 		/obj/item/stock_parts/manipulator = 40,
-		/obj/item/stock_parts/micro_laser = 40,
-		/obj/item/stock_parts/micro_laser = 40,
-		/obj/item/stock_parts/micro_laser = 40,
-		/obj/item/stock_parts/matter_bin = 40,
-		/obj/item/stock_parts/matter_bin = 40,
-		/obj/item/stock_parts/matter_bin = 40,
-		/obj/item/stock_parts/matter_bin = 40,
 		/obj/item/stock_parts/capacitor = 20,
 		/obj/item/stock_parts/micro_laser = 20,
-		/obj/item/stock_parts/micro_laser = 20,
-		/obj/item/stock_parts/matter_bin = 20,
 		/obj/item/stock_parts/matter_bin = 20,
 		/obj/item/stack/material/steel{amount = 20} = 40,
 		/obj/item/stack/material/glass{amount = 20} = 40,
@@ -150,16 +125,8 @@
 		/obj/item/trash/material/circuit = 60,
 		/obj/item/trash/material/metal = 60,
 		/obj/item/computer_hardware/network_card = 40,
-		/obj/item/computer_hardware/network_card = 40,
-		/obj/item/computer_hardware/processor_unit = 40,
 		/obj/item/computer_hardware/processor_unit = 40,
 		/obj/item/computer_hardware/hard_drive = 50,
-		/obj/item/computer_hardware/hard_drive = 50,
-		/obj/item/computer_hardware/hard_drive = 50,
-		/obj/item/computer_hardware/hard_drive = 50,
-		/obj/item/computer_hardware/hard_drive = 50,
-		/obj/item/computer_hardware/hard_drive = 50,
-		/obj/item/computer_hardware/hard_drive/advanced = 30,
 		/obj/item/computer_hardware/hard_drive/advanced = 30,
 		/obj/item/computer_hardware/network_card/advanced = 20
 	)
@@ -178,18 +145,11 @@
 		/obj/item/trash/material/circuit = 60,
 		/obj/item/trash/material/metal = 60,
 		/obj/item/computer_hardware/network_card = 40,
-		/obj/item/computer_hardware/network_card = 40,
-		/obj/item/computer_hardware/processor_unit = 40,
 		/obj/item/computer_hardware/processor_unit = 40,
 		/obj/item/stock_parts/subspace/amplifier = 40,
-		/obj/item/stock_parts/subspace/amplifier = 40,
-		/obj/item/stock_parts/subspace/analyzer = 40,
 		/obj/item/stock_parts/subspace/analyzer = 40,
 		/obj/item/stock_parts/subspace/ansible = 40,
-		/obj/item/stock_parts/subspace/ansible = 40,
 		/obj/item/stock_parts/subspace/transmitter = 40,
-		/obj/item/stock_parts/subspace/transmitter = 40,
-		/obj/item/stock_parts/subspace/crystal = 30,
 		/obj/item/stock_parts/subspace/crystal = 30,
 		/obj/item/computer_hardware/network_card/advanced = 20
 	)
@@ -255,8 +215,6 @@
 		/obj/item/trash/material/circuit = 60,
 		/obj/item/trash/material/metal = 60,
 		/obj/item/stock_parts/capacitor = 40,
-		/obj/item/stock_parts/capacitor = 40,
-		/obj/item/stock_parts/scanning_module = 40,
 		/obj/item/stock_parts/scanning_module = 40
 	)
 
@@ -273,8 +231,6 @@
 		/obj/item/trash/material/circuit = 60,
 		/obj/item/trash/material/metal = 60,
 		/obj/item/stock_parts/capacitor = 40,
-		/obj/item/stock_parts/capacitor = 40,
-		/obj/item/stock_parts/scanning_module = 40,
 		/obj/item/stock_parts/scanning_module = 40
 	)
 
@@ -289,14 +245,9 @@
 		/obj/item/stock_parts/console_screen = 80,
 		/obj/item/stack/cable_coil{amount = 5} = 80,
 		/obj/item/stock_parts/capacitor = 40,
-		/obj/item/stock_parts/capacitor = 40,
-		/obj/item/stock_parts/scanning_module = 40,
 		/obj/item/stock_parts/scanning_module = 40,
 		/obj/item/stock_parts/manipulator = 40,
-		/obj/item/stock_parts/manipulator = 40,
 		/obj/item/stock_parts/micro_laser = 40,
-		/obj/item/stock_parts/micro_laser = 40,
-		/obj/item/stock_parts/matter_bin = 40,
 		/obj/item/stock_parts/matter_bin = 40
 	)
 
@@ -308,10 +259,7 @@
 		/obj/item/stack/cable_coil{amount = 5} = 90,
 		/obj/item/stack/material/glass{amount = 5} = 90,
 		/obj/item/stock_parts/capacitor = 60,
-		/obj/item/stock_parts/capacitor = 60,
 		/obj/item/computer_hardware/processor_unit/photonic = 40,
-		/obj/item/computer_hardware/processor_unit/photonic = 40,
-		/obj/item/computer_hardware/card_slot = 40,
 		/obj/item/computer_hardware/card_slot = 40,
 		/obj/item/computer_hardware/network_card/advanced = 40
 	)
@@ -341,7 +289,6 @@
 		/obj/item/computer_hardware/processor_unit/small = 60,
 		/obj/item/computer_hardware/processor_unit/photonic = 50,
 		/obj/item/computer_hardware/hard_drive/super = 50,
-		/obj/item/computer_hardware/hard_drive/super = 50,
 		/obj/item/computer_hardware/hard_drive/cluster = 50,
 		/obj/item/computer_hardware/network_card/wired = 40
 	)
@@ -353,19 +300,12 @@
 		/obj/item/stock_parts/console_screen = 80,
 		/obj/item/stack/cable_coil{amount = 5} = 90,
 		/obj/item/stack/material/glass{amount = 5} = 90,
-		/obj/item/computer_hardware/network_card/wired = 40,
-		/obj/item/computer_hardware/network_card/wired = 40,
 		/obj/item/computer_hardware/processor_unit = 40,
 		/obj/item/computer_hardware/processor_unit/photonic = 40,
 		/obj/item/stock_parts/subspace/amplifier = 40,
-		/obj/item/stock_parts/subspace/amplifier = 40,
-		/obj/item/stock_parts/subspace/analyzer = 40,
 		/obj/item/stock_parts/subspace/analyzer = 40,
 		/obj/item/stock_parts/subspace/ansible = 40,
-		/obj/item/stock_parts/subspace/ansible = 40,
 		/obj/item/stock_parts/subspace/transmitter = 40,
-		/obj/item/stock_parts/subspace/transmitter = 40,
-		/obj/item/stock_parts/subspace/crystal = 30,
 		/obj/item/stock_parts/subspace/crystal = 30,
 		/obj/item/computer_hardware/network_card/wired = 20
 	)
@@ -378,10 +318,8 @@
 		/obj/item/stack/cable_coil{amount = 5} = 90,
 		/obj/item/stock_parts/console_screen = 80,
 		/obj/item/stock_parts/capacitor = 60,
-		/obj/item/stock_parts/capacitor = 60,
 		/obj/item/computer_hardware/processor_unit/small = 40,
 		/obj/item/computer_hardware/processor_unit/photonic = 40,
-		/obj/item/computer_hardware/card_slot = 40,
 		/obj/item/computer_hardware/card_slot = 40,
 		/obj/item/computer_hardware/network_card/advanced = 40
 	)
@@ -393,10 +331,8 @@
 		/obj/item/stack/cable_coil{amount = 5} = 90,
 		/obj/item/stock_parts/console_screen = 80,
 		/obj/item/stock_parts/capacitor = 60,
-		/obj/item/stock_parts/capacitor = 60,
 		/obj/item/computer_hardware/processor_unit = 40,
 		/obj/item/computer_hardware/processor_unit/photonic = 40,
-		/obj/item/computer_hardware/card_slot = 40,
 		/obj/item/computer_hardware/card_slot = 40,
 		/obj/item/computer_hardware/network_card/advanced = 40
 	)
@@ -405,11 +341,9 @@
 	name = "broken slot machine"
 	icon_state = "slot1"
 	salvageable_parts = list(
-		/obj/item/stack/cable_coil{amount = 5} = 90,
 		/obj/item/stock_parts/console_screen = 90,
 		/obj/item/stack/cable_coil{amount = 5} = 90,
 		/obj/item/stack/material/glass{amount = 5} = 90,
-		/obj/item/stock_parts/capacitor = 60,
 		/obj/item/stock_parts/capacitor = 60,
 		/obj/item/computer_hardware/network_card/advanced = 40
 	)
@@ -418,11 +352,9 @@
 	name = "broken slot machine"
 	icon_state = "slot2"
 	salvageable_parts = list(
-		/obj/item/stack/cable_coil{amount = 5} = 90,
 		/obj/item/stock_parts/console_screen = 90,
 		/obj/item/stack/cable_coil{amount = 5} = 90,
 		/obj/item/stack/material/glass{amount = 5} = 90,
-		/obj/item/stock_parts/capacitor = 60,
 		/obj/item/stock_parts/capacitor = 60,
 		/obj/item/computer_hardware/network_card/advanced = 40
 	)

@@ -392,7 +392,6 @@
 			stages = list(
 				"ripped charred stump" = damage_amt*1.3,
 				"charred stump" = damage_amt,
-				"scarred stump" = damage_amt*0.5,
 				"scarred stump" = 0
 				)
 

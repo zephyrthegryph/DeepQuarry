@@ -28,11 +28,6 @@
 		/obj/item/stock_parts/capacitor = 80,
 		/obj/item/stock_parts/manipulator = 80,
 		/obj/item/stock_parts/matter_bin = 80,
-		/obj/item/stock_parts/scanning_module = 80,
-		/obj/item/stock_parts/micro_laser = 80,
-		/obj/item/stock_parts/capacitor = 80,
-		/obj/item/stock_parts/manipulator = 80,
-		/obj/item/stock_parts/matter_bin = 80,
 		/obj/item/prop/deconstructable/gigacell = 100,
 		)
 

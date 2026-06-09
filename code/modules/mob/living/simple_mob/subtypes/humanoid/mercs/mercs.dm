@@ -280,7 +280,6 @@
 
 	loot_list = list(/obj/item/gun/projectile/dartgun = 100,
 		/obj/item/gun/launcher/grenade = 100,
-		/obj/item/grenade/spawnergrenade/manhacks/mercenary = 50,
 		/obj/item/grenade/spawnergrenade/manhacks/mercenary = 30
 		)
 
@@ -610,7 +609,6 @@
 /mob/living/simple_mob/humanoid/merc/ranged/technician/poi
 	loot_list = list(/obj/random/projectile/scrapped_dartgun = 100,
 		/obj/random/projectile/scrapped_grenadelauncher = 100,
-		/obj/item/grenade/spawnergrenade/manhacks/mercenary = 50,
 		/obj/item/grenade/spawnergrenade/manhacks/mercenary = 30
 		)
 

@@ -58,7 +58,7 @@
 
 /obj/item/ammo_magazine/mfoam_dart/smg/riot
 	ammo_type = /obj/item/ammo_casing/afoam_dart/riot
-	matter = list(MAT_PLASTIC = 1260, MAT_PLASTIC = 250)
+	matter = list(MAT_PLASTIC = 250)
 
 ///////// .357 /////////
 

@@ -56,10 +56,9 @@
 	starts_with = list(
 		/obj/item/clothing/suit/bio_suit/scientist = 2, // CHOMP Block Edit Start
 		/obj/item/clothing/head/bio_hood/scientist = 2,
-		/obj/item/storage/bag/xeno = 2,
-		/obj/item/clothing/mask/gas/clear = 2, // Clear gas mask implementation
+		/obj/item/clothing/mask/gas/clear = 2,
 		/obj/item/tank/oxygen = 2,
-		/obj/item/storage/bag/xeno = 2) // CHOMP Block Edit End
+		/obj/item/storage/bag/xeno = 2)
 
 
 /obj/structure/closet/l3closet/medical
