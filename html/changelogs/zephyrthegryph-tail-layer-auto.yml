@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - qol: "Tail layering is now automatic: tails render behind the body when facing north/south and on the middle layer when facing east/west, updating as you turn."
+  - rscdel: "Removed the manual 'Switch tail layer' verb and the Tail Layering character setup preference (layering is now automatic)."

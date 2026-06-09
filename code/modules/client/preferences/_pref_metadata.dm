@@ -128,7 +128,6 @@ GLOBAL_LIST_INIT(pref_metadata_table, init_pref_metadata_table())
 	tag_pref(., /datum/preference/color/human/tail_color2, "appearance", "tail")
 	tag_pref(., /datum/preference/color/human/tail_color3, "appearance", "tail")
 	tag_pref(., /datum/preference/numeric/human/tail_alpha, "appearance", "tail")
-	tag_pref(., /datum/preference/choiced/human/tail_layering, "appearance", "tail")
 	// Wings
 	tag_pref(., /datum/preference/text/human/wing_style, "appearance", "wings")
 	tag_pref(., /datum/preference/color/human/wing_color1, "appearance", "wings")

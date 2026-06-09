@@ -475,10 +475,6 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 
 
 // === merged from emote_vr.dm during hard-fork de-suffix (chain-verified: prior definer is this file, nothing between) ===
-#define SWITCH_TAIL_LAYER_UPPER    	"Upper"
-#define SWITCH_TAIL_LAYER_STANDARD 	"Standard"
-#define SWITCH_TAIL_LAYER_LOWER	   	"Lower"
-
 /mob/living/carbon/human/verb/toggle_resizing_immunity()
 	set name = "Toggle Resizing Immunity"
 	set desc = "Toggles your ability to resist resizing attempts"
@@ -545,20 +541,6 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 	change_gender_identity(new_gender_identity)
 	return 1
 
-/mob/living/carbon/human/verb/switch_tail_layer()
-	set name = "Switch tail layer"
-	set category = "IC.Game"
-	set desc = "Switch tail layer to show below/above/between clothing or other things such as wings!."
-
-	var/input = tgui_input_list(src, "Select a tail layer.", "Set Tail Layer", GLOB.tail_layer_options, read_preference(/datum/preference/choiced/human/tail_layering))
-	if(!input)
-		return
-	var/tail_option =  GLOB.tail_layer_options[input]
-	if(!tail_option)
-		return
-	tail_layering = tail_option
-	update_tail_showing()
-
 /mob/living/carbon/human/verb/hide_wings_vr()
 	set name = "Show/Hide wings"
 	set category = "IC.Settings"
@@ -594,10 +576,6 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 	else
 		message = "hides their tail."
 	visible_message(span_filter_notice("[src] [message]"))
-
-#undef SWITCH_TAIL_LAYER_UPPER
-#undef SWITCH_TAIL_LAYER_STANDARD
-#undef SWITCH_TAIL_LAYER_LOWER
 
 
 // === merged from emote_chomp.dm during hard-fork de-suffix (chain-verified: prior definer is this file, nothing between) ===
