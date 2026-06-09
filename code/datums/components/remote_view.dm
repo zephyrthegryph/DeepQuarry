@@ -445,6 +445,7 @@
 		return
 
 /datum/component/remote_view/mob_holding_item/handle_recursive_moved(atom/source, atom/oldloc, atom/new_loc)
+	SIGNAL_HANDLER
 	if(!host_mob)
 		return
 	// default moved signal will handle this

@@ -37,6 +37,7 @@
 		UnregisterSignal(parent, COMSIG_MOVABLE_MOVED) //happens if gargoyle_pause is used
 
 /datum/component/gargoyle/proc/process_component()
+	SIGNAL_HANDLER
 	if(QDELETED(gargoyle))
 		return
 	if(transformed)

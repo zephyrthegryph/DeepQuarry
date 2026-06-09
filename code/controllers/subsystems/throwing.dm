@@ -251,6 +251,7 @@ SUBSYSTEM_DEF(throwing)
 	qdel(src)
 
 /datum/thrownthing/proc/hit_atom(atom/A)
+	SIGNAL_HANDLER
 	finalize(hit=TRUE, t_target=A)
 
 /datum/thrownthing/proc/hitcheck(turf/T)

@@ -22,7 +22,9 @@
 	UnregisterSignal(parent, COMSIG_TECHWEB_TYPE_CHECK)
 
 /datum/component/deconstructable_research/proc/point_check(atom/movable/source)
+	SIGNAL_HANDLER
 	return techweb_points
 
 /datum/component/deconstructable_research/proc/type_check(atom/movable/source, list/modify_me)
+	SIGNAL_HANDLER
 	modify_me["type"] = techweb_point_type

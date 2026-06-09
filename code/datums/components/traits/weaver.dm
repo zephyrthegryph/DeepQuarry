@@ -23,6 +23,7 @@
 
 	//Processing
 /datum/component/weaver/proc/process_component()
+	SIGNAL_HANDLER
 	if (QDELETED(parent))
 		return
 	process_weaver_silk()

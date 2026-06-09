@@ -21,6 +21,7 @@
 	RegisterSignal(owner, COMSIG_LIVING_LIFE, PROC_REF(process_component))
 
 /datum/component/nutrition_size_change/proc/process_component()
+	SIGNAL_HANDLER
 	if(QDELETED(parent))
 		return
 	if(owner.stat == DEAD)

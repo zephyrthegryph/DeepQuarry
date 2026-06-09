@@ -65,6 +65,7 @@
 	lightning_overlay = null
 
 /obj/item/organ/internal/heart/machine/anomalock/proc/activate_survival(mob/living/carbon/organ_owner)
+	SIGNAL_HANDLER
 	if(!COOLDOWN_FINISHED(src, survival_cooldown))
 		return FALSE
 

@@ -209,5 +209,6 @@
 	return dat
 
 /obj/effect/overmap/visitable/ship/simplemob/proc/on_parent_moved(atom/movable/source, OldLoc, Dir, Forced)
+	SIGNAL_HANDLER
 	forceMove(parent.loc)
 	set_dir(parent.dir)

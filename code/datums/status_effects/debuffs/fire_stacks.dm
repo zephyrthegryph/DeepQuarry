@@ -298,6 +298,7 @@
  */
 
 /datum/status_effect/fire_handler/fire_stacks/proc/extinguish()
+	SIGNAL_HANDLER
 	QDEL_NULL(moblight)
 	on_fire = FALSE
 	// owner.clear_mood_event("on_fire")

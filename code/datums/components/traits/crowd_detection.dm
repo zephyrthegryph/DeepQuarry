@@ -34,9 +34,9 @@
 	. = ..()
 
 /datum/component/crowd_detection/proc/handle_life()
+	SIGNAL_HANDLER
 	SHOULD_CALL_PARENT(TRUE)
 	PROTECTED_PROC(TRUE)
-	SIGNAL_HANDLER
 	// If they're dead or unconcious they're a bit beyond this kind of thing.
 	if(human_parent.stat)
 		discomfort = 0

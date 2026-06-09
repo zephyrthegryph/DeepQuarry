@@ -149,6 +149,7 @@
 		animate(holder, alpha = visibility, time = 1 SECOND)
 
 /datum/modifier/robot_cloak/proc/damage_inflicted(mob/living/source, damage)
+	SIGNAL_HANDLER
 	if(damage < 5) //weak, don't do anything.
 		return
 	times_hit++
@@ -168,6 +169,7 @@
 	addtimer(CALLBACK(src, PROC_REF(remove_wibble), 0.1 SECOND), 0.5 SECONDS, TIMER_DELETE_ME) //Calling a proc with no arguments
 
 /datum/modifier/robot_cloak/proc/attacked_in_cloak()
+	SIGNAL_HANDLER
 	if(holder && !holder.get_filter("wibbly-[1]")) //We're not wibbled at the moment.
 		var/alpha_to_show = CLAMP((holder.alpha+(rand(50,200))), holder.alpha, 255) //Become more visible by a significant margin, randomly.
 		flick_cloak(alpha_to_show)

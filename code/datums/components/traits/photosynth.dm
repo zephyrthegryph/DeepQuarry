@@ -14,6 +14,7 @@
 	UnregisterSignal(parent, list(COMSIG_LIVING_LIFE))
 
 /datum/component/photosynth/proc/process_component()
+	SIGNAL_HANDLER
 	var/mob/living/owner = parent
 	if(QDELETED(parent))
 		return

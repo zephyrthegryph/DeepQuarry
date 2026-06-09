@@ -22,6 +22,7 @@
 	UnregisterSignal(parent, list(COMSIG_LIVING_LIFE))
 
 /datum/component/burninlight/proc/process_component()
+	SIGNAL_HANDLER
 	if(QDELETED(parent))
 		return
 	var/mob/living/owner = parent

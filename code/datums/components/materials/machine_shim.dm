@@ -41,22 +41,22 @@
 	host_mob = null
 
 /datum/component/using_machine_shim/proc/on_mob_action()
+	SIGNAL_HANDLER
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
-	SIGNAL_HANDLER
 	if(host_mob.stat == DEAD || !host_mob.client || !host_mob.Adjacent(linked_machine))
 		qdel(src)
 
 /datum/component/using_machine_shim/proc/on_machine_qdelete()
+	SIGNAL_HANDLER
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
-	SIGNAL_HANDLER
 	qdel(src)
 
 /datum/component/using_machine_shim/proc/on_mob_logout()
+	SIGNAL_HANDLER
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
-	SIGNAL_HANDLER
 	qdel(src)
 
 /////////////////////////////////////////////////////////////////////////////////

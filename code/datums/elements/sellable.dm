@@ -22,6 +22,7 @@
 	return null // returns a string explaining why the item couldn't be sold. Otherwise null to allow it to be sold.
 
 /datum/element/sellable/proc/calculate_sell_value(obj/source)
+	SIGNAL_HANDLER
 	return 1
 
 /datum/element/sellable/proc/calculate_sell_quantity(obj/source)
@@ -49,8 +50,8 @@
 	return TRUE
 
 /datum/element/sellable/proc/on_examine(datum/source, mob/user, list/examine_texts)
-	SHOULD_NOT_OVERRIDE(TRUE)
 	SIGNAL_HANDLER
+	SHOULD_NOT_OVERRIDE(TRUE)
 	if(sale_info)
 		examine_texts += span_notice(sale_info)
 
