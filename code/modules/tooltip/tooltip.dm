@@ -118,7 +118,7 @@
 	_view_w = view_size[1]
 	_view_h = view_size[2]
 
-	dq_log("[TT] show ctrl=[control] title_len=[length(_title)] cursor=[params] sloc=[thing.screen_loc]")
+	dq_log("tooltip show ctrl=[control] title_len=[length(_title)] cursor=[params] sloc=[thing.screen_loc]")
 	// Fallback: show at a default size so the tooltip is visible even if the
 	// React-side winset can't resolve its element. Tooltip.tsx then refines the
 	// element to the box's exact size at the cursor (and may move/shrink it).
