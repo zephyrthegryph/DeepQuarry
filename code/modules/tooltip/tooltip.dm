@@ -42,14 +42,11 @@
 		return
 	owner = C
 	tooltip_window = new(C, control)
-	// Mirror belly_overlay's working setup: create the tgui bound to the window
-	// and open() it normally — that loads the bundle and mounts React. The old
-	// initialize() + open(preinitialized = TRUE) path left React unmounted, so
-	// show() pushed data to a frontend that was never running.
-	var/datum/tgui/ui = new(C.mob, src, "Tooltip", window = tooltip_window)
-	ui.closeable = FALSE
-	ui.open()
-	dq_log("tooltip New: ctrl=[control] window=[tooltip_window ? "ok" : "null"] ui=[ui ? "ok" : "null"]")
+	// The tgui ui is opened lazily in show(), bound to the CURRENT mob. Opening it
+	// here (at login) binds it to the lobby new_player mob, which is deleted on
+	// spawn — after which update_uis() pushes to a dead user and the frontend
+	// never refreshes (it stays on its initial visible=FALSE/empty data).
+	dq_log("tooltip New: ctrl=[control] window=[tooltip_window ? "ok" : "null"]")
 	..()
 
 
@@ -124,11 +121,19 @@
 	_view_h = view_size[2]
 
 	dq_log("tooltip show ctrl=[control] title_len=[length(_title)] cursor=[params] sloc=[thing.screen_loc]")
+	// Ensure a ui bound to the CURRENT mob. try_update_ui() finds + refreshes an
+	// existing one; if the mob changed (lobby -> spawned) there's none for the new
+	// user, so we open a fresh ui on the persistent window. This is what actually
+	// pushes the new data to React (and mounts it on first hover).
+	var/datum/tgui/ui = SStgui.try_update_ui(owner.mob, src, null)
+	if(!ui)
+		ui = new(owner.mob, src, "Tooltip", window = tooltip_window)
+		ui.closeable = FALSE
+		ui.open()
 	// Fallback: show at a default size so the tooltip is visible even if the
 	// React-side winset can't resolve its element. Tooltip.tsx then refines the
 	// element to the box's exact size at the cursor (and may move/shrink it).
 	winset(owner, control, "is-visible=true;size=300x90")
-	SStgui.update_uis(src)
 
 	showing = 0
 	if(queueHide)
