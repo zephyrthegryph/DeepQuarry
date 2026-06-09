@@ -205,14 +205,17 @@ export const Tooltip = () => {
     data.tile_size,
   ]);
 
+  // theme="tooltip" makes the outer Window transparent (see main.scss). Without
+  // it the standard .Window grey background fills the full-window 999x999 browser
+  // element and paints a grey box over the viewport whenever the element is shown.
   if (!data.visible || !position) {
-    return <Window fitted />;
+    return <Window fitted theme="tooltip" />;
   }
 
   const themeStyle = themeStyles[data.theme] ?? themeStyles.default;
 
   return (
-    <Window fitted>
+    <Window fitted theme="tooltip">
       <div
         // Root layer is transparent and passes clicks through to the
         // map underneath; only the inner tooltip box catches events.

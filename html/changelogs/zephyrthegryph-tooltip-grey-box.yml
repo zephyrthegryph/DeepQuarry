@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Fixed a grey box covering the viewport when hovering over atoms; the in-game tooltip's outer window is now transparent so only the name popup shows."

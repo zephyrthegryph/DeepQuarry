@@ -81,6 +81,16 @@
   background-repeat: no-repeat;
 }
 
+// Tooltip overlay theme. The in-game hover tooltip (Tooltip.tsx) is hosted in a
+// full-window 999x999 mainwindow.tooltip BROWSER element; the standard .Window
+// background would paint that whole element grey over the viewport. Make the outer
+// Window transparent so only the inner positioned tooltip box is visible. The
+// inner box keeps its own colors (themeStyles keyed by the user's tooltip_style).
+.theme-tooltip .Window {
+  background-color: transparent;
+  background-image: none;
+}
+
 // A default, in case someone uses the vp() function outside of a <Window>
 :root {
   --scaling-amount: 1;
