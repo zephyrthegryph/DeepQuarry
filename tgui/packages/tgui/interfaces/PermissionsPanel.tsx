@@ -6,7 +6,7 @@
 // per-admin / per-rank workflows keep working unchanged. Logging search
 // state is owned by the panel datum — the React side just submits inputs.
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import {
@@ -271,6 +271,17 @@ const LoggingPage = (props: { data: LoggingPageData; act: ActFn }) => {
   const [target, setTarget] = useState(data.log_target);
   const [actor, setActor] = useState(data.log_actor);
   const [op, setOp] = useState(data.log_operation);
+
+  // The panel datum owns the applied filter values; mirror them into the inputs
+  // whenever the datum's values change (e.g. a search is applied, here or
+  // externally). These deps only change on an applied search — routine UI polls
+  // resend the same values, so in-progress (un-searched) typing is never clobbered.
+  useEffect(() => {
+    setTarget(data.log_target);
+    setActor(data.log_actor);
+    setOp(data.log_operation);
+  }, [data.log_target, data.log_actor, data.log_operation]);
+
   const total_pages = Math.max(1, Math.ceil(data.log_count / data.per_page));
   const pages = Array.from({ length: total_pages }, (_, i) => i);
   return (

@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "ChemMaster and other multi-step input dialogs no longer submit a stale value when the same prompt is reused (e.g. a second batch of bottles now makes the amount you entered instead of one)."
+  - admin: "Permissions Panel log filters now stay in sync with the applied search."
