@@ -87,6 +87,16 @@
 		"tile_size" = isnum(world.icon_size) ? world.icon_size : 32,
 	)
 
+// TEMP DIAGNOSTIC: React pings here (standard tgui act) -> existing dq_log, so we
+// can see whether the React component runs and what it computes.
+/datum/tooltip/tgui_act(action, list/params, datum/tgui/ui, datum/ui_state/state)
+	. = ..()
+	if(.)
+		return
+	if(action == "ttdebug")
+		dq_log("tooltip REACT [params["m"]]")
+		return TRUE
+
 
 /datum/tooltip/proc/show(atom/movable/thing, params = null, title = null, content = null, theme = "default", special = "none")
 	if(!thing || !params || (!title && !content) || !owner)

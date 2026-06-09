@@ -117,12 +117,16 @@ const parseMapSize = (raw: string | undefined): [number, number] => {
 };
 
 export const Tooltip = () => {
-  const { data } = useBackend<Data>();
+  const { data, act } = useBackend<Data>();
   const boxRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Prefer the explicit element id from DM; fall back to Byond.windowId.
     const winId = data.control || Byond.windowId;
+
+    act('ttdebug', {
+      m: `enter winId=${winId} vis=${data.visible ? 1 : 0} tlen=${data.title?.length ?? -1}`,
+    });
 
     if (!data.visible) {
       Byond.winset(winId, { 'is-visible': false });
@@ -147,6 +151,7 @@ export const Tooltip = () => {
           py = Math.max(0, posY - h - Math.round(perTileY) - 4);
         }
         const px = Math.max(0, posX);
+        act('ttdebug', { m: `place w=${w} h=${h} px=${px} py=${py}` });
         Byond.winset(winId, { pos: `${px},${py}`, size: `${w}x${h}` });
       });
     };
@@ -157,6 +162,7 @@ export const Tooltip = () => {
     ])
       .then(([rawSize, rawViewSize]) => {
         if (cancelled) return;
+        act('ttdebug', { m: `winget size=${rawSize} view=${rawViewSize}` });
         const [mapPxW, mapPxH] = parseMapSize(rawSize);
         const [mapTileW, mapTileH] = parseMapSize(rawViewSize);
         const tilesShownX = data.view_w || mapTileW;
