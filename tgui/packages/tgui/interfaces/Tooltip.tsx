@@ -11,23 +11,24 @@
 // the box it only ever covers the small tooltip (which sits below the hovered
 // tile and hides on MouseExited), leaving the rest of the map clickable.
 //
+// Flow each show: make the element visible at a tiny size FIRST (so its page is
+// laid out and measurable, and so it always appears even if the positioning math
+// below can't run), then measure the rendered box and winset the element to the
+// box's exact size + the cursor position. Positioning is best-effort: any missing
+// winget/param value falls back to the map's top-left rather than hiding.
+//
 // We render a bare <div>, not a tgui <Window> (its Layout chrome paints opaque
 // theme backgrounds). The box fills the element; TOOLTIP_RESET_CSS zeroes body
-// margins so the box sits flush at 0,0 and keeps the page transparent so any
-// sub-pixel gap shows the map rather than grey.
-//
-// Positioning math is ported from the legacy tooltip.html JS: query the live map
-// element pixel size via Byond.winget, then map the cursor's icon-x/icon-y +
-// screen-loc to map pixels for the element's pos.
+// margins so the box sits flush at 0,0.
 
 import { useEffect, useRef } from 'react';
 import { useBackend } from 'tgui/backend';
 import type { BooleanLike } from 'tgui-core/react';
 import { HtmlRenderer } from './common/HtmlRenderer';
 
-// Neutralize the tgui base/theme chrome (which would otherwise leave opaque
-// pixels and a body margin) so the box sits flush at the element's 0,0 and any
-// gap shows the map (the element has inner-background-color=#00000000 in BYOND).
+// Neutralize the tgui base/theme chrome (opaque backgrounds + body margin) so the
+// box sits flush at the element's 0,0; the element is sized to the box so the
+// page is otherwise not visible.
 const TOOLTIP_RESET_CSS = `
 html, body, #react-root, .TooltipRoot,
 div[class^="theme-"], .Layout, .Layout__content, .Window {
@@ -124,9 +125,27 @@ export const Tooltip = () => {
 
     let cancelled = false;
 
+    // Show immediately (tiny) so the element is visible + its page laid out for
+    // measuring, regardless of whether the positioning math below succeeds.
+    Byond.winset(Byond.windowId, { size: '8x8', 'is-visible': true });
+
+    // Measure the rendered box and winset the element to it at (posX, posY).
+    const place = (posX: number, posY: number, mapPxH: number, perTileY: number) => {
+      requestAnimationFrame(() => {
+        if (cancelled) return;
+        const box = boxRef.current;
+        const w = Math.ceil(box?.offsetWidth || 0) || 80;
+        const h = Math.ceil(box?.offsetHeight || 0) || 24;
+        let py = posY;
+        if (mapPxH && py + h > mapPxH) {
+          py = Math.max(0, posY - h - Math.round(perTileY) - 4);
+        }
+        const px = Math.max(0, posX);
+        Byond.winset(Byond.windowId, { pos: `${px},${py}`, size: `${w}x${h}` });
+      });
+    };
+
     Promise.all([
-      // Byond.winget for the live pixel size of the map element.
-      // `size` is the pixel size; `view-size` is the BYOND tile size.
       Byond.winget('mapwindow.map', 'size'),
       Byond.winget('mapwindow.map', 'view-size'),
     ])
@@ -134,34 +153,32 @@ export const Tooltip = () => {
         if (cancelled) return;
         const [mapPxW, mapPxH] = parseMapSize(rawSize);
         const [mapTileW, mapTileH] = parseMapSize(rawViewSize);
-        if (!mapPxW || !mapPxH || !mapTileW || !mapTileH) return;
-
         const tilesShownX = data.view_w || mapTileW;
         const tilesShownY = data.view_h || mapTileH;
-        if (!tilesShownX || !tilesShownY) return;
 
-        // Real per-tile pixel size of the rendered map and resize ratio
-        // vs the engine's tile size (data.tile_size).
+        // Best-effort: missing map metrics -> park at the map's top-left.
+        if (!mapPxW || !mapPxH || !tilesShownX || !tilesShownY) {
+          place(4, 4, mapPxH, 0);
+          return;
+        }
+
         const realIconSizeX = mapPxW / tilesShownX;
         const realIconSizeY = mapPxH / tilesShownY;
         const resizeRatioX = realIconSizeX / data.tile_size;
         const resizeRatioY = realIconSizeY / data.tile_size;
 
-        // The element is a mapwindow child positioned in map-pixel space, so no
-        // full-window centering offset is needed; offsets only accumulate the
-        // atom's own screen_loc pixel offsets below.
         let leftOffset = 0;
         let topOffset = 0;
 
-        // Parse cursor params: "icon-x=NN;icon-y=NN;screen-loc=X:px,Y:py"
         const params = parseSemiParams(data.cursor_params);
         const iconX = parseInt(params['icon-x'] ?? '0', 10);
         const iconY = parseInt(params['icon-y'] ?? '0', 10);
         const screenLocRaw = params['screen-loc'] ?? '';
-        if (!iconX || !iconY || !screenLocRaw) return;
-
         const [leftRaw, topRaw] = screenLocRaw.split(',');
-        if (!leftRaw || !topRaw) return;
+        if (!leftRaw || !topRaw) {
+          place(4, 4, mapPxH, realIconSizeY);
+          return;
+        }
 
         const [leftTileStr, enteredXStr] = leftRaw.split(':');
         const [topTileStr, enteredYStr] = topRaw.split(':');
@@ -170,8 +187,6 @@ export const Tooltip = () => {
         const enteredX = parseInt(enteredXStr ?? '0', 10);
         const enteredY = parseInt(enteredYStr ?? '0', 10);
 
-        // Original (atom) screen_loc, used to compute offsets when the
-        // atom's screen_loc itself has a pixel offset like "WEST+0:6".
         const oScreenLoc = data.screen_loc.split(',');
         if (oScreenLoc[0]) {
           const westParts = oScreenLoc[0].split(':');
@@ -203,40 +218,18 @@ export const Tooltip = () => {
           }
         }
 
-        // Clamp.
         left = Math.max(0, Math.min(tilesShownX, left));
         top = Math.max(0, Math.min(tilesShownY, top));
 
-        // Top-left where the box should sit (just below the hovered tile).
         const posX = Math.round((left - 1) * realIconSizeX + leftOffset + 2);
         const posY = Math.round(
           (tilesShownY - top + 1) * realIconSizeY + topOffset + 2,
         );
 
-        // Measure the rendered box, size the element to it, park it at the
-        // cursor. offsetWidth/Height are border-box (incl. border+padding) since
-        // the box is box-sizing: border-box; the box fills the element 1:1.
-        const box = boxRef.current;
-        if (!box) return;
-        const w = Math.ceil(box.offsetWidth) || 64;
-        const h = Math.ceil(box.offsetHeight) || 24;
-
-        // Flip above the tile if the box would run off the bottom of the map.
-        let py = posY;
-        if (py + h > mapPxH) {
-          py = Math.max(0, posY - h - Math.round(realIconSizeY) - 4);
-        }
-        // Keep it inside the map horizontally.
-        const px = Math.max(0, Math.min(posX, Math.max(0, mapPxW - w)));
-
-        Byond.winset(Byond.windowId, {
-          pos: `${px},${py}`,
-          size: `${w}x${h}`,
-          'is-visible': true,
-        });
+        place(posX, posY, mapPxH, realIconSizeY);
       })
       .catch(() => {
-        // winget can fail mid-shutdown; just leave the element hidden.
+        if (!cancelled) place(4, 4, 0, 0);
       });
 
     return () => {
@@ -255,8 +248,8 @@ export const Tooltip = () => {
   const themeStyle = themeStyles[data.theme] ?? themeStyles.default;
 
   // The box is always rendered flush at the element's top-left; the effect sizes
-  // the element to it. width: max-content makes its measured size independent of
-  // the (transiently small) element viewport.
+  // the element to it. width: max-content keeps its measured size independent of
+  // the (transiently tiny) element viewport.
   return (
     <div className="TooltipRoot">
       <style>{TOOLTIP_RESET_CSS}</style>
