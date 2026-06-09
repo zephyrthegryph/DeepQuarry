@@ -81,6 +81,15 @@
 			soundloop.start()
 			playing_sound = TRUE
 
+// Number of stored products, used to pick the fill-level overlay. Counts the
+// actual item_records contents rather than contents.len, because contents also
+// holds the machine's component parts (circuit + motor + gears), which would
+// otherwise mask the empty (-0) overlay and inflate the apparent fill level.
+/obj/machinery/smartfridge/proc/stored_count()
+	. = 0
+	for(var/datum/stored_item/I as anything in item_records)
+		. += I.get_amount()
+
 /obj/machinery/smartfridge/update_icon()
 	cut_overlays()
 	if(panel_open)
@@ -92,7 +101,7 @@
 
 	if(stat & (NOPOWER))
 		icon_state = "[icon_base]-off"
-		switch(contents.len)
+		switch(stored_count())
 			if(0)
 				add_overlay("[icon_base]-0-off")
 			if(1 to 3)
@@ -103,7 +112,7 @@
 				add_overlay("[icon_base]-[icon_contents]3-off")
 	else
 		icon_state = icon_base
-		switch(contents.len)
+		switch(stored_count())
 			if(0)
 				add_overlay("[icon_base]-0")
 			if(1 to 3)

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Smartfridges (chemical storage, medicine, etc.) now correctly show their empty texture when empty instead of always looking partly stocked."
