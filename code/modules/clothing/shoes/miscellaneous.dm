@@ -4,7 +4,6 @@
 	icon_state = "brown"
 	permeability_coefficient = 0.05
 	item_flags = NOSLIP
-	var/list/clothing_choices = list()
 	siemens_coefficient = 0.8
 	species_restricted = null
 	step_volume_mod = 0.5

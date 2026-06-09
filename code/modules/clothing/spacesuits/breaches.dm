@@ -11,7 +11,7 @@
 /obj/item/clothing/suit/space
 
 	var/can_breach = 1                      // Set to 0 to disregard all breaching.
-	var/list/breaches = list()              // Breach datum container.
+	var/list/breaches                       // Breach datum container (lazylist; empty for an undamaged suit).
 	var/resilience = 0.2                    // Multiplier that turns damage into breach class. 1 is 100% of damage to breach, 0.1 is 10%. 0.2 -> 50 brute/burn damage to cause 10 breach damage
 	var/breach_threshold = 3                // Min damage before a breach is possible. Damage is subtracted by this amount, it determines the "hardness" of the suit.
 	var/damage = 0                          // Current total damage
@@ -37,7 +37,7 @@
 //Repair a certain amount of brute or burn damage to the suit.
 /obj/item/clothing/suit/space/proc/repair_breaches(damtype, amount, mob/user)
 
-	if(!can_breach || !breaches || !breaches.len || !damage)
+	if(!can_breach || !LAZYLEN(breaches) || !damage)
 		to_chat(user, "There are no breaches to repair on \the [src].")
 		return
 
@@ -58,7 +58,7 @@
 		if(B.class <= amount_left)
 			amount_left -= B.class
 			valid_breaches -= B
-			breaches -= B
+			LAZYREMOVE(breaches, B)
 		else
 			B.class	-= amount_left
 			amount_left = 0
@@ -74,9 +74,6 @@
 
 	if(!can_breach || amount <= 0)
 		return
-
-	if(!breaches)
-		breaches = list()
 
 	if(damage > 25) return //We don't need to keep tracking it when it's at 250% pressure loss, really.
 
@@ -109,7 +106,7 @@
 	if (amount)
 		//Spawn a new breach.
 		var/datum/breach/B = new()
-		breaches += B
+		LAZYADD(breaches, B)
 
 		B.class = min(amount,5)
 
@@ -131,13 +128,13 @@
 	brute_damage = 0
 	burn_damage = 0
 
-	if(!can_breach || !breaches || !breaches.len)
+	if(!can_breach || !LAZYLEN(breaches))
 		name = base_name
 		return 0
 
 	for(var/datum/breach/B in breaches)
 		if(!B.class)
-			src.breaches -= B
+			LAZYREMOVE(breaches, B)
 			qdel(B)
 		else
 			damage += B.class
@@ -208,6 +205,6 @@
 
 /obj/item/clothing/suit/space/examine(mob/user)
 	. = ..()
-	if(can_breach && breaches?.len)
+	if(can_breach && LAZYLEN(breaches))
 		for(var/datum/breach/B in breaches)
 			. += span_red(span_bold("It has \a [B.descriptor]."))
