@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - qol: "The character setup window now closes instantly instead of hanging for ~2s on redundant savefile I/O."
+  - qol: "A couple of tgui windows are now pre-warmed off-screen at login, so the first interfaces you open skip the ~1s grey-box cold load."

@@ -2,6 +2,11 @@
 #define TGUI_WINDOW_SOFT_LIMIT 5
 /// Maximum number of open windows
 #define TGUI_WINDOW_HARD_LIMIT 9
+/// How many pooled windows to pre-warm (parse the bundle off-screen) at login,
+/// so the first UIs a player opens reuse a warm slot instead of cold-loading
+/// the ~2 MB bundle. Capped at TGUI_WINDOW_SOFT_LIMIT (only those slots stay
+/// warm on close). Each warm window costs one live browser context of memory.
+#define TGUI_WINDOW_PRELOAD_COUNT 2
 
 /// Maximum ping timeout allowed to detect zombie windows
 #define TGUI_PING_TIMEOUT (4 SECONDS)

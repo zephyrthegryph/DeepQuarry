@@ -8,14 +8,13 @@
 // itself via `winset` calls.
 //
 // We host the mapwindow.tooltip skin element as a /datum/tgui_window.
-// Tooltip.tsx queries the map size with Byond.winget, runs the positioning
-// math, and renders a small absolute-positioned tooltip <div>. The BROWSER
-// element is a mapwindow child anchored over the map (like belly_overlay) with
-// inner-background-color=transparent, so the page's transparent pixels show the
-// map through; the React tree uses pointer-events: none so it doesn't eat map
-// clicks. A mainwindow-level element composites against mainwindow's backdrop
-// (grey) instead of the map, which is why it must live under mapwindow.
-// Show/hide toggles the skin element's is-visible.
+// Tooltip.tsx queries the map size with Byond.winget, runs the positioning math,
+// measures the rendered tooltip box, then winsets the BROWSER element to the
+// box's exact size + the cursor position and shows it. Sizing the element to the
+// box (rather than leaving a map-covering overlay) is what keeps the rest of the
+// map clickable: a BROWSER covering the map eats all mouse input regardless of
+// CSS pointer-events. DM here only pushes the content/data and toggles hide;
+// React owns is-visible (it shows the element after sizing it).
 
 
 /datum/tooltip
@@ -118,7 +117,9 @@
 	_view_w = view_size[1]
 	_view_h = view_size[2]
 
-	winset(owner, control, "is-visible=true;inner-background-color=#00000000")
+	// Don't winset is-visible here — Tooltip.tsx sizes the element to the
+	// rendered box and parks it at the cursor, then sets is-visible=true itself.
+	// Showing it now (before sizing) would flash a full-size element over the map.
 	SStgui.update_uis(src)
 
 	showing = 0

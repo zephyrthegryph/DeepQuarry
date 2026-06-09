@@ -1,32 +1,33 @@
 // In-game atom hover tooltip — TGUI.
 //
-// Hosted inside the hidden mapwindow.tooltip BROWSER skin element — a
-// map-sized child anchored over the map with inner-background-color
-// transparent, so transparent page pixels composite against the map.
-// The element is shown/hidden by DM via winset.
+// Hosted in the hidden mapwindow.tooltip BROWSER skin element. Unlike a normal
+// tgui window we SIZE THE BROWSER ELEMENT TO THE TOOLTIP BOX and park it at the
+// cursor via Byond.winset, the way the legacy tooltip.html did.
 //
-// IMPORTANT: we render a bare <div>, NOT a tgui <Window>. The Window/Layout
-// chrome paints theme-driven backgrounds (.Window gradient, NT-logo SVG on
-// .Layout__content, etc.) that are opaque and would fill the whole map-sized
-// element grey, defeating the BROWSER's transparency. Instead we inject
-// TOOLTIP_RESET_CSS to force every document layer transparent and render only
-// an absolutely-positioned tooltip box. This mirrors BellyOverlay.tsx, the
-// other working over-map transparent overlay. The box catches pointer events;
-// the rest of the layer is pointer-events: none so clicks reach the map.
+// This is the only approach that doesn't block map clicks: a BROWSER control
+// covering the map intercepts all mouse input at the control level — CSS
+// pointer-events can't pass clicks through to the map behind it — so a full-map
+// overlay, even a transparent one, eats every click. By shrinking the element to
+// the box it only ever covers the small tooltip (which sits below the hovered
+// tile and hides on MouseExited), leaving the rest of the map clickable.
 //
-// Ports the positioning math from the legacy tooltip.html JS: query
-// the live map element pixel size via Byond.winget, then map the
-// cursor's icon-x/icon-y + screen-loc to overlay pixels.
+// We render a bare <div>, not a tgui <Window> (its Layout chrome paints opaque
+// theme backgrounds). The box fills the element; TOOLTIP_RESET_CSS zeroes body
+// margins so the box sits flush at 0,0 and keeps the page transparent so any
+// sub-pixel gap shows the map rather than grey.
+//
+// Positioning math is ported from the legacy tooltip.html JS: query the live map
+// element pixel size via Byond.winget, then map the cursor's icon-x/icon-y +
+// screen-loc to map pixels for the element's pos.
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useBackend } from 'tgui/backend';
 import type { BooleanLike } from 'tgui-core/react';
 import { HtmlRenderer } from './common/HtmlRenderer';
 
-// Force every document layer transparent so the BROWSER element (which has
-// inner-background-color=#00000000 on the BYOND side) composites against the
-// map instead of painting grey. Without this the tgui base styles
-// (html/body/#react-root/.Layout/.Window) leave opaque pixels.
+// Neutralize the tgui base/theme chrome (which would otherwise leave opaque
+// pixels and a body margin) so the box sits flush at the element's 0,0 and any
+// gap shows the map (the element has inner-background-color=#00000000 in BYOND).
 const TOOLTIP_RESET_CSS = `
 html, body, #react-root, .TooltipRoot,
 div[class^="theme-"], .Layout, .Layout__content, .Window {
@@ -35,11 +36,9 @@ div[class^="theme-"], .Layout, .Layout__content, .Window {
   margin: 0 !important;
   padding: 0 !important;
   border: 0 !important;
-  overflow: hidden !important;
+  overflow: visible !important;
 }
 html, body, #react-root, .TooltipRoot {
-  width: 100% !important;
-  height: 100% !important;
   position: fixed !important;
   inset: 0 !important;
 }
@@ -56,8 +55,6 @@ type Data = {
   view_h: number;
   tile_size: number;
 };
-
-type Position = { x: number; y: number } | null;
 
 const themeStyles: Record<string, React.CSSProperties> = {
   midnight: {
@@ -117,11 +114,11 @@ const parseMapSize = (raw: string | undefined): [number, number] => {
 
 export const Tooltip = () => {
   const { data } = useBackend<Data>();
-  const [position, setPosition] = useState<Position>(null);
+  const boxRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!data.visible) {
-      setPosition(null);
+      Byond.winset(Byond.windowId, { 'is-visible': false });
       return;
     }
 
@@ -150,10 +147,9 @@ export const Tooltip = () => {
         const resizeRatioX = realIconSizeX / data.tile_size;
         const resizeRatioY = realIconSizeY / data.tile_size;
 
-        // The tooltip BROWSER element is a mapwindow child anchored over the
-        // map (same rect as mapwindow.map), so element-space == map-space. No
-        // full-window centering offset is needed (it used to be a 999x999
-        // mainwindow overlay, hence the old (999 - mapPx)/2 letterbox term).
+        // The element is a mapwindow child positioned in map-pixel space, so no
+        // full-window centering offset is needed; offsets only accumulate the
+        // atom's own screen_loc pixel offsets below.
         let leftOffset = 0;
         let topOffset = 0;
 
@@ -211,17 +207,36 @@ export const Tooltip = () => {
         left = Math.max(0, Math.min(tilesShownX, left));
         top = Math.max(0, Math.min(tilesShownY, top));
 
-        // Position the tooltip just below the hovered tile.
+        // Top-left where the box should sit (just below the hovered tile).
         const posX = Math.round((left - 1) * realIconSizeX + leftOffset + 2);
         const posY = Math.round(
           (tilesShownY - top + 1) * realIconSizeY + topOffset + 2,
         );
 
-        setPosition({ x: posX, y: posY });
+        // Measure the rendered box, size the element to it, park it at the
+        // cursor. offsetWidth/Height are border-box (incl. border+padding) since
+        // the box is box-sizing: border-box; the box fills the element 1:1.
+        const box = boxRef.current;
+        if (!box) return;
+        const w = Math.ceil(box.offsetWidth) || 64;
+        const h = Math.ceil(box.offsetHeight) || 24;
+
+        // Flip above the tile if the box would run off the bottom of the map.
+        let py = posY;
+        if (py + h > mapPxH) {
+          py = Math.max(0, posY - h - Math.round(realIconSizeY) - 4);
+        }
+        // Keep it inside the map horizontally.
+        const px = Math.max(0, Math.min(posX, Math.max(0, mapPxW - w)));
+
+        Byond.winset(Byond.windowId, {
+          pos: `${px},${py}`,
+          size: `${w}x${h}`,
+          'is-visible': true,
+        });
       })
       .catch(() => {
-        // winget can fail mid-shutdown; just leave position null and
-        // the tooltip won't render.
+        // winget can fail mid-shutdown; just leave the element hidden.
       });
 
     return () => {
@@ -229,6 +244,7 @@ export const Tooltip = () => {
     };
   }, [
     data.visible,
+    data.title,
     data.cursor_params,
     data.screen_loc,
     data.view_w,
@@ -238,40 +254,30 @@ export const Tooltip = () => {
 
   const themeStyle = themeStyles[data.theme] ?? themeStyles.default;
 
-  // Always render the bare transparent root (+ reset CSS). The tooltip box only
-  // renders once visible and positioned; until then the layer is fully
-  // transparent, so showing the element never flashes a grey backdrop.
+  // The box is always rendered flush at the element's top-left; the effect sizes
+  // the element to it. width: max-content makes its measured size independent of
+  // the (transiently small) element viewport.
   return (
     <div className="TooltipRoot">
       <style>{TOOLTIP_RESET_CSS}</style>
-      {data.visible && position && (
-        <div
-          // Root layer is transparent and passes clicks through to the
-          // map underneath; only the inner tooltip box catches events.
-          style={{
-            position: 'fixed',
-            inset: 0,
-            pointerEvents: 'none',
-          }}
-        >
-          <div
-            style={{
-              position: 'absolute',
-              left: position.x,
-              top: position.y,
-              maxWidth: 298,
-              padding: 8,
-              border: `2px solid ${themeStyle.borderColor}`,
-              color: themeStyle.color,
-              backgroundColor: themeStyle.backgroundColor,
-              font: 'bold 12px Arial, "Helvetica Neue", Helvetica, sans-serif',
-              pointerEvents: 'auto',
-            }}
-          >
-            <HtmlRenderer html={data.title} />
-          </div>
-        </div>
-      )}
+      <div
+        ref={boxRef}
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: 'max-content',
+          maxWidth: 298,
+          padding: 8,
+          border: `2px solid ${themeStyle.borderColor}`,
+          color: themeStyle.color,
+          backgroundColor: themeStyle.backgroundColor,
+          font: 'bold 12px Arial, "Helvetica Neue", Helvetica, sans-serif',
+          boxSizing: 'border-box',
+        }}
+      >
+        <HtmlRenderer html={data.title} />
+      </div>
     </div>
   );
 };

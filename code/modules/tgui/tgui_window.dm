@@ -64,7 +64,8 @@
 		assets = list(),
 		inline_html = "",
 		inline_js = "",
-		inline_css = "")
+		inline_css = "",
+		preload = FALSE)
 	#ifdef TGUI_DEBUGGING
 	log_tgui(client, "[id]/initiailize ([src])")
 	#endif
@@ -84,6 +85,13 @@
 		options += "titlebar=0;can_resize=0;"
 	else
 		options += "titlebar=1;can_resize=1;"
+	// Preload (pool warming): create the window hidden so the ~1s bundle parse
+	// happens off-screen. The tgui bundle boots in the suspended state
+	// (suspendedAtom defaults truthy), so React renders nothing and keeps the
+	// window invisible until a real UI later acquires this warm slot via open()
+	// — at which point Window.tsx's mount effect flips is-visible back to true.
+	if(preload)
+		options += "is-visible=0;"
 	// Generate page html
 	var/html = SStgui.basehtml
 	html = replacetextEx(html, "\[tgui:windowId]", id)

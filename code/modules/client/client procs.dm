@@ -609,6 +609,12 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		if (CONFIG_GET(flag/asset_simple_preload))
 			addtimer(CALLBACK(SSassets.transport, TYPE_PROC_REF(/datum/asset_transport, send_assets_slow), src, SSassets.transport.preload), 5 SECONDS)
 
+		//Pre-warm a couple of pooled tgui windows off-screen so the first interfaces
+		//the player opens reuse a warm slot instead of cold-loading the ~2 MB bundle
+		//(the ~1s grey-box flash). Deferred past the asset preload above so the bundle
+		//is already cached client-side when the warm windows initialize.
+		addtimer(CALLBACK(SStgui, TYPE_PROC_REF(/datum/controller/subsystem/tgui, preload_windows), src), 10 SECONDS)
+
 /mob/proc/MayRespawn()
 	return FALSE
 

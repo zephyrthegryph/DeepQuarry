@@ -200,8 +200,15 @@
 
 
 /datum/preferences/tgui_close(mob/user)
-	load_character()
-	save_preferences()
+	// Edits already persist as they happen: update_preference() ends every change with
+	// end_update_batch() → save_character() + save_preferences(), flushing to the savefile
+	// at edit time. The old load_character() + save_preferences() here therefore changed no
+	// state — load_character() re-read the whole savefile (which already matched the in-memory
+	// cache) and re-ran the priority-order read/sanitize loop, and save_preferences() re-wrote
+	// already-written player prefs — costing ~2s of synchronous, blocking savefile I/O on the
+	// close click. Just free the preview byte cache and queue one async straggler-flush.
+	clear_character_previews()
+	SScharacter_setup.queue_preferences_save(src)
 
 /datum/preferences/proc/create_character_profiles()
 	var/list/profiles = list()

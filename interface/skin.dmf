@@ -1325,9 +1325,9 @@ window "mapwindow"
 	elem "tooltip"
 		type = BROWSER
 		pos = 0,0
-		size = 640,480
-		anchor1 = 0,0
-		anchor2 = 100,100
+		size = 8,8
+		anchor1 = -1,-1
+		anchor2 = -1,-1
 		is-visible = false
 		inner-background-color = #00000000
 
