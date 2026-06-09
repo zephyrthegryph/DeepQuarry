@@ -1,3 +1,4 @@
+import 'tgui/styles/interfaces/Wires.scss';
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Color } from 'tgui-core/color';
