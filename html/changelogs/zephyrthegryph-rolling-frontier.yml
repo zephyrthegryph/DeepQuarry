@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - rscadd: "The next quarry depth's stratum now drifts: its candidate ore/mob/goal set re-rolls over time until a crew locks it in at the surface elevator panel or descends to it."
+  - rscadd: "Added a Lock In / Release control on the freight elevator's frontier card, with a countdown to the next drift."

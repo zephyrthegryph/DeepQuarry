@@ -33,6 +33,9 @@ type Depth = {
   depth: number;
   loaded: BooleanLike;
   snapshot: BooleanLike;
+  rolling?: BooleanLike;
+  archetype?: string;
+  archetype_desc?: string;
   stability?: number;
   stability_threshold?: number;
   danger: number;
@@ -50,10 +53,13 @@ type Data = {
   current_depth: number;
   unlocked_depth: number;
   deepest_visited: number;
-  panel_role: 'surface' | 'call';
+  panel_role: 'surface' | 'call' | 'layer';
   panel_depth: number;
   depths: Depth[];
   frontier: Frontier;
+  frontier_candidate_depth: number;
+  frontier_locked: BooleanLike;
+  frontier_roll_in: number;
 };
 
 export const QuarryElevator = () => {
@@ -66,15 +72,25 @@ export const QuarryElevator = () => {
     deepest_visited,
     panel_role,
     panel_depth,
+    frontier_locked,
+    frontier_roll_in,
   } = data;
 
   const isCallPanel = panel_role === 'call';
-  const title = isCallPanel
-    ? `Exterior Call - Depth ${panel_depth}`
-    : 'Freight Elevator';
-  const blurb = isCallPanel
-    ? 'This panel summons the elevator car to this depth.'
-    : 'Pick a destination. A layer is stabilised — and unlocks the next depth — when the average of its goal progress is high enough.';
+  const isLayer = panel_role === 'layer';
+  let title = 'Freight Elevator';
+  if (isCallPanel) {
+    title = `Exterior Call - Depth ${panel_depth}`;
+  } else if (isLayer) {
+    title = `Freight Elevator - Depth ${panel_depth}`;
+  }
+  let blurb =
+    'Pick a destination. A floor unlocks the next depth once its objective is fully complete.';
+  if (isCallPanel) {
+    blurb = 'This panel summons the elevator car to this depth.';
+  } else if (isLayer) {
+    blurb = `You're at depth ${panel_depth}. Complete this floor's objective to open the way down, or return to the surface.`;
+  }
 
   return (
     <Window width={580} height={620}>
@@ -99,6 +115,19 @@ export const QuarryElevator = () => {
             {blurb}
           </Box>
 
+          {isLayer ? (
+            <Button
+              fluid
+              icon="arrow-up"
+              color="good"
+              disabled={!!traveling}
+              onClick={() => act('ascend')}
+              mb={1}
+            >
+              Return to Surface
+            </Button>
+          ) : null}
+
           <Stack vertical fill>
             {depths.map((d) => (
               <Stack.Item key={d.depth}>
@@ -110,6 +139,9 @@ export const QuarryElevator = () => {
                       ? act('call')
                       : act('dispatch', { depth: d.depth })
                   }
+                  onLock={() => act('lock_frontier')}
+                  frontierLocked={!!frontier_locked}
+                  frontierRollIn={frontier_roll_in}
                   traveling={!!traveling}
                 />
               </Stack.Item>
@@ -146,30 +178,85 @@ const DepthCard = (props: {
   depth: Depth;
   isCallPanel: boolean;
   onAction: () => void;
+  onLock: () => void;
+  frontierLocked: boolean;
+  frontierRollIn: number;
   traveling: boolean;
 }) => {
   const d = props.depth;
   const hasGoals = (d.goals?.length ?? 0) > 0;
-  const stability = d.stability ?? 0;
-  const threshold = d.stability_threshold ?? 80;
-  const stable = stability >= threshold;
+  const objective = d.stability ?? 0;
+  const threshold = d.stability_threshold ?? 100;
+  const complete = objective >= threshold;
   const satisfiedCount = d.goals?.filter((g) => !!g.satisfied).length ?? 0;
   const totalCount = d.goals?.length ?? 0;
   const danger = d.danger ?? 0;
+  const rolling = !!d.rolling;
+  const locked = props.frontierLocked;
 
   return (
     <Section
-      title={`Depth ${d.depth}`}
+      title={
+        d.archetype ? `Depth ${d.depth} — ${d.archetype}` : `Depth ${d.depth}`
+      }
       buttons={
-        <Button
-          color={props.isCallPanel ? 'good' : stable ? 'good' : 'average'}
-          disabled={props.traveling}
-          onClick={props.onAction}
-        >
-          {props.isCallPanel ? 'Call Elevator' : 'Dispatch'}
-        </Button>
+        <>
+          {rolling ? (
+            <Button
+              icon={locked ? 'lock' : 'lock-open'}
+              color={locked ? 'good' : 'average'}
+              disabled={props.traveling}
+              onClick={props.onLock}
+              mr={1}
+            >
+              {locked ? 'Locked' : 'Lock In'}
+            </Button>
+          ) : null}
+          <Button
+            color={props.isCallPanel ? 'good' : complete ? 'good' : 'average'}
+            disabled={props.traveling}
+            onClick={props.onAction}
+          >
+            {props.isCallPanel ? 'Call Elevator' : 'Dispatch'}
+          </Button>
+        </>
       }
     >
+      {d.archetype_desc ? (
+        <Box color="label" italic mb={1} fontSize="0.9em">
+          {d.archetype_desc}
+        </Box>
+      ) : null}
+      {rolling ? (
+        <Box
+          mb={1}
+          p={1}
+          backgroundColor="rgba(0,0,0,0.25)"
+          style={{ borderRadius: '2px' }}
+        >
+          {locked ? (
+            <Box color="good">
+              <Box inline bold mr={1}>
+                Stratum locked.
+              </Box>
+              Held in place — descend to commit, or release to let it drift
+              again.
+            </Box>
+          ) : (
+            <Box color="average">
+              <Box inline bold mr={1}>
+                Stratum drifting.
+              </Box>
+              The formation below the bore is unstable
+              {props.frontierRollIn > 0
+                ? ` — shifts in ~${props.frontierRollIn}s`
+                : ' — shifting now…'}
+              . Lock it in to hold this one, or dispatch to commit.
+            </Box>
+          )}
+        </Box>
+      ) : null}
+
       {/* Danger bar always shown. */}
       <Box mb={1}>
         <Box mb="2px">
@@ -198,20 +285,19 @@ const DepthCard = (props: {
         <Box>
           <Box mb="2px">
             <Box inline bold mr={1}>
-              {stable ? (
+              {complete ? (
                 <Box inline color="good" mr={1}>
                   ✓
                 </Box>
               ) : null}
-              Stability
+              Objective
             </Box>
             <Box inline color="label">
-              {satisfiedCount} / {totalCount} goals complete · target{' '}
-              {threshold}%
+              {satisfiedCount} / {totalCount} goals complete
             </Box>
           </Box>
           <ProgressBar
-            value={stability}
+            value={objective}
             minValue={0}
             maxValue={100}
             ranges={{
@@ -220,7 +306,7 @@ const DepthCard = (props: {
               bad: [-Infinity, threshold / 2],
             }}
           >
-            {stability}%
+            {objective}%
           </ProgressBar>
 
           <Box mt={1}>

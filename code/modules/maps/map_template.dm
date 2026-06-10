@@ -103,15 +103,18 @@
 		x = round((world.maxx - width)/2)
 		y = round((world.maxy - height)/2)
 
-	// This would normally be handled by SSmapping
-	world.increment_max_z()
+	// This would normally be handled by SSmapping. Capture the allocated z
+	// up front: load_map() yields, and re-reading world.maxz afterward
+	// would pick up any z allocated meanwhile, building this map onto the
+	// wrong (possibly occupied) z-level. Use new_z everywhere and return it.
+	var/new_z = world.increment_max_z()
 
-	on_map_preload(world.maxz)
+	on_map_preload(new_z)
 	var/datum/parsed_map/parsed = load_map(
 		file(mappath),
 		x,
 		y,
-		world.maxz,
+		new_z,
 		no_changeturf = TRUE, // (SSatoms.initialized == INITIALIZATION_INSSATOMS),
 		place_on_top = FALSE, // should_place_on_top,
 		new_z = TRUE,
@@ -124,9 +127,9 @@
 
 	//initialize things that are normally initialized after map load
 	initTemplateBounds(bounds)
-	log_game("Z-level [name] loaded at at [x],[y],[world.maxz]")
-	on_map_loaded(world.maxz)
-	return TRUE
+	log_game("Z-level [name] loaded at at [x],[y],[new_z]")
+	on_map_loaded(new_z)
+	return new_z
 
 /datum/map_template/proc/load(turf/T, centered = FALSE)
 	var/old_T = T

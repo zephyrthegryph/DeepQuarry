@@ -8,11 +8,13 @@
 #define QUARRY_LAYER_SIZE 256
 #endif
 
-// Percent of per-goal completion required for a layer to count as
-// "stabilised". Stabilising a layer unlocks the next-deeper depth on
-// the elevator. Referenced from quarry_controller.dm / elevator_panel,
-// which sort before quarry_goal.dm where the goal datum itself lives.
-#define QUARRY_STABILITY_THRESHOLD 80
+// Rolling frontier ("the bore drifts"). The next-deeper stratum isn't
+// fixed until a player commits to it: while the deepest unlocked depth
+// is un-generated, SSquarry re-rolls its candidate feature/goal set
+// every QUARRY_FRONTIER_ROLL_INTERVAL until someone locks it in (at the
+// surface panel) or descends to it. See quarry_controller.dm
+// (tick_frontier_roll / begin_frontier_roll / frontier_candidate_depth).
+#define QUARRY_FRONTIER_ROLL_INTERVAL (2 MINUTES)
 
 // Raw-chemistry mineral names. These index GLOB.ore_data the same way
 // the upstream ORE_HEMATITE / ORE_PHORON defines do, and have to be

@@ -1,0 +1,9 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - rscadd: "Quarry floors now have archetypes — distinct objectives and clear conditions instead of one uniform stabilise-the-quotas gate: Sour Vein (seal gas fissures), The Burn (cool lava vents), Frozen Hollows (thaw ice chokes), The Lightless Deep (light pylons), The Blight (cleanse infection), Freight Quota (ship ore off), Infested Warren (destroy hive cores), Overcharge (run generators), Extermination Order (cull fauna), and a Shaft Assault siege gate every five depths."
+  - rscadd: "The drifting frontier candidate now rotates through floor archetypes as well as content, and the elevator panel shows each depth's floor type and objective."
+  - rscadd: "Added a freight export terminal beside the surface elevator bay. The Freight Quota floor is now completed by Cargo staging ore around the terminal and shipping it off to Central, not just by riding it up the lift."
+  - balance: "Consecutive descents avoid repeating the same floor family, so a run spreads work across departments instead of repeating one kind of floor."
+  - rscadd: "Shaft Assault floors now have a control console: trigger it to start a 3-minute defend-the-elevator hold that roars at the lift and throws escalating waves at it. The sequence aborts if any hostile gets into the elevator, and must be retriggered."
+  - balance: "Overcharge power targets, Extermination Order kill counts, and Freight Quota tonnage now scale with depth."
