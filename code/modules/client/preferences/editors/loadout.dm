@@ -198,10 +198,6 @@
 	return out
 
 /datum/preference_editor/loadout/build_ui_data(datum/preferences/preferences)
-	// Heartbeat — tgui polls this every second while the loadout tab is open. If DD
-	// crashes silently during an idle session, the last dq_log line tells us which
-	// build_ui_data call was last completing.
-	dq_log("build_ui_data enter")
 	var/list/gear_list = preferences.read_preference(/datum/preference/gear_list) || list()
 	var/loadout_key = _current_slot(preferences)
 	// Editing a per-job loadout: by_body_slot reflects ONLY the per-job items. Default
@@ -264,7 +260,7 @@
 				try
 					per_tweak_display["[i]"] = gt.get_contents(meta_value)
 				catch(var/exception/e)
-					dq_log("build_ui_data get_contents THREW for gear=[gear_name] gt=[gt?.type] meta=[meta_value]: [e?.name] @ [e?.file]:[e?.line]")
+					log_world("loadout build_ui_data get_contents THREW for gear=[gear_name] gt=[gt?.type] meta=[meta_value]: [e?.name] @ [e?.file]:[e?.line]")
 					per_tweak_display["[i]"] = "(error)"
 				// Raw value — scalar metadata flows directly to React for inline widgets.
 				// For item_tf_spawn the metadata is a list ({state, valid}); derive a
@@ -373,7 +369,6 @@
 		if(_outfit?.pda_slot)
 			pda_slot = "[_outfit.pda_slot]"
 
-	dq_log("build_ui_data exit ok")
 	return list(
 		"loadout_key" = loadout_key,
 		"loadouts" = loadouts,
@@ -427,7 +422,7 @@
 			for(var/i in 1 to length(G.gear_tweaks))
 				var/datum/gear_tweak/gt = G.gear_tweaks[i]
 				if(!istype(gt))
-					dq_log("build_ui_static_data: gear=[G.display_name] has bad tweak at idx=[i]: [gt]")
+					log_world("loadout build_ui_static_data: gear=[G.display_name] has bad tweak at idx=[i]: [gt]")
 					continue
 				var/_kind = dq_gear_tweak_kind(gt)
 				var/list/desc = list(
@@ -646,24 +641,19 @@
 			// opens the gear_tweak's input dialog and saves the returned value.
 			var/gear_name = params["gear"]
 			var/tweak_idx = text2num(params["tweak"])
-			dq_log("set_tweak enter: gear=[gear_name] idx=[tweak_idx] user=[user]")
 			var/datum/gear/G = GLOB.gear_datums[gear_name]
 			if(!G || !isnum(tweak_idx) || tweak_idx < 1 || tweak_idx > length(G.gear_tweaks))
-				dq_log("set_tweak rejected: G=[G] valid=[length(G?.gear_tweaks)]")
 				return PREF_UPDATE_REJECTED
 			var/datum/gear_tweak/gt = G.gear_tweaks[tweak_idx]
-			dq_log("set_tweak resolved: gt=[gt] type=[gt?.type]")
 			var/loadout_key = _current_slot(preferences)
 			var/list/gear_list = preferences.read_preference(/datum/preference/gear_list) || list()
 			var/list/active = gear_list[loadout_key] || list()
 			if(!(gear_name in active))
-				dq_log("set_tweak: gear not in active loadout key=[loadout_key]")
 				return PREF_UPDATE_REJECTED  // item must be equipped to customize
 			var/list/item_meta = active[gear_name]
 			if(!islist(item_meta))
 				item_meta = list()
 			var/cur_value = item_meta["[tweak_idx]"]
-			dq_log("set_tweak: about to call get_metadata cur=[cur_value]")
 			// The matrix_recolor tweak needs the gear datum as a 3rd arg; others ignore.
 			var/new_value
 			try
@@ -672,9 +662,8 @@
 				else
 					new_value = gt.get_metadata(user, cur_value)
 			catch(var/exception/e)
-				dq_log("set_tweak: get_metadata THREW: [e?.name] @ [e?.file]:[e?.line]")
+				log_world("set_tweak: get_metadata THREW: [e?.name] @ [e?.file]:[e?.line]")
 				return PREF_UPDATE_REJECTED
-			dq_log("set_tweak: get_metadata returned [new_value]")
 			if(isnull(new_value))
 				return PREF_UPDATE_UNCHANGED
 			item_meta["[tweak_idx]"] = new_value
@@ -682,7 +671,6 @@
 			gear_list[loadout_key] = active
 			preferences.update_preference_by_type(/datum/preference/gear_list, gear_list)
 			preferences.update_preview_icon()
-			dq_log("set_tweak: saved")
 			return PREF_UPDATE_ACCEPTED
 
 		if("set_tweak_value")
@@ -829,34 +817,28 @@
 			// opens the matrix colormatrix picker for the unified recolor tweak.
 			var/gear_name = params["gear"]
 			var/tweak_idx = text2num(params["tweak"])
-			dq_log("recolor_pick_matrix enter: gear=[gear_name] idx=[tweak_idx]")
 			var/datum/gear/G = GLOB.gear_datums[gear_name]
 			if(!G || !isnum(tweak_idx) || tweak_idx < 1 || tweak_idx > length(G.gear_tweaks))
-				dq_log("recolor_pick_matrix rejected: G=[G]")
 				return PREF_UPDATE_REJECTED
 			var/datum/gear_tweak/gt = G.gear_tweaks[tweak_idx]
 			if(!istype(gt, /datum/gear_tweak/recolor))
-				dq_log("recolor_pick_matrix rejected: tweak is [gt?.type], expected /datum/gear_tweak/recolor")
 				return PREF_UPDATE_REJECTED
 			var/loadout_key = _current_slot(preferences)
 			var/list/gear_list = preferences.read_preference(/datum/preference/gear_list) || list()
 			var/list/active = gear_list[loadout_key] || list()
 			if(!(gear_name in active))
-				dq_log("recolor_pick_matrix rejected: gear not in active loadout")
 				return PREF_UPDATE_REJECTED
 			var/list/item_meta = active[gear_name]
 			if(!islist(item_meta))
 				item_meta = list()
 			var/list/cur_meta = item_meta["[tweak_idx]"]
 			var/list/cur_matrix = (islist(cur_meta) && cur_meta["mode"] == "matrix") ? cur_meta["value"] : null
-			dq_log("recolor_pick_matrix: about to call tgui_input_colormatrix with cur_matrix len=[length(cur_matrix)]")
 			var/list/new_matrix
 			try
 				new_matrix = tgui_input_colormatrix(user, "Pick a color matrix for this item", "Matrix Recolor", G.path, cur_matrix, TRUE)
 			catch(var/exception/e)
-				dq_log("recolor_pick_matrix: tgui_input_colormatrix THREW: [e?.name] @ [e?.file]:[e?.line]")
+				log_world("recolor_pick_matrix: tgui_input_colormatrix THREW: [e?.name] @ [e?.file]:[e?.line]")
 				return PREF_UPDATE_REJECTED
-			dq_log("recolor_pick_matrix: tgui_input_colormatrix returned [islist(new_matrix) ? "list len=[length(new_matrix)]" : "[new_matrix]"]")
 			if(!islist(new_matrix) || length(new_matrix) < 12)
 				return PREF_UPDATE_UNCHANGED
 			// tgui_input_colormatrix sleeps — re-verify prefs ownership.
@@ -867,7 +849,6 @@
 			gear_list[loadout_key] = active
 			preferences.update_preference_by_type(/datum/preference/gear_list, gear_list)
 			preferences.update_preview_icon()
-			dq_log("recolor_pick_matrix: saved")
 			return PREF_UPDATE_ACCEPTED
 
 		if("set_recolor")

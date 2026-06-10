@@ -667,10 +667,9 @@
 	..()
 	gear_tweaks += GLOB.gear_tweak_free_color_choice
 
-/datum/gear/shoes/toelessjack
-	display_name = "toe-less jackboots"
-	path = /obj/item/clothing/shoes/boots/jackboots/toeless
-
+// toelessjack removed — it was a literal duplicate (same name + path) of
+// /datum/gear/shoes/toeless in loadout_shoes.dm, which made GLOB.gear_datums'
+// "toe-less jackboots" entry ambiguous.
 /datum/gear/shoes/toelessknee
 	display_name = "toe-less jackboots, knee-length"
 	path = /obj/item/clothing/shoes/boots/jackboots/toeless/knee
@@ -785,6 +784,7 @@
 /datum/gear/uniform/altevian_outfit
 	description = "A uniform commonly seen worn by altevians. The material on this uniform is made of a durable thread that can handle the stress of most forms of labor."
 	display_name = "altevian duty jumpsuit selection (Altevian)"
+	path = /obj/item/clothing/under/altevian
 	whitelisted = SPECIES_ALTEVIAN
 	sort_category = "Xenowear"
 
@@ -798,6 +798,7 @@
 /datum/gear/accessory/altevian_aquila
 	description = "An emblem found across all altevian vessels. The specific metals and jewels denote ranks. Otherwise, it's just a pretty rat skull emblem with a set of crystals for their eyes and fangs."
 	display_name = "royal altevian navy emblem selection"
+	path = /obj/item/clothing/accessory/altevian_badge/aquila
 	whitelisted = SPECIES_ALTEVIAN
 	sort_category = "Xenowear"
 
@@ -816,6 +817,7 @@
 /datum/gear/suit/altevian_officer_suit
 	description = "A comfortable official suit for altevian command officers."
 	display_name = "altevian officer's suit selection, site manager"
+	path = /obj/item/clothing/suit/captunic/capjacket/altevian_admiral
 	whitelisted = SPECIES_ALTEVIAN
 	allowed_roles = list(JOB_SITE_MANAGER)
 	sort_category = "Xenowear"
