@@ -8,10 +8,6 @@
 	digestable = 0
 	devourable = 0
 
-/mob/living/simple_mob/vore/aggressive/chungus
-	digestable = 0
-	devourable = 0
-
 /mob/living/simple_mob/vore/greatwolf
 	digestable = 0
 	devourable = 0

@@ -116,12 +116,11 @@
 	)
 	mob_count = 3000
 	// Midmines: mid-tier hostiles. Tunneler spiders show up, xenos
-	// patrol packs, chungus rumble through the corridors, and the
+	// patrol packs, and the
 	// occasional panther stalks the deeper rooms. 100-200 HP range.
 	default_mob_table = list(
 		/mob/living/simple_mob/animal/giant_spider/tunneler/cave = 30,
 		/mob/living/simple_mob/vore/xeno_defanged = 25,
-		/mob/living/simple_mob/vore/aggressive/chungus = 20,
 		/mob/living/simple_mob/vore/aggressive/panther = 15,
 		/mob/living/simple_mob/vore/aggressive/corrupthound = 15,
 		/mob/living/simple_mob/vore/aggressive/lizardman = 15,

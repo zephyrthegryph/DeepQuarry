@@ -122,7 +122,6 @@
 		ORE_QUARTZ = 15,
 	)
 	mob_contributions = list(
-		/mob/living/simple_mob/vore/aggressive/chungus = 30,
 		/mob/living/simple_mob/vore/scrubble = 25,
 		/mob/living/simple_mob/vore/aggressive/rat = 20,
 	)

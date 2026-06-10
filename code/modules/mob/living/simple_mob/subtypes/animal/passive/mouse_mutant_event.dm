@@ -11,11 +11,7 @@
 		return
 
 /mob/living/simple_mob/animal/passive/mouse/event/proc/rat()
-	var/mob/bigger = null
-	if(prob(99.5))
-		bigger = new /mob/living/simple_mob/vore/aggressive/rat/event(get_turf(src))
-	else
-		bigger = new /mob/living/simple_mob/vore/aggressive/chungus(get_turf(src))
+	var/mob/bigger = new /mob/living/simple_mob/vore/aggressive/rat/event(get_turf(src))
 
 	if(istype(loc,/obj/belly))
 		var/obj/belly/B = loc
