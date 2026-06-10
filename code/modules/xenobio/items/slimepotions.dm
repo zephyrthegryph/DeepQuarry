@@ -508,9 +508,8 @@
 	to_chat(user, span_notice("You feed the slime the agent. It has been disciplined, for better or worse..."))
 	var/justified = xenobio_slime.is_justified_to_discipline()
 	xenobio_slime.adjust_discipline(10)
-	var/datum/ai_holder/simple_mob/xenobio_slime/AI = xenobio_slime.ai_holder
-	if(istype(AI) && justified)
-		AI.obedience = 10
+	if(xenobio_slime.slime_state && justified)
+		xenobio_slime.slime_state.obedience = 10
 	playsound(src, 'sound/effects/bubbles.ogg', 50, 1)
 	qdel(src)
 	return ITEM_INTERACT_SUCCESS

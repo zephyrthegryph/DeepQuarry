@@ -683,7 +683,6 @@
 	harm_intent_damage = 5
 	melee_damage_lower = 7
 	melee_damage_upper = 7
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged
 	projectiletype = /obj/item/projectile/energy/fireball
 
 /mob/living/simple_mob/humanoid/cultist/noodle
@@ -713,7 +712,6 @@
 	projectiletype = /obj/item/projectile/energy/plasma/vepr
 	projectilesound = 'sound/weapons/spiderlunge.ogg'
 	movement_cooldown = 2
-	ai_holder_type = /datum/ai_holder/simple_mob/ranged
 
 /obj/item/shield_projector/rectangle/automatic/magus
 	name = "cult shield stone"
