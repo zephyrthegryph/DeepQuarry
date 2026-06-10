@@ -810,7 +810,7 @@
 			/mob/living/simple_mob/vore/woof/hostile/terrible = 5,
 			/mob/living/simple_mob/vore/woof/cass = 1
 			),
-		list(/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced/recursive)
+		list(/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced)
 		)
 
 /obj/random/mob/semirandom_mob_spawner/mecha

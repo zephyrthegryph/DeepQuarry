@@ -340,7 +340,7 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 
 /mob/living/simple_mob/animal/passive/cat/tabiranth/handle_special()
 	. = ..()
-	if (has_AI() && friend)
+	if ((ai_brain != null) && friend)
 		var/friend_dist = get_dist(src,friend)
 		if (friend_dist <= 1)
 			if (friend.stat >= DEAD || friend.health <= CONFIG_GET(number/health_threshold_softcrit))

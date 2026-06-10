@@ -39,7 +39,6 @@
 	special_attack_min_range = 1
 	special_attack_max_range = 9
 	special_attack_cooldown = 30 SECONDS
-	ai_holder_type = /datum/ai_holder/simple_mob/intentional/adv_dark_gygax
 	size_multiplier = 1.25
 	shock_resist = 0.5
 	ranged_attack_delay = 1 SECONDS

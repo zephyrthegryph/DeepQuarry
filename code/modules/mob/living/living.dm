@@ -1544,12 +1544,9 @@
 
 /mob/living/Initialize(mapload)
 	. = ..()
-	// Without this the legacy ai_holder is never wired up for any mob, because
-	// this override silently replaces the upstream /mob/living/Initialize in
-	// code/modules/ai/ai_holder.dm. Mobs that touch ai_holder during their own
-	// Initialize (e.g. /spacewhale/Initialize -> handle_restless) NRE.
-	if(!ai_holder)
-		initialize_ai_holder()
+	// Brain creation is handled by the combat AI integration's
+	// /mob/living/Initialize re-open (code/modules/combat_ai/integration/mob_living.dm),
+	// which calls initialize_ai_brain() when the mob opts in via use_modern_ai.
 
 	//Prime this list if we need it.
 	if(has_huds)

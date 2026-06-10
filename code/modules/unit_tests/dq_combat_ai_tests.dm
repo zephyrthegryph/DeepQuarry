@@ -8,15 +8,14 @@
 //   - faction vs. personal disposition resolution
 //   - item-granted behavior declaration
 //
-// All three sibling files are #included from
-// code/modules/unit_tests/_unit_tests.dm (via DQAdd) so the TEST_ASSERT*
-// macros are still in scope. The combat_ai defines header is re-included
-// here because the upstream test block compiles before the modular_dq
-// combat_ai includes.
+// This file is #included from code/modules/unit_tests/_unit_tests.dm so the
+// TEST_ASSERT* macros are in scope. The combat_ai defines header is re-included
+// here (DM dedupes identical includes) because the test block compiles before
+// the combat_ai framework includes later in the DME.
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
-#include "../modules/combat_ai/_defines.dm"
+#include "../combat_ai/_defines.dm"
 
 // --- static: behaviors are flyweights ----------------------------------
 // dq_get_behavior(T) must return the same singleton across calls — the
