@@ -146,7 +146,7 @@
 	gear_tweaks += GLOB.gear_tweak_free_color_choice
 
 /datum/gear/accessory/jacket
-	display_name = "suit jacket selection"
+	display_name = "jacket selection (accessory)"
 	path = /obj/item/clothing/accessory/jacket
 	cost = 1
 

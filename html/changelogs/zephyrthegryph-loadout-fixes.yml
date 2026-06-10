@@ -1,0 +1,7 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Loadout: items whose gear datum shared a display_name with an abstract parent type (e.g. the blue blazer) can now be added — previously the catalog showed one item but the write path resolved to a different, sometimes species-locked, datum and silently rejected the pick."
+  - bugfix: "Loadout: the point total no longer climbs each time you swap items in a single-occupancy slot; the optimistic total is now recomputed from the equipped items."
+  - bugfix: "Loadout: restored the vertical scrollbar on the gear catalog list."
+  - code_imp: "Loadout: gear datums must now have unique display_names (enforced by a unit test); removed a duplicate toe-less jackboots entry and disambiguated the accessory jacket selection."

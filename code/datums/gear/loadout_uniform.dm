@@ -17,6 +17,7 @@
 /datum/gear/uniform/cheongsam
 	description = "Various color variations of an old earth dress style. They are pretty close fitting around the waist."
 	display_name = "cheongsam selection"
+	path = /obj/item/clothing/under/cheongsam
 
 /datum/gear/uniform/cheongsam/New()
 	..()
@@ -28,6 +29,7 @@
 /datum/gear/uniform/croptop
 	description = "Light shirts which shows the midsection of the wearer."
 	display_name = "croptop selection"
+	path = /obj/item/clothing/under/croptop
 
 /datum/gear/uniform/croptop/New()
 	..()
@@ -742,6 +744,7 @@ Talon jumpsuit
 /datum/gear/uniform/altevian
 	description = "A comfortable set of clothing for people to handle their day to day work around the fleets with little to no discomfort."
 	display_name = "altevian uniform selection"
+	path = /obj/item/clothing/under/pants/altevian
 
 /datum/gear/uniform/altevian/New()
 	..()

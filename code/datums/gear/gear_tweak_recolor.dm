@@ -43,10 +43,8 @@ GLOBAL_DATUM_INIT(gear_tweak_unified_recolor, /datum/gear_tweak/recolor, new)
 
 /datum/gear_tweak/recolor/tweak_item(obj/item/I, metadata)
 	if(!islist(metadata) || !istype(I))
-		dq_log("recolor tweak_item: skipped — metadata=[islist(metadata) ? "list" : "[metadata]"] I=[I]")
 		return
 	var/mode = metadata["mode"]
-	dq_log("recolor tweak_item: mode=[mode] for [I]")
 	switch(mode)
 		if(null, "off")
 			return
@@ -54,13 +52,9 @@ GLOBAL_DATUM_INIT(gear_tweak_unified_recolor, /datum/gear_tweak/recolor, new)
 			var/color = metadata["value"]
 			if(istext(color) && length(color) >= 4 && color != "#ffffff")
 				I.add_atom_colour(color, FIXED_COLOUR_PRIORITY)
-				dq_log("tint apply: color=[color] applied to [I] (atom_colours after: [json_encode(I.atom_colours)])")
-			else
-				dq_log("tint apply: skipped — color=[color] istext=[istext(color)] len=[istext(color) ? length(color) : 0]")
 		if("palette")
 			var/list/swaps = metadata["value"]
 			if(!islist(swaps) || !length(swaps))
-				dq_log("palette apply: skipped — no swaps for [I]")
 				return
 			// Swap colors across every icon resource the item exposes — the ground/inv
 			// sprite (I.icon), the worn override (I.icon_override), per-slot worn icons
@@ -69,11 +63,9 @@ GLOBAL_DATUM_INIT(gear_tweak_unified_recolor, /datum/gear_tweak/recolor, new)
 			// sprite recolored; the mob render still uses the un-swapped default sheet.
 			// A full fix needs `update_clothing_icon`-level intervention per clothing
 			// subtype.
-			var/swap_count = 0
 			var/icon/ground = _swap_icon(I.icon, swaps)
 			if(ground)
 				I.icon = ground
-				swap_count += swaps.len
 			if(I.icon_override)
 				var/icon/swapped_override = _swap_icon(I.icon_override, swaps)
 				if(swapped_override)
@@ -112,7 +104,6 @@ GLOBAL_DATUM_INIT(gear_tweak_unified_recolor, /datum/gear_tweak/recolor, new)
 					var/icon/swapped_sheet = _swap_icon(I.sprite_sheets[species], swaps)
 					new_sheets[species] = swapped_sheet || I.sprite_sheets[species]
 				I.sprite_sheets = new_sheets
-			dq_log("palette apply: [swap_count] swaps applied to [I] (worn override=[I.icon_override ? "yes" : "no"], slot icons=[islist(I.item_icons) ? I.item_icons.len : 0], species sheets=[islist(I.sprite_sheets) ? I.sprite_sheets.len : 0])")
 		if("matrix")
 			var/list/m = metadata["value"]
 			if(islist(m) && length(m) >= 12)

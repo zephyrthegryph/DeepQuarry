@@ -271,12 +271,30 @@ const GroupBlock = ({
   const editors = group.items.filter((i) => i.type === 'editor');
   const hasTitle = !!group.group;
 
+  // Full-height editor pages (Loadout, Mind & Body) MUST fill the panel. Render the editor(s)
+  // directly in a height:100% container even when the group carries a title — a titled, non-fill
+  // Section (the path below) has no height:100% and collapses the editor to its content height,
+  // which left the loadout catalog filling only ~half the window (the paper-doll column height).
+  // These pages are single-editor by design, so dropping the redundant group frame is fine.
+  if (fillHeight) {
+    return (
+      <Box style={{ height: '100%' }}>
+        {editors.map((item, idx) => (
+          <EditorBlock
+            key={`editor:${item.key}-${idx}`}
+            item={item}
+            staticData={staticData}
+          />
+        ))}
+      </Box>
+    );
+  }
+
   // Bare-frame mode: no group title and no widgets — just render the editors
-  // directly. Used by single-editor categories (Loadout, Mind & Body) and
-  // by groups that only carry an editor.
+  // directly. Used by groups that only carry an editor.
   if (!hasTitle && widgets.length === 0) {
     return (
-      <Box style={fillHeight ? { height: '100%' } : undefined}>
+      <Box>
         {editors.map((item, idx) => (
           <EditorBlock
             key={`editor:${item.key}-${idx}`}

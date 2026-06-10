@@ -35,10 +35,7 @@ import {
   TextArea,
   Tooltip,
 } from 'tgui-core/components';
-import {
-  ColorizedImage,
-  ColorizedImageButton,
-} from '../helper_components';
+import { ColorizedImage, ColorizedImageButton } from '../helper_components';
 import type { EditorProps } from './index';
 
 type BodySlot = {
@@ -65,8 +62,8 @@ type RecolorMeta = {
 };
 
 type GearTweakDescriptor = {
-  key: string;        // stable 1-based gear_tweaks index, as a string
-  label: string;      // e.g. "Color", "Custom Name", "Variant"
+  key: string; // stable 1-based gear_tweaks index, as a string
+  label: string; // e.g. "Color", "Custom Name", "Variant"
   kind: GearTweakKind;
   /// When true, render side-by-side as a compact button at the bottom of the customize
   /// panel instead of a full-width row. Set on the DM side for boolean/tf_toggle/modal_button.
@@ -106,9 +103,9 @@ type UnderwearData = { selections: Record<string, string> };
 type UnderwearStatic = { categories: Record<string, UnderwearItem[]> };
 
 type LoadoutEntry = {
-  key: string;          // "_default" or a job title
-  label: string;        // displayed label
-  priority?: string;    // "high"|"med"|"low" (only on per-job entries)
+  key: string; // "_default" or a job title
+  label: string; // displayed label
+  priority?: string; // "high"|"med"|"low" (only on per-job entries)
   count: number;
   cost: number;
 };
@@ -172,7 +169,7 @@ const HUD_ICON = 'icons/mob/screen/midnight.dmi';
 // Valid icon_states in screen/midnight.dmi (matches the in-game inventory HUD).
 const SLOT_HUD: Record<string, string> = {
   '12': 'hair',
-  '9':  'glasses',
+  '9': 'glasses',
   '10': 'mask',
   '16': 'ears',
   '17': 'ears',
@@ -180,12 +177,12 @@ const SLOT_HUD: Record<string, string> = {
   '14': 'suit',
   '11': 'gloves',
   '13': 'shoes',
-  '3':  'back',
-  '4':  'belt',
-  '5':  'id',
-  '7':  'pocket',
-  '8':  'pocket',
-  '6':  'suitstore',
+  '3': 'back',
+  '4': 'belt',
+  '5': 'id',
+  '7': 'pocket',
+  '8': 'pocket',
+  '6': 'suitstore',
 };
 
 // Paper-doll grid (3 columns, head→toe). Compact 5-row layout — all cells visible at
@@ -196,37 +193,47 @@ const SLOT_HUD: Record<string, string> = {
 //   '_uw'     = Consolidated underwear slot (opens an in-panel multi-category picker)
 //   null      = truly empty cell
 const DOLL_GRID: Array<Array<string | null>> = [
-  ['_acc',  '12',   '_other'],  // Accessories / Head / Other
-  ['9',     '10',   '16'    ],  // Eyes / Mask / L.Ear
-  ['15',    '14',   '_uw'   ],  // Uniform / Suit / Underwear
-  ['3',     '4',    '11'    ],  // Back / Belt / Gloves
-  [null,    '13',   null    ],  // — / Shoes / —
+  ['_acc', '12', '_other'], // Accessories / Head / Other
+  ['9', '10', '16'], // Eyes / Mask / L.Ear
+  ['15', '14', '_uw'], // Uniform / Suit / Underwear
+  ['3', '4', '11'], // Back / Belt / Gloves
+  [null, '13', null], // — / Shoes / —
 ];
 
 type OptimisticOp = { kind: 'add' | 'remove'; item: CatalogItem; slot: string };
 
-const applyOps = (base: LoadoutData, ops: OptimisticOp[]): LoadoutData => {
+const applyOps = (
+  base: LoadoutData,
+  ops: OptimisticOp[],
+  costByName: Record<string, number>,
+): LoadoutData => {
   if (ops.length === 0) return base;
   const by_body_slot: Record<string, string[]> = { ...base.by_body_slot };
-  let total_cost = base.total_cost;
   for (const op of ops) {
     const cur = [...(by_body_slot[op.slot] ?? [])];
     if (op.kind === 'add') {
       if (op.slot === '19' || op.slot === 'other') {
+        // multi-occupancy buckets (accessories / other): append
         if (!cur.includes(op.item.name)) cur.push(op.item.name);
       } else {
+        // single-occupancy slot: the new item replaces whatever was there
         cur.length = 0;
         cur.push(op.item.name);
       }
-      total_cost += op.item.cost;
     } else {
       const idx = cur.indexOf(op.item.name);
-      if (idx >= 0) {
-        cur.splice(idx, 1);
-        total_cost -= op.item.cost;
-      }
+      if (idx >= 0) cur.splice(idx, 1);
     }
     by_body_slot[op.slot] = cur;
+  }
+  // Recompute the point total from the resulting slots rather than nudging it per-op. A swap
+  // in a single-occupancy slot evicts the previous occupant, so adding the new item's cost
+  // without subtracting the evicted one made the total climb on every swap.
+  let total_cost = 0;
+  for (const slot in by_body_slot) {
+    for (const name of by_body_slot[slot]) {
+      total_cost += costByName[name] ?? 0;
+    }
   }
   return { ...base, by_body_slot, total_cost };
 };
@@ -275,12 +282,6 @@ export const LoadoutBuilder = ({ data, staticData }: EditorProps) => {
     );
   }, [serverData.by_body_slot]);
 
-  const d = applyOps(serverData, pending);
-  const sk = d.starting_kit ?? ({} as StartingKitData);
-  const sks = s.starting_kit ?? ({} as StartingKitStatic);
-  const uw = d.underwear ?? ({ selections: {} } as UnderwearData);
-  const uws = s.underwear ?? ({ categories: {} } as UnderwearStatic);
-
   // s.categories is static data (server identity stable across polls); memo so we
   // don't rebuild the flattened catalog every render. ~1000 items × ~1Hz polls = a lot
   // of unnecessary work otherwise.
@@ -288,6 +289,19 @@ export const LoadoutBuilder = ({ data, staticData }: EditorProps) => {
     () => Object.values(s.categories ?? {}).flat(),
     [s.categories],
   );
+  // name -> point cost, so applyOps can total the optimistic loadout from its resulting
+  // slots instead of accumulating per-op drift.
+  const costByName: Record<string, number> = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const it of allItems) m[it.name] = it.cost;
+    return m;
+  }, [allItems]);
+
+  const d = applyOps(serverData, pending, costByName);
+  const sk = d.starting_kit ?? ({} as StartingKitData);
+  const sks = s.starting_kit ?? ({} as StartingKitStatic);
+  const uw = d.underwear ?? ({ selections: {} } as UnderwearData);
+  const uws = s.underwear ?? ({ categories: {} } as UnderwearStatic);
   // Role filter: scoped to the loadout currently being edited.
   //   "_default"   → union of every prioritized job (the default fronts all of them)
   //   <job_title>  → just that job
@@ -311,8 +325,7 @@ export const LoadoutBuilder = ({ data, staticData }: EditorProps) => {
 
   const costPct = d.max_gear_cost > 0 ? d.total_cost / d.max_gear_cost : 0;
 
-  const slotById = (id: string) =>
-    bodySlots.find((b) => bodySlotKey(b) === id);
+  const slotById = (id: string) => bodySlots.find((b) => bodySlotKey(b) === id);
   const filteredLabel =
     filterSlot === '_uw'
       ? 'Underwear'
@@ -329,7 +342,6 @@ export const LoadoutBuilder = ({ data, staticData }: EditorProps) => {
 
   // Full-window datum picker state — used for the underwear selector. `null` = closed.
   const [pickerCategory, setPickerCategory] = useState<string | null>(null);
-
 
   // The headset/backpack/PDA picks are now regular loadout gear datums in the catalog;
   // the only remaining starting-kit-style controls are ringtone and comm-visibility.
@@ -418,8 +430,8 @@ export const LoadoutBuilder = ({ data, staticData }: EditorProps) => {
 
       {d.preview_job && (
         <Box mb={0.5} color="label" fontSize="0.85em">
-          Grey labels = <b>{d.preview_job}</b>'s default kit. Your picks
-          replace them.
+          Grey labels = <b>{d.preview_job}</b>'s default kit. Your picks replace
+          them.
         </Box>
       )}
 
@@ -511,9 +523,7 @@ export const LoadoutBuilder = ({ data, staticData }: EditorProps) => {
                     key={cellKey}
                     bs={bs}
                     occupants={occupants}
-                    inheritedOccupants={
-                      d.inherited_by_body_slot?.[cell] ?? []
-                    }
+                    inheritedOccupants={d.inherited_by_body_slot?.[cell] ?? []}
                     jobDefault={d.job_defaults?.[cell] ?? null}
                     selected={filterSlot === cell}
                     onClick={() => setFilterSlot(cell)}
@@ -525,80 +535,86 @@ export const LoadoutBuilder = ({ data, staticData }: EditorProps) => {
           </Box>
         </Stack.Item>
 
-        {/* RIGHT: catalog (independent scroll). minHeight: 0 + the parent Stack's
-            flex:1+minHeight:0 above let the inner scrollable div claim a real
-            percentage height instead of expanding to its natural content height. */}
-        <Stack.Item grow style={{ minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-          <Box
-            mb={0.5}
-            px={1}
-            py={0.5}
-            bold
-            style={{
-              backgroundColor: 'rgba(255,255,255,0.05)',
-              borderRadius: '2px',
-            }}
-          >
-            {filteredLabel}
-            <Box inline ml={0.5} color="label" fontSize="0.85em">
-              ({visibleItems.length}{' '}
-              {visibleItems.length === 1 ? 'item' : 'items'})
-            </Box>
-          </Box>
-          {/* PDA slot: ringtone is now a per-PDA tweak (see standard_pda's
-              gear_tweaks). Comm-visible stays as a small inline toggle here because
-              it's a global pref, not a per-PDA setting. */}
-          {d.pda_slot && filterSlot === d.pda_slot && (
-            <Stack mb={0.5} align="center">
-              <Stack.Item grow color="label" fontSize="0.85em">
-                Comm visibility:
-              </Stack.Item>
+        {/* RIGHT: catalog. Use a tgui `Stack fill vertical` with a `Stack.Item grow` for the
+            scroll area — the same proven pattern as the preview pane — so the scrollable list
+            gets a real bounded height. The earlier hand-rolled flex:1 chain relied on every
+            tgui ancestor forwarding a definite height, which it didn't, so the list grew to
+            its natural content height and the vertical scrollbar disappeared. */}
+        <Stack.Item grow style={{ minHeight: 0 }}>
+          <Stack fill vertical>
+            <Stack.Item>
+              <Box
+                px={1}
+                py={0.5}
+                bold
+                style={{
+                  backgroundColor: 'rgba(255,255,255,0.05)',
+                  borderRadius: '2px',
+                }}
+              >
+                {filteredLabel}
+                <Box inline ml={0.5} color="label" fontSize="0.85em">
+                  ({visibleItems.length}{' '}
+                  {visibleItems.length === 1 ? 'item' : 'items'})
+                </Box>
+              </Box>
+            </Stack.Item>
+            {/* PDA slot: ringtone is now a per-PDA tweak (see standard_pda's
+                gear_tweaks). Comm-visible stays as a small inline toggle here because
+                it's a global pref, not a per-PDA setting. */}
+            {d.pda_slot && filterSlot === d.pda_slot && (
               <Stack.Item>
-                <Button
-                  compact
-                  selected={sk.comm_visible}
-                  color={sk.comm_visible ? 'good' : undefined}
-                  icon={sk.comm_visible ? 'check' : 'xmark'}
-                  onClick={() =>
-                    sendTo(act, 'starting_kit', 'toggle_comm_visible')
-                  }
-                  tooltip="Communicator visible to others"
-                >
-                  {sk.comm_visible ? 'Visible' : 'Hidden'}
-                </Button>
+                <Stack align="center">
+                  <Stack.Item grow color="label" fontSize="0.85em">
+                    Comm visibility:
+                  </Stack.Item>
+                  <Stack.Item>
+                    <Button
+                      compact
+                      selected={sk.comm_visible}
+                      color={sk.comm_visible ? 'good' : undefined}
+                      icon={sk.comm_visible ? 'check' : 'xmark'}
+                      onClick={() =>
+                        sendTo(act, 'starting_kit', 'toggle_comm_visible')
+                      }
+                      tooltip="Communicator visible to others"
+                    >
+                      {sk.comm_visible ? 'Visible' : 'Hidden'}
+                    </Button>
+                  </Stack.Item>
+                </Stack>
               </Stack.Item>
-            </Stack>
-          )}
-          {filterSlot === '_uw' ? (
-            // Wrap the underwear category list in the same flex-fill scroll container
-            // so it gets the same available-space treatment as the gear catalog.
-            <div
-              style={{
-                flex: 1,
-                minHeight: 0,
-                overflowY: 'auto',
-                paddingRight: '4px',
-              }}
-            >
-              <UnderwearCatalog
-                uws={uws}
-                uw={uw}
-                onPickCategory={(cat) => setPickerCategory(cat)}
-                onClear={(cat) =>
-                  sendTo(act, 'underwear', 'clear', { category: cat })
-                }
-              />
-            </div>
-          ) : (
-            <CatalogScrollList
-              visibleItems={visibleItems}
-              data={d}
-              bodySlots={bodySlots}
-              onOp={queueOp}
-              filterSlot={filterSlot}
-              loadoutKey={loadoutKey}
-            />
-          )}
+            )}
+            <Stack.Item grow style={{ minHeight: 0 }}>
+              {filterSlot === '_uw' ? (
+                <div
+                  style={{
+                    height: '100%',
+                    overflowY: 'auto',
+                    paddingRight: '4px',
+                  }}
+                >
+                  <UnderwearCatalog
+                    uws={uws}
+                    uw={uw}
+                    onPickCategory={(cat) => setPickerCategory(cat)}
+                    onClear={(cat) =>
+                      sendTo(act, 'underwear', 'clear', { category: cat })
+                    }
+                  />
+                </div>
+              ) : (
+                <CatalogScrollList
+                  visibleItems={visibleItems}
+                  data={d}
+                  bodySlots={bodySlots}
+                  onOp={queueOp}
+                  filterSlot={filterSlot}
+                  loadoutKey={loadoutKey}
+                />
+              )}
+            </Stack.Item>
+          </Stack>
         </Stack.Item>
       </Stack>
 
@@ -716,7 +732,8 @@ const SlotCell = ({
           // background with a subtle tint so the player can still tell at a glance
           // that the slot's icon comes from inherited/default, not their own pick.
           opacity:
-            occupants.length === 0 && (inheritedOccupants.length > 0 || jobDefault)
+            occupants.length === 0 &&
+            (inheritedOccupants.length > 0 || jobDefault)
               ? 0.6
               : 1,
         }}
@@ -931,12 +948,7 @@ const RecolorWidget = ({
             <ColorBox color={String(meta.value ?? '#ffffff')} />
           </Stack.Item>
           <Stack.Item grow>
-            <Button
-              fluid
-              compact
-              icon="palette"
-              onClick={onPickTint}
-            >
+            <Button fluid compact icon="palette" onClick={onPickTint}>
               {String(meta.value ?? '#ffffff')}
             </Button>
           </Stack.Item>
@@ -989,11 +1001,7 @@ const RecolorWidget = ({
                 : 'No matrix set yet.'}
             </Stack.Item>
             <Stack.Item>
-              <Button
-                compact
-                icon="palette"
-                onClick={onOpenMatrixModal}
-              >
+              <Button compact icon="palette" onClick={onOpenMatrixModal}>
                 Open matrix picker
               </Button>
             </Stack.Item>
@@ -1391,8 +1399,7 @@ const CatalogScrollList = ({
     <div
       ref={listRef}
       style={{
-        flex: 1,
-        minHeight: 0,
+        height: '100%',
         overflowY: 'auto',
         paddingRight: '4px',
       }}

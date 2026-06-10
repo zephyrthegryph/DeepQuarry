@@ -21,6 +21,18 @@ GLOBAL_LIST_EMPTY_TYPED(gear_datums, /datum/gear)
 		if(!use_name)
 			log_world("## ERROR Loadout - Missing display name: [G]")
 			continue
+
+		// Skip subtypes that merely INHERIT their parent's display_name instead of declaring
+		// their own — these are abstract intermediate types (e.g. /datum/gear/uniform/dept,
+		// which only sets whitelisted/sort_category for its named children) or unnamed leaves.
+		// GLOB.gear_datums is keyed by display_name, so instantiating an inheritor overwrites
+		// the real item that declared that name. That made "blazer, blue" resolve to the
+		// Teshari-only /datum/gear/uniform/dept/undercoat on the write path while the catalog
+		// still showed the real /datum/gear/uniform — so adding it was silently rejected for
+		// non-Teshari players. Properly-named leaves (parent has a different name) are kept.
+		var/datum/gear/parent_gear = G.parent_type
+		if(parent_gear && initial(parent_gear.display_name) == use_name)
+			continue
 		if(isnull(initial(G.cost)))
 			log_world("## ERROR Loadout - Missing cost: [G]")
 			continue
