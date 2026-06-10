@@ -31,6 +31,8 @@ GLOBAL_LIST_EMPTY(dq_default_behavior_cache)
 	// Idle always.
 	L += /datum/ai_behavior/idle_wander
 	L += /datum/ai_behavior/idle_speak
+	// Curiosity — walk over and check out a loud nearby noise when not fighting.
+	L += /datum/ai_behavior/investigate_noise
 	// Destination walking — every mob can be given a target turf to head to
 	// (used by migration events, technomancer control, admin tools).
 	L += /datum/ai_behavior/walk_to_destination
