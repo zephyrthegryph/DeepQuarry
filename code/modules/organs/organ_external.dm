@@ -787,6 +787,8 @@ This function completely restores a damaged organ to perfect condition.
 	// the organ would stop ticking after the wound heals.
 	if(LAZYLEN(medical_issues))
 		return 1
+	if(wounds.len)
+		return 1
 	return 0
 
 /obj/item/organ/external/process()
@@ -1596,7 +1598,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 
 		if(W.bleeding())
 			this_wound_desc = "bleeding [this_wound_desc]"
-		else if(W.bandaged)
+		else if(W.bandaged && W.damage > 0)
 			this_wound_desc = "bandaged [this_wound_desc]"
 
 		if(W.germ_level > 600)
