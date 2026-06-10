@@ -5411,6 +5411,7 @@
 #include "code\modules\combat_ai\behaviors\parity.dm"
 #include "code\modules\combat_ai\behaviors\tactical.dm"
 #include "code\modules\combat_ai\behaviors\destination.dm"
+#include "code\modules\combat_ai\behaviors\investigate.dm"
 #include "code\modules\combat_ai\brain\brain.dm"
 #include "code\modules\combat_ai\brain\default_behaviors.dm"
 #include "code\modules\combat_ai\brain\pathing.dm"

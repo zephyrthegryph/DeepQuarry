@@ -88,6 +88,10 @@
 #define DQ_DAMAGE_HISTORY_CAP 8
 // Default behavior cooldown after FAILED.
 #define DQ_BEHAVIOR_FAIL_COOLDOWN (1 SECOND)
+// How long a mob remembers / pursues a heard noise before giving up.
+// (DQ_AI_NOISE_MIN_VOL lives in code/__defines/mobs.dm — it's referenced from
+// game/sound.dm, which is compiled well before this modular block.)
+#define DQ_NOISE_INVESTIGATE_TTL (8 SECONDS)
 
 // Quick log macro; keep parity with the existing ai_log noop philosophy.
 // Flip to enable for debugging.

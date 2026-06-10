@@ -55,6 +55,12 @@
 		hearer.playsound_local(turf_source, soundin, vol, vary, frequency, falloff, is_global, channel, pressure_affected, S, preference, volume_channel, T)
 		SSmotiontracker.ping(source,vol) // Nearly everything pings this, the quieter the less likely
 
+	// DQAdd — loud, positioned sounds wake nearby idle AI mobs to walk over and
+	// investigate the source (see combat_ai/behaviors/investigate.dm). Gated on
+	// volume so footsteps/quiet sfx don't constantly distract wildlife.
+	if(vol >= DQ_AI_NOISE_MIN_VOL && !is_global)
+		dq_ai_propagate_noise(source, turf_source, vol)
+
 /mob/proc/check_sound_preference(list/preference)
 	if(!islist(preference))
 		preference = list(preference)

@@ -552,3 +552,7 @@
 #define VOMIT_PURPLE 2
 // Nanite vomit
 #define VOMIT_NANITE 3
+
+// DeepQuarry combat AI: playsound() at or above this volume wakes nearby idle
+// AI mobs to investigate the source (see code/modules/combat_ai/behaviors/investigate.dm).
+#define DQ_AI_NOISE_MIN_VOL 45
