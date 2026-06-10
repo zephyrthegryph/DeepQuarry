@@ -1,4 +1,4 @@
-// Runtime hooks that drive stabilization-goal progress.
+// Runtime hooks that drive quarry-goal progress.
 //
 // Detection is event-based: goals tick when the *work* happens (mining
 // a wall, pumping a pool, venting a gas pocket, killing a mob, walking

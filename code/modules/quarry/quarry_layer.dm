@@ -9,17 +9,23 @@
 	// The biome config that generated this layer. Kept for diagnostics and
 	// future features that may want to inspect a layer's flavor at runtime.
 	var/datum/quarry_layer_config/config
-	// All stabilization goals rolled at layer generation. Each goal
-	// tracks its own progress independently. The layer is "stabilised"
-	// (and unlocks the next-deeper depth) when at least
-	// QUARRY_STABILITY_THRESHOLD percent of goals are individually
-	// satisfied — see SSquarry.layer_stability_percent().
+	// The floor archetype that decides this layer's objective + clear
+	// condition (gas pocket, lava, hive, siege, ...). Selected at roll
+	// time, persisted on the snapshot, and consulted by
+	// SSquarry.recompute_unlocked_depth via archetype.is_cleared().
+	var/datum/quarry_floor_archetype/archetype
+	// The layer's objective goals, supplied by the archetype's
+	// build_goals(). Each tracks its own progress; the layer unlocks the
+	// next-deeper depth once every goal is satisfied (archetype.is_cleared).
 	var/list/datum/quarry_goal/goals
+	// Archetype objective structures placed on this layer (gas fissures,
+	// lava vents, hive cores, ...). Cached so the archetype's per-tick
+	// ambient hazard doesn't rescan 65k tiles. Lazily (re)built by
+	// _quarry_get_objectives — null means "not scanned yet this load".
+	var/list/objectives
 	// Typepaths of /datum/quarry_feature rolled at layer generation.
-	// Kept so restore_layer can rebuild the same goals after a
-	// snapshot — without this the restored layer would re-roll a
-	// different set of features and the goals players were chasing
-	// would change between visits.
+	// Kept so restore_layer rebuilds the same ore/mob/decoration content
+	// after a snapshot instead of re-rolling a different set.
 	var/list/feature_types
 	// Danger level 0..100. Accrues from time loaded, walls mined,
 	// machinery running, gas vents popped, mob kills. Decays slowly

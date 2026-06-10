@@ -36,6 +36,10 @@ SUBSYSTEM_DEF(quarry)
 
 	// Per-depth re-entrancy guard: set to depth while ensure_layer is generating.
 	var/list/generating = list()
+	// Global generation lock: TRUE while ANY layer is allocating a z and
+	// building. Serializes layer generation across depths so two layers
+	// can't race load_new_z onto the same z-level. See ensure_layer.
+	var/layer_gen_lock = FALSE
 
 	// All concrete /datum/quarry_layer_config instances. Built once at
 	// Initialize from subtypesof(); select_config picks across them.
@@ -51,10 +55,20 @@ SUBSYSTEM_DEF(quarry)
 	// goes to depth 1, generated on demand.
 	var/deepest_visited = 0
 	// The deepest depth the elevator may travel to. Bumped when the
-	// previous depth's stabilization goal hits its unlock threshold.
+	// previous depth's archetype objective is completed.
 	// Starts at 1: depth 1 is unconditionally reachable so a fresh
 	// round always has a first destination.
 	var/unlocked_depth = 1
+
+	// Rolling frontier state. While the deepest unlocked depth is still
+	// un-generated, its prerolled candidate (feature/goal set) re-rolls
+	// on a timer — the stratum below the bore "drifts" until someone
+	// commits to it. frontier_locked freezes the current candidate;
+	// next_frontier_roll is the world.time of the next scheduled re-roll.
+	// Both are reset by begin_frontier_roll() whenever a new frontier
+	// opens (init + each unlock). See tick_frontier_roll().
+	var/frontier_locked = FALSE
+	var/next_frontier_roll = 0
 
 /datum/controller/subsystem/quarry/Initialize()
 	// Wipe any leftover snapshots from a prior round before anything
@@ -108,12 +122,20 @@ SUBSYSTEM_DEF(quarry)
 	// Instantiate all runtime cave events.
 	init_events()
 
+	// Instantiate all floor archetypes (the objective/clear layer that
+	// rides on top of the biome configs).
+	init_archetypes()
+
 	// Carve cave network into the surface map around the hand-authored
 	// rooms. The .dmm fills the area outside the room with mineable cave
 	// walls; this gen punches walkable passages through them and tags
 	// some walls as ore-bearing. The room/elevator structure (stonebricks,
 	// concrete, elevator walls/floor) is non-mineral so it's left alone.
 	generate_surface()
+
+	// Place the freight export terminal next to the surface bay so Cargo
+	// can ship mined ore off to Central (the Freight Quota turn-in).
+	place_freight_terminal()
 
 	// No pregen of layer 1 — the elevator's travel_to handles generation
 	// on demand. The first "descend further" press from the surface
@@ -126,6 +148,9 @@ SUBSYSTEM_DEF(quarry)
 	// a goals-only snapshot for UI consumption.
 	if(!has_snapshot(1))
 		preroll_layer(1)
+	// Start the rolling frontier on the depth-1 candidate: it drifts
+	// (re-rolls) until a player locks it in or descends.
+	begin_frontier_roll()
 
 	// One-shot memory profile dump. Wait a few seconds for the world to
 	// settle (atoms, atmos, lighting all finished initializing), then
@@ -149,8 +174,7 @@ SUBSYSTEM_DEF(quarry)
 
 	// Roll features for the surface biome and place each as veins or
 	// pools. Pass a throwaway layer so build_goals can be called (the
-	// goals themselves are discarded — surface doesn't participate in
-	// stabilization).
+	// goals themselves are discarded — the surface has no objective).
 	var/datum/quarry_layer/throwaway = new(0)
 	var/list/feature_types = _quarry_roll_feature_types(cfg)
 	var/list/aggregated = _quarry_aggregate_features(feature_types, throwaway)
@@ -172,6 +196,34 @@ SUBSYSTEM_DEF(quarry)
 				_quarry_place_wall_feature(F, walls)
 	qdel(throwaway)
 
+// Place the surface freight export terminal on a walkable tile next to
+// the surface elevator bay, so Cargo can stage ore off the lift and ship
+// it to Central. No-op if the bay never resolved or no adjacent floor is
+// free (door tiles and dense objects are skipped).
+/datum/controller/subsystem/quarry/proc/place_freight_terminal()
+	if(!length(elevator?.surface_bay))
+		return
+	for(var/turf/B as anything in elevator.surface_bay)
+		for(var/dir in GLOB.cardinal)
+			var/turf/T = get_step(B, dir)
+			if(!istype(T, /turf/simulated/floor))
+				continue
+			if(T in elevator.surface_bay)
+				continue
+			if(T.density)
+				continue
+			var/blocked = FALSE
+			for(var/obj/O in T)
+				if(O.density || istype(O, /obj/machinery/door))
+					blocked = TRUE
+					break
+			if(blocked)
+				continue
+			new /obj/structure/quarry_freight_export(T)
+			return
+	log_game("SSquarry: couldn't place freight export terminal near the surface bay")
+
+
 // Elevator stops at every depth a player has reached. Surface panel
 // uses this as its "send to N" target. Returns null if no depth has
 // been visited yet.
@@ -181,11 +233,10 @@ SUBSYSTEM_DEF(quarry)
 	return deepest_visited
 
 
-// Re-evaluate unlocked_depth based on aggregate goal completion. The
-// deepest reachable depth advances by one for each consecutive
-// stabilised layer starting from depth 1. A layer is "stabilised"
-// when at least QUARRY_STABILITY_THRESHOLD% of its goals are
-// individually satisfied — see layer_stability_percent.
+// Re-evaluate unlocked_depth. The deepest reachable depth advances by
+// one for each consecutive *cleared* layer starting from depth 1. A
+// layer is cleared when its floor archetype's objective is complete —
+// see /datum/quarry_floor_archetype/is_cleared.
 //
 // Idempotent. Call after every goal-progress event.
 /datum/controller/subsystem/quarry/proc/recompute_unlocked_depth()
@@ -193,7 +244,10 @@ SUBSYSTEM_DEF(quarry)
 		var/datum/quarry_layer/L = layers["[unlocked_depth]"]
 		if(!L?.loaded)
 			return
-		if(layer_stability_percent(L) < QUARRY_STABILITY_THRESHOLD)
+		// The floor's archetype objective is the sole clear condition.
+		// A null archetype (shouldn't happen) doesn't block progression.
+		var/cleared = L.archetype ? L.archetype.is_cleared(L) : TRUE
+		if(!cleared)
 			return
 		unlocked_depth++
 		// Pre-roll the newly-frontier depth's features and goals so the
@@ -201,26 +255,9 @@ SUBSYSTEM_DEF(quarry)
 		// snapshot is consumed by ensure_layer on first dispatch.
 		if(!has_snapshot(unlocked_depth))
 			preroll_layer(unlocked_depth)
+		// A fresh frontier opened: unlock it and (re)arm the drift timer.
+		begin_frontier_roll()
 
-
-// Returns the aggregate stability of a layer as a 0..100 integer.
-// Mean of per-goal percent_complete across all goals on the layer —
-// each goal is clamped 0..100 individually so over-mining one
-// resource can't carry an under-mined one. A layer with no goals is
-// treated as fully stable so a config whose rolled features all
-// returned empty goal lists doesn't soft-lock the round.
-/datum/controller/subsystem/quarry/proc/layer_stability_percent(datum/quarry_layer/L)
-	if(!L)
-		return 0
-	var/total = length(L.goals)
-	if(total <= 0)
-		return 100
-	var/sum_percent = 0
-	for(var/datum/quarry_goal/G as anything in L.goals)
-		if(!G)
-			continue
-		sum_percent += G.percent_complete()
-	return round(sum_percent / total)
 
 // Returns a /datum/quarry_layer_config picked weighted-randomly from all
 // configs whose weight_at(depth) is non-zero. Returns null if none apply.
@@ -237,7 +274,53 @@ SUBSYSTEM_DEF(quarry)
 /datum/controller/subsystem/quarry/fire()
 	tick_layer_danger()
 	tick_layer_events()
+	tick_layer_goals()
+	tick_frontier_roll()
 	unload_empty_layers()
+
+
+// Depth of the rolling frontier candidate, or 0 if nothing is currently
+// drifting. A candidate exists only while the deepest unlocked depth is
+// un-generated and still holds a preroll (partial) snapshot — i.e. no
+// player has committed to it yet. Once a layer is generated at that
+// depth (someone descended), or the depth already has a full snapshot
+// from a prior visit, there is nothing left to roll.
+/datum/controller/subsystem/quarry/proc/frontier_candidate_depth()
+	var/depth = unlocked_depth
+	var/datum/quarry_layer/L = layers["[depth]"]
+	if(L?.loaded)
+		return 0
+	if(!is_partial_snapshot(depth))
+		return 0
+	return depth
+
+
+// Open (or re-open) the rolling frontier: unlock the candidate and arm
+// the drift timer for one full interval. Called at init and whenever a
+// new depth unlocks.
+/datum/controller/subsystem/quarry/proc/begin_frontier_roll()
+	frontier_locked = FALSE
+	next_frontier_roll = world.time + QUARRY_FRONTIER_ROLL_INTERVAL
+
+
+// Per-SS-tick driver for the rolling frontier. When the candidate is
+// unlocked and its drift interval has elapsed, re-roll it — preroll_layer
+// overwrites the partial snapshot with a fresh feature/goal set, so the
+// stratum lined up below the bore changes. Locked candidates and
+// already-committed depths are left alone.
+/datum/controller/subsystem/quarry/proc/tick_frontier_roll()
+	if(frontier_locked)
+		return
+	var/depth = frontier_candidate_depth()
+	if(!depth)
+		return
+	if(world.time < next_frontier_roll)
+		return
+	// Re-roll, steering away from the current candidate's archetype so the
+	// drift visibly lands on a different floor type when one is available.
+	var/datum/quarry_floor_archetype/current = read_snapshot_archetype(depth)
+	preroll_layer(depth, current?.type)
+	next_frontier_roll = world.time + QUARRY_FRONTIER_ROLL_INTERVAL
 
 // Sweep loaded layers and unload any that have no live players on them.
 // Called periodically from fire(). Layers already mid-unload are
@@ -255,6 +338,11 @@ SUBSYSTEM_DEF(quarry)
 		// between the elevator's ensure_layer call and its bay_at()
 		// check, leaving the player staring at "the shaft groans."
 		if(elevator?.pending_arrivals?[key])
+			continue
+		// Never unload the active frontier objective floor while its
+		// objective is incomplete — the floor you're working on shouldn't
+		// wipe out from under you if you briefly step into the lift.
+		if(L.depth == unlocked_depth && L.archetype && !L.archetype.is_cleared(L))
 			continue
 		if(is_layer_empty(L.z))
 			unload_layer(L.depth)
@@ -303,6 +391,14 @@ SUBSYSTEM_DEF(quarry)
 		return existing
 
 	generating[key] = TRUE
+	// Global generation lock: only ONE layer may allocate a z + build at a
+	// time. The per-depth `generating` guard above doesn't stop two
+	// *different* depths from racing load_new_z onto the same z-level
+	// (stacking one layer on top of another). Generation yields heavily
+	// (load_map, cave gen), so serializing it is the safe choice.
+	while(layer_gen_lock)
+		sleep(2)
+	layer_gen_lock = TRUE
 	var/datum/quarry_layer/L = null
 	if(has_snapshot(depth))
 		// Partial snapshot = preroll_layer output. Goal previews are in
@@ -311,16 +407,18 @@ SUBSYSTEM_DEF(quarry)
 		// matches the goals the UI promised.
 		if(is_partial_snapshot(depth))
 			var/list/preset = read_snapshot_feature_types(depth)
+			var/datum/quarry_floor_archetype/preset_arch = read_snapshot_archetype(depth)
 			var/path = _quarry_snapshot_path(depth)
 			if(fexists(path))
 				fdel(path)
-			L = generate_layer(depth, preset)
+			L = generate_layer(depth, preset, preset_arch)
 		else
 			L = restore_layer(depth)
 			if(!L)
 				log_game("SSquarry: restore_layer failed for depth [depth]; falling back to generate_layer")
 	if(!L)
 		L = generate_layer(depth)
+	layer_gen_lock = FALSE
 	generating -= key
 
 	if(L)
@@ -331,7 +429,7 @@ SUBSYSTEM_DEF(quarry)
 // runs the cave generator, marks ores, scatters decorations, spawns mobs,
 // and places the escape ladder and the down-ladder. Returns the layer
 // record on success, null on failure.
-/datum/controller/subsystem/quarry/proc/generate_layer(depth, list/preset_feature_types = null)
+/datum/controller/subsystem/quarry/proc/generate_layer(depth, list/preset_feature_types = null, datum/quarry_floor_archetype/preset_archetype = null)
 	var/datum/quarry_layer_config/cfg = select_config(depth)
 	if(!cfg)
 		log_game("SSquarry: no applicable config for depth [depth]; refusing to generate")
@@ -339,10 +437,12 @@ SUBSYSTEM_DEF(quarry)
 
 	var/_tl0 = world.timeofday
 	var/datum/map_template/quarry_layer/template = new
-	if(!template.load_new_z())
+	// Use the z load_new_z actually allocated — never re-read world.maxz
+	// after it (that's racy; another z could have been allocated meanwhile).
+	var/new_z = template.load_new_z()
+	if(!new_z)
 		log_game("SSquarry: failed to load_new_z for depth [depth]")
 		return null
-	var/new_z = world.maxz
 	// The quarry digs the live map into additional z-levels at runtime, so refresh
 	// the atmos vertical-adjacency table to cover the new level (multi-z atmos —
 	// see SSair.build_multiz_atmos_levels). Vertical gas flow then follows turf
@@ -398,13 +498,22 @@ SUBSYSTEM_DEF(quarry)
 	// Pre-rolled features from a partial snapshot take precedence so
 	// the UI's goal preview matches what actually gets placed below.
 	L.feature_types = length(preset_feature_types) ? preset_feature_types : _quarry_roll_feature_types(cfg)
+	// Pick the floor archetype (objective + clear condition). A pre-rolled
+	// archetype from the locked-in frontier candidate takes precedence so
+	// what the crew committed to is what they get.
+	L.archetype = preset_archetype || select_archetype(depth) || default_archetype()
 	var/list/aggregated = _quarry_aggregate_features(L.feature_types, L)
 	var/list/instances = aggregated["instances"]
 	var/list/mob_table = aggregated["mob_table"]
 	var/list/decoration_table = aggregated["decoration_table"]
 	var/extra_mob_spawns = aggregated["extra_mob_spawns"]
 	var/extra_decoration_density = aggregated["extra_decoration_density"]
-	L.goals = aggregated["goals"]
+	// The floor's goals ARE its archetype's objective. Feature rolls still
+	// drive ore/mob/decoration placement, but their goals are not the gate
+	// — discard them.
+	for(var/datum/quarry_goal/G as anything in aggregated["goals"])
+		qdel(G)
+	L.goals = L.archetype ? L.archetype.build_goals(L) : list()
 
 	// Resource placement: each feature draws its own veins. Wall
 	// features mark mineral walls with their ore; pool features
@@ -474,7 +583,14 @@ SUBSYSTEM_DEF(quarry)
 	var/_tl7 = world.timeofday
 
 	L.loaded = TRUE
-	log_game("BENCH: generate_layer phases (depth [depth]) load_new_z=[(_tl1-_tl0)/10]s cave=[(_tl2-_tl1)/10]s bucket=[(_tl3-_tl2)/10]s carve=[(_tl4-_tl3)/10]s ore=[(_tl5-_tl4)/10]s deco=[(_tl6-_tl5)/10]s mobs=[(_tl7-_tl6)/10]s features=[length(L.feature_types)] goals=[length(L.goals)]")
+	// Archetype environmental setup: place objective structures + hazards
+	// (one-time), then idempotent ambient setup. Done after L.loaded so
+	// the placement helpers (which gate on L.loaded and read the bay) work.
+	if(L.archetype)
+		L.archetype.on_layer_generated(L)
+		L.archetype.apply_environment(L)
+		last_committed_family = L.archetype.family
+	log_game("BENCH: generate_layer phases (depth [depth]) load_new_z=[(_tl1-_tl0)/10]s cave=[(_tl2-_tl1)/10]s bucket=[(_tl3-_tl2)/10]s carve=[(_tl4-_tl3)/10]s ore=[(_tl5-_tl4)/10]s deco=[(_tl6-_tl5)/10]s mobs=[(_tl7-_tl6)/10]s features=[length(L.feature_types)] goals=[length(L.goals)] archetype=[L.archetype?.name]")
 	return L
 
 // Carves a 3x3 elevator room out of the cave at a depth-deterministic

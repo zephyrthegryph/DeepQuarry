@@ -158,6 +158,7 @@
 		"goals" = goals_out,
 		"danger" = L?.danger || 0,
 		"last_danger_wave" = L?.last_danger_wave || 0,
+		"archetype" = (L?.archetype ? "[L.archetype.type]" : null),
 	)
 	var/path = _quarry_snapshot_path(depth)
 	if(fexists(path))
@@ -202,6 +203,19 @@
 // Returns TRUE if a snapshot exists on disk for this depth.
 /datum/controller/subsystem/quarry/proc/has_snapshot(depth)
 	return fexists(_quarry_snapshot_path(depth))
+
+
+// Overwrite a depth's snapshot file with an (already json-shaped) doc.
+// Used to patch persisted goal progress (e.g. crediting a freight
+// delivery to a layer that has since unloaded). No-op if no snapshot dir.
+/datum/controller/subsystem/quarry/proc/write_snapshot_doc(depth, list/doc)
+	if(!islist(doc))
+		return FALSE
+	var/path = _quarry_snapshot_path(depth)
+	if(fexists(path))
+		fdel(path)
+	text2file(json_encode(doc), path)
+	return fexists(path)
 
 
 // Read and json_decode the snapshot document for a depth. Returns
@@ -261,6 +275,15 @@
 	return out
 
 
+// Resolve the archetype named in a snapshot to its singleton instance,
+// or null if the snapshot predates archetypes / names an unknown type.
+/datum/controller/subsystem/quarry/proc/read_snapshot_archetype(depth)
+	var/list/doc = read_snapshot_doc(depth)
+	if(!islist(doc))
+		return null
+	return archetype_by_type(doc["archetype"])
+
+
 // TRUE if a snapshot exists but contains no tile data — i.e. it was
 // written by preroll_layer to publish goal data to the UI before the
 // layer is actually generated.
@@ -293,16 +316,26 @@
 // player actually finds underground.
 //
 // Idempotent: re-rolls and overwrites if called twice.
-/datum/controller/subsystem/quarry/proc/preroll_layer(depth)
+// `avoid_archetype` (optional): a typepath the archetype roll should skip
+// if possible — passed by the rolling frontier so a re-roll changes the
+// floor type rather than repeating the current candidate.
+/datum/controller/subsystem/quarry/proc/preroll_layer(depth, avoid_archetype = null)
 	var/datum/quarry_layer_config/cfg = select_config(depth)
 	if(!cfg)
 		return FALSE
 	// Build features + goals on a throwaway layer record so
-	// build_goals has something to attach to.
+	// build_goals has something to attach to. The archetype is rolled
+	// here too — re-rolling preroll is exactly how the frontier "drifts"
+	// across archetypes, not just feature sets.
 	var/datum/quarry_layer/preview = new(depth)
+	var/datum/quarry_floor_archetype/arch = select_archetype(depth, avoid_archetype)
+	preview.archetype = arch
 	preview.feature_types = _quarry_roll_feature_types(cfg)
 	var/list/aggregated = _quarry_aggregate_features(preview.feature_types, preview)
-	preview.goals = aggregated["goals"]
+	// The preview goals are the archetype's objective; discard feature goals.
+	for(var/datum/quarry_goal/FG as anything in aggregated["goals"])
+		qdel(FG)
+	preview.goals = arch ? arch.build_goals(preview) : list()
 	var/list/feature_types_out = list()
 	for(var/feat_type in preview.feature_types)
 		feature_types_out += "[feat_type]"
@@ -323,6 +356,7 @@
 		"tiles" = list(),  // empty -> partial; ensure_layer routes to generate_layer
 		"feature_types" = feature_types_out,
 		"goals" = goals_out,
+		"archetype" = (arch ? "[arch.type]" : null),
 	)
 	if(!fexists(QUARRY_SNAPSHOT_DIR))
 		text2file("", "[QUARRY_SNAPSHOT_DIR].keep")
@@ -369,10 +403,12 @@
 
 	var/_rl0 = world.timeofday
 	var/datum/map_template/quarry_layer/template = new
-	if(!template.load_new_z())
+	// Use the z load_new_z actually allocated (never re-read world.maxz
+	// after it — that's racy across the load's yields).
+	var/new_z = template.load_new_z()
+	if(!new_z)
 		log_game("SSquarry: restore_layer: load_new_z failed for depth [depth]")
 		return null
-	var/new_z = world.maxz
 	// Refresh atmos vertical-adjacency for the restored layer's z-level (multi-z
 	// atmos — see SSair.build_multiz_atmos_levels).
 	SSair.build_multiz_atmos_levels()
@@ -452,6 +488,8 @@
 	var/datum/quarry_layer/L = new(depth)
 	L.z = new_z
 	L.config = cfg
+	// Restore the floor archetype (null for pre-archetype / unknown).
+	L.archetype = archetype_by_type(doc["archetype"])
 
 	// Restore the feature set. v2+ snapshots embed it; older v1
 	// snapshots lose feature identity and have to re-roll. Re-rolling
@@ -468,7 +506,10 @@
 	var/list/aggregated = _quarry_aggregate_features(L.feature_types, L)
 	var/list/mob_table = aggregated["mob_table"]
 	var/extra_mob_spawns = aggregated["extra_mob_spawns"]
-	L.goals = aggregated["goals"]
+	// The floor's goals are its archetype's objective; discard feature goals.
+	for(var/datum/quarry_goal/FG as anything in aggregated["goals"])
+		qdel(FG)
+	L.goals = L.archetype ? L.archetype.build_goals(L) : list()
 
 	// Restore persisted danger state (defaults to 0 for partial
 	// snapshots written by preroll_layer).
@@ -516,6 +557,11 @@
 	var/_rl4 = world.timeofday
 
 	L.loaded = TRUE
+	// Re-apply idempotent ambient setup (air/light/runtime state isn't
+	// snapshotted). Placed objective structures round-trip via the tile
+	// diffs, so on_layer_generated is deliberately NOT re-run here.
+	if(L.archetype)
+		L.archetype.apply_environment(L)
 
 	log_game("BENCH: restore_layer phases (depth [depth]) load_new_z=[(_rl1-_rl0)/10]s overlay=[(_rl2-_rl1)/10]s recache=[(_rl3-_rl2)/10]s mobs=[(_rl4-_rl3)/10]s [applied_turfs] turfs, [applied_movables] atoms features=[length(L.feature_types)] goals=[length(L.goals)]")
 	return L

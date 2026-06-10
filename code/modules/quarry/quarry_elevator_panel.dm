@@ -3,7 +3,7 @@
 // Three roles, distinguished by is_call_panel and depth:
 //   - Surface interior (is_call_panel = FALSE, depth = 0):
 //       Opens the QuarryElevator TGUI window. The window shows every
-//       unlocked depth, each depth's stabilization goal status, and
+//       unlocked depth, each depth's objective status, and
 //       buttons to dispatch the car to a chosen depth.
 //   - Layer interior (is_call_panel = FALSE, depth >= 1):
 //       Simple one-button action — send the car back to the surface.
@@ -55,28 +55,19 @@
 		to_chat(user, span_warning("The elevator is in transit. Wait."))
 		return
 
-	if(is_call_panel)
-		// Exterior call panel: open the TGUI showing this depth's
-		// stability/danger/goals + a single Call button. Acting on the
-		// call request happens via tgui_act("call").
-		tgui_interact(user)
-		return
-
-	// Interior dispatch. Surface panel opens the TGUI window with all
-	// the unlock state; layer panels just send the car back up.
-	if(depth == 0)
-		tgui_interact(user)
-		return
-
-	to_chat(user, span_notice("Sending the elevator back up to the surface…"))
-	E.dispatch_from(depth, 0)
+	// Every panel opens the TGUI. The role (call / surface / layer) decides
+	// what it shows and which actions are offered — exterior call panels
+	// get a Call button, the surface gets the dispatch list, and a layer's
+	// interior panel gets the same progress UI plus a Return to Surface
+	// button (acted on via tgui_act).
+	tgui_interact(user)
 
 
 // --- TGUI ---------------------------------------------------------------
 //
-// Only the surface interior panel uses this. The window shows every
-// unlocked depth as a card with goal name, progress bar, and a
-// dispatch button.
+// All panels use this. The window shows every unlocked depth as a card
+// with goal name, progress bar, and an action button; the panel role
+// ("surface", "layer", or "call") decides the available actions.
 
 /obj/structure/quarry_elevator_panel/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -91,11 +82,22 @@
 	data["current_depth"] = E ? E.current_depth : 0
 	data["unlocked_depth"] = SSquarry?.unlocked_depth || 1
 	data["deepest_visited"] = SSquarry?.deepest_visited || 0
-	// Panel role: "surface" surfaces the full dispatch list, "call" is
-	// an exterior in-mine panel that only shows its own depth and a
-	// Call button.
-	data["panel_role"] = is_call_panel ? "call" : "surface"
+	// Panel role: "call" is an exterior in-mine panel (own depth + Call
+	// button); "layer" is a layer's interior panel (full progress list +
+	// Return to Surface); "surface" is the surface interior dispatch panel.
+	data["panel_role"] = is_call_panel ? "call" : (depth >= 1 ? "layer" : "surface")
 	data["panel_depth"] = depth
+
+	// Rolling frontier: the deepest unlocked depth's candidate drifts
+	// (re-rolls) until locked or descended. Surface panels expose the
+	// lock state + a countdown to the next drift so players can time
+	// their commit; exterior call panels don't dispatch, so they skip it.
+	var/candidate_depth = (SSquarry && !is_call_panel) ? SSquarry.frontier_candidate_depth() : 0
+	data["frontier_candidate_depth"] = candidate_depth
+	data["frontier_locked"] = SSquarry ? SSquarry.frontier_locked : FALSE
+	data["frontier_roll_in"] = 0
+	if(candidate_depth && !SSquarry.frontier_locked && SSquarry.next_frontier_roll > world.time)
+		data["frontier_roll_in"] = round((SSquarry.next_frontier_roll - world.time) / 10)
 
 	var/list/depths = list()
 	// Surface panel: one card per unlocked depth. Exterior call panel:
@@ -111,6 +113,15 @@
 		var/list/card = list("depth" = d)
 		card["loaded"] = L?.loaded ? TRUE : FALSE
 		card["snapshot"] = SSquarry.has_snapshot(d)
+		// This card is the drifting frontier candidate (un-committed,
+		// re-rolling) iff it's the depth frontier_candidate_depth() named.
+		card["rolling"] = (d == candidate_depth) ? TRUE : FALSE
+		// Floor archetype — the kind of floor + its objective. Live from
+		// the layer if loaded, otherwise from the snapshot/preroll doc.
+		var/datum/quarry_floor_archetype/arch = L?.loaded ? L.archetype : SSquarry.read_snapshot_archetype(d)
+		if(arch)
+			card["archetype"] = arch.name
+			card["archetype_desc"] = arch.desc
 		// Danger: live for loaded layers, snapshot-frozen otherwise.
 		card["danger"] = 0
 		card["danger_label"] = "Quiet"
@@ -158,19 +169,19 @@
 					))
 		if(goals_out)
 			card["goals"] = goals_out
-			// Stability is mean of per-goal percent_complete (matches
-			// SSquarry.layer_stability_percent).
+			// Objective progress is the mean of per-goal completion; the
+			// floor clears only when every objective goal is satisfied.
 			var/sum_percent = 0
 			for(var/list/g in goals_out)
 				sum_percent += g["percent"]
 			card["stability"] = round(sum_percent / length(goals_out))
-			card["stability_threshold"] = QUARRY_STABILITY_THRESHOLD
+			card["stability_threshold"] = 100
 		depths += list(card)
 	data["depths"] = depths
 
 	// Frontier card: only emit if there's a deeper depth a player could
 	// push toward (i.e. the deepest unlocked depth has been visited and
-	// stabilised, or no depth has been visited yet). Exterior call
+	// cleared, or no depth has been visited yet). Exterior call
 	// panels don't show the frontier — they're not dispatch-capable.
 	var/list/frontier = null
 	if(SSquarry && !is_call_panel)
@@ -206,6 +217,29 @@
 			to_chat(user, span_notice("Calling the elevator…"))
 			SStgui.close_uis(src)
 			return TRUE
+		if("ascend")
+			// Layer interior panel: send the car back up to the surface.
+			if(is_call_panel || depth < 1)
+				return
+			to_chat(user, span_notice("Sending the elevator back up to the surface…"))
+			E.dispatch_from(depth, 0)
+			SStgui.close_uis(src)
+			return TRUE
+		if("lock_frontier")
+			// Toggle the drift lock on the rolling frontier candidate.
+			// Surface-only; meaningless on exterior call panels.
+			if(is_call_panel)
+				return
+			if(!SSquarry.frontier_candidate_depth())
+				to_chat(user, span_warning("There's no incoming stratum to lock onto right now."))
+				return TRUE
+			SSquarry.frontier_locked = !SSquarry.frontier_locked
+			if(SSquarry.frontier_locked)
+				to_chat(user, span_notice("You lock the bore onto the current stratum. It holds until the elevator descends."))
+			else
+				to_chat(user, span_notice("You release the bore; the formation begins to drift again."))
+				SSquarry.next_frontier_roll = world.time + QUARRY_FRONTIER_ROLL_INTERVAL
+			return TRUE
 		if("dispatch")
 			var/target = text2num(params["depth"])
 			if(!isnum(target))
@@ -213,6 +247,11 @@
 			if(target < 1 || target > SSquarry.unlocked_depth)
 				to_chat(user, span_warning("The elevator's shaft monitor refuses that destination."))
 				return
+			// Committing the bore: dispatching to the drifting frontier
+			// freezes it so the stratum the player saw is the one that
+			// generates — no re-roll during the descent countdown.
+			if(target == SSquarry.frontier_candidate_depth())
+				SSquarry.frontier_locked = TRUE
 			if(target > SSquarry.deepest_visited)
 				SSquarry.deepest_visited = target
 			to_chat(user, span_notice("Sending the elevator to depth [target]…"))

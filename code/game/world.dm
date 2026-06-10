@@ -664,8 +664,13 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 	// 	global_area.turfs_by_zlevel[zlevel] += to_add
 
 // Call this to make a new blank z-level, don't modify maxz directly.
+// Allocate a new top z-level and return its index. The return is captured
+// BEFORE max_z_changed() runs, so even if that yields and another
+// allocation happens, this call still reports the z it created — callers
+// can rely on it instead of re-reading world.maxz across a yield.
 /world/proc/increment_max_z()
 	maxz++
+	. = maxz
 	max_z_changed()
 
 // Call this to change world.fps, don't modify it directly.

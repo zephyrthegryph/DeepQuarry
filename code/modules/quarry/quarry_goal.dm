@@ -1,27 +1,16 @@
-// Stabilization goals.
+// Quarry goals.
 //
-// Every procedurally-generated quarry layer rolls a large pool of
-// goals at generation time (typically 20-40 per layer). All goals are
-// active simultaneously; players choose which to prioritize. The
-// layer is "stabilised" — and unlocks the next-deeper depth — once at
-// least QUARRY_STABILITY_THRESHOLD percent of goals are individually
-// complete.
+// A goal is one trackable objective on a layer. The layer's goals are
+// supplied by its floor archetype's build_goals() and ARE the floor's
+// clear condition: a layer unlocks the next-deeper depth once every one
+// of its goals is satisfied (see /datum/quarry_floor_archetype/is_cleared).
 //
-// Each /datum/quarry_goal instance is owned by a /datum/quarry_layer
-// and tracks its own progress. A goal is satisfied at 100% of its
-// target. The aggregate "stability" of a layer is the percentage of
-// its goals that are satisfied (see SSquarry.layer_stability_percent).
+// Each /datum/quarry_goal instance is owned by a /datum/quarry_layer and
+// tracks its own progress; a goal is satisfied at 100% of its target.
 //
-// Goal kinds:
-//   - "Resource delivery": tally items of type T present in the elevator
-//     bay when it arrives at the surface.
-//   - "Combat": tally kills of a mob type on this layer.
-//   - "Exploration": tally unique floor tiles a player has walked.
-//   - "Demolition": tally destroyed decorations on this layer.
-
-// QUARRY_STABILITY_THRESHOLD moved to quarry_defines.dm so it can be
-// referenced from quarry_controller.dm / quarry_elevator_panel.dm, which
-// the dme auto-sort lists before quarry_goal.dm.
+// Goal kinds (this file plus quarry_archetype_goals.dm): mine_node,
+// kill_mob, map_tiles, pump_reagent, vent_gas, survive_timer, neutralize,
+// deliver_resource, power_output.
 
 /datum/quarry_goal
 	// Human-readable name shown in the elevator UI.
@@ -41,10 +30,8 @@
 		return 100
 	return min(100, round(100 * progress / target))
 
-// TRUE once the goal counts as satisfied (fully complete). Aggregate
-// layer stability is the mean of percent_complete across all goals on
-// the layer; see SSquarry.layer_stability_percent. is_satisfied is
-// still used by the UI for the checkmark icon.
+// TRUE once the goal counts as satisfied (fully complete). Gates the
+// floor's clear condition (archetype.is_cleared) and the UI checkmark.
 /datum/quarry_goal/proc/is_satisfied()
 	return progress >= target
 
@@ -100,6 +87,28 @@
 // Concrete subtype hook: a player walked on a new turf on this layer.
 // Default no-op; only exploration goals override.
 /datum/quarry_goal/proc/on_tile_visited(turf/T)
+	return
+
+// Concrete subtype hook: fired once per SSquarry tick for every goal on
+// a loaded layer that has at least one live player. `seconds` is the
+// subsystem wait in seconds, so sustained goals (survive timers, power
+// output, ambient remediation) can accrue scaled progress. Default
+// no-op; only time-based goals override. See SSquarry.tick_layer_goals.
+/datum/quarry_goal/proc/on_layer_tick(datum/quarry_layer/L, seconds)
+	return
+
+// Concrete subtype hook: an archetype "objective" was resolved on this
+// layer (a gas fissure sealed, a hive core destroyed, an outpost lit,
+// a cure node cleansed, ...). `tag` identifies which objective kind.
+// Default no-op; the generic neutralize goal overrides. See
+// SSquarry.on_layer_objective and /obj/structure/quarry_objective.
+/datum/quarry_goal/proc/on_objective_resolved(tag)
+	return
+
+// Concrete subtype hook: the freight elevator arrived at the surface
+// carrying `count` deliverable items out of this layer. Default no-op;
+// only the resource-delivery goal overrides. See SSquarry.on_layer_delivery.
+/datum/quarry_goal/proc/on_delivery(count)
 	return
 
 
