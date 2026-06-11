@@ -406,11 +406,14 @@ SUBSYSTEM_DEF(quarry)
 		// rolled feature set so what the player sees underground
 		// matches the goals the UI promised.
 		if(is_partial_snapshot(depth))
+			// Keep the preview snapshot on disk through generation. The
+			// elevator panel reads it for this depth's goal list, and
+			// generate_layer takes ~15s during which the live layer isn't in
+			// `layers` yet — deleting it here would blank the goals for the
+			// whole descent ("No goal data available for this depth"). It's
+			// dropped once the live layer is registered as the goal source.
 			var/list/preset = read_snapshot_feature_types(depth)
 			var/datum/quarry_floor_archetype/preset_arch = read_snapshot_archetype(depth)
-			var/path = _quarry_snapshot_path(depth)
-			if(fexists(path))
-				fdel(path)
 			L = generate_layer(depth, preset, preset_arch)
 		else
 			L = restore_layer(depth)
@@ -423,6 +426,13 @@ SUBSYSTEM_DEF(quarry)
 
 	if(L)
 		layers[key] = L
+		// The live layer is now this depth's goal source. Drop any leftover
+		// preview (partial) snapshot so it isn't later mistaken for a full
+		// one; a real full snapshot is written when the layer unloads.
+		if(is_partial_snapshot(depth))
+			var/preview_path = _quarry_snapshot_path(depth)
+			if(fexists(preview_path))
+				fdel(preview_path)
 	return L
 
 // Allocates a Z, loads the empty stone template, applies a biome config,
