@@ -87,20 +87,6 @@
 	ai_brain?.give_target(speaker, TRUE)
 
 // ---------------------------------------------------------------------------
-// Armadillo "torta" — grow when "grande" is spoken nearby.
-// ---------------------------------------------------------------------------
-/mob/living/simple_mob/animal/passive/armadillo/torta/hear_say(list/message_pieces, verb = "says", italics = 0, mob/speaker = null, sound/speech_sound, sound_vol)
-	. = ..()
-	if(!speaker || !speaker.client || speaker == src)
-		return
-	var/message = lowertext(multilingual_to_message(message_pieces))
-	addtimer(CALLBACK(src, PROC_REF(dq_torta_grande), message), 1 SECOND)
-
-/mob/living/simple_mob/animal/passive/armadillo/torta/proc/dq_torta_grande(message)
-	if(findtext(message, "grande"))
-		resize(size_multiplier + 0.01)
-
-// ---------------------------------------------------------------------------
 // Catslug — "psps" triggers a follow; everything else echoes (like parrot).
 // ---------------------------------------------------------------------------
 /mob/living/simple_mob/vore/alienanimals/catslug/hear_say(list/message_pieces, verb = "says", italics = 0, mob/speaker = null, sound/speech_sound, sound_vol)
