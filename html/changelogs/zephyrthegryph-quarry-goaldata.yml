@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "The elevator panel no longer shows \"No goal data available for this depth\" while a floor is generating — the goal preview now stays visible through the ~15s descent instead of being cleared before the live layer is ready."
