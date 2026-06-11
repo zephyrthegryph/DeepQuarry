@@ -470,6 +470,54 @@ export const TgFontTarget = new Juke.Target({
   },
 });
 
+// Entry bundles that must always exist after a successful tgui build.
+const TGUI_ENTRY_BUNDLES = [
+  'tgui/public/tgui.bundle.js',
+  'tgui/public/tgui.bundle.css',
+  'tgui/public/tgui-panel.bundle.js',
+  'tgui/public/tgui-panel.bundle.css',
+  'tgui/public/tgui-say.bundle.js',
+  'tgui/public/tgui-say.bundle.css',
+];
+const TGUI_CHUNK_MANIFEST = 'tgui/public/tgui-chunk-manifest.json';
+
+// True only if the tgui bundle in public/ is COMPLETE: the entry bundles exist and
+// are non-empty, the chunk manifest parses, and every interface chunk it references
+// is present and non-empty. The individual *.chunk.* files aren't tracked as Juke
+// outputs (they're content-hashed and numerous), so without this check an interrupted
+// or corrupt rspack emit — entry bundles written but some interface chunks missing —
+// passes the mtime dirty-check forever and silently serves blank/grey UI windows
+// (e.g. the lobby) until public/ is wiped by hand.
+const tguiBundleComplete = (): boolean => {
+  const nonEmpty = (p: string): boolean => {
+    try {
+      return fs.statSync(p).size > 0;
+    } catch {
+      return false;
+    }
+  };
+  if (!TGUI_ENTRY_BUNDLES.every(nonEmpty)) {
+    return false;
+  }
+  if (!nonEmpty(TGUI_CHUNK_MANIFEST)) {
+    return false;
+  }
+  let manifest: Record<string, string[]>;
+  try {
+    manifest = JSON.parse(fs.readFileSync(TGUI_CHUNK_MANIFEST, 'utf8'));
+  } catch {
+    return false;
+  }
+  for (const files of Object.values(manifest)) {
+    for (const file of files) {
+      if (!nonEmpty(`tgui/public/${file}`)) {
+        return false;
+      }
+    }
+  }
+  return true;
+};
+
 export const TguiTarget = new Juke.Target({
   dependsOn: [BunTarget, BiomeInstallTarget],
   inputs: [
@@ -488,10 +536,39 @@ export const TguiTarget = new Juke.Target({
     // manifest maps interface name -> chunk file (consumed by SStgui). Tracking the
     // manifest as an output makes Juke rebuild if it's missing (e.g. a public/ wipe)
     // and keeps it in sync with rspack.config.ts changes. The individual *.chunk.*
-    // files are content-id'd and numerous, so they aren't listed literally.
+    // files are content-id'd and numerous, so they aren't listed literally — instead
+    // tguiBundleComplete() validates them (see onlyWhen / executes below).
     'tgui/public/tgui-chunk-manifest.json',
   ],
-  executes: () => bun('tgui:build'),
+  // Runs before the mtime dirty-check. If the existing bundle is incomplete (a chunk
+  // the manifest references is missing/empty), drop the tracked entry bundles so the
+  // mtime check treats the outputs as missing and forces a fresh rebuild — otherwise
+  // a half-written bundle is skipped indefinitely and serves broken UI.
+  onlyWhen: () => {
+    if (!tguiBundleComplete()) {
+      for (const f of TGUI_ENTRY_BUNDLES) {
+        try {
+          fs.rmSync(f);
+        } catch {
+          /* already gone */
+        }
+      }
+    }
+    return true;
+  },
+  executes: async () => {
+    await bun('tgui:build');
+    // Fail loudly instead of silently shipping a broken UI: if rspack returned 0 but
+    // the emit is incomplete (a flaky/interrupted build), throw so the build is red
+    // and the partial bundle isn't accepted.
+    if (!tguiBundleComplete()) {
+      throw new Error(
+        'tgui build finished but the bundle is incomplete (missing/empty interface '
+          + 'chunks). Re-run the build; if it persists, delete '
+          + 'tgui/public/*.{bundle,chunk}.* and rebuild.',
+      );
+    }
+  },
 });
 
 export const TguiTscTarget = new Juke.Target({
