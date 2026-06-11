@@ -29,6 +29,10 @@
 	var/sharp = FALSE		// whether this object cuts
 	var/edge = FALSE		// whether this object is more likely to dismember
 	var/armor_penetration = 0
+	// --- Phased player melee (windup -> swing -> recovery). See code/modules/mob/living/melee_swing.dm ---
+	var/melee_windup = 0	// Deciseconds of windup before the swing lands. 0 = w_class-scaled default.
+	var/melee_recovery = 0	// Deciseconds of recovery (post-swing click cooldown). 0 = w_class-scaled default.
+	var/melee_sweep = null	// TRUE forces a 3-tile arc, FALSE forces single-tile; null = size default (LARGE+ sweeps).
 	var/catchable = TRUE
 	var/can_cleave = FALSE // If true, a 'cleaving' attack will occur.
 	var/pry = 0			//Used in attackby() to open doors

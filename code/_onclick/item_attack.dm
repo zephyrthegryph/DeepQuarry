@@ -82,6 +82,16 @@ avoid code duplication. This includes items that may sometimes act as a standard
 	if(vore_attackby(I, user)) // The vore, of course.
 		return
 
+	// Phased melee: a harm-intent attack with a real weapon winds up, telegraphs its swing
+	// tiles, then resolves (see code/modules/mob/living/melee_swing.dm). Diverts the instant
+	// attack. Non-harm intents, unarmed, and item-use on objects never reach this branch.
+	if(isliving(user) && user.a_intent == I_HURT && I.force && !(I.flags & NOBLUDGEON))
+		var/mob/living/attacker = user
+		if(attacker.is_swinging)
+			return FALSE // already mid-swing — ignore the queued attack click
+		attacker.begin_melee_swing(src, I)
+		return ITEM_INTERACT_SUCCESS // suppress afterattack; the swing applies its own hit
+
 	return I.attack(src, user, user.zone_sel.selecting, attack_modifier)
 
 // Used to get how fast a mob should attack, and influences click delay.
