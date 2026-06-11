@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - rscadd: "Harm-intent melee attacks now have a windup, swing, and recovery instead of landing instantly. Your character winds up (pulling back), the tiles the swing will hit light up, then it strikes — and you recover before you can swing again. Bigger weapons wind up and recover slower."
+  - rscadd: "Large weapons sweep a 3-tile frontal arc; smaller weapons hit a single tile. The swing strikes whoever is standing in the telegraphed tiles when it lands, so targets can step out of the way during the windup to dodge."
+  - balance: "Moving during a melee windup cancels the swing. Per-weapon windup/recovery and sweep can be tuned via melee_windup/melee_recovery/melee_sweep."
