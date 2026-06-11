@@ -38,6 +38,7 @@
 
 /mob/living/simple_mob/quarry_stalker/get_ai_behaviors()
 	var/static/list/L = list(
+		/datum/ai_behavior/retaliate_to_attacker,
 		/datum/ai_behavior/threaten,
 		/datum/ai_behavior/approach_threat,
 		/datum/ai_behavior/melee_attack,

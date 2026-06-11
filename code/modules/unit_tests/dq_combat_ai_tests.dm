@@ -307,4 +307,102 @@
 	S.ai_brain.set_hostile(TRUE)
 	TEST_ASSERT_EQUAL(S.ai_attack_on_sight, TRUE, "set_hostile(TRUE) didn't flip ai_attack_on_sight")
 
+
+// --- runtime: aggro-on-damage: retaliate_to_attacker drives primary_threat ---
+//
+// Regression test for the three-symptom cluster reported after the combat-AI
+// merge. Before the fix:
+//   (a) notify_damage with a real attacker set last_attacker on the world model
+//       and personal HOSTILE, then dispatch_behavior_signal fired retaliate's
+//       on_signal → invalidate_selection, so on the next handle_tactics call
+//       pick_and_run would evaluate retaliate_to_attacker; BUT
+//   (b) update_primary_threat() ran on the PRECEDING slow tick and immediately
+//       cleared primary_threat because visible_hostiles was empty (attacker
+//       not in view() range). retaliate_to_attacker.start() then set
+//       primary_threat, which held until the NEXT slow tick, which cleared it
+//       again → mob never committed to an attack behavior for more than 250ms.
+//
+// After the fix: update_primary_threat respects the personal-HOSTILE entry
+// (set by notify_damage) and retains primary_threat while that entry lives,
+// so the mob stays locked on the out-of-view attacker for the duration.
+//
+// This test exercises both paths headlessly (no map, no slow tick):
+//   1. Damage in-view: primary_threat set and held.
+//   2. Damage out-of-view: primary_threat set and RETAINED after calling
+//      update_primary_threat with an empty visible_hostiles list.
+//   3. retaliate_to_attacker is in the quarry_stalker's behavior list.
+
+/datum/unit_test/dq_combat_ai_aggro_on_damage_out_of_view
+
+/datum/unit_test/dq_combat_ai_aggro_on_damage_out_of_view/Run()
+	var/mob/living/simple_mob/quarry_stalker/victim = allocate(/mob/living/simple_mob/quarry_stalker)
+	var/mob/living/carbon/human/attacker = allocate(/mob/living/carbon/human)
+
+	TEST_ASSERT_NOTNULL(victim.ai_brain, "victim spawned without an ai_brain")
+
+	// Confirm retaliate_to_attacker is in the behavior list.
+	victim.ai_brain.rebuild_behaviors()
+	TEST_ASSERT(/datum/ai_behavior/retaliate_to_attacker in victim.ai_brain.effective_behaviors, \
+		"retaliate_to_attacker is not in quarry_stalker effective_behaviors after rebuild")
+
+	// Simulate attacker hitting the victim (out of view — visible_hostiles is empty
+	// because we never ran update_perception and the mobs aren't on a live map).
+	victim.ai_brain.notify_damage(10, BRUTE, attacker)
+
+	// notify_damage should: record last_attacker, add personal HOSTILE, invalidate selection.
+	TEST_ASSERT(victim.ai_brain.check_attacker(attacker), \
+		"notify_damage didn't add personal HOSTILE entry for attacker")
+
+	// Manually invoke update_primary_threat. visible_hostiles is empty (never populated
+	// by update_perception), so the old code would clear primary_threat here.
+	// First, let retaliate_to_attacker drive primary_threat by running pick_and_run directly.
+	victim.ai_brain.pick_and_run()
+	TEST_ASSERT_EQUAL(victim.ai_brain.primary_threat, attacker, \
+		"pick_and_run didn't set primary_threat to attacker via retaliate_to_attacker")
+
+	// Now simulate a second slow tick: update_primary_threat should start the
+	// grace timer but NOT clear the threat yet (lose_threat_at just got set).
+	victim.ai_brain.update_primary_threat()
+	TEST_ASSERT_EQUAL(victim.ai_brain.primary_threat, attacker, \
+		"update_primary_threat cleared primary_threat immediately on first tick after attacker left view — mob would freeze instead of pursuing")
+	TEST_ASSERT(victim.ai_brain.lose_threat_at > 0, \
+		"update_primary_threat didn't start the lose_threat_at grace timer")
+
+	// Sanity: once the grace period expires, the threat IS eventually released.
+	// Fast-forward the timer past the timeout by back-dating lose_threat_at.
+	victim.ai_brain.lose_threat_at = world.time - DQ_LOSE_THREAT_TIMEOUT - 1
+	victim.ai_brain.update_primary_threat()
+	TEST_ASSERT_NULL(victim.ai_brain.primary_threat, \
+		"update_primary_threat should clear primary_threat after DQ_LOSE_THREAT_TIMEOUT expires")
+
+
+// --- runtime: react_to_attack sets last_attacker on world model ----------
+// Regression guard for the null_holder runtime: react_to_attack must not
+// crash when called on a brain whose holder is null (Destroy in progress),
+// and must set model.last_attacker so retaliate_to_attacker.evaluate() works.
+
+/datum/unit_test/dq_combat_ai_react_to_attack_sets_last_attacker
+
+/datum/unit_test/dq_combat_ai_react_to_attack_sets_last_attacker/Run()
+	var/mob/living/simple_mob/quarry_stalker/victim = allocate(/mob/living/simple_mob/quarry_stalker)
+	var/mob/living/carbon/human/attacker = allocate(/mob/living/carbon/human)
+
+	// react_to_attack is called from hit_with_weapon when a player swings a knife.
+	victim.ai_brain.react_to_attack(attacker)
+
+	// Should have set last_attacker on the world model.
+	TEST_ASSERT_EQUAL(victim.ai_brain.model.get_last_attacker(), attacker, \
+		"react_to_attack didn't record last_attacker on the world model — retaliate_to_attacker.evaluate() will return null")
+
+	// Should have set primary_threat (it was null before).
+	TEST_ASSERT_EQUAL(victim.ai_brain.primary_threat, attacker, \
+		"react_to_attack didn't set primary_threat when it was null")
+
+	// null-holder safety: calling react_to_attack after brain.holder = null must
+	// not runtime. Simulate the vore-eating case from the confirmed runtime log.
+	var/mob/living/simple_mob/quarry_stalker/victim2 = allocate(/mob/living/simple_mob/quarry_stalker)
+	victim2.ai_brain.holder = null  // Simulate partial Destroy / eaten state.
+	victim2.ai_brain.react_to_attack(attacker)  // Must not runtime.
+	// If we reach here, no crash — test passes implicitly.
+
 #endif

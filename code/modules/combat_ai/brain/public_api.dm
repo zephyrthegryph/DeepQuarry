@@ -18,6 +18,7 @@
 		invalidate_selection()
 
 /datum/ai_brain/proc/lose_target()
+	lose_threat_at = 0
 	if(primary_threat)
 		var/old = primary_threat
 		primary_threat = null
@@ -93,10 +94,17 @@
 /datum/ai_brain/proc/react_to_attack(atom/movable/attacker)
 	if(!attacker || !ismob(attacker))
 		return
+	if(!holder)
+		return
 	add_personal(attacker, DQ_DISPOSITION_HOSTILE, DQ_PERSONAL_DEFAULT_DURATION, "react_to_attack")
+	// Record in the world model so retaliate_to_attacker.evaluate() can see
+	// who struck us even when they're outside view() range.
+	if(model && ismob(attacker))
+		model.record_damage(0, BRUTE, attacker)
 	if(!primary_threat)
+		var/mob/old = primary_threat
 		primary_threat = attacker
-		SEND_SIGNAL(holder, COMSIG_DQAI_TARGET_CHANGED, attacker, null)
+		SEND_SIGNAL(holder, COMSIG_DQAI_TARGET_CHANGED, attacker, old)
 	invalidate_selection()
 
 // ---------------------------------------------------------------------------

@@ -85,6 +85,11 @@
 	name = "retaliate"
 	priority_class = DQ_BEHAVIOR_PRIORITY_INTERRUPT
 	target_kind = DQ_TARGET_MOB
+	// Must be TRUE: the whole point of this behavior is to set the first
+	// primary_threat when we're hit by someone outside view(). If FALSE,
+	// pick_and_run skips it whenever primary_threat == null, which is exactly
+	// the state it needs to fire in.
+	no_threat_required = TRUE
 	eval_triggers = list(COMSIG_DQAI_DAMAGE_TAKEN)
 	cooldown = 1 SECOND
 
