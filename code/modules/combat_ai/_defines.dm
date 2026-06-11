@@ -92,6 +92,9 @@
 // (DQ_AI_NOISE_MIN_VOL lives in code/__defines/mobs.dm — it's referenced from
 // game/sound.dm, which is compiled well before this modular block.)
 #define DQ_NOISE_INVESTIGATE_TTL (8 SECONDS)
+// Grace period (deciseconds) before the brain drops a target that left view().
+// Mirrors legacy ai_holder.lose_target_timeout (5 SECONDS).
+#define DQ_LOSE_THREAT_TIMEOUT (5 SECONDS)
 
 // Quick log macro; keep parity with the existing ai_log noop philosophy.
 // Flip to enable for debugging.

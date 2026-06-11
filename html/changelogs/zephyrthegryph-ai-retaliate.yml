@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Simple mobs now retaliate when attacked and keep pursuing a target that briefly leaves their sight, instead of forgetting it the instant it steps out of view (restores the legacy lose-target grace period). Fixes mobs ignoring you when shot or meleed in dark caves."
+  - bugfix: "Fixed a runtime in the combat-AI damage reaction (null holder) that could fire during vore feeding."

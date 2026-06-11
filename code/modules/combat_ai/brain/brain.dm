@@ -60,6 +60,10 @@
 	var/last_juke_at = 0             // last world.time evasive_juke fired
 	var/turf/home_turf = null        // for guard / return_home behaviors
 	var/datum/weakref/leader_ref = null  // for follow_leader / cooperative AI
+	/// world.time when primary_threat first left view(). Used to mirror legacy
+	/// ai_holder lose_target_timeout: the mob keeps pursuing for
+	/// DQ_LOSE_THREAT_TIMEOUT deciseconds before dropping the target.
+	var/lose_threat_at = 0
 
 /datum/ai_brain/New(mob/living/owner)
 	if(!owner)
@@ -328,10 +332,23 @@
 /datum/ai_brain/proc/update_primary_threat()
 	if(!model || !length(model.visible_hostiles))
 		if(primary_threat)
+			// Mirror legacy ai_holder lose_target_timeout: hold the target for
+			// DQ_LOSE_THREAT_TIMEOUT after it leaves view before giving up.
+			// This prevents caves-are-dark from dropping the target the instant
+			// the player steps one tile out of the narrow view() cone.
+			if(!lose_threat_at)
+				lose_threat_at = world.time
+				return  // Start the grace timer; don't drop yet.
+			if(world.time < lose_threat_at + DQ_LOSE_THREAT_TIMEOUT)
+				return  // Still within the grace period.
+			// Grace period expired — drop the target.
+			lose_threat_at = 0
 			var/old = primary_threat
 			primary_threat = null
 			SEND_SIGNAL(holder, COMSIG_DQAI_TARGET_LOST, old)
 		return
+	// Target is visible again — reset the grace timer.
+	lose_threat_at = 0
 	var/new_threat = null
 	for(var/typepath as anything in target_selector_chain)
 		var/datum/target_selector/S = dq_get_selector(typepath)
@@ -445,7 +462,7 @@
 
 /// Called by /mob/living/dq_notify_damage when the mob takes a hit.
 /datum/ai_brain/proc/notify_damage(amount, damagetype, atom/attacker)
-	if(!model)
+	if(!model || !holder)
 		return
 	model.record_damage(amount, damagetype, attacker)
 	if(ismob(attacker) && attacker != holder)
