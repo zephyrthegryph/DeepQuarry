@@ -138,12 +138,32 @@
 
 // A variant-selector gear (one carrying a /datum/gear_tweak/variant) renders its catalog /
 // slot sprite from initial(G.path). When the variant offers concrete item paths, G.path must
-// be one of them — otherwise the gear inherited an unrelated base item's path and shows the
-// wrong sprite (the "croptop selection shows the blue blazer" report: croptop/cheongsam/the
-// altevian selectors set a name + variant tweak but no path, so they inherited the blazer/
-// apron/base-accessory path). String-keyed variants (recolors/restyles of G.path itself) carry
-// no path options and are left alone, as are non-variant gears that legitimately reuse a
-// parent's item (e.g. generic implant secondary/tertiary, colorable latex gloves).
+// belong to the same item family as those options — otherwise the gear inherited an unrelated
+// base item's path and shows the wrong sprite (the "croptop selection shows the blue blazer"
+// report: croptop/cheongsam/the altevian selectors set a name + variant tweak but no path, so
+// they inherited the blazer/apron/base-accessory path). "Same family" is read loosely so the
+// many legitimate selectors that preview a base type (skirt, scarf) or a sibling leaf (the
+// colored armband) aren't flagged. String-keyed variants (recolors/restyles of G.path itself)
+// carry no path options and are left alone.
+
+// Longest common type ancestor of a list of type paths (the deepest type every path is a
+// subtype of). Returns null on empty input. Used to test item-family membership.
+/proc/dq_longest_common_type(list/paths)
+	if(!length(paths))
+		return null
+	var/list/ref = splittext("[paths[1]]", "/")
+	var/common = length(ref)
+	for(var/p in paths)
+		var/list/segs = splittext("[p]", "/")
+		var/limit = min(common, length(segs))
+		var/i = 1
+		while(i <= limit && ref[i] == segs[i])
+			i++
+		common = i - 1
+	if(common < length(ref))
+		ref.Cut(common + 1)
+	return text2path(jointext(ref, "/"))
+
 /datum/unit_test/dq_gear_variant_sprite
 
 /datum/unit_test/dq_gear_variant_sprite/Run()
@@ -162,10 +182,34 @@
 			var/val = vt.valid_variants[disp]
 			if(ispath(val))
 				option_paths += val
-		if(length(option_paths) && !(G.path in option_paths))
-			offenders += "'[name]' ([G.type]) sprite path [G.path] is not among its variant options"
+		if(!length(option_paths))
+			continue
+		// The preview sprite (G.path) must belong to the SAME item family as the
+		// variant options. "Same family" = either (a) some option is G.path or a
+		// subtype of it (G.path is the typesof base / common ancestor the variants
+		// were enumerated from), or (b) G.path is a subtype of the options' common
+		// type ancestor (G.path is a sibling leaf in that family, e.g. the colored
+		// armband whose options are the other /armband/* types). This catches the
+		// real bug class — a gear with no `path` silently inheriting an unrelated
+		// parent default (the croptop selection inheriting /datum/gear/uniform's
+		// blazer path and previewing a blazer, sharing only the bare /under
+		// category) — while allowing base-type and sibling-leaf previews.
+		if(!G.path)
+			offenders += "'[name]' ([G.type]) has no preview path (would inherit an unrelated parent default)"
+			continue
+		var/family_ok = FALSE
+		for(var/op in option_paths)
+			if(ispath(op, G.path))
+				family_ok = TRUE
+				break
+		if(!family_ok)
+			var/common_ancestor = dq_longest_common_type(option_paths)
+			if(common_ancestor && ispath(G.path, common_ancestor))
+				family_ok = TRUE
+		if(!family_ok)
+			offenders += "'[name]' ([G.type]) preview sprite [G.path] is in a different item family than any of its variant options"
 	if(length(offenders))
-		TEST_FAIL("[length(offenders)] variant-selector gear show a sprite outside their own options: [offenders.Join(" | ")]")
+		TEST_FAIL("[length(offenders)] variant-selector gear preview a sprite outside their own item family: [offenders.Join(" | ")]")
 
 
 // Direct repro of the user's report: add "blazer, blue" and confirm it persists.
