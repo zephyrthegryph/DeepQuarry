@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Restored the bespoke AI for ~16 mobs onto the modern combat-AI framework: the Eclipse three-phase bullet-hell boss, ysbryd, ddraig, blaidd, broodmother, kururak pack-hunters, sakimm scavengers, gryphon stalkers, juvenile metroids, leeches, solar grubs, scrubbles, siffets, fluffballs, alchemist bees, healbellies, and the armadillo/torta gag."
