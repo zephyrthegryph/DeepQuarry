@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Quarry packs now react quickly and together — the pack coordinator runs every tick instead of being starved, so the whole pack locks onto you and starts moving at once instead of trickling in over ~20 seconds."
+  - bugfix: "Mobs now walk smoothly toward you instead of teleporting between tiles."
+  - bugfix: "A mob blocked by a packmate in front now slips around it, so a clustered pack flows toward you rather than only the front rank advancing."
