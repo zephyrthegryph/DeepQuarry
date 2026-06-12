@@ -16,6 +16,13 @@
 // (tick_frontier_roll / begin_frontier_roll / frontier_candidate_depth).
 #define QUARRY_FRONTIER_ROLL_INTERVAL (2 MINUTES)
 
+// Layer fauna spawns as single-species packs rather than per-tile random
+// scatter: pick one type at a seed tile, then fill a contiguous cluster of
+// this many with it. Same-species packmates are faction allies, so they don't
+// infight and a player attack pack-aggros the rest (call_for_help).
+#define QUARRY_PACK_SIZE_MIN 2
+#define QUARRY_PACK_SIZE_MAX 4
+
 // Raw-chemistry mineral names. These index GLOB.ore_data the same way
 // the upstream ORE_HEMATITE / ORE_PHORON defines do, and have to be
 // available at parse time wherever a quarry feature lists them in

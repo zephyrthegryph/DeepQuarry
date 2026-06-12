@@ -46,7 +46,8 @@
 	// layer has at most a few dozen hostiles. Skip mobs that are
 	// already engaged with a target.
 	for(var/mob/living/simple_mob/M in GLOB.living_mob_list)
-		if(M.z != origin.z)
+		var/turf/MT = get_turf(M) // resolve through containers (a held/swallowed mob's .z is 0)
+		if(!MT || MT.z != origin.z)
 			continue
 		if(M.stat == DEAD)
 			continue

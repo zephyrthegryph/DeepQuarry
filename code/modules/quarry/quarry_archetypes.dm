@@ -98,7 +98,10 @@
 	if(!L?.z)
 		return out
 	for(var/mob/living/M in GLOB.living_mob_list)
-		if(M.z == L.z)
+		// get_turf, not M.z: a mob inside a container (e.g. swallowed into a belly)
+		// reports z 0, but it's physically present on the layer.
+		var/turf/MT = get_turf(M)
+		if(MT && MT.z == L.z)
 			out += M
 	return out
 

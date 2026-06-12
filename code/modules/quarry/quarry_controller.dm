@@ -571,25 +571,59 @@ SUBSYSTEM_DEF(quarry)
 	if(total_mob_count > 0 && (length(fallback_mob_table) || biome_map))
 		var/spawned = 0
 		var/list/spawn_candidates = floor_candidates.Copy()
+		// Parallel set (turf => TRUE) for O(1) membership in the pack flood-fill
+		// below — a plain-list `in` is a linear scan, and it runs per neighbour
+		// per pack across a layer's worth of floor tiles.
+		var/list/candidate_set = list()
+		for(var/turf/T as anything in spawn_candidates)
+			candidate_set[T] = TRUE
 		while(spawned < total_mob_count && length(spawn_candidates))
-			var/turf/T = pick(spawn_candidates)
-			spawn_candidates -= T
-			if(_quarry_tile_is_safe(T))
+			var/turf/seed = pick(spawn_candidates)
+			spawn_candidates -= seed
+			candidate_set -= seed
+			if(_quarry_tile_is_safe(seed))
 				continue
 			// Prefer the biome's mob table at this specific tile. If
 			// the biome has none, fall back to the layer-wide table.
 			var/list/effective_table = fallback_mob_table
 			if(biome_map)
-				var/datum/quarry_biome/B = _quarry_biome_at(biome_map, T)
+				var/datum/quarry_biome/B = _quarry_biome_at(biome_map, seed)
 				if(B && length(B.mob_contributions))
 					effective_table = B.mob_contributions
 			if(!length(effective_table))
-				spawned++
 				continue
+			// One species per pack: pick a single type at the seed, then fill a
+			// contiguous cluster of free tiles around it with that same type.
+			// Same-species packmates are faction allies, so they don't infight,
+			// and attacking one pack-aggros the rest (call_for_help reaches its
+			// now-friendly neighbours). Mixed per-tile scatter did neither.
 			var/mob_type = pickweight(effective_table)
-			if(mob_type)
-				new mob_type(T)
-			spawned++
+			if(!mob_type)
+				continue
+			var/want = min(rand(QUARRY_PACK_SIZE_MIN, QUARRY_PACK_SIZE_MAX), total_mob_count - spawned)
+			var/list/pack_tiles = list(seed)
+			var/list/frontier = list(seed)
+			while(length(pack_tiles) < want && length(frontier))
+				var/turf/cur = frontier[1]
+				frontier.Cut(1, 2)
+				for(var/dir in GLOB.alldirs)
+					if(length(pack_tiles) >= want)
+						break
+					var/turf/N = get_step(cur, dir)
+					if(!N || !candidate_set[N] || _quarry_tile_is_safe(N))
+						continue
+					spawn_candidates -= N
+					candidate_set -= N
+					pack_tiles += N
+					frontier += N
+			for(var/turf/PT as anything in pack_tiles)
+				var/spawned_mob = new mob_type(PT)
+				// Tag wildlife so different species on the layer coexist (neutral)
+				// rather than infighting; same species stays allied.
+				if(istype(spawned_mob, /mob/living/simple_mob))
+					var/mob/living/simple_mob/fauna = spawned_mob
+					fauna.quarry_fauna = TRUE
+				spawned++
 	var/_tl7 = world.timeofday
 
 	L.loaded = TRUE
@@ -673,7 +707,10 @@ SUBSYSTEM_DEF(quarry)
 			if(istype(T, /turf/simulated/mineral))
 				var/turf/simulated/mineral/M = T
 				if(M.density)
+					// make_floor() toggles density/opacity but leaves the wall sprite
+					// in place — update_icon repaints it as carved floor.
 					M.make_floor()
+					M.update_icon(1)
 				floor_candidates -= M
 				wall_candidates -= M
 
@@ -685,6 +722,7 @@ SUBSYSTEM_DEF(quarry)
 		var/turf/simulated/mineral/M = exterior_panel_tile
 		if(M.density)
 			M.make_floor()
+			M.update_icon(1)
 		floor_candidates -= M
 		wall_candidates -= M
 
@@ -841,11 +879,17 @@ SUBSYSTEM_DEF(quarry)
 // Empty iff no /mob/living with an active mind (live client OR temporarily
 // disconnected body) is on the Z. Bodies of disconnected players keep the
 // layer loaded so players can reconnect.
+//
+// Resolve presence via get_turf, not the built-in M.z: a mob inside a non-turf
+// container (e.g. a player swallowed into a predator's belly) reports z 0, so
+// an eaten player would read as "not here" and the sweep would wipe the whole
+// layer — predator and prey included. get_turf walks the loc chain.
 /datum/controller/subsystem/quarry/proc/is_layer_empty(z)
 	for(var/mob/living/M in GLOB.living_mob_list)
-		if(M.z != z)
+		if(!M.mind)
 			continue
-		if(M.mind)
+		var/turf/T = get_turf(M)
+		if(T && T.z == z)
 			return FALSE
 	return TRUE
 

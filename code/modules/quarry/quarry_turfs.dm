@@ -23,6 +23,9 @@
 /turf/simulated/mineral/cave/quarry
 	sand_icon_path = 'icons/turf/outdoors.dmi'
 	sand_icon_state = "rock"
+	// Mine walls are solid — you dig through them, not climb over them. The /cave parent sets
+	// climbable = TRUE (atmospheric rock formations); that would let players walk over quarry walls.
+	climbable = FALSE
 
 // Hook GetDrilled so mining a quarry wall fires a node-mined event.
 // Captures mineral identity BEFORE the parent runs (the parent clears

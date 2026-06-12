@@ -363,7 +363,15 @@
 	var/path = _quarry_snapshot_path(depth)
 	if(fexists(path))
 		fdel(path)
-	text2file(json_encode(doc), path)
+	var/encoded = json_encode(doc)
+	text2file(encoded, path)
+	if(!fexists(path))
+		log_game("SSquarry: preroll_layer([depth]) failed to write snapshot to [path] (encoded len [length(encoded)], goals [length(goals_out)])")
+	// The preview's goals hold owner_layer = preview, a ref cycle qdel(preview) can't break on its
+	// own — qdel them first so the throwaway preview layer actually frees instead of leaking.
+	for(var/datum/quarry_goal/G as anything in preview.goals)
+		qdel(G)
+	preview.goals = null
 	qdel(preview)
 	return TRUE
 
