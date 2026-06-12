@@ -69,6 +69,11 @@
 	/// re-entry, since behaviors don't sleep so all re-entry is same-tick).
 	var/last_react_tick = 0
 
+	/// The /datum/ai_lord coordinating this mob's pack, if any. The lord pushes
+	/// shared targets/orders down; the brain itself never touches it beyond
+	/// dropping out on Destroy.
+	var/datum/ai_lord/lord = null
+
 /datum/ai_brain/New(mob/living/owner)
 	if(!owner)
 		stack_trace("ai_brain instantiated with no owner")
@@ -92,6 +97,9 @@
 	if(active_behavior_type)
 		var/datum/ai_behavior/B = dq_get_behavior(active_behavior_type)
 		B.stop(src, active_target, active_source, DQ_BEHAVIOR_STOP_QDEL)
+	if(lord)
+		lord.remove_member(holder) // drop out of the pack (may disband it if last)
+		lord = null
 	if(holder)
 		UnregisterSignal(holder, COMSIG_MOB_STATCHANGE)
 		UnregisterSignal(holder, COMSIG_MOB_LOGIN)
