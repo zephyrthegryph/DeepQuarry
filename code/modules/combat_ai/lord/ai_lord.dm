@@ -27,6 +27,13 @@
 	var/lost_focus_at = 0
 	/// How far the lord senses prey around the pack centroid.
 	var/detect_range = LORD_DETECT_RANGE
+	/// Shared perception: the living mobs seen from the centroid on the last scan,
+	/// reused in place. Members bucket from this (cheap distance + disposition)
+	/// instead of each running their own dview — one scan per pack per tick, not
+	/// one per mob. Read by /datum/world_model/update_perception.
+	var/list/perceived = list()
+	/// world.time of the last scan; members fall back to self-scan once it's stale.
+	var/perceived_at = 0
 
 /datum/ai_lord/New(list/initial_members)
 	SSai_lords.lords += src
@@ -58,6 +65,7 @@
 		if(M?.ai_brain && M.ai_brain.lord == src)
 			M.ai_brain.lord = null
 	members.Cut()
+	perceived.Cut()
 	SSai_lords.lords -= src
 
 /// Rough pack centre (average member position) — detection + pursuit origin.
@@ -84,31 +92,60 @@
 /datum/ai_lord/proc/valid_prey(mob/living/H)
 	return H && !QDELETED(H) && H.client && H.stat < DEAD
 
-/// Nearest valid prey to the pack: the lord's own scan from the centroid (fast,
-/// every tick, lighting-independent like the brains) unioned with whatever members
-/// already perceive (covers a spread-out pack without a scan per member).
+/// One pack-wide perception scan from the centroid, sized so it covers every
+/// member's own vision (centroid distance + that member's vision_range). Fills
+/// `perceived` with the living mobs in view; members read it via perception_fresh()
+/// in place of a per-mob dview. dview is lighting-independent (a cave predator
+/// senses prey in the dark) but opacity-blocked, so walls still hide a target.
+/datum/ai_lord/proc/scan(turf/centroid)
+	perceived.Cut()
+	if(!centroid)
+		return
+	var/scan_range = detect_range
+	for(var/mob/living/M as anything in members)
+		var/turf/T = get_turf(M)
+		if(!T)
+			continue
+		var/datum/ai_brain/b = M.ai_brain
+		var/v = b ? b.vision_range : 7
+		var/r = get_dist(centroid, T) + v
+		if(r > scan_range)
+			scan_range = r
+	scan_range = min(scan_range, LORD_PERCEPTION_MAX_RANGE)
+	for(var/mob/living/H in dview(scan_range, centroid))
+		if(H.stat >= DEAD)
+			continue
+		perceived += H
+	perceived_at = world.time
+
+/// True when the shared scan is recent enough for members to read instead of
+/// running their own dview. A scan that legitimately found nothing still counts
+/// as fresh (perceived_at is set), so members in an empty area skip the dview too.
+/datum/ai_lord/proc/perception_fresh()
+	return perceived_at && (world.time - perceived_at <= LORD_PERCEPTION_TTL)
+
+/// Nearest valid prey to the pack: the shared centroid scan, plus any player a
+/// member is already locked onto. The member fallback preserves pack aggro when a
+/// player attacks from cover the centroid can't see — without a per-member scan.
 /datum/ai_lord/proc/find_focus(turf/centroid)
 	var/mob/living/best = null
 	var/best_dist = INFINITY
-	if(centroid)
-		for(var/mob/living/H in dview(detect_range, centroid))
-			if(!valid_prey(H))
-				continue
-			var/d = get_dist(centroid, H)
-			if(d < best_dist)
-				best = H
-				best_dist = d
+	for(var/mob/living/H as anything in perceived)
+		if(!valid_prey(H))
+			continue
+		var/d = centroid ? get_dist(centroid, H) : 0
+		if(d < best_dist)
+			best = H
+			best_dist = d
 	for(var/mob/living/M as anything in members)
 		var/datum/ai_brain/b = M.ai_brain
-		if(!b || !b.model)
+		var/mob/living/t = b?.primary_threat
+		if(!valid_prey(t))
 			continue
-		for(var/mob/living/H in b.model.visible_hostiles)
-			if(!valid_prey(H))
-				continue
-			var/d = get_dist(M, H)
-			if(d < best_dist)
-				best = H
-				best_dist = d
+		var/d = centroid ? get_dist(centroid, t) : 0
+		if(d < best_dist)
+			best = t
+			best_dist = d
 	return best
 
 /// Order every member to engage `target`. Re-pushes only on change so we don't
@@ -129,6 +166,9 @@
 		return // disband() already ran inside remove_member
 
 	var/turf/centroid = pack_centroid()
+	// One scan for the whole pack; members read the result instead of each
+	// running their own dview this strategic tick.
+	scan(centroid)
 	var/mob/living/prey = find_focus(centroid)
 	if(prey)
 		focus = prey

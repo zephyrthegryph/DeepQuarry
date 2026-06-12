@@ -567,4 +567,92 @@
 	TEST_ASSERT(lord in SSai_lords.lords, "the pack disbanded while a live member remained")
 	qdel(lord)
 
+
+// --- runtime: a lord's scan fills shared perception with living mobs -------
+// The perf step: the lord scans once from the centroid and members read the
+// result. scan() must capture nearby living mobs, exclude the dead, and mark the
+// perception fresh so members know they can skip their own dview.
+
+/datum/unit_test/dq_ai_lord_scan_populates_shared_perception
+
+/datum/unit_test/dq_ai_lord_scan_populates_shared_perception/Run()
+	var/turf/base = _swing_arena()
+	TEST_ASSERT_NOTNULL(base, "no test arena available")
+	var/mob/living/simple_mob/quarry_stalker/a = allocate(/mob/living/simple_mob/quarry_stalker, base)
+	var/mob/living/simple_mob/quarry_stalker/b = allocate(/mob/living/simple_mob/quarry_stalker, get_step(base, EAST))
+	var/mob/living/carbon/human/foe = allocate(/mob/living/carbon/human, get_step(base, NORTH))
+	var/mob/living/simple_mob/quarry_stalker/corpse = allocate(/mob/living/simple_mob/quarry_stalker, get_step(base, SOUTH))
+	corpse.stat = DEAD
+	var/datum/ai_lord/lord = dq_assign_lord(list(a, b))
+	TEST_ASSERT_NOTNULL(lord, "dq_assign_lord returned null")
+
+	var/turf/centroid = lord.pack_centroid()
+	lord.scan(centroid)
+	TEST_ASSERT(lord.perception_fresh(), "scan didn't mark the shared perception fresh")
+	TEST_ASSERT(foe in lord.perceived, "scan didn't capture a nearby living mob")
+	TEST_ASSERT(!(corpse in lord.perceived), "scan captured a dead mob")
+	qdel(lord)
+
+
+// --- runtime: a member buckets from the lord's scan, range-gated -----------
+// update_perception, when the brain has a lord with a fresh scan, must bucket the
+// shared mobs into the member's own visible_* by the member's disposition — and
+// drop any beyond the member's vision_range — WITHOUT running a per-mob dview.
+
+/datum/unit_test/dq_ai_lord_member_buckets_from_shared_scan
+
+/datum/unit_test/dq_ai_lord_member_buckets_from_shared_scan/Run()
+	var/turf/base = _swing_arena()
+	TEST_ASSERT_NOTNULL(base, "no test arena available")
+	var/mob/living/simple_mob/quarry_stalker/a = allocate(/mob/living/simple_mob/quarry_stalker, base)
+	var/mob/living/simple_mob/quarry_stalker/b = allocate(/mob/living/simple_mob/quarry_stalker, get_step(base, EAST))
+	var/mob/living/carbon/human/foe = allocate(/mob/living/carbon/human, get_step(base, NORTH))
+	a.ai_attack_on_sight = TRUE
+	var/datum/ai_lord/lord = dq_assign_lord(list(a, b))
+	TEST_ASSERT_NOTNULL(lord, "dq_assign_lord returned null")
+
+	// Simulate a completed scan that saw the foe (adjacent, dist 1).
+	lord.perceived.Cut()
+	lord.perceived += foe
+	lord.perceived_at = world.time
+
+	a.ai_brain.vision_range = 7
+	a.ai_brain.model.update_perception(a.ai_brain)
+	TEST_ASSERT(foe in a.ai_brain.model.visible_hostiles, "member didn't bucket the lord's shared-scan foe as hostile")
+
+	// Range gate: with zero vision the dist-1 foe must be filtered out, proving the
+	// member honours its own vision against the shared list rather than seeing all of it.
+	a.ai_brain.vision_range = 0
+	a.ai_brain.model.update_perception(a.ai_brain)
+	TEST_ASSERT(!(foe in a.ai_brain.model.visible_hostiles), "member didn't range-gate a shared-scan foe beyond its vision")
+	qdel(lord)
+
+
+// --- runtime: a member with a STALE lord scan falls back to its own scan ----
+// Resilience: if the lord's coordination tick stalls (scan older than
+// LORD_PERCEPTION_TTL), members must self-scan rather than go blind. With a
+// back-dated perceived_at the member should ignore the shared list entirely.
+
+/datum/unit_test/dq_ai_lord_stale_scan_falls_back
+
+/datum/unit_test/dq_ai_lord_stale_scan_falls_back/Run()
+	var/turf/base = _swing_arena()
+	TEST_ASSERT_NOTNULL(base, "no test arena available")
+	var/mob/living/simple_mob/quarry_stalker/a = allocate(/mob/living/simple_mob/quarry_stalker, base)
+	var/mob/living/simple_mob/quarry_stalker/b = allocate(/mob/living/simple_mob/quarry_stalker, get_step(base, EAST))
+	var/mob/living/carbon/human/foe = allocate(/mob/living/carbon/human, get_step(base, NORTH))
+	a.ai_attack_on_sight = TRUE
+	var/datum/ai_lord/lord = dq_assign_lord(list(a, b))
+	TEST_ASSERT_NOTNULL(lord, "dq_assign_lord returned null")
+
+	// A stale scan that (wrongly) omits the foe must be ignored: the member
+	// self-scans and still finds the adjacent foe via its own dview.
+	lord.perceived.Cut()
+	lord.perceived_at = world.time - LORD_PERCEPTION_TTL - 1
+	TEST_ASSERT(!lord.perception_fresh(), "a back-dated scan should not read as fresh")
+
+	a.ai_brain.model.update_perception(a.ai_brain)
+	TEST_ASSERT(foe in a.ai_brain.model.visible_hostiles, "member with a stale lord scan didn't fall back to its own dview")
+	qdel(lord)
+
 #endif

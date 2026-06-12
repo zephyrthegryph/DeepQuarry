@@ -3,3 +3,4 @@ delete-after: true
 changes:
   - rscadd: "Quarry mob packs now coordinate under an AI 'lord' — a per-pack tracker that spots players and engages the whole pack at once, then pursues the player's last-known position across line-of-sight breaks."
   - balance: "Packs converge on one shared target instead of scattering, so going loud draws a coordinated swarm rather than a loose scatter of mobs."
+  - code_imp: "Pack members now share their lord's single perception scan instead of each scanning their surroundings every tick, cutting AI perception cost on crowded layers."
