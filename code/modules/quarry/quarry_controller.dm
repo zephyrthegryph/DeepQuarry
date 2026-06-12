@@ -620,9 +620,7 @@ SUBSYSTEM_DEF(quarry)
 				var/spawned_mob = new mob_type(PT)
 				// Tag wildlife so different species on the layer coexist (neutral)
 				// rather than infighting; same species stays allied.
-				if(istype(spawned_mob, /mob/living/simple_mob))
-					var/mob/living/simple_mob/fauna = spawned_mob
-					fauna.quarry_fauna = TRUE
+				tag_fauna(spawned_mob)
 				spawned++
 	var/_tl7 = world.timeofday
 

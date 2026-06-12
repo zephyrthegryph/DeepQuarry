@@ -11,6 +11,18 @@
 // Heat cools when the layer goes quiet (see tick_layer_danger), so breaking
 // contact ends the swarm — the core go-loud / go-quiet loop the mode is built on.
 
+/// Tag a quarry-spawned mob as fauna: different species coexist (neutral) instead
+/// of infighting, and they prefer hunting players over each other so a stray
+/// retaliation doesn't turn the swarm on itself. No-ops off simple_mobs. Call on
+/// EVERY quarry mob spawn (generation, events, reinforcements).
+/datum/controller/subsystem/quarry/proc/tag_fauna(mob/living/M)
+	if(!istype(M, /mob/living/simple_mob))
+		return
+	var/mob/living/simple_mob/SM = M
+	SM.quarry_fauna = TRUE
+	if(SM.ai_brain)
+		SM.ai_brain.target_selector_chain = list(/datum/target_selector/prefer_players, /datum/target_selector/closest)
+
 /// 0 at MIN heat, 1 at 100 heat. Drives both wave cadence and wave size.
 /datum/controller/subsystem/quarry/proc/siege_intensity(danger)
 	return clamp((danger - QUARRY_REINFORCE_MIN_DANGER) / (100 - QUARRY_REINFORCE_MIN_DANGER), 0, 1)
@@ -114,9 +126,9 @@
 		if(spawned >= wave)
 			break
 		var/spawned_mob = new mob_type(T)
+		tag_fauna(spawned_mob)
 		if(istype(spawned_mob, /mob/living/simple_mob))
 			var/mob/living/simple_mob/SM = spawned_mob
-			SM.quarry_fauna = TRUE
 			SM.siege_reinforcement = TRUE
 			SM.ai_brain?.give_target(target_player, TRUE)
 		spawned++

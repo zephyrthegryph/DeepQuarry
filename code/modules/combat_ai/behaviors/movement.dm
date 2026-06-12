@@ -1,5 +1,12 @@
 // Movement behaviors. None of these deal damage; they reposition the mob.
 
+// A chaser takes up to this many steps per 250ms tactical tick while still far
+// from its target, so it keeps pace with a running player instead of falling
+// behind at one-step-per-tick. Within APPROACH_SMOOTH_DIST it drops to a single
+// step per tick so close-quarters movement doesn't blink.
+#define APPROACH_MAX_STEPS_PER_TICK 2
+#define APPROACH_SMOOTH_DIST 2
+
 // --- Approach ----------------------------------------------------------------
 // Walk toward primary_threat until adjacent. Always available when there's a
 // threat we can't yet attack. Scored low so any attack behavior preempts it.
@@ -35,10 +42,26 @@
 	if(owner.Adjacent(target))
 		brain.clear_path()
 		return DQ_BEHAVIOR_DONE
-	// Smart A* step; falls back gracefully when pathing fails.
-	if(!brain.smart_step_toward(target))
-		// One direct step as a backup so we don't stall in open space.
+	// Cheap built-in step first. step_to() handles open ground and minor obstacles
+	// synchronously; the A* pather (smart_step_toward) blocks the tick on stoplag
+	// while SSpathfinder runs, and a moving target forces constant recomputes — so
+	// leading with A* made the mob barely move. Only fall back to A* when step_to
+	// can't make progress (a wall/maze between us). Take a second step while still
+	// far so a chaser keeps pace with a running player.
+	var/moved = FALSE
+	for(var/i in 1 to APPROACH_MAX_STEPS_PER_TICK)
+		if(owner.Adjacent(target))
+			break
+		var/turf/before = get_turf(owner)
 		step_to(owner, target)
+		if(get_turf(owner) == before)
+			break // blocked — try to path around below
+		moved = TRUE
+		brain.failed_steps = 0
+		if(get_dist(owner, target) <= APPROACH_SMOOTH_DIST)
+			break // close now; one step/tick from here keeps it smooth
+	if(!moved)
+		brain.smart_step_toward(target) // genuinely walled in — path around it
 	return DQ_BEHAVIOR_CONTINUE
 
 // --- Idle wander -------------------------------------------------------------
