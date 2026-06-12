@@ -1403,16 +1403,17 @@
 		else if(ear_damage < 25)	//ear damage heals slowly under this threshold. otherwise you'll need earmuffs
 			ear_damage = max(ear_damage-0.05, 0)
 
-		// CHOMPEnable Start: Handle Ear ringing, standalone safety check.
+		// Handle ear ringing, standalone safety check.
 		if(ear_deaf <= 0)
 			deaf_loop.stop()
-		// CHOMPEnable End
 
 		//Resting
 		if(resting)
 			adjustHalLoss(-3)
 		else
 			adjustHalLoss(-1)
+
+		handle_stamina_regen()
 
 		if (drowsyness)
 			drowsyness = max(0, drowsyness - 1)

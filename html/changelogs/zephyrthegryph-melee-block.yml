@@ -1,0 +1,8 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - rscadd: "Right-clicking with a melee weapon now raises a brief block that parries an incoming attack and staggers the attacker."
+  - rscadd: "Right-clicking during your own windup feints, cancelling the swing for free."
+  - rscadd: "A block that catches nothing locks out your attacks and movement for a beat, and stepping briefly locks out attacking."
+  - balance: "Help, Disarm and Harm intents now swing as combat stances with different damage, windup/recovery, and move speed; Grab is unchanged."
+  - qol: "Removed the right-click context popup that listed every atom on a tile."

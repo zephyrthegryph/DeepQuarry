@@ -48,6 +48,9 @@
 
 	damage_to_do = apply_bonus_melee_damage(A, damage_to_do)
 
+	if(heavy_strike_mult) // a telegraphed heavy is in progress (interactive_melee.dm)
+		damage_to_do *= heavy_strike_mult
+
 	for(var/datum/modifier/M in modifiers)
 		if(!isnull(M.outgoing_melee_damage_percent))
 			damage_to_do *= M.outgoing_melee_damage_percent
@@ -65,6 +68,10 @@
 			var/mob/living/carbon/human/H = L
 			if(H.check_shields(damage = damage_to_do, damage_source = src, attacker = src, def_zone = null, attack_text = "the attack"))
 				return FALSE // We were blocked.
+			// A soft block (the tail of a raised guard) stops half the hit; flag set same-tick by check_shields.
+			if(H.block_soft_at == world.time)
+				damage_to_do *= 0.5
+				H.block_soft_at = 0
 
 	if(apply_attack(A, damage_to_do))
 		apply_melee_effects(A)

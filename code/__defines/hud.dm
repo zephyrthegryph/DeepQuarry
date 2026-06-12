@@ -115,6 +115,7 @@
 //Middle right (status indicators)
 #define ui_temp "EAST-1:28,CENTER-2:13"
 #define ui_health "EAST-1:28,CENTER-1:15"
+#define ui_stamina "EAST-1:28,CENTER-3:11"
 #define ui_internal "EAST-1:28,CENTER:17"
 #define ui_under_health "EAST-1:28,CENTER-2:13"
 									//borgs

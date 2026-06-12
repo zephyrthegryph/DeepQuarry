@@ -241,6 +241,10 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 
 	winset(src, null, "browser-options=[DEFAULT_CLIENT_BROWSER_OPTIONS]")
 
+	// The right-click context menu is suppressed only while a melee weapon is held (so a bare
+	// right-click is a guard) and restored when unarmed — see /mob/living/refresh_combat_popup_menus,
+	// driven by the hand-HUD updates. Left at BYOND's default here.
+
 	if(!(connection in list("seeker", "web")))					//Invalid connection type.
 		return null
 	if(byond_version < MIN_CLIENT_VERSION)		//Out of date client.
@@ -588,12 +592,46 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	if(inactivity > duration)	return inactivity
 	return 0
 
+/// world.time of the most recent mouse press, for the click-drag grace window.
+/client/var/tmp/mouse_down_time = 0
+/// world.time a right-press combat action fired, so the matching click doesn't double-handle it.
+/client/var/tmp/combat_right_at = 0
+
+/client/MouseDown(object, location, control, params)
+	mouse_down_time = world.time
+	// A bare right-press on a world atom raises a HELD guard (or feints/shoves). The matching
+	// MouseUp drops the guard, so holding keeps the block up. The click handler is a fallback for
+	// clients where the right-button press isn't delivered here.
+	if(isliving(mob) && !istype(object, /atom/movable/screen))
+		var/list/mods = params2list(params)
+		if(mods[RIGHT_CLICK] && !mods[SHIFT_CLICK] && !mods[CTRL_CLICK] && !mods[ALT_CLICK])
+			combat_right_at = world.time
+			var/mob/living/L = mob
+			L.melee_rightclick(object, TRUE)
+	. = ..()
+
+/client/MouseUp(object, location, control, params)
+	// Releasing the mouse drops a held guard.
+	if(isliving(mob))
+		var/mob/living/L = mob
+		if(L.blocking)
+			L.release_block()
+	. = ..()
+
 //Called when the client performs a drag-and-drop operation.
 /client/MouseDrop(start_object,end_object,start_location,end_location,start_control,end_control,params)
 	if(buildmode && start_control == "mapwindow.map" && start_control == end_control)
 		build_drag(src,buildmode,start_object,end_object,start_location,end_location,start_control,end_control,params)
-	else
-		. = ..()
+		return
+	// A right-button drag is a held guard (handled in MouseDown/MouseUp), not a drag interaction.
+	if(LAZYACCESS(params2list(params), RIGHT_CLICK))
+		return
+	// Grace window: a drag released on the same atom it started on, within CLICK_DRAG_GRACE, is a
+	// twitch while trying to click — treat it as a click so it doesn't get eaten as a drag.
+	if(start_object && start_object == end_object && (world.time - mouse_down_time) <= CLICK_DRAG_GRACE)
+		Click(end_object, end_location, end_control, params)
+		return
+	. = ..()
 
 /client/proc/last_activity_seconds()
 	return inactivity / 10
@@ -811,6 +849,11 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 			to_chat(src, span_danger("Your previous click was ignored because you've done too many in a second"))
 			return
 	SEND_SIGNAL(src, COMSIG_CLIENT_CLICK, object, location, control, params, usr)
+	// Dispatch right-clicks ourselves so BYOND's default "objects under the cursor" context popup
+	// never shows; ClickOn routes them (bare right-click = melee block, alt/ctrl-right as before).
+	if(object && params && LAZYACCESS(params2list(params), RIGHT_CLICK))
+		object.Click(location, control, params)
+		return
 	. = ..()
 
 /// This grabs the DPI of the user per their skin
