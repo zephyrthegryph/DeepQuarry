@@ -249,7 +249,7 @@
 	while(spawned < pack_size && length(candidates))
 		var/turf/T = candidates[1]
 		candidates.Cut(1, 2)
-		new mob_type(T)
+		SSquarry.tag_fauna(new mob_type(T)) // coexist with other fauna; hunt players, not each other
 		spawned++
 
 
@@ -274,6 +274,7 @@
 	if(!spawn_tile)
 		return
 	var/mob/living/S = new stalker_type(spawn_tile)
+	SSquarry.tag_fauna(S) // coexist with other fauna; hunt players, not each other
 	L.active_stalker = S
 	// No announcement — players discover the stalker when they meet it.
 	// A subtle distant snarl on spawn so they have *some* chance to

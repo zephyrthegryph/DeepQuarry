@@ -56,8 +56,13 @@
 /datum/world_model/proc/get_owner()
 	return owner_ref?.resolve()
 
-/// Walks view() once and bucket-sorts everyone visible into hostile/friendly/neutral.
-/// Called from /datum/ai_brain/handle_strategicals at the slow tick.
+/// Walks the mob's surroundings once and bucket-sorts everyone into
+/// hostile/friendly/neutral. Called from /datum/ai_brain/handle_strategicals.
+///
+/// Uses dview (a lighting-independent view) rather than view(): a cave predator
+/// senses prey in pitch darkness, but opacity still blocks it, so walls hide you.
+/// Plain view() made AI blind in unlit quarry caves — they only noticed a player
+/// once you were lit or nearly adjacent.
 /datum/world_model/proc/update_perception(datum/ai_brain/brain)
 	var/mob/living/owner = get_owner()
 	if(!owner || !brain)
@@ -68,7 +73,7 @@
 	visible_neutrals.Cut()
 
 	var/range = brain.vision_range
-	for(var/mob/living/M in view(range, owner))
+	for(var/mob/living/M in dview(range, get_turf(owner)))
 		if(M == owner)
 			continue
 		if(M.stat >= DEAD)
