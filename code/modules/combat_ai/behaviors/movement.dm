@@ -55,14 +55,34 @@
 		var/turf/before = get_turf(owner)
 		step_to(owner, target)
 		if(get_turf(owner) == before)
-			break // blocked — try to path around below
+			break // blocked — try to slide / path around below
 		moved = TRUE
 		brain.failed_steps = 0
 		if(get_dist(owner, target) <= APPROACH_SMOOTH_DIST)
 			break // close now; one step/tick from here keeps it smooth
+	// Blocked: try a cheap wall-slide (step along one axis toward the target) before
+	// reaching for A*. Most cave corners clear this way, so the global pathfinder
+	// stays idle and mobs don't queue up on it.
 	if(!moved)
-		brain.smart_step_toward(target) // genuinely walled in — path around it
+		moved = dq_corner_step(owner, target)
+	if(!moved)
+		brain.smart_step_toward(target) // genuinely walled in — path around it (non-blocking; may skip this tick)
 	return DQ_BEHAVIOR_CONTINUE
+
+/// Cheap obstacle slip: when a straight step toward `target` is blocked, try the
+/// component cardinal directions so a mob hugging a wall slides along it toward the
+/// target instead of stalling and demanding an A* path. Non-blocking. Returns TRUE
+/// if it moved.
+/proc/dq_corner_step(mob/living/owner, atom/target)
+	var/want = get_dir(owner, target)
+	for(var/try_dir in list(want & (NORTH|SOUTH), want & (EAST|WEST)))
+		if(!try_dir)
+			continue
+		var/turf/before = get_turf(owner)
+		step(owner, try_dir)
+		if(get_turf(owner) != before)
+			return TRUE
+	return FALSE
 
 // --- Idle wander -------------------------------------------------------------
 

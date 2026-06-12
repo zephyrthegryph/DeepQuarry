@@ -1254,6 +1254,9 @@
 	var/obj/item/I = get_inactive_hand()
 	if(I)
 		I.in_inactive_hand(src)	//This'll do specific things, determined by the item
+	// Active hand changed → the weapon governing the right-click guard may have too,
+	// so re-evaluate whether the BYOND context menu is suppressed.
+	refresh_combat_popup_menus()
 	return
 
 /mob/living/proc/activate_hand(selhand) //0 or "r" or "right" for right hand; 1 or "l" or "left" for left hand.

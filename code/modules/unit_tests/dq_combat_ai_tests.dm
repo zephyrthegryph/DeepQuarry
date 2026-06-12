@@ -172,6 +172,10 @@
 /datum/unit_test/dq_combat_ai_damage_promotes_attacker/Run()
 	var/mob/living/simple_mob/quarry_stalker/victim = allocate(/mob/living/simple_mob/quarry_stalker)
 	var/mob/living/simple_mob/quarry_stalker/aggressor = allocate(/mob/living/simple_mob/quarry_stalker)
+	// A genuine enemy, not a packmate: different factions so the hit isn't friendly
+	// fire (a same-faction packmate is spared — see dq_ai_friendly_fire_no_grudge).
+	victim.ai_attack_on_sight = TRUE
+	aggressor.faction = "hostile_other"
 	// Direct notify (the hook does the same after attack_generic).
 	victim.ai_brain.notify_damage(10, BRUTE, aggressor)
 	TEST_ASSERT(victim.ai_brain.check_attacker(aggressor), "notify_damage didn't promote attacker to HOSTILE")
@@ -654,5 +658,67 @@
 	a.ai_brain.model.update_perception(a.ai_brain)
 	TEST_ASSERT(foe in a.ai_brain.model.visible_hostiles, "member with a stale lord scan didn't fall back to its own dview")
 	qdel(lord)
+
+
+// --- runtime: friendly fire from a packmate doesn't start a feud ----------
+// A packmate's stray hit (a cleave, or a telegraphed heavy landing on an ally on
+// the struck tile) must NOT promote the ally to a personal enemy — that grudge
+// would override faction ALLY and turn the pack on itself. Coexisting cross-species
+// fauna are spared too. A real enemy (the player) still aggros on being hit.
+
+/datum/unit_test/dq_ai_friendly_fire_no_grudge
+
+/datum/unit_test/dq_ai_friendly_fire_no_grudge/Run()
+	// Same-faction packmate: ALLY, so a hit is friendly fire.
+	var/mob/living/simple_mob/quarry_stalker/victim = allocate(/mob/living/simple_mob/quarry_stalker)
+	var/mob/living/simple_mob/quarry_stalker/packmate = allocate(/mob/living/simple_mob/quarry_stalker)
+	victim.ai_attack_on_sight = TRUE
+	TEST_ASSERT(victim.ai_brain.is_friendly_fire(packmate), "a same-faction packmate should count as friendly fire")
+	victim.ai_brain.notify_damage(10, BRUTE, packmate)
+	TEST_ASSERT(!victim.ai_brain.check_attacker(packmate), "friendly fire from a packmate added a personal HOSTILE grudge")
+	TEST_ASSERT_NULL(victim.ai_brain.primary_threat, "friendly fire from a packmate bound primary_threat to the ally")
+	TEST_ASSERT_NULL(victim.ai_brain.model.get_last_attacker(), "friendly fire bound last_attacker — retaliate would target the ally")
+
+	// Coexisting cross-species quarry fauna: NEUTRAL but still spared.
+	var/mob/living/simple_mob/quarry_stalker/fauna_a = allocate(/mob/living/simple_mob/quarry_stalker)
+	var/mob/living/simple_mob/quarry_stalker/fauna_b = allocate(/mob/living/simple_mob/quarry_stalker)
+	fauna_a.faction = "fauna_a"
+	fauna_b.faction = "fauna_b"
+	fauna_a.quarry_fauna = TRUE
+	fauna_b.quarry_fauna = TRUE
+	fauna_a.ai_attack_on_sight = TRUE
+	TEST_ASSERT(fauna_a.ai_brain.is_friendly_fire(fauna_b), "coexisting cross-species fauna should count as friendly fire")
+	fauna_a.ai_brain.notify_damage(10, BRUTE, fauna_b)
+	TEST_ASSERT(!fauna_a.ai_brain.check_attacker(fauna_b), "cross-species fauna friendly fire added a grudge")
+
+	// A genuine enemy (the player) is never friendly fire and still aggros.
+	var/mob/living/carbon/human/foe = allocate(/mob/living/carbon/human)
+	var/mob/living/simple_mob/quarry_stalker/v2 = allocate(/mob/living/simple_mob/quarry_stalker)
+	v2.ai_attack_on_sight = TRUE
+	TEST_ASSERT(!v2.ai_brain.is_friendly_fire(foe), "a player must not be treated as friendly fire")
+	v2.ai_brain.notify_damage(10, BRUTE, foe)
+	TEST_ASSERT(v2.ai_brain.check_attacker(foe), "being hit by the player didn't aggro the mob")
+	TEST_ASSERT_EQUAL(v2.ai_brain.primary_threat, foe, "being hit by the player didn't bind primary_threat")
+
+
+// --- runtime: AI pathfinding never blocks on the global mutex -------------
+// A search yields (CHECK_TICK) while holding pathfinding_mutex; if dq_pathfind
+// stoplag-waited on it, the whole AI tick would serialize behind one mob. Instead
+// it must bail to null when the pathfinder is busy, so the caller falls back to a
+// cheap step and other mobs keep moving.
+
+/datum/unit_test/dq_ai_pathfind_nonblocking
+
+/datum/unit_test/dq_ai_pathfind_nonblocking/Run()
+	var/turf/base = _swing_arena()
+	TEST_ASSERT_NOTNULL(base, "no test arena available")
+	var/mob/living/simple_mob/quarry_stalker/m = allocate(/mob/living/simple_mob/quarry_stalker, base)
+	var/turf/goal = get_step(base, NORTH)
+
+	var/saved = SSpathfinder.pathfinding_mutex
+	SSpathfinder.pathfinding_mutex = TRUE
+	var/result = dq_pathfind(m, goal)
+	SSpathfinder.pathfinding_mutex = saved // restore before asserting so a failure can't wedge other tests
+	TEST_ASSERT_NULL(result, "dq_pathfind blocked/searched while the pathfinder mutex was held instead of bailing")
 
 #endif

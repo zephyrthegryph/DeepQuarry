@@ -24,8 +24,16 @@
 	path_goal = null
 	failed_steps = 0
 
-/proc/dq_pathfind(mob/living/actor, turf/goal, min_dist = 1, max_path = 128)
+/proc/dq_pathfind(mob/living/actor, turf/goal, min_dist = 1, max_path = 64)
 	if(!actor || !goal)
+		return null
+	// Never stoplag-wait on the global pathfinder. A search yields via CHECK_TICK
+	// while holding pathfinding_mutex, so waiting on it serializes the whole AI
+	// tick behind one mob — the "only one mob moves at a time, ~1 step/second"
+	// stall. If the pathfinder is mid-search, skip A* this tick; the caller falls
+	// back to a cheap step and retries next tick. One short A* runs per free tick
+	// instead of a stoplag pileup.
+	if(SSpathfinder.pathfinding_mutex)
 		return null
 	var/datum/pathfinding/astar/instance = new(actor, get_turf(actor), goal, min_dist, max_path * 2)
 	var/obj/item/card/id/potential_id = actor.GetIdCard()
