@@ -80,6 +80,7 @@
 		return FALSE
 	holder.face_atom(next)
 	var/old_loc = get_turf(holder)
+	dq_set_move_glide(holder) // glide one tile per tick so pathed movement animates smoothly too
 	step_to(holder, next)
 	if(get_turf(holder) != old_loc)
 		cached_path.Cut(1, 2)

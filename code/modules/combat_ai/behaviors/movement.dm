@@ -1,11 +1,13 @@
 // Movement behaviors. None of these deal damage; they reposition the mob.
 
-// A chaser takes up to this many steps per 250ms tactical tick while still far
-// from its target, so it keeps pace with a running player instead of falling
-// behind at one-step-per-tick. Within APPROACH_SMOOTH_DIST it drops to a single
-// step per tick so close-quarters movement doesn't blink.
-#define APPROACH_MAX_STEPS_PER_TICK 2
-#define APPROACH_SMOOTH_DIST 2
+/// Glide a stepped tile across one fast tactical tick so AI movement animates
+/// smoothly instead of snapping. An AI step_to() defaults glide_size, which leaves
+/// the icon to teleport between tiles; matching the glide to the step cadence
+/// (one tile per SSaifast tick) makes it slide like a player walking. Re-applied
+/// before each AI step.
+/proc/dq_set_move_glide(mob/living/owner)
+	if(owner)
+		owner.glide_size = WORLD_ICON_SIZE / max(DS2TICKS(SSaifast.wait), 1)
 
 // --- Approach ----------------------------------------------------------------
 // Walk toward primary_threat until adjacent. Always available when there's a
@@ -42,42 +44,35 @@
 	if(owner.Adjacent(target))
 		brain.clear_path()
 		return DQ_BEHAVIOR_DONE
-	// Cheap built-in step first. step_to() handles open ground and minor obstacles
-	// synchronously; the A* pather (smart_step_toward) blocks the tick on stoplag
-	// while SSpathfinder runs, and a moving target forces constant recomputes — so
-	// leading with A* made the mob barely move. Only fall back to A* when step_to
-	// can't make progress (a wall/maze between us). Take a second step while still
-	// far so a chaser keeps pace with a running player.
-	var/moved = FALSE
-	for(var/i in 1 to APPROACH_MAX_STEPS_PER_TICK)
-		if(owner.Adjacent(target))
-			break
-		var/turf/before = get_turf(owner)
-		step_to(owner, target)
-		if(get_turf(owner) == before)
-			break // blocked — try to slide / path around below
-		moved = TRUE
+	// One step per tactical tick, glided across the tick so it slides smoothly
+	// instead of teleporting (two steps in a single tick read as a snap). step_to()
+	// handles open ground and minor obstacles cheaply; the A* pather only blocks the
+	// tick when the pathfinder is free (non-blocking), so leading with step_to keeps
+	// mobs moving and the swarm un-serialized.
+	dq_set_move_glide(owner)
+	var/turf/before = get_turf(owner)
+	step_to(owner, target)
+	if(get_turf(owner) != before)
 		brain.failed_steps = 0
-		if(get_dist(owner, target) <= APPROACH_SMOOTH_DIST)
-			break // close now; one step/tick from here keeps it smooth
+		return DQ_BEHAVIOR_CONTINUE
 	// Blocked: try a cheap wall-slide (step along one axis toward the target) before
-	// reaching for A*. Most cave corners clear this way, so the global pathfinder
-	// stays idle and mobs don't queue up on it.
-	if(!moved)
-		moved = dq_corner_step(owner, target)
-	if(!moved)
-		brain.smart_step_toward(target) // genuinely walled in — path around it (non-blocking; may skip this tick)
+	// reaching for A*. Most cave corners — and packmates side-by-side — clear this
+	// way, so the global pathfinder stays idle and mobs don't queue up on it.
+	if(dq_corner_step(owner, target))
+		return DQ_BEHAVIOR_CONTINUE
+	brain.smart_step_toward(target) // genuinely walled in — path around it (non-blocking; may skip this tick)
 	return DQ_BEHAVIOR_CONTINUE
 
 /// Cheap obstacle slip: when a straight step toward `target` is blocked, try the
-/// component cardinal directions so a mob hugging a wall slides along it toward the
-/// target instead of stalling and demanding an A* path. Non-blocking. Returns TRUE
-/// if it moved.
+/// nearby directions so a mob can slide around a wall corner OR a packmate standing
+/// directly in its way, instead of stalling and demanding an A* path. Tries the two
+/// directions 45° off the target heading first (still closing in), then the two
+/// perpendicular ones (pure sidestep around a blocker). Non-blocking; returns TRUE
+/// if it moved. This is what lets a clustered pack flow toward the player rather
+/// than only the front rank advancing.
 /proc/dq_corner_step(mob/living/owner, atom/target)
 	var/want = get_dir(owner, target)
-	for(var/try_dir in list(want & (NORTH|SOUTH), want & (EAST|WEST)))
-		if(!try_dir)
-			continue
+	for(var/try_dir in list(turn(want, 45), turn(want, -45), turn(want, 90), turn(want, -90)))
 		var/turf/before = get_turf(owner)
 		step(owner, try_dir)
 		if(get_turf(owner) != before)
