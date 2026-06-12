@@ -37,7 +37,7 @@
 /// close to the previous goal; recomputes otherwise. Returns TRUE if the mob
 /// moved this call, FALSE if the path is exhausted or movement failed.
 /datum/ai_brain/proc/smart_step_toward(atom/target, get_to = 1)
-	if(!target || !holder)
+	if(!target || !holder || holder.anchored) // anchored mobs can't path-move (Move() ignores anchored)
 		clear_path()
 		return FALSE
 	var/turf/target_turf = get_turf(target)

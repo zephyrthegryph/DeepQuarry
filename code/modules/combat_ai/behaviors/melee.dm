@@ -25,9 +25,11 @@
 		return null
 	if(!owner.Adjacent(threat))
 		return null
+	if(world.time < owner.melee_locked_until) // parried / shoved / off-balance — the player opened us
+		return null
 	if(!owner.checkClickCooldown())
 		return null
-	// Mid-band score; charge_slam/web_spit beat plain melee when in their range.
+	// Mid-band score; charge_slam/telegraphed_strike beat plain melee when eligible.
 	return DQAI_RESULT(40, threat)
 
 /datum/ai_behavior/melee_attack/start(datum/ai_brain/brain, atom/target, atom/source)

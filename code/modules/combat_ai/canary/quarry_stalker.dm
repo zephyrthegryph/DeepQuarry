@@ -42,6 +42,8 @@
 		/datum/ai_behavior/threaten,
 		/datum/ai_behavior/approach_threat,
 		/datum/ai_behavior/melee_attack,
+		/datum/ai_behavior/telegraphed_strike/flinch, // agile elite: yanks the heavy back to dodge an incoming swing
+		/datum/ai_behavior/sidestep_dodge,
 		/datum/ai_behavior/charge_slam,
 		/datum/ai_behavior/flee_low_hp,
 		/datum/ai_behavior/idle_wander,

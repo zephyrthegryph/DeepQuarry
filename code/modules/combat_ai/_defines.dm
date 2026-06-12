@@ -74,6 +74,7 @@
 #define COMSIG_DQAI_LOW_HEALTH       "dqai_low_health"        // (hp_fraction)
 #define COMSIG_DQAI_ENTERED_VIEW     "dqai_entered_view"      // (mob_seen)
 #define COMSIG_DQAI_HEARD_HAZARD     "dqai_heard_hazard"      // (hazard_atom)
+#define COMSIG_DQAI_INCOMING_ATTACK  "dqai_incoming_attack"   // (attacker) — a telegraphed swing is winding up on this mob
 
 // ---------------------------------------------------------------------------
 // Misc helpers / tuning.

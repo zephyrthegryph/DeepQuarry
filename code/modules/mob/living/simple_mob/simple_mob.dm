@@ -113,6 +113,14 @@
 	var/attack_edge = FALSE				// Does the attack have an edge?
 
 	var/melee_attack_delay = 2			// If set, the mob will do a windup animation and can miss if the target moves out of the way.
+	// Interactive-melee tunables (see code/modules/combat_ai/behaviors/interactive_melee.dm).
+	var/telegraph_windup = 0.7 SECONDS	// Readable windup before a telegraphed heavy lands.
+	var/heavy_cooldown = 6 SECONDS		// Time between telegraphed heavies.
+	var/dodge_chance = 25				// Percent chance to sidestep an incoming telegraphed swing.
+	var/heavy_strike_mult = 0			// Transient damage multiplier set during a telegraphed heavy.
+	var/incoming_block_at = 0			// world.time a brace flagged the next incoming hit for halving.
+	var/incoming_attack_at = 0			// world.time deadline by which to sidestep an incoming swing.
+	var/quarry_fauna = FALSE			// Set on SSquarry-spawned wildlife: different species coexist (neutral) instead of infighting. See /datum/ai_brain/proc/disposition_to.
 	var/ranged_attack_delay = null
 	var/special_attack_delay = null
 	var/ranged_cooldown = 0

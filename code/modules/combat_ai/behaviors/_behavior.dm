@@ -76,6 +76,12 @@ GLOBAL_LIST_EMPTY(dq_behaviors)
 	/// behavior selection. For long windup attacks like charge_slam.
 	var/blocks_reselection = FALSE
 
+	/// Signal types that flinch-cancel this behavior even while it's busy
+	/// (blocks_reselection). null = fully committed once started. Lets an elite
+	/// telegraph be interrupted by an incoming attack so it can dodge/brace,
+	/// while trash mobs stay committed and exploitable. See dispatch_behavior_signal.
+	var/list/interruptible_by = null
+
 	/// If TRUE, the behavior should be considered even if the brain has no
 	/// primary_threat (e.g. wander, idle_speak).
 	var/no_threat_required = FALSE

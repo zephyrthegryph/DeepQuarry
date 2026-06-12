@@ -50,7 +50,11 @@ GLOBAL_LIST_EMPTY(dq_default_behavior_cache)
 
 	if(has_melee)
 		L += /datum/ai_behavior/melee_attack
+		L += /datum/ai_behavior/telegraphed_strike // readable heavy + punish opening
 		if(hostile)
+			L += /datum/ai_behavior/sidestep_dodge   // dodge the player's telegraphed swing
+			L += /datum/ai_behavior/brace_guard       // fallback when there's no room to dodge
+			L += /datum/ai_behavior/back_off          // give ground after taking a hit
 			L += /datum/ai_behavior/maul_unconscious
 
 	if(has_ranged)
