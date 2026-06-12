@@ -64,6 +64,10 @@
 	/// ai_holder lose_target_timeout: the mob keeps pursuing for
 	/// DQ_LOSE_THREAT_TIMEOUT deciseconds before dropping the target.
 	var/lose_threat_at = 0
+	/// world.time of the last event-driven react_now() re-selection. Debounces a
+	/// burst of same-tick events down to a single re-pick (and stops synchronous
+	/// re-entry, since behaviors don't sleep so all re-entry is same-tick).
+	var/last_react_tick = 0
 
 /datum/ai_brain/New(mob/living/owner)
 	if(!owner)
@@ -325,6 +329,22 @@
 /datum/ai_brain/proc/invalidate_selection()
 	selection_dirty = TRUE
 
+/// Re-decide and act THIS instant instead of waiting up to a tactical tick (~250ms). Combat is
+/// sub-second, so reactions (retaliating to a hit, dodging an incoming swing) must be event-driven
+/// or the mob is always a beat behind. handle_tactics() keeps its own guards (busy / dead / client),
+/// and selection_dirty stays set so a busy mob still re-picks on its next tick.
+/datum/ai_brain/proc/react_now()
+	selection_dirty = TRUE
+	// Collapse a burst of same-tick events into one re-selection. Set the stamp
+	// BEFORE handle_tactics so a synchronous re-entrant react_now (a behavior that
+	// deals damage notifying through this same brain) is debounced out — behaviors
+	// don't sleep, so all re-entry lands in this same tick. selection_dirty stays
+	// set, so anything skipped is picked up on the next tactical tick.
+	if(last_react_tick == world.time)
+		return
+	last_react_tick = world.time
+	handle_tactics()
+
 // ---------------------------------------------------------------------------
 // Targeting.
 // ---------------------------------------------------------------------------
@@ -376,6 +396,13 @@
 				UNSETEMPTY(personal)
 			else
 				return entry["disp"]
+	// A shared non-null faction string means teammates, registry or not. The
+	// faction_data tables describe CROSS-faction stances; without this, mobs whose
+	// faction isn't enumerated (most wildlife) fall through to the default data,
+	// whose null faction_key never matches, so packmates resolve NEUTRAL instead of
+	// ALLY — which silently kills pack cohesion and call_for_help (visible_friendlies).
+	if(holder.faction && other.faction == holder.faction)
+		return DQ_DISPOSITION_ALLY
 	var/datum/faction_data/data = dq_faction_data_for(holder.faction)
 	var/result
 	if(other.client)
@@ -390,6 +417,13 @@
 	if(result == DQ_DISPOSITION_NEUTRAL && istype(holder, /mob/living/simple_mob))
 		var/mob/living/simple_mob/SM = holder
 		if(SM.ai_attack_on_sight && holder.faction != other.faction)
+			// Quarry-spawned fauna of different species coexist rather than tearing
+			// the layer's ecosystem apart: stay NEUTRAL toward each other. Same
+			// species is ALLY (handled above), and players aren't fauna, so they're
+			// still engaged on sight.
+			var/mob/living/simple_mob/other_sm = other
+			if(SM.quarry_fauna && istype(other_sm) && other_sm.quarry_fauna)
+				return DQ_DISPOSITION_NEUTRAL
 			result = DQ_DISPOSITION_HOSTILE
 	return result
 
@@ -467,14 +501,29 @@
 	model.record_damage(amount, damagetype, attacker)
 	if(ismob(attacker) && attacker != holder)
 		add_personal(attacker, DQ_DISPOSITION_HOSTILE, DQ_PERSONAL_DEFAULT_DURATION, "hit me")
+		if(!primary_threat)
+			primary_threat = attacker // target the attacker NOW so react_now() can act this instant
 	SEND_SIGNAL(holder, COMSIG_DQAI_DAMAGE_TAKEN, amount, damagetype, attacker)
 	dispatch_behavior_signal(COMSIG_DQAI_DAMAGE_TAKEN, amount, damagetype, attacker)
 	if(holder.maxHealth && holder.health / holder.maxHealth <= DQ_LOW_HP_THRESHOLD)
 		dispatch_behavior_signal(COMSIG_DQAI_LOW_HEALTH, holder.health / holder.maxHealth)
-	invalidate_selection()
+	react_now() // retaliate immediately instead of on the next tactical tick
 
 /// Forwards a behavior signal to every subscribed behavior. `args` after
 /// sig_type are passed through verbatim.
+/// Cancel the active behavior IFF it opted into being interrupted by sig_type
+/// (interruptible_by). Called by a reaction behavior the moment it COMMITS — so an
+/// elite's flinch-cancellable heavy is yanked only when the mob actually dodges/braces,
+/// not for free on every passing swing. Returns TRUE if it interrupted something.
+/datum/ai_brain/proc/interrupt_if_opted_in(sig_type)
+	if(!active_behavior_type)
+		return FALSE
+	var/datum/ai_behavior/active = dq_get_behavior(active_behavior_type)
+	if(active.interruptible_by && (sig_type in active.interruptible_by))
+		stop_active(DQ_BEHAVIOR_STOP_INTERRUPTED)
+		return TRUE
+	return FALSE
+
 /datum/ai_brain/proc/dispatch_behavior_signal(sig_type)
 	if(!subscribed_signals || !subscribed_signals[sig_type])
 		return

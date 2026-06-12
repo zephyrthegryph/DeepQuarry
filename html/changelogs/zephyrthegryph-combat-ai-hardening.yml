@@ -1,0 +1,8 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "The quarry elevator's approach corridor no longer leaves invisible walls — carved tiles now repaint as floor instead of looking solid."
+  - bugfix: "Getting swallowed on a quarry layer no longer makes every mob on that layer vanish."
+  - bugfix: "Quarry wildlife now spawns in single-species packs instead of mixed clumps that attacked each other; different species coexist, and attacking one pack-mate now aggros the rest."
+  - balance: "Elite mobs can flinch-cancel a wound-up heavy to dodge your swing, while lesser mobs stay committed and punishable. Cornered mobs with no room to sidestep now brace instead of facetanking."
+  - bugfix: "Mobs react to a hit or an incoming swing the instant it happens rather than a beat later."

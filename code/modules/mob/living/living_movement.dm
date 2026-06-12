@@ -267,6 +267,10 @@ default behaviour is:
 
 /mob/living/Moved(atom/oldloc, direct, forced, movetime)
 	. = ..()
+	if(client)
+		// The camera scrolling out from under a stationary cursor doesn't reliably fire MouseExited,
+		// leaving the hover nametag tooltip stuck. Close it on every move.
+		closeToolTip(src)
 	handle_footstep(loc)
 	if(!forced && movetime /* && !is_incorporeal()*/)
 		SSmotiontracker?.ping(src) // Incase of before init "turf enter gravity" this is ?, unfortunately.
@@ -285,7 +289,8 @@ default behaviour is:
 
 		else if(get_dist(src, pulling) > 1 || (moving_diagonally != SECOND_DIAG_STEP && ((pull_dir - 1) & pull_dir))) // puller and pullee more than one tile away or in diagonal position
 			// If it is too far away or across z-levels from old location, stop pulling.
-			if(get_dist(pulling.loc, oldloc) > 1 || pulling.loc.z != oldloc?.z)
+			var/turf/pulling_turf = get_turf(pulling) // container-robust; pulling.loc is already a turf here (guarded above)
+			if(get_dist(pulling.loc, oldloc) > 1 || pulling_turf?.z != oldloc?.z)
 				stop_pulling()
 
 			// living might take damage from drags
