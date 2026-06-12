@@ -1,0 +1,7 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - rscadd: "Melee NPCs now fight interactively: they wind up readable heavy attacks (telegraphed on a tile) you can parry, dodge by stepping out of, or soft-block."
+  - rscadd: "Parrying or shoving a mob now actually opens it — it can't attack during the stagger — and landing or whiffing a heavy leaves the mob in a punishable recovery."
+  - rscadd: "Mobs defend too: they sometimes sidestep your telegraphed swing or give ground after taking a hit, and tanky mobs can brace to soften a blow (broken by a shove)."
+  - balance: "Per-mob tunables (telegraph windup, heavy frequency, dodge reflex) pace mob attacks instead of constant spam."

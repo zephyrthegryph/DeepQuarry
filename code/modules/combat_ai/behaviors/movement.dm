@@ -30,6 +30,8 @@
 	var/mob/living/owner = brain.get_owner()
 	if(!owner || !target || QDELETED(target))
 		return DQ_BEHAVIOR_FAILED
+	if(owner.anchored)
+		return DQ_BEHAVIOR_FAILED // can't close the distance while anchored; let melee_attack handle adjacency
 	if(owner.Adjacent(target))
 		brain.clear_path()
 		return DQ_BEHAVIOR_DONE
@@ -58,6 +60,8 @@
 	var/mob/living/owner = brain.get_owner()
 	if(!owner)
 		return DQ_BEHAVIOR_FAILED
+	if(owner.anchored)
+		return DQ_BEHAVIOR_DONE // anchored: nothing to wander
 	if(prob(35))
 		var/turf/T = get_step(owner, pick(GLOB.cardinal))
 		if(T && !T.density)
@@ -92,6 +96,8 @@
 	var/mob/living/owner = brain.get_owner()
 	if(!owner || !target)
 		return DQ_BEHAVIOR_FAILED
+	if(owner.anchored)
+		return DQ_BEHAVIOR_FAILED // anchored: can't flee
 	if(get_dist(owner, target) >= 8)
 		return DQ_BEHAVIOR_DONE  // far enough
 	var/turf/away = get_step_away(owner, target)
