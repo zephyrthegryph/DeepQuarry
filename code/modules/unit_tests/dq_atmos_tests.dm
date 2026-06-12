@@ -1005,6 +1005,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 /// after enough share ticks both should hold roughly half. This is the
 /// fundamental "gases mix" behaviour — every other atmos behaviour assumes it.
 /datum/unit_test/dq_gas_equilibrates_over_ticks
+	slow = TRUE
 
 /datum/unit_test/dq_gas_equilibrates_over_ticks/Run()
 	var/list/pair = dq_atmos_test_find_floor_pair()
@@ -1106,6 +1107,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 /// Wall barrier: A floor with plasma, a wall between, B floor on the far side.
 /// Phoron must NOT cross the wall, no matter how many ticks pass.
 /datum/unit_test/dq_wall_blocks_gas_spread
+	slow = TRUE
 
 /datum/unit_test/dq_wall_blocks_gas_spread/Run()
 	var/turf/simulated/floor/A = null
@@ -1247,6 +1249,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 /// pressure must drop and B pressure must rise, with total moles conserved.
 /// The "pressurised room equalises with the hallway" path.
 /datum/unit_test/dq_pressure_differential_drives_flow
+	slow = TRUE
 
 /datum/unit_test/dq_pressure_differential_drives_flow/Run()
 	var/list/pair = dq_atmos_test_find_floor_pair()
@@ -1345,6 +1348,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 /// errors shouldn't compound into mass loss over hundreds of ticks. If this
 /// fails, rooms slowly go to vacuum without any obvious leak.
 /datum/unit_test/dq_total_moles_conserved_long_run
+	slow = TRUE
 
 /datum/unit_test/dq_total_moles_conserved_long_run/Run()
 	var/list/pair = dq_atmos_test_find_floor_pair()
@@ -1433,6 +1437,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 /// world.increment_max_z() path load_new_z() uses, connect + test on them, then
 /// tear the scratch column back down so later tests see a clean world.
 /datum/unit_test/dq_multiz_spread_through_open_turf
+	slow = TRUE
 
 /datum/unit_test/dq_multiz_spread_through_open_turf/Run()
 	world.increment_max_z()
@@ -1514,6 +1519,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 /// to the planet's baseline atmosphere; an empty turf should rapidly inherit
 /// the planet's gas.
 /datum/unit_test/dq_planetary_atmos_converges_to_baseline
+	slow = TRUE
 
 /datum/unit_test/dq_planetary_atmos_converges_to_baseline/Run()
 	// No mapped turf type sets planetary_atmos on this build, so build the
@@ -2859,6 +2865,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 /// ticks of share + hotspot_expose. This is the visible "fire spreads" game
 /// behaviour — if it doesn't work, plasma breaches don't propagate.
 /datum/unit_test/dq_fire_spreads_to_adjacent_floor
+	slow = TRUE
 
 /datum/unit_test/dq_fire_spreads_to_adjacent_floor/Run()
 	var/list/pair = dq_atmos_test_find_floor_pair()
@@ -2922,6 +2929,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 /// Spacing: a pressurized floor adjacent to a space tile should LOSE moles
 /// every tick as gas vents into space (sharing with the immutable vacuum mix).
 /datum/unit_test/dq_room_depressurizes_when_open_to_space
+	slow = TRUE
 
 /datum/unit_test/dq_room_depressurizes_when_open_to_space/Run()
 	// Deterministically build the floor↔space scenario: grab a sealed test-room
@@ -4853,6 +4861,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 /// Validates the LINDA share() math drives gas mixing toward equilibrium,
 /// not just toward equal moles.
 /datum/unit_test/dq_diffusion_converges_to_balanced_composition
+	slow = TRUE
 
 /datum/unit_test/dq_diffusion_converges_to_balanced_composition/Run()
 	var/list/pair = dq_atmos_test_find_floor_pair()
@@ -4913,6 +4922,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 /// Asserts that ticks actually advanced (so we know we're not just waiting
 /// for a frozen MC) and that plasma reached the adjacent turf.
 /datum/unit_test/dq_real_spread_via_ssair_fire
+	slow = TRUE
 
 /datum/unit_test/dq_real_spread_via_ssair_fire/Run()
 	var/list/pair = dq_atmos_test_find_floor_pair_with_real_adjacency()
@@ -4964,6 +4974,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 /// plasma reaches the neighboring tile. If a player opens a canister in
 /// game and gas doesn't spread, THIS test catches it.
 /datum/unit_test/dq_real_canister_release_spreads_via_master_loop
+	slow = TRUE
 
 /datum/unit_test/dq_real_canister_release_spreads_via_master_loop/Run()
 	var/list/pair = dq_atmos_test_find_floor_pair_with_real_adjacency()

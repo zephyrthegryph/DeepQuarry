@@ -244,6 +244,7 @@
 //     and a list entry.
 
 /datum/unit_test/dq_quarry_bench_snapshot_empty_layer
+	slow = TRUE
 
 /datum/unit_test/dq_quarry_bench_snapshot_empty_layer/Run()
 	// Allocate a fresh z via the same map_template the real code uses.
@@ -275,6 +276,7 @@
 // in production. Fails if either exceeds budget.
 
 /datum/unit_test/dq_quarry_bench_snapshot_and_wipe_populated
+	slow = TRUE
 
 /datum/unit_test/dq_quarry_bench_snapshot_and_wipe_populated/Run()
 	var/datum/map_template/quarry_layer/template = new
@@ -348,6 +350,7 @@
 // config. That's the user-visible "first descent" cost.
 
 /datum/unit_test/dq_quarry_bench_full_lifecycle
+	slow = TRUE
 
 /datum/unit_test/dq_quarry_bench_full_lifecycle/Run()
 	// Depth must be in [1, 25] so select_config picks a real biome.
@@ -477,6 +480,7 @@
 // requiring identity would be wrong.
 
 /datum/unit_test/dq_quarry_serialize_deserialize_equals_original
+	slow = TRUE
 
 /datum/unit_test/dq_quarry_serialize_deserialize_equals_original/Run()
 	// Must be in [1, 25] so select_config picks a real biome.
