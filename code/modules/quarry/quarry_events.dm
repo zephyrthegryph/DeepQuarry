@@ -67,7 +67,12 @@
 		return null
 	var/list/players = list()
 	for(var/mob/M in GLOB.mob_list)
-		if(M.z == L.z && M.client)
+		// get_turf resolves through containers: a swallowed player still anchors
+		// "far from players" so an event doesn't spawn on their predator.
+		if(!M.client)
+			continue
+		var/turf/MT = get_turf(M)
+		if(MT && MT.z == L.z)
 			players += M
 	if(!length(players))
 		// No players means no anchor for "far"; fall back to any floor.
@@ -121,7 +126,8 @@
 /datum/quarry_event/tremor/fire(datum/quarry_layer/L)
 	// Camera shake + distant rumble is the whole tell. No text.
 	for(var/mob/M in GLOB.mob_list)
-		if(M.z != L.z)
+		var/turf/MT = get_turf(M) // resolve through containers so a swallowed player still feels it
+		if(!MT || MT.z != L.z)
 			continue
 		if(M.client)
 			shake_camera(M, 12, 1)

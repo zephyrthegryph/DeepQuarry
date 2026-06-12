@@ -69,22 +69,45 @@
 				floors += T
 	TEST_ASSERT(length(floors) >= 16, "couldn't prepare patch; got [length(floors)] floors")
 
-	// Replica of the spawn loop body. If a real bug exists in the
-	// production loop's logic, mirror the change here too — that's
-	// the cost of testing without invoking the full generate_layer.
+	// Replica of the production spawn loop: single-species packs flood-filled
+	// from a seed tile. If a real bug exists in the production loop's logic,
+	// mirror the change here too — that's the cost of testing without invoking
+	// the full generate_layer.
 	var/list/mob_table = list(/mob/living/simple_mob/animal/passive/mouse/rat = 100)
 	var/want = 10
 	var/spawned = 0
 	var/list/candidates = floors.Copy()
+	var/list/candidate_set = list()
+	for(var/turf/CT as anything in candidates)
+		candidate_set[CT] = TRUE
 	while(spawned < want && length(candidates))
-		var/turf/T = pick(candidates)
-		candidates -= T
-		if(_quarry_tile_is_safe(T))
+		var/turf/seed = pick(candidates)
+		candidates -= seed
+		candidate_set -= seed
+		if(_quarry_tile_is_safe(seed))
 			continue
 		var/mob_type = pickweight(mob_table)
-		if(mob_type)
-			new mob_type(T)
-		spawned++
+		if(!mob_type)
+			continue
+		var/pack_want = min(rand(QUARRY_PACK_SIZE_MIN, QUARRY_PACK_SIZE_MAX), want - spawned)
+		var/list/pack_tiles = list(seed)
+		var/list/frontier = list(seed)
+		while(length(pack_tiles) < pack_want && length(frontier))
+			var/turf/cur = frontier[1]
+			frontier.Cut(1, 2)
+			for(var/dir in GLOB.alldirs)
+				if(length(pack_tiles) >= pack_want)
+					break
+				var/turf/N = get_step(cur, dir)
+				if(!N || !candidate_set[N] || _quarry_tile_is_safe(N))
+					continue
+				candidates -= N
+				candidate_set -= N
+				pack_tiles += N
+				frontier += N
+		for(var/turf/PT as anything in pack_tiles)
+			new mob_type(PT)
+			spawned++
 
 	// Count mobs actually present on the patch.
 	var/found = 0
@@ -99,6 +122,43 @@
 	for(var/turf/T as anything in floors)
 		for(var/mob/living/simple_mob/animal/passive/mouse/rat/R in T)
 			qdel(R)
+
+
+// --- is_layer_empty counts a swallowed player -------------------------
+//
+// is_layer_empty drives the unload sweep. It must resolve a mob's z via
+// get_turf (which walks the loc chain), not the built-in .z — a player
+// swallowed into a predator's belly has .z == 0, so the old check read the
+// layer as empty and the sweep wiped every mob on it (predator and prey
+// included). This pins that regression.
+
+/datum/unit_test/dq_quarry_layer_empty_counts_swallowed_player
+
+/datum/unit_test/dq_quarry_layer_empty_counts_swallowed_player/Run()
+	TEST_ASSERT_NOTNULL(SSquarry, "SSquarry not initialized")
+	var/turf/T = _dq_quarry_test_turf()
+	TEST_ASSERT_NOTNULL(T, "no test turf available on z=1")
+	var/testz = T.z
+	// Baseline: a headless test run has no minded mobs, so this z reads empty.
+	// (If a stray minded mob sits on z[testz], this assert flags it rather than
+	// letting the test false-pass.)
+	TEST_ASSERT(SSquarry.is_layer_empty(testz), "expected z[testz] empty before placing a minded mob")
+	var/mob/living/simple_mob/quarry_stalker/pred = allocate(/mob/living/simple_mob/quarry_stalker)
+	pred.forceMove(T)
+	var/mob/living/simple_mob/quarry_stalker/prey = allocate(/mob/living/simple_mob/quarry_stalker)
+	prey.forceMove(T)
+	prey.mind = new /datum/mind("test-prey")
+	TEST_ASSERT(!SSquarry.is_layer_empty(testz), "a minded mob on the layer should keep it non-empty")
+	// Swallow the prey. Its built-in .z now reads 0, but get_turf resolves
+	// through the belly -> predator -> turf chain.
+	var/obj/belly/B = new /obj/belly(pred)
+	prey.forceMove(B)
+	TEST_ASSERT_EQUAL(prey.z, 0, "sanity: a contained mob's built-in .z is 0")
+	TEST_ASSERT(!SSquarry.is_layer_empty(testz), "a swallowed minded player must still keep the layer loaded")
+	// Cleanup: pull prey back out so qdel(belly) doesn't orphan it, drop the mind.
+	prey.forceMove(T)
+	qdel(B)
+	prey.mind = null
 
 
 #endif
