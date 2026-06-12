@@ -503,11 +503,35 @@
 		manage_processing(DQAI_PROCESSING | DQAI_FASTPROCESSING)
 
 /// Called by /mob/living/dq_notify_damage when the mob takes a hit.
+/// TRUE when `attacker` is a packmate / ally / coexisting fauna whose hit on us
+/// should NOT start a grudge. Accidental friendly fire — a packmate's cleave or a
+/// telegraphed heavy landing on an ally standing on the struck tile — would
+/// otherwise add a personal HOSTILE entry that overrides faction ALLY and turns the
+/// pack on itself. Players and genuine enemies are never friendly fire, so being
+/// provoked still aggros a neutral animal as expected.
+/datum/ai_brain/proc/is_friendly_fire(atom/attacker)
+	if(!ismob(attacker) || attacker == holder)
+		return FALSE
+	if(disposition_to(attacker) >= DQ_DISPOSITION_FRIENDLY)
+		return TRUE // a faction-mate / ally clipped us
+	// Coexisting quarry wildlife tolerate accidental cross-species hits rather than
+	// turning the whole layer into a brawl.
+	if(istype(holder, /mob/living/simple_mob) && istype(attacker, /mob/living/simple_mob))
+		var/mob/living/simple_mob/h = holder
+		var/mob/living/simple_mob/a = attacker
+		if(h.quarry_fauna && a.quarry_fauna)
+			return TRUE
+	return FALSE
+
 /datum/ai_brain/proc/notify_damage(amount, damagetype, atom/attacker)
 	if(!model || !holder)
 		return
-	model.record_damage(amount, damagetype, attacker)
-	if(ismob(attacker) && attacker != holder)
+	var/ally_fire = is_friendly_fire(attacker)
+	// Record the damage for low-HP/flee logic, but for friendly fire pass no
+	// attacker so last_attacker (which retaliate_to_attacker targets) isn't bound to
+	// the packmate.
+	model.record_damage(amount, damagetype, ally_fire ? null : attacker)
+	if(ismob(attacker) && attacker != holder && !ally_fire)
 		add_personal(attacker, DQ_DISPOSITION_HOSTILE, DQ_PERSONAL_DEFAULT_DURATION, "hit me")
 		if(!primary_threat)
 			primary_threat = attacker // target the attacker NOW so react_now() can act this instant
@@ -515,7 +539,8 @@
 	dispatch_behavior_signal(COMSIG_DQAI_DAMAGE_TAKEN, amount, damagetype, attacker)
 	if(holder.maxHealth && holder.health / holder.maxHealth <= DQ_LOW_HP_THRESHOLD)
 		dispatch_behavior_signal(COMSIG_DQAI_LOW_HEALTH, holder.health / holder.maxHealth)
-	react_now() // retaliate immediately instead of on the next tactical tick
+	if(!ally_fire)
+		react_now() // retaliate immediately instead of on the next tactical tick
 
 /// Forwards a behavior signal to every subscribed behavior. `args` after
 /// sig_type are passed through verbatim.

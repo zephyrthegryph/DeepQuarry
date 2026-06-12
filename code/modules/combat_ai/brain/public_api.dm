@@ -96,6 +96,8 @@
 		return
 	if(!holder)
 		return
+	if(is_friendly_fire(attacker))
+		return // a packmate / coexisting fauna clipped us — don't start a feud
 	add_personal(attacker, DQ_DISPOSITION_HOSTILE, DQ_PERSONAL_DEFAULT_DURATION, "react_to_attack")
 	// Record in the world model so retaliate_to_attacker.evaluate() can see
 	// who struck us even when they're outside view() range.

@@ -12,6 +12,9 @@
 	SSantag_job.update_antag_icons(mind)
 	client.screen |= GLOB.global_hud.darksight
 	client.images |= dsoverlay
+	// Suppress the right-click context menu now if we're already holding a weapon
+	// (loadout/spawn), so a bare right-click is a guard from the first frame.
+	refresh_combat_popup_menus()
 
 	if(ai_brain && !ai_brain.autopilot)
 		ai_brain.go_sleep()
