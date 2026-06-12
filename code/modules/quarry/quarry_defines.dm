@@ -49,6 +49,24 @@
 
 #define QUARRY_DANGER_DECAY 1.0
 
+// Reinforcement siege ("going loud"). Above QUARRY_REINFORCE_MIN_DANGER heat a
+// layer lays siege: waves of mobs spawn just off-screen and beeline the nearest
+// player, on a cadence and in sizes that tighten as heat climbs to 100. The loop
+// runs on its own heat-scaled timer (not the 30s SS tick) so it feels continuous.
+// Heat bleeds off once the layer goes quiet (no noise for QUARRY_QUIET_PERIOD),
+// so breaking contact / going quiet ends the swarm — the core go-loud/go-quiet loop.
+#define QUARRY_REINFORCE_MIN_DANGER 55              // heat at/above which the siege runs
+#define QUARRY_REINFORCE_INTERVAL_SLOW (40 SECONDS) // wave spacing at MIN heat
+#define QUARRY_REINFORCE_INTERVAL_FAST (8 SECONDS)  // wave spacing at 100 heat
+#define QUARRY_REINFORCE_WAVE_MIN 2                 // mobs per wave at MIN heat
+#define QUARRY_REINFORCE_WAVE_MAX 6                 // mobs per wave at 100 heat
+#define QUARRY_REINFORCE_RING 8                     // spawn this many tiles from the player (just off-screen)
+#define QUARRY_QUIET_PERIOD (25 SECONDS)            // no noise for this long => heat cools instead of rising
+#define QUARRY_QUIET_DECAY 6                        // heat lost per SS tick while quiet (beats passive accrual)
+#define QUARRY_HEAT_FLOOR_PER_DEPTH 4               // quiet heat settles toward depth*this (capped below the siege threshold)
+#define QUARRY_HEAT_FLOOR_MAX 45                    // cap on the depth heat floor, so going quiet can always end a siege
+#define QUARRY_REINFORCE_MAX_ALIVE 28               // stop spawning waves past this many reinforcement mobs alive on a layer (perf + fairness cap)
+
 // Noise system loudness presets. Used at the call site to keep the
 // per-source values consistent. Each value is both the alert radius
 // (tiles) and the input to the danger bump (divided by a divisor in

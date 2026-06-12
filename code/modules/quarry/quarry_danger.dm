@@ -58,11 +58,19 @@
 		var/datum/quarry_layer/L = layers[key]
 		if(!L?.loaded || L.unloading)
 			continue
-		var/has_players = !is_layer_empty(L.z)
-		if(has_players)
+		if(is_layer_empty(L.z))
+			add_layer_danger(L, -QUARRY_DANGER_DECAY)
+			continue
+		// Players present. Loud recently => tension rises; quiet => it bleeds off
+		// toward a depth-scaled floor, so going quiet cools heat and ends a siege.
+		if(world.time - L.last_noise_at <= QUARRY_QUIET_PERIOD)
 			add_layer_danger(L, QUARRY_DANGER_PASSIVE_BASE + QUARRY_DANGER_PASSIVE_PER_DEPTH * L.depth)
 		else
-			add_layer_danger(L, -QUARRY_DANGER_DECAY)
+			var/floor_heat = min(L.depth * QUARRY_HEAT_FLOOR_PER_DEPTH, QUARRY_HEAT_FLOOR_MAX)
+			if(L.danger > floor_heat)
+				add_layer_danger(L, -QUARRY_QUIET_DECAY)
+		// Schedule this window's reinforcement waves if the layer is hot.
+		schedule_siege_waves(L)
 
 
 // (Monster waves at critical danger now live in quarry_events.dm as
