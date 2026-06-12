@@ -193,6 +193,60 @@
 	TEST_ASSERT_EQUAL(S.ai_brain.disposition_to(mate), DQ_DISPOSITION_HOSTILE, "personal HOSTILE should override faction ALLY")
 
 
+// --- runtime: quarry fauna of different species coexist ----------------
+// SSquarry tags spawned wildlife with quarry_fauna = TRUE so a layer's mixed
+// fauna don't tear each other apart. Different species stay NEUTRAL; same
+// species is still ALLY (pack cohesion + pack aggro); a non-fauna stranger is
+// still engaged on sight. The exemption is what spares them — clearing the flag
+// must restore the on-sight hostility.
+
+/datum/unit_test/dq_quarry_fauna_coexist
+
+/datum/unit_test/dq_quarry_fauna_coexist/Run()
+	var/mob/living/simple_mob/quarry_stalker/a = allocate(/mob/living/simple_mob/quarry_stalker)
+	var/mob/living/simple_mob/quarry_stalker/b = allocate(/mob/living/simple_mob/quarry_stalker)
+	a.ai_attack_on_sight = TRUE
+	a.faction = "fauna_a"
+	b.faction = "fauna_b"
+	a.quarry_fauna = TRUE
+	b.quarry_fauna = TRUE
+	TEST_ASSERT_EQUAL(a.ai_brain.disposition_to(b), DQ_DISPOSITION_NEUTRAL, "different-species quarry fauna should coexist (NEUTRAL)")
+	b.quarry_fauna = FALSE
+	TEST_ASSERT_EQUAL(a.ai_brain.disposition_to(b), DQ_DISPOSITION_HOSTILE, "a non-fauna stranger of another faction is HOSTILE on sight")
+	b.faction = "fauna_a"
+	TEST_ASSERT_EQUAL(a.ai_brain.disposition_to(b), DQ_DISPOSITION_ALLY, "same faction stays ALLY (pack cohesion)")
+
+
+// --- runtime: a flinch telegraph is interruptible only when opted in ----
+// interrupt_if_opted_in is what a reaction calls the moment it commits, so a
+// flinch heavy is yanked only when the mob actually dodges/braces — not for free
+// on every passing swing. Trash mobs use the committed /telegraphed_strike (no
+// interruptible_by) and stay punishable. The /flinch subtype opts into
+// COMSIG_DQAI_INCOMING_ATTACK only — other signals must not cancel it.
+
+/datum/unit_test/dq_combat_ai_flinch_telegraph_interrupts
+
+/datum/unit_test/dq_combat_ai_flinch_telegraph_interrupts/Run()
+	var/mob/living/simple_mob/quarry_stalker/m = allocate(/mob/living/simple_mob/quarry_stalker)
+	var/datum/ai_brain/brain = m.ai_brain
+	TEST_ASSERT_NOTNULL(brain, "stalker spawned without a brain")
+	// Committed heavy: not opted in, so a commit-time interrupt is a no-op.
+	brain.active_behavior_type = /datum/ai_behavior/telegraphed_strike
+	brain.busy = TRUE
+	TEST_ASSERT(!brain.interrupt_if_opted_in(COMSIG_DQAI_INCOMING_ATTACK), "a committed telegraph must not be interruptible")
+	TEST_ASSERT_EQUAL(brain.active_behavior_type, /datum/ai_behavior/telegraphed_strike, "committed telegraph should still be active")
+	// Flinch heavy: opted into INCOMING_ATTACK, so a committing reaction yanks it.
+	brain.active_behavior_type = /datum/ai_behavior/telegraphed_strike/flinch
+	brain.busy = TRUE
+	TEST_ASSERT(brain.interrupt_if_opted_in(COMSIG_DQAI_INCOMING_ATTACK), "a flinch telegraph must be interruptible by an incoming attack")
+	TEST_ASSERT_NULL(brain.active_behavior_type, "flinch telegraph should be cancelled once a reaction commits")
+	// A flinch heavy is NOT cancelled by a signal it didn't opt into.
+	brain.active_behavior_type = /datum/ai_behavior/telegraphed_strike/flinch
+	brain.busy = TRUE
+	TEST_ASSERT(!brain.interrupt_if_opted_in(COMSIG_DQAI_DAMAGE_TAKEN), "flinch opts into INCOMING_ATTACK only")
+	TEST_ASSERT_EQUAL(brain.active_behavior_type, /datum/ai_behavior/telegraphed_strike/flinch, "flinch should survive a non-opted signal")
+
+
 // --- runtime: grenade declares throw_grenade as a granted behavior -----
 // The grant declarations are the contract the brain.rebuild_behaviors loop
 // reads. A broken declaration would silently strip the item-granted moves.
@@ -404,5 +458,29 @@
 	victim2.ai_brain.holder = null  // Simulate partial Destroy / eaten state.
 	victim2.ai_brain.react_to_attack(attacker)  // Must not runtime.
 	// If we reach here, no crash — test passes implicitly.
+
+
+// A player parry/shove sets the mob's melee_locked_until; the melee_attack and telegraphed_strike
+// behaviors must respect it, so the player's defenses actually open the mob (not just stop movement).
+/datum/unit_test/dq_combat_ai_melee_lock_opens_mob
+
+/datum/unit_test/dq_combat_ai_melee_lock_opens_mob/Run()
+	var/turf/base = _swing_arena()
+	TEST_ASSERT_NOTNULL(base, "no test arena available")
+	var/turf/north = get_step(base, NORTH)
+	var/mob/living/simple_mob/quarry_stalker/S = allocate(/mob/living/simple_mob/quarry_stalker, base)
+	var/mob/living/carbon/human/foe = allocate(/mob/living/carbon/human, north)
+	S.ai_brain.give_target(foe)
+
+	var/datum/ai_behavior/melee_attack/poke = dq_get_behavior(/datum/ai_behavior/melee_attack)
+	TEST_ASSERT_NOTNULL(poke.evaluate(S.ai_brain, null), "an adjacent unhindered mob should want to attack")
+
+	S.melee_locked_until = world.time + 50 // simulate a player parry / shove stagger
+	TEST_ASSERT_NULL(poke.evaluate(S.ai_brain, null), "a staggered mob (melee_locked_until) should not attack")
+
+	var/datum/ai_behavior/telegraphed_strike/heavy = dq_get_behavior(/datum/ai_behavior/telegraphed_strike)
+	TEST_ASSERT_NULL(heavy.evaluate(S.ai_brain, null), "a staggered mob should not wind up a heavy either")
+	S.melee_locked_until = 0
+	TEST_ASSERT_NOTNULL(heavy.evaluate(S.ai_brain, null), "an unhindered adjacent mob should be able to wind up a heavy")
 
 #endif

@@ -82,7 +82,8 @@
 		return
 	if(!speaker.devourable || !speaker.allowmobvore || !speaker.can_be_drop_prey)
 		return
-	if(speaker.z != z)
+	var/turf/speaker_turf = get_turf(speaker) // resolve through containers; speaker.z is 0 if eaten
+	if(!speaker_turf || speaker_turf.z != z)
 		return
 	ai_brain?.give_target(speaker, TRUE)
 

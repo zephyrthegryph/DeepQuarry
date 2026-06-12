@@ -185,7 +185,10 @@
 		return null  // in combat, don't run home
 	var/mob/living/owner = brain.get_owner()
 	var/turf/home = brain.home_turf
-	if(!owner || !home || owner.z != home.z)
+	if(!owner || !home)
+		return null
+	var/turf/owner_turf = get_turf(owner) // get_turf, not owner.z: a contained mob reports z 0
+	if(!owner_turf || owner_turf.z != home.z)
 		return null
 	// Use brain.max_home_distance as override when set; defaults to return_threshold.
 	var/threshold = brain.max_home_distance || return_threshold
@@ -220,7 +223,13 @@
 	if(!leader)
 		return null
 	var/mob/living/owner = brain.get_owner()
-	if(!owner || owner.z != leader.z)
+	if(!owner)
+		return null
+	// get_turf both sides: either the follower or the leader could be inside a
+	// container (a contained mob's .z is 0, which would falsely read cross-z).
+	var/turf/owner_turf = get_turf(owner)
+	var/turf/leader_turf = get_turf(leader)
+	if(!owner_turf || !leader_turf || owner_turf.z != leader_turf.z)
 		return null
 	if(get_dist(owner, leader) <= follow_distance)
 		return null
