@@ -8,6 +8,24 @@
 /obj/structure/cable,
 /turf/simulated/floor/tiled,
 /area/deep_quarry/main)
+"Qg" = (
+/mob/living/simple_mob/humanoid/training_dummy,
+/turf/simulated/floor/tiled,
+/area/deep_quarry/main)
+"Qa" = (
+/mob/living/simple_mob/humanoid/training_dummy/aggressive,
+/turf/simulated/floor/tiled,
+/area/deep_quarry/main)
+"Qk" = (
+/obj/item/material/knife/tacknife,
+/turf/simulated/floor/tiled,
+/area/deep_quarry/main)
+"QL" = (
+/obj/machinery/light{
+	dir = 1
+	},
+/turf/simulated/floor/tiled,
+/area/deep_quarry/main)
 "cj" = (
 /obj/structure/filingcabinet/chestdrawer{
 	name = "Medical Forms"
@@ -33551,15 +33569,15 @@ dz
 dz
 dz
 Hz
+QL
+mz
+Qa
 mz
 mz
 mz
-mz
-mz
-mz
-mz
+Qg
 bt
-mz
+Qk
 nQ
 NF
 NF
