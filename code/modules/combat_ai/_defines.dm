@@ -35,6 +35,8 @@
 #define LORD_TICK_INTERVAL (1 SECONDS)  // pack coordination cadence; faster than the 2s member strategic tick
 #define LORD_FOCUS_GRACE   (6 SECONDS)  // pursue a lost player's last-known tile this long before standing down
 #define LORD_DETECT_RANGE  9            // the lord's own prey-scan radius around the pack centroid
+#define LORD_PERCEPTION_TTL   (2 SECONDS)  // members reuse the lord's shared scan if it's no older than this; else they self-scan
+#define LORD_PERCEPTION_MAX_RANGE 16       // cap on the centroid scan radius so a spread pack can't trigger a huge dview
 
 // ---------------------------------------------------------------------------
 // Behavior priority classes. The brain prefers higher classes regardless of

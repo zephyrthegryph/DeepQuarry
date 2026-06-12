@@ -2,8 +2,9 @@
 //
 // Refreshed once per slow tick from the brain. Behaviors READ this; they never
 // run view()/range()/orange() themselves. Cuts the AI cost from O(behaviors ×
-// tick) to one perception call per slow tick per brain, with the option to
-// share results across faction-mates in the same cluster later.
+// tick) to one perception call per slow tick per brain — and for a mob in a pack,
+// down to a shared per-pack scan its lord runs once (update_perception buckets
+// from /datum/ai_lord/perceived instead of scanning per mob).
 //
 // All lists are either reused-in-place (visible_*) or lazy (events/sounds),
 // per the project's list-allocation rules.
@@ -56,13 +57,17 @@
 /datum/world_model/proc/get_owner()
 	return owner_ref?.resolve()
 
-/// Walks the mob's surroundings once and bucket-sorts everyone into
-/// hostile/friendly/neutral. Called from /datum/ai_brain/handle_strategicals.
+/// Refreshes the visible_* buckets. Called from /datum/ai_brain/handle_strategicals.
 ///
-/// Uses dview (a lighting-independent view) rather than view(): a cave predator
-/// senses prey in pitch darkness, but opacity still blocks it, so walls hide you.
-/// Plain view() made AI blind in unlit quarry caves — they only noticed a player
-/// once you were lit or nearly adjacent.
+/// A mob in a pack reads its lord's one shared scan (cheap distance + disposition
+/// filtering) instead of running its own view — one perception scan per pack per
+/// tick, not one per mob. A lordless mob (or one whose lord's scan has gone stale)
+/// scans its own surroundings.
+///
+/// Scanning uses dview (a lighting-independent view) rather than view(): a cave
+/// predator senses prey in pitch darkness, but opacity still blocks it, so walls
+/// hide you. Plain view() made AI blind in unlit quarry caves — they only noticed
+/// a player once you were lit or nearly adjacent.
 /datum/world_model/proc/update_perception(datum/ai_brain/brain)
 	var/mob/living/owner = get_owner()
 	if(!owner || !brain)
@@ -73,23 +78,39 @@
 	visible_neutrals.Cut()
 
 	var/range = brain.vision_range
-	for(var/mob/living/M in dview(range, get_turf(owner)))
-		if(M == owner)
-			continue
-		if(M.stat >= DEAD)
-			continue
-		var/disposition = brain.disposition_to(M)
-		if(disposition <= DQ_DISPOSITION_HOSTILE)
-			visible_hostiles += M
-		else if(disposition >= DQ_DISPOSITION_FRIENDLY)
-			visible_friendlies += M
-		else
-			visible_neutrals += M
+	var/datum/ai_lord/lord = brain.lord
+	if(lord && lord.perception_fresh())
+		// Pack member: bucket from the lord's shared scan. Range-gate so an edge
+		// member doesn't perceive past its own vision, and re-check liveness since
+		// the scan may be up to LORD_PERCEPTION_TTL old.
+		var/turf/ot = get_turf(owner)
+		for(var/mob/living/M as anything in lord.perceived)
+			if(M == owner || QDELETED(M) || M.stat >= DEAD)
+				continue
+			if(get_dist(ot, M) > range)
+				continue
+			bucket_mob(brain, M)
+	else
+		for(var/mob/living/M in dview(range, get_turf(owner)))
+			if(M == owner || M.stat >= DEAD)
+				continue
+			bucket_mob(brain, M)
 
 	last_update = world.time
 	trim_old_damage()
 	trim_old_sounds()
 	trim_old_hazards()
+
+/// Sort one mob into the visible_* buckets by the brain's disposition toward it.
+/// Shared by the lord-scan and self-scan perception paths.
+/datum/world_model/proc/bucket_mob(datum/ai_brain/brain, mob/living/M)
+	var/disposition = brain.disposition_to(M)
+	if(disposition <= DQ_DISPOSITION_HOSTILE)
+		visible_hostiles += M
+	else if(disposition >= DQ_DISPOSITION_FRIENDLY)
+		visible_friendlies += M
+	else
+		visible_neutrals += M
 
 /// Record an incoming hit. Called by the brain's damage signal handler.
 /datum/world_model/proc/record_damage(amount, damagetype, atom/attacker)
