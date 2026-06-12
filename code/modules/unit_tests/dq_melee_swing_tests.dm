@@ -71,6 +71,7 @@
 	var/turf/north = get_step(base, NORTH)
 	var/mob/living/carbon/human/attacker = allocate(/mob/living/carbon/human, base)
 	var/mob/living/simple_mob/animal/passive/mouse/victim = allocate(/mob/living/simple_mob/animal/passive/mouse, north)
+	QDEL_NULL(victim.ai_brain) // no AI: keep it in the swing tile deterministically (anchored alone doesn't stop the brain)
 	var/obj/item/weapon = allocate(/obj/item)
 	weapon.force = 8
 	weapon.w_class = ITEMSIZE_SMALL
@@ -96,6 +97,7 @@
 
 	var/mob/living/carbon/human/attacker = allocate(/mob/living/carbon/human, base)
 	var/mob/living/simple_mob/animal/passive/mouse/victim = allocate(/mob/living/simple_mob/animal/passive/mouse, north)
+	QDEL_NULL(victim.ai_brain) // only the deliberate forceMove below should move it (no AI wandering)
 	var/obj/item/weapon = allocate(/obj/item)
 	weapon.force = 8
 	weapon.w_class = ITEMSIZE_HUGE // long windup for timing headroom
@@ -127,3 +129,30 @@
 	attacker.begin_melee_swing(victim, weapon)
 	TEST_ASSERT(attacker.next_click > world.time, "a recovery cooldown should be active immediately after the swing")
 	TEST_ASSERT(!attacker.is_swinging, "is_swinging should be cleared after the swing resolves")
+
+
+// A landed, unparried hit opens the combo window; a whiff breaks it.
+/datum/unit_test/dq_melee_combo_window
+
+/datum/unit_test/dq_melee_combo_window/Run()
+	var/turf/base = _swing_arena()
+	var/turf/north = get_step(base, NORTH)
+	var/turf/east = get_step(base, EAST)
+	var/mob/living/carbon/human/attacker = allocate(/mob/living/carbon/human, base)
+	var/mob/living/simple_mob/animal/passive/mouse/victim = allocate(/mob/living/simple_mob/animal/passive/mouse, north)
+	QDEL_NULL(victim.ai_brain) // no AI: keep it in the swing tile deterministically (anchored alone doesn't stop the brain)
+	var/obj/item/weapon = allocate(/obj/item)
+	weapon.force = 8
+	weapon.w_class = ITEMSIZE_NORMAL
+	attacker.put_in_active_hand(weapon)
+	attacker.a_intent = I_HURT
+
+	// Landing on the mouse opens the combo window and still sets a (reduced) recovery cooldown.
+	attacker.begin_melee_swing(victim, weapon)
+	TEST_ASSERT(attacker.combo_until > world.time, "a landed hit should open the combo window")
+	TEST_ASSERT(attacker.next_click > world.time, "a landed hit should still set a recovery cooldown (no spam)")
+
+	// A swing that connects with nothing (empty tile) breaks the combo.
+	attacker.combo_until = world.time + COMBO_WINDOW
+	attacker.begin_melee_swing(east, weapon) // nobody on the east tile
+	TEST_ASSERT(attacker.combo_until <= world.time, "a whiffed swing should break the combo window")

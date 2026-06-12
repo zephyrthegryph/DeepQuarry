@@ -86,6 +86,16 @@
 		CtrlClickOn(A)
 		return
 
+	// Bare right-click is a melee guard/parry (or feint mid-windup, or a shove on Disarm intent) —
+	// not your own held item, which is attack_self_secondary. The press is handled on MouseDown
+	// (held guard); this is the fallback for clients that don't deliver the right-button press,
+	// so skip it if MouseDown already fired this tick.
+	if(LAZYACCESS(modifiers, RIGHT_CLICK) && A != get_active_hand())
+		if(!(client && client.combat_right_at == world.time) && isliving(src))
+			var/mob/living/blocker = src
+			blocker.melee_rightclick(A)
+		return
+
 	//Replaces the old 'stat||paralysis||stunned' check
 	//Not fully implemented yet.
 	if(INCAPACITATED_IGNORING(src, INCAPABLE_RESTRAINTS|INCAPABLE_STASIS))

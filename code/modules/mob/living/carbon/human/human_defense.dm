@@ -202,6 +202,9 @@ emp_act
 	return null
 
 /mob/living/carbon/human/proc/check_shields(damage = 0, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
+	// A raised melee guard intercepts an incoming melee attack (negate; a parry also staggers).
+	if(melee_block_intercepts(damage_source, attacker))
+		return 1
 	for(var/obj/item/shield in list(l_hand, r_hand, wear_suit, l_ear, r_ear)) // included ears for the headset/event item
 		if(!shield) continue
 		. = shield.handle_shield(src, damage, damage_source, attacker, def_zone, attack_text)

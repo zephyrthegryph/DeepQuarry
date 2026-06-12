@@ -121,6 +121,42 @@
 #define DEFAULT_ATTACK_COOLDOWN 8 //Default timeout for aggressive actions
 #define DEFAULT_QUICK_COOLDOWN  4
 
+// Melee block / parry / feint timing (deciseconds). See code/modules/mob/living/melee_block.dm.
+#define DQ_BLOCK_WINDOW     10  // How long a tapped guard lasts (also the minimum for a held one).
+#define DQ_BLOCK_MAX        50  // Safety cap on a held guard if the mouse-release is never delivered.
+#define DQ_PARRY_WINDOW      5  // Tight window at the guard's start; a hit caught here parries (staggers).
+#define DQ_BLOCK_WHIFF_LOCK  10 // Attack + move lockout when a guard expires having caught nothing.
+#define DQ_GUARD_COOLDOWN     4 // Lockout on raising another guard after one ends (anti-spam).
+#define DQ_RIPOSTE_WINDOW    8  // After a parry, your attacks are unblockable for this long.
+#define DQ_PARRY_STAGGER     5  // Attack + move lockout placed on an attacker whose swing is parried.
+#define DQ_MOVE_ATTACK_LOCK  2  // Attack lockout imposed after taking a step.
+#define DQ_SHOVE_LOCK        5  // Move + act lockout on a shoved target (0.5s).
+#define DQ_SHOVE_KNOCKDOWN   3  // Knockdown (Weaken) duration when a shoved target slams into something.
+#define CLICK_DRAG_GRACE     3  // A click-drag released on its origin within this is treated as a click.
+
+// Indices into a get_intent_combat_mods() row.
+#define INTENT_MOD_DAMAGE   1
+#define INTENT_MOD_WINDUP   2
+#define INTENT_MOD_RECOVERY 3
+#define INTENT_MOD_MOVE     4
+
+// Stamina / tiredness. See code/modules/mob/living/stamina.dm. Costs are stamina points;
+// regen is per Life tick; the delay/lockout are deciseconds.
+#define MAX_STAMINA              100  // Default stamina pool.
+#define STAMINA_REGEN_DELAY       10  // Quiet time after a drain before regen resumes (idle gate).
+#define STAMINA_REGEN_AWAKE        6  // Regen per Life tick, standing idle past the regen delay.
+#define STAMINA_REGEN_RESTING     12  // Regen per Life tick while resting.
+#define STAMINA_REGEN_SLEEPING    18  // Regen per Life tick while sleeping.
+#define STAMINA_COST_SWING         4  // Base melee-swing cost (scaled by weapon size and intent).
+#define STAMINA_DRAIN_RUN        0.5  // Drain per step while on Run intent.
+#define STAMINA_COLLAPSE_WEAKEN    4  // Life ticks of knockdown when stamina hits zero.
+#define STAMINA_COLLAPSE_FLOOR    25  // Stamina restored on collapse, so you come round with a little.
+#define STAMINA_RECOVER_THRESHOLD 50  // Must climb back to this before another collapse can trigger.
+#define STAMINA_FATIGUE_SCALE    1.0  // Windup/recovery grow by up to this fraction as stamina empties.
+#define COMBO_WINDOW              10  // Deciseconds after a landed hit (or a parry) to chain a faster swing.
+#define COMBO_WINDUP_MULT        0.5  // Windup multiplier while comboing (a follow-up winds up faster).
+#define COMBO_RECOVERY_MULT      0.5  // Recovery multiplier while comboing (faster, but not skipped).
+
 
 #define MIN_SUPPLIED_LAW_NUMBER 15
 #define MAX_SUPPLIED_LAW_NUMBER 50

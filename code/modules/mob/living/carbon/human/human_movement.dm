@@ -18,6 +18,13 @@
 
 	. += species.slowdown
 
+	// Combat stance: aggressive intents move slower (see get_intent_combat_mods).
+	. += get_intent_combat_mods()[INTENT_MOD_MOVE]
+
+	// Running burns stamina each step; walking is free.
+	if(m_intent == I_RUN)
+		adjust_stamina(-STAMINA_DRAIN_RUN)
+
 	//Quick math:
 	//100 max hp w/ 0 damage = 100/100 * 100 = 100HP
 	//100 max hp w/ 50 damage = (50/100) * 100 = 50HP
