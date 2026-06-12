@@ -616,12 +616,16 @@ SUBSYSTEM_DEF(quarry)
 					candidate_set -= N
 					pack_tiles += N
 					frontier += N
+			var/list/pack_mobs = list()
 			for(var/turf/PT as anything in pack_tiles)
 				var/spawned_mob = new mob_type(PT)
 				// Tag wildlife so different species on the layer coexist (neutral)
 				// rather than infighting; same species stays allied.
 				tag_fauna(spawned_mob)
+				pack_mobs += spawned_mob
 				spawned++
+			// One coordinator per pack: shared threat tracking + coordinated aggro.
+			dq_assign_lord(pack_mobs)
 	var/_tl7 = world.timeofday
 
 	L.loaded = TRUE

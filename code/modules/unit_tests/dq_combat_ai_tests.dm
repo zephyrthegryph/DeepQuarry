@@ -483,4 +483,88 @@
 	S.melee_locked_until = 0
 	TEST_ASSERT_NOTNULL(heavy.evaluate(S.ai_brain, null), "an unhindered adjacent mob should be able to wind up a heavy")
 
+
+// --- runtime: dq_assign_lord forms a lord and back-references its members --
+// Every quarry pack is assigned one /datum/ai_lord at spawn. The lord must
+// register on SSai_lords (so it gets a coordination tick), collect the
+// brain-bearing mobs, and each member's brain.lord must point back at the lord
+// (so the brain can drop out of the pack on Destroy).
+
+/datum/unit_test/dq_ai_lord_forms_over_pack
+
+/datum/unit_test/dq_ai_lord_forms_over_pack/Run()
+	var/mob/living/simple_mob/quarry_stalker/a = allocate(/mob/living/simple_mob/quarry_stalker)
+	var/mob/living/simple_mob/quarry_stalker/b = allocate(/mob/living/simple_mob/quarry_stalker)
+	var/datum/ai_lord/lord = dq_assign_lord(list(a, b))
+	TEST_ASSERT_NOTNULL(lord, "dq_assign_lord returned null over two brain-bearing mobs")
+	TEST_ASSERT_EQUAL(length(lord.members), 2, "lord didn't collect both pack members")
+	TEST_ASSERT_EQUAL(a.ai_brain.lord, lord, "member a's brain.lord doesn't point back at the lord")
+	TEST_ASSERT_EQUAL(b.ai_brain.lord, lord, "member b's brain.lord doesn't point back at the lord")
+	TEST_ASSERT(lord in SSai_lords.lords, "lord didn't register on SSai_lords for its coordination tick")
+	// An empty / brainless roster yields no lord (nothing to coordinate).
+	TEST_ASSERT_NULL(dq_assign_lord(list()), "dq_assign_lord over an empty list should return null")
+	qdel(lord)
+
+
+// --- runtime: command_attack pushes one shared target to every member -----
+// The lord's whole job: the moment it has prey, every member engages the SAME
+// target. command_attack re-pushes only on change, but the end state is that
+// each member's brain.primary_threat is the commanded target.
+
+/datum/unit_test/dq_ai_lord_command_attack_propagates
+
+/datum/unit_test/dq_ai_lord_command_attack_propagates/Run()
+	var/mob/living/simple_mob/quarry_stalker/a = allocate(/mob/living/simple_mob/quarry_stalker)
+	var/mob/living/simple_mob/quarry_stalker/b = allocate(/mob/living/simple_mob/quarry_stalker)
+	var/mob/living/carbon/human/foe = allocate(/mob/living/carbon/human)
+	var/datum/ai_lord/lord = dq_assign_lord(list(a, b))
+	TEST_ASSERT_NOTNULL(lord, "dq_assign_lord returned null")
+	lord.command_attack(foe)
+	TEST_ASSERT_EQUAL(a.ai_brain.primary_threat, foe, "command_attack didn't engage member a on the shared target")
+	TEST_ASSERT_EQUAL(b.ai_brain.primary_threat, foe, "command_attack didn't engage member b on the shared target")
+	qdel(lord)
+
+
+// --- runtime: a wiped pack prunes to empty and disbands -------------------
+// process_lord prunes dead/gone members each tick; when the last one falls the
+// lord disbands — leaves SSai_lords and nulls the survivors' back-refs — so a
+// cleared pack leaves no dangling coordinator. Also covers the brain.Destroy
+// path: a member removed from the world drops itself out of the pack.
+
+/datum/unit_test/dq_ai_lord_prunes_and_disbands
+
+/datum/unit_test/dq_ai_lord_prunes_and_disbands/Run()
+	var/mob/living/simple_mob/quarry_stalker/a = allocate(/mob/living/simple_mob/quarry_stalker)
+	var/mob/living/simple_mob/quarry_stalker/b = allocate(/mob/living/simple_mob/quarry_stalker)
+	var/datum/ai_lord/lord = dq_assign_lord(list(a, b))
+	TEST_ASSERT_NOTNULL(lord, "dq_assign_lord returned null")
+	// One member dies: the lord prunes it but survives on its remaining member.
+	a.stat = DEAD
+	lord.process_lord()
+	TEST_ASSERT(!(a in lord.members), "process_lord didn't prune a dead member")
+	TEST_ASSERT(lord in SSai_lords.lords, "lord disbanded while a live member remained")
+	// The last member dies: the lord prunes it and disbands.
+	b.stat = DEAD
+	lord.process_lord()
+	TEST_ASSERT_EQUAL(length(lord.members), 0, "process_lord didn't empty a wiped pack")
+	TEST_ASSERT(!(lord in SSai_lords.lords), "a wiped pack's lord didn't leave SSai_lords")
+
+
+// --- runtime: a member leaving the world drops out of its pack ------------
+// brain.Destroy calls lord.remove_member, so a qdel'd member is pulled from the
+// pack (and disbands it if it was the last one) without waiting for the next
+// coordination tick.
+
+/datum/unit_test/dq_ai_lord_member_destroy_leaves_pack
+
+/datum/unit_test/dq_ai_lord_member_destroy_leaves_pack/Run()
+	var/mob/living/simple_mob/quarry_stalker/a = allocate(/mob/living/simple_mob/quarry_stalker)
+	var/mob/living/simple_mob/quarry_stalker/b = allocate(/mob/living/simple_mob/quarry_stalker)
+	var/datum/ai_lord/lord = dq_assign_lord(list(a, b))
+	TEST_ASSERT_NOTNULL(lord, "dq_assign_lord returned null")
+	qdel(a)
+	TEST_ASSERT(!(a in lord.members), "a qdel'd member didn't drop out of the pack on Destroy")
+	TEST_ASSERT(lord in SSai_lords.lords, "the pack disbanded while a live member remained")
+	qdel(lord)
+
 #endif

@@ -28,6 +28,15 @@
 #define DQ_INTENT_ANY             (DQ_INTENT_HURT_FLAG | DQ_INTENT_DISARM_FLAG | DQ_INTENT_GRAB_FLAG | DQ_INTENT_HELP_FLAG)
 
 // ---------------------------------------------------------------------------
+// AI Lords — per-pack coordinator that extends the brain framework.
+// A lord tracks the pack's shared threats/goals on its own faster tick and
+// pushes orders down to member brains. See code/modules/combat_ai/lord/.
+// ---------------------------------------------------------------------------
+#define LORD_TICK_INTERVAL (1 SECONDS)  // pack coordination cadence; faster than the 2s member strategic tick
+#define LORD_FOCUS_GRACE   (6 SECONDS)  // pursue a lost player's last-known tile this long before standing down
+#define LORD_DETECT_RANGE  9            // the lord's own prey-scan radius around the pack centroid
+
+// ---------------------------------------------------------------------------
 // Behavior priority classes. The brain prefers higher classes regardless of
 // raw score — a low-score INTERRUPT beats a high-score NORMAL. Inside a class
 // the score chooses.

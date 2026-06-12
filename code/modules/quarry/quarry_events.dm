@@ -242,6 +242,7 @@
 	var/pack_size = rand(3, 5)
 	var/spawned = 0
 	var/list/candidates = list(seed)
+	var/list/pack_mobs = list()
 	for(var/dir in GLOB.cardinal)
 		var/turf/N = get_step(seed, dir)
 		if(istype(N, /turf/simulated/floor) && !length(N.contents))
@@ -249,8 +250,12 @@
 	while(spawned < pack_size && length(candidates))
 		var/turf/T = candidates[1]
 		candidates.Cut(1, 2)
-		SSquarry.tag_fauna(new mob_type(T)) // coexist with other fauna; hunt players, not each other
+		var/mob/living/spawned_mob = new mob_type(T)
+		SSquarry.tag_fauna(spawned_mob) // coexist with other fauna; hunt players, not each other
+		pack_mobs += spawned_mob
 		spawned++
+	// One coordinator per roaming pack: shared awareness + coordinated aggro.
+	dq_assign_lord(pack_mobs)
 
 
 // --- Stalker: single elite mob from a depth-appropriate roster spawns

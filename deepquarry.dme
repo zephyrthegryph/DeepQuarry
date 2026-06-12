@@ -5421,6 +5421,10 @@
 #include "code\modules\combat_ai\behaviors\investigate.dm"
 #include "code\modules\combat_ai\brain\brain.dm"
 #include "code\modules\combat_ai\brain\default_behaviors.dm"
+#include "code\modules\combat_ai\lord\ai_lord.dm"
+// SSai_lords reads LORD_TICK_INTERVAL from combat_ai/_defines.dm, so its include
+// lives here after the defines rather than with the other subsystem files.
+#include "code\controllers\subsystems\ai_lords.dm"
 #include "code\modules\combat_ai\brain\pathing.dm"
 #include "code\modules\combat_ai\brain\public_api.dm"
 #include "code\modules\combat_ai\brain\subsystem_init.dm"

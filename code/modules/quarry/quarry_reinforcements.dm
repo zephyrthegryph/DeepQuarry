@@ -122,6 +122,7 @@
 		if(istype(N, /turf/simulated/floor) && !N.density && !length(N.contents))
 			tiles += N
 	var/spawned = 0
+	var/list/wave_mobs = list()
 	for(var/turf/T as anything in tiles)
 		if(spawned >= wave)
 			break
@@ -131,7 +132,11 @@
 			var/mob/living/simple_mob/SM = spawned_mob
 			SM.siege_reinforcement = TRUE
 			SM.ai_brain?.give_target(target_player, TRUE)
+		wave_mobs += spawned_mob
 		spawned++
+	// One coordinator per wave: the lord re-shares the target player and pursues
+	// across line-of-sight breaks, so a thinned wave keeps closing in as a unit.
+	dq_assign_lord(wave_mobs)
 
 /// A free floor tile ~QUARRY_REINFORCE_RING tiles from the player (just beyond the
 /// default view, so the wave appears off-screen), not in the bay or a powered safe
