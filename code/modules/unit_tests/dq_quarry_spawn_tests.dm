@@ -161,4 +161,21 @@
 	prey.mind = null
 
 
+// --- reinforcement siege: heat -> intensity scaling -------------------
+//
+// siege_intensity drives both wave cadence and wave size, so its 0..1
+// mapping across the [MIN_DANGER, 100] heat band is the knob the whole
+// "go loud" escalation rides on. Pin the endpoints and the clamp.
+
+/datum/unit_test/dq_quarry_siege_intensity
+
+/datum/unit_test/dq_quarry_siege_intensity/Run()
+	TEST_ASSERT_NOTNULL(SSquarry, "SSquarry not initialized")
+	TEST_ASSERT_EQUAL(SSquarry.siege_intensity(QUARRY_REINFORCE_MIN_DANGER), 0, "intensity at the siege threshold should be 0")
+	TEST_ASSERT_EQUAL(SSquarry.siege_intensity(100), 1, "intensity at max heat should be 1")
+	TEST_ASSERT_EQUAL(SSquarry.siege_intensity(QUARRY_REINFORCE_MIN_DANGER - 20), 0, "below the threshold clamps to 0")
+	var/mid = SSquarry.siege_intensity((QUARRY_REINFORCE_MIN_DANGER + 100) / 2)
+	TEST_ASSERT(mid > 0.4 && mid < 0.6, "mid-band heat should be ~0.5 intensity, got [mid]")
+
+
 #endif

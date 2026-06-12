@@ -5061,6 +5061,7 @@
 #include "code\modules\quarry\quarry_mob_moves.dm"
 #include "code\modules\quarry\quarry_stalker_mobs.dm"
 #include "code\modules\quarry\quarry_noise.dm"
+#include "code\modules\quarry\quarry_reinforcements.dm"
 #include "code\modules\quarry\quarry_elevator.dm"
 #include "code\modules\quarry\quarry_elevator_anchor.dm"
 #include "code\modules\quarry\quarry_elevator_panel.dm"

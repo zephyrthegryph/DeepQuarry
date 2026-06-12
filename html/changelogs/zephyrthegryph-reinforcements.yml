@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - rscadd: "Going loud in the quarry now draws a siege: once a layer heats up (gunfire, mining, explosions), reinforcement waves spawn just off-screen and close in on you, faster and bigger the hotter it gets."
+  - rscadd: "Heat cools when you go quiet - stop making noise or break contact and the swarm thins out and stops. Guns are loud and spike heat fast; blades are quiet."
+  - balance: "Quarry heat now rises while you're active and bleeds off toward a depth-based floor when a layer goes quiet, instead of only decaying when empty."

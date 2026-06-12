@@ -121,6 +121,7 @@
 	var/incoming_block_at = 0			// world.time a brace flagged the next incoming hit for halving.
 	var/incoming_attack_at = 0			// world.time deadline by which to sidestep an incoming swing.
 	var/quarry_fauna = FALSE			// Set on SSquarry-spawned wildlife: different species coexist (neutral) instead of infighting. See /datum/ai_brain/proc/disposition_to.
+	var/siege_reinforcement = FALSE		// Set on reinforcement-wave mobs (a subset of quarry_fauna) so the siege loop can cap the active swarm without counting ambient gen fauna.
 	var/ranged_attack_delay = null
 	var/special_attack_delay = null
 	var/ranged_cooldown = 0

@@ -36,6 +36,14 @@
 	// world.time of the last danger-driven mob wave on this layer. Used
 	// to throttle waves at critical danger.
 	var/last_danger_wave = 0
+	// world.time of the last noise emitted on this layer. Heat rises while
+	// the layer is loud and bleeds off once it's been quiet for
+	// QUARRY_QUIET_PERIOD. Runtime-only (not snapshotted).
+	var/last_noise_at = 0
+	// Lazily-cached aggregated mob table (species => weight) for reinforcement
+	// waves, so the 8s siege loop doesn't re-aggregate features every wave.
+	// Layer-constant; rebuilt from feature_types after a restore. Runtime-only.
+	var/list/reinforce_mob_table = null
 	// The currently-active stalker mob on this layer, if any. The
 	// stalker event refuses to spawn a second one while this ref
 	// still resolves to a living mob. Cleared via /mob/living/death

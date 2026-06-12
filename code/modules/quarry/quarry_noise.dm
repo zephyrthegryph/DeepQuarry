@@ -34,6 +34,10 @@
 		// Not a quarry z. Noise is a no-op outside the mine.
 		return
 
+	// Mark the layer loud regardless of the danger bump's magnitude — even
+	// sub-threshold noise (a pickaxe) keeps heat rising rather than cooling.
+	L.last_noise_at = world.time
+
 	// (B) Aggregate danger bump. Sub-1 contributions still round to 0
 	// for small noise; that's fine — only meaningful actions move the
 	// danger meter.
