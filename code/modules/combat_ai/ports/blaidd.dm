@@ -11,9 +11,9 @@
 //   * Active camouflage: cloaks while pursuing at range, uncloaks adjacent.
 //     The mob already owns blaidd_invisibility + update_icon for the sprite;
 //     this port drives the toggle that the legacy set_invis() handled.
-//   * Vore targeting falls out of the generic melee path: simple_mob's
-//     apply_attack already pounces + EatTargets edible prey on a melee hit, so
-//     /datum/ai_behavior/melee_attack swallows prey with no bespoke behavior.
+//   * Vore is the escapable grab: when it reaches unwatched edible prey it runs
+//     predation/pounce (telegraphed tackle → pin → reinforce → swallow), the same
+//     contact-grab the other ambush eaters use — not an instant melee-hit swallow.
 //
 // The witness rule is the showpiece. It's split in two so it can both *stop
 // approaching* (a high-priority gate that beats approach_threat) and *flee*
@@ -29,6 +29,7 @@
 		/datum/ai_behavior/blaidd_flee_watched,
 		/datum/ai_behavior/blaidd_freeze_watched,
 		/datum/ai_behavior/blaidd_stealth,
+		/datum/ai_behavior/predation/pounce,    // reaches unwatched prey → escapable grab-and-devour
 		/datum/ai_behavior/melee_attack,
 		/datum/ai_behavior/maul_unconscious,
 		/datum/ai_behavior/approach_threat,
@@ -160,7 +161,6 @@
 	var/mob/living/owner = brain.get_owner()
 	if(!owner || !target)
 		return DQ_BEHAVIOR_FAILED
-	step_away(owner, target, flee_distance)
 	owner.face_atom(target)
 	return DQ_BEHAVIOR_CONTINUE
 
@@ -172,7 +172,11 @@
 	if(get_dist(B, target) >= flee_distance || !dq_blaidd_active_watcher(brain))
 		B.blaidd_watched_since = 0
 		return DQ_BEHAVIOR_DONE
-	step_away(B, target, brain.vision_range)
+	// One throttled, glided step away per AI interval — not raw step_away(…, distance), which jumps
+	// several tiles every tick and reads as teleporting.
+	var/turf/away = get_step_away(B, target)
+	if(away && !away.density)
+		dq_ai_step_to(B, away)
 	B.face_atom(target)
 	return DQ_BEHAVIOR_CONTINUE
 

@@ -1,16 +1,18 @@
-// Quarry Stalker — canary mob proving the modern AI framework works end-to-end.
+// Quarry Stalker — an ambush predator built on the modern AI framework. It does NOT brawl:
+// it keeps its distance and circles its prey (stalk_orbit), staying just out of reach, and
+// only commits to the kill when the prey is weakened (low HP/stamina, staggered, or downed)
+// or alone (no ally nearby). When it commits it pounces in with a telegraphed dash, then
+// tears in with melee — and breaks off to circle again if the prey rallies.
 //
 // Behaviors:
 //   - threaten on first sight
-//   - approach when out of range
-//   - melee_attack when adjacent
-//   - charge_slam at 3-6 tiles (the showpiece — telegraphed dash)
+//   - stalk_orbit while stalking — hold the band, strafe/circle
+//   - stalk_pounce — the telegraphed commit dash (only when prey is weak/alone)
+//   - approach + melee + telegraphed heavy once it has closed for the kill
+//   - sidestep_dodge — slips the player's telegraphed swings
 //   - flee_low_hp under 40% HP
-//   - idle_wander when nothing to do
 //
-// No legacy ai_holder — `use_modern_ai = TRUE`, `ai_holder_type = null`.
-// Compare against any vanilla hostile simple_mob to see the difference: this
-// mob announces itself, telegraphs the dash, and retreats when wounded.
+// No legacy ai_holder — `use_modern_ai = TRUE`.
 
 /mob/living/simple_mob/quarry_stalker
 	name = "quarry stalker"
@@ -40,11 +42,12 @@
 	var/static/list/L = list(
 		/datum/ai_behavior/retaliate_to_attacker,
 		/datum/ai_behavior/threaten,
-		/datum/ai_behavior/approach_threat,
+		/datum/ai_behavior/stalk_orbit,               // keep range + circle while the prey is fresh
+		/datum/ai_behavior/charge_slam/stalk_pounce,  // commit dash, only when the prey is weak/alone
+		/datum/ai_behavior/approach_threat,           // close the last gap once committed
 		/datum/ai_behavior/melee_attack,
 		/datum/ai_behavior/telegraphed_strike/flinch, // agile elite: yanks the heavy back to dodge an incoming swing
 		/datum/ai_behavior/sidestep_dodge,
-		/datum/ai_behavior/charge_slam,
 		/datum/ai_behavior/flee_low_hp,
 		/datum/ai_behavior/idle_wander,
 	)

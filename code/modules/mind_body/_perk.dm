@@ -34,9 +34,22 @@
 	/// Optional: list of other /datum/perk subpaths that must already be selected.
 	var/list/requires = null
 
+	/// Threshold-capstone gate: points that must already be spent in this perk's
+	/// category before it can be picked. 0 = no threshold. Unlike `requires`, this
+	/// rewards deep investment by ANY combination of perks in the category, not a
+	/// specific chain — the road to a capstone can run through any build.
+	var/category_spend_required = 0
+
 	/// Body var_changes — assoc list mirroring /datum/trait.var_changes. Applied to
 	/// the synthesized species datum. Leave null for Mind perks and override grant().
 	var/list/var_changes = null
+
+	/// Declarative numeric effects, folded into the mob's fx cache on grant:
+	///   fx_mult[hook] — multiplied into perk_mult(hook) (default 1).
+	///   fx_add[hook]  — summed into perk_add(hook) (default 0).
+	/// A gameplay site reads the aggregate; new perks sharing a hook need no site code.
+	var/list/fx_mult = null
+	var/list/fx_add = null
 
 	/// Optional component to attach on grant / detach on revoke.
 	var/added_component_path = null
@@ -59,10 +72,16 @@
 	var/tree_y = null
 
 /datum/perk/proc/grant(mob/living/carbon/human/target, datum/preferences/preferences)
+	if(istype(target))
+		target.grant_perk(type)
+		target.fold_perk_fx(src)
 	if(added_component_path && !target.GetComponent(added_component_path))
 		target.AddComponent(added_component_path)
 
 /datum/perk/proc/revoke(mob/living/carbon/human/target, datum/preferences/preferences)
+	if(istype(target))
+		target.revoke_perk(type)
+		target.rebuild_perk_fx()
 	if(added_component_path)
 		var/datum/component/C = target.GetComponent(added_component_path)
 		if(C)

@@ -134,6 +134,7 @@
 #include "dq_medical_tests.dm"
 #include "dq_melee_block_tests.dm"
 #include "dq_melee_swing_tests.dm"
+#include "dq_perk_tests.dm"
 #include "dq_preferences_tests.dm"
 #include "dq_quarry_persistence_tests.dm"
 #include "dq_quarry_spawn_tests.dm"

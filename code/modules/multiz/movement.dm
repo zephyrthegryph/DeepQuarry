@@ -545,6 +545,11 @@
 	var/safe_fall = FALSE
 	if(dq_get_softfall(src) || (isanimal(src) && src.mob_size <= MOB_SMALL))
 		safe_fall = TRUE
+	if(has_perk(/datum/perk/body/spd_catlike)) // Catlike: always land on your feet.
+		safe_fall = TRUE
+	if(has_perk(/datum/perk/body/str_bone_density)) // Bone Density: shrug off heavy impacts.
+		damage_min = round(damage_min * DQ_PERK_BONE_DENSITY_MULT)
+		damage_max = round(damage_max * DQ_PERK_BONE_DENSITY_MULT)
 	if(planetary && src.CanParachute())
 		if(!silent)
 			visible_message(span_warning("\The [src] glides in from above and lands on \the [landing]!"), \

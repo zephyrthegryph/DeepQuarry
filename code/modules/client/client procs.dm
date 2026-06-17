@@ -274,6 +274,15 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		chatlog_token = vchatlog_generate_token(ckey, GLOB.round_id)
 
 	winset(src, null, list("browser-options" = "find,refresh"))
+	// Transient mapwindow overlays (belly vore overlay, hover tooltip) are toggled
+	// visible via winset at runtime. A world reboot keeps the client's live skin
+	// state, so an overlay left visible when the server restarted stays pinned over
+	// the whole map on reconnect — a transparent BROWSER that silently eats every
+	// click (e.g. the lobby/start menu) until a full client reload resets the skin.
+	// Force them hidden the moment the client (re)connects so stale state can't leak
+	// across a reboot.
+	winset(src, "mapwindow.belly_overlay", "is-visible=false")
+	winset(src, "mapwindow.tooltip", "is-visible=false")
 	// Instantiate stat panel
 	stat_panel = new(src, "statbrowser")
 	stat_panel.subscribe(src, PROC_REF(on_stat_panel_message))
@@ -596,26 +605,46 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 /client/var/tmp/mouse_down_time = 0
 /// world.time a right-press combat action fired, so the matching click doesn't double-handle it.
 /client/var/tmp/combat_right_at = 0
+/// TRUE once a right-press was handled on MouseDown, so the release Click skips its fallback guard
+/// (a feint, a guard, etc. is one action — the release must NOT raise a second guard).
+/client/var/tmp/combat_right_handled = FALSE
+/// world.time a left-press melee attack fired, so the matching release click doesn't double-swing.
+/client/var/tmp/combat_left_at = 0
+/// The atom a held left-press is attacking; while set, the swing auto-repeats. Cleared on MouseUp.
+/client/var/tmp/atom/held_attack_target = null
 
 /client/MouseDown(object, location, control, params)
 	mouse_down_time = world.time
-	// A bare right-press on a world atom raises a HELD guard (or feints/shoves). The matching
-	// MouseUp drops the guard, so holding keeps the block up. The click handler is a fallback for
-	// clients where the right-button press isn't delivered here.
 	if(isliving(mob) && !istype(object, /atom/movable/screen))
 		var/list/mods = params2list(params)
-		if(mods[RIGHT_CLICK] && !mods[SHIFT_CLICK] && !mods[CTRL_CLICK] && !mods[ALT_CLICK])
+		var/bare = !mods[SHIFT_CLICK] && !mods[CTRL_CLICK] && !mods[ALT_CLICK]
+		// A bare right-press raises a HELD guard (or feints/shoves). The matching MouseUp drops it,
+		// so holding keeps the block up. The click handler is a fallback if the press isn't delivered.
+		if(mods[RIGHT_CLICK] && bare)
 			combat_right_at = world.time
+			combat_right_handled = TRUE // the release Click must not also fire the guard fallback
 			var/mob/living/L = mob
 			L.melee_rightclick(object, TRUE)
+		// A bare LEFT-press winds up a swing that HOLDS until release (hold-to-charge). Mark the held
+		// target BEFORE starting the swing so begin_melee_swing reliably sees it (no async race), and
+		// clear it if this click wasn't a real swing (UI / item / ranged / non-adjacent).
+		else if(!mods[RIGHT_CLICK] && bare)
+			var/mob/living/L = mob
+			held_attack_target = object
+			combat_left_at = world.time
+			if(!L.dq_try_held_attack(object))
+				held_attack_target = null
+				combat_left_at = 0
 	. = ..()
 
 /client/MouseUp(object, location, control, params)
-	// Releasing the mouse drops a held guard.
 	if(isliving(mob))
 		var/mob/living/L = mob
-		if(L.blocking)
+		if(L.blocking) // releasing the mouse drops a held guard
 			L.release_block()
+		if(held_attack_target) // stop the held-attack loop; suppress the release click's extra swing
+			held_attack_target = null
+			combat_left_at = world.time
 	. = ..()
 
 //Called when the client performs a drag-and-drop operation.
@@ -625,6 +654,9 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		return
 	// A right-button drag is a held guard (handled in MouseDown/MouseUp), not a drag interaction.
 	if(LAZYACCESS(params2list(params), RIGHT_CLICK))
+		// A drag delivers no release Click, so clear the press flag here — otherwise it stays stuck
+		// TRUE and the Click fallback eats the NEXT right-click (a swallowed guard/examine/menu).
+		combat_right_handled = FALSE
 		return
 	// Grace window: a drag released on the same atom it started on, within CLICK_DRAG_GRACE, is a
 	// twitch while trying to click — treat it as a click so it doesn't get eaten as a drag.

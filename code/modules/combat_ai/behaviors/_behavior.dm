@@ -90,6 +90,20 @@ GLOBAL_LIST_EMPTY(dq_behaviors)
 	/// a held item).
 	var/requires_held_source = FALSE
 
+	// --- Shared preconditions enforced centrally in pick_and_run -----------------
+	// These are the common gates many behaviors used to re-check inside evaluate().
+	// Declaring them here keeps each evaluate() to its UNIQUE scoring logic, and a new
+	// global rule is one edit in pick_and_run instead of N edits across behaviors.
+
+	/// If TRUE, the behavior only runs when the owner is adjacent to primary_threat.
+	/// (Behaviors that act on a target OTHER than primary_threat — e.g. maul — do their
+	/// own adjacency check instead.)
+	var/requires_adjacent = FALSE
+
+	/// If TRUE, the behavior is suppressed while the owner is off-balance (a parry / shove /
+	/// stagger pushed melee_locked_until into the future). For the owner's own attacks.
+	var/blocked_by_melee_lock = FALSE
+
 // ---------------------------------------------------------------------------
 // Lifecycle hooks. Override in subtypes.
 // ---------------------------------------------------------------------------
@@ -144,7 +158,9 @@ GLOBAL_LIST_EMPTY(dq_behaviors)
 /datum/ai_behavior/proc/is_off_cooldown(datum/ai_brain/brain, atom/source)
 	return brain.cooldown_until(type, source) <= world.time
 
-/// Override to limit a behavior to a specific mob shape. Cheaper than checking
-/// in evaluate() because the brain caches eligibility once per slow tick.
+/// Override to limit a behavior to a specific mob shape (has melee, has hands,
+/// not anchored…). Checked before evaluate() in pick_and_run, so keep it to cheap
+/// istype / flag tests — put anything that depends on the current target or world
+/// state in evaluate() instead.
 /datum/ai_behavior/proc/applicable_to(mob/living/owner)
 	return TRUE

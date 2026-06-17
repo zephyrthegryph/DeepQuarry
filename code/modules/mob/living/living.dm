@@ -455,6 +455,7 @@
 	var/crit_point = -(getMaxHealth()*0.5)
 	if(species.crit_mod)
 		crit_point *= species.crit_mod
+	crit_point -= dq_crit_point_bonus() // Pain Tolerance / Survivor / Death's Door: stay up longer.
 	return crit_point
 
 /mob/living/proc/setMaxHealth(newMaxHealth)
@@ -1281,7 +1282,7 @@
 	if(!item || istype(item, /obj/item/tk_grab))
 		return FALSE
 
-	var/throw_range = item.throw_range
+	var/throw_range = item.throw_range + perk_add(DQ_PERK_FX_THROW_RANGE) // Throwing Arm: throw farther.
 	if (istype(item, /obj/item/grab))
 		var/obj/item/grab/G = item
 		item = G.throw_held() //throw the person instead of the grab
@@ -1298,6 +1299,9 @@
 				var/mob/living/carbon/human/N = M
 				if((N.health + N.halloss) < N.get_crit_point() || N.stat == DEAD)
 					N.adjustBruteLoss(rand(10,30))
+			if(isliving(M) && has_perk(/datum/perk/body/str_wrestler)) // Wrestler: thrown bodies hit harder.
+				var/mob/living/thrown_mob = M
+				thrown_mob.adjustBruteLoss(rand(8,16))
 			src.drop_from_inventory(G)
 
 			src.visible_message(span_warning("[src] has thrown [item]."))

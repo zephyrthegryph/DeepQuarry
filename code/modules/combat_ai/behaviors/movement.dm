@@ -1,13 +1,37 @@
 // Movement behaviors. None of these deal damage; they reposition the mob.
 
-/// Glide a stepped tile across one fast tactical tick so AI movement animates
-/// smoothly instead of snapping. An AI step_to() defaults glide_size, which leaves
-/// the icon to teleport between tiles; matching the glide to the step cadence
-/// (one tile per SSaifast tick) makes it slide like a player walking. Re-applied
-/// before each AI step.
+/// Deciseconds an AI mob waits between steps: the natural per-step interval (the larger of
+/// the fast-tick cadence or the mob's own movement_delay) scaled by DQ_AI_MOVE_DELAY_MULT, so
+/// mobs move at a clear fraction of a running player's pace — the player outpaces a swarm and
+/// can kite it, and detection stays noise-led. The mob's move cooldown (next_move) is gated on this.
+/proc/dq_ai_move_delay(mob/living/owner)
+	return max(SSaifast.wait, owner.movement_delay()) * DQ_AI_MOVE_DELAY_MULT
+
+/// Glide a stepped tile across one AI move interval so movement animates smoothly
+/// instead of snapping. An AI step_to() defaults glide_size, which leaves the icon
+/// to teleport; matching the glide to dq_ai_move_delay makes it slide like a walk.
+/// Re-applied before each AI step.
 /proc/dq_set_move_glide(mob/living/owner)
 	if(owner)
-		owner.glide_size = WORLD_ICON_SIZE / max(DS2TICKS(SSaifast.wait), 1)
+		owner.glide_size = WORLD_ICON_SIZE / max(DS2TICKS(dq_ai_move_delay(owner)), 1)
+
+/// One throttled step toward `goal`, honoring the AI move cooldown so ALL AI
+/// repositioning — retreats, kites, flanks — moves at the same measured half-tick pace
+/// as an approach, never a full-tick-rate sprint. Glides smoothly. Returns TRUE if it
+/// stepped. Every away-from-the-player behavior routes movement through here so fleeing
+/// looks as deliberate as closing in.
+/proc/dq_ai_step_to(mob/living/owner, atom/goal)
+	if(!owner || !goal)
+		return FALSE
+	if(world.time < owner.next_move)
+		return FALSE
+	dq_set_move_glide(owner)
+	var/turf/before = get_turf(owner)
+	step_to(owner, goal)
+	if(get_turf(owner) == before)
+		return FALSE
+	owner.setMoveCooldown(dq_ai_move_delay(owner))
+	return TRUE
 
 // --- Approach ----------------------------------------------------------------
 // Walk toward primary_threat until adjacent. Always available when there's a
@@ -44,23 +68,39 @@
 	if(owner.Adjacent(target))
 		brain.clear_path()
 		return DQ_BEHAVIOR_DONE
-	// One step per tactical tick, glided across the tick so it slides smoothly
-	// instead of teleporting (two steps in a single tick read as a snap). step_to()
-	// handles open ground and minor obstacles cheaply; the A* pather only blocks the
-	// tick when the pathfinder is free (non-blocking), so leading with step_to keeps
-	// mobs moving and the swarm un-serialized.
+	// Throttle to the AI move rate: hold until the mob is off its move cooldown so it
+	// moves at ~half the tick rate (the player can outrun a swarm) rather than every
+	// 250ms. The tactical tick still runs; it just doesn't step every time.
+	if(world.time < owner.next_move)
+		return DQ_BEHAVIOR_CONTINUE
+	// Pack pincer: a flanker the lord gave a slot heads for the tile on its assigned side
+	// of the target instead of straight at it, so the pack surrounds the target rather
+	// than stacking onto one face. Once adjacent to the real target (above) it attacks;
+	// if the slot tile is blocked we just fall back to closing on the target.
+	var/atom/move_goal = target
+	if(brain.flank_dir && brain.pack_role == DQ_ROLE_FLANKER)
+		var/turf/slot = get_step(get_turf(target), brain.flank_dir)
+		// Only take the flank slot if it's on our approach side — never if reaching it means
+		// walking AROUND the target (a slot farther from us than the target is behind it), which
+		// reads as the mob "running away" mid-fight. Otherwise just close straight in.
+		if(slot && !slot.density && !owner.Adjacent(slot) && get_dist(owner, slot) <= get_dist(owner, target))
+			move_goal = slot
+	// One step per move interval, glided across it so it slides smoothly instead of
+	// teleporting. step_to() handles open ground and minor obstacles cheaply; the A*
+	// pather only blocks when the pathfinder is free (non-blocking). A wall-slide
+	// covers cave corners and side-by-side packmates so the swarm flows.
 	dq_set_move_glide(owner)
 	var/turf/before = get_turf(owner)
-	step_to(owner, target)
-	if(get_turf(owner) != before)
+	step_to(owner, move_goal)
+	var/moved = (get_turf(owner) != before)
+	if(!moved)
+		moved = dq_corner_step(owner, move_goal)
+	if(!moved)
+		brain.smart_step_toward(move_goal) // genuinely walled in — path around it (non-blocking; may skip this tick)
+		moved = (get_turf(owner) != before)
+	if(moved)
+		owner.setMoveCooldown(dq_ai_move_delay(owner)) // start the move cooldown
 		brain.failed_steps = 0
-		return DQ_BEHAVIOR_CONTINUE
-	// Blocked: try a cheap wall-slide (step along one axis toward the target) before
-	// reaching for A*. Most cave corners — and packmates side-by-side — clear this
-	// way, so the global pathfinder stays idle and mobs don't queue up on it.
-	if(dq_corner_step(owner, target))
-		return DQ_BEHAVIOR_CONTINUE
-	brain.smart_step_toward(target) // genuinely walled in — path around it (non-blocking; may skip this tick)
 	return DQ_BEHAVIOR_CONTINUE
 
 /// Cheap obstacle slip: when a straight step toward `target` is blocked, try the
@@ -100,10 +140,16 @@
 		return DQ_BEHAVIOR_FAILED
 	if(owner.anchored)
 		return DQ_BEHAVIOR_DONE // anchored: nothing to wander
+	// Throttle to the AI move pace: an idle mob that's still on the fast tick for some other
+	// reason must not skitter a step every 250ms. Wander a good bit slower than a pursuit, too.
+	if(world.time < owner.next_move)
+		return DQ_BEHAVIOR_DONE
 	if(prob(35))
 		var/turf/T = get_step(owner, pick(GLOB.cardinal))
 		if(T && !T.density)
+			dq_set_move_glide(owner)
 			step_to(owner, T)
+			owner.setMoveCooldown(dq_ai_move_delay(owner) * 2) // leisurely amble, slower than chasing
 	return DQ_BEHAVIOR_DONE
 
 // --- Flee at low HP ---------------------------------------------------------
@@ -117,6 +163,8 @@
 	cooldown = 3 SECONDS
 
 /datum/ai_behavior/flee_low_hp/evaluate(datum/ai_brain/brain, atom/source)
+	if(DQ_AI_RETREAT_DISABLED) // wounded mobs fight on instead of fleeing
+		return null
 	var/mob/living/owner = brain.get_owner()
 	if(!owner || !owner.maxHealth)
 		return null
@@ -140,5 +188,5 @@
 		return DQ_BEHAVIOR_DONE  // far enough
 	var/turf/away = get_step_away(owner, target)
 	if(away && !away.density)
-		step_to(owner, away)
+		dq_ai_step_to(owner, away) // throttled — fleeing moves at the same pace as approaching
 	return DQ_BEHAVIOR_CONTINUE

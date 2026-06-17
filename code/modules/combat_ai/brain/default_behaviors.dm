@@ -21,7 +21,8 @@ GLOBAL_LIST_EMPTY(dq_default_behavior_cache)
 	var/has_ranged = SM.projectiletype != null
 	var/has_hands  = SM.has_hands
 	var/hostile    = SM.ai_attack_on_sight
-	var/sig = "[has_melee][has_ranged][has_hands][hostile]"
+	var/vore       = SM.vore_active
+	var/sig = "[has_melee][has_ranged][has_hands][hostile][vore]"
 
 	var/list/cached = GLOB.dq_default_behavior_cache[sig]
 	if(cached)
@@ -42,11 +43,11 @@ GLOBAL_LIST_EMPTY(dq_default_behavior_cache)
 		L += /datum/ai_behavior/retaliate_to_attacker
 
 	if(hostile)
-		// On-sight aggressors get the full kit.
+		// On-sight aggressors get the full kit. (No call_for_help: the AI lord already
+		// coordinates pack aggro, so the "sounds an alarm" bark was just noise.)
 		L += /datum/ai_behavior/threaten
 		L += /datum/ai_behavior/approach_threat
 		L += /datum/ai_behavior/flee_low_hp
-		L += /datum/ai_behavior/call_for_help
 
 	if(has_melee)
 		L += /datum/ai_behavior/melee_attack
@@ -56,6 +57,12 @@ GLOBAL_LIST_EMPTY(dq_default_behavior_cache)
 			L += /datum/ai_behavior/brace_guard       // fallback when there's no room to dodge
 			L += /datum/ai_behavior/back_off          // give ground after taking a hit
 			L += /datum/ai_behavior/maul_unconscious
+			// A vore-capable predator devours through the telegraphed grapple sequence
+			// (tackle -> pin -> reinforce -> swallow), gated on the prey being worn down —
+			// NOT the old instant pounce/bump-swallow. Without this in the kit, AI vore
+			// mobs can only melee (the auto-eat paths are disabled for AI).
+			if(vore)
+				L += /datum/ai_behavior/predation
 
 	if(has_ranged)
 		L += /datum/ai_behavior/ranged_attack

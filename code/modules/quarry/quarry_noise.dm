@@ -11,10 +11,9 @@
 //             danger bump (divided by a tunable factor)
 //   source  : optional atom that caused it, for log clarity
 //
-// Mobs in the radius that are currently idle / sleeping are given
-// origin as a wander destination so they investigate. Mobs already
-// in combat are left alone — they have a real target, no need to
-// redirect them.
+// Idle / sleeping mobs in the radius are sent to investigate the noise origin
+// (a slow, wary creep — see investigate_noise). Mobs already in combat are left
+// alone — they have a real target, no need to redirect them.
 //
 // Noise events don't cross z-levels: only mobs on origin.z are
 // affected, and only the layer at origin.z gets the danger bump.
@@ -62,7 +61,9 @@
 		// Already fighting something — don't redirect.
 		if(M.ai_brain.primary_threat)
 			continue
-		// Wake sleeping mobs and walk them toward the noise.
+		// Wake sleeping mobs and send them to investigate the noise — a slow, wary creep
+		// (the investigate behavior), NOT a full-speed destination march, so a loud action
+		// draws mobs in at a readable pace you can see coming rather than a sudden swarm.
 		if(M.ai_brain.process_flags == 0)
 			M.ai_brain.go_wake()
-		M.ai_brain.give_destination(origin)
+		M.ai_brain.notify_noise(origin)

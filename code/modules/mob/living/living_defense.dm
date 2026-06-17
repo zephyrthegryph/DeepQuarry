@@ -264,6 +264,8 @@
 		var/obj/item/O = source
 		var/dtype = O.damtype
 		var/throw_damage = O.throwforce*(speed/THROWFORCE_SPEED_DIVISOR)
+		if(isliving(thrower)) // Hammer Throw: the thrower puts more force behind it.
+			throw_damage *= thrower.perk_mult(DQ_PERK_FX_THROW_FORCE)
 
 		/*var/miss_chance = 15
 		if (O.throw_source)
@@ -278,7 +280,14 @@
 		var/armor = run_armor_check(null, "melee")
 
 
-		apply_damage(throw_damage, dtype, null, armor, is_sharp(O), has_edge(O), O)
+		// Thrown items land on the thrower's targeted zone; a normal throw scatters off it,
+		// while Precise Aim plants it exactly where aimed.
+		var/hit_zone = throwingdatum?.target_zone
+		if(hit_zone && !(isliving(thrower) && thrower.has_perk(/datum/perk/body/str_precise_aim)))
+			hit_zone = get_zone_with_miss_chance(hit_zone, src)
+		apply_damage(throw_damage, dtype, hit_zone, armor, is_sharp(O), has_edge(O), O)
+		if(isliving(thrower) && is_sharp(O) && thrower.has_perk(/datum/perk/body/str_practiced_throw)) // Practiced Throw: sharp throws embed.
+			embed(O)
 
 		if(ismob(thrower))
 			var/client/assailant = thrower.client
@@ -296,6 +305,9 @@
 
 			visible_message(span_filter_warning("[span_red("[src] staggers under the impact!")]"),span_filter_warning("[span_red("You stagger under the impact!")]"))
 			src.throw_at(get_edge_target_turf(src,dir),1,momentum)
+			if(isliving(thrower) && thrower.has_perk(/datum/perk/body/str_crippling_throw)) // Crippling Throw: knock them down.
+				Weaken(2)
+				add_stagger(DQ_STAGGER_HEAVY, thrower)
 
 			if(!O || !src) return
 
@@ -311,6 +323,18 @@
 					visible_message(span_warning("[src] is pinned to the wall by [O]!"),span_warning("You are pinned to the wall by [O]!"))
 					src.anchored = TRUE
 					src.pinned += O
+
+// A thrown body that crashes into someone can bowl them over — but only if the mob who threw
+// it has Toppler. The thrower context rides along on the throwingdatum.
+/mob/living/throw_impact(atom/hit_atom, datum/thrownthing/throwingdatum)
+	. = ..()
+	if(!isliving(hit_atom) || hit_atom == src)
+		return
+	var/mob/living/pitcher = throwingdatum?.get_thrower()
+	if(istype(pitcher) && pitcher.has_perk(/datum/perk/body/str_toppler))
+		var/mob/living/bowled = hit_atom
+		bowled.Weaken(2)
+		bowled.visible_message(span_danger("\The [src] is hurled into \the [bowled], knocking them sprawling!"))
 
 /mob/living/proc/on_throw_vore_special(pred = TRUE, mob/living/target)
 	return

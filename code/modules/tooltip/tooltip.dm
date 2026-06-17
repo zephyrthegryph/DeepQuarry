@@ -17,12 +17,22 @@
 // React owns is-visible (it shows the element after sizing it).
 
 
+/// How long the cursor must dwell over an atom before its hover tooltip appears.
+#define TOOLTIP_HOVER_DELAY (0.5 SECONDS)
+
 /datum/tooltip
 	var/client/owner
 	var/control = "mapwindow.tooltip"
 	var/showing = 0
 	var/queueHide = 0
 	var/atom/last_target
+	/// Pending hover-delay timer, and the request it will display when it fires.
+	var/show_timer
+	var/atom/movable/pending_thing
+	var/pending_params
+	var/pending_title
+	var/pending_content
+	var/pending_theme
 	var/datum/tgui_window/tooltip_window
 	// State that gets pushed to the React side. When `_visible` is
 	// FALSE the React component renders nothing; otherwise it
@@ -50,6 +60,7 @@
 
 
 /datum/tooltip/Destroy(force)
+	cancel_pending()
 	if(tooltip_window)
 		tooltip_window.close()
 		tooltip_window = null
@@ -77,10 +88,40 @@
 		"tile_size" = isnum(world.icon_size) ? world.icon_size : 32,
 	)
 
+/// Schedule a tooltip after a short hover dwell rather than popping it instantly.
+/// Any hide() (MouseExited, or a click via MouseDown) before the timer fires
+/// cancels it via cancel_pending(). A fresh hover replaces the pending request.
 /datum/tooltip/proc/show(atom/movable/thing, params = null, title = null, content = null, theme = "default", special = "none")
 	if(!thing || !params || (!title && !content) || !owner)
 		return FALSE
 	if(!isnum(world.icon_size))
+		return FALSE
+	cancel_pending()
+	pending_thing = thing
+	pending_params = params
+	pending_title = title
+	pending_content = content
+	pending_theme = theme
+	show_timer = addtimer(CALLBACK(src, PROC_REF(do_show)), TOOLTIP_HOVER_DELAY, TIMER_STOPPABLE)
+	return TRUE
+
+/// Drop a queued (not-yet-shown) tooltip. Called by hide() and by a fresh show().
+/datum/tooltip/proc/cancel_pending()
+	if(show_timer)
+		deltimer(show_timer)
+		show_timer = null
+	pending_thing = null
+
+/// Actually display the dwelt-on tooltip. Fired by the hover-delay timer.
+/datum/tooltip/proc/do_show()
+	show_timer = null
+	var/atom/movable/thing = pending_thing
+	var/params = pending_params
+	var/title = pending_title
+	var/content = pending_content
+	var/theme = pending_theme
+	pending_thing = null
+	if(!thing || !params || (!title && !content) || !owner || !isnum(world.icon_size))
 		return FALSE
 
 	if(!isnull(last_target))
@@ -127,6 +168,7 @@
 
 
 /datum/tooltip/proc/hide()
+	cancel_pending() // drop a not-yet-shown tooltip (moved off / clicked before the dwell)
 	queueHide = showing ? TRUE : FALSE
 	if(queueHide)
 		addtimer(CALLBACK(src, PROC_REF(do_hide)), 0.1 SECONDS)

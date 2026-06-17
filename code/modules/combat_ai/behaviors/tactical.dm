@@ -56,6 +56,8 @@
 	var/kite_distance = 4
 
 /datum/ai_behavior/kite_away/evaluate(datum/ai_brain/brain, atom/source)
+	if(DQ_AI_RETREAT_DISABLED) // no kiting — close in and stay in
+		return null
 	var/mob/threat = brain.primary_threat
 	if(!threat)
 		return null
@@ -78,7 +80,7 @@
 		return DQ_BEHAVIOR_FAILED
 	var/turf/away = get_step_away(owner, target, kite_distance)
 	if(away && !away.density)
-		step_to(owner, away)
+		dq_ai_step_to(owner, away) // throttled to the AI move pace
 	owner.face_atom(target)
 	return DQ_BEHAVIOR_DONE
 
@@ -94,6 +96,8 @@
 	cooldown = 5 SECONDS
 
 /datum/ai_behavior/hit_and_run/evaluate(datum/ai_brain/brain, atom/source)
+	if(DQ_AI_RETREAT_DISABLED) // no darting away after a hit
+		return null
 	var/mob/threat = brain.primary_threat
 	if(!threat || !ismob(threat))
 		return null
@@ -116,7 +120,7 @@
 		return DQ_BEHAVIOR_FAILED
 	var/turf/away = get_step_away(owner, target)
 	if(away && !away.density)
-		step_to(owner, away)
+		dq_ai_step_to(owner, away) // throttled to the AI move pace
 	return DQ_BEHAVIOR_CONTINUE
 
 /datum/ai_behavior/hit_and_run/tick(datum/ai_brain/brain, atom/target, atom/source)
@@ -127,7 +131,7 @@
 		return DQ_BEHAVIOR_DONE
 	var/turf/away = get_step_away(owner, target)
 	if(away && !away.density)
-		step_to(owner, away)
+		dq_ai_step_to(owner, away) // throttled to the AI move pace
 	return DQ_BEHAVIOR_CONTINUE
 
 // --- Pack flee (on dying / outmatched) -------------------------------------
@@ -142,13 +146,18 @@
 	cooldown = 3 SECONDS
 
 /datum/ai_behavior/pack_retreat/evaluate(datum/ai_brain/brain, atom/source)
+	if(DQ_AI_RETREAT_DISABLED) // packs don't fall back — they commit
+		return null
 	var/mob/living/owner = brain.get_owner()
 	var/mob/threat = brain.primary_threat
 	if(!owner || !threat || !owner.maxHealth)
 		return null
 	var/dying = owner.health / owner.maxHealth < 0.3
-	// "Outmatched" — we have no nearby faction allies and the target is robust.
-	var/no_backup = brain.model && !length(brain.model.visible_friendlies)
+	// "Outmatched" — genuinely alone (no pack), not merely unable to SEE allies. A pack
+	// that spreads out to flank loses line of sight to its own members, so reading
+	// visible_friendlies made the whole pack think it was solo and flee at once. The lord
+	// is the real source of truth for "do I have backup", so trust it.
+	var/no_backup = !brain.lord || length(brain.lord.members) <= 1
 	var/outmatched = FALSE
 	if(no_backup && isliving(threat))
 		var/mob/living/threat_living = threat
@@ -165,7 +174,7 @@
 		return DQ_BEHAVIOR_DONE
 	var/turf/away = get_step_away(owner, target)
 	if(away && !away.density)
-		step_to(owner, away)
+		dq_ai_step_to(owner, away) // throttled to the AI move pace
 	return DQ_BEHAVIOR_CONTINUE
 
 // --- Return home -----------------------------------------------------------

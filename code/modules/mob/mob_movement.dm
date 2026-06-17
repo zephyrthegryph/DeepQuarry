@@ -9,7 +9,9 @@
 /mob/proc/movement_delay(oldloc, direct)
 	. = 0
 	if(locate(/obj/item/grab) in src)
-		. += 5
+		var/mob/living/grabber = isliving(src) ? src : null
+		if(!grabber || !grabber.has_perk(/datum/perk/body/str_manhandle)) // Manhandle: drag without slowing.
+			. += 5
 
 	if(lying)
 		if(weakened >= 1)

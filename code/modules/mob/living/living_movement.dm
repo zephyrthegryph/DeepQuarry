@@ -232,6 +232,12 @@ default behaviour is:
 
 // Almost all of this handles pulling movables behind us
 /mob/living/Move(atom/newloc, direct, movetime)
+	// A raised guard roots you (a defensive commitment), as does the brief lock after it
+	// drops. A parry clears the lock so you can chase the riposte. Only ever set on players
+	// (NPCs never block), so AI movement is unaffected.
+	if(blocking || world.time < guard_lock_until)
+		return 0
+
 	if(buckled && buckled.loc != newloc) //not updating position
 		if(!buckled.anchored && buckled.buckle_movable)
 			return buckled.Move(newloc, direct)
