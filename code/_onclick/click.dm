@@ -91,9 +91,21 @@
 	// (held guard); this is the fallback for clients that don't deliver the right-button press,
 	// so skip it if MouseDown already fired this tick.
 	if(LAZYACCESS(modifiers, RIGHT_CLICK) && A != get_active_hand())
+		// MouseDown already handled this right-press (guard / feint / shove). Its release click must
+		// NOT fire the fallback — that's what made a feint also raise a guard. Only run the fallback
+		// for clients that never delivered the MouseDown press.
+		if(client && client.combat_right_handled)
+			client.combat_right_handled = FALSE
+			return
 		if(!(client && client.combat_right_at == world.time) && isliving(src))
 			var/mob/living/blocker = src
 			blocker.melee_rightclick(A)
+		return
+
+	// A bare left-press melee swing is handled on MouseDown (hold-to-attack); swallow the matching
+	// release click this tick so it doesn't fire a second swing on lift.
+	if(client && client.combat_left_at == world.time && !LAZYACCESS(modifiers, RIGHT_CLICK) \
+			&& !LAZYACCESS(modifiers, SHIFT_CLICK) && !LAZYACCESS(modifiers, CTRL_CLICK) && !LAZYACCESS(modifiers, ALT_CLICK))
 		return
 
 	//Replaces the old 'stat||paralysis||stunned' check

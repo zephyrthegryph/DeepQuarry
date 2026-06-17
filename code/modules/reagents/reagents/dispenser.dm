@@ -494,7 +494,7 @@
 	if(alien == IS_GREY)
 		return
 	if(issmall(M)) removed *= 2
-	M.take_organ_damage(0, removed * power * 2)
+	M.take_organ_damage(0, removed * power * 2 * M.perk_mult(DQ_PERK_FX_HAZARD_ACID)) // Acid Resistant.
 
 /datum/reagent/acid/affect_touch(mob/living/carbon/M, alien, removed) // This is the most interesting
 	if(alien == IS_GREY)

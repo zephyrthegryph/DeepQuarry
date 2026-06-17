@@ -969,7 +969,7 @@
 				burn_dam = HEAT_DAMAGE_LEVEL_1
 				throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_LOW)
 
-		take_overall_damage(burn=burn_dam, used_weapon = "High Body Temperature")
+		take_overall_damage(burn=burn_dam * perk_mult(DQ_PERK_FX_HAZARD_HEAT), used_weapon = "High Body Temperature")
 
 	else if(bodytemperature <= species.cold_discomfort_level)
 		//Body temperature is too cold.
@@ -989,7 +989,7 @@
 				else
 					cold_dam = COLD_DAMAGE_LEVEL_1
 
-			take_overall_damage(burn=cold_dam, used_weapon = "Low Body Temperature")
+			take_overall_damage(burn=cold_dam * perk_mult(DQ_PERK_FX_HAZARD_COLD), used_weapon = "Low Body Temperature")
 
 	else clear_alert("temp")
 
@@ -1003,7 +1003,7 @@
 		if(stat == DEAD)
 			pressure_damage = pressure_damage/2
 		if(!istype(loc, /obj/structure/closet/body_bag/cryobag))
-			take_overall_damage(brute=pressure_damage, used_weapon = "High Pressure")
+			take_overall_damage(brute=pressure_damage * perk_mult(DQ_PERK_FX_HAZARD_PRESSURE_HIGH), used_weapon = "High Pressure")
 		throw_alert("pressure", /atom/movable/screen/alert/highpressure, 2)
 	else if(adjusted_pressure >= species.warning_high_pressure)
 		throw_alert("pressure", /atom/movable/screen/alert/highpressure, 1)
@@ -1014,7 +1014,7 @@
 	else
 		if(!(COLD_RESISTANCE in mutations) && !istype(loc, /obj/structure/closet/body_bag/cryobag))
 			if(!isSynthetic() || !nif || !nif.flag_check(NIF_O_PRESSURESEAL,NIF_FLAGS_OTHER))
-				var/pressure_damage = LOW_PRESSURE_DAMAGE
+				var/pressure_damage = LOW_PRESSURE_DAMAGE * perk_mult(DQ_PERK_FX_HAZARD_PRESSURE_LOW)
 				if(stat==DEAD)
 					pressure_damage = pressure_damage/2
 				take_overall_damage(brute=pressure_damage, used_weapon = "Low Pressure")
@@ -1030,7 +1030,7 @@
 																		// Stronger protection (Closer to 0) results in a smaller fraction
 																		// Firesuits (Min protection = 0.2 atmospheres) decrease oxyloss to 1/5
 
-				adjustOxyLoss(pressure_dam)
+				adjustOxyLoss(pressure_dam * perk_mult(DQ_PERK_FX_HAZARD_PRESSURE_LOW))
 			throw_alert("pressure", /atom/movable/screen/alert/lowpressure, 2)
 		else
 			clear_alert("pressure")
@@ -1235,6 +1235,8 @@
 	else				//ALIVE. LIGHTS ARE ON
 		updatehealth()	//TODO
 
+		dq_check_crit_reactions() // Second Wind / Adrenal Reserve auto-fire before we resolve crit/death.
+
 		if(health <= (-getMaxHealth()) || (should_have_organ(O_BRAIN) && !has_brain()))
 			death()
 			blinded = 1
@@ -1414,6 +1416,7 @@
 			adjustHalLoss(-1)
 
 		handle_stamina_regen()
+		dq_perk_regen() // Hearty / Quick Healer / Convalescent out-of-combat heal.
 
 		if (drowsyness)
 			drowsyness = max(0, drowsyness - 1)

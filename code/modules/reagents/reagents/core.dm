@@ -65,6 +65,8 @@
 		if(H.species.bloodsucker)
 			H.adjust_nutrition(removed*30)
 			is_vampire = TRUE
+		if(H.has_perk(/datum/perk/body/vig_blood_freak)) // Blood Freak: drinking blood restores your own.
+			H.inject_blood(src, removed * 3)
 	if(alien == IS_SLIME)	// Treat it like nutriment for the jello, but not equivalent.
 		if(data["species"] == M.species.name)	// Unless it's Promethean goo, then refill this one's goo.
 			M.inject_blood(src, volume * volume_mod)

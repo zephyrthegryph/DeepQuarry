@@ -29,6 +29,10 @@
 		to_chat(src, span_warning("Put your hands to good use instead!"))
 		return
 	*/
+	// Final swallow funnel — every eat path (bump, pounce, grapple-devour) ends here, so this
+	// is the one line guaranteed to fire when a player gets eaten. Names the route via stagger/
+	// grab state so the trace shows whether it came through the grapple or an instant path.
+	dqai_pdbg(src, "VORE", "animal_nom SWALLOW (prey lying=[T.lying] grabbed_by_me=[locate(/obj/item/grab) in T.grabbed_by ? "yes" : "no"] stagger_broken=[T.is_stagger_broken()])", T)
 	feed_grabbed_to_self(src,T)
 
 /mob/living/simple_mob/perform_the_nom(mob/living/user, mob/living/prey, mob/living/pred, obj/belly/belly, delay_time)

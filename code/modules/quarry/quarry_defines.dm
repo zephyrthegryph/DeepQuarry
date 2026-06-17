@@ -23,6 +23,13 @@
 #define QUARRY_PACK_SIZE_MIN 2
 #define QUARRY_PACK_SIZE_MAX 4
 
+// Passive eyes-only sight range for quarry fauna (default brain vision is 7). Kept
+// very short so a quiet player can slip between packs — detection is led by NOISE
+// (gunfire/mining → notify_noise draws them from much farther). With thousands of
+// mobs per layer, anything longer means a pack is always in sight as you walk.
+// See tag_fauna.
+#define QUARRY_FAUNA_VISION_RANGE 2
+
 // Raw-chemistry mineral names. These index GLOB.ore_data the same way
 // the upstream ORE_HEMATITE / ORE_PHORON defines do, and have to be
 // available at parse time wherever a quarry feature lists them in

@@ -8,10 +8,13 @@
 
 	face_atom(A)
 
-	if(melee_attack_delay)
-		melee_pre_animation(A)
+	// AI mobs telegraph every hit with a readable wind-up (DQ_AI_MIN_ATTACK_WINDUP floor) so even
+	// a fast light jab can be parried/dodged; player-piloted mobs use their raw delay.
+	var/windup = client ? melee_attack_delay : max(melee_attack_delay, DQ_AI_MIN_ATTACK_WINDUP)
+	if(windup)
+		melee_pre_animation(A, windup)
 		. = ATTACK_SUCCESSFUL //Shoving this in here as a 'best guess' since this proc is about to sleep and return and we won't be able to know the real value
-		handle_attack_delay(A, melee_attack_delay) // This will sleep this proc for a bit, which is why waitfor is false.
+		handle_attack_delay(A, windup) // This will sleep this proc for a bit, which is why waitfor is false.
 
 	// Cooldown testing is done at click code (for players) and interface code (for AI).
 	// Simplemob Injury
@@ -50,6 +53,8 @@
 
 	if(heavy_strike_mult) // a telegraphed heavy is in progress (interactive_melee.dm)
 		damage_to_do *= heavy_strike_mult
+	else if(!client) // an AI mob's plain light poke hits softer than its telegraphed heavy
+		damage_to_do *= DQ_AI_LIGHT_ATTACK_MULT
 
 	for(var/datum/modifier/M in modifiers)
 		if(!isnull(M.outgoing_melee_damage_percent))
@@ -57,6 +62,13 @@
 
 	if(isliving(A)) // Check defenses.
 		var/mob/living/L = A
+
+		// Don't let the rest of the pack beat prey to death while ANOTHER predator has it grabbed
+		// to eat — the meal is claimed, so their swings glance off harmlessly. This is what lets
+		// the grapple finish instead of the victim dying mid-pin to the swarm's stray hits.
+		if(L.dq_grapple_claimant && L.dq_grapple_claimant != src && !QDELETED(L.dq_grapple_claimant))
+			do_attack_animation(src)
+			return FALSE
 
 		if(prob(melee_miss_chance))
 			add_attack_logs(src, L, "Animal-attacked (miss)", admin_notify = FALSE)
@@ -79,6 +91,13 @@
 			playsound(src, attack_sound, 75, 1)
 
 	return TRUE
+
+// AI-controlled mobs swing slower than their raw stat for a readable cadence (see
+// DQ_AI_ATTACK_COOLDOWN_MULT). Player-piloted mobs keep their normal speed.
+/mob/living/simple_mob/get_attack_speed(obj/item/W)
+	. = ..()
+	if(!client)
+		. *= DQ_AI_ATTACK_COOLDOWN_MULT
 
 // Generally used to do the regular attack.
 // Override for doing special stuff with the direct result of the attack.
@@ -266,8 +285,8 @@
 
 	if(ai_brain) ai_brain.busy = FALSE
 // Override these four for special custom animations (like the GOLEM).
-/mob/living/simple_mob/proc/melee_pre_animation(atom/A)
-	do_windup_animation(A, melee_attack_delay)
+/mob/living/simple_mob/proc/melee_pre_animation(atom/A, windup = melee_attack_delay)
+	do_windup_animation(A, windup)
 
 /mob/living/simple_mob/proc/melee_post_animation(atom/A)
 

@@ -40,6 +40,24 @@ html, body, #react-root, .TooltipRoot {
   position: fixed !important;
   inset: 0 !important;
 }
+/* The DM side wraps the name in <h1> and the desc in <p>; tame the default
+   browser margins/sizes so the box reads as a clean label, not a webpage. */
+.TooltipRoot h1 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+.TooltipRoot p {
+  margin: 3px 0 0 0;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.3;
+  opacity: 0.92;
+}
+.TooltipRoot h1:first-child + p { margin-top: 3px; }
+.TooltipRoot p:first-child { margin-top: 0; }
+.TooltipRoot * { word-break: break-word; }
 `;
 
 // Padding constant (px) from the legacy tooltip.html (tooltip.padding = 2).
@@ -221,14 +239,12 @@ export const Tooltip = () => {
         const toDeviceH = (cssH: number) => Math.floor(cssH * pixelRatio);
 
         // pos + size + show in one winset; box pinned to element top-left so a
-        // later shrink never moves it. Bottom-edge flip matches the legacy.
+        // later shrink never moves it. Always placed BELOW the hovered tile (posY is
+        // the tile's bottom edge) — no bottom-edge flip to above, which used to cover
+        // the very atom being hovered/clicked near the screen edge.
         const placeAndShow = (w: number, h: number) => {
-          let py = posY;
-          if (posY + h > mapPxH) {
-            py = posY - h - realIconSizeY - PAD;
-          }
           Byond.winset(winId, {
-            pos: `${posX},${py}`,
+            pos: `${posX},${posY}`,
             size: `${w}x${h}`,
             'is-visible': true,
           });
@@ -291,12 +307,14 @@ export const Tooltip = () => {
           top: 0,
           left: 0,
           width: 'max-content',
-          maxWidth: 298,
-          padding: 8,
-          border: `2px solid ${themeStyle.borderColor}`,
+          maxWidth: 300,
+          padding: '5px 9px',
+          borderRadius: 4,
+          border: `1px solid ${themeStyle.borderColor}`,
           color: themeStyle.color,
           backgroundColor: themeStyle.backgroundColor,
-          font: 'bold 12px Arial, "Helvetica Neue", Helvetica, sans-serif',
+          font: '400 12px "Segoe UI", Roboto, Arial, "Helvetica Neue", Helvetica, sans-serif',
+          letterSpacing: '0.2px',
           boxSizing: 'border-box',
         }}
       >

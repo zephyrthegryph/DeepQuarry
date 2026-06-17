@@ -91,4 +91,12 @@
 		for(var/req in P.requires)
 			if(!(req in list_sel))
 				return FALSE
+	// Threshold capstone: enough already invested in this perk's category.
+	if(P.category_spend_required)
+		var/list/by_cat = dq_spent_by_category(preferences)
+		var/in_cat = (by_cat[P.category] || 0)
+		if(path in list_sel) // don't let the capstone's own cost satisfy its gate
+			in_cat -= P.cost
+		if(in_cat < P.category_spend_required)
+			return FALSE
 	return TRUE

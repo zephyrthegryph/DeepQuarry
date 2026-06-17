@@ -22,6 +22,8 @@
 	min_range = 0
 	max_range = 1
 	blocks_reselection = TRUE
+	requires_adjacent = TRUE       // central gate: only when in melee reach
+	blocked_by_melee_lock = TRUE   // central gate: can't wind up while off-balance
 	/// Damage multiplier vs the mob's normal melee.
 	var/damage_mult = 2
 
@@ -36,12 +38,9 @@
 	var/mob/threat = brain.primary_threat
 	if(!owner || !threat)
 		return null
-	if(!owner.Adjacent(threat))
-		return null
-	if(world.time < owner.melee_locked_until) // parried / shoved / off-balance — can't wind up
-		return null
 	if(!is_off_cooldown(brain, source))
 		return null
+	// Adjacency, off-balance lock, and target-validity are enforced centrally in pick_and_run.
 	// Above plain melee (40) so it occasionally takes over; below INTERRUPT reactions.
 	return DQAI_RESULT(70, threat)
 
@@ -54,10 +53,12 @@
 		return DQ_BEHAVIOR_FAILED
 	SM.face_atom(target)
 	var/windup = SM.telegraph_windup
-	// Resolve against the tile in front, so the target can dodge by stepping off it.
-	var/turf/struck = get_step(SM, SM.dir) || get_turf(target)
+	// Mark the target's own tile (a guessed "front" tile misfires when the target is diagonal,
+	// showing the warning on the wrong square). Dodge by stepping off it during the windup.
+	var/turf/struck = get_turf(target)
 	if(struck)
-		new /obj/effect/temp_visual/swing_telegraph(struck, windup)
+		dq_telegraph(struck, windup, DQ_TELEGRAPH_PARRY) // a heavy — parry or block it
+
 	SM.do_windup_animation(target, windup)
 	SM.visible_message(span_danger("\The [SM] rears back for a heavy blow!"), blind_message = span_warning("You hear something heavy wind up to strike."))
 	addtimer(CALLBACK(src, PROC_REF(execute_strike), brain, struck), windup)
@@ -87,8 +88,17 @@
 /datum/ai_behavior/telegraphed_strike/proc/resolve_heavy(mob/living/simple_mob/SM, turf/struck)
 	var/landed = FALSE
 	if(struck && SM.Adjacent(struck))
+		var/datum/ai_brain/brain = SM.ai_brain
 		for(var/mob/living/victim in struck)
 			if(victim == SM)
+				continue
+			// Only land on something the mob is actually hostile to. A dense swarm packs
+			// allies onto the tile between the mob and the player; without this guard the
+			// heavy clobbers packmates, which reads as constant infighting (is_friendly_fire
+			// blocks the grudge but not the damage). Players resolve to HOSTILE and still eat
+			// it; ally / coexisting-fauna / neutral bystanders are spared. No brain → no
+			// disposition data, so fall back to hitting whatever's there.
+			if(brain && brain.disposition_to(victim) > DQ_DISPOSITION_HOSTILE)
 				continue
 			SM.heavy_strike_mult = damage_mult // read + cleared inside do_attack
 			if(SM.do_attack(victim, struck)) // routes through check_shields → parry / soft-block / dodge
@@ -145,7 +155,12 @@
 		return
 	if(!is_off_cooldown(brain, null))
 		return
-	if(!prob(SM.dodge_chance))
+	// Once the prey has strung together a combo on us, the next telegraphed swing is
+	// read and dodged for certain — a mob that's been hit repeatedly stops eating them.
+	var/comboed = brain.combo_hits >= DQ_COMBO_DODGE_THRESHOLD
+	if(comboed)
+		brain.combo_hits = 0 // spend the read
+	else if(!prob(SM.dodge_chance))
 		return
 	// Only commit if there's actually somewhere to step. Otherwise leave the flag
 	// clear so brace_guard can take over for a cornered mob (it checks this).
@@ -207,9 +222,16 @@
 	cooldown = 3 SECONDS
 
 /datum/ai_behavior/back_off/applicable_to(mob/living/owner)
-	return istype(owner, /mob/living/simple_mob) && !owner.anchored
+	if(!istype(owner, /mob/living/simple_mob) || owner.anchored)
+		return FALSE
+	var/mob/living/simple_mob/SM = owner
+	if(SM.quarry_fauna)
+		return FALSE // swarm fauna commit to the attack rather than giving ground (they still telegraph heavies)
+	return TRUE
 
 /datum/ai_behavior/back_off/evaluate(datum/ai_brain/brain, atom/source)
+	if(DQ_AI_RETREAT_DISABLED) // mobs hold their ground instead of giving ground after a hit
+		return null
 	var/mob/living/owner = brain.get_owner()
 	var/mob/threat = brain.primary_threat
 	if(!owner || !threat || !owner.Adjacent(threat))
@@ -226,8 +248,8 @@
 		return DQ_BEHAVIOR_FAILED
 	var/turf/away = get_step_away(owner, target)
 	if(away && !away.density && !(locate(/mob/living) in away))
-		step(owner, get_dir(owner, away))
-		owner.visible_message(span_notice("\The [owner] gives ground, circling."))
+		if(dq_ai_step_to(owner, away)) // throttled — give ground at the AI move pace, not a sprint
+			owner.visible_message(span_notice("\The [owner] gives ground, circling."))
 	return DQ_BEHAVIOR_DONE
 
 // --- Brace guard ------------------------------------------------------------

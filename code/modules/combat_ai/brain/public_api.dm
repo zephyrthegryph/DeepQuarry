@@ -14,6 +14,7 @@
 		return
 	primary_threat = M
 	add_personal(M, DQ_DISPOSITION_HOSTILE, 60 SECONDS, "given_target")
+	update_engagement() // engage the fast tick immediately (lord command / external aggro)
 	if(urgent)
 		invalidate_selection()
 
@@ -24,6 +25,7 @@
 		primary_threat = null
 		SEND_SIGNAL(holder, COMSIG_DQAI_TARGET_LOST, old)
 		invalidate_selection()
+		update_engagement() // no threat → drop off the fast tick
 
 /// Legacy name for lose_target — kept so direct sed-style migrations work.
 /datum/ai_brain/proc/remove_target()
@@ -65,7 +67,8 @@
 		return
 	if(holder.client && !autopilot)
 		return
-	manage_processing(DQAI_PROCESSING | DQAI_FASTPROCESSING)
+	manage_processing(DQAI_PROCESSING) // wake to the slow tick; engagement adds the fast tick on a threat
+	update_engagement()
 
 // ---------------------------------------------------------------------------
 // Legacy attribute proxies — getters/setters so caller code that reads or
@@ -107,6 +110,7 @@
 		var/mob/old = primary_threat
 		primary_threat = attacker
 		SEND_SIGNAL(holder, COMSIG_DQAI_TARGET_CHANGED, attacker, old)
+	update_engagement() // being attacked engages the fast tick immediately
 	invalidate_selection()
 
 // ---------------------------------------------------------------------------

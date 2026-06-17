@@ -543,6 +543,7 @@ This function restores all organs.
 	SEND_SIGNAL(src, COMSIG_MOB_APPLY_DAMAGE, damage, damagetype, def_zone, blocked, sharp, edge, used_weapon, projectile)
 	if(GLOB.Debug2)
 		log_world("## DEBUG: human/apply_damage() was called on [src], with [damage] damage, and an armor value of [blocked].")
+	damage *= dq_crit_damage_mult() // Undying / Unkillable: take less the closer you are to death.
 	var/obj/item/organ/external/organ = null
 	if(isorgan(def_zone))
 		organ = def_zone

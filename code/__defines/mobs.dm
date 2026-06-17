@@ -122,16 +122,43 @@
 #define DEFAULT_QUICK_COOLDOWN  4
 
 // Melee block / parry / feint timing (deciseconds). See code/modules/mob/living/melee_block.dm.
-#define DQ_BLOCK_WINDOW     10  // How long a tapped guard lasts (also the minimum for a held one).
-#define DQ_BLOCK_MAX        50  // Safety cap on a held guard if the mouse-release is never delivered.
-#define DQ_PARRY_WINDOW      5  // Tight window at the guard's start; a hit caught here parries (staggers).
-#define DQ_BLOCK_WHIFF_LOCK  10 // Attack + move lockout when a guard expires having caught nothing.
-#define DQ_GUARD_COOLDOWN     4 // Lockout on raising another guard after one ends (anti-spam).
+#define DQ_BLOCK_WINDOW      8  // How long a tapped guard lasts (also the minimum for a held one). 0.5s parry + 0.3s soft tail.
+#define DQ_BLOCK_MAX       300  // Safety cap on a held guard if the mouse-release is never delivered (30s — a held guard holds until you let go).
+#define DQ_PARRY_WINDOW      5  // Generous window at the guard's start; a hit caught here parries (staggers).
+#define DQ_BLOCK_WHIFF_LOCK   4 // Attack + move lockout when a guard expires having caught nothing.
+#define DQ_GUARD_DROP_LOCK    2 // Attack + move lockout after any non-parry guard drop (a guard commits you).
+#define DQ_SWING_MAX_HOLD   12  // Max deciseconds a held (hold-to-strike) swing stays wound up before it auto-strikes (~1.2s).
+#define DQ_SWING_HEAVY_CHARGE 6 // Deciseconds of holding a swing before it charges into a heavy (stronger, wider, knockback).
 #define DQ_RIPOSTE_WINDOW    8  // After a parry, your attacks are unblockable for this long.
 #define DQ_PARRY_STAGGER     5  // Attack + move lockout placed on an attacker whose swing is parried.
 #define DQ_MOVE_ATTACK_LOCK  2  // Attack lockout imposed after taking a step.
 #define DQ_SHOVE_LOCK        5  // Move + act lockout on a shoved target (0.5s).
 #define DQ_SHOVE_KNOCKDOWN   3  // Knockdown (Weaken) duration when a shoved target slams into something.
+
+// Stagger / poise — a universal "guard break" meter on /mob/living. Melee hits and (mostly)
+// parries fill it; at the cap the mob/player is broken OPEN: knocked off-balance and
+// vulnerable to an execution (mobs) or a grapple/devour (players). It decays if you stop
+// applying pressure. See code/modules/mob/living/stagger.dm.
+#define DQ_STAGGER_MAX            100         // poise ceiling (per-mob override via max_stagger)
+#define DQ_STAGGER_BREAK_DURATION (3 SECONDS) // how long the broken-open window lasts
+#define DQ_STAGGER_IMMUNE_GRACE   (4 SECONDS) // after the window, poise can't refill toward another break
+#define DQ_STAGGER_DECAY_DELAY    (2 SECONDS) // quiet time after the last hit before poise recovers
+#define DQ_STAGGER_DECAY_RATE     18          // poise recovered per second past the decay delay
+#define DQ_STAGGER_PARRY          42          // poise a parry strips from the attacker (the main breaker)
+#define DQ_STAGGER_HEAVY          45          // bonus poise damage from a charged heavy
+#define DQ_STAGGER_SHOVE          25          // poise damage from being shoved into something
+// Fauna break in proportion to their durability, not the flat PvP ceiling: a simple_mob's
+// max_stagger is set to this fraction of its maxHealth at spawn. At 0.8 a 50-HP critter breaks
+// around 40 poise — about one parry (42) — so it staggers open BEFORE its health runs out and
+// the execution payoff is reachable, while a tanky mob still resists. Tune up to make executions
+// rarer, down to make them easier. See /mob/living/simple_mob/Initialize.
+#define DQ_STAGGER_FAUNA_FRAC     0.8
+
+// Wounding — a melee hit to a specific limb applies an effect. See code/modules/mob/living/wounds.dm.
+#define DQ_WOUND_DURATION  (12 SECONDS) // how long a leg-wound slow lasts (refreshed on re-hit)
+#define DQ_WOUND_MIN_FORCE 8            // a weapon must hit at least this hard to wound a limb
+#define DQ_WOUND_ARM_LOCK  8            // attack lockout an arm wound imposes on the victim
+#define DQ_WOUND_HEAD_DAZE 6           // Confuse duration from a head wound
 #define CLICK_DRAG_GRACE     3  // A click-drag released on its origin within this is treated as a click.
 
 // Indices into a get_intent_combat_mods() row.
@@ -592,3 +619,18 @@
 // DeepQuarry combat AI: playsound() at or above this volume wakes nearby idle
 // AI mobs to investigate the source (see code/modules/combat_ai/behaviors/investigate.dm).
 #define DQ_AI_NOISE_MIN_VOL 45
+
+// DeepQuarry combat AI: AI-controlled simple mobs swing this much slower than their raw
+// attack stat (their melee click cooldown is multiplied by this), for a slower, more
+// readable cadence. Player-piloted mobs keep their normal speed. 2.4 = ~2.4x slower.
+#define DQ_AI_ATTACK_COOLDOWN_MULT 2.4
+
+// Minimum windup (telegraph) deciseconds before an AI simple mob's melee hit lands, so every
+// attack — even a mob's fast light jab — has a readable wind-up you can parry/dodge. Mobs that
+// set a longer melee_attack_delay keep it; this is just the floor. Player-piloted mobs unaffected.
+#define DQ_AI_MIN_ATTACK_WINDUP 4
+
+// Damage multiplier on an AI simple mob's plain light poke (melee_attack), so the fast jab hits
+// for about half — the telegraphed heavy is the threatening hit, the poke is chip. Heavies
+// (heavy_strike_mult) and player-piloted mobs are unaffected.
+#define DQ_AI_LIGHT_ATTACK_MULT 0.5

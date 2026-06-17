@@ -51,6 +51,10 @@
 	else
 		swallow_time = ishuman(prey) ? belly.human_prey_swallow_time : belly.nonhuman_prey_swallow_time
 
+	// Grappler perks: a pinned, choked victim is swallowed faster.
+	if(istype(user) && (user.has_perk(/datum/perk/body/str_pin) || user.has_perk(/datum/perk/body/str_choke_hold)))
+		swallow_time = round(swallow_time * DQ_PERK_DEVOUR_SPEED_MULT)
+
 	// Their AI should get notified so they can stab us
 	prey.ai_brain?.react_to_attack(user)
 

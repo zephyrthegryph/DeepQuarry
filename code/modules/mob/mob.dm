@@ -10,7 +10,7 @@
 	GLOB.living_mob_list -= src
 	GLOB.player_list -= src
 	unset_machine()
-	clear_fullscreen()
+	clear_fullscreens() // was clear_fullscreen() — a no-op (needs a category), which left vore/belly fullscreen overlays on a client that had already moved to the lobby mob (e.g. on round restart)
 	if(client)
 		for(var/atom/movable/screen/movable/spell_master/spell_master in spell_masters)
 			qdel(spell_master)
@@ -824,6 +824,14 @@
 /mob/proc/Stun(amount, ignore_canstun = FALSE) //Can't go below remaining duration
 	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_STUN, amount, ignore_canstun) & COMPONENT_NO_STUN)
 		return
+	if(amount > 0 && isliving(src))
+		var/mob/living/L = src
+		if(L.dq_immovable_blocks_cc()) // Immovable: shrug off back-to-back hard CC.
+			return
+		if(L.has_perk(/datum/perk/body/end_tenacious)) // Tenacious: a fight's first stun is brief.
+			if(world.time > L.dq_last_stun_at + DQ_PERK_TENACIOUS_WINDOW)
+				amount *= DQ_PERK_TENACIOUS_MULT
+			L.dq_last_stun_at = world.time
 	if(status_flags & CANSTUN)
 		facing_dir = null
 		stunned = max(max(stunned,amount),0) //can't go below 0, getting a low amount of stun doesn't lower your current stun
@@ -849,6 +857,11 @@
 /mob/proc/Weaken(amount, ignore_canstun = FALSE) //Can't go below remaining duration
 	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_WEAKEN, amount, ignore_canstun) & COMPONENT_NO_STUN)
 		return
+	if(amount > 0 && isliving(src))
+		var/mob/living/L = src
+		if(L.dq_immovable_blocks_cc()) // Immovable: shrug off back-to-back hard CC.
+			return
+		amount *= L.perk_mult(DQ_PERK_FX_KNOCKDOWN_DUR) // Acrobatic: shorter knockdowns.
 	if(status_flags & CANWEAKEN)
 		facing_dir = null
 		weakened = max(max(weakened,amount),0)

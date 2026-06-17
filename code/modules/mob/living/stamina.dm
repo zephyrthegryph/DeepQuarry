@@ -27,6 +27,7 @@
 		return
 	if(amount < 0)
 		stamina_use_time = world.time
+		amount *= perk_mult(DQ_PERK_FX_STAMINA_DRAIN) // Conditioned: exertion drains you less.
 	stamina = clamp(stamina + amount, 0, max_stamina)
 	if(stamina <= 0 && !stamina_collapsed)
 		stamina_collapse()
@@ -57,6 +58,7 @@
 		regen = STAMINA_REGEN_SLEEPING
 	else if(resting)
 		regen = STAMINA_REGEN_RESTING
+	regen *= perk_mult(DQ_PERK_FX_STAMINA_REGEN) // Second Breath: recover faster once clear of the fight.
 	stamina = min(stamina + regen, max_stamina)
 	update_stamina_meter()
 

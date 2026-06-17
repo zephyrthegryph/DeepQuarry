@@ -55,4 +55,15 @@
 	init_vore(TRUE)
 	handle_regular_hud_updates()
 
+	// Reconnecting while eaten: client/New hides the belly-overlay BROWSER on every
+	// connect to clear stale skin state left visible across a world reboot. If we're
+	// actually inside a belly right now, that hide was wrong for us — restore the
+	// overlay against this freshly-connected client. The old overlay datum is bound to
+	// the now-dead connection, so drop it and let vore_fx rebuild the tgui window for
+	// the new client (vore_fx re-applies the show_vore_fx / fullscreen guards itself).
+	if(isbelly(loc))
+		var/obj/belly/gut = loc
+		QDEL_NULL(belly_overlay_tgui)
+		gut.vore_fx(src)
+
 	return .

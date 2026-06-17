@@ -90,8 +90,11 @@
 	if(FAT in mutations)
 		. += 1.5
 
-	if (bodytemperature < species.cold_level_1)
+	if (bodytemperature < species.cold_level_1 && !has_perk(/datum/perk/body/spd_marathoner)) // Marathoner: the cold doesn't drag you down.
 		. += (species.cold_level_1 - bodytemperature) / 10 * 1.75
+
+	if(has_perk(/datum/perk/body/spd_burst)) // Burst Speed: explosive quickness on the move.
+		. -= 0.5
 
 	// Turf related slowdown
 	var/turf/T = get_turf(src)
@@ -112,6 +115,10 @@
 
 	if(item_tally > 0) //ALT-ENCUMBERANCE
 		item_tally *= species.item_slowdown_mod //ALT-ENCUMBERANCE
+		if(has_perk(/datum/perk/body/str_heavy_lifter)) // bulky gear doesn't weigh you down
+			item_tally = max(0, item_tally - 1)
+		if(has_perk(/datum/perk/body/str_strongman)) // carry an extra bulky item free
+			item_tally = max(0, item_tally - 1)
 
 	. += item_tally
 
@@ -221,6 +228,12 @@
 	if(!T)
 		return 0
 
+	// Ice Walker: frost/snow terrain doesn't hinder you. Web Walker: webbed tiles don't either.
+	if(has_perk(/datum/perk/body/spd_ice_walker) && istype(T, /turf/simulated/floor/outdoors/snow))
+		return 0
+	if(has_perk(/datum/perk/body/spd_web_walker) && (locate(/obj/effect/spider) in T))
+		return 0
+
 	if(T.movement_cost && !flying) //If you are flying you are probably not affected by the terrain on the ground.
 		var/turf_move_cost = T.movement_cost
 		if(locate(/obj/structure/catwalk) in T) //catwalks prevent turfs from slowing your
@@ -305,6 +318,8 @@
 
 // Handle footstep sounds
 /mob/living/carbon/human/handle_footstep(turf/T)
+	if(has_perk(/datum/perk/body/spd_light_footed)) // Light-Footed: move silently.
+		return
 	if(shoes && loc == T && get_gravity(loc) && !flying)
 		if(SEND_SIGNAL(shoes, COMSIG_SHOES_STEP_ACTION, m_intent))
 			return

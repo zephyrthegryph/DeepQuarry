@@ -22,6 +22,10 @@
 	SM.quarry_fauna = TRUE
 	if(SM.ai_brain)
 		SM.ai_brain.target_selector_chain = list(/datum/target_selector/prefer_players, /datum/target_selector/closest)
+		// Short passive sight: a quiet player is hard to spot. Detection is meant to
+		// be led by NOISE (gunfire/mining/etc → notify_noise draws them from much
+		// farther), so keep eyes-only range tight.
+		SM.ai_brain.vision_range = QUARRY_FAUNA_VISION_RANGE
 
 /// 0 at MIN heat, 1 at 100 heat. Drives both wave cadence and wave size.
 /datum/controller/subsystem/quarry/proc/siege_intensity(danger)

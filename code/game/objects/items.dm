@@ -113,8 +113,6 @@
 	// drop sound - this is the default
 	var/drop_sound = "generic_drop"
 
-	var/tip_timer // reference to timer id for a tooltip we might open soon
-
 	var/no_random_knockdown = FALSE			//stops item from being able to randomly knock people down in combat
 
 	var/rock_climbing = FALSE //If true, allows climbing cliffs using click drag for single Z, walls if multiZ
@@ -1062,16 +1060,15 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 	if(QDELETED(src))
 		return
 	if(usr?.read_preference(/datum/preference/toggle/inv_tooltips) && ((src in usr) || isstorage(loc))) // If in inventory or in storage we're looking at
-		var/user = usr
-		tip_timer = addtimer(CALLBACK(src, PROC_REF(openTip), location, control, params, user), 5, TIMER_STOPPABLE)
+		openToolTip(usr, src, params, title = name, content = desc) // the tooltip datum applies the hover dwell + cancel
+
+/obj/item/MouseDown()
+	closeToolTip(usr) // clicking cancels a queued hover popup
+	. = ..()
 
 /obj/item/MouseExited()
 	. = ..()
-	deltimer(tip_timer)
 	closeToolTip(usr)
-
-/obj/item/proc/openTip(location, control, params, user)
-	openToolTip(user, src, params, title = name, content = desc)
 
 // These procs are for RPEDs and part ratings. The concept for this was borrowed from /vg/station.
 // Gets the rating of the item, used in stuff like machine construction.

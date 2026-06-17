@@ -25,15 +25,6 @@
 	var/turf/last_known = null
 	/// world.time the focus was lost; the pack pursues until +LORD_FOCUS_GRACE.
 	var/lost_focus_at = 0
-	/// How far the lord senses prey around the pack centroid.
-	var/detect_range = LORD_DETECT_RANGE
-	/// Shared perception: the living mobs seen from the centroid on the last scan,
-	/// reused in place. Members bucket from this (cheap distance + disposition)
-	/// instead of each running their own dview — one scan per pack per tick, not
-	/// one per mob. Read by /datum/world_model/update_perception.
-	var/list/perceived = list()
-	/// world.time of the last scan; members fall back to self-scan once it's stale.
-	var/perceived_at = 0
 
 /datum/ai_lord/New(list/initial_members)
 	SSai_lords.lords += src
@@ -65,18 +56,82 @@
 		if(M?.ai_brain && M.ai_brain.lord == src)
 			M.ai_brain.lord = null
 	members.Cut()
-	perceived.Cut()
 	SSai_lords.lords -= src
 
-/// Rough pack centre (average member position) — detection + pursuit origin.
-/datum/ai_lord/proc/pack_centroid()
+/// The only thing a lord coordinates the pack onto: a living, cliented, alive
+/// player. Mob-vs-mob stays each brain's own business, so the lord never herds the
+/// pack into infighting.
+/datum/ai_lord/proc/valid_prey(mob/living/H)
+	return H && !QDELETED(H) && H.client && H.stat < DEAD
+
+/// Nearest valid prey to the pack, drawn ONLY from what the MEMBERS actually SEE
+/// this tick (their visible_hostiles). Each member runs its own perception, so the
+/// pack engages the instant ANY member's eyes catch a player, and distance is
+/// measured from the seeing member — detection range is just the members' own vision.
+///
+/// Deliberately does NOT read members' primary_threat: the lord SETS that via
+/// command_attack, so reading it back makes focus self-perpetuating — the pack could
+/// never lose sight (a member holding a lord-assigned target re-reports it as "prey
+/// found"), so it would pursue forever and never stand down. Retention is the lord's
+/// own job: when no member can see the player, find_focus returns null and the lord
+/// pursues last_known for LORD_FOCUS_GRACE before releasing the pack.
+/datum/ai_lord/proc/find_focus()
+	var/mob/living/best = null
+	var/best_dist = INFINITY
+	for(var/mob/living/M as anything in members)
+		var/datum/ai_brain/b = M.ai_brain
+		if(!b || !b.model)
+			continue
+		for(var/mob/living/H as anything in b.model.visible_hostiles)
+			if(!valid_prey(H))
+				continue
+			var/d = get_dist(M, H)
+			if(d < best_dist)
+				best = H
+				best_dist = d
+	return best
+
+/// Drop the lord-assigned target on every member still locked onto our focus, so the
+/// pack actually disengages (and leaves the 250ms fast tick) on standdown. Members
+/// that have independently re-acquired some other target are left alone.
+/datum/ai_lord/proc/release_members()
+	for(var/mob/living/M as anything in members)
+		var/datum/ai_brain/b = M.ai_brain
+		if(b && b.primary_threat == focus)
+			b.primary_threat = null
+			b.lose_threat_at = 0
+			b.pack_role = DQ_ROLE_NONE
+			b.flank_dir = 0
+			b.invalidate_selection()
+			b.update_engagement()
+
+/// Order members within LORD_COMMAND_RANGE of the prey to engage `target`. A member too far
+/// to plausibly be in the fight is NOT teleport-aggroed across the layer — it engages on its
+/// own once it sees (or hears) the prey. Re-pushes only on change so we don't spam reselection.
+/datum/ai_lord/proc/command_attack(mob/living/target)
+	for(var/mob/living/M as anything in members)
+		var/datum/ai_brain/b = M.ai_brain
+		if(!b || b.primary_threat == target)
+			continue
+		if(get_dist(M, target) > LORD_COMMAND_RANGE)
+			continue
+		if(dq_prey_locked_by_other(M, target)) // another member has it grabbed to eat — don't pile on
+			continue
+		b.give_target(target, TRUE)
+
+/// Rough pack centre — the direction the pack is mostly coming from, used to spread
+/// flankers to the sides and rear of the target. `restrict_z` counts only members on that
+/// z (the quarry is multi-z; averaging across z-levels yields a meaningless tile/dir).
+/datum/ai_lord/proc/pack_centroid(restrict_z = 0)
 	var/sx = 0
 	var/sy = 0
-	var/sz = 0
+	var/sz = restrict_z
 	var/n = 0
 	for(var/mob/living/M as anything in members)
 		var/turf/T = get_turf(M)
 		if(!T)
+			continue
+		if(restrict_z && T.z != restrict_z)
 			continue
 		sx += T.x
 		sy += T.y
@@ -86,75 +141,62 @@
 		return null
 	return locate(round(sx / n), round(sy / n), sz)
 
-/// The only thing a lord coordinates the pack onto: a living, cliented, alive
-/// player. Mob-vs-mob stays each brain's own business, so the lord never herds the
-/// pack into infighting.
-/datum/ai_lord/proc/valid_prey(mob/living/H)
-	return H && !QDELETED(H) && H.client && H.stat < DEAD
-
-/// One pack-wide perception scan from the centroid, sized so it covers every
-/// member's own vision (centroid distance + that member's vision_range). Fills
-/// `perceived` with the living mobs in view; members read it via perception_fresh()
-/// in place of a per-mob dview. dview is lighting-independent (a cave predator
-/// senses prey in the dark) but opacity-blocked, so walls still hide a target.
-/datum/ai_lord/proc/scan(turf/centroid)
-	perceived.Cut()
+/// Hand out pincer roles around `prey`. Ranged members harry from afar; the nearest one
+/// or two melee members anchor the front (the face the pack is coming from); the rest
+/// flank, each assigned a distinct slot fanning out to the sides and rear so the pack
+/// surrounds the target instead of stacking onto one tile. Cheap: one sort + a walk over
+/// a handful of members, only while the lord actually has a focus.
+/datum/ai_lord/proc/assign_roles(mob/living/prey)
+	var/turf/pt = get_turf(prey)
+	if(!pt)
+		return
+	var/turf/centroid = pack_centroid(pt.z) // only members sharing the prey's z flank coherently
 	if(!centroid)
 		return
-	var/scan_range = detect_range
-	for(var/mob/living/M as anything in members)
-		var/turf/T = get_turf(M)
-		if(!T)
-			continue
-		var/datum/ai_brain/b = M.ai_brain
-		var/v = b ? b.vision_range : 7
-		var/r = get_dist(centroid, T) + v
-		if(r > scan_range)
-			scan_range = r
-	scan_range = min(scan_range, LORD_PERCEPTION_MAX_RANGE)
-	for(var/mob/living/H in dview(scan_range, centroid))
-		if(H.stat >= DEAD)
-			continue
-		perceived += H
-	perceived_at = world.time
-
-/// True when the shared scan is recent enough for members to read instead of
-/// running their own dview. A scan that legitimately found nothing still counts
-/// as fresh (perceived_at is set), so members in an empty area skip the dview too.
-/datum/ai_lord/proc/perception_fresh()
-	return perceived_at && (world.time - perceived_at <= LORD_PERCEPTION_TTL)
-
-/// Nearest valid prey to the pack: the shared centroid scan, plus any player a
-/// member is already locked onto. The member fallback preserves pack aggro when a
-/// player attacks from cover the centroid can't see — without a per-member scan.
-/datum/ai_lord/proc/find_focus(turf/centroid)
-	var/mob/living/best = null
-	var/best_dist = INFINITY
-	for(var/mob/living/H as anything in perceived)
-		if(!valid_prey(H))
-			continue
-		var/d = centroid ? get_dist(centroid, H) : 0
-		if(d < best_dist)
-			best = H
-			best_dist = d
+	var/front = get_dir(pt, centroid) || NORTH // the face the pack approaches from
+	// Slots fan out to the SIDES of the approach face, not the rear — sending a mob to the
+	// far side of the target makes it path away from the player and round the back, which
+	// reads as fleeing. Side slots spread the pack laterally while everyone keeps closing.
+	var/static/list/flank_turns = list(90, -90, 45, -45)
+	// Bucket members: ranged → harrier (no slot); the rest are melee, ordered nearest-
+	// first to the prey by a small insertion sort (packs are only a handful of mobs).
+	var/list/melee = list()      // mob -> distance to prey
+	var/list/ordered = list()    // melee mobs, nearest first
 	for(var/mob/living/M as anything in members)
 		var/datum/ai_brain/b = M.ai_brain
-		var/mob/living/t = b?.primary_threat
-		if(!valid_prey(t))
+		if(!b)
 			continue
-		var/d = centroid ? get_dist(centroid, t) : 0
-		if(d < best_dist)
-			best = t
-			best_dist = d
-	return best
-
-/// Order every member to engage `target`. Re-pushes only on change so we don't
-/// spam give_target / reselection.
-/datum/ai_lord/proc/command_attack(mob/living/target)
-	for(var/mob/living/M as anything in members)
+		var/turf/mt = get_turf(M)
+		if(!mt || mt.z != pt.z) // a member on another quarry layer can't flank coherently
+			continue
+		if(istype(M, /mob/living/simple_mob))
+			var/mob/living/simple_mob/SM = M
+			if(SM.projectiletype && SM.melee_damage_upper <= 0)
+				b.pack_role = DQ_ROLE_HARRIER
+				b.flank_dir = 0
+				continue
+		var/d = get_dist(mt, pt)
+		melee[M] = d
+		var/placed = FALSE
+		for(var/i in 1 to length(ordered))
+			if(d < melee[ordered[i]])
+				ordered.Insert(i, M)
+				placed = TRUE
+				break
+		if(!placed)
+			ordered += M
+	var/anchors = (length(ordered) >= 4) ? 2 : 1
+	var/flank_i = 0
+	for(var/i in 1 to length(ordered))
+		var/mob/living/M = ordered[i]
 		var/datum/ai_brain/b = M.ai_brain
-		if(b && b.primary_threat != target)
-			b.give_target(target, TRUE)
+		if(i <= anchors)
+			b.pack_role = DQ_ROLE_ANCHOR
+			b.flank_dir = front // press the front face head-on
+		else
+			b.pack_role = DQ_ROLE_FLANKER
+			b.flank_dir = turn(front, flank_turns[(flank_i % length(flank_turns)) + 1])
+			flank_i++
 
 /// One coordination tick. Called by SSai_lords.
 /datum/ai_lord/proc/process_lord()
@@ -165,16 +207,15 @@
 	if(!length(members))
 		return // disband() already ran inside remove_member
 
-	var/turf/centroid = pack_centroid()
-	// One scan for the whole pack; members read the result instead of each
-	// running their own dview this strategic tick.
-	scan(centroid)
-	var/mob/living/prey = find_focus(centroid)
+	var/mob/living/prey = find_focus()
 	if(prey)
+		if(focus != prey && length(members))
+			dqai_pdbg(members[1], "LORD", "pack focus -> [prey.name]: commanding [length(members)] members to engage + assigning flank roles", prey)
 		focus = prey
 		last_known = get_turf(prey)
 		lost_focus_at = 0
 		command_attack(prey)
+		assign_roles(prey)
 		return
 
 	// Nothing in sight. Pursue the focus's last-known tile briefly, then stand down.
@@ -183,6 +224,9 @@
 	if(!lost_focus_at)
 		lost_focus_at = world.time
 	if(world.time > lost_focus_at + LORD_FOCUS_GRACE)
+		if(length(members))
+			dqai_pdbg(members[1], "LORD", "pack standdown — lost [focus ? focus.name : "focus"] for [LORD_FOCUS_GRACE/10]s, releasing [length(members)] members", focus)
+		release_members() // clear lord-assigned targets BEFORE nulling focus (it keys off focus)
 		focus = null
 		last_known = null
 		lost_focus_at = 0

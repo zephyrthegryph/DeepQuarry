@@ -48,6 +48,8 @@
 	if(!target || !holder || holder.anchored) // anchored mobs can't path-move (Move() ignores anchored)
 		clear_path()
 		return FALSE
+	if(world.time < holder.next_move) // honor the AI move cooldown (dq_ai_move_delay)
+		return FALSE
 	var/turf/target_turf = get_turf(target)
 	if(!target_turf || target_turf.z != holder.z)
 		clear_path()
@@ -81,8 +83,11 @@
 	holder.face_atom(next)
 	var/old_loc = get_turf(holder)
 	dq_set_move_glide(holder) // glide one tile per tick so pathed movement animates smoothly too
-	step_to(holder, next)
+	// `next` is guaranteed adjacent (checked above), so a direct step beats step_to()
+	// — the latter re-runs BYOND's internal A* for what is only a one-tile move.
+	step(holder, get_dir(holder, next))
 	if(get_turf(holder) != old_loc)
+		holder.setMoveCooldown(dq_ai_move_delay(holder)) // start the move cooldown
 		cached_path.Cut(1, 2)
 		failed_steps = 0
 		return TRUE
