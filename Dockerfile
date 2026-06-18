@@ -36,9 +36,39 @@ WORKDIR /vorestation
 
 RUN apt-get install -y --no-install-recommends \
 	curl \
-    unzip
+    unzip \
+    python3 \
+    python3-pip \
+    git \
+    gcc-multilib \
+    clang \
+    libclang-dev
+
+# DQ build: the icon-repack step (tools/dq_icons) runs under python3 and needs
+# Pillow + numpy (+ bidict, used by the vendored tools/dmi module). The upstream
+# Dockerfile predates this fork-added step, so install them here.
+RUN pip3 install --break-system-packages --no-cache-dir \
+    Pillow==12.2.0 \
+    numpy==2.4.4 \
+    bidict==0.23.1
+
+# DQ build: install the Rust toolchain so the in-tree verdigris FFI lib builds
+# inline during build.sh instead of warn-skipping. verdigris/rust-toolchain.toml
+# pins the channel + i686 targets (BYOND's 32-bit ABI); rustup reads it when
+# cargo runs in verdigris/. gcc-multilib links the i686 cdylib; clang/libclang
+# back bindgen (byondapi-sys); git feeds bosion (verdigris build.rs).
+ENV PATH="/root/.cargo/bin:${PATH}"
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
 
 COPY . .
+
+# bosion (verdigris/verdigris/build.rs) captures build provenance from git, but
+# the build context excludes .git — give it a throwaway repo with one commit so
+# the build.rs probe succeeds.
+RUN git init -q . \
+    && git config user.email build@local \
+    && git config user.name "docker build" \
+    && git commit -q --allow-empty -m "docker build provenance"
 
 RUN env TG_BOOTSTRAP_NODE_LINUX=1 tools/build/build.sh
 
@@ -78,5 +108,5 @@ COPY --from=rust_g /rust_g/target/i686-unknown-linux-gnu/release/librust_g.so ./
 
 #VOLUME [ "/vorestation/config", "/vorestation/data" ]
 
-ENTRYPOINT [ "DreamDaemon", "vorestation.dmb", "-port", "2303", "-trusted", "-close", "-verbose" ]
+ENTRYPOINT [ "DreamDaemon", "deepquarry.dmb", "-port", "2303", "-trusted", "-close", "-verbose" ]
 EXPOSE 2303
