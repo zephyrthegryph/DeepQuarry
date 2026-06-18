@@ -663,7 +663,7 @@ It's fairly easy to fix if dealing with single letters but not so much with comp
 	if(victim)
 		threatcount += 4
 */
-	// DQEdit - slime rabid check moved to /datum/slime_state.
+	//slime rabid check moved to /datum/slime_state.
 	if(istype(src, /mob/living/simple_mob/slime/xenobio))
 		var/mob/living/simple_mob/slime/xenobio/X = src
 		if(X.slime_state && X.slime_state.rabid)

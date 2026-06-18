@@ -350,7 +350,7 @@
 	else
 		if(grabber.incapacitated()) return
 
-	//YW edit - size diff check
+	//size diff check
 	var/sizediff = grabber.size_multiplier - size_multiplier
 	if(sizediff < -0.5)
 		if(self_grab)
@@ -358,7 +358,7 @@
 		else
 			to_chat(grabber, span_warning("\The [src] is too big to fit in your hands!"))
 		return
-	//end YW edit
+	//end
 
 	var/obj/item/holder/H = new holder_type(get_turf(src), src)
 	H.sync(src)

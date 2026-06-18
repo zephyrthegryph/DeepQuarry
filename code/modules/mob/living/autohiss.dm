@@ -88,7 +88,7 @@
 			"th" = list("zk", "szk"),
 			"r" = list("rk")
 		)
-//YW edit over.
+//over.
 
 /datum/species/proc/handle_autohiss(message, datum/language/lang, mode)
 	if(!autohiss_basic_map)

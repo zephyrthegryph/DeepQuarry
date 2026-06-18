@@ -19,7 +19,7 @@
 	var/threat_guess = 0
 
 	// First lets consider their attack ability.
-	// DQEdit: legacy ai_brain.pointblank is dead in the modern brain — ranged
+	//legacy ai_brain.pointblank is dead in the modern brain — ranged
 	// behaviors have min_range >= 2, so no mob fires at point-blank. Leave
 	// the var here in case a future behavior wants to set it, but it's FALSE
 	// for every brain today.
@@ -142,7 +142,7 @@
 	var/threat_guess = 0
 
 	// First lets consider their attack ability.
-	// DQEdit: legacy ai_brain.pointblank is dead in the modern brain — ranged
+	//legacy ai_brain.pointblank is dead in the modern brain — ranged
 	// behaviors have min_range >= 2, so no mob fires at point-blank. Leave
 	// the var here in case a future behavior wants to set it, but it's FALSE
 	// for every brain today.

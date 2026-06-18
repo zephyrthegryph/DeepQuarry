@@ -1,5 +1,4 @@
 // DQ atmos / LINDA migration tests.
-//
 // Validates the ZAS→LINDA engine swap with CHOMP machinery on top:
 //   1. verdigris.dll loaded — Rust auxmos lib responds to call_ext
 //   2. gas_mixture procs work — adjust_gas, total_moles, return_pressure roundtrip
@@ -789,7 +788,6 @@
 // =====================================================================
 // Atmos spread / share / barrier / conservation suite
 // =====================================================================
-//
 // These tests drive process_cell directly with a monotonically increasing
 // fire_count to simulate consecutive SSair ticks under a controlled adjacency
 // graph. They cover what "atmos spreading works" means in practice:
@@ -1787,7 +1785,6 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 // =====================================================================
 // CHOMP atmos machinery integration on top of LINDA
 // =====================================================================
-//
 // The CHOMP atmospherics machinery (vents, scrubbers, pumps, canisters) was
 // built against the XGM gas API. After the LINDA migration the gas math runs
 // on /tg/'s LINDA gas_mixture (with auxmos Rust bindings). The integration
@@ -2196,7 +2193,6 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 // =====================================================================
 // Doors / CanZASPass routing through can_atmos_pass
 // =====================================================================
-//
 // A closed airlock between two rooms should block atmos. CHOMP airlocks
 // override CanZASPass; our xgm_compat.CanZASPass routes through LINDA's
 // can_atmos_pass so the override propagates into adjacency calc.

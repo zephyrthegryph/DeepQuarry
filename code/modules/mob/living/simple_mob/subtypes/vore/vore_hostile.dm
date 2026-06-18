@@ -87,7 +87,7 @@
 		return ..()
 	if(!user.devourable || !user.allowmobvore || !user.can_be_drop_prey)
 		return ..()
-	// DQEdit - was: ai_holder.give_target(user); track_target_position; set_stance(STANCE_FIGHT)
+	//was: ai_holder.give_target(user); track_target_position; set_stance(STANCE_FIGHT)
 	ai_brain?.give_target(user, TRUE)
 /////Leaper/////
 

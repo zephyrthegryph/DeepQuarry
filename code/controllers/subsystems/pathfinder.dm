@@ -38,7 +38,7 @@ SUBSYSTEM_DEF(pathfinder)
 	var/datum/pathfinding/astar/instance = new(actor, start, goal, target_distance, max_path_length)
 	return run_pathfinding(instance)
 
-// DQEdit - default_ai_pathfinding was a /datum/ai_brain helper. The modern
+//default_ai_pathfinding was a /datum/ai_brain helper. The modern
 // brain has its own wrapper in modular_dq/combat_ai/brain/pathing.dm
 // (`dq_pathfind`). The legacy proc has no remaining callers and is removed.
 

@@ -10,7 +10,7 @@
 	if(nutrition < 50)
 		to_chat(src, span_warning("You need more energy to produce antiseptic enzymes. Eat something and try again."))
 		return
-	//YW edit. Added the distance check to here. this allows the ability to lick ones own wounds. although this also means that all living/carbon/M appear on the list if used.
+	//Added the distance check to here. this allows the ability to lick ones own wounds. although this also means that all living/carbon/M appear on the list if used.
 	if (get_dist(src,M) >= 2)
 		to_chat(src, span_warning("You need to be closer to do that.")) // don't use src << unless you have to.
 		return

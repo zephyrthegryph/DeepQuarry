@@ -24,7 +24,7 @@
 	if(ai_brain)
 		ai_brain.holder = null
 		ai_brain.UnregisterSignal(src,COMSIG_MOB_STATCHANGE)
-		// DQEdit: legacy faction_friends list cleanup removed — the modern
+		//legacy faction_friends list cleanup removed — the modern
 		// brain stores relationships as weakrefs in personal[], which
 		// invalidate automatically when the referenced mob qdels.
 		QDEL_NULL(ai_brain)
