@@ -49,7 +49,9 @@
 			updateUsrDialog(usr)
 			return
 		var/mob/M = locate(href_list["traitormob"])
-		if(M.mind.special_role || jobban_isbanned(M, JOB_SYNDICATE))
+		if(!istype(M))
+			return
+		if(M.mind?.special_role || jobban_isbanned(M, JOB_SYNDICATE))
 			temptext = span_italics("We have no need for you at this time. Have a pleasant day.") + "<br>"
 			updateUsrDialog(usr)
 			return

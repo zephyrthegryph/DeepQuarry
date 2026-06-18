@@ -438,7 +438,7 @@
 			return TRUE
 		if("hardprint")
 			var/newpath = text2path(params["path"])
-			if(!newpath)
+			if(!ispath(newpath, /obj/item/book))
 				return TRUE
 			var/obj/item/book/NewBook = new newpath(get_turf(src))
 			NewBook.name = "Book: [NewBook.name]"

@@ -66,7 +66,7 @@ ADMIN_VERB(check_customitem_activity, R_ADMIN|R_MOD|R_SERVER, "Check activity of
 	//if there are ckeys left over, check whether they have a database entry at all
 	if(ckeys_with_customitems.len)
 		for(var/cur_ckey in ckeys_with_customitems)
-			var/datum/db_query/query_inactive = SSdbcore.NewQuery("SELECT ckey FROM erro_player WHERE ckey = '[cur_ckey]'")
+			var/datum/db_query/query_inactive = SSdbcore.NewQuery("SELECT ckey FROM erro_player WHERE ckey = :ckey", list("ckey" = cur_ckey))
 			query_inactive.Execute()
 			if(!query_inactive.rows)
 				inactive_ckeys += cur_ckey
