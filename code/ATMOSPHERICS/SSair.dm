@@ -783,7 +783,7 @@ GLOBAL_LIST_EMPTY(colored_images)
 	data["showing_user"] = user.hud_used.atmos_debug_overlays
 	return data
 
-/datum/controller/subsystem/air/proc/ui_act(action, list/params, datum/tgui/ui, datum/ui_state/state)
+/datum/controller/subsystem/air/proc/ui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	// was . = ..(); but as a fresh declaration there's no parent to
 	// chain to. The /tg/ ..() called /datum/ui_state ancestry which CHOMP's
 	// TGUI doesn't have. Skip the parent chain; rights check below handles

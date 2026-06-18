@@ -694,7 +694,6 @@
 	owned_core.Shutdown()
 	return
 
-#undef FUSION_HEAT_CAP
 #undef FUSION_ENERGY_PER_K
 #undef FUSION_MAX_ENVIRO_HEAT
 #undef PLASMA_TEMP_RADIATION_DIVISIOR

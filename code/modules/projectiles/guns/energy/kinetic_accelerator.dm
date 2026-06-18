@@ -1,4 +1,3 @@
-#define LAVALAND_EQUIPMENT_EFFECT_PRESSURE 50 //what pressure you have to be under to increase the effect of equipment meant for lavaland
 #define HEATMODE_ATMOSPHERE		312.1 //kPa. basically virgo 2's
 #define HEATMODE_TEMP			612 //kelvin. basically virgo 2's
 /**

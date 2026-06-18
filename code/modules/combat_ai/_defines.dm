@@ -1,3 +1,6 @@
+#ifndef DQ_COMBAT_AI_DEFINES_DM
+#define DQ_COMBAT_AI_DEFINES_DM
+
 // DeepQuarry combat AI framework — defines.
 // All identifiers prefixed with DQ_ or DQAI_ to avoid colliding with upstream.
 
@@ -107,3 +110,5 @@
 // Legacy carry-overs from the deleted ai_holder engine (AI_NORMAL,
 // MOVEMENT_*, ATTACK_*, AI_TARGET_*, ai_log) live in code/modules/ai/_defines.dm
 // so files included before this modular block can still see them.
+
+#endif // DQ_COMBAT_AI_DEFINES_DM

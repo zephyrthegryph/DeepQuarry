@@ -47,7 +47,6 @@
 #define PIPING_LAYER_SCRUBBER	3
 #define PIPING_LAYER_FUEL		4
 #define PIPING_LAYER_AUX		5
-#define PIPING_LAYER_DEFAULT	PIPING_LAYER_REGULAR
 
 // We offset the layer values of the different pipe types to ensure they look nice
 #define PIPES_AUX_LAYER			(PIPES_LAYER - 0.04)
@@ -57,10 +56,6 @@
 #define PIPES_HE_LAYER			(PIPES_LAYER + 0.01)
 
 // Pipe flags
-#define PIPING_ALL_LAYER 1					//intended to connect with all layers, check for all instead of just one.
-#define PIPING_ONE_PER_TURF 2 				//can only be built if nothing else with this flag is on the tile already.
-#define PIPING_DEFAULT_LAYER_ONLY 4			//can only exist at PIPING_LAYER_DEFAULT
-#define PIPING_CARDINAL_AUTONORMALIZE 8		//north/south east/west doesn't matter, auto normalize on build.
 
 // Disposals Construction
 // Future: Eliminate these type codes by adding disposals equivilent of pipe_state.
