@@ -202,7 +202,7 @@
 		if(client)
 			return
 		visible_message(span_notice("\The [src] pushes [M]'s hand away from their tummy and furrows their brow!"))
-		// DQEdit - prob(5) give_target on tummy rub removed.
+		//prob(5) give_target on tummy rub removed.
 	else
 		return ..()
 
@@ -254,8 +254,8 @@
 
 /mob/living/simple_mob/vore/alienanimals/catslug/Login()	//If someone plays as us let's just be a passive mob in case accidents happen if the player D/Cs
 	. = ..()
-	// DQEdit: legacy if-block emptied.
-		// DQEdit: legacy .wander reference removed (no equivalent on /datum/ai_brain).
+	//legacy if-block emptied.
+		//legacy .wander reference removed (no equivalent on /datum/ai_brain).
 /mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_color()
 	set name = "Pick Color"
 	set category = "Abilities.Settings"
@@ -386,7 +386,7 @@
 		if(client)
 			return
 		visible_message(span_notice("\The [src] pushes [M]'s hand away from their tummy and furrows their brow, frantically pressing at the buttons [M] so carelessly pushed!"))
-		// DQEdit - prob(5) give_target on tummy rub removed.
+		//prob(5) give_target on tummy rub removed.
 	else
 		return ..()
 
@@ -485,7 +485,7 @@
 		if(client)
 			return
 		visible_message(span_notice("\The [src] pushes [M]'s hand away from their tummy and furrows their brow!"))
-		// DQEdit - prob(5) give_target on tummy rub removed.
+		//prob(5) give_target on tummy rub removed.
 	else
 		return ..()
 

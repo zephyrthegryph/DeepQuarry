@@ -1,5 +1,4 @@
 // Concrete quarry layer features.
-//
 // Two broad kinds:
 //   - Resource features (ore_*): add an ore to the table and a
 //     delivery goal for that ore.
@@ -7,7 +6,6 @@
 //     the table, bump the mob spawn count, and add a kill goal.
 //   - Ambient features (overgrowth_*, debris_*): add decorations and
 //     usually a clearance goal.
-//
 // Goals are built from a small helper so authoring stays declarative.
 
 // --- helpers ------------------------------------------------------------
@@ -24,7 +22,7 @@
 	G.name = goal_name
 	G.description = description
 	G.mineral_name = mineral_name
-	// DQEdit: legacy .target reference removed (no equivalent on /datum/ai_brain).
+	//legacy .target reference removed (no equivalent on /datum/ai_brain).
 	return G
 
 // Pump quota: tick by units pumped of the given reagent ID. Units
@@ -35,7 +33,7 @@
 	G.name = goal_name
 	G.description = description
 	G.reagent_id = reagent_id
-	// DQEdit: legacy .target reference removed (no equivalent on /datum/ai_brain).
+	//legacy .target reference removed (no equivalent on /datum/ai_brain).
 	return G
 
 // Gas vent quota: tick by moles released from mined gas pockets.
@@ -45,7 +43,7 @@
 	G.name = goal_name
 	G.description = description
 	G.gas_id = gas_id
-	// DQEdit: legacy .target reference removed (no equivalent on /datum/ai_brain).
+	//legacy .target reference removed (no equivalent on /datum/ai_brain).
 	return G
 
 // Combat: tick on mob death.
@@ -55,13 +53,12 @@
 	G.name = goal_name
 	G.description = description
 	G.mob_type = mob_path
-	// DQEdit: legacy .target reference removed (no equivalent on /datum/ai_brain).
+	//legacy .target reference removed (no equivalent on /datum/ai_brain).
 	return G
 
 
 
 // === RESOURCE FEATURES ===============================================
-//
 // Each adds one ore type to the layer and a delivery quota goal for it.
 
 /datum/quarry_feature/ore_hematite
@@ -215,7 +212,6 @@
 
 
 // === OBSTACLE FEATURES ===============================================
-//
 // Each adds a hostile mob to the spawn table, increases the mob count,
 // and adds a kill quota goal targeting that mob.
 
@@ -283,7 +279,6 @@
 
 
 // === CHEMISTRY FEATURES ==============================================
-//
 // Engineering-extractable raw chemistry. Three forms:
 //   solid   — drops a stackable raw_chem item; goal counts items
 //   liquid  — drops a sealed flask of reagent; goal counts flasks
@@ -444,7 +439,6 @@
 
 
 // === EXPLORATION FEATURE =============================================
-//
 // One generic exploration goal that any layer config can include.
 
 /datum/quarry_feature/unmapped_passages
@@ -456,5 +450,5 @@
 	G.owner_layer = L
 	G.name = "Survey the Layer"
 	G.description = "Walk 120 distinct floor tiles to map the cave."
-	// DQEdit: legacy .target reference removed (no equivalent on /datum/ai_brain).
+	//legacy .target reference removed (no equivalent on /datum/ai_brain).
 	return list(G)

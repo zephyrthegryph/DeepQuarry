@@ -126,7 +126,7 @@
 
 	update_icon()
 
-// DQEdit - legacy /datum/ai_brain/.../can_attack and /engage_target overrides
+//legacy /datum/ai_brain/.../can_attack and /engage_target overrides
 // removed in the combat migration. Behaviors now handled by the brain.
 
 /mob/living/simple_mob/vore/blaidd/hostile

@@ -117,7 +117,7 @@
 			currently_using = FALSE
 			return ..()
 
-		// DQEdit: legacy .hostile reference removed (no equivalent on /datum/ai_brain).
+		//legacy .hostile reference removed (no equivalent on /datum/ai_brain).
 		to_chat(M, span_warning("You consume the agent and feel a serene sense of peace."))
 		to_chat(user, span_notice("You feed \the [SM] the agent, calming it."))
 

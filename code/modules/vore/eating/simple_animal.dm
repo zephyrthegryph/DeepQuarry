@@ -8,9 +8,7 @@
 		init_vore(TRUE)
 	..()
 
-//
 // Simple nom proc for if you get ckey'd into a simple_mob mob! Avoids grabs.
-//
 /mob/living/simple_mob/proc/animal_nom(mob/living/T in living_mobs_in_view(1))
 	set name = "Animal Nom"
 	set category = "Abilities.Vore" // Moving this to abilities from IC as it's more fitting there
@@ -46,10 +44,8 @@
 		init_vore(TRUE)
 		belly = vore_selected
 	return ..()
-//
 // Simple proc for animals to have their digestion toggled on/off externally
 // Added as a verb in /mob/living/simple_mob/init_vore() if vore is enabled for this mob.
-//
 /mob/living/simple_mob/proc/toggle_digestion()
 	set name = "Toggle Animal's Digestion"
 	set desc = "Enables digestion on this mob for 20 minutes."
@@ -91,7 +87,7 @@
 
 /mob/living/simple_mob/attackby(obj/item/O, mob/user)
 	if(istype(O, /obj/item/newspaper) && !(ckey || (ai_brain.hostile && faction != user.faction)) && isturf(user.loc))
-		// DQEdit: legacy `.retaliate` is dead — every brain mob fights back on
+		//legacy `.retaliate` is dead — every brain mob fights back on
 		// provocation. Gate stays on brain presence + the existing coin flip.
 		if(ai_brain && prob(vore_pounce_chance/2)) // This is a gamble!
 			user.Weaken(5) //They get tackled anyway whether they're edible or not.
@@ -101,7 +97,7 @@
 				animal_nom(user)
 				update_icon()
 				if(ai_brain) ai_brain.busy = FALSE
-			// DQEdit - legacy give_target call on attack/feed removed; brain handles auto-targeting.
+			//legacy give_target call on attack/feed removed; brain handles auto-targeting.
 		else
 			user.visible_message(span_info("[user] swats [src] with [O]!"))
 			release_vore_contents()

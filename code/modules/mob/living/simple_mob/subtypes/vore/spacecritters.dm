@@ -26,7 +26,7 @@
 	melee_damage_upper = 12
 	melee_miss_chance = 0
 	melee_attack_delay = 1.5
-	// DQEdit — dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
+	//dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
 	heat_resist = 1.0
 	cold_resist = 1.0

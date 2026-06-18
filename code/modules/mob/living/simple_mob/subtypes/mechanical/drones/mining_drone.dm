@@ -129,7 +129,7 @@
 							break
 		return has_tool
 
-// DQEdit - the IFF retaliation hooks (attack_hand / bullet_act / hit_with_weapon)
+//the IFF retaliation hooks (attack_hand / bullet_act / hit_with_weapon)
 // poked legacy ai_brain.check_attacker / add_attacker. The modern brain handles
 // retaliation automatically via dq_notify_damage; these wrappers are noops now.
 /mob/living/simple_mob/mechanical/mining_drone/attack_hand(mob/living/L)

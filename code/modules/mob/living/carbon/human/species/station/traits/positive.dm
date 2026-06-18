@@ -35,7 +35,7 @@
 	desc = "Your unarmed attacks deal more damage. (+5 per attack)"
 	cost = 1
 	custom_only = FALSE
-	hidden = FALSE // Disabled on Virgo. //
+	hidden = FALSE // Disabled on Virgo.
 	var_changes = list("unarmed_bonus" = 5)
 	excludes = list(/datum/trait/positive/punchdamageplus)
 	banned_species = list(SPECIES_TESHARI)
@@ -45,7 +45,7 @@
 	desc = "Your unarmed attacks deal high damage. (+10 per attack)"
 	cost = 2
 	custom_only = FALSE
-	hidden = FALSE // Disabled on Virgo. //
+	hidden = FALSE // Disabled on Virgo.
 	var_changes = list("unarmed_bonus" = 10)
 	excludes = list(/datum/trait/positive/punchdamage)
 	banned_species = list(SPECIES_TESHARI, SPECIES_VOX)
@@ -64,7 +64,7 @@
 	desc = "Your unarmed attacks deal more damage (+5), and you can carry heavy equipment with 50% less slowdown."
 	cost = 2
 	custom_only = FALSE
-	hidden = FALSE // Disabled on Virgo. //
+	hidden = FALSE // Disabled on Virgo.
 	var_changes = list("unarmed_bonus" = 5, "item_slowdown_mod" = 0.5)
 	excludes = list(/datum/trait/positive/punchdamage, /datum/trait/positive/hardy, /datum/trait/positive/hardy_plus, /datum/trait/positive/speed_fast)
 	banned_species = list(SPECIES_ALRAUNE, SPECIES_TESHARI, SPECIES_UNATHI, SPECIES_DIONA, SPECIES_PROMETHEAN, SPECIES_PROTEAN)
@@ -74,7 +74,7 @@
 	desc = "You are unreasonably strong. Your unarmed attacks do high damage (+10), you experience much less slowdown from heavy equipment (75% less)."
 	cost = 4
 	custom_only = FALSE
-	hidden = FALSE // Disabled on Virgo. //
+	hidden = FALSE // Disabled on Virgo.
 	var_changes = list("unarmed_bonus" = 10, "item_slowdown_mod" = 0.25)
 	excludes = list(/datum/trait/positive/punchdamage, /datum/trait/positive/hardy, /datum/trait/positive/punchdamageplus, /datum/trait/positive/hardy_plus, /datum/trait/positive/speed_fast)
 	banned_species = list(SPECIES_ALRAUNE, SPECIES_TESHARI, SPECIES_UNATHI, SPECIES_DIONA, SPECIES_PROMETHEAN, SPECIES_PROTEAN, SPECIES_VOX)
@@ -836,7 +836,7 @@
 	custom_only = FALSE
 	var_changes = list("chem_strength_heal" = 1.2)
 
-/datum/trait/positive/photoresistant_plus // YW added Trait
+/datum/trait/positive/photoresistant_plus //Trait
 	name = "Photoresistance, Major"
 	desc = "Decreases stun duration from flashes and other light-based stuns and disabilities by 50%."
 	cost = 2

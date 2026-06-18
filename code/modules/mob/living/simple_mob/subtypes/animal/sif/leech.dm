@@ -207,7 +207,7 @@
 
 			if(prob(15 + (20 * heartless_mod)))
 				feed_on_organ()
-	// DQEdit: legacy else-clause emptied (was ai_holder reset).
+	//legacy else-clause emptied (was ai_holder reset).
 	if(host && host.stat == DEAD && istype(get_turf(host), /turf/simulated/floor/water))
 		leave_host()
 

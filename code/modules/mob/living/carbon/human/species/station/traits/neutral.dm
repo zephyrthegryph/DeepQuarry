@@ -232,7 +232,7 @@
 	cost = 0
 	custom_only = FALSE
 	var_changes = list("organic_food_coeff" = 0, "bloodsucker" = TRUE) //The verb is given in human.dm
-	excludes = list(/datum/trait/neutral/bloodsucker_freeform, /datum/trait/positive/bloodsucker_plus) //YW edit
+	excludes = list(/datum/trait/neutral/bloodsucker_freeform, /datum/trait/positive/bloodsucker_plus)
 
 /datum/trait/neutral/bloodsucker/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
@@ -253,7 +253,7 @@
 	cost = 0
 	custom_only = FALSE
 	var_changes = list("bloodsucker" = TRUE)
-	excludes = list(/datum/trait/neutral/bloodsucker, /datum/trait/positive/bloodsucker_plus) //YW edit
+	excludes = list(/datum/trait/neutral/bloodsucker, /datum/trait/positive/bloodsucker_plus)
 
 /datum/trait/neutral/bloodsucker_freeform/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
@@ -339,7 +339,7 @@
 	H.trait_injection_reagents += REAGENT_ID_RAINBOWTOXIN 	// Funny flashing lights.
 	H.trait_injection_reagents += REAGENT_ID_PARALYSISTOXIN 	// Paralysis!
 	H.trait_injection_reagents += REAGENT_ID_PAINENZYME		// Pain INCREASER
-	H.trait_injection_reagents += REAGENT_ID_APHRODISIAC // Horni //
+	H.trait_injection_reagents += REAGENT_ID_APHRODISIAC // Horni
 
 /datum/trait/neutral/long_vore
 	name = "Long Predatorial Reach"
@@ -1839,14 +1839,14 @@
 	name = "Growing"
 	desc = "After you consume enough nutrition, you start to slowly grow while metabolizing nutrition faster."
 	cost = 0
-	hidden = FALSE // Disabled on Virgo //
+	hidden = FALSE // Disabled on Virgo
 	added_component_path = /datum/component/nutrition_size_change/growing
 
 /datum/trait/neutral/nutritionshrink
 	name = "Shrinking"
 	desc = "If you don't eat enough, your body starts shrinking to make up the difference!"
 	cost = 0
-	hidden = FALSE // Disabled on Virgo //
+	hidden = FALSE // Disabled on Virgo
 	added_component_path = /datum/component/nutrition_size_change/shrinking
 
 /datum/trait/neutral/disease_carrier

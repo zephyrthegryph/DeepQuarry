@@ -106,7 +106,7 @@
 	if(pred && !extra_possessive && !(LAZYFIND(prey_excludes, target)))
 		LAZYSET(prey_excludes, target, world.time)
 		addtimer(CALLBACK(src, PROC_REF(removeMobFromPreyExcludes), WEAKREF(target)), 5 MINUTES)
-	// DQEdit: legacy if-block emptied.
+	//legacy if-block emptied.
 
 /mob/living/simple_mob/vore/pakkun/load_default_bellies()
 	. = ..()

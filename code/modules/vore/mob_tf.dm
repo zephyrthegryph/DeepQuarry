@@ -93,7 +93,7 @@
 		tf_mob_holder = null
 		return
 	new /obj/effect/effect/teleport_greyscale(src.loc)
-	// DQEdit - legacy ai_holder.set_stance(STANCE_SLEEP) removed; brain auto-sleeps
+	//legacy ai_holder.set_stance(STANCE_SLEEP) removed; brain auto-sleeps
 	// when the mob's stat changes via its COMSIG_MOB_STATCHANGE handler.
 	tf_mob_holder = null
 	ourmob.ckey = ckey
@@ -191,7 +191,7 @@
 			new_mob.ckey = src.ckey
 			if(new_mob.tf_form_ckey)
 				src.ckey = new_mob.tf_form_ckey
-			// DQEdit - legacy ai_holder state transfer between original and TF'd mob
+			//legacy ai_holder state transfer between original and TF'd mob
 			// no longer needed; modern brain spawns fresh on the new mob.
 			src.loc = new_mob
 			src.forceMove(new_mob)
