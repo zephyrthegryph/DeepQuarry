@@ -794,7 +794,8 @@
 			if(!islist(item_meta))
 				item_meta = list()
 			var/list/cur_meta = item_meta["[tweak_idx]"]
-			var/list/swaps = (islist(cur_meta) && cur_meta["mode"] == "palette" && islist(cur_meta["value"])) ? cur_meta["value"].Copy() : list()
+			var/list/cur_swaps = (islist(cur_meta) && cur_meta["mode"] == "palette" && islist(cur_meta["value"])) ? cur_meta["value"] : null
+			var/list/swaps = cur_swaps ? cur_swaps.Copy() : list()
 			var/cur_value = swaps[original] || original
 			var/picked = tgui_color_picker(user, "Recolor source [original]", "[G.display_name]", cur_value)
 			if(!picked)

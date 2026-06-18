@@ -4263,7 +4263,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 		"pipeline volume mismatch: pipeline=[Line.air.volume] pipe=[Pipe.volume]")
 	TEST_ASSERT(Pipe.parent == Line, \
 		"pipe.parent not set to the pipeline: pipe.parent=[Pipe.parent] line=[Line]")
-	TEST_ASSERT(Line.members && Pipe in Line.members, \
+	TEST_ASSERT(Line.members && (Pipe in Line.members), \
 		"pipe not in pipeline.members after build_pipeline")
 
 	qdel(Line)

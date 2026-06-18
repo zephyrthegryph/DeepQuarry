@@ -48,7 +48,11 @@
 	if(!active_ui)
 		var/datum/tgui_window/win = new(C, "mapwindow.belly_overlay")
 		active_ui = new /datum/tgui(owner, src, "BellyOverlay", "Belly Overlay", null, null, null, win)
-		active_ui.open()
+		// Opening the window touches blocking BYOND UI calls (winexists / asset
+		// stoplag). This UI can be reached from no-sleep contexts (e.g. a death
+		// triggered during atom Initialize), so fire the open asynchronously — it
+		// is inherently fire-and-forget — to keep those callers non-blocking.
+		INVOKE_ASYNC(active_ui, TYPE_PROC_REF(/datum/tgui, open))
 
 /datum/belly_overlay_tgui/proc/build_show_signature(obj/belly/B, mob/prey)
 	// Cheap signature of everything that affects the rendered layer set. Continuous

@@ -155,7 +155,8 @@
 	// Don't go hunting while already nested inside a machine.
 	if(istype(LV.loc, /obj/machinery))
 		return null
-	var/obj/machinery/M = dq_get_selector(/datum/target_selector/larva_machine).select(brain, null)
+	var/datum/target_selector/larva_selector = dq_get_selector(/datum/target_selector/larva_machine)
+	var/obj/machinery/M = larva_selector.select(brain, null)
 	if(!M)
 		return null
 	return DQAI_RESULT(20, M)

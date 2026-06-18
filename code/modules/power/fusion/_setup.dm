@@ -1,5 +1,4 @@
 // temperature of the core of the sun
-#define FUSION_HEAT_CAP 1.57e7
 
 #define SETUP_OK 1			// All good
 #define SETUP_WARNING 2		// Something that shouldn't happen happened, but it's not critical so we will continue

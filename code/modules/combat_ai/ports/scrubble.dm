@@ -65,7 +65,8 @@
 		return null
 	var/mob/living/simple_mob/vore/scrubble/S = brain.holder
 	if(!istype(S))
-		return dq_get_selector(/datum/target_selector/closest).select(brain, candidates)
+		var/datum/target_selector/closest_selector = dq_get_selector(/datum/target_selector/closest)
+		return closest_selector.select(brain, candidates)
 	var/list/edible = list()
 	for(var/mob/living/M as anything in candidates)
 		if(S.will_eat(M))

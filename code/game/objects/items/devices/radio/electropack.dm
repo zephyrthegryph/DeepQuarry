@@ -82,6 +82,7 @@
 
 // TGUI Electropack window; no more browse() panel.
 /obj/item/radio/electropack/attack_self(mob/user, flag1)
+	. = ..()
 	if(!ishuman(user))
 		return
 	user.set_machine(src)

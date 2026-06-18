@@ -103,7 +103,8 @@
 
 /datum/target_selector/sakimm_loot/select(datum/ai_brain/brain, list/candidates)
 	// Living threats always take priority — defend yourself first.
-	var/threat = dq_get_selector(/datum/target_selector/closest).select(brain, candidates)
+	var/datum/target_selector/closest_selector = dq_get_selector(/datum/target_selector/closest)
+	var/threat = closest_selector.select(brain, candidates)
 	if(threat)
 		return threat
 	return null  // loot acquisition is handled by the steal behavior, not here
