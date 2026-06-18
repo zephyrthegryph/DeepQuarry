@@ -143,9 +143,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 			to_chat(src, span_warning("Sorry, that link doesn't appear to be valid. Please try again."))
 			return
 
-		var/sql_discord = sql_sanitize_text(their_id)
-		var/sql_ckey = sql_sanitize_text(ckey)
-		var/datum/db_query/query = SSdbcore.NewQuery("UPDATE erro_player SET discord_id = '[sql_discord]' WHERE ckey = '[sql_ckey]'")
+		var/datum/db_query/query = SSdbcore.NewQuery("UPDATE erro_player SET discord_id = :discord_id WHERE ckey = :ckey", list("discord_id" = their_id, "ckey" = ckey))
 		if(query.Execute())
 			to_chat(src, span_notice("Registration complete! Thank you for taking the time to register your Discord ID."))
 			log_and_message_admins("[ckey] has registered their Discord ID. Their Discord snowflake ID is: [their_id]", src)
@@ -438,9 +436,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	if(!SSdbcore.IsConnected())
 		return null
 
-	var/sql_ckey = sql_sanitize_text(ckey(key))
-
-	var/datum/db_query/query = SSdbcore.NewQuery("SELECT datediff(Now(),firstseen) as age FROM erro_player WHERE ckey = '[sql_ckey]'")
+	var/datum/db_query/query = SSdbcore.NewQuery("SELECT datediff(Now(),firstseen) as age FROM erro_player WHERE ckey = :ckey", list("ckey" = ckey(key)))
 	query.Execute()
 
 	var/player_age = -1
@@ -458,9 +454,9 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	if(!SSdbcore.IsConnected())
 		return
 
-	var/sql_ckey = sql_sanitize_text(src.ckey)
+	var/sql_ckey = src.ckey
 
-	var/datum/db_query/query = SSdbcore.NewQuery("SELECT id, datediff(Now(),firstseen) as age FROM erro_player WHERE ckey = '[sql_ckey]'")
+	var/datum/db_query/query = SSdbcore.NewQuery("SELECT id, datediff(Now(),firstseen) as age FROM erro_player WHERE ckey = :ckey", list("ckey" = sql_ckey))
 	if(!query.Execute())
 		qdel(query)
 		return
@@ -472,9 +468,9 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		break
 
 	qdel(query)
-	account_join_date = sanitizeSQL(findJoinDate())
+	account_join_date = findJoinDate()
 	if(account_join_date && SSdbcore.IsConnected())
-		var/datum/db_query/query_datediff = SSdbcore.NewQuery("SELECT DATEDIFF(Now(),'[account_join_date]')")
+		var/datum/db_query/query_datediff = SSdbcore.NewQuery("SELECT DATEDIFF(Now(), :join_date)", list("join_date" = account_join_date))
 		if(!query_datediff.Execute())
 			qdel(query)
 			return
@@ -482,7 +478,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 			account_age = text2num(query_datediff.item[1])
 		qdel(query_datediff)
 
-	var/datum/db_query/query_ip = SSdbcore.NewQuery("SELECT ckey FROM erro_player WHERE ip = '[address]'")
+	var/datum/db_query/query_ip = SSdbcore.NewQuery("SELECT ckey FROM erro_player WHERE ip = :ip", list("ip" = address))
 	if(!query_ip.Execute())
 		qdel(query)
 		return
@@ -493,7 +489,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		break
 	qdel(query_ip)
 
-	var/datum/db_query/query_cid = SSdbcore.NewQuery("SELECT ckey FROM erro_player WHERE computerid = '[computer_id]'")
+	var/datum/db_query/query_cid = SSdbcore.NewQuery("SELECT ckey FROM erro_player WHERE computerid = :computerid", list("computerid" = computer_id))
 	if(!query_cid.Execute())
 		qdel(query)
 		return
@@ -515,9 +511,9 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	if(src.holder)
 		admin_rank = src.holder.rank_names()
 
-	var/sql_ip = sql_sanitize_text(src.address)
-	var/sql_computerid = sql_sanitize_text(src.computer_id)
-	var/sql_admin_rank = sql_sanitize_text(admin_rank)
+	var/sql_ip = src.address
+	var/sql_computerid = src.computer_id
+	var/sql_admin_rank = admin_rank
 
 	// If you're about to disconnect the player, you have to use to_chat_immediate otherwise they won't get the message (SSchat will queue it)
 
@@ -552,7 +548,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		else
 			log_admin("Couldn't perform IP check on [key] with [address]")
 
-	var/datum/db_query/query_hours = SSdbcore.NewQuery("SELECT department, hours, total_hours FROM vr_player_hours WHERE ckey = '[sql_ckey]'")
+	var/datum/db_query/query_hours = SSdbcore.NewQuery("SELECT department, hours, total_hours FROM vr_player_hours WHERE ckey = :ckey", list("ckey" = sql_ckey))
 	if(query_hours.Execute())
 		while(query_hours.NextRow())
 			department_hours[query_hours.item[1]] = text2num(query_hours.item[2])
@@ -564,18 +560,18 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	qdel(query_hours)
 	if(sql_id)
 		//Player already identified previously, we need to just update the 'lastseen', 'ip' and 'computer_id' variables
-		var/datum/db_query/query_update = SSdbcore.NewQuery("UPDATE erro_player SET lastseen = Now(), ip = '[sql_ip]', computerid = '[sql_computerid]', lastadminrank = '[sql_admin_rank]' WHERE id = [sql_id]")
+		var/datum/db_query/query_update = SSdbcore.NewQuery("UPDATE erro_player SET lastseen = Now(), ip = :ip, computerid = :computerid, lastadminrank = :admin_rank WHERE id = :id", list("ip" = sql_ip, "computerid" = sql_computerid, "admin_rank" = sql_admin_rank, "id" = sql_id))
 		query_update.Execute()
 		qdel(query_update)
 	else
 		//New player!! Need to insert all the stuff
-		var/datum/db_query/query_insert = SSdbcore.NewQuery("INSERT INTO erro_player (id, ckey, firstseen, lastseen, ip, computerid, lastadminrank) VALUES (null, '[sql_ckey]', Now(), Now(), '[sql_ip]', '[sql_computerid]', '[sql_admin_rank]')")
+		var/datum/db_query/query_insert = SSdbcore.NewQuery("INSERT INTO erro_player (id, ckey, firstseen, lastseen, ip, computerid, lastadminrank) VALUES (null, :ckey, Now(), Now(), :ip, :computerid, :admin_rank)", list("ckey" = sql_ckey, "ip" = sql_ip, "computerid" = sql_computerid, "admin_rank" = sql_admin_rank))
 		query_insert.Execute()
 		qdel(query_insert)
 
 	//Logging player access
 	var/serverip = "[world.internet_address]:[world.port]"
-	var/datum/db_query/query_accesslog = SSdbcore.NewQuery("INSERT INTO `erro_connection_log`(`id`,`datetime`,`serverip`,`ckey`,`ip`,`computerid`) VALUES(null,Now(),'[serverip]','[sql_ckey]','[sql_ip]','[sql_computerid]');")
+	var/datum/db_query/query_accesslog = SSdbcore.NewQuery("INSERT INTO `erro_connection_log`(`id`,`datetime`,`serverip`,`ckey`,`ip`,`computerid`) VALUES(null,Now(),:serverip,:ckey,:ip,:computerid)", list("serverip" = serverip, "ckey" = sql_ckey, "ip" = sql_ip, "computerid" = sql_computerid))
 	query_accesslog.Execute()
 	qdel(query_accesslog)
 

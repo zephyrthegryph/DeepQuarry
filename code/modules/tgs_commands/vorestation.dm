@@ -89,8 +89,7 @@ GLOBAL_LIST_EMPTY(pending_discord_registrations)
 
 /datum/tgs_chat_command/register/Run(datum/tgs_chat_user/sender, params)
 	// Try to find if that ID is registered to someone already
-	var/sql_discord = sql_sanitize_text(sender.id)
-	var/datum/db_query/query = SSdbcore.NewQuery("SELECT discord_id FROM erro_player WHERE discord_id = '[sql_discord]'")
+	var/datum/db_query/query = SSdbcore.NewQuery("SELECT discord_id FROM erro_player WHERE discord_id = :discord_id", list("discord_id" = sender.id))
 	query.Execute()
 	if(query.NextRow())
 		qdel(query)
@@ -113,8 +112,7 @@ GLOBAL_LIST_EMPTY(pending_discord_registrations)
 	if(!user)
 		return "[sender.friendly_name], I couldn't find a logged-in user with the username of '[key_to_find]', which is what you provided after conversion to Byond's ckey format. Please connect to the game server and try again."
 
-	var/sql_ckey = sql_sanitize_text(key_to_find)
-	query = SSdbcore.NewQuery("SELECT discord_id FROM erro_player WHERE ckey = '[sql_ckey]'")
+	query = SSdbcore.NewQuery("SELECT discord_id FROM erro_player WHERE ckey = :ckey", list("ckey" = key_to_find))
 	query.Execute()
 
 	// We somehow found their client, BUT they don't exist in the database
