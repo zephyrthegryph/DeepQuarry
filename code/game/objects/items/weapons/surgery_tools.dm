@@ -56,7 +56,7 @@
 	icon_state = "hemostat"
 	matter = list(MAT_STEEL = 5000, MAT_GLASS = 2500)
 	attack_verb = list("attacked", "pinched")
-	hitsound = 'sound/items/wirecutter.ogg'
+	hitsound = 'sound/items/Wirecutter.ogg'
 	drop_sound = 'sound/items/drop/scrap.ogg'
 
 /*

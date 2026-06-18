@@ -2,7 +2,7 @@
 	name = "bullet"
 	icon = 'icons/obj/projectiles_yw.dmi' // uses our bullet sprites
 	icon_state = "bullet"
-	fire_sound = 'sound/weapons/Gunshot4.ogg'
+	fire_sound = 'sound/weapons/gunshot4.ogg'
 	damage = 60
 	damage_type = BRUTE
 	nodamage = 0

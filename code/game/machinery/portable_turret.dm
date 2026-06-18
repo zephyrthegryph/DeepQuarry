@@ -394,7 +394,7 @@
 			lethal_icon_color = "green"
 			lethal_projectile = /obj/item/projectile/beam/xray
 			projectile = /obj/item/projectile/beam/stun // Otherwise we fire xrays on both modes.
-			lethal_shot_sound = 'sound/weapons/eluger.ogg'
+			lethal_shot_sound = 'sound/weapons/eLuger.ogg'
 			shot_sound = 'sound/weapons/taser.ogg'
 
 /obj/machinery/porta_turret/proc/isLocked(mob/user)

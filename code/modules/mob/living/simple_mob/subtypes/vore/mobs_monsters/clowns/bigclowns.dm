@@ -152,7 +152,7 @@
 	name = "A Clown?"
 	desc = "Just look at those muscles."
 	tt_desc = "E Homo sapiens corydon horrificus" //this is a redspace clown
-	icon = 'icons/mob/mobs_monsters/tgclowns.dmi'
+	icon = 'icons/mob/mobs_monsters/TGClowns.dmi'
 	icon_state = "honkhulk"
 	icon_living = "honkhulk"
 	icon_dead = "hulk_dead"
@@ -172,7 +172,7 @@
 	name = "A Clown?"
 	desc = "Why the long face?"
 	tt_desc = "E Homo sapiens corydon horrificus" //this is a redspace clown
-	icon = 'icons/mob/mobs_monsters/tgclowns.dmi'
+	icon = 'icons/mob/mobs_monsters/TGClowns.dmi'
 	icon_state = "long face"
 	icon_living = "long face"
 	icon_dead = "long_dead"
@@ -190,7 +190,7 @@
 	name = "A Giggles?"
 	desc = "Oh sweet space christ."
 	tt_desc = "E Homo sapiens corydon horrificus" //this is a redspace clown
-	icon = 'icons/mob/mobs_monsters/tgclowns.dmi'
+	icon = 'icons/mob/mobs_monsters/TGClowns.dmi'
 	icon_state = "giggles"
 	icon_living = "giggles"
 	icon_dead = "giggles_dead"
@@ -202,7 +202,7 @@
 	name = "A Clown?"
 	desc = "That clown looks like he means business."
 	tt_desc = "E Homo sapiens corydon horrificus" //this is a redspace clown
-	icon = 'icons/mob/mobs_monsters/tgclowns.dmi'
+	icon = 'icons/mob/mobs_monsters/TGClowns.dmi'
 	icon_state = "destroyer"
 	icon_living = "destroyer"
 	icon_dead = "destroyer_dead"
@@ -233,7 +233,7 @@
 	name = "A Clown?"
 	desc = "No."
 	tt_desc = "E Homo sapiens corydon horrificus" //this is a redspace clown
-	icon = 'icons/mob/mobs_monsters/tgclowns.dmi'
+	icon = 'icons/mob/mobs_monsters/TGClowns.dmi'
 	icon_state = "chlown"
 	icon_living = "chlown"
 	icon_dead = "chlown_dead"
@@ -251,7 +251,7 @@
 	name = "A Clown?"
 	desc = "Hey that clown looks familiar!"
 	tt_desc = "E Homo sapiens corydon horrificus" //this is a redspace clown
-	icon = 'icons/mob/mobs_monsters/tgclowns.dmi'
+	icon = 'icons/mob/mobs_monsters/TGClowns.dmi'
 	icon_state = "scary_clown"
 	icon_living = "scary_clown"
 	icon_dead = "scary_dead"
@@ -263,7 +263,7 @@
 	name = "A Clown?"
 	desc = "WOOOOO STREAKING WOOOO!"
 	tt_desc = "E Homo sapiens corydon horrificus" //this is a redspace clown
-	icon = 'icons/mob/mobs_monsters/tgclowns.dmi'
+	icon = 'icons/mob/mobs_monsters/TGClowns.dmi'
 	icon_state = "fleshclown"
 	icon_living = "fleshclown"
 	icon_dead = "flesh_dead"
@@ -275,7 +275,7 @@
 	name = "Definitely a singular clown"
 	desc = "Is it one clown, or many clowns in not a trenchcoat?"
 	tt_desc = "E Homo sapiens corydon horrificus" //this is a redspace clown
-	icon = 'icons/mob/mobs_monsters/tgclowns.dmi'
+	icon = 'icons/mob/mobs_monsters/TGClowns.dmi'
 	icon_state = "clowns"
 	icon_living = "clowns"
 	icon_dead = "clowns_dead"
@@ -293,7 +293,7 @@
 	name = "A Clown?"
 	desc = "Oh sweet space christ."
 	tt_desc = "E Homo sapiens corydon horrificus" //this is a redspace clown
-	icon = 'icons/mob/mobs_monsters/tgclowns.dmi'
+	icon = 'icons/mob/mobs_monsters/TGClowns.dmi'
 	icon_state = "mutant"
 	icon_living = "mutant"
 	icon_dead = "mutant_dead"
@@ -311,7 +311,7 @@
 	name = "A Clown?"
 	desc = "Go to a gym fatty!"
 	tt_desc = "E Homo sapiens corydon horrificus" //this is a redspace clown
-	icon = 'icons/mob/mobs_monsters/tgclowns.dmi'
+	icon = 'icons/mob/mobs_monsters/TGClowns.dmi'
 	icon_state = "blob"
 	icon_living = "blob"
 	icon_dead = "blob_dead"
@@ -347,7 +347,7 @@
 	name = "A Clown?"
 	desc = "Oh sweet space christ."
 	tt_desc = "E Homo sapiens corydon horrificus" //this is a redspace clown
-	icon = 'icons/mob/mobs_monsters/tgclowns.dmi'
+	icon = 'icons/mob/mobs_monsters/TGClowns.dmi'
 	icon_state = "honkling"
 	icon_living = "honkling"
 	icon_dead = "honkling_dead"
@@ -361,7 +361,7 @@
 //	name = "A Clown?"
 //	desc = "Oh sweet space christ."
 //	tt_desc = "E Homo sapiens corydon horrificus" //this is a redspace clown
-//	icon = 'icons/mob/mobs_monsters/tgclowns.dmi'
+//	icon = 'icons/mob/mobs_monsters/TGClowns.dmi'
 //	icon_state = ""
 //	icon_living = ""
 //	icon_dead = "_dead"

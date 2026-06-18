@@ -8,7 +8,7 @@
 /mob/living/simple_mob/vr
 	name = "vr creation"
 	desc = "A digital creature"
-	icon = 'icons/mob/animal_vg.dmi'
+	icon = 'icons/mob/animal_VG.dmi'
 	icon_state = "bookbat_purple"
 	icon_living = "bookbat_purple"
 	icon_dead = "bookbat_purple_dead"

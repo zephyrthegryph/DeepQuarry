@@ -2177,7 +2177,7 @@
 		user.visible_message(span_warning("[user] presses a button on [src]"), span_notice("You activate [src], it plays a loud noise!"), span_notice("You hear the click of a button."))
 		spawn(5) //gia said so
 			icon_state = "nuketoy"
-			playsound(src, 'sound/machines/alarm.ogg', 10, 0, 0)
+			playsound(src, 'sound/machines/Alarm.ogg', 10, 0, 0)
 			VARSET_IN(src, icon_state, "nuketoycool", 135)
 			VARSET_IN(src, icon_state, "nuketoyidle", (135 + (cooldown - world.time)))
 	else

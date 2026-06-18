@@ -48,7 +48,7 @@
 
 	movement_cooldown = 3
 
-	projectilesound = 'sound/weapons/Gunshot_light.ogg'
+	projectilesound = 'sound/weapons/gunshot_light.ogg'
 
 
 	special_attack_cooldown = 15 SECONDS

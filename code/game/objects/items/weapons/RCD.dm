@@ -140,7 +140,7 @@
 			return FALSE
 		if(A.rcd_act(user, src, rcd_results[RCD_VALUE_MODE]))
 			consume_resources(rcd_results[RCD_VALUE_COST])
-			playsound(A, 'sound/items/deconstruct.ogg', 50, 1)
+			playsound(A, 'sound/items/Deconstruct.ogg', 50, 1)
 			cleanup_effect(A)
 			return TRUE
 

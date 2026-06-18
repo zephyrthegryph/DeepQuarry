@@ -591,7 +591,7 @@
 
 	needs_reload = TRUE
 	reload_max = 2
-	projectilesound = 'sound/weapons/Gunshot_shotgun.ogg'
+	projectilesound = 'sound/weapons/gunshot_shotgun.ogg'
 
 
 /mob/living/simple_mob/humanoid/cultist/hunter/death()

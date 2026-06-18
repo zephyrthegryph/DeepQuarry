@@ -346,7 +346,7 @@
 	icon_state = "syndicateranged_veteran"
 	icon_living = "syndicateranged_veteran"
 	projectiletype = /obj/item/projectile/bullet/rifle/a762
-	projectilesound = 'sound/weapons/Gunshot_heavy.ogg'
+	projectilesound = 'sound/weapons/gunshot_heavy.ogg'
 	loot_list = list(/obj/item/gun/projectile/garand = 100)
 	reload_max = 8
 	reload_time = 2 // It takes a bit to jam a stripper clip into the rifle.
@@ -358,7 +358,7 @@
 	icon_state = "syndicate_handcannon"
 	icon_living = "syndicate_handcannon"
 	projectiletype = /obj/item/projectile/bullet/pistol/strong
-	projectilesound = 'sound/weapons/Gunshot_deagle.ogg'
+	projectilesound = 'sound/weapons/gunshot_deagle.ogg'
 	loot_list = list(/obj/item/gun/projectile/deagle = 100)
 	needs_reload = TRUE
 	reload_max = 7		// Deagle Reload
@@ -432,7 +432,7 @@
 	reload_max = 7
 	reload_time = 2 SECONDS //Takes a While to load all those shells.
 	projectiletype = /obj/item/projectile/bullet/pellet/shotgun		// Buckshot
-	projectilesound = 'sound/weapons/Gunshot_shotgun.ogg'
+	projectilesound = 'sound/weapons/gunshot_shotgun.ogg'
 	loot_list = list(/obj/item/gun/projectile/shotgun/pump/combat = 100)
 
 //Auto-Shotgun Space Merc
@@ -444,7 +444,7 @@
 	base_attack_cooldown = 5 // Two attacks a second or so.
 	reload_max = 24
 	projectiletype = /obj/item/projectile/bullet/pellet/shotgun		// Buckshot
-	projectilesound = 'sound/weapons/Gunshot_shotgun.ogg'
+	projectilesound = 'sound/weapons/gunshot_shotgun.ogg'
 	loot_list = list(/obj/item/gun/projectile/automatic/as24 = 100)
 
 //Machine Gun Merc
@@ -456,7 +456,7 @@
 	base_attack_cooldown = 2.5 // Four Attacks a Second. MOAR DAKKA
 	reload_max = 50
 	projectiletype = /obj/item/projectile/bullet/rifle/a545
-	projectilesound = 'sound/weapons/Gunshot_light.ogg'
+	projectilesound = 'sound/weapons/gunshot_light.ogg'
 	loot_list = list(/obj/item/gun/projectile/automatic/l6_saw = 100)
 
 //Tommy-Las Merc
@@ -478,7 +478,7 @@
 	icon_state = "syndicatespace-commando"
 	icon_living = "syndicatespace-commando"
 	projectiletype = /obj/item/projectile/bullet/rifle/a762
-	projectilesound = 'sound/weapons/Gunshot_heavy.ogg'
+	projectilesound = 'sound/weapons/gunshot_heavy.ogg'
 	// loot_list = list(/obj/item/gun/projectile/automatic/fal = 100)// Downstream
 	reload_max = 20
 

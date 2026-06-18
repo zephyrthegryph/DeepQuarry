@@ -26,7 +26,7 @@
 	damage = 30
 
 /obj/item/projectile/bullet/rifle/a545
-	fire_sound = 'sound/weapons/Gunshot_light.ogg'
+	fire_sound = 'sound/weapons/gunshot_light.ogg'
 	damage = 30
 	hud_state = "rifle"
 

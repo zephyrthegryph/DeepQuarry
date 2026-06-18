@@ -111,7 +111,7 @@
 		var/obj/item/stack/tile/floor/S = C
 		if (S.get_amount() < 1)
 			return
-		playsound(src, 'sound/weapons/Genhit.ogg', 50, 1)
+		playsound(src, 'sound/weapons/genhit.ogg', 50, 1)
 		ChangeTurf(/turf/simulated/floor)
 		S.use(1)
 		return
