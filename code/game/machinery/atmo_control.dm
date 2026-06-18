@@ -107,7 +107,7 @@
 	gsensor.id_tag = id_tag
 	gsensor.output = output
 	qdel(src)
-	playsound(src, 'sound/items/deconstruct.ogg', 50, 1)
+	playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
 
 #define ONOFF_TOGGLE(flag) "\[[(output & flag) ? "YES" : "NO"]]"
 /obj/machinery/air_sensor/proc/multitool_act(mob/living/user, obj/item/multitool/tool)

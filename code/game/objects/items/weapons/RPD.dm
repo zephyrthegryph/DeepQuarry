@@ -287,7 +287,7 @@
 		qdel(P)
 
 /obj/item/pipe_dispenser/proc/activate()
-	playsound(src, 'sound/items/deconstruct.ogg', 50, 1)
+	playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
 
 /obj/item/pipe_dispenser/proc/do_wrench(atom/target, mob/user)
 	var/resolved = target.attackby(tool,user)

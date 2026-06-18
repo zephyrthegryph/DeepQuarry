@@ -10,7 +10,7 @@
 	icon_state = "netgun"
 	item_state = "gun" // Placeholder
 
-	fire_sound = 'sound/weapons/eluger.ogg'
+	fire_sound = 'sound/weapons/eLuger.ogg'
 	projectile_type = /obj/item/projectile/beam/energy_net
 	charge_cost = 800
 	fire_delay = 50

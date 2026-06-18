@@ -31,7 +31,7 @@
 	force = 5
 	icon_state = "medbeam"
 	accuracy = 100
-	fire_sound = 'sound/weapons/eluger.ogg'
+	fire_sound = 'sound/weapons/eLuger.ogg'
 	self_recharge = 1
 	use_external_power = 1
 

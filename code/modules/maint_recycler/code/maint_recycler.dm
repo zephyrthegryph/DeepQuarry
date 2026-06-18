@@ -328,7 +328,7 @@
 /obj/machinery/maint_recycler/proc/shoot(mob/victim)
 	var/projectile = /obj/item/projectile/beam/stun
 	var/obj/item/projectile/P = new projectile(loc)
-	playsound(src, 'sound/weapons/Taser.ogg', 30, 1)
+	playsound(src, 'sound/weapons/taser.ogg', 30, 1)
 	P.old_style_target(victim)
 	P.fire()
 

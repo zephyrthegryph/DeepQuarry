@@ -121,7 +121,7 @@
 	catalogue_data = list(/datum/category_item/catalogue/fauna/mercenary/vox/boarder)
 
 	projectiletype = /obj/item/projectile/bullet/pellet/shotgun
-	projectilesound = 'sound/weapons/Gunshot_shotgun.ogg'
+	projectilesound = 'sound/weapons/gunshot_shotgun.ogg'
 
 	corpse = /obj/effect/landmark/mobcorpse/vox/boarder_r
 	loot_list = list(/obj/item/gun/projectile/shotgun/pump/combat = 100,

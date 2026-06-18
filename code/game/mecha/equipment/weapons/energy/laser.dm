@@ -14,7 +14,7 @@
 	icon_state = "mecha_xray"
 	energy_drain = 150
 	projectile = /obj/item/projectile/beam/xray
-	fire_sound = 'sound/weapons/eluger.ogg'
+	fire_sound = 'sound/weapons/eLuger.ogg'
 
 /obj/item/mecha_parts/mecha_equipment/weapon/energy/laser/gamma // begin : adds Gamma Laser as proof of concept
 	equip_cooldown = 5

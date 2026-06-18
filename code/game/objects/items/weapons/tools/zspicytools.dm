@@ -9,7 +9,7 @@
 	item_state = "heavysniper"
 	toolspeed = 0.1
 	force = 30
-	usesound = 'sound/weapons/Gunshot_cannon.ogg'
+	usesound = 'sound/weapons/gunshot_cannon.ogg'
 
 /obj/item/weldingtool/lasercannon
 	name = "laser cannon welding tool"

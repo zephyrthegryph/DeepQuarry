@@ -301,7 +301,7 @@
 		var/obj/item/target_item = target
 		if(target_item.drop_sound)
 			playsound(src, target_item.drop_sound, vac_power * 5, 1, -1)
-	playsound(src, 'sound/rakshasa/corrosion3.ogg', auto_setting * 15, 1, -1)
+	playsound(src, 'sound/rakshasa/Corrosion3.ogg', auto_setting * 15, 1, -1)
 	if(isbelly(output_atom))
 		var/obj/belly/output_belly = output_atom
 		output_belly.nom_atom(target)

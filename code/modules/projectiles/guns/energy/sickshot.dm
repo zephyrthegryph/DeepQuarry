@@ -15,7 +15,7 @@
 	icon_override = 'icons/vore/custom_guns_vr.dmi'
 	item_state = "gun"
 
-	fire_sound = 'sound/weapons/eluger.ogg'
+	fire_sound = 'sound/weapons/eLuger.ogg'
 	projectile_type = /obj/item/projectile/sickshot
 
 	charge_cost = 600

@@ -12,7 +12,7 @@
 	w_class = ITEMSIZE_SMALL
 	matter = list(MAT_STEEL = 150)
 	attack_verb = list("bashed", "battered", "bludgeoned", "whacked")
-	usesound = 'sound/items/ratchet.ogg'
+	usesound = 'sound/items/Ratchet.ogg'
 	toolspeed = 1
 	drop_sound = 'sound/items/drop/wrench.ogg'
 	pickup_sound = 'sound/items/pickup/wrench.ogg'
@@ -61,7 +61,7 @@
 	catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_wrench)
 	icon = 'icons/obj/abductor.dmi'
 	icon_state = "wrench"
-	usesound = 'sound/effects/empulse.ogg'
+	usesound = 'sound/effects/EMPulse.ogg'
 	toolspeed = 0.1
 
 /obj/item/tool/wrench/power

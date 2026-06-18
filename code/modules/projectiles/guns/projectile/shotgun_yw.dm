@@ -73,7 +73,7 @@
 /obj/item/projectile/bullet/shotgun/scatterprojectile
 	name = "pellet"
 	icon_state = "bullet"
-	fire_sound = 'sound/weapons/Gunshot_shotgun.ogg'
+	fire_sound = 'sound/weapons/gunshot_shotgun.ogg'
 	damage = 13
 
 /obj/item/storage/box/scattershot

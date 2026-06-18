@@ -95,7 +95,7 @@
 	name = "pulsating laser"
 	damage = 10
 	armor_penetration = 20
-	fire_sound = 'sound/weapons/eluger.ogg'
+	fire_sound = 'sound/weapons/eLuger.ogg'
 
 	excavation_amount = 100
 
@@ -146,7 +146,7 @@
 /obj/item/projectile/beam/xray
 	name = "xray beam"
 	icon_state = "xray"
-	fire_sound = 'sound/weapons/eluger.ogg'
+	fire_sound = 'sound/weapons/eLuger.ogg'
 	damage = 25
 	armor_penetration = 50
 	light_color = "#00CC33"
@@ -159,7 +159,7 @@
 /obj/item/projectile/beam/gamma
 	name = "gamma beam"
 	icon_state = "xray"
-	fire_sound = 'sound/weapons/eluger.ogg'
+	fire_sound = 'sound/weapons/eLuger.ogg'
 	damage = 12
 	armor_penetration = 90
 	irradiate = 20
@@ -173,7 +173,7 @@
 /obj/item/projectile/beam/cyan
 	name = "cyan beam"
 	icon_state = "cyan"
-	fire_sound = 'sound/weapons/eluger.ogg'
+	fire_sound = 'sound/weapons/eLuger.ogg'
 	damage = 40
 	light_color = "#00C6FF"
 	hud_state = "laser_disabler"

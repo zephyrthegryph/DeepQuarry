@@ -20,7 +20,7 @@
 	grab_resist = 100
 
 	projectiletype = /obj/item/projectile/bullet/pistol/medium
-	projectilesound = 'sound/weapons/Gunshot_light.ogg'
+	projectilesound = 'sound/weapons/gunshot_light.ogg'
 
 	needs_reload = TRUE
 	base_attack_cooldown = 5 // Two attacks a second or so.

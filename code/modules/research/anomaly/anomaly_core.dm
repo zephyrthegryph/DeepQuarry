@@ -182,7 +182,7 @@
 	var/turf/our_turf = get_turf(src)
 	if(!our_turf)
 		return
-	playsound(our_turf, 'sound/magic/fireball.ogg', 100, TRUE)
+	playsound(our_turf, 'sound/magic/Fireball.ogg', 100, TRUE)
 	for(var/turf/turf as anything in RANGE_TURFS(1, our_turf))
 		our_turf.assume_gas(GAS_PHORON, 10, T20C)
 		our_turf.hotspot_expose(700, 400)

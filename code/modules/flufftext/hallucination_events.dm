@@ -140,14 +140,14 @@
 			send_sound = 'sound/machines/door/windowdoor.ogg'
 		if(9)
 			//To make it more realistic, I added two gunshots (enough to kill)
-			send_sound = 'sound/weapons/Gunshot1.ogg'
-			addtimer(CALLBACK(src, PROC_REF(secondary_sound), 'sound/weapons/Gunshot2.ogg'), rand(1,3) SECONDS, TIMER_DELETE_ME)
+			send_sound = 'sound/weapons/gunshot1.ogg'
+			addtimer(CALLBACK(src, PROC_REF(secondary_sound), 'sound/weapons/gunshot2.ogg'), rand(1,3) SECONDS, TIMER_DELETE_ME)
 		if(10)
 			send_sound = 'sound/weapons/smash.ogg'
 		if(11)
 			//Same as above, but with tasers.
-			send_sound = 'sound/weapons/Taser.ogg'
-			addtimer(CALLBACK(src, PROC_REF(secondary_sound), 'sound/weapons/Taser.ogg'), rand(1,3) SECONDS, TIMER_DELETE_ME)
+			send_sound = 'sound/weapons/taser.ogg'
+			addtimer(CALLBACK(src, PROC_REF(secondary_sound), 'sound/weapons/taser.ogg'), rand(1,3) SECONDS, TIMER_DELETE_ME)
 	//Rare audio
 		if(12)
 //These sounds are (mostly) taken from Hidden: Source
