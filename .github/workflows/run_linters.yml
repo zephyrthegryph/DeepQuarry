@@ -68,11 +68,6 @@ jobs:
       - name: Run Grep Checks
         if: steps.linter-setup.conclusion == 'success' && !cancelled()
         run: bash tools/ci/check_grep.sh
-      # Ticked File Enforcement stays disabled: it requires the .dme include list to
-      # be in strict "ticked" (sorted) order and every unit-test file to be ticked,
-      # neither of which this fork's deepquarry.dme / _unit_tests.dm follow. Enabling
-      # it would require a large, define-order-sensitive reorder of the .dme. The
-      # "every .dm is wired in" guarantee is already provided by ValidateDmeTarget.
       - name: Run Define Sanity Checks
         run: tools/bootstrap/python -m define_sanity.check
       - name: Run DreamChecker
