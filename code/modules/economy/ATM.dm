@@ -101,8 +101,9 @@ log transactions
 				authenticated_account = null
 	else if(authenticated_account)
 		if(istype(I,/obj/item/spacecash))
+			var/obj/item/spacecash/cash = I
 			//consume the money
-			authenticated_account.money += I:worth
+			authenticated_account.money += cash.worth
 			if(prob(50))
 				playsound(src, 'sound/items/polaroid1.ogg', 50, 1)
 			else
@@ -112,7 +113,7 @@ log transactions
 			var/datum/transaction/T = new()
 			T.target_name = authenticated_account.owner_name
 			T.purpose = "Credit deposit"
-			T.amount = I:worth
+			T.amount = cash.worth
 			T.source_terminal = machine_id
 			T.date = GLOB.current_date_string
 			T.time = stationtime2text()
@@ -284,6 +285,23 @@ log transactions
 		if("change_security_level")
 			if(authenticated_account)
 				var/new_sec_level = clamp(text2num(params["new_security_level"]), 0, 2)
+				if(!isnum(new_sec_level))
+					return
+				// Lowering the security level weakens future access controls, so it must
+				// be re-authorised: either the matching card is physically inserted, or
+				// the account PIN is re-entered and validated. Raising the level is always
+				// allowed for the already-authenticated holder.
+				if(new_sec_level < authenticated_account.security_level)
+					var/card_present = held_card && held_card.associated_account_number == authenticated_account.account_number
+					if(!card_present)
+						var/tried_pin = tgui_input_number(ui.user, "Re-enter your account PIN to lower the security level", "Confirm PIN")
+						// Re-validate auth/state after the sleeping input.
+						if(!authenticated_account || QDELETED(src))
+							return
+						var/datum/money_account/reauth = attempt_account_access(authenticated_account.account_number, tried_pin, 1)
+						if(reauth != authenticated_account)
+							to_chat(ui.user, "[icon2html(src, ui.user.client)]" + span_warning("Incorrect PIN; security level unchanged."))
+							return
 				authenticated_account.security_level = new_sec_level
 			. = TRUE
 

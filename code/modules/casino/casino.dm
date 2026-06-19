@@ -473,6 +473,8 @@
 			to_chat(user, span_warning("Lottery sales are currently disabled."))
 			return
 
+		if(!user.client)
+			return
 		if(user.client.ckey in lottery_tickets_ckeys)
 			to_chat(user, span_warning("The scanner beeps in an upset manner, you already have a ticket!"))
 			return
@@ -481,6 +483,8 @@
 		insert_chip(C, user)
 
 /obj/machinery/wheel_of_fortune/proc/insert_chip(obj/item/spacecasinocash/cashmoney, mob/user)
+	if(!user.client)
+		return
 	if (busy)
 		to_chat(user,span_notice("The Wheel of Fortune is busy, wait for it to be done to buy a lottery ticket."))
 		return
@@ -552,10 +556,11 @@
 	if(usr.incapacitated())
 		return
 	if(ishuman(usr) || isrobot(usr))
-		interval = tgui_input_number(usr, "Put the desired interval (1-1000)", "Set Interval", null, 1000, 1)
-		if(interval>1000 || interval<1)
+		var/new_interval = tgui_input_number(usr, "Put the desired interval (1-1000)", "Set Interval", null, 1000, 1)
+		if(!isnum(new_interval) || new_interval < 1 || new_interval > 1000)
 			to_chat(usr, span_notice("Invalid interval."))
 			return
+		interval = new_interval
 		to_chat(usr, span_notice("You set the interval to [interval]"))
 	return
 
@@ -614,6 +619,8 @@
 					return
 
 			if("Become Prize (Please examine yourself first)") //Its awkward, but no easy way to obtain flavor_text due to server not loading text of mob until its been examined at least once.
+				if(!user.client)
+					return
 				var/safety_ckey = user.client.ckey
 				if(safety_ckey in sentientprizes_ckeys_list)
 					to_chat(user, span_warning("The SPASM beeps in an upset manner, you already have a collar!"))
@@ -659,6 +666,8 @@
 			to_chat(user, span_warning("Select a prize first."))
 			return
 		if(!selected_collar.ownername)
+			if(!user.client)
+				return
 			var/obj/item/spacecasinocash/C = W
 			if(user.client.ckey == selected_collar.sentientprizeckey)
 				insert_chip(C, user, "selfbuy")
@@ -775,11 +784,48 @@
 	return newitem
 
 /obj/machinery/casinosentientprize_handler/proc/insert_chip(obj/item/spacecasinocash/cashmoney, mob/user, buystate)
-	if(cashmoney.worth < casinosentientprize_price)
+	// Snapshot the shared instance var: it can be reassigned/nulled by another user's
+	// interaction while this purchase sleeps on a dialog, so work off a stable local.
+	var/obj/item/clothing/accessory/collar/casinosentientprize/collar = selected_collar
+	if(QDELETED(collar))
+		to_chat(user,span_notice("There is no prize selected!"))
+		return
+	// A still-owned collar means it's already been bought; never charge for it.
+	if(collar.ownername)
+		to_chat(user,span_notice("That prize has already been claimed!"))
+		return
+
+	// Snapshot the authoritative price before charging.
+	var/charge = casinosentientprize_price
+	if(cashmoney.worth < charge)
 		to_chat(user,span_notice("You dont have enough chips to pay for the sentient prize!"))
 		return
 
-	cashmoney.worth -= casinosentientprize_price
+	// For the buy + item-TF path, resolve the (sleeping) confirmation BEFORE charging so
+	// that aborting on a collar claimed mid-dialog costs the buyer nothing. The outcome is
+	// captured here and applied after the charge.
+	var/do_tf = FALSE
+	var/list/tf_choice = null
+	var/declined_tf = FALSE
+	if(buystate == "buy" && collar.sentientprizeitemtf)
+		var/confirm_item_tf_claim = tgui_alert(user, "This prize has opted in to being transformed into an item! Would you like to claim your prize as an item?", "Confirm Prize Item Transformation", list("Yes", "No"))
+		// Re-validate the snapshotted collar after the sleeping dialog: it may have been
+		// claimed/nulled in the meantime. No charge taken yet, so we just bail.
+		if(QDELETED(collar) || collar.ownername)
+			to_chat(user,span_warning("That prize was claimed by someone else while you decided!"))
+			return
+		if(confirm_item_tf_claim == "Yes")
+			tf_choice = tgui_input_list(user, "Choose the item to claim your prize as. (Cancelling will default you to claiming your prize without transformation!)", "Choose Sentient Prize Item", GLOB.item_tf_options)
+			if(QDELETED(collar) || collar.ownername)
+				to_chat(user,span_warning("That prize was claimed by someone else while you decided!"))
+				return
+			if(LAZYLEN(tf_choice))
+				do_tf = TRUE
+			else
+				declined_tf = TRUE
+
+	// All sleeping dialogs are done and the collar is re-validated — charge now.
+	cashmoney.worth -= charge
 	cashmoney.update_icon()
 
 	if(cashmoney.worth <= 0)
@@ -788,48 +834,45 @@
 		cashmoney.update_icon()
 
 	if(buystate == "selfbuy")
-		to_chat(user,span_notice("You put [casinosentientprize_price] credits worth of chips into the SPASM and nullify your collar!"))
-		selected_collar.icon_state = "casinoslave"
-		selected_collar.update_icon()
-		selected_collar.name = "disabled Sentient Prize Collar: [selected_collar.sentientprizename]"
-		selected_collar.desc = "A collar worn by sentient prizes on the Golden Goose Casino. The tag says its registered to [selected_collar.sentientprizename], but harsh red text informs you its been disabled."
-		sentientprizes_ckeys_list -= selected_collar.sentientprizeckey
-		selected_collar.sentientprizeckey = null
-		collar_list -= selected_collar
-		selected_collar = null
+		to_chat(user,span_notice("You put [charge] credits worth of chips into the SPASM and nullify your collar!"))
+		collar.icon_state = "casinoslave"
+		collar.update_icon()
+		collar.name = "disabled Sentient Prize Collar: [collar.sentientprizename]"
+		collar.desc = "A collar worn by sentient prizes on the Golden Goose Casino. The tag says its registered to [collar.sentientprizename], but harsh red text informs you its been disabled."
+		sentientprizes_ckeys_list -= collar.sentientprizeckey
+		collar.sentientprizeckey = null
+		collar_list -= collar
+		if(selected_collar == collar)
+			selected_collar = null
 
 	if(buystate == "buy")
-		to_chat(user,span_notice("You put [casinosentientprize_price] credits worth of chips into the SPASM and it pings to inform you bought [selected_collar.sentientprizename]!"))
-		// If the sentient prize opted in to be TF'd into an item....
-		if(selected_collar.sentientprizeitemtf)
-			// ... prompt the buyer asking if they want to do that!
-			var/confirm_item_tf_claim = tgui_alert(user, "This prize has opted in to being transformed into an item! Would you like to claim your prize as an item?", "Confirm Prize Item Transformation", list("Yes", "No"))
-			if(confirm_item_tf_claim == "Yes")
-				// Show the claimer a list of options to turn their prize into.
-				var/item_choice = tgui_input_list(user, "Choose the item to claim your prize as. (Cancelling will default you to claiming your prize without transformation!)", "Choose Sentient Prize Item", GLOB.item_tf_options)
-				if(LAZYLEN(item_choice))
-					var/mob/living/sentient_prize = selected_collar.wearer?.resolve()
-					if(sentient_prize)
-						do_item_tf(selected_collar.wearer, item_choice)
-					else
-						log_runtime(EXCEPTION("Casino sentient prize collar \"[selected_collar]\" didn't have a living mob as its wearer and couldn't item TF!"))
-						to_chat(user,span_warning("\The [src] couldn't transform your prize due to the prize's collar not being able to resolve its wearer as a living mob. Contact a coder."))
-						to_chat(user,span_infoplain("Falling back to claiming your prize as normal. An admin can help transform your prize!"))
-				else
-					to_chat(user,span_notice("You decided to claim your prize without transformation."))
-		selected_collar.icon_state = "casinoslave_owned"
-		selected_collar.update_icon()
-		selected_collar.ownername = user.name
-		selected_collar.name =  "Sentient Prize Collar: [selected_collar.sentientprizename] owned by [selected_collar.ownername]!"
-		selected_collar.desc = "A collar worn by sentient prizes on the Golden Goose Casino. The tag says its registered to [selected_collar.sentientprizename] and they are owned by [selected_collar.ownername]."
-		selected_collar = null
+		to_chat(user,span_notice("You put [charge] credits worth of chips into the SPASM and it pings to inform you bought [collar.sentientprizename]!"))
+		// Apply the item-TF outcome resolved (and paid for) above.
+		if(do_tf)
+			var/mob/living/sentient_prize = collar.wearer?.resolve()
+			if(sentient_prize)
+				do_item_tf(collar.wearer, tf_choice)
+			else
+				log_runtime(EXCEPTION("Casino sentient prize collar \"[collar]\" didn't have a living mob as its wearer and couldn't item TF!"))
+				to_chat(user,span_warning("\The [src] couldn't transform your prize due to the prize's collar not being able to resolve its wearer as a living mob. Contact a coder."))
+				to_chat(user,span_infoplain("Falling back to claiming your prize as normal. An admin can help transform your prize!"))
+		else if(declined_tf)
+			to_chat(user,span_notice("You decided to claim your prize without transformation."))
+		collar.icon_state = "casinoslave_owned"
+		collar.update_icon()
+		collar.ownername = user.name
+		collar.name =  "Sentient Prize Collar: [collar.sentientprizename] owned by [collar.ownername]!"
+		collar.desc = "A collar worn by sentient prizes on the Golden Goose Casino. The tag says its registered to [collar.sentientprizename] and they are owned by [collar.ownername]."
+		if(selected_collar == collar)
+			selected_collar = null
 
 /obj/machinery/casinosentientprize_handler/proc/setprice(mob/living/user)
 	if(user.incapacitated())
 		return
 	if(ishuman(user) || isrobot(user))
-		casinosentientprize_price = tgui_input_number(user, "Select the desired price (1-1000)", "Set Price", null, null, 1000, 1)
-		if(casinosentientprize_price>1000 || casinosentientprize_price<1)
+		var/new_price = tgui_input_number(user, "Select the desired price (1-1000)", "Set Price", null, 1000, 1)
+		if(!isnum(new_price) || new_price < 1 || new_price > 1000)
 			to_chat(user,span_notice("Invalid price."))
 			return
+		casinosentientprize_price = new_price
 		to_chat(user,span_notice("You set the price to [casinosentientprize_price]"))
