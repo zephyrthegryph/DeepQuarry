@@ -105,6 +105,11 @@
 		if(state && state["dash_timer"])
 			deltimer(state["dash_timer"])
 			state["dash_timer"] = null
+	// A charge cancelled mid-windup (INTERRUPTED) is spent too: set the cooldown so the mob can't
+	// instantly re-wind and race its own still-pending dash timer. (COMPLETED/FAILED are handled by
+	// the base stop via the `cooldown` var.)
+	if(reason == DQ_BEHAVIOR_STOP_INTERRUPTED && cooldown)
+		brain.set_cooldown(type, source, cooldown)
 	return ..()
 
 /datum/ai_behavior/charge_slam/proc/execute_dash(datum/ai_brain/brain, atom/target)
@@ -147,14 +152,6 @@
 			var/mob/living/L = target
 			L.apply_effect(2, WEAKEN)
 	brain.stop_active(DQ_BEHAVIOR_STOP_COMPLETED)
-
-/datum/ai_behavior/charge_slam/stop(datum/ai_brain/brain, atom/target, atom/source, reason)
-	// A charge cancelled mid-windup (INTERRUPTED) is spent too: set the cooldown so the mob can't
-	// instantly re-wind and race its own still-pending dash timer. (COMPLETED/FAILED are handled by
-	// the base stop via the `cooldown` var.)
-	if(reason == DQ_BEHAVIOR_STOP_INTERRUPTED && cooldown)
-		brain.set_cooldown(type, source, cooldown)
-	return ..()
 
 /datum/ai_behavior/charge_slam/get_player_verb_info()
 	var/static/list/L = list(
