@@ -79,3 +79,28 @@
 		update_fullness()
 		return
 	update_icon()
+
+// Like handle_belly_update(), but skips the (expensive, for non-humans) icon
+// rebuild when the rounded fullness buckets haven't actually changed. Use this
+// on per-tick paths (e.g. digestion driving health_impacts_size) where the
+// underlying value drifts continuously but the displayed sprite only changes
+// when a fullness bucket crosses an integer boundary.
+/mob/proc/handle_belly_update_buckets()
+	// update_fullness() is pure math (rounds into integer buckets); always run it.
+	if(ishuman(src))
+		update_fullness()
+		return
+	var/old_fullness = vore_fullness
+	var/list/old_fullness_ex = vore_fullness_ex.Copy()
+	update_fullness()
+	if(old_fullness == vore_fullness && fullness_buckets_match(old_fullness_ex, vore_fullness_ex))
+		return
+	update_icon()
+
+/mob/proc/fullness_buckets_match(list/old_ex, list/new_ex)
+	if(length(old_ex) != length(new_ex))
+		return FALSE
+	for(var/belly_class in new_ex)
+		if(old_ex[belly_class] != new_ex[belly_class])
+			return FALSE
+	return TRUE

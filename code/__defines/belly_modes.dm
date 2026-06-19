@@ -37,6 +37,12 @@
 //Stance for hostile mobs to be in while devouring someone.
 #define HOSTILE_STANCE_EATING	99
 
+// Baseline process() interval that all per-tick belly digestion/resize/drain
+// constants are balanced against (SSbellies wait). A belly running on a faster
+// subsystem (DM_FLAG_TURBOMODE -> SSobj) gets a proportionally smaller per-tick
+// delta so today's numbers stay identical on the normal path.
+#define BELLY_BASELINE_TICK		(6 SECONDS)
+
 // Defines for weight system
 #define MIN_MOB_WEIGHT			70
 #define MAX_MOB_WEIGHT			500
