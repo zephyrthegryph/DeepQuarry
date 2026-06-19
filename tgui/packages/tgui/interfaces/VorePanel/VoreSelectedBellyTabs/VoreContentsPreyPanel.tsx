@@ -24,23 +24,27 @@ export const VoreContentsPreyPanel = (props: {
           <Stack.Item>
             <Section title="Abilities">
               <Stack>
-                {prey_abilities.map((ability) => (
-                  <Stack.Item key={ability.name}>
-                    <Button
-                      disabled={!ability.available}
-                      color={preyAbilityToData[ability.name].color}
-                      tooltip={preyAbilityToData[ability.name].desc}
-                      onClick={() =>
-                        act('prey_ability', {
-                          ability: ability.name,
-                          belly: inside.ref,
-                        })
-                      }
-                    >
-                      {preyAbilityToData[ability.name].displayName}
-                    </Button>
-                  </Stack.Item>
-                ))}
+                {prey_abilities.map((ability) => {
+                  const meta = preyAbilityToData[ability.name];
+                  if (!meta) return null;
+                  return (
+                    <Stack.Item key={ability.name}>
+                      <Button
+                        disabled={!ability.available}
+                        color={meta.color}
+                        tooltip={meta.desc}
+                        onClick={() =>
+                          act('prey_ability', {
+                            ability: ability.name,
+                            belly: inside.ref,
+                          })
+                        }
+                      >
+                        {meta.displayName}
+                      </Button>
+                    </Stack.Item>
+                  );
+                })}
               </Stack>
             </Section>
           </Stack.Item>

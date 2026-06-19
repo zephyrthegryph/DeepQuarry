@@ -1,13 +1,10 @@
-import { useBackend } from 'tgui/backend';
-
+import { escapeHtml } from './functions';
 import type { Data } from './types';
 import { generateBellyString } from './VorePanelExportBellyString';
 import { generateSoulcatcherString } from './VorePanelExportSoulcatcherString';
 import { getCurrentTimestamp } from './VorePanelExportTimestamp';
 
-export const downloadPrefs = (extension: string) => {
-  const { data } = useBackend<Data>();
-
+export const downloadPrefs = (extension: string, data: Data) => {
   const { db_version, db_repo, mob_name, bellies, soulcatcher } = data;
 
   if (!bellies) {
@@ -32,17 +29,17 @@ export const downloadPrefs = (extension: string) => {
           '<title>' +
           validBellies.length +
           ' Exported Bellies (DB_VER: ' +
-          db_repo +
+          escapeHtml(db_repo) +
           '-' +
-          db_version +
+          escapeHtml(db_version) +
           ')</title>' +
           '<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-gH2yIJqKdNHPEq0n4Mqa/HGKIhSkIHeL5AyhkYV8i59U5AR6csBvApHHNl/vI1Bx" crossorigin="anonymous">' +
           '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.9.1/font/bootstrap-icons.css">' +
           style +
           '</head><body class="py-4"><main><div class="container"><h2>Bellies of ' +
-          mob_name +
+          escapeHtml(mob_name) +
           '</h2><p class="lead">Generated on: ' +
-          datesegment +
+          escapeHtml(datesegment) +
           '</p><div class="accordion" id="accordionBellies">',
       ],
       {

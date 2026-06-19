@@ -1,6 +1,8 @@
+import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, Section } from 'tgui-core/components';
 
+import type { Data } from './types';
 import { downloadPrefs } from './VorePanelExportDownload';
 
 export const VorePanelExport = () => {
@@ -13,14 +15,24 @@ export const VorePanelExport = () => {
   );
 };
 
-const VorePanelExportContent = (props) => {
+const VorePanelExportContent = () => {
+  const { data } = useBackend<Data>();
+
   return (
     <Section title="Vore Export Panel">
       <Section title="Export">
-        <Button fluid icon="file-alt" onClick={() => downloadPrefs('.html')}>
+        <Button
+          fluid
+          icon="file-alt"
+          onClick={() => downloadPrefs('.html', data)}
+        >
           Export (HTML)
         </Button>
-        <Button fluid icon="file-alt" onClick={() => downloadPrefs('.vrdb')}>
+        <Button
+          fluid
+          icon="file-alt"
+          onClick={() => downloadPrefs('.vrdb', data)}
+        >
           Export (VRDB)
         </Button>
       </Section>

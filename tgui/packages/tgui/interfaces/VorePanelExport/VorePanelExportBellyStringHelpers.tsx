@@ -1,13 +1,14 @@
 import type { BooleanLike } from 'tgui-core/react';
 
 import { AddonIcon, AutotransferFlagIcon, ReagentAddonIcon } from './constants';
+import { escapeHtml } from './functions';
 
 export const GetAddons = (addons: string[]) => {
   const result: string[] = [];
 
   addons?.forEach((addon) => {
     result.push(
-      `<span class="badge text-bg-secondary"><i class="${AddonIcon[addon]}"></i>${addon}</span>`,
+      `<span class="badge text-bg-secondary"><i class="${escapeHtml(AddonIcon[addon] ?? '')}"></i>${escapeHtml(addon)}</span>`,
     );
   });
 
@@ -23,7 +24,7 @@ export const GetLiquidAddons = (addons: string[]) => {
 
   addons?.forEach((addon) => {
     result.push(
-      `<span class="badge text-bg-secondary"><i class="${ReagentAddonIcon[addon]}"></i>${addon}</span>`,
+      `<span class="badge text-bg-secondary"><i class="${escapeHtml(ReagentAddonIcon[addon] ?? '')}"></i>${escapeHtml(addon)}</span>`,
     );
   });
 
@@ -42,7 +43,7 @@ export const GetAutotransferFlags = (
 
   addons?.forEach((addon) => {
     result.push(
-      `<span class="badge text-bg-secondary"><i class="${AutotransferFlagIcon[addon]}"></i>${addon}</span>`,
+      `<span class="badge text-bg-secondary"><i class="${escapeHtml(AutotransferFlagIcon[addon] ?? '')}"></i>${escapeHtml(addon)}</span>`,
     );
   });
 

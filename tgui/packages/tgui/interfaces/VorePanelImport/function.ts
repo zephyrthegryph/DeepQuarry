@@ -2,10 +2,10 @@ import { UNKNOWN_ORIGIN } from './constants';
 import type { DesiredData, ImportData } from './types';
 
 export function importLengthToColor(importLength: number): string {
-  if (importLength < 200000) {
+  if (importLength < 30000) {
     return 'green';
   }
-  if (importLength < 30000) {
+  if (importLength < 200000) {
     return 'yellow';
   }
   return 'red';

@@ -245,12 +245,14 @@ export const VoreContentsPanel = (props: {
           <Section fill scrollable>
             {(show_pictures && !icon_overflow && (
               <Stack wrap="wrap" justify="center" align="center">
-                {displayedContents?.map((thing) => (
+                {displayedContents?.map((thing) => {
+                  const statColor = stats[thing.stat];
+                  return (
                   <Stack.Item key={thing.ref} basis="32%">
                     <Button
                       width="64px"
                       selected={thing.ref === selectedAtom?.ref}
-                      color={thing.absorbed ? 'purple' : stats[thing.stat]}
+                      color={thing.absorbed ? 'purple' : statColor}
                       style={{
                         verticalAlign: 'middle',
                         marginRight: '5px',
@@ -274,12 +276,10 @@ export const VoreContentsPanel = (props: {
                       />
                     </Button>
                     {thing.ref === selectedAtom?.ref &&
-                      (!!stats[thing.stat] || !!thing.absorbed) && (
+                      (!!statColor || !!thing.absorbed) && (
                         <>
                           <ColorBox
-                            color={
-                              thing.absorbed ? 'purple' : stats[thing.stat]
-                            }
+                            color={thing.absorbed ? 'purple' : statColor}
                           />
                           <Box inline preserveWhitespace>
                             {' '}
@@ -288,18 +288,21 @@ export const VoreContentsPanel = (props: {
                       )}
                     {thing.name}
                   </Stack.Item>
-                ))}
+                  );
+                })}
               </Stack>
             )) || (
               <LabeledList>
-                {displayedContents?.map((thing) => (
+                {displayedContents?.map((thing) => {
+                  const statColor = stats[thing.stat];
+                  return (
                   <LabeledList.Item key={thing.ref} label={thing.name}>
                     <Button
                       fluid
                       mt={-1}
                       mb={-1}
                       selected={thing.ref === selectedAtom?.ref}
-                      color={thing.absorbed ? 'purple' : stats[thing.stat]}
+                      color={thing.absorbed ? 'purple' : statColor}
                       onClick={() => {
                         if (selectedAtom?.ref === thing.ref) {
                           setSelectedAtom(null);
@@ -312,15 +315,14 @@ export const VoreContentsPanel = (props: {
                         <Stack.Item grow>Interact</Stack.Item>
                         {thing.ref === selectedAtom?.ref && (
                           <ColorBox
-                            color={
-                              thing.absorbed ? 'purple' : stats[thing.stat]
-                            }
+                            color={thing.absorbed ? 'purple' : statColor}
                           />
                         )}
                       </Stack>
                     </Button>
                   </LabeledList.Item>
-                ))}
+                  );
+                })}
               </LabeledList>
             )}
           </Section>
