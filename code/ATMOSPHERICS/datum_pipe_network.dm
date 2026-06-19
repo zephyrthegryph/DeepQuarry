@@ -11,6 +11,12 @@
 	var/update = TRUE
 	//var/datum/gas_mixture/air_transient = null
 
+	/// Scratch pool (/datum/gas type → total moles) reused by reconcile_air() to
+	/// avoid a fresh list() allocation every equalization cycle. Cleared on entry.
+	/// Safe to cache because reconcile_air() runs only from process(), is
+	/// non-sleeping and non-reentrant.
+	var/list/reconcile_pool = list()
+
 /datum/pipe_network/Destroy()
 	STOP_PROCESSING_PIPENET(src)
 	for(var/datum/pipeline/line_member in line_members)
@@ -19,6 +25,7 @@
 		normal_member.reassign_network(src, null)
 	gases.Cut()  // Do not qdel the gases, we don't own them
 	leaks.Cut()
+	reconcile_pool.Cut()
 	return ..()
 
 /datum/pipe_network/process()
@@ -97,7 +104,8 @@
 /datum/pipe_network/proc/reconcile_air()
 	if(!length(gases))
 		return
-	var/list/pooled = list()         // /datum/gas type → total moles in network
+	var/list/pooled = reconcile_pool // /datum/gas type → total moles in network
+	pooled.Cut()                     // reused scratch list; clear last cycle's contents
 	var/total_thermal = 0
 	var/total_moles = 0
 	var/total_volume = 0

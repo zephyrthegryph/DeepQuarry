@@ -108,10 +108,7 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 /// Do NOT use this in code where performance matters!
 /// It's better to batch calls to garbage_collect(), especially in places where you're checking many gastypes
 /datum/gas_mixture/proc/has_gas(gas_id, amount=0)
-	ASSERT_GAS(gas_id, src)
-	var/is_there_gas = amount < gases[gas_id][MOLES]
-	garbage_collect()
-	return is_there_gas
+	return amount < (gases[gas_id]?[MOLES] || 0)
 
 /// Calculate pressure in kilopascals
 /datum/gas_mixture/proc/return_pressure()
@@ -590,8 +587,10 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
  * - output_air (gasmix).
  */
 /datum/gas_mixture/proc/gas_pressure_minimum_transfer(datum/gas_mixture/output_air)
-	var/resulting_energy = output_air.thermal_energy() + (MOLAR_ACCURACY / total_moles() * thermal_energy())
-	var/resulting_capacity = output_air.heat_capacity() + (MOLAR_ACCURACY / total_moles() * heat_capacity())
+	// Cache the full-list passes so we don't walk the gaslist multiple times.
+	var/our_moles = total_moles()
+	var/resulting_energy = output_air.thermal_energy() + (MOLAR_ACCURACY / our_moles * thermal_energy())
+	var/resulting_capacity = output_air.heat_capacity() + (MOLAR_ACCURACY / our_moles * heat_capacity())
 	return (output_air.total_moles() + MOLAR_ACCURACY) * R_IDEAL_GAS_EQUATION * (resulting_energy / resulting_capacity) / output_air.volume
 
 
