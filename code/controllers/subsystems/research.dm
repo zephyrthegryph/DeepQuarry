@@ -202,15 +202,15 @@ SUBSYSTEM_DEF(research)
 
 /datum/controller/subsystem/research/proc/on_design_deletion(datum/design_techweb/D)
 	for(var/i in techweb_nodes)
-		var/datum/techweb_node/TN = techwebs[i]
-		TN.on_design_deletion(TN)
+		var/datum/techweb_node/TN = techweb_nodes[i]
+		TN.on_design_deletion(D)
 	for(var/i in techwebs)
 		var/datum/techweb/T = i
 		T.recalculate_nodes(TRUE)
 
 /datum/controller/subsystem/research/proc/on_node_deletion(datum/techweb_node/TN)
 	for(var/i in techweb_nodes)
-		var/datum/techweb_node/TN2 = techwebs[i]
+		var/datum/techweb_node/TN2 = techweb_nodes[i]
 		TN2.on_node_deletion(TN)
 	for(var/i in techwebs)
 		var/datum/techweb/T = i

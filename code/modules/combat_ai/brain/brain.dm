@@ -635,12 +635,16 @@
 	if(!personal)
 		return
 	var/now = world.time
-	// Iterate over a copy of the keys so modifying `personal` during the loop
-	// doesn't skip entries.
-	for(var/ref as anything in personal.Copy())
+	// Collect expired keys into a reused temp and subtract once, rather than
+	// Copy()ing the whole assoc list every strategic tick. Iterating the live
+	// list while only reading is safe; mutation happens after the loop.
+	var/list/expired
+	for(var/ref in personal)
 		var/list/entry = personal[ref]
 		if(entry && entry["expires"] && entry["expires"] < now)
-			personal -= ref
+			LAZYADD(expired, ref)
+	if(expired)
+		personal -= expired
 	UNSETEMPTY(personal)
 
 // ---------------------------------------------------------------------------

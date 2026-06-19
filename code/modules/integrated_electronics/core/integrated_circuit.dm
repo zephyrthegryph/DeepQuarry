@@ -257,15 +257,27 @@ a creative player the means to solve many problems.  Circuits are held inside an
 		return TRUE // Battery has enough.
 	return FALSE // Not enough power.
 
-/obj/item/integrated_circuit/proc/check_then_do_work(ignore_power = FALSE)
+/obj/item/integrated_circuit/proc/check_then_do_work(ignore_power = FALSE, work_left = IC_MAX_PULSE_CIRCUITS)
 	if(world.time < next_use) 	// All intergrated circuits have an internal cooldown, to protect from spam.
+		return
+	// Per-propagation work ceiling: a single synchronous pulse can fan out across
+	// the reachable circuit graph faster than the 1s per-circuit cooldown gates
+	// it. Bail (with feedback) before a pathological wide assembly stalls the
+	// tick. Normal assemblies never approach IC_MAX_PULSE_CIRCUITS.
+	if(work_left <= 0)
+		if(assembly)
+			assembly.visible_message(span_warning("\The [assembly] buzzes and overheats, its circuits unable to keep up!"))
 		return
 	if(power_draw_per_use && !ignore_power)
 		if(!check_power())
 			power_fail()
 			return
 	next_use = world.time + cooldown_per_use
+	// Stash the remaining budget so activate_pin() — called from inside the many
+	// do_work() overrides without threading an arg — can forward it downstream.
+	ic_work_budget = work_left - 1
 	do_work()
+	ic_work_budget = IC_MAX_PULSE_CIRCUITS
 
 /obj/item/integrated_circuit/proc/do_work()
 	return
