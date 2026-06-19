@@ -19,6 +19,10 @@
 	var/obj/item/card/id/locked_by = null // The ID that locked this assembly
 	var/obj/item/card/id/access_card = null // ID card for door access
 	var/list/component_positions = list() // Stores circuit positions as list of lists: list("ref" = ref, "x" = x, "y" = y)
+	/// Cached flag: TRUE when this assembly has at least one circuit that draws or
+	/// makes power (so handle_idle_power() actually has work to do). Invalidated to
+	/// null on circuit add/remove via Entered()/Exited() and recomputed lazily.
+	var/tmp/power_relevant = null
 
 
 /obj/item/electronic_assembly/Initialize(mapload)
@@ -31,11 +35,49 @@
 	battery = null // It will be qdel'd by ..() if still in our contents
 	return ..()
 
-/obj/item/electronic_assembly/process()
-	handle_idle_power()
+/obj/item/electronic_assembly/process(seconds_per_tick)
+	handle_idle_power(seconds_per_tick)
 
-/obj/item/electronic_assembly/proc/handle_idle_power()
+// Cache invalidation: any circuit entering/leaving contents can change whether
+// there's power-relevant work to do. Recomputed lazily on next process().
+/obj/item/electronic_assembly/Entered(atom/movable/AM, atom/old_loc)
+	. = ..()
+	if(istype(AM, /obj/item/integrated_circuit) || istype(AM, /obj/item/cell))
+		power_relevant = null
+
+/obj/item/electronic_assembly/Exited(atom/movable/AM, atom/new_loc)
+	. = ..()
+	if(istype(AM, /obj/item/integrated_circuit) || istype(AM, /obj/item/cell))
+		power_relevant = null
+
+// (Re)computes whether handle_idle_power() has anything to do: a battery to draw
+// from plus at least one circuit that makes or draws idle power.
+/obj/item/electronic_assembly/proc/recompute_power_relevant()
+	power_relevant = FALSE
+	if(!battery)
+		return
+	for(var/obj/item/integrated_circuit/IC in contents)
+		if(IC.power_draw_idle || istype(IC, /obj/item/integrated_circuit/passive/power))
+			power_relevant = TRUE
+			return
+
+/obj/item/electronic_assembly/proc/handle_idle_power(seconds_per_tick)
 	net_power = 0 // Reset this. This gets increased/decreased with [give/draw]_power() outside of this loop.
+
+	// Early-out: no battery / nothing power-relevant means double-iterating
+	// contents every SSobj tick is pure waste. Cache the verdict, recompute only
+	// when a circuit/battery is added or removed (Entered/Exited null the flag).
+	if(isnull(power_relevant))
+		recompute_power_relevant()
+	if(!power_relevant)
+		return
+
+	// Normalize the per-tick draw to the current SSobj wait so the power economy
+	// is unchanged while the rate decouples from the scheduler. seconds_per_tick
+	// arrives in deciseconds from the processing subsystem; convert to seconds.
+	var/draw_scale = (seconds_per_tick / 10) / IC_IDLE_POWER_BASELINE_SPT
+	if(draw_scale <= 0)
+		draw_scale = 1
 
 	// First we handle passive sources. Most of these make power so they go first.
 	for(var/obj/item/integrated_circuit/passive/power/P in contents)
@@ -44,7 +86,7 @@
 	// Now we handle idle power draw.
 	for(var/obj/item/integrated_circuit/IC in contents)
 		if(IC.power_draw_idle)
-			if(!draw_power(IC.power_draw_idle))
+			if(!draw_power(IC.power_draw_idle * draw_scale))
 				IC.power_fail()
 
 
