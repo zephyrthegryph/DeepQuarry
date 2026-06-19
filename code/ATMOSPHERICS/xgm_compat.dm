@@ -115,15 +115,25 @@
 	var/our_heat = heat_capacity() * inv_ratio
 	var/their_heat = giver.heat_capacity() * ratio
 	// Scale our existing moles by (1-r); add giver's moles * r. giver untouched.
+	// Collect zero candidates during scaling instead of a third full pass over
+	// gases; entries re-touched by the giver loop drop back out of the set.
+	var/list/zeroes = list()
 	for(var/datum/gas/g as anything in gases)
-		gases[g][MOLES] *= inv_ratio
+		var/scaled = gases[g][MOLES] * inv_ratio
+		gases[g][MOLES] = scaled
+		if(scaled <= 0)
+			zeroes[g] = TRUE
 	for(var/datum/gas/g as anything in giver.gases)
 		ASSERT_GAS(g, src)
-		gases[g][MOLES] += giver.gases[g][MOLES] * ratio
+		var/summed = gases[g][MOLES] + giver.gases[g][MOLES] * ratio
+		gases[g][MOLES] = summed
+		if(summed <= 0)
+			zeroes[g] = TRUE
+		else
+			zeroes -= g
 	// Garbage-collect zeros so total_moles() doesn't see ghost entries.
-	for(var/datum/gas/g as anything in gases)
-		if(gases[g][MOLES] <= 0)
-			gases -= g
+	for(var/datum/gas/g as anything in zeroes)
+		gases -= g
 	var/combined_heat = our_heat + their_heat
 	if(combined_heat > MINIMUM_HEAT_CAPACITY)
 		set_temperature((our_heat * temperature + their_heat * giver.temperature) / combined_heat)
