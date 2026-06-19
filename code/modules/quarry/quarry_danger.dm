@@ -55,8 +55,8 @@
 //   - Fires hostile waves at critical danger.
 /datum/controller/subsystem/quarry/proc/tick_layer_danger(list/occupancy, seconds = QUARRY_TICK_NORMALIZE_SECONDS)
 	// Normalize per-tick accrual/decay against the current wait so the
-	// scheduler period no longer changes the magnitude. At a 30s wait
-	// (seconds=3) `scale` is 1 and the present-day balance is unchanged.
+	// scheduler period no longer changes the magnitude. At the 30s wait
+	// (wait=300ds, seconds=wait/10=30) `scale` is 1 and present-day balance is unchanged.
 	var/scale = seconds / QUARRY_TICK_NORMALIZE_SECONDS
 	for(var/key in layers)
 		var/datum/quarry_layer/L = layers[key]
