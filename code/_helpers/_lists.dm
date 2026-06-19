@@ -42,7 +42,7 @@
  */
 
 ///Initialize the lazylist
-#define LAZYINITLIST(L) if (!L) { L = list(); }
+#define LAZYINITLIST(L) do { if (!L) { L = list(); } } while(0)
 ///Returns the key of the submitted item in the list
 #define LAZYFIND(L, V) (L ? L.Find(V) : 0)
 
@@ -160,9 +160,7 @@
 /proc/is_path_in_list(atom/A, list/L, zebra = FALSE)
 	for(var/path in L)
 		if(ispath(A, path))
-			if(ispath(A, path))
-				return !zebra || L[path]
-			return 1
+			return !zebra || L[path]
 	return 0
 
 //////////////////////////////////////////////////////
@@ -336,9 +334,10 @@ Checks if a list has the same entries and values as an element of big.
 
 //Returns the next element in parameter list after first appearance of parameter element. If it is the last element of the list or not present in list, returns first element.
 /proc/next_in_list(element, list/L)
-	for(var/i=1, i<L.len, i++)
+	for(var/i = 1, i <= L.len, i++)
 		if(L[i] == element)
-			return L[i+1]
+			// Wrap around to the first element when element is in the last slot.
+			return (i < L.len) ? L[i + 1] : L[1]
 	return L[1]
 
 /*
