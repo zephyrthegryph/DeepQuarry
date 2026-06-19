@@ -109,6 +109,13 @@ const BufferedSlider = ({
   // a normal commit just from event types; instead we mark not-interacting on
   // a short timeout after the last tick, which is when the user has released.
   const interactionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Cancel any pending commit timer if we unmount mid-interaction.
+  useEffect(
+    () => () => {
+      if (interactionTimer.current) clearTimeout(interactionTimer.current);
+    },
+    [],
+  );
   return (
     <Slider
       minValue={min}
@@ -153,6 +160,13 @@ const BufferedNumberInput = ({
     if (!interacting.current) setLocal(serverValue);
   }, [serverValue]);
   const interactionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Cancel any pending commit timer if we unmount mid-interaction.
+  useEffect(
+    () => () => {
+      if (interactionTimer.current) clearTimeout(interactionTimer.current);
+    },
+    [],
+  );
   return (
     <NumberInput
       fluid

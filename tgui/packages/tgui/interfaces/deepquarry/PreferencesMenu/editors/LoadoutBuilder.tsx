@@ -332,11 +332,6 @@ export const LoadoutBuilder = ({ data, staticData }: EditorProps) => {
       : (slotById(filterSlot)?.label ?? filterSlot);
 
   const otherOccupants = d.by_body_slot?.other ?? [];
-  // DQEdit — backbag pref deleted; "no bag" sentinel is gone. The job's outfit always
-  // equips a canonical backpack, so the "items in Other won't spawn" warning would
-  // require checking both loadout back slot AND job's back default; not worth detecting
-  // client-side. Items in Other simply go into whatever back slot ends up occupied.
-  const bagWarning = false;
 
   const queueOp = (op: OptimisticOp) => setPending((cur) => [...cur, op]);
 
@@ -667,25 +662,6 @@ const SlotCell = ({
   if (occupants.length === 0 && inheritedOccupants.length === 0 && jobDefault)
     tipLines.push(jobDefault);
 
-  // Subtext priority order: per-job item > inherited from default > job's themed default.
-  // Per-job items are bright; inherited and job defaults render italic grey.
-  let subText: string | null = null;
-  let subIsGhost = false;
-  if (occupants.length === 1) {
-    subText = occupants[0];
-  } else if (occupants.length > 1) {
-    subText = occupants.join(', ');
-  } else if (inheritedOccupants.length > 0) {
-    subText =
-      inheritedOccupants.length === 1
-        ? inheritedOccupants[0]
-        : inheritedOccupants.join(', ');
-    subIsGhost = true;
-  } else if (jobDefault) {
-    subText = jobDefault;
-    subIsGhost = true;
-  }
-
   const bgColor = selected
     ? 'rgba(0, 153, 0, 0.35)'
     : occupants.length > 0
@@ -700,13 +676,9 @@ const SlotCell = ({
         ? iconDataByItem[inheritedOccupants[0]]
         : undefined;
 
-  // Full-cell icon, no text labels. Tooltip carries everything (slot label, occupants,
-  // inherited items, job default). subText is retained only for the tooltip; the cell
-  // itself is just the icon.
-  if (subText) {
-    // (already mentioned in tipLines above — nothing more to do)
-  }
-
+  // Full-cell icon, no text labels. The tooltip (tipLines) carries everything
+  // (slot label, occupants, inherited items, job default); the cell itself is
+  // just the icon.
   return (
     <Tooltip content={tipLines.join('\n')}>
       <Box
