@@ -656,6 +656,11 @@
 /obj/item/organ/proc/handle_organ_proc_special()	// Called when processed.
 	return
 
+// Shared heat output from robotic body parts, used by machine organs that run hot.
+/obj/item/organ/proc/apply_robobody_heat()
+	if(owner && owner.stat != DEAD)
+		owner.bodytemperature += round(owner.robobody_count * 0.25, 0.1)
+
 /obj/item/organ/proc/check_verb_compatability()		// Used for determining if an organ should give or remove its verbs. I.E., FBP part in a human, no verbs. If true, keep or add.
 	if(owner)
 		if(ishuman(owner))

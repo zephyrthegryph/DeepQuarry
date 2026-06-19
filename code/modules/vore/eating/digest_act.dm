@@ -3,7 +3,9 @@
 //return non-negative integer: Amount of nutrition/charge gained (scaled to nutrition, other end can multiply for charge scale).
 
 // Ye default implementation.
-/obj/item/proc/digest_act(atom/movable/item_storage = null, touchable_amount, splashing = 0)
+// digest_rate_mult normalizes the per-tick digestion damage to the subsystem cadence
+// (see BELLY_BASELINE_TICK). 1 = the balanced SSbellies rate; smaller on faster ticks.
+/obj/item/proc/digest_act(atom/movable/item_storage = null, touchable_amount, splashing = 0, digest_rate_mult = 1)
 	if(!digestable)
 		return FALSE
 	if(istype(item_storage, /obj/item/dogborg/sleeper))
@@ -43,7 +45,9 @@
 	if(splashing > 0)
 		g_damage = 0.25 * splashing
 	else if(istype(B))
-		g_damage = 0.25 * (B.digest_brute + B.digest_burn) / touchable_amount
+		// Per-tick belly digestion; normalize to the subsystem cadence so TURBOMODE
+		// (SSobj) bellies don't digest items faster than SSbellies ones.
+		g_damage = 0.25 * (B.digest_brute + B.digest_burn) / touchable_amount * digest_rate_mult
 	if(g_damage <= 0)
 		return FALSE
 	if(g_damage > digest_stage)

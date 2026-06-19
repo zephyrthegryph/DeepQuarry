@@ -11,6 +11,10 @@
 	var/mob/owner
 	var/datum/tgui/active_ui
 	var/list/state = list()
+	/// Signature of the last computed overlay state. show() recomputes it cheaply
+	/// each tick and skips the (expensive) layer rebuild + send_update() when it
+	/// hasn't changed, so liquid bellies don't repaint the tgui every single tick.
+	var/last_show_sig
 
 /datum/belly_overlay_tgui/New(mob/M)
 	owner = M
@@ -50,9 +54,33 @@
 		// is inherently fire-and-forget — to keep those callers non-blocking.
 		INVOKE_ASYNC(active_ui, TYPE_PROC_REF(/datum/tgui, open))
 
-/datum/belly_overlay_tgui/proc/show(obj/belly/B, mob/prey)
+/datum/belly_overlay_tgui/proc/build_show_signature(obj/belly/B, mob/prey)
+	// Cheap signature of everything that affects the rendered layer set. Continuous
+	// values (reagent volume / nutrition driven pixel offsets) are bucketed to whole
+	// pixels so sub-pixel jitter every tick doesn't force a repaint.
+	if(!B || !B.belly_fullscreen)
+		return "none"
+	var/alpha = B.belly_fullscreen_alpha
+	if(prey)
+		alpha = min(alpha, prey.max_voreoverlay_alpha)
+	. = "[B.belly_fullscreen]|[alpha]|[B.belly_fullscreen_color]|[B.belly_fullscreen_color2]|[B.belly_fullscreen_color3]|[B.belly_fullscreen_color4]|[B.digest_mode]|[B.item_digest_mode]"
+	var/mob/living/lp = prey
+	if(istype(lp) && B.show_liquids && lp.liquidbelly_visuals)
+		var/mush_content = B.owner ? (B.owner.nutrition + LAZYLEN(B.contents) * B.item_mush_val) : 0
+		. += "|m[B.mush_overlay]:[round(mush_content)]:[B.mush_color]:[B.mush_alpha]"
+		. += "|l[B.liquid_overlay]:[round(B.reagents?.total_volume)]:[B.custom_reagentcolor || B.reagentcolor]:[B.custom_reagentalpha]"
+
+/datum/belly_overlay_tgui/proc/show(obj/belly/B, mob/prey, force = FALSE)
 	if(!owner?.client)
 		return
+	// Dirty-flag: skip the full layer rebuild + send_update() when nothing visible
+	// changed since the last show(). The window must already be open for the skip to
+	// be safe; first show (or after hide()) always falls through.
+	var/new_sig = build_show_signature(B, prey)
+	if(!force && active_ui && new_sig == last_show_sig)
+		open_window()
+		return
+	last_show_sig = new_sig
 	var/list/layers = list()
 	if(B && B.belly_fullscreen)
 		var/lookup_slug = lowertext(B.belly_fullscreen)
@@ -136,6 +164,9 @@
 	// side renders nothing, and hide the BROWSER widget. The window stays
 	// alive in the background, ready to re-render the next belly instantly.
 	state = list("visible" = FALSE, "layers" = list())
+	// Invalidate the cached signature so the next show() always re-renders rather
+	// than matching a stale (pre-hide) signature and leaving the overlay blank.
+	last_show_sig = null
 	if(active_ui)
 		active_ui.send_update()
 	if(owner?.client)

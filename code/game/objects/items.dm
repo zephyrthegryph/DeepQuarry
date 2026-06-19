@@ -143,6 +143,7 @@
 	var/d_mult_old = 1 //digest stage descriptions
 	var/d_mult = 1 //digest stage descriptions
 	var/image/d_stage_overlay //digest stage effects
+	var/d_stage_overlay_key //cache key (icon|icon_state|color) for d_stage_overlay; rebuild only when this changes
 	var/gurgled = FALSE
 	var/oldname
 	var/cleanname
@@ -163,6 +164,7 @@
 
 /obj/item/Destroy()
 	d_stage_overlay = null
+	d_stage_overlay_key = null
 	exploit_for = null
 	if(item_tf_spawn_allowed)
 		GLOB.item_tf_spawnpoints -= src
