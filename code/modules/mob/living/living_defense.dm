@@ -310,14 +310,14 @@
 					src.loc = T
 					visible_message(span_warning("[src] is pinned to the wall by [O]!"),span_warning("You are pinned to the wall by [O]!"))
 					src.anchored = TRUE
-					src.pinned += O
+					LAZYADD(src.pinned, O)
 
 /mob/living/proc/on_throw_vore_special(pred = TRUE, mob/living/target)
 	return
 
 /mob/living/proc/embed(obj/O, def_zone=null)
 	O.loc = src
-	src.embedded += O
+	LAZYADD(src.embedded, O)
 	add_verb(src, /mob/proc/yank_out_object)
 	throw_alert("embeddedobject", /atom/movable/screen/alert/embeddedobject)
 

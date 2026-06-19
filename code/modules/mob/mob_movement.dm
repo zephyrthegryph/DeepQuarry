@@ -97,10 +97,11 @@
 
 /client/verb/toggle_throw_mode()
 	set hidden = 1
-	if(!istype(mob, /mob/living/carbon))
+	var/mob/living/carbon/C = mob
+	if(!istype(C))
 		return
-	if (!mob.stat && isturf(mob.loc) && !mob.restrained())
-		mob:toggle_throw_mode()
+	if (!C.stat && isturf(C.loc) && !C.restrained())
+		C.toggle_throw_mode()
 	else
 		return
 
@@ -241,7 +242,7 @@
 				else
 					M.stop_pulling()
 
-	if(my_mob.pinned.len)
+	if(LAZYLEN(my_mob.pinned))
 		to_chat(src, span_blue("You're pinned to a wall by [my_mob.pinned[1]]!"))
 		return 0
 
@@ -340,13 +341,14 @@
 				my_mob.other_mobs = 1
 				M.other_mobs = 1 //Has something to do with people being able or unable to pass a chain of mobs
 
-				//Ugly!
-				spawn(0) //Step
-					M.Move(pre_move_loc, get_dir(M, pre_move_loc), total_delay)
-				spawn(1) //Unstep
-					M.other_mobs = null
-				spawn(1) //Unset
-					my_mob.other_mobs = null
+				// Step the chained mob towards where we were, then clear the
+				// pass-through flags a tick later (preserves old spawn(0)/spawn(1) timing).
+				// grab_chain_step wraps the built-in Move() so it can be deferred via
+				// INVOKE_ASYNC (Move itself has no /proc/ decl to reference, and INVOKE_ASYNC
+				// snapshots M so the loop variable can't be clobbered before it runs).
+				INVOKE_ASYNC(M, TYPE_PROC_REF(/mob, grab_chain_step), pre_move_loc, get_dir(M, pre_move_loc), total_delay)
+				addtimer(CALLBACK(M, TYPE_PROC_REF(/mob, clear_other_mobs)), 1 DECISECONDS, TIMER_STOPPABLE)
+				addtimer(CALLBACK(my_mob, TYPE_PROC_REF(/mob, clear_other_mobs)), 1 DECISECONDS, TIMER_STOPPABLE)
 
 	// Update all the grabs!
 	for (var/obj/item/grab/G in my_mob)
@@ -362,6 +364,17 @@
 
 /mob/proc/SelfMove(turf/n, direct, movetime)
 	return Move(n, direct, movetime)
+
+/// Forces this mob to step toward `target` as part of a grab chain. Wraps the
+/// built-in Move() so the step can be deferred via INVOKE_ASYNC; calling Move()
+/// on src still virtual-dispatches to this mob's Move override, exactly like the
+/// old direct `M.Move(...)` call did.
+/mob/proc/grab_chain_step(turf/target, dir, delay)
+	Move(target, dir, delay)
+
+/// Clears the grab-chain pass-through flag. Used as a deferred callback after a chain step.
+/mob/proc/clear_other_mobs()
+	other_mobs = null
 
 
 //Set your incorporeal movespeed

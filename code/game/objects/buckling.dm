@@ -204,7 +204,7 @@
 	if(!istype(M))
 		return FALSE
 
-	if((!can_buckle && !forced) || M.buckled || M.pinned.len || (max_buckled_mobs == 0) || (buckle_require_restraints && !M.restrained()))
+	if((!can_buckle && !forced) || M.buckled || LAZYLEN(M.pinned) || (max_buckled_mobs == 0) || (buckle_require_restraints && !M.restrained()))
 		return FALSE
 	if(LAZYLEN(M.grabbed_by) && !forced)
 		to_chat(M, span_boldwarning("You can not buckle while grabbed!"))

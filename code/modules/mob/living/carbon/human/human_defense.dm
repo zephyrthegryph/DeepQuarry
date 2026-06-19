@@ -446,7 +446,7 @@ emp_act
 					src.loc = T
 					visible_message(span_warning("[src] is pinned to the wall by [thrown_object]!"),span_warning("You are pinned to the wall by [thrown_object]!"))
 					src.anchored = TRUE
-					src.pinned += thrown_object
+					LAZYADD(src.pinned, thrown_object)
 
 // This does a prob check to catch the thing flying at you, with a minimum of 1%
 /mob/living/carbon/human/proc/can_catch(obj/item/O)

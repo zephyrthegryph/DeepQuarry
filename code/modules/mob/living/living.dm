@@ -1,7 +1,10 @@
 /mob/living/proc/get_visible_name()
-	var/list/name_data = list(null)
-	if(SEND_SIGNAL(src, COMSIG_HUMAN_GET_VISIBLE_NAME, name_data) & COMPONENT_VISIBLE_NAME_CHANGED)
-		return name_data[1]
+	// Only allocate the signal payload list when a handler is actually registered.
+	// This proc runs every Life() tick per human; the list(null) alloc is otherwise wasted.
+	if(_listen_lookup?[COMSIG_HUMAN_GET_VISIBLE_NAME])
+		var/list/name_data = list(null)
+		if(SEND_SIGNAL(src, COMSIG_HUMAN_GET_VISIBLE_NAME, name_data) & COMPONENT_VISIBLE_NAME_CHANGED)
+			return name_data[1]
 
 	if(real_name)
 		return real_name
