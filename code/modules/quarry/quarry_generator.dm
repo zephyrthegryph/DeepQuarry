@@ -23,10 +23,15 @@
 	iterations = 4
 	initial_wall_cell = 50
 	// Parent runs generate() up to max_attempts times unconditionally — there's
-	// no break on success in /datum/random_map/New. Setting this to 1 stops
-	// the redundant 4-5x rework. If sanity-check failures become a problem we
-	// can wrap this with a retry mechanism that DOES break early.
-	max_attempts = 1
+	// no break on success in /datum/random_map/New, so a literal retry count
+	// would re-seed and re-apply a sane map several times. We keep the retry
+	// budget (so an insane map is regenerated instead of stranding the
+	// player) but override generate() to break on the first sane map: once
+	// applied, further attempts are cheap no-ops. See generate() below.
+	max_attempts = 5
+	// TRUE once a sane map has been generated + applied. Guards generate()
+	// so the parent's unconditional attempt loop doesn't redo the work.
+	var/succeeded = FALSE
 
 // Construct with a layer config. We need iterations and initial_wall_cell
 // set BEFORE the parent's New() runs generate(), so the override applies
@@ -37,6 +42,30 @@
 		initial_wall_cell = cfg.wall_density
 		iterations = cfg.smoothing_iterations
 	..(null, tx, ty, tz, tlx, tly)
+
+// Break-on-success retry: the parent's New() calls generate() max_attempts
+// times unconditionally (no early break). We honor a real retry budget — an
+// insane map is re-rolled instead of being applied-and-stranded — but once a
+// sane map has been applied, every subsequent attempt is a no-op so we don't
+// re-seed/re-apply over a good map. Returns 1 (success) so the parent never
+// flags the run as failed once we've landed a sane map.
+// NOTE: the parent New()'s `failed` flag is sticky (set on any 0-return,
+// never reset), so if attempt 1 is insane and a later attempt succeeds the
+// parent still logs a "failed to generate" admin_notice. That's cosmetic
+// only — the sane map is applied correctly. Fixing the log would require
+// reimplementing the whole parent New() body, which isn't worth the risk.
+/datum/random_map/automata/cave_system/quarry/generate()
+	if(succeeded)
+		return 1
+	seed_map()
+	generate_map()
+	if(check_map_sanity())
+		cleanup()
+		if(auto_apply)
+			apply_to_map()
+		succeeded = TRUE
+		return 1
+	return 0
 
 // Override cleanup: skip the ore-placement loop that the parent runs.
 // SSquarry handles ore placement from the config after generation.

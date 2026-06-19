@@ -176,6 +176,22 @@
 	)
 
 
+/// Inspect a list of /datum/quarry_feature instances and record the cheap
+/// per-layer event gates (has_pools / has_gas_pools) onto L. Called once at
+/// generation/restore while the feature instances are already in hand.
+/proc/_quarry_set_layer_feature_flags(datum/quarry_layer/L, list/instances)
+	if(!L)
+		return
+	L.has_pools = FALSE
+	L.has_gas_pools = FALSE
+	for(var/datum/quarry_feature/F as anything in instances)
+		if(F.placement_type != "pool" || !F.pool_turf)
+			continue
+		L.has_pools = TRUE
+		if(ispath(F.pool_turf, /turf/simulated/floor/gas_crack))
+			L.has_gas_pools = TRUE
+
+
 /// Flood-fill from a seed tile through tiles matching a predicate, up
 /// to a maximum cluster size. Returns a list of contributing turfs in
 /// the order they were visited. The seed itself is the first entry.
@@ -218,12 +234,15 @@
 		return 0
 	var/placed = 0
 	var/datum/callback/match_cb = CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(_quarry_match_unclaimed_wall))
+	// Build the eligible-wall list ONCE, then pop claimed tiles out of it as
+	// veins consume them — instead of rescanning tens of thousands of walls
+	// inside every vein iteration (O(veins x walls)).
+	var/list/eligible = list()
+	for(var/turf/simulated/mineral/W in wall_candidates)
+		if(W.mineral || W.ignore_mapgen || W.ignore_oregen)
+			continue
+		eligible += W
 	for(var/v in 1 to F.vein_count)
-		var/list/eligible = list()
-		for(var/turf/simulated/mineral/W in wall_candidates)
-			if(W.mineral || W.ignore_mapgen || W.ignore_oregen)
-				continue
-			eligible += W
 		if(!length(eligible))
 			break
 		var/turf/simulated/mineral/seed = pick(eligible)
@@ -236,6 +255,13 @@
 				T.mineral = GLOB.ore_data[mineral_name]
 				T.UpdateMineral()
 				placed++
+			// Claimed — remove from the eligible pool so later veins don't
+			// re-seed on it.
+			eligible -= T
+		// The seed may have been rejected by the cluster pass (already
+		// claimed); drop it regardless so the next vein can't re-pick it.
+		eligible -= seed
+		CHECK_TICK
 	return placed
 
 
@@ -250,19 +276,22 @@
 		return 0
 	var/painted = 0
 	var/datum/callback/match_cb = CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(_quarry_match_clean_floor))
+	// Build the eligible-floor list ONCE before the vein loop; pop claimed
+	// (painted) tiles out of it as veins consume them rather than rescanning
+	// floor_candidates each iteration.
+	var/list/eligible = list()
+	for(var/turf/simulated/floor/T as anything in floor_candidates)
+		if(istype(T, F.pool_turf))
+			continue
+		var/blocked = FALSE
+		for(var/atom/movable/AM in T)
+			if(_quarry_is_real_obstacle(AM))
+				blocked = TRUE
+				break
+		if(blocked)
+			continue
+		eligible += T
 	for(var/v in 1 to F.vein_count)
-		var/list/eligible = list()
-		for(var/turf/simulated/floor/T as anything in floor_candidates)
-			if(istype(T, F.pool_turf))
-				continue
-			var/blocked = FALSE
-			for(var/atom/movable/AM in T)
-				if(_quarry_is_real_obstacle(AM))
-					blocked = TRUE
-					break
-			if(blocked)
-				continue
-			eligible += T
 		if(!length(eligible))
 			break
 		var/turf/simulated/floor/seed = pick(eligible)
@@ -272,9 +301,14 @@
 				continue
 			if(istype(T, F.pool_turf))
 				continue
+			var/turf/old_t = T
 			T = T.ChangeTurf(F.pool_turf)
 			floor_candidates -= T
+			// The pre-ChangeTurf turf is what's in `eligible`; remove it.
+			eligible -= old_t
 			painted++
+		eligible -= seed
+		CHECK_TICK
 	return painted
 
 

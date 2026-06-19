@@ -23,6 +23,21 @@
 	// ambient hazard doesn't rescan 65k tiles. Lazily (re)built by
 	// _quarry_get_objectives — null means "not scanned yet this load".
 	var/list/objectives
+	// Cached walkable-floor tiles captured at generation/restore (the
+	// generator already buckets these as floor_candidates). Runtime event
+	// tile-picks reuse this instead of walking the 65k-tile block() each
+	// call. Mining/cave-ins can make it slightly stale, so consumers
+	// re-validate each picked turf is still an eligible floor. null = not
+	// captured yet (fall back to a block() scan).
+	var/list/floor_cache
+	// Cheap per-layer event gates, computed once from the rolled features at
+	// generation/restore. Let machine/pool-dependent events (gas_leak,
+	// pump_malfunction) early-out before scanning GLOB.machines / the z grid.
+	// has_pools: any pool feature rolled (pumps only matter on pool layers).
+	// has_gas_pools: any pool feature whose pool_turf is a gas_crack subtype
+	//   (gas_leak amplifies those).
+	var/has_pools = FALSE
+	var/has_gas_pools = FALSE
 	// Typepaths of /datum/quarry_feature rolled at layer generation.
 	// Kept so restore_layer rebuilds the same ore/mob/decoration content
 	// after a snapshot instead of re-rolling a different set.
@@ -46,3 +61,21 @@
 	depth = _depth
 	goals = list()
 	feature_types = list()
+
+/datum/quarry_layer/Destroy()
+	// Goals are owned by the layer; qdel them so they don't outlive it.
+	if(goals)
+		for(var/datum/quarry_goal/G as anything in goals)
+			qdel(G)
+		goals = null
+	// The remaining refs are not owned here (configs/archetypes are shared
+	// singletons; the stalker/objectives/feature instances are owned
+	// elsewhere or already gone) — just null them so the layer doesn't
+	// pin them.
+	config = null
+	archetype = null
+	active_stalker = null
+	objectives = null
+	feature_types = null
+	floor_cache = null
+	return ..()

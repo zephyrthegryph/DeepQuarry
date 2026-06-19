@@ -24,6 +24,12 @@
 	// Layer this goal belongs to. Set when the layer rolls the goal.
 	var/datum/quarry_layer/owner_layer = null
 
+/datum/quarry_goal/Destroy()
+	// Owned by the layer; drop the back-ref so a qdel'd goal doesn't pin
+	// the layer record after unload.
+	owner_layer = null
+	return ..()
+
 // Percent complete, clamped 0..100.
 /datum/quarry_goal/proc/percent_complete()
 	if(target <= 0)

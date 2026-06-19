@@ -42,6 +42,15 @@
 
 #define QUARRY_DANGER_DECAY 1.0
 
+// Per-tick hazard/danger magnitudes above are authored for the CURRENT
+// SSquarry wait of 30 SECONDS. BYOND subsystem `wait` is in deciseconds
+// (30 SECONDS == 300 ds), and callers pass `seconds = wait/10 == 30`. To
+// decouple the magnitudes from the scheduler without rebalancing, callers
+// multiply by the tick's `seconds` and divide by this normalization constant
+// — so at the 30s wait the factor is exactly 1 (present-day balance preserved)
+// and any other wait scales proportionally. If the wait define changes, update this too.
+#define QUARRY_TICK_NORMALIZE_SECONDS 30
+
 // Noise system loudness presets. Used at the call site to keep the
 // per-source values consistent. Each value is both the alert radius
 // (tiles) and the input to the danger bump (divided by a divisor in
