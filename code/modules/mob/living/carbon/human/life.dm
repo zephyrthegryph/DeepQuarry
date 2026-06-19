@@ -45,6 +45,11 @@
 	if(life_tick % 30)
 		hud_updateflag = (1 << TOTAL_HUDS) - 1
 
+	// NOTE: voice/name are recomputed every tick. GetVoice()/get_visible_name() now
+	// skip their per-tick list alloc when no signal handler is registered (the common case).
+	// A fuller event-driven conversion (recompute only on identity/mask/wear/disguise change)
+	// is deferred: the inputs (rig/voice-changer active state, changeling mimic, belly absorb)
+	// change from too many scattered sites to hook safely without behavior risk.
 	voice = GetVoice()
 
 	var/stasis = (inStasisNow())
@@ -88,6 +93,9 @@
 	handle_species_components()
 
 	//Update our name based on whether our face is obscured/disfigured
+	// NOTE: recomputed every tick. get_visible_name() now skips its per-tick list alloc
+	// when no signal handler is registered. A fuller event-driven conversion (recompute
+	// only on identity/mask/wear/disguise change) is deferred as too risky to verify here.
 	name = get_visible_name()
 
 	pulse = handle_pulse()

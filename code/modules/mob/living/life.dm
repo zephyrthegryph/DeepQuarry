@@ -153,16 +153,22 @@
 		AdjustStunned(-1)
 		if(has_perk(/datum/perk/body/vig_stalwart) && prob(DQ_PERK_STALWART_PROB))
 			AdjustStunned(-1) // Stalwart: shake off stuns faster.
-		throw_alert("stunned", /atom/movable/screen/alert/stunned)
-	else
+		if(!alert_state_stunned)
+			alert_state_stunned = TRUE
+			throw_alert("stunned", /atom/movable/screen/alert/stunned)
+	else if(alert_state_stunned)
+		alert_state_stunned = FALSE
 		clear_alert("stunned")
 	return stunned
 
 /mob/living/proc/handle_weakened()
 	if(weakened)
 		AdjustWeakened(-1)
-		throw_alert("weakened", /atom/movable/screen/alert/weakened)
-	else
+		if(!alert_state_weakened)
+			alert_state_weakened = TRUE
+			throw_alert("weakened", /atom/movable/screen/alert/weakened)
+	else if(alert_state_weakened)
+		alert_state_weakened = FALSE
 		clear_alert("weakened")
 	return weakened
 
@@ -179,8 +185,11 @@
 /mob/living/proc/handle_drugged()
 	if(druggy)
 		druggy = max(druggy-1, 0)
-		throw_alert("high", /atom/movable/screen/alert/high)
-	else
+		if(!alert_state_drugged)
+			alert_state_drugged = TRUE
+			throw_alert("high", /atom/movable/screen/alert/high)
+	else if(alert_state_drugged)
+		alert_state_drugged = FALSE
 		clear_alert("high")
 	return druggy
 
@@ -192,16 +201,22 @@
 /mob/living/proc/handle_paralysed()
 	if(paralysis)
 		AdjustParalysis(-1)
-		throw_alert("paralyzed", /atom/movable/screen/alert/paralyzed)
-	else
+		if(!alert_state_paralysed)
+			alert_state_paralysed = TRUE
+			throw_alert("paralyzed", /atom/movable/screen/alert/paralyzed)
+	else if(alert_state_paralysed)
+		alert_state_paralysed = FALSE
 		clear_alert("paralyzed")
 	return paralysis
 
 /mob/living/proc/handle_confused()
 	if(confused)
 		AdjustConfused(-1)
-		throw_alert("confused", /atom/movable/screen/alert/confused)
-	else
+		if(!alert_state_confused)
+			alert_state_confused = TRUE
+			throw_alert("confused", /atom/movable/screen/alert/confused)
+	else if(alert_state_confused)
+		alert_state_confused = FALSE
 		clear_alert("confused")
 	return confused
 
@@ -259,18 +274,39 @@
 	if(glow_override)
 		return FALSE
 
+	// Determine the desired light params, then only call set_light() if they changed
+	// since last tick (this runs every Life() tick for every glowing mob).
+	var/want_range
+	var/want_intensity
+	var/want_color
+	. = FALSE
+
 	if(instability >= TECHNOMANCER_INSTABILITY_MIN_GLOW)
 		var/distance = round(sqrt(instability / 2))
 		if(distance)
-			set_light(distance, distance * 4, l_color = "#660066")
-			return TRUE
+			want_range = distance
+			want_intensity = distance * 4
+			want_color = "#660066"
+			. = TRUE
+		else
+			return FALSE // Preserve old behavior: distance 0 leaves the existing light untouched.
 
 	else if(glow_toggle && !is_ventcrawling) // Hide the light in vents
-		set_light(glow_range, glow_intensity, glow_color)
+		want_range = glow_range
+		want_intensity = glow_intensity
+		want_color = glow_color
 
 	else
-		set_light(0)
-		return FALSE
+		want_range = 0
+
+	if(want_range != last_glow_range || want_intensity != last_glow_intensity || want_color != last_glow_color)
+		if(want_range)
+			set_light(want_range, want_intensity, want_color)
+		else
+			set_light(0)
+		last_glow_range = want_range
+		last_glow_intensity = want_intensity
+		last_glow_color = want_color
 
 /mob/living/proc/handle_darksight()
 	SEND_SIGNAL(src,COMSIG_MOB_HANDLE_HUD_DARKSIGHT)

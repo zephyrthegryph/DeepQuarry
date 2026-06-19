@@ -71,7 +71,7 @@
 					for(var/obj/item/O in organ.implants)
 						if(O == src)
 							organ.implants -= src
-			host.pinned -= src
-			host.embedded -= src
+			LAZYREMOVE(host.pinned, src)
+			LAZYREMOVE(host.embedded, src)
 			host.drop_from_inventory(src)
 		spawn(1) if(!QDELETED(src)) qdel(src)

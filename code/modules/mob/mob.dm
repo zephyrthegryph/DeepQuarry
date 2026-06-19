@@ -997,7 +997,7 @@
 	return visible_implants
 
 /mob/proc/embedded_needs_process()
-	return (embedded.len > 0)
+	return (LAZYLEN(embedded) > 0)
 
 /mob/proc/yank_out_object()
 	set category = "Object"
@@ -1080,7 +1080,7 @@
 
 	else if(issilicon(src))
 		var/mob/living/silicon/robot/R = src
-		R.embedded -= selection
+		LAZYREMOVE(R.embedded, selection)
 		R.adjustBruteLoss(5)
 		R.adjustFireLoss(10)
 
@@ -1089,8 +1089,8 @@
 
 	for(var/obj/item/O in pinned)
 		if(O == selection)
-			pinned -= O
-		if(!pinned.len)
+			LAZYREMOVE(pinned, O)
+		if(!LAZYLEN(pinned))
 			anchored = FALSE
 	return 1
 
