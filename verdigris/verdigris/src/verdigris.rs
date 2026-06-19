@@ -35,9 +35,7 @@ pub fn verdigris_features() -> &'static str {
 /// DM should call this in `/world/New()` before any other verdigris call.
 #[byond_fn]
 pub fn verdigris_init() -> ByondResult<()> {
-    panic_safe!({
-        Ok(())
-    })
+    panic_safe!({ Ok(()) })
 }
 
 /// Drop transient Rust-side state. Currently a no-op; once the gas-mixture
