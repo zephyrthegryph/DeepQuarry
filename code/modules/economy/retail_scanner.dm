@@ -124,9 +124,10 @@
 			amount = CLAMP(amount, 1, 20)
 			item_list[t_purpose] = amount
 			var/price = params["price"]
-			if (!price)
+			if(!isnum(price) || price <= 0)
 				return FALSE
-			transaction_amount += amount * price
+			price = CLAMP(round(price), 1, 1000000)
+			transaction_amount = max(0, transaction_amount + amount * price)
 			price_list[t_purpose] = price
 			playsound(src, 'sound/machines/twobeep.ogg', 25)
 			visible_message("[icon2html(src, viewers(src))][transaction_purpose][amount > 1 ? "[amount] x" : ""]: [amount * price] Thaler\s.")
@@ -141,7 +142,7 @@
 			n_amount = CLAMP(n_amount, 0, 20)
 			if(!item_list[item_name])
 				return FALSE
-			transaction_amount += (n_amount - item_list[item_name]) * price_list[item_name]
+			transaction_amount = max(0, transaction_amount + (n_amount - item_list[item_name]) * price_list[item_name])
 			if(!n_amount)
 				item_list -= item_name
 				price_list -= item_name
@@ -152,7 +153,7 @@
 			var/item_name = params["item"]
 			if(!item_name)
 				return FALSE
-			transaction_amount -= price_list[item_name]
+			transaction_amount = max(0, transaction_amount - price_list[item_name])
 			item_list[item_name]--
 			if(item_list[item_name] <= 0)
 				item_list -= item_name
@@ -164,14 +165,14 @@
 				return FALSE
 			if(item_list[item_name] >= 20)
 				return FALSE
-			transaction_amount += price_list[item_name]
+			transaction_amount = max(0, transaction_amount + price_list[item_name])
 			item_list[item_name]++
 			return TRUE
 		if("clear")
 			var/item_name = params["item"]
 			if(!item_name)
 				return FALSE
-			transaction_amount -= price_list[item_name] * item_list[item_name]
+			transaction_amount = max(0, transaction_amount - price_list[item_name] * item_list[item_name])
 			item_list -= item_name
 			price_list -= item_name
 			return TRUE

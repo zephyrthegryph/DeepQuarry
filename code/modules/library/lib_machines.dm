@@ -195,6 +195,18 @@
 		return GLOB.tgui_always_state
 	return ..()
 
+/// Maps the stored sortby value to a fixed, known-safe SQL column literal.
+/// Defense-in-depth: even if a future writer sets `sortby` without the whitelist
+/// in the "sort" tgui_act branch, ORDER BY can never become injectable.
+/obj/machinery/librarycomp/proc/safe_sortby_column()
+	switch(sortby)
+		if("title")
+			return "title"
+		if("category")
+			return "category"
+		else
+			return "author"
+
 /obj/machinery/librarycomp/tgui_data(mob/user)
 	var/list/data = list()
 	data["screenstate"] = screenstate
@@ -251,9 +263,9 @@
 	data["internal_archive"] = internal
 	var/list/external = list()
 	if((screenstate == 8 || is_admin_view) && SSdbcore.IsConnected())
-		// sortby is validated in the "sort" tgui_act branch against a fixed whitelist,
-		// so it is safe to interpolate here as a column name (not a value).
-		var/datum/db_query/query = SSdbcore.NewQuery("SELECT id, author, title, category FROM library ORDER BY [sortby]")
+		// sortby is mapped to a fixed column literal at the query site, so ORDER BY
+		// can never be injected even if the whitelist in tgui_act is ever bypassed.
+		var/datum/db_query/query = SSdbcore.NewQuery("SELECT id, author, title, category FROM library ORDER BY [safe_sortby_column()]")
 		query.Execute()
 		while(query.NextRow())
 			external += list(list(

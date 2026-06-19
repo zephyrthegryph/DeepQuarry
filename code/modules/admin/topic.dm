@@ -190,6 +190,8 @@
 				unbanpanel()
 
 	else if(href_list["warn"])
+		if(!check_rights(R_MOD|R_ADMIN))
+			return
 		usr.client.warn(href_list["warn"])
 
 	else if(href_list["unbane"])
@@ -247,7 +249,8 @@
 	/////////////////////////////////////new ban stuff
 
 	else if(href_list["jobban2"])
-//		if(!check_rights(R_BAN))	return
+		if(!check_rights(R_BAN))
+			return
 
 		var/mob/M = locate(href_list["jobban2"])
 		if(!ismob(M))
@@ -261,10 +264,7 @@
 			to_chat(usr, span_filter_adminlog("Job Master has not been setup!"))
 			return
 
-		// Job-Ban Panel now opens a structured TGUI panel.
-		// The legacy HTML builder below this block is unreachable but left
-		// in place so an upstream merge that touches it still hits the
-		// CONTRIBUTING-required edit marker.
+		// Job-Ban Panel opens a structured TGUI panel.
 		dq_open_jobban_panel(M)
 		return
 	else if(href_list["jobban3"])
