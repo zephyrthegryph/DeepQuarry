@@ -168,13 +168,13 @@
 /// (a survive-timer or power goal can complete purely on time). Empty
 /// layers are skipped — siege timers and power output only count while a
 /// crew is actually present.
-/datum/controller/subsystem/quarry/proc/tick_layer_goals()
+/datum/controller/subsystem/quarry/proc/tick_layer_goals(list/occupancy)
 	var/seconds = wait / 10
 	for(var/key in layers)
 		var/datum/quarry_layer/L = layers[key]
 		if(!L?.loaded || L.unloading)
 			continue
-		if(is_layer_empty(L.z))
+		if(layer_empty_cached(occupancy, L.z))
 			continue
 		var/progressed = FALSE
 		for(var/datum/quarry_goal/G as anything in L.goals)

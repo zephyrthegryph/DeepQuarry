@@ -257,14 +257,12 @@
 // one, else null. Used by ensure_layer to honor a pre-rolled feature
 // set when a partial snapshot exists — see preroll_layer.
 /datum/controller/subsystem/quarry/proc/read_snapshot_feature_types(depth)
-	var/path = _quarry_snapshot_path(depth)
-	if(!fexists(path))
-		return null
-	var/list/doc
-	try
-		doc = json_decode(file2text(path))
-	catch
-		return null
+	return _quarry_doc_feature_types(read_snapshot_doc(depth))
+
+// Extract the feature typepaths from an already-decoded snapshot doc. Lets
+// callers that already hold a decoded doc avoid a redundant file2text +
+// json_decode. Returns null if the doc has no feature_types.
+/datum/controller/subsystem/quarry/proc/_quarry_doc_feature_types(list/doc)
 	if(!islist(doc) || !islist(doc["feature_types"]))
 		return null
 	var/list/out = list()
@@ -278,7 +276,10 @@
 // Resolve the archetype named in a snapshot to its singleton instance,
 // or null if the snapshot predates archetypes / names an unknown type.
 /datum/controller/subsystem/quarry/proc/read_snapshot_archetype(depth)
-	var/list/doc = read_snapshot_doc(depth)
+	return _quarry_doc_archetype(read_snapshot_doc(depth))
+
+// Resolve the archetype from an already-decoded snapshot doc.
+/datum/controller/subsystem/quarry/proc/_quarry_doc_archetype(list/doc)
 	if(!islist(doc))
 		return null
 	return archetype_by_type(doc["archetype"])
@@ -288,14 +289,13 @@
 // written by preroll_layer to publish goal data to the UI before the
 // layer is actually generated.
 /datum/controller/subsystem/quarry/proc/is_partial_snapshot(depth)
-	var/path = _quarry_snapshot_path(depth)
-	if(!fexists(path))
+	if(!has_snapshot(depth))
 		return FALSE
-	var/list/doc
-	try
-		doc = json_decode(file2text(path))
-	catch
-		return FALSE
+	return _quarry_doc_is_partial(read_snapshot_doc(depth))
+
+// TRUE if an already-decoded snapshot doc has no tile data (a preroll
+// partial). A null/malformed doc is treated as non-partial.
+/datum/controller/subsystem/quarry/proc/_quarry_doc_is_partial(list/doc)
 	if(!islist(doc))
 		return FALSE
 	var/list/tiles = doc["tiles"]
@@ -390,21 +390,18 @@
 // Returns the new /datum/quarry_layer on success, null on failure
 // (caller can fall back to a clean generate_layer).
 /datum/controller/subsystem/quarry/proc/restore_layer(depth)
-	var/path = _quarry_snapshot_path(depth)
-	if(!fexists(path))
-		return null
+	return restore_layer_from_doc(depth, read_snapshot_doc(depth))
 
+// Restore body that takes an already-decoded snapshot doc. ensure_layer
+// decodes the snapshot exactly once and threads the doc through the
+// partial-check / feature / archetype / restore path so the file isn't
+// re-read + re-parsed ~4x per descent.
+/datum/controller/subsystem/quarry/proc/restore_layer_from_doc(depth, list/doc)
 	var/datum/quarry_layer_config/cfg = select_config(depth)
 	if(!cfg)
 		log_game("SSquarry: restore_layer: no config for depth [depth]")
 		return null
 
-	var/list/doc
-	try
-		doc = json_decode(file2text(path))
-	catch
-		log_game("SSquarry: snapshot for depth [depth] is unreadable")
-		return null
 	if(!islist(doc) || !islist(doc["tiles"]))
 		log_game("SSquarry: snapshot for depth [depth] is malformed")
 		return null
@@ -512,6 +509,7 @@
 		L.feature_types = _quarry_roll_feature_types(cfg)
 
 	var/list/aggregated = _quarry_aggregate_features(L.feature_types, L)
+	_quarry_set_layer_feature_flags(L, aggregated["instances"])
 	var/list/mob_table = aggregated["mob_table"]
 	var/extra_mob_spawns = aggregated["extra_mob_spawns"]
 	// The floor's goals are its archetype's objective; discard feature goals.
@@ -541,23 +539,30 @@
 					G.deserialize_extra(saved)
 					break
 
+	// Bucket the restored walkable floors once: used for both the mob
+	// respawn pass and the runtime event-pick floor cache.
+	var/list/floor_candidates = list()
+	for(var/turf/simulated/floor/F in block(locate(1, 1, new_z), locate(QUARRY_LAYER_SIZE, QUARRY_LAYER_SIZE, new_z)))
+		if(F in bay_tiles)
+			continue
+		// Player-built safe rooms (with powered APC) are spawn-safe.
+		if(_quarry_tile_is_safe(F))
+			continue
+		floor_candidates += F
+	// Cache before the spawn pass consumes tiles (the cache wants the full
+	// walkable set; occupancy is re-validated at pick time).
+	L.floor_cache = floor_candidates.Copy()
+
 	var/total_mob_count = cfg.mob_count + extra_mob_spawns
 	var/list/effective_mob_table = length(mob_table) ? mob_table : cfg.default_mob_table
 	if(total_mob_count > 0 && length(effective_mob_table))
-		var/list/floor_candidates = list()
-		for(var/turf/simulated/floor/F in block(locate(1, 1, new_z), locate(QUARRY_LAYER_SIZE, QUARRY_LAYER_SIZE, new_z)))
-			if(F in bay_tiles)
-				continue
+		var/list/spawn_candidates = floor_candidates.Copy()
+		var/spawned = 0
+		while(spawned < total_mob_count && length(spawn_candidates))
+			var/turf/F = pick(spawn_candidates)
+			spawn_candidates -= F
 			if(length(F.contents))
 				continue
-			// Player-built safe rooms (with powered APC) are spawn-safe.
-			if(_quarry_tile_is_safe(F))
-				continue
-			floor_candidates += F
-		var/spawned = 0
-		while(spawned < total_mob_count && length(floor_candidates))
-			var/turf/F = pick(floor_candidates)
-			floor_candidates -= F
 			var/mob_type = pickweight(effective_mob_table)
 			if(mob_type)
 				new mob_type(F)
@@ -565,6 +570,9 @@
 	var/_rl4 = world.timeofday
 
 	L.loaded = TRUE
+	// Index now that the layer is fully built (failure paths above return
+	// first, so the flat z index never holds a half-built/orphaned ref).
+	_index_layer_z(L)
 	// Re-apply idempotent ambient setup (air/light/runtime state isn't
 	// snapshotted). Placed objective structures round-trip via the tile
 	// diffs, so on_layer_generated is deliberately NOT re-run here.

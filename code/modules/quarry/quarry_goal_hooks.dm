@@ -17,12 +17,11 @@
 // Find the loaded quarry layer for a given z, or null if z isn't a
 // procedural quarry layer (the surface station z, an unrelated z, etc).
 /datum/controller/subsystem/quarry/proc/layer_at_z(z)
-	if(!isnum(z) || z < 1)
+	if(!isnum(z) || z < 1 || z > length(layers_by_z))
 		return null
-	for(var/key in layers)
-		var/datum/quarry_layer/L = layers[key]
-		if(L?.loaded && L.z == z)
-			return L
+	var/datum/quarry_layer/L = layers_by_z[z]
+	if(L?.loaded && L.z == z)
+		return L
 	return null
 
 
@@ -34,9 +33,16 @@
 	var/datum/quarry_layer/L = layer_at_z(z)
 	if(!L || !length(L.goals))
 		return
+	var/progressed = FALSE
 	for(var/datum/quarry_goal/G as anything in L.goals)
+		var/before = G.progress
 		G.on_node_mined(mineral_name, item_type)
-	recompute_unlocked_depth()
+		if(G.progress != before)
+			progressed = TRUE
+	// recompute_unlocked_depth only changes state when a goal actually
+	// advances — gate it so a no-op mine event doesn't re-scan all goals.
+	if(progressed)
+		recompute_unlocked_depth()
 
 /datum/controller/subsystem/quarry/proc/on_layer_reagent_pumped(z, reagent_id, units)
 	var/datum/quarry_layer/L = layer_at_z(z)
@@ -56,9 +62,14 @@
 		emit_noise(origin, QUARRY_NOISE_PUMP, origin)
 	if(!length(L.goals))
 		return
+	var/progressed = FALSE
 	for(var/datum/quarry_goal/G as anything in L.goals)
+		var/before = G.progress
 		G.on_reagent_pumped(reagent_id, units)
-	recompute_unlocked_depth()
+		if(G.progress != before)
+			progressed = TRUE
+	if(progressed)
+		recompute_unlocked_depth()
 
 /datum/controller/subsystem/quarry/proc/on_layer_gas_vented(z, gas_id, moles)
 	var/datum/quarry_layer/L = layer_at_z(z)
@@ -71,9 +82,14 @@
 	// raw_chem_vent.dm directly.
 	if(!length(L.goals))
 		return
+	var/progressed = FALSE
 	for(var/datum/quarry_goal/G as anything in L.goals)
+		var/before = G.progress
 		G.on_gas_vented(gas_id, moles)
-	recompute_unlocked_depth()
+		if(G.progress != before)
+			progressed = TRUE
+	if(progressed)
+		recompute_unlocked_depth()
 
 
 // Hook for mob death. Quarry layer mobs only — guard on z so we don't
@@ -95,9 +111,14 @@
 		L.active_stalker = null
 	if(!length(L.goals))
 		return
+	var/progressed = FALSE
 	for(var/datum/quarry_goal/G as anything in L.goals)
+		var/before = G.progress
 		G.on_mob_killed(src)
-	SSquarry.recompute_unlocked_depth()
+		if(G.progress != before)
+			progressed = TRUE
+	if(progressed)
+		SSquarry.recompute_unlocked_depth()
 
 
 // Hook for player turf entry. Only fires on mineable cave floors that
@@ -122,6 +143,16 @@
 	var/datum/quarry_layer/L = SSquarry.layer_at_z(z)
 	if(!L || !length(L.goals))
 		return
+	// Fires on EVERY player tile-step. on_tile_visited dedupes via the
+	// goal's seen_tiles set, so progress only changes the first time a
+	// given tile is walked. recompute_unlocked_depth loops all goals via
+	// is_cleared, so gate it on a real progress delta — re-walking known
+	// tiles (the common case) does no work.
+	var/progressed = FALSE
 	for(var/datum/quarry_goal/G as anything in L.goals)
+		var/before = G.progress
 		G.on_tile_visited(src)
-	SSquarry.recompute_unlocked_depth()
+		if(G.progress != before)
+			progressed = TRUE
+	if(progressed)
+		SSquarry.recompute_unlocked_depth()

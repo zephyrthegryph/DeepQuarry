@@ -73,6 +73,14 @@
 #define QUARRY_HEAT_FLOOR_PER_DEPTH 4               // quiet heat settles toward depth*this (capped below the siege threshold)
 #define QUARRY_HEAT_FLOOR_MAX 45                    // cap on the depth heat floor, so going quiet can always end a siege
 #define QUARRY_REINFORCE_MAX_ALIVE 28               // stop spawning waves past this many reinforcement mobs alive on a layer (perf + fairness cap)
+// Per-tick hazard/danger magnitudes above are authored for the CURRENT
+// SSquarry wait of 30 SECONDS. BYOND subsystem `wait` is in deciseconds
+// (30 SECONDS == 300 ds), and callers pass `seconds = wait/10 == 30`. To
+// decouple the magnitudes from the scheduler without rebalancing, callers
+// multiply by the tick's `seconds` and divide by this normalization constant
+// — so at the 30s wait the factor is exactly 1 (present-day balance preserved)
+// and any other wait scales proportionally. If the wait define changes, update this too.
+#define QUARRY_TICK_NORMALIZE_SECONDS 30
 
 // Noise system loudness presets. Used at the call site to keep the
 // per-source values consistent. Each value is both the alert radius

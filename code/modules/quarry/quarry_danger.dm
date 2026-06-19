@@ -53,22 +53,26 @@
 //   - Adds passive danger if at least one live player is on it.
 //   - Decays danger if empty.
 //   - Fires hostile waves at critical danger.
-/datum/controller/subsystem/quarry/proc/tick_layer_danger()
+/datum/controller/subsystem/quarry/proc/tick_layer_danger(list/occupancy, seconds = QUARRY_TICK_NORMALIZE_SECONDS)
+	// Normalize per-tick accrual/decay against the current wait so the
+	// scheduler period no longer changes the magnitude. At a 30s wait
+	// (seconds=3) `scale` is 1 and the present-day balance is unchanged.
+	var/scale = seconds / QUARRY_TICK_NORMALIZE_SECONDS
 	for(var/key in layers)
 		var/datum/quarry_layer/L = layers[key]
 		if(!L?.loaded || L.unloading)
 			continue
-		if(is_layer_empty(L.z))
-			add_layer_danger(L, -QUARRY_DANGER_DECAY)
+		if(layer_empty_cached(occupancy, L.z))
+			add_layer_danger(L, -QUARRY_DANGER_DECAY * scale)
 			continue
 		// Players present. Loud recently => tension rises; quiet => it bleeds off
 		// toward a depth-scaled floor, so going quiet cools heat and ends a siege.
 		if(world.time - L.last_noise_at <= QUARRY_QUIET_PERIOD)
-			add_layer_danger(L, QUARRY_DANGER_PASSIVE_BASE + QUARRY_DANGER_PASSIVE_PER_DEPTH * L.depth)
+			add_layer_danger(L, (QUARRY_DANGER_PASSIVE_BASE + QUARRY_DANGER_PASSIVE_PER_DEPTH * L.depth) * scale)
 		else
 			var/floor_heat = min(L.depth * QUARRY_HEAT_FLOOR_PER_DEPTH, QUARRY_HEAT_FLOOR_MAX)
 			if(L.danger > floor_heat)
-				add_layer_danger(L, -QUARRY_QUIET_DECAY)
+				add_layer_danger(L, -QUARRY_QUIET_DECAY * scale)
 		// Schedule this window's reinforcement waves if the layer is hot.
 		schedule_siege_waves(L)
 

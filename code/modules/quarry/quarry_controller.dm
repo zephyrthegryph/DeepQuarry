@@ -34,6 +34,12 @@ SUBSYSTEM_DEF(quarry)
 	// Indexed by "[depth]" string key.
 	var/list/layers = list()
 
+	// Flat z -> /datum/quarry_layer index. z is a small positive int so a
+	// flat list indexed by z gives layer_at_z a single O(1) read instead of
+	// a linear scan over `layers` (called per footstep / per event). Kept in
+	// sync with `layers` in generate_layer / restore_layer / _finish_unload_layer.
+	var/list/layers_by_z = list()
+
 	// Per-depth re-entrancy guard: set to depth while ensure_layer is generating.
 	var/list/generating = list()
 	// Global generation lock: TRUE while ANY layer is allocating a z and
@@ -272,11 +278,35 @@ SUBSYSTEM_DEF(quarry)
 	return pickweight(weighted)
 
 /datum/controller/subsystem/quarry/fire()
-	tick_layer_danger()
-	tick_layer_events()
-	tick_layer_goals()
+	// Single occupancy pass per fire: one walk of GLOB.living_mob_list
+	// building a z -> TRUE set of "has a live-minded player", reused by
+	// every tick sub-driver below instead of each one re-scanning the
+	// mob list ~3x per layer.
+	var/list/occupancy = build_layer_occupancy()
+	tick_layer_danger(occupancy, wait / 10)
+	tick_layer_events(occupancy)
+	tick_layer_goals(occupancy)
 	tick_frontier_roll()
-	unload_empty_layers()
+	unload_empty_layers(occupancy)
+
+// Build a flat z -> TRUE set of z-levels that have at least one live-minded
+// player on them, in a single pass over GLOB.living_mob_list. Mirrors the
+// is_layer_empty predicate (a mind = a live or temporarily-disconnected
+// player body). Reused across one fire() so the sub-drivers don't each
+// re-scan the mob list.
+/datum/controller/subsystem/quarry/proc/build_layer_occupancy()
+	var/list/occ = list()
+	for(var/mob/living/M in GLOB.living_mob_list)
+		if(!M.mind || !M.z)
+			continue
+		occ["[M.z]"] = TRUE
+	return occ
+
+// As is_layer_empty(z), but answered from a prebuilt occupancy set.
+/datum/controller/subsystem/quarry/proc/layer_empty_cached(list/occupancy, z)
+	if(!occupancy)
+		return is_layer_empty(z)
+	return !occupancy["[z]"]
 
 
 // Depth of the rolling frontier candidate, or 0 if nothing is currently
@@ -325,7 +355,7 @@ SUBSYSTEM_DEF(quarry)
 // Sweep loaded layers and unload any that have no live players on them.
 // Called periodically from fire(). Layers already mid-unload are
 // skipped so the async wipe can finish without being re-triggered.
-/datum/controller/subsystem/quarry/proc/unload_empty_layers()
+/datum/controller/subsystem/quarry/proc/unload_empty_layers(list/occupancy)
 	// Snapshot the keys: unload_layer can mutate the list when the
 	// async tail finishes.
 	var/list/keys = layers.Copy()
@@ -344,11 +374,26 @@ SUBSYSTEM_DEF(quarry)
 		// wipe out from under you if you briefly step into the lift.
 		if(L.depth == unlocked_depth && L.archetype && !L.archetype.is_cleared(L))
 			continue
-		if(is_layer_empty(L.z))
+		if(layer_empty_cached(occupancy, L.z))
 			unload_layer(L.depth)
 
 /datum/controller/subsystem/quarry/proc/get_layer(depth)
 	return layers["[depth]"]
+
+// Register a layer in the flat z index, growing the list if z exceeds its
+// current length. z is a small positive int (allocated by load_new_z).
+/datum/controller/subsystem/quarry/proc/_index_layer_z(datum/quarry_layer/L)
+	if(!L || L.z < 1)
+		return
+	if(L.z > length(layers_by_z))
+		layers_by_z.len = L.z
+	layers_by_z[L.z] = L
+
+// Clear a z slot in the flat index (leaves the slot allocated, just nulled).
+/datum/controller/subsystem/quarry/proc/_deindex_layer_z(z)
+	if(!isnum(z) || z < 1 || z > length(layers_by_z))
+		return
+	layers_by_z[z] = null
 
 // Returns the /datum/quarry_layer for the given depth, creating + generating
 // it if it does not currently exist or has been unloaded.
@@ -401,22 +446,26 @@ SUBSYSTEM_DEF(quarry)
 	layer_gen_lock = TRUE
 	var/datum/quarry_layer/L = null
 	if(has_snapshot(depth))
+		// Decode the snapshot ONCE and thread the doc through the partial /
+		// feature / archetype / restore decisions below, instead of each
+		// helper re-reading + re-parsing the same file.
+		var/list/doc = read_snapshot_doc(depth)
 		// Partial snapshot = preroll_layer output. Goal previews are in
 		// the file, but no tiles have been generated yet. Honor the
 		// rolled feature set so what the player sees underground
 		// matches the goals the UI promised.
-		if(is_partial_snapshot(depth))
+		if(_quarry_doc_is_partial(doc))
 			// Keep the preview snapshot on disk through generation. The
 			// elevator panel reads it for this depth's goal list, and
 			// generate_layer takes ~15s during which the live layer isn't in
 			// `layers` yet — deleting it here would blank the goals for the
 			// whole descent ("No goal data available for this depth"). It's
 			// dropped once the live layer is registered as the goal source.
-			var/list/preset = read_snapshot_feature_types(depth)
-			var/datum/quarry_floor_archetype/preset_arch = read_snapshot_archetype(depth)
+			var/list/preset = _quarry_doc_feature_types(doc)
+			var/datum/quarry_floor_archetype/preset_arch = _quarry_doc_archetype(doc)
 			L = generate_layer(depth, preset, preset_arch)
 		else
-			L = restore_layer(depth)
+			L = restore_layer_from_doc(depth, doc)
 			if(!L)
 				log_game("SSquarry: restore_layer failed for depth [depth]; falling back to generate_layer")
 	if(!L)
@@ -514,6 +563,7 @@ SUBSYSTEM_DEF(quarry)
 	L.archetype = preset_archetype || select_archetype(depth) || default_archetype()
 	var/list/aggregated = _quarry_aggregate_features(L.feature_types, L)
 	var/list/instances = aggregated["instances"]
+	_quarry_set_layer_feature_flags(L, instances)
 	var/list/mob_table = aggregated["mob_table"]
 	var/list/decoration_table = aggregated["decoration_table"]
 	var/extra_mob_spawns = aggregated["extra_mob_spawns"]
@@ -545,7 +595,13 @@ SUBSYSTEM_DEF(quarry)
 
 	var/total_deco_density = cfg.decoration_density + extra_decoration_density
 	if(total_deco_density > 0 && (length(decoration_table) || biome_map))
+		var/deco_batch = 0
 		for(var/turf/T as anything in floor_candidates)
+			// Walking the full floor set synchronously can blow the tick
+			// budget; yield in batches when we're over budget.
+			if(++deco_batch >= 500)
+				deco_batch = 0
+				CHECK_TICK
 			if(!prob(total_deco_density))
 				continue
 			// Same biome-priority rule as mob spawning: biome's deco
@@ -570,6 +626,7 @@ SUBSYSTEM_DEF(quarry)
 	var/list/fallback_mob_table = length(mob_table) ? mob_table : cfg.default_mob_table
 	if(total_mob_count > 0 && (length(fallback_mob_table) || biome_map))
 		var/spawned = 0
+		var/mob_batch = 0
 		var/list/spawn_candidates = floor_candidates.Copy()
 		// Parallel set (turf => TRUE) for O(1) membership in the pack flood-fill
 		// below — a plain-list `in` is a linear scan, and it runs per neighbour
@@ -578,6 +635,11 @@ SUBSYSTEM_DEF(quarry)
 		for(var/turf/T as anything in spawn_candidates)
 			candidate_set[T] = TRUE
 		while(spawned < total_mob_count && length(spawn_candidates))
+			// Spawning each mob (atom init, AI controller, signals) is heavy;
+			// yield in batches when the tick is over budget.
+			if(++mob_batch >= 25)
+				mob_batch = 0
+				CHECK_TICK
 			var/turf/seed = pick(spawn_candidates)
 			spawn_candidates -= seed
 			candidate_set -= seed
@@ -628,7 +690,15 @@ SUBSYSTEM_DEF(quarry)
 			dq_assign_lord(pack_mobs)
 	var/_tl7 = world.timeofday
 
+	// Cache the walkable-floor set for runtime event tile-picks (excludes
+	// the bay and painted pools). Copy so later mutation of floor_candidates
+	// (none after here, but defensive) can't disturb the cache.
+	L.floor_cache = floor_candidates.Copy()
+
 	L.loaded = TRUE
+	// Index now that the layer is fully built — failure paths above return
+	// before this, so the flat z index never holds a half-built/orphaned ref.
+	_index_layer_z(L)
 	// Archetype environmental setup: place objective structures + hazards
 	// (one-time), then idempotent ambient setup. Done after L.loaded so
 	// the placement helpers (which gate on L.loaded and read the bay) work.
@@ -876,7 +946,13 @@ SUBSYSTEM_DEF(quarry)
 	L.loaded = FALSE
 	L.z = 0
 	L.unloading = FALSE
+	// Drop the flat z index entry and the layers record, then qdel the
+	// layer. quarry_layer/Destroy cascades to its goals; nothing else
+	// references L after this (layer_at_z reads the index, the elevator's
+	// bay/door refs were dropped in unload_layer).
+	_deindex_layer_z(quarry_z)
 	layers -= key
+	qdel(L)
 
 // Empty iff no /mob/living with an active mind (live client OR temporarily
 // disconnected body) is on the Z. Bodies of disconnected players keep the

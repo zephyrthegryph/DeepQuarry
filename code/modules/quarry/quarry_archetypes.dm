@@ -170,6 +170,10 @@
 	_quarry_setup_neutralize(L, /obj/structure/quarry_objective/gas_fissure, "seal", fissure_count)
 
 /datum/quarry_floor_archetype/gas/ambient_tick(datum/quarry_layer/L, seconds)
+	// Normalize per-tick magnitudes against the current wait (see
+	// QUARRY_TICK_NORMALIZE_SECONDS): scale is 1 at a 30s wait so balance
+	// is unchanged today, but the hazard no longer depends on the period.
+	var/scale = seconds / QUARRY_TICK_NORMALIZE_SECONDS
 	var/list/objs = _quarry_get_objectives(L)
 	var/leaks = 0
 	for(var/obj/structure/quarry_objective/gas_fissure/F in objs)
@@ -177,12 +181,12 @@
 		if(!istype(T, /turf/simulated))
 			continue
 		var/datum/gas_mixture/leak = new
-		leak.adjust_gas_temp(GAS_PHORON, 2, T20C + 40)
-		leak.adjust_gas_temp(GAS_CO2, 3, T20C + 40)
+		leak.adjust_gas_temp(GAS_PHORON, 2 * scale, T20C + 40)
+		leak.adjust_gas_temp(GAS_CO2, 3 * scale, T20C + 40)
 		T.assume_air(leak)
 		leaks++
 	if(leaks)
-		SSquarry.add_layer_danger(L, 0.5 * leaks)
+		SSquarry.add_layer_danger(L, 0.5 * leaks * scale)
 
 
 // === #2 Lava / high heat =============================================
@@ -214,17 +218,18 @@
 		vents += V
 	if(!length(vents))
 		return
+	var/scale = seconds / QUARRY_TICK_NORMALIZE_SECONDS
 	var/open = length(vents)
-	SSquarry.add_layer_danger(L, 0.4 * open)
+	SSquarry.add_layer_danger(L, 0.4 * open * scale)
 	// Oven heat across the whole level, scaled by how many vents are
 	// still open. Safe rooms (powered APC) shelter from it.
-	_quarry_environmental_damage(L, 2 + 1.2 * open, "fire")
+	_quarry_environmental_damage(L, (2 + 1.2 * open) * scale, "fire")
 	// Lethal heat right next to an un-cooled vent — the "molten" zone.
 	for(var/obj/structure/quarry_objective/lava_vent/V as anything in vents)
 		for(var/mob/living/M in range(1, V))
 			if(_quarry_tile_is_safe(get_turf(M)))
 				continue
-			M.adjustFireLoss(10)
+			M.adjustFireLoss(10 * scale)
 
 
 // === #3 Ice / high cold ==============================================
@@ -256,11 +261,12 @@
 		frozen++
 	if(!frozen)
 		return
-	SSquarry.add_layer_danger(L, 0.4 * frozen)
+	var/scale = seconds / QUARRY_TICK_NORMALIZE_SECONDS
+	SSquarry.add_layer_danger(L, 0.4 * frozen * scale)
 	// Biting cold scaled by remaining chokes — reads as fireloss
 	// (frostbite) so it's universal across mob types. Heating the chokes
 	// (clearing them) warms the level back up. Safe rooms shelter from it.
-	_quarry_environmental_damage(L, 2 + 1.0 * frozen, "fire")
+	_quarry_environmental_damage(L, (2 + 1.0 * frozen) * scale, "fire")
 
 
 // === #4 Darkness =====================================================
@@ -297,7 +303,7 @@
 		unlit++
 	if(!unlit)
 		return
-	SSquarry.add_layer_danger(L, 0.3 * unlit)
+	SSquarry.add_layer_danger(L, 0.3 * unlit * (seconds / QUARRY_TICK_NORMALIZE_SECONDS))
 	if(world.time < L.last_danger_wave + spawn_cooldown)
 		return
 	var/turf/T = _quarry_random_layer_floor(L)
@@ -337,12 +343,13 @@
 		active++
 	if(!active)
 		return
-	SSquarry.add_layer_danger(L, 0.3 * active)
+	var/scale = seconds / QUARRY_TICK_NORMALIZE_SECONDS
+	SSquarry.add_layer_danger(L, 0.3 * active * scale)
 	// The contagion sickens everyone on the level until the source blooms
 	// are cleansed — toxin damage scaled by how many are still active.
 	// Survival needs Medical support; cleansing fast needs the antiviral
 	// (Chem). Safe rooms don't help — the sickness is already in you.
-	_quarry_environmental_damage(L, 1 + 0.8 * active, "tox")
+	_quarry_environmental_damage(L, (1 + 0.8 * active) * scale, "tox")
 
 
 // === #6 Resource delivery ============================================
@@ -399,7 +406,7 @@
 		cores += C
 	if(!length(cores))
 		return
-	SSquarry.add_layer_danger(L, 0.4 * length(cores))
+	SSquarry.add_layer_danger(L, 0.4 * length(cores) * (seconds / QUARRY_TICK_NORMALIZE_SECONDS))
 	if(world.time < L.last_danger_wave + spawn_cooldown)
 		return
 	L.last_danger_wave = world.time
