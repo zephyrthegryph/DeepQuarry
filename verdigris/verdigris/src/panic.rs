@@ -13,8 +13,10 @@ static HOOK_INSTALLED: OnceLock<()> = OnceLock::new();
 
 pub fn ensure_panic_hook() {
     HOOK_INSTALLED.get_or_init(|| {
-        panic::set_hook(Box::new(|info| {
+        let previous = panic::take_hook();
+        panic::set_hook(Box::new(move |info| {
             eprintln!("[verdigris panic] {info}");
+            previous(info);
         }));
     });
 }

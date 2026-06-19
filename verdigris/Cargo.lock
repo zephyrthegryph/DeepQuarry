@@ -1637,7 +1637,6 @@ dependencies = [
  "auxmos",
  "bosion",
  "const_format",
- "eyre",
  "meowtonin",
  "rand 0.10.1",
  "rand_distr",
