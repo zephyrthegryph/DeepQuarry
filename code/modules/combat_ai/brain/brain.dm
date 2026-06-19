@@ -761,6 +761,7 @@
 	var/list/tail = args.Copy(2)
 	// Copy the subscriber list: a handler can interrupt/rebuild behaviors, which mutates
 	// subscribed_signals[sig_type] mid-iteration.
-	for(var/btype in subscribed_signals[sig_type].Copy())
+	var/list/subs = subscribed_signals[sig_type]
+	for(var/btype in subs.Copy())
 		var/datum/ai_behavior/B = dq_get_behavior(btype)
 		B.on_signal(arglist(list(src, sig_type) + tail))

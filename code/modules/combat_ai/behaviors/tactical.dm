@@ -56,8 +56,9 @@
 	var/kite_distance = 4
 
 /datum/ai_behavior/kite_away/evaluate(datum/ai_brain/brain, atom/source)
-	if(DQ_AI_RETREAT_DISABLED) // no kiting — close in and stay in
-		return null
+#if DQ_AI_RETREAT_DISABLED
+	return null // no kiting — close in and stay in
+#else
 	var/mob/threat = brain.primary_threat
 	if(!threat)
 		return null
@@ -73,6 +74,7 @@
 		if(!SM.projectiletype)
 			return null
 	return DQAI_RESULT(65, threat)
+#endif
 
 /datum/ai_behavior/kite_away/start(datum/ai_brain/brain, atom/target, atom/source)
 	var/mob/living/owner = brain.get_owner()
@@ -96,8 +98,9 @@
 	cooldown = 5 SECONDS
 
 /datum/ai_behavior/hit_and_run/evaluate(datum/ai_brain/brain, atom/source)
-	if(DQ_AI_RETREAT_DISABLED) // no darting away after a hit
-		return null
+#if DQ_AI_RETREAT_DISABLED
+	return null // no darting away after a hit
+#else
 	var/mob/threat = brain.primary_threat
 	if(!threat || !ismob(threat))
 		return null
@@ -113,6 +116,7 @@
 		if(L.incapacitated(INCAPACITATION_DISABLED))
 			return null  // target is stunned; keep attacking
 	return DQAI_RESULT(75, threat)
+#endif
 
 /datum/ai_behavior/hit_and_run/start(datum/ai_brain/brain, atom/target, atom/source)
 	var/mob/living/owner = brain.get_owner()
@@ -146,8 +150,9 @@
 	cooldown = 3 SECONDS
 
 /datum/ai_behavior/pack_retreat/evaluate(datum/ai_brain/brain, atom/source)
-	if(DQ_AI_RETREAT_DISABLED) // packs don't fall back — they commit
-		return null
+#if DQ_AI_RETREAT_DISABLED
+	return null // packs don't fall back — they commit
+#else
 	var/mob/living/owner = brain.get_owner()
 	var/mob/threat = brain.primary_threat
 	if(!owner || !threat || !owner.maxHealth)
@@ -165,6 +170,7 @@
 	if(!dying && !outmatched)
 		return null
 	return DQAI_RESULT(120, threat)  // overrides plain flee_low_hp
+#endif
 
 /datum/ai_behavior/pack_retreat/tick(datum/ai_brain/brain, atom/target, atom/source)
 	var/mob/living/owner = brain.get_owner()

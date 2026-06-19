@@ -163,8 +163,9 @@
 	cooldown = 3 SECONDS
 
 /datum/ai_behavior/flee_low_hp/evaluate(datum/ai_brain/brain, atom/source)
-	if(DQ_AI_RETREAT_DISABLED) // wounded mobs fight on instead of fleeing
-		return null
+#if DQ_AI_RETREAT_DISABLED
+	return null // wounded mobs fight on instead of fleeing
+#else
 	var/mob/living/owner = brain.get_owner()
 	if(!owner || !owner.maxHealth)
 		return null
@@ -177,6 +178,7 @@
 	// Score grows as HP drops. At 0% HP and a NEMESIS attacker, this is decisive.
 	var/score = (DQ_LOW_HP_THRESHOLD - hp_frac) * 200
 	return DQAI_RESULT(score, threat)
+#endif
 
 /datum/ai_behavior/flee_low_hp/tick(datum/ai_brain/brain, atom/target, atom/source)
 	var/mob/living/owner = brain.get_owner()

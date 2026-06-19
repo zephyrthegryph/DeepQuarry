@@ -230,8 +230,9 @@
 	return TRUE
 
 /datum/ai_behavior/back_off/evaluate(datum/ai_brain/brain, atom/source)
-	if(DQ_AI_RETREAT_DISABLED) // mobs hold their ground instead of giving ground after a hit
-		return null
+#if DQ_AI_RETREAT_DISABLED
+	return null // mobs hold their ground instead of giving ground after a hit
+#else
 	var/mob/living/owner = brain.get_owner()
 	var/mob/threat = brain.primary_threat
 	if(!owner || !threat || !owner.Adjacent(threat))
@@ -241,6 +242,7 @@
 	if(!prob(40)) // not every hit — an occasional reset
 		return null
 	return DQAI_RESULT(60, threat)
+#endif
 
 /datum/ai_behavior/back_off/start(datum/ai_brain/brain, atom/target, atom/source)
 	var/mob/living/owner = brain.get_owner()
