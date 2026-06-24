@@ -75,6 +75,10 @@
 	handle_light() // Update the light immediately.
 	..()
 
+/mob/living/simple_mob/mechanical/ward/monitor/Destroy()
+	seen_mobs = null
+	return ..()
+
 /mob/living/simple_mob/mechanical/ward/monitor/proc/detect_mobs()
 	var/last_seen_mobs_len = seen_mobs.len
 	var/list/mobs_nearby = hearers(view_range, src)

@@ -75,7 +75,7 @@ Bonus
 
 	switch(A.stage)
 		if(1)
-			if(base_message_chance)
+			if(prob(base_message_chance))
 				to_chat(M, span_warning("You feel tired."))
 		if(2)
 			if(prob(10))

@@ -49,6 +49,7 @@
 			T.Entered(A)
 		step_rand(A)
 	cargo.Cut()
+	QDEL_NULL(orescanner)
 	. = ..()
 
 /obj/mecha/working/ripley/firefighter

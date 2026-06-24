@@ -5325,7 +5325,6 @@
 	strength = 10
 	druggy = 50
 	halluci = 30
-	var/adj_dizzy = 10
 	color = "#d3785d"
 
 	glass_name = REAGENT_GALACTICPANIC
@@ -5371,7 +5370,6 @@
 	strength = 20
 	druggy = 0
 	halluci = 0
-	var/adj_dizzy = 0
 	color = "#d3785d"
 
 	glass_name = REAGENT_ITALIANCRISIS
@@ -5407,7 +5405,6 @@
 	strength = 100
 	druggy = 30
 	halluci = 30
-	var/adj_dizzy = 30
 	color = "#d3785d"
 
 	glass_name = REAGENT_SHROOMJUICE
@@ -5419,7 +5416,6 @@
 	description = "The perfect drink for wagering your liver on a game of cards."
 	taste_description = "coffee, vodka, cream, and a hot metal slug"
 	strength = 30
-	var/adj_dizzy = 30
 	color = "#d3785d"
 
 	glass_name = REAGENT_RUSSIANROULETTE
@@ -5439,7 +5435,6 @@
 	strength = 30
 	druggy = 0
 	halluci = 0
-	var/adj_dizzy = 30
 	adj_temp = 10
 	targ_temp = 360
 	color = "#d3785d"
@@ -5453,7 +5448,6 @@
 	description = "The perfect drink for bees."
 	taste_description = "sweet tart grenadine flavored with honey"
 	strength = 40
-	var/adj_dizzy = 10
 	color = "#d3785d"
 
 	glass_name = REAGENT_HONEYSHOT
@@ -5477,7 +5471,6 @@
 	taste_description = "overwhelmingly sour apples powered by a nuclear fission reactor"
 	strength = 30
 	druggy = 20
-	var/adj_dizzy = 20
 	color = "#d3785d"
 
 	glass_name = REAGENT_GLOWINGAPPLETINI
@@ -5491,7 +5484,6 @@
 	strength = 30
 	druggy = 0
 	halluci = 0
-	var/adj_dizzy = 0
 	color = "#d3785d"
 
 	glass_name = REAGENT_SCSATW
@@ -5514,7 +5506,6 @@
 	taste_description = "whiskey and rum strung out through a hellish dimensional rift"
 	strength = 30
 	druggy = 10
-	var/adj_dizzy = 10
 	color = "#d3785d"
 
 	glass_name = REAGENT_REDSPACEFLUSH
@@ -5997,7 +5988,7 @@
 	adj_sleepy = 0
 	var/adj_tiredness = 5
 
-/datum/reagent/drink/coffee/nukie/mega/nega/affect_ingest(mob/living/carbon/human/M)
+/datum/reagent/drink/coffee/nukie/mega/nega/affect_ingest(mob/living/carbon/human/M, alien, removed)
 	if(M.tiredness < 105)
 		M.tiredness = (M.tiredness + adj_tiredness)
 	..()
@@ -6755,7 +6746,10 @@
 	glass_desc = "It'll either knock the drunkenness out of you or knock you out cold. Both, probably."
 
 /datum/reagent/ethanol/crevice_spike/affect_ingest(mob/living/carbon/M, alien, removed)
+	..()
 	M.adjustBruteLoss(50 * removed)
+	if(!M.ingested)
+		return
 	for(var/datum/reagent/R in M.ingested.reagent_list)
 		if(istype(R, /datum/reagent/ethanol))
 			R.remove_self(50 * removed)

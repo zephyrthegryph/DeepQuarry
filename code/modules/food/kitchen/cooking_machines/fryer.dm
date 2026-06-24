@@ -156,6 +156,8 @@
 	var/total_our_oil = 0
 	var/total_removed = 0
 	var/datum/reagent/our_oil = oil.get_master_reagent()
+	if(!our_oil)
+		return
 
 	for (var/obj/item/I in CI.container)
 		if (I.reagents && I.reagents.total_volume)

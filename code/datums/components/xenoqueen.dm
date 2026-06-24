@@ -17,6 +17,7 @@
 	if(xeno.stat == DEAD)
 		STOP_PROCESSING(SSprocessing, src)
 		aura_active = 0  //Turn off the aura when we die.
+		return
 
 	for(var/mob/living/L in range(7, xeno))
 		if(L == xeno)

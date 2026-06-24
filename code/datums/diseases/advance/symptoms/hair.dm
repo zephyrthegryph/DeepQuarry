@@ -33,7 +33,7 @@ BONUS
 /datum/symptom/shedding/Activate(datum/disease/advance/A)
 	if(!..())
 		return
-	if(ishuman(A.affected_mob))
+	if(!ishuman(A.affected_mob))
 		return
 	var/mob/living/carbon/human/H = A.affected_mob
 	var/obj/item/organ/external/head/head_organ = H.get_organ(BP_HEAD)

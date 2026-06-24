@@ -6,6 +6,8 @@
 
 /obj/item/medigun_backpack/tgui_data(mob/user)
 	var/obj/item/bork_medigun/medigun = get_medigun()
+	if(!medigun)
+		return list()
 	var/mob/living/carbon/human/H = medigun.current_target
 	var/patientname
 	var/patienthealth = 0

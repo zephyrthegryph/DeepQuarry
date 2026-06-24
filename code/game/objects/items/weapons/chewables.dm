@@ -288,6 +288,8 @@
 /obj/item/clothing/mask/chewable/candy/lolli/spitout()
 	if(victims && victims.len)
 		var/mob/living/M = loc
+		if(!isliving(M))
+			return ..()
 		if(M.can_be_drop_pred && M.food_vore && M.vore_selected)
 			for(var/mob/living/F in victims)
 				if(!F.can_be_drop_prey || !F.food_vore)

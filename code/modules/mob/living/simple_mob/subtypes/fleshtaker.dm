@@ -43,7 +43,7 @@ Only physical attributes are copied.
 	icon_living = target.icon_living
 	icon_dead = target.icon_dead
 	pixel_x = target.pixel_x
-	pixel_x = target.pixel_y
+	pixel_y = target.pixel_y
 	melee_damage_lower = target.melee_damage_lower
 	melee_damage_upper = target.melee_damage_upper
 	maxHealth = target.maxHealth

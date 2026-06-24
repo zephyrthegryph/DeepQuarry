@@ -9,7 +9,6 @@
 	var/list/rlist = list(list(),list(),FALSE,0)
 	var/i = 0
 	for(i = 1, i <= LAZYLEN(keys), i++)
-		to_chat(world,keys[i])
 		rlist[1] += keys[i]
 		rlist[2][keys[i]] = values[i]
 	rlist += TRUE

@@ -251,7 +251,8 @@
 			tr = H.reagents.total_volume
 		set_pin_data(IC_OUTPUT, 6, mr)
 		set_pin_data(IC_OUTPUT, 7, tr)
-		set_pin_data(IC_OUTPUT, 8, H:stat == DEAD ? FALSE : TRUE)
+		var/mob/scanned_mob = H
+		set_pin_data(IC_OUTPUT, 8, ismob(scanned_mob) && scanned_mob.stat != DEAD)
 		push_data()
 		activate_pin(2)
 	else
@@ -388,7 +389,7 @@
 			if(thing.is_incorporeal())
 				continue
 			var/atom/movable/M = thing
-			if(ismob(M) && M == DEAD && get_pin_data(IC_INPUT, 3) == TRUE) // Ignore dead mobs if requested.
+			if(ismob(M) && M:stat == DEAD && get_pin_data(IC_INPUT, 3) == TRUE) // Ignore dead mobs if requested.
 				continue
 			// Skip invisible & incorporeal players.
 			if(ismob(M) && M:invisibility > 0)

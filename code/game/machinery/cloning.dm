@@ -111,7 +111,7 @@
 					return 0
 
 	for(var/modifier_type in BR.genetic_modifiers)	//Can't be cloned, even if they had a previous scan
-		if(istype(modifier_type, /datum/modifier/no_clone))
+		if(ispath(modifier_type, /datum/modifier/no_clone))
 			return 0
 
 	// Remove biomass when the cloning is started, rather than when the guy pops out

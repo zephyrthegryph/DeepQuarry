@@ -16,12 +16,15 @@
 
 	switch(action)
 		if("toggle_active")
+			if(!C)
+				return TRUE
 			if(!C.Startup()) //Startup() whilst the device is active will return null.
 				C.Shutdown()
 			return TRUE
 
 		if("toggle_reactantdump")
-			C.reactant_dump = !C.reactant_dump
+			if(C)
+				C.reactant_dump = !C.reactant_dump
 			return TRUE
 
 		if("set_tag")
@@ -32,7 +35,8 @@
 
 		if("set_fieldstr")
 			var/new_strength = params["fieldstr"]
-			C.target_field_strength = new_strength
+			if(C)
+				C.target_field_strength = new_strength
 			return TRUE
 
 /datum/tgui_module/rustcore_monitor/tgui_data(mob/user)

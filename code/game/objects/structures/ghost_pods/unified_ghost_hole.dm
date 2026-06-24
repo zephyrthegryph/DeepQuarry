@@ -113,6 +113,9 @@
 	qdel(src)
 
 /obj/structure/ghost_pod/ghost_activated/unified_hole/proc/create_lurker(mob/M)
+	if(!M?.client)
+		reset_ghostpod()
+		return
 	var/picked_ckey = M.ckey
 	var/picked_slot = M.client.prefs.default_slot
 	GLOB.active_ghost_pods -= src

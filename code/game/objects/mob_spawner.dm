@@ -156,7 +156,7 @@ It also makes it so a ghost wont know where all the goodies/mobs are.
 	//and then we spawn them
 	if(ispath(mob_path, /mob/living))
 		var/mob/living/L = new mob_path(get_turf(spawn_turf))
-		L.nest = spawn_turf
+		L.nest = src
 		spawned_mobs.Add(L)
 		if(mob_faction)
 			L.faction = mob_faction
@@ -164,7 +164,7 @@ It also makes it so a ghost wont know where all the goodies/mobs are.
 	if(ispath(mob_path, /obj/structure/closet/crate/mimic))
 		var/obj/structure/closet/crate/mimic/O = new mob_path(get_turf(spawn_turf))
 		spawned_mobs.Add(O)
-		O.nest = spawn_turf
+		O.nest = src
 		return O
 	return 0
 

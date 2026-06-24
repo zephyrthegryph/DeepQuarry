@@ -94,8 +94,11 @@
 		return
 
 	signal_strength = 0
+	if(current_uav)
+		UnregisterSignal(current_uav, COMSIG_MOVABLE_Z_CHANGED)
 	current_uav = U
-	RegisterSignal(U, COMSIG_MOVABLE_Z_CHANGED, PROC_REF(current_uav_changed_z))
+	if(U)
+		RegisterSignal(U, COMSIG_MOVABLE_Z_CHANGED, PROC_REF(current_uav_changed_z))
 	SEND_SIGNAL(src,COMSIG_REMOTE_VIEW_CLEAR)
 
 /datum/tgui_module/uav/proc/clear_current()

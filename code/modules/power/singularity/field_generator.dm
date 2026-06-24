@@ -253,7 +253,7 @@
 	return actual_draw
 
 /obj/machinery/field_generator/proc/start_fields()
-	if(!src.state == 2 || !anchored)
+	if(src.state != 2 || !anchored)
 		turn_off()
 		return
 	spawn(1)

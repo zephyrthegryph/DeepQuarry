@@ -255,11 +255,15 @@
 
 	// Access account for transaction
 	if(check_account(user))
+		var/snapshot_amount = transaction_amount
 		var/datum/money_account/D = get_account(I.associated_account_number)
 		var/attempt_pin = ""
 		if(D && D.security_level)
 			attempt_pin = tgui_input_number(user, "Enter PIN", "Transaction")
 			D = null
+		// Re-validate after the (sleeping) PIN prompt so the charged amount can't be altered mid-transaction.
+		if(QDELETED(src) || transaction_amount != snapshot_amount)
+			return
 		D = attempt_account_access(I.associated_account_number, attempt_pin, 2)
 
 		if(!D)

@@ -36,10 +36,6 @@
 	// update the current life tick, can be used to e.g. only do something every 4 ticks
 	life_tick++
 
-	// This is not an ideal place for this but it will do for now.
-	if(wearing_rig && wearing_rig.offline)
-		wearing_rig = null
-
 	..()
 
 	if(life_tick % 30)
@@ -761,7 +757,7 @@
 		var/obj/item/organ/internal/lungs/L = internal_organs_by_name[O_LUNGS]
 		var/turf = get_turf(src)
 		var/mob/living/carbon/human/M = src
-		if(L.robotic < ORGAN_ROBOT && is_below_sound_pressure(turf) && M.internal) // Only non-synthetic lungs, please, and only play these while the pressure is below that which we can hear sounds normally AND we're on internals.
+		if(L && L.robotic < ORGAN_ROBOT && is_below_sound_pressure(turf) && M.internal) // Only non-synthetic lungs, please, and only play these while the pressure is below that which we can hear sounds normally AND we're on internals.
 			if(!failed_inhale && (world.time >= (last_breath_sound + 7 SECONDS))) // Were we able to inhale successfully? Play inhale.
 				var/exhale = failed_exhale // Pass through if we passed exhale or not
 				play_inhale(M, exhale)

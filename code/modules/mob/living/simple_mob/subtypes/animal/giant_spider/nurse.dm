@@ -172,6 +172,7 @@
 
 	W = locate() in T
 	if(W)
+		if(ai_brain) ai_brain.busy = FALSE
 		return FALSE // Spamclick protection.
 
 	if(ai_brain) ai_brain.busy = FALSE
@@ -201,11 +202,14 @@
 
 	if(!do_after(src, 5 SECONDS, T))
 		if(ai_brain) ai_brain.busy = FALSE
+		laying_eggs = FALSE
 		to_chat(src, span_warning("You need to stay still to lay eggs on \the [T]."))
 		return FALSE
 
 	E = locate() in T
 	if(E)
+		if(ai_brain) ai_brain.busy = FALSE
+		laying_eggs = FALSE
 		return FALSE // Spamclick protection.
 
 	if(ai_brain) ai_brain.busy = FALSE

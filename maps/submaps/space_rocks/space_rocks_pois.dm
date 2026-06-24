@@ -46,7 +46,7 @@
 	mappath = "maps/submaps/space_rocks/tunnel2.dmm"
 	cost = 10
 
-/datum/map_template/space_rocks/tunnel2
+/datum/map_template/space_rocks/spacecrystals
 	name = "Space Crystals"
 	desc = "Some crystals living in space!"
 	mappath = "maps/submaps/space_rocks/spacecrystals.dmm"

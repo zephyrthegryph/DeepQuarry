@@ -98,7 +98,7 @@ GLOBAL_LIST_BOILERPLATE(pointdefense_turrets, /obj/machinery/pointdefense)
 		if(new_ident && new_ident != id_tag && user.Adjacent(src) && CanInteract(user, GLOB.tgui_physical_state))
 			// Check for duplicate controllers with this ID
 			for(var/obj/machinery/pointdefense_control/PC as anything in GLOB.pointdefense_controllers)
-				if(PC != src && PC.id_tag == id_tag)
+				if(PC != src && PC.id_tag == new_ident)
 					to_chat(user, span_warning("The [new_ident] network already has a controller."))
 					return
 			to_chat(user, span_notice("You register [src] with the [new_ident] network."))
@@ -210,7 +210,8 @@ GLOBAL_LIST_BOILERPLATE(pointdefense_turrets, /obj/machinery/pointdefense)
 
 	var/obj/machinery/pointdefense_control/PC = get_controller()
 	engaging = null
-	PC.targets -= target
+	if(PC)
+		PC.targets -= target
 
 	last_shot = world.time
 	var/obj/effect/meteor/M = target.resolve()

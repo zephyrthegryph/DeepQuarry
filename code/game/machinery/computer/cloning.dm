@@ -219,7 +219,7 @@
 					set_temp("Access denied.", "danger")
 			return
 
-	var/mob/living/carbon/human/scanner_occupant = scanner.get_occupant()
+	var/mob/living/carbon/human/scanner_occupant = scanner?.get_occupant()
 
 	switch(action)
 		if("scan")

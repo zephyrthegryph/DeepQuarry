@@ -61,7 +61,7 @@
 		engine_paint_mask.color = engine_paint
 		add_overlay(engine_paint_mask)
 	if(central_paint)
-		if(!engine_paint_mask)
+		if(!central_paint_mask)
 			central_paint_mask = image(icon, "[initial_icon]-mask+central", src.layer + 2)
 		central_paint_mask.color = central_paint
 		add_overlay(central_paint_mask)

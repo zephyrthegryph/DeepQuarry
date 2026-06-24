@@ -248,18 +248,6 @@
 	else
 		activate_pin(3)
 
-	// Normal pulse in (ord == 1)
-	pull_data()
-	var/enabled_input = get_pin_data(IC_INPUT, 2)
-
-	// Always set the output data, but make it null if disabled
-	if(enabled_input)
-		set_pin_data(IC_OUTPUT, 1, get_pin_data(IC_INPUT, 1))
-		push_data()
-		activate_pin(3)  // Only activate downstream circuits if enabled
-	else  // Clear output when disabled
-		push_data()
-
 
 /obj/item/integrated_circuit/smart/z_level_sensor
 	name = "Z-level sensor"

@@ -11,7 +11,7 @@
 		input = tgui_input_text(src,"Choose an emote to display.", max_length = MAX_MESSAGE_LEN)
 	else
 		input = message
-	process_normal_emote(m_type, message, input, range)
+	process_normal_emote(m_type, input, input, range)
 
 /// This is the custom_emote that you'll want to use if you're forcing something to custom emote with no input from the mob.
 /// By default, we have a visible message, our range is world.view, and we do NOT check the stat.

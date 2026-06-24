@@ -297,12 +297,12 @@
 					if(!enough_metal)
 						continue
 					else
-						var/total
+						var/total = 0
 						for(var/needs_metal in A.requires)
 							ores_stored[needs_metal] -= A.requires[needs_metal]
 							total += A.requires[needs_metal]
-							total = max(1,round(total*A.product_mod)) //Always get at least one sheet.
-							sheets += total-1
+						total = max(1,round(total*A.product_mod)) //Always get at least one sheet.
+						sheets += total-1
 
 						for(var/i=0,i<total,i++)
 							new A.product(output.loc)

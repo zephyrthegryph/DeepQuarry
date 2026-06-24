@@ -2819,7 +2819,9 @@
 				internal_tank_valve = new_pressure
 				to_chat(user, "The internal pressure valve has been set to [internal_tank_valve]kPa.")
 	if(href_list["remove_passenger"] && state >= MECHA_BOLTS_SECURED)
-		var/mob/user = top_filter.getMob("user")
+		if(!in_range(src, usr))
+			return
+		var/mob/user = usr
 		var/list/passengers = list()
 		for (var/obj/item/mecha_parts/mecha_equipment/tool/passenger/P in contents)
 			if (P.occupant)

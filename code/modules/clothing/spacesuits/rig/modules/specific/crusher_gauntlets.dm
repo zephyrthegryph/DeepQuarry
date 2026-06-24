@@ -23,8 +23,11 @@
 	stored_gauntlets.storing_module = src
 
 /obj/item/rig_module/gauntlets/activate()
-	..()
+	if(!..())
+		return
 	var/mob/living/M = holder.wearer
+	if(!M)
+		return
 
 	if(M.l_hand && M.r_hand)
 		to_chat(M, span_danger("Your hands are full."))

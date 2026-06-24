@@ -18,7 +18,6 @@
 	..()
 
 /obj/item/stack/material/supermatter/proc/radiate()
-	SIGNAL_HANDLER
 	if(active)
 		return
 	if(world.time <= last_event + 1.5 SECONDS)

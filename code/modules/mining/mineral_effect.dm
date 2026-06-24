@@ -15,6 +15,8 @@
 	if(!istype(min_turf))
 		return INITIALIZE_HINT_QDEL
 	var/datum/ore/M = min_turf.mineral
+	if(!M)
+		return INITIALIZE_HINT_QDEL
 	name = "[M.display_name] deposit"
 	ore_key = M.name
 	if(M.reagent)

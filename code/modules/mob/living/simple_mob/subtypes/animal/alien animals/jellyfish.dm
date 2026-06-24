@@ -125,8 +125,11 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 /mob/living/simple_mob/vore/alienanimals/space_jellyfish/death()
 	. = ..()
 	new /obj/item/reagent_containers/food/snacks/jellyfishcore(loc, nutrition)
-	GLOB.jellyfish_count --
 	qdel(src)
+
+/mob/living/simple_mob/vore/alienanimals/space_jellyfish/Destroy()
+	GLOB.jellyfish_count --
+	return ..()
 
 /mob/living/simple_mob/vore/alienanimals/space_jellyfish/Life()
 	. = ..()

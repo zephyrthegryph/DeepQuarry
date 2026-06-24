@@ -241,7 +241,7 @@
 	icon_state = "sotiecrate"
 	starts_with = list(/mob/living/simple_mob/vore/otie/security)
 
-/obj/structure/largecrate/animal/otie/guardbeast/Initialize(mapload)
+/obj/structure/largecrate/animal/guardbeast/Initialize(mapload)
 	starts_with = list(pick(/mob/living/simple_mob/vore/otie/security,
 						/mob/living/simple_mob/vore/otie/security/chubby))
 	return ..()
@@ -253,7 +253,7 @@
 	icon_state = "sotiecrate"
 	starts_with = list(/mob/living/simple_mob/vore/otie/security/phoron)
 
-/obj/structure/largecrate/animal/otie/guardmutant/Initialize(mapload)
+/obj/structure/largecrate/animal/guardmutant/Initialize(mapload)
 	starts_with = list(pick(/mob/living/simple_mob/vore/otie/security/phoron;2,
 						/mob/living/simple_mob/vore/otie/security/phoron/red;0.5,
 						/mob/living/simple_mob/vore/otie/security/phoron/red/chubby;0.5))

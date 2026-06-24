@@ -61,7 +61,8 @@
 /datum/component/radioactive_exposure/proc/on_exited(atom/movable/also_parent, area/old_area, direction)
 	SIGNAL_HANDLER
 
-	if(istype(get_area(parent), radioactive_areas)) //we left to another area that is also radioactive, so dont do anything
+	var/area/new_area = get_area(parent)
+	if(new_area && (new_area.type in radioactive_areas)) //we left to another area that is also radioactive, so dont do anything
 		return
 
 	qdel(src)

@@ -377,7 +377,7 @@
 				changed = 1 // update_icon()
 
 		tile_info = getCardinalAirInfo(src.loc,list("temperature","pressure"))
-		var/old_alerts = dir_alerts
+		var/old_alerts = dir_alerts.Copy()
 		for(var/index = 1; index <= 4; index++)
 			var/list/tileinfo=tile_info[index]
 			if(tileinfo==null)

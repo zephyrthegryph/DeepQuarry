@@ -46,7 +46,7 @@
 			modules += GLOB.shell_module_types
 			// crisis mode for shells
 			if(R.crisis || GLOB.security_level == SEC_LEVEL_RED || R.crisis_override)
-				to_chat(src, span_red("Crisis mode active. Combat module available."))
+				to_chat(R, span_red("Crisis mode active. Combat module available."))
 				modules |= GLOB.emergency_module_types
 		else
 			modules += GLOB.robot_module_types
@@ -148,6 +148,8 @@
 				R.sprite_name = new_name
 			return TRUE
 		if("confirm")
+			if(!sprite_datum || !selected_module)
+				return TRUE
 			R.apply_name(new_name)
 			R.apply_module(sprite_datum, selected_module)
 			R.update_multibelly()

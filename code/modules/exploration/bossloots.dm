@@ -70,7 +70,7 @@
 	else if(user.a_intent == I_HURT) //Tiny Chance to crit
 		. = ..()
 		if(active && prob(2))
-			target.adjustBruteLoss(-50)
+			target.adjustBruteLoss(50)
 			playsound(src, "blade1", 50, 1)
 
 //Mining tool

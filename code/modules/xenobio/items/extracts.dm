@@ -942,7 +942,7 @@
 	holder.my_atom.visible_message(span_danger("\The [holder.my_atom] begins to vibrate violently!"))
 	spawn(5 SECONDS)
 		if(!QDELETED(holder.my_atom) && istype(holder.my_atom, /obj/item/slime_extract/green))
-			START_PROCESSING(SSobj, src)
+			START_PROCESSING(SSobj, holder.my_atom)
 
 
 

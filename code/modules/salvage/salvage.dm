@@ -5,7 +5,7 @@
 	force = 5
 	throwforce = 5
 	throw_speed = 1
-	throw_speed = 4
+	throw_range = 4
 	hitsound = 'sound/items/salvage/salvagepickup.ogg'
 	drop_sound = 'sound/items/salvage/salvagedrop.ogg'
 	w_class = ITEMSIZE_NORMAL

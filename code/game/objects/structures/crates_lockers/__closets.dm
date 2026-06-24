@@ -568,7 +568,7 @@
 		if(L.devourable)
 			targets += L
 
-	if(targets == 0)
+	if(!targets.len)
 		to_chat(src, span_notice("No eligible targets found."))
 		return
 

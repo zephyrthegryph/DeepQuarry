@@ -118,7 +118,7 @@
 /datum/gear/eyes/janitor/New()
 	..()
 	var/list/selector_uniforms = list(
-		"standard Contaminant HUD"=/obj/item/clothing/glasses/hud/health,
+		"standard Contaminant HUD"=/obj/item/clothing/glasses/hud/janitor,
 		"prescription Contaminant HUD"=/obj/item/clothing/glasses/hud/janitor/prescription
 	)
 	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))

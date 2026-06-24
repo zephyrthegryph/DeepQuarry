@@ -9,7 +9,7 @@
 		return
 	var/voted = 0
 
-	var/datum/db_query/query = SSdbcore.NewQuery("SELECT * FROM erro_privacy WHERE ckey='[src.ckey]'")
+	var/datum/db_query/query = SSdbcore.NewQuery("SELECT * FROM erro_privacy WHERE ckey=:ckey", list("ckey" = src.ckey))
 	query.Execute()
 	while(query.NextRow())
 		voted = 1
@@ -91,7 +91,7 @@
 
 		var/alreadyvoted = 0
 
-		var/datum/db_query/voted_query = SSdbcore.NewQuery("SELECT id FROM erro_poll_vote WHERE pollid = [pollid] AND ckey = '[src.ckey]'")
+		var/datum/db_query/voted_query = SSdbcore.NewQuery("SELECT id FROM erro_poll_vote WHERE pollid = :pollid AND ckey = :ckey", list("pollid" = pollid, "ckey" = src.ckey))
 		voted_query.Execute()
 
 		while(voted_query.NextRow())
@@ -112,7 +112,8 @@
 			adminrank = client.holder.rank_names()
 
 
-		var/datum/db_query/insert_query = SSdbcore.NewQuery("INSERT INTO erro_poll_vote (id ,datetime ,pollid ,optionid ,ckey ,ip ,adminrank) VALUES (null, Now(), [pollid], [optionid], '[src.ckey]', '[client.address]', '[adminrank]')")
+		var/datum/db_query/insert_query = SSdbcore.NewQuery("INSERT INTO erro_poll_vote (id ,datetime ,pollid ,optionid ,ckey ,ip ,adminrank) VALUES (null, Now(), :pollid, :optionid, :ckey, :ip, :adminrank)",
+			list("pollid" = pollid, "optionid" = optionid, "ckey" = src.ckey, "ip" = client.address, "adminrank" = adminrank))
 		insert_query.Execute()
 
 		to_chat(src, span_blue("Vote successful."))
@@ -144,7 +145,7 @@
 
 		var/alreadyvoted = 0
 
-		var/datum/db_query/voted_query = SSdbcore.NewQuery("SELECT id FROM erro_poll_textreply WHERE pollid = [pollid] AND ckey = '[src.ckey]'")
+		var/datum/db_query/voted_query = SSdbcore.NewQuery("SELECT id FROM erro_poll_textreply WHERE pollid = :pollid AND ckey = :ckey", list("pollid" = pollid, "ckey" = src.ckey))
 		voted_query.Execute()
 
 		while(voted_query.NextRow())
@@ -169,7 +170,8 @@
 			to_chat(src, "The text you entered was blank, contained illegal characters or was too long. Please correct the text and submit again.")
 			return
 
-		var/datum/db_query/insert_query = SSdbcore.NewQuery("INSERT INTO erro_poll_textreply (id ,datetime ,pollid ,ckey ,ip ,replytext ,adminrank) VALUES (null, Now(), [pollid], '[src.ckey]', '[client.address]', '[replytext]', '[adminrank]')")
+		var/datum/db_query/insert_query = SSdbcore.NewQuery("INSERT INTO erro_poll_textreply (id ,datetime ,pollid ,ckey ,ip ,replytext ,adminrank) VALUES (null, Now(), :pollid, :ckey, :ip, :replytext, :adminrank)",
+			list("pollid" = pollid, "ckey" = src.ckey, "ip" = client.address, "replytext" = replytext, "adminrank" = adminrank))
 		insert_query.Execute()
 
 		to_chat(src, span_blue("Feedback logging successful."))
@@ -214,7 +216,7 @@
 
 		var/alreadyvoted = 0
 
-		var/datum/db_query/voted_query = SSdbcore.NewQuery("SELECT id FROM erro_poll_vote WHERE optionid = [optionid] AND ckey = '[src.ckey]'")
+		var/datum/db_query/voted_query = SSdbcore.NewQuery("SELECT id FROM erro_poll_vote WHERE optionid = :optionid AND ckey = :ckey", list("optionid" = optionid, "ckey" = src.ckey))
 		voted_query.Execute()
 
 		while(voted_query.NextRow())
@@ -230,7 +232,8 @@
 			adminrank = client.holder.rank_names()
 
 
-		var/datum/db_query/insert_query = SSdbcore.NewQuery("INSERT INTO erro_poll_vote (id ,datetime ,pollid ,optionid ,ckey ,ip ,adminrank, rating) VALUES (null, Now(), [pollid], [optionid], '[src.ckey]', '[client.address]', '[adminrank]', [(isnull(rating)) ? "null" : rating])")
+		var/datum/db_query/insert_query = SSdbcore.NewQuery("INSERT INTO erro_poll_vote (id ,datetime ,pollid ,optionid ,ckey ,ip ,adminrank, rating) VALUES (null, Now(), :pollid, :optionid, :ckey, :ip, :adminrank, :rating)",
+			list("pollid" = pollid, "optionid" = optionid, "ckey" = src.ckey, "ip" = client.address, "adminrank" = adminrank, "rating" = rating))
 		insert_query.Execute()
 
 		to_chat(src, span_blue("Vote successful."))

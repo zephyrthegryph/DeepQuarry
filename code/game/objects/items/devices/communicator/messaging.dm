@@ -102,6 +102,8 @@
 	switch(href_list["action"])
 		if("Reply")
 			var/obj/item/communicator/comm = locate(href_list["target"])
+			if(!istype(comm) || !comm.exonet)
+				return
 			var/message = tgui_input_text(usr, "Enter your message below.", "Reply")
 
 			if(message)

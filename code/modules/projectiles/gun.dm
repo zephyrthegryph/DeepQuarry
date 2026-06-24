@@ -51,7 +51,11 @@
 	drop_sound = 'sound/items/drop/gun.ogg'
 	pickup_sound = 'sound/items/pickup/gun.ogg'
 
-	var/automatic = 0
+	var/automatic = 0	//If set, holding LMB sustains fire: the trigger is re-pulled
+						//at fire_delay cadence until released. Each pull respects the
+						//current firemode (so a burst gun fires repeated bursts). See autofire.dm.
+	var/last_fire_noise = 0		//world.time of the last quarry noise emit from this gun (autofire throttle)
+	var/fire_noise_cooldown = 5	//min deciseconds between quarry noise emits while firing
 	var/burst = 1
 	var/fire_delay = 6 	//delay after shooting before the gun can be used again
 	var/burst_delay = 2	//delay between shots, if firing in bursts
@@ -110,10 +114,8 @@
 	///Var for attack_self chain
 	var/special_handling = FALSE
 
-	// Decomposition datums (see gun_datums.dm).
-	// These mirror the tmp/ aim vars and sel_mode/firemodes list; both paths
-	// stay in sync so legacy code that reads the vars directly continues to work.
-	var/datum/gun_aim_state/aim_state = null
+	// Firemode selector datum (see gun_datums.dm).  A thin API over the gun's
+	// own firemodes list / sel_mode index.
 	var/datum/gun_firemode_selector/firemode_selector = null
 
 /obj/item/gun/item_ctrl_click(mob/user)
@@ -152,12 +154,10 @@
 		var/datum/firemode/new_mode = firemodes[sel_mode]
 		new_mode.apply_to(src)
 
-	// Initialise decomposition datums.
-	aim_state          = new /datum/gun_aim_state(src)
+	// Initialise the firemode selector.
 	firemode_selector  = new /datum/gun_firemode_selector(src)
 
 /obj/item/gun/Destroy()
-	QDEL_NULL(aim_state)
 	QDEL_NULL(firemode_selector)
 	// The attached_lock is parented to src (loc = src), qdel cascade handles it.
 	attached_lock = null
@@ -399,13 +399,17 @@
 	// gunfire as noise inside the quarry. Loud sources
 	// alert nearby hostile mobs and bump layer danger. emit_noise is a
 	// no-op outside a quarry z, so non-mine play is unaffected.
-	if(SSquarry)
+	// Throttled so sustained autofire collapses into a few noise pulses per
+	// second instead of one aggro event per round.  Single shots fire seconds
+	// apart, so they are never affected.
+	if(SSquarry && world.time >= last_fire_noise + fire_noise_cooldown)
 		var/turf/origin = get_turf(user)
 		if(origin && SSquarry.layer_at_z(origin.z))
 			var/loudness = istype(src, /obj/item/gun/energy) \
 				? QUARRY_NOISE_WEAPON_LASER \
 				: QUARRY_NOISE_WEAPON_BALLISTIC
 			SSquarry.emit_noise(origin, loudness, src)
+			last_fire_noise = world.time
 	handle_gunfire(target, user, clickparams, pointblank, reflex, 1, FALSE)
 
 /obj/item/gun/proc/handle_gunfire(atom/target, mob/living/user, clickparams, pointblank=0, reflex=0, ticker, recursive = FALSE)
@@ -578,6 +582,11 @@
 	if (user)
 		user.visible_message("*click click*", span_danger("*click*"))
 		user.hud_used.update_ammo_hud(user, src)
+		// Running dry ends any held-trigger autofire immediately, so a dropped
+		// magazine turns into one click instead of a stream of them.
+		var/mob/living/L = user
+		if(istype(L))
+			L.stop_autofire()
 	else
 		src.visible_message("*click click*")
 	playsound(src, 'sound/weapons/empty.ogg', 100, 1)
@@ -846,13 +855,13 @@
 
 /obj/item/gun/equipped(mob/living/user, slot) // When a gun is equipped to your hands, we'll add the HUD to the user. Pending porting over TGMC guncode where wielding is far more sensible.
 	if(slot == slot_l_hand || slot == slot_r_hand)
-		user.hud_used.add_ammo_hud(user, src)
+		user.hud_used?.add_ammo_hud(user, src)
 	else
-		user.hud_used.remove_ammo_hud(user, src)
+		user.hud_used?.remove_ammo_hud(user, src)
 
 	return ..()
 
 /obj/item/gun/dropped(mob/user, equipping, slot) // Ditto as above, we remove the HUD. Pending porting TGMC code to clean up this fucking nightmare of spaghetti.
-	user.hud_used.remove_ammo_hud(user, src)
+	user.hud_used?.remove_ammo_hud(user, src)
 
 	..()

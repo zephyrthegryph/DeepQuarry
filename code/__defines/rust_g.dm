@@ -432,7 +432,7 @@
 
 	var/ret = RUSTG_CALL(RUST_G, "sound_len")(file_path)
 	var/as_num = text2num(ret)
-	if(isnull(ret))
+	if(isnull(as_num))
 		. = 0
 		CRASH("rustg_sound_length error: [ret]")
 

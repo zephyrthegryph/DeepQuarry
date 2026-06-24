@@ -344,11 +344,11 @@
 		if(2)
 			if(istype(W, /obj/item/stack/cable_coil))
 				var/obj/item/stack/cable_coil/C = W
-				if(!C.use(3))
+				if(C.get_amount() < 6)
 					to_chat(user, span_notice("You need six cable coils to wire the devices."))
 					..()
 					return
-				C.use(3)
+				C.use(6)
 				buildstep++
 				to_chat(user, span_notice("You wire the assembly"))
 				desc = "This TV camera assembly has wires sticking out"

@@ -20,7 +20,7 @@
 /obj/machinery/transportpod/process()
 	if(occupant)
 		if(in_transit)
-			var/locNum = rand(0, 7) //pick a random location
+			var/locNum = rand(1, 8) //pick a random location
 			var/turf/L = locate(xc[locNum], yc[locNum], 1) // Pairs the X and Y to get an actual location.
 			limit_x = xc[locNum]+1
 			limit_y = yc[locNum]+1

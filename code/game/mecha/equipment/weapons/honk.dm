@@ -22,7 +22,7 @@
 			var/ear_safety = 0
 			ear_safety = M.get_ear_protection()
 			if(ear_safety > 0)
-				return
+				continue
 		to_chat(M, span_warning("Your ears feel like they're bleeding!"))
 		playsound(M, 'sound/effects/bang.ogg', 70, 1, 30)
 		M.SetSleeping(0)

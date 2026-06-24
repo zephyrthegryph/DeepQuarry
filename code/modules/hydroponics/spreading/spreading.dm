@@ -73,7 +73,7 @@
 
 /obj/effect/plant/Destroy()
 	neighbors.Cut()
-	if(seed.get_trait(TRAIT_SPREAD)==2)
+	if(seed && seed.get_trait(TRAIT_SPREAD)==2)
 		unsense_proximity(callback = TYPE_PROC_REF(/atom, HasProximity), center = get_turf(src))
 	SSplants.remove_plant(src)
 	for(var/obj/effect/plant/neighbor in range(1,src))

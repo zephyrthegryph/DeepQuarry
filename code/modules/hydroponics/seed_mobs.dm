@@ -10,6 +10,8 @@
 	P.request_player(host, "Someone is harvesting [display_name]. ")
 
 	spawn(75)
+		if(QDELETED(host))
+			return
 		if(!host.ckey && !host.client)
 			host.death()  // This seems redundant, but a lot of mobs don't
 			host.set_stat(DEAD) // handle death() properly. Better safe than etc.

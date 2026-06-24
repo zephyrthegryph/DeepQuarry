@@ -81,6 +81,18 @@
 		else
 			to_chat(user, span_warning("You fail to collect anything!"))
 		box.reloading = FALSE
+	else if(istype(I, /obj/item/ammo_casing)) // Gather two loose rounds into a handful.
+		var/obj/item/ammo_casing/other = I
+		if(other == src)
+			return
+		if(other.caliber != caliber)
+			to_chat(user, span_warning("Those rounds aren't the same caliber."))
+			return
+		var/obj/item/ammo_magazine/handful/H = make_ammo_handful(src, other, user)
+		if(H)
+			user.put_in_hands(H)
+			user.visible_message("[user] gathers some rounds into a handful.", span_notice("You gather the rounds into a handful."))
+			playsound(H, 'sound/weapons/empty.ogg', 25, 1)
 	else
 		return ..()
 
@@ -283,4 +295,4 @@ GLOBAL_LIST_EMPTY(magazine_icondata_states)
 /obj/item/ammo_magazine/ammo_box/examine(mob/user)
 	. = ..()
 
-	. += to_chat(user, span_notice("Alt-click to extract contents."))
+	. += span_notice("Alt-click to extract contents.")

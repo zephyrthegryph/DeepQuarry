@@ -1,4 +1,4 @@
-GLOBAL_DATUM(planet_tyr, /datum/planet/sif)
+GLOBAL_DATUM(planet_tyr, /datum/planet/tyr)
 
 /datum/time/tyr
 	seconds_in_day = 12 HOURS

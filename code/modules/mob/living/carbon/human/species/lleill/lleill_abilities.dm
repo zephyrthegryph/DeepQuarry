@@ -274,7 +274,7 @@
 			continue
 		targets |= M
 
-	if(!targets)
+	if(!targets.len)
 		to_chat(src, span_warning("There is nobody next to you."))
 		return
 	var/mob/living/carbon/human/chosen_target = tgui_input_list(src, "Who do you wish to take energy from?", "Make contact", targets)

@@ -33,7 +33,7 @@ ADMIN_VERB(admin_memo, R_ADMIN|R_MOD|R_EVENT, "Memo", "Manage admin memos.", ADM
 				return
 		if( findtext(memo,"<script",1,0) )
 			return
-		to_chat(F[ckey], span_filter_adminlog("[key] on [time2text(world.realtime,"(DDD) DD MMM hh:mm")]<br>[memo]"))
+		F[ckey] = "[key] on [time2text(world.realtime,"(DDD) DD MMM hh:mm")]<br>[memo]"
 		message_admins("[key] set an admin memo:<br>[memo]")
 
 //show all memos

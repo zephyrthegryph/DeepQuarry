@@ -9,5 +9,5 @@
 		if(spam_alert > 5)
 			cmd_admin_mute(src.mob, mute_type, TRUE)
 	else
-		spam_alert = max(0, spam_alert--)
+		spam_alert = max(0, spam_alert - 1)
 	last_message_time = world.time

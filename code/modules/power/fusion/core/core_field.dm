@@ -210,19 +210,19 @@
 				var/flare
 				var/fuel_loss
 				var/rupture
-				if(percent_unstable > 0.2)
-					visible_message(span_danger("\The [src] ripples uneasily, like a disturbed pond."))
-					flare = prob(25)
+				if(percent_unstable > 0.8)
+					visible_message(span_danger("\The [src] is wracked by a series of horrendous distortions, buckling and twisting like a living thing!"))
+					flare = 1
+					fuel_loss = prob(50)
+					rupture = prob(25)
 				else if(percent_unstable > 0.5)
 					visible_message(span_danger("\The [src] undulates violently, shedding plumes of plasma!"))
 					flare = prob(50)
 					fuel_loss = prob(20)
 					rupture = prob(5)
-				else if(percent_unstable > 0.8)
-					visible_message(span_danger("\The [src] is wracked by a series of horrendous distortions, buckling and twisting like a living thing!"))
-					flare = 1
-					fuel_loss = prob(50)
-					rupture = prob(25)
+				else if(percent_unstable > 0.2)
+					visible_message(span_danger("\The [src] ripples uneasily, like a disturbed pond."))
+					flare = prob(25)
 
 				if(rupture)
 					if(prob(80))
@@ -673,8 +673,8 @@
 		TT.assume_air(plasma)
 		TT.hotspot_expose(plasma_temperature)
 		plasma = null
-	Destroy()
 	owned_core.Shutdown()
+	qdel(src)
 	return
 
 /obj/effect/fusion_em_field/proc/BluespaceQuenchEvent() //!!FUN!! causes a number of explosions in an area around the core. Will likely destory or heavily damage the reactor.
@@ -690,8 +690,8 @@
 	for(var/loopcount = 1 to 10)
 		explosion(pick(things_in_range), -1, 5, 5, 5)
 		empulse(pick(things_in_range), CEILING(plasma_temperature/1000, 1), CEILING(plasma_temperature/300, 1))
-	Destroy()
 	owned_core.Shutdown()
+	qdel(src)
 	return
 
 #undef FUSION_ENERGY_PER_K

@@ -160,9 +160,10 @@
 		if(istype(I, /obj/item/holder))
 			var/obj/item/holder/holder = I
 			var/mob/victim = holder.held_mob
-			if(victim.client)
-				log_and_message_admins("placed [victim] inside \the [src]", user)
-			victim.forceMove(src)
+			if(victim)
+				if(victim.client)
+					log_and_message_admins("placed [victim] inside \the [src]", user)
+				victim.forceMove(src)
 			qdel(I)
 			user.visible_message(
 				span_danger("[user] tosses \the [victim] into \the [src]."),

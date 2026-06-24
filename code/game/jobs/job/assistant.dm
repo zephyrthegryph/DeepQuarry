@@ -151,7 +151,7 @@
 //		Visitor
 //////////////////////////////////
 
-/datum/job/assistant		// Visitor
+/datum/job/assistant/visitor		// Visitor
 	title = JOB_ALT_VISITOR
 	supervisors = "nobody! You don't work here"
 	job_description = "A " + JOB_ALT_VISITOR + " is just there to visit the place. They have no real authority or responsibility."
@@ -159,7 +159,7 @@
 	requestable = FALSE
 	alt_titles = list("Guest" = /datum/alt_title/guest, "Traveler" = /datum/alt_title/traveler)
 
-/datum/job/assistant/New()
+/datum/job/assistant/visitor/New()
 	..()
 	if(config)
 		total_positions = CONFIG_GET(number/limit_visitors)

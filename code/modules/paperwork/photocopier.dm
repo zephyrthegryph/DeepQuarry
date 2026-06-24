@@ -108,17 +108,23 @@
 		if (istype(copyitem, /obj/item/paper))
 			playsound(src, "sound/machines/copier.ogg", 100, 1)
 			sleep(11)
+			if(!istype(copyitem, /obj/item/paper)) // removed/swapped during the sleep
+				break
 			copy(copyitem)
 			audible_message(span_notice("You can hear [src] whirring as it finishes printing."), runemessage = "whirr")
 			playsound(src, "sound/machines/buzzbeep.ogg", 30)
 		else if (istype(copyitem, /obj/item/photo))
 			playsound(src, "sound/machines/copier.ogg", 100, 1)
 			sleep(11)
+			if(!istype(copyitem, /obj/item/photo)) // removed/swapped during the sleep
+				break
 			photocopy(copyitem)
 			audible_message(span_notice("You can hear [src] whirring as it finishes printing."), runemessage = "whirr")
 			playsound(src, "sound/machines/buzzbeep.ogg", 30)
 		else if (istype(copyitem, /obj/item/paper_bundle))
 			sleep(11)
+			if(!istype(copyitem, /obj/item/paper_bundle)) // removed/swapped during the sleep
+				break
 			playsound(src, "sound/machines/copier.ogg", 100, 1)
 			var/obj/item/paper_bundle/B = bundlecopy(copyitem)
 			sleep(11*B.pages.len)

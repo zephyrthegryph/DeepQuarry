@@ -47,6 +47,8 @@
 
 	node1 = null
 	node2 = null
+	network1 = null
+	network2 = null
 	return ..()
 
 /obj/machinery/atmospherics/pipeturbine/process()

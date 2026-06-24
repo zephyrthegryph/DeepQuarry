@@ -98,9 +98,11 @@
 		return
 	if (!istext(mat) || !istext(idt) || !istext(adj) || !istext(tnt))
 		popup_msg(user, "Invalid options.")
+		return
 	var/turf/T = statue.loc
 	if (!istype(T))
 		popup_msg(user, "They must be visible to the [petrifier ? "device" : "machine"].")
+		return
 	if (!petrifier)
 		var/turf/center = get_step(get_turf(src), turn(dir, 180))
 		if (!center)

@@ -193,7 +193,7 @@
 		regulate_mode = text2num(signal.data["set_regulate_mode"])
 
 	if("set_flow_rate" in signal.data)
-		regulate_mode = text2num(signal.data["set_flow_rate"])
+		set_flow_rate = between(0, text2num(signal.data["set_flow_rate"]), air1.volume)
 
 	if("status" in signal.data)
 		spawn(2)

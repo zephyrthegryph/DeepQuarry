@@ -138,7 +138,7 @@
 		if(L.stat == DEAD && !L.allowmobvore)
 			L.gib()
 		else
-			return ..()
+			return .
 
 /obj/effect/overmap/visitable/simplemob/spacewhale
 	skybox_icon = 'icons/skybox/anomaly.dmi'

@@ -173,7 +173,7 @@
 
 	O.loc = loc
 	O.job = JOB_CYBORG
-	if(O.mind.assigned_role == JOB_CYBORG)
+	if(O.mind && O.mind.assigned_role == JOB_CYBORG)
 		if(O.mind.role_alt_title == JOB_ALT_ROBOT)
 			O.mmi = new /obj/item/mmi/digital/posibrain(O)
 		else if(O.mind.role_alt_title == JOB_ALT_DRONE)

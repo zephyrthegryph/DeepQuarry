@@ -1050,7 +1050,7 @@
 		return
 
 	if(!G || !istype(G) || !G.has_ammo_counter() || !G.get_ammo_type() || isnull(G.get_ammo_count()))
-		remove_hud()
+		remove_hud(user)
 		return
 
 	var/list/ammo_type = G.get_ammo_type()

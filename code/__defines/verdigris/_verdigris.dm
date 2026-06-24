@@ -14,10 +14,6 @@
 /proc/verdigris_init()		return VERDIGRIS_CALL("verdigris_init")
 /proc/verdigris_cleanup()	return VERDIGRIS_CALL("cleanup")
 
-/world/New()
-	// Init must come before cleanup so the panic hook catches any failure inside cleanup itself.
-	verdigris_init()
-	verdigris_cleanup()
-	// log so we can confirm Rust loaded and read what features it has.
-	log_world("Verdigris loaded: [verdigris_version()] | features: [verdigris_features()]")
-	..()
+// NOTE: verdigris bring-up (verdigris_init/cleanup + version log) lives in the real
+// /world/New() in code/game/world.dm. A duplicate /world/New() here was silently
+// discarded by the compiler (last-include-wins), so verdigris_init() never ran at boot.

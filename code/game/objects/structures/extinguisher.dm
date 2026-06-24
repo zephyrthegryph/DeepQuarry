@@ -81,7 +81,7 @@
 	if(has_extinguisher)
 		if(istype(has_extinguisher, /obj/item/extinguisher/mini))
 			suffix = "mini"
-		if(istype(has_extinguisher, /obj/item/extinguisher/atmo))
+		else if(istype(has_extinguisher, /obj/item/extinguisher/atmo))
 			suffix = "advanced"
 		else
 			suffix = "standard"

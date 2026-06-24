@@ -179,6 +179,10 @@
 
 	explosion_intensity = min(explosion_intensity, 12) // 3, 6, 12 explosion cap
 
+	// Charge the AI BEFORE damaging hardware, so a failed payment doesn't burn the APC/SMES for free.
+	if(!ability_pay(user,price))
+		return
+
 	M.use_power(2000000) // Major power spike, few of these will completely burn APC's cell - equivalent of 2GJ of power.
 
 	// Trigger a powernet alarm. Careful engineers will probably notice something is going on.
@@ -195,9 +199,6 @@
 					qdel(temp_apc.cell)
 					temp_apc.set_broken()
 
-
-	if(!ability_pay(user,price))
-		return
 
 	M.visible_message(span_notice("BZZZZZZZT"))
 	spawn(50)

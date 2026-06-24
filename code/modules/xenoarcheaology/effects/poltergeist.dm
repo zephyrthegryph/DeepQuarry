@@ -26,7 +26,7 @@
 	if(istype(holder, /obj/item/anobattery))
 		holder = holder.loc //We are inside of an artifact harvester. Make that the holder.
 	var/mob/living/target = null
-	for(var/mob/living/L in oview(get_turf(holder), effectrange))
+	for(var/mob/living/L in oview(effectrange, get_turf(holder)))
 		if(L.stat || !L.mind)
 			continue
 
@@ -43,7 +43,7 @@
 	var/mob/living/target = null
 	if(istype(holder, /obj/item/anobattery))
 		holder = holder.loc //We are inside of an artifact harvester. Make that the holder.
-	for(var/mob/living/L in oview(get_turf(holder), effectrange))
+	for(var/mob/living/L in oview(effectrange, get_turf(holder)))
 		if(L.stat || !L.mind)
 			continue
 

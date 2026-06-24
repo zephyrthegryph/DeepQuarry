@@ -94,7 +94,7 @@
 	if(M != owner)
 		to_chat(M, span_notice("\The [src] emits an unpleasant tone... It does not respond to your command."))
 		playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
-	else if(bound_mob.stat != CONSCIOUS)
+	else if(!bound_mob || bound_mob.stat != CONSCIOUS)
 		to_chat(M, span_notice("\The [src] emits an unpleasant tone... \The [bound_mob] is not able to hear your command."))
 		playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
 	else if(bound_mob.client)
@@ -203,7 +203,7 @@
 	if(!cooldown_check())
 		icon_state = "[icon_state]-busy"
 		spawn(activate_cooldown)		//If it's busy then we want to wait a bit to fix the sprite after the cooldown is done.
-		update_icon()
+			update_icon()
 
 /obj/item/capture_crystal/proc/cooldown_check()
 	if(world.time < last_activate + activate_cooldown)

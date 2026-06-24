@@ -461,7 +461,7 @@ TGUI PROCS
 		eject_item(ui.user)
 		. = TRUE
 	if(action == "recycle")
-		if(canRecycle(ui.user))
+		if(canRecycle(ui.user, try_get_obj_value(inserted_item)))
 			start_recycling(ui.user)
 		else
 			deny_act(inserted_item,ui.user)

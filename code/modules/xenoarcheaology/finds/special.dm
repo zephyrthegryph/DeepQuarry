@@ -124,11 +124,11 @@
 
 		var/obj/effect/shadow_wight/W = shadow_wights[wight_check_index]
 		if(isnull(W))
-			shadow_wights.Remove(wight_check_index)
+			shadow_wights.Remove(W)
 		else if(isnull(W.loc))
-			shadow_wights.Remove(wight_check_index)
+			shadow_wights.Remove(W)
 		else if(get_dist(W, src) > 10)
-			shadow_wights.Remove(wight_check_index)
+			shadow_wights.Remove(W)
 
 /obj/item/vampiric/hear_talk(mob/M, list/message_pieces, verb)
 	..()

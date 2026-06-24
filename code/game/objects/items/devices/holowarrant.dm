@@ -45,7 +45,7 @@
 /obj/item/holowarrant/attackby(obj/item/W, mob/user)
 	if(active)
 		var/obj/item/card/id/I = W.GetIdCard()
-		if(ACCESS_HOS in I.GetAccess())
+		if(I && (ACCESS_HOS in I.GetAccess()))
 			var/choice = tgui_alert(user, "Would you like to authorize this warrant?","Warrant authorization",list("Yes","No"))
 			if(choice == "Yes")
 				active.fields["auth"] = "[I.registered_name] - [I.assignment ? I.assignment : "(Unknown)"]"

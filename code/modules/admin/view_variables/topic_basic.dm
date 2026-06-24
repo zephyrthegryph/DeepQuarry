@@ -128,7 +128,7 @@
 				if(!lst)
 					lst = list()
 				lst.Insert(1, path)
-				target._RemoveElement(lst)
+				target_to_remove_from._RemoveElement(lst)
 			else
 				var/list/components_actual = target_to_remove_from.GetComponents(path)
 				for(var/to_delete in components_actual)

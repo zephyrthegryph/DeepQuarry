@@ -131,7 +131,6 @@
 		range_light = range_light * 2
 		range_long = range_long * 2
 		to_chat(src, span_notice("We are extra loud."))
-		changeling.recursive_enhancement = FALSE
 
 	for(var/obj/machinery/light/L in range(range_light, src))
 		L.on = TRUE

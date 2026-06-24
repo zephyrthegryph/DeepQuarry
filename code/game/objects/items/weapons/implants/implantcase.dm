@@ -52,8 +52,6 @@
 			M.update()
 		else
 			if (imp)
-				if (M.imp)
-					return
 				imp.loc = M
 				M.imp = imp
 				imp = null

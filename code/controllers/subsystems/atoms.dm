@@ -73,8 +73,10 @@ SUBSYSTEM_DEF(atoms)
 		atoms_to_return += created_atoms
 		created_atoms = null
 
-	for (var/queued_deletion in queued_deletions)
-		qdel(queued_deletion)
+	for (var/datum/weakref/queued_deletion in queued_deletions)
+		var/atom/resolved = queued_deletion.resolve()
+		if(resolved)
+			qdel(resolved)
 
 	testing("[length(queued_deletions)] atoms were queued for deletion.")
 	queued_deletions.Cut()

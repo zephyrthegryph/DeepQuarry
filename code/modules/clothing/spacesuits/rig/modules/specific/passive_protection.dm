@@ -228,7 +228,8 @@
 
 	to_chat(H, span_boldnotice("You activate your suit's powered faraday shielding."))
 	stored_siemens_coefficient = holder.siemens_coefficient
-	stored_gloves_siemens_coefficient = gloves.siemens_coefficient
+	if(gloves)
+		stored_gloves_siemens_coefficient = gloves.siemens_coefficient
 	if(boots)
 		boots.siemens_coefficient = 0
 	if(chest)
@@ -260,7 +261,7 @@
 		helmet.siemens_coefficient = stored_siemens_coefficient
 	if(gloves)
 		gloves.siemens_coefficient = stored_gloves_siemens_coefficient
-	holder.siemens_coefficient = siemens_coefficient
+	holder.siemens_coefficient = stored_siemens_coefficient
 
 	stored_siemens_coefficient = 0
 

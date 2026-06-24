@@ -568,6 +568,8 @@ GLOBAL_LIST_EMPTY(vending_products)
 	if(R.category & CAT_COIN)
 		if(!coin)
 			to_chat(user, span_notice("You need to insert a coin to get this item."))
+			vend_ready = TRUE
+			SStgui.update_uis(src)
 			return
 		if(coin.string_attached)
 			if(prob(50))

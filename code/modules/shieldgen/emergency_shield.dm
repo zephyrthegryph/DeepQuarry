@@ -38,7 +38,7 @@
 	opacity = 0
 	density = FALSE
 	update_nearby_tiles()
-	var/obj/machinery/shieldgen/SG = our_owner.resolve()
+	var/obj/machinery/shieldgen/SG = our_owner?.resolve()
 	if(SG)
 		SG.deployed_shields -= src
 	our_owner = null

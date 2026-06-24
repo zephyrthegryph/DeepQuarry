@@ -135,7 +135,7 @@
 	icon_connect_type = "-supply"
 	color = PIPE_COLOR_BLUE
 
-/obj/machinery/atmospherics/pipe/cap/visible/fuel
+/obj/machinery/atmospherics/pipe/cap/hidden/fuel
 	name = "fuel pipe endcap"
 	desc = "An endcap for fuel pipes"
 	icon_state = "cap-f-fuel"

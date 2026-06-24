@@ -12,7 +12,7 @@ GLOBAL_LIST_EMPTY(active_radio_jammers)
 	for(var/obj/item/radio_jammer/J as anything in GLOB.active_radio_jammers)
 		var/turf/Tj = get_turf(J)
 
-		if(J.on && Tj.z == Tr.z) //If we're on the same Z, it's worth checking.
+		if(J.on && Tj && Tj.z == Tr.z) //If we're on the same Z, it's worth checking.
 			var/dist = get_dist(Tj,Tr)
 			if(dist <= J.jam_range)
 				return list("jammer" = J, "distance" = dist)

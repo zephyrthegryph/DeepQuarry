@@ -791,7 +791,7 @@
 
 /obj/item/commcard/head/ce/Initialize(mapload)
 	..()
-	internal_devices |= new /obj.item/analyzer(src)
+	internal_devices |= new /obj/item/analyzer(src)
 	internal_devices |= new /obj/item/halogen_counter(src)
 	return INITIALIZE_HINT_LATELOAD
 
@@ -846,7 +846,7 @@
 
 /obj/item/commcard/head/captain/Initialize(mapload)
 	. = ..()
-	internal_devices += new /obj.item/analyzer(src)
+	internal_devices += new /obj/item/analyzer(src)
 	internal_devices += new /obj/item/healthanalyzer(src)
 	internal_devices += new /obj/item/reagent_scanner(src)
 	internal_devices += new /obj/item/halogen_counter(src)

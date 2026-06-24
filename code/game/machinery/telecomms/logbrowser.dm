@@ -119,7 +119,10 @@
 				return
 
 			if(SelectedServer)
-				var/datum/comm_log_entry/D = SelectedServer.log_entries[text2num(params["id"])]
+				var/idx = text2num(params["id"])
+				if(!idx || idx < 1 || idx > length(SelectedServer.log_entries))
+					return
+				var/datum/comm_log_entry/D = SelectedServer.log_entries[idx]
 				set_temp("DELETED ENTRY: [D.name]", "bad")
 				SelectedServer.log_entries.Remove(D)
 				qdel(D)

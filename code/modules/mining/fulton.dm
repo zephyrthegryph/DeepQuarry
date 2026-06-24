@@ -191,8 +191,8 @@
 		if(L.stat != DEAD)
 			return 1
 	for(var/thing in A.GetAllContents())
-		if(isliving(A))
-			var/mob/living/L = A
+		if(isliving(thing))
+			var/mob/living/L = thing
 			if(L.stat != DEAD)
 				return 1
 	return 0

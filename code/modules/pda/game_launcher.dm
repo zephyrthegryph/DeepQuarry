@@ -118,7 +118,7 @@
 		QDEL_NULL(chess)
 	if(checkers)
 		QDEL_NULL(checkers)
-	if(checkers)
+	if(ninemens)
 		QDEL_NULL(ninemens)
 	if(tictactoe)
 		QDEL_NULL(tictactoe)

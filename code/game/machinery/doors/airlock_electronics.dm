@@ -91,7 +91,17 @@
 			one_access = !one_access
 			return TRUE
 		if("access")
-			toggle_access(params["access"])
+			// Re-validate the client-supplied access against what this user may actually program.
+			var/acc = params["access"]
+			var/list/available = get_available_accesses(usr)
+			if(!length(available))
+				return TRUE
+			if(acc == "all")
+				// "all" clears all access requirements; only allow users who may program any access.
+				if(length(available) >= length(SSaccess.get_all_station_access()))
+					toggle_access(acc)
+			else if(text2num(acc) in available)
+				toggle_access(acc)
 			return TRUE
 
 /obj/item/airlock_electronics/proc/toggle_access(acc)

@@ -528,7 +528,7 @@
 					totalcolour = S.filling_color
 				else
 					var/t = buffer.total_volume + S.reagents.total_volume
-					t = buffer.total_volume / y
+					t = buffer.total_volume / t
 					totalcolour = BlendRGB(totalcolour, S.filling_color, t)
 					//Blend colours in order to find a good filling color
 

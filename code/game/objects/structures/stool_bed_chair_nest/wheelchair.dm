@@ -116,10 +116,11 @@
 			pulling.forceMove(T)
 		else
 			spawn(0)
-			if(get_dist(src, pulling) > 1) // We are too far away? Losing control.
-				pulling = null
-				user.pulledby = null
-			pulling.set_dir(get_dir(pulling, src)) // When everything is right, face the wheelchair
+				if(get_dist(src, pulling) > 1) // We are too far away? Losing control.
+					pulling = null
+					user.pulledby = null
+				if(pulling)
+					pulling.set_dir(get_dir(pulling, src)) // When everything is right, face the wheelchair
 	if(bloodiness)
 		create_track()
 	driving = 0

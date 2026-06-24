@@ -1089,6 +1089,8 @@ GLOBAL_LIST_EMPTY(sacrificed)
 /////////////////////////////////////////TWENTY-FIFTH RUNE
 
 /obj/effect/rune/proc/armor(mob/living/user)
+	if(!ishuman(user))
+		return
 	var/mob/living/carbon/human/H = user
 	if(istype(src,/obj/effect/rune))
 		user.say("N'ath reth sh'yro eth d[pick("'","`")]raggathnor!")

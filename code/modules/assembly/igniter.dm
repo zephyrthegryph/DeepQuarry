@@ -5,7 +5,7 @@
 	matter = list(MAT_STEEL = 500, MAT_GLASS = 50)
 
 	secured = 1
-	wires = WIRE_RECEIVE
+	wires_type = WIRE_RECEIVE
 	special_handling = TRUE
 
 /obj/item/assembly/igniter/activate()

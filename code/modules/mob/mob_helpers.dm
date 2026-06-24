@@ -593,7 +593,7 @@ It's fairly easy to fix if dealing with single letters but not so much with comp
 
 /mob/living/carbon/human/assess_perp(obj/access_obj, check_access, auth_weapons, check_records, check_arrest)
 	var/threatcount = ..()
-	if(. == SAFE_PERP)
+	if(threatcount == SAFE_PERP)
 		return SAFE_PERP
 
 	//Agent cards lower threatlevel.
@@ -636,7 +636,7 @@ It's fairly easy to fix if dealing with single letters but not so much with comp
 
 /mob/living/simple_mob/assess_perp(obj/access_obj, check_access, auth_weapons, check_records, check_arrest)
 	var/threatcount = ..()
-	if(. == SAFE_PERP)
+	if(threatcount == SAFE_PERP)
 		return SAFE_PERP
 
 	if((ai_brain != null) && ai_brain.hostile && faction != "neutral") // Otherwise Runtime gets killed.

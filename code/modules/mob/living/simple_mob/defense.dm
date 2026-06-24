@@ -68,11 +68,11 @@
 					L.visible_message(span_warning("\The [L] uselessly hits \the [src]!"))
 					L.do_attack_animation(src)
 					return
-				apply_damage(damage = real_damage, damagetype = hit_dam_type, def_zone = null, blocked = armor, blocked = resistance, sharp = FALSE, edge = FALSE, used_weapon = null)
+				apply_damage(damage = real_damage, damagetype = hit_dam_type, def_zone = null, blocked = armor, sharp = FALSE, edge = FALSE, used_weapon = null)
 				L.visible_message(span_warning("\The [L] [pick(attack.attack_verb)] \the [src]!"))
 				L.do_attack_animation(src)
 				return
-			apply_damage(damage = harm_intent_damage, damagetype = BRUTE, def_zone = null, blocked = armor, blocked = resistance, sharp = FALSE, edge = FALSE, used_weapon = null) // EDIT Somebody set this to burn instead of brute.
+			apply_damage(damage = harm_intent_damage, damagetype = BRUTE, def_zone = null, blocked = armor, sharp = FALSE, edge = FALSE, used_weapon = null) // EDIT Somebody set this to burn instead of brute.
 			L.visible_message(span_warning("\The [L] [response_harm] \the [src]!"))
 			L.do_attack_animation(src)
 
@@ -159,7 +159,7 @@
 		if (3.0)
 			bombdam = 30
 
-	apply_damage(damage = bombdam, damagetype = BRUTE, def_zone = null, blocked = armor, blocked = resistance, sharp = FALSE, edge = FALSE, used_weapon = null)
+	apply_damage(damage = bombdam, damagetype = BRUTE, def_zone = null, blocked = armor, sharp = FALSE, edge = FALSE, used_weapon = null)
 
 	if(bombdam > maxHealth)
 		gib()
@@ -226,11 +226,11 @@
 
 		if(stun_amount)
 			stunDam += stun_amount * 0.5
-			apply_damage(damage = stunDam, damagetype = BURN, def_zone = null, blocked = armor, blocked = resistance, sharp = FALSE, edge = FALSE, used_weapon = used_weapon)
+			apply_damage(damage = stunDam, damagetype = BURN, def_zone = null, blocked = armor, sharp = FALSE, edge = FALSE, used_weapon = used_weapon)
 
 		if(agony_amount)
 			agonyDam += agony_amount * 0.5
-			apply_damage(damage = agonyDam, damagetype = BURN, def_zone = null, blocked = armor, blocked = resistance, sharp = FALSE, edge = FALSE, used_weapon = used_weapon)
+			apply_damage(damage = agonyDam, damagetype = BURN, def_zone = null, blocked = armor, sharp = FALSE, edge = FALSE, used_weapon = used_weapon)
 
 
 // Electromagnetism

@@ -14,7 +14,6 @@
 	desc = "A [type] drawn in crayon."
 
 	// Persistence vars. Unused here but used downstream. If someone updates the persistance code, it's here.
-	art_type = type
 	art_color = main
 	art_shade = shade
 
@@ -23,6 +22,8 @@
 			type = "rune[rand(1,6)]"
 		if("graffiti")
 			type = pick("amyjon","face","matt","revolution","engie","guy","end","dwarf","uboa")
+
+	art_type = type
 
 	. = ..(mapload, new_age) // mapload, age
 

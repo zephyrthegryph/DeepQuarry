@@ -8,7 +8,7 @@
 /datum/event/ray_migration/setup()
 	announceWhen = rand(30, 60) // 1 to 2 minutes
 	endWhen += severity * 25
-	ray_cap = 1 + 1 ** severity // No more than this many at once regardless of waves. (2, 3, ?)
+	ray_cap = 1 + severity // No more than this many at once regardless of waves. (2, 3, ?)
 
 /datum/event/ray_migration/start()
 	affecting_z -= using_map.sealed_levels // Space levels only please!

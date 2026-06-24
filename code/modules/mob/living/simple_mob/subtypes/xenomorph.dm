@@ -63,6 +63,15 @@
 	src.adjust_nutrition(src.max_nutrition)
 	sight |= SEE_MOBS
 
+/mob/living/simple_mob/xeno_ch/Destroy()
+	QDEL_NULL(build_action)
+	QDEL_NULL(neurotox_action)
+	QDEL_NULL(acidspit_action)
+	QDEL_NULL(corrode_action)
+	QDEL_NULL(pounce_action)
+	QDEL_NULL(spin_action)
+	return ..()
+
 /mob/living/simple_mob/xeno_ch/Login()
 	. = ..()
 	faction = "neutral"

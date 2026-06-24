@@ -181,9 +181,4 @@
 
 /mob
 	var/datum/belly_overlay_tgui/belly_overlay_tgui
-
-/mob/Destroy()
-	if(belly_overlay_tgui)
-		qdel(belly_overlay_tgui)
-		belly_overlay_tgui = null
-	return ..()
+// /mob/Destroy() cleanup of belly_overlay_tgui folded into the canonical /mob/Destroy() in mob.dm

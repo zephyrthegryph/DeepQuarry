@@ -44,8 +44,8 @@ They're also cool, and Rykka/Nyria wrote this uwu
 	response_disarm = "boops aside"
 	response_harm = "smacks"
 
-	melee_damage_lower = 12 // hyenas go for the legs/lower bits
-	melee_damage_upper = 6 // not as high damage, but faster bites. nomnomnom <3
+	melee_damage_lower = 6 // hyenas go for the legs/lower bits
+	melee_damage_upper = 12 // not as high damage, but faster bites. nomnomnom <3
 	attack_sharp = 1
 	attack_edge = 1
 	base_attack_cooldown = 2

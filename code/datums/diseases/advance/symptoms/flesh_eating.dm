@@ -64,7 +64,7 @@ Bonus
 /datum/symptom/flesh_eating/proc/Flesheat(mob/living/M, datum/disease/advance/A)
 	if(damage)
 		M.take_overall_damage(BRUTE = rand(15, 25))
-	if(ishuman(M))
+	if(!ishuman(M))
 		return
 	var/mob/living/carbon/human/H = M
 	var/obj/item/organ/external/O = pick(H.organs)

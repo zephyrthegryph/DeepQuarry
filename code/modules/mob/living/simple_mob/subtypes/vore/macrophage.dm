@@ -39,7 +39,7 @@
 	attacktext = list("squashed")
 	friendly = list("shoos", "rubs")
 
-	vore_bump_chance = "attempts to absorb"
+	vore_bump_emote = "attempts to absorb"
 
 	vore_active = TRUE
 	vore_capacity = 1

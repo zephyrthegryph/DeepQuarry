@@ -244,6 +244,7 @@
 			if(!debug)
 				if(!Adjacent(ui.user))
 					to_chat(ui.user, span_notice("You are too far away from \the [src]."))
+					return 1
 				if(metal - cost < 0)
 					to_chat(ui.user, span_warning("You need [cost] metal to build that!."))
 					return 1

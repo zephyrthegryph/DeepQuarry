@@ -101,7 +101,7 @@ ADMIN_VERB(persistent_client_logs, R_ADMIN|R_MOD, "Check Player Logs", "Displays
 		return
 	var/datum/db_query/query = SSdbcore.NewQuery("SELECT mid,time,ckey,mob,area,color,type,message from erro_dialog WHERE ckey = :t_ckey", list("t_ckey" = target_ckey))
 	if(!query.Execute())
-		to_chat(src, span_admin("Database query error"))
+		to_chat(usr, span_admin("Database query error"))
 		qdel(query)
 		return
 

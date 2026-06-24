@@ -346,7 +346,7 @@ GLOBAL_LIST_BOILERPLATE(all_crematoriums, /obj/structure/morgue/crematorium)
 		for (var/obj/structure/morgue/crematorium/C in GLOB.all_crematoriums)
 			if (C.id == id)
 				if (!C.cremating)
-					C.cremate(user)
+					C.cremate(null, user)
 	else
 		to_chat(user, span_warning("Access denied."))
 
@@ -373,13 +373,13 @@ GLOBAL_LIST_BOILERPLATE(all_crematoriums, /obj/structure/morgue/crematorium)
 			return
 
 		for(var/I in contents)
-			if(!(I in allowed_items))
+			if(!is_type_in_list(I, allowed_items))
 				to_chat(user, span_notice("\The [src] cannot cremate while there are items inside!"))
 				return
 			if(isliving(I))
 				var/mob/living/cremated = I
 				for(var/Z in cremated.contents)
-					if(!(Z in allowed_items))
+					if(!is_type_in_list(Z, allowed_items))
 						to_chat(user, span_notice("\The [src] cannot cremate while there are items inside!"))
 						return
 

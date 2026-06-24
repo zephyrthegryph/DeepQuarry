@@ -62,7 +62,7 @@
 
 /obj/item/clothing/suit/space/void/examine(mob/user)
 	. = ..()
-	. += to_chat(user, span_notice("Alt-click to relase Tank/Cooling unit if installed."))
+	. += span_notice("Alt-click to relase Tank/Cooling unit if installed.")
 	for(var/obj/item/I in list(hood,boots,tank,cooler))
 		. += "It has \a [I] installed."
 	if(tank && in_range(src,user))

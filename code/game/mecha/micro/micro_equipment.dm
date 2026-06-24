@@ -197,7 +197,7 @@
 /obj/item/mecha_parts/mecha_equipment/tool/micro/orescoop/get_equip_info()
 	return "[..()] <br /><a href='byond://?src=\ref[src];empty_box=1'>Empty ore compartment</a>"
 
-/obj/item/mecha_parts/mecha_equipment/tool/orescoop/verb/empty_box() //so you can still get the ore out if someone detaches it from the mech
+/obj/item/mecha_parts/mecha_equipment/tool/micro/orescoop/verb/empty_box() //so you can still get the ore out if someone detaches it from the mech
 	set name = "Empty Ore compartment"
 	set category = "Object"
 	set src in view(1)

@@ -55,6 +55,8 @@ GLOBAL_VAR_INIT(nttransfer_uid, 0)
 		for(var/datum/computer_file/program/nttransfer/P in connected_clients)
 			P.crash_download("Connection terminated by remote server")
 		downloaded_file = null
+		if(GLOB.ntnet_global)
+			GLOB.ntnet_global.fileservers -= src
 	..(forced)
 
 // Finishes download and attempts to store the file on HDD

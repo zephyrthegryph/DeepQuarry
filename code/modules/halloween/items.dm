@@ -112,6 +112,8 @@
 		treated[user.ckey] = TRUE
 
 	add_fingerprint(user)
+	if(!thegoods)
+		return
 	var/goodie = new thegoods(src)
 	user.put_in_hands(goodie)
 

@@ -78,16 +78,16 @@
 	var/duration = 6000 //ten minutes
 	switch(severity)
 		if(EMP_HEAVY)
-			stat &= BROKEN
+			stat |= BROKEN
 			if(prob(75)) explode()
 		if(EMP_MEDIUM)
-			if(prob(50)) stat &= BROKEN
+			if(prob(50)) stat |= BROKEN
 			if(prob(10)) explode()
 		if(EMP_LIGHT)
-			if(prob(25)) stat &= BROKEN
+			if(prob(25)) stat |= BROKEN
 			duration = 300
 		if(EMP_HARMLESS)
-			if(prob(10)) stat &= BROKEN
+			if(prob(10)) stat |= BROKEN
 			duration = 300
 
 	stat |= EMPED

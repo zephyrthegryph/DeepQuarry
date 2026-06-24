@@ -416,7 +416,7 @@
 		if(difference > 0)
 			consider_pressure_difference(enemy_tile, difference)
 		else
-			enemy_tile.consider_pressure_difference(src, difference)
+			enemy_tile.consider_pressure_difference(src, -difference)
 
 	var/reacting = our_air.react(src)
 	if(our_excited_group)

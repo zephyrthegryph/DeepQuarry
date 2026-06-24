@@ -180,9 +180,11 @@
 	if(.)
 		return TRUE
 	var/mob/living/silicon/robot/R = user
+	if(!istype(R))
+		return
 	if(R.emagged || R.emag_items)
 		emagged = !emagged
-		if(R.sprite_datum.dogborg_sprites)
+		if(R.sprite_datum?.dogborg_sprites)
 			if(emagged)
 				name = "combat jaws"
 				icon_state = "jaws"

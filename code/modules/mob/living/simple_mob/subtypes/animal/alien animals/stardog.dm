@@ -1094,8 +1094,10 @@
 
 /obj/effect/landmark/area_gatherer/LateInitialize()	//I am very afraid
 	var/obj/effect/overmap/visitable/ship/simplemob/stardog/s = get_overmap_sector(z)
-	var/mob/living/simple_mob/vore/overmap/stardog/dog = s.parent
-	dog.weather_areas |= get_area(src)
+	if(istype(s))
+		var/mob/living/simple_mob/vore/overmap/stardog/dog = s.parent
+		if(istype(dog))
+			dog.weather_areas |= get_area(src)
 	qdel(src)
 
 /obj/machinery/computer/ship/navigation/telescreen/dog_eye
@@ -1258,7 +1260,7 @@
 /obj/effect/dog_teleporter/proc/do_setup()
 	if(target)
 		return
-	for(var/obj/effect/dog_teleporter/T in dog_teleporters)
+	for(var/obj/effect/dog_teleporter/T in dog_teleporters.Copy())
 		if(!istype(T,/obj/effect/dog_teleporter))
 			dog_teleporters -= T
 			continue

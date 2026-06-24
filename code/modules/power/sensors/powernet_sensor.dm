@@ -200,7 +200,7 @@
 	out += "<br><b>TOTAL AVAILABLE: [reading_to_text(powernet.avail)]</b>"
 	out += "<br><b>APC LOAD: [reading_to_text(total_apc_load)]</b>"
 	out += "<br><b>OTHER LOAD: [reading_to_text(max(powernet.load - total_apc_load, 0))]</b>"
-	out += "<br><b>TOTAL GRID LOAD: [reading_to_text(powernet.viewload)] ([round((powernet.load / powernet.avail) * 100)]%)</b>"
+	out += "<br><b>TOTAL GRID LOAD: [reading_to_text(powernet.viewload)] ([powernet.avail ? round((powernet.load / powernet.avail) * 100) : 0]%)</b>"
 
 	if(powernet.problem)
 		out += "<br><b>WARNING: Abnormal grid activity detected!</b>"

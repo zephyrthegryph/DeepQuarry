@@ -152,7 +152,7 @@
 	if(!istype(user) || user.stat || user.incapacitated())
 		return
 	var/obj/item/rig/owner_rig = master_ref?.resolve()
-	if(user != owner_rig.wearer)
+	if(!owner_rig || user != owner_rig.wearer)
 		return
 	user.toggle_internals()
 

@@ -44,8 +44,6 @@
 					log_game("[user.ckey] has launched the shuttle early")
 					to_chat(world, span_boldnotice("Alert: Shuttle launch time shortened to 10 seconds!"))
 					SSemergency_shuttle.set_launch_countdown(10)
-					//src.authorized = null
-					qdel(src.authorized)
 					src.authorized = list(  )
 
 			if("Repeal")

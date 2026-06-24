@@ -90,8 +90,10 @@
 	var/pangle = P.Angle
 	var/ploc = get_turf(P)
 	if(!finished || !allowed_projectile_typecache[P.type] || !(P.dir in GLOB.cardinal))
+		bullet_act_in_progress = FALSE
 		return ..()
 	if(auto_reflect(P, pdir, ploc, pangle) != 2)
+		bullet_act_in_progress = FALSE
 		return ..()
 	bullet_act_in_progress = FALSE
 

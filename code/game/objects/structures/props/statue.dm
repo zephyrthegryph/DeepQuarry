@@ -40,7 +40,7 @@
 
 //World Server statues
 
-/obj/structure/prop/statue
+/obj/structure/prop/statue/venus
 	name = "statue"
 	desc = "A statue."
 	icon = 'icons/obj/props/decor32x64.dmi'

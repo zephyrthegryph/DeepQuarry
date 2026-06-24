@@ -263,7 +263,7 @@
 
 /obj/item/mecha_parts/mecha_equipment/proc/occupant_message(message)
 	if(chassis)
-		chassis.occupant_message("[icon2html(src, chassis.occupant.client)] [message]")
+		chassis.occupant_message("[icon2html(src, chassis.occupant?.client)] [message]")
 	return
 
 /obj/item/mecha_parts/mecha_equipment/proc/mecha_log_message(message)

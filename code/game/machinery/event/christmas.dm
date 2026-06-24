@@ -69,5 +69,5 @@
 
 	var/santa_log = "[T.ckey] playing as [T.name] got a present!"
 	nice_list_log[++nice_list_log.len] = santa_log
-	ckey_log[user.ckey] = TRUE
+	ckey_log[T.ckey] = TRUE
 	//Currently doesnt have an ingame way to show. Can only be viewed through View-Variables, to ensure theres no chance of players ckeys exposed - Jack

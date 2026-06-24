@@ -65,7 +65,8 @@
 	user.update_mob_action_buttons()
 
 /obj/item/clothing/shoes/magboots/mob_can_equip(mob/user, slot, disable_warning = FALSE, ignore_obstruction, go_over_slot = TRUE)
-
+	if(!ishuman(user))
+		return ..()
 	var/mob/living/carbon/human/H = user
 
 	if(H.shoes)

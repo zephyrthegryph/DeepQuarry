@@ -6,7 +6,7 @@
 	if(input > 0)
 		// Gain around one level per 50 nutrition.
 		if(prob(input * 2))
-			power_charge = min(power_charge++, 10)
+			power_charge = min(power_charge + 1, 10)
 			if(power_charge == 10)
 				adjustToxLoss(-10)
 
@@ -78,7 +78,7 @@
 	victim = null
 	update_icon()
 	spawn(30)
-	if(ai_brain) ai_brain.busy = FALSE // Resume normal operations.
+		if(ai_brain) ai_brain.busy = FALSE // Resume normal operations.
 
 /mob/living/simple_mob/metroid/juvenile/proc/can_consume(mob/living/L)
 	if(!L || !istype(L))

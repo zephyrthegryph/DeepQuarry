@@ -198,8 +198,8 @@
 				update_icon()
 				return
 
-			if(contents.len + total_harvest >= capacity)
-				total_harvest = capacity - contents.len
+			if(current_capacity + total_harvest >= capacity)
+				total_harvest = capacity - current_capacity
 
 			if(total_harvest <= 0) break
 			if(harvesting.resources[metal])

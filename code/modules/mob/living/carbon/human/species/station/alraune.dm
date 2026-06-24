@@ -389,9 +389,9 @@
 				do_generation()
 
 	if(reagents)
-		if(reagents.total_volume == reagents.maximum_volume * 0.05)
+		if(reagents.total_volume >= reagents.maximum_volume * 0.05 && before_gen < reagents.maximum_volume * 0.05)
 			to_chat(organ_owner, span_notice("[pick(empty_message)]"))
-		else if(reagents.total_volume == reagents.maximum_volume && before_gen < reagents.maximum_volume)
+		else if(reagents.total_volume >= reagents.maximum_volume && before_gen < reagents.maximum_volume)
 			to_chat(organ_owner, span_warning("[pick(full_message)]"))
 
 /obj/item/organ/internal/fruitgland/proc/do_generation()
@@ -454,7 +454,7 @@
 		else
 			S.harvest(usr,0,0,1)
 
-		var/index = rand(0,2)
+		var/index = rand(1,2)
 
 		if (usr != src)
 			var/emote = fruit_gland.emote_descriptor[index]

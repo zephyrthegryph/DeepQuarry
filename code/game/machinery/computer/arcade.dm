@@ -45,13 +45,8 @@
 
 	else if(LAZYLEN(prizes))
 		var/prizeselect = pickweight(prizes)
-		//VOREstation edit - Randomized map objects were put in loot piles, so handle them...
-		if(istype(prizeselect,/obj/random))
-			var/obj/random/randy = prizeselect
-			var/new_I = randy.spawn_item()
-			qdel(prizeselect)
-			prizeselect = new_I // swap it
-		//VOREstation edit end
+		// /obj/random typepaths spawn their random item and self-delete on Initialize,
+		// so creating one at src.loc yields the loot directly.
 		new prizeselect(src.loc)
 
 		if(istype(prizeselect, /obj/item/clothing/suit/syndicatefake)) //Helmet is part of the suit

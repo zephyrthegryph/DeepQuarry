@@ -83,6 +83,7 @@
 
 //Plays the sound every ~4 seconds.
 /mob/living/simple_mob/humanoid/possessed/Life()
+	. = ..()
 	if(idle <= 0 && silenced == 0)
 		playsound(src, 'sound/h_sounds/breathing.ogg', 60, 1)
 		idle = 4

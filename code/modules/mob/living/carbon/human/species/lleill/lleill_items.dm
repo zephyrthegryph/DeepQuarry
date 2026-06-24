@@ -143,7 +143,7 @@
 				continue
 			targets |= M
 
-		if(!targets)
+		if(!targets.len)
 			to_chat(user, span_warning("There are no appropriate targets in range."))
 			return
 
@@ -245,6 +245,8 @@
 /obj/structure/glamour_ring/attack_hand(mob/living/M as mob)
 
 	var/mob/living/carbon/human/L = connected_mob
+	if(!istype(L))
+		return
 	var/datum/species/lleill/LL = L.species
 
 	var/m_action

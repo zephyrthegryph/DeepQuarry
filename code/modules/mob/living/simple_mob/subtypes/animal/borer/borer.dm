@@ -95,12 +95,12 @@
 	request_player()
 
 /mob/living/simple_mob/animal/borer/Destroy()
-	. = ..()
 	motiontracker_unsubscribe()
 	QDEL_NULL(ghost_check)
 	if(host)
 		detatch()
 		leave_host()
+	. = ..()
 
 /mob/living/simple_mob/animal/borer/handle_special()
 	handle_chemicals()

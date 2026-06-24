@@ -69,7 +69,8 @@
 
 	if(!success)
 		to_chat(user, span_warning("The spell matrix was unable to locate a suitable teleport destination, because the destination area is entirely obstructed. Sorry."))
-		user.forceMove(pick(L))
+		if(L.len)
+			user.forceMove(pick(L))
 
 	return
 

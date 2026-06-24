@@ -317,9 +317,9 @@
 	aw.icon_state = "use"
 	aw.name = "use held item on self"
 	aw.screen_loc = ui_swaphand2
-	using.color = HUD.ui_color
-	using.alpha = HUD.ui_alpha
-	adding |= using
+	aw.color = HUD.ui_color
+	aw.alpha = HUD.ui_alpha
+	adding |= aw
 
 	//Component hud elements. Made in /mob/living/create_mob_hud
 	hud_elements |= shadekin_display

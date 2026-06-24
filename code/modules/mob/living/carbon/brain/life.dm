@@ -195,7 +195,7 @@
 	if(!. || !healths)
 		return
 
-	if(stat == DEAD || (status_effects & FAKEDEATH))
+	if(stat == DEAD || (status_flags & FAKEDEATH))
 		healths.icon_state = "health7"
 		return
 

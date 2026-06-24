@@ -114,6 +114,8 @@
 
 	//Build and get a new zone.
 	var/datum/rogue/zonemaster/ZM_target = GLOB.rm_controller.prepare_new_zone()
+	if(!ZM_target)
+		return
 
 	//Update shuttle destination.
 	var/datum/shuttle/autodock/ferry/S = SSshuttles.shuttles["Belter"]

@@ -49,9 +49,9 @@
 		playsound(src, 'sound/metroid/metroidgrow.ogg', 50, 1)
 		src.visible_message(span_notice("\The [src] begins to lay an egg."))
 		spawn(50)
-		new /obj/effect/metroid/egg(loc, src)
-		adjust_nutrition(-500)
-		paralysis = 0
+			new /obj/effect/metroid/egg(loc, src)
+			adjust_nutrition(-500)
+			paralysis = 0
 		return
 
 	if(nutrition >= evo_point && !buckled && vore_fullness == 0 && !victim)

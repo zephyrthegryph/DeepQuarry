@@ -20,7 +20,7 @@
 			gain = 100
 		if(mind.assigned_role == JOB_ALT_VISITOR) // Visitor not Assistant
 			gain = rand(0, 300)
-	investigate_log(I_SINGULO,"has been consumed by a singularity", I_SINGULO)
+	investigate_log("has been consumed by a singularity", I_SINGULO)
 	gib()
 	return gain
 

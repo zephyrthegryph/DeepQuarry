@@ -97,7 +97,7 @@
 		icon_state = "arfg_off"
 
 /obj/machinery/atmospheric_field_generator/power_change()
-	var/oldstat
+	var/oldstat = stat
 	..()
 	if(!(stat & (BROKEN|NOPOWER|EMPED)))
 		ispowered = TRUE

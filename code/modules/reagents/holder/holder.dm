@@ -345,6 +345,8 @@
 		return
 
 	var/datum/reagent/transfering_reagent = get_reagent(rtype)
+	if(!transfering_reagent)
+		return
 
 	if (istype(target, /atom))
 		var/atom/A = target

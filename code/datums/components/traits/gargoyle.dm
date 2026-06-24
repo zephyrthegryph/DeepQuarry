@@ -43,6 +43,7 @@
 	if(transformed)
 		if(!statue)
 			transformed = FALSE
+			return
 		if(paused) //We somehow lost our energy while paused.
 			unpause()
 		statue.damage(-0.5)
@@ -111,7 +112,7 @@
 
 	if(!transformed && !paused)
 		paused = TRUE
-		RegisterSignal(parent, COMSIG_MOVABLE_MOVED, /datum/component/gargoyle/proc/unpause)
+		RegisterSignal(parent, COMSIG_MOVABLE_MOVED, PROC_REF(unpause))
 		to_chat(parent, span_notice("You start conserving your energy."))
 
 /mob/living/carbon/human/proc/gargoyle_checkenergy()

@@ -43,8 +43,8 @@
 
 	if(istype(W, /obj/item/stack/tile))
 		to_chat(user, span_notice("\The [W] successfully loaded."))
-		user.drop_item(T)
-		TakeTile(T)
+		user.drop_item(W)
+		TakeTile(W)
 		return
 
 	if(W.has_tool_quality(TOOL_CROWBAR))

@@ -55,7 +55,7 @@
 
 /obj/item/integrated_circuit/output/screen/large/do_work()
 	..()
-	var/obj/O = assembly ? loc : assembly
+	var/obj/O = assembly ? assembly : src
 	O.visible_message(span_notice("[icon2html(O,viewers(O))] [stuff_to_display]"))
 
 /obj/item/integrated_circuit/output/light
@@ -134,7 +134,7 @@
 /obj/item/integrated_circuit/output/text_to_speech/do_work()
 	text = get_pin_data(IC_INPUT, 1)
 	if(!isnull(text))
-		var/obj/O = assembly ? loc : assembly
+		var/obj/O = assembly ? assembly : src
 		audible_message("[icon2html(O,hearers(src))] \The [O.name] states, \"[text]\"", runemessage = text)
 
 /obj/item/integrated_circuit/output/text_to_speech/advanced

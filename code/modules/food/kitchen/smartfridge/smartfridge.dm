@@ -174,9 +174,13 @@
 		if(!wrapped)
 			to_chat(user, span_filter_notice("\The [B] is not holding anything."))
 			return TRUE
-		else
+		else if(accept_check(wrapped))
+			stock(wrapped)
 			to_chat(user, span_filter_notice("You use \the [B] to put \the [wrapped] into \the [src]."))
-		return FALSE
+			sortTim(item_records, GLOBAL_PROC_REF(cmp_stored_item_name))
+		else
+			to_chat(user, span_filter_notice("\The [src] refuses \the [wrapped]."))
+		return TRUE
 
 	else
 		to_chat(user, span_notice("\The [src] smartly refuses [O]."))
@@ -361,6 +365,9 @@
 	return 0
 
 /obj/machinery/smartfridge/chemistry/chemvator/down/Destroy()
+	if(attached)
+		attached.attached = null // clear the upper unit's back-reference to us
+	item_records = null // shared with the upper unit; don't let the base Destroy qdel its stored records
 	attached = null
 	return ..()
 

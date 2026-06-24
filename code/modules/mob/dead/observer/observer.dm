@@ -541,6 +541,10 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	var/list/following_mobs = list()
 
 /mob/observer/dead/Destroy()
+	if(exonet)
+		exonet.remove_address()
+		QDEL_NULL(exonet)
+	QDEL_NULL(dq_exonet_log_panel_cache)
 	if(body_backup)
 		body_backup.moveToNullspace() //YEET
 		qdel(body_backup)

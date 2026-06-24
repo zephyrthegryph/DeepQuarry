@@ -175,11 +175,15 @@
 // attack_hand body relocated to code/modules/admin/misc_admin_panels.dm (structured TGUI).
 
 /obj/machinery/syndicate_beacon/virgo/Topic(href, href_list)
+	if(..())
+		return
 	if(href_list["betraitor"])
 		if(charges < 1)
 			updateUsrDialog(usr)
 			return
 		var/mob/M = locate(href_list["traitormob"])
+		if(!istype(M) || !M.mind)
+			return
 		if(M.mind.tcrystals > 0 || jobban_isbanned(M, JOB_SYNDICATE))
 			temptext = "<i>We have no need for you at this time. Have a pleasant day.</i><br>"
 			updateUsrDialog(usr)

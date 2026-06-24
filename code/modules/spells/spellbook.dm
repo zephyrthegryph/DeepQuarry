@@ -18,14 +18,14 @@
 
 /obj/item/spellbook/Topic(href, href_list)
 	..()
+	if(!ishuman(usr))
+		return 1
 	var/mob/living/carbon/human/H = usr
 
 	if(H.stat || H.restrained())
 		return
-	if(!ishuman(H))
-		return 1
 
-	if(H.mind.special_role == JOB_APPRENTICE)
+	if(H.mind && H.mind.special_role == JOB_APPRENTICE)
 		temp = "If you got caught sneaking a peak from your teacher's spellbook, you'd likely be expelled from the Wizard Academy. Better not."
 		return
 

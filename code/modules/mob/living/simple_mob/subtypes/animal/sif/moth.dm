@@ -121,6 +121,10 @@
 	add_verb(src, /mob/living/proc/ventcrawl)
 	add_verb(src, /mob/living/proc/hide)
 
+/mob/living/simple_mob/animal/sif/tymisian/Destroy()
+	QDEL_NULL(smoke_spore)
+	return ..()
+
 /mob/living/simple_mob/animal/sif/tymisian/handle_special()
 	..()
 

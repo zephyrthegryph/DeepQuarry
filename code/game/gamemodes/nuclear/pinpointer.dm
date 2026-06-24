@@ -161,7 +161,7 @@
 
 				if("Item")
 					var/datum/objective/steal/itemlist
-					itemlist = itemlist
+					itemlist = new
 					var/targetitem = tgui_input_list(usr, "Select item to search for.", "Item Mode Select", itemlist.possible_items)
 					if(!targetitem)
 						return

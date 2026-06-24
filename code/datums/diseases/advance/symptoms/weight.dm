@@ -62,6 +62,6 @@ Bonus
 		else
 			if(prob(base_message_chance))
 				to_chat(M, span_warning(pick("So hungry...", "You'd kill someone for a bite of food...", "Hunger cramps seize you...")))
-			M.adjust_nutrition(rand(10, 50))
+			M.adjust_nutrition(-rand(10, 50))
 			if(starving)
 				M.adjust_nutrition(-100)

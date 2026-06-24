@@ -267,6 +267,6 @@ GLOBAL_LIST_INIT(slime_default_emotes, list(
 // === merged from slime_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /mob/living/simple_mob/slime
 	base_attack_cooldown = 2 SECONDS
-	var/allowed_attack_types = list(
+	var/static/list/allowed_attack_types = list(
 							/obj/item/melee/baton/slime,
 							/obj/item/slimepotion)

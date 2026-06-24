@@ -461,7 +461,8 @@
 			break
 		picked += pickweight(leftovers)
 	while(length(picked) > max_symptoms)
-		picked.Cut(rand(1, length(picked)), rand(1, length(picked)) + 1)
+		var/cut_idx = rand(1, length(picked))
+		picked.Cut(cut_idx, cut_idx + 1)
 	// Instantiate.
 	for(var/type in picked)
 		var/datum/medical_symptom/S = new type()

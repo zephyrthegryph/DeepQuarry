@@ -135,7 +135,7 @@
 		visible_message(span_warning("\The [src] breaks down!"))
 		playsound(src, 'sound/effects/grillehit.ogg', 50, 1)
 		new /obj/item/stack/rods(get_turf(src))
-		Destroy()
+		qdel(src)
 
 /obj/structure/catwalk/Crossed(atom/movable/AM)
 	. = ..()

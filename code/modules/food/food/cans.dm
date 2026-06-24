@@ -19,6 +19,8 @@
 		shaken += 3
 		return
 	if(HAS_TRAIT(user, TRAIT_UNLUCKY) && prob(10)) // Because it's always funny
+		if(!shaken)
+			START_PROCESSING(SSobj, src)
 		shaken += 10
 
 /obj/item/reagent_containers/food/drinks/cans/open(mob/user)
@@ -37,10 +39,10 @@
 				explosion(get_turf(src), -1, -1, -1, 1)
 			qdel(src)
 
-/obj/item/reagent_containers/food/drinks/cans/process()
+/obj/item/reagent_containers/food/drinks/cans/process(seconds_per_tick)
 	if(shaken <= 0)
 		return PROCESS_KILL
-	shaken--
+	shaken -= seconds_per_tick
 
 /obj/item/reagent_containers/food/drinks/Destroy()
 	STOP_PROCESSING(SSobj, src)

@@ -456,6 +456,7 @@
 	currentarea = get_area(src.loc)
 	if(!currentarea)
 		qdel(src)
+		return
 
 	if(eventstarted)
 		to_chat(user, "The event has already begun!")

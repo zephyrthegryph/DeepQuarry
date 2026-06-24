@@ -12,7 +12,7 @@
 	name = "toy floor"
 	icon = 'icons/vore/smoleworld_vr.dmi'
 	icon_state = "megablocksturf"
-	var/list/crossed_dirs = list()
+	var/list/crossed_dirs
 
 /turf/simulated/floor/smole/Entered(atom/A)
 	if(isliving(A))
@@ -26,7 +26,7 @@
 		if(L.get_effective_size(FALSE) >= RESIZE_A_BIGNORMAL)
 			playsound(src, 'sound/effects/footstep/giantstep_gigga.ogg', 35, 1, -1, volume_channel = VOLUME_CHANNEL_MASTER)
 			var/mdir = "[A.dir]"
-			crossed_dirs[mdir] = 1
+			LAZYSET(crossed_dirs, mdir, 1)
 			update_icon()
 	. = ..()
 

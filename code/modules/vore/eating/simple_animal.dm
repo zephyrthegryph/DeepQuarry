@@ -82,7 +82,7 @@
 	to_chat(user, "[src] is now using [vore_selected.fancy_vore ? "Fancy" : "Classic"] vore sounds.")
 
 /mob/living/simple_mob/attackby(obj/item/O, mob/user)
-	if(istype(O, /obj/item/newspaper) && !(ckey || (ai_brain.hostile && faction != user.faction)) && isturf(user.loc))
+	if(istype(O, /obj/item/newspaper) && !(ckey || (ai_brain && ai_brain.hostile && faction != user.faction)) && isturf(user.loc))
 		//legacy `.retaliate` is dead — every brain mob fights back on
 		// provocation. Gate stays on brain presence + the existing coin flip.
 		if(ai_brain && prob(vore_pounce_chance/2)) // This is a gamble!

@@ -58,7 +58,7 @@
 							continue
 						if(FLASHPROOF in H.mutations)
 							continue
-						if(!H.eyecheck() <= 0)
+						if(H.eyecheck() <= 0)
 							continue
 						flash_time *= H.species.flash_mod
 						var/obj/item/organ/internal/eyes/E = H.internal_organs_by_name[O_EYES]

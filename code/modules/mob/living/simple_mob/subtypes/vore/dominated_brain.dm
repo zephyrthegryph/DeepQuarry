@@ -41,8 +41,10 @@
 	. = ..()
 	if(!isliving(loc))
 		qdel(src)
+		return
 	if(!ckey)
 		qdel(src)
+		return
 
 /mob/living/dominated_brain/say_understands(mob/other, datum/language/speaking = null)
 	if(pred_body.say_understands(other, speaking))
@@ -202,6 +204,10 @@
 		if(isbelly(pocketpal.card.loc))
 			pred = pocketpal.card.loc.loc
 	else
+		to_chat(prey, span_notice("You are not inside anyone."))
+		return
+
+	if(!pred)
 		to_chat(prey, span_notice("You are not inside anyone."))
 		return
 

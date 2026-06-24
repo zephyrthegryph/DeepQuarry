@@ -183,7 +183,7 @@
 		visible_message(span_danger("[user] hits [src] with [W]!"))
 		if(material == get_material_by_name(MAT_RESIN))
 			playsound(src, 'sound/effects/attackblob.ogg', 100, 1)
-		else if(material == (get_material_by_name(MAT_WOOD) || get_material_by_name(MAT_SIFWOOD) || get_material_by_name(MAT_HARDWOOD)))
+		else if(material == get_material_by_name(MAT_WOOD) || material == get_material_by_name(MAT_SIFWOOD) || material == get_material_by_name(MAT_HARDWOOD))
 			playsound(src, 'sound/effects/woodcutting.ogg', 100, 1)
 		else
 			playsound(src, 'sound/weapons/smash.ogg', 50, 1)
@@ -279,8 +279,11 @@
 	. = ..(mapload, material_name || MAT_URANIUM)
 	START_PROCESSING(SSobj, src)
 
+// Use the uranium-specific rate-limited pulse instead of the base generic material radiation.
+/obj/structure/simple_door/uranium/process()
+	radiate()
+
 /obj/structure/simple_door/uranium/proc/radiate()
-	SIGNAL_HANDLER
 	if(active)
 		return
 	if(world.time <= last_event + 1.5 SECONDS)

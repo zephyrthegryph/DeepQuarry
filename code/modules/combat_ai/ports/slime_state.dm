@@ -170,7 +170,7 @@
 			holder.ai_brain.lose_target()
 		var/mob/leader = holder.ai_brain?.get_leader()
 		if(leader)
-			if(can_command(speaker) == SLIME_COMMAND_FRIEND || leader == speaker)
+			if(can_command(speaker) || leader == speaker)
 				dq_delayed_say(holder, "Yes... I'll stop...", speaker)
 				holder.ai_brain.lose_follow()
 			else

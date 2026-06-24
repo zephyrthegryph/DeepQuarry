@@ -1099,8 +1099,6 @@
 
 	if(incapacitated(INCAPACITATION_KNOCKOUT) || incapacitated(INCAPACITATION_STUNNED)) // Making sure we're in good condition to crawl
 		canmove = FALSE
-	else
-		canmove = TRUE
 
 	if(is_paralyzed())
 		lying = TRUE
@@ -1788,6 +1786,7 @@ Maybe later, gotta figure out a way to click yourself when in a locker etc.
 	var/choice = tgui_input_list(src, "Which set of sounds would you like to use for your character's speech sounds?", "Voice Sounds", SSsounds.talk_sound_map)
 	if(!choice)
 		voice_sounds_list = DEFAULT_TALK_SOUNDS
+		return
 	voice_sounds_list = get_talk_sound(choice)
 
 /mob/living/proc/save_private_notes(mob/user)

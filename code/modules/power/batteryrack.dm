@@ -128,6 +128,8 @@
 	if(equalise)
 		// Now try to get most charged cell and use the power from it.
 		var/obj/item/cell/CL = get_most_charged_cell()
+		if(!CL)
+			return
 		amount -= CL.use(amount)
 		if(!amount)
 			return

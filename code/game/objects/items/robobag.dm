@@ -29,7 +29,7 @@
 	..()
 	if(corptag)
 		var/corptag_icon_state = "tag_blank"
-		if(istype(corptag,/obj/item/clothing/accessory/badge/holo/detective) || istype(corptag,/obj/item/clothing/accessory/badge/holo/detective) || istype(corptag, /obj/item/clothing/accessory/badge/holo/hos) || istype(corptag, /obj/item/clothing/accessory/badge/old) || istype(corptag, /obj/item/clothing/accessory/badge/sheriff))
+		if(istype(corptag,/obj/item/clothing/accessory/badge/holo/detective) || istype(corptag, /obj/item/clothing/accessory/badge/holo/hos) || istype(corptag, /obj/item/clothing/accessory/badge/old) || istype(corptag, /obj/item/clothing/accessory/badge/sheriff))
 			corptag_icon_state = "tag_badge_gold"
 		else if(istype(corptag, /obj/item/clothing/accessory/badge/holo/warden))
 			corptag_icon_state = "tag_badge_silver"
@@ -42,7 +42,7 @@
 
 /obj/structure/closet/body_bag/cryobag/robobag/click_alt(mob/user)
 	if(!Adjacent(user))
-		..()
+		return ..()
 	if(corptag)
 		corptag.forceMove(get_turf(user))
 		to_chat(user, span_notice("You remove \the [corptag] from \the [src]."))

@@ -121,9 +121,12 @@
 	// Choose a name, if any.
 	var/newname = tgui_input_text(player, "You are a [role_text]. Would you like to change your name to something else?", "Name change", null, MAX_NAME_LEN)
 	if (newname)
+		if(QDELETED(player))
+			return
 		player.real_name = newname
 		player.name = player.real_name
-		player.dna.real_name = newname
+		if(player.dna)
+			player.dna.real_name = newname
 	if(player.mind) player.mind.name = player.name
 	// Update any ID cards.
 	update_access(player)

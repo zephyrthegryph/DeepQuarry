@@ -110,7 +110,7 @@
 	name = MAT_SHELLCHITIN
 	material_class = MATCLASS_ORGANIC // class assignment
 	icon_colour = "#006633"
-	stack_type = /obj/item/stack/material/dreamscale
+	stack_type = /obj/item/stack/material/shellchitin
 	icon_base = "solid"
 	icon_reinf = "reinf_mesh"
 	integrity = 250

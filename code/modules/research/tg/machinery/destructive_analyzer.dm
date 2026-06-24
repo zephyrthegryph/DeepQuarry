@@ -298,7 +298,8 @@ It is used to destroy hand-held objects and advance technological research. Used
 
 	//Finally, let's add it to the material silo, if applicable.
 	var/datum/component/material_container/materials = get_silo_material_container_datum(FALSE)
-	materials.insert_item(thing, decon_mod, src, FALSE)
+	if(materials)
+		materials.insert_item(thing, decon_mod, src, FALSE)
 	qdel(thing)
 
 /**

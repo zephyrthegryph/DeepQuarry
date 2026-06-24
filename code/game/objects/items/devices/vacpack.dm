@@ -207,7 +207,7 @@
 				if(suckanim)
 					if(vac_conga < 100)
 						vac_conga += 3
-					addtimer(CALLBACK(src, PROC_REF(prepare_sucking), F, user, auto_setting, target), 0.3 SECONDS + vac_conga)
+					addtimer(CALLBACK(src, PROC_REF(prepare_sucking), F, user, target), 0.3 SECONDS + vac_conga)
 				else if(is_allowed_suck(target, user, output_atom))
 					handle_consumption(F, user, auto_setting)
 			if(vac_conga > 0)

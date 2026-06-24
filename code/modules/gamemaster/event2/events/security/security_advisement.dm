@@ -7,7 +7,7 @@
 /datum/event2/meta/security_screening/get_weight()
 	. = 0
 	var/sec = GLOB.metric.count_people_in_department(DEPARTMENT_SECURITY)
-	if(!sec < 2)
+	if(sec < 2)
 		return 0 // Can't screen with no security.
 	. += sec * 10
 	. += GLOB.metric.count_people_in_department(DEPARTMENT_EVERYONE) * 2

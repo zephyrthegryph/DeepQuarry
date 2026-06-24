@@ -212,7 +212,7 @@
 			if(do_after (user, 5 SECONDS, target))
 				user.visible_message("[user] finishes eating \the [target.name].", span_notice("You finish eating \the [target.name]."))
 				user << span_notice("You finish off \the [target.name].")
-				del(target)
+				qdel(target)
 				var/mob/living/silicon/robot/R = user
 				R.cell.charge = R.cell.charge + 250
 			busy = 0 // prevents abuse

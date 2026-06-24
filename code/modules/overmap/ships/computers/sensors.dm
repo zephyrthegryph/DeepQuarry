@@ -89,7 +89,7 @@
 	switch(action)
 		if("viewing")
 			if(ui.user && !isAI(ui.user))
-				if(!get_dist(ui.user, src) > 1 || ui.user.blinded || !linked)
+				if(get_dist(ui.user, src) > 1 || ui.user.blinded || !linked)
 					. = FALSE
 				else if(!viewing_overmap(ui.user) && linked)
 					if(!viewers) viewers = list() // List must exist for pass by reference to work

@@ -810,7 +810,7 @@
 	new_copy.race_key = race_key
 	if (selects_bodytype && custom_base)
 		new_copy.base_species = custom_base
-		if(selects_bodytype == SELECTS_BODYTYPE_CUSTOM || SELECTS_BODYTYPE_ZORREN) //If race selects a bodytype, retrieve the custom_base species and copy needed variables.
+		if(selects_bodytype == SELECTS_BODYTYPE_CUSTOM || selects_bodytype == SELECTS_BODYTYPE_ZORREN) //If race selects a bodytype, retrieve the custom_base species and copy needed variables.
 			var/datum/species/S = GLOB.all_species[custom_base]
 			S.copy_variables(new_copy, copy_vars)
 

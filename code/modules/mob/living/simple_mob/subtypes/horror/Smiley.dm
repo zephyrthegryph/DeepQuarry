@@ -32,19 +32,19 @@
 	playsound(src, 'sound/h_sounds/lynx.ogg', 50, 1)
 	..()
 
-/mob/living/simple_mob/horror/Helix/bullet_act()
+/mob/living/simple_mob/horror/Smiley/bullet_act()
 	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
 	..()
 
-/mob/living/simple_mob/horror/Helix/attack_hand()
+/mob/living/simple_mob/horror/Smiley/attack_hand()
 	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
 	..()
 
-/mob/living/simple_mob/horror/Helix/hitby()
+/mob/living/simple_mob/horror/Smiley/hitby()
 	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
 	..()
 
-/mob/living/simple_mob/horror/Helix/attackby()
+/mob/living/simple_mob/horror/Smiley/attackby()
 	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
 	..()
 

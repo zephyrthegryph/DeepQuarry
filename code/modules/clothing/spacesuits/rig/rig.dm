@@ -15,7 +15,6 @@
 	req_one_access = list()
 	req_access = list()
 	w_class = ITEMSIZE_HUGE
-	actions_types = list(/datum/action/item_action/toggle_heatsink)
 
 	// These values are passed on to all component pieces.
 	armor = list(melee = 40, bullet = 5, laser = 20,energy = 5, bomb = 35, bio = 100, rad = 20)
@@ -102,8 +101,8 @@
 	var/datum/rig_power_system/power_system
 	var/datum/rig_component_registry/component_registry
 
-	// Action button
-	actions_types = list(/datum/action/item_action/hardsuit_interface)
+	// Action buttons
+	actions_types = list(/datum/action/item_action/hardsuit_interface, /datum/action/item_action/toggle_heatsink)
 
 	// Protean
 	var/protean = 0
@@ -184,6 +183,20 @@
 	else
 		STOP_PROCESSING(SSobj, src)
 		QDEL_NULL(minihud) // Just in case we get removed some other way
+
+		// The control module has left the wearer's body — dropped, force-dropped on
+		// damage, stuffed into storage, gibbed off, or a protean transforming out of
+		// rig mode. Retract any still-deployed pieces so the armour can't stay locked
+		// onto the (ex-)wearer. Moved() is the universal hook: unlike dropped() it also
+		// fires for forceMove(), which is how the damage/protean paths remove the suit.
+		for(var/obj/item/clothing/piece in list(helmet, gloves, chest, boots))
+			if(piece.master_rig == src && ismob(piece.loc))
+				piece.rig_self_detach()
+		// drop_from_inventory() bypasses the canremove seal gate, so a sealed suit can
+		// land here still flagged sealed. Reset to a clean unsealed state, otherwise the
+		// next wearer's first seal toggle inverts (seal_target = !canremove).
+		if(!canremove)
+			reset()
 
 	// If we've lost any parts, grab them back.
 	var/mob/living/M
@@ -533,11 +546,12 @@
 			species_icon = sprite_sheets[wearer.species.get_bodytype(wearer)]
 		mob_icon = icon(icon = species_icon, icon_state = "[icon_state]")
 
-	chest.cut_overlays()
-	if(installed_modules.len)
-		for(var/obj/item/rig_module/module in installed_modules)
-			if(module.suit_overlay)
-				chest.add_overlay(image(module.suit_overlay_icon, icon_state = "[module.suit_overlay]", dir = SOUTH))
+	if(chest)
+		chest.cut_overlays()
+		if(installed_modules.len)
+			for(var/obj/item/rig_module/module in installed_modules)
+				if(module.suit_overlay)
+					chest.add_overlay(image(module.suit_overlay_icon, icon_state = "[module.suit_overlay]", dir = SOUTH))
 
 	if(wearer)
 		wearer.update_inv_shoes()
@@ -608,7 +622,7 @@
 	if((sealing || !cell || !cell.charge) && !forced)
 		return
 
-	if((!istype(wearer) || (!wearer.back == src && !wearer.belt == src)) && !forced)
+	if((!istype(wearer) || (wearer.back != src && wearer.belt != src)) && !forced)
 		return
 
 	if(!H)
@@ -619,7 +633,7 @@
 
 	var/obj/item/check_slot
 	var/equip_to
-	var/obj/item/use_obj
+	var/obj/item/clothing/use_obj
 
 	switch(piece)
 		if("helmet")
@@ -650,6 +664,7 @@
 					if(use_obj && check_slot == use_obj)
 						balloon_alert(H, "your [use_obj.name] [use_obj.gender == PLURAL ? "retract" : "retracts"] swiftly.")
 						playsound(src, 'sound/machines/rig/rigservo.ogg', 10, FALSE)
+						use_obj.master_rig = null   // intentional retract: silence the dropped() safety net
 						use_obj.canremove = TRUE
 						holder.drop_from_inventory(use_obj)
 						use_obj.forceMove(get_turf(src))
@@ -667,6 +682,7 @@
 					to_chat(H, span_danger("You are unable to deploy \the [piece] as \the [check_slot] [check_slot.gender == PLURAL ? "are" : "is"] in the way."))
 					return
 			else
+				use_obj.master_rig = src   // the piece now knows its controller, so it can free itself
 				balloon_alert(H, "your [use_obj.name] [use_obj.gender == PLURAL ? "deploy" : "deploys"] swiftly.")
 				playsound(src, 'sound/machines/rig/rigservo.ogg', 10, FALSE)
 
@@ -714,8 +730,8 @@
 	. = ..(user)
 	// So the next user will see the boot animation
 	tgui_shared_states?.Cut()
-	for(var/piece in list("helmet","gauntlets","chest","boots"))
-		toggle_piece(piece, user, ONLY_RETRACT)
+	// Piece retraction and seal-state reset are handled in Moved() (the universal hook
+	// that also catches forceMove); here we just drop the wearer back-references.
 	if(wearer && wearer.wearing_rig == src)
 		wearer.wearing_rig = null
 	wearer = null

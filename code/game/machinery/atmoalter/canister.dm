@@ -294,7 +294,8 @@ update_flag
 		healthcheck()
 
 	if(isrobot(user) && istype(W, /obj/item/tank/jetpack))
-		var/datum/gas_mixture/thejetpack = W:air_contents
+		var/obj/item/tank/jetpack/the_jetpack_tank = W
+		var/datum/gas_mixture/thejetpack = the_jetpack_tank.air_contents
 		var/env_pressure = thejetpack.return_pressure()
 		var/pressure_delta = min(10*ONE_ATMOSPHERE - env_pressure, (air_contents.return_pressure() - env_pressure)/2)
 		//Can not have a pressure delta that would cause environment pressure > tank pressure

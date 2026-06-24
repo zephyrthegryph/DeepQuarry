@@ -4,7 +4,7 @@
 	edge_blending_priority = 6
 	movement_cost = 2
 	initial_flooring = /datum/decl/flooring/snow
-	var/list/crossed_dirs = list()
+	var/list/crossed_dirs
 
 
 /turf/simulated/floor/outdoors/snow/Entered(atom/A)
@@ -15,7 +15,7 @@
 				L.adjust_nutrition(-0.5)
 			return ..()
 		var/mdir = "[A.dir]"
-		crossed_dirs[mdir] = 1
+		LAZYSET(crossed_dirs, mdir, 1)
 		update_icon()
 	. = ..()
 

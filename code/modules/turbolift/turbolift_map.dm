@@ -183,7 +183,7 @@
 					var/obj/machinery/door/firedoor/glass/firedoor = new firedoor_type(checking) //ition for fire doors
 					if(internal)
 						lift.doors += newdoor
-						newdoor.lift = cfloor
+						newdoor.lift = lift
 					else
 						cfloor.doors += newdoor
 						newdoor.floor = cfloor

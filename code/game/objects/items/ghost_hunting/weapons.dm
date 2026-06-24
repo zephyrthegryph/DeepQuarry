@@ -77,7 +77,7 @@
 
 	if(istype(target, /obj/item/ghost_trap)) //Special handling for traps, since traps are full sized objects and not turf.
 		var/obj/item/ghost_trap/trap = target
-		var/atom/movable/entity = grabbed_entity.resolve()
+		var/atom/movable/entity = grabbed_entity?.resolve()
 		if(!trap.deployed)
 			to_chat(user, span_warning("The trap isn't deployed!"))
 			return

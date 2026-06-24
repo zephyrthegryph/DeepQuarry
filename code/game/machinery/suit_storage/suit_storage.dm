@@ -289,10 +289,13 @@
 					MASK.wash(CLEAN_SCRUB)
 			else //It was supercycling, destroy everything
 				if(HELMET)
+					qdel(HELMET)
 					HELMET = null
 				if(SUIT)
+					qdel(SUIT)
 					SUIT = null
 				if(MASK)
+					qdel(MASK)
 					MASK = null
 				visible_message(span_danger("With a loud whining noise, the Suit Storage Unit's door grinds open. Puffs of ashen smoke come out of its chamber."), 3)
 				isbroken = 1

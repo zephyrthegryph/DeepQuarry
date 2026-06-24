@@ -401,7 +401,7 @@
 			if(parent && !silent)
 				owner.custom_pain("Something inside your [parent.name] hurts a lot.", amount)
 	if(owner)
-		SEND_SIGNAL(owner, COMSIG_INTERNAL_ORGAN_PRE_DAMAGE_APPLICATION, amount, silent)
+		SEND_SIGNAL(owner, COMSIG_INTERNAL_ORGAN_POST_DAMAGE_APPLICATION, amount, silent)
 /obj/item/organ/proc/bruise()
 	damage = max(damage, min_bruised_damage)
 

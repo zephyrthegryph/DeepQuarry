@@ -10,6 +10,8 @@
 		if(!C.destroyed && (C.z in using_map.station_levels) && C.air_contents.total_moles() >= MOLES_CELLSTANDARD && !C.dont_burst)
 			all_canisters += C
 
+	if(!length(all_canisters))
+		return
 	for(var/i in 1 to 10)
 		var/obj/machinery/portable_atmospherics/canister/C = pick(all_canisters)
 		if(severity <= EVENT_LEVEL_MUNDANE && area_is_occupied(get_area(C)))

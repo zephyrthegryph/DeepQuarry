@@ -33,7 +33,8 @@
 
 		var/obj/item/projectile/P = new spore_projectile(get_turf(B))
 
-		carrier.visible_message(span_danger("\The [B] discharges energy toward \the [L]!"))
-		P.launch_projectile(L, BP_TORSO, carrier)
+		var/atom/source = carrier || B
+		source.visible_message(span_danger("\The [B] discharges energy toward \the [L]!"))
+		P.launch_projectile(L, BP_TORSO, source)
 
 	return

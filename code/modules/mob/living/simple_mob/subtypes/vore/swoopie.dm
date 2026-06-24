@@ -217,7 +217,7 @@
 			Vac.afterattack(T, src, 1)
 			return
 	for(var/mob/living/L in T)
-		if(!L.anchored && L.devourable && !L == src && !L.buckled && L.can_be_drop_prey)
+		if(!L.anchored && L.devourable && L != src && !L.buckled && L.can_be_drop_prey)
 			Vac.afterattack(L, src, 1)
 			return
 
@@ -243,7 +243,7 @@
 			return
 		if(src.a_intent == I_GRAB && Vac.vac_power != 0) //Only on grab intent. if someone needs to use grab intent they can just turn off the vac
 			if(istype(A, /obj/machinery/disposal)) //You used that bin when the bird was right there? How inconsiderate!
-				var/obj/machinery/disposal/D
+				var/obj/machinery/disposal/D = A
 				if(D.flushing)
 					to_chat(src, "\The [D] has already began flushing, you're too late to grab whatever was inside!")
 					return

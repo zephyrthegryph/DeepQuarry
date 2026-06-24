@@ -532,9 +532,6 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 		for(var/obj/machinery/telecomms/allinone/R in GLOB.telecomms_list)
 			R.receive_signal(signal)
 
-	for(var/obj/machinery/telecomms/receiver/R in GLOB.telecomms_list)
-		R.receive_signal(signal)
-
 		if(signal.data["done"] && (pos_z in signal.data["level"]))
 			if(adhoc_fallback)
 				to_chat(loc, span_notice("\The [src] pings as it reestablishes subspace communications."))

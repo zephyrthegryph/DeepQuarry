@@ -623,16 +623,16 @@
 		back.handleParachute()
 		return TRUE
 	if(s_store && s_store.isParachute())
-		back.handleParachute()
+		s_store.handleParachute()
 		return TRUE
 	if(belt && belt.isParachute())
-		back.handleParachute()
+		belt.handleParachute()
 		return TRUE
 	if(wear_suit && wear_suit.isParachute())
-		back.handleParachute()
+		wear_suit.handleParachute()
 		return TRUE
 	if(w_uniform && w_uniform.isParachute())
-		back.handleParachute()
+		w_uniform.handleParachute()
 		return TRUE
 	else
 		return dq_get_parachuting(src)
@@ -822,7 +822,7 @@
 		if(!permit_human)
 			var/sure = tgui_alert(H,"Are you sure you want to try without tools? It's VERY LIKELY \
 			you will fall and get hurt. More agile species might have better luck", "Second Thoughts", list("Bring it!", "Stay grounded"))
-			if(sure || sure == "Stay grounded") return
+			if(!sure || sure == "Stay grounded") return
 			fall_chance = clamp(100 - H.species.agility, 40, 90) //This should be 80 for most species. Traceur would reduce to 10%, so clamping higher
 	//If not a human mob, must be simple or silicon. They got a var stored on their mob we can check
 	else if(!L.can_climb)

@@ -89,7 +89,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	unfortunate_soul.fear = min(100, unfortunate_soul.fear + 2) //Fear is increased by 1, but never above 100. You're in a scary place.
 	if(unfortunate_soul.life_tick % 20 == 0)
 		var/obj/item/organ/O = pick(unfortunate_soul.internal_organs)
-		if(!O) //If you don't have any internal organs, you know what? No spooky messages for you, freak.
+		if(O) //If you don't have any internal organs, you know what? No spooky messages for you, freak.
 			var/spooky_message = pick("Join us...", "Stay with us...", "Stay forever...", "Don't leave us...", \
 			"Don't go...", "We can be as one...", "Become one with us...", \
 			"You can feel your [O] squirming inside of you, trying to get out...", "Your [O] is trying to escape...", \
@@ -646,8 +646,8 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 
 	//First, check if we're already wearing the armor, and if so, take it off.
 	if(istype(M.wear_suit, armor_type) || istype(M.head, helmet_type) || istype(M.shoes, boot_type) || istype(M.gloves, glove_type))
-		M.visible_message(span_warning("[M] casts off their [M.wear_suit.name]!"),
-		span_warning("We cast off our [M.wear_suit.name]"),
+		M.visible_message(span_warning("[M] casts off their [M.wear_suit ? M.wear_suit.name : "armor"]!"),
+		span_warning("We cast off our [M.wear_suit ? M.wear_suit.name : "armor"]"),
 		span_warningplain("You hear the organic matter ripping and tearing!"))
 		if(istype(M.wear_suit, armor_type))
 			qdel(M.wear_suit)

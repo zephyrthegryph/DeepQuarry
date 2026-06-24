@@ -617,7 +617,7 @@
 		if(prob(80))
 			visible_message(span_danger("\The [src] deflects \the [O] with its shell!"))
 			if(user)
-				ai_brain.react_to_attack(user)
+				ai_brain?.react_to_attack(user)
 			return
 		else
 			..()
@@ -692,5 +692,3 @@
 
 	B.emote_lists[DM_DIGEST] = list(
 		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!")
-
-v

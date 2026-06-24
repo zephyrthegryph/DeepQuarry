@@ -511,7 +511,8 @@
 			return
 		if(istype(HP) && HP.nif && HP.nif.flag_check(NIF_O_SCOTHERS,NIF_FLAGS_OTHER))
 			var/datum/nifsoft/soulcatcher/SC = HP.nif.imp_check(NIF_SOULCATCHER)
-			SC.catch_mob(H)
+			if(istype(SC))
+				SC.catch_mob(H)
 	else
 		var/obj/soulgem/gem = soulgem
 		if(gem && gem.flag_check(SOULGEM_ACTIVE | NIF_SC_CATCHING_ME, TRUE))
@@ -525,7 +526,8 @@
 			return
 		if(H.nif && H.nif.flag_check(NIF_O_SCMYSELF,NIF_FLAGS_OTHER)) //They are caught in their own NIF
 			var/datum/nifsoft/soulcatcher/SC = H.nif.imp_check(NIF_SOULCATCHER)
-			SC.catch_mob(H)
+			if(istype(SC))
+				SC.catch_mob(H)
 
 ///////////////////
 //Verbs for humans

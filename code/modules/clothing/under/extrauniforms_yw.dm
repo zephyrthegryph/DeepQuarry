@@ -241,9 +241,6 @@
 	item_state = "victorianredvest"
 
 /obj/item/clothing/under/yw/victsuit/get_worn_icon_file(body_type,slot_name,default_icon,inhands)
-	if(body_type == SPECIES_GREY_YW)
-		if(!inhands)
-			return 'icons/mob/species/grey/uniform.dmi'
-
-	else
-		return ..()
+	if(body_type == SPECIES_GREY_YW && !inhands)
+		return 'icons/mob/species/grey/uniform.dmi'
+	return ..()

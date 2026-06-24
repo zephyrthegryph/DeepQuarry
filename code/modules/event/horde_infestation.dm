@@ -90,7 +90,7 @@
 			if(!metroid_area) //Huh, really?
 				if(!get_turf(M)) //No turf either?
 					qdel(M) //Must have been nullspaced
-					continue
+				continue
 			area_names |= metroid_area.name
 		if(area_names.len)
 			var/english_list = english_list(area_names)

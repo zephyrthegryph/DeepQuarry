@@ -278,8 +278,8 @@
 		if("Remove")
 			// Creates an associative mapping of Names to Tags, from Tags to Names.
 			var/list/sensor_names = list()
-			for(tag in sensors)
-				sensor_names[sensors[tag]] = sensors[tag]
+			for(var/tag in sensors)
+				sensor_names[sensors[tag]] = tag
 
 			var/to_remove = tgui_input_list(user, "Select a sensor/meter to remove", "Sensor/Meter Removal", sensor_names)
 			if(!to_remove)

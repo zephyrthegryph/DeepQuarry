@@ -39,7 +39,7 @@ Bonus
 /datum/symptom/language/Start(datum/disease/advance/A)
 	if(!..())
 		return
-	if(A.resistance)
+	if(A.resistance >= 5)
 		gibberish = TRUE
 
 /datum/symptom/language/Activate(datum/disease/advance/A)

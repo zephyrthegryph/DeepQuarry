@@ -71,6 +71,7 @@
 		var/obj/item/reagent_containers/foodItem = new product_path
 
 		var/total = foodItem.reagents.total_volume
+		qdel(foodItem)
 
 		if(!container)
 			to_chat(user, span_warning("There is no container!"))

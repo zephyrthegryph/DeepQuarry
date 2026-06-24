@@ -33,6 +33,6 @@
 	if((living_guy.nutrition < nutrition_weak) && prob(10))
 		living_guy.Confuse(10)
 	if((living_guy.nutrition < nutrition_danger) && prob(25))
-		living_guy.hallucination = max(30,living_guy.hallucination+8)
+		living_guy.hallucination = min(30,living_guy.hallucination+8)
 	if((living_guy.nutrition < nutrition_critical) && prob(5))
-		living_guy.drowsyness = max(100,living_guy.drowsyness+30)
+		living_guy.drowsyness = min(100,living_guy.drowsyness+30)

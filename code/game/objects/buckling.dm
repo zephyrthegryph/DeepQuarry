@@ -19,7 +19,7 @@
 	if(can_buckle && has_buckled_mobs())
 		if(buckled_mobs.len > 1)
 			var/unbuckled = tgui_input_list(user, "Who do you wish to unbuckle?","Unbuckle Who?", buckled_mobs)
-			if(user_unbuckle_mob(unbuckled, user))
+			if(unbuckled && user_unbuckle_mob(unbuckled, user))
 				return TRUE
 		else
 			if(user_unbuckle_mob(buckled_mobs[1], user))

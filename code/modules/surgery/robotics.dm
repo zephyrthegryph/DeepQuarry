@@ -561,7 +561,6 @@
 	// VOREstation edit begin - Select the proper mmi holder subtype based on the brain inserted
 	var/obj/item/organ/internal/mmi_holder/holder = null
 	user.drop_from_inventory(M)
-	M.loc = holder
 	if(istype(M,/obj/item/mmi/digital/posibrain/nano))
 		holder = new /obj/item/organ/internal/mmi_holder/posibrain/nano(target, 1, M)
 	else if(istype(M,/obj/item/mmi/digital/posibrain))

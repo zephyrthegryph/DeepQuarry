@@ -45,7 +45,7 @@ Bonus
 	if(!..())
 		return
 	if(A.stealth >= 4)
-		supress_warning = FALSE
+		supress_warning = TRUE
 	if(A.stage_rate >= 5)
 		vomit_blood = TRUE
 	if(A.transmission >= 6)

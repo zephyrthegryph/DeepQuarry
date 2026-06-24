@@ -63,7 +63,7 @@
 	if(damagestrength)
 		if(damageorgan)
 			var/maxtotal = max(maxdamage,affectedorgan.damage) //We don't want it to heal damage that's above the max by this
-			affectedorgan.damage = max((affectedorgan.damage + damagestrength),maxtotal)
+			affectedorgan.damage = min((affectedorgan.damage + damagestrength),maxtotal)
 		else
 			switch(damagetype)
 				if(BRUTE)

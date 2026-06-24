@@ -350,6 +350,8 @@ ADMIN_VERB(spawn_mail, R_SPAWN, "Spawn Mail", "Spawn mail for a specific player,
 		else
 			new_mail = new /obj/item/mail/envelope(src)
 		var/mob/living/carbon/human/mail_to
+		if(length(mail_recipients))
+			mail_to = pick(mail_recipients)
 		if(mail_to)
 			new_mail.initialize_for_recipient(mail_to.mind)
 			mail_recipients -= mail_to
@@ -436,7 +438,9 @@ ADMIN_VERB(spawn_mail, R_SPAWN, "Spawn Mail", "Spawn mail for a specific player,
 			to_chat(user, span_warning("Consent Verification failed: You can't deliver mail to a corpse!"))
 			playsound(loc, 'sound/items/mail/maildenied.ogg', 50, TRUE)
 			return
-		if(recipient.current.dna.unique_enzymes != recipient.current.dna.unique_enzymes)
+		var/mob/living/carbon/human/scanned_human = A
+		var/mob/living/carbon/human/intended = recipient.current
+		if(!ishuman(scanned_human) || !ishuman(intended) || !scanned_human.dna || !intended.dna || scanned_human.dna.unique_enzymes != intended.dna.unique_enzymes)
 			to_chat(user, span_warning("Identity Verification failed: Target is not authorized recipient of this envelope!"))
 			playsound(loc, 'sound/items/mail/maildenied.ogg', 50, TRUE)
 			return

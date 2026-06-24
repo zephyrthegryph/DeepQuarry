@@ -4,6 +4,8 @@
 
 	if(isliving(target))
 		if(type == CHEM_VORE)
+			if(!istype(target_belly))
+				return
 			var/datum/reagents/R = target_belly.reagents
 			if(!R)
 				R = new /datum/reagents(amount)

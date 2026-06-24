@@ -22,7 +22,7 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	if(user.mind.accept_tcrystals) //Checks to see if antag type allows for tcrystals
+	if(user.mind && user.mind.accept_tcrystals) //Checks to see if antag type allows for tcrystals
 		to_chat(user, span_notice("You use \the [src], adding [src.amount] to your balance."))
 		user.mind.tcrystals += amount
 		use(amount)

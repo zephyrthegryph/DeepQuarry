@@ -74,7 +74,7 @@
 		for(var/merge_type in merge_types)
 			var/datum/status_effect/fire_handler/merge_effect = owner.has_status_effect(merge_type)
 			if(merge_effect)
-				merge_effects += merge_effects
+				merge_effects += merge_effect
 
 		if(LAZYLEN(merge_effects))
 			for(var/datum/status_effect/fire_handler/merge_effect in merge_effects)

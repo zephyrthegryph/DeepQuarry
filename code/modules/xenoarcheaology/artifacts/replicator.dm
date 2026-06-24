@@ -244,7 +244,7 @@
 		var/color = pick(colors)
 		var/button_desc = "a [background], [icon] shaped [color]"
 		var/generated_mob = pick(viable_mobs)
-		viable_mobs.Remove(type)
+		viable_mobs.Remove(generated_mob)
 		created_mobs[button_desc] = generated_mob
 		tgui_vore_selection.Add(list(list(
 			"key" = button_desc,
@@ -494,7 +494,7 @@
 		var/color = pick(colors)
 		var/button_desc = "a [background], [icon] shaped [color]"
 		var/generated_item = pick(viable_items)
-		viable_items.Remove(type)
+		viable_items.Remove(generated_item)
 		created_items[button_desc] = generated_item
 		tgui_vore_selection.Add(list(list(
 			"key" = button_desc,

@@ -122,7 +122,7 @@
 /mob/living/simple_mob/vore/oregrub/death()
 	visible_message(span_warning("\The [src] shudders and collapses, expelling the ores it had devoured!"))
 	var/i = rand(min_ore,max_ore)
-	while(i>1)
+	while(i>0)
 		var/ore = pick(/obj/item/ore/glass,/obj/item/ore/coal,/obj/item/ore/iron,/obj/item/ore/lead,/obj/item/ore/marble,/obj/item/ore/phoron,/obj/item/ore/silver,/obj/item/ore/gold)
 		new ore(src.loc)
 		i--
@@ -139,7 +139,7 @@
 /mob/living/simple_mob/vore/oregrub/lava/death()
 	set_light(0)
 	var/p = rand(lava_min_ore,lava_max_ore)
-	while(p>1)
+	while(p>0)
 		var/ore = pick(/obj/item/ore/osmium,/obj/item/ore/uranium,/obj/item/ore/hydrogen,/obj/item/ore/diamond,/obj/item/ore/verdantium)
 		new ore(src.loc)
 		p--

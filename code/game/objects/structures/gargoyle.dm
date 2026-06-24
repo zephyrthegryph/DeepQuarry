@@ -133,7 +133,7 @@
 
 /obj/structure/gargoyle/Destroy()
 	STOP_PROCESSING(SSprocessing, src)
-	var/mob/living/carbon/human/gargoyle = WR_gargoyle.resolve()
+	var/mob/living/carbon/human/gargoyle = WR_gargoyle?.resolve()
 	if(!gargoyle)
 		return ..()
 	if(can_revert)
@@ -259,7 +259,7 @@
 			to_chat(user, span_notice("You [anchored ? "un" : ""]anchor the [src]."))
 			anchored = !anchored
 	else if(!isrobot(user) && gargoyle && gargoyle.vore_selected && gargoyle.trash_catching)
-		if(istype(W,/obj/item/grab || /obj/item/holder))
+		if(istype(W, /obj/item/grab) || istype(W, /obj/item/holder))
 			gargoyle.vore_attackby(W, user)
 			return
 		if(gargoyle.adminbus_trash || is_type_in_list(W, GLOB.edible_trash) && W.trash_eatable && !is_type_in_list(W, GLOB.item_vore_blacklist))

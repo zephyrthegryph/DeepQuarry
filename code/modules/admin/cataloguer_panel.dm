@@ -58,8 +58,10 @@
 			pulse_scan(ui.user)
 			return TRUE
 		if("show_data")
-			displayed_data = locate(params["ref"])
-			SStgui.update_uis(src)
+			var/datum/category_item/catalogue/new_data = locate(params["ref"])
+			if(istype(new_data))
+				displayed_data = new_data
+				SStgui.update_uis(src)
 			return TRUE
 		if("back_to_list")
 			displayed_data = null

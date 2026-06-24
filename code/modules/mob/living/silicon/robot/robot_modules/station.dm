@@ -194,6 +194,7 @@
 		for(var/datum/matter_synth/synth as anything in synths)
 			if(matter_synth.type == synth.type)
 				item_synths += synth
+				found = TRUE
 				break
 		if(!found)
 			var/datum/matter_synth/new_synth = new matter_synth.type(10000)
@@ -365,7 +366,7 @@
 /obj/item/robot_module/robot/medical/surgeon/respawn_consumable(mob/living/silicon/robot/R, amount)
 
 	var/obj/item/reagent_containers/syringe/S = locate() in src.modules
-	if(S.mode == 2)
+	if(S && S.mode == 2)
 		S.reagents.clear_reagents()
 		S.mode = initial(S.mode)
 		S.desc = initial(S.desc)
@@ -433,7 +434,7 @@
 /obj/item/robot_module/robot/medical/crisis/respawn_consumable(mob/living/silicon/robot/R, amount)
 
 	var/obj/item/reagent_containers/syringe/S = locate() in src.modules
-	if(S.mode == 2)
+	if(S && S.mode == 2)
 		S.reagents.clear_reagents()
 		S.mode = initial(S.mode)
 		S.desc = initial(S.desc)
@@ -529,7 +530,7 @@
 /obj/item/robot_module/robot/security/respawn_consumable(mob/living/silicon/robot/R, amount)
 	..()
 	var/obj/item/flash/F = locate() in src.modules
-	if(F.broken)
+	if(F && F.broken)
 		F.broken = 0
 		F.times_used = 0
 		F.icon_state = "flash"
@@ -607,7 +608,7 @@
 /obj/item/robot_module/robot/janitor/respawn_consumable(mob/living/silicon/robot/R, amount)
 	..()
 	var/obj/item/lightreplacer/LR = locate() in src.modules
-	LR.Charge(R, amount)
+	LR?.Charge(R, amount)
 
 	var/obj/item/reagent_containers/spray/LS = locate() in src.emag
 	if(LS)
@@ -839,7 +840,7 @@
 /obj/item/robot_module/robot/research/respawn_consumable(mob/living/silicon/robot/R, amount)
 
 	var/obj/item/reagent_containers/syringe/S = locate() in src.modules
-	if(S.mode == 2)
+	if(S && S.mode == 2)
 		S.reagents.clear_reagents()
 		S.mode = initial(S.mode)
 		S.desc = initial(S.desc)
@@ -934,7 +935,7 @@
 
 /obj/item/robot_module/drone/respawn_consumable(mob/living/silicon/robot/R, amount)
 	var/obj/item/lightreplacer/LR = locate() in src.modules
-	LR.Charge(R, amount)
+	LR?.Charge(R, amount)
 	..()
 	return
 

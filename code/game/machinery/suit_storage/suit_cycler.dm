@@ -352,11 +352,13 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 		if("dispense")
 			switch(params["item"])
 				if("helmet")
-					helmet.forceMove(get_turf(src))
-					helmet = null
+					if(helmet)
+						helmet.forceMove(get_turf(src))
+						helmet = null
 				if("suit")
-					suit.forceMove(get_turf(src))
-					suit = null
+					if(suit)
+						suit.forceMove(get_turf(src))
+						suit = null
 			. = TRUE
 
 		if("department")

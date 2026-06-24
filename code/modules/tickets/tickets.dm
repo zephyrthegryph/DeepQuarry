@@ -512,9 +512,9 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 	if(!silent)
 		feedback_inc("ticket_resolve")
 		var/msg = "Ticket [TicketHref("#[id]")] resolved by [admin_resolver_name]"
-		if(type == 1)
+		if(level == 1)
 			message_mentors(msg)
-		else if (type == 0)
+		else if (level == 0)
 			message_admins(msg)
 
 		log_admin(msg)

@@ -248,7 +248,7 @@
 /datum/component/artifact_master/proc/on_bullet()
 	SIGNAL_HANDLER
 	var/obj/item/projectile/P = args[2]
-	var/triggered = TRUE
+	var/triggered = FALSE
 	for(var/datum/artifact_effect/my_effect in my_effects)
 		if(istype(P,/obj/item/projectile/bullet))
 			if(my_effect.trigger == TRIGGER_FORCE)

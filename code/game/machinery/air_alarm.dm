@@ -508,7 +508,7 @@
 	if(report_danger_level && alarm_area.atmosalert(new_danger_level, src))
 		post_alert(new_danger_level)
 	for(var/obj/machinery/alarm/AA in alarm_area.air_alarms)
-		update_icon()
+		AA.update_icon()
 
 /obj/machinery/alarm/proc/post_alert(alert_level)
 	var/datum/radio_frequency/frequency = SSradio.return_frequency(alarm_frequency)
@@ -796,7 +796,7 @@
 			atmos_reset()
 			. = TRUE
 	for(var/obj/machinery/alarm/AA in alarm_area.air_alarms)
-		update_icon()
+		AA.update_icon()
 
 // This big ol' mess just ensures that TLV always makes sense. If you set the max value below the min value,
 // it'll automatically update all the other values to keep it sane.
@@ -839,7 +839,7 @@
 	if(alarm_area.atmosalert(0, src))
 		apply_danger_level(0)
 	for(var/obj/machinery/alarm/AA in alarm_area.air_alarms)
-		update_icon()
+		AA.update_icon()
 
 /obj/machinery/alarm/attackby(obj/item/W as obj, mob/user)
 	add_fingerprint(user)

@@ -1215,8 +1215,6 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 		set_dir(construct.dir)
 	else
 		installed_light = new light_type(src)
-		if(start_with_cell && !no_emergency)
-			cell = new/obj/item/cell/emergency_light(src)
 		var/obj/item/light/L = get_light_type_instance(light_type) //This is fine, but old code.
 		update_from_bulb(L)
 		if(prob(L.broken_chance))

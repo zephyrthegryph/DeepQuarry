@@ -285,8 +285,6 @@ GLOBAL_LIST_EMPTY(pending_discord_registrations)
 		return "```Invalid command usage: ticket id \[reply, reject, icissue, close, resolve, handle, reopen\] message```"
 
 	var/action = message_as_list[1]
-	if(isnum(action))
-		return "```Second param must be the action type.```"
 	message_as_list.Cut(1, 2)
 
 	if(!LAZYLEN(message_as_list) && action == "reply")

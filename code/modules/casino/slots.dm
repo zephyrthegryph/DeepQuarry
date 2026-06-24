@@ -117,7 +117,6 @@
 	if(cashmoney.worth <= 0)
 		user.drop_from_inventory(cashmoney)
 		qdel(cashmoney)
-		cashmoney.update_icon()
 
 	busy = 1
 	icon_state = "slotmachine_rolling"
@@ -174,10 +173,6 @@
 		if (symbol1 == "lemon" && symbol2 == "lemon" && symbol3 == "lemon")
 			output = span_notice("Three lemons! The slot machine deposits a 50 credit chip!")
 			winnings = 50
-
-		if (symbol1 == "watermelon" && symbol2 == "watermelon" && symbol3 == "watermelon")
-			output = span_notice("Three watermelons! The slot machine deposits chips worth 75 credits!")
-			winnings = 75
 
 		if (symbol1 == "bell" && symbol2 == "bell" && symbol3 == "bell")
 			output = span_notice("Three bells! The slot machine deposits chips a 100 credit chip!")
@@ -348,7 +343,6 @@
 	if(cashmoney.worth <= 0)
 		user.drop_from_inventory(cashmoney)
 		qdel(cashmoney)
-		cashmoney.update_icon()
 
 	busy = 1
 	icon_state = "ntslotmachine_rolling"
@@ -405,10 +399,6 @@
 		if (symbol1 == "lemon" && symbol2 == "lemon" && symbol3 == "lemon")
 			output = span_notice("Three lemons! The slot machine deposits 50 Thalers!")
 			winnings = 50
-
-		if (symbol1 == "watermelon" && symbol2 == "watermelon" && symbol3 == "watermelon")
-			output = span_notice("Three watermelons! The slot machine deposits 75 Thalers!")
-			winnings = 75
 
 		if (symbol1 == "bell" && symbol2 == "bell" && symbol3 == "bell")
 			output = span_notice("Three bells! The slot machine deposits 100 Thalers!")

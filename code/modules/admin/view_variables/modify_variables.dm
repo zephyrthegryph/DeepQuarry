@@ -245,7 +245,7 @@ GLOBAL_PROTECT(VVpixelmovement)
 		if("DELETE FROM LIST")
 			L.Cut(index, index+1)
 			if (O)
-				if (O.vv_edit_var(objectvar, L))
+				if (!O.vv_edit_var(objectvar, L))
 					to_chat(src, "Your edit was rejected by the object.", confidential = TRUE)
 					return
 			log_world("### ListVarEdit by [src]: [O.type] [objectvar]: REMOVED=[html_encode("[original_var]")]")

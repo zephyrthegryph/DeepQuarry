@@ -697,7 +697,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 			to_chat(user,span_warning("Remove any clothing they have on, as it might interfere!"))
 			return ITEM_INTERACT_FAILURE
 		var/obj/item/organ/external/eo = T.get_organ(BP_TORSO)
-		if(!T)
+		if(!eo)
 			to_chat(user,span_warning("They should probably regrow their torso first."))
 			return ITEM_INTERACT_FAILURE
 		U.visible_message(span_notice("[U] begins installing [src] into [T]'s chest by just stuffing it in."),

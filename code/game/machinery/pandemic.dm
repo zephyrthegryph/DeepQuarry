@@ -132,6 +132,8 @@
 	if(usr.stat != 0)
 		return
 
+	if(!beaker)
+		return
 	beaker.forceMove(loc)
 	beaker = null
 	icon_state = "pandemic0"
@@ -277,8 +279,10 @@
 
 /obj/machinery/computer/pandemic/proc/create_vaccine_bottle(index)
 	use_power(active_power_usage)
-	var/id = index
+	var/id = get_virus_id_by_index(text2num(index))
 	var/datum/disease/disease = GLOB.archive_diseases[id]
+	if(!disease)
+		return FALSE
 	var/obj/item/reagent_containers/glass/beaker/vial/vaccine/bottle = new(drop_location())
 	bottle.name = "[disease.name] vaccine"
 	bottle.reagents.add_reagent(REAGENT_ID_VACCINE, 15, list(get_by_index("resistances", id)))

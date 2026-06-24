@@ -17,7 +17,7 @@
 	// Inline FBP detection — mirrors /datum/category_item/player_setup_item/proc/is_FBP()
 	// which keys off the saved organ_data showing a cyborg torso.
 	var/list/organ_data = preferences.read_preference(/datum/preference/organ_data)
-	var/is_fbp = !(organ_data && organ_data[BP_TORSO] != "cyborg")
+	var/is_fbp = organ_data && (organ_data[BP_TORSO] == "cyborg")
 
 	// Fixes being able to swap from FBP to organic before round join to be organic with numbers in name.
 	char_real_name = sanitize_name(char_real_name, pref_species, is_fbp)

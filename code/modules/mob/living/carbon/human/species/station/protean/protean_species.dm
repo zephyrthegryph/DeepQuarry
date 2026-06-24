@@ -339,6 +339,7 @@
 	//No origin set
 	if(!istype(origin))
 		expire()
+		return
 
 	//No refactory
 	var/obj/item/organ/internal/nano/refactory/refactory = origin.resolve()

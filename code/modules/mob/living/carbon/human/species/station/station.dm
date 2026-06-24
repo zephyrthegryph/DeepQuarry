@@ -1749,7 +1749,11 @@
 
 /datum/species/xenochimera/handle_environment_special(mob/living/carbon/human/H)
 	//Cold/pressure effects when not regenerating
+	if(!isturf(H.loc))
+		return
 	var/datum/gas_mixture/environment = H.loc.return_air()
+	if(!environment)
+		return
 	var/pressure2 = environment.return_pressure()
 	var/adjusted_pressure2 = H.calculate_affecting_pressure(pressure2)
 
@@ -2004,8 +2008,9 @@
 	if(LINDA_GAS_AMT(environment, GAS_PHORON) > 0 || locate(/obj/effect/alien/weeds) in T)
 		if(!regenerate(H))
 			var/obj/item/organ/internal/xenos/plasmavessel/P = H.internal_organs_by_name[O_PLASMA]
-			P.stored_plasma += weeds_plasma_rate
-			P.stored_plasma = min(max(P.stored_plasma,0),P.max_plasma)
+			if(istype(P))
+				P.stored_plasma += weeds_plasma_rate
+				P.stored_plasma = min(max(P.stored_plasma,0),P.max_plasma)
 	..()
 
 /datum/species/xenomorph_hybrid/proc/regenerate(mob/living/carbon/human/H)

@@ -128,6 +128,13 @@ GLOBAL_VAR(restart_counter)
 /world/New()
 	log_world("World loaded at [time_stamp()]!")
 
+	// Verdigris (Rust FFI) bring-up. Init must come before cleanup so the panic hook
+	// catches any failure inside cleanup itself. (Was a duplicate /world/New() in
+	// _verdigris.dm that the compiler silently discarded; folded in here.)
+	verdigris_init()
+	verdigris_cleanup()
+	log_world("Verdigris loaded: [verdigris_version()] | features: [verdigris_features()]")
+
 	GLOB.world_startup_time = world.timeofday
 	GLOB.rollover_safety_date = world.realtime - world.timeofday // 00:00 today (ish, since floating point error with world.realtime) of today
 

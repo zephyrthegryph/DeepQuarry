@@ -160,7 +160,7 @@
 	if(stat & (NOPOWER|BROKEN))
 		return
 
-	if(!allowed(user) && (wires & 1))
+	if(!allowed(user) && (wires_num & 1))
 		to_chat(user, span_warning("Access Denied"))
 		flick("doorctrl-denied",src)
 		return

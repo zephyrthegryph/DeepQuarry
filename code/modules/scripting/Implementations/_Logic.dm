@@ -221,7 +221,7 @@ Just found out there was already a string explode function, did some benchmarkin
 // Round up
 /proc/n_ceil(num)
 	if(isnum(num))
-		return round(num)+1
+		return round(num) < num ? round(num) + 1 : round(num)
 
 // Round to nearest integer
 /proc/n_round(num)
@@ -281,11 +281,8 @@ Just found out there was already a string explode function, did some benchmarkin
 			//CharCopy (dest + targetIndex, src + sourceIndex, count);
 			//CharCopy (dest + curPos, source + lastReadPos, precopy);
 			buf+=copytext(haystack,lastReadPos,precopy)
-			log_world("## MISC buf+=copytext([haystack],[lastReadPos],[precopy])")
-			log_world("## MISC [buf]")
 			lastReadPos = dat[i] + lena
 			//CharCopy (dest + curPos, replace, newValue.length);
 			buf+=b
-			log_world("## MISC [buf]")
 		buf+=copytext(haystack,lastReadPos, 0)
 		return buf

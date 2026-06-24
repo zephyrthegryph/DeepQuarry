@@ -49,7 +49,7 @@
 		old_weather = current_weather
 	current_weather = allowed_weather_types[new_weather]
 	next_weather_shift = world.time + rand(current_weather.timer_low_bound, current_weather.timer_high_bound) MINUTES
-	if(new_weather != old_weather)
+	if(current_weather != old_weather)
 		if(istype(old_weather)) // At roundstart this is null.
 			old_weather.process_sounds() // Ensure that people who should hear the ending sound will hear it.
 			old_weather.stop_sounds()

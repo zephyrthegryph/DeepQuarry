@@ -24,7 +24,7 @@
 		return FALSE
 	var/S
 	if(LAZYLEN(names) > 1)
-		tgui_input_list(src, "Select the target DNA:", "Target DNA", names)
+		S = tgui_input_list(src, "Select the target DNA:", "Target DNA", names)
 	else
 		S = names[1]
 

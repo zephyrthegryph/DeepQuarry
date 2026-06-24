@@ -62,10 +62,10 @@ calculate text size per text.
 			if(percent < minimum_percent)
 				continue
 			var/intensity_desc = "a hint of"
-			if(percent > minimum_percent * 2 || percent == 100)
-				intensity_desc = "the flavor of"
-			else if(percent > minimum_percent * 3)
+			if(percent > minimum_percent * 3)
 				intensity_desc = "the strong flavor of"
+			else if(percent > minimum_percent * 2 || percent == 100)
+				intensity_desc = "the flavor of"
 			out += "[intensity_desc] [taste_desc]"
 
 	return english_list(out, "something indescribable")

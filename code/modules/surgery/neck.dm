@@ -26,7 +26,7 @@
 		return FALSE
 	if(target_zone != sponge.parent_organ)
 		return FALSE
-	if((target.can_defib && !(sponge.status & ORGAN_DEAD)) && !target.op_stage.brainstem == 5) //Final step can be done after our can_defib step is set.
+	if((target.can_defib && !(sponge.status & ORGAN_DEAD)) && target.op_stage.brainstem != 5) //Final step can be done after our can_defib step is set.
 		return FALSE
 	return target_zone == sponge.parent_organ
 

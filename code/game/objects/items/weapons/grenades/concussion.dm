@@ -26,9 +26,7 @@
 				var/mob/living/carbon/human/H = L
 				to_chat(H, span_critical("WHUMP."))
 
-				var/ear_safety = 0
-
-				H.get_ear_protection()
+				var/ear_safety = H.get_ear_protection()
 
 				var/bang_effectiveness = H.species.sound_mod
 

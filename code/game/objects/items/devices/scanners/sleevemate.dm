@@ -336,6 +336,8 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 			to_chat(usr,span_warning("There is already someone's mind stored inside"))
 			return
 		var/mob/living/carbon/human/H = target
+		if(!istype(H) || !H.nif)
+			return
 		var/datum/nifsoft/soulcatcher/SC = H.nif.imp_check(NIF_SOULCATCHER)
 		if(!SC)
 			return

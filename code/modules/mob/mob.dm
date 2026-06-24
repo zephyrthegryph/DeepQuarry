@@ -56,6 +56,9 @@
 		if(original && original == src)
 			mind.original_character = null
 
+	GLOB.entopic_users -= src // from mob_planes.dm
+	QDEL_NULL(belly_overlay_tgui) // from belly_overlay_tgui.dm
+
 	. = ..()
 	update_client_z(null)
 	//return QDEL_HINT_HARDDEL_NOW

@@ -38,9 +38,9 @@
 		hit |= A
 	if(isturf(A))
 		for(var/obj/O in A)
-			hit |= A
+			hit |= O
 		for(var/mob/living/M in A)
-			hit |= A
+			hit |= M
 	return ..()
 
 /obj/item/projectile/test/fire(angle, atom/direct_target)

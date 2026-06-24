@@ -24,6 +24,8 @@
 	// Client does NOT have tgui_input on: Returns regular input
 	if(!user.read_preference(/datum/preference/toggle/tgui_input_mode))
 		var/input_key = input(user, message, title + "(Modifiers are TGUI only, sorry!)", default) as null|text
+		if(!input_key)
+			return
 		return input_key[1]
 	var/datum/tgui_input_keycombo/key_input = new(user, message, title, default, timeout, ui_state)
 	key_input.tgui_interact(user)

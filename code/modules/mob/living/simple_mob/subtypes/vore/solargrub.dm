@@ -89,6 +89,8 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 				sparks.start()
 			anchored = TRUE
 			PN = attached.powernet
+			if(!PN)
+				return
 			PN.draw_power(powerdraw)
 			charge = charge + (powerdraw/1000) //This adds raw powerdraw to charge(Charge is in Ks as in 1 = 1000)
 			var/apc_drain_rate = 750 //Going to see if grubs are better as a minimal bother. previous value : 4000

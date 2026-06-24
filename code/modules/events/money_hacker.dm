@@ -33,7 +33,7 @@ GLOBAL_VAR_INIT(account_hack_attempted, 0)
 
 /datum/event/money_hacker/end()
 	var/message
-	if(affected_account && !affected_account)
+	if(affected_account && !affected_account.suspended)
 		//hacker wins
 		message = "The hack attempt has succeeded."
 

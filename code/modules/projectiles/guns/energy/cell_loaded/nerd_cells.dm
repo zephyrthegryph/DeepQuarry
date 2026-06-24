@@ -63,6 +63,8 @@
 			target.adjustOxyLoss(-30)
 			for(var/name in list(BP_HEAD, BP_L_HAND, BP_R_HAND, BP_L_ARM, BP_R_ARM, BP_L_FOOT, BP_R_FOOT, BP_L_LEG, BP_R_LEG, BP_GROIN, BP_TORSO))
 				var/obj/item/organ/external/O = target.organs_by_name[name]
+				if(!O)
+					continue
 				for (var/datum/wound/W in O.wounds)
 					if (W.internal)
 						continue
@@ -161,6 +163,8 @@
 			target.adjustOxyLoss(-200)
 			for(var/name in list(BP_HEAD, BP_L_HAND, BP_R_HAND, BP_L_ARM, BP_R_ARM, BP_L_FOOT, BP_R_FOOT, BP_L_LEG, BP_R_LEG, BP_GROIN, BP_TORSO))
 				var/obj/item/organ/external/O = target.organs_by_name[name]
+				if(!O)
+					continue
 				for (var/datum/wound/W in O.wounds)
 					if(W.internal)
 						continue

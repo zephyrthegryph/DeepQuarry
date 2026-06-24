@@ -133,7 +133,7 @@
 /obj/item/capture_crystal/on_trash_eaten(mob/living/user)
 	if(!..())
 		return FALSE
-	if(!bound_mob.devourable)
+	if(!bound_mob || !bound_mob.devourable)
 		to_chat(user, span_warning("That doesn't seem like a good idea. (\The [bound_mob]'s prefs don't allow it.)"))
 		return FALSE
 	return TRUE

@@ -41,11 +41,11 @@
 	var/list/inherent_damage_absorption = list("brute"=0.7,"fire"=0.7,"bullet"=0.7,"laser"=0.7,"energy"=0.7,"bomb"=0.7)
 
 /obj/mecha/combat/phazon/equipped/Initialize(mapload)
-	. = ..()
 	starting_equipment = list(
 		/obj/item/mecha_parts/mecha_equipment/tool/rcd,
 		/obj/item/mecha_parts/mecha_equipment/gravcatapult
 		)
+	. = ..()
 	return
 
 /* Leaving this until we are really sure we don't need it for reference.

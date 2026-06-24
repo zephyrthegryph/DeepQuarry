@@ -135,6 +135,7 @@
 				L.mind.transfer_to(soul_owner)
 				soul_owner.revive(TRUE, TRUE)
 				L.death(FALSE)
+				break
 
 // Lose your claim to the throne!
 /datum/soul_link/multi_sharer/replacement_pool/sharer_died(gibbed, mob/living/sharer)

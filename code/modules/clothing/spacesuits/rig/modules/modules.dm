@@ -95,7 +95,7 @@
 				return
 
 		var/obj/item/stack/cable_coil/cable = W
-		if(!cable.get_amount() >= 5)
+		if(cable.get_amount() < 5)
 			to_chat(user, "You need five units of cable to repair \the [src].")
 			return
 
@@ -174,7 +174,7 @@
 		to_chat(usr, span_danger("Access denied."))
 		return 0
 
-	if(!holder.check_power_cost(usr, use_power_cost, 0, src, (istype(usr,/mob/living/silicon ? 1 : 0) ) ) )
+	if(!holder.check_power_cost(usr, use_power_cost, 0, src, (istype(usr,/mob/living/silicon) ? 1 : 0) ) )
 		return 0
 
 	next_use = world.time + module_cooldown
@@ -272,7 +272,9 @@
 				else
 					module.activate()
 			if("select_charge_type")
-				module.charge_selected = module.charges[module.charges.Find(module.charge_selected)]
+				var/charge_index = module.charges.Find(module.charge_selected)
+				charge_index = charge_index == module.charges.len ? 1 : charge_index + 1
+				module.charge_selected = module.charges[charge_index]
 
 /atom/movable/stat_rig_module/DblClick()
 	return Click()

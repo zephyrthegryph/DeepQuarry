@@ -27,9 +27,9 @@
 /obj/effect/anomaly/bluespace/detonate()
 	playsound(src, 'sound/effects/cosmic_energy.ogg', vol = 50)
 
-	var/turf/impact_turf = pick(get_area_turfs(impact_area))
 	if(!impact_area)
 		return
+	var/turf/impact_turf = pick(get_area_turfs(impact_area))
 
 	var/obj/item/radio/beacon/chosen
 	var/list/possible = list()
@@ -121,6 +121,8 @@
 			continue
 		possible += beacon
 
+	if(!length(possible))
+		return
 	var/chosen = pick(possible)
 
 	var/list/things = list()
@@ -131,5 +133,7 @@
 			continue
 		things += thing
 
+	if(!length(things))
+		return
 	for(var/i in 1 to count)
 		do_teleport(pick(things), get_turf(chosen))

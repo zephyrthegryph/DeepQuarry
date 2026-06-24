@@ -77,7 +77,7 @@
 		client.media.update_music()
 
 /mob/proc/stop_all_music()
-	client?.media.stop_music()
+	client?.media?.stop_music()
 
 /mob/proc/force_music(url, start, volume=1)
 	if (client?.media)

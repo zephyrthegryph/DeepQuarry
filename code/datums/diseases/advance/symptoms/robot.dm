@@ -69,7 +69,7 @@
 		var/obj/item/organ/internal/O = pick(H.internal_organs)
 		if(O.robotic >= ORGAN_ROBOT)
 			return FALSE
-		switch(O)
+		switch(O.type)
 			if(/obj/item/organ/internal/brain)
 				var/obj/item/organ/internal/brain/brain = O
 				brain.robotize()

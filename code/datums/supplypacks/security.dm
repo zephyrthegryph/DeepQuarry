@@ -790,7 +790,7 @@
 	containertype = /obj/structure/closet/crate/secure/gear
 	containername = "Reinforced PSG crate"
 
-/datum/supply_pack/security/secstrongpsg
+/datum/supply_pack/security/secpsgp
 	name = "Security PSG-P"
 	contains = list(
 			/obj/item/personal_shield_generator/belt/parry

@@ -105,7 +105,7 @@
 
 		if("immersion")
 			immersion = !immersion
-			my_area.toggle_optional(immersion)
+			my_area?.toggle_optional(immersion)
 			return TRUE
 
 	add_fingerprint(ui.user)
@@ -124,15 +124,15 @@
 	VARSET_IN(src, ready, TRUE, 10 SECONDS)
 
 	if(prog_name in supported_programs)
-		my_area.begin_program(supported_programs[prog_name])
+		my_area?.begin_program(supported_programs[prog_name])
 	else if(prog_name in secret_programs)
-		my_area.begin_program(secret_programs[prog_name])
+		my_area?.begin_program(secret_programs[prog_name])
 
 /obj/machinery/computer/looking_glass/proc/unload_program()
 	ready = FALSE
 	VARSET_IN(src, ready, TRUE, 10 SECONDS)
 
-	my_area.end_program()
+	my_area?.end_program()
 
 /obj/machinery/computer/looking_glass/proc/toggle_gravity(area/A)
 	if(world.time < (last_gravity_change + 3 SECONDS))

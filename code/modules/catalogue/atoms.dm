@@ -20,6 +20,8 @@
 		var/has_new_data = FALSE
 		for(var/t in data)
 			var/datum/category_item/catalogue/item = GLOB.catalogue_data.resolve_item(t)
+			if(!item)
+				continue
 			if(!item.visible)
 				has_new_data = TRUE
 				break

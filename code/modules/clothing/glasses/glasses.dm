@@ -366,7 +366,7 @@ BLIND     // can't see anything
 
 /obj/item/clothing/glasses/sunglasses/bigshot/examine(mob/user)
 	. = ..()
-	. += to_chat(user, span_notice("Alt-click to toggle modes."))
+	. += span_notice("Alt-click to toggle modes.")
 
 /obj/item/clothing/glasses/sunglasses/bigshot/click_alt(mob/user)
 	set src in usr

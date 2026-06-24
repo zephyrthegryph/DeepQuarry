@@ -14,6 +14,7 @@
 
 	var/frequency = AIRLOCK_FREQ
 	var/datum/radio_frequency/radio_connection
+	var/feedback_timer = 0
 
 /obj/machinery/mech_sensor/CanPass(atom/movable/mover, turf/target)
 	if(!enabled())
@@ -37,7 +38,6 @@
 
 /obj/machinery/mech_sensor/proc/give_feedback(O as obj)
 	var/block_message = span_warning("Movement control overridden. Area denial active.")
-	var/feedback_timer = 0
 	if(feedback_timer)
 		return
 

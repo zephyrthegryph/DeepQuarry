@@ -52,7 +52,7 @@
 		to_chat(owner, span_notice("You feel a bit luckier..."))
 
 	// First the spell will concern itself with the health of the technomancer.
-	if(prob(owner.getBruteLoss() + owner.getBruteLoss() * 2)) // Having 20 brute means a 40% chance of being added to the pool.
+	if(prob(owner.getBruteLoss() * 2)) // Having 20 brute means a 40% chance of being added to the pool.
 		if(!owner.isSynthetic())
 			potential_spells |= /obj/item/spell/modifier/mend_life
 		else

@@ -64,7 +64,7 @@
 		var/obj/item/grenade/G = trap
 		trap = null
 		G.forceMove(get_turf(src))
-		if(victim.ckey)
+		if(victim && victim.ckey)
 			msg_admin_attack("[key_name_admin(victim)] stepped on \a [src.name], triggering [trap]")
 		G.activate()
 

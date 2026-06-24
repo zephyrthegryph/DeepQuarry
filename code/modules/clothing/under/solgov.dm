@@ -231,7 +231,7 @@
 	icon_state = "greenutility"
 	worn_state = "greenutility"
 
-//obj/item/clothing/under/solgov/utility/army/command
+/obj/item/clothing/under/solgov/utility/army/command
 	starting_accessories = list(/obj/item/clothing/accessory/solgov/department/command/army)
 
 /obj/item/clothing/under/solgov/utility/army/engineering

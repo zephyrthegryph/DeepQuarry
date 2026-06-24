@@ -64,6 +64,8 @@
 /obj/machinery/door/blast/puzzle/tyrdoor/keypad/proc/check_input(input)
 	if(length(input) != codelen)
 		return 0
+	if(length(code) < codelen) //unconfigured keypad (no code set) can never be opened
+		return 0
 
 	. = 1
 	lastattempt.Cut()

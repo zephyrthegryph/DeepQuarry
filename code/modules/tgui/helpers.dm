@@ -10,6 +10,8 @@
 								"timeout" = addtimer(CALLBACK(src, PROC_REF(clear_oversized_payload)), 10 SECONDS, TIMER_UNIQUE|TIMER_OVERRIDE|TIMER_STOPPABLE)
 								)
 
+	if(!partial_packets)
+		return null
 	var/list/chunks = partial_packets["chunks"]
 	chunks[id] = packet
 

@@ -125,14 +125,17 @@ GLOBAL_LIST_INIT(RMS_random_malfunction, list(/obj/item/fbp_backup_cell,
 		if(!can_afford(charge_cost))
 			to_chat(user, span_notice("There is not enough charge to use this mode."))
 			return
-		consume_resources(charge_cost)
 	else
 		if(!can_afford(charge_cost * overcharge_modifier))
 			to_chat(user, span_notice("There is not enough charge to use the overcharged mode."))
 			return
-		consume_resources(charge_cost * overcharge_modifier)
 	playsound(src.loc, 'sound/machines/click.ogg', 50, 1)
 	if(do_after(user, 5, target = A))
+		// Only deduct charge once the action actually completes, so an interrupted use refunds nothing-spent.
+		if(overcharge)
+			consume_resources(charge_cost * overcharge_modifier)
+		else
+			consume_resources(charge_cost)
 		if(overcharge)
 			if(prob(5)) //5% chance for malfunction
 				var/thing_to_spawn = pick(GLOB.RMS_random_malfunction)
@@ -204,7 +207,7 @@ GLOBAL_LIST_INIT(RMS_random_malfunction, list(/obj/item/fbp_backup_cell,
 		if(picked_metal in banned_sheet_materials)
 			continue
 		var/datum/material/M = get_material_by_name(initial(picked_metal.default_type))
-		if(M.flags & MATERIAL_NO_SYNTH)
+		if(!M || (M.flags & MATERIAL_NO_SYNTH))
 			continue
 		else
 			new_metal = picked_metal

@@ -158,6 +158,7 @@
 /mob/living/simple_mob/ysbryd/bullet_act(obj/item/projectile/Proj)
 	if(istype(Proj ,/obj/item/projectile/beam/xray) || istype(Proj ,/obj/item/projectile/beam/gamma) || istype(Proj ,/obj/item/projectile/beam/emitter))
 		plane = MOB_PLANE
+	return ..()
 
 
 ///////////////////////////AI stuff

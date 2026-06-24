@@ -546,7 +546,7 @@
 				if(rgb2num(input_style_list[17]))
 					goia_overlays["zorgoia_spike"] = input_style_list[17]
 			catch
-			input_style_list["spike"] = input_style_list[18]
+			goia_overlays["spike"] = input_style_list[18]
 			try
 				if(rgb2num(input_style_list[19]))
 					goia_overlays["zorgoia_belly"] = input_style_list[19]

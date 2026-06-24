@@ -24,6 +24,8 @@
 			return TRUE
 
 		if("toggle_active")
+			if(!G)
+				return TRUE
 			G.activate(ui.user)
 			return TRUE
 
@@ -31,7 +33,7 @@
 			var/new_strength = params["str"]
 			if(istext(new_strength))
 				new_strength = text2num(new_strength)
-			if(new_strength)
+			if(new_strength && G)
 				G.set_beam_power(new_strength)
 			return TRUE
 
@@ -39,7 +41,7 @@
 			var/new_delay = params["rate"]
 			if(istext(new_delay))
 				new_delay = text2num(new_delay)
-			if(new_delay)
+			if(new_delay && G)
 				G.rate = new_delay
 			return TRUE
 

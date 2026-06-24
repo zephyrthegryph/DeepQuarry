@@ -47,7 +47,7 @@
 		if(!grub_area) //Huh, really?
 			if(!get_turf(G)) //No turf either?
 				qdel(G) //Must have been nullspaced
-				continue
+			continue
 		area_names |= grub_area.name
 	if(area_names.len)
 		var/english_list = english_list(area_names)

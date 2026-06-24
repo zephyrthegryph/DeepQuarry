@@ -296,6 +296,7 @@
 	C.forceMove(loc)
 	sleep(2)
 	if(C.loc != loc) //To prevent you from going onto more than one bot.
+		busy = 0
 		return
 	C.forceMove(src)
 	load = C

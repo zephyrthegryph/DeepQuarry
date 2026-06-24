@@ -4,7 +4,7 @@
 	icon_state = "timer"
 	matter = list(MAT_STEEL = 500, MAT_GLASS = 50)
 
-	wires = WIRE_PULSE
+	wires_type = WIRE_PULSE
 
 	secured = 0
 

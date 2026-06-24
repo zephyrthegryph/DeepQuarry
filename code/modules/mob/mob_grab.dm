@@ -398,9 +398,9 @@
 	return mob_size_difference(A.mob_size, B.mob_size)
 
 /obj/item/grab/Destroy()
-	animate(affecting, pixel_x = initial(affecting.pixel_x), pixel_y = initial(affecting.pixel_y), 4, 1, LINEAR_EASING)
-	affecting.reset_plane_and_layer()
 	if(affecting)
+		animate(affecting, pixel_x = initial(affecting.pixel_x), pixel_y = initial(affecting.pixel_y), 4, 1, LINEAR_EASING)
+		affecting.reset_plane_and_layer()
 		affecting.grabbed_by -= src
 		affecting = null
 	if(assailant)

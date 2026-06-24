@@ -257,9 +257,9 @@ GLOBAL_LIST_EMPTY(shoreline_icon_cache)
 		var/mob/living/L = AM
 		if(L.isSynthetic())
 			return
-		poisonlevel *= 1 - L.get_water_protection()
-		if(poisonlevel > 0)
-			L.adjustToxLoss(poisonlevel)
+		var/applied_poison = poisonlevel * (1 - L.get_water_protection())
+		if(applied_poison > 0)
+			L.adjustToxLoss(applied_poison)
 
 /turf/simulated/floor/water/blood
 	name = REAGENT_ID_BLOOD

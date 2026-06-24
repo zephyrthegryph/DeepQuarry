@@ -507,7 +507,7 @@
 			to_chat(user, span_blue("You put the rocket in [src]."))
 			to_chat(user, span_blue("[rockets.len] / [max_rockets] rockets."))
 		else
-			to_chat(usr, span_red("[src] cannot hold more rockets."))
+			to_chat(user, span_red("[src] cannot hold more rockets."))
 
 /obj/item/gun/launcher/scopedrocket/consume_next_projectile()
 	if(rockets.len)

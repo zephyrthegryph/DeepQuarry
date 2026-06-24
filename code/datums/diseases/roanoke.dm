@@ -63,6 +63,7 @@
 				O = pick(organ_list)
 				O.adjust_germ_level(rand(5, 10))
 			if(prob(1))
+				O = pick(organ_list)
 				O.take_damage(rand(1, 3))
 		if(6)
 			if(prob(1))
@@ -75,6 +76,7 @@
 				O.adjust_germ_level(rand(5, 10))
 
 			if(prob(2))
+				O = pick(organ_list)
 				O.take_damage(rand(1, 3))
 
 			if(prob(1) && prob(10))

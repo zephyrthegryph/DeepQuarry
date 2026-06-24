@@ -64,7 +64,7 @@
 
 	// In /mob/living's `update_transform()`, the sprite is horizontally shifted when scaled up, so that the center of the sprite doesn't move to the right.
 	// Because of that, this adjustment needs to happen with the future indicator row as well, or it will look bad.
-	current_x_position -= (icon_expected_width / 2) * (get_icon_scale_y() - 1)
+	current_x_position -= (icon_expected_width / 2) * (get_icon_scale_x() - 1)
 
 	// Now the indicator row can actually be built.
 	for(var/image/I as anything in status_indicators)

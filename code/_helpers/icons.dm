@@ -931,7 +931,7 @@ GLOBAL_LIST_EMPTY(cached_examine_icons)
 		return TRUE
 
 	var/static/list/screams = list()
-	if(!isnull(screams[file]))
+	if(isnull(screams[file]))
 		screams[file] = TRUE
 		stack_trace("State [state] in file [file] does not exist.")
 

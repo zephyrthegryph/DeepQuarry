@@ -358,15 +358,6 @@
 	else
 		exonet.make_address("communicator-[key]-[src.real_name]")
 
-// Proc: Destroy()
-// Parameters: None
-// Description: Removes the ghost's address and nulls the exonet datum, to allow qdel()ing.
-/mob/observer/dead/Destroy()
-	if(exonet)
-		exonet.remove_address()
-		QDEL_NULL(exonet)
-	. = ..()
-
 // Proc: register_device()
 // Parameters: 1 (user - the person to use their name for)
 // Description: Updates the owner's name and the device's name.

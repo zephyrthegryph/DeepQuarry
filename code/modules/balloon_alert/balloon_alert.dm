@@ -22,7 +22,7 @@
 
 	for(var/mob/M in hearers)
 
-		runechat_enabled = M.client.prefs?.read_preference(/datum/preference/toggle/runechat_mob)
+		runechat_enabled = M.client?.prefs?.read_preference(/datum/preference/toggle/runechat_mob)
 
 		if(M.client && !runechat_enabled)
 			continue

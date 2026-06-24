@@ -72,6 +72,10 @@
 				return
 			running = TRUE
 			target_access = SSaccess.get_access_by_id("[params["access_target"]]")
+			if(!target_access)
+				message = "Invalid access target. Operation aborted."
+				running = FALSE
+				return
 			if(GLOB.ntnet_global.intrusion_detection_enabled)
 				GLOB.ntnet_global.add_log("IDS WARNING - Unauthorised access attempt to primary keycode database from device: [computer.network_card.get_network_tag()]")
 				GLOB.ntnet_global.intrusion_detection_alarm = TRUE

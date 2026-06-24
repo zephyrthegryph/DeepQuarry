@@ -182,7 +182,7 @@
 		if(length(notes.note) > 0)
 			notes.note += "<br><br>"
 		// Store the scanned document to the notes
-		notes.note = formatted_scan
+		notes.note += formatted_scan
 		notes.notetitle = sanitize_simple(P.name, list("\n" = "", "\t" = "", "ÿ" = ""))
 		// update the saved note too incase we kept the pda open, this is really silly due to how the notehtml is actually what's passed to the editor's text.
 		// If I don't update it here, it loses the data when you edit it!

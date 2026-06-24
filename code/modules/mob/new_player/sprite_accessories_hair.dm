@@ -236,7 +236,7 @@
 	name = "Bowl 2"
 	icon_state = "hair_bowlcut2"
 
-/datum/sprite_accessory/hair/bowlcut2
+/datum/sprite_accessory/hair/overeyebowl
 	name = "Bowl, Overeye"
 	icon_state = "hair_overeyebowl"
 
@@ -1002,11 +1002,6 @@
 	icon_state = "hair_nofade"
 	gender = MALE
 	flags = HAIR_VERY_SHORT
-
-/datum/sprite_accessory/hair/newyou
-	name = "New You"
-	icon_state = "hair_newyou"
-	flags = HAIR_TIEABLE
 
 /datum/sprite_accessory/hair/rockandroll
 	name = "Rock and Roll"

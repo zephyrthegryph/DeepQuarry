@@ -148,7 +148,7 @@
 				if("analyze")
 					var/idx = text2num(arguments["idx"]) || 0
 					var/from_beaker = text2num(arguments["beaker"]) || FALSE
-					var/reagent_list = from_beaker ? beaker.reagents.reagent_list : reagents.reagent_list
+					var/reagent_list = (from_beaker && beaker) ? beaker.reagents.reagent_list : reagents.reagent_list
 					if(idx < 1 || idx > length(reagent_list))
 						return
 
@@ -424,7 +424,7 @@
 
 			var/idx = text2num(params["idx"]) || 0
 			var/from_beaker = text2num(params["beaker"]) || FALSE
-			var/reagent_list = from_beaker ? beaker.reagents.reagent_list : reagents.reagent_list
+			var/reagent_list = (from_beaker && beaker) ? beaker.reagents.reagent_list : reagents.reagent_list
 			if(idx < 1 || idx > length(reagent_list))
 				return
 

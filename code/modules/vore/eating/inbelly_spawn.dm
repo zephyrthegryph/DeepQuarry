@@ -27,6 +27,7 @@
 		if(digest_answer != "Yes")
 			to_chat(potential_prey, span_notice("Something went wrong with predator selecting a belly. Try again?"))
 			to_chat(src, span_notice("Inbelly spawn cancelled."))
+			return
 
 	// Are they already fat (and/or appropriate equivalent)?
 	var/absorbed = FALSE

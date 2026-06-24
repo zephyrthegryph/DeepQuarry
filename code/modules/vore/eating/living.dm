@@ -763,7 +763,7 @@
 	volume = 2500
 	temperature = 293.150
 
-/datum/gas_mixture/carbon_dioxide_breather/New()
+/datum/gas_mixture/belly_air/carbon_dioxide_breather/New()
 	. = ..()
 	adjust_gas(GAS_CO2, 100)
 
@@ -986,7 +986,7 @@
 			adjust_nutrition(nom["nutrition"])
 			qdel(I)
 
-			if(nom["WTF"]) //Bites back.
+			if(nom["WTF"] && istype(H)) //Bites back.
 				H.Weaken(2)
 				H.Confuse(nom["WTF"])
 				H.apply_effect(nom["WTF"], STUTTER)

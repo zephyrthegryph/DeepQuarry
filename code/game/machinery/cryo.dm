@@ -75,7 +75,7 @@
 		heat_gas_contents()
 		expel_gas()
 
-	if(abs(temperature_archived-air_contents.temperature) > 1)
+	if(air_contents && abs(temperature_archived-air_contents.temperature) > 1)
 		network.update = 1
 
 	return 1

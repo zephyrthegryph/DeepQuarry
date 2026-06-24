@@ -208,7 +208,7 @@
 				b_loss = b_loss/1.5
 				f_loss = f_loss/1.5
 
-			if (!get_ear_protection() >= 2)
+			if (get_ear_protection() < 2)
 				ear_damage += 30
 				ear_deaf += 120
 				deaf_loop.start() // CHOMPEnable: Ear Ringing/Deafness
@@ -220,7 +220,7 @@
 			b_loss += 30
 			if (prob(getarmor(null, "bomb")))
 				b_loss = b_loss/2
-			if (!get_ear_protection() >= 2)
+			if (get_ear_protection() < 2)
 				ear_damage += 15
 				ear_deaf += 60
 				deaf_loop.start() // CHOMPEnable: Ear Ringing/Deafness
@@ -904,7 +904,7 @@
 		b_facial = hex2num(copytext(new_facial, 6, 8))
 
 	var/new_hair = tgui_color_picker(src, "Please select hair color.", "Character Generation",rgb(r_hair,g_hair,b_hair))
-	if(new_facial)
+	if(new_hair)
 		r_hair = hex2num(copytext(new_hair, 2, 4))
 		g_hair = hex2num(copytext(new_hair, 4, 6))
 		b_hair = hex2num(copytext(new_hair, 6, 8))

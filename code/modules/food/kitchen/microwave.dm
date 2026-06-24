@@ -501,7 +501,7 @@
 	return
 
 /obj/machinery/microwave/proc/wzhzhzh() // Whoever named this proc is fucking literally Satan. ~ Z
-	visible_message(span_notice("\The [src] " + visible_action + "."), span_notice("You hear a " + audible_action ? audible_action : "[src]" + "."))
+	visible_message(span_notice("\The [src] [visible_action]."), span_notice("You hear a [audible_action ? audible_action : "[src]"]."))
 	operating = TRUE
 	update_use_power(USE_POWER_ACTIVE)
 	post_state_change()

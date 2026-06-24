@@ -138,7 +138,7 @@
 			feral_state = FALSE
 			to_chat(owner,span_info("Your thoughts start clearing, your feral urges having passed - for the time being, at least."))
 			log_and_message_admins("is no longer feral.", owner)
-			update_xenochimera_hud(owner, danger, feral_state)
+			update_xenochimera_hud(danger, feral_state)
 			return
 
 		//If they lose enough health to hit softcrit, handle_shock() will keep resetting this. Otherwise, pissed off critters will lose shock faster than they gain it.
@@ -147,7 +147,7 @@
 		//Handle light/dark areas
 		var/turf/T = get_turf(owner)
 		if(!T)
-			update_xenochimera_hud(owner, danger, feral_state)
+			update_xenochimera_hud(danger, feral_state)
 			return //Nullspace
 		var/darkish = T.get_lumcount() <= 0.1
 
@@ -169,7 +169,7 @@
 					handle_feral()
 
 			//And bail
-			update_xenochimera_hud(owner, danger, feral_state)
+			update_xenochimera_hud(danger, feral_state)
 			return
 
 		// In the darkness, or "hidden", or in a belly. No need for custom scene-protection checks as it's just an occational infomessage.

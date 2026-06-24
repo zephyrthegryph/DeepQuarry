@@ -177,9 +177,9 @@
 	if(status && CLUMSY_FAIL_CHANCE(user))
 		to_chat(user, span_danger("You accidentally hit yourself with the [src]!"))
 		user.Weaken(30)
-		deductcharge(hitcost)
+		deductcharge()
 		return ITEM_INTERACT_SUCCESS
-	deductcharge(hitcost)
+	deductcharge()
 	return ..()
 
 /obj/item/melee/baton/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)

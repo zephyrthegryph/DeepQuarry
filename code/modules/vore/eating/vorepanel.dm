@@ -454,13 +454,13 @@
 		if("toggle_global_privacy")
 			host.eating_privacy_global = !host.eating_privacy_global
 			if(host.client.prefs_vr)
-				host.eating_privacy_global = host.eating_privacy_global
+				host.client.prefs_vr.eating_privacy_global = host.eating_privacy_global
 			unsaved_changes = TRUE
 			return TRUE
 		if("toggle_death_privacy")
 			host.vore_death_privacy = !host.vore_death_privacy
 			if(host.client.prefs_vr)
-				host.vore_death_privacy = host.vore_death_privacy
+				host.client.prefs_vr.vore_death_privacy = host.vore_death_privacy
 			unsaved_changes = TRUE
 			return TRUE
 		if("toggle_mimicry")
@@ -915,7 +915,7 @@
 			return TRUE
 		if("preset")
 			var/raw_data = lowertext(params["color"])
-			var/index = lowertext(params["index"])
+			var/index = text2num(params["index"])
 			var/list/entries = splittext(preset_colors, ";")
 			while(LAZYLEN(entries) < 20)
 				entries += "#FFFFFF"

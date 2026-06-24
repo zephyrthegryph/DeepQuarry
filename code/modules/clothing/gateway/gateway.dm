@@ -129,7 +129,7 @@
 
 /obj/item/clothing/suit/armor/buffvest/equipped(mob/living/carbon/human/H, slot)
 	..()
-	if(istype(H) && H.head == src && H.is_sentient())
+	if(istype(H) && H.wear_suit == src && H.is_sentient())
 		START_PROCESSING(SSobj, src)
 		if(flavor_equip)
 			to_chat(H, span_info(flavor_equip))

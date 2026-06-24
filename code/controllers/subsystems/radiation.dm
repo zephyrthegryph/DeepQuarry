@@ -171,6 +171,8 @@ SUBSYSTEM_DEF(radiation)
 				protected_limbs++
 				break
 
+	if(!limb_count)
+		return 0
 	return (protected_limbs/limb_count)
 
 ///Proc for when geiger counter is checked. This is called twice: Once when the geiger counter is in range of a pulse itself and once when a geiger counter is on a mob that is in range of a pulse.

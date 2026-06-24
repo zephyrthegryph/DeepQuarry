@@ -51,7 +51,7 @@
 	species_sounds = "Mouse"
 
 	pain_emote_1p = list("squeak", "squik")
-	pain_emote_1p = list("squeaks", "squiks")
+	pain_emote_3p = list("squeaks", "squiks")
 
 /mob/living/simple_mob/animal/passive/mouse/Destroy()
 	GLOB.active_ghost_pods -= src

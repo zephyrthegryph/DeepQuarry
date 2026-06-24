@@ -101,8 +101,9 @@
 	var/datum/anomaly_stats/stats = anom.stats
 	if(stats.attached_harvester)
 		var/obj/machinery/anomaly_harvester/harvester = stats.attached_harvester.resolve()
-		harvester.harvested = null
-		harvester.update_icon()
+		if(harvester)
+			harvester.harvested = null
+			harvester.update_icon()
 		stats.attached_harvester = null
 	harvested = anomaly
 	stats.attached_harvester = WEAKREF(src)

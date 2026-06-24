@@ -134,6 +134,7 @@ ADMIN_VERB(narrate_mob_args, R_FUN, "Narrate Entity", "Narrate entities using po
 		return
 	if(!holder.entity_refs[name])
 		to_chat(user, span_notice("[name] not in saved references!"))
+		return
 
 	//Separate definition for mob/living and /obj due to .say() code allowing us to engage with languages, stuttering etc
 	//We also need this so we can check for .client
@@ -143,6 +144,7 @@ ADMIN_VERB(narrate_mob_args, R_FUN, "Narrate Entity", "Narrate entities using po
 		to_chat(user, span_notice("[name] has invalid reference, deleting"))
 		holder.entity_names -= name
 		holder.entity_refs -= name
+		return
 	if(isliving(selection))
 		var/mob/living/our_entity = selection
 		if(our_entity.client) //Making sure we can't speak for players
