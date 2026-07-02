@@ -141,18 +141,18 @@ SUBSYSTEM_DEF(air)
 
 /datum/controller/subsystem/air/Initialize()
 	map_loading = FALSE
-	gas_reactions = init_gas_reactions()
-	hotspot_reactions = init_hotspot_reactions()
 
-	// Register the gas roster in the Rust arena. Reactions run in DM (user
-	// decision) via /datum/gas_mixture/react(), NOT auxmos' reaction engine — so
-	// we empty gas_reactions across hook_init so it doesn't parse them (its
-	// gas_reactions.iter() parser panics on our reaction list shape, and we don't
-	// need auxmos' reaction dispatch table). See doc/auxmos_wiring_plan.md.
-	var/list/_saved_reactions = gas_reactions
-	gas_reactions = list()
+	// Register the gas roster in the Rust arena FIRST — reaction setup
+	// (init_gas_reactions -> build_min_requirements) and everything else that
+	// touches gas ops needs the registry populated, or lookups fail with "Invalid
+	// gas ID" (and a throwing reaction New() would leave gas_reactions null).
+	// gas_reactions is still empty (SSair default) at this point, so hook_init's
+	// reaction parser reads nothing — reactions run in DM via /datum/gas_mixture/react().
 	auxtools_atmos_init(build_auxmos_gas_registry())
-	gas_reactions = _saved_reactions
+
+	gas_reactions = init_gas_reactions()
+	log_world("SSAIR_DIAG post-assign gas_reactions=[isnull(gas_reactions) ? "NULL" : length(gas_reactions)]")
+	hotspot_reactions = init_hotspot_reactions()
 
 	build_multiz_atmos_levels()
 	setup_allturfs()

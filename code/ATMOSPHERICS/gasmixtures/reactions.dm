@@ -32,8 +32,13 @@
 		// reactions collide (auxmos drops duplicate priorities). Higher priority
 		// sorts LAST in auxmos' BTreeMap, and all_reactable iterates .rev(), so
 		// higher-numbered priorities fire FIRST (PRIORITY_FIRE group first).
-		var/tiebreaker = (group_counters[reaction.priority_group] || 0) + 1
-		group_counters[reaction.priority_group] = tiebreaker
+		// STRING key: priority_group is a NUMBER, and list[number] is POSITIONAL
+		// indexing (not assoc key lookup) — group_counters[5] on an empty list is a
+		// "list index out of bounds" runtime that aborts this whole proc and leaves
+		// SSair.gas_reactions null (killing every reaction). Stringify the key.
+		var/pg_key = "[reaction.priority_group]"
+		var/tiebreaker = (group_counters[pg_key] || 0) + 1
+		group_counters[pg_key] = tiebreaker
 		reaction.priority = reaction.priority_group * 1000 + tiebreaker
 		reactions[reaction] = TRUE
 	return reactions
@@ -89,8 +94,13 @@
 	init_factors()
 	build_min_requirements()
 
-/datum/gas_reaction/proc/init_reqs() // Override this
-	CRASH("Reaction [type] made without specifying requirements.")
+/datum/gas_reaction/proc/init_reqs() // Override this to set `requirements`.
+	// Do NOT CRASH here: New() calls init_reqs() during init_gas_reactions(), and a
+	// CRASH() unwinds the whole call chain — aborting init_gas_reactions() and
+	// leaving SSair.gas_reactions null, which silently kills EVERY reaction. An
+	// abstract/intermediate reaction base without requirements simply no-ops (it
+	// won't react, since react() skips reactions with empty requirements).
+	return
 
 /**
  * Translate the DM `requirements` list into the `min_requirements` list auxmos
