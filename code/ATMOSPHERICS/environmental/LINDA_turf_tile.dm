@@ -122,6 +122,10 @@
 		return FALSE
 	air.merge(giver)
 	update_visuals()
+	// air_update_turf now (re)pushes arena adjacency both directions even with
+	// update=FALSE, so a turf that just received gas has live neighbour edges and
+	// auxmos will spread the gas out (critical on runtime-built turfs whose edges
+	// were never pushed). No need for the expensive update=TRUE geometry rescan.
 	air_update_turf(FALSE, FALSE)
 	return TRUE
 

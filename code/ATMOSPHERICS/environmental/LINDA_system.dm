@@ -215,11 +215,21 @@
 	// to turfs already present in the arena, so the air ref must land before the
 	// adjacency push.
 	update_air_ref(0)
+	// Rebuild the DM adjacency graph only when the world geometry actually changed
+	// (update=TRUE) — that's the expensive scan, so gas-only updates skip it.
 	if(update)
 		immediate_calculate_adjacent_turfs()
-		// Push the freshly-rebuilt adjacency to the Rust arena so auxmos' FDM sees
-		// the new neighbour set on its next process_turfs cycle.
-		__update_auxtools_turf_adjacency_info()
+	// ALWAYS (re)push adjacency into the Rust arena, both directions. auxmos stores
+	// adjacency as DIRECTED graph edges and the FDM shares across them; a turf built
+	// at runtime (ChangeTurf, a freshly loaded z-level like an expedition site or the
+	// unit-test room) may have a correct DM adjacency list that was never pushed to
+	// the arena, or only its own out-edges pushed — so the reverse edge (neighbour ->
+	// src) is missing and gas never flows back. Pushing src plus each neighbour keeps
+	// the arena graph symmetric. This is just the FFI push (reads the existing DM
+	// list) — NOT a recursive air_update_turf — so it's cheap and can't loop.
+	__update_auxtools_turf_adjacency_info()
+	for(var/turf/open/near_turf as anything in atmos_adjacent_turfs)
+		near_turf.__update_auxtools_turf_adjacency_info()
 
 /atom/movable/proc/move_update_air(turf/target_turf)
 	if(isturf(target_turf))

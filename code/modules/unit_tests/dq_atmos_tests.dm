@@ -1392,6 +1392,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	var/a_final_pressure = A.air.return_pressure()
 	var/b_final_pressure = B.air.return_pressure()
 	var/total_final_moles = A.air.total_moles() + B.air.total_moles()
+	log_world("PDIAG1: aP [a_initial_pressure]->[a_final_pressure] bP [b_initial_pressure]->[b_final_pressure] Aadj=[LAZYLEN(A.atmos_adjacent_turfs)] AadjB=[A.atmos_adjacent_turfs ? A.atmos_adjacent_turfs[B] : "?"] BadjA=[B.atmos_adjacent_turfs ? B.atmos_adjacent_turfs[A] : "?"] Az=[A.z] Bz=[B.z] samez_adj=[get_dist(A,B)]")
 	TEST_ASSERT(a_final_pressure < a_initial_pressure, \
 		"A pressure didn't drop after real SSair ticks in walled pair: [a_initial_pressure] → [a_final_pressure]")
 	TEST_ASSERT(b_final_pressure > b_initial_pressure, \
@@ -1555,6 +1556,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	dq_atmos_test_wait_real_ssair_ticks(20)
 
 	var/down_p = lower.air.get_moles(/datum/gas/plasma)
+	log_world("PDIAG2: down_p=[down_p] upperP=[upper.air.get_moles(/datum/gas/plasma)] upAdjLower=[upper.atmos_adjacent_turfs ? upper.atmos_adjacent_turfs[lower] : "?"] lowerAdjUp=[lower.atmos_adjacent_turfs ? lower.atmos_adjacent_turfs[upper] : "?"] upperZ=[upper.z] lowerZ=[lower.z]")
 	TEST_ASSERT(down_p > 1, \
 		"multi-z spread failed: floor below the open turf got [down_p] plasma after real SSair ticks")
 
@@ -1604,6 +1606,14 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	var/datum/gas_mixture/planet_mix = SSair.planetary[T.initial_gas_mix]
 	TEST_ASSERT_NOTNULL(planet_mix, "SSair.planetary missing entry for [T.type] gas_mix [T.initial_gas_mix]")
 
+	// Register T as planetary in the arena WHILE IT IS STILL CLEAN. auxmos captures
+	// the planetary baseline (the mix a planetary turf is pulled toward) from the
+	// turf's current air at registration time. A real planetary turf registers clean
+	// at mapload; here we set the flag at runtime, so re-register now — before we
+	// pollute it — or auxmos would snapshot the polluted air as the baseline and the
+	// share would have nothing to drain toward.
+	T.update_air_ref(0)
+
 	// Pollute the turf with phoron via the production path. assume_air calls
 	// air_update_turf → enrolls T in active_turfs.
 	for(var/datum/gas/g as anything in T.air.get_gases())
@@ -1621,6 +1631,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	dq_atmos_test_wait_real_ssair_ticks(20)
 
 	var/final_plasma = T.air.get_moles(/datum/gas/plasma)
+	log_world("PDIAG3: plasma [initial_plasma]->[final_plasma] planetaryflag=[T.planetary_atmos] Tadj=[LAZYLEN(T.atmos_adjacent_turfs)] initgas=[T.initial_gas_mix]")
 
 	// Clean up: drop the planetary flag and unwall the room so later tests see
 	// a clean, non-planetary floor. (We leave the SSair.planetary entry in
@@ -1668,6 +1679,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 
 	dq_atmos_test_wait_real_ssair_ticks(5)
 
+	log_world("PDIAG4: Am=[A.air.get_moles(/datum/gas/plasma)] Bm=[B.air.get_moles(/datum/gas/plasma)] Aov=[LAZYLEN(A.atmos_overlay_types)] Bov=[LAZYLEN(B.atmos_overlay_types)] AadjB=[A.atmos_adjacent_turfs ? A.atmos_adjacent_turfs[B] : "?"] BadjA=[B.atmos_adjacent_turfs ? B.atmos_adjacent_turfs[A] : "?"]")
 	TEST_ASSERT(LAZYLEN(A.atmos_overlay_types) > 0, \
 		"A has plasma but no atmos_overlay — process_cell didn't call update_visuals")
 	TEST_ASSERT(LAZYLEN(B.atmos_overlay_types) > 0, \
