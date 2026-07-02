@@ -193,6 +193,19 @@ SUBSYSTEM_DEF(air)
 	// rebuild their networks through /obj/machinery/atmospherics/pipe Initialize
 	// and the ChangeTurf path, no SSair orchestration needed.
 
+	// Drain the Rust->DM atmos callback queue (gas-overlay updates + reactions the
+	// arena's post_process pass enqueues for every turf whose gas changed) up front,
+	// unconditionally, each fire. The stepped pipeline below only reaches its own
+	// drain step (SSAIR_FINALIZE_TURFS) once the turf + equalize steps finish without
+	// overtiming; with every turf registered active the turf step can pause on
+	// overtime every fire and never reach it, starving the drain — so gas clouds that
+	// spread onto a neighbouring tile via the FDM never get their overlay refreshed
+	// (the tile that RECEIVED gas, as opposed to the one a machine injected into,
+	// relies entirely on this callback). Draining here guarantees those run; it's a
+	// no-op when the queue is empty.
+	if(initialized)
+		finish_turf_processing_auxtools(SSAIR_REMAINING_MS)
+
 	if(currentpart == SSAIR_PIPENETS || !resumed)
 		timer = TICK_USAGE_REAL
 		if(!resumed)
