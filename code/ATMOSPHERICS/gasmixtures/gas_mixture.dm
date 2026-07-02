@@ -301,9 +301,38 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 	return call_ext(VERDIGRIS, "byond:compare_hook_ffi")(src, sample)
 
 ///Performs various reactions such as combustion and fabrication
-///Returns: reaction flags (auxmos dispatches back to DM /datum/gas_reaction datums)
+/// Runs DM gas reactions against this mixture. Reactions stay in DM (user
+/// decision); this dispatcher checks each /datum/gas_reaction's requirements via
+/// arena getters and calls its react() (whose body was ported onto arena
+/// accessors). auxmos' own reaction engine is NOT used (SSair.gas_reactions is
+/// emptied during auxtools_atmos_init so hook_init doesn't parse it).
 /datum/gas_mixture/proc/react(datum/holder)
-	return call_ext(VERDIGRIS, "byond:react_hook_ffi")(src, holder)
+	. = NO_REACTION
+	var/list/reactions = SSair.gas_reactions
+	if(!length(reactions))
+		return
+	var/temp = return_temperature()
+	// Hypernoblium suppresses all reactions (parity with the old react()).
+	if(get_moles(/datum/gas/hypernoblium) >= REACTION_OPPRESSION_THRESHOLD && temp > REACTION_OPPRESSION_MIN_TEMP)
+		return STOP_REACTIONS
+	for(var/datum/gas_reaction/reaction as anything in reactions)
+		var/list/reqs = reaction.requirements
+		if(!reqs)
+			continue
+		if((reqs["MIN_TEMP"] && temp < reqs["MIN_TEMP"]) || (reqs["MAX_TEMP"] && temp > reqs["MAX_TEMP"]))
+			continue
+		var/satisfied = TRUE
+		for(var/id in reqs)
+			if(id == "MIN_TEMP" || id == "MAX_TEMP")
+				continue
+			if(get_moles(id) < reqs[id])
+				satisfied = FALSE
+				break
+		if(!satisfied)
+			continue
+		. |= reaction.react(src, holder)
+		if(. & STOP_REACTIONS)
+			return
 
 /**
  * Returns the partial pressure of the gas in the breath based on BREATH_VOLUME

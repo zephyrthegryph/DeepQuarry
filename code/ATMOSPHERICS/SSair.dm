@@ -144,14 +144,15 @@ SUBSYSTEM_DEF(air)
 	gas_reactions = init_gas_reactions()
 	hotspot_reactions = init_hotspot_reactions()
 
-	// Register the gas roster in the Rust arena AND build the reaction dispatch
-	// table. hook_init reads SSair.gas_reactions (the flat list of
-	// /datum/gas_reaction instances that init_gas_reactions() returns) and, per
-	// reaction, its `priority` (unique number), `min_requirements` (arena-shaped
-	// requirements), and `id`. Those vars are built by init_gas_reactions() and
-	// build_min_requirements(). Reactions still RUN in DM — auxmos' react()
-	// dispatches back into each datum's react(). See doc/auxmos_wiring_plan.md.
+	// Register the gas roster in the Rust arena. Reactions run in DM (user
+	// decision) via /datum/gas_mixture/react(), NOT auxmos' reaction engine — so
+	// we empty gas_reactions across hook_init so it doesn't parse them (its
+	// gas_reactions.iter() parser panics on our reaction list shape, and we don't
+	// need auxmos' reaction dispatch table). See doc/auxmos_wiring_plan.md.
+	var/list/_saved_reactions = gas_reactions
+	gas_reactions = list()
 	auxtools_atmos_init(build_auxmos_gas_registry())
+	gas_reactions = _saved_reactions
 
 	build_multiz_atmos_levels()
 	setup_allturfs()
