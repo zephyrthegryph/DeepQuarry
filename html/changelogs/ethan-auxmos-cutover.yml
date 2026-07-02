@@ -1,0 +1,7 @@
+author: "ethan"
+delete-after: true
+changes:
+  - rscadd: "Atmospherics now runs fully on the Rust auxmos arena — gas math, diffusion, pressure equalisation, multi-z sharing, planetary atmospheres, reactions, and gas overlays are all arena-backed."
+  - bugfix: "Fixed the station booting in vacuum (gas roster was registered after mapload parsed turf air)."
+  - bugfix: "Fixed gas not spreading, equalising, or rendering on tiles reached purely by diffusion (arena turf adjacency is now pushed bidirectionally and gas-recipient tiles are enabled for visual/reaction processing)."
+  - bugfix: "Fixed gas thruster thrust, pipe-network reconcile_air mass balance, and planetary-atmosphere pollution draining."
