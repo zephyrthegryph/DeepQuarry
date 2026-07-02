@@ -1238,11 +1238,10 @@
  */
 /datum/gas_reaction/antinoblium_replication/react(datum/gas_mixture/air, datum/holder)
 	. = REACTING | VOLATILE_REACTION
-	// get_gases() returns a flat list of the gas STRING ids present in the
-	// mixture ("/datum/gas/plasma", ...) — not moles, and keyed by string, so
-	// compare against the stringified antinoblium path and fetch moles per-id.
+	// get_gases() returns an assoc list keyed by gas-type PATH (present gases);
+	// iterating it yields the type-path keys. Exclude antinoblium itself by path.
 	var/list/cached_gases = air.get_gases()
-	var/antinoblium_id = "[/datum/gas/antinoblium]"
+	var/antinoblium_id = /datum/gas/antinoblium
 	var/heat_capacity = air.heat_capacity()
 	var/total_moles = air.total_moles()
 	var/antinoblium_moles = air.get_moles(/datum/gas/antinoblium)

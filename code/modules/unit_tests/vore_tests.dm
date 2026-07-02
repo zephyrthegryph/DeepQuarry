@@ -2,14 +2,21 @@
 	if(!loc)
 		// was T.zone.air.return_pressure() under ZAS; LINDA exposes
 		// per-turf air directly via return_air().
+		var/dbg_count = 0
+		var/dbg_samples = ""
 		for(var/turf/simulated/floor/tiled/T in world)
 			var/datum/gas_mixture/air = T.return_air()
 			if(!air)
 				continue
 			var/pressure = air.return_pressure()
+			dbg_count++
+			if(dbg_count <= 8)
+				dbg_samples += "[pressure]/[air.return_temperature()]/[air.total_moles()] "
 			if(90 < pressure && pressure < 120) // Find a turf between 90 and 120
 				loc = T
 				break
+		if(!loc)
+			log_world("VORE_DIAG: tiled floors with air=[dbg_count]; first samples (P/T/mol)=[dbg_samples]")
 
 	TEST_ASSERT(loc, "No valid turf available for test mob")
 

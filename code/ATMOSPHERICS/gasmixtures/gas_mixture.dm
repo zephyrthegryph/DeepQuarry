@@ -143,10 +143,17 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 	. = list()
 	if(!islist(ids))
 		return
+	// Build an ASSOC list gas-type-path -> moles. Iterating it (for(g in ...))
+	// still yields the type-path keys, so the many iterate-only callers are
+	// unchanged; callers that read the value (cached[g]) now get the mole count
+	// instead of null. The Rust bind returns registered STRING ids (type-path
+	// text, e.g. "/datum/gas/plasma"); convert each back to a path for the key
+	// (meta_gas_info / get_moles all key by type path) and read its moles by the
+	// same string id we got back.
 	for(var/id in ids)
 		var/gas_path = text2path(id)
 		if(gas_path)
-			. += gas_path
+			.[gas_path] = call_ext(VERDIGRIS, "byond:get_moles_hook_ffi")(src, id)
 
 /// Checks to see if gas amount exists in mixture.
 /datum/gas_mixture/proc/has_gas(gas_id, amount=0)
