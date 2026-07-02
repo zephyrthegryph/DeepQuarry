@@ -133,8 +133,20 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 	return call_ext(VERDIGRIS, "byond:adjust_moles_hook_ffi")(src, "[gas_id]", amount)
 
 /// Returns the list of gas ids present in the mixture (assoc id -> moles).
+/// Returns the /datum/gas TYPE PATHS present in the mixture. The Rust bind
+/// returns the registered STRING ids (which we register as type-path text, e.g.
+/// "/datum/gas/plasma"), so convert each back to a path so callers get the same
+/// type-path contract the old DM gases[] keys had (meta_gas_info/get_moles all
+/// key by type path).
 /datum/gas_mixture/proc/get_gases()
-	return call_ext(VERDIGRIS, "byond:get_gases_hook_ffi")(src)
+	var/list/ids = call_ext(VERDIGRIS, "byond:get_gases_hook_ffi")(src)
+	. = list()
+	if(!islist(ids))
+		return
+	for(var/id in ids)
+		var/gas_path = text2path(id)
+		if(gas_path)
+			. += gas_path
 
 /// Checks to see if gas amount exists in mixture.
 /datum/gas_mixture/proc/has_gas(gas_id, amount=0)

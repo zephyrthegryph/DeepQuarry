@@ -59,6 +59,16 @@
 /turf/proc/update_air_ref(flag)
 	return
 
+// Rust hook_register_turf uses the flag arg AS the turf's SimulationFlags
+// (turfs.rs). A turf is only processed by the FDM if it has SIMULATION_DIFFUSE
+// or SIMULATION_ALL set (is_active = flags.intersects(SIMULATION_ANY)). The
+// driver's callers use `flag` only as a register(>=0)/unregister(<0) signal, so
+// register must translate to SIMULATION_ANY or the turf is registered inert and
+// gas never moves.
+#define SIMULATION_DIFFUSE 1
+#define SIMULATION_ALL 2
+#define SIMULATION_ANY 3
+
 /turf/open/update_air_ref(flag)
 	// Airless open turfs that don't block air (rare, but the reparent made walls
 	// /turf/open) would also trip the null-air read on the register path. Walls
@@ -67,7 +77,9 @@
 	// tile; always allow the unregister (flag < 0) path through.
 	if(flag >= 0 && !blocks_air && isnull(air))
 		return
-	return call_ext(VERDIGRIS, "byond:hook_register_turf_ffi")(src, flag)
+	// Register (flag>=0) with SIMULATION_ANY so the Rust FDM actually processes
+	// this turf; unregister passes the negative flag straight through.
+	return call_ext(VERDIGRIS, "byond:hook_register_turf_ffi")(src, flag >= 0 ? SIMULATION_ANY : flag)
 
 /// Pushes this turf's atmos_adjacent_turfs graph into the Rust arena. Both the
 /// turf and every neighbour must already be registered (update_air_ref) or the

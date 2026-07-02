@@ -306,6 +306,9 @@
 	var/list/molar_specific_volume = list()
 	var/list/flags = list()
 	var/list/overlay_limit = list()
+	/// Rust turf visuals (update_visuals) reads GLOB.gas_data.overlays[gas_id][vis_factor].
+	/// Declare so the read resolves (empty -> no overlay, no per-turf error flood).
+	var/list/overlays = list()
 
 // Real molar masses (kg/mol) for the LINDA-only /datum/gas subtypes that
 // don't have a matching /datum/decl/xgm_gas in code/defines/gases.dm. Real

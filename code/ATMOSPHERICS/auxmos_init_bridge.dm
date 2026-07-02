@@ -42,10 +42,16 @@
 /datum/controller/subsystem/air/proc/auxtools_update_reactions()
 	return call_ext(VERDIGRIS, "byond:update_reactions_ffi")()
 
-// byondapi_stack_trace — auxmos panic handler routes back into DM via this proc.
-// Logging-only; do not raise.
+// byondapi_stack_trace — auxmos error/panic handler routes back into DM via this
+// proc. Log each DISTINCT message once (deduped) to world log so a per-turf error
+// flood doesn't drown the log — and so we can actually see the message.
+GLOBAL_LIST_EMPTY(auxmos_seen_errors)
 /proc/byondapi_stack_trace(msg)
-	stack_trace("[msg]")
+	var/key = "[msg]"
+	if(GLOB.auxmos_seen_errors[key])
+		return
+	GLOB.auxmos_seen_errors[key] = TRUE
+	log_world("AUXMOS_STACK_TRACE: [key]")
 
 
 // === Gas registry adapter (chunk 2) ===
