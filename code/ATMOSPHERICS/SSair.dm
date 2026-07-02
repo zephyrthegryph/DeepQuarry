@@ -151,7 +151,6 @@ SUBSYSTEM_DEF(air)
 	auxtools_atmos_init(build_auxmos_gas_registry())
 
 	gas_reactions = init_gas_reactions()
-	log_world("SSAIR_DIAG post-assign gas_reactions=[isnull(gas_reactions) ? "NULL" : length(gas_reactions)]")
 	hotspot_reactions = init_hotspot_reactions()
 
 	build_multiz_atmos_levels()
