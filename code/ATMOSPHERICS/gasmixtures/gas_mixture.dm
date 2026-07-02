@@ -62,6 +62,10 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 	var/initial_volume
 
 /datum/gas_mixture/New(volume)
+	// Ensure auxmos knows the gas roster before ANY set_moles can run on this
+	// mixture. Turf air is parsed during mapload, before SSair.Initialize, so
+	// this (idempotent) call is what actually registers gases in practice.
+	ensure_auxmos_gas_registry()
 	if(!isnull(volume))
 		src.volume = volume
 	if(src.volume <= 0)

@@ -371,6 +371,27 @@ GLOBAL_LIST_INIT(dq_linda_only_molar_masses, list(
 
 GLOBAL_DATUM_INIT(gas_data, /datum/xgm_gas_data, new())
 
+// Populate GLOB.gas_data.overlays so the Rust turf-processing visuals path
+// (verdigris turfs.rs::update_visuals) can render gas clouds. It reads
+// overlays[registered_gas_id][visibility_step(moles)] -> an overlay appearance,
+// where the id is the STRING we registered the gas under (its type-path text)
+// and visibility_step is clamped to 1..FACTOR_GAS_VISIBLE_MAX. The per-gas
+// overlay objects already exist in GLOB.meta_gas_info[path][META_GAS_OVERLAY],
+// a list-of-[plane offset] each a fill list of TOTAL_VISIBLE_STATES overlays;
+// expose the base-plane fill list (Rust indexes it with no plane offset and
+// only reads 1..20, well within the fill list's range). Must run AFTER
+// meta_gas_list() has generated overlays (SSmapping ready) — SSair.Initialize
+// calls this.
+/proc/build_gas_data_overlays()
+	if(!GLOB.gas_data || !GLOB.meta_gas_info)
+		return
+	for(var/gas_path in GLOB.meta_gas_info)
+		var/list/meta = GLOB.meta_gas_info[gas_path]
+		var/list/overlay = meta[META_GAS_OVERLAY]
+		if(!length(overlay))
+			continue
+		GLOB.gas_data.overlays["[gas_path]"] = overlay[1]
+
 
 // =====================================================================
 // 6. Specific entropy

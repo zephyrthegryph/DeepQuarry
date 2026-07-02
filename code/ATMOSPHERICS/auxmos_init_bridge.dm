@@ -26,6 +26,22 @@
 /proc/auxtools_atmos_init(gas_data)
 	return call_ext(VERDIGRIS, "byond:hook_init_ffi")(gas_data)
 
+// The gas registry MUST be initialised in auxmos before any gas_mixture's
+// set_moles runs — otherwise the gas ids are unknown and set_moles no-ops
+// ("Invalid gas ID"), so every mixture stays empty (the whole station boots
+// in vacuum). Turf air is created eagerly in /turf/open/Initialize (mapload),
+// which runs BEFORE SSair.Initialize, so we can't rely on SSair to register
+// gases first. Register lazily on the first gas_mixture ever created (New()),
+// guarded so it runs exactly once. build_auxmos_gas_registry() only reads the
+// compiled /datum/gas roster, so it's safe this early.
+GLOBAL_VAR_INIT(auxmos_gas_registry_initialized, FALSE)
+
+/proc/ensure_auxmos_gas_registry()
+	if(GLOB.auxmos_gas_registry_initialized)
+		return
+	GLOB.auxmos_gas_registry_initialized = TRUE
+	auxtools_atmos_init(build_auxmos_gas_registry())
+
 /// For registering gases, do not touch this.
 /proc/_auxtools_register_gas(gas)
 	return call_ext(VERDIGRIS, "byond:hook_register_gas_ffi")(gas)

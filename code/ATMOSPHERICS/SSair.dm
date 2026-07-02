@@ -148,7 +148,13 @@ SUBSYSTEM_DEF(air)
 	// gas ID" (and a throwing reaction New() would leave gas_reactions null).
 	// gas_reactions is still empty (SSair default) at this point, so hook_init's
 	// reaction parser reads nothing — reactions run in DM via /datum/gas_mixture/react().
-	auxtools_atmos_init(build_auxmos_gas_registry())
+	// Idempotent: in practice the very first turf air (created during mapload,
+	// before this runs) already triggered registration via gas_mixture/New().
+	ensure_auxmos_gas_registry()
+
+	// Fill GLOB.gas_data.overlays now that meta_gas_info's overlay objects exist,
+	// so the Rust turf-processing visuals path can render gas clouds.
+	build_gas_data_overlays()
 
 	gas_reactions = init_gas_reactions()
 	hotspot_reactions = init_hotspot_reactions()
