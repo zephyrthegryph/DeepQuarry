@@ -1489,9 +1489,8 @@
 "bL" = (
 /obj/machinery/shipsensors{
 	dir = 1;
-	health = 1000;
+	max_integrity = 1000;
 	heat_reduction = 4.5;
-	max_health = 1000;
 	name = "military sensors suite"
 	},
 /obj/effect/floor_decal/industrial/danger/full,
@@ -1527,8 +1526,7 @@
 /obj/machinery/mech_recharger/alien,
 /obj/mecha/combat/fighter/baron/loaded{
 	ground_capable = 1;
-	health = 600;
-	maxhealth = 600;
+	max_integrity = 600;
 	name = "Duke";
 	desc = "A heavily modified Baron-class fighter from the commonwealth. It has been retrofitted with heavier armor and additional maneuvering thrusters. Can be used in atmospheric operations.";
 	starting_components = list(/obj/item/mecha_parts/component/hull/lightweight,/obj/item/mecha_parts/component/actuator/hispeed,/obj/item/mecha_parts/component/armor/military,/obj/item/mecha_parts/component/gas/reinforced,/obj/item/mecha_parts/component/electrical)

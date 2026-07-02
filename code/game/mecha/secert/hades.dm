@@ -7,8 +7,7 @@
 	step_in = 1
 	dir_in = 1 //Facing North.
 	step_energy_drain = 15
-	health = 400
-	maxhealth = 400
+	max_integrity = 400
 	deflect_chance = 30
 	max_temperature = 20000 //A ship meant to travel the void
 	infra_luminosity = 3

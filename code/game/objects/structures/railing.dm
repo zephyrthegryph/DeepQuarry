@@ -15,9 +15,8 @@
 	flags = ON_BORDER
 	icon_state = "railing0"
 	var/broken = FALSE
-	var/health = 70
+	max_integrity = 70
 	var/interactable = FALSE
-	var/maxhealth = 70
 	var/check = 0
 	var/icon_modifier = ""
 
@@ -59,8 +58,8 @@
 
 /obj/structure/railing/examine(mob/user)
 	. = ..()
-	if(health < maxhealth)
-		switch(health / maxhealth)
+	if(get_integrity() < max_integrity)
+		switch(get_integrity() / max_integrity)
 			if(0.0 to 0.5)
 				. += span_warning("It looks severely damaged!")
 			if(0.25 to 0.5)
@@ -68,13 +67,11 @@
 			if(0.5 to 1.0)
 				. += span_notice("It has a few scrapes and dents.")
 
-/obj/structure/railing/take_damage(amount)
-	health -= amount
-	if(health <= 0)
-		visible_message(span_warning("\The [src] breaks down!"))
-		playsound(src, 'sound/effects/grillehit.ogg', 50, 1)
-		new /obj/item/stack/rods(get_turf(src))
-		qdel(src)
+/obj/structure/railing/atom_destruction(damage_flag)
+	visible_message(span_warning("\The [src] breaks down!"))
+	playsound(src, 'sound/effects/grillehit.ogg', 50, 1)
+	new /obj/item/stack/rods(get_turf(src))
+	return ..()
 
 /obj/structure/railing/proc/NeighborsCheck(UpdateNeighbors = 1)
 	check = 0
@@ -182,13 +179,13 @@
 			return
 
 	// Repair
-	if(health < maxhealth && W.has_tool_quality(TOOL_WELDER))
+	if(get_integrity() < max_integrity && W.has_tool_quality(TOOL_WELDER))
 		var/obj/item/weldingtool/F = W.get_welder()
 		if(F.welding)
 			playsound(src, F.usesound, 50, 1)
 			if(do_after(user, 2 SECONDS, target = src))
 				user.visible_message(span_infoplain(span_bold("\The [user]") + " repairs some damage to \the [src]."), span_notice("You repair some damage to \the [src]."))
-				health = min(health+(maxhealth/5), maxhealth) // 20% repair per application
+				repair_damage(max_integrity/5) // 20% repair per application
 				return
 
 	// Install
@@ -214,7 +211,7 @@
 				if(user.a_intent == I_HURT)
 					if (prob(15))	M.Weaken(5)
 					M.apply_damage(8,def_zone = "head")
-					take_damage(8)
+					take_damage(8, BRUTE, MELEE, sound_effect = FALSE)
 					visible_message(span_danger("[G.assailant] slams [G.affecting]'s face against \the [src]!"))
 					playsound(src, 'sound/effects/grillehit.ogg', 50, 1)
 				else
@@ -232,7 +229,7 @@
 
 	else
 		playsound(src, 'sound/effects/grillehit.ogg', 50, 1)
-		take_damage(W.force)
+		take_damage(W.force, W.damtype, MELEE, sound_effect = FALSE)
 		user.setClickCooldown(user.get_attack_speed(W))
 
 	return ..()

@@ -171,7 +171,6 @@
 /obj/machinery/power/smes/buildable/RefreshParts()
 	recalc_coils()
 
-	dq_apply_material_synergies(src)
 // Proc: recalc_coils()
 // Parameters: None
 // Description: Updates properties (IO, capacity, etc.) of this SMES by checking internal components.

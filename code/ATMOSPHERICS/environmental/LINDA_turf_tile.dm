@@ -133,7 +133,16 @@
 
 /turf/open/return_air()
 	RETURN_TYPE(/datum/gas_mixture)
-	return air
+	// After the /turf/simulated → /turf/open reparent, walls / dense / vacuum tiles
+	// are /turf/open subtypes with air = null. Stock /tg/ never hits this (walls are
+	// a separate /turf/closed type with no return_air), so its ~260 return_air()
+	// callers assume a non-null mixture and deref it directly — every one of them is
+	// a latent null-crash on an airless tile (the external dock airlock sensors hit
+	// it every tick). Fall back to the base turf's non-null empty (vacuum) mixture
+	// for airless tiles instead of returning null: consumers read 0-pressure vacuum,
+	// which is the correct answer for a wall/space tile, rather than runtiming. The
+	// atmos hot path (share/process_cell) uses .air directly and is unaffected.
+	return air || ..()
 
 /turf/open/return_analyzable_air()
 	return return_air()
@@ -532,18 +541,30 @@
 	//make local for sanic speed
 	var/list/shared_gases = shared_mix.gases
 	var/list/turf_list = src.turf_list
-	var/turflen = turf_list.len
 	var/imumutable_in_group = FALSE
 	var/energy = 0
 	var/heat_cap = 0
 
+	// After the /turf/simulated -> /turf/open reparent, a turf already in this
+	// group can be ChangeTurf'd into a wall (air = null, blocks_air = 1) and left
+	// as a STALE ref in turf_list (mark_for_update doesn't always pull it out; the
+	// unit tests' isolate_pair does exactly this on purpose). /tg/ stock never hits
+	// this because walls are a separate /turf/closed type. If we counted those dead
+	// refs in the denominator below (`/= turflen`) we'd divide the pooled moles by
+	// too large a number and DESTROY gas every breakdown (mass non-conservation),
+	// and reading `.air.heat_capacity()` on them runtimes. So validate members up
+	// front, pool + redistribute against only the real air-holding turfs, and prune
+	// the dead refs so a later tick doesn't redo the work.
+	var/list/turf/open/valid_members = list()
 	for(var/turf/open/group_member as anything in turf_list)
-		//Cache?
 		var/datum/gas_mixture/turf/mix = group_member.air
+		if(!mix || group_member.blocks_air)
+			group_member.excited_group = null //drop the stale wall/space ref from the group
+			continue
 		if (roundstart)
-			if(istype(group_member.air, /datum/gas_mixture/immutable))
+			if(istype(mix, /datum/gas_mixture/immutable))
 				imumutable_in_group = TRUE
-				shared_mix.copy_from(group_member.air) //This had better be immutable young man
+				shared_mix.copy_from(mix) //This had better be immutable young man
 				shared_gases = shared_mix.gases //update the cache
 				break
 			// If we're planetary use THAT mix, and stop here
@@ -553,6 +574,7 @@
 				shared_mix.copy_from(planetary_mix)
 				shared_gases = shared_mix.gases // Cache update
 				break
+		valid_members += group_member
 		//"borrowing" this code from merge(), I need to play with the temp portion. Lets expand it out
 		//temperature = (giver.temperature * giver_heat_capacity + temperature * self_heat_capacity) / combined_heat_capacity
 		var/capacity = mix.heat_capacity()
@@ -564,13 +586,23 @@
 			ASSERT_GAS_IN_LIST(giver_id, shared_gases)
 			shared_gases[giver_id][MOLES] += giver_gases[giver_id][MOLES]
 
+	// If we pruned dead refs, keep turf_list consistent for the rest of the group's life.
+	if(valid_members.len != turf_list.len && !imumutable_in_group)
+		src.turf_list = valid_members
+		turf_list = valid_members
+
 	if(!imumutable_in_group)
-		shared_mix.temperature = energy / heat_cap
+		var/turflen = valid_members.len
+		if(!turflen) //everything in the group was a stale wall/space ref
+			return
+		shared_mix.temperature = heat_cap ? (energy / heat_cap) : shared_mix.temperature
 		for(var/id in shared_gases)
 			shared_gases[id][MOLES] /= turflen
 		shared_mix.garbage_collect()
 
-	for(var/turf/open/group_member as anything in turf_list)
+	for(var/turf/open/group_member as anything in (imumutable_in_group ? turf_list : valid_members))
+		if(!group_member.air || group_member.blocks_air)
+			continue
 		if(group_member.planetary_atmos) //We do this as a hack to try and minimize unneeded excited group spread over planetary turfs
 			group_member.air.copy_from(SSair.planetary[group_member.initial_gas_mix]) //Comes with a cost of "slower" drains, but it's worth it
 		else

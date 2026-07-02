@@ -75,8 +75,8 @@
 
 	var/damaged_hull = HC && HC.integrity < HC.max_integrity
 
-	if(effective_boost<0 || chassis.health < initial(chassis.health) || damaged_armor || damaged_hull)
-		chassis.health += min(effective_boost, initial(chassis.health)-chassis.health)
+	if(effective_boost<0 || chassis.get_integrity() < chassis.max_integrity || damaged_armor || damaged_hull)
+		chassis.repair_damage(min(effective_boost, chassis.max_integrity - chassis.get_integrity()))
 
 		if(AC)
 			AC.adjust_integrity(round(effective_boost * 0.5, 0.5))

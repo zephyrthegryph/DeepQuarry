@@ -15,7 +15,7 @@
 
 	var/seal_tool = /obj/item/weldingtool	//Tool used to seal the closet, defaults to welder
 	var/wall_mounted = 0 //never solid (You can always pass over it)
-	var/health = 100
+	max_integrity = 100
 
 	var/breakout = 0 //if someone is currently breaking out. mutex
 	var/breakout_time = 2 //2 minutes by default
@@ -248,14 +248,7 @@
 				qdel(src)
 
 /obj/structure/closet/blob_act()
-	damage(100)
-
-/obj/structure/closet/proc/damage(damage)
-	health -= damage
-	if(health <= 0)
-		for(var/atom/movable/A in src)
-			A.forceMove(loc)
-		qdel(src)
+	take_damage(100, BRUTE, MELEE)
 
 /obj/structure/closet/bullet_act(obj/item/projectile/Proj)
 	var/proj_damage = Proj.get_structure_damage()
@@ -263,7 +256,7 @@
 		return
 
 	..()
-	damage(proj_damage)
+	take_damage(proj_damage, Proj.damage_type, BULLET)
 
 	return
 
@@ -489,12 +482,10 @@
 			return (loc.return_air_for_internal_lifeform(L))
 	return return_air()
 
-/obj/structure/closet/take_damage(damage)
-	if(damage < STRUCTURE_MIN_DAMAGE_THRESHOLD)
-		return
+// Reaching 0 integrity spills the closet's contents before it's destroyed.
+/obj/structure/closet/atom_destruction(damage_flag)
 	dump_contents()
-	spawn(1) qdel(src)
-	return 1
+	return ..()
 
 /obj/structure/closet/proc/animate_door(closing = FALSE)
 	if(!closet_appearance?.door_anim_time)

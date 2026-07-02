@@ -1,0 +1,4 @@
+author: "ethan"
+delete-after: true
+changes:
+  - admin: "Restored the atmospherics debug panel. A new 'Debug Atmospherics' verb (Debug → Investigate) opens a live view of SSair: times fired, active turfs, excited groups (with jump-to and overlay toggles), hotspots, superconductivity, and a processing freeze toggle. The panel had been dead — it referenced a nonexistent interface and used the wrong TGUI callback names, so nothing ever opened it."

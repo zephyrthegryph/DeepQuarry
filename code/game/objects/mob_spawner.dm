@@ -18,7 +18,7 @@
 	var/mob_faction
 
 	var/destructible = 0
-	var/health = 50
+	max_integrity = 50
 
 	var/list/spawned_mobs = list()
 
@@ -91,18 +91,17 @@
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	user.do_attack_animation(src)
 	visible_message(span_warning("\The [src] has been [LAZYLEN(I.attack_verb) ? "[pick(I.attack_verb)]":"attacked"] with \the [I] by [user]."))
-	take_damage(I.force)
+	take_damage(I.force, I.damtype, MELEE)
 
 /obj/structure/mob_spawner/bullet_act(obj/item/projectile/Proj)
 	..()
 	if(destructible)
-		take_damage(Proj.get_structure_damage())
+		take_damage(Proj.get_structure_damage(), Proj.damage_type, BULLET)
 
-/obj/structure/mob_spawner/take_damage(damage)
-	health -= damage
-	if(health <= 0)
-		visible_message(span_warning("\The [src] breaks apart!"))
-		qdel(src)
+// Reaching 0 integrity breaks the spawner apart.
+/obj/structure/mob_spawner/atom_destruction(damage_flag)
+	visible_message(span_warning("\The [src] breaks apart!"))
+	return ..()
 
 /obj/structure/mob_spawner/clear_zlevel/can_spawn()
 	if(!..())
@@ -205,7 +204,7 @@ It also makes it so a ghost wont know where all the goodies/mobs are.
 	simultaneous_spawns = 5
 	range = 7
 	destructible = 1
-	health = 200
+	max_integrity = 200
 	total_spawns = 100
 
 /obj/structure/mob_spawner/scanner/wild_animals
@@ -233,7 +232,7 @@ It also makes it so a ghost wont know where all the goodies/mobs are.
 	mob_faction = FACTION_XENO
 	total_spawns = -1
 	destructible = 1
-	health = 50
+	max_integrity = 50
 	anchored = TRUE
 	icon = 'icons/mob/actions.dmi'
 	icon_state = "alien_egg"
@@ -252,7 +251,7 @@ It also makes it so a ghost wont know where all the goodies/mobs are.
 	mob_faction = FACTION_XENO
 	total_spawns = 1
 	destructible = 1
-	health = 50
+	max_integrity = 50
 	anchored = TRUE
 	icon = 'icons/mob/actions.dmi'
 	icon_state = "alien_egg"

@@ -20,8 +20,7 @@
 	var/normalspeed = 1
 	var/heat_proof = FALSE // For glass airlocks/opacity firedoors
 	var/air_properties_vary_with_direction = 0
-	var/maxhealth = 300
-	var/health
+	max_integrity = 300
 	var/destroy_hits = 10 //How many strong hits it takes to destroy the door
 	var/min_force = 10 //minimum amount of force needed to damage the door with a melee weapon
 	var/hitsound = 'sound/weapons/smash.ogg' //sound door makes when hit with a weapon
@@ -76,7 +75,6 @@
 			bound_width = world.icon_size
 			bound_height = width * world.icon_size
 
-	health = maxhealth
 	update_icon()
 
 	update_nearby_tiles(need_rebuild=1)
@@ -268,7 +266,7 @@
 		if(heat_proof)
 			to_chat(user, span_warning("\The [src] is already reinforced."))
 			return
-		if((stat & BROKEN) || (health < maxhealth))
+		if((stat & BROKEN) || (get_integrity() < max_integrity))
 			to_chat(user, span_notice("It looks like \the [src] broken. Repair it before reinforcing it."))
 			return
 		if(!density)
@@ -323,7 +321,7 @@
 					reinforcing = 0
 			return
 
-		if(health < maxhealth)
+		if(get_integrity() < max_integrity)
 			if(!density)
 				to_chat(user, span_warning("\The [src] must be closed before you can repair it."))
 				return
@@ -332,10 +330,11 @@
 			if(welder.remove_fuel(0,user))
 				to_chat(user, span_notice("You start to fix dents and repair \the [src]."))
 				playsound(src, welder.usesound, 50, 1)
-				var/repairtime = maxhealth - health //Since we're not using materials anymore... We'll just calculate how much damage there is to repair.
+				var/repairtime = max_integrity - get_integrity() //Since we're not using materials anymore... We'll just calculate how much damage there is to repair.
 				if(do_after(user, repairtime * welder.toolspeed, target = src) && welder && welder.isOn())
 					to_chat(user, span_notice("You finish repairing the damage to \the [src]."))
-					health = maxhealth
+					repair_damage(max_integrity)
+					stat &= ~BROKEN
 					update_icon()
 			return
 
@@ -386,30 +385,41 @@
 	open()
 	operating = -1
 
-/obj/machinery/door/take_damage(damage)
-	var/initialhealth = health
-	health = max(0, health - damage)
-	if(health <= 0 && initialhealth > 0)
-		set_broken()
-	else if(health < maxhealth / 4 && initialhealth >= maxhealth / 4)
-		visible_message("\The [src] looks like it's about to break!" )
-	else if(health < maxhealth / 2 && initialhealth >= maxhealth / 2)
-		visible_message("\The [src] looks seriously damaged!" )
-	else if(health < maxhealth * 3/4 && initialhealth >= maxhealth * 3/4)
-		visible_message("\The [src] shows signs of damage!" )
+// A broken door persists as a wrecked-but-present barrier (its real destruction is
+// explicit: ex_act qdel, projectile/fire destroy_hits). So suppress further normal
+// damage once broken — this also keeps us from re-entering take_damage at 0 integrity.
+/obj/machinery/door/take_damage(damage_amount, damage_type = BRUTE, damage_flag = "", sound_effect = TRUE, attack_dir, armour_penetration = 0)
+	if(stat & BROKEN)
+		return
+	return ..()
+
+// Damage-state flavour text as integrity drops.
+/obj/machinery/door/on_update_integrity(old_value, new_value)
+	. = ..()
+	if(new_value > 0)
+		if(new_value < max_integrity / 4 && old_value >= max_integrity / 4)
+			visible_message("\The [src] looks like it's about to break!" )
+		else if(new_value < max_integrity / 2 && old_value >= max_integrity / 2)
+			visible_message("\The [src] looks seriously damaged!" )
+		else if(new_value < max_integrity * 3/4 && old_value >= max_integrity * 3/4)
+			visible_message("\The [src] shows signs of damage!" )
 	update_icon()
-	return
+
+// Integrity hitting zero breaks the door rather than deleting it.
+/obj/machinery/door/atom_destruction(damage_flag)
+	. = ..()
+	set_broken()
 
 
 /obj/machinery/door/examine(mob/user)
 	. = ..()
-	if(health <= 0)
+	if(stat & BROKEN)
 		. += "It is broken!"
-	else if(health < maxhealth / 4)
+	else if(get_integrity() < max_integrity / 4)
 		. += "It looks like it's about to break!"
-	else if(health < maxhealth / 2)
+	else if(get_integrity() < max_integrity / 2)
 		. += "It looks seriously damaged!"
-	else if(health < maxhealth * 3/4)
+	else if(get_integrity() < max_integrity * 3/4)
 		. += "It shows signs of damage!"
 
 
@@ -639,13 +649,15 @@
 
 	if(exposed_temperature > maxtemperature)
 		var/burndamage = log(RAND_F(0.9, 1.1) * (exposed_temperature - maxtemperature))
-		if (burndamage && health <= 0) //once they break, start taking damage to destroy_hits
-			destroy_hits -= (burndamage / destroytime)
-			if (destroy_hits <= 0)
-				visible_message(span_danger("\The [src.name] disintegrates!"))
-				new /obj/effect/decal/cleanable/ash(src.loc) // Turn it to ashes!
-				qdel(src)
-		take_damage(burndamage)
+		if(burndamage)
+			if(stat & BROKEN) //once they break, start taking damage to destroy_hits
+				destroy_hits -= (burndamage / destroytime)
+				if (destroy_hits <= 0)
+					visible_message(span_danger("\The [src.name] disintegrates!"))
+					new /obj/effect/decal/cleanable/ash(src.loc) // Turn it to ashes!
+					qdel(src)
+			else
+				take_damage(burndamage, BURN)
 
 	return ..()
 

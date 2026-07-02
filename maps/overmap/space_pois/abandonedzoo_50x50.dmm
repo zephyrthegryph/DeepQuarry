@@ -845,7 +845,7 @@
 /obj/structure/window/reinforced,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/template_noop,
 /area/submap/abandonedzoo)
@@ -894,7 +894,7 @@
 "pV" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced/tinted/frosted{
 	dir = 1
@@ -945,7 +945,7 @@
 /area/submap/abandonedzoo)
 "uA" = (
 /obj/structure/window/reinforced{
-	health = 1e+006;
+	max_integrity = 1e+006;
 	req_access = list(5)
 	},
 /turf/template_noop,
@@ -967,7 +967,7 @@
 "zN" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/template_noop,
 /area/submap/abandonedzoo)
@@ -1023,7 +1023,7 @@
 "CR" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/template_noop,
 /area/space)
@@ -1233,7 +1233,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/template_noop,
 /area/submap/abandonedzoo)
@@ -1319,7 +1319,7 @@
 	dir = 8
 	},
 /obj/structure/window/reinforced{
-	health = 1e+006;
+	max_integrity = 1e+006;
 	req_access = list(5)
 	},
 /turf/template_noop,
@@ -1470,7 +1470,7 @@
 	dir = 4
 	},
 /obj/structure/window/reinforced{
-	health = 1e+006;
+	max_integrity = 1e+006;
 	req_access = list(5)
 	},
 /turf/template_noop,

@@ -54,8 +54,6 @@
 	var/automatic = 0	//If set, holding LMB sustains fire: the trigger is re-pulled
 						//at fire_delay cadence until released. Each pull respects the
 						//current firemode (so a burst gun fires repeated bursts). See autofire.dm.
-	var/last_fire_noise = 0		//world.time of the last quarry noise emit from this gun (autofire throttle)
-	var/fire_noise_cooldown = 5	//min deciseconds between quarry noise emits while firing
 	var/burst = 1
 	var/fire_delay = 6 	//delay after shooting before the gun can be used again
 	var/burst_delay = 2	//delay between shots, if firing in bursts
@@ -396,20 +394,6 @@
 	var/shoot_time = (burst - 1)* burst_delay
 
 	next_fire_time = world.time + shoot_time
-	// gunfire as noise inside the quarry. Loud sources
-	// alert nearby hostile mobs and bump layer danger. emit_noise is a
-	// no-op outside a quarry z, so non-mine play is unaffected.
-	// Throttled so sustained autofire collapses into a few noise pulses per
-	// second instead of one aggro event per round.  Single shots fire seconds
-	// apart, so they are never affected.
-	if(SSquarry && world.time >= last_fire_noise + fire_noise_cooldown)
-		var/turf/origin = get_turf(user)
-		if(origin && SSquarry.layer_at_z(origin.z))
-			var/loudness = istype(src, /obj/item/gun/energy) \
-				? QUARRY_NOISE_WEAPON_LASER \
-				: QUARRY_NOISE_WEAPON_BALLISTIC
-			SSquarry.emit_noise(origin, loudness, src)
-			last_fire_noise = world.time
 	handle_gunfire(target, user, clickparams, pointblank, reflex, 1, FALSE)
 
 /obj/item/gun/proc/handle_gunfire(atom/target, mob/living/user, clickparams, pointblank=0, reflex=0, ticker, recursive = FALSE)

@@ -228,8 +228,7 @@
 	can_buckle = FALSE
 	product = /obj/item/stack/material/log
 	product_amount = 50
-	health = 2000
-	max_health = 2000
+	max_integrity = 2000
 	//var/fruit
 
 /obj/structure/flora/tree/desert_planet/palmtreeb
@@ -298,5 +297,4 @@
 	icon_state = "desert_tree3"
 	base_state = "desert"
 	product_amount = 100
-	health = 4000
-	max_health = 4000
+	max_integrity = 4000

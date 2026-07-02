@@ -60,8 +60,6 @@
 		return
 	if(chan == CURRENT_CHANNEL)
 		chan = power_channel
-	// scale by any synergy power_use_mod (e.g. Cold Forge halves draw).
-	amount = amount * dq_synergy_value(src, "power_use_mod", 1)
 	return A.use_power_oneoff(amount, chan)
 
 // Check if we CAN use a given amount of extra power as a one off. Returns amount we could use without actually using it.

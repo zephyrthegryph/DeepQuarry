@@ -34,7 +34,6 @@
 	efficiency = max(1, (efficient/10+1))
 	points_to_create = min(100, (100 - (rating * 5)))
 
-	dq_apply_material_synergies(src)
 /obj/machinery/anomaly_harvester/process()
 	..()
 	if(stat & (NOPOWER|BROKEN) || !anchored)

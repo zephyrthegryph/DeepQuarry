@@ -77,7 +77,7 @@
 /area/submap/dronelord)
 "fU" = (
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/structure/window/plastitanium/full,
@@ -142,7 +142,7 @@
 /area/submap/dronelord)
 "mO" = (
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/structure/window/plastitanium/full,
@@ -206,7 +206,7 @@
 /area/submap/dronelord)
 "Fc" = (
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/structure/window/plastitanium/full,

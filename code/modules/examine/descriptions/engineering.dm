@@ -38,7 +38,7 @@
 /obj/machinery/door/get_description_interaction()
 	var/list/results = list()
 	//VOREstation Edit: Removing material requirements
-	if((health < maxhealth) && !(stat & BROKEN))
+	if((get_integrity() < max_integrity) && !(stat & BROKEN))
 		results += "[desc_panel_image("welder")]to start repairing damage."
 	//VOREstation Edit End
 	return results

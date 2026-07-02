@@ -20,8 +20,7 @@
 	var/mechanical = TRUE // If false, doesn't care for things like cells, engines, EMP, keys, etc.
 	var/attack_log = null
 	var/on = 0
-	var/health = 0	//do not forget to set health for your vehicle!
-	var/maxhealth = 0
+	max_integrity = 100	//do not forget to set max_integrity for your vehicle!
 	var/fire_dam_coeff = 1.0
 	var/brute_dam_coeff = 1.0
 	var/open = 0	//Maint panel
@@ -118,9 +117,9 @@
 		else if(W.has_tool_quality(TOOL_WELDER))
 			var/obj/item/weldingtool/T = W.get_welder()
 			if(T.welding)
-				if(health < maxhealth)
+				if(get_integrity() < max_integrity)
 					if(open)
-						health = min(maxhealth, health+10)
+						repair_damage(10)
 						user.setClickCooldown(user.get_attack_speed(W))
 						playsound(src, T.usesound, 50, 1)
 						user.visible_message(span_red("[user] repairs [src]!"),span_blue("You repair [src]!"))
@@ -135,22 +134,22 @@
 		user.setClickCooldown(user.get_attack_speed(W))
 		switch(W.damtype)
 			if(BURN)
-				health -= W.force * fire_dam_coeff
+				take_damage(W.force * fire_dam_coeff, BURN, MELEE)
 			if(BRUTE)
-				health -= W.force * brute_dam_coeff
+				take_damage(W.force * brute_dam_coeff, BRUTE, MELEE)
 		..()
-		healthcheck()
 	else
 		..()
 
 /obj/vehicle/bullet_act(obj/item/projectile/Proj)
-	health -= Proj.get_structure_damage()
+	take_damage(Proj.get_structure_damage(), Proj.damage_type, BULLET)
 	..()
-	healthcheck()
 
 /obj/vehicle/proc/adjust_health(amount)
-	health = between(0, health + amount, maxhealth)
-	healthcheck()
+	if(amount < 0)
+		take_damage(-amount)
+	else
+		repair_damage(amount)
 
 /obj/vehicle/ex_act(severity)
 	switch(severity)
@@ -158,15 +157,11 @@
 			explode()
 			return
 		if(2.0)
-			health -= rand(5,10)*fire_dam_coeff
-			health -= rand(10,20)*brute_dam_coeff
-			healthcheck()
+			take_damage(rand(5,10)*fire_dam_coeff + rand(10,20)*brute_dam_coeff, BRUTE, BOMB)
 			return
 		if(3.0)
 			if (prob(50))
-				health -= rand(1,5)*fire_dam_coeff
-				health -= rand(1,5)*brute_dam_coeff
-				healthcheck()
+				take_damage(rand(1,5)*fire_dam_coeff + rand(1,5)*brute_dam_coeff, BRUTE, BOMB)
 				return
 	return
 
@@ -267,9 +262,9 @@
 
 	qdel(src)
 
-/obj/vehicle/proc/healthcheck()
-	if(health <= 0)
-		explode()
+/obj/vehicle/atom_destruction(damage_flag)
+	. = ..()
+	explode()
 
 /obj/vehicle/proc/powercheck()
 	if(!mechanical)
@@ -421,20 +416,14 @@
 	visible_message(span_danger("[user] [attack_message] the [src]!"))
 	add_attack_logs(user, src, "attacked")
 	user.do_attack_animation(src)
-	src.health -= damage
-	if(mechanical && prob(10))
-		new /obj/effect/decal/cleanable/blood/oil(src.loc)
-	spawn(1) healthcheck()
+	take_damage(damage, BRUTE, MELEE, sound_effect = FALSE)
 	return 1
 
-/obj/vehicle/take_damage(damage)
-	if(!damage)
-		return
-	src.health -= damage
-	if(mechanical && prob(10))
+// Thin override so any damage source leaks a little oil on mechanical vehicles.
+/obj/vehicle/take_damage(damage_amount, damage_type = BRUTE, damage_flag = "", sound_effect = TRUE, attack_dir, armour_penetration = 0)
+	. = ..()
+	if(. && mechanical && prob(10))
 		new /obj/effect/decal/cleanable/blood/oil(src.loc)
-	spawn(1) healthcheck()
-	return 1
 
 //ChompADD START
 //----------------------------

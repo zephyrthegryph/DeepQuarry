@@ -8,8 +8,7 @@
 	anchored = TRUE
 	unacidable = TRUE
 	can_atmos_pass = ATMOS_PASS_NO
-	var/const/max_health = 200
-	var/health = max_health //The shield can only take so much beating (prevents perma-prisons)
+	max_integrity = 200 //The shield can only take so much beating (prevents perma-prisons)
 	var/shield_generate_power = 7500	//how much power we use when regenerating
 	var/shield_idle_power = 1500		//how much power we use when just being sustained.
 	var/datum/weakref/our_owner
@@ -17,17 +16,19 @@
 /obj/machinery/shield/malfai
 	name = "emergency forcefield"
 	desc = "A weak forcefield which seems to be projected by the station's emergency atmosphere containment field"
-	health = max_health/2 // Half health, it's not suposed to resist much.
+
+/obj/machinery/shield/malfai/Initialize(mapload)
+	. = ..()
+	update_integrity(max_integrity/2) // Half health, it's not suposed to resist much.
 
 /obj/machinery/shield/malfai/process()
-	health -= 0.5 // Slowly lose integrity over time
-	check_failure()
+	take_damage(0.5, sound_effect = FALSE) // Slowly lose integrity over time
 
-/obj/machinery/shield/proc/check_failure()
-	if (src.health <= 0)
-		visible_message(span_boldnotice("\The [src]") + " dissipates!")
-		qdel(src)
-		return
+// A depleted shield dissipates.
+/obj/machinery/shield/atom_destruction(damage_flag)
+	. = ..()
+	visible_message(span_boldnotice("\The [src]") + " dissipates!")
+	qdel(src)
 
 /obj/machinery/shield/Initialize(mapload)
 	src.set_dir(pick(1,2,3,4))
@@ -47,24 +48,21 @@
 /obj/machinery/shield/attackby(obj/item/W as obj, mob/user as mob)
 	if(!istype(W)) return
 
-	//Calculate damage
-	var/aforce = W.force
-	if(W.damtype == BRUTE || W.damtype == BURN)
-		src.health -= aforce
-
 	//Play a fitting sound
 	playsound(src, 'sound/effects/EMPulse.ogg', 75, 1)
 
-	check_failure()
+	//Calculate damage
+	if(W.damtype == BRUTE || W.damtype == BURN)
+		take_damage(W.force, W.damtype, MELEE, sound_effect = FALSE)
+
 	set_opacity(1)
 	spawn(20) if(!QDELETED(src)) set_opacity(0)
 
 	..()
 
 /obj/machinery/shield/bullet_act(obj/item/projectile/Proj)
-	health -= Proj.get_structure_damage()
 	..()
-	check_failure()
+	take_damage(Proj.get_structure_damage(), Proj.damage_type, BULLET, sound_effect = FALSE)
 	set_opacity(1)
 	spawn(20) if(!QDELETED(src)) set_opacity(0)
 
@@ -115,12 +113,10 @@
 		else
 			tforce = object.w_class
 
-	src.health -= tforce
-
 	//This seemed to be the best sound for hitting a force field.
 	playsound(src, 'sound/effects/EMPulse.ogg', 100, 1)
 
-	check_failure()
+	take_damage(tforce, BRUTE, sound_effect = FALSE)
 
 	//The shield becomes dense to absorb the blow.. purely asthetic.
 	set_opacity(1)
@@ -138,10 +134,10 @@
 	anchored = FALSE
 	pressure_resistance = 2*ONE_ATMOSPHERE
 	req_access = list(ACCESS_ENGINE)
-	var/const/max_health = 100
+	max_integrity = 100
+	integrity_failure = 0.3 // starts malfunctioning at 30% integrity
 	var/obj/item/cell/cell
 	var/cell_type = /obj/item/cell/high
-	var/health = max_health
 	var/active = 0
 	var/malfunction = 0 //Malfunction causes parts of the shield to slowly dissapate
 	var/list/deployed_shields = list()
@@ -235,29 +231,29 @@
 		if(deployed_shields.len && prob(5))
 			qdel(pick(deployed_shields))
 
-/obj/machinery/shieldgen/proc/checkhp()
-	if(health <= 30)
-		malfunction = TRUE
-	if(health <= 0)
-		spawn(0)
-			explosion(get_turf(src.loc), 0, 0, 1, 0, 0, 0)
-		qdel(src)
+// Dropping below 30% integrity makes the generator start to malfunction.
+/obj/machinery/shieldgen/atom_break(damage_flag)
+	. = ..()
+	malfunction = TRUE
 	update_icon()
-	return
+
+// Integrity zero blows the generator apart.
+/obj/machinery/shieldgen/atom_destruction(damage_flag)
+	. = ..()
+	spawn(0)
+		explosion(get_turf(src.loc), 0, 0, 1, 0, 0, 0)
+	qdel(src)
 
 /obj/machinery/shieldgen/ex_act(severity)
 	switch(severity)
 		if(1.0)
-			src.health -= 75
-			src.checkhp()
+			take_damage(75, BRUTE, BOMB)
 		if(2.0)
-			src.health -= 30
 			if (prob(15))
 				src.malfunction = 1
-			src.checkhp()
+			take_damage(30, BRUTE, BOMB)
 		if(3.0)
-			src.health -= 10
-			src.checkhp()
+			take_damage(10, BRUTE, BOMB)
 	return
 
 /obj/machinery/shieldgen/emp_act(severity, recursive)
@@ -266,14 +262,13 @@
 		return
 	switch(severity)
 		if(1)
-			src.health /= 2 //cut health in half
+			take_damage(get_integrity() / 2, BURN, ENERGY) //cut health in half
 			malfunction = 1
 			locked = pick(0,1)
 		if(2)
 			if(prob(50))
-				src.health *= 0.3 //chop off a third of the health
+				take_damage(get_integrity() * 0.7, BURN, ENERGY) //chop off a third of the health
 				malfunction = 1
-	checkhp()
 
 /obj/machinery/shieldgen/attack_hand(mob/user as mob)
 	if(locked)
@@ -320,7 +315,7 @@
 		//if(do_after(user, min(60, round( ((getMaxHealth()/health)*10)+(malfunction*10) ))) //Take longer to repair heavier damage
 		if(do_after(user, 3 SECONDS, target = src))
 			if (coil.use(1))
-				health = max_health
+				repair_damage(max_integrity)
 				malfunction = 0
 				to_chat(user, span_notice("You repair the [src]!"))
 				update_icon()

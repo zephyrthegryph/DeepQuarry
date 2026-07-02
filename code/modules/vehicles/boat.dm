@@ -3,8 +3,7 @@
 	desc = "It's a wooden boat. Looks like it'll hold two people. Oars not included."
 	icon = 'icons/obj/vehicles_36x32.dmi'
 	icon_state = "boat"
-	health = 100
-	maxhealth = 100
+	max_integrity = 100
 	charge_use = 0 // Boats use oars.
 	pixel_x = -2
 	move_delay = 3 // Rather slow, but still faster than swimming, and won't get you wet.
@@ -21,8 +20,7 @@
 	desc = "It's a large wooden boat, carved to have a nordic-looking dragon on the front. Looks like it'll hold five people. Oars not included."
 	icon = 'icons/obj/64x32.dmi'
 	icon_state = "dragon_boat"
-	health = 250
-	maxhealth = 250
+	max_integrity = 250
 	pixel_x = -16
 	max_buckled_mobs = 5
 	riding_datum_type = /datum/riding/boat/big

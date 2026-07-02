@@ -104,6 +104,7 @@
 	. = ..()
 	if (!BB)
 		. += "This one is spent."
+	substance_round_examine(forged_material, .)
 
 //An item that holds casings and can be used to put them inside guns
 /obj/item/ammo_magazine
@@ -136,7 +137,7 @@
 	var/list/icon_keys = list()		//keys
 	var/list/ammo_states = list()	//values
 
-/obj/item/ammo_magazine/Initialize(mapload)
+/obj/item/ammo_magazine/Initialize(mapload, material_key)
 	. = ..()
 	pixel_x = rand(-5, 5)
 	pixel_y = rand(-5, 5)
@@ -149,6 +150,13 @@
 	if(initial_ammo)
 		for(var/i in 1 to initial_ammo)
 			stored_ammo += new ammo_type(src)
+
+	// A lathe can forge a magazine from a chosen material (material_selectable design),
+	// passing its key as the second Initialize arg — stamp the rounds with it.
+	if(material_key)
+		var/datum/material/forged = get_material_by_name(material_key)
+		if(forged)
+			set_forged_material(forged)
 	update_icon()
 
 /obj/item/ammo_magazine/attackby(obj/item/W as obj, mob/user as mob)
@@ -234,6 +242,7 @@
 /obj/item/ammo_magazine/examine(mob/user)
 	. = ..()
 	. += "There [(stored_ammo.len == 1)? "is" : "are"] [stored_ammo.len] round\s left!"
+	substance_round_examine(forged_material, .)
 
 //magazine icon state caching
 GLOBAL_LIST_EMPTY(magazine_icondata_keys)

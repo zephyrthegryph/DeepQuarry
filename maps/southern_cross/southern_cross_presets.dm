@@ -38,20 +38,7 @@
 	listening_level = Z_LEVEL_STATION_THREE
 	autolinkers = list("d3_relay")
 
-/obj/machinery/telecomms/relay/preset/southerncross/planet
-	id = "Planet Relay"
-	listening_level = Z_LEVEL_SURFACE
-	autolinkers = list("pnt_relay")
-
-/obj/machinery/telecomms/relay/preset/southerncross/cave
-	id = "Cave Relay"
-	listening_level = Z_LEVEL_SURFACE_MINE
-	autolinkers = list("cve_relay")
-
-/obj/machinery/telecomms/relay/preset/southerncross/wild
-	id = "Wild Relay"
-	listening_level = Z_LEVEL_SURFACE_WILD
-	autolinkers = list("wld_relay")
+// Planet/Cave/Wild surface relays removed with the planetary z-levels (station-only trim).
 
 /obj/machinery/telecomms/relay/preset/southerncross/transit
 	id = "Transit Relay"

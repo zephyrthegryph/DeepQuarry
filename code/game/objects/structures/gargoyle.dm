@@ -11,9 +11,11 @@
 	var/initial_lying_prev
 	var/wagging
 	var/flapping
-	var/obj_integrity = 100
-	var/original_int = 100
 	max_integrity = 100
+	// The integrity the statue started at when the mob was petrified (= mob health + 100).
+	// Damage taken below this is transferred back to the mob on release; this is NOT
+	// max_integrity, because a wounded mob petrifies into an already-weakened statue.
+	var/original_int = 100
 	var/stored_examine
 	var/identifier = "statue"
 	var/material = "stone"
@@ -63,8 +65,8 @@
 		tail_lower_dirs = H.tail_style.lower_layer_dirs.Copy()
 
 	max_integrity = H.getMaxHealth() + 100
-	obj_integrity = H.health + 100
-	original_int = obj_integrity
+	original_int = H.health + 100
+	update_integrity(original_int)
 	name = "[identifier] of [H.name]"
 	desc = "A very lifelike [identifier] made of [material]."
 	stored_examine = H.examine(H)
@@ -210,8 +212,8 @@
 	gargoyle.update_canmove()
 	var/hurtmessage = ""
 	if(deal_damage)
-		if(obj_integrity < original_int)
-			var/f = (original_int - obj_integrity) / 10
+		if(get_integrity() < original_int)
+			var/f = (original_int - get_integrity()) / 10
 			for (var/x in 1 to 10)
 				gargoyle.adjustBruteLoss(f)
 			hurtmessage = " " + span_bold("You feel your body take the damage that was dealt while being [material]!")
@@ -232,15 +234,10 @@
 	var/air = new air_type(1000)
 	return air
 
-/obj/structure/gargoyle/proc/damage(damage)
+/obj/structure/gargoyle/proc/damage(amount)
 	if(was_rayed)
 		return //gargoyle quick regenerates, the others don't, so let's not have them getting too damaged
-	obj_integrity = min(obj_integrity-damage, max_integrity)
-	if(obj_integrity <= 0)
-		qdel(src)
-
-/obj/structure/gargoyle/take_damage(damage)
-	damage(damage)
+	take_damage(amount, BRUTE, MELEE, sound_effect = FALSE)
 
 /obj/structure/gargoyle/attack_generic(mob/user, damage, attack_message = "hits")
 	user.do_attack_animation(src)

@@ -9,8 +9,7 @@
 	step_in = 2
 	step_energy_drain = 5
 	max_temperature = 20000
-	health = 300
-	maxhealth = 300
+	max_integrity = 300
 	infra_luminosity = 6
 	wreckage = /obj/effect/decal/mecha_wreckage/shuttlecraft
 	cargo_capacity = 3

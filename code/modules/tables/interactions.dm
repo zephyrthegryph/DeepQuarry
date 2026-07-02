@@ -44,13 +44,11 @@
 			else
 				return 1					//But only from one side
 		if(prob(chance))
-			health -= P.damage/2
-			if (health > 0)
+			take_damage(P.damage/2, P.damage_type, BULLET)
+			if(!QDELETED(src))
 				visible_message(span_warning("[P] hits \the [src]!"))
 				return 0
 			else
-				visible_message(span_warning("[src] breaks down!"))
-				break_to_parts()
 				return 1
 	return 1
 
@@ -107,7 +105,10 @@
 						playsound(src, material.tableslam_noise, 50, 1)
 					else
 						playsound(src, 'sound/weapons/tablehit1.ogg', 50, 1)
-					var/list/L = take_damage(rand(1,5))
+					last_break_shards = null
+					take_damage(rand(1,5))
+					var/list/L = last_break_shards
+					last_break_shards = null
 					// Shards. Extra damage, plus potentially the fact YOU LITERALLY HAVE A PIECE OF GLASS/METAL/WHATEVER IN YOUR FACE
 					for(var/obj/item/material/shard/S in L)
 						if(prob(50))

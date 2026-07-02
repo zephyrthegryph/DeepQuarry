@@ -85,7 +85,6 @@
 		scan_rating += S.rating
 	simulation_delay = 25 SECONDS - scan_rating SECONDS
 
-	dq_apply_material_synergies(src)
 /obj/machinery/bomb_tester/attackby(obj/item/I, mob/user)
 	if(default_deconstruction_screwdriver(user, I))
 		return

@@ -109,9 +109,7 @@
 
 /datum/material/uranium/New()
 	. = ..()
-	// was `radioactivity = 12` direct var. Now lives on a
-	// /datum/component/material_radioactive carrying the magnitude.
-	AddComponent(/datum/component/material_radioactive, 12)
+	radioactivity = 12
 
 /datum/material/mhydrogen
 	name = MAT_METALHYDROGEN

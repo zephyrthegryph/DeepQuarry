@@ -1646,7 +1646,7 @@
 "eL" = (
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 4
@@ -2121,7 +2121,7 @@
 "fs" = (
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 4
@@ -2258,7 +2258,7 @@
 "fE" = (
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 4
@@ -2945,11 +2945,11 @@
 /obj/structure/table/rack,
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/item/storage/backpack/ert/engineer,
 /obj/item/storage/backpack/ert/engineer,
@@ -3031,11 +3031,11 @@
 "gV" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/table/rack,
 /obj/item/storage/backpack/ert/medical,
@@ -3096,7 +3096,7 @@
 /obj/structure/window/reinforced,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/item/rig/ert/engineer,
 /obj/item/rig/ert/engineer,
@@ -3121,7 +3121,7 @@
 "hd" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced,
 /obj/structure/table/rack,
@@ -3224,7 +3224,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/shuttle/plating/airless,
 /area/shuttle/response_ship/start)
@@ -3279,11 +3279,11 @@
 /obj/structure/table/rack,
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/item/clothing/accessory/storage/brown_drop_pouches,
 /obj/item/clothing/accessory/storage/brown_drop_pouches,
@@ -3305,11 +3305,11 @@
 "hs" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/table/rack,
 /obj/item/clothing/accessory/storage/white_vest,
@@ -3521,7 +3521,7 @@
 /obj/structure/window/reinforced,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/item/clothing/head/helmet/ert/engineer,
 /obj/item/clothing/head/helmet/ert/engineer,
@@ -3588,7 +3588,7 @@
 "hK" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced,
 /obj/structure/table/rack,
@@ -3635,7 +3635,7 @@
 /obj/item/rig_module/mounted/egun,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/unsimulated/floor{
 	icon_state = "vault";
@@ -3754,11 +3754,11 @@
 /obj/item/flash,
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/unsimulated/floor{
 	icon_state = "vault";
@@ -3843,7 +3843,7 @@
 "if" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/unsimulated/floor{
 	icon_state = "vault";
@@ -3875,7 +3875,7 @@
 /obj/structure/window/reinforced,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/item/clothing/gloves/yellow,
 /obj/item/clothing/gloves/yellow,
@@ -3899,7 +3899,7 @@
 /obj/structure/window/reinforced,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/item/storage/belt/medical,
 /obj/item/storage/belt/medical,
@@ -4176,7 +4176,7 @@
 /obj/item/rig_module/grenade_launcher,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/unsimulated/floor{
 	icon_state = "vault";
@@ -4717,7 +4717,7 @@
 "kb" = (
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/table/rack,
 /obj/item/reagent_containers/spray/cleaner,
@@ -4726,7 +4726,7 @@
 "kc" = (
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/shuttle/plating,
 /area/centcom/evac)
@@ -4762,7 +4762,7 @@
 "kh" = (
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/machinery/portable_atmospherics/canister/oxygen,
 /turf/simulated/shuttle/plating,
@@ -4807,7 +4807,7 @@
 "kp" = (
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/closet/secure_closet/personal,
 /turf/simulated/shuttle/floor,
@@ -4815,7 +4815,7 @@
 "kq" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/closet/secure_closet/personal,
 /turf/simulated/shuttle/floor,
@@ -5376,7 +5376,7 @@
 /obj/structure/window/reinforced,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/shuttle/plating/airless,
 /area/shuttle/transport1/centcom)
@@ -5483,7 +5483,7 @@
 "mc" = (
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 8
@@ -5503,7 +5503,7 @@
 /obj/machinery/computer/rcon,
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/unsimulated/floor{
 	icon_state = "vault";
@@ -5514,7 +5514,7 @@
 /obj/machinery/computer/station_alert/all,
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/unsimulated/floor{
 	icon_state = "vault";
@@ -5525,7 +5525,7 @@
 /obj/machinery/computer/power_monitor,
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/unsimulated/floor{
 	icon_state = "vault";
@@ -5535,7 +5535,7 @@
 "mh" = (
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 4
@@ -5703,7 +5703,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/shuttle/plating/airless,
 /area/shuttle/transport1/centcom)
@@ -6028,7 +6028,7 @@
 "nm" = (
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 8
@@ -6044,7 +6044,7 @@
 "nn" = (
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/effect/floor_decal/corner/blue/diagonal{
 	dir = 4
@@ -6057,7 +6057,7 @@
 "no" = (
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 4
@@ -6742,7 +6742,7 @@
 "oQ" = (
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 8
@@ -6782,7 +6782,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 4
@@ -10237,11 +10237,11 @@
 /obj/structure/table/glass,
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/unsimulated/floor{
 	icon_state = "white"
@@ -10530,7 +10530,7 @@
 /obj/machinery/computer/med_data/laptop,
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced,
 /turf/unsimulated/floor{
@@ -12082,7 +12082,7 @@
 /obj/structure/window/reinforced,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/shuttle/plating,
 /area/shuttle/escape/centcom)
@@ -12225,7 +12225,7 @@
 /obj/structure/window/reinforced,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/shuttle/plating,
 /area/shuttle/escape/centcom)
@@ -12954,7 +12954,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/shuttle/floor/white,
 /area/shuttle/escape/centcom)
@@ -12964,7 +12964,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/shuttle/floor/white,
 /area/shuttle/escape/centcom)
@@ -14557,7 +14557,7 @@
 "GQ" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/unsimulated/floor{
 	dir = 2;
@@ -14582,7 +14582,7 @@
 "GT" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/unsimulated/floor{
 	icon_state = "asteroid"
@@ -16261,7 +16261,7 @@
 /obj/machinery/portable_atmospherics/canister/carbon_dioxide,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced,
 /turf/unsimulated/floor{
@@ -16294,7 +16294,7 @@
 /obj/item/tank/jetpack/carbondioxide,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced,
 /turf/unsimulated/floor{

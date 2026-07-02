@@ -180,7 +180,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor/plating,
 /area/survivalpod/superpose/CrashedQurantineShip)
@@ -189,7 +189,7 @@
 /obj/structure/window/reinforced,
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor/plating,
 /area/survivalpod/superpose/CrashedQurantineShip)
@@ -206,7 +206,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor/plating,
 /area/survivalpod/superpose/CrashedQurantineShip)
@@ -566,7 +566,7 @@
 /obj/structure/grille,
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced,
 /obj/structure/window/reinforced{
@@ -578,7 +578,7 @@
 /obj/structure/grille,
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 4

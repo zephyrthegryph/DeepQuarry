@@ -139,7 +139,6 @@
 
 	. = ..()
 
-	dq_apply_material_synergies(src)
 /obj/machinery/organ_printer/attack_hand(mob/user)
 
 	if(stat & (BROKEN|NOPOWER))

@@ -10,7 +10,7 @@
 /area/survivalpod/superpose/PizzaParlor)
 "aA" = (
 /obj/structure/window/reinforced{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 8
@@ -391,7 +391,7 @@
 /area/survivalpod/superpose/PizzaParlor)
 "ro" = (
 /obj/structure/window/reinforced{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/effect/floor_decal/corner/lime/border,
 /turf/simulated/floor/tiled/hydro,
@@ -462,7 +462,7 @@
 /area/survivalpod/superpose/PizzaParlor)
 "wD" = (
 /obj/structure/window/reinforced{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/machinery/portable_atmospherics/hydroponics,
 /obj/effect/floor_decal/corner/lime/border{

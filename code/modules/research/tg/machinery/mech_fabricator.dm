@@ -139,7 +139,6 @@
 
 	update_static_data_for_all_viewers()
 
-	dq_apply_material_synergies(src)
 /obj/machinery/mecha_part_fabricator_tg/examine(mob/user)
 	. = ..()
 	if(in_range(user, src) || isobserver(user))

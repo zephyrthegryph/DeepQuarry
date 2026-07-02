@@ -16,6 +16,10 @@
 
 	var/default_type = MAT_STEEL
 	var/datum/material/material
+	/// Exotic/runtime-material stacks (substance alloys, shellchitin) whose material
+	/// has no static autolathe design and legitimately can't be reprinted from a
+	/// fixed recipe — exempt from all_sheets_must_be_printable_from_autolathe.
+	var/exotic_no_autolathe_reprint = FALSE
 	var/coin_type = null
 	var/perunit = SHEET_MATERIAL_AMOUNT
 	var/apply_colour //temp pending icon rewrite

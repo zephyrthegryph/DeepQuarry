@@ -304,7 +304,7 @@
 /obj/structure/grille,
 /obj/structure/window/reinforced{
 	dir = 2;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/template_noop,
 /area/submap/DecoupledEngine)
@@ -313,14 +313,14 @@
 /obj/structure/grille,
 /obj/structure/window/reinforced{
 	dir = 2;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 4
 	},
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/template_noop,
 /area/submap/DecoupledEngine)

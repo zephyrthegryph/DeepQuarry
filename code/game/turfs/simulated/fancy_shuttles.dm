@@ -192,7 +192,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/fancy_shuttle)
 	icon_state = "hull_window"
 	density = TRUE
 	fulltile = TRUE
-	maxhealth = 60
+	max_integrity = 60
 	reinf = 1
 	force_threshold = 7
 	var/fancy_shuttle_tag

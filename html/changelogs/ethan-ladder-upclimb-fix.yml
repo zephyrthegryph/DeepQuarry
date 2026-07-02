@@ -1,0 +1,4 @@
+author: "ethan"
+delete-after: true
+changes:
+  - bugfix: "Fixed climbing UP ladders: map-placed ladders never linked their upward target, so ladders could only be climbed down, never up. Ladders now wire both ends when they connect."

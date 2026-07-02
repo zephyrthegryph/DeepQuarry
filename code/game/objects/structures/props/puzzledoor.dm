@@ -11,7 +11,7 @@
 
 	explosion_resistance = 100
 
-	maxhealth = 9999999 //No.
+	max_integrity = 9999999 //No.
 	heat_proof = 1 //just so repairing them doesn't try to fireproof something that never takes fire damage
 
 	var/list/locks = list()

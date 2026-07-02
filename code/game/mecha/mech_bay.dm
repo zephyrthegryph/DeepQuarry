@@ -49,7 +49,6 @@
 		if(istype(P, /obj/item/stock_parts/manipulator))
 			repair += P.rating * 2
 
-	dq_apply_material_synergies(src)
 /obj/machinery/mech_recharger/process()
 	..()
 	if(!charging)
@@ -74,9 +73,9 @@
 				mech.occupant_message(span_notice("Fully charged."))
 			done = TRUE
 
-	if(repair && istype(mech) && mech.health < initial(mech.health))
-		mech.health = min(mech.health + repair, initial(mech.health))
-		if(mech.health == initial(mech.health))
+	if(repair && istype(mech) && mech.get_integrity() < mech.max_integrity)
+		mech.repair_damage(min(repair, mech.max_integrity - mech.get_integrity()))
+		if(mech.get_integrity() >= mech.max_integrity)
 			mech.occupant_message(span_notice("Fully repaired."))
 		else
 			done = FALSE

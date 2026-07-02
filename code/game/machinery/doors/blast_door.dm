@@ -195,7 +195,7 @@
 				return
 
 	else if(istype(C, /obj/item/stack/material) && C.get_material_name() == MAT_PLASTEEL) // Repairing.
-		var/amt = CEILING((maxhealth - health)/150, 1)
+		var/amt = CEILING((max_integrity - get_integrity())/150, 1)
 		if(!amt)
 			to_chat(user, span_notice("\The [src] is already fully repaired."))
 			return
@@ -302,7 +302,7 @@
 // Parameters: None
 // Description: Fully repairs the blast door.
 /obj/machinery/door/blast/proc/repair()
-	health = maxhealth
+	repair_damage(max_integrity)
 	if(stat & BROKEN)
 		stat &= ~BROKEN
 
@@ -323,7 +323,7 @@
 	icon_state_closed = "pdoor1"
 	icon_state_closing = "pdoorc1"
 	icon_state = "pdoor1"
-	maxhealth = 600
+	max_integrity = 600
 	heat_proof = 1 //just so repairing them doesn't try to fireproof something that never takes fire damage
 
 /obj/machinery/door/blast/regular/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume)
@@ -352,7 +352,7 @@
 	icon_state_closed = "spdoor1"
 	icon_state_closing = "spdoorc1"
 	icon_state = "spdoor1"
-	maxhealth = 400
+	max_integrity = 400
 
 /obj/machinery/door/blast/shuttle/open
 	icon_state = "spdoor0"
@@ -379,7 +379,7 @@
 	icon_state_closing = "tshutterc1"
 	icon_state = "tshutter1"
 	damage = SHUTTER_CRUSH_DAMAGE
-	maxhealth = 400
+	max_integrity = 400
 	block_air_zones = 0
 	opacity = 0
 	istransparent = 1
@@ -395,7 +395,7 @@
 	icon_state_closed = "shutter2_1"
 	icon_state_closing = "shutter2_c1"
 	icon_state = "shutter2_1"
-	maxhealth = 200
+	max_integrity = 200
 	opacity = 0
 
 /obj/machinery/door/blast/gate/thin/open
@@ -409,7 +409,7 @@
 	icon_state_closed = "bars_1"
 	icon_state_closing = "bars_c1"
 	icon_state = "bars_1"
-	maxhealth = 600
+	max_integrity = 600
 	opacity = 0
 
 /obj/machinery/door/blast/gate/bars/open

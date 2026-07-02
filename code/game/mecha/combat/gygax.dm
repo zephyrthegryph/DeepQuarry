@@ -5,8 +5,7 @@
 	initial_icon = "gygax"
 	step_in = 3
 	dir_in = 1 //Facing North.
-	health = 250
-	maxhealth = 250			//Don't forget to update the /old variant if  you change this number.
+	max_integrity = 250			//Don't forget to update the /old variant if  you change this number.
 	deflect_chance = 15
 	max_temperature = 25000
 	infra_luminosity = 6
@@ -51,8 +50,7 @@
 	name = "Dark Gygax"
 	icon_state = "darkgygax"
 	initial_icon = "darkgygax"
-	health = 400
-	maxhealth = 400
+	max_integrity = 400
 	deflect_chance = 25
 	max_temperature = 45000
 	overload_coeff = 1
@@ -86,8 +84,7 @@
 	name = "Serenity"
 	icon_state = "medgax"
 	initial_icon = "medgax"
-	health = 150
-	maxhealth = 150
+	max_integrity = 150
 	deflect_chance = 20
 	step_in = 2
 	max_temperature = 20000
@@ -142,6 +139,6 @@
 
 /obj/mecha/combat/gygax/old/Initialize(mapload)
 	. = ..()
-	health = 25
-	maxhealth = 250	//Just slightly worse.
+	max_integrity = 250	//Just slightly worse.
+	update_integrity(25)
 	cell.charge = rand(0, (cell.charge/2))

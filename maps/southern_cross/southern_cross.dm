@@ -37,14 +37,12 @@
 	#include "turfs/outdoors.dm"
 	#include "overmap/sectors.dm"
 
+	// Station-only trim (2026-07-01). Load order sets z-levels:
+	//   -1 = station decks (z1,2,3), -6 = CentCom (z4), -7 = Transit (z5).
+	// Removed: -2 (empty), -3 Plains, -4 Mountains, -5 misc/derelict, -8 Wilderness.
 	#include "southern_cross-1.dmm"
-	#include "southern_cross-2.dmm"
-	#include "southern_cross-3.dmm"
-	#include "southern_cross-4.dmm"
-	#include "southern_cross-5.dmm"
 	#include "southern_cross-6.dmm"
 	#include "southern_cross-7.dmm"
-	#include "southern_cross-8.dmm"
 
 	#define USING_MAP_DATUM /datum/map/southern_cross
 

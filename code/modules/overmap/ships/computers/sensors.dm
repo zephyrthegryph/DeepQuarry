@@ -53,11 +53,11 @@
 	if(sensors)
 		data["on"] = sensors.use_power
 		data["range"] = sensors.range
-		data["health"] = sensors.health
-		data["max_health"] = sensors.max_health
+		data["health"] = sensors.get_integrity()
+		data["max_health"] = sensors.max_integrity
 		data["heat"] = sensors.heat
 		data["critical_heat"] = sensors.critical_heat
-		if(sensors.health == 0)
+		if(sensors.get_integrity() <= 0)
 			data["status"] = "DESTROYED"
 		else if(!sensors.powered())
 			data["status"] = "NO POWER"
@@ -141,8 +141,7 @@
 	icon = 'icons/obj/stationobjs.dmi'
 	icon_state = "sensors"
 	anchored = TRUE
-	var/max_health = 200
-	var/health = 200
+	max_integrity = 200
 	var/critical_heat = 50 // sparks and takes damage when active & above this heat
 	var/heat_reduction = 1.5 // mitigates this much heat per tick
 	var/heat = 0
@@ -150,7 +149,7 @@
 	idle_power_usage = 5000
 
 /obj/machinery/shipsensors/attackby(obj/item/W, mob/user)
-	var/damage = max_health - health
+	var/damage = max_integrity - get_integrity()
 	if(damage && W.has_tool_quality(TOOL_WELDER))
 
 		var/obj/item/weldingtool/WT = W.get_welder()
@@ -163,7 +162,7 @@
 			playsound(src, 'sound/items/Welder.ogg', 100, 1)
 			if(do_after(user, max(5, damage / 5), target = src) && WT && WT.isOn())
 				to_chat(user, span_notice("You finish repairing the damage to [src]."))
-				take_damage(-damage)
+				repair_damage(damage)
 		else
 			to_chat(user, span_notice("You need more welding fuel to complete this task."))
 			return
@@ -187,21 +186,21 @@
 
 /obj/machinery/shipsensors/examine(mob/user)
 	. = ..()
-	if(health <= 0)
+	if(get_integrity() <= 0)
 		. += span_danger("It is wrecked.")
-	else if(health < max_health * 0.25)
+	else if(get_integrity() < max_integrity * 0.25)
 		. += span_danger("It looks like it's about to break!")
-	else if(health < max_health * 0.5)
+	else if(get_integrity() < max_integrity * 0.5)
 		. += span_danger("It looks seriously damaged!")
-	else if(health < max_health * 0.75)
+	else if(get_integrity() < max_integrity * 0.75)
 		. += "It shows signs of damage!"
 
 /obj/machinery/shipsensors/bullet_act(obj/item/projectile/Proj)
-	take_damage(Proj.get_structure_damage())
+	take_damage(Proj.get_structure_damage(), Proj.damage_type, BULLET)
 	..()
 
 /obj/machinery/shipsensors/proc/toggle()
-	if(!use_power && (health == 0 || !in_vacuum()))
+	if(!use_power && (get_integrity() <= 0 || !in_vacuum()))
 		return // No turning on if broken or misplaced.
 	if(!use_power) //need some juice to kickstart
 		use_power_oneoff(idle_power_usage*5)
@@ -241,9 +240,16 @@
 	take_damage(20/severity)
 	toggle()
 
-/obj/machinery/shipsensors/take_damage(value)
-	health = min(max(health - value, 0),max_health)
-	if(use_power && health == 0)
+// A wrecked sensor array persists (powered off) rather than being deleted; guard against
+// re-entering take_damage at 0 integrity.
+/obj/machinery/shipsensors/take_damage(damage_amount, damage_type = BRUTE, damage_flag = "", sound_effect = TRUE, attack_dir, armour_penetration = 0)
+	if(get_integrity() <= 0)
+		return
+	return ..()
+
+/obj/machinery/shipsensors/atom_destruction(damage_flag)
+	. = ..()
+	if(use_power)
 		toggle()
 
 /obj/machinery/shipsensors/weak

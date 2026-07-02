@@ -55,12 +55,12 @@
 	qdel(src)
 	return
 
-/obj/structure/closet/crate/mimic/damage(damage)
+/obj/structure/closet/crate/mimic/take_damage(damage_amount, damage_type = BRUTE, damage_flag, sound_effect = TRUE, attack_dir, armour_penetration = 0)
 	if(contents.len)
 		visible_message(span_bolddanger("[src] makes out a crunchy noise as its contents are destroyed!"))
 		for(var/obj/O in src.contents)
 			qdel(O)
-	..()
+	return ..()
 
 /obj/structure/closet/crate/mimic/safe
 	mimic_chance = 0
@@ -188,12 +188,12 @@
 	qdel(src)
 	return
 
-/obj/structure/closet/crate/mimic/airlock/damage(damage)
+/obj/structure/closet/crate/mimic/airlock/take_damage(damage_amount, damage_type = BRUTE, damage_flag, sound_effect = TRUE, attack_dir, armour_penetration = 0)
 	if(contents.len)
 		visible_message(span_bolddanger("The [src] let's out an enraged screach!"))
 		for(var/obj/O in src.contents)
 			qdel(O)
-	..()
+	return ..()
 
 /obj/structure/closet/crate/mimic/airlock/safe
 	mimic_chance = 0
@@ -282,12 +282,12 @@
 	qdel(src)
 	return
 
-/obj/structure/closet/crate/mimic/closet/damage(damage)
+/obj/structure/closet/crate/mimic/closet/take_damage(damage_amount, damage_type = BRUTE, damage_flag, sound_effect = TRUE, attack_dir, armour_penetration = 0)
 	if(contents.len)
 		visible_message(span_bolddanger("The [src] makes out a crunchy noise as its contents are destroyed!"))
 		for(var/obj/O in src.contents)
 			qdel(O)
-	..()
+	return ..()
 
 /obj/structure/closet/crate/mimic/closet/safe
 	mimic_chance = 0

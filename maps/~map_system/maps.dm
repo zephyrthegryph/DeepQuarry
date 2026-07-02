@@ -134,6 +134,10 @@ GLOBAL_LIST_EMPTY(all_maps)
 	var/list/unit_test_exempt_from_apc = list()
 	var/list/unit_test_exempt_from_wires = list()
 	var/list/unit_test_z_levels //To test more than Z1, set your z-levels to test here.
+	/// Skip the whole-station map-validity tests (APC/vent/scrubber coverage, wiring).
+	/// Set on minimal CI harness maps (virgo_minitest) that aren't complete stations —
+	/// those checks are meant for the live playable map and run under its own build.
+	var/skip_map_validity_tests = FALSE
 
 	var/list/planet_datums_to_make = list() // Types of `/datum/planet`s that will be instantiated by SSPlanets.
 

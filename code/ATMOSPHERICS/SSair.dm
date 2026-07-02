@@ -104,11 +104,14 @@ SUBSYSTEM_DEF(air)
 	gas_reactions = init_gas_reactions()
 	hotspot_reactions = init_hotspot_reactions()
 
-	// NOTE: gas math currently runs in pure DM (the /datum/gas_mixture bodies in
-	// gasmixtures/gas_mixture.dm). The optional Rust-accelerated auxmos backend
-	// is not wired: auxmos_bindings.dm is not compiled and the gas-arena init
-	// (auxtools_atmos_init in auxmos_init_bridge.dm) is not called. Wiring it is
-	// a future perf project — until then there is nothing to initialise here.
+	// chunk 2: register the gas roster in the Rust arena. Reactions are parsed by
+	// hook_init from SSair.gas_reactions; temporarily empty it so this step wires
+	// ONLY the gas registry (reaction reconciliation is chunk 4). See
+	// doc/auxmos_wiring_plan.md.
+	var/list/_saved_reactions = gas_reactions
+	gas_reactions = list()
+	auxtools_atmos_init(build_auxmos_gas_registry())
+	gas_reactions = _saved_reactions
 
 	build_multiz_atmos_levels()
 	setup_allturfs()
@@ -385,14 +388,16 @@ SUBSYSTEM_DEF(air)
 
 ///Adds a turf to active processing, handles duplicates. Call this with blockchanges == TRUE if you want to nuke the assoc excited group
 /datum/controller/subsystem/air/proc/add_to_active(turf/open/activate, blockchanges = FALSE)
-	// after the /turf/simulated → /turf/open reparent, walls and
-	// minerals match the /turf/open type but have blocks_air=1 / air=null.
-	// They reach this proc via legitimate paths — ChangeTurf calls
-	// mark_for_update on the new turf regardless of type, and /tg/'s design
-	// intent is that the activation simply routes to neighbors when the turf
-	// itself can't hold gas. Recurse on neighbors if init (so the room
-	// next to the changed wall gets re-shared), queue or mark otherwise.
-	if(activate && (activate.blocks_air || isnull(activate.air)))
+	// after the /turf/simulated → /turf/open reparent, walls and minerals match
+	// the /turf/open type but have blocks_air=1 / air=null. On TOP of that,
+	// /turf/unsimulated/* (Southern Cross planetary floors) are NOT /turf/open at
+	// all and have no `air` var — yet they reach here via legit paths (ChangeTurf
+	// mark_for_update, and pipeline/mingle_with_turf from vents). Reading `.air`
+	// on those throws "undefined variable .../var/air" every vent tick (×1188
+	// unsimulated floors), flooding runtimes and starving init. So type-gate the
+	// `.air` read: anything that isn't a /turf/open can't hold gas — route it to
+	// neighbors (if init) / queue / mark, same as a blocked open turf.
+	if(activate && (!istype(activate, /turf/open) || activate.blocks_air || isnull(activate.air)))
 		if(activate.flags_1 & INITIALIZED_1)
 			for(var/turf/neighbor as anything in activate.atmos_adjacent_turfs)
 				add_to_active(neighbor, TRUE)
@@ -479,8 +484,12 @@ SUBSYSTEM_DEF(air)
 		// We pass the tick as the current step so if we sleep the step changes
 		// This way we can make setting up adjacent turfs O(n) rather then O(n^2)
 		setup.Initalize_Atmos(time)
-		// We assert that we'll only get open turfs here
-		difference_check += setup
+		// Only /turf/open carries the `air` var and belongs in the difference pass below.
+		// /turf/unsimulated/* (space outpost floors, planetary walls) inherit init_air = TRUE
+		// but are NOT /turf/open after the simulated→open reparent, so including them here
+		// would runtime on the `.air` read in the next loop. Gate on the real type.
+		if(istype(setup, /turf/open))
+			difference_check += setup
 		if(CHECK_TICK)
 			time--
 
@@ -496,6 +505,11 @@ SUBSYSTEM_DEF(air)
 		if(!potential_diff.air)
 			continue
 		for(var/turf/open/enemy_tile as anything in potential_diff.atmos_adjacent_turfs)
+			// `as anything` skips the implicit istype filter for speed, so a non-/turf/open
+			// neighbour (e.g. /turf/unsimulated, which has no `air`/`current_cycle` vars) can
+			// slip into atmos_adjacent_turfs and runtime on the reads below — guard explicitly.
+			if(!istype(enemy_tile))
+				continue
 			// If it's already been processed, then it's already talked to us
 			if(enemy_tile.current_cycle == -INFINITY)
 				continue
@@ -732,22 +746,22 @@ GLOBAL_LIST_EMPTY(colored_images)
 // start_processing_machine / stop_processing_machine removed.
 // See vars block comment: SSair never owned device processing on this fork.
 
-// added /proc/ keyword so these are fresh declarations rather than
-// overrides. CHOMP's TGUI base uses tgui_state/tgui_interact (different proc
-// names) and has no /datum-level ui_* base, so the original /tg/ override
-// syntax was relying on a base declaration in tg_infra_compat.dm. Promoting
-// these to fresh declarations lets us delete that scaffolding.
-/datum/controller/subsystem/air/proc/ui_state(mob/user)
+// This fork's TGUI base calls tgui_state / tgui_interact / tgui_data / tgui_act
+// on the src object (see code/modules/tgui/external.dm), NOT the /tg/ ui_* names.
+// These were previously declared as ui_* procs, so the framework never called them
+// and the panel was dead. Renamed to the fork convention + opened by an admin verb
+// (code/modules/admin/verbs/debug.dm: "Debug Atmospherics").
+/datum/controller/subsystem/air/tgui_state(mob/user)
 	return ADMIN_STATE(R_DEBUG)
 
-/datum/controller/subsystem/air/proc/ui_interact(mob/user, datum/tgui/ui)
+/datum/controller/subsystem/air/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
-		ui = new(user, src, "AtmosControlPanel")
+		ui = new(user, src, "AtmosControlPanel", "Atmospherics Debug")
 		ui.set_autoupdate(FALSE)
 		ui.open()
 
-/datum/controller/subsystem/air/proc/ui_data(mob/user)
+/datum/controller/subsystem/air/tgui_data(mob/user)
 	var/list/data = list()
 	data["excited_groups"] = list()
 	for(var/datum/excited_group/group in excited_groups)
@@ -784,11 +798,10 @@ GLOBAL_LIST_EMPTY(colored_images)
 	data["showing_user"] = user.hud_used.atmos_debug_overlays
 	return data
 
-/datum/controller/subsystem/air/proc/ui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	// was . = ..(); but as a fresh declaration there's no parent to
-	// chain to. The /tg/ ..() called /datum/ui_state ancestry which CHOMP's
-	// TGUI doesn't have. Skip the parent chain; rights check below handles
-	// the permission gate that ..() would have asserted.
+/datum/controller/subsystem/air/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
+	. = ..()
+	if(.)
+		return
 	var/mob/user = ui?.user
 	if(!user || !check_rights_for(user.client, R_DEBUG))
 		return

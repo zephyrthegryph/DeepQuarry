@@ -94,7 +94,7 @@
 	desc = "A strange door, but seems weaker then others. May break under extreme firepower.."
 	icon = 'icons/obj/weather_ruins.dmi'
 	icon_state_closed = "ultra_blast_door"
-	health = 4500
+	max_integrity = 4500
 
 /*
 //Funky Buildings

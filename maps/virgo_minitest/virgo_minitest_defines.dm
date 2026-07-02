@@ -20,6 +20,10 @@
 
 	zlevel_datum_type = /datum/map_z_level/minitest
 
+	// Minimal CI harness, not a complete station — skip the whole-station APC/vent/
+	// scrubber-coverage and wiring validity tests (they run against the live map).
+	skip_map_validity_tests = TRUE
+
 	station_name  = "NSS Ade-testing"
 	station_short = "VORE-testing"
 	dock_name     = "Virgo-test CC"

@@ -9,8 +9,7 @@
 	initial_icon = "odysseus"
 	step_in = 2
 	max_temperature = 15000
-	health = 70
-	maxhealth = 70
+	max_integrity = 70
 	wreckage = /obj/effect/decal/mecha_wreckage/odysseus
 	internal_damage_threshold = 35
 	deflect_chance = 15
@@ -116,8 +115,8 @@
 
 /obj/mecha/medical/odysseus/old/Initialize(mapload)
 	. = ..()
-	health = 25
-	maxhealth = 50	//Just slightly worse.
+	max_integrity = 50	//Just slightly worse.
+	update_integrity(25)
 	cell.charge = rand(0, (cell.charge/2))
 
 

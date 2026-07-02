@@ -252,7 +252,7 @@
 			var/atom/movable/objectOrMob = target
 			if(istype(objectOrMob, /obj/machinery/door))	// Doors and airlocks take time based on their durability and our damageo.
 				var/obj/machinery/door/D = objectOrMob
-				var/total_hits = max(2, round(D.maxhealth / (2 * melee_damage_upper)))
+				var/total_hits = max(2, round(D.max_integrity / (2 * melee_damage_upper)))
 
 				for(var/I = 1 to total_hits)
 

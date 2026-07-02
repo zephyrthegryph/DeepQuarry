@@ -6,8 +6,7 @@
 	icon_state = "barricade"
 	anchored = TRUE
 	density = TRUE
-	var/health = 100
-	var/maxhealth = 100
+	max_integrity = 100
 	var/datum/material/material
 
 /obj/structure/barricade/Initialize(mapload, material_name)
@@ -20,8 +19,8 @@
 	name = "[material.display_name] barricade"
 	desc = "This space is blocked off by a barricade made of [material.display_name]."
 	color = material.icon_colour
-	maxhealth = material.integrity
-	health = maxhealth
+	max_integrity = material.integrity
+	update_integrity(max_integrity)
 
 /obj/structure/barricade/get_material()
 	return material
@@ -31,13 +30,12 @@
 	var/barricade_damage = P.get_structure_damage()
 	if(!barricade_damage)
 		return
+	var/base_multiplier
 	if(barricade_damage > 30)
-		var/base_multiplier = P.damage_type == BURN ? 0.5 : 0.25
-		health -= barricade_damage * base_multiplier
+		base_multiplier = P.damage_type == BURN ? 0.5 : 0.25
 	else
-		var/base_multiplier = P.damage_type == BURN ? 0.25 : 0.1
-		health -= barricade_damage * base_multiplier
-	CheckHealth()
+		base_multiplier = P.damage_type == BURN ? 0.25 : 0.1
+	take_damage(barricade_damage * base_multiplier, P.damage_type, BULLET)
 
 /obj/structure/barricade/attackby(obj/item/W as obj, mob/user as mob)
 	user.setClickCooldown(user.get_attack_speed(W))
@@ -45,42 +43,32 @@
 		var/obj/item/stack/D = W
 		if(D.get_material_name() != material.name)
 			return //hitting things with the wrong type of stack usually doesn't produce messages, and probably doesn't need to.
-		if(health < maxhealth)
+		if(get_integrity() < max_integrity)
 			if(D.get_amount() < 1)
 				to_chat(user, span_warning("You need one sheet of [material.display_name] to repair \the [src]."))
 				return
 			visible_message(span_notice("[user] begins to repair \the [src]."))
-			if(do_after(user, 2 SECONDS, target = src) && health < maxhealth)
+			if(do_after(user, 2 SECONDS, target = src) && get_integrity() < max_integrity)
 				if(D.use(1))
-					health = maxhealth
+					repair_damage(max_integrity)
 					visible_message(span_notice("[user] repairs \the [src]."))
 				return
 		return
 
-	switch(W.damtype)
-		if(BURN)
-			health -= W.force * 1
-		if(BRUTE)
-			health -= W.force * 0.75
 	if(material == get_material_by_name(MAT_WOOD) || material == get_material_by_name(MAT_SIFWOOD))
 		playsound(src, 'sound/effects/woodcutting.ogg', 100, 1)
 	else
 		playsound(src, 'sound/weapons/smash.ogg', 50, 1)
-	CheckHealth()
+	switch(W.damtype)
+		if(BURN)
+			take_damage(W.force, BURN, MELEE, sound_effect = FALSE)
+		if(BRUTE)
+			take_damage(W.force * 0.75, BRUTE, MELEE, sound_effect = FALSE)
 	..()
 
-/obj/structure/barricade/proc/CheckHealth()
-	if(health <= 0)
-		dismantle()
-
-	health = min(health, maxhealth)
-
-	return
-
-/obj/structure/barricade/take_damage(damage)
-	health -= damage
-	CheckHealth()
-	return
+/obj/structure/barricade/atom_destruction(damage_flag)
+	dismantle()
+	return ..()
 
 /obj/structure/barricade/attack_generic(mob/user, damage, attack_verb)
 	visible_message(span_danger("[user] [attack_verb] the [src]!"))
@@ -93,8 +81,7 @@
 	else
 		playsound(src, 'sound/weapons/smash.ogg', 50, 1)
 	user.do_attack_animation(src)
-	health -= damage
-	CheckHealth()
+	take_damage(damage, BRUTE, MELEE, sound_effect = FALSE)
 	return
 
 /obj/structure/barricade/proc/dismantle()
@@ -108,8 +95,7 @@
 		if(1.0)
 			dismantle()
 		if(2.0)
-			health -= 25
-			CheckHealth()
+			take_damage(25, BRUTE, BOMB)
 
 /obj/structure/barricade/CanPass(atom/movable/mover, turf/target)//So bullets will fly over and stuff.
 	if(istype(mover) && mover.checkpass(PASSTABLE))
@@ -119,8 +105,7 @@
 /obj/structure/barricade/planks
 	name = "crude barricade"
 	icon_state = "barricade_planks"
-	health = 50
-	maxhealth = 50
+	max_integrity = 50
 
 /obj/structure/barricade/sandbag
 	name = "sandbags"
@@ -134,8 +119,8 @@
 	. = ..(mapload, material_name)
 	name = "[material.display_name] [initial(name)]"
 	color = null
-	maxhealth = material.integrity * 2	// These things are, commonly, used to stop bullets where possible.
-	health = maxhealth
+	max_integrity = material.integrity * 2	// These things are, commonly, used to stop bullets where possible.
+	update_integrity(max_integrity)
 	update_connections(1)
 
 /obj/structure/barricade/sandbag/Destroy()

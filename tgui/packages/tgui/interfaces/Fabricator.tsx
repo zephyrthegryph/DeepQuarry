@@ -13,6 +13,7 @@ import { MaterialAccessBar } from './common/MaterialAccessBar';
 import { TechWebRecipeIcon } from './common/TechWebRecipeIcon';
 import { DesignBrowser } from './Fabrication/DesignBrowser';
 import { MaterialCostSequence } from './Fabrication/MaterialCostSequence';
+import { SelectableRecipe } from './Fabrication/SelectableRecipe';
 import type {
   Design,
   FabricatorData,
@@ -166,8 +167,27 @@ type RecipeProps = {
 };
 
 const Recipe = (props: RecipeProps) => {
-  const { act } = useBackend<FabricatorData>();
+  const { act, data } = useBackend<FabricatorData>();
   const { design, available, SHEET_MATERIAL_AMOUNT } = props;
+
+  // Material-selectable designs render a material picker instead of fixed costs.
+  if (design.materialSelectable) {
+    return (
+      <SelectableRecipe
+        design={design}
+        available={available}
+        materialChoices={data.materialChoices ?? []}
+        SHEET_MATERIAL_AMOUNT={SHEET_MATERIAL_AMOUNT}
+        onBuild={(materialId, quantity) =>
+          act('build', {
+            ref: design.id,
+            amount: quantity,
+            material: materialId,
+          })
+        }
+      />
+    );
+  }
 
   const canPrint = !Object.entries(design.cost).some(
     ([material, amount]) =>

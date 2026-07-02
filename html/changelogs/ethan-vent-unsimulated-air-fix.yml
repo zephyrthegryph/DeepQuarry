@@ -1,0 +1,4 @@
+author: "ethan"
+delete-after: true
+changes:
+  - bugfix: "Fixed air vents throwing a runtime error every tick when adjacent to planetary/outpost (unsimulated) floors. The atmospherics activation path read a gas-mix variable that only exists on normal floors, so every vent next to those tiles spammed errors each processing cycle — flooding the logs and starving the atmospherics subsystem of processing time. Vents now correctly treat unsimulated tiles as non-gas-holding."

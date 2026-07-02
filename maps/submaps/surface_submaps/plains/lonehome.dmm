@@ -24,7 +24,7 @@
 "aI" = (
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/flora/pottedplant/fern{
 	pixel_y = 12
@@ -95,7 +95,7 @@
 "gn" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/template_noop,
 /area/submap/lonehome)
@@ -509,7 +509,7 @@
 "AQ" = (
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/item/material/shard,
 /turf/simulated/floor/outdoors/dirt,
@@ -587,7 +587,7 @@
 "Ek" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor/outdoors/dirt,
 /area/submap/lonehome)
@@ -817,7 +817,7 @@
 "Oe" = (
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/template_noop,
 /area/submap/lonehome)
@@ -869,7 +869,7 @@
 "RI" = (
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor/outdoors/dirt,
 /area/submap/lonehome)

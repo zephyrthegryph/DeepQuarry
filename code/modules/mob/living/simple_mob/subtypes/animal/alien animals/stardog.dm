@@ -513,8 +513,7 @@
 	opacity = TRUE
 	product = /obj/item/stack/material/fur
 	product_amount = 10
-	health = 100
-	max_health = 100
+	max_integrity = 100
 	pixel_x = 0
 	pixel_y = 0
 	shake_animation_degrees = 2

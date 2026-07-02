@@ -83,6 +83,10 @@ ADMIN_VERB(Cell, R_DEBUG, "Cell", "Display the atmos information of the current 
 	user.mob.show_message(t, 1)
 	feedback_add_details("admin_verb","ASL") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
+ADMIN_VERB(debug_atmospherics, R_DEBUG, "Debug Atmospherics", "Opens the SSair debug panel (excited groups, active turfs, fire count, freeze).", ADMIN_CATEGORY_DEBUG_INVESTIGATE)
+	SSair.tgui_interact(user.mob)
+	feedback_add_details("admin_verb","DBGATMOS") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
+
 ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_robotize, R_ADMIN|R_EVENT|R_DEBUG, "Make Robot", "Turns the target into a robot.", ADMIN_CATEGORY_FUN_EVENT_KIT, mob/living/carbon/human/target_human in GLOB.human_mob_list)
 	if(!SSticker)
 		tgui_alert_async(user, "Wait until the game starts")

@@ -26,7 +26,7 @@
 /obj/structure/table/glass,
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor/tiled/eris/dark/violetcorener,
 /area/awaymission/baseblep/base)
@@ -82,7 +82,7 @@
 	dir = 1
 	},
 /obj/structure/window/reinforced{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/shuttle/floor/darkred,
 /area/awaymission/baseblep/hivebotsphere)
@@ -149,7 +149,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = null
+	max_integrity = null
 	},
 /turf/simulated/shuttle/floor/darkred,
 /area/awaymission/baseblep/hivebotsphere)
@@ -380,10 +380,10 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = null
+	max_integrity = null
 	},
 /obj/structure/window/reinforced{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor/tiled/eris/steel,
 /area/awaymission/baseblep/base)
@@ -451,7 +451,7 @@
 /obj/structure/table/glass,
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor/tiled/eris/steel,
 /area/awaymission/baseblep/base)
@@ -492,7 +492,7 @@
 /area/awaymission/baseblep/cavern)
 "vC" = (
 /obj/structure/window/reinforced{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/bed,
 /turf/simulated/floor/tiled/eris/dark/violetcorener,
@@ -544,7 +544,7 @@
 /obj/machinery/chem_master,
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor/tiled/eris/dark/violetcorener,
 /area/awaymission/baseblep/base)
@@ -610,7 +610,7 @@
 /obj/structure/grille,
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = null
+	max_integrity = null
 	},
 /obj/structure/window/reinforced{
 	dir = 1
@@ -649,7 +649,7 @@
 "CJ" = (
 /obj/structure/grille,
 /obj/structure/window/reinforced{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 1
@@ -689,7 +689,7 @@
 	dir = 4
 	},
 /obj/structure/window/reinforced{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/shuttle/floor/darkred,
 /area/awaymission/baseblep/hivebotsphere)
@@ -716,7 +716,7 @@
 /obj/structure/table/steel,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 1
@@ -774,11 +774,11 @@
 /obj/structure/table/glass,
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor/tiled/eris/steel,
 /area/awaymission/baseblep/base)
@@ -810,7 +810,7 @@
 /obj/structure/grille,
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = null
+	max_integrity = null
 	},
 /obj/structure/window/reinforced{
 	dir = 4
@@ -831,10 +831,10 @@
 /obj/structure/grille,
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = null
+	max_integrity = null
 	},
 /obj/structure/window/reinforced{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/shuttle/floor/darkred,
 /area/awaymission/baseblep/hivebotsphere)
@@ -1127,7 +1127,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor/tiled/eris/dark/violetcorener,
 /area/awaymission/baseblep/base)
@@ -1180,7 +1180,7 @@
 /obj/machinery/chemical_dispenser/full,
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor/tiled/eris/dark/violetcorener,
 /area/awaymission/baseblep/base)

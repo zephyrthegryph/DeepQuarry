@@ -29,7 +29,7 @@ include out "in case." Git history is the record of what was removed.
 | Path | Purpose |
 |---|---|
 | `code/` | All DM game code (the entire codebase — base + everything the fork added). |
-| `maps/` | Maps. The live map is `maps/deep_quarry/`. `maps/submaps/`, `maps/common*/`, `maps/overmap/`, `maps/~turfpacks/` hold dynamically-loaded submaps/turfpacks/overmap content. Other top-level map dirs are dormant upstream maps not in the build. |
+| `maps/` | Maps. The live map is `maps/southern_cross/` — **station-only**: 3 station decks (z1-3) + CentCom (z4) + Transit (z5); the empty/surface/misc z-levels were trimmed (see §9). `maps/virgo_minitest/` is the **unit-test map** selected under `-DCITESTING` (tiny → fast test boots; see `maps/~map_system/_map_selection.dm`). `maps/submaps/`, `maps/common*/`, `maps/overmap/`, `maps/~turfpacks/` hold dynamically-loaded submaps/turfpacks/overmap content. `maps/expedition/` holds the blank substrate the on-demand expedition generator carves. Other top-level map dirs are dormant upstream maps not in the build. |
 | `icons/` | Art. Editable sources are `*.png` + `*.dmi.toml`; the build repacks them into `icons/gen/` (see §4). Never hand-edit files under `icons/gen/`. |
 | `sound/`, `interface/`, `html/`, `strings/` | Assets, BYOND skin, browser assets, lookup text. |
 | `tgui/` | React/TypeScript front-end (TypeScript only, Biome + Bun). |
@@ -230,18 +230,123 @@ accident or assume they work:
   by load-bearing shims (`xgm_compat.dm` ~67 callers of `assume_gas`/`update_nearby_tiles`/etc.,
   `tg_infra_compat.dm`, `machine_shim.dm` ~39 `set_machine()` callers) rather than migrated to
   native LINDA APIs. See `doc/atmos_migration.md`, `code/ATMOSPHERICS/README.md`.
-- **Overmap — subsystem on, surface map ground-only, live map still multi-z at runtime.**
-  `code/modules/overmap/` compiles and runs; `maps/deep_quarry/` sets `use_overmap = FALSE`
-  (no overmap sectors). But the live map is **not** single-z: `SSquarry` digs the map into
-  procedurally-generated quarry layers, each loaded as a new z-level via `load_new_z()`, so
-  vertical multi-z atmos applies to them at runtime. The overmap proper is exercised by
-  `virgo_minitest`.
+  The **`.air`-on-unsimulated-turf** family (Southern Cross has ~1188 `/turf/unsimulated/floor` that
+  inherit `init_air` but are NOT `/turf/open`, so have no `air` var) is now guarded at all three sites:
+  `setup_allturfs` append, the difference-pass neighbour loop, AND `add_to_active` (`SSair.dm` — the last
+  was reached via **vents** `pipeline/mingle_with_turf` and threw a runtime EVERY vent tick, flooding logs).
+  The SSair admin debug panel works again: verb "Debug Atmospherics" (Debug→Investigate) →
+  `SSair.tgui_interact` → `AtmosControlPanel.tsx` (was dead: nonexistent interface + `ui_*` names when this
+  fork's tgui calls `tgui_*`).
+- **Quarry system — removed, replaced by the on-demand expedition generator.** The old
+  `SSquarry` (depth layers + freight elevator + goals/danger/noise/archetype/persistence)
+  and the `maps/deep_quarry/` map are **deleted**. In their place, `code/modules/expedition/`
+  provides `SSexpedition.generate_site()`: a lean, demand-driven generator that allocates a
+  fresh (or recycled) z-level (`load_new_z()` on `/datum/map_template/expedition_site`), carves
+  it with the base `cave_system` automata, bridges it into multi-z atmos, and scatters loot/POIs.
+  Now a full loop: `SSexpedition` fires on a 2s tick to poll mission completion and presence-
+  release empty sites (their z-levels recycled via a `free_z` pool). The station-side
+  `/obj/machinery/computer/expedition` (TGUI `ExpeditionConsole`, auto-placed in a hangar if not
+  mapped) rolls a mission board, launches the selected `/datum/expedition_mission` (survey,
+  extermination, salvage, retrieval, rescue — see `code/modules/expedition/`), bluespace-deploys
+  the pad crew, and recalls them; an extraction beacon on-site returns them too. Missions pay
+  survey points + Thalers on completion. A dynamic POI system (`expedition_poi.dm`: vault, camp,
+  nest, cache, salvage field, relay) populates sites. Admin Debug verbs ("Generate Expedition
+  Site" / "Generate Expedition Mission") jump a site directly. (Reusable non-quarry infra kept:
+  `cave_system` automata, `load_new_z`, the `quarry_stalker` combat-AI canary mob, `tab_noop`.)
+- **Substance & chemistry system — science core (new, live).** `code/modules/substance/`:
+  everything is a `/datum/substance` with a visible surface behavior (effect family + trigger)
+  and a hidden five-axis profile (energy/volatility/affinity 0–100, resonance 0–360 cyclic,
+  purity) that **rerolls every round** (md5 salt). The engine is `substance_combine(A,B,ctx)`
+  (`substance_resolver.dm`): resonance distance picks MATCHING/ADJACENT/OPPOSING → reinforce /
+  transform (a `switch`-based family transform map) / conflict; energy=magnitude,
+  volatility=control, affinity=yield+dampening, purity=byproducts+wobble; hazards erupt via the
+  shared `substance_apply_effect()`. **A substance is ALWAYS a material — there is no vial/gadget.**
+  The universal object is the stack `/obj/item/stack/material/substance` (sheets; `…/random_field`
+  drops in loot), backed by `/datum/material/substance` (`substance_material.dm`, runtime-registered
+  in `GLOB.name_to_material` like `/datum/material/dynamic`, stats derived from the axes;
+  `substance_spawn_stack()` / `substance_stack_substance()`). Player-facing pipeline (all operate on
+  stacks): the **combiner** (`/obj/machinery/substance_combiner` + TGUI `SubstanceCombiner`) alloys
+  two stacks and shows learned-by-doing **Field Notes** (no scanning); the **refiner** pushes one
+  axis at others' cost; the **extractor** renders slime extracts / bred produce into bio / botany
+  substance stacks. From a stack it is ordinary material: forge via the in-hand material stack-recipe
+  menu (`material.get_recipes()`, like exotic/dynamic materials) into weapons, plating, walls, OR via a
+  **material-selectable lathe design** (see the material-selection note below) — load a substance alloy
+  stack into a protolathe and pick it in the design's material picker. Anything made of it carries
+  `/datum/component/substance_infusion` (applied
+  via the `dq_apply_material_behaviors` seam) that fires the effect on `COMSIG_SUBSTANCE_FORM_TRIGGER`
+  with finite charges. **All trigger conditions are wired** (`substance_triggers.dm` +
+  `material_weapons.dm`, via `/obj/item/material/substance_form_trigger()`): melee strike
+  (IMPACT+CONTACT), thrown impact (IMPACT+PRESSURE), fire (HEAT), projectile hit (IMPACT+PRESSURE,
+  +ENERGY for energy shots), EMP (ENERGY), bare-hand touch (CONTACT); plus **armour struck**
+  (`material_impact`, material_armor.dm), any substance **obj destroyed** (`substance_on_destruction`
+  in `/atom/atom_destruction`), and substance **walls dismantled** (walls.dm). Substance materials also
+  drive the material behaviour vars from their axes (glow/rad/tox) and scale `supply_conversion_value`
+  by potency. Xenoarch source: the extractor renders an `/obj/item/anobattery` essence into a field
+  substance. Atmospherics (ambient temp/pressure → volatility) and engineering (rig `energy_ceiling`)
+  feed the resolver via `/datum/substance_context`. Debug verbs under "Substance: …". Earlier
+  vial/charge/node carriers + rigging were removed in favour of the material model. **Substance gun-ammo
+  IS built:** base `/obj/item/ammo_casing`/`ammo_magazine` carry a forged material (`set_forged_material`);
+  a substance round's bullet gets the infusion only (`apply_substance_infusion`) and discharges via the base
+  `/obj/item/projectile/on_impact` form-trigger (IMPACT/PRESSURE, +ENERGY for burn); lathe entry =
+  material-selectable `material_rounds_9mm`. Deferred: medical/cargo axis mechanics, the full
+  threat-vulnerability intel loop, and discovery-gated techweb fabrication. **Reachability — via existing
+  engineering machines, no new machines:** REFINE by loading a substance sheet into a `particle_smasher`
+  (the PA's beam target), clicking to pick the trade, and firing the particle accelerator at it until it
+  charges past threshold → `apply_refine` (`substance_particle_refine.dm` + a hook in the smasher's
+  `process()`). COMBINE by feeding two substance stacks into the `fusion_core` ("R-UST") reactant slots;
+  the live field fuses a sheet-pair per interval via `substance_combine`, casts the alloy at the core,
+  turns magnitude into reactor energy (`AddEnergy`), and maps a hazard onto `tick_instability`/breach
+  (`substance_fusion_combine.dm` + hooks in `_core.dm` attackby/process/Destroy). EXTRACT deferred. The
+  standalone `/obj/machinery/substance_combiner`/`_refiner`/`_extractor` remain debug-verb-only fallbacks.
+  **Atmos/engineering feed BOTH machine paths** via one shared helper (`substance_env_context()` in
+  `substance_resolver.dm`, factored out of the bench combiner): the room's temperature/pressure shift
+  volatility and the machine's power rating is the energy ceiling — PA refine ceiling scales with charge,
+  fusion combine ceiling with field strength (+plasma heat as extra volatility). `apply_refine()` takes an
+  optional context and spills over-ceiling energy into volatility.
+  CAVEAT: the PA (CE supply crate) and the R-UST reactor (circuit-board build) are NOT pre-mapped on
+  Southern Cross, so refine/combine require building those engineering machines first.
+- **Material behaviour system — rewritten; material synergies removed.** A material's three active
+  behaviours are plain vars on `/datum/material` (`luminescence`/`radioactivity`/`toxicity`), read via
+  `dq_material_*()` and applied to items by a working self-processing `/datum/component/material_behaviors`
+  (`material_behaviors.dm`) — replacing the old half-wired magnitude-only component layer
+  (`material_components.dm`) and `material_traits.dm`, both deleted. `material_synergies.dm` is deleted, and
+  the `dq_apply_material_synergies()`/`dq_synergy_value()` no-op shims plus all 53 `RefreshParts` call sites
+  and 2 value-reads are **now fully removed** (zero residual refs). Structures/walls keep self-processing for
+  radiation via `products_need_process()` + the read API.
+- **Material-selectable lathe designs (BOTH lathes).** A `/datum/design_techweb` can set
+  `material_selectable = TRUE` + `selectable_amount` (+ optional `selectable_class`); the lathe UI then
+  shows a material picker (loaded materials via `lathe_material_choice_list(container)` in `_production.dm`)
+  and the chosen material is consumed and passed to `create_item(target, chosen)` → the product's
+  `set_material`. This is how exotic/substance alloys become lathe-buildable WITHOUT one techweb entry per
+  material. Design backend: `effective_materials()`/`material_choice_valid()` (`designs.dm`). Both build
+  paths thread `chosen_material`: protolathe family `_production.dm` (`build`/`do_make_item`) AND autolathe
+  `autolathe.dm` (`make`/`do_make_item`). UI: one shared `Fabrication/SelectableRecipe.tsx` (native row +
+  dropdown + x1/x5/x10/max), used by both `Fabricator.tsx` and `Autolathe.tsx` via an `onBuild` callback;
+  `materialChoices` in `Types.ts`. Sample designs + node: `designs/material_selectable.dm` (Material
+  Knife/Sword, `build_type = AUTOLATHE | PROTOLATHE`, starting node). The lathe material container allows
+  any `/datum/material` subtype, so substance/dynamic sheets load. Biome lint/format clean (root
+  `npm install` provides Biome); tsc **is** run clean (bun at `~/.bun/bin`; `bun install` in `tgui/` provides
+  the workspace) — sample design now also includes `material_rounds_9mm`.
+- **Overmap — subsystem on, station map ground-only.** `code/modules/overmap/` compiles and
+  runs; the live `maps/southern_cross/` is station-only and does not use overmap sectors.
+  Expedition sites are still multi-z at runtime (each is its own `load_new_z()` z-level, so
+  vertical multi-z atmos applies). The overmap proper is exercised by `virgo_minitest`.
 - **Dynamic overmap POI system — deleted.** The spawn hook in `code/modules/overmap/sectors.dm`
   and the POI templates/loot were removed. Reviving requires restoring that content from git
   history. Leave it removed unless explicitly asked to revive it.
 - **ATC (Air Traffic Control) — removed.** The `SSatc` subsystem and its radio-chatter module
   (`busy_space/atc_chatter*`, `chatter_*`) are deleted. The `loremaster`/`organizations` lore
   datums that lived alongside it in `busy_space/` are kept (used codebase-wide).
+- **Damage model — unified on TG obj_integrity.** Every damageable `/obj` (structures,
+  machinery, doors, vehicles, mechs) now takes damage through the TG integrity system in
+  `code/game/atom/atom_defense.dm`: `take_damage(amount, damage_type, damage_flag, …)`,
+  `get_integrity()`, `repair_damage()`, and the `atom_break()`/`atom_fix()`/`atom_destruction()`
+  hooks. The old parallel `var/health`/`var/maxhealth` + `healthcheck()`/`CheckHealth()` model is
+  **gone** — don't reintroduce it; set `max_integrity` (and `integrity_failure` for a "broken
+  but not destroyed" state) and route damage through `take_damage()`. Turfs/walls keep their own
+  `damage`-var model (as upstream TG does). A few entities run self-contained damage backed by
+  obj_integrity but with their own combat logic on top: `/obj/mecha` (component armor/deflect)
+  and `/obj/item/uav`. Mob/plant/blob health is a separate system and untouched.
 - **verdigris (Rust FFI)** is a build artifact, gitignored per-platform. If `cargo` is absent
   the build warns and skips it; cave-gen FFI then fails at runtime. (Atmos does **not** depend
   on it — gas math is pure DM until the auxmos backend is wired.)

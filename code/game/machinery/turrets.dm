@@ -1,27 +1,22 @@
 /* Combat refactor walkback
 /obj/machinery/porta_turret
-	health = 40				//the turret's health
-	maxhealth = 40			//turrets maximal health.
+	max_integrity = 40			//turrets maximal health.
 
 /obj/machinery/porta_turret/ai_defense
-	health = 125 // Since lasers do 40 each.
-	maxhealth = 125
+	max_integrity = 125
 
 /obj/machinery/porta_turret/alien
-	health = 125
-	maxhealth = 125
+	max_integrity = 125
 
 /obj/machinery/porta_turret/industrial
-	health = 100
-	maxhealth = 100
+	max_integrity = 100
 
 /obj/machinery/porta_turret/industrial/teleport_defense
 	name = "defense turret"
 	desc = "This variant appears to be much more durable, with a rugged outer coating."
 	req_one_access = list(ACCESS_HEADS)
 	installation = /obj/item/gun/energy/gun/burst
-	health = 125
-	maxhealth = 125
+	max_integrity = 125
 
 */
 /obj/machinery/porta_turret/obelisk
@@ -49,8 +44,7 @@
 	blocks_emissive = EMISSIVE_BLOCK_UNIQUE
 
 
-	health = 300				//the turret's health
-	maxhealth = 300			//turrets maximal health.
+	max_integrity = 300			//turrets maximal health.
 	auto_repair = TRUE		//if 1 the turret slowly repairs itself.
 
 	installation = /obj/item/gun/energy/pulse_rifle

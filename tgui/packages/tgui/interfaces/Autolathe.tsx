@@ -16,7 +16,13 @@ import { Window } from '../layouts';
 import { TechWebRecipeIcon } from './common/TechWebRecipeIcon';
 import { DesignBrowser } from './Fabrication/DesignBrowser';
 import { MaterialCostSequence } from './Fabrication/MaterialCostSequence';
-import type { Design, Material, MaterialMap } from './Fabrication/Types';
+import { SelectableRecipe } from './Fabrication/SelectableRecipe';
+import type {
+  Design,
+  Material,
+  MaterialChoice,
+  MaterialMap,
+} from './Fabrication/Types';
 
 type AutolatheData = {
   materials: Material[];
@@ -24,6 +30,7 @@ type AutolatheData = {
   materialsmax: number;
   SHEET_MATERIAL_AMOUNT: number;
   designs: Design[];
+  materialChoices?: MaterialChoice[];
   active: BooleanLike;
 };
 
@@ -172,8 +179,27 @@ type AutolatheRecipeProps = {
 };
 
 const AutolatheRecipe = (props: AutolatheRecipeProps) => {
-  const { act } = useBackend<AutolatheData>();
+  const { act, data } = useBackend<AutolatheData>();
   const { design, availableMaterials, SHEET_MATERIAL_AMOUNT } = props;
+
+  // Material-selectable designs render the shared material picker instead.
+  if (design.materialSelectable) {
+    return (
+      <SelectableRecipe
+        design={design}
+        available={availableMaterials}
+        materialChoices={data.materialChoices ?? []}
+        SHEET_MATERIAL_AMOUNT={SHEET_MATERIAL_AMOUNT}
+        onBuild={(materialId, quantity) =>
+          act('make', {
+            id: design.id,
+            multiplier: quantity,
+            material: materialId,
+          })
+        }
+      />
+    );
+  }
 
   let maxmult = 0;
   maxmult = Object.entries(design.cost).reduce(

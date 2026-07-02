@@ -76,21 +76,21 @@
 	if(!chosen_window)
 		return
 
-	chosen_window.take_damage(chosen_window.maxhealth * 0.8)
+	chosen_window.take_damage(chosen_window.max_integrity * 0.8)
 	playsound(chosen_window, 'sound/effects/Glasshit.ogg', 100, 1)
 	chosen_window.visible_message(span_danger("\The [chosen_window] suddenly begins to crack!"))
 
 /datum/event2/event/window_break/should_end()
 	. = ..()
 	if(!.) // If the timer didn't expire, we can still end it early if someone messes up.
-		if(!chosen_window || !chosen_window.anchored || chosen_window.health == chosen_window.maxhealth)
+		if(!chosen_window || !chosen_window.anchored || chosen_window.get_integrity() >= chosen_window.max_integrity)
 			// If the window got deconstructed/moved/etc, immediately end and make the breach happen.
 			// Also end early if it was repaired.
 			return TRUE
 
 /datum/event2/event/window_break/end()
 	// If someone fixed the window, then everything is fine.
-	if(chosen_window && chosen_window.anchored && chosen_window.health == chosen_window.maxhealth)
+	if(chosen_window && chosen_window.anchored && chosen_window.get_integrity() >= chosen_window.max_integrity)
 		log_game("Window Break event ended with window repaired.")
 		return
 

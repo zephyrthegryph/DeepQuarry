@@ -79,7 +79,6 @@
 	max_temp = initial(max_temp) + (50 * (total_laser_rating - 1))
 	min_temp = max(1, initial(min_temp) - (30 * (total_laser_rating - 1)))
 
-	dq_apply_material_synergies(src)
 	return
 
 /obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/setup_overlay_vars()

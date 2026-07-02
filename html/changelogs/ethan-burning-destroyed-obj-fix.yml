@@ -1,0 +1,4 @@
+author: "ethan"
+delete-after: true
+changes:
+  - bugfix: "Fixed a server error that repeated every tick when furniture (and other flammable objects) burned up while still sitting in a fire. Once an object was destroyed by the flames it kept getting 'damaged' again, throwing a runtime each time. Burning objects now stop taking fire damage the moment they're wrecked."

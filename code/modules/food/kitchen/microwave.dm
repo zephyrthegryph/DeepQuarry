@@ -82,7 +82,6 @@
 	efficiency = mlrating
 	active_power_usage = max(100, 2000 / caprating)
 
-	dq_apply_material_synergies(src)
 /obj/machinery/microwave/Initialize(mapload)
 	. = ..()
 

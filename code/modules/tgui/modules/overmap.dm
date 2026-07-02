@@ -281,11 +281,11 @@
 	if(sensors)
 		data["on"] = sensors.use_power
 		data["range"] = sensors.range
-		data["health"] = sensors.health
-		data["max_health"] = sensors.max_health
+		data["health"] = sensors.get_integrity()
+		data["max_health"] = sensors.max_integrity
 		data["heat"] = sensors.heat
 		data["critical_heat"] = sensors.critical_heat
-		if(sensors.health == 0)
+		if(sensors.get_integrity() <= 0)
 			data["status"] = "DESTROYED"
 		else if(!sensors.powered())
 			data["status"] = "NO POWER"

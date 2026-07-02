@@ -199,6 +199,9 @@
 
 /obj/machinery/airlock_sensor/process()
 	if(on)
+		// return_air() is now guaranteed non-null (empty vacuum mix on airless
+		// tiles) — see /turf/open/return_air. A sensor on a vacuum dock tile
+		// correctly reports 0 pressure instead of runtiming.
 		var/datum/gas_mixture/air_sample = return_air()
 		var/pressure = round(air_sample.return_pressure(),0.1)
 

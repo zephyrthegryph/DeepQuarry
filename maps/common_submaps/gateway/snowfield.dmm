@@ -299,7 +299,7 @@
 /obj/structure/catwalk,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor/tiled/techfloor/grid,
 /area/awaymission/snowfield/security/security_cell)
@@ -444,7 +444,7 @@
 "axS" = (
 /obj/machinery/door/blast/regular{
 	density = 0;
-	health = 0;
+	max_integrity = 0;
 	icon_state = "pdoor0";
 	id = "snowfield fourth pathway lock";
 	opacity = 0
@@ -610,12 +610,12 @@
 /area/awaymission/snowfield/medical/front_desk)
 "aGe" = (
 /obj/machinery/door/window/brigdoor/northleft{
-	health = 1e+006;
+	max_integrity = 1e+006;
 	req_access = null;
 	req_one_access = list(108)
 	},
 /obj/machinery/door/window/brigdoor/southleft{
-	health = 1e+006;
+	max_integrity = 1e+006;
 	req_access = null;
 	req_one_access = list(108)
 	},
@@ -1812,7 +1812,7 @@
 "bKe" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/effect/floor_decal/borderfloor{
 	dir = 5
@@ -3303,7 +3303,7 @@
 /obj/structure/catwalk,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/effect/decal/cleanable/dirt,
 /turf/simulated/floor/tiled/techfloor/grid,
@@ -4509,12 +4509,12 @@
 "efy" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/grille,
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/machinery/door/blast/regular{
 	density = 0;
@@ -4523,7 +4523,7 @@
 	opacity = 0
 	},
 /obj/structure/window/reinforced/full{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor,
 /area/awaymission/snowfield/command/bsa)
@@ -4560,7 +4560,7 @@
 /obj/effect/floor_decal/steeldecal/steel_decals_central5,
 /obj/machinery/door/blast/regular{
 	density = 0;
-	health = 80;
+	max_integrity = 80;
 	icon_state = "pdoor0";
 	id = "snowfield gateway";
 	opacity = 0
@@ -4896,7 +4896,7 @@
 "ewG" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/effect/floor_decal/borderfloor{
 	dir = 1
@@ -5620,7 +5620,7 @@
 "fjP" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/effect/floor_decal/borderfloor{
 	dir = 4
@@ -5869,7 +5869,7 @@
 "fve" = (
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/machinery/door/blast/regular{
 	density = 0;
@@ -6876,7 +6876,7 @@
 "gsi" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/effect/floor_decal/industrial/outline/yellow,
 /obj/structure/closet/secure_closet/engineering_personal/snowfield,
@@ -8306,19 +8306,19 @@
 /area/awaymission/snowfield/service/janitor)
 "hBm" = (
 /obj/structure/window/reinforced{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/grille,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced/full{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/machinery/door/blast/regular{
 	density = 0;
@@ -8817,15 +8817,15 @@
 /area/awaymission/snowfield/security/security_lockerroom)
 "ibJ" = (
 /obj/structure/window/reinforced{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/grille,
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced/full{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/machinery/door/blast/regular{
 	density = 0;
@@ -8928,7 +8928,7 @@
 "igl" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/closet/secure_closet/guncabinet{
 	req_one_access = list(2,4)
@@ -9850,18 +9850,18 @@
 "iXa" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/grille,
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced/full{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/machinery/door/blast/regular{
 	density = 0;
@@ -10647,7 +10647,7 @@
 /area/awaymission/snowfield/checkpointunpowered)
 "jEF" = (
 /obj/structure/window/reinforced{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/machinery/door/blast/regular{
 	density = 0;
@@ -11181,19 +11181,19 @@
 /area/awaymission/snowfield/engineering/hallway)
 "kbh" = (
 /obj/structure/window/reinforced{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/grille,
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced/full{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/machinery/door/blast/regular{
 	density = 0;
@@ -11679,19 +11679,19 @@
 /area/awaymission/snowfield/medical/morgue)
 "kzi" = (
 /obj/structure/window/reinforced{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/grille,
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced/full{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/machinery/door/blast/regular{
 	density = 0;
@@ -12331,7 +12331,7 @@
 /obj/effect/floor_decal/steeldecal/steel_decals_central5,
 /obj/machinery/door/blast/regular{
 	density = 0;
-	health = 135;
+	max_integrity = 135;
 	icon_state = "pdoor0";
 	id = "snowfield gateway";
 	opacity = 0
@@ -12546,7 +12546,7 @@
 "lme" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/effect/decal/cleanable/dirt,
 /turf/simulated/floor,
@@ -12951,7 +12951,7 @@
 /obj/structure/window/reinforced,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/effect/floor_decal/industrial/outline/yellow,
 /obj/structure/closet/secure_closet/engineering_personal/snowfield,
@@ -13056,7 +13056,7 @@
 "lGI" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor,
 /area/awaymission/snowfield/security/security_cell)
@@ -13483,7 +13483,7 @@
 "meB" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/effect/floor_decal/borderfloor{
 	dir = 4
@@ -13548,10 +13548,10 @@
 /area/awaymission/snowfield/hallway/commandhallway)
 "mgO" = (
 /obj/structure/window/reinforced{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced/full{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/grille,
 /turf/simulated/floor,
@@ -13785,7 +13785,7 @@
 "muH" = (
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/effect/decal/cleanable/dirt,
 /obj/item/paper/awaygate/snowfield/evacuation_order2,
@@ -16907,18 +16907,18 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/grille,
 /obj/machinery/door/blast/regular{
@@ -16929,7 +16929,7 @@
 	opacity = 0
 	},
 /obj/structure/window/reinforced/full{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor,
 /area/awaymission/snowfield/hallway/frontgate_substation)
@@ -17810,19 +17810,19 @@
 "qcI" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/grille,
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced/full{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/machinery/door/blast/regular{
 	density = 0;
@@ -18514,14 +18514,14 @@
 /obj/structure/catwalk,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/item/material/snow/snowball/reinforced,
 /turf/simulated/floor/tiled/techfloor/grid,
 /area/awaymission/snowfield/security/security_cell)
 "qHd" = (
 /obj/machinery/door/airlock/medical{
-	health = 130;
+	max_integrity = 130;
 	locked = 1;
 	name = "Operating Theatre";
 	req_access = list(45)
@@ -20351,7 +20351,7 @@
 /obj/structure/window/reinforced,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/effect/floor_decal/borderfloor{
 	dir = 4
@@ -21048,7 +21048,7 @@
 "tsZ" = (
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/machinery/door/blast/regular{
 	density = 0;
@@ -21820,7 +21820,7 @@
 "uch" = (
 /obj/machinery/door/blast/regular{
 	density = 0;
-	health = 0;
+	max_integrity = 0;
 	icon_state = "pdoor0";
 	id = "snowfield bsa MCA";
 	opacity = 0
@@ -23194,22 +23194,22 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/grille,
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced/full{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor,
 /area/awaymission/snowfield/hallway/frontgate_substation)
@@ -23367,7 +23367,7 @@
 	icon_state = "4-8"
 	},
 /obj/machinery/door/airlock/highsecurity{
-	health = 0;
+	max_integrity = 0;
 	name = "BSA Monitoring Room";
 	req_one_access = list(1,11,20,47,56)
 	},
@@ -23980,7 +23980,7 @@
 "vYw" = (
 /obj/machinery/door/blast/regular{
 	density = 0;
-	health = 0;
+	max_integrity = 0;
 	icon_state = "pdoor0";
 	id = "snowfield bsa MCA";
 	opacity = 0
@@ -24855,7 +24855,7 @@
 "wQl" = (
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/machinery/door/blast/regular{
 	density = 0;
@@ -24866,10 +24866,10 @@
 /obj/structure/grille,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced/full{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor,
 /area/awaymission/snowfield/command/bsa)
@@ -26609,7 +26609,7 @@
 /obj/effect/floor_decal/steeldecal/steel_decals_central5,
 /obj/machinery/door/blast/regular{
 	density = 0;
-	health = 40;
+	max_integrity = 40;
 	icon_state = "pdoor0";
 	id = "snowfield gateway";
 	opacity = 0

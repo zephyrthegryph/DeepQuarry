@@ -37,7 +37,6 @@
 		mb_rating += M.rating
 	max_metal = mb_rating * initial(max_metal)
 
-	dq_apply_material_synergies(src)
 /obj/machinery/pipelayer/dismantle()
 	eject_metal()
 	..()

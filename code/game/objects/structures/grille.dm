@@ -8,7 +8,10 @@
 	pressure_resistance = 5*ONE_ATMOSPHERE
 	layer = TABLE_LAYER
 	explosion_resistance = 1
-	var/health = 10
+	// 16 integrity with a 6-point "broken" buffer: 10 damage to break it into a passable
+	// stub (integrity_failure), then 6 more to clear it entirely (atom_destruction).
+	max_integrity = 16
+	integrity_failure = 0.375
 	var/destroyed = FALSE
 
 
@@ -86,8 +89,8 @@
 		. = PROJECTILE_CONTINUE
 		damage = between(0, (damage - Proj.damage)*(Proj.damage_type == BRUTE? 0.4 : 1), 10) //if the bullet passes through then the grille avoids most of the damage
 
-	src.health -= damage*0.2
-	spawn(0) healthcheck() //spawn to make sure we return properly if the grille is deleted
+	if(damage > 0)
+		take_damage(damage * 0.2, Proj.damage_type, BULLET)
 
 /obj/structure/grille/attackby(obj/item/W as obj, mob/user as mob)
 	if(!istype(W))
@@ -156,28 +159,26 @@
 		playsound(src, 'sound/effects/grillehit.ogg', 80, 1)
 		switch(W.damtype)
 			if(BURN)
-				health -= W.force
+				take_damage(W.force, BURN, MELEE, sound_effect = FALSE)
 			if(BRUTE)
-				health -= W.force * 0.1
-	healthcheck()
+				take_damage(W.force * 0.1, BRUTE, MELEE, sound_effect = FALSE)
 	..()
 	return
 
 
-/obj/structure/grille/proc/healthcheck()
-	if(health <= 0)
-		if(!destroyed)
-			density = FALSE
-			destroyed = 1
-			update_icon()
-			new /obj/item/stack/rods(get_turf(src))
+// Crossing the integrity_failure threshold turns the grille into a passable broken stub.
+/obj/structure/grille/atom_break(damage_flag)
+	. = ..()
+	if(!destroyed)
+		density = FALSE
+		destroyed = TRUE
+		update_icon()
+		new /obj/item/stack/rods(get_turf(src))
 
-		else
-			if(health <= -6)
-				new /obj/item/stack/rods(get_turf(src))
-				qdel(src)
-				return
-	return
+// Reaching 0 integrity clears the grille entirely, dropping its last rod.
+/obj/structure/grille/atom_destruction(damage_flag)
+	new /obj/item/stack/rods(get_turf(src))
+	return ..()
 
 // shock user with probability prb (if all connections & power are working)
 // returns 1 if shocked, 0 otherwise
@@ -208,15 +209,13 @@
 /obj/structure/grille/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume)
 	if(!destroyed)
 		if(exposed_temperature > T0C + 1500)
-			health -= 1
-			healthcheck()
+			take_damage(1, BURN)
 	..()
 
 /obj/structure/grille/attack_generic(mob/user, damage, attack_verb)
 	visible_message(span_danger("[user] [attack_verb] the [src]!"))
 	user.do_attack_animation(src)
-	health -= damage
-	spawn(1) healthcheck()
+	take_damage(damage, BRUTE, MELEE)
 	return 1
 
 // Used in mapping to avoid
@@ -227,14 +226,15 @@
 
 /obj/structure/grille/broken/Initialize(mapload)
 	. = ..()
-	health = rand(-5, -1) //In the destroyed but not utterly threshold.
-	healthcheck() //Send this to healthcheck just in case we want to do something else with it.
+	update_integrity(rand(1, 5)) //In the broken-but-not-cleared band (below integrity_failure).
+	atom_break() //Drop into the passable broken stub state.
 
 /obj/structure/grille/cult
 	name = "cult grille"
 	desc = "A matrice built out of an unknown material, with some sort of force field blocking air around it."
 	icon_state = "grillecult"
-	health = 40 // Make it strong enough to avoid people breaking in too easily.
+	max_integrity = 46 // Strong enough to avoid people breaking in too easily (40 + 6 broken buffer).
+	integrity_failure = 0.13
 	can_atmos_pass = ATMOS_PASS_NO // Make sure air doesn't drain.
 
 /obj/structure/grille/broken/cult
@@ -287,8 +287,3 @@
 	new /obj/structure/grille/cult(get_turf(src))
 	qdel(src)
 	return TRUE
-
-/obj/structure/grille/take_damage(damage)
-	health -= damage
-	spawn(1) healthcheck()
-	return 1

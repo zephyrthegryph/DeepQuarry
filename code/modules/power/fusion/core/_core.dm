@@ -50,6 +50,7 @@ GLOBAL_LIST_EMPTY(fusion_cores)
 		if(FCC.cur_viewed_device == src)
 			FCC.cur_viewed_device = null
 	GLOB.fusion_cores -= src
+	drop_fuse_slots()
 	return ..()
 
 /obj/machinery/power/fusion_core/proc/check_core_status()
@@ -68,6 +69,9 @@ GLOBAL_LIST_EMPTY(fusion_cores)
 	if(owned_field)
 
 		set_strength(target_field_strength)
+
+		// Fuse any loaded substance reactants while the field is hot (substance_fusion_combine.dm).
+		try_fusion_combine()
 
 		spawn(1)
 			if(!QDELETED(owned_field))
@@ -133,6 +137,11 @@ GLOBAL_LIST_EMPTY(fusion_cores)
 		Shutdown()
 
 /obj/machinery/power/fusion_core/attackby(obj/item/W, mob/user)
+
+	// Substance reactant stacks load into the fuse slots even while running (the live
+	// field is what fuses them — see substance_fusion_combine.dm).
+	if(istype(W, /obj/item/stack/material/substance))
+		return load_fuse_substance(W, user)
 
 	if(owned_field)
 		to_chat(user,span_warning("Shut \the [src] off first!"))

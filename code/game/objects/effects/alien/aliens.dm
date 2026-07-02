@@ -35,7 +35,7 @@
 	layer = ABOVE_TURF_LAYER
 	var/delete_me
 
-	var/health = 15
+	max_integrity = 15
 	var/obj/effect/alien/weeds/node/linked_node = null
 	var/static/list/weedImageCache
 
@@ -203,37 +203,24 @@
 			damage = 15
 			playsound(src, 'sound/items/Welder.ogg', 100, 1)
 
-	health -= damage
-	healthcheck()
+	take_damage(damage, BRUTE, MELEE, sound_effect = FALSE)
 
 /obj/effect/alien/weeds/attack_generic(mob/user, damage, attack_verb)
 	visible_message(span_danger("[user] [attack_verb] the [src]!"))
 	user.do_attack_animation(src)
-	health -= damage
-	healthcheck()
+	take_damage(damage, BRUTE, MELEE, sound_effect = FALSE)
 	return
-
-/obj/effect/alien/weeds/take_damage(damage)
-	health -= damage
-	healthcheck()
-	return
-
-/obj/effect/alien/weeds/proc/healthcheck()
-	if(health <= 0)
-		qdel(src)
-
 
 /obj/effect/alien/weeds/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume)
 	if(exposed_temperature > 300 + T0C)
-		health -= 5
-		healthcheck()
+		take_damage(5, BURN)
 
 // start - Smaller-ranged nodes for Xenomorph Hybrids, node/weed deletion.
 /obj/effect/alien/weeds/attack_hand(mob/user as mob)
 	usr.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if (HULK in usr.mutations)
 		visible_message(span_warning("[usr] destroys the [name]!"))
-		health = 0
+		take_damage(get_integrity(), BRUTE, MELEE, sound_effect = FALSE)
 	else
 
 		// Aliens can get straight through these.
@@ -242,10 +229,8 @@
 				var/mob/living/carbon/M = usr
 				if(locate(/obj/item/organ/internal/xenos/hivenode) in M.internal_organs)
 					visible_message (span_warning("[usr] strokes the [name] and it melts away!"), 1)
-					health = 0
-					healthcheck()
+					take_damage(get_integrity(), BRUTE, MELEE, sound_effect = FALSE)
 					return
-	healthcheck()
 	return
 
 /obj/effect/alien/weeds/node/weak

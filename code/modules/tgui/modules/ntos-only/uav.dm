@@ -245,7 +245,7 @@
 	if(!tgui_owner?.current_uav)
 		MA.icon_state = "health7"
 	else
-		switch(tgui_owner.current_uav.health)
+		switch(tgui_owner.current_uav.get_integrity())
 			if(100 to INFINITY)
 				MA.icon_state = "health0"
 			if(80 to 100)

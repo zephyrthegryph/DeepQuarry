@@ -10,10 +10,9 @@
 	pressure_resistance = 4*ONE_ATMOSPHERE
 	anchored = TRUE
 	flags = ON_BORDER
-	var/maxhealth = 14.0
+	max_integrity = 14
 	var/maximal_heat = T0C + 100 		// Maximal heat before this window begins taking damage from fire
 	var/damage_per_fire_tick = 2.0 		// Amount of damage per fire tick. Regular windows are not fireproof so they might as well break quickly.
-	var/health
 	var/force_threshold = 0
 	var/ini_dir = null
 	var/state = 2
@@ -28,10 +27,10 @@
 /obj/structure/window/examine(mob/user)
 	. = ..()
 
-	if(health == maxhealth)
+	if(get_integrity() >= max_integrity)
 		. += span_notice("It looks fully intact.")
 	else
-		var/perc = health / maxhealth
+		var/perc = get_integrity() / max_integrity
 		if(perc > 0.75)
 			. += span_notice("It has a few cracks.")
 		else if(perc > 0.5)
@@ -51,34 +50,41 @@
 /obj/structure/window/examine_icon()
 	return icon(icon=initial(icon),icon_state=initial(icon_state))
 
-/obj/structure/window/take_damage(damage = 0,  sound_effect = 1)
-	var/initialhealth = health
+// Silicate coating soaks part of incoming damage, armor-style.
+/obj/structure/window/run_atom_armor(damage_amount, damage_type, damage_flag, attack_dir, armour_penetration)
+	. = ..()
+	if(silicate && .)
+		. = . * (1 - silicate / 200)
 
-	if(silicate)
-		damage = damage * (1 - silicate / 200)
+// Glass-on-glass sound rather than the default smash.
+/obj/structure/window/play_attack_sound(damage_amount, damage_type, damage_flag)
+	playsound(src, 'sound/effects/Glasshit.ogg', 100, TRUE)
 
-	health = max(0, health - damage)
+// Crack visuals / warnings as integrity drops past thresholds.
+/obj/structure/window/on_update_integrity(old_value, new_value)
+	. = ..()
+	integrity_message(old_value, new_value)
+	update_icon()
 
-	if(health <= 0)
-		shatter()
-	else
-		if(sound_effect)
-			playsound(src, 'sound/effects/Glasshit.ogg', 100, 1)
-		if(health < maxhealth / 4 && initialhealth >= maxhealth / 4)
-			visible_message("[src] looks like it's about to shatter!" )
-			update_icon()
-		else if(health < maxhealth / 2 && initialhealth >= maxhealth / 2)
-			visible_message("[src] looks seriously damaged!" )
-			update_icon()
-		else if(health < maxhealth * 3/4 && initialhealth >= maxhealth * 3/4)
-			visible_message("Cracks begin to appear in [src]!" )
-			update_icon()
-	return
+// Overridable per-subtype damage-threshold flavour text.
+/obj/structure/window/proc/integrity_message(old_value, new_value)
+	if(new_value <= 0)
+		return
+	if(new_value < max_integrity / 4 && old_value >= max_integrity / 4)
+		visible_message("[src] looks like it's about to shatter!")
+	else if(new_value < max_integrity / 2 && old_value >= max_integrity / 2)
+		visible_message("[src] looks seriously damaged!")
+	else if(new_value < max_integrity * 3/4 && old_value >= max_integrity * 3/4)
+		visible_message("Cracks begin to appear in [src]!")
+
+/obj/structure/window/atom_destruction(damage_flag)
+	shatter()
+	return ..()
 
 /obj/structure/window/proc/apply_silicate(amount)
-	if(health < maxhealth) // Mend the damage
-		health = min(health + amount * 3, maxhealth)
-		if(health == maxhealth)
+	if(get_integrity() < max_integrity) // Mend the damage
+		repair_damage(amount * 3)
+		if(get_integrity() >= max_integrity)
 			visible_message("[src] looks fully repaired." )
 	else // Reinforce
 		silicate = min(silicate + amount, 100)
@@ -117,7 +123,7 @@
 	if(!proj_damage) return
 
 	..()
-	take_damage(proj_damage)
+	take_damage(proj_damage, Proj.damage_type, BULLET)
 	return
 
 /obj/structure/window/can_pathfinding_enter(atom/movable/actor, dir, datum/pathfinding/search)
@@ -177,7 +183,7 @@
 		var/obj/hitting_object = source
 		tforce = hitting_object.w_class * 5
 	if(reinf) tforce *= 0.25
-	if(health - tforce <= 7 && !reinf)
+	if(get_integrity() - tforce <= 7 && !reinf)
 		anchored = FALSE
 		update_verbs()
 		update_nearby_icons()
@@ -237,12 +243,12 @@
 	// Fixing.
 	if(W.has_tool_quality(TOOL_WELDER) && user.a_intent == I_HELP)
 		var/obj/item/weldingtool/WT = W.get_welder()
-		if(health < maxhealth)
+		if(get_integrity() < max_integrity)
 			if(WT.remove_fuel(1 ,user))
 				to_chat(user, span_notice("You begin repairing [src]..."))
 				playsound(src, WT.usesound, 50, 1)
 				if(do_after(user, 4 SECONDS * WT.toolspeed, target = src))
-					health = maxhealth
+					repair_damage(max_integrity)
 			//		playsound(src, 'sound/items/Welder.ogg', 50, 1)
 					update_icon()
 					to_chat(user, span_notice("You repair [src]."))
@@ -325,8 +331,8 @@
 				if(is_fulltile())
 					P.fulltile = TRUE
 					P.icon_state = "fwindow"
-				P.maxhealth = maxhealth
-				P.health = health
+				P.max_integrity = max_integrity
+				P.update_integrity(get_integrity())
 				P.state = state
 				P.anchored = anchored
 				qdel(src)
@@ -338,7 +344,7 @@
 		if(W.damtype == BRUTE || W.damtype == BURN)
 			user.do_attack_animation(src)
 			hit(W.force)
-			if(health <= 7)
+			if(get_integrity() <= 7)
 				anchored = FALSE
 				update_nearby_icons()
 				step(src, get_dir(user, src))
@@ -377,8 +383,6 @@
 	// If we started anchored we'll need to disable rotation
 	AddElement(/datum/element/rotatable)
 	update_verbs()
-
-	health = maxhealth
 
 	ini_dir = dir
 
@@ -446,7 +450,7 @@
 	if(!is_fulltile())
 		// Rotate the sprite somewhat so non-fulltiled windows can be seen as needing repair.
 		var/full_tilt_degrees = 15
-		var/tilt_to_apply = abs((health / maxhealth) - 1)
+		var/tilt_to_apply = abs((get_integrity() / max_integrity) - 1)
 		if(tilt_to_apply && prob(50))
 			tilt_to_apply = -tilt_to_apply
 		adjust_rotation(LERP(0, full_tilt_degrees, tilt_to_apply))
@@ -469,7 +473,7 @@
 		add_overlay(I)
 
 	// Damage overlays.
-	var/ratio = health / maxhealth
+	var/ratio = get_integrity() / max_integrity
 	ratio = CEILING(ratio * 4, 1) * 25
 
 	if(ratio > 75)
@@ -493,12 +497,12 @@
 	glasstype = /obj/item/stack/material/glass
 	maximal_heat = T0C + 100
 	damage_per_fire_tick = 2.0
-	maxhealth = 12.0
+	max_integrity = 12.0
 	force_threshold = 3
 
 /obj/structure/window/basic/full
 	icon_state = "window-full"
-	maxhealth = 24
+	max_integrity = 24
 	fulltile = TRUE
 	flags = NONE
 
@@ -511,12 +515,12 @@
 	glasstype = /obj/item/stack/material/glass/phoronglass
 	maximal_heat = T0C + 2000
 	damage_per_fire_tick = 1.0
-	maxhealth = 40.0
+	max_integrity = 40.0
 	force_threshold = 5
 
 /obj/structure/window/phoronbasic/full
 	icon_state = "phoronwindow-full"
-	maxhealth = 80
+	max_integrity = 80
 	fulltile = TRUE
 	flags = NONE
 	rad_insulation = RAD_LIGHT_INSULATION
@@ -531,13 +535,13 @@
 	reinf = 1
 	maximal_heat = T0C + 4000
 	damage_per_fire_tick = 1.0 // This should last for 80 fire ticks if the window is not damaged at all. The idea is that borosilicate windows have something like ablative layer that protects them for a while.
-	maxhealth = 80.0
+	max_integrity = 80.0
 	force_threshold = 10
 	rad_insulation = RAD_LIGHT_INSULATION
 
 /obj/structure/window/phoronreinforced/full
 	icon_state = "phoronrwindow-full"
-	maxhealth = 160
+	max_integrity = 160
 	fulltile = TRUE
 	flags = NONE
 	rad_insulation = RAD_MEDIUM_INSULATION
@@ -547,7 +551,7 @@
 	desc = "It looks rather strong. Might take a few good hits to shatter it."
 	icon_state = "rwindow"
 	basestate = "rwindow"
-	maxhealth = 40.0
+	max_integrity = 40.0
 	reinf = 1
 	maximal_heat = T0C + 750
 	damage_per_fire_tick = 2.0
@@ -556,7 +560,7 @@
 
 /obj/structure/window/reinforced/full
 	icon_state = "rwindow-full"
-	maxhealth = 80
+	max_integrity = 80
 	fulltile = TRUE
 	flags = NONE
 
@@ -572,7 +576,7 @@
 	desc = "It looks rather strong and frosted over. Looks like it might take a few less hits then a normal reinforced window."
 	icon_state = "fwindow"
 	basestate = "fwindow"
-	maxhealth = 30
+	max_integrity = 30
 	force_threshold = 5
 
 /obj/structure/window/shuttle
@@ -581,7 +585,7 @@
 	icon = 'icons/obj/podwindows.dmi'
 	icon_state = "window"
 	basestate = "window"
-	maxhealth = 40
+	max_integrity = 40
 	reinf = 1
 	basestate = "w"
 	dir = 5
@@ -595,7 +599,7 @@
 
 /obj/structure/window/reinforced/polarized/full
 	icon_state = "rwindow-full"
-	maxhealth = 80
+	max_integrity = 80
 	fulltile = TRUE
 	flags = NONE
 
@@ -719,13 +723,13 @@
 	reinf = 0
 	maximal_heat = T0C + 5000
 	damage_per_fire_tick = 1.0
-	maxhealth = 100.0
+	max_integrity = 100.0
 	force_threshold = 10
 	rad_insulation = RAD_EXTREME_INSULATION
 
 /obj/structure/window/titanium/full
 	icon_state = "window-full"
-	maxhealth = 200
+	max_integrity = 200
 	fulltile = TRUE
 
 /obj/structure/window/plastitanium
@@ -739,13 +743,13 @@
 	reinf = 0
 	maximal_heat = T0C + 7000
 	damage_per_fire_tick = 1.0
-	maxhealth = 120.0
+	max_integrity = 120.0
 	force_threshold = 10
 	rad_insulation = RAD_EXTREME_INSULATION
 
 /obj/structure/window/plastitanium/full
 	icon_state = "window-full"
-	maxhealth = 250
+	max_integrity = 250
 	fulltile = TRUE
 
 /obj/structure/window/reinforced/tinted/full

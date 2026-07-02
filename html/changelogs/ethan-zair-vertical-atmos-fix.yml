@@ -1,0 +1,4 @@
+author: "ethan"
+delete-after: true
+changes:
+  - bugfix: "Fixed air leaking between decks (and into space) straight through solid floors. Multi-z atmospherics was letting gas cross a floor/ceiling as if it weren't there, so any room sitting above open space slowly vented its air into the void — most visibly the atmospherics gas tanks, which quietly drained their reserves. Air now only moves between decks through an actual opening. This also clears up the station-wide atmospherics slowdown the leak was causing."

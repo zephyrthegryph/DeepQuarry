@@ -10,7 +10,7 @@
 	var/randpixel = 6
 	var/abstract = 0
 	// r_speed removed (dead, 0 refs)
-	var/health = null
+	var/health = null // generic per-item value (food freshness, organ/instrument condition, …); NOT the obj_integrity damage system
 	// burn_point removed (dead, 0 refs)
 	var/burning = null
 	var/hitsound = "swing_hit"

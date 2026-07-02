@@ -1176,12 +1176,12 @@
 	dir = 1
 	},
 /obj/structure/window/reinforced{
-	health = 1e+006;
+	max_integrity = 1e+006;
 	req_access = list(5)
 	},
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor/tiled/milspec/raised,
 /area/sc_away/fueldepotspawn)

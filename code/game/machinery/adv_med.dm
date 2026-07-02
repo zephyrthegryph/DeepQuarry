@@ -28,7 +28,6 @@
 	for(var/obj/item/stock_parts/scanning_module/P in component_parts)
 		scan_level += max(0, (P.rating - 2)) //We require T3 parts or higher to actually increase our scan level.
 
-	dq_apply_material_synergies(src)
 /obj/machinery/bodyscanner/Destroy()
 	if(console)
 		console.scanner = null

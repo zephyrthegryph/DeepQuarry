@@ -61,7 +61,6 @@
 	mat_efficiency = 6 / T // Ranges from 3.0 to 1.0
 	speed = T / 2 // Ranges from 1.0 to 3.0
 
-	dq_apply_material_synergies(src)
 /obj/machinery/partslathe/dismantle()
 	for(var/f in materials)
 		eject_materials(f, -1)

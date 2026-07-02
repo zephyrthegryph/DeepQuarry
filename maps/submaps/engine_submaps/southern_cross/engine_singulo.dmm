@@ -313,7 +313,7 @@
 /obj/machinery/door/firedoor/glass,
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor,
 /area/engineering/engine_room)
@@ -642,7 +642,7 @@
 /obj/machinery/door/firedoor/glass,
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 1
@@ -725,7 +725,7 @@
 /obj/structure/window/reinforced/full,
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/machinery/door/blast/regular{
 	density = 0;
@@ -990,7 +990,7 @@
 /obj/structure/window/reinforced/full,
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/machinery/door/blast/regular{
 	density = 0;
@@ -1071,7 +1071,7 @@
 /obj/machinery/door/firedoor/glass,
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced,
 /turf/simulated/floor,

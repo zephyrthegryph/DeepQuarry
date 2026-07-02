@@ -5,7 +5,7 @@
 	initial_icon = "gopher"
 	step_in = 3
 	dir_in = 2 //Facing south.
-	health = 100
+	max_integrity = 100
 	deflect_chance = 10
 	max_temperature = 15000
 	infra_luminosity = 6

@@ -331,7 +331,7 @@
 /obj/structure/window/reinforced/full,
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor/plating,
 /area/shuttle/generic_shuttle/gen)

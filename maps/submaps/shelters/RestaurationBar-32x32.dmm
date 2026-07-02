@@ -130,11 +130,11 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006;
+	max_integrity = 1e+006;
 	req_access = list(5)
 	},
 /obj/structure/window/reinforced{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor,
 /area/survivalpod/superpose/RestaurationBar)
@@ -151,11 +151,11 @@
 "ds" = (
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 1
@@ -291,15 +291,15 @@
 /obj/structure/grille,
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006;
+	max_integrity = 1e+006;
 	req_access = list(5)
 	},
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = null
+	max_integrity = null
 	},
 /obj/structure/window/reinforced{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor,
 /area/survivalpod/superpose/RestaurationBar)
@@ -413,11 +413,11 @@
 "hI" = (
 /obj/structure/grille,
 /obj/structure/window/reinforced{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor,
 /area/survivalpod/superpose/RestaurationBar)
@@ -429,10 +429,10 @@
 "ik" = (
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = null
+	max_integrity = null
 	},
 /obj/structure/window/reinforced{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/curtain/black{
 	icon_state = "open";
@@ -491,11 +491,11 @@
 /obj/structure/grille,
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006;
+	max_integrity = 1e+006;
 	req_access = list(5)
 	},
 /obj/structure/window/reinforced{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 8
@@ -506,14 +506,14 @@
 /obj/structure/grille,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 1
 	},
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor,
 /area/survivalpod/superpose/RestaurationBar)
@@ -537,7 +537,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = null
+	max_integrity = null
 	},
 /turf/simulated/floor/tiled/hydro,
 /area/survivalpod/superpose/RestaurationBar)
@@ -619,11 +619,11 @@
 "nj" = (
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006;
+	max_integrity = 1e+006;
 	req_access = list(5)
 	},
 /obj/structure/window/reinforced{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/grille,
 /turf/simulated/floor,
@@ -657,14 +657,14 @@
 /obj/structure/grille,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor,
 /area/survivalpod/superpose/RestaurationBar)
@@ -913,11 +913,11 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006;
+	max_integrity = 1e+006;
 	req_access = list(5)
 	},
 /obj/structure/window/reinforced{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/grille,
 /turf/simulated/floor,
@@ -1052,11 +1052,11 @@
 /obj/structure/grille,
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006;
+	max_integrity = 1e+006;
 	req_access = list(5)
 	},
 /obj/structure/window/reinforced{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor,
 /area/survivalpod/superpose/RestaurationBar)
@@ -1265,7 +1265,7 @@
 /obj/structure/grille,
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006;
+	max_integrity = 1e+006;
 	req_access = list(5)
 	},
 /turf/simulated/floor,
@@ -1415,7 +1415,7 @@
 "CW" = (
 /obj/structure/grille,
 /obj/structure/window/reinforced{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 8
@@ -1445,11 +1445,11 @@
 "Do" = (
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = null
+	max_integrity = null
 	},
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006;
+	max_integrity = 1e+006;
 	req_access = list(5)
 	},
 /obj/structure/curtain/black{
@@ -1604,15 +1604,15 @@
 /area/survivalpod/superpose/RestaurationBar)
 "FW" = (
 /obj/structure/window/reinforced{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/grille,
 /turf/simulated/floor,
@@ -1634,21 +1634,21 @@
 /area/survivalpod/superpose/RestaurationBar)
 "GC" = (
 /obj/structure/window/reinforced{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 1
 	},
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/grille,
 /turf/simulated/floor,
 /area/survivalpod/superpose/RestaurationBar)
 "GD" = (
 /obj/structure/window/reinforced{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/effect/floor_decal/corner/lime/border{
 	dir = 6
@@ -1664,7 +1664,7 @@
 	},
 /obj/structure/grille,
 /obj/structure/window/reinforced{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor,
 /area/survivalpod/superpose/RestaurationBar)
@@ -1675,7 +1675,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = null
+	max_integrity = null
 	},
 /turf/simulated/floor,
 /area/survivalpod/superpose/RestaurationBar)
@@ -1868,10 +1868,10 @@
 /obj/structure/grille,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor,
 /area/survivalpod/superpose/RestaurationBar)
@@ -1960,11 +1960,11 @@
 "Lk" = (
 /obj/structure/grille,
 /obj/structure/window/reinforced{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 4
@@ -2052,15 +2052,15 @@
 "MF" = (
 /obj/structure/grille,
 /obj/structure/window/reinforced{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = null
+	max_integrity = null
 	},
 /turf/simulated/floor,
 /area/survivalpod/superpose/RestaurationBar)
@@ -2071,11 +2071,11 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = null
+	max_integrity = null
 	},
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006;
+	max_integrity = 1e+006;
 	req_access = list(5)
 	},
 /turf/simulated/floor,
@@ -2185,7 +2185,7 @@
 /obj/structure/grille,
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006;
+	max_integrity = 1e+006;
 	req_access = list(5)
 	},
 /obj/structure/window/reinforced{
@@ -2248,7 +2248,7 @@
 /obj/structure/grille,
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006;
+	max_integrity = 1e+006;
 	req_access = list(5)
 	},
 /obj/structure/window/reinforced{
@@ -2256,10 +2256,10 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor,
 /area/survivalpod/superpose/RestaurationBar)
@@ -2314,10 +2314,10 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = null
+	max_integrity = null
 	},
 /obj/structure/window/reinforced{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor,
 /area/survivalpod/superpose/RestaurationBar)
@@ -2544,24 +2544,24 @@
 /obj/structure/grille,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor,
 /area/survivalpod/superpose/RestaurationBar)
 "XI" = (
 /obj/structure/window/reinforced{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/effect/floor_decal/corner/lime/border,
 /turf/simulated/floor/tiled/hydro,
 /area/survivalpod/superpose/RestaurationBar)
 "XS" = (
 /obj/structure/window/reinforced{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 8
@@ -2617,15 +2617,15 @@
 "Yn" = (
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = null
+	max_integrity = null
 	},
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006;
+	max_integrity = 1e+006;
 	req_access = list(5)
 	},
 /obj/structure/window/reinforced{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/grille,
 /turf/simulated/floor,
@@ -2658,11 +2658,11 @@
 "Zo" = (
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/grille,
 /turf/simulated/floor,

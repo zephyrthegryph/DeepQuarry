@@ -209,10 +209,8 @@ GLOBAL_LIST_INIT(name_to_material, populate_material_list())
 
 	// Attributes
 	var/cut_delay = 0            // Delay in ticks when cutting through this wall.
-	// radioactivity / luminescence moved out into
-	// /datum/component/material_radioactive and /material_luminescent
-	// (see code/modules/materials/material_components.dm).
-	// Readers query via dq_material_radioactivity() / dq_material_luminescence().
+	// radioactivity / luminescence / toxicity are numeric vars further down (see the
+	// material property block); read via dq_material_*() and applied by material_behaviors.dm.
 	var/ignition_point           // K, point at which the material catches on fire.
 	var/melting_point = 1800     // K, walls will take damage if they're next to a fire hotter than this
 	// integrity moved into the property system below.
@@ -225,7 +223,6 @@ GLOBAL_LIST_INIT(name_to_material, populate_material_list())
 	var/conductive = 1           // Objects without this var add NOCONDUCT to flags on spawn.
 	// conductivity moved into the property system below.
 	var/list/composite_material  // If set, object matter var will be a list containing these values.
-	// luminescence moved into /datum/component/material_luminescent.
 	var/radiation_resistance = 0 // Radiation resistance, which is added on top of a material's density for blocking radiation. Needed to make lead special without superrobust weapons.
 	var/supply_conversion_value  // Supply points per sheet that this material sells for.
 	var/can_sharpen = TRUE // Is this material compatible with a sharpening kit?
@@ -243,11 +240,12 @@ GLOBAL_LIST_INIT(name_to_material, populate_material_list())
 	// upstream-style defaults — 0 means "this material does not
 	// contribute to that axis."
 	//
-	// Behavior properties (luminescence, radioactivity, toxicity) live on
-	// /datum/component subtypes attached to the material; see
-	// code/modules/materials/material_components.dm. They're
-	// queried via dq_material_luminescence/radioactivity/toxicity which
-	// return the component magnitude or 0.
+	// Behavior properties: plain numeric magnitudes. Read via
+	// dq_material_luminescence/radioactivity/toxicity (material_behaviors.dm) and
+	// applied to items by /datum/component/material_behaviors. 0 = inert on that axis.
+	var/luminescence = 0   // passive light range driver (~0-80)
+	var/radioactivity = 0  // per-tick irradiation strength
+	var/toxicity = 0       // per-tick toxin dose to a bare holder
 	var/material_class = MATCLASS_METAL
 	// Mechanical
 	var/hardness = 0
@@ -352,12 +350,10 @@ GLOBAL_LIST_INIT(name_to_material, populate_material_list())
 /datum/material/proc/can_open_material_door(mob/living/user)
 	return 1
 
-// was `(radioactivity>0)`. Radioactivity now lives on a
-// /datum/component/material_radioactive attached to materials that
-// emit. Items made from such materials still need to process for
-// irradiation.
+// Structures made of a behaving material self-process to irradiate; items use the
+// /datum/component/material_behaviors instead (see material_behaviors.dm).
 /datum/material/proc/products_need_process()
-	return dq_material_radioactivity(src) > 0
+	return (radioactivity > 0) || (toxicity > 0)
 
 // Used by walls when qdel()ing to avoid neighbor merging.
 /datum/material/placeholder
@@ -395,7 +391,10 @@ GLOBAL_LIST_INIT(name_to_material, populate_material_list())
 /datum/material/proc/is_brittle()
 	return !!(flags & MATERIAL_BRITTLE)
 
-/datum/material/proc/combustion_effect(turf/T, temperature)
+/// effect_multiplier scales how hard the material degrades when it combusts; all callers
+/// pass it (walls 0.7, doors 0.3, weapons 0.1) and the /phoron override reads it. The base
+/// is inert for most materials, but the param must be declared so it isn't silently dropped.
+/datum/material/proc/combustion_effect(turf/T, temperature, effect_multiplier)
 	return
 
 // Used by walls to do on-touch things, after checking for crumbling and open-ability.

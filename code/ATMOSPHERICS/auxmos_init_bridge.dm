@@ -48,6 +48,61 @@
 	stack_trace("[msg]")
 
 
+// === Gas registry adapter (chunk 2) ===
+//
+// auxmos hook_init reads gas_data.datums as an ASSOC list (id -> gas datum) and
+// registers each by the `id` string it reads. DeepQuarry's LINDA identifies
+// gases by /datum/gas TYPE PATHS (gases[] keys, caller args) — so we register
+// each gas under its type-path TEXT ("/datum/gas/plasma"). DM gas_mixture
+// wrappers then pass the arg stringified ("[gas_type]") and auxmos resolves it
+// via get_string. See doc/auxmos_wiring_plan.md.
+
+/// Lightweight metadata datum shaped for auxmos hook_register_gas.
+/// NOTE: auxmos reads combustion vars via byond_string!("oxidation_temperature")
+/// etc., which PANICS (NonExistentString) if the var-name string was never
+/// emitted into the compiled DM. DeepQuarry has no such vars (they're /tg/-isms),
+/// so we MUST declare every name auxmos looks up here — even unused ones — so the
+/// strings exist. Left null; auxmos then resolves them to FireInfo::None.
+/datum/auxmos_gas_meta
+	var/id
+	var/name
+	var/specific_heat
+	var/flags = 0
+	var/fusion_power = 0
+	var/moles_visible
+	// Combustion metadata auxmos hook_register_gas reads (kept null — reactions
+	// run in DM, not auxmos; these exist only to satisfy the string lookups).
+	var/oxidation_temperature
+	var/oxidation_rate
+	var/fire_temperature
+	var/fire_burn_rate
+	var/fire_products
+	var/enthalpy
+	var/fire_radiation_released
+
+/// Container passed to auxtools_atmos_init; exposes `datums` (assoc id -> meta).
+/datum/auxmos_gas_registry
+	var/list/datums
+
+/// Build the auxmos gas registry from the /datum/gas roster, keyed by path-text.
+/proc/build_auxmos_gas_registry()
+	var/datum/auxmos_gas_registry/reg = new
+	reg.datums = list()
+	for(var/gp in subtypesof(/datum/gas))
+		var/datum/gas/g = gp
+		var/gid = initial(g.id)
+		if(!gid)
+			continue
+		var/datum/auxmos_gas_meta/m = new
+		m.id = "[gp]"                     // "/datum/gas/plasma"
+		m.name = "[initial(g.name)]"
+		m.specific_heat = initial(g.specific_heat)
+		m.fusion_power = initial(g.fusion_power)
+		m.moles_visible = initial(g.moles_visible)
+		reg.datums["[gp]"] = m
+	return reg
+
+
 // === auxmos-only gas_mixture procs ===
 //
 // /tg/'s gas_mixture.dm doesn't declare these — they live ONLY in auxmos's

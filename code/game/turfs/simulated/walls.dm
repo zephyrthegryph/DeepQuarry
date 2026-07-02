@@ -197,6 +197,8 @@
 	return ..()
 
 /turf/simulated/wall/proc/dismantle_wall(devastated, explode, no_product)
+	// A wall built from a substance material discharges its effect when breached.
+	substance_discharge_from_material(src, material, src)
 
 	playsound(src, 'sound/items/Welder.ogg', 100, 1)
 	if(!no_product)
@@ -980,8 +982,8 @@ rborosilicate = 12
 				if("WEST")
 					A.dir = WEST
 			if(selected_windoor_type == "secure")
-				A.health = 300.0
-				A.maxhealth =300
+				A.max_integrity = 300
+				A.update_integrity(A.max_integrity)
 			A.electronics = new/obj/item/airlock_electronics(A)
 			A.electronics.req_access = null
 			A.electronics.req_one_access = null
@@ -1279,7 +1281,7 @@ rborosilicate = 12
 		if(RCD_WINDOWGRILLE)
 			if(destroyed)
 				destroyed = 0
-				health = initial(health)
+				repair_damage(max_integrity)
 				update_icon()
 				density = 1
 				to_chat(user, span_notice("You repair \the [src]."))

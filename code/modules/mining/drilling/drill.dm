@@ -343,7 +343,6 @@
 			charge_use -= 10 * P.rating
 	cell = locate(/obj/item/cell) in src
 
-	dq_apply_material_synergies(src)
 /obj/machinery/mining/drill/proc/check_supports()
 
 	supported = 0
@@ -458,7 +457,6 @@
 	for(var/obj/item/stock_parts/manipulator/M in component_parts)
 		brace_tier += M.rating
 
-	dq_apply_material_synergies(src)
 /obj/machinery/mining/brace/attackby(obj/item/W as obj, mob/user as mob)
 	if(connected && connected.active)
 		balloon_alert(user, "you can't work with the brace of a running drill.")

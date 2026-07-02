@@ -161,6 +161,9 @@
 		return
 
 	if(energy)
+		// A loaded substance stack refines once it charges past the threshold (substance_particle_refine.dm).
+		if(istype(target, /obj/item/stack/material/substance))
+			try_substance_refine()
 		radiation_pulse(
 			src,
 			max_range = 7,

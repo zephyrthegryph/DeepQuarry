@@ -112,7 +112,6 @@
 		E += M.rating
 	efficiency = E / 6
 
-	dq_apply_material_synergies(src)
 /obj/machinery/compressor/attackby(obj/item/W, mob/user)
 	src.add_fingerprint(user)
 
@@ -209,7 +208,6 @@
 		P += C.rating
 	productivity = P / 6
 
-	dq_apply_material_synergies(src)
 /obj/machinery/power/turbine/proc/locate_machinery()
 	if(compressor)
 		return

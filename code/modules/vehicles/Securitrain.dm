@@ -12,8 +12,7 @@
 	move_delay = 0.5
 
 	//Health stuff
-	health = 100
-	maxhealth = 100
+	max_integrity = 100
 	fire_dam_coeff = 0.6
 	brute_dam_coeff = 0.5
 

@@ -5,7 +5,7 @@
 	icon = 'icons/effects/effects.dmi'
 	anchored = TRUE
 	density = FALSE
-	var/health = 10
+	max_integrity = 10
 
 //similar to weeds, but only barfed out by nurses manually
 /obj/effect/spider/ex_act(severity)
@@ -37,8 +37,7 @@
 			damage = 15
 			playsound(src, W.usesound, 100, 1)
 
-	health -= damage
-	healthcheck()
+	take_damage(damage, BRUTE, MELEE, sound_effect = FALSE)
 
 /obj/effect/spider/spiderling/attack_hand(mob/living/user)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
@@ -53,21 +52,19 @@
 	die()
 
 /obj/effect/spider/bullet_act(obj/item/projectile/Proj)
-	..()
-	health -= Proj.get_structure_damage()
-	healthcheck()
+	. = ..()
+	take_damage(Proj.get_structure_damage(), Proj.damage_type, BULLET)
 
 /obj/effect/spider/proc/die()
 	qdel(src)
 
-/obj/effect/spider/proc/healthcheck()
-	if(health <= 0)
-		die()
+/obj/effect/spider/atom_destruction(damage_flag)
+	die()
+	return ..()
 
 /obj/effect/spider/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume)
 	if(exposed_temperature > 300 + T0C)
-		health -= 5
-		healthcheck()
+		take_damage(5, BURN)
 
 /obj/effect/spider/stickyweb
 	icon_state = "stickyweb1"
@@ -146,7 +143,7 @@
 	icon_state = "spiderling"
 	anchored = FALSE
 	layer = HIDING_LAYER
-	health = 3
+	max_integrity = 3
 	var/last_itch = 0
 	var/amount_grown = 0
 	var/obj/machinery/atmospherics/unary/vent_pump/entry_vent
@@ -192,12 +189,7 @@
 	new /obj/effect/decal/cleanable/spiderling_remains(src.loc)
 	..()
 
-/obj/effect/spider/spiderling/healthcheck()
-	if(health <= 0)
-		die()
-
 /obj/effect/spider/spiderling/process()
-	healthcheck()
 	if(travelling_in_vent)
 		if(istype(src.loc, /turf))
 			travelling_in_vent = 0
@@ -310,7 +302,7 @@
 	name = "cocoon"
 	desc = "Something wrapped in silky spider web"
 	icon_state = "cocoon1"
-	health = 15
+	max_integrity = 15
 
 /obj/effect/spider/cocoon/Initialize(mapload)
 	. = ..()

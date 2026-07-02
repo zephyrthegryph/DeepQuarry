@@ -37,6 +37,13 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 	/// When this gas mixture was last touched by pipeline processing
 	/// I am sorry
 	var/pipeline_cycle = -1
+	/// auxmos arena handle: index into the Rust gas-mixture arena, written by
+	/// __gasmixture_register (verdigris GasArena::register_mix). Null until
+	/// registered. See doc/auxmos_wiring_plan.md.
+	var/_extools_pointer_gasmixture
+	/// Volume the mixture was created with; read by register_mix to size the
+	/// Rust-side mixture. Kept in sync with `volume` at New().
+	var/initial_volume
 
 /datum/gas_mixture/New(volume)
 	gases = new
@@ -44,6 +51,7 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 		src.volume = volume
 	if(src.volume <= 0)
 		stack_trace("Created a gas mixture with zero volume!")
+	initial_volume = src.volume
 	reaction_results = new
 
 //listmos procs
@@ -464,7 +472,11 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 	var/temperature_delta = temperature_archived - sharer_temperature
 	if(abs(temperature_delta) > MINIMUM_TEMPERATURE_DELTA_TO_CONSIDER)
 		var/self_heat_capacity = heat_capacity(ARCHIVE)
-		sharer_heat_capacity = sharer_heat_capacity || sharer.heat_capacity(ARCHIVE)
+		// This proc intentionally supports a null sharer (conduction with a turf's
+		// own thermal mass, where the caller passes sharer_heat_capacity). Only
+		// fall back to reading the sharer's heat capacity when there IS a sharer —
+		// otherwise a caller that passes null + a 0 heat capacity runtimes here.
+		sharer_heat_capacity = sharer_heat_capacity || (sharer ? sharer.heat_capacity(ARCHIVE) : 0)
 
 		if((sharer_heat_capacity > MINIMUM_HEAT_CAPACITY) && (self_heat_capacity > MINIMUM_HEAT_CAPACITY))
 			// coefficient applied first because some turfs have very big heat caps.

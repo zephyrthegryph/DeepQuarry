@@ -1,0 +1,4 @@
+author: "ethan"
+delete-after: true
+changes:
+  - code_imp: "The unit-test suite can now boot the tiny virgo_minitest map instead of the full 8-z Southern Cross station: compiling with -DCITESTING selects it, and the world reaches the tests in ~2 minutes instead of ~10. Re-ported the map (stubbed the handful of content types removed during the hard fork) so it compiles clean."

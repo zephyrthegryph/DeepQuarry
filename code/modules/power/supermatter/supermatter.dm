@@ -239,7 +239,6 @@
 		if(!(S.z in affected_z))
 			continue
 		if(prob(DETONATION_SOLAR_BREAK_CHANCE))
-			S.health = -1
 			S.broken()
 
 	// Effect 4: Medium scale explosion
@@ -261,7 +260,9 @@
 	if(lum != light_range || clr != light_color)
 		set_light(lum, l_color = clr)
 
-/obj/machinery/power/supermatter/proc/get_integrity()
+// Supermatter reports integrity as 0-100% of its meltdown threshold; this overrides the
+// atom get_integrity() (the SM is not damaged through the atom_integrity system).
+/obj/machinery/power/supermatter/get_integrity()
 	var/integrity = damage / explosion_point
 	integrity = round(100 - integrity * 100)
 	integrity = integrity < 0 ? 0 : integrity

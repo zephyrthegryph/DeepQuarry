@@ -138,10 +138,9 @@ GLOBAL_LIST_INIT(contrast_colors, list("#ff0000", "#00ff00", "#0000ff", "#ffff00
 	smoothing_junction = new_junction
 
 
-// SSair admin TGUI procs (ui_state/ui_interact/ui_data/ui_act) are declared
-// directly on /datum/controller/subsystem/air in the vendored SSair.dm — no
-// stubs needed here. (Previously kept as base declarations because SSair.dm
-// used override syntax; promoted to fresh declarations in SSair.dm.)
+// SSair admin TGUI procs override the fork's tgui_state/tgui_interact/tgui_data/
+// tgui_act base (code/modules/tgui/external.dm) directly on
+// /datum/controller/subsystem/air in the vendored SSair.dm — no stubs needed here.
 
 
 // get_rebuild_targets — used to be needed by /tg/'s centralized pipenet
@@ -227,10 +226,27 @@ GLOBAL_LIST_INIT(diagonals_multiz, list(NORTHEAST, NORTHWEST, SOUTHEAST, SOUTHWE
 
 
 // === /turf zAir / atmos_expose hooks LINDA expects ===
+// Vertical atmos gate for multi-z (LINDA_system.dm:30 calls
+// `src.zAirOut(dir, target) && target.zAirIn(dir, src)` for UP/DOWN pairs).
+// These MUST NOT be blanket-TRUE: on a stacked-deck station every solid floor
+// would then atmos-merge with the tile directly above/below it THROUGH the
+// floor, so any deck tile overhanging space vents to vacuum forever (this was
+// the Southern Cross SSair-starvation churn — ~573 perpetual vents from the
+// atmos gas tanks on deck 2 leaking down into the deck-1 space beneath them).
+// Air only crosses a z-boundary through an actual opening: a /turf/simulated/open
+// (openspace) tile — i.e. the UPPER turf of the vertical pair must be the hole.
+// (istype instead of the isopenspace() macro: this compat file parses before
+// is_helpers.dm in the .dme, so the macro isn't defined yet here.)
 /turf/proc/zAirIn(direction, turf/source)
+	// Air rises UP into src from below only if src itself is a hole (no floor).
+	if(direction & UP)
+		return istype(src, /turf/simulated/open)
 	return TRUE
 
 /turf/proc/zAirOut(direction, turf/source)
+	// Air falls DOWN out of src's bottom only if src itself is a hole (no floor).
+	if(direction & DOWN)
+		return istype(src, /turf/simulated/open)
 	return TRUE
 
 // atmos_expose / should_atmos_process — base /turf no-ops are FALSE/return;
@@ -313,7 +329,12 @@ GLOBAL_LIST_INIT(diagonals_multiz, list(NORTHEAST, NORTHWEST, SOUTHEAST, SOUTHWE
 /proc/isnoslipturf(turf/T)
 	if(!T)
 		return FALSE
-	return TRUE
+	// No turf is currently flagged no-slip, so water vapor can wet any floor
+	// (water_vapor_gas_act, which itself only wets /turf/simulated). Was hardcoded TRUE,
+	// which silently disabled steam/condensation wetting everywhere — the reaction burned
+	// moles but never slicked a floor. (Trait-based opt-out isn't used; the TRAIT_NO_SLIP_*
+	// constants also aren't defined this early in include order — atmos compat parses first.)
+	return FALSE
 
 /proc/visible_hallucination_pulse(atom/center, range, hallucination_amount, duration)
 	if(!center || !range)

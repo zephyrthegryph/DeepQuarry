@@ -22,7 +22,10 @@ rayon = "1.10.0"
 # (verdigris/build-linux.sh / build-windows.sh, and CI integration tests) is
 # the real validation.
 [target.'cfg(target_arch = "x86")'.dependencies]
-auxmos = { path = "../atmos", default-features = false, features = ["turf_processing", "katmos", "katmos_slow_decompression"] }
+# superconductivity: full-auxmos moves DM super_conduct/consider_superconductivity
+# (LINDA_turf_tile.dm) into Rust; update_air_ref/hook_infos call the superconduct
+# hooks. reaction_hooks stays OFF — reactions run in DM (see doc/auxmos_wiring_plan.md).
+auxmos = { path = "../atmos", default-features = false, features = ["turf_processing", "katmos", "katmos_slow_decompression", "superconductivity"] }
 
 [build-dependencies]
 bosion = "2.0.0"

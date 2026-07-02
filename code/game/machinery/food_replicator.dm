@@ -200,7 +200,6 @@
 	speed = cap_rating / 2
 
 
-	dq_apply_material_synergies(src)
 /obj/machinery/food_replicator/verb/eject_beaker()
 	set name = "Eject Beaker"
 	set category = "Object"

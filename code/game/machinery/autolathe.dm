@@ -176,7 +176,9 @@
 			"cost" = cost,
 			"id" = design.id,
 			"categories" = design.category,
-			"icon" = "[size == size32x32 ? "" : "[size] "][css_id]"
+			"icon" = "[size == size32x32 ? "" : "[size] "][css_id]",
+			"materialSelectable" = design.material_selectable,
+			"selectableAmount" = design.selectable_amount,
 		)
 
 		output += list(design_data)
@@ -204,6 +206,7 @@
 	data["materialsmax"] = materials.max_amount
 	data["active"] = busy
 	data["materials"] = materials.tgui_data()
+	data["materialChoices"] = lathe_material_choice_list(materials)
 
 	return data
 
@@ -251,10 +254,17 @@
 		return
 	build_count = clamp(build_count, 1, 50)
 
+	// Material-selectable designs let the user pick which loaded material to use.
+	var/chosen_material = design.material_selectable ? params["material"] : null
+	if(design.material_selectable && !design.material_choice_valid(chosen_material))
+		atom_say("Select a valid material for this design.")
+		return
+	var/list/effective_mats = design.effective_materials(chosen_material)
+
 	// Check for materials required. For custom material items decode their required materials
 	var/list/materials_needed = list()
-	for(var/id, amount_needed in design.materials)
-		var/datum/material = get_material_by_name(id)
+	for(var/id, amount_needed in effective_mats)
+		var/datum/material = (id in GLOB.name_to_material) ? get_material_by_name(id) : id
 		if(!istype(material, /datum/material))
 			CRASH("Autolathe ui_act got passed an invalid material id: [material]")
 		materials_needed[material] += amount_needed
@@ -267,7 +277,7 @@
 
 	//compute power & time to print 1 item
 	var/charge_per_item = 0
-	for(var/material, amount in design.materials)
+	for(var/material, amount in effective_mats)
 		charge_per_item += amount
 
 	charge_per_item = ROUND_UP((charge_per_item / (MAX_STACK_SIZE * SHEET_MATERIAL_AMOUNT)) * material_cost_coefficient * active_power_usage)
@@ -288,7 +298,7 @@
 		target_location = get_turf(src)
 
 
-	addtimer(CALLBACK(src, PROC_REF(do_make_item), design, build_count, build_time_per_item, material_cost_coefficient, charge_per_item, materials_needed, target_location), build_time_per_item)
+	addtimer(CALLBACK(src, PROC_REF(do_make_item), design, build_count, build_time_per_item, material_cost_coefficient, charge_per_item, materials_needed, target_location, chosen_material), build_time_per_item)
 	return TRUE
 
 /**
@@ -303,7 +313,7 @@
  * * list/materials_needed - the list of materials to print 1 item
  * * turf/target - the location to drop the printed item on
 */
-/obj/machinery/autolathe/proc/do_make_item(datum/design_techweb/design, items_remaining, build_time_per_item, material_cost_coefficient, charge_per_item, list/materials_needed, turf/target)
+/obj/machinery/autolathe/proc/do_make_item(datum/design_techweb/design, items_remaining, build_time_per_item, material_cost_coefficient, charge_per_item, list/materials_needed, turf/target, chosen_material = null)
 	PROTECTED_PROC(TRUE)
 
 	if(items_remaining <= 0) // how
@@ -347,7 +357,7 @@
 
 		created = new stack_item(target, number_to_make)
 	else
-		created = design.create_item(target)
+		created = design.create_item(target, chosen_material)
 		split_materials_uniformly(materials_needed, material_cost_coefficient, created)
 
 	if(isitem(created))
@@ -362,7 +372,7 @@
 	if(items_remaining <= 0)
 		finalize_build()
 		return
-	addtimer(CALLBACK(src, PROC_REF(do_make_item), design, items_remaining, build_time_per_item, material_cost_coefficient, charge_per_item, materials_needed, target), build_time_per_item)
+	addtimer(CALLBACK(src, PROC_REF(do_make_item), design, items_remaining, build_time_per_item, material_cost_coefficient, charge_per_item, materials_needed, target, chosen_material), build_time_per_item)
 
 /**
  * Resets the icon state and busy flag
@@ -491,7 +501,6 @@
 	creation_efficiency = max(0.6, round(1.1 - (man_rating * 0.1), 0.1)) // creation_efficiency goes 1 -> 0.9 -> 0.8 -> 0.7 -> 0.6 per level of manipulator efficiency
 	lathe_build_rate = 0.85 - (man_rating * 0.05) // lathe_build_rate goes 0.8 -> 0.75 -> 0.7 -> 0.65 -> 0.6 per level of manipulator efficiency
 
-	dq_apply_material_synergies(src)
 /obj/machinery/autolathe/update_icon()
 	cut_overlays()
 

@@ -6,8 +6,7 @@
 	step_in = 1
 	dir_in = 1 //Facing North.
 	step_energy_drain = 3
-	health = 250 // God this is low // increased it a bit.
-	maxhealth = 250 // Don't forget to update the /old variant if you change this number. // increased health.
+	max_integrity = 250 // Don't forget to update the /old variant if you change this number.
 	deflect_chance = 30
 	max_temperature = 25000
 	infra_luminosity = 3
@@ -90,8 +89,7 @@
 	step_in = 1
 	dir_in = 1 //Facing North.
 	step_energy_drain = 3
-	health = 350
-	maxhealth = 350
+	max_integrity = 350
 	deflect_chance = 30
 	inherent_damage_absorption = list("brute"=0.6,"fire"=0.7,"bullet"=0.7,"laser"=0.9,"energy"=0.7,"bomb"=0.5)
 	max_temperature = 10000
@@ -170,6 +168,6 @@
 
 /obj/mecha/combat/phazon/old/Initialize(mapload)
 	. = ..()
-	health = 25
-	maxhealth = 150	//Just slightly worse.
+	max_integrity = 150	//Just slightly worse.
+	update_integrity(25)
 	cell.charge = rand(0, (cell.charge/2))

@@ -688,6 +688,16 @@
 		if(T)
 			T.hotspot_expose(700, 5)
 
+	// A round forged from a substance alloy discharges where the bullet lands — the
+	// same form-trigger path a substance blade uses on a strike. Only fires if the
+	// bullet carries a substance infusion AND the substance's trigger is one a strike
+	// presents (IMPACT/PRESSURE, plus ENERGY for energy shots); inert otherwise.
+	var/turf/impact_turf = get_turf(A) || get_turf(src)
+	if(damage_type == BURN)
+		substance_emit_form_trigger(src, impact_turf, firer, SUB_TRIG_IMPACT, SUB_TRIG_PRESSURE, SUB_TRIG_ENERGY)
+	else
+		substance_emit_form_trigger(src, impact_turf, firer, SUB_TRIG_IMPACT, SUB_TRIG_PRESSURE)
+
 //Checks if the projectile is eligible for embedding. Not that it necessarily will.
 /obj/item/projectile/proc/can_embed()
 	//embed must be enabled and damage type must be brute

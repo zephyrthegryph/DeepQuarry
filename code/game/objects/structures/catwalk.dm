@@ -16,8 +16,7 @@
 		/obj/item/stack/tile/floor/white = "#e8e8e8",
 		/obj/item/stack/tile/floor/techmaint = "#4d585b",
 		/obj/item/stack/tile/floor/techgrey = "#363f43")
-	var/health = 100
-	var/maxhealth = 100
+	max_integrity = 100
 	var/delete_me = FALSE
 
 /obj/structure/catwalk/Initialize(mapload)
@@ -129,13 +128,11 @@
 /obj/structure/catwalk/refresh_neighbors()
 	return
 
-/obj/structure/catwalk/take_damage(amount)
-	health -= amount
-	if(health <= 0)
-		visible_message(span_warning("\The [src] breaks down!"))
-		playsound(src, 'sound/effects/grillehit.ogg', 50, 1)
-		new /obj/item/stack/rods(get_turf(src))
-		qdel(src)
+/obj/structure/catwalk/atom_destruction(damage_flag)
+	visible_message(span_warning("\The [src] breaks down!"))
+	playsound(src, 'sound/effects/grillehit.ogg', 50, 1)
+	new /obj/item/stack/rods(get_turf(src))
+	return ..()
 
 /obj/structure/catwalk/Crossed(atom/movable/AM)
 	. = ..()

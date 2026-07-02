@@ -6,8 +6,7 @@
 	var/base_state = "left"
 	min_force = 4
 	hitsound = 'sound/effects/Glasshit.ogg'
-	maxhealth = 150 //If you change this, consiter changing ../door/window/brigdoor/ health at the bottom of this .dm file
-	health = 150
+	max_integrity = 150 //If you change this, consiter changing ../door/window/brigdoor/ max_integrity at the bottom of this .dm file
 	visible = 0.0
 	use_power = USE_POWER_OFF
 	flags = ON_BORDER
@@ -150,11 +149,13 @@
 	operating = FALSE
 	return TRUE
 
-/obj/machinery/door/window/take_damage(damage)
-	src.health = max(0, src.health - damage)
-	if (src.health <= 0)
-		shatter()
-		return
+// Window doors shatter outright at zero integrity rather than persisting broken.
+// Window doors shatter outright rather than persisting in the broken state the
+// base door uses, so we deliberately do NOT chain to /obj/machinery/door's
+// atom_destruction (which calls set_broken()). Fire the destruction signal here.
+/obj/machinery/door/window/atom_destruction(damage_flag)
+	SEND_SIGNAL(src, COMSIG_ATOM_DESTRUCTION, damage_flag)
+	shatter()
 
 /obj/machinery/door/window/attack_ai(mob/user as mob)
 	return src.attack_hand(user)
@@ -201,12 +202,12 @@
 		// Fixing.
 		if(I.has_tool_quality(TOOL_WELDER) && user.a_intent == I_HELP)
 			var/obj/item/weldingtool/WT = I.get_welder()
-			if(health < maxhealth)
+			if(get_integrity() < max_integrity)
 				if(WT.remove_fuel(1 ,user))
 					to_chat(user, span_notice("You begin repairing [src]..."))
 					playsound(src, WT.usesound, 50, 1)
 					if(do_after(user, 4 SECONDS * WT.toolspeed, target = src))
-						health = maxhealth
+						repair_damage(max_integrity)
 						update_icon()
 						to_chat(user, span_notice("You repair [src]."))
 			else
@@ -291,8 +292,7 @@
 	base_state = "leftsecure"
 	req_access = list(ACCESS_SECURITY)
 	var/id = null
-	maxhealth = 300
-	health = 300.0 //Stronger doors for prison (regular window door health is 150)
+	max_integrity = 300 //Stronger doors for prison (regular window door integrity is 150)
 
 /obj/machinery/door/window/brigdoor/shatter()
 	new /obj/item/stack/rods(src.loc, 2)

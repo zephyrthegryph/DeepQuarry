@@ -6,10 +6,8 @@
 	layer = TABLE_LAYER // moved so that they render above catwalks.
 	w_class = ITEMSIZE_HUGE
 	var/state = 0
-	var/health = 200
-	var/max_health = 200
+	max_integrity = 200
 	var/displaced_health = 50
-	var/current_damage = 0
 	var/cover = 50 //how much cover the girder provides against projectiles.
 	var/default_material = MAT_STEEL
 	var/datum/material/girder_material
@@ -60,9 +58,9 @@
 /obj/structure/girder/proc/set_material(datum/material/new_material)
 	girder_material = new_material
 	name = "[girder_material.display_name] [initial(name)]"
-	max_health = round(girder_material.integrity) //Should be 150 with default integrity (steel). Weaker than ye-olden Girders now.
-	health = max_health
-	displaced_health = round(max_health/4)
+	max_integrity = round(girder_material.integrity) //Should be 150 with default integrity (steel). Weaker than ye-olden Girders now.
+	update_integrity(max_integrity)
+	displaced_health = round(max_integrity/4)
 	if(applies_material_colour)
 		color = girder_material.icon_colour
 	if(girder_material.products_need_process()) //Am I radioactive or some other? Process me!
@@ -82,7 +80,6 @@
 /obj/structure/girder/displaced
 	icon_state = "displaced"
 	anchored = FALSE
-	health = 50
 	cover = 25
 
 /obj/structure/girder/displaced/Initialize(mapload, material_key)
@@ -93,7 +90,7 @@
 	name = "displaced [girder_material.display_name] [initial(name)]"
 	icon_state = "displaced"
 	anchored = FALSE
-	health = (displaced_health - round(current_damage / 4))
+	update_integrity(displaced_health)
 	cover = 25
 
 /obj/structure/girder/attack_generic(mob/user, damage, attack_message = "smashes apart")
@@ -135,10 +132,8 @@
 		// redirect the projectile
 		Proj.redirect(new_x, new_y, curloc, null)
 
-	health -= damage
 	..()
-	if(health <= 0)
-		dismantle()
+	take_damage(damage, Proj.damage_type, BULLET)
 
 	return
 
@@ -149,7 +144,7 @@
 	name = "[girder_material.display_name] [initial(name)]"
 	anchored = TRUE
 	cover = initial(cover)
-	health = min(max_health - current_damage,max_health)
+	repair_damage(max_integrity)
 	state = 0
 	icon_state = initial(icon_state)
 	reinforcing = 0
@@ -161,7 +156,7 @@
 		if(anchored && !reinf_material)
 			playsound(src, W.usesound, 100, 1)
 			to_chat(user, span_notice("Now disassembling the girder..."))
-			if(do_after(user,(35 + round(max_health/50)) * W.toolspeed, target = src))
+			if(do_after(user,(35 + round(max_integrity/50)) * W.toolspeed, target = src))
 				if(!src) return
 				to_chat(user, span_notice("You dissasembled the girder!"))
 				dismantle()
@@ -230,12 +225,10 @@
 	else
 		return ..()
 
-/obj/structure/girder/take_damage(damage)
-	health -= damage
-	if(health <= 0)
-		dismantle()
-	else
-		current_damage = current_damage + damage //Rather than calculate this every time we need to use it, just calculate it here and save it.
+// Reaching 0 integrity dismantles the girder back into its material.
+/obj/structure/girder/atom_destruction(damage_flag)
+	dismantle()
+	return ..()
 
 
 /obj/structure/girder/proc/construct_wall(obj/item/stack/material/S, mob/user)
@@ -304,7 +297,9 @@
 
 /obj/structure/girder/proc/reinforce_girder()
 	cover = reinf_material.hardness
-	health = health + round(reinf_material.integrity/2)
+	var/bonus = round(reinf_material.integrity/2)
+	max_integrity += bonus
+	repair_damage(bonus)
 	state = 2
 	icon_state = "reinforced"
 	reinforcing = 0
@@ -340,8 +335,7 @@
 	name = "column"
 	icon= 'icons/obj/cult.dmi'
 	icon_state= "cultgirder"
-	max_health = 250
-	health = 250
+	max_integrity = 250
 	cover = 70
 	girder_material = "cult"
 	applies_material_colour = 0
@@ -378,8 +372,7 @@
 /obj/structure/girder/resin
 	name = "soft girder"
 	icon_state = "girder_resin"
-	max_health = 225
-	health = 225
+	max_integrity = 225
 	cover = 60
 	girder_material = MAT_RESIN
 

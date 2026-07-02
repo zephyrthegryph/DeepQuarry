@@ -3,7 +3,7 @@
 	icon = 'icons/obj/atmos.dmi'
 	icon_state = "yellow"
 	density = TRUE
-	var/health = 100.0
+	max_integrity = 100
 	w_class = ITEMSIZE_HUGE
 
 	layer = TABLE_LAYER	// Above catwalks, hopefully below other things
@@ -173,34 +173,31 @@ update_flag
 
 /obj/machinery/portable_atmospherics/canister/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume)
 	if(exposed_temperature > temperature_resistance)
-		health -= 5
-		healthcheck()
+		take_damage(5, BURN)
 
-/obj/machinery/portable_atmospherics/canister/proc/healthcheck()
+// At zero integrity the canister ruptures: dumps its gas into the environment,
+// frees any connected port, and becomes a non-dense wreck (it is NOT qdel'd).
+/obj/machinery/portable_atmospherics/canister/atom_destruction(damage_flag)
+	. = ..()
 	if(destroyed)
-		return 1
+		return
 
-	if (src.health <= 10)
-		var/atom/location = src.loc
-		var/obj/machinery/atmospherics/portables_connector/port = locate() in location // Finds if there's a port
-		location.assume_air(air_contents)
+	var/atom/location = src.loc
+	var/obj/machinery/atmospherics/portables_connector/port = locate() in location // Finds if there's a port
+	location.assume_air(air_contents)
 
-		if(port && anchored) // if it blew up, frees up the port
-			disconnect()
-			anchored = 0
+	if(port && anchored) // if it blew up, frees up the port
+		disconnect()
+		anchored = 0
 
-		src.destroyed = 1
-		playsound(src, 'sound/effects/spray.ogg', 10, 1, -3)
-		src.density = FALSE
-		update_icon()
+	src.destroyed = 1
+	playsound(src, 'sound/effects/spray.ogg', 10, 1, -3)
+	src.density = FALSE
+	update_icon()
 
-		if (src.holding)
-			src.holding.loc = src.loc
-			src.holding = null
-
-		return 1
-	else
-		return 1
+	if (src.holding)
+		src.holding.loc = src.loc
+		src.holding = null
 
 /obj/machinery/portable_atmospherics/canister/process()
 	if (destroyed)
@@ -264,8 +261,7 @@ update_flag
 		return
 
 	if(Proj.damage)
-		src.health -= round(Proj.damage / 2)
-		healthcheck()
+		take_damage(round(Proj.damage / 2), Proj.damage_type, BULLET)
 	..()
 
 /obj/machinery/portable_atmospherics/canister/attackby(obj/item/W as obj, mob/user as mob)
@@ -289,9 +285,8 @@ update_flag
 	//Voreend
 	if(!W.has_tool_quality(TOOL_WRENCH) && !istype(W, /obj/item/tank) && !istype(W, /obj/item/analyzer) && !istype(W, /obj/item/pda))
 		visible_message(span_warning("\The [user] hits \the [src] with \a [W]!"))
-		src.health -= W.force
 		src.add_fingerprint(user)
-		healthcheck()
+		take_damage(W.force, W.damtype, MELEE)
 
 	if(isrobot(user) && istype(W, /obj/item/tank/jetpack))
 		var/obj/item/tank/jetpack/the_jetpack_tank = W
@@ -492,6 +487,3 @@ update_flag
 	air_contents.adjust_gas(GAS_PHORON, MolesForPressure())
 	update_icon()
 
-/obj/machinery/portable_atmospherics/canister/take_damage(damage)
-	health -= damage
-	healthcheck()

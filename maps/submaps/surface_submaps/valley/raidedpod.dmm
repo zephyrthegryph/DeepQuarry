@@ -103,7 +103,7 @@
 "z" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/bed/chair{
 	dir = 1
@@ -174,7 +174,7 @@
 "P" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/bed/chair,
 /turf/simulated/shuttle/floor/white,
@@ -208,7 +208,7 @@
 "X" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/shuttle/floor,
 /area/submap/raidedpod)

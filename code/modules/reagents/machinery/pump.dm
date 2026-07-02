@@ -61,7 +61,6 @@
 
 	cell = locate(/obj/item/cell) in src
 
-	dq_apply_material_synergies(src)
 /obj/machinery/pump/update_icon()
 	..()
 	cut_overlays()

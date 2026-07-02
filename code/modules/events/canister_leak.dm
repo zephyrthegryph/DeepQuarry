@@ -28,5 +28,4 @@
 
 /datum/event/canister_leak/proc/break_canister(obj/machinery/portable_atmospherics/canister/C)
 	log_game("canister_leak event: Canister [C] ([C.x],[C.y],[C.z]) destroyed.")
-	C.health = 0
-	C.healthcheck()
+	C.take_damage(C.max_integrity, BRUTE)

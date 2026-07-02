@@ -17,7 +17,16 @@
 	if(QDELETED(src))
 		CRASH("[src] taking damage after deletion")
 	if(atom_integrity <= 0)
-		CRASH("[src] taking damage while having <= 0 integrity")
+		// Already at zero integrity: destruction has already fired (or another
+		// damage source reached here first this same tick). Further damage is a
+		// harmless no-op — update_integrity() clamps at 0 and the `previous > 0`
+		// gate below ensures atom_destruction() only ever runs on the crossing, so
+		// nothing here needs to run again. This used to CRASH, which spammed
+		// runtimes whenever a sustained hotspot / explosion / rapid melee landed a
+		// second hit on the tick an atom broke (e.g. furniture burning down in a
+		// fire — ~11 runtimes/round on Southern Cross). Matches upstream /tg/, which
+		// has no such assert. See dq_take_damage_on_destroyed_atom_no_crash.
+		return
 	if(sound_effect)
 		play_attack_sound(damage_amount, damage_type, damage_flag)
 	if(resistance_flags & INDESTRUCTIBLE)
@@ -68,6 +77,24 @@
 	on_update_integrity(old_value, new_value)
 	return new_value
 
+/// Returns the atom's current integrity. Use this instead of reading atom_integrity (which is private).
+/atom/proc/get_integrity()
+	return atom_integrity
+
+/// Repairs the atom by repair_amount, clamped to max_integrity. Fires atom_fix() when crossing
+/// back above the integrity_failure threshold. Returns the new integrity.
+/atom/proc/repair_damage(repair_amount)
+	if(!uses_integrity)
+		CRASH("/atom/proc/repair_damage() was called on [src] when it doesn't use integrity!")
+	if(repair_amount <= 0)
+		return atom_integrity
+	var/integrity_failure_amount = integrity_failure * max_integrity
+	var/previous_atom_integrity = atom_integrity
+	update_integrity(min(max_integrity, atom_integrity + repair_amount))
+	if(integrity_failure && previous_atom_integrity <= integrity_failure_amount && atom_integrity > integrity_failure_amount)
+		atom_fix()
+	return atom_integrity
+
 /// Handle updates to your atom's integrity
 /atom/proc/on_update_integrity(old_value, new_value)
 	SHOULD_NOT_SLEEP(TRUE)
@@ -88,6 +115,7 @@
 /atom/proc/atom_destruction(damage_flag)
 	SHOULD_CALL_PARENT(TRUE)
 	SEND_SIGNAL(src, COMSIG_ATOM_DESTRUCTION, damage_flag)
+	substance_on_destruction(src) // a substance-material obj discharges its effect when destroyed
 
 ///returns the damage value of the attack after processing the atom's various armor protections
 ///Damage_flag can be any of the following: "melee" = 0, "bullet" = 0, "laser" = 0,"energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0

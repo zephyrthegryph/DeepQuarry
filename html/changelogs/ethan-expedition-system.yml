@@ -1,0 +1,16 @@
+author: "ethan"
+delete-after: true
+changes:
+  - rscadd: "Added the expedition system: launch missions from the Expedition Control console to dynamically-generated planetary sites."
+  - rscadd: "Added five expedition mission types — geological survey, hostile clearance, salvage recovery, artifact retrieval, and search & rescue — each with its own objective, content, and survey-point/Thaler rewards."
+  - rscadd: "Added a dynamic point-of-interest system (vaults, fauna nests, survivor camps, salvage fields, supply caches, survey relays) that populates expedition sites."
+  - rscadd: "Expedition sites recycle their z-levels once the crew leaves, so repeated launches don't leak."
+  - rscadd: "Added a procedural building generator: expeditions can now contain derelict outposts with real rooms, corridors, and doors, plus a Derelict Sweep mission to clear them."
+  - rscadd: "Expedition sites now vary by terrain biome — cavern, plains, asteroid, or low-orbit station deck — instead of always being caves."
+  - rscadd: "Procedurally-generated building rooms are now furnished with themed contents (storage, quarters, work spaces) instead of being empty."
+  - rscadd: "Added a five-tier expedition loot system (scrap to exotic): higher-difficulty, larger sites pull better rewards, with random spread and rare jackpots — including treasure safes, alien coins, and boss-grade gear."
+  - rscadd: "Expedition sites now roll a size (small/medium/large) that scales how many points of interest, loot, and how large its derelict structures are."
+  - rscadd: "Points of interest are now decorated with biome-appropriate set-dressing — remains, wreckage, flora, and grime — so each site feels distinct."
+  - rscadd: "Reworked expeditions onto a composable objective system with eleven goal types (eliminate, slay elite, clear structure, retrieve, collect, rescue, survey, reach, restore terminal, demolish, hold the line) and five new mission types (Demolition Raid, Black Box Recovery, Hold the Line, Deep Recon, Systems Restoration)."
+  - rscadd: "Missions can now combine required and bonus objectives, fail on a time limit or a total party wipe, and pay extra for completed bonus goals; the console shows live per-objective progress and pass/fail state."
+  - rscadd: "Expedition objectives now use real game systems: demolition targets must be destroyed with actual weapons/explosives, survey markers must be logged with a scanner or analyzer, and the engineering objective stamps a real derelict thermoelectric engine bay (TEG, circulators, burn chamber, fuel) the crew must commission to actual power output."

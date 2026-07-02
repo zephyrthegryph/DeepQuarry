@@ -178,7 +178,6 @@
 		store_rating = store_rating * MB.rating
 	max_res_amount = store_rating
 
-	dq_apply_material_synergies(src)
 /obj/machinery/transhuman/synthprinter/process()
 	if(stat & NOPOWER)
 		if(busy)
@@ -347,7 +346,6 @@
 		manip_rating += M.rating
 	blur_amount = (48 - manip_rating * 8)
 
-	dq_apply_material_synergies(src)
 /obj/machinery/transhuman/resleever/attack_hand(mob/user as mob)
 	tgui_interact(user)
 

@@ -3,7 +3,7 @@
 	icon = 'icons/effects/effects.dmi'
 	anchored = TRUE
 	var/obj/item/holosign_creator/projector
-	var/health = 10
+	max_integrity = 10
 	explosion_resistance = 1
 
 /obj/structure/holosign/Initialize(mapload, source_projector)
@@ -28,23 +28,14 @@
 		return
 	user.setClickCooldown(user.get_attack_speed())
 	user.do_attack_animation(src)
-	take_damage(5)
 	playsound(loc, 'sound/weapons/egloves.ogg', 80, 1)
+	take_damage(5, BRUTE, MELEE, sound_effect = FALSE)
 
 /obj/structure/holosign/attackby(obj/item/W as obj, mob/user as mob)
 	user.setClickCooldown(user.get_attack_speed(W))
 	user.do_attack_animation(src)
 	playsound(loc, 'sound/weapons/egloves.ogg', 80, 1)
-	take_damage(W.force)
-
-/obj/structure/holosign/take_damage(damage)
-	health -= damage
-	spawn(1) healthcheck()
-	return 1
-
-/obj/structure/holosign/proc/healthcheck()
-	if(health <= 0)
-		qdel(src)
+	take_damage(W.force, W.damtype, MELEE, sound_effect = FALSE)
 
 /obj/structure/holosign/wetsign
 	name = "wet floor sign"

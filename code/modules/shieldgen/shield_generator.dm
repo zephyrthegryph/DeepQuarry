@@ -84,7 +84,6 @@
 	..()
 
 
-	dq_apply_material_synergies(src)
 // Shuts down the shield, removing all shield segments and unlocking generator settings.
 /obj/machinery/power/shield_generator/proc/shutdown_field()
 	for(var/obj/effect/shield/S in field_segments)

@@ -130,6 +130,8 @@
 	no_variants = FALSE
 	pass_color = TRUE
 	strict_color_stacking = TRUE
+	// Mob-grinding by-product with no autolathe design — crafted, not lathe-printed.
+	exotic_no_autolathe_reprint = TRUE
 
 //Putting this here for now because in intial PRs, I enjoy making/altering as few files as possible.
 //Solar ray stuff

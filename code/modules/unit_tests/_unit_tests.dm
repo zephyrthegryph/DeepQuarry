@@ -131,11 +131,10 @@
 #include "dq_audit_tests.dm"
 #include "dq_bodyscanner_tests.dm"
 #include "dq_combat_ai_tests.dm"
+#include "dq_expedition_tests.dm"
 #include "dq_medical_tests.dm"
 #include "dq_melee_swing_tests.dm"
 #include "dq_preferences_tests.dm"
-#include "dq_quarry_persistence_tests.dm"
-#include "dq_quarry_spawn_tests.dm"
 #include "dq_surgery_tests.dm"
 #include "xgm_total_moles_test.dm"
 // END_INCLUDE

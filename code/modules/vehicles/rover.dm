@@ -15,8 +15,7 @@
 	charge_use = 2.5 // Reduced from 5 to 2.5 for more fuel efficiency, being a dedicated transport vehicle.
 
 	//Health stuff
-	health = 250 // 100 to 250. Cars are usually just a bit tougher than humans.
-	maxhealth = 250 // Cars are usually just a bit tougher than humans.
+	max_integrity = 250 // Cars are usually just a bit tougher than humans.
 	fire_dam_coeff = 0.6
 	brute_dam_coeff = 0.5
 

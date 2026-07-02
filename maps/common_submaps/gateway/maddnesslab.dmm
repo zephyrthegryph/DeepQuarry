@@ -3845,7 +3845,7 @@
 	dir = 1
 	},
 /obj/structure/window/reinforced{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 4
@@ -6598,7 +6598,7 @@
 	dir = 1
 	},
 /obj/structure/window/reinforced{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/machinery/door/blast/regular/open{
 	id = "MoLockC"
@@ -6887,7 +6887,7 @@
 	dir = 1
 	},
 /obj/structure/window/reinforced{
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 8

@@ -6,8 +6,7 @@
 	step_in = 5 // vorestation edit, was 6 but that's PAINFULLY slow
 	step_energy_drain = 5 // vorestation edit because 10 drained a significant chunk of its cell before you even got out the airlock
 	max_temperature = 20000
-	health = 200
-	maxhealth = 200		//Don't forget to update the /old variant if  you change this number.
+	max_integrity = 200		//Don't forget to update the /old variant if  you change this number.
 	wreckage = /obj/effect/decal/mecha_wreckage/ripley
 	cargo_capacity = 10
 	var/obj/item/mining_scanner/orescanner // vorestation addition
@@ -58,7 +57,7 @@
 	icon_state = "firefighter"
 	initial_icon = "firefighter"
 	max_temperature = 65000
-	health = 250
+	max_integrity = 250
 	lights_power = 8
 	wreckage = /obj/effect/decal/mecha_wreckage/ripley/firefighter
 	max_hull_equip = 2
@@ -144,8 +143,8 @@
 
 /obj/mecha/working/ripley/mining/old/Initialize(mapload)
 	. = ..()
-	health = 25
-	maxhealth = 190	//Just slightly worse.
+	max_integrity = 190	//Just slightly worse.
+	update_integrity(25)
 	cell.charge = rand(0, cell.charge)
 
 

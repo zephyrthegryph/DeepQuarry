@@ -1,0 +1,9 @@
+author: "ethan"
+delete-after: true
+changes:
+  - rscadd: "Expedition sites now roll an enemy faction — wild fauna, a xenomorph brood, rogue synthetics, or hostile mercenaries — that themes every hostile guarding the site. Tougher factions show up more often on higher-difficulty sites; the launch console shows the threat type."
+  - rscadd: "Added a xenomorph hive point of interest: resin-infested ground, an egg clutch, a nest, and a xeno brood crowned by a praetorian or queen."
+  - rscadd: "The expedition launch board now shows each mission's threat faction and a briefing before you launch, so you can pick your loadout."
+  - rscadd: "Hostiles now drop faction-themed loot — mercs leave weapons and cash, synthetics drop tech and power cells, xenomorphs leave alien spoils — and each faction's elite guards a guaranteed prize."
+  - balance: "Sites guarded by tougher factions (xenomorphs, synthetics, mercenaries) now pay a scaling reward premium."
+  - rscadd: "Expedition sites are now set-dressed to match their enemy faction — resin for xenomorphs, wreckage and oil for synthetics, camp grime for mercenaries."

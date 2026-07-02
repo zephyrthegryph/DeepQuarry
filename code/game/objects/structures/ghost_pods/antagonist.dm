@@ -7,7 +7,7 @@
 	icon = 'icons/mob/alien.dmi'
 	icon_state = "egg"
 	icon_state_opened = "egg_opened"
-	var/health = 50 //So they can be destroyed by the crew
+	max_integrity = 50 //So they can be destroyed by the crew
 	density = FALSE
 	ghost_query_type = /datum/ghost_query/xenomorph_larva
 	delay_to_try_again = 1 MINUTES //10 minutes for egg to grow, 5 minutes for larva to mature
@@ -26,31 +26,27 @@
 	visible_message(span_warning("\the [src] peels open, and a fresh larva slithers out!"))
 	..()
 
-/obj/structure/ghost_pod/automatic/xenomorph_egg/proc/healthcheck()
-	if(health <=0)
-		visible_message(span_warning("\the [src] splatters everywhere as it cracks open!"))
-		playsound(src, 'sound/effects/slime_squish.ogg', 50, 1)
-		qdel(src)
-	return
+/obj/structure/ghost_pod/automatic/xenomorph_egg/atom_destruction(damage_flag)
+	visible_message(span_warning("\the [src] splatters everywhere as it cracks open!"))
+	playsound(src, 'sound/effects/slime_squish.ogg', 50, 1)
+	return ..()
 
 /obj/structure/ghost_pod/automatic/xenomorph_egg/attackby(obj/item/W as obj, mob/user as mob)
 	user.setClickCooldown(user.get_attack_speed(W))
+	playsound(src, 'sound/effects/attackblob.ogg', 50, 1)
 	switch(W.damtype)
 		if(BURN)
-			health -= W.force * 1.25 //It really doesn't like fire
+			take_damage(W.force * 1.25, BURN, MELEE, sound_effect = FALSE) //It really doesn't like fire
 		if(BRUTE)
-			health -= W.force * 0.75 //Bit hard to cut
-	playsound(src, 'sound/effects/attackblob.ogg', 50, 1)
-	healthcheck()
+			take_damage(W.force * 0.75, BRUTE, MELEE, sound_effect = FALSE) //Bit hard to cut
 	..()
 	return
 
 /obj/structure/ghost_pod/automatic/xenomorph_egg/bullet_act(obj/item/projectile/Proj)
-	switch(Proj.damtype)
+	switch(Proj.damage_type)
 		if(BURN)
-			health -= Proj.damage * 1.5 //It burns!
+			take_damage(Proj.damage * 1.5, BURN, BULLET) //It burns!
 		if(BRUTE)
-			health -= Proj.damage //It hurts a bit more then a sharp stick
-	healthcheck()
+			take_damage(Proj.damage, BRUTE, BULLET) //It hurts a bit more then a sharp stick
 	..()
 	return

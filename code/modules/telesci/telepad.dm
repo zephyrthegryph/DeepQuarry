@@ -28,7 +28,6 @@
 		E += C.rating
 	efficiency = E
 
-	dq_apply_material_synergies(src)
 /obj/machinery/telepad/attackby(obj/item/W as obj, mob/user as mob)
 	src.add_fingerprint(user)
 

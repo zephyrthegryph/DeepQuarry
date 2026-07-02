@@ -55,8 +55,7 @@
 
 	var/raised = FALSE			//if the turret cover is "open" and the turret is raised
 	var/raising= FALSE			//if the turret is currently opening or closing its cover
-	var/health = 80				//the turret's health
-	var/maxhealth = 80			//turrets maximal health.
+	max_integrity = 80			//the turret's integrity
 	var/auto_repair = FALSE		//if 1 the turret slowly repairs itself.
 	var/locked = TRUE			//if the turret's behaviour control access is locked
 	var/controllock = FALSE		//if the turret responds to control panels
@@ -137,8 +136,7 @@
 	desc = "This variant appears to be much more durable."
 	req_one_access = list(ACCESS_SYNTH) // Just in case.
 	installation = /obj/item/gun/energy/xray // For the armor pen.
-	health = 250 // Since lasers do 40 each.
-	maxhealth = 250
+	max_integrity = 250
 
 /datum/category_item/catalogue/anomalous/precursor_a/alien_turret
 	name = "Precursor Alpha Object - Turrets"
@@ -163,8 +161,7 @@
 	lethal = TRUE
 	ailock = TRUE
 	check_all = TRUE
-	health = 250 // Similar to the AI turrets.
-	maxhealth = 250
+	max_integrity = 250
 	turret_type = "alien"
 
 /obj/machinery/porta_turret/alien/destroyed // Turrets that are already dead, to act as a warning of what the rest of the submap contains.
@@ -180,8 +177,7 @@
 	req_one_access = list(ACCESS_HEADS)
 	icon_state = "turret_cover_industrial"
 	installation = /obj/item/gun/energy/locked/phasegun/unlocked
-	health = 200
-	maxhealth = 200
+	max_integrity = 200
 	turret_type = "industrial"
 
 /obj/machinery/porta_turret/industrial/bullet_act(obj/item/projectile/Proj)
@@ -205,8 +201,7 @@
 	desc = "This variant appears to be much more durable, with a rugged outer coating."
 	req_one_access = list(ACCESS_HEADS)
 	installation = /obj/item/gun/energy/gun/burst
-	health = 250
-	maxhealth = 250
+	max_integrity = 250
 
 /obj/machinery/porta_turret/poi	//These are always angry
 	enabled = TRUE
@@ -618,17 +613,25 @@
 		VARSET_IN(src, enabled, TRUE, 6 SECONDS) // Turns it back on. The cover popUp() popDown() are automatically called in process(), no need to define it here
 		return 1
 
-/obj/machinery/porta_turret/take_damage(force)
+// While the cover is closed the turret is heavily armored: incoming damage is
+// cut to an eighth, and anything that small is shrugged off entirely.
+/obj/machinery/porta_turret/run_atom_armor(damage_amount, damage_type, damage_flag = 0, attack_dir, armour_penetration = 0)
+	. = ..()
 	if(!raised && !raising)
-		force = force / 8
-		if(force < 5)
-			return
+		. = . / 8
+		if(. < 5)
+			return 0
 
-	health -= force
-	if(force > 5 && prob(45))
+/obj/machinery/porta_turret/on_update_integrity(old_value, new_value)
+	. = ..()
+	if(new_value < old_value && (old_value - new_value) > 5 && prob(45))
 		spark_system?.start()
-	if(health <= 0)
-		die()	//the death process :(
+
+// Reaching zero integrity runs the turret's death process (it persists as a
+// broken wreck rather than being deleted).
+/obj/machinery/porta_turret/atom_destruction(damage_flag)
+	. = ..()
+	die()
 
 /obj/machinery/porta_turret/bullet_act(obj/item/projectile/Proj)
 	var/damage = Proj.get_structure_damage()
@@ -683,12 +686,11 @@
 			if(prob(25))
 				qdel(src)
 			else
-				take_damage(initial(health) * 8) //should instakill most turrets
+				take_damage(max_integrity * 8, BRUTE, BOMB) //should instakill most turrets
 		if(3)
-			take_damage(initial(health) * 8 / 3) //Level 4 is too weak to bother turrets
+			take_damage(max_integrity * 8 / 3, BRUTE, BOMB) //Level 4 is too weak to bother turrets
 
-/obj/machinery/porta_turret/proc/die()	//called when the turret dies, ie, health <= 0
-	health = 0
+/obj/machinery/porta_turret/proc/die()	//called when the turret dies, ie, integrity <= 0
 	stat |= BROKEN	//enables the BROKEN bit
 	spark_system?.start()	//creates some sparks because they look cool
 	update_icon()
@@ -730,9 +732,9 @@
 	if(!shot_targets && --timeout <= 0)
 		popDown() // no valid targets, close the cover
 
-	if(auto_repair && (health < maxhealth))
+	if(auto_repair && (get_integrity() < max_integrity))
 		use_power(20000)
-		health = min(health+1, maxhealth) // 1HP for 20kJ
+		repair_damage(1) // 1HP for 20kJ
 
 /obj/machinery/porta_turret/proc/set_processing_speed(fast)
 	if(fast == speed_process)
@@ -1220,8 +1222,7 @@
 	name = "CIWS turret"
 	desc = "A ship weapons turret designed for light defense."
 	req_one_access = list(ACCESS_CENT_GENERAL)
-	health = 200
-	maxhealth = 200
+	max_integrity = 200
 	enabled = TRUE
 	lethal = TRUE
 	check_weapons = TRUE
@@ -1231,8 +1232,7 @@
 	name = "mercenary CIWS turret"
 	desc = "A ship weapons turret designed for light defense."
 	req_one_access = list(ACCESS_SYNDICATE)
-	health = 200
-	maxhealth = 200
+	max_integrity = 200
 	enabled = TRUE
 	lethal = TRUE
 	check_weapons = TRUE
@@ -1243,8 +1243,7 @@
 	desc = "A ship weapons turret designed for anti-fighter defense."
 	req_one_access = list(ACCESS_CENT_GENERAL)
 	installation = /obj/item/gun/energy/pulse_rifle/destroyer
-	health = 500
-	maxhealth = 500
+	max_integrity = 500
 	enabled = TRUE
 	lethal = TRUE
 	check_weapons = TRUE
@@ -1258,8 +1257,7 @@
 	use_power = FALSE
 	idle_power_usage = 0
 	active_power_usage = 0
-	health = 5	//extremely brittle
-	maxhealth = 20
+	max_integrity = 20	//extremely brittle
 	reqpower = 0
 	enabled = TRUE
 	lethal = TRUE
@@ -1267,6 +1265,11 @@
 	check_all = TRUE
 	can_salvage = FALSE
 	check_down = TRUE
+
+// Printed pre-stressed: starts at a sliver of integrity ("extremely brittle").
+/obj/machinery/porta_turret/rcd/Initialize(mapload)
+	. = ..()
+	update_integrity(5)
 
 /obj/machinery/porta_turret/rcd/operable()
 	return !inoperable()
