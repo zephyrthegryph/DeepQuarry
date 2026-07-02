@@ -228,47 +228,47 @@
  * precomputed overlay list (see below).
  */
 /turf/open/proc/update_visuals()
-	if(!air) // airless / wall tile — clear any lingering overlays
-		set_visuals(null)
-		return
-
-	// Moles now live in the arena; get_gases() returns id -> bare mole count (NOT
-	// the old list(MOLES,ARCHIVE,GAS_META)). Per-gas meta lives in the global
-	// meta table, keyed by the same gas-type path. Build the overlay list here,
-	// mirroring the GAS_OVERLAYS macro but off arena getters, then hand it to
-	// set_visuals for the vis_contents diff.
-	var/list/gases = air.get_gases()
-	var/offset = GET_TURF_PLANE_OFFSET(src) + 1
-	var/list/new_overlay_types
-	for(var/id in gases)
-		if(GLOB.nonoverlaying_gases[id])
-			continue
-		var/list/gas_meta = GLOB.meta_gas_info[id]
-		if(!gas_meta)
-			continue
-		var/moles = gases[id]
-		if(moles <= gas_meta[META_GAS_MOLES_VISIBLE])
-			continue
-		var/list/gas_overlay = gas_meta[META_GAS_OVERLAY][offset]
-		LAZYADD(new_overlay_types, gas_overlay[min(TOTAL_VISIBLE_STATES, CEILING(moles / MOLES_GAS_VISIBLE_STEP, 1))])
-	set_visuals(new_overlay_types)
+	set_visuals()
 
 /**
- * Apply a precomputed gas-overlay list to vis_contents, diffing against the
- * currently applied set. This is the DM callback the auxmos turf-processing loop
- * invokes (verdigris turfs.rs::update_visuals -> turf.set_visuals(overlay_types)),
- * and the tail of the DM update_visuals() path above. Passing null/empty clears.
+ * Recompute this turf's gas overlays from its (arena-backed) air and diff the
+ * result into vis_contents. This is the single source of truth for gas visuals.
+ *
+ * It's called two ways: (a) directly by ~56 DM atmos callers (pumps, canisters,
+ * vents) via update_visuals() after they mutate air; (b) by the auxmos turf-
+ * processing loop (verdigris turfs.rs::update_visuals -> turf.set_visuals(list))
+ * for every turf whose gas changed during the FDM share — this is how a turf that
+ * RECEIVED gas from a neighbour (not the injector) gets its overlay updated.
+ *
+ * The Rust callback passes its own computed overlay list, but we IGNORE it and
+ * recompute from air: the Rust-side gas_data.overlays table is a compat shim and
+ * the turf's arena air is authoritative, so recomputing here is always correct and
+ * keeps the DM path and the Rust-triggered path identical. Empty air clears.
  */
-/turf/open/proc/set_visuals(list/new_overlay_types)
-	// Best-effort DM temperature-mirror sync. The Rust FDM keeps temperature in the
-	// arena and this baked verdigris .so exposes no "changed turfs" drain, so we
-	// can't cheaply refresh every turf's .temperature mirror each tick. set_visuals
-	// fires (from the Rust callback) for the turfs auxmos flagged as interesting, so
-	// piggy-back the mirror refresh here for those. Turfs whose temperature changed
-	// WITHOUT a visual change keep a stale .temperature mirror — read authoritative
-	// values via air.return_temperature() where correctness matters.
+/turf/open/proc/set_visuals(list/_rust_overlay_types)
+	// Best-effort DM temperature-mirror sync (the Rust FDM keeps temperature in the
+	// arena; this fires for turfs auxmos flagged as interesting). Correctness-
+	// sensitive reads should still use air.return_temperature().
 	if(air)
 		air.temperature = air.return_temperature()
+
+	var/list/new_overlay_types
+	if(air)
+		// get_gases() returns an assoc id -> moles (id = gas-type path). Per-gas meta
+		// lives in the global meta table keyed by the same path.
+		var/list/gases = air.get_gases()
+		var/offset = GET_TURF_PLANE_OFFSET(src) + 1
+		for(var/id in gases)
+			if(GLOB.nonoverlaying_gases[id])
+				continue
+			var/list/gas_meta = GLOB.meta_gas_info[id]
+			if(!gas_meta)
+				continue
+			var/moles = gases[id]
+			if(moles <= gas_meta[META_GAS_MOLES_VISIBLE])
+				continue
+			var/list/gas_overlay = gas_meta[META_GAS_OVERLAY][offset]
+			LAZYADD(new_overlay_types, gas_overlay[min(TOTAL_VISIBLE_STATES, CEILING(moles / MOLES_GAS_VISIBLE_STEP, 1))])
 
 	var/list/atmos_overlay_types = src.atmos_overlay_types // Cache for free performance
 
