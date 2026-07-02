@@ -228,7 +228,16 @@
 	// the arena graph symmetric. This is just the FFI push (reads the existing DM
 	// list) — NOT a recursive air_update_turf — so it's cheap and can't loop.
 	__update_auxtools_turf_adjacency_info()
+	// Also register + push each neighbour. Beyond making the adjacency graph
+	// symmetric, update_air_ref(0) ENABLES the neighbour (SIMULATION_ANY) in the
+	// arena. This matters because auxmos' FDM pushes gas INTO a neighbour from the
+	// active turf's process_cell without the neighbour itself being active — and the
+	// arena's post_process pass (which fires the gas-overlay + reaction callbacks)
+	// only visits ENABLED turfs. So a tile that merely RECEIVES gas would never get
+	// its overlay refreshed unless we enable it here when its active neighbour is
+	// (re)wired.
 	for(var/turf/open/near_turf as anything in atmos_adjacent_turfs)
+		near_turf.update_air_ref(0)
 		near_turf.__update_auxtools_turf_adjacency_info()
 
 /atom/movable/proc/move_update_air(turf/target_turf)
