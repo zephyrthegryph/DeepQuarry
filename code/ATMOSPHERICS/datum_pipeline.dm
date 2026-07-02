@@ -39,7 +39,7 @@
 	for(var/obj/machinery/atmospherics/pipe/member in members)
 		member.air_temporary = new
 		member.air_temporary.copy_from(air)
-		member.air_temporary.volume = member.volume
+		member.air_temporary.set_volume(member.volume)
 		member.air_temporary.multiply(member.volume / air.volume)
 
 /datum/pipeline/proc/build_pipeline(obj/machinery/atmospherics/pipe/base)
@@ -96,7 +96,7 @@
 
 			possible_expansions -= borderline
 
-	air.volume = volume
+	air.set_volume(volume)
 
 /datum/pipeline/proc/network_expand(datum/pipe_network/new_network, obj/machinery/atmospherics/pipe/reference)
 
@@ -127,19 +127,26 @@
 
 // rewrote off ZAS zones. ZAS branch was `if(target.zone) … modify
 // zone.air …`. Under LINDA, /turf.zone is always null, so we always take the
-// non-zone path: pull a sample from the pipe air, share it with the turf's
-// LINDA mixture (mutual exchange via share()), then merge the sample back
-// into the pipe.
+// non-zone path. Under the auxmos arena there is no share(); we do the mingle
+// with arena ops: pull a sample of the pipe air, merge it into the turf mix so
+// the combined contents fully equalise, then split the mingle share back out of
+// the (now equalised) turf mix by volume ratio and merge it into the pipe.
 /datum/pipeline/proc/mingle_with_turf(turf/target, mingle_volume)
 	var/datum/gas_mixture/turf_air = target.return_air()
 	if(!turf_air)
 		return
+	// Sample the pipe air proportional to the mingle volume.
 	var/datum/gas_mixture/air_sample = air.remove_ratio(mingle_volume / air.volume)
-	air_sample.volume = mingle_volume
+	air_sample.set_volume(mingle_volume)
 
-	// share() does symmetric exchange weighted by volume; both mixes converge.
-	air_sample.share(turf_air, 4, 4)
-	air.merge(air_sample)
+	// Merge the sample into the turf mix so both sets of contents fully mix,
+	// then reclaim the pipe's share back out by volume ratio.
+	turf_air.merge(air_sample)
+	var/turf_volume = turf_air.return_volume()
+	if(turf_volume > 0)
+		var/datum/gas_mixture/reclaimed = turf_air.remove_ratio(mingle_volume / (mingle_volume + turf_volume))
+		if(reclaimed)
+			air.merge(reclaimed)
 
 	// Mark the turf so SSair re-equalises it with its neighbours next tick.
 	if(SSair?.initialized)
@@ -156,9 +163,10 @@
 		var/turf/simulated/modeled_location = target
 
 		if (modeled_location.special_temperature)
-			air.temperature += thermal_conductivity * (modeled_location.special_temperature - air.temperature)
-			if (air.temperature < TCMB)
-				air.temperature = TCMB
+			var/new_temp = air.temperature + thermal_conductivity * (modeled_location.special_temperature - air.temperature)
+			if (new_temp < TCMB)
+				new_temp = TCMB
+			air.set_temperature(new_temp)
 			if (network)
 				network.update = TRUE
 
@@ -170,7 +178,7 @@
 				var/heat = thermal_conductivity*delta_temperature* \
 					(partial_heat_capacity*modeled_location.heat_capacity/(partial_heat_capacity+modeled_location.heat_capacity))
 
-				air.temperature -= heat/total_heat_capacity
+				air.set_temperature(air.temperature - heat/total_heat_capacity)
 				modeled_location.temperature += heat/modeled_location.heat_capacity
 
 		else
@@ -196,8 +204,8 @@
 			else
 				return 1
 
-			air.temperature += self_temperature_delta
-			sharer_air.temperature += sharer_temperature_delta
+			air.set_temperature(air.temperature + self_temperature_delta)
+			sharer_air.set_temperature(sharer_air.temperature + sharer_temperature_delta)
 
 
 	else
@@ -207,7 +215,7 @@
 			var/heat = thermal_conductivity*delta_temperature* \
 				(partial_heat_capacity*target.heat_capacity/(partial_heat_capacity+target.heat_capacity))
 
-			air.temperature -= heat/total_heat_capacity
+			air.set_temperature(air.temperature - heat/total_heat_capacity)
 	if(network)
 		network.update = 1
 

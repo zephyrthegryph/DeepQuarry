@@ -319,15 +319,14 @@
 				my_mob.minbodytemp = env.temperature * 0.8
 				my_mob.maxbodytemp = env.temperature * 1.2
 
-				var/list/gaslist = env.gases
-				my_mob.min_oxy = gaslist[GAS_O2] * 0.8
-				my_mob.min_tox = gaslist[GAS_PHORON] * 0.8
-				my_mob.min_n2 = gaslist[GAS_N2] * 0.8
-				my_mob.min_co2 = gaslist[GAS_CO2] * 0.8
-				my_mob.max_oxy = gaslist[GAS_O2] * 1.2
-				my_mob.max_tox = gaslist[GAS_PHORON] * 1.2
-				my_mob.max_n2 = gaslist[GAS_N2] * 1.2
-				my_mob.max_co2 = gaslist[GAS_CO2] * 1.2
+				my_mob.min_oxy = LINDA_GAS_AMT(env, GAS_O2) * 0.8
+				my_mob.min_tox = LINDA_GAS_AMT(env, GAS_PHORON) * 0.8
+				my_mob.min_n2 = LINDA_GAS_AMT(env, GAS_N2) * 0.8
+				my_mob.min_co2 = LINDA_GAS_AMT(env, GAS_CO2) * 0.8
+				my_mob.max_oxy = LINDA_GAS_AMT(env, GAS_O2) * 1.2
+				my_mob.max_tox = LINDA_GAS_AMT(env, GAS_PHORON) * 1.2
+				my_mob.max_n2 = LINDA_GAS_AMT(env, GAS_N2) * 1.2
+				my_mob.max_co2 = LINDA_GAS_AMT(env, GAS_CO2) * 1.2
 /* // AI TEMPORARY REMOVAL
 		if(guard)
 			my_mob.returns_home = TRUE

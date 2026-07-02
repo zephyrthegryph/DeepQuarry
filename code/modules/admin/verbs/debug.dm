@@ -75,9 +75,9 @@ ADMIN_VERB(Cell, R_DEBUG, "Cell", "Display the atmos information of the current 
 	var/t = span_blue("Coordinates: [T.x],[T.y],[T.z]\n")
 	t += span_red("Temperature: [env.temperature]\n")
 	t += span_red("Pressure: [env.return_pressure()]kPa\n")
-	// was env.gas[g] (XGM); under LINDA env.gases[gas_type][MOLES].
-	for(var/datum/gas/g as anything in env.gases)
-		var/moles = env.gases[g][MOLES]
+	// was env.gas[g] (XGM); under LINDA/auxmos, iterate get_gases() (id -> moles).
+	for(var/datum/gas/g as anything in env.get_gases())
+		var/moles = env.get_moles(g)
 		t += span_blue("[g]: [moles] / [moles * R_IDEAL_GAS_EQUATION * env.temperature / env.volume]kPa\n")
 
 	user.mob.show_message(t, 1)
@@ -464,7 +464,7 @@ ADMIN_VERB(setup_supermatter_engine, R_DEBUG|R_ADMIN, "Setup supermatter", "Sets
 		var/datum/gas_mixture/_air = T.return_air()
 		if(_air)
 			LINDA_GAS_ADJUST(_air, GAS_N2, 450)
-			_air.temperature = 50
+			_air.set_temperature(50)
 
 
 	log_admin("[key_name(user)] setup the supermatter engine [response == "Setup except coolant" ? "without coolant" : ""]")

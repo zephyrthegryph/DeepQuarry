@@ -732,6 +732,7 @@
 
 /datum/gas_mixture/belly_air/New()
 	. = ..()
+	set_temperature(initial(src.temperature)) // arena default is TCMB; sync mirror initializer into the arena
 	adjust_gas(GAS_O2, 21)
 	adjust_gas(GAS_N2, 79)
 
@@ -741,6 +742,7 @@
 
 /datum/gas_mixture/belly_air/vox/New()
 	. = ..()
+	set_temperature(initial(src.temperature))
 	adjust_gas(GAS_N2, 100)
 
 /datum/gas_mixture/belly_air/zaddat
@@ -749,6 +751,7 @@
 
 /datum/gas_mixture/belly_air/zaddat/New()
 	. = ..()
+	set_temperature(initial(src.temperature))
 	adjust_gas(GAS_O2, 100)
 
 /datum/gas_mixture/belly_air/nitrogen_breather
@@ -757,6 +760,7 @@
 
 /datum/gas_mixture/belly_air/nitrogen_breather/New()
 	. = ..()
+	set_temperature(initial(src.temperature))
 	adjust_gas(GAS_N2, 100)
 
 /datum/gas_mixture/belly_air/carbon_dioxide_breather
@@ -765,6 +769,7 @@
 
 /datum/gas_mixture/belly_air/carbon_dioxide_breather/New()
 	. = ..()
+	set_temperature(initial(src.temperature))
 	adjust_gas(GAS_CO2, 100)
 
 /datum/gas_mixture/belly_air/methane_breather
@@ -773,6 +778,7 @@
 
 /datum/gas_mixture/belly_air/methane_breather/New()
 	. = ..()
+	set_temperature(initial(src.temperature))
 	adjust_gas(GAS_CH4, 100)
 
 /mob/living/proc/feed_grabbed_to_self_falling_nom(mob/living/user, mob/living/prey)

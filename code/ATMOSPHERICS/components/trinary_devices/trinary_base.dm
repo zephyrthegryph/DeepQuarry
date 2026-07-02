@@ -24,9 +24,9 @@
 	air2 = new
 	air3 = new
 
-	air1.volume = 200
-	air2.volume = 200
-	air3.volume = 200
+	air1.set_volume(200)
+	air2.set_volume(200)
+	air3.set_volume(200)
 
 /obj/machinery/atmospherics/trinary/init_dir()
 	initialize_directions = get_initialize_directions_trinary(dir, mirrored, tee)

@@ -40,8 +40,8 @@ Thus, the two variables affect pump operation are set in New():
 /obj/machinery/atmospherics/binary/volume_pump/Initialize(mapload)
 	. = ..()
 
-	air1.volume = ATMOS_DEFAULT_VOLUME_PUMP
-	air2.volume = ATMOS_DEFAULT_VOLUME_PUMP
+	air1.set_volume(ATMOS_DEFAULT_VOLUME_PUMP)
+	air2.set_volume(ATMOS_DEFAULT_VOLUME_PUMP)
 	if(frequency)
 		set_frequency(frequency)
 

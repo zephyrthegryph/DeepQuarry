@@ -116,11 +116,11 @@ GLOBAL_LIST_EMPTY(all_turbines)
 			last_thermal_gen = energy_transfer*thermal_efficiency
 
 			if(air2.temperature > air1.temperature)
-				air2.temperature = air2.temperature - energy_transfer/air2_heat_capacity
-				air1.temperature = air1.temperature + heat/air1_heat_capacity
+				air2.set_temperature(air2.temperature - energy_transfer/air2_heat_capacity)
+				air1.set_temperature(air1.temperature + heat/air1_heat_capacity)
 			else
-				air2.temperature = air2.temperature + heat/air2_heat_capacity
-				air1.temperature = air1.temperature - energy_transfer/air1_heat_capacity
+				air2.set_temperature(air2.temperature + heat/air2_heat_capacity)
+				air1.set_temperature(air1.temperature - energy_transfer/air1_heat_capacity)
 
 	//Transfer the air
 	if (air1)

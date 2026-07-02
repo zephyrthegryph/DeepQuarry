@@ -1,93 +1,60 @@
-//"immutable" gas mixture used for immutable calculations
-//it can be changed, but any changes will ultimately be undone before they can have any effect
+//"immutable" gas mixture — arena-backed (auxmos).
+//
+//Immutability is enforced Rust-side: after the mixture is populated we call
+//mark_immutable(), and the arena silently drops any future mutation (set_moles/
+//set_temperature/merge/react/etc. become no-ops once marked). The old DM
+//archive()/share()/temperature_share()/garbage_collect() overrides that faked
+//immutability by resetting the (now-deleted) `gases` list every share are gone —
+//the base no longer has those procs, and the arena + mark_immutable() replace the
+//behaviour. Turf sharing runs Rust-side (SSair.process_turfs_auxtools).
+//
+//IMPORTANT ordering: mark_immutable() is a one-way latch — once set, further
+//writes are ignored. So it must be the LAST thing done, after the mix is fully
+//populated. The base New() only registers the mix + sets its initial temperature;
+//each concrete subtype marks itself immutable once it is done being populated
+//(space immediately, since it's empty; planetary in parse_string_immutable()).
 
 /datum/gas_mixture/immutable
-	var/initial_temperature
-	gc_share = TRUE
+	var/initial_temperature = TCMB
 
 /datum/gas_mixture/immutable/New()
-	..()
-	garbage_collect()
+	..() // register the mixture in the arena first
+	set_temperature(initial_temperature)
 
-/datum/gas_mixture/immutable/garbage_collect()
-	temperature = initial_temperature
-	temperature_archived = initial_temperature
-	gases.Cut()
-
-/datum/gas_mixture/immutable/archive()
-	return TRUE //nothing changes, so we do nothing and the archive is successful
-
-/datum/gas_mixture/immutable/merge()
-	return FALSE //we're immutable.
-
-/datum/gas_mixture/immutable/share(datum/gas_mixture/sharer, our_coeff, sharer_coeff)
-	. = ..()
-	sharer.temperature = initial_temperature
-	garbage_collect()
-
-/datum/gas_mixture/immutable/react()
-	return FALSE //we're immutable.
-
-/datum/gas_mixture/immutable/copy()
-	return new type //we're immutable, so we can just return a new instance.
-
-/datum/gas_mixture/immutable/copy_from()
-	return FALSE //we're immutable.
-
-/datum/gas_mixture/immutable/copy_from_ratio()
-	return FALSE //we're immutable.
-
-/datum/gas_mixture/immutable/temperature_share(datum/gas_mixture/sharer, conduction_coefficient, sharer_temperature, sharer_heat_capacity)
-	. = ..()
-	temperature = initial_temperature
-
-//used by space tiles
+//used by space tiles — empty and fixed at construction, so mark immutable now.
 /datum/gas_mixture/immutable/space
 	initial_temperature = TCMB
 
-/datum/gas_mixture/immutable/space/heat_capacity()
+/datum/gas_mixture/immutable/space/New()
+	..()
+	mark_immutable()
+
+/datum/gas_mixture/immutable/space/heat_capacity(data = MOLES)
 	return HEAT_CAPACITY_VACUUM
 
-/datum/gas_mixture/immutable/space/remove()
+/datum/gas_mixture/immutable/space/remove(amount)
 	return copy() //we're always empty, so we can just return a copy.
 
-/datum/gas_mixture/immutable/space/remove_ratio()
+/datum/gas_mixture/immutable/space/remove_ratio(ratio)
 	return copy() //we're always empty, so we can just return a copy.
 
-//planet side stuff
+//planet side stuff — populated after construction via parse_string_immutable(),
+//which marks the mix immutable once its gases are loaded. NOT marked in New().
 /datum/gas_mixture/immutable/planetary
-	var/list/initial_gas = list()
-
-/datum/gas_mixture/immutable/planetary/garbage_collect()
-	..()
-	gases.Cut()
-	for(var/id in initial_gas)
-		ADD_GAS(id, gases)
-		gases[id][MOLES] = initial_gas[id][MOLES]
-		gases[id][ARCHIVE] = initial_gas[id][ARCHIVE]
 
 /datum/gas_mixture/immutable/planetary/proc/parse_string_immutable(gas_string) //I know I know, I need this tho
 	gas_string = SSair.preprocess_gas_string(gas_string)
 
-	var/list/mix = initial_gas
 	var/list/gas = params2list(gas_string)
 	if(gas["TEMP"])
 		initial_temperature = text2num(gas["TEMP"])
-		temperature_archived = initial_temperature
-		temperature = initial_temperature
 		gas -= "TEMP"
-	mix.Cut()
+	set_temperature(initial_temperature)
+
 	for(var/id in gas)
 		var/path = id
 		if(!ispath(path))
 			path = gas_id2path(path) //a lot of these strings can't have embedded expressions (especially for mappers), so support for IDs needs to stick around
-		ADD_GAS(path, mix)
-		mix[path][MOLES] = text2num(gas[id])
-		mix[path][ARCHIVE] = mix[path][MOLES]
+		set_moles(path, text2num(gas[id]))
 
-	for(var/id in mix)
-		ADD_GAS(id, gases)
-		gases[id][MOLES] = mix[id][MOLES]
-		gases[id][ARCHIVE] = mix[id][MOLES]
-
-
+	mark_immutable()

@@ -260,7 +260,7 @@
 	return 0
 
 /obj/machinery/bomb_tester/proc/single_tank_sim()
-	faketank.volume = tank1.volume
+	faketank.set_volume(tank1.volume)
 	faketank.copy_from(tank1.air_contents)
 	faketank_integrity = tank1.integrity
 
@@ -284,7 +284,7 @@
 		simulation_results += "<hr>Final Result: No detonation."
 
 /obj/machinery/bomb_tester/proc/ttv_sim()
-	faketank.volume = tank1.air_contents.volume + tank2.air_contents.volume
+	faketank.set_volume(tank1.air_contents.volume + tank2.air_contents.volume)
 	faketank.copy_from(tank1.air_contents)
 	faketank_integrity = tank1.integrity
 	faketank.merge(tank2.air_contents)
@@ -310,12 +310,12 @@
 
 /obj/machinery/bomb_tester/proc/canister_sim()
 	test_canister.anchored = TRUE
-	faketank.volume = tank1.air_contents.volume
+	faketank.set_volume(tank1.air_contents.volume)
 	faketank.copy_from(tank1.air_contents)
 	faketank_integrity = tank1.integrity
 
 	var/datum/gas_mixture/fakecanister = new
-	fakecanister.volume = test_canister.air_contents.volume
+	fakecanister.set_volume(test_canister.air_contents.volume)
 	fakecanister.copy_from(test_canister.air_contents)
 	var/fakecanister_RFL = test_canister.release_flow_rate
 

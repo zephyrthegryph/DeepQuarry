@@ -45,7 +45,7 @@
 		var/thermal_power = 300 * adjusted_power
 
 		removed.add_thermal_energy(thermal_power)
-		removed.temperature = between(0, removed.temperature, 10000)
+		removed.set_temperature(between(0, removed.temperature, 10000))
 
 		env.merge(removed)
 

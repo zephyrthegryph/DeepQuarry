@@ -28,9 +28,38 @@ SUBSYSTEM_DEF(air)
 	var/cost_pipenets = 0
 	var/cost_rebuilds = 0
 	var/cost_adjacent = 0
+	// auxmos turf processing writes these cost mirrors back into SSair each tick
+	// (turfs/processing.rs writes cost_turfs/cost_post_process, groups.rs writes
+	// cost_groups, katmos.rs writes cost_equalize). They MUST be declared or the
+	// Rust write_var_id(byond_string!(...)) panics with NonExistentString.
+	var/cost_post_process = 0
+	var/cost_equalize = 0
 
-	var/list/excited_groups = list()
-	var/list/active_turfs = list()
+	// === auxmos turf-processing tunables (read by the Rust binds) ===
+	// Every var below is read via read_number_id(byond_string!(...)) in the
+	// verdigris turf hooks; declaring them is mandatory (NonExistentString panic
+	// otherwise). Defaults per SSAIR_CONTRACT.
+	/// FDM sharing steps per process_turfs tick (turfs/processing.rs).
+	var/share_max_steps = 4
+	/// Enables katmos equalize (turfs/processing.rs gates on this AND cfg!(fastmos)).
+	var/equalize_enabled = TRUE
+	/// Fraction of the delta a planetary turf shares with its atmosphere each pass.
+	var/planet_share_ratio = 0.25
+	/// Pressure delta below which an excited group is considered equalized (groups.rs).
+	var/excited_group_pressure_goal = 0.5
+	/// Hard cap on turfs a single katmos equalize pass may touch (katmos.rs).
+	var/equalize_hard_turf_limit = 2000
+
+	// auxmos turf processing writes these counters back each tick. Declared so the
+	// Rust write_var_id calls don't panic (NonExistentString). Informational only.
+	var/low_pressure_turfs = 0
+	var/high_pressure_turfs = 0
+	var/num_group_turfs_processed = 0
+	var/num_equalize_processed = 0
+
+	// active_turfs / excited_groups are gone — turf sharing lives in the Rust
+	// arena now. hotspots stays (LINDA hotspot fires are still DM). networks stays
+	// (CHOMP pipenets). The rebuild/expansion/adjacent queues below are unchanged.
 	var/list/hotspots = list()
 	var/list/networks = list()
 	var/list/rebuild_queue = list()
@@ -38,6 +67,10 @@ SUBSYSTEM_DEF(air)
 	var/list/expansion_queue = list()
 	/// List of turfs to recalculate adjacent turfs on before processing
 	var/list/adjacent_rebuild = list()
+	/// Turfs that requested a high-pressure spacewind push this tick. auxmos
+	/// (katmos explosively_depressurize) appends to this list via
+	/// consider_pressure_difference; the DM high-pressure step drains it.
+	var/list/high_pressure_delta = list()
 	// /tg/'s SSair.atmos_machinery (an atmos-tick-scheduled device
 	// queue) is dead code on this fork: atmospherics devices run via
 	// SSmachines.processing_machines (CHOMP-legacy /obj/machinery process()).
@@ -56,8 +89,12 @@ SUBSYSTEM_DEF(air)
 
 
 	//Special functions lists
-	var/list/turf/active_super_conductivity = list()
-	var/list/turf/open/high_pressure_delta = list()
+	// active_super_conductivity removed — LINDA's DM superconduction engine is
+	// deleted. auxmos ships a Rust superconductivity subsystem (process_turf_heat)
+	// but it is NOT wired here (out of scope for the turf-processing cutover). See
+	// the migration notes; reviving heat conduction means calling process_turf_heat
+	// as a fire() step and declaring its turf vars.
+	// high_pressure_delta moved up next to the auxmos tunables (auxmos appends to it).
 	// atom_process removed; see cost_atoms comment.
 	/// Reactions which will contribute to a hotspot's size.
 	var/list/hotspot_reactions
@@ -77,24 +114,27 @@ SUBSYSTEM_DEF(air)
 /datum/controller/subsystem/air/stat_entry(msg)
 	msg += "\n  Cost:{"
 	msg += "AT:[round(cost_turfs,1)]|"
+	msg += "PP:[round(cost_post_process,1)]|"
 	msg += "HS:[round(cost_hotspots,1)]|"
 	msg += "EG:[round(cost_groups,1)]|"
+	msg += "EQ:[round(cost_equalize,1)]|"
 	msg += "HP:[round(cost_highpressure,1)]|"
-	msg += "SC:[round(cost_superconductivity,1)]|"
 	msg += "PN:[round(cost_pipenets,1)]|"
 	msg += "RB:[round(cost_rebuilds,1)]|"
 	msg += "AJ:[round(cost_adjacent,1)]|"
 	msg += "} "
-	msg += "\n  Count:{AT:[active_turfs.len]|"
+	// Active-turf/excited-group counts now live in the Rust arena; the DM lists
+	// are gone. Surface the auxmos-reported per-tick turf counts instead.
+	msg += "\n  Count:{GT:[num_group_turfs_processed]|"
+	msg += "EQ:[num_equalize_processed]|"
+	msg += "LP:[low_pressure_turfs]|"
+	msg += "HP:[high_pressure_turfs]|"
 	msg += "HS:[hotspots.len]|"
-	msg += "EG:[excited_groups.len]|"
-	msg += "HP:[high_pressure_delta.len]|"
-	msg += "SC:[active_super_conductivity.len]|"
+	msg += "HPD:[high_pressure_delta.len]|"
 	msg += "PN:[networks.len]|"
 	msg += "RB:[rebuild_queue.len]|"
 	msg += "EP:[expansion_queue.len]|"
-	msg += "AJ:[adjacent_rebuild.len]|"
-	msg += "AT/MS:[round((cost ? active_turfs.len/cost : 0),0.1)]"
+	msg += "AJ:[adjacent_rebuild.len]"
 	msg += "}"
 	return ..()
 
@@ -104,14 +144,14 @@ SUBSYSTEM_DEF(air)
 	gas_reactions = init_gas_reactions()
 	hotspot_reactions = init_hotspot_reactions()
 
-	// chunk 2: register the gas roster in the Rust arena. Reactions are parsed by
-	// hook_init from SSair.gas_reactions; temporarily empty it so this step wires
-	// ONLY the gas registry (reaction reconciliation is chunk 4). See
-	// doc/auxmos_wiring_plan.md.
-	var/list/_saved_reactions = gas_reactions
-	gas_reactions = list()
+	// Register the gas roster in the Rust arena AND build the reaction dispatch
+	// table. hook_init reads SSair.gas_reactions (the flat list of
+	// /datum/gas_reaction instances that init_gas_reactions() returns) and, per
+	// reaction, its `priority` (unique number), `min_requirements` (arena-shaped
+	// requirements), and `id`. Those vars are built by init_gas_reactions() and
+	// build_min_requirements(). Reactions still RUN in DM — auxmos' react()
+	// dispatches back into each datum's react(). See doc/auxmos_wiring_plan.md.
 	auxtools_atmos_init(build_auxmos_gas_registry())
-	gas_reactions = _saved_reactions
 
 	build_multiz_atmos_levels()
 	setup_allturfs()
@@ -157,23 +197,64 @@ SUBSYSTEM_DEF(air)
 			return
 		cost_pipenets = MC_AVERAGE(cost_pipenets, TICK_DELTA_TO_MS(cached_cost))
 		resumed = FALSE
-		currentpart = SSAIR_ACTIVETURFS
+		currentpart = SSAIR_TURFS
 
 	// SSAIR_ATMOSMACHINERY step removed: see vars block comment.
 
-	if(currentpart == SSAIR_ACTIVETURFS)
-		timer = TICK_USAGE_REAL
-		if(!resumed)
-			cached_cost = 0
-		process_active_turfs(resumed)
-		cached_cost += TICK_USAGE_REAL - timer
+	// === auxmos turf processing ===
+	// The Rust binds run their own internal work loops bounded by a millisecond
+	// budget (SSAIR_REMAINING_MS) and return TRUE if they were interrupted
+	// ("overtimed"). On interruption we pause and resume this same currentpart
+	// next fire(). process_turfs also SPAWNS callbacks (react / set_visuals /
+	// consider_pressure_difference) onto a queue that FINALIZE_TURFS drains on the
+	// main thread. cost_turfs / cost_post_process / cost_groups / cost_equalize are
+	// written back into SSair by the binds themselves.
+	// NOTE on cost bookkeeping: the Rust binds maintain their own smoothed cost
+	// mirrors (cost_turfs, cost_post_process, cost_groups, cost_equalize) by
+	// read-modify-writing those SSair vars themselves. So we do NOT reassign them
+	// here — doing so would clobber the arena-reported timings.
+	if(currentpart == SSAIR_TURFS)
+		var/overtimed = process_turfs_auxtools(src, SSAIR_REMAINING_MS)
+		// process_excited_groups only does work if process_turfs ran this cycle,
+		// so run it immediately after (it has its own budget/overtime return).
+		if(!overtimed)
+			overtimed = process_excited_groups_auxtools(src, SSAIR_REMAINING_MS)
 		if(state != SS_RUNNING)
 			return
-		cost_turfs = MC_AVERAGE(cost_turfs, TICK_DELTA_TO_MS(cached_cost))
+		if(overtimed) // ran out of tick; pause so we resume this step next run
+			pause()
+			return
+		resumed = FALSE
+		currentpart = SSAIR_EQUALIZE
+
+	if(currentpart == SSAIR_EQUALIZE)
+		// katmos equalize. No-op unless a process_turfs cycle queued equalizes.
+		var/overtimed = process_turf_equalize_auxtools(src, SSAIR_REMAINING_MS)
+		if(state != SS_RUNNING)
+			return
+		if(overtimed)
+			pause()
+			return
+		resumed = FALSE
+		currentpart = SSAIR_FINALIZE_TURFS
+
+	if(currentpart == SSAIR_FINALIZE_TURFS)
+		// Drain the Rust->DM callback queue on the main thread. finish drains the
+		// turf-processing callbacks; process_atmos_callbacks drains everything
+		// else queued (both return TRUE on overtime). These invoke DM
+		// air.react(turf) / turf.set_visuals(...) / turf.consider_pressure_difference().
+		var/overtimed = finish_turf_processing_auxtools(SSAIR_REMAINING_MS)
+		if(!overtimed)
+			overtimed = process_atmos_callbacks(SSAIR_REMAINING_MS)
+		if(state != SS_RUNNING)
+			return
+		if(overtimed)
+			pause()
+			return
 		resumed = FALSE
 		currentpart = SSAIR_HOTSPOTS
 
-	if(currentpart == SSAIR_HOTSPOTS) //We do this before excited groups to allow breakdowns to be independent of adding turfs while still *mostly preventing mass fires
+	if(currentpart == SSAIR_HOTSPOTS)
 		timer = TICK_USAGE_REAL
 		if(!resumed)
 			cached_cost = 0
@@ -183,20 +264,10 @@ SUBSYSTEM_DEF(air)
 			return
 		cost_hotspots = MC_AVERAGE(cost_hotspots, TICK_DELTA_TO_MS(cached_cost))
 		resumed = FALSE
-		currentpart = SSAIR_EXCITEDGROUPS
-
-	if(currentpart == SSAIR_EXCITEDGROUPS)
-		timer = TICK_USAGE_REAL
-		if(!resumed)
-			cached_cost = 0
-		process_excited_groups(resumed)
-		cached_cost += TICK_USAGE_REAL - timer
-		if(state != SS_RUNNING)
-			return
-		cost_groups = MC_AVERAGE(cost_groups, TICK_DELTA_TO_MS(cached_cost))
-		resumed = FALSE
 		currentpart = SSAIR_HIGHPRESSURE
 
+	// Spacewind. consider_pressure_difference (called from the FINALIZE_TURFS /
+	// EQUALIZE callbacks above) populates high_pressure_delta; drain it here.
 	if(currentpart == SSAIR_HIGHPRESSURE)
 		timer = TICK_USAGE_REAL
 		if(!resumed)
@@ -207,27 +278,15 @@ SUBSYSTEM_DEF(air)
 			return
 		cost_highpressure = MC_AVERAGE(cost_highpressure, TICK_DELTA_TO_MS(cached_cost))
 		resumed = FALSE
-		currentpart = SSAIR_SUPERCONDUCTIVITY
 
-	if(currentpart == SSAIR_SUPERCONDUCTIVITY)
-		timer = TICK_USAGE_REAL
-		if(!resumed)
-			cached_cost = 0
-		process_super_conductivity(resumed)
-		cached_cost += TICK_USAGE_REAL - timer
-		if(state != SS_RUNNING)
-			return
-		cost_superconductivity = MC_AVERAGE(cost_superconductivity, TICK_DELTA_TO_MS(cached_cost))
-		resumed = FALSE
-
+	// SSAIR_SUPERCONDUCTIVITY step removed: DM engine deleted, auxmos heat unwired.
 	// SSAIR_PROCESS_ATOMS step removed; see cost_atoms comment.
 
 	currentpart = SSAIR_PIPENETS
 	SStgui.update_uis(SSair) //Lightning fast debugging motherfucker
 
 /datum/controller/subsystem/air/Recover()
-	excited_groups = SSair.excited_groups
-	active_turfs = SSair.active_turfs
+	// active_turfs / excited_groups / active_super_conductivity are gone (arena-side).
 	hotspots = SSair.hotspots
 	networks = SSair.networks
 	rebuild_queue = SSair.rebuild_queue
@@ -237,7 +296,6 @@ SUBSYSTEM_DEF(air)
 	gas_reactions = SSair.gas_reactions
 	atmos_gen = SSair.atmos_gen
 	planetary = SSair.planetary
-	active_super_conductivity = SSair.active_super_conductivity
 	high_pressure_delta = SSair.high_pressure_delta
 	currentrun = SSair.currentrun
 	queued_for_activation = SSair.queued_for_activation
@@ -247,14 +305,16 @@ SUBSYSTEM_DEF(air)
 
 	while (length(queue))
 		var/turf/currT = queue[1]
-		var/goal = queue[currT]
 		queue.Cut(1,2)
 
+		// Rebuild the DM adjacency graph (multi-z aware) and push the result to
+		// the Rust arena. The old MAKE_ACTIVE / KILL_EXCITED distinction is gone —
+		// auxmos decides activity itself from the arena; we just keep the arena's
+		// adjacency + air-ref view of this turf current. Register the air ref FIRST
+		// (arena.map must hold the turf before update_adjacencies can attach edges).
 		currT.immediate_calculate_adjacent_turfs()
-		if(goal == MAKE_ACTIVE)
-			add_to_active(currT)
-		else if(goal == KILL_EXCITED)
-			add_to_active(currT, TRUE)
+		currT.update_air_ref(0)
+		currT.__update_auxtools_turf_adjacency_info()
 
 		if(init)
 			CHECK_TICK
@@ -284,17 +344,8 @@ SUBSYSTEM_DEF(air)
 // process_atoms removed alongside atom_process / process_exposure.
 // process_atmos_machinery removed; see vars block comment.
 
-/datum/controller/subsystem/air/proc/process_super_conductivity(resumed = FALSE)
-	if (!resumed)
-		src.currentrun = active_super_conductivity.Copy()
-	//cache for sanic speed (lists are references anyways)
-	var/list/currentrun = src.currentrun
-	while(currentrun.len)
-		var/turf/T = currentrun[currentrun.len]
-		currentrun.len--
-		T.super_conduct()
-		if(MC_TICK_CHECK)
-			return
+// process_super_conductivity removed — LINDA's DM superconduction engine is
+// deleted; auxmos' Rust heat subsystem is not wired.
 
 /datum/controller/subsystem/air/proc/process_hotspots(resumed = FALSE)
 	if (!resumed)
@@ -320,112 +371,54 @@ SUBSYSTEM_DEF(air)
 		if(MC_TICK_CHECK)
 			return
 
-/datum/controller/subsystem/air/proc/process_active_turfs(resumed = FALSE)
-	//cache for sanic speed
-	var/fire_count = times_fired
-	if (!resumed)
-		src.currentrun = active_turfs.Copy()
-	//cache for sanic speed (lists are references anyways)
-	var/list/currentrun = src.currentrun
-	while(currentrun.len)
-		var/turf/open/T = currentrun[currentrun.len]
-		currentrun.len--
-		if (T)
-			T.process_cell(fire_count)
-		if (MC_TICK_CHECK)
-			return
-
-/datum/controller/subsystem/air/proc/process_excited_groups(resumed = FALSE)
-	if (!resumed)
-		src.currentrun = excited_groups.Copy()
-	//cache for sanic speed (lists are references anyways)
-	var/list/currentrun = src.currentrun
-	while(currentrun.len)
-		var/datum/excited_group/EG = currentrun[currentrun.len]
-		currentrun.len--
-		var/volatile_reaction = EG.turf_reactions & VOLATILE_REACTION
-		EG.breakdown_cooldown++
-		if(!volatile_reaction)
-			EG.dismantle_cooldown++
-		if(EG.breakdown_cooldown >= EXCITED_GROUP_BREAKDOWN_CYCLES && !volatile_reaction)
-			EG.self_breakdown(poke_turfs = TRUE)
-		else if(EG.dismantle_cooldown >= EXCITED_GROUP_DISMANTLE_CYCLES && !(EG.turf_reactions & (REACTING | STOP_REACTIONS)))
-			EG.dismantle()
-		EG.turf_reactions = NONE
-		if (MC_TICK_CHECK)
-			return
+// process_active_turfs / process_excited_groups removed — turf FDM sharing and
+// excited-group tracking now live in the Rust arena (process_turfs_auxtools /
+// process_excited_groups_auxtools, driven from fire()).
 
 // process_rebuilds + expand_pipeline removed — /tg/-style pipenet expansion
 // (rebuild_pipes / set_pipenet / replace_pipenet / pipeline_expansion / etc.)
 // is replaced by CHOMP's /datum/pipe_network/build_network, which runs in the
 // pipe's own Initialize chain.
 
-///Removes a turf from processing, and causes its excited group to clean up so things properly adapt to the change
-/datum/controller/subsystem/air/proc/remove_from_active(turf/open/T)
-	active_turfs -= T
-	if(currentpart == SSAIR_ACTIVETURFS)
-		currentrun -= T
-	#ifdef VISUALIZE_ACTIVE_TURFS //Use this when you want details about how the turfs are moving, display_all_groups should work for normal operation
-	T.remove_atom_colour(TEMPORARY_COLOUR_PRIORITY, COLOR_VIBRANT_LIME)
-	#endif
-	if(istype(T))
-		T.excited = FALSE
-		if(T.excited_group)
-			//If this fires during active turfs it'll cause a slight removal of active turfs, as they breakdown if they have no excited group
-			//The group also expands by a tile per rebuild on each edge, suffering
-			T.excited_group.garbage_collect() //Kill the excited group, it'll reform on its own later
+// === active-turf API compat shims ===
+//
+// add_to_active / remove_from_active / sleep_active_turf were the DM active-turf
+// bookkeeping API. ~50 call sites across the codebase (doors, canisters, vents,
+// ChangeTurf, pipelines, mining, admin verbs) still call them meaning "this
+// turf's air changed — reconsider it". The DM active-turf list is gone, so these
+// now just push the turf's current air ref into the Rust arena via update_air_ref;
+// auxmos decides activity itself. The blockchanges/excited-group args are ignored
+// (excited groups are arena-side).
 
-///Puts an active turf to sleep so it doesn't process. Do this without cleaning up its excited group.
-/datum/controller/subsystem/air/proc/sleep_active_turf(turf/open/T)
-	active_turfs -= T
-	if(currentpart == SSAIR_ACTIVETURFS)
-		currentrun -= T
-	#ifdef VISUALIZE_ACTIVE_TURFS
-	T.remove_atom_colour(TEMPORARY_COLOUR_PRIORITY, COLOR_VIBRANT_LIME)
-	#endif
-	if(istype(T))
-		T.excited = FALSE
-
-///Adds a turf to active processing, handles duplicates. Call this with blockchanges == TRUE if you want to nuke the assoc excited group
+///Legacy API: a turf's air changed and should be reconsidered. Pushes its air
+///ref to the Rust arena. (Was: add to the DM active-turf list.)
 /datum/controller/subsystem/air/proc/add_to_active(turf/open/activate, blockchanges = FALSE)
-	// after the /turf/simulated → /turf/open reparent, walls and minerals match
-	// the /turf/open type but have blocks_air=1 / air=null. On TOP of that,
-	// /turf/unsimulated/* (Southern Cross planetary floors) are NOT /turf/open at
-	// all and have no `air` var — yet they reach here via legit paths (ChangeTurf
-	// mark_for_update, and pipeline/mingle_with_turf from vents). Reading `.air`
-	// on those throws "undefined variable .../var/air" every vent tick (×1188
-	// unsimulated floors), flooding runtimes and starving init. So type-gate the
-	// `.air` read: anything that isn't a /turf/open can't hold gas — route it to
-	// neighbors (if init) / queue / mark, same as a blocked open turf.
-	if(activate && (!istype(activate, /turf/open) || activate.blocks_air || isnull(activate.air)))
-		if(activate.flags_1 & INITIALIZED_1)
-			for(var/turf/neighbor as anything in activate.atmos_adjacent_turfs)
-				add_to_active(neighbor, TRUE)
-		else if(map_loading)
-			if(queued_for_activation)
-				queued_for_activation[activate] = activate
-		else
-			activate.requires_activation = TRUE
+	if(!activate)
 		return
-	if(istype(activate) && activate.air)
-		activate.significant_share_ticker = 0
-		if(blockchanges && activate.excited_group) //This is used almost exclusivly for shuttles, so the excited group doesn't stay behind
-			activate.excited_group.garbage_collect() //Nuke it
-		if(activate.excited) //Don't keep doing it if there's no point
-			return
-		#ifdef VISUALIZE_ACTIVE_TURFS
-		activate.add_atom_colour(COLOR_VIBRANT_LIME, TEMPORARY_COLOUR_PRIORITY)
-		#endif
-		activate.excited = TRUE
-		active_turfs += activate
-	else if(activate.flags_1 & INITIALIZED_1)
-		for(var/turf/neighbor as anything in activate.atmos_adjacent_turfs)
-			add_to_active(neighbor, TRUE)
-	else if(map_loading)
+	// During mapload we can't register turfs whose air isn't set up yet; queue
+	// them and register on StopLoadingMap, preserving the old load-time behaviour.
+	if(map_loading && !(activate.flags_1 & INITIALIZED_1))
 		if(queued_for_activation)
 			queued_for_activation[activate] = activate
-	else
-		activate.requires_activation = TRUE
+		return
+	// flag >= 0 registers/updates the turf in the arena; the Rust side reads
+	// blocks_air / air / planetary_atmos and figures out whether it's an airless
+	// wall, space, planet, or a regular turf on its own.
+	activate.update_air_ref(0)
+
+///Legacy API: remove a turf's air from arena processing (Read: it became a wall
+///or is being torn down). flag < 0 unregisters.
+/datum/controller/subsystem/air/proc/remove_from_active(turf/open/T)
+	if(!T)
+		return
+	T.update_air_ref(-1)
+
+///Legacy API alias — the arena has no separate "sleep" state; treat it as a
+///normal re-register (auxmos will drop it from processing once it's equalized).
+/datum/controller/subsystem/air/proc/sleep_active_turf(turf/open/T)
+	if(!T)
+		return
+	T.update_air_ref(0)
 
 /datum/controller/subsystem/air/StartLoadingMap()
 	LAZYINITLIST(queued_for_activation)
@@ -433,8 +426,15 @@ SUBSYSTEM_DEF(air)
 
 /datum/controller/subsystem/air/StopLoadingMap()
 	map_loading = FALSE
-	for(var/T in queued_for_activation)
-		add_to_active(T, TRUE)
+	// Turfs deferred during a mid-round map load (submaps, quarry z-levels). Now
+	// that the whole batch exists, rebuild each one's adjacency, register it, then
+	// push adjacency to the arena (all endpoints in the batch are registered by the
+	// time the second loop runs).
+	for(var/turf/T as anything in queued_for_activation)
+		T.immediate_calculate_adjacent_turfs()
+		T.update_air_ref(0)
+	for(var/turf/T as anything in queued_for_activation)
+		T.__update_auxtools_turf_adjacency_info()
 	queued_for_activation.Cut()
 
 /// Bridge the movement-multiz connection data (GLOB.z_levels, populated by
@@ -462,201 +462,39 @@ SUBSYSTEM_DEF(air)
 		SSmapping.multiz_levels[z] = traits
 
 /datum/controller/subsystem/air/proc/setup_allturfs()
-	var/list/active_turfs = src.active_turfs
 	times_fired++
 
-	// Clear active turfs - faster than removing every single turf in the world
-	// one-by-one, and Initalize_Atmos only ever adds `src` back in.
-	#ifdef VISUALIZE_ACTIVE_TURFS
-	for(var/jumpy in active_turfs)
-		var/turf/active = jumpy
-		active.remove_atom_colour(TEMPORARY_COLOUR_PRIORITY, COLOR_VIBRANT_LIME)
-	#endif
-	active_turfs.Cut()
-	// We compare this against turf.current cycle using <= to ensure O(n)
-	// It defaults to 0, so we start at -1
+	// Roundstart turf init. The old DM active-turf diffing pass is gone: turf
+	// FDM sharing lives in the Rust arena, which discovers active turfs itself on
+	// the first process_turfs tick. So here we only need to build each turf's air
+	// mixture + adjacency graph and register it in the arena.
+	//
+	// current_cycle is still seeded (decrementing per sleep) so the O(n)
+	// init_immediate_calculate_adjacent_turfs fast-path in Initalize_Atmos works.
 	var/time = -1
 
-	var/list/turf/open/difference_check = list()
+	// PASS 1: build each turf's DM adjacency graph and register its air ref in the
+	// Rust arena. Adjacency is NOT pushed to the arena here — auxmos drops edges to
+	// unregistered turfs, and a neighbour may not be registered yet on this pass.
+	var/list/turf/open/open_turfs = list()
 	for(var/turf/setup as anything in ALL_TURFS())
 		if (!setup.init_air)
 			continue
-		// We pass the tick as the current step so if we sleep the step changes
-		// This way we can make setting up adjacent turfs O(n) rather then O(n^2)
 		setup.Initalize_Atmos(time)
-		// Only /turf/open carries the `air` var and belongs in the difference pass below.
-		// /turf/unsimulated/* (space outpost floors, planetary walls) inherit init_air = TRUE
-		// but are NOT /turf/open after the simulated→open reparent, so including them here
-		// would runtime on the `.air` read in the next loop. Gate on the real type.
 		if(istype(setup, /turf/open))
-			difference_check += setup
+			open_turfs += setup
 		if(CHECK_TICK)
 			time--
 
-	// Now we're gonna compare for differences
-	// Taking advantage of current cycle being set to negative before this run to do A->B B->A prevention
-	for(var/turf/open/potential_diff as anything in difference_check)
-		// I can't use 0 here, so we're gonna do this instead. If it ever breaks I'll eat my shoe
-		potential_diff.current_cycle = -INFINITY
-		// defend against air=null turfs (walls/mineral after the
-		// /turf/simulated → /turf/open reparent, since walls inherit /turf/open
-		// by type but blocks_air=1 → no air). Skip them so we never try to
-		// .compare() against null or activate them.
-		if(!potential_diff.air)
-			continue
-		for(var/turf/open/enemy_tile as anything in potential_diff.atmos_adjacent_turfs)
-			// `as anything` skips the implicit istype filter for speed, so a non-/turf/open
-			// neighbour (e.g. /turf/unsimulated, which has no `air`/`current_cycle` vars) can
-			// slip into atmos_adjacent_turfs and runtime on the reads below — guard explicitly.
-			if(!istype(enemy_tile))
-				continue
-			// If it's already been processed, then it's already talked to us
-			if(enemy_tile.current_cycle == -INFINITY)
-				continue
-			// same null-air defense for the neighbor side.
-			if(!enemy_tile.air)
-				continue
-			// .air instead of .return_air() because we can guarantee that the proc won't do anything
-			if(potential_diff.air.compare(enemy_tile.air, MOLES))
-				//testing("Active turf found. Return value of compare(): [T.air.compare(enemy_tile.air, MOLES)]")
-				if(!potential_diff.excited)
-					potential_diff.excited = TRUE
-					SSair.active_turfs += potential_diff
-				if(!enemy_tile.excited)
-					enemy_tile.excited = TRUE
-					SSair.active_turfs += enemy_tile
-				// No sense continuing to iterate
-				break
+	// PASS 2: every /turf/open is now registered in the arena, so pushing the
+	// adjacency graph resolves all edges (both endpoints exist in arena.map).
+	for(var/turf/open/registered as anything in open_turfs)
+		registered.__update_auxtools_turf_adjacency_info()
 		CHECK_TICK
 
-	if(active_turfs.len)
-		var/starting_ats = active_turfs.len
-		sleep(world.tick_lag)
-		var/timer = world.timeofday
-
-		log_mapping("There are [starting_ats] active turfs at roundstart caused by a difference of the air between the adjacent turfs. \
-		To locate these active turfs, go into the \"Debug\" tab of your stat-panel. Then hit the verb that says \"Mapping Verbs - Enable\". \
-		Now, you can see all of the associated coordinates using \"Mapping -> Show roundstart AT list\" verb.")
-
-		for(var/turf/T in active_turfs)
-			GLOB.active_turfs_startlist += T
-
-		//now lets clear out these active turfs
-		var/list/turfs_to_check = active_turfs.Copy()
-		do
-			var/list/new_turfs_to_check = list()
-			for(var/turf/open/T in turfs_to_check)
-				new_turfs_to_check += T.resolve_active_graph()
-			CHECK_TICK
-
-			active_turfs += new_turfs_to_check
-			turfs_to_check = new_turfs_to_check
-		while (turfs_to_check.len)
-
-		var/ending_ats = active_turfs.len
-		for(var/thing in excited_groups)
-			var/datum/excited_group/EG = thing
-			EG.self_breakdown(roundstart = TRUE)
-			EG.dismantle()
-			CHECK_TICK
-
-		log_active_turfs() // invoke this here so we can count the time it takes to run this proc as "wasted time", quite simple honestly.
-
-		var/msg = "HEY! LISTEN! [DisplayTimeText(world.timeofday - timer, 0.00001)] were wasted processing [starting_ats] turf(s) (connected to [ending_ats - starting_ats] other turfs) with atmos differences at round start."
-		to_chat(world, span_boldannounce("[msg]"))
-		warning(msg)
-
-/// Logs all active turfs at roundstart to the mapping log so it can be readily accessed.
-/datum/controller/subsystem/air/proc/log_active_turfs()
-// sadly this has to be here because we can't realistically expect that all active turfs will be resolved in every possible situation when running through CI.
-// In an ideal world, we would have absolutely zero active turfs 99.99% of the time, but that's not the case. `log_mapping()` during world initialize triggers a CI fail.
-#ifdef UNIT_TESTS
-	return
-#else
-	// Associated lists, left-hand-side is the z-level or z-trait, right-hand-side is the number of active turfs associated with that.
-	var/list/tally_by_level = list()
-	// Discriminate for certain z-traits, stuff like "Linkage" is not helpful.
-	var/list/tally_by_level_trait = list(
-		ZTRAIT_AWAY = 0,
-		ZTRAIT_CENTCOM = 0,
-		ZTRAIT_ICE_RUINS = 0,
-		ZTRAIT_ICE_RUINS_UNDERGROUND  = 0,
-		ZTRAIT_ISOLATED_RUINS = 0,
-		ZTRAIT_LAVA_RUINS = 0,
-		ZTRAIT_MINING = 0,
-		ZTRAIT_RESERVED = 0,
-		ZTRAIT_SPACE_RUINS = 0,
-		ZTRAIT_STATION = 0,
-	)
-
-	var/list/message_to_log = list()
-
-	message_to_log += "\nAll that follows is a turf with an active air difference at roundstart. To clear this, make sure that all of the turfs listed below are connected to a turf with the same air contents.\n\
-		In an ideal world, this list should have enough information to help you locate the active turf(s) in question. Unfortunately, this might not be an ideal world.\n\
-		If the round is still ongoing, you can use the \"Mapping -> Show roundstart AT list\" verb to see exactly what active turfs were detected. Otherwise, good luck."
-
-	for(var/turf/active_turf as anything in GLOB.active_turfs_startlist)
-		var/turf_z = active_turf.z
-		var/datum/space_level/level = SSmapping.z_list[turf_z]
-		var/list/level_traits = list()
-		for(var/trait in level.traits)
-			if(!isnull(tally_by_level_trait[trait]))
-				level_traits += trait
-				tally_by_level_trait[trait]++
-
-		// so we can pass along the area type for the log, making it much easier to locate the active turf for a mapper assuming all area types are unique. This is only really a problem for stuff like ruin areas.
-		var/area/turf_area = get_area(active_turf)
-		message_to_log += "Active turf: [AREACOORD(active_turf)] ([turf_area.type]). Turf type: [active_turf.type]. Relevant Z-Trait(s): [english_list(level_traits)]."
-
-		tally_by_level["[turf_z]"]++
-
-	// Following is so we can detect which rounds were "problematic" as far as active turfs go.
-	SSblackbox.record_feedback("amount", "overall_roundstart_active_turfs", length(GLOB.active_turfs_startlist))
-
-	for(var/z_level in tally_by_level)
-		var/level_turf_count = tally_by_level[z_level]
-		if(level_turf_count == 0) // no point logging it
-			continue
-		message_to_log += "Z-Level [z_level] has [level_turf_count] active turf(s)."
-		SSblackbox.record_feedback("tally", "roundstart_active_turfs_per_z", level_turf_count, z_level)
-
-	for(var/z_trait in tally_by_level_trait)
-		var/trait_turf_count = tally_by_level_trait[z_trait]
-		if(trait_turf_count == 0)
-			continue
-		message_to_log += "Z-Level trait [z_trait] has [trait_turf_count] active turf(s)."
-		SSblackbox.record_feedback("amount", "roundstart_active_turfs_for_trait_[z_trait]", trait_turf_count)
-
-	message_to_log += "End of active turf list."
-	log_mapping(message_to_log.Join("\n"))
-#endif
-
-/turf/open/proc/resolve_active_graph()
-	. = list()
-	var/datum/excited_group/EG = excited_group
-	if (blocks_air || !air)
-		return
-	if (!EG)
-		EG = new
-		EG.add_turf(src)
-
-	for (var/turf/open/ET in atmos_adjacent_turfs)
-		if (ET.blocks_air || !ET.air)
-			continue
-
-		var/ET_EG = ET.excited_group
-		if (ET_EG)
-			if (ET_EG != EG)
-				EG.merge_groups(ET_EG)
-				EG = excited_group //merge_groups() may decide to replace our current EG
-		else
-			EG.add_turf(ET)
-		if (!ET.excited)
-			ET.excited = TRUE
-			. += ET
-
-/turf/open/space/resolve_active_graph()
-	return list()
+// log_active_turfs / resolve_active_graph removed — they existed only to service
+// the DM roundstart active-turf diffing pass, which is gone (auxmos discovers
+// active turfs from the arena). GLOB.active_turfs_startlist is no longer written.
 
 // single-pass init for every map-loaded /obj/machinery/atmospherics.
 // /tg/ ran this off SSair.atmos_machinery (which doubled as the per-tick
@@ -716,20 +554,21 @@ GLOBAL_LIST_EMPTY(colored_images)
 	strings_to_mix[cache_key] = canonical_mix
 	gas_string = preprocess_gas_string(gas_string)
 
-	var/list/gases = canonical_mix.gases
+	// Moles/temperature live in the Rust arena now — write through the arena-backed
+	// setters (set_moles stringifies the gas path per the get_strid contract;
+	// set_temperature clamps + refreshes the DM mirror). immutable mixtures parse
+	// through their own parse_string_immutable path instead.
 	var/list/gas = params2list(gas_string)
 	if(gas["TEMP"])
-		canonical_mix.temperature = text2num(gas["TEMP"])
-		canonical_mix.temperature_archived = canonical_mix.temperature
+		canonical_mix.set_temperature(text2num(gas["TEMP"]))
 		gas -= "TEMP"
 	else // if we do not have a temp in the new gas mix lets assume room temp.
-		canonical_mix.temperature = T20C
+		canonical_mix.set_temperature(T20C)
 	for(var/id in gas)
 		var/path = id
 		if(!ispath(path))
 			path = gas_id2path(path) //a lot of these strings can't have embedded expressions (especially for mappers), so support for IDs needs to stick around
-		ADD_GAS(path, gases)
-		gases[path][MOLES] = text2num(gas[id])
+		canonical_mix.set_moles(path, text2num(gas[id]))
 
 	if(istype(canonical_mix, /datum/gas_mixture/immutable))
 		return canonical_mix
@@ -763,30 +602,14 @@ GLOBAL_LIST_EMPTY(colored_images)
 
 /datum/controller/subsystem/air/tgui_data(mob/user)
 	var/list/data = list()
+	// Excited groups + active-turf/superconduction lists live in the Rust arena
+	// now and aren't enumerable from DM. Surface the per-tick auxmos counters the
+	// binds report back instead of the (deleted) DM lists.
 	data["excited_groups"] = list()
-	for(var/datum/excited_group/group in excited_groups)
-		var/turf/T = group.turf_list[1]
-		var/area/target = get_area(T)
-		var/max = 0
-		#ifdef TRACK_MAX_SHARE
-		for(var/who in group.turf_list)
-			var/turf/open/lad = who
-			max = max(lad.max_share, max)
-		#endif
-		data["excited_groups"] += list(list(
-			"jump_to" = REF(T), //Just go to the first turf
-			"group" = REF(group),
-			"area" = target.name,
-			"breakdown" = group.breakdown_cooldown,
-			"dismantle" = group.dismantle_cooldown,
-			"size" = group.turf_list.len,
-			"should_show" = group.should_display,
-			"max_share" = max
-		))
-	data["active_size"] = active_turfs.len
+	data["active_size"] = num_group_turfs_processed + num_equalize_processed
 	data["hotspots_size"] = hotspots.len
-	data["excited_size"] = excited_groups.len
-	data["conducting_size"] = active_super_conductivity.len
+	data["excited_size"] = num_group_turfs_processed
+	data["conducting_size"] = 0
 	data["frozen"] = can_fire
 	data["show_all"] = display_all_groups
 	data["fire_count"] = times_fired
@@ -814,25 +637,10 @@ GLOBAL_LIST_EMPTY(colored_images)
 		if("toggle-freeze")
 			can_fire = !can_fire
 			return TRUE
-		if("toggle_show_group")
-			var/datum/excited_group/group = locate(params["group"])
-			if(!group)
-				return
-			group.should_display = !group.should_display
-			if(display_all_groups)
-				return TRUE
-			if(group.should_display)
-				group.display_turfs()
-			else
-				group.hide_turfs()
-			return TRUE
+		// toggle_show_group / toggle_show_all removed — excited groups live in the
+		// Rust arena and have no DM turf_list to display/hide.
 		if("toggle_show_all")
 			display_all_groups = !display_all_groups
-			for(var/datum/excited_group/group in excited_groups)
-				if(display_all_groups)
-					group.display_turfs()
-				else if(!group.should_display) //Don't flicker yeah?
-					group.hide_turfs()
 			return TRUE
 		if("toggle_user_display")
 			user.hud_used.atmos_debug_overlays = !user.hud_used.atmos_debug_overlays

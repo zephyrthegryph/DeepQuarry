@@ -322,4 +322,4 @@
 
 /obj/machinery/portable_atmospherics/canister/phoron/cold/Initialize(mapload)
 	. = ..()
-	src.air_contents.temperature = 2.72
+	src.air_contents.set_temperature(2.72)

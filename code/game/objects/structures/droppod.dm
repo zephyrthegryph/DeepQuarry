@@ -144,5 +144,6 @@
 
 /datum/gas_mixture/pod_air/New()
 	. = ..()
+	set_temperature(initial(src.temperature)) // arena default is TCMB; sync mirror initializer into the arena
 	adjust_gas(GAS_O2, 21) // literal "oxygen" doesn't match LINDA gas IDs; GAS_O2 is "o2"
 	adjust_gas(GAS_N2, 79)

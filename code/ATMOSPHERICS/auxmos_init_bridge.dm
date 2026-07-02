@@ -103,37 +103,18 @@
 	return reg
 
 
-// === auxmos-only gas_mixture procs ===
-//
-// /tg/'s gas_mixture.dm doesn't declare these — they live ONLY in auxmos's
-// byondapi bindings. The DM-side declarations below are required so byondapi
-// has a target proc to swap at DLL load. CHOMP/DQ code uses these for
-// Rust-state-aware reads/writes — `adjust_gas` from gas_mixture.dm only
-// mutates the DM dict and is invisible to the Rust-backed total_moles/pressure.
-//
-// USE THESE for any read/write that needs to round-trip through Rust:
-//   - get_moles(gas_type) — current moles
-//   - set_moles(gas_type, value) — overwrite moles
-//   - adjust_moles(gas_type, delta) — add to moles
-//   - adjust_moles_temp(gas_type, moles, temp) — add moles at temp
-//   - set_temperature(value) — set temperature
-//   - merge(other) — combine moles + temperature from `other`
-
-/datum/gas_mixture/proc/get_moles(gas_type)
-	// Body is replaced at DLL load by auxmos byondapi bind.
-	// Fallback: read DM dict if Rust isn't loaded.
-	return gases[gas_type] ? gases[gas_type][MOLES] : 0
-
-/datum/gas_mixture/proc/set_moles(gas_type, amount)
-	ASSERT_GAS(gas_type, src)
-	gases[gas_type][MOLES] = amount
-
-/datum/gas_mixture/proc/adjust_moles(gas_type, delta)
-	ASSERT_GAS(gas_type, src)
-	gases[gas_type][MOLES] += delta
-
+// adjust_moles_temp is the one arena mole-accessor gas_mixture.dm doesn't already
+// define (get_moles/set_moles/adjust_moles now live there, arena-backed). Route it
+// through the auxmos bind and refresh the temperature mirror. Gas arg stringified
+// per the get_strid contract.
 /datum/gas_mixture/proc/adjust_moles_temp(gas_type, moles, temp)
-	ASSERT_GAS(gas_type, src)
-	gases[gas_type][MOLES] += moles
-	if(temperature > 0 && moles > 0)
-		temperature = (temperature * total_moles() + temp * moles) / max(total_moles() + moles, 1)
+	. = call_ext(VERDIGRIS, "byond:adjust_moles_temp_hook_ffi")(src, "[gas_type]", moles, temp)
+	temperature = return_temperature()
+
+/// Latches the mixture immutable in the arena (one-way; further writes no-op).
+/datum/gas_mixture/proc/mark_immutable()
+	return call_ext(VERDIGRIS, "byond:mark_immutable_hook_ffi")(src)
+
+/// Removes all gases from the mixture (arena-side).
+/datum/gas_mixture/proc/clear()
+	return call_ext(VERDIGRIS, "byond:clear_hook_ffi")(src)

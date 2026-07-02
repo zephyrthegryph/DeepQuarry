@@ -77,8 +77,8 @@
 
 /obj/machinery/atmospherics/pipe/tank/air/Initialize(mapload)
 	air_temporary = new
-	air_temporary.volume = volume
-	air_temporary.temperature = T20C
+	air_temporary.set_volume(volume)
+	air_temporary.set_temperature(T20C)
 
 	air_temporary.adjust_multi(GAS_O2,  (start_pressure*O2STANDARD)*(air_temporary.volume)/(R_IDEAL_GAS_EQUATION*air_temporary.temperature), \
 								GAS_N2,(start_pressure*N2STANDARD)*(air_temporary.volume)/(R_IDEAL_GAS_EQUATION*air_temporary.temperature))
@@ -93,8 +93,8 @@
 
 /obj/machinery/atmospherics/pipe/tank/oxygen/Initialize(mapload)
 	air_temporary = new
-	air_temporary.volume = volume
-	air_temporary.temperature = T20C
+	air_temporary.set_volume(volume)
+	air_temporary.set_temperature(T20C)
 
 	air_temporary.adjust_gas(GAS_O2, (start_pressure)*(air_temporary.volume)/(R_IDEAL_GAS_EQUATION*air_temporary.temperature))
 
@@ -108,8 +108,8 @@
 
 /obj/machinery/atmospherics/pipe/tank/nitrogen/Initialize(mapload)
 	air_temporary = new
-	air_temporary.volume = volume
-	air_temporary.temperature = T20C
+	air_temporary.set_volume(volume)
+	air_temporary.set_temperature(T20C)
 
 	air_temporary.adjust_gas(GAS_N2, (start_pressure)*(air_temporary.volume)/(R_IDEAL_GAS_EQUATION*air_temporary.temperature))
 
@@ -122,8 +122,8 @@
 
 /obj/machinery/atmospherics/pipe/tank/carbon_dioxide/Initialize(mapload)
 	air_temporary = new
-	air_temporary.volume = volume
-	air_temporary.temperature = T20C
+	air_temporary.set_volume(volume)
+	air_temporary.set_temperature(T20C)
 
 	air_temporary.adjust_gas(GAS_CO2, (start_pressure)*(air_temporary.volume)/(R_IDEAL_GAS_EQUATION*air_temporary.temperature))
 
@@ -137,8 +137,8 @@
 
 /obj/machinery/atmospherics/pipe/tank/phoron/Initialize(mapload)
 	air_temporary = new
-	air_temporary.volume = volume
-	air_temporary.temperature = T20C
+	air_temporary.set_volume(volume)
+	air_temporary.set_temperature(T20C)
 
 	air_temporary.adjust_gas(GAS_PHORON, (start_pressure)*(air_temporary.volume)/(R_IDEAL_GAS_EQUATION*air_temporary.temperature))
 
@@ -151,8 +151,8 @@
 
 /obj/machinery/atmospherics/pipe/tank/nitrous_oxide/Initialize(mapload)
 	air_temporary = new
-	air_temporary.volume = volume
-	air_temporary.temperature = T0C
+	air_temporary.set_volume(volume)
+	air_temporary.set_temperature(T0C)
 
 	air_temporary.adjust_gas(GAS_N2O, (start_pressure)*(air_temporary.volume)/(R_IDEAL_GAS_EQUATION*air_temporary.temperature))
 
@@ -167,8 +167,8 @@
 /obj/machinery/atmospherics/pipe/tank/methane/Initialize(mapload)
 	. = ..()
 	air_temporary = new
-	air_temporary.volume = volume
-	air_temporary.temperature = T20C
+	air_temporary.set_volume(volume)
+	air_temporary.set_temperature(T20C)
 
 	air_temporary.adjust_gas(GAS_CH4, (start_pressure)*(air_temporary.volume)/(R_IDEAL_GAS_EQUATION*air_temporary.temperature))
 	icon_state = "ch4"

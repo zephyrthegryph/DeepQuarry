@@ -15,10 +15,15 @@
 // AMT keeps outer parens because the ternary needs grouping. ADJUST omits
 // outer parens so callers can chain. LINDA_GAS_LIST does NOT exist — DM's
 // preprocessor doesn't handle `MACRO(x).member` cleanly; whole-list `.gas`
-// references must be per-site rewritten to `.gases`.
+// references must be per-site rewritten to get_gases().
+//
+// Under auxmos the per-mixture `gases` list is gone; moles route through the
+// arena-backed get_moles() getter (returns 0 for absent gases, so no presence
+// guard is needed). gas_id_str is a CHOMP string id mapped to a /datum/gas
+// type path by get_xgm_id_for_gas().
 
 #define LINDA_GAS_AMT(mix, gas_id_str) \
-	( mix && mix.gases && mix.get_xgm_id_for_gas(gas_id_str) && mix.gases[mix.get_xgm_id_for_gas(gas_id_str)] ? mix.gases[mix.get_xgm_id_for_gas(gas_id_str)][MOLES] : 0 )
+	( mix ? mix.get_moles(mix.get_xgm_id_for_gas(gas_id_str)) : 0 )
 #define LINDA_GAS_ADJUST(mix, gas_id_str, delta) mix.adjust_gas(gas_id_str, delta)
 
 // /tg/ helpers/plane defines/wet-floor constants are below in the consolidated block.
@@ -30,12 +35,28 @@
 // SSAIR_ATMOSMACHINERY (2) deleted with the atmos_machinery process
 // queue; devices run via SSmachines. Don't reuse value 2 — leaving the gap
 // keeps the fire() switch identifiers stable if a future merge re-introduces it.
-#define SSAIR_ACTIVETURFS 3
+// SSAIR_ACTIVETURFS (3) deleted — the DM active-turf loop is gone; turf sharing
+// is the auxmos Rust FDM (SSAIR_TURFS below). Value kept vacant.
 #define SSAIR_HOTSPOTS 4
 #define SSAIR_EXCITEDGROUPS 5
 #define SSAIR_HIGHPRESSURE 6
-#define SSAIR_SUPERCONDUCTIVITY 7
+// SSAIR_SUPERCONDUCTIVITY (7) deleted — DM superconduction engine removed; the
+// auxmos heat subsystem is not wired.
 // SSAIR_PROCESS_ATOMS (8) deleted alongside atom_process / process_exposure.
+// auxmos turf-processing steps. These run in a fixed order each fire(); the
+// fire() switch checkpoints on them so a mid-tick MC pause resumes correctly.
+#define SSAIR_TURFS 9              // process_turfs_auxtools (Rust FDM sharing)
+#define SSAIR_EQUALIZE 10         // process_turf_equalize_auxtools (katmos)
+#define SSAIR_FINALIZE_TURFS 11   // drain Rust->DM callbacks (react/set_visuals/pressure)
+
+// Milliseconds of tick budget still available to hand an auxmos turf-processing
+// bind. TICK_USAGE and Master.current_ticklimit are both percentages of a tick
+// (0-100); TICK_DELTA_TO_MS converts a percentage to milliseconds using
+// world.tick_lag. Clamped to a small positive floor so we never hand the Rust
+// side a zero/negative budget (it would parse as 50ms via unwrap_or, over-running
+// the tick). The Rust binds internally checkpoint against this and return
+// "overtimed" so SSair pauses/resumes cleanly.
+#define SSAIR_REMAINING_MS (max(TICK_DELTA_TO_MS(Master.current_ticklimit - TICK_USAGE), 1))
 
 // Pipeline rebuild helper subtasks.
 #define SSAIR_REBUILD_PIPELINE 1

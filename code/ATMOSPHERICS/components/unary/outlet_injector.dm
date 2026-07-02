@@ -27,7 +27,7 @@
 /obj/machinery/atmospherics/unary/outlet_injector/Initialize(mapload)
 	. = ..()
 
-	air_contents.volume = ATMOS_DEFAULT_VOLUME_PUMP + 500	//Give it a small reservoir for injecting. Also allows it to have a higher flow rate limit than vent pumps, to differentiate injectors a bit more.
+	air_contents.set_volume(ATMOS_DEFAULT_VOLUME_PUMP + 500)	//Give it a small reservoir for injecting. Also allows it to have a higher flow rate limit than vent pumps, to differentiate injectors a bit more.
 	if(frequency)
 		set_frequency(frequency)
 

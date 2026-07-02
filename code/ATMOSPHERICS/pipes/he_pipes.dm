@@ -97,7 +97,7 @@
 			for(var/mob/living/L as anything in buckled_mobs)
 				var/hc = pipe_air.heat_capacity()
 				var/avg_temp = (pipe_air.temperature * hc + L.bodytemperature * 3500) / (hc + 3500)
-				pipe_air.temperature = avg_temp
+				pipe_air.set_temperature(avg_temp)
 				L.bodytemperature = avg_temp
 
 				var/heat_limit = 1000

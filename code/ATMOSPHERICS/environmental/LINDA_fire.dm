@@ -30,22 +30,16 @@
 	if(fire_protection && (world.time - fire_protection < FIRE_PROTECTION_DURATION))
 		return
 	//If the air doesn't exist we just return false
-	var/list/air_gases = air?.gases
-	if(!air_gases)
+	if(!air)
 		return
 
-	. = air_gases[/datum/gas/oxygen]
-	var/oxy = . ? .[MOLES] : 0
+	var/oxy = air.get_moles(/datum/gas/oxygen)
 	if (oxy < 0.5)
 		return
-	. = air_gases[/datum/gas/plasma]
-	var/plas = . ? .[MOLES] : 0
-	. = air_gases[/datum/gas/tritium]
-	var/trit = . ? .[MOLES] : 0
-	. = air_gases[/datum/gas/hydrogen]
-	var/h2 = . ? .[MOLES] : 0
-	. = air_gases[/datum/gas/freon]
-	var/freon = . ? .[MOLES] : 0
+	var/plas = air.get_moles(/datum/gas/plasma)
+	var/trit = air.get_moles(/datum/gas/tritium)
+	var/h2 = air.get_moles(/datum/gas/hydrogen)
+	var/freon = air.get_moles(/datum/gas/freon)
 	if(active_hotspot)
 		if(soh)
 			if(plas > 0.5 || trit > 0.5 || h2 > 0.5)
@@ -202,7 +196,7 @@
 		var/datum/gas_mixture/affected = location.air.remove_ratio(volume/location.air.volume)
 		if(affected) //in case volume is 0
 			reference = affected // Our color and volume will depend on this small sparked gasmix
-			affected.temperature = temperature
+			affected.set_temperature(temperature)
 			affected.react(src)
 			location.assume_air(affected)
 
@@ -290,7 +284,7 @@
 	color = list(LERP(0.3, 1, 1-greyscale_fire) * heat_r,0.3 * heat_g * greyscale_fire,0.3 * heat_b * greyscale_fire, 0.59 * heat_r * greyscale_fire,LERP(0.59, 1, 1-greyscale_fire) * heat_g,0.59 * heat_b * greyscale_fire, 0.11 * heat_r * greyscale_fire,0.11 * heat_g * greyscale_fire,LERP(0.11, 1, 1-greyscale_fire) * heat_b, 0,0,0)
 	alpha = heat_a
 
-#define INSUFFICIENT(path) (!location.air.gases[path] || location.air.gases[path][MOLES] < 0.5)
+#define INSUFFICIENT(path) (location.air.get_moles(path) < 0.5)
 
 /**
  * Regular process proc for hotspots governed by the controller.
@@ -309,8 +303,9 @@
 		qdel(src)
 		return
 
-	if(location.excited_group)
-		location.excited_group.reset_cooldowns()
+	// Excited groups live in the Rust arena now; there's no DM group to poke a
+	// cooldown reset on. Re-registering the burning turf keeps auxmos processing it.
+	SSair.add_to_active(location)
 
 	cold_fire = FALSE
 	if(temperature <= FREON_MAXIMUM_BURN_TEMPERATURE)

@@ -30,7 +30,7 @@
 
 	rebuild_filtering_list()
 	for(var/datum/omni_port/P in ports)
-		P.air.volume = ATMOS_DEFAULT_VOLUME_FILTER
+		P.air.set_volume(ATMOS_DEFAULT_VOLUME_FILTER)
 
 /obj/machinery/atmospherics/omni/atmos_filter/Destroy()
 	input = null
@@ -50,7 +50,7 @@
 			if(atmos_filters.Find(P))
 				atmos_filters -= P
 
-			P.air.volume = 200
+			P.air.set_volume(200)
 			switch(P.mode)
 				if(ATM_INPUT)
 					input = P

@@ -422,9 +422,9 @@
 			if(int_tank_air && int_tank_air.return_pressure() > TANK_LEAK_PRESSURE && !(hasInternalDamage(MECHA_INT_TANK_BREACH)))
 				setInternalDamage(MECHA_INT_TANK_BREACH)
 			if(int_tank_air && int_tank_air.volume > 0) //heat the air_contents
-				int_tank_air.temperature = min(6000+T0C, int_tank_air.temperature+rand(10,15))
+				int_tank_air.set_temperature(min(6000+T0C, int_tank_air.temperature+rand(10,15)))
 		if(cabin_air && cabin_air.volume>0)
-			cabin_air.temperature = min(6000+T0C, cabin_air.temperature+rand(10,15))
+			cabin_air.set_temperature(min(6000+T0C, cabin_air.temperature+rand(10,15)))
 			if(cabin_air.temperature>max_temperature/2)
 				take_damage(4/round(max_temperature/cabin_air.temperature,0.1),"fire")
 
@@ -476,8 +476,8 @@
 
 /obj/mecha/proc/add_cabin()
 	cabin_air = new
-	cabin_air.temperature = T20C
-	cabin_air.volume = 200
+	cabin_air.set_temperature(T20C)
+	cabin_air.set_volume(200)
 	// adjust_multi was XGM; LINDA's gas_mixture has adjust_gas per-call.
 	var/moles_o2 = O2STANDARD * cabin_air.volume / (R_IDEAL_GAS_EQUATION * cabin_air.temperature)
 	var/moles_n2 = N2STANDARD * cabin_air.volume / (R_IDEAL_GAS_EQUATION * cabin_air.temperature)

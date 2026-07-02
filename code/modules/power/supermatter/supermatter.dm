@@ -446,7 +446,7 @@
 			visible_message("[src]: Releasing additional [round((heat_capacity_new - heat_capacity)*removed.temperature)] W with exhaust gasses.")
 
 		removed.add_thermal_energy(thermal_power)
-		removed.temperature = between(0, removed.temperature, 10000)
+		removed.set_temperature(between(0, removed.temperature, 10000))
 
 		env.merge(removed)
 

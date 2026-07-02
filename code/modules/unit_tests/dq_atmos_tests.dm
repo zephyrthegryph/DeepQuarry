@@ -105,7 +105,7 @@
 
 	mix.adjust_gas(/datum/gas/oxygen, MOLES_O2STANDARD)
 	mix.adjust_gas(/datum/gas/nitrogen, MOLES_N2STANDARD)
-	mix.temperature = T20C
+	mix.set_temperature(T20C)
 
 	var/total = mix.total_moles()
 	TEST_ASSERT(total > 0, "total_moles() returned 0 after adjust_gas: [total]")
@@ -444,8 +444,8 @@
 	TEST_ASSERT(final_toxin > initial_toxin, \
 		"breathe() on a 200-mol-plasma turf did NOT add toxin reagent: [initial_toxin] → [final_toxin]. Turf plasma was [turf_plasma]. The chain from turf → breath → handle_breath → reagent is broken under LINDA.")
 
-	for(var/datum/gas/g as anything in T.air.gases)
-		T.air.gases[g][MOLES] = 0
+	for(var/datum/gas/g as anything in T.air.get_gases())
+		T.air.set_moles(g, 0)
 
 
 /// Breathing a plasma-laden gas mixture MUST add a toxin reagent to the
@@ -691,10 +691,10 @@
 	// Wipe ALL overlay-emitting gases so reaction products left by earlier tests
 	// (water vapor / CO2 / tritium from hotspot_expose) don't fail this test.
 	var/datum/gas_mixture/air = T.return_air()
-	for(var/datum/gas/g as anything in air.gases)
+	for(var/datum/gas/g as anything in air.get_gases())
 		if(GLOB.nonoverlaying_gases[g])
 			continue
-		air.gases[g][MOLES] = 0
+		air.set_moles(g, 0)
 	// 0.1 mol < MOLES_GAS_VISIBLE (0.25)
 	air.set_moles(/datum/gas/plasma, 0.1)
 
@@ -1113,7 +1113,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 			GLOB.dq_atmos_test_walled_turfs[neighbor] = neighbor.type
 			floor.air_update_turf(TRUE, FALSE)
 			return neighbor
-		if(neighbor.blocks_air || istype(neighbor, /turf/closed) || istype(neighbor, /turf/simulated/wall))
+		if(neighbor.blocks_air || istype(neighbor, /turf/simulated/wall))
 			GLOB.dq_atmos_test_walled_turfs[neighbor] = neighbor.type
 			var/turf/space/created = neighbor.ChangeTurf(/turf/space)
 			// Make sure the floor side recomputes its adjacency too, in case the
@@ -1130,37 +1130,6 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	dq_atmos_test_wait_real_ssair_ticks(ticks)
 
 
-/// Sanity check on the share() math itself, decoupled from process_cell.
-/// Builds two free-standing gas mixtures (no turfs involved) and shares them
-/// directly. If THIS loses mass then LINDA's share() is broken; if this is
-/// fine but the turf-based tests lose mass, the leak is elsewhere (per-tick
-/// turf processing, planetary share, hotspot reactions, etc.).
-/datum/unit_test/dq_share_conserves_mass_two_mixtures
-
-/datum/unit_test/dq_share_conserves_mass_two_mixtures/Run()
-	var/datum/gas_mixture/A = new(CELL_VOLUME)
-	var/datum/gas_mixture/B = new(CELL_VOLUME)
-	A.adjust_gas(/datum/gas/plasma, 100)
-	A.set_temperature(T20C)
-	B.set_temperature(T20C)
-
-	// archive() to set ARCHIVE values share() reads.
-	A.archive()
-	B.archive()
-
-	for(var/i in 1 to 60)
-		A.share(B, 0.5, 0.5)
-		A.archive()
-		B.archive()
-
-	var/a_p = A.get_moles(/datum/gas/plasma)
-	var/b_p = B.get_moles(/datum/gas/plasma)
-	TEST_ASSERT(abs((a_p + b_p) - 100) < 0.5, \
-		"two-mixture share lost mass: A=[a_p] B=[b_p] total=[a_p+b_p], expected 100. share() impl is broken.")
-	TEST_ASSERT(abs(a_p - b_p) < 5, \
-		"two-mixture share didn't equilibrate: A=[a_p] B=[b_p]")
-
-
 /// Equilibration over multiple ticks: load A with plasma, B starts empty,
 /// after enough share ticks both should hold roughly half. This is the
 /// fundamental "gases mix" behaviour — every other atmos behaviour assumes it.
@@ -1174,10 +1143,10 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 
 	dq_atmos_test_isolate_pair(A, B)
 
-	for(var/datum/gas/g as anything in A.air.gases)
-		A.air.gases[g][MOLES] = 0
-	for(var/datum/gas/g as anything in B.air.gases)
-		B.air.gases[g][MOLES] = 0
+	for(var/datum/gas/g as anything in A.air.get_gases())
+		A.air.set_moles(g, 0)
+	for(var/datum/gas/g as anything in B.air.get_gases())
+		B.air.set_moles(g, 0)
 	B.air.set_temperature(T20C)
 
 	// Production injection: assume_air enrolls A in active_turfs via
@@ -1218,8 +1187,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	TEST_ASSERT(B.atmos_adjacent_turfs[C], "B-C adjacency missing")
 
 	for(var/turf/open/T as anything in list(A, B, C))
-		for(var/datum/gas/g as anything in T.air.gases)
-			T.air.gases[g][MOLES] = 0
+		for(var/datum/gas/g as anything in T.air.get_gases())
+			T.air.set_moles(g, 0)
 		T.air.set_temperature(T20C)
 
 	var/datum/gas_mixture/donor = new(70)
@@ -1279,10 +1248,10 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	TEST_ASSERT(!(A.atmos_adjacent_turfs && A.atmos_adjacent_turfs[B]), \
 		"B somehow ended up adjacent to A despite a wall between them")
 
-	for(var/datum/gas/g as anything in A.air.gases)
-		A.air.gases[g][MOLES] = 0
-	for(var/datum/gas/g as anything in B.air.gases)
-		B.air.gases[g][MOLES] = 0
+	for(var/datum/gas/g as anything in A.air.get_gases())
+		A.air.set_moles(g, 0)
+	for(var/datum/gas/g as anything in B.air.get_gases())
+		B.air.set_moles(g, 0)
 
 	// Inject plasma via the production path.
 	var/datum/gas_mixture/donor = new(70)
@@ -1320,13 +1289,12 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	donor.adjust_gas(/datum/gas/oxygen, 50)
 	donor.set_temperature(T20C)
 	A.assume_air(donor)
-	TEST_ASSERT(A in SSair.active_turfs, "test setup: A didn't enter active_turfs after assume_air")
+	// (active_turfs enrollment is now Rust-side; the DM list is gone. The test's
+	// point is that ChangeTurf->wall doesn't crash and yields a null-air wall.)
 
 	var/turf/W = A.ChangeTurf(/turf/simulated/wall)
 	TEST_ASSERT_NOTNULL(W, "ChangeTurf returned null")
 	TEST_ASSERT(istype(W, /turf/simulated/wall), "ChangeTurf didn't produce a wall: [W.type]")
-	TEST_ASSERT(!(W in SSair.active_turfs), \
-		"ChangeTurf'd wall is still in active_turfs — Destroy didn't clear it")
 	TEST_ASSERT(W.blocks_air, "new wall should blocks_air=1")
 	var/turf/open/W_open = W
 	TEST_ASSERT(isnull(W_open.air), "new wall should have air=null")
@@ -1395,10 +1363,10 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 
 	dq_atmos_test_isolate_pair(A, B)
 
-	for(var/datum/gas/g as anything in A.air.gases)
-		A.air.gases[g][MOLES] = 0
-	for(var/datum/gas/g as anything in B.air.gases)
-		B.air.gases[g][MOLES] = 0
+	for(var/datum/gas/g as anything in A.air.get_gases())
+		A.air.set_moles(g, 0)
+	for(var/datum/gas/g as anything in B.air.get_gases())
+		B.air.set_moles(g, 0)
 	A.air.set_temperature(T20C)
 	B.air.set_temperature(T20C)
 
@@ -1435,51 +1403,6 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	B.air.set_moles(/datum/gas/nitrogen, MOLES_N2STANDARD)
 
 
-/// Excited group formation: two adjacent active turfs with different gas
-/// content should end up in an excited_group after a share tick. This is the
-/// performance optimization that lets LINDA process clusters efficiently.
-/datum/unit_test/dq_excited_group_forms_on_disequilibrium
-
-/datum/unit_test/dq_excited_group_forms_on_disequilibrium/Run()
-	var/list/pair = dq_atmos_test_find_floor_pair()
-	TEST_ASSERT_NOTNULL(pair, "no usable floor pair on map for excited-group test")
-	var/turf/simulated/floor/A = pair[1]
-	var/turf/simulated/floor/B = pair[2]
-
-	dq_atmos_test_isolate_pair(A, B)
-
-	// If a previous test left A or B in an excited group, dismantle it
-	// through the production proc so the engine cleans up properly.
-	if(A.excited_group)
-		A.excited_group.dismantle()
-	if(B.excited_group)
-		B.excited_group.dismantle()
-
-	for(var/datum/gas/g as anything in A.air.gases)
-		A.air.gases[g][MOLES] = 0
-	for(var/datum/gas/g as anything in B.air.gases)
-		B.air.gases[g][MOLES] = 0
-
-	var/datum/gas_mixture/donor = new(70)
-	donor.adjust_gas(/datum/gas/plasma, 80)
-	donor.set_temperature(T20C)
-	A.assume_air(donor)
-
-	dq_atmos_test_wait_real_ssair_ticks(3)
-
-	TEST_ASSERT_NOTNULL(A.excited_group, \
-		"A.excited_group still null after real SSair share with B holding different gas")
-	TEST_ASSERT(A.excited_group == B.excited_group, \
-		"A and B not in the same excited_group: A=[A.excited_group] B=[B.excited_group]")
-
-	A.air.set_moles(/datum/gas/plasma, 0)
-	B.air.set_moles(/datum/gas/plasma, 0)
-	A.update_visuals()
-	B.update_visuals()
-	if(A.excited_group)
-		A.excited_group.dismantle()
-
-
 /// Total moles conservation under repeated share. Small per-tick rounding
 /// errors shouldn't compound into mass loss over hundreds of ticks. If this
 /// fails, rooms slowly go to vacuum without any obvious leak.
@@ -1493,10 +1416,10 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 
 	dq_atmos_test_isolate_pair(A, B)
 
-	for(var/datum/gas/g as anything in A.air.gases)
-		A.air.gases[g][MOLES] = 0
-	for(var/datum/gas/g as anything in B.air.gases)
-		B.air.gases[g][MOLES] = 0
+	for(var/datum/gas/g as anything in A.air.get_gases())
+		A.air.set_moles(g, 0)
+	for(var/datum/gas/g as anything in B.air.get_gases())
+		B.air.set_moles(g, 0)
 
 	var/datum/gas_mixture/donor_a = new(70)
 	donor_a.adjust_gas(/datum/gas/oxygen, 75)
@@ -1617,10 +1540,10 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 		"vertical atmos adjacency wasn't wired: the open turf isn't adjacent to the floor below it")
 
 	// Zero both, load plasma up top, let the real engine share it down.
-	for(var/datum/gas/g as anything in upper.air.gases)
-		upper.air.gases[g][MOLES] = 0
-	for(var/datum/gas/g as anything in lower.air.gases)
-		lower.air.gases[g][MOLES] = 0
+	for(var/datum/gas/g as anything in upper.air.get_gases())
+		upper.air.set_moles(g, 0)
+	for(var/datum/gas/g as anything in lower.air.get_gases())
+		lower.air.set_moles(g, 0)
 	lower.air.set_temperature(T20C)
 
 	var/datum/gas_mixture/donor = new(70)
@@ -1683,8 +1606,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 
 	// Pollute the turf with phoron via the production path. assume_air calls
 	// air_update_turf → enrolls T in active_turfs.
-	for(var/datum/gas/g as anything in T.air.gases)
-		T.air.gases[g][MOLES] = 0
+	for(var/datum/gas/g as anything in T.air.get_gases())
+		T.air.set_moles(g, 0)
 	var/datum/gas_mixture/donor = new(70)
 	donor.adjust_gas(/datum/gas/plasma, 200)
 	donor.set_temperature(T20C)
@@ -1692,8 +1615,9 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	var/initial_plasma = T.air.get_moles(/datum/gas/plasma)
 	TEST_ASSERT(initial_plasma > 150, "test setup didn't load enough plasma: [initial_plasma]")
 
-	// Real Master.Loop ticks SSair, which runs T.process_cell, which calls
-	// our_air.share(planetary_mix, 0.8, 0.8) when T.planetary_atmos is set.
+	// Real Master.Loop ticks SSair, whose Rust turf-sharing pass
+	// (process_turfs_auxtools) blends the turf air toward planetary_mix
+	// when T.planetary_atmos is set.
 	dq_atmos_test_wait_real_ssair_ticks(20)
 
 	var/final_plasma = T.air.get_moles(/datum/gas/plasma)
@@ -1703,8 +1627,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	// place — it's an immutable baseline keyed by the standard gas string and
 	// matches what a real planetary turf would have registered anyway.)
 	T.planetary_atmos = FALSE
-	for(var/datum/gas/g as anything in T.air.gases)
-		T.air.gases[g][MOLES] = 0
+	for(var/datum/gas/g as anything in T.air.get_gases())
+		T.air.set_moles(g, 0)
 	dq_atmos_test_restore_walls()
 
 	TEST_ASSERT(final_plasma < initial_plasma * 0.5, \
@@ -1731,10 +1655,10 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 				T.vis_contents -= old_ov
 			T.atmos_overlay_types = null
 
-	for(var/datum/gas/g as anything in A.air.gases)
-		A.air.gases[g][MOLES] = 0
-	for(var/datum/gas/g as anything in B.air.gases)
-		B.air.gases[g][MOLES] = 0
+	for(var/datum/gas/g as anything in A.air.get_gases())
+		A.air.set_moles(g, 0)
+	for(var/datum/gas/g as anything in B.air.get_gases())
+		B.air.set_moles(g, 0)
 	B.air.set_temperature(T20C)
 
 	var/datum/gas_mixture/donor = new(70)
@@ -1775,8 +1699,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 		T.active_hotspot = null
 
 	var/datum/gas_mixture/air = T.return_air()
-	for(var/datum/gas/g as anything in air.gases)
-		air.gases[g][MOLES] = 0
+	for(var/datum/gas/g as anything in air.get_gases())
+		air.set_moles(g, 0)
 	air.adjust_gas(/datum/gas/plasma, 20)
 	air.adjust_gas(/datum/gas/oxygen, 50)
 	air.set_temperature(PLASMA_MINIMUM_BURN_TEMPERATURE + 300)
@@ -2056,8 +1980,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	TEST_ASSERT_NOTNULL(T, "no floor on test map for vent_pump test")
 
 	var/datum/gas_mixture/turf_air = T.return_air()
-	for(var/datum/gas/g as anything in turf_air.gases)
-		turf_air.gases[g][MOLES] = 0
+	for(var/datum/gas/g as anything in turf_air.get_gases())
+		turf_air.set_moles(g, 0)
 	turf_air.set_temperature(T20C)
 
 	var/obj/machinery/atmospherics/unary/vent_pump/V = new(T)
@@ -2107,8 +2031,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	TEST_ASSERT_NOTNULL(T, "no floor on test map for vent_scrubber test")
 
 	var/datum/gas_mixture/turf_air = T.return_air()
-	for(var/datum/gas/g as anything in turf_air.gases)
-		turf_air.gases[g][MOLES] = 0
+	for(var/datum/gas/g as anything in turf_air.get_gases())
+		turf_air.set_moles(g, 0)
 	turf_air.adjust_gas(/datum/gas/plasma, 100)
 	turf_air.adjust_gas(/datum/gas/oxygen, 100)
 	turf_air.set_temperature(T20C)
@@ -2268,8 +2192,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	T.wet = TURFSLIP_DRY
 
 	var/datum/gas_mixture/air = T.return_air()
-	for(var/datum/gas/g as anything in air.gases)
-		air.gases[g][MOLES] = 0
+	for(var/datum/gas/g as anything in air.get_gases())
+		air.set_moles(g, 0)
 	air.adjust_gas(/datum/gas/water_vapor, MOLES_GAS_VISIBLE * 4)
 	air.set_temperature(WATER_VAPOR_DEPOSITION_POINT - 20) // below deposition
 
@@ -2621,8 +2545,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 
 	// Drain ambient so the pump's effect shows up clearly.
 	var/datum/gas_mixture/turf_air = T.return_air()
-	for(var/datum/gas/g as anything in turf_air.gases)
-		turf_air.gases[g][MOLES] = 0
+	for(var/datum/gas/g as anything in turf_air.get_gases())
+		turf_air.set_moles(g, 0)
 	turf_air.set_temperature(T20C)
 
 	var/obj/machinery/portable_atmospherics/powered/pump/P = new(T)
@@ -2661,8 +2585,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	TEST_ASSERT_NOTNULL(T, "no floor for portable scrubber test")
 
 	var/datum/gas_mixture/turf_air = T.return_air()
-	for(var/datum/gas/g as anything in turf_air.gases)
-		turf_air.gases[g][MOLES] = 0
+	for(var/datum/gas/g as anything in turf_air.get_gases())
+		turf_air.set_moles(g, 0)
 	turf_air.adjust_gas(/datum/gas/plasma, 50)
 	turf_air.set_temperature(T20C)
 
@@ -2842,10 +2766,10 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 
 	dq_atmos_test_isolate_pair(A, B)
 
-	for(var/datum/gas/g as anything in A.air.gases)
-		A.air.gases[g][MOLES] = 0
-	for(var/datum/gas/g as anything in B.air.gases)
-		B.air.gases[g][MOLES] = 0
+	for(var/datum/gas/g as anything in A.air.get_gases())
+		A.air.set_moles(g, 0)
+	for(var/datum/gas/g as anything in B.air.get_gases())
+		B.air.set_moles(g, 0)
 	B.air.set_temperature(T20C)
 
 	var/datum/gas_mixture/donor = new(70)
@@ -2957,8 +2881,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	TEST_ASSERT_NOTNULL(T, "no floor for temperature_interact test")
 
 	var/datum/gas_mixture/turf_air = T.return_air()
-	for(var/datum/gas/g as anything in turf_air.gases)
-		turf_air.gases[g][MOLES] = 0
+	for(var/datum/gas/g as anything in turf_air.get_gases())
+		turf_air.set_moles(g, 0)
 	turf_air.adjust_gas(/datum/gas/nitrogen, MOLES_N2STANDARD)
 	turf_air.set_temperature(T20C)
 
@@ -3009,10 +2933,10 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 		B.active_hotspot = null
 
 	// Stock both with plasma + oxygen so once gas migrates, B can also burn.
-	for(var/datum/gas/g as anything in A.air.gases)
-		A.air.gases[g][MOLES] = 0
-	for(var/datum/gas/g as anything in B.air.gases)
-		B.air.gases[g][MOLES] = 0
+	for(var/datum/gas/g as anything in A.air.get_gases())
+		A.air.set_moles(g, 0)
+	for(var/datum/gas/g as anything in B.air.get_gases())
+		B.air.set_moles(g, 0)
 
 	var/datum/gas_mixture/donor_a = new(70)
 	donor_a.adjust_gas(/datum/gas/plasma, 30)
@@ -3075,11 +2999,11 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	TEST_ASSERT(A.atmos_adjacent_turfs && A.atmos_adjacent_turfs[S], \
 		"floor↔space adjacency wasn't wired after breaching the wall to space")
 
-	for(var/datum/gas/g as anything in A.air.gases)
-		A.air.gases[g][MOLES] = 0
+	for(var/datum/gas/g as anything in A.air.get_gases())
+		A.air.set_moles(g, 0)
 	// And ensure space is genuinely vacuum (some maps initialize it with trace gas).
-	for(var/datum/gas/g as anything in S.air.gases)
-		S.air.gases[g][MOLES] = 0
+	for(var/datum/gas/g as anything in S.air.get_gases())
+		S.air.set_moles(g, 0)
 
 	// Pressurize A through the production path.
 	var/datum/gas_mixture/donor = new(70)
@@ -3120,8 +3044,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	TEST_ASSERT_NOTNULL(T, "no floor for full-cycle test")
 
 	var/datum/gas_mixture/turf_air = T.return_air()
-	for(var/datum/gas/g as anything in turf_air.gases)
-		turf_air.gases[g][MOLES] = 0
+	for(var/datum/gas/g as anything in turf_air.get_gases())
+		turf_air.set_moles(g, 0)
 	turf_air.set_temperature(T20C)
 
 	// Pollute the turf with CO2 — the scrubber's target.
@@ -3165,8 +3089,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	TEST_ASSERT(S.air_contents.get_moles(/datum/gas/carbon_dioxide) > 0, \
 		"scrubber air_contents didn't accumulate CO2")
 
-	for(var/datum/gas/g as anything in turf_air.gases)
-		turf_air.gases[g][MOLES] = 0
+	for(var/datum/gas/g as anything in turf_air.get_gases())
+		turf_air.set_moles(g, 0)
 	qdel(V)
 	qdel(S)
 
@@ -3186,8 +3110,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	TEST_ASSERT_NOTNULL(H, "couldn't allocate human")
 
 	var/datum/gas_mixture/turf_air = T.return_air()
-	for(var/datum/gas/g as anything in turf_air.gases)
-		turf_air.gases[g][MOLES] = 0
+	for(var/datum/gas/g as anything in turf_air.get_gases())
+		turf_air.set_moles(g, 0)
 	// Crush pressure (~20 atm).
 	turf_air.adjust_gas(/datum/gas/nitrogen, MOLES_N2STANDARD * 20)
 	turf_air.set_temperature(T20C)
@@ -3201,8 +3125,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 		"human took no brute damage at ~20 atm pressure: [initial_brute] → [final_brute]")
 
 	// Reset turf to standard atmosphere.
-	for(var/datum/gas/g as anything in turf_air.gases)
-		turf_air.gases[g][MOLES] = 0
+	for(var/datum/gas/g as anything in turf_air.get_gases())
+		turf_air.set_moles(g, 0)
 	turf_air.adjust_gas(/datum/gas/oxygen, MOLES_O2STANDARD)
 	turf_air.adjust_gas(/datum/gas/nitrogen, MOLES_N2STANDARD)
 
@@ -3222,8 +3146,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	TEST_ASSERT_NOTNULL(H, "couldn't allocate human")
 
 	var/datum/gas_mixture/turf_air = T.return_air()
-	for(var/datum/gas/g as anything in turf_air.gases)
-		turf_air.gases[g][MOLES] = 0
+	for(var/datum/gas/g as anything in turf_air.get_gases())
+		turf_air.set_moles(g, 0)
 	turf_air.adjust_gas(/datum/gas/nitrogen, MOLES_N2STANDARD)
 	turf_air.set_temperature(50) // 50 K, ~-223°C
 
@@ -3236,8 +3160,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	TEST_ASSERT(final_fireloss > initial_fireloss, \
 		"human took no fireloss at 50K: [initial_fireloss] → [final_fireloss]")
 
-	for(var/datum/gas/g as anything in turf_air.gases)
-		turf_air.gases[g][MOLES] = 0
+	for(var/datum/gas/g as anything in turf_air.get_gases())
+		turf_air.set_moles(g, 0)
 	turf_air.adjust_gas(/datum/gas/oxygen, MOLES_O2STANDARD)
 	turf_air.adjust_gas(/datum/gas/nitrogen, MOLES_N2STANDARD)
 	turf_air.set_temperature(T20C)
@@ -3284,8 +3208,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	TEST_ASSERT_NOTNULL(T, "no floor for air alarm test")
 
 	var/datum/gas_mixture/turf_air = T.return_air()
-	for(var/datum/gas/g as anything in turf_air.gases)
-		turf_air.gases[g][MOLES] = 0
+	for(var/datum/gas/g as anything in turf_air.get_gases())
+		turf_air.set_moles(g, 0)
 	turf_air.adjust_gas(/datum/gas/oxygen, MOLES_O2STANDARD)
 	turf_air.adjust_gas(/datum/gas/nitrogen, MOLES_N2STANDARD)
 	turf_air.set_temperature(T20C)
@@ -3556,8 +3480,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 				T.vis_contents -= old_ov
 			T.atmos_overlay_types = null
 		// Clear all gases on the turf first.
-		for(var/datum/gas/g as anything in T.air.gases)
-			T.air.gases[g][MOLES] = 0
+		for(var/datum/gas/g as anything in T.air.get_gases())
+			T.air.set_moles(g, 0)
 		// Put visible_threshold * 10 of THIS gas only.
 		T.air.adjust_gas(g_type, visible_threshold * 10)
 		T.update_visuals()
@@ -3570,8 +3494,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 		"only [gases_tested] of [visible_gas_count] visible gases rendered overlays")
 
 	// Reset turf.
-	for(var/datum/gas/g as anything in T.air.gases)
-		T.air.gases[g][MOLES] = 0
+	for(var/datum/gas/g as anything in T.air.get_gases())
+		T.air.set_moles(g, 0)
 	T.update_visuals()
 
 
@@ -3739,8 +3663,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	TEST_ASSERT_NOTNULL(T, "no floor for shared-pipenet test")
 
 	var/datum/gas_mixture/turf_air = T.return_air()
-	for(var/datum/gas/g as anything in turf_air.gases)
-		turf_air.gases[g][MOLES] = 0
+	for(var/datum/gas/g as anything in turf_air.get_gases())
+		turf_air.set_moles(g, 0)
 	turf_air.adjust_gas(/datum/gas/carbon_dioxide, 200)
 	turf_air.set_temperature(T20C)
 
@@ -3792,8 +3716,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	TEST_ASSERT(final_shared_co2 > initial_shared_co2, \
 		"scrubber didn't deposit CO2 into shared pipenet: [initial_shared_co2] → [final_shared_co2]")
 
-	for(var/datum/gas/g as anything in turf_air.gases)
-		turf_air.gases[g][MOLES] = 0
+	for(var/datum/gas/g as anything in turf_air.get_gases())
+		turf_air.set_moles(g, 0)
 	qdel(V)
 	qdel(S)
 
@@ -4333,8 +4257,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	TEST_ASSERT_NOTNULL(T, "no floor for hotspot threshold test")
 
 	var/datum/gas_mixture/turf_air = T.return_air()
-	for(var/datum/gas/g as anything in turf_air.gases)
-		turf_air.gases[g][MOLES] = 0
+	for(var/datum/gas/g as anything in turf_air.get_gases())
+		turf_air.set_moles(g, 0)
 	turf_air.adjust_gas(/datum/gas/plasma, 50)
 	turf_air.adjust_gas(/datum/gas/oxygen, 100)
 	turf_air.set_temperature(T20C)
@@ -4357,8 +4281,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	if(T.active_hotspot)
 		qdel(T.active_hotspot)
 		T.active_hotspot = null
-	for(var/datum/gas/g as anything in turf_air.gases)
-		turf_air.gases[g][MOLES] = 0
+	for(var/datum/gas/g as anything in turf_air.get_gases())
+		turf_air.set_moles(g, 0)
 
 
 /// /datum/pipeline.build_pipeline() on a single pipe should: allocate a fresh
@@ -4484,43 +4408,6 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	qdel(PB)
 
 
-/// temperature_share directly equalizes the temperature between two gas
-/// mixtures via conduction. Validates the heat-conduction path used between
-/// adjacent pipes/turfs.
-/datum/unit_test/dq_temperature_share_equalizes_two_mixtures
-
-/datum/unit_test/dq_temperature_share_equalizes_two_mixtures/Run()
-	var/datum/gas_mixture/hot = new(70)
-	hot.adjust_gas(/datum/gas/oxygen, 100)
-	hot.set_temperature(T0C + 200)
-	hot.archive()
-
-	var/datum/gas_mixture/cold = new(70)
-	cold.adjust_gas(/datum/gas/nitrogen, 100)
-	cold.set_temperature(T0C - 100)
-	cold.archive()
-
-	var/hot_initial = hot.temperature
-	var/cold_initial = cold.temperature
-	var/initial_total_thermal = hot.thermal_energy() + cold.thermal_energy()
-
-	// Repeatedly conduct heat between them.
-	for(var/i in 1 to 60)
-		hot.temperature_share(cold, 0.4)
-		hot.archive()
-		cold.archive()
-
-	TEST_ASSERT(hot.temperature < hot_initial, "hot side didn't cool: [hot_initial] → [hot.temperature]")
-	TEST_ASSERT(cold.temperature > cold_initial, "cold side didn't warm: [cold_initial] → [cold.temperature]")
-	TEST_ASSERT(abs(hot.temperature - cold.temperature) < 5, \
-		"temperature_share didn't converge: hot=[hot.temperature] cold=[cold.temperature]")
-
-	// Thermal-energy conservation across the system (within 5%).
-	var/final_total_thermal = hot.thermal_energy() + cold.thermal_energy()
-	TEST_ASSERT(abs(final_total_thermal - initial_total_thermal) < (initial_total_thermal * 0.05), \
-		"temperature_share lost thermal energy: [initial_total_thermal] → [final_total_thermal] (>5%)")
-
-
 /// Full integration: open a plasma canister in a room, run ticks, verify
 /// plasma reaches an adjacent floor a few hops away. End-to-end test of
 /// canister release + LINDA turf-to-turf share + adjacency walking.
@@ -4537,12 +4424,12 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 
 	// Zero out A and B atmospheres.
 	var/datum/gas_mixture/A_air = A.return_air()
-	for(var/datum/gas/g as anything in A_air.gases)
-		A_air.gases[g][MOLES] = 0
+	for(var/datum/gas/g as anything in A_air.get_gases())
+		A_air.set_moles(g, 0)
 	A_air.set_temperature(T20C)
 	var/datum/gas_mixture/B_air = B.return_air()
-	for(var/datum/gas/g as anything in B_air.gases)
-		B_air.gases[g][MOLES] = 0
+	for(var/datum/gas/g as anything in B_air.get_gases())
+		B_air.set_moles(g, 0)
 	B_air.set_temperature(T20C)
 
 	// Place a plasma canister on A with the valve open.
@@ -4562,10 +4449,10 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	TEST_ASSERT(B_plasma > 0, "plasma didn't spread from A to adjacent B: [B_plasma] (A=[A_plasma])")
 
 	// Cleanup so other tests don't see leftover plasma.
-	for(var/datum/gas/g as anything in A_air.gases)
-		A_air.gases[g][MOLES] = 0
-	for(var/datum/gas/g as anything in B_air.gases)
-		B_air.gases[g][MOLES] = 0
+	for(var/datum/gas/g as anything in A_air.get_gases())
+		A_air.set_moles(g, 0)
+	for(var/datum/gas/g as anything in B_air.get_gases())
+		B_air.set_moles(g, 0)
 	qdel(Can)
 
 
@@ -4594,47 +4481,6 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 		"atmosanalyzer_scan returned empty list at [pressure] kPa")
 
 	qdel(Tank)
-
-
-/// excited_group.dismantle() detaches all member turfs from the group, sets
-/// their excited_group var to null, and removes the group from SSair's
-/// active group list. Validates the cleanup path that fires after a region
-/// goes quiet — without it, idle turfs would keep getting processed forever.
-/datum/unit_test/dq_excited_group_dismantle_releases_turfs
-
-/datum/unit_test/dq_excited_group_dismantle_releases_turfs/Run()
-	var/list/pair = dq_atmos_test_find_floor_pair()
-	TEST_ASSERT_NOTNULL(pair, "no adjacent-floor pair for excited-group dismantle test")
-	var/turf/open/A = pair[1]
-	var/turf/open/B = pair[2]
-	dq_atmos_test_isolate_pair(A, B)
-
-	// Set up a delta so excited group forms.
-	var/datum/gas_mixture/A_air = A.return_air()
-	for(var/datum/gas/g as anything in A_air.gases)
-		A_air.gases[g][MOLES] = 0
-	A_air.adjust_gas(/datum/gas/oxygen, 500)
-	A_air.set_temperature(T20C)
-	var/datum/gas_mixture/B_air = B.return_air()
-	for(var/datum/gas/g as anything in B_air.gases)
-		B_air.gases[g][MOLES] = 0
-	B_air.set_temperature(T20C)
-
-	// Drive a few cells to form the excited group.
-	dq_atmos_test_drive_ticks(list(A, B), 5)
-	TEST_ASSERT_NOTNULL(A.excited_group, "A.excited_group never formed after 5 ticks of delta")
-	var/datum/excited_group/EG = A.excited_group
-
-	// Manually invoke dismantle (the proc SSair fires after the quiet window).
-	EG.dismantle()
-
-	TEST_ASSERT_NULL(A.excited_group, "A.excited_group not cleared by EG.dismantle()")
-	TEST_ASSERT_NULL(B.excited_group, "B.excited_group not cleared by EG.dismantle()")
-
-	for(var/datum/gas/g as anything in A_air.gases)
-		A_air.gases[g][MOLES] = 0
-	for(var/datum/gas/g as anything in B_air.gases)
-		B_air.gases[g][MOLES] = 0
 
 
 // =====================================================================
@@ -4934,8 +4780,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	TEST_ASSERT_NOTNULL(T, "no floor for siphon test")
 
 	var/datum/gas_mixture/turf_air = T.return_air()
-	for(var/datum/gas/g as anything in turf_air.gases)
-		turf_air.gases[g][MOLES] = 0
+	for(var/datum/gas/g as anything in turf_air.get_gases())
+		turf_air.set_moles(g, 0)
 	// Mixed atmosphere — N2, O2, CO2 — none of which a scrubber would
 	// normally filter. Siphon mode should grab all three.
 	turf_air.adjust_gas(/datum/gas/nitrogen, 200)
@@ -4975,8 +4821,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	TEST_ASSERT(abs(turf_lost - pipe_total) < 1, \
 		"siphon conservation broken: turf lost [turf_lost], pipe got [pipe_total]")
 
-	for(var/datum/gas/g as anything in turf_air.gases)
-		turf_air.gases[g][MOLES] = 0
+	for(var/datum/gas/g as anything in turf_air.get_gases())
+		turf_air.set_moles(g, 0)
 	qdel(S)
 
 
@@ -4995,10 +4841,10 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 
 	var/datum/gas_mixture/A_air = A.return_air()
 	var/datum/gas_mixture/B_air = B.return_air()
-	for(var/datum/gas/g as anything in A_air.gases)
-		A_air.gases[g][MOLES] = 0
-	for(var/datum/gas/g as anything in B_air.gases)
-		B_air.gases[g][MOLES] = 0
+	for(var/datum/gas/g as anything in A_air.get_gases())
+		A_air.set_moles(g, 0)
+	for(var/datum/gas/g as anything in B_air.get_gases())
+		B_air.set_moles(g, 0)
 	A_air.adjust_gas(/datum/gas/nitrogen, 200)
 	A_air.set_temperature(T20C)
 	B_air.adjust_gas(/datum/gas/oxygen, 200)
@@ -5027,10 +4873,10 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	TEST_ASSERT(abs((a_o2 + b_o2) - initial_total_o2) < 1, \
 		"O2 mass lost during diffusion: [initial_total_o2] → [a_o2 + b_o2]")
 
-	for(var/datum/gas/g as anything in A_air.gases)
-		A_air.gases[g][MOLES] = 0
-	for(var/datum/gas/g as anything in B_air.gases)
-		B_air.gases[g][MOLES] = 0
+	for(var/datum/gas/g as anything in A_air.get_gases())
+		A_air.set_moles(g, 0)
+	for(var/datum/gas/g as anything in B_air.get_gases())
+		B_air.set_moles(g, 0)
 
 
 // =====================================================================
@@ -5075,8 +4921,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	// be in SSair.active_turfs (via air_update_turf → add_to_active).
 	TEST_ASSERT(A.air.get_moles(/datum/gas/plasma) > initial_a_plasma + 50, \
 		"A didn't accept the donor plasma after assume_air: [A.air.get_moles(/datum/gas/plasma)]")
-	TEST_ASSERT(A in SSair.active_turfs, \
-		"A not in SSair.active_turfs after assume_air — air_update_turf/add_to_active broken")
+	// (turf activity is Rust-side now; the real proof is that B receives gas below.)
 
 	// Sleep to let the live Master.Loop fire SSair normally. No state hacking.
 	// Guard: SSair must be genuinely TICKING, not frozen/starved. The old
@@ -5095,10 +4940,10 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 		"plasma DID NOT SPREAD to adjacent turf B after [ticks_advanced] real SSair ticks: A=[A.air.get_moles(/datum/gas/plasma)] B=[final_b_plasma]. The atmos engine isn't moving gas under normal Master.Loop firing — THIS IS THE PRODUCTION BUG.")
 
 	// Cleanup so other tests don't see leftover plasma.
-	for(var/datum/gas/g as anything in A.air.gases)
-		A.air.gases[g][MOLES] = 0
-	for(var/datum/gas/g as anything in B.air.gases)
-		B.air.gases[g][MOLES] = 0
+	for(var/datum/gas/g as anything in A.air.get_gases())
+		A.air.set_moles(g, 0)
+	for(var/datum/gas/g as anything in B.air.get_gases())
+		B.air.set_moles(g, 0)
 
 
 /// True end-to-end production scenario: spawn a phoron canister on an open
@@ -5115,10 +4960,10 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	var/turf/open/B = pair[2]
 
 	// Clear A and B to a known state so the canister's release is observable.
-	for(var/datum/gas/g as anything in A.air.gases)
-		A.air.gases[g][MOLES] = 0
-	for(var/datum/gas/g as anything in B.air.gases)
-		B.air.gases[g][MOLES] = 0
+	for(var/datum/gas/g as anything in A.air.get_gases())
+		A.air.set_moles(g, 0)
+	for(var/datum/gas/g as anything in B.air.get_gases())
+		B.air.set_moles(g, 0)
 	A.air.set_temperature(T20C)
 	B.air.set_temperature(T20C)
 
@@ -5145,10 +4990,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	TEST_ASSERT(final_a_plasma > initial_a_plasma + 1, \
 		"canister DID NOT release plasma onto A after 30 SSair ticks: A=[final_a_plasma]. canister.process() not running or not pumping.")
 
-	// A must be in active_turfs after canister released gas into it.
-	// Without this, SSair has nothing to process and gas can't spread.
-	TEST_ASSERT(A in SSair.active_turfs, \
-		"A not in SSair.active_turfs after canister release — canister.process pumped gas into the turf but didn't enroll it. SSair will never process this turf. THIS IS THE PLAYER-VISIBLE PRODUCTION BUG.")
+	// (turf enrollment is Rust-side now; the real proof is gas reaching B below.)
 
 	TEST_ASSERT(final_b_plasma > initial_b_plasma + 0.1, \
 		"plasma DID NOT spread from canister-released A to adjacent B: A=[final_a_plasma] B=[final_b_plasma]. Even though A has plasma, SSair never spread it. THIS IS THE PRODUCTION BUG players see.")
@@ -5156,10 +4998,10 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	// Cleanup
 	Can.valve_open = FALSE
 	qdel(Can)
-	for(var/datum/gas/g as anything in A.air.gases)
-		A.air.gases[g][MOLES] = 0
-	for(var/datum/gas/g as anything in B.air.gases)
-		B.air.gases[g][MOLES] = 0
+	for(var/datum/gas/g as anything in A.air.get_gases())
+		A.air.set_moles(g, 0)
+	for(var/datum/gas/g as anything in B.air.get_gases())
+		B.air.set_moles(g, 0)
 
 
 /// After assume_air, update_visuals must produce a visible overlay on the
@@ -5181,8 +5023,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	// LINDA_turf_tile.dm), so on such a turf adding more plasma wouldn't grow
 	// vis_contents and the assertion would spuriously fail. Zero the turf's gases
 	// and refresh visuals first to get a clean, overlay-free baseline.
-	for(var/datum/gas/g as anything in T.air.gases)
-		T.air.gases[g][MOLES] = 0
+	for(var/datum/gas/g as anything in T.air.get_gases())
+		T.air.set_moles(g, 0)
 	T.update_visuals()
 
 	// Snapshot the (now clean) overlay state.
@@ -5217,8 +5059,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 		"no plasma overlay (icon_state '[expected_overlay]') in atmos_overlay_types after assume_air — turf overlays grew but not with the plasma gas overlay")
 
 	// Cleanup
-	for(var/datum/gas/g as anything in T.air.gases)
-		T.air.gases[g][MOLES] = 0
+	for(var/datum/gas/g as anything in T.air.get_gases())
+		T.air.set_moles(g, 0)
 	T.update_visuals()
 
 

@@ -203,12 +203,23 @@
 /turf/air_update_turf(update = FALSE, remove = FALSE)
 	if(!SSair.initialized) // I'm sorry for polutting user code, I'll do 10 hail giacom's
 		return
+	// Under the DM engine `remove` meant "deactivate this turf" (excited = FALSE);
+	// it never destroyed the turf's air. Auxmos owns activity now, so `remove` no
+	// longer needs a distinct arena action — a live turf that stopped being able to
+	// share simply falls out of processing on its own once its (rebuilt) adjacency
+	// shows no neighbours. Genuine air teardown (a turf becoming a wall) goes
+	// through /turf/open/Destroy -> remove_from_active -> update_air_ref(-1), not
+	// this proc. So both cases here just refresh the arena registration + adjacency.
+	//
+	// Register the air ref FIRST — auxmos' update_adjacencies can only attach edges
+	// to turfs already present in the arena, so the air ref must land before the
+	// adjacency push.
+	update_air_ref(0)
 	if(update)
 		immediate_calculate_adjacent_turfs()
-	if(remove)
-		SSair.remove_from_active(src)
-	else
-		SSair.add_to_active(src)
+		// Push the freshly-rebuilt adjacency to the Rust arena so auxmos' FDM sees
+		// the new neighbour set on its next process_turfs cycle.
+		__update_auxtools_turf_adjacency_info()
 
 /atom/movable/proc/move_update_air(turf/target_turf)
 	if(isturf(target_turf))
@@ -228,5 +239,5 @@
 	var/datum/gas_mixture/turf_mixture = SSair.parse_gas_string(text, /datum/gas_mixture/turf)
 
 	air.merge(turf_mixture)
-	archive()
+	// archive() removed — turf FDM archiving is Rust-side now.
 	SSair.add_to_active(src)

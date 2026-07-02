@@ -248,7 +248,7 @@
 	var/combined_heat_capacity = current_heat_capacity + air_heat_capacity
 	if(combined_heat_capacity > 0)
 		var/combined_energy = T20C*current_heat_capacity + air_heat_capacity*air_contents.temperature
-		air_contents.temperature = combined_energy/combined_heat_capacity
+		air_contents.set_temperature(combined_energy/combined_heat_capacity)
 
 /obj/machinery/atmospherics/unary/cryo_cell/proc/expel_gas()
 	if(air_contents.total_moles() < 1)

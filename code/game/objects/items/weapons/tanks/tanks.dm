@@ -62,8 +62,8 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 
 	src.init_proxy()
 	src.air_contents = new /datum/gas_mixture()
-	src.air_contents.volume = volume //liters
-	src.air_contents.temperature = T20C
+	src.air_contents.set_volume(volume) //liters
+	src.air_contents.set_temperature(T20C)
 	update_gauge()
 
 /obj/item/tank/Destroy()
@@ -553,7 +553,7 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 	src.air_contents.adjust_gas(GAS_O2, (oxygen_amt) - LINDA_GAS_AMT(src.air_contents, GAS_O2))
 	// update_values() removed; no-op under LINDA.
 	src.valve_welded = 1
-	src.air_contents.temperature = PHORON_MINIMUM_BURN_TEMPERATURE-1
+	src.air_contents.set_temperature(PHORON_MINIMUM_BURN_TEMPERATURE-1)
 
 	src.wired = 1
 

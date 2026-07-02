@@ -1,0 +1,5 @@
+author: "ethan"
+delete-after: true
+changes:
+  - refactor: "SSair now drives turf gas processing through the auxmos Rust arena (FDM sharing, excited groups, equalize) instead of the DM active-turf loop."
+  - code_imp: "Turfs register their air ref and adjacency graph with the Rust atmos arena on init/change; the DM superconduction engine is retired pending the auxmos heat subsystem."

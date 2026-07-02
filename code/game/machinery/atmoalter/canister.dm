@@ -429,7 +429,7 @@ update_flag
 	. = ..()
 
 	air_contents.adjust_gas(GAS_O2, MolesForPressure())
-	air_contents.temperature = 80
+	air_contents.set_temperature(80)
 	update_icon()
 
 /obj/machinery/portable_atmospherics/canister/nitrous_oxide/Initialize(mapload)

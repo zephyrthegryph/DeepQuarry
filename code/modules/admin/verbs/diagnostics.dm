@@ -8,12 +8,8 @@ ADMIN_VERB(air_report, R_DEBUG, "Show Air Report", "Displays the current atmos s
 		tgui_alert_async(user, "SSair not ready.", "Air Report")
 		return
 
-	var/active_turfs_total = length(SSair.active_turfs)
-	var/active_on_main_station = 0
-	for(var/turf/T as anything in SSair.active_turfs)
-		if(T.z in using_map.station_levels)
-			active_on_main_station++
-
+	// Active turfs / excited groups live in the Rust arena now and aren't
+	// enumerable from DM; report the per-tick auxmos counters SSair mirrors back.
 	var/hotspots = 0
 	for(var/obj/effect/hotspot/H in world)
 		if(!QDELETED(H))
@@ -22,9 +18,9 @@ ADMIN_VERB(air_report, R_DEBUG, "Show Air Report", "Displays the current atmos s
 	var/output = {"<B>AIR SYSTEMS REPORT</B><HR>
 <B>General Processing Data</B><BR>
 	Cycle: [SSair.times_fired]<BR>
-	Active turfs: [active_turfs_total]<BR>
-	&nbsp;&nbsp;on station: [active_on_main_station]<BR>
-	Excited groups: [length(SSair.excited_groups)]<BR>
+	Turfs processed (last tick): [SSair.num_group_turfs_processed]<BR>
+	Equalized (last tick): [SSair.num_equalize_processed]<BR>
+	Low/High pressure turfs: [SSair.low_pressure_turfs]/[SSair.high_pressure_turfs]<BR>
 <BR>
 <B>Special Processing Data</B><BR>
 	Hotspots (active fires): [hotspots]<BR>
