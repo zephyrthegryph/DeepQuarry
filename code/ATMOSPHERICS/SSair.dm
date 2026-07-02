@@ -203,8 +203,13 @@ SUBSYSTEM_DEF(air)
 	// (the tile that RECEIVED gas, as opposed to the one a machine injected into,
 	// relies entirely on this callback). Draining here guarantees those run; it's a
 	// no-op when the queue is empty.
+	// Floor the drain budget: when the arena's post_process floods the queue (e.g. the
+	// round-start pass where every turf's vis hash flips from its 0 initial), a 1 ms
+	// slice can't keep up and real per-turf visual/react callbacks queue behind the
+	// backlog indefinitely. process_callbacks_for_millis returns as soon as the queue
+	// empties, so this floor only actually spends time when there IS a backlog.
 	if(initialized)
-		finish_turf_processing_auxtools(SSAIR_REMAINING_MS)
+		finish_turf_processing_auxtools(max(SSAIR_REMAINING_MS, 4))
 
 	if(currentpart == SSAIR_PIPENETS || !resumed)
 		timer = TICK_USAGE_REAL
