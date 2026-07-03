@@ -64,14 +64,28 @@ arena, and the atmospherics unit-test suite is **fully green**:
   each fire with a floored budget (`SSair.dm`).
 - **Panic hazard**: `byondapi_stack_trace` logs deduped (was flooding).
 
-## Known-remaining (not blocking; pre-existing scope)
+## Hardening done
 
-- **Rust panic-safety** (Task 1, deferred): auxmos binds are not `catch_unwind`-wrapped,
-  so a missing string/callback is a hard crash rather than a recoverable DM runtime.
-- **Superconductivity / heat-conduction**: feature added to `verdigris/Cargo.toml`
-  (`superconductivity`) but the baked `.so` predates it; a `docker build` is needed to
-  pick it up. The `.rs` source is otherwise identical to the baked `.so`, so the
-  cutover's behaviour above is what the running library does.
+- **Rust panic-safety (Task 1) — DONE.** Every one of the 57 auxmos FFI binds is now
+  wrapped in `catch_unwind` via a new `#[auxmacros::panic_safe]` attribute
+  (`verdigris/atmos/crates/auxmacros/src/lib.rs`), applied directly under each
+  `#[byondapi::bind(...)]`. A panic inside a bind (a bad DM arg, a missing compiled
+  string, an out-of-bounds index, an `unwrap` on None) is now converted to an `Err`
+  that byondapi routes to `/proc/byondapi_stack_trace` (logged deduped) instead of
+  unwinding across the `extern "C"` boundary and aborting DreamDaemon.
+
+## Known-remaining (not blocking; scoped out)
+
+- **Superconductivity / heat-conduction — DISABLED (unported).**
+  `verdigris/atmos/src/turfs/superconduct.rs` is 490 lines of pre-byondapi auxtools
+  code (`byondapi_hooks::bind`, magic `src`, `#[init(partial)]`/`#[shutdown]`,
+  `src.raw.data.id`, `auxtools::ByondValue::world()`/`globals()`,
+  `src.read_number("..")`). It does not compile under byondapi 0.4.x and was never
+  built. The `superconductivity` cargo feature is turned OFF so the build is green and
+  matches the running library. Enabling it is a self-contained subsystem project: port
+  that whole file to byondapi, then wire the DM side (a `process_turf_heat` SSair step,
+  turf `thermal_conductivity`/`heat_capacity`/`initial_temperature` vars, a
+  `return_temperature` turf hook).
 - The DM `.temperature` mirror is best-effort; correctness-sensitive reads should use
   `air.return_temperature()`.
 

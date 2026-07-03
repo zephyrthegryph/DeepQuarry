@@ -22,10 +22,17 @@ rayon = "1.10.0"
 # (verdigris/build-linux.sh / build-windows.sh, and CI integration tests) is
 # the real validation.
 [target.'cfg(target_arch = "x86")'.dependencies]
-# superconductivity: full-auxmos moves DM super_conduct/consider_superconductivity
-# (LINDA_turf_tile.dm) into Rust; update_air_ref/hook_infos call the superconduct
-# hooks. reaction_hooks stays OFF — reactions run in DM (see doc/auxmos_wiring_plan.md).
-auxmos = { path = "../atmos", default-features = false, features = ["turf_processing", "katmos", "katmos_slow_decompression", "superconductivity"] }
+# superconductivity: DISABLED. code/atmos/src/turfs/superconduct.rs is unported
+# auxtools-era code (byondapi_hooks::bind, magic `src`, #[init(partial)]/#[shutdown],
+# src.raw.data.id, auxtools::ByondValue::world/globals, src.read_number("..")). It
+# does NOT compile under byondapi 0.4.x and was never built (the last successful .so
+# predates this feature being added). Enabling it needs a full byondapi port of that
+# file PLUS DM wiring (a process_turf_heat SSair step, turf thermal_conductivity/
+# heat_capacity/initial_temperature vars, and a return_temperature turf hook). That
+# is a self-contained subsystem project — left off so the build is green and matches
+# the running library. See doc/auxmos_cutover_status.md. reaction_hooks stays OFF too
+# (reactions run in DM — see doc/auxmos_wiring_plan.md).
+auxmos = { path = "../atmos", default-features = false, features = ["turf_processing", "katmos", "katmos_slow_decompression"] }
 
 [build-dependencies]
 bosion = "2.0.0"

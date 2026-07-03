@@ -2,6 +2,52 @@ use proc_macro2::{Ident, TokenStream};
 use quote::quote;
 use syn::spanned::Spanned;
 
+/// Wraps an FFI bind function body in `catch_unwind` so a panic (a bad DM arg, a
+/// missing compiled string, an out-of-bounds index, an `unwrap` on None) becomes a
+/// recoverable `Err` — which byondapi's bind macro then routes to
+/// `/proc/byondapi_stack_trace` (logged deduped) — instead of unwinding across the
+/// `extern "C"` boundary and aborting the whole DreamDaemon process.
+///
+/// Apply it BELOW `#[byondapi::bind(...)]` (so it transforms the fn body first, then
+/// bind wraps the result):
+/// ```ignore
+/// #[byondapi::bind("/proc/foo")]
+/// #[auxmacros::panic_safe]
+/// fn foo(src: ByondValue) -> Result<ByondValue> { ... }
+/// ```
+/// The function MUST return `eyre::Result<ByondValue>` (every auxmos bind does).
+#[proc_macro_attribute]
+pub fn panic_safe(
+	_: proc_macro::TokenStream,
+	item: proc_macro::TokenStream,
+) -> proc_macro::TokenStream {
+	let input = syn::parse_macro_input!(item as syn::ItemFn);
+	let attrs = &input.attrs;
+	let vis = &input.vis;
+	let sig = &input.sig;
+	let block = &input.block;
+	quote! {
+		#(#attrs)*
+		#vis #sig {
+			match ::std::panic::catch_unwind(::std::panic::AssertUnwindSafe(move || #block)) {
+				::std::result::Result::Ok(__panic_safe_result) => __panic_safe_result,
+				::std::result::Result::Err(__panic_safe_payload) => {
+					let __panic_safe_msg = __panic_safe_payload
+						.downcast_ref::<&str>()
+						.map(|__s| (*__s).to_string())
+						.or_else(|| __panic_safe_payload.downcast_ref::<::std::string::String>().cloned())
+						.unwrap_or_else(|| "unknown panic".to_string());
+					::std::result::Result::Err(::eyre::eyre!(
+						"panic caught in auxmos FFI bind: {}",
+						__panic_safe_msg
+					))
+				}
+			}
+		}
+	}
+	.into()
+}
+
 fn strip_mut_and_filter(arg: &syn::FnArg) -> Option<syn::FnArg> {
 	let syn::FnArg::Typed(pattype) = arg else {
 		return None;

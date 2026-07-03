@@ -417,6 +417,7 @@ where
 
 /// Returns: null. Updates turf air infos, whether the turf is closed, is space or a regular turf, or even a planet turf is decided here.
 #[byondapi::bind("/turf/proc/update_air_ref")]
+#[auxmacros::panic_safe]
 fn hook_register_turf(src: ByondValue, flag: ByondValue) -> Result<ByondValue> {
 	let id = src.get_ref()?;
 	let flag = flag.get_number()? as i32;
@@ -501,6 +502,7 @@ fn determine_turf_flag(src: &ByondValue) -> i32 {
 */
 /// Updates adjacency infos for turfs, only use this in immediateupdateturfs.
 #[byondapi::bind("/turf/proc/__update_auxtools_turf_adjacency_info")]
+#[auxmacros::panic_safe]
 fn hook_infos(src: ByondValue) -> Result<ByondValue> {
 	let id = src.get_ref()?;
 	with_turf_gases_write(|arena| -> Result<()> {
