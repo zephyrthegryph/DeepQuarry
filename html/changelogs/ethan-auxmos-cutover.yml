@@ -5,3 +5,5 @@ changes:
   - bugfix: "Fixed the station booting in vacuum (gas roster was registered after mapload parsed turf air)."
   - bugfix: "Fixed gas not spreading, equalising, or rendering on tiles reached purely by diffusion (arena turf adjacency is now pushed bidirectionally and gas-recipient tiles are enabled for visual/reaction processing)."
   - bugfix: "Fixed gas thruster thrust, pipe-network reconcile_air mass balance, and planetary-atmosphere pollution draining."
+  - code_imp: "Hardened the Rust atmospherics FFI: every bind is now panic-safe (a bad argument or internal error is logged and recovered instead of crashing the server)."
+  - server: "Fixed the verdigris (Rust atmos) build being broken by an enabled-but-unported superconductivity feature; it's now disabled so the library compiles."
