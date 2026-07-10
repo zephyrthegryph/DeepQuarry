@@ -313,6 +313,12 @@ GLOBAL_LIST_EMPTY(cached_maps)
 	. = _load_impl(x_offset, y_offset, z_offset, crop_map, no_changeturf, x_lower, x_upper, y_lower, y_upper, z_lower, z_upper, place_on_top, new_z)
 	Master.StopLoadingMap()
 
+// In unit-test builds the yield is compiled out: there are no clients to keep
+// the tick smooth for, and under a loaded MC these per-chunk stoplag()s turn a
+// 65k-turf runtime template load (expedition z-alloc) into ~9 minutes of sleeps.
+#ifdef UNIT_TESTS
+#define MAPLOADING_CHECK_TICK
+#else
 #define MAPLOADING_CHECK_TICK \
 	if(TICK_CHECK) { \
 		if(loading) { \
@@ -323,6 +329,7 @@ GLOBAL_LIST_EMPTY(cached_maps)
 			stoplag(); \
 		} \
 	}
+#endif
 
 // Do not call except via load() above.
 /datum/parsed_map/proc/_load_impl(x_offset, y_offset, z_offset, crop_map, no_changeturf, x_lower, x_upper, y_lower, y_upper, z_lower, z_upper, place_on_top, new_z)

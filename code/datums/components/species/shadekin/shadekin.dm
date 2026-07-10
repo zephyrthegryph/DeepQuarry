@@ -139,9 +139,15 @@
 	for(var/obj/effect/abstract/dark_maw/dm as anything in active_dark_maws) //if the component gets destroyed so does your precious maws
 		if(!QDELETED(dm))
 			qdel(dm)
-	if(owner.shadekin_display)
-		owner.shadekin_display.invisibility = INVISIBILITY_ABSTRACT //hide it
-	replace_shadekin_master()
+	// Only rebuild the owner's HUD when the component is removed from a LIVE mob
+	// (e.g. species change). During mob deletion, /mob/Destroy has already
+	// QDEL_NULL'd ability_master — replace_shadekin_master() would then allocate
+	// a fresh screen atom inside the dying mob (my_mob ref + contents residency +
+	// ability_master var = an immortal cycle that pins the mob against GC).
+	if(owner && !QDELING(owner))
+		if(owner.shadekin_display)
+			owner.shadekin_display.invisibility = INVISIBILITY_ABSTRACT //hide it
+		replace_shadekin_master()
 	active_dark_maws.Cut()
 	shadekin_abilities.Cut()
 	shadekin_ability_datums.Cut()

@@ -112,13 +112,13 @@ Thus, the two variables affect pump operation are set in New():
 	if((input_starting_moles < MINIMUM_MOLES_TO_PUMP  || output_starting_pressure > VOLUME_PUMP_MAX_OUTPUT_PRESSURE) && !overclocked)
 		return
 
-	var/transfer_ratio = transfer_rate / air1.volume
+	var/transfer_ratio = transfer_rate / air1.return_volume()
 	if(!transfer_ratio)
 		return
 
 	var/datum/gas_mixture/removed = air1.remove_ratio(transfer_ratio)
 	var/transfer_moles = removed.total_moles()
-	last_flow_rate = (transfer_moles/input_starting_moles)*air1.volume
+	last_flow_rate = (transfer_moles/input_starting_moles)*air1.return_volume()
 
 	// Some gases will leak if overclocked. Trade off for no pump limits.
 	if(overclocked)
@@ -214,7 +214,7 @@ Thus, the two variables affect pump operation are set in New():
 		update_use_power(!use_power)
 
 	if(signal.data["set_volume_rate"])
-		transfer_rate = between(0, text2num(signal.data["set_volume_rate"]), air1.volume)
+		transfer_rate = between(0, text2num(signal.data["set_volume_rate"]), air1.return_volume())
 
 	if(signal.data["status"])
 		broadcast_status()
@@ -332,5 +332,6 @@ Thus, the two variables affect pump operation are set in New():
 	to_chat(user, span_notice("You toggle the [name] [use_power ? "on" : "off"]."))
 	return CLICK_ACTION_SUCCESS
 
-#undef VOLUME_PUMP_MAX_OUTPUT_PRESSURE
-#undef VOLUME_PUMP_LEAK_AMOUNT
+// (No #undef here: VOLUME_PUMP_MAX_OUTPUT_PRESSURE / VOLUME_PUMP_LEAK_AMOUNT are
+// globals from __defines/atmospherics_linda/atmos_piping.dm now; undef'ing them
+// from a component file would break any later include that uses them.)

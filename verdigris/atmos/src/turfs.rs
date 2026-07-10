@@ -419,14 +419,33 @@ where
 #[byondapi::bind("/turf/proc/update_air_ref")]
 #[auxmacros::panic_safe]
 fn hook_register_turf(src: ByondValue, flag: ByondValue) -> Result<ByondValue> {
-	let id = src.get_ref()?;
 	let flag = flag.get_number()? as i32;
+	register_turf_impl(src, flag)?;
+	Ok(ByondValue::null())
+}
+
+/// Bulk form of hook_register_turf: takes a /list of turfs and registers each
+/// with the given flag in ONE FFI entry. Roundstart setup_allturfs used to make
+/// one call_ext per turf (~327k on a 5-z station) — the call dispatch overhead
+/// alone dominated SSair init.
+#[byondapi::bind("/proc/_auxmos_register_turfs_bulk")]
+#[auxmacros::panic_safe]
+fn hook_register_turfs_bulk(list: ByondValue, flag: ByondValue) -> Result<ByondValue> {
+	let flag = flag.get_number()? as i32;
+	for (turf, _) in list.iter()? {
+		register_turf_impl(turf, flag)?;
+	}
+	Ok(ByondValue::null())
+}
+
+fn register_turf_impl(src: ByondValue, flag: i32) -> Result<()> {
+	let id = src.get_ref()?;
 	if let Ok(blocks) = src.read_number_id(byond_string!("blocks_air")) {
 		if blocks > 0.0 {
 			with_turf_gases_write(|arena| arena.remove_turf(id));
 			#[cfg(feature = "superconductivity")]
 			superconduct::supercond_update_ref(src)?;
-			return Ok(ByondValue::null());
+			return Ok(());
 		}
 	}
 	if flag >= 0 {
@@ -475,7 +494,7 @@ fn hook_register_turf(src: ByondValue, flag: ByondValue) -> Result<ByondValue> {
 
 	#[cfg(feature = "superconductivity")]
 	superconduct::supercond_update_ref(src)?;
-	Ok(ByondValue::null())
+	Ok(())
 }
 
 /* will come back to you later
@@ -504,6 +523,22 @@ fn determine_turf_flag(src: &ByondValue) -> i32 {
 #[byondapi::bind("/turf/proc/__update_auxtools_turf_adjacency_info")]
 #[auxmacros::panic_safe]
 fn hook_infos(src: ByondValue) -> Result<ByondValue> {
+	infos_impl(src)?;
+	Ok(ByondValue::null())
+}
+
+/// Bulk form of hook_infos: pushes the adjacency graph for a whole /list of
+/// turfs in one FFI entry (see hook_register_turfs_bulk for why).
+#[byondapi::bind("/proc/_auxmos_update_adjacencies_bulk")]
+#[auxmacros::panic_safe]
+fn hook_infos_bulk(list: ByondValue) -> Result<ByondValue> {
+	for (turf, _) in list.iter()? {
+		infos_impl(turf)?;
+	}
+	Ok(ByondValue::null())
+}
+
+fn infos_impl(src: ByondValue) -> Result<ByondValue> {
 	let id = src.get_ref()?;
 	with_turf_gases_write(|arena| -> Result<()> {
 		if let Some(adjacent_list) = src

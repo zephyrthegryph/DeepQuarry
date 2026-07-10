@@ -14,7 +14,15 @@ default-members = ["verdigris"]
 # Inherited by atmos and its sub-crates (which were originally their own workspace).
 # See verdigris/atmos/UPSTREAM.md for context.
 [workspace.dependencies]
-byondapi = "0.4.11"
+# byondapi git-main (0.6.x, default feature byond-516-1682): the modern 516 ABI —
+# buffer-based Byond_LastError (no LastError deref crash) and correct 516 reference
+# handling (temp refs / DecTempRef / persistent off-thread refs). This targets BYOND
+# 516.1682+, which is why the runtime image is pinned to 516.1682 (see the Dockerfile /
+# build-*.sh). Pinned to a rev because 0.6.x is not yet published to crates.io; revisit
+# and switch to a crates.io version once one lands. Replaced the old vendored 0.4.11 +
+# LastError patch and the intermediate 0.5.14 attempt (0.5.14's 516-1651 needs a runtime
+# with DecTempRef but the *pointer* LastError — no single BYOND build satisfies both).
+byondapi = { git = "https://github.com/spacestation13/byondapi-rs", rev = "721dd4690b60954687e41d8691d0040f398d91a6" }
 coarsetime = "0.1.35"
 flume = "0.11.1"
 eyre = "0.6.12"

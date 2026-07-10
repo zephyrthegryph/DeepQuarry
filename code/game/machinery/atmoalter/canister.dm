@@ -215,9 +215,9 @@ update_flag
 		var/env_pressure = environment.return_pressure()
 		var/pressure_delta = release_pressure - env_pressure
 
-		if((air_contents.temperature > 0) && (pressure_delta > 0))
+		if((air_contents.return_temperature() > 0) && (pressure_delta > 0))
 			var/transfer_moles = calculate_transfer_moles(air_contents, environment, pressure_delta)
-			transfer_moles = min(transfer_moles, (release_flow_rate/air_contents.volume)*air_contents.total_moles()) //flow rate limit
+			transfer_moles = min(transfer_moles, (release_flow_rate/air_contents.return_volume())*air_contents.total_moles()) //flow rate limit
 
 			var/returnval = pump_gas_passive(src, air_contents, environment, transfer_moles)
 			if(returnval >= 0)
@@ -246,13 +246,13 @@ update_flag
 
 /obj/machinery/portable_atmospherics/canister/proc/return_temperature()
 	var/datum/gas_mixture/GM = src.return_air()
-	if(GM && GM.volume>0)
-		return GM.temperature
+	if(GM && GM.return_volume()>0)
+		return GM.return_temperature()
 	return 0
 
 /obj/machinery/portable_atmospherics/canister/proc/return_pressure()
 	var/datum/gas_mixture/GM = src.return_air()
-	if(GM && GM.volume>0)
+	if(GM && GM.return_volume()>0)
 		return GM.return_pressure()
 	return 0
 
@@ -295,8 +295,8 @@ update_flag
 		var/pressure_delta = min(10*ONE_ATMOSPHERE - env_pressure, (air_contents.return_pressure() - env_pressure)/2)
 		//Can not have a pressure delta that would cause environment pressure > tank pressure
 		var/transfer_moles = 0
-		if((air_contents.temperature > 0) && (pressure_delta > 0))
-			transfer_moles = pressure_delta*thejetpack.volume/(air_contents.temperature * R_IDEAL_GAS_EQUATION)//Actually transfer the gas
+		if((air_contents.return_temperature() > 0) && (pressure_delta > 0))
+			transfer_moles = pressure_delta*thejetpack.return_volume()/(air_contents.return_temperature() * R_IDEAL_GAS_EQUATION)//Actually transfer the gas
 			var/datum/gas_mixture/removed = air_contents.remove(transfer_moles)
 			thejetpack.merge(removed)
 			to_chat(user, "You pulse-pressurize your jetpack from the tank.")

@@ -147,10 +147,11 @@
 	if(get_integrity() < 50)
 		return SUPERMATTER_DANGER
 
-	if((get_integrity() < 100) || (air.temperature > CRITICAL_TEMPERATURE))
+	var/air_temperature = air.return_temperature()
+	if((get_integrity() < 100) || (air_temperature > CRITICAL_TEMPERATURE))
 		return SUPERMATTER_WARNING
 
-	if(air.temperature > (CRITICAL_TEMPERATURE * 0.8))
+	if(air_temperature > (CRITICAL_TEMPERATURE * 0.8))
 		return SUPERMATTER_NOTIFY
 
 	if(power > 5)
@@ -408,7 +409,7 @@
 	else
 		damage_archived = damage
 
-		damage = max( damage + min( ( (removed.temperature - CRITICAL_TEMPERATURE) / 150 ), damage_inc_limit ) , 0 )
+		damage = max( damage + min( ( (removed.return_temperature() - CRITICAL_TEMPERATURE) / 150 ), damage_inc_limit ) , 0 )
 		//Ok, 100% oxygen atmosphere = best reaction
 		//Maxes out at 100% oxygen pressure
 		oxygen = max(min((LINDA_GAS_AMT(removed, GAS_O2) - (LINDA_GAS_AMT(removed, GAS_N2) * NITROGEN_RETARDATION_FACTOR)) / xgm_total_moles(removed), 1), 0) // XGM mix.gas[id] dict read → LINDA_GAS_AMT macro; total_moles var → xgm_total_moles helper
@@ -426,7 +427,7 @@
 			icon_state = base_icon_state
 
 		temp_factor = ( (equilibrium_power/DECAY_FACTOR)**3 )/800
-		power = max( (removed.temperature * temp_factor) * oxygen + power, 0)
+		power = max( (removed.return_temperature() * temp_factor) * oxygen + power, 0)
 
 		//We've generated power, now let's transfer it to the collectors for storing/usage
 		//transfer_energy()
@@ -437,16 +438,16 @@
 		var/heat_capacity = removed.heat_capacity()
 		// adjust_multi was XGM; LINDA's gas_mixture has adjust_gas per-call.
 		removed.adjust_gas(GAS_PHORON, max(device_energy / PHORON_RELEASE_MODIFIER, 0))
-		removed.adjust_gas(GAS_O2, max((device_energy + removed.temperature - T0C) / OXYGEN_RELEASE_MODIFIER, 0))
+		removed.adjust_gas(GAS_O2, max((device_energy + removed.return_temperature() - T0C) / OXYGEN_RELEASE_MODIFIER, 0))
 
 		var/thermal_power = THERMAL_RELEASE_MODIFIER * device_energy
 		if (debug)
 			var/heat_capacity_new = removed.heat_capacity()
 			visible_message("[src]: Releasing [round(thermal_power)] W.")
-			visible_message("[src]: Releasing additional [round((heat_capacity_new - heat_capacity)*removed.temperature)] W with exhaust gasses.")
+			visible_message("[src]: Releasing additional [round((heat_capacity_new - heat_capacity)*removed.return_temperature())] W with exhaust gasses.")
 
 		removed.add_thermal_energy(thermal_power)
-		removed.set_temperature(between(0, removed.temperature, 10000))
+		removed.set_temperature(between(0, removed.return_temperature(), 10000))
 
 		env.merge(removed)
 
@@ -566,7 +567,7 @@
 		data["ambient_temp"] = 0
 		data["ambient_pressure"] = 0
 	else
-		data["ambient_temp"] = round(env.temperature)
+		data["ambient_temp"] = round(env.return_temperature())
 		data["ambient_pressure"] = round(env.return_pressure())
 	data["detonating"] = grav_pulling
 

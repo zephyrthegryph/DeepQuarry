@@ -628,10 +628,17 @@
 		var/datum/gas_mixture/environment = T?.return_air()
 		if(environment)
 			for(var/i=1;i<=stats.len;i++)
-				if(stats[i] == "pressure")
-					rstats[i] = environment.return_pressure()
-				else
-					rstats[i] = environment.vars[stats[i]]
+				switch(stats[i])
+					// temperature/volume/pressure are arena-backed accessors now, not DM
+					// vars; a dynamic environment.vars["temperature"] read would runtime.
+					if("pressure")
+						rstats[i] = environment.return_pressure()
+					if("temperature")
+						rstats[i] = environment.return_temperature()
+					if("volume")
+						rstats[i] = environment.return_volume()
+					else
+						rstats[i] = environment.vars[stats[i]]
 		else if(istype(T, /turf/simulated))
 			rstats = null // Exclude wall/door/etc — no air to sample.
 		temps[direction] = rstats

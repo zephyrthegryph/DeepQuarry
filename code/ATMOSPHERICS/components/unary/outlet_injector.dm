@@ -67,8 +67,8 @@
 	var/power_draw = -1
 	var/datum/gas_mixture/environment = loc.return_air()
 
-	if(environment && air_contents.temperature > 0)
-		var/transfer_moles = (volume_rate/air_contents.volume)*air_contents.total_moles() //apply flow rate limit
+	if(environment && air_contents.return_temperature() > 0)
+		var/transfer_moles = (volume_rate/air_contents.return_volume())*air_contents.total_moles() //apply flow rate limit
 		power_draw = pump_gas(src, air_contents, environment, transfer_moles, power_rating)
 
 	if (power_draw >= 0)
@@ -97,7 +97,7 @@
 
 	injecting = 1
 
-	if(air_contents.temperature > 0)
+	if(air_contents.return_temperature() > 0)
 		var/power_used = pump_gas(src, air_contents, environment, air_contents.total_moles(), power_rating)
 		use_power(power_used)
 		// same enroll-turf reason as in process().
@@ -154,7 +154,7 @@
 
 	if(signal.data["set_volume_rate"])
 		var/number = text2num(signal.data["set_volume_rate"])
-		volume_rate = between(0, number, air_contents.volume)
+		volume_rate = between(0, number, air_contents.return_volume())
 
 	if(signal.data["status"])
 		spawn(2)

@@ -317,7 +317,7 @@ GLOBAL_LIST_EMPTY_TYPED(running_demand_events, /datum/event/supply_demand)
 		unpickedTypes -= gasId
 		// XGM mix.gas[id] = X → LINDA set_moles. gasId is a string XGM id.
 		var/datum/gas/_gtype = mixture.get_xgm_id_for_gas(gasId)
-		if(_gtype) mixture.set_moles(_gtype, (rand(1,1000) * mixture.volume) / (R_IDEAL_GAS_EQUATION * mixture.temperature))
+		if(_gtype) mixture.set_moles(_gtype, (rand(1,1000) * mixture.return_volume()) / (R_IDEAL_GAS_EQUATION * mixture.return_temperature()))
 	// mixture.update_values() removed; no-op under LINDA.
 	var/datum/supply_demand_order/gas/O = new(qty = 1)
 	O.mixture = mixture

@@ -36,7 +36,8 @@
 		for(var/datum/gas/g as anything in environment.get_gases())
 			var/moles = environment.get_moles(g)
 			to_chat(user, span_notice("[initial(g.name)]: [round((moles / total_moles) * 100)]%"))
-		to_chat(user, span_notice("Temperature: [round(environment.temperature-T0C,0.1)]&deg;C ([round(environment.temperature,0.1)]K)"))
+		var/environment_temperature = environment.return_temperature()
+		to_chat(user, span_notice("Temperature: [round(environment_temperature-T0C,0.1)]&deg;C ([round(environment_temperature,0.1)]K)"))
 
 /obj/item/boop_module/afterattack(obj/O, mob/user as mob, proximity)
 	if(!proximity)

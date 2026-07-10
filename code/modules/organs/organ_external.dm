@@ -99,16 +99,19 @@
 		QDEL_LIST(wounds)
 
 	if(children)
-		for(var/obj/item/organ/external/C in children)
-			children -= C
+		// Iterate a snapshot: shrinking `children` mid-loop makes DM skip entries,
+		// leaving child limbs never-Destroy()'d (their owner ref then pins the mob).
+		for(var/obj/item/organ/external/C in children.Copy())
 			C.parent = null
 			qdel(C)
+		children = null
 
 	if(internal_organs)
-		for(var/obj/item/organ/O in internal_organs)
-			internal_organs -= O
+		// Same snapshot rule — organs remove themselves from this list in Destroy().
+		for(var/obj/item/organ/O in internal_organs.Copy())
 			if(isobj(O))
 				qdel(O)
+		internal_organs = null
 
 	if(splinted && splinted.loc == src)
 		splinted.loc = null

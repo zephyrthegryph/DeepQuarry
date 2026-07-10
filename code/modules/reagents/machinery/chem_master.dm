@@ -459,13 +459,13 @@
 		if("add")
 			var/id = params["id"]
 			var/amount = text2num(params["amount"])
-			if(!id || !amount)
+			if(!id || !amount || amount <= 0) // negative amounts pass a bare falsy check and reach trans_id_to
 				return
 			R.trans_id_to(src, id, amount)
 		if("remove")
 			var/id = params["id"]
 			var/amount = text2num(params["amount"])
-			if(!id || !amount)
+			if(!id || !amount || amount <= 0) // see "add" — reject crafted negative amounts
 				return
 			if(mode)
 				reagents.trans_id_to(beaker, id, amount)

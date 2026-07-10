@@ -87,8 +87,8 @@
 				environment_temperature = loc_as_turf.temperature
 			else
 				var/datum/gas_mixture/environment = loc_as_turf.return_air()
-				environment_temperature = environment.temperature
-			if((abs(environment_temperature-pipe_air.temperature) > minimum_temperature_difference) || (loc_as_turf.special_temperature))
+				environment_temperature = environment.return_temperature()
+			if((abs(environment_temperature-pipe_air.return_temperature()) > minimum_temperature_difference) || (loc_as_turf.special_temperature))
 				parent.temperature_interact(loc, volume, thermal_conductivity)
 		else if(istype(loc, /turf/space/))
 			parent.radiate_heat_to_space(surface, 1)
@@ -96,7 +96,7 @@
 		if(has_buckled_mobs())
 			for(var/mob/living/L as anything in buckled_mobs)
 				var/hc = pipe_air.heat_capacity()
-				var/avg_temp = (pipe_air.temperature * hc + L.bodytemperature * 3500) / (hc + 3500)
+				var/avg_temp = (pipe_air.return_temperature() * hc + L.bodytemperature * 3500) / (hc + 3500)
 				pipe_air.set_temperature(avg_temp)
 				L.bodytemperature = avg_temp
 
@@ -106,13 +106,13 @@
 				if(istype(H) && H.species)
 					heat_limit = H.species.heat_level_3
 
-				if(pipe_air.temperature > heat_limit + 1)
-					L.apply_damage(4 * log(pipe_air.temperature - heat_limit), BURN, BP_TORSO)
+				if(pipe_air.return_temperature() > heat_limit + 1)
+					L.apply_damage(4 * log(pipe_air.return_temperature() - heat_limit), BURN, BP_TORSO)
 
 		//fancy radiation glowing
-		if(pipe_air.temperature && (icon_temperature > 500 || pipe_air.temperature > 500)) //start glowing at 500K
-			if(abs(pipe_air.temperature - icon_temperature) > 10)
-				icon_temperature = pipe_air.temperature
+		if(pipe_air.return_temperature() && (icon_temperature > 500 || pipe_air.return_temperature() > 500)) //start glowing at 500K
+			if(abs(pipe_air.return_temperature() - icon_temperature) > 10)
+				icon_temperature = pipe_air.return_temperature()
 
 				var/h_r = heat2color_r(icon_temperature)
 				var/h_g = heat2color_g(icon_temperature)

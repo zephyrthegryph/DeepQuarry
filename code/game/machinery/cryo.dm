@@ -71,11 +71,11 @@
 			process_occupant()
 
 	if(air_contents)
-		temperature_archived = air_contents.temperature
+		temperature_archived = air_contents.return_temperature()
 		heat_gas_contents()
 		expel_gas()
 
-	if(air_contents && abs(temperature_archived-air_contents.temperature) > 1)
+	if(air_contents && abs(temperature_archived-air_contents.return_temperature()) > 1)
 		network.update = 1
 
 	return 1
@@ -124,11 +124,12 @@
 		occupantData["bodyTemperature"] = occupant.bodytemperature
 	data["occupant"] = occupantData;
 
-	data["cellTemperature"] = round(air_contents.temperature)
+	var/air_temperature = air_contents.return_temperature()
+	data["cellTemperature"] = round(air_temperature)
 	data["cellTemperatureStatus"] = "good"
-	if(air_contents.temperature > T0C) // if greater than 273.15 kelvin (0 celcius)
+	if(air_temperature > T0C) // if greater than 273.15 kelvin (0 celcius)
 		data["cellTemperatureStatus"] = "bad"
-	else if(air_contents.temperature > 225)
+	else if(air_temperature > 225)
 		data["cellTemperatureStatus"] = "average"
 
 	data["isBeakerLoaded"] = beaker ? TRUE : FALSE
@@ -214,8 +215,9 @@
 	if(occupant)
 		if(occupant.stat >= DEAD)
 			return
-		occupant.bodytemperature += 2*(air_contents.temperature - occupant.bodytemperature)*current_heat_capacity/(current_heat_capacity + air_contents.heat_capacity())
-		occupant.bodytemperature = max(occupant.bodytemperature, air_contents.temperature) // this is so ugly i'm sorry for doing it i'll fix it later i promise
+		var/air_temperature = air_contents.return_temperature()
+		occupant.bodytemperature += 2*(air_temperature - occupant.bodytemperature)*current_heat_capacity/(current_heat_capacity + air_contents.heat_capacity())
+		occupant.bodytemperature = max(occupant.bodytemperature, air_temperature) // this is so ugly i'm sorry for doing it i'll fix it later i promise
 		occupant.set_stat(UNCONSCIOUS)
 		occupant.dir = SOUTH
 		if(occupant.bodytemperature < T0C)
@@ -247,7 +249,7 @@
 	var/air_heat_capacity = air_contents.heat_capacity()
 	var/combined_heat_capacity = current_heat_capacity + air_heat_capacity
 	if(combined_heat_capacity > 0)
-		var/combined_energy = T20C*current_heat_capacity + air_heat_capacity*air_contents.temperature
+		var/combined_energy = T20C*current_heat_capacity + air_heat_capacity*air_contents.return_temperature()
 		air_contents.set_temperature(combined_energy/combined_heat_capacity)
 
 /obj/machinery/atmospherics/unary/cryo_cell/proc/expel_gas()

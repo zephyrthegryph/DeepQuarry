@@ -49,6 +49,14 @@
 	. = ..()
 	substance_form_trigger(get_turf(src), src, SUB_TRIG_ENERGY)
 
+/obj/item/material/fire_act(exposed_temperature, exposed_volume)
+	. = ..()
+	// HEAT-triggered infusions (THERMAL-family substances) discharge when burned. The
+	// legacy fire_act that did this was tied to the removed health model; this clean
+	// override only emits the trigger (substance_form_trigger fast-outs on non-substance
+	// material items), closing the previously-dead SUB_TRIG_HEAT path.
+	substance_form_trigger(get_turf(src), src, SUB_TRIG_HEAT)
+
 /obj/item/material/attack_hand(mob/living/user)
 	. = ..()
 	substance_form_trigger(get_turf(src), user, SUB_TRIG_CONTACT)
@@ -69,7 +77,12 @@
 	if(!sm.infused_substance)
 		return
 	var/datum/substance/S = sm.infused_substance
-	substance_apply_effect(T, S.family, S.energy, S.volatility, cause)
+	// Deferred: this fires from destruction hooks (walls.dm, /atom/atom_destruction).
+	// The effect can destroy other substance objs, which re-enter this proc — so a
+	// room of substance structures collapsing in one explosion() must not cascade
+	// synchronously through a single call stack. INVOKE_ASYNC breaks the recursion for
+	// every family (the corrode/blast in-effect deferral only covered those two).
+	INVOKE_ASYNC(GLOBAL_PROC_REF(substance_apply_effect), T, S.family, S.energy, S.volatility, cause)
 
 // Called from /atom/atom_destruction for any obj made of a substance material.
 /proc/substance_on_destruction(atom/A)

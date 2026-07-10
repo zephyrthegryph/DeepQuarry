@@ -40,8 +40,8 @@ Thus, the two variables affect pump operation are set in New():
 /obj/machinery/atmospherics/binary/pump/Initialize(mapload)
 	. = ..()
 
-	air1.volume = ATMOS_DEFAULT_VOLUME_PUMP
-	air2.volume = ATMOS_DEFAULT_VOLUME_PUMP
+	air1.set_volume(ATMOS_DEFAULT_VOLUME_PUMP)
+	air2.set_volume(ATMOS_DEFAULT_VOLUME_PUMP)
 	if(frequency)
 		set_frequency(frequency)
 
@@ -101,7 +101,7 @@ Thus, the two variables affect pump operation are set in New():
 	var/power_draw = -1
 	var/pressure_delta = target_pressure - air2.return_pressure()
 
-	if(pressure_delta > 0.01 && air1.temperature > 0)
+	if(pressure_delta > 0.01 && air1.return_temperature() > 0)
 		//Figure out how much gas to transfer to meet the target pressure.
 		var/transfer_moles = calculate_transfer_moles(air1, air2, pressure_delta, (network2)? network2.volume : 0)
 		power_draw = pump_gas(src, air1, air2, transfer_moles, power_rating)

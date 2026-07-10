@@ -113,7 +113,7 @@
 	//acounts for changes in temperature
 	var/turf/parent = parent_type
 	if(temperature != initial(temperature) || temperature != initial(parent.temperature))
-		mix.set_temperature(temperature) // arena-backed write; refreshes the DM mirror
+		mix.set_temperature(temperature) // arena-backed write (no DM mirror under the opaque-handle model)
 
 	return mix
 
@@ -246,12 +246,11 @@
  * keeps the DM path and the Rust-triggered path identical. Empty air clears.
  */
 /turf/open/proc/set_visuals(list/_rust_overlay_types)
-	// Best-effort DM temperature-mirror sync (the Rust FDM keeps temperature in the
-	// arena; this fires for turfs auxmos flagged as interesting). Correctness-
-	// sensitive reads should still use air.return_temperature().
-	if(air)
-		air.temperature = air.return_temperature()
-
+	// (Formerly refreshed a DM temperature mirror here. Under the /tg/ opaque-handle
+	// model there is no mirror — the arena is authoritative and read via
+	// return_temperature() — so this per-turf sync is gone. Do NOT re-add a
+	// set_temperature() here: writing the arena its own value re-marks the turf active
+	// and causes endless re-processing/re-visualising.)
 	var/list/new_overlay_types
 	if(air)
 		// get_gases() returns an assoc id -> moles (id = gas-type path). Per-gas meta
@@ -379,20 +378,17 @@
 // LINDA's DM superconduction engine (super_conduct, conductivity_directions,
 // neighbor_conduct_with_src, temperature_share_open_to_solid,
 // share_temperature_mutual_solid, radiate_to_spess, finish_superconduction,
-// consider_superconductivity) is DELETED. auxmos ships a Rust heat subsystem
-// (process_turf_heat / return_temperature bind, superconductivity feature) but it
-// is NOT wired into SSair.fire() by this cutover — heat conduction between turfs
-// is currently inert. Reviving it means adding a process_turf_heat fire() step and
-// declaring the turf vars it reads (conductivity_blocked_directions,
-// initial_temperature, should_conduct_to_space, thermal_conductivity, heat_capacity).
+// consider_superconductivity) is DELETED. Heat conduction now runs in RUST and
+// IS live: the auxmos superconductivity feature is compiled in and SSair.fire()
+// drives it via the SSAIR_SUPERCONDUCTIVITY step (process_turf_heat() — see
+// SSair.dm). Turf heat lives in the Rust superconductivity arena; read/write it
+// via /turf/proc/return_temperature() / set_temperature(), never a raw var.
 //
 // should_conduct_to_space() is a Rust->DM callback: auxmos superconduct.rs's
-// supercond_update_ref() invokes turf.should_conduct_to_space() by name via call_id to
-// decide whether a turf radiates heat to space. Even though the heat subsystem isn't wired
-// into fire() yet, the proc name must exist so that if/when it is, the call_id resolves
-// instead of hitting a NonExistentString / missing-proc panic. STUB: reports whether this
-// turf is space-exposed. /turf/space (and the base /turf, treated as unsimulated) return
-// TRUE; simulated open turfs return FALSE. Adjust when the heat subsystem is revived.
+// supercond_update_ref() invokes turf.should_conduct_to_space() by name via
+// call_id to decide whether a turf radiates heat to space. Reports whether this
+// turf is space-exposed: /turf/space (and the base /turf, treated as
+// unsimulated) return TRUE; simulated open turfs return FALSE.
 
 /// Rust superconductivity hook: TRUE if this turf should radiate heat directly to space.
 /turf/proc/should_conduct_to_space()

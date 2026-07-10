@@ -647,7 +647,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 		for(var/datum/gas/g as anything in environment.get_gases())
 			var/_moles = environment.get_moles(g)
 			gas_analyzing += "[initial(g.name)]: [round((_moles / total_moles) * 100)]% ([round(_moles, 0.01)] moles)"
-		gas_analyzing += "Temperature: [round(environment.temperature-T0C,0.1)]&deg;C ([round(environment.temperature,0.1)]K)"
+		gas_analyzing += "Temperature: [round(environment.return_temperature()-T0C,0.1)]&deg;C ([round(environment.return_temperature(),0.1)]K)"
 		gas_analyzing += "Heat Capacity: [round(environment.heat_capacity(),0.1)]"
 	to_chat(src, span_notice("[jointext(gas_analyzing, "<br>")]"))
 /*

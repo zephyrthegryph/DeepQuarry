@@ -92,6 +92,7 @@
 //New Vest 4 pocket storage and badge toggles, until suit accessories are a thing.
 /obj/item/clothing/suit/storage/vest/heavy/Initialize(mapload)
 	. = ..()
+	qdel(pockets) // Parent Initialize already made one; don't orphan it in contents.
 	pockets = new/obj/item/storage/internal(src)
 	pockets.max_w_class = ITEMSIZE_SMALL
 	pockets.max_storage_space = ITEMSIZE_COST_SMALL * 4

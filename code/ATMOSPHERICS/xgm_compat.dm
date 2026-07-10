@@ -64,7 +64,7 @@
 	var/old_total = total_moles()
 	adjust_moles(gas_type, moles)
 	if (old_total > 0)
-		set_temperature((temperature * old_total + temp * moles) / (old_total + moles))
+		set_temperature((return_temperature() * old_total + temp * moles) / (old_total + moles))
 	else
 		set_temperature(temp)
 
@@ -73,7 +73,7 @@
 	var/cap = heat_capacity()
 	if (cap <= 0)
 		return
-	set_temperature((temperature * cap + joules) / cap)
+	set_temperature((return_temperature() * cap + joules) / cap)
 
 // XGM: adjust_multi(g1, n1, g2, n2, ...) — variadic adjustment helper.
 /datum/gas_mixture/proc/adjust_multi(...)
@@ -89,6 +89,7 @@
 // XGM: remove_volume(removed_volume) — remove a fraction by volume.
 // LINDA's remove(amount) takes moles. Equivalent: removed_volume / volume.
 /datum/gas_mixture/proc/remove_volume(removed_volume)
+	var/volume = return_volume()
 	if (volume <= 0)
 		return null
 	return remove_ratio(min(1, removed_volume / volume))
@@ -117,7 +118,7 @@
 		adjust_moles(g, giver_gases[g] * ratio)
 	var/combined_heat = our_heat + their_heat
 	if(combined_heat > MINIMUM_HEAT_CAPACITY)
-		set_temperature((our_heat * temperature + their_heat * giver.temperature) / combined_heat)
+		set_temperature((our_heat * return_temperature() + their_heat * giver.return_temperature()) / combined_heat)
 
 
 // =====================================================================
@@ -149,8 +150,8 @@
 		return null
 	var/to_remove = min(amount, total_matching)
 	var/datum/gas_mixture/removed = new
-	removed.set_temperature(temperature)
-	removed.set_volume(volume)
+	removed.set_temperature(return_temperature())
+	removed.set_volume(return_volume())
 	var/share_fraction = to_remove / total_matching
 	var/list/cached = get_gases()
 	for(var/datum/gas/g as anything in cached)
@@ -206,7 +207,7 @@
 	if(!isnull(temp) && temp > 0)
 		var/old_total = max(air.total_moles() - amount, 0)
 		if(old_total > 0)
-			air.set_temperature((air.temperature * old_total + temp * amount) / (old_total + amount))
+			air.set_temperature((air.return_temperature() * old_total + temp * amount) / (old_total + amount))
 		else
 			air.set_temperature(temp)
 	if(SSair)
@@ -424,6 +425,8 @@ GLOBAL_DATUM_INIT(gas_data, /datum/xgm_gas_data, new())
 	. /= n_total
 
 /datum/gas_mixture/proc/specific_entropy_gas(gas_id_or_type)
+	var/temperature = return_temperature()
+	var/volume = return_volume()
 	if(temperature <= 0 || volume <= 0)
 		return SPECIFIC_ENTROPY_VACUUM
 	var/datum/gas/gas_type = istext(gas_id_or_type) ? get_xgm_id_for_gas(gas_id_or_type) : gas_id_or_type
@@ -492,7 +495,7 @@ GLOBAL_DATUM_INIT(gas_data, /datum/xgm_gas_data, new())
 
 /obj/item/tank/proc/return_temperature()
 	if(air_contents)
-		return air_contents.temperature
+		return air_contents.return_temperature()
 	return 0
 
 // /datum/decl/xgm_gas — base type for the per-gas decls in code/defines/gases.dm.

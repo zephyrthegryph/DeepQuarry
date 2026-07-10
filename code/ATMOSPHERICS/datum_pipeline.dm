@@ -15,7 +15,7 @@
 /datum/pipeline/Destroy()
 	QDEL_NULL(network)
 
-	if(air && air.volume)
+	if(air && air.return_volume())
 		temporarily_store_air()
 	for(var/obj/machinery/atmospherics/pipe/P in members)
 		P.parent = null
@@ -40,7 +40,7 @@
 		member.air_temporary = new
 		member.air_temporary.copy_from(air)
 		member.air_temporary.set_volume(member.volume)
-		member.air_temporary.multiply(member.volume / air.volume)
+		member.air_temporary.multiply(member.volume / air.return_volume())
 
 /datum/pipeline/proc/build_pipeline(obj/machinery/atmospherics/pipe/base)
 	air = new
@@ -136,7 +136,7 @@
 	if(!turf_air)
 		return
 	// Sample the pipe air proportional to the mingle volume.
-	var/datum/gas_mixture/air_sample = air.remove_ratio(mingle_volume / air.volume)
+	var/datum/gas_mixture/air_sample = air.remove_ratio(mingle_volume / air.return_volume())
 	air_sample.set_volume(mingle_volume)
 
 	// Merge the sample into the turf mix so both sets of contents fully mix,
@@ -157,13 +157,13 @@
 
 /datum/pipeline/proc/temperature_interact(turf/target, share_volume, thermal_conductivity)
 	var/total_heat_capacity = air.heat_capacity()
-	var/partial_heat_capacity = total_heat_capacity*(share_volume/air.volume)
+	var/partial_heat_capacity = total_heat_capacity*(share_volume/air.return_volume())
 
 	if(istype(target, /turf/simulated))
 		var/turf/simulated/modeled_location = target
 
 		if (modeled_location.special_temperature)
-			var/new_temp = air.temperature + thermal_conductivity * (modeled_location.special_temperature - air.temperature)
+			var/new_temp = air.return_temperature() + thermal_conductivity * (modeled_location.special_temperature - air.return_temperature())
 			if (new_temp < TCMB)
 				new_temp = TCMB
 			air.set_temperature(new_temp)
@@ -173,13 +173,15 @@
 		if(modeled_location.blocks_air)
 
 			if((modeled_location.heat_capacity>0) && (partial_heat_capacity>0))
-				var/delta_temperature = air.temperature - modeled_location.temperature
+				// Read the wall turf's live (arena-authoritative) temperature, not the stale DM mirror.
+				var/wall_temp = modeled_location.return_temperature()
+				var/delta_temperature = air.return_temperature() - wall_temp
 
 				var/heat = thermal_conductivity*delta_temperature* \
 					(partial_heat_capacity*modeled_location.heat_capacity/(partial_heat_capacity+modeled_location.heat_capacity))
 
-				air.set_temperature(air.temperature - heat/total_heat_capacity)
-				modeled_location.temperature += heat/modeled_location.heat_capacity
+				air.set_temperature(air.return_temperature() - heat/total_heat_capacity)
+				modeled_location.set_temperature(wall_temp + heat/modeled_location.heat_capacity)
 
 		else
 			// collapsed ZAS zone branch. zone is always null under LINDA;
@@ -189,7 +191,7 @@
 			var/datum/gas_mixture/sharer_air = modeled_location.air
 			if(!sharer_air)
 				return 1
-			var/delta_temperature = air.temperature - sharer_air.temperature
+			var/delta_temperature = air.return_temperature() - sharer_air.return_temperature()
 			var/sharer_heat_capacity = sharer_air.heat_capacity()
 
 			var/self_temperature_delta = 0
@@ -204,24 +206,24 @@
 			else
 				return 1
 
-			air.set_temperature(air.temperature + self_temperature_delta)
-			sharer_air.set_temperature(sharer_air.temperature + sharer_temperature_delta)
+			air.set_temperature(air.return_temperature() + self_temperature_delta)
+			sharer_air.set_temperature(sharer_air.return_temperature() + sharer_temperature_delta)
 
 
 	else
 		if((target.heat_capacity>0) && (partial_heat_capacity>0))
-			var/delta_temperature = air.temperature - target.temperature
+			var/delta_temperature = air.return_temperature() - target.temperature
 
 			var/heat = thermal_conductivity*delta_temperature* \
 				(partial_heat_capacity*target.heat_capacity/(partial_heat_capacity+target.heat_capacity))
 
-			air.set_temperature(air.temperature - heat/total_heat_capacity)
+			air.set_temperature(air.return_temperature() - heat/total_heat_capacity)
 	if(network)
 		network.update = 1
 
 //surface must be the surface area in m^2
 /datum/pipeline/proc/radiate_heat_to_space(surface, thermal_conductivity)
-	var/gas_density = air.total_moles()/air.volume
+	var/gas_density = air.total_moles()/air.return_volume()
 	thermal_conductivity *= min(gas_density / ( RADIATOR_OPTIMUM_PRESSURE/(R_IDEAL_GAS_EQUATION*GAS_CRITICAL_TEMPERATURE) ), 1) //mult by density ratio
 
 	// We only get heat from the star on the exposed surface area.
@@ -231,7 +233,7 @@
 	// Previously, the temperature would enter equilibrium at 26C or 294K.
 	// Only would happen if both sides (all 2 square meters of surface area) were exposed to sunlight.  We now assume it aligned edge on.
 	// It currently should stabilise at 129.6K or -143.6C
-	heat_gain -= surface * STEFAN_BOLTZMANN_CONSTANT * thermal_conductivity * (air.temperature - COSMIC_RADIATION_TEMPERATURE) ** 4
+	heat_gain -= surface * STEFAN_BOLTZMANN_CONSTANT * thermal_conductivity * (air.return_temperature() - COSMIC_RADIATION_TEMPERATURE) ** 4
 
 	air.add_thermal_energy(heat_gain)
 	if(network)

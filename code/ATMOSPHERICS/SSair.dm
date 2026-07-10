@@ -90,10 +90,9 @@ SUBSYSTEM_DEF(air)
 
 	//Special functions lists
 	// active_super_conductivity removed — LINDA's DM superconduction engine is
-	// deleted. auxmos ships a Rust superconductivity subsystem (process_turf_heat)
-	// but it is NOT wired here (out of scope for the turf-processing cutover). See
-	// the migration notes; reviving heat conduction means calling process_turf_heat
-	// as a fire() step and declaring its turf vars.
+	// deleted. Heat conduction runs in Rust and IS wired: the
+	// SSAIR_SUPERCONDUCTIVITY fire() step below calls process_turf_heat()
+	// (auxmos superconductivity feature, compiled in).
 	// high_pressure_delta moved up next to the auxmos tunables (auxmos appends to it).
 	// atom_process removed; see cost_atoms comment.
 	/// Reactions which will contribute to a hotspot's size.
@@ -151,6 +150,12 @@ SUBSYSTEM_DEF(air)
 	// Idempotent: in practice the very first turf air (created during mapload,
 	// before this runs) already triggered registration via gas_mixture/New().
 	ensure_auxmos_gas_registry()
+
+	// Hand the Rust superconductivity arena the map dimensions it needs to compute
+	// turf neighbours by coordinate id. MUST precede setup_allturfs(), whose turf
+	// adjacency registration reads these; reading world vars from Rust is unreliable
+	// on BYOND 516 so DM pushes them in.
+	auxmos_set_world_dims(world.maxx, world.maxy)
 
 	// Fill GLOB.gas_data.overlays now that meta_gas_info's overlay objects exist,
 	// so the Rust turf-processing visuals path can render gas clouds.
@@ -302,8 +307,16 @@ SUBSYSTEM_DEF(air)
 			return
 		cost_highpressure = MC_AVERAGE(cost_highpressure, TICK_DELTA_TO_MS(cached_cost))
 		resumed = FALSE
+		currentpart = SSAIR_SUPERCONDUCTIVITY
 
-	// SSAIR_SUPERCONDUCTIVITY step removed: DM engine deleted, auxmos heat unwired.
+	// Heat conduction: turf<->turf, turf<->space (radiation), turf<->gas. Runs on a
+	// detached Rust thread (process_turf_heat fires it and returns immediately); the
+	// results land via the atmos callback queue drained in SSAIR_FINALIZE_TURFS next
+	// fire(). cost_superconductivity is written back from the worker thread.
+	if(currentpart == SSAIR_SUPERCONDUCTIVITY)
+		process_turf_heat()
+		resumed = FALSE
+
 	// SSAIR_PROCESS_ATOMS step removed; see cost_atoms comment.
 
 	currentpart = SSAIR_PIPENETS
@@ -497,23 +510,35 @@ SUBSYSTEM_DEF(air)
 	// init_immediate_calculate_adjacent_turfs fast-path in Initalize_Atmos works.
 	var/time = -1
 
-	// PASS 1: build each turf's DM adjacency graph and register its air ref in the
-	// Rust arena. Adjacency is NOT pushed to the arena here — auxmos drops edges to
-	// unregistered turfs, and a neighbour may not be registered yet on this pass.
+	// PASS 1: build each turf's DM adjacency graph (pure DM). Arena registration
+	// is deferred to a bulk FFI call below — one call_ext per ~327k turfs was the
+	// dominant cost of SSair init. Adjacency is NOT pushed here either — auxmos
+	// drops edges to unregistered turfs.
 	var/list/turf/open/open_turfs = list()
 	for(var/turf/setup as anything in ALL_TURFS())
 		if (!setup.init_air)
 			continue
-		setup.Initalize_Atmos(time)
-		if(istype(setup, /turf/open))
-			open_turfs += setup
+		setup.Initalize_Atmos(time, register = FALSE)
+		var/turf/open/open_setup = setup
+		if(istype(open_setup))
+			// Same eligibility rule as /turf/open/update_air_ref: a non-blocking
+			// tile with no air mixture must not reach the Rust register (it reads
+			// air unconditionally when blocks_air == 0).
+			if(open_setup.blocks_air || !isnull(open_setup.air))
+				open_turfs += open_setup
 		if(CHECK_TICK)
 			time--
 
-	// PASS 2: every /turf/open is now registered in the arena, so pushing the
-	// adjacency graph resolves all edges (both endpoints exist in arena.map).
-	for(var/turf/open/registered as anything in open_turfs)
-		registered.__update_auxtools_turf_adjacency_info()
+	// PASS 2: bulk-register every eligible turf's air ref, then bulk-push the
+	// adjacency graph (all endpoints now exist in arena.map). Chunked so a
+	// single FFI call can't hold the tick hostage for the whole world.
+	var/total = length(open_turfs)
+	var/chunk = 8192
+	for(var/start = 1, start <= total, start += chunk)
+		auxmos_register_turfs_bulk(open_turfs.Copy(start, min(start + chunk, total + 1)))
+		CHECK_TICK
+	for(var/start = 1, start <= total, start += chunk)
+		auxmos_update_adjacencies_bulk(open_turfs.Copy(start, min(start + chunk, total + 1)))
 		CHECK_TICK
 
 // log_active_turfs / resolve_active_graph removed — they existed only to service

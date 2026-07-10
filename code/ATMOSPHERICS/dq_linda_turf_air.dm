@@ -43,9 +43,29 @@
 /datum/controller/subsystem/air/proc/finish_turf_processing_auxtools(time_remaining)
 	return call_ext(VERDIGRIS, "byond:finish_process_turfs_ffi")(time_remaining)
 
-/// TRUE while a Rust worker thread still holds the turf-processing lock.
-/datum/controller/subsystem/air/proc/thread_running()
-	return call_ext(VERDIGRIS, "byond:thread_running_hook_ffi")()
+/// Pushes world.maxx / world.maxy into the Rust superconductivity arena so it can
+/// compute turf neighbours by coordinate id. Call once before setup_allturfs().
+/datum/controller/subsystem/air/proc/auxmos_set_world_dims(max_x, max_y)
+	return call_ext(VERDIGRIS, "byond:set_world_dims_ffi")(max_x, max_y)
+
+/// Fires the Rust superconductivity (heat-conduction) pass on a detached thread;
+/// results land via the atmos callback queue drained in SSAIR_FINALIZE_TURFS.
+/// cost_superconductivity is written back from the worker thread.
+/datum/controller/subsystem/air/proc/process_turf_heat()
+	return call_ext(VERDIGRIS, "byond:process_heat_notify_ffi")(src)
+
+/// Rust arena heat temperature (K) for this turf, or a sentinel if untracked.
+/turf/proc/return_temperature()
+	return call_ext(VERDIGRIS, "byond:hook_turf_temperature_ffi")(src)
+
+/// Set this turf's temperature. The superconductivity arena OWNS turf heat (it seeds
+/// from the `temperature` var only at registration, then runs its own conduction), so
+/// a bare `T.temperature = x` updates a stale mirror the arena ignores. This is the
+/// sanctioned setter: it updates the DM mirror AND pushes the value into the arena.
+/// Use it for any external heat injection (pipe-to-wall exchange, holodeck programs).
+/turf/proc/set_temperature(temp)
+	temperature = temp
+	return call_ext(VERDIGRIS, "byond:hook_set_turf_temperature_ffi")(src, temp)
 
 /// Registers / refreshes (flag >= 0) or removes (flag < 0) this turf's air ref in
 /// the Rust arena. Rust reads blocks_air / air._extools_pointer_gasmixture /
@@ -81,6 +101,18 @@
 	// this turf; unregister passes the negative flag straight through.
 	return call_ext(VERDIGRIS, "byond:hook_register_turf_ffi")(src, flag >= 0 ? SIMULATION_ANY : flag)
 
+/// Bulk arena registration: one FFI entry for a whole list of turfs (Rust
+/// iterates). Callers MUST pre-filter with the same rule /turf/open/update_air_ref
+/// applies — skip tiles with !blocks_air && isnull(air) — or the Rust side
+/// errors reading their air var. Used by SSair.setup_allturfs; runtime
+/// single-turf paths keep using update_air_ref.
+/proc/auxmos_register_turfs_bulk(list/turf/turfs)
+	return call_ext(VERDIGRIS, "byond:hook_register_turfs_bulk_ffi")(turfs, SIMULATION_ANY)
+
+/// Bulk adjacency push: one FFI entry for a whole list of registered turfs.
+/proc/auxmos_update_adjacencies_bulk(list/turf/turfs)
+	return call_ext(VERDIGRIS, "byond:hook_infos_bulk_ffi")(turfs)
+
 /// Pushes this turf's atmos_adjacent_turfs graph into the Rust arena. Both the
 /// turf and every neighbour must already be registered (update_air_ref) or the
 /// arena silently drops the unresolved edges. Base /turf is a no-op — only open
@@ -95,7 +127,7 @@
 // Initalize_Atmos() on. The base /turf/proc/Initalize_Atmos in
 // tg_infra_compat.dm is a no-op; we override it on /turf/open here to do the
 // /tg/-canonical thing — build the adjacency graph and seed current_cycle.
-/turf/open/Initalize_Atmos(times_fired)
+/turf/open/Initalize_Atmos(times_fired, register = TRUE)
 	// Set current_cycle BEFORE building adjacency — init_immediate_calculate_adjacent_turfs
 	// reads current_cycle on both sides to decide "have I already done this neighbor?".
 	// SSair.setup_allturfs passes a negative (decrementing) times_fired so the very
@@ -113,7 +145,11 @@
 	// that proc) that pushes adjacency once every turf is registered. Runtime
 	// callers (air_update_turf) hit the fully-registered arena and push adjacency
 	// immediately, so they're unaffected.
-	update_air_ref(0)
+	// register=FALSE lets setup_allturfs skip this per-turf FFI call and instead
+	// bulk-register everything in chunked list calls (~327k call_ext dispatches
+	// saved on a 5-z roundstart).
+	if(register)
+		update_air_ref(0)
 
 
 // === CHOMP lingering-fire bridge ===

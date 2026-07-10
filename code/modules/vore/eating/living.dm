@@ -727,58 +727,52 @@
 // was XGM (total_moles var, gas list). Under LINDA, set initial moles
 // via adjust_gas() in New(); total_moles is computed on demand.
 /datum/gas_mixture/belly_air
-	volume = 2500
-	temperature = 293.150
+	initial_volume = 2500
 
 /datum/gas_mixture/belly_air/New()
 	. = ..()
-	set_temperature(initial(src.temperature)) // arena default is TCMB; sync mirror initializer into the arena
+	set_temperature(T20C) // arena default is TCMB; sync mirror initializer into the arena
 	adjust_gas(GAS_O2, 21)
 	adjust_gas(GAS_N2, 79)
 
 /datum/gas_mixture/belly_air/vox
-	volume = 2500
-	temperature = 293.150
+	initial_volume = 2500
 
 /datum/gas_mixture/belly_air/vox/New()
 	. = ..()
-	set_temperature(initial(src.temperature))
+	set_temperature(T20C)
 	adjust_gas(GAS_N2, 100)
 
 /datum/gas_mixture/belly_air/zaddat
-	volume = 2500
-	temperature = 293.150
+	initial_volume = 2500
 
 /datum/gas_mixture/belly_air/zaddat/New()
 	. = ..()
-	set_temperature(initial(src.temperature))
+	set_temperature(T20C)
 	adjust_gas(GAS_O2, 100)
 
 /datum/gas_mixture/belly_air/nitrogen_breather
-	volume = 2500
-	temperature = 293.150
+	initial_volume = 2500
 
 /datum/gas_mixture/belly_air/nitrogen_breather/New()
 	. = ..()
-	set_temperature(initial(src.temperature))
+	set_temperature(T20C)
 	adjust_gas(GAS_N2, 100)
 
 /datum/gas_mixture/belly_air/carbon_dioxide_breather
-	volume = 2500
-	temperature = 293.150
+	initial_volume = 2500
 
 /datum/gas_mixture/belly_air/carbon_dioxide_breather/New()
 	. = ..()
-	set_temperature(initial(src.temperature))
+	set_temperature(T20C)
 	adjust_gas(GAS_CO2, 100)
 
 /datum/gas_mixture/belly_air/methane_breather
-	volume = 2500
-	temperature = 293.150
+	initial_volume = 2500
 
 /datum/gas_mixture/belly_air/methane_breather/New()
 	. = ..()
-	set_temperature(initial(src.temperature))
+	set_temperature(T20C)
 	adjust_gas(GAS_CH4, 100)
 
 /mob/living/proc/feed_grabbed_to_self_falling_nom(mob/living/user, mob/living/prey)

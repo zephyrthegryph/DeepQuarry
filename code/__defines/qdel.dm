@@ -62,8 +62,12 @@
 #define QDEL_NULL(item) qdel(item); item = null
 #define QDEL_SWAP(item1, item2) if(item1) { qdel(item1) }; item1 = item2;
 #define QDEL_NULL_LIST QDEL_LIST_NULL
-#define QDEL_LIST_NULL(x) if(x) { for(var/y in x) { qdel(y) } ; x = null }
-#define QDEL_LIST(L) if(L) { for(var/I in L) qdel(I); L.Cut(); }
+// The list-qdel macros iterate a Copy(): many members' Destroy() remove
+// themselves from the very list being walked (organs, bellies, routes,
+// tickets, ...), and DM's for-in skips elements when the list shrinks under
+// it — skipped members never run Destroy() and pin their holder against GC.
+#define QDEL_LIST_NULL(x) if(x) { for(var/y in x.Copy()) { qdel(y) } ; x = null }
+#define QDEL_LIST(L) if(L) { for(var/I in L.Copy()) qdel(I); L.Cut(); }
 #define QDEL_LIST_IN(L, time) addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(______qdel_list_wrapper), L), time, TIMER_STOPPABLE)
 #define QDEL_LIST_ASSOC(L) if(L) { for(var/I, V in L) { qdel(V); qdel(I); } L.Cut(); }
 #define QDEL_LIST_ASSOC_VAL(L) if(L) { for(var/I, V in L) qdel(V); L.Cut(); }

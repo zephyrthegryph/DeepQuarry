@@ -5,6 +5,13 @@
 	name = "Expedition Site"
 	mappath = "maps/expedition/expedition_blank.dmm"
 
+// The substrate turf the blank map is filled with: an ordinary cave-mineral
+// wall whose Initialize-time decor is skipped (pregen_substrate) — the carver
+// re-rolls ore and repaints every touched cell right after load, so the skip
+// saves ~65k redundant update_icon/neighbor scans per generated site.
+/turf/simulated/mineral/cave/pregen
+	pregen_substrate = TRUE
+
 // A real, pre-piped thermoelectric engine bay (TEG + circulators + burn chamber
 // + phoron/nitrogen canisters) reused from the Southern Cross engine submaps.
 // Stamped onto a site for the "commission the engine" objective: the crew must

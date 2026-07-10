@@ -7,10 +7,11 @@
  * routes over the auxmos FFI binds (call_ext(VERDIGRIS, "byond:<hook>_ffi")(...)),
  * or DM logic layered on top of the arena-backed getters.
  *
- * `temperature` and `volume` remain as DM mirror vars for legacy direct READERS.
- * READS of .temperature/.volume are left as-is (SSair keeps them fresh). WRITES
- * go through set_temperature()/set_volume(). Procs here that mutate temperature
- * refresh the DM mirror after calling the bind.
+ * OPAQUE HANDLE (/tg/ auxmos model): there is NO public temperature/volume var. The
+ * Rust arena is the single source of truth. READ via return_temperature()/return_volume()
+ * (each crosses the FFI boundary — cache in a local in hot loops); WRITE via
+ * set_temperature()/set_volume(). A stale-mirror read is impossible and a raw
+ * `GM.temperature = x` is a compile error.
  *
  * Gas identity: auxmos binds take gas args as BYOND STRINGS. Callers pass a
  * /datum/gas TYPE PATH, so every bind route stringifies with "[gas_type]".
@@ -39,11 +40,12 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 	return gases
 
 /datum/gas_mixture
-	/// The temperature of the gas mix in kelvin. MIRROR of the arena value, kept
-	/// fresh for legacy direct readers. Authoritative copy lives in Rust.
-	var/temperature = TCMB
-	/// Volume in liters. MIRROR of the arena value (authoritative copy in Rust).
-	var/volume = CELL_VOLUME
+	// OPAQUE HANDLE (/tg/ auxmos model). There is deliberately NO public `temperature`
+	// or `volume` var — the Rust arena is the single source of truth. Read via
+	// return_temperature() / return_volume(); write via set_temperature() / set_volume().
+	// This makes a stale-mirror read impossible and a mis-write a COMPILE error. In hot
+	// loops, cache the accessor result in a local (e.g. `var/temp = air.return_temperature()`)
+	// rather than calling it repeatedly, since each call crosses the FFI boundary.
 	/// The last tick this gas mixture shared on. A counter that turfs use to manage activity
 	var/last_share = 0
 	/// Tells us what reactions have happened in our gasmix. Assoc list of reaction - moles reacted pair.
@@ -58,8 +60,8 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 	/// registered. See doc/atmos_migration.md.
 	var/_extools_pointer_gasmixture
 	/// Volume the mixture was created with; read by register_mix to size the
-	/// Rust-side mixture. Kept in sync with `volume` at New().
-	var/initial_volume
+	/// Rust-side mixture at New(). The live volume lives in the arena (return_volume()).
+	var/initial_volume = CELL_VOLUME
 
 /datum/gas_mixture/New(volume)
 	// Ensure auxmos knows the gas roster before ANY set_moles can run on this
@@ -67,10 +69,9 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 	// this (idempotent) call is what actually registers gases in practice.
 	ensure_auxmos_gas_registry()
 	if(!isnull(volume))
-		src.volume = volume
-	if(src.volume <= 0)
+		initial_volume = volume
+	if(initial_volume <= 0)
 		stack_trace("Created a gas mixture with zero volume!")
-	initial_volume = src.volume
 	reaction_results = new
 	// Register the mixture in the Rust arena. Reads initial_volume, writes
 	// _extools_pointer_gasmixture.
@@ -202,7 +203,6 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 	if(!giver)
 		return FALSE
 	. = call_ext(VERDIGRIS, "byond:merge_hook_ffi")(src, giver)
-	src.temperature = call_ext(VERDIGRIS, "byond:return_temperature_hook_ffi")(src)
 	SEND_SIGNAL(src, COMSIG_GASMIX_MERGED)
 
 // Set the gas specie within the gas mix to a set amount, if there is none it will be created at the target temp
@@ -210,13 +210,11 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 	return call_ext(VERDIGRIS, "byond:set_moles_hook_ffi")(src, "[gas_specie]", amount)
 
 /datum/gas_mixture/proc/set_temperature(target_temp)
-	. = call_ext(VERDIGRIS, "byond:set_temperature_hook_ffi")(src, target_temp)
-	// Read back — the bind clamps to TCMB, so mirror the authoritative value.
-	src.temperature = call_ext(VERDIGRIS, "byond:return_temperature_hook_ffi")(src)
+	// Arena is authoritative (and clamps to TCMB). No DM mirror to refresh.
+	return call_ext(VERDIGRIS, "byond:set_temperature_hook_ffi")(src, target_temp)
 
 /datum/gas_mixture/proc/set_volume(vol)
-	. = call_ext(VERDIGRIS, "byond:set_volume_hook_ffi")(src, vol)
-	src.volume = vol
+	return call_ext(VERDIGRIS, "byond:set_volume_hook_ffi")(src, vol)
 
 /// Add a specific amount of moles to specified gas or add a new gas to the mix
 /// amount is added so make it negative to remove
@@ -243,21 +241,19 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 	amount = min(amount, sum) //Can not take more air than tile has!
 	if(amount <= 0)
 		return null
-	var/datum/gas_mixture/removed = new type(volume)
+	var/datum/gas_mixture/removed = new type(return_volume())
 	call_ext(VERDIGRIS, "byond:remove_hook_ffi")(src, removed, amount)
-	removed.temperature = call_ext(VERDIGRIS, "byond:return_temperature_hook_ffi")(removed)
 	SEND_SIGNAL(src, COMSIG_GASMIX_REMOVED)
 	return removed
 
 ///Proportionally removes ratio of gas from the gas_mixture.
 ///Returns: gas_mixture with the gases removed
 /datum/gas_mixture/proc/remove_ratio(ratio)
-	var/datum/gas_mixture/removed = new type(volume)
+	var/datum/gas_mixture/removed = new type(return_volume())
 	if(ratio <= 0)
 		return removed
 	ratio = min(ratio, 1)
 	call_ext(VERDIGRIS, "byond:remove_ratio_hook_ffi")(src, removed, ratio)
-	removed.temperature = call_ext(VERDIGRIS, "byond:return_temperature_hook_ffi")(removed)
 	SEND_SIGNAL(src, COMSIG_GASMIX_REMOVED)
 	return removed
 
@@ -268,8 +264,7 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 	if(amount <= 0)
 		return null
 	var/datum/gas_mixture/removed = new type
-	removed.temperature = call_ext(VERDIGRIS, "byond:return_temperature_hook_ffi")(src)
-	call_ext(VERDIGRIS, "byond:set_temperature_hook_ffi")(removed, removed.temperature)
+	removed.set_temperature(return_temperature())
 	call_ext(VERDIGRIS, "byond:set_moles_hook_ffi")(removed, "[gas_id]", amount)
 	call_ext(VERDIGRIS, "byond:adjust_moles_hook_ffi")(src, "[gas_id]", -amount)
 	return removed
@@ -279,8 +274,7 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 		return null
 	ratio = min(ratio, 1)
 	var/datum/gas_mixture/removed = new type
-	removed.temperature = call_ext(VERDIGRIS, "byond:return_temperature_hook_ffi")(src)
-	call_ext(VERDIGRIS, "byond:set_temperature_hook_ffi")(removed, removed.temperature)
+	removed.set_temperature(return_temperature())
 	var/amount = QUANTIZE(call_ext(VERDIGRIS, "byond:get_moles_hook_ffi")(src, "[gas_id]") * ratio)
 	call_ext(VERDIGRIS, "byond:set_moles_hook_ffi")(removed, "[gas_id]", amount)
 	call_ext(VERDIGRIS, "byond:adjust_moles_hook_ffi")(src, "[gas_id]", -amount)
@@ -289,24 +283,19 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 ///Distributes the contents of two mixes equally between themselves
 //Returns: bool indicating whether gases moved between the two mixes
 /datum/gas_mixture/proc/equalize(datum/gas_mixture/other)
-	. = call_ext(VERDIGRIS, "byond:equalize_with_hook_ffi")(src, other)
-	// equalize_with mutates temperature on both sides; refresh mirrors.
-	src.temperature = call_ext(VERDIGRIS, "byond:return_temperature_hook_ffi")(src)
-	other.temperature = call_ext(VERDIGRIS, "byond:return_temperature_hook_ffi")(other)
+	return call_ext(VERDIGRIS, "byond:equalize_with_hook_ffi")(src, other)
 
 ///Creates new, identical gas mixture
 ///Returns: duplicate gas mixture
 /datum/gas_mixture/proc/copy()
 	var/datum/gas_mixture/copy = new type
 	call_ext(VERDIGRIS, "byond:copy_from_hook_ffi")(copy, src)
-	copy.temperature = call_ext(VERDIGRIS, "byond:return_temperature_hook_ffi")(copy)
 	return copy
 
 ///Copies variables from sample
 ///Returns: TRUE if we are mutable, FALSE otherwise
 /datum/gas_mixture/proc/copy_from(datum/gas_mixture/sample)
-	. = call_ext(VERDIGRIS, "byond:copy_from_hook_ffi")(src, sample)
-	src.temperature = call_ext(VERDIGRIS, "byond:return_temperature_hook_ffi")(src)
+	call_ext(VERDIGRIS, "byond:copy_from_hook_ffi")(src, sample)
 	return TRUE
 
 ///Copies variables from sample, moles multiplicated by partial
@@ -315,7 +304,6 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 	call_ext(VERDIGRIS, "byond:copy_from_hook_ffi")(src, sample)
 	if(partial != 1)
 		call_ext(VERDIGRIS, "byond:multiply_hook_ffi")(src, partial)
-	src.temperature = call_ext(VERDIGRIS, "byond:return_temperature_hook_ffi")(src)
 	return TRUE
 
 ///Compares sample to self to see if within acceptable ranges that group processing may be enabled
@@ -338,6 +326,7 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 	// Hypernoblium suppresses all reactions (parity with the old react()).
 	if(get_moles(/datum/gas/hypernoblium) >= REACTION_OPPRESSION_THRESHOLD && temp > REACTION_OPPRESSION_MIN_TEMP)
 		return STOP_REACTIONS
+	var/results_reset = FALSE
 	for(var/datum/gas_reaction/reaction as anything in reactions)
 		var/list/reqs = reaction.requirements
 		if(!reqs)
@@ -353,6 +342,13 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 				break
 		if(!satisfied)
 			continue
+		// Reset reaction_results once, only when a reaction actually fires, so it
+		// can't accumulate across ticks on a persistent (turf) mixture without
+		// allocating a list on every no-op tick. A fresh list (not LAZYCLEARLIST,
+		// which nulls it here) — the reactions below index it via SET_REACTION_RESULTS.
+		if(!results_reset)
+			reaction_results = list()
+			results_reset = TRUE
 		. |= reaction.react(src, holder)
 		if(. & STOP_REACTIONS)
 			return
@@ -368,7 +364,7 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
  * 10 = 2.5/5*20
  */
 /datum/gas_mixture/proc/get_breath_partial_pressure(gas_mole_count)
-	return (gas_mole_count * R_IDEAL_GAS_EQUATION * temperature) / BREATH_VOLUME
+	return (gas_mole_count * R_IDEAL_GAS_EQUATION * return_temperature()) / BREATH_VOLUME
 
 /**
  * Counts how much pressure will there be if we impart MOLAR_ACCURACY amounts of our gas to the output gasmix.
@@ -382,7 +378,7 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 	var/our_moles = total_moles()
 	var/resulting_energy = output_air.thermal_energy() + (MOLAR_ACCURACY / our_moles * thermal_energy())
 	var/resulting_capacity = output_air.heat_capacity() + (MOLAR_ACCURACY / our_moles * heat_capacity())
-	return (output_air.total_moles() + MOLAR_ACCURACY) * R_IDEAL_GAS_EQUATION * (resulting_energy / resulting_capacity) / output_air.volume
+	return (output_air.total_moles() + MOLAR_ACCURACY) * R_IDEAL_GAS_EQUATION * (resulting_energy / resulting_capacity) / output_air.return_volume()
 
 
 /** Returns the amount of gas to be pumped to a specific container.
@@ -392,16 +388,20 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
  * - ignore_temperature. Returns a cheaper form of gas calculation, useful if the temperature difference between the two gasmixes is low or nonexistent.
  */
 /datum/gas_mixture/proc/gas_pressure_calculate(datum/gas_mixture/output_air, target_pressure, ignore_temperature = FALSE)
-	// So we don't need to iterate the gaslist multiple times.
+	// So we don't need to iterate the gaslist multiple times, and to avoid repeated
+	// FFI reads, cache each mixture's temperature/volume once up front.
 	var/our_moles = total_moles()
 	var/output_moles = output_air.total_moles()
 	var/output_pressure = output_air.return_pressure()
+	var/temperature = return_temperature()
+	var/output_temperature = output_air.return_temperature()
+	var/output_volume = output_air.return_volume()
 
 	if(our_moles <= 0 || temperature <= 0)
 		return FALSE
 
 	var/pressure_delta = 0
-	if(output_air.temperature <= 0 || output_moles <= 0)
+	if(output_temperature <= 0 || output_moles <= 0)
 		ignore_temperature = TRUE
 		pressure_delta = target_pressure
 	else
@@ -411,18 +411,18 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 		return FALSE
 
 	if(ignore_temperature)
-		return (pressure_delta*output_air.volume)/(temperature * R_IDEAL_GAS_EQUATION)
+		return (pressure_delta*output_volume)/(temperature * R_IDEAL_GAS_EQUATION)
 
 	// Lower and upper bound for the moles we must transfer to reach the pressure. The answer is bound to be here somewhere.
-	var/pv = target_pressure * output_air.volume
+	var/pv = target_pressure * output_volume
 	/// The PV/R part in the equation we will use later. Counted early because pv/(r*t) might not be equal to pv/r/t, messing our lower and upper limit.
 	var/pvr = pv / R_IDEAL_GAS_EQUATION
 	// These works by assuming our gas has extremely high heat capacity
 	// and the resultant gasmix will hit either the highest or lowest temperature possible.
 
 	/// This is the true lower limit, but numbers still can get lower than this due to floats.
-	var/lower_limit = max((pvr / max(temperature, output_air.temperature)) - output_moles, 0)
-	var/upper_limit = (pvr / min(temperature, output_air.temperature)) - output_moles // In theory this should never go below zero, the pressure_delta check above should account for this.
+	var/lower_limit = max((pvr / max(temperature, output_temperature)) - output_moles, 0)
+	var/upper_limit = (pvr / min(temperature, output_temperature)) - output_moles // In theory this should never go below zero, the pressure_delta check above should account for this.
 
 	lower_limit = max(lower_limit - ATMOS_PRESSURE_ERROR_TOLERANCE, 0)
 	upper_limit += ATMOS_PRESSURE_ERROR_TOLERANCE
@@ -473,7 +473,7 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 	if(.)
 		return
 	// Inaccurate and will probably explode but whatever.
-	return (pressure_delta*output_air.volume)/(temperature * R_IDEAL_GAS_EQUATION)
+	return (pressure_delta*output_volume)/(temperature * R_IDEAL_GAS_EQUATION)
 
 /// Actually tries to solve the quadratic equation.
 /// Do mind that the numbers can get very big and might hit BYOND's single point float limit.
@@ -505,11 +505,11 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 /// Pumps gas from src to output_air. Amount depends on target_pressure
 /datum/gas_mixture/proc/pump_gas_to(datum/gas_mixture/output_air, target_pressure, specific_gas = null, datum/gas_mixture/output_pipenet_air = null)
 	var/datum/gas_mixture/input_air = specific_gas ? remove_specific_ratio(specific_gas, 1) : src
-	var/temperature_delta = abs(input_air.temperature - output_air.temperature)
+	var/temperature_delta = abs(input_air.return_temperature() - output_air.return_temperature())
 	var/datum/gas_mixture/removed
 
 	var/transfer_moles_output = input_air.gas_pressure_calculate(output_air, target_pressure, temperature_delta <= 5)
-	var/transfer_moles_pipenet = output_pipenet_air?.volume ? input_air.gas_pressure_calculate(output_pipenet_air, target_pressure, temperature_delta <= 5) : 0
+	var/transfer_moles_pipenet = output_pipenet_air?.return_volume() ? input_air.gas_pressure_calculate(output_pipenet_air, target_pressure, temperature_delta <= 5) : 0
 	var/transfer_moles = max(transfer_moles_output, transfer_moles_pipenet)
 
 	if(specific_gas)
@@ -534,10 +534,10 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 		return FALSE
 	//Can not have a pressure delta that would cause output_pressure > input_pressure
 	target_pressure = output_starting_pressure + min(target_pressure - output_starting_pressure, (input_starting_pressure - output_starting_pressure)/2)
-	var/temperature_delta = abs(temperature - output_air.temperature)
+	var/temperature_delta = abs(return_temperature() - output_air.return_temperature())
 
 	var/transfer_moles_output = gas_pressure_calculate(output_air, target_pressure, temperature_delta <= 5)
-	var/transfer_moles_pipenet = output_pipenet_air?.volume ? gas_pressure_calculate(output_pipenet_air, target_pressure, temperature_delta <= 5) : 0
+	var/transfer_moles_pipenet = output_pipenet_air?.return_volume() ? gas_pressure_calculate(output_pipenet_air, target_pressure, temperature_delta <= 5) : 0
 	var/transfer_moles = max(transfer_moles_output, transfer_moles_pipenet)
 
 	//Actually transfer the gas
@@ -558,7 +558,7 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 /// Convert a gas mixture to a string (ie. "o2=22;n2=82;TEMP=180")
 /// Rounds all temperature and gases to 0.01 and skips any gases less than that amount
 /datum/gas_mixture/proc/to_string()
-	var/rounded_temp = round(temperature, 0.01)
+	var/rounded_temp = round(return_temperature(), 0.01)
 
 	var/list/atmos_contents = list()
 	var/temperature_str = "TEMP=[num2text(rounded_temp)]"

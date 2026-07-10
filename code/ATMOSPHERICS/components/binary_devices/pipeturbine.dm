@@ -22,7 +22,7 @@
 	. = ..()
 	air_in.set_volume(200)
 	air_out.set_volume(800)
-	volume_ratio = air_in.volume / (air_in.volume + air_out.volume)
+	volume_ratio = air_in.return_volume() / (air_in.return_volume() + air_out.return_volume())
 	switch(dir)
 		if(NORTH)
 			initialize_directions = EAST|WEST
@@ -57,11 +57,11 @@
 		kin_energy *= 1 - kin_loss
 		dP = max(air_in.return_pressure() - air_out.return_pressure(), 0)
 		if(dP > 10)
-			kin_energy += 1/ADIABATIC_EXPONENT * dP * air_in.volume * (1 - volume_ratio**ADIABATIC_EXPONENT) * efficiency
-			air_in.set_temperature(air_in.temperature * volume_ratio**ADIABATIC_EXPONENT)
+			kin_energy += 1/ADIABATIC_EXPONENT * dP * air_in.return_volume() * (1 - volume_ratio**ADIABATIC_EXPONENT) * efficiency
+			air_in.set_temperature(air_in.return_temperature() * volume_ratio**ADIABATIC_EXPONENT)
 
 			var/datum/gas_mixture/air_all = new
-			air_all.set_volume(air_in.volume + air_out.volume)
+			air_all.set_volume(air_in.return_volume() + air_out.return_volume())
 			air_all.merge(air_in.remove_ratio(1))
 			air_all.merge(air_out.remove_ratio(1))
 

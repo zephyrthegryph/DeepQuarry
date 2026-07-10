@@ -64,7 +64,10 @@
 							S.code = newVal
 
 						if("Frequency")
-							S.frequency = newVal
+							// set_frequency() re-registers with SSradio; a bare var
+							// write leaves the signaler listening (and later stranded,
+							// unable to GC) on its old frequency.
+							S.set_frequency(sanitize_frequency(newVal, RADIO_LOW_FREQ, RADIO_HIGH_FREQ))
 
 	// Refresh list of powernet sensors
 	if(href_list["powernet_refresh"])

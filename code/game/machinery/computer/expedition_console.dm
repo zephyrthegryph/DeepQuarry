@@ -111,6 +111,10 @@
 /obj/machinery/computer/expedition/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	if(..())
 		return TRUE
+	// Re-validate machine state after the UI round-trip: the console may have lost
+	// power / broken since the panel was opened.
+	if(stat & (BROKEN|NOPOWER))
+		return TRUE
 	switch(action)
 		if("launch")
 			launch(text2num(params["index"]), usr)
@@ -192,7 +196,9 @@
 	var/turf/center = get_turf(src)
 	var/deployed = 0
 	for(var/mob/living/L in range(EXP_PAD_RADIUS, center))
-		do_teleport(L, active_site.landing, precision = 1, channel = TELEPORT_CHANNEL_BLUESPACE, forced = TRUE)
+		// Only count a mob as deployed if the teleport actually fired.
+		if(!do_teleport(L, active_site.landing, precision = 1, channel = TELEPORT_CHANNEL_BLUESPACE, forced = TRUE))
+			continue
 		active_site.participants |= L
 		deployed++
 	if(!deployed)
@@ -200,6 +206,7 @@
 		return
 	active_site.status = EXP_STATUS_ACTIVE
 	active_site.last_occupied = world.time
+	active_site.deployed_at = world.time
 	visible_message(span_notice("[src] hums as the pad fires — [deployed] crew deployed to [active_site.name]."))
 
 /obj/machinery/computer/expedition/proc/recall(mob/user)
@@ -211,8 +218,10 @@
 		to_chat(user, span_warning("No clear return point on the station pad."))
 		return
 	var/recalled = 0
-	for(var/mob/M in GLOB.player_list)
-		if(M.z != active_site.z_level)
+	// Only recall the mobs this site actually deployed — never yank an unrelated
+	// player who happens to share this site's pooled z-level.
+	for(var/mob/M in active_site.participants)
+		if(QDELETED(M) || M.z != active_site.z_level)
 			continue
 		do_teleport(M, dest, precision = 1, channel = TELEPORT_CHANNEL_BLUESPACE, forced = TRUE)
 		recalled++

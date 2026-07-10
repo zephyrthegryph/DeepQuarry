@@ -80,7 +80,16 @@
 
 /mob/living/carbon/human/Destroy()
 	GLOB.human_mob_list -= src
-	QDEL_NULL_LIST(organs)
+	// Each organ's Destroy() removes itself (and qdels its children/internals)
+	// out of src.organs, so iterating the live list skips entries — skipped
+	// organs never run Destroy() and their lingering `owner` ref pins this mob
+	// (and their medical issues) against GC. Snapshot first. Each organ also
+	// scrubs itself out of the *_by_name lookup tables, so those end up empty
+	// here — do NOT null them: the parent Destroy chain (equipment drops →
+	// update_icons, should_have_organ) still indexes them.
+	if(organs)
+		for(var/o in organs.Copy())
+			qdel(o)
 	if(nif)
 		QDEL_NULL(nif)
 	GLOB.alt_farmanimals -= src

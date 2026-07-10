@@ -316,8 +316,9 @@
 			var/turf/T = get_turf(src)
 			var/datum/gas_mixture/env = T.return_air()
 			if(env)
-				my_mob.minbodytemp = env.temperature * 0.8
-				my_mob.maxbodytemp = env.temperature * 1.2
+				var/env_temp = env.return_temperature()
+				my_mob.minbodytemp = env_temp * 0.8
+				my_mob.maxbodytemp = env_temp * 1.2
 
 				my_mob.min_oxy = LINDA_GAS_AMT(env, GAS_O2) * 0.8
 				my_mob.min_tox = LINDA_GAS_AMT(env, GAS_PHORON) * 0.8

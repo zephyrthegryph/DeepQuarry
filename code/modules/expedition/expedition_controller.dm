@@ -45,8 +45,13 @@ SUBSYSTEM_DEF(expedition)
 		if(players > 0)
 			site.last_occupied = world.time
 			continue
-		if(site.status >= EXP_STATUS_ACTIVE && (world.time - site.last_occupied) > EXP_AUTO_RELEASE_GRACE)
-			release_site(site)
+		if(site.status >= EXP_STATUS_ACTIVE)
+			// Never release within the deploy grace window: crew may still be in the
+			// bluespace-travel gap (0 on-z players) between fire() and arrival.
+			if(site.deployed_at && (world.time - site.deployed_at) <= EXP_DEPLOY_GRACE)
+				continue
+			if((world.time - site.last_occupied) > EXP_AUTO_RELEASE_GRACE)
+				release_site(site)
 		else if(site.status == EXP_STATUS_READY && (world.time - site.generated_at) > 5 MINUTES)
 			release_site(site)
 
@@ -57,18 +62,22 @@ SUBSYSTEM_DEF(expedition)
 	if(mission)
 		difficulty = mission.difficulty
 
+	var/gen_started = REALTIMEOFDAY
 	var/z = acquire_z()
 	if(!isnum(z) || z < 1)
 		log_world("SSexpedition: failed to acquire a z-level for a new site.")
 		return null
+	var/t_zalloc = REALTIMEOFDAY
 
 	// Pick and lay down the biome terrain (cavern / plains / asteroid / orbital).
 	var/datum/expedition_biome/biome = pick_biome(mission)
 	biome.generate(z)
+	var/t_biome = REALTIMEOFDAY
 
 	// Wire the freshly-(re)allocated z into the LINDA multi-z atmos table.
 	if(SSair)
 		SSair.build_multiz_atmos_levels()
+	var/t_multiz = REALTIMEOFDAY
 
 	var/datum/expedition_site/site = new(z, difficulty)
 	site.biome = biome
@@ -76,6 +85,7 @@ SUBSYSTEM_DEF(expedition)
 	// Roll (or take the mission's pinned) enemy faction — themes every hostile here.
 	site.faction = mission?.faction_type || expedition_pick_faction(difficulty)
 	site.floors = scan_floors(z)
+	var/t_scan = REALTIMEOFDAY
 	if(!length(site.floors))
 		log_world("SSexpedition: site on z[z] carved no walkable floor; releasing.")
 		wipe_z(z)
@@ -112,15 +122,23 @@ SUBSYSTEM_DEF(expedition)
 	site.status = EXP_STATUS_READY
 	sites["[z]"] = site
 	log_world("SSexpedition: generated [site.name] on z[z] (difficulty [difficulty][mission ? ", mission '[mission.name]'" : ""]).")
+	// Phase timing (real seconds) — generation is rare, so always log; this is
+	// the first place to look when site generation gets slow.
+	log_world("SSexpedition: timing z-alloc=[(t_zalloc - gen_started) / 10]s biome([biome.name])=[(t_biome - t_zalloc) / 10]s multiz=[(t_multiz - t_biome) / 10]s floor-scan=[(t_scan - t_multiz) / 10]s content=[(REALTIMEOFDAY - t_scan) / 10]s total=[(REALTIMEOFDAY - gen_started) / 10]s")
 	return site
 
-// Reuse a pooled z if available, else allocate a fresh one.
+// Reuse a pooled z if available, else allocate a fresh one — capped so runaway
+// launches can't grow world.maxz without bound. Returns null on failure.
 /datum/controller/subsystem/expedition/proc/acquire_z()
 	while(length(free_z))
 		var/z = free_z[1]
 		free_z.Cut(1, 2)
 		if(isnum(z) && z >= 1 && z <= world.maxz)
 			return z
+	// Pool is empty: only allocate a new z if we're under the site-z cap.
+	if((length(sites) + length(free_z)) >= EXP_MAX_SITE_ZLEVELS)
+		log_world("SSexpedition: at the [EXP_MAX_SITE_ZLEVELS]-z site cap with an empty reuse pool; refusing to allocate a new z-level.")
+		return null
 	var/datum/map_template/expedition_site/template = new()
 	return template.load_new_z()
 
@@ -196,8 +214,8 @@ SUBSYSTEM_DEF(expedition)
 				if(M.client)
 					continue
 			qdel(AM)
-		if(!istype(T, /turf/simulated/mineral/cave))
-			T.ChangeTurf(/turf/simulated/mineral/cave, tell_universe = FALSE)
+		if(!istype(T, /turf/simulated/mineral/cave/pregen))
+			T.ChangeTurf(/turf/simulated/mineral/cave/pregen, tell_universe = FALSE)
 		if(++wiped % 1000 == 0)
 			CHECK_TICK
 

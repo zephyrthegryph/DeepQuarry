@@ -34,14 +34,16 @@
 		if(SUBFAM_THERMAL)
 			var/datum/gas_mixture/env = T.return_air()
 			if(env)
-				env.temperature += mag * 20
+				env.set_temperature(env.return_temperature() + mag * 20)
 			T.hotspot_expose(mag * 20, 200)
 			_substance_damage_mobs(T, radius, round(5 + mag * 0.35), BURN)
 		if(SUBFAM_CORROSIVE)
 			_substance_damage_mobs(T, radius, round(6 + mag * 0.45), BURN)
-			for(var/obj/O in range(radius, T))
-				if(O.uses_integrity)
-					O.take_damage(round(mag * 0.5), BRUTE)
+			// Damaging an obj can destroy it; if it is itself a substance material,
+			// that fires substance_on_destruction -> substance_apply_effect again.
+			// Defer off this call stack so a room of substance structures can't
+			// recurse synchronously through one call (matches the infusion idiom).
+			INVOKE_ASYNC(GLOBAL_PROC_REF(_substance_corrode_objs), T, radius, round(mag * 0.5))
 		if(SUBFAM_FORCE)
 			_substance_throw_movables(T, radius, round(1 + power * 4))
 		if(SUBFAM_VOID)
@@ -53,9 +55,21 @@
 			// A barrier pulse: shoves everything one step out and resists for a moment.
 			_substance_throw_movables(T, radius, 1)
 
-	// High-magnitude eruptions throw a real (small) blast on top.
+	// High-magnitude eruptions throw a real (small) blast on top. Deferred: the
+	// blast can destroy substance-material objs (-> re-entrant substance_apply_effect),
+	// so keep it off the current call stack.
 	if(mag >= SUB_HAZARD_M_THRESHOLD)
-		explosion(T, -1, round(power * 1), round(2 + power * 3))
+		INVOKE_ASYNC(GLOBAL_PROC_REF(explosion), T, -1, round(power * 1), round(2 + power * 3))
+
+// Corrode every integrity-backed obj in range. Runs deferred (see caller): a
+// destroyed substance-material obj re-enters substance_apply_effect, so this must
+// not run inside the firing call stack.
+/proc/_substance_corrode_objs(turf/T, radius, amount)
+	if(!isturf(T) || amount <= 0)
+		return
+	for(var/obj/O in range(radius, T))
+		if(O.uses_integrity)
+			O.take_damage(amount, BRUTE)
 
 // Damage living mobs in range by a flat amount of a damage type.
 /proc/_substance_damage_mobs(turf/T, radius, amount, damtype)
@@ -67,7 +81,7 @@
 // Throw movables away from the centre, strength scaling the distance.
 /proc/_substance_throw_movables(turf/T, radius, strength)
 	for(var/atom/movable/AM in range(radius, T))
-		if(AM.anchored || AM == T)
+		if(AM.anchored)
 			continue
 		var/turf/edge = get_edge_target_turf(AM, get_dir(T, AM) || pick(GLOB.alldirs))
 		AM.throw_at(edge, strength, 1)

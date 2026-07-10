@@ -237,7 +237,7 @@
 			pressure = faketank.return_pressure()
 
 			var/strength = (pressure-TANK_FRAGMENT_PRESSURE)/TANK_FRAGMENT_SCALE
-			var/mult = ((faketank.volume/140)**(1/2)) * (faketank.total_moles()**(2/3))/((29*0.64) **(2/3)) //Don't ask me what this is, see tanks.dm
+			var/mult = ((faketank.return_volume()/140)**(1/2)) * (faketank.total_moles()**(2/3))/((29*0.64) **(2/3)) //Don't ask me what this is, see tanks.dm
 
 			var/dev = round((mult*strength)*0.15)
 			var/heavy = round((mult*strength)*0.35)
@@ -255,7 +255,7 @@
 		else
 			faketank_integrity -= 5
 
-	else if(pressure > TANK_LEAK_PRESSURE || faketank.temperature - T0C > 173)
+	else if(pressure > TANK_LEAK_PRESSURE || faketank.return_temperature() - T0C > 173)
 		faketank_integrity -= 1
 	return 0
 
@@ -284,7 +284,7 @@
 		simulation_results += "<hr>Final Result: No detonation."
 
 /obj/machinery/bomb_tester/proc/ttv_sim()
-	faketank.set_volume(tank1.air_contents.volume + tank2.air_contents.volume)
+	faketank.set_volume(tank1.air_contents.return_volume() + tank2.air_contents.return_volume())
 	faketank.copy_from(tank1.air_contents)
 	faketank_integrity = tank1.integrity
 	faketank.merge(tank2.air_contents)
@@ -310,12 +310,12 @@
 
 /obj/machinery/bomb_tester/proc/canister_sim()
 	test_canister.anchored = TRUE
-	faketank.set_volume(tank1.air_contents.volume)
+	faketank.set_volume(tank1.air_contents.return_volume())
 	faketank.copy_from(tank1.air_contents)
 	faketank_integrity = tank1.integrity
 
 	var/datum/gas_mixture/fakecanister = new
-	fakecanister.set_volume(test_canister.air_contents.volume)
+	fakecanister.set_volume(test_canister.air_contents.return_volume())
 	fakecanister.copy_from(test_canister.air_contents)
 	var/fakecanister_RFL = test_canister.release_flow_rate
 
@@ -331,7 +331,7 @@
 		var/pressure_delta = sim_canister_output - faketank.return_pressure()
 		if(pressure_delta > 0)
 			var/transfer_moles = calculate_transfer_moles(fakecanister, faketank, pressure_delta)
-			transfer_moles = min(transfer_moles, (fakecanister_RFL/fakecanister.volume)*fakecanister.total_moles())
+			transfer_moles = min(transfer_moles, (fakecanister_RFL/fakecanister.return_volume())*fakecanister.total_moles())
 			pump_gas_passive(src, fakecanister, faketank, transfer_moles)
 		if(simulate_tank())
 			break
@@ -369,7 +369,7 @@
 
 	results += "Pressure: [round(pressure,0.1)] kPa"
 	if(G.total_moles())
-		results += "<br>Temperature: [round(G.temperature-T0C)]&deg;C"
+		results += "<br>Temperature: [round(G.return_temperature()-T0C)]&deg;C"
 		// was iterating XGM `G.gas`; under LINDA use gas_ids().
 		for(var/mix in G.gas_ids())
 			results += "<br>[GLOB.gas_data.name[mix]]: [round((LINDA_GAS_AMT(G, mix) / G.total_moles()) * 100)]%"

@@ -1,23 +1,17 @@
 // Auxmos init/lifecycle bridge.
 //
-// auxmos_bindings.dm has the full call_ext routes for every gas_mixture proc,
-// but including it would re-declare procs already defined in /tg/'s vendored
-// gas_mixture.dm (a duplicate-definition compile error).
+// The Rust gas-math backend IS live: /datum/gas_mixture is an opaque handle
+// over the Rust arena, and every gas proc in gasmixtures/gas_mixture.dm routes
+// through call_ext(VERDIGRIS, ...). This file carries the init/lifecycle FREE
+// procs (auxtools_atmos_init etc.) plus the gas-registry adapter; the registry
+// is populated by ensure_auxmos_gas_registry() below, called from
+// SSair.Initialize AND lazily from /datum/gas_mixture/New() (mapload turf air
+// is created before SSair inits, so the lazy path is load-bearing — see the
+// note above it).
 //
-// IMPORTANT — the gas-math backend is NOT live. byondapi does NOT transparently
-// swap DM proc bodies at DLL load (that was auxtools' detour hooking; byondapi is
-// pull-based — a #[byondapi::bind] only exports an FFI symbol reachable via
-// call_ext). So the pure-DM bodies in gas_mixture.dm are what actually run today;
-// gas math is NOT routed through Rust. Making it Rust-backed requires REPLACING
-// those DM bodies with the call_ext routes from auxmos_bindings.dm AND adopting
-// auxmos' Rust gas-arena data model (mixtures live in Rust, the DM datum is a
-// handle) — a core re-architecture, not a drop-in. See doc/atmos_migration.md.
-//
-// What this bridge DOES provide: the small set of init/lifecycle FREE procs
-// (auxtools_atmos_init etc.) declared as thin call_ext stubs. These are wired
-// targets but auxtools_atmos_init() is still not CALLED from SSair, so the Rust
-// gas registry is currently unpopulated (see SSair.Initialize).
-//
+// auxmos_bindings.dm (the generated reference sheet of every call_ext route)
+// is intentionally NOT #include'd: it would re-declare procs already defined
+// in gasmixtures/gas_mixture.dm (duplicate-definition compile error).
 // DO NOT add proc declarations that conflict with gas_mixture.dm here.
 // Generation source: verdigris/atmos/bindings.dm (selected procs only).
 
@@ -39,8 +33,11 @@ GLOBAL_VAR_INIT(auxmos_gas_registry_initialized, FALSE)
 /proc/ensure_auxmos_gas_registry()
 	if(GLOB.auxmos_gas_registry_initialized)
 		return
-	GLOB.auxmos_gas_registry_initialized = TRUE
+	// Set the guard only after init succeeds so a runtimed first attempt (e.g.
+	// verdigris failed to load) retries on the next mixture instead of leaving
+	// the registry permanently unpopulated after one log line.
 	auxtools_atmos_init(build_auxmos_gas_registry())
+	GLOB.auxmos_gas_registry_initialized = TRUE
 
 /// For registering gases, do not touch this.
 /proc/_auxtools_register_gas(gas)
@@ -127,11 +124,9 @@ GLOBAL_LIST_EMPTY(auxmos_seen_errors)
 
 // adjust_moles_temp is the one arena mole-accessor gas_mixture.dm doesn't already
 // define (get_moles/set_moles/adjust_moles now live there, arena-backed). Route it
-// through the auxmos bind and refresh the temperature mirror. Gas arg stringified
-// per the get_strid contract.
+// through the auxmos bind. Gas arg stringified per the get_strid contract.
 /datum/gas_mixture/proc/adjust_moles_temp(gas_type, moles, temp)
-	. = call_ext(VERDIGRIS, "byond:adjust_moles_temp_hook_ffi")(src, "[gas_type]", moles, temp)
-	temperature = return_temperature()
+	return call_ext(VERDIGRIS, "byond:adjust_moles_temp_hook_ffi")(src, "[gas_type]", moles, temp)
 
 /// Latches the mixture immutable in the arena (one-way; further writes no-op).
 /datum/gas_mixture/proc/mark_immutable()

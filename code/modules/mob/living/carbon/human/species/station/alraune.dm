@@ -166,7 +166,7 @@
 	var/inhaled_gas_used = 0
 
 	var/breath_total = xgm_total_moles(breath) // cache total_moles for repeated use
-	var/breath_pressure = (breath_total*R_IDEAL_GAS_EQUATION*breath.temperature)/BREATH_VOLUME
+	var/breath_pressure = (breath_total*R_IDEAL_GAS_EQUATION*breath.return_temperature())/BREATH_VOLUME
 
 	var/inhaling
 	var/poison
@@ -262,35 +262,36 @@
 
 
 	// Hot air hurts :(
-	if((breath.temperature < breath_cold_level_1 || breath.temperature > breath_heat_level_1) && !(COLD_RESISTANCE in H.mutations))
+	var/breath_temperature = breath.return_temperature()
+	if((breath_temperature < breath_cold_level_1 || breath_temperature > breath_heat_level_1) && !(COLD_RESISTANCE in H.mutations))
 
-		if(breath.temperature <= breath_cold_level_1)
+		if(breath_temperature <= breath_cold_level_1)
 			if(prob(20))
 				to_chat(H, span_danger("You feel icicles forming on your skin!"))
-		else if(breath.temperature >= breath_heat_level_1)
+		else if(breath_temperature >= breath_heat_level_1)
 			if(prob(20))
 				to_chat(H, span_danger("You feel yourself smouldering in the heat!"))
 
 		var/bodypart = pick(BP_L_FOOT,BP_R_FOOT,BP_L_LEG,BP_R_LEG,BP_L_ARM,BP_R_ARM,BP_L_HAND,BP_R_HAND,BP_TORSO,BP_GROIN,BP_HEAD)
-		if(breath.temperature >= breath_heat_level_1)
-			if(breath.temperature < breath_heat_level_2)
+		if(breath_temperature >= breath_heat_level_1)
+			if(breath_temperature < breath_heat_level_2)
 				H.apply_damage(HEAT_GAS_DAMAGE_LEVEL_1, BURN, bodypart)
-			else if(breath.temperature < breath_heat_level_3)
+			else if(breath_temperature < breath_heat_level_3)
 				H.apply_damage(HEAT_GAS_DAMAGE_LEVEL_2, BURN, bodypart)
 			else
 				H.apply_damage(HEAT_GAS_DAMAGE_LEVEL_3, BURN, bodypart)
 
-		else if(breath.temperature <= breath_cold_level_1)
-			if(breath.temperature > breath_cold_level_2)
+		else if(breath_temperature <= breath_cold_level_1)
+			if(breath_temperature > breath_cold_level_2)
 				H.apply_damage(COLD_GAS_DAMAGE_LEVEL_1, BURN, bodypart)
-			else if(breath.temperature > breath_cold_level_3)
+			else if(breath_temperature > breath_cold_level_3)
 				H.apply_damage(COLD_GAS_DAMAGE_LEVEL_2, BURN, bodypart)
 			else
 				H.apply_damage(COLD_GAS_DAMAGE_LEVEL_3, BURN, bodypart)
 
 
 		//breathing in hot/cold air also heats/cools you a bit
-		var/temp_adj = breath.temperature - H.bodytemperature
+		var/temp_adj = breath_temperature - H.bodytemperature
 		if (temp_adj < 0)
 			temp_adj /= (BODYTEMP_COLD_DIVISOR * 5)	//don't raise temperature as much as if we were directly exposed
 		else
@@ -304,9 +305,9 @@
 		//to_world("Breath: [breath.temperature], [src]: [bodytemperature], Adjusting: [temp_adj]")
 		H.bodytemperature += temp_adj
 
-	else if(breath.temperature >= heat_discomfort_level)
+	else if(breath_temperature >= heat_discomfort_level)
 		get_environment_discomfort(src,"heat")
-	else if(breath.temperature <= cold_discomfort_level)
+	else if(breath_temperature <= cold_discomfort_level)
 		get_environment_discomfort(src,"cold")
 
 	// breath.update_values() removed; no-op under LINDA.

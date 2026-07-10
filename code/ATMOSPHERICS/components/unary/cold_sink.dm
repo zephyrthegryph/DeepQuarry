@@ -74,9 +74,10 @@
 /obj/machinery/atmospherics/unary/freezer/tgui_data(mob/user)
 	// this is the data which will be sent to the ui
 	var/data[0]
+	var/air_temperature = air_contents.return_temperature()
 	data["on"] = use_power ? 1 : 0
 	data["gasPressure"] = round(air_contents.return_pressure())
-	data["gasTemperature"] = round(air_contents.temperature)
+	data["gasTemperature"] = round(air_temperature)
 	data["minGasTemperature"] = 0
 	data["maxGasTemperature"] = round(T20C+500)
 	data["targetGasTemperature"] = round(set_temperature)
@@ -87,9 +88,9 @@
 	data["reagentPower"] = reagent_cooling
 
 	var/temp_class = "good"
-	if(air_contents.temperature > (T0C - 20))
+	if(air_temperature > (T0C - 20))
 		temp_class = "bad"
-	else if(air_contents.temperature < (T0C - 20) && air_contents.temperature > (T0C - 100))
+	else if(air_temperature < (T0C - 20) && air_temperature > (T0C - 100))
 		temp_class = "average"
 	data["gasTemperatureClass"] = temp_class
 
@@ -125,14 +126,15 @@
 		update_icon()
 		return
 
-	if(network && air_contents.temperature > set_temperature)
+	var/air_temperature = air_contents.return_temperature()
+	if(network && air_temperature > set_temperature)
 		cooling = 1
 
 		var/heat_transfer = max( -air_contents.get_thermal_energy_change(set_temperature - 5), 0 )
 
 		//Assume the heat is being pumped into the hull which is fixed at heatsink_temperature
 		//not /really/ proper thermodynamics but whatever
-		var/cop = FREEZER_PERF_MULT * air_contents.temperature/heatsink_temperature	//heatpump coefficient of performance from thermodynamics -> power used = heat_transfer/cop
+		var/cop = FREEZER_PERF_MULT * air_temperature/heatsink_temperature	//heatpump coefficient of performance from thermodynamics -> power used = heat_transfer/cop
 		heat_transfer = min(heat_transfer, cop * power_rating)	//limit heat transfer by available power
 
 		// Process coolant
@@ -168,7 +170,7 @@
 
 	max_power_rating = initial(max_power_rating) * cap_rating / 2			//more powerful
 	heatsink_temperature = initial(heatsink_temperature) / ((manip_rating + bin_rating) / 2)	//more efficient
-	air_contents.volume = max(initial(internal_volume) - 200, 0) + 200 * bin_rating
+	air_contents.set_volume(max(initial(internal_volume) - 200, 0) + 200 * bin_rating)
 	set_power_level(power_setting)
 
 /obj/machinery/atmospherics/unary/freezer/proc/set_power_level(new_power_setting)

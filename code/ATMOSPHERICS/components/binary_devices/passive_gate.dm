@@ -80,11 +80,11 @@
 
 	//-1 if pump_gas() did not move any gas, >= 0 otherwise
 	var/returnval = -1
-	if((regulate_mode == REGULATE_NONE || pressure_delta > 0.01) && (air1.temperature > 0 || air2.temperature > 0))	//since it's basically a valve, it makes sense to check both temperatures
+	if((regulate_mode == REGULATE_NONE || pressure_delta > 0.01) && (air1.return_temperature() > 0 || air2.return_temperature() > 0))	//since it's basically a valve, it makes sense to check both temperatures
 		flowing = 1
 
 		//flow rate limit
-		var/transfer_moles = (set_flow_rate/air1.volume)*air1.total_moles()
+		var/transfer_moles = (set_flow_rate/air1.return_volume())*air1.total_moles()
 
 		//Figure out how much gas to transfer to meet the target pressure.
 		switch (regulate_mode)
@@ -193,7 +193,7 @@
 		regulate_mode = text2num(signal.data["set_regulate_mode"])
 
 	if("set_flow_rate" in signal.data)
-		set_flow_rate = between(0, text2num(signal.data["set_flow_rate"]), air1.volume)
+		set_flow_rate = between(0, text2num(signal.data["set_flow_rate"]), air1.return_volume())
 
 	if("status" in signal.data)
 		spawn(2)
@@ -272,10 +272,10 @@
 				if("min")
 					set_flow_rate = 0
 				if("max")
-					set_flow_rate = air1.volume
+					set_flow_rate = air1.return_volume()
 				if("set")
-					var/new_flow_rate = tgui_input_number(ui.user,"Enter new flow rate limit (0-[air1.volume]L/s)","Flow Rate Control",src.set_flow_rate,air1.volume,0)
-					src.set_flow_rate = between(0, new_flow_rate, air1.volume)
+					var/new_flow_rate = tgui_input_number(ui.user,"Enter new flow rate limit (0-[air1.return_volume()]L/s)","Flow Rate Control",src.set_flow_rate,air1.return_volume(),0)
+					src.set_flow_rate = between(0, new_flow_rate, air1.return_volume())
 
 	update_icon()
 	add_fingerprint(ui.user)

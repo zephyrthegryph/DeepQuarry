@@ -63,7 +63,7 @@
 		else
 			environment = loc.return_air()
 
-		var/transfer_moles = min(1, volume_rate/environment.volume)*environment.total_moles()
+		var/transfer_moles = min(1, volume_rate/environment.return_volume())*environment.total_moles()
 
 		power_draw = scrub_gas(src, scrubbing_gas, environment, air_contents, transfer_moles, power_rating)
 
@@ -212,7 +212,7 @@
 
 	var/datum/gas_mixture/environment = loc.return_air()
 
-	var/transfer_moles = min(1, volume_rate/environment.volume)*environment.total_moles()
+	var/transfer_moles = min(1, volume_rate/environment.return_volume())*environment.total_moles()
 
 	power_draw = scrub_gas(src, scrubbing_gas, environment, air_contents, transfer_moles, active_power_usage)
 

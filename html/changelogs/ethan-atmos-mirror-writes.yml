@@ -1,0 +1,6 @@
+author: "ethan"
+delete-after: true
+changes:
+  - bugfix: "Fixed several atmospherics interactions that silently stopped working after the Rust gas-engine cutover: tank transfer valve (bomb) gas mixing, fire-suppression cooling from extinguisher chemicals, mecha cabin temperature regulation, the gas-crack mining drill, and freezer/heater/pump/mixer/vent reservoir sizing all wrote to a stale value the engine ignored."
+  - bugfix: "Holodeck heat programs and pipe-to-wall heat conduction now correctly reach the turf heat engine."
+  - code_imp: "Gas-mixture and turf temperature/volume are now written through set_temperature()/set_volume() setters (the raw vars are read-only mirrors of the Rust arena); a CI lint guards against direct mirror writes."

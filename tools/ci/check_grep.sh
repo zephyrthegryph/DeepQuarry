@@ -112,6 +112,19 @@ fi;
 
 section "code issues"
 
+part "gas mixture mirror writes"
+# /datum/gas_mixture temperature/volume are READ-ONLY mirrors of the Rust atmos arena
+# (the authoritative store). A bare `air.temperature = x` / `air_contents.volume = y`
+# (incl. += -= *= /=) updates only the DM mirror, so the arena keeps the old value and
+# the change silently vanishes from all gas math. Callers must use set_temperature() /
+# set_volume() instead. This guards the common gas-mixture accessor idioms; a refresh of
+# the mirror FROM the arena (RHS return_temperature()/return_volume()) is allowed.
+if $grep -nE '(\bair|air_contents|\bair[0-9]|cabin_air|\benvironment)\.(temperature|volume)[[:space:]]*[-+*/]?=[^=]' $code_files | grep -vE 'return_temperature|return_volume'; then
+	echo
+	echo -e "${RED}ERROR: direct write to a gas mixture temperature/volume mirror detected. Use set_temperature() / set_volume() — a raw assignment updates only the DM mirror and is ignored by the Rust atmos arena.${NC}"
+	FAILED=1
+fi;
+
 part "space indentation"
 if grep -P '(^ {2})|(^ [^ * ])|(^    +)' $code_files; then
 	echo

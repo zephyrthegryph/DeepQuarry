@@ -40,8 +40,7 @@
 #define SSAIR_HOTSPOTS 4
 #define SSAIR_EXCITEDGROUPS 5
 #define SSAIR_HIGHPRESSURE 6
-// SSAIR_SUPERCONDUCTIVITY (7) deleted — DM superconduction engine removed; the
-// auxmos heat subsystem is not wired.
+#define SSAIR_SUPERCONDUCTIVITY 7 // process_turf_heat (Rust auxmos heat conduction)
 // SSAIR_PROCESS_ATOMS (8) deleted alongside atom_process / process_exposure.
 // auxmos turf-processing steps. These run in a fixed order each fire(); the
 // fire() switch checkpoints on them so a mid-tick MC pause resumes correctly.

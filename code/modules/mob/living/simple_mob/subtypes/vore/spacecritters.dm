@@ -97,11 +97,11 @@
 			var/datum/gas_mixture/removed = env.remove(transfer_moles)
 			if(removed)
 				var/heat_transfer = removed.get_thermal_energy_change(set_temperature)
-				if(heat_transfer > 0 && env.temperature < T0C + 200)	//This should start heating the room at a moderate pace up to 200 degrees celsius.
+				if(heat_transfer > 0 && env.return_temperature() < T0C + 200)	//This should start heating the room at a moderate pace up to 200 degrees celsius.
 					heat_transfer = min(heat_transfer , heating_power) //limit by the power rating of the heater
 					removed.add_thermal_energy(heat_transfer)
 
-				else if(heat_transfer > 0 && env.temperature < set_temperature) //Set temperature is 10,000 degrees celsius. So this thing will start cooking crazy hot between the temperatures of 200C and 10,000C.
+				else if(heat_transfer > 0 && env.return_temperature() < set_temperature) //Set temperature is 10,000 degrees celsius. So this thing will start cooking crazy hot between the temperatures of 200C and 10,000C.
 					heating_power = original_temp*100 //Changed to work variable -shark //FLAME ON! This will make the moth heat up the room at an incredible rate.
 					heat_transfer = min(heat_transfer , heating_power) //limit by the power rating of the heater. Except it's hot, so yeah.
 					removed.add_thermal_energy(heat_transfer)

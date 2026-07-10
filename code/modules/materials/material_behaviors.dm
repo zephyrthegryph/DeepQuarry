@@ -4,8 +4,8 @@
 // are plain numeric magnitudes on /datum/material (see _materials.dm). This file
 // owns: the read API, the item-side application, and the component that actually
 // makes the behaviour happen. It replaces the earlier half-wired component layer
-// (which only carried magnitudes and never irradiated/poisoned anything) and the
-// removed material-synergy system (no-op shims kept here for its old callers).
+// (which only carried magnitudes and never irradiated/poisoned anything). The old
+// material-synergy system was removed outright — no shims remain.
 
 // ---- Read API --------------------------------------------------------------
 // Canonical accessors; structural readers (walls, girders, doors, fuel) go
@@ -79,7 +79,9 @@
 			strength = radioactivity,
 		)
 	if(toxicity > 0)
-		// Sub-lethal but real, only while held bare in hand (loc is the mob).
+		// Sub-lethal but real, only while held bare in hand (loc is the mob). Dose is
+		// per fixed SSobj tick (wait = 20 ds); SSobj passes a deciseconds delta, not
+		// seconds, so this is deliberately NOT multiplied by the process arg.
 		var/mob/living/carbon/human/H = I.loc
 		if(istype(H))
 			H.adjustToxLoss(toxicity * 0.01)

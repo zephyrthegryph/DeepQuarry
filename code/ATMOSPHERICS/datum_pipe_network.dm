@@ -89,7 +89,7 @@
 		gases += line_member.air
 
 	for(var/datum/gas_mixture/air in gases)
-		volume += air.volume
+		volume += air.return_volume()
 
 // pipenet gas equalization. The original /proc/equalize_gases pooled
 // every member mixture's gases + thermal energy, then redistributed to each
@@ -112,8 +112,8 @@
 	for(var/datum/gas_mixture/mix in gases)
 		var/m = mix.total_moles()
 		total_moles += m
-		total_thermal += m * mix.temperature
-		total_volume += mix.volume
+		total_thermal += m * mix.return_temperature()
+		total_volume += mix.return_volume()
 		var/list/mix_gases = mix.get_gases()
 		for(var/datum/gas/g as anything in mix_gases)
 			pooled[g] = (pooled[g] || 0) + mix_gases[g]
@@ -121,7 +121,7 @@
 		return
 	var/avg_temp = total_moles > 0 ? total_thermal / total_moles : T20C
 	for(var/datum/gas_mixture/mix in gases)
-		var/share = mix.volume / total_volume
+		var/share = mix.return_volume() / total_volume
 		// Zero out current gases first so removed gas types disappear.
 		for(var/datum/gas/g as anything in mix.get_gases())
 			mix.set_moles(g, 0)

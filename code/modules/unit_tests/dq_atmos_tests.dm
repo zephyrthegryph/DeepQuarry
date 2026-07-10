@@ -251,8 +251,9 @@
 		"oxygen did not deplete: [initial_o2] → [post_o2]")
 	TEST_ASSERT(post_co2 > initial_co2, \
 		"CO2 not produced: [initial_co2] → [post_co2]")
-	TEST_ASSERT(mix.temperature > PLASMA_MINIMUM_BURN_TEMPERATURE + 200, \
-		"temperature did not rise from exothermic reaction: [mix.temperature]")
+	var/mix_temp = mix.return_temperature()
+	TEST_ASSERT(mix_temp > PLASMA_MINIMUM_BURN_TEMPERATURE + 200, \
+		"temperature did not rise from exothermic reaction: [mix_temp]")
 
 
 /// Verifies scrub_gas() helper actually transfers gas. Without the gas_ids()
@@ -882,6 +883,29 @@
 	return SSair.times_fired - baseline
 
 
+/// Convergence-polling counterpart to dq_atmos_test_wait_real_ssair_ticks:
+/// tests that know exactly what "done" looks like (e.g. plasma reached B,
+/// pressure dropped) inline a `while` loop over this SAME baseline/deadline
+/// shape — poll SSair.times_fired against the ORIGINAL fixed-tick deadline
+/// (so a slow machine still gets the full budget) but `break` the instant
+/// their success condition holds, instead of always sleeping out the full
+/// tick count. See dq_gas_equilibrates_over_ticks, dq_multiz_spread_through_open_turf,
+/// dq_planetary_atmos_converges_to_baseline, dq_gas_overlays_appear_on_share,
+/// dq_room_depressurizes_when_open_to_space, dq_canister_release_propagates_through_room,
+/// dq_diffusion_converges_to_balanced_composition, and
+/// dq_real_canister_release_spreads_via_master_loop for the pattern:
+///
+///   var/baseline = SSair.times_fired
+///   var/max_wait = min(SSair.wait * ticks * 3, DQ_ATMOS_TEST_MAX_WAIT)
+///   var/started = world.time
+///   while(SSair.times_fired < baseline + ticks)
+///       if(<success condition>)
+///           break
+///       if(world.time - started > max_wait)
+///           break
+///       sleep(SSair.wait)
+
+
 /// Find an adjacent floor pair whose adjacency was built by the real init
 /// path (init_immediate_calculate_adjacent_turfs). Preference order:
 ///   1. Adjacent floor pair INSIDE the unit_tests.dmm sealed room (walls of
@@ -1156,10 +1180,24 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	donor.set_temperature(T20C)
 	A.assume_air(donor)
 
-	dq_atmos_test_wait_real_ssair_ticks(20)
+	// Poll for equilibration instead of always sleeping out the full 20-tick
+	// budget: break as soon as the SAME condition we assert below holds.
+	var/baseline = SSair.times_fired
+	var/max_wait = min(SSair.wait * 20 * 3, DQ_ATMOS_TEST_MAX_WAIT)
+	var/started = world.time
+	var/a_plasma
+	var/b_plasma
+	while(SSair.times_fired < baseline + 20)
+		a_plasma = A.air.get_moles(/datum/gas/plasma)
+		b_plasma = B.air.get_moles(/datum/gas/plasma)
+		if(abs((a_plasma + b_plasma) - 100) < 2 && abs(a_plasma - b_plasma) < 10)
+			break
+		if(world.time - started > max_wait)
+			break
+		sleep(SSair.wait)
 
-	var/a_plasma = A.air.get_moles(/datum/gas/plasma)
-	var/b_plasma = B.air.get_moles(/datum/gas/plasma)
+	a_plasma = A.air.get_moles(/datum/gas/plasma)
+	b_plasma = B.air.get_moles(/datum/gas/plasma)
 	TEST_ASSERT(abs((a_plasma + b_plasma) - 100) < 2, \
 		"plasma moles NOT conserved after real SSair ticks in walled pair: A=[a_plasma] B=[b_plasma] total=[a_plasma + b_plasma], expected ~100")
 	TEST_ASSERT(abs(a_plasma - b_plasma) < 10, \
@@ -1259,6 +1297,11 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	donor.set_temperature(T20C)
 	A.assume_air(donor)
 
+	// NEGATIVE test (plasma must NOT cross) — keep the full fixed wait.
+	// Polling-and-breaking-early on "b_p == 0" would be vacuous: that
+	// condition is already true at tick 0, so an early-break loop would
+	// exit immediately and never actually exercise 20 real SSair ticks
+	// of opportunity for a leak to appear.
 	dq_atmos_test_wait_real_ssair_ticks(20)
 
 	var/b_p = B.air.get_moles(/datum/gas/plasma)
@@ -1552,9 +1595,21 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	upper.assume_air(donor)
 	upper.air_update_turf(TRUE, FALSE)
 
-	dq_atmos_test_wait_real_ssair_ticks(20)
+	// Poll: break the moment plasma has reached the floor below (same
+	// condition asserted after the loop), instead of always sleeping 20 ticks.
+	var/baseline = SSair.times_fired
+	var/max_wait = min(SSair.wait * 20 * 3, DQ_ATMOS_TEST_MAX_WAIT)
+	var/started = world.time
+	var/down_p
+	while(SSair.times_fired < baseline + 20)
+		down_p = lower.air.get_moles(/datum/gas/plasma)
+		if(down_p > 1)
+			break
+		if(world.time - started > max_wait)
+			break
+		sleep(SSair.wait)
 
-	var/down_p = lower.air.get_moles(/datum/gas/plasma)
+	down_p = lower.air.get_moles(/datum/gas/plasma)
 	TEST_ASSERT(down_p > 1, \
 		"multi-z spread failed: floor below the open turf got [down_p] plasma after real SSair ticks")
 
@@ -1625,10 +1680,21 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 
 	// Real Master.Loop ticks SSair, whose Rust turf-sharing pass
 	// (process_turfs_auxtools) blends the turf air toward planetary_mix
-	// when T.planetary_atmos is set.
-	dq_atmos_test_wait_real_ssair_ticks(20)
+	// when T.planetary_atmos is set. Poll and break as soon as the drain
+	// target (asserted below) is reached, instead of always waiting 20 ticks.
+	var/baseline = SSair.times_fired
+	var/max_wait = min(SSair.wait * 20 * 3, DQ_ATMOS_TEST_MAX_WAIT)
+	var/started = world.time
+	var/final_plasma
+	while(SSair.times_fired < baseline + 20)
+		final_plasma = T.air.get_moles(/datum/gas/plasma)
+		if(final_plasma < initial_plasma * 0.5)
+			break
+		if(world.time - started > max_wait)
+			break
+		sleep(SSair.wait)
 
-	var/final_plasma = T.air.get_moles(/datum/gas/plasma)
+	final_plasma = T.air.get_moles(/datum/gas/plasma)
 	// Clean up: drop the planetary flag and unwall the room so later tests see
 	// a clean, non-planetary floor. (We leave the SSair.planetary entry in
 	// place — it's an immutable baseline keyed by the standard gas string and
@@ -1673,7 +1739,17 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	donor.set_temperature(T20C)
 	A.assume_air(donor)
 
-	dq_atmos_test_wait_real_ssair_ticks(20)
+	// Poll: break as soon as both overlays appear (the same condition
+	// asserted below), instead of always sleeping out 20 ticks.
+	var/baseline = SSair.times_fired
+	var/max_wait = min(SSair.wait * 20 * 3, DQ_ATMOS_TEST_MAX_WAIT)
+	var/started = world.time
+	while(SSair.times_fired < baseline + 20)
+		if(LAZYLEN(A.atmos_overlay_types) > 0 && LAZYLEN(B.atmos_overlay_types) > 0)
+			break
+		if(world.time - started > max_wait)
+			break
+		sleep(SSair.wait)
 
 	TEST_ASSERT(LAZYLEN(A.atmos_overlay_types) > 0, \
 		"A has plasma but no atmos_overlay — process_cell didn't call update_visuals")
@@ -1948,7 +2024,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	net.gases += pipe_a
 	net.gases += pipe_b
 	for(var/datum/gas_mixture/m in net.gases)
-		net.volume += m.volume
+		net.volume += m.return_volume()
 	var/initial_total = pipe_a.total_moles() + pipe_b.total_moles()
 	var/initial_thermal = pipe_a.thermal_energy() + pipe_b.thermal_energy()
 
@@ -1964,8 +2040,10 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	TEST_ASSERT(abs(a_after - b_after) < 0.5, \
 		"reconcile_air didn't equalize equal-volume pipes: A=[a_after] B=[b_after]")
 	// Temperature equalizes to the moles-weighted thermal-energy average.
-	TEST_ASSERT(abs(pipe_a.temperature - pipe_b.temperature) < 1, \
-		"reconcile_air didn't equalize temperatures: A=[pipe_a.temperature] B=[pipe_b.temperature]")
+	var/pipe_a_temp = pipe_a.return_temperature()
+	var/pipe_b_temp = pipe_b.return_temperature()
+	TEST_ASSERT(abs(pipe_a_temp - pipe_b_temp) < 1, \
+		"reconcile_air didn't equalize temperatures: A=[pipe_a_temp] B=[pipe_b_temp]")
 	// Thermal energy should be approximately conserved (within rounding).
 	TEST_ASSERT(abs(final_thermal - initial_thermal) < (initial_thermal * 0.05), \
 		"reconcile_air lost thermal energy: [initial_thermal] → [final_thermal] (>5% loss)")
@@ -2116,7 +2194,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	var/initial_trit = mix.get_moles(/datum/gas/tritium)
 	var/initial_o2 = mix.get_moles(/datum/gas/oxygen)
 	var/initial_h2o = mix.get_moles(/datum/gas/water_vapor)
-	var/initial_temp = mix.temperature
+	var/initial_temp = mix.return_temperature()
 
 	mix.react(null)
 
@@ -2126,8 +2204,9 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 		"O2 not consumed by tritfire")
 	TEST_ASSERT(mix.get_moles(/datum/gas/water_vapor) > initial_h2o, \
 		"water vapor not produced by tritfire")
-	TEST_ASSERT(mix.temperature > initial_temp, \
-		"tritfire didn't release heat: [initial_temp] → [mix.temperature]")
+	var/tritfire_temp = mix.return_temperature()
+	TEST_ASSERT(tritfire_temp > initial_temp, \
+		"tritfire didn't release heat: [initial_temp] → [tritfire_temp]")
 
 
 /// Hydrogen combustion: H2 + O2 + heat → water vapor. Similar shape to
@@ -2142,14 +2221,14 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 
 	var/initial_h2 = mix.get_moles(/datum/gas/hydrogen)
 	var/initial_o2 = mix.get_moles(/datum/gas/oxygen)
-	var/initial_temp = mix.temperature
+	var/initial_temp = mix.return_temperature()
 
 	mix.react(null)
 
 	TEST_ASSERT(mix.get_moles(/datum/gas/hydrogen) < initial_h2, \
 		"H2 did not burn: [initial_h2] → [mix.get_moles(/datum/gas/hydrogen)]")
 	TEST_ASSERT(mix.get_moles(/datum/gas/oxygen) < initial_o2, "O2 not consumed by h2fire")
-	TEST_ASSERT(mix.temperature > initial_temp, "h2fire didn't release heat")
+	TEST_ASSERT(mix.return_temperature() > initial_temp, "h2fire didn't release heat")
 
 
 /// Freon combustion: freon + O2 (BELOW freezing point) → endothermic cooling.
@@ -2169,13 +2248,13 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	mix.set_temperature((FREON_LOWER_TEMPERATURE + FREON_MAXIMUM_BURN_TEMPERATURE) / 2) // ~171K
 
 	var/initial_freon = mix.get_moles(/datum/gas/freon)
-	var/initial_temp = mix.temperature
+	var/initial_temp = mix.return_temperature()
 	TEST_ASSERT(initial_freon > 0, "test setup didn't load freon: [initial_freon]")
 
 	mix.react(null)
 
 	var/final_freon = mix.get_moles(/datum/gas/freon)
-	var/final_temp = mix.temperature
+	var/final_temp = mix.return_temperature()
 	// Freon combustion is endothermic: it consumes freon and cools the mix.
 	TEST_ASSERT(final_freon < initial_freon, \
 		"freonfire didn't fire under T=[initial_temp] freon=[initial_freon] O2=[mix.get_moles(/datum/gas/oxygen)] — freon was not consumed: [initial_freon] → [final_freon]")
@@ -2899,13 +2978,13 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	P.air.adjust_gas(/datum/gas/nitrogen, 50)
 	P.air.set_temperature(T0C + 500) // hot
 
-	var/initial_turf_temp = turf_air.temperature
-	var/initial_pipe_temp = P.air.temperature
+	var/initial_turf_temp = turf_air.return_temperature()
+	var/initial_pipe_temp = P.air.return_temperature()
 
-	P.temperature_interact(T, P.air.volume, OPEN_HEAT_TRANSFER_COEFFICIENT)
+	P.temperature_interact(T, P.air.return_volume(), OPEN_HEAT_TRANSFER_COEFFICIENT)
 
-	var/final_turf_temp = turf_air.temperature
-	var/final_pipe_temp = P.air.temperature
+	var/final_turf_temp = turf_air.return_temperature()
+	var/final_pipe_temp = P.air.return_temperature()
 	TEST_ASSERT(final_turf_temp > initial_turf_temp, \
 		"turf air didn't heat from hot pipe: [initial_turf_temp] → [final_turf_temp]")
 	TEST_ASSERT(final_pipe_temp < initial_pipe_temp, \
@@ -2966,9 +3045,9 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 
 	// After enough ticks, B should have caught fire (hotspot present OR
 	// temperature now well above ignition).
-	var/b_caught = !isnull(B.active_hotspot) || B.air.temperature > PLASMA_MINIMUM_BURN_TEMPERATURE
+	var/b_caught = !isnull(B.active_hotspot) || B.air.return_temperature() > PLASMA_MINIMUM_BURN_TEMPERATURE
 	TEST_ASSERT(b_caught, \
-		"fire did not spread from A to B over 20 ticks. B.hotspot=[B.active_hotspot] B.temp=[B.air.temperature]")
+		"fire did not spread from A to B over 20 ticks. B.hotspot=[B.active_hotspot] B.temp=[B.air.return_temperature()]")
 
 	if(A.active_hotspot)
 		qdel(A.active_hotspot)
@@ -3021,11 +3100,24 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	var/initial_pressure = A.air.return_pressure()
 	var/initial_moles = A.air.total_moles()
 
-	// Let real SSair tick.
-	dq_atmos_test_wait_real_ssair_ticks(15)
+	// Let real SSair tick, polling for the drop instead of always waiting the
+	// full 15-tick budget — break as soon as both conditions asserted below hold.
+	var/baseline = SSair.times_fired
+	var/max_wait = min(SSair.wait * 15 * 3, DQ_ATMOS_TEST_MAX_WAIT)
+	var/started = world.time
+	var/final_pressure
+	var/final_moles
+	while(SSair.times_fired < baseline + 15)
+		final_pressure = A.air.return_pressure()
+		final_moles = A.air.total_moles()
+		if(final_pressure < initial_pressure && final_moles < initial_moles)
+			break
+		if(world.time - started > max_wait)
+			break
+		sleep(SSair.wait)
 
-	var/final_pressure = A.air.return_pressure()
-	var/final_moles = A.air.total_moles()
+	final_pressure = A.air.return_pressure()
+	final_moles = A.air.total_moles()
 
 	// Restore baseline air on A and roll the breached wall + isolation walls back
 	// to their original turf types so later tests see a clean sealed room.
@@ -3357,15 +3449,16 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	P.air.set_temperature(PLASMA_MINIMUM_BURN_TEMPERATURE + 300)
 
 	var/initial_plasma = P.air.get_moles(/datum/gas/plasma)
-	var/initial_temp = P.air.temperature
+	var/initial_temp = P.air.return_temperature()
 
 	P.air.react(P)
 
 	var/final_plasma = P.air.get_moles(/datum/gas/plasma)
 	TEST_ASSERT(final_plasma < initial_plasma, \
 		"plasma didn't burn inside pipeline: [initial_plasma] → [final_plasma]")
-	TEST_ASSERT(P.air.temperature > initial_temp, \
-		"pipeline plasmafire didn't release heat: [initial_temp] → [P.air.temperature]")
+	var/pipe_react_temp = P.air.return_temperature()
+	TEST_ASSERT(pipe_react_temp > initial_temp, \
+		"pipeline plasmafire didn't release heat: [initial_temp] → [pipe_react_temp]")
 	qdel(P)
 
 
@@ -3806,7 +3899,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	turf_air.set_temperature(1000) // very hot
 	turf_air.adjust_gas(/datum/gas/oxygen, 100)
 
-	I.fire_act(turf_air.temperature, turf_air.volume)
+	I.fire_act(turf_air.return_temperature(), turf_air.return_volume())
 
 	// Observable consequence: a flammable item exposed to ignition-temperature
 	// air must be alight. If fire_act stopped applying heat to floor items, the
@@ -4014,9 +4107,9 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	TEST_ASSERT(initial_moles > 500, "fuel load failed: only [initial_moles] moles")
 
 	// Replicate the thrust_burn() core: pull a ratio of the fuel mixture.
-	var/burn_ratio = E.volume_per_burn * E.thrust_limit / E.air_contents.volume
+	var/burn_ratio = E.volume_per_burn * E.thrust_limit / E.air_contents.return_volume()
 	TEST_ASSERT(burn_ratio > 0 && burn_ratio < 1, \
-		"burn_ratio out of range: [burn_ratio] (vol_per_burn=[E.volume_per_burn] thrust_limit=[E.thrust_limit] vol=[E.air_contents.volume])")
+		"burn_ratio out of range: [burn_ratio] (vol_per_burn=[E.volume_per_burn] thrust_limit=[E.thrust_limit] vol=[E.air_contents.return_volume()])")
 
 	var/datum/gas_mixture/removed = E.air_contents.remove_ratio(burn_ratio)
 	TEST_ASSERT_NOTNULL(removed, "remove_ratio returned null on a fuel-rich mixture")
@@ -4173,7 +4266,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	// Pressure target: ~37 atm. DQ's TANK_RUPTURE_PRESSURE is 35 atm and
 	// TANK_FRAGMENT_PRESSURE is 40 atm — we need to sit between those so
 	// check_status takes the "integrity damage, no explosion" branch.
-	var/target_moles = (37 * ONE_ATMOSPHERE) * Tank.air_contents.volume / (R_IDEAL_GAS_EQUATION * T20C)
+	var/target_moles = (37 * ONE_ATMOSPHERE) * Tank.air_contents.return_volume() / (R_IDEAL_GAS_EQUATION * T20C)
 	Tank.air_contents.adjust_gas(/datum/gas/oxygen, target_moles - Tank.air_contents.total_moles())
 	Tank.air_contents.set_temperature(T20C)
 
@@ -4314,8 +4407,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	Line.build_pipeline(Pipe)
 
 	TEST_ASSERT_NOTNULL(Line.air, "build_pipeline didn't allocate pipeline.air")
-	TEST_ASSERT(Line.air.volume == Pipe.volume, \
-		"pipeline volume mismatch: pipeline=[Line.air.volume] pipe=[Pipe.volume]")
+	TEST_ASSERT(Line.air.return_volume() == Pipe.volume, \
+		"pipeline volume mismatch: pipeline=[Line.air.return_volume()] pipe=[Pipe.volume]")
 	TEST_ASSERT(Pipe.parent == Line, \
 		"pipe.parent not set to the pipeline: pipe.parent=[Pipe.parent] line=[Line]")
 	TEST_ASSERT(Line.members && (Pipe in Line.members), \
@@ -4345,7 +4438,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	net.gases += p2
 	net.gases += p3
 	for(var/datum/gas_mixture/m in net.gases)
-		net.volume += m.volume
+		net.volume += m.return_volume()
 
 	var/initial_total = p1.total_moles() + p2.total_moles() + p3.total_moles()
 	var/initial_thermal = p1.thermal_energy() + p2.thermal_energy() + p3.thermal_energy()
@@ -4363,8 +4456,11 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	TEST_ASSERT(abs(m1 - m2) < 0.5 && abs(m2 - m3) < 0.5, \
 		"reconcile_air didn't equalize 3 pipes: m1=[m1] m2=[m2] m3=[m3]")
 	// Temperatures should all converge.
-	TEST_ASSERT(abs(p1.temperature - p2.temperature) < 1 && abs(p2.temperature - p3.temperature) < 1, \
-		"reconcile_air didn't equalize temperatures: T1=[p1.temperature] T2=[p2.temperature] T3=[p3.temperature]")
+	var/p1_temp = p1.return_temperature()
+	var/p2_temp = p2.return_temperature()
+	var/p3_temp = p3.return_temperature()
+	TEST_ASSERT(abs(p1_temp - p2_temp) < 1 && abs(p2_temp - p3_temp) < 1, \
+		"reconcile_air didn't equalize temperatures: T1=[p1_temp] T2=[p2_temp] T3=[p3_temp]")
 	TEST_ASSERT(abs(final_thermal - initial_thermal) < (initial_thermal * 0.05), \
 		"reconcile_air lost thermal energy with 3 pipes: [initial_thermal] → [final_thermal] (>5%)")
 	qdel(net)
@@ -4407,8 +4503,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 		"pipe.parent not set on both members: A=[PA.parent] B=[PB.parent]")
 
 	// Volume should be the sum of both pipe volumes.
-	TEST_ASSERT(Line.air.volume == (PA.volume + PB.volume), \
-		"pipeline volume not sum of pipes: pipeline=[Line.air.volume] expected=[PA.volume + PB.volume]")
+	TEST_ASSERT(Line.air.return_volume() == (PA.volume + PB.volume), \
+		"pipeline volume not sum of pipes: pipeline=[Line.air.return_volume()] expected=[PA.volume + PB.volume]")
 
 	qdel(Line)
 	qdel(PA)
@@ -4446,12 +4542,20 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	Can.release_pressure = ONE_ATMOSPHERE * 50
 
 	// Run canister.process to release, then drive cells to share into B.
+	// Poll: stop looping as soon as both turfs show plasma (the condition
+	// asserted below) rather than always burning the full 8 iterations.
+	var/A_plasma
+	var/B_plasma
 	for(var/i in 1 to 8)
 		Can.process()
 		dq_atmos_test_drive_ticks(list(A, B), 1)
+		A_plasma = A_air.get_moles(/datum/gas/plasma)
+		B_plasma = B_air.get_moles(/datum/gas/plasma)
+		if(A_plasma > 0 && B_plasma > 0)
+			break
 
-	var/A_plasma = A_air.get_moles(/datum/gas/plasma)
-	var/B_plasma = B_air.get_moles(/datum/gas/plasma)
+	A_plasma = A_air.get_moles(/datum/gas/plasma)
+	B_plasma = B_air.get_moles(/datum/gas/plasma)
 	TEST_ASSERT(A_plasma > 0, "canister didn't release ANY plasma onto A: [A_plasma]")
 	TEST_ASSERT(B_plasma > 0, "plasma didn't spread from A to adjacent B: [B_plasma] (A=[A_plasma])")
 
@@ -4473,7 +4577,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	TEST_ASSERT_NOTNULL(Tank, "tank construct failed")
 
 	// Push pressure to ~30 atm (below TANK_LEAK so we don't lose integrity).
-	var/target_moles = (28 * ONE_ATMOSPHERE) * Tank.air_contents.volume / (R_IDEAL_GAS_EQUATION * T20C)
+	var/target_moles = (28 * ONE_ATMOSPHERE) * Tank.air_contents.return_volume() / (R_IDEAL_GAS_EQUATION * T20C)
 	Tank.air_contents.adjust_gas(/datum/gas/oxygen, target_moles - Tank.air_contents.total_moles())
 	Tank.air_contents.set_temperature(T20C)
 
@@ -4515,8 +4619,9 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	TEST_ASSERT_EQUAL(mix.get_moles(/datum/gas/oxygen), 100, \
 		"oxygen consumed at TCMB — temperature gate broken")
 	// Allow tiny floating drift but no significant change.
-	TEST_ASSERT(abs(mix.temperature - TCMB) < 1, \
-		"temperature shifted at TCMB react: [mix.temperature]")
+	var/tcmb_temp = mix.return_temperature()
+	TEST_ASSERT(abs(tcmb_temp - TCMB) < 1, \
+		"temperature shifted at TCMB react: [tcmb_temp]")
 
 
 /// An empty (vacuum) gas mixture should return 0 pressure without crashing —
@@ -4860,14 +4965,31 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	var/initial_total_n2 = A_air.get_moles(/datum/gas/nitrogen)
 	var/initial_total_o2 = B_air.get_moles(/datum/gas/oxygen)
 
-	// Drive equilibration.
-	dq_atmos_test_drive_ticks(list(A, B), 60)
+	// Drive equilibration, polling for the 50/50 composition (the same
+	// condition asserted below) instead of always burning the full 60 ticks.
+	var/baseline = SSair.times_fired
+	var/max_wait = min(SSair.wait * 60 * 3, DQ_ATMOS_TEST_MAX_WAIT)
+	var/started = world.time
+	var/a_n2
+	var/a_o2
+	var/b_n2
+	var/b_o2
+	while(SSair.times_fired < baseline + 60)
+		dq_atmos_test_drive_ticks(list(A, B), 1)
+		a_n2 = A_air.get_moles(/datum/gas/nitrogen)
+		a_o2 = A_air.get_moles(/datum/gas/oxygen)
+		b_n2 = B_air.get_moles(/datum/gas/nitrogen)
+		b_o2 = B_air.get_moles(/datum/gas/oxygen)
+		if(abs(a_n2 - a_o2) < (initial_total_n2 * 0.1) && abs(b_n2 - b_o2) < (initial_total_o2 * 0.1))
+			break
+		if(world.time - started > max_wait)
+			break
 
 	// Each cell should now hold roughly half N2 and half O2.
-	var/a_n2 = A_air.get_moles(/datum/gas/nitrogen)
-	var/a_o2 = A_air.get_moles(/datum/gas/oxygen)
-	var/b_n2 = B_air.get_moles(/datum/gas/nitrogen)
-	var/b_o2 = B_air.get_moles(/datum/gas/oxygen)
+	a_n2 = A_air.get_moles(/datum/gas/nitrogen)
+	a_o2 = A_air.get_moles(/datum/gas/oxygen)
+	b_n2 = B_air.get_moles(/datum/gas/nitrogen)
+	b_o2 = B_air.get_moles(/datum/gas/oxygen)
 
 	// Composition: in each cell, N2 and O2 should be approximately equal.
 	TEST_ASSERT(abs(a_n2 - a_o2) < (initial_total_n2 * 0.1), \
@@ -4989,10 +5111,24 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 
 	// Sleep and let the real game tick. Master.Loop ticks SSmachines
 	// (which calls Can.process()) AND SSair (which spreads gas tile-to-tile).
-	dq_atmos_test_wait_real_ssair_ticks(30)
+	// Poll and break as soon as both conditions asserted below hold, instead
+	// of always sleeping out the full 30-tick budget.
+	var/baseline = SSair.times_fired
+	var/max_wait = min(SSair.wait * 30 * 3, DQ_ATMOS_TEST_MAX_WAIT)
+	var/started = world.time
+	var/final_a_plasma
+	var/final_b_plasma
+	while(SSair.times_fired < baseline + 30)
+		final_a_plasma = A.air.get_moles(/datum/gas/plasma)
+		final_b_plasma = B.air.get_moles(/datum/gas/plasma)
+		if(final_a_plasma > initial_a_plasma + 1 && final_b_plasma > initial_b_plasma + 0.1)
+			break
+		if(world.time - started > max_wait)
+			break
+		sleep(SSair.wait)
 
-	var/final_a_plasma = A.air.get_moles(/datum/gas/plasma)
-	var/final_b_plasma = B.air.get_moles(/datum/gas/plasma)
+	final_a_plasma = A.air.get_moles(/datum/gas/plasma)
+	final_b_plasma = B.air.get_moles(/datum/gas/plasma)
 
 	TEST_ASSERT(final_a_plasma > initial_a_plasma + 1, \
 		"canister DID NOT release plasma onto A after 30 SSair ticks: A=[final_a_plasma]. canister.process() not running or not pumping.")
@@ -5069,6 +5205,47 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	for(var/datum/gas/g as anything in T.air.get_gases())
 		T.air.set_moles(g, 0)
 	T.update_visuals()
+
+
+/// Superconductivity (the Rust heat-conduction arena) is wired end-to-end. A heat-eligible
+/// turf — thermal_conductivity > 0 AND heat_capacity > 0 — must report its real arena
+/// temperature through the /turf/proc/return_temperature bind (the value supercond_update_ref
+/// seeded from turf.temperature), NOT the 102 K "untracked" sentinel that hook_turf_temperature
+/// returns for a turf the arena never registered.
+///
+/// This is the regression guard the ported superconductivity subsystem otherwise lacked: it is
+/// green iff turfs actually reach the heat arena. It fails if the `superconductivity` cargo
+/// feature is dropped, the registration path (update_air_ref -> supercond_update_ref) breaks, or
+/// the world-dims push (auxmos_set_world_dims) is mis-ordered so adjacency/registration silently
+/// no-ops. Heat *conduction* itself runs on a detached worker thread, so asserting temperature
+/// convergence would be racy — this proves the DM<->arena bridge, which is exactly what a
+/// silently-disabled subsystem would break.
+/datum/unit_test/dq_superconductivity_arena_tracks_turfs
+
+/datum/unit_test/dq_superconductivity_arena_tracks_turfs/Run()
+	var/eligible = 0
+	var/tracked = 0
+	var/sample_temp = 0
+	for(var/turf/simulated/floor/T in world)
+		// A turf with no conductivity or no heat capacity is legitimately NOT in the arena.
+		if(T.thermal_conductivity <= 0 || T.heat_capacity <= 0)
+			continue
+		eligible++
+		var/arena_temp = T.return_temperature()
+		// 102 K == the untracked sentinel; a genuinely-tracked turf reports a real temperature
+		// (~293 K for a room-temp floor). Bound the top end to reject NaN/garbage too.
+		if(isnum(arena_temp) && arena_temp > 150 && arena_temp < 6000)
+			tracked++
+			sample_temp = arena_temp
+
+	TEST_ASSERT(eligible > 0, \
+		"no heat-eligible floors on the map (thermal_conductivity>0 && heat_capacity>0) — cannot validate superconductivity")
+	TEST_ASSERT(tracked > 0, \
+		"0 of [eligible] heat-eligible floors are registered in the Rust heat arena (all returned the 102 K untracked sentinel) — superconductivity is NOT wired: the cargo feature is off, supercond_update_ref isn't running, or world dims were never pushed")
+	// Broad registration, not a one-off fluke: the bulk of eligible floors must be tracked.
+	TEST_ASSERT(tracked >= eligible / 2, \
+		"only [tracked]/[eligible] heat-eligible floors reached the heat arena — turf registration is partially broken")
+	log_test("Superconductivity: [tracked]/[eligible] eligible floors heat-tracked; sample arena temp [sample_temp] K")
 
 
 

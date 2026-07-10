@@ -76,18 +76,42 @@ arena, and the atmospherics unit-test suite is **fully green**:
 
 ## Known-remaining (not blocking; scoped out)
 
-- **Superconductivity / heat-conduction — DISABLED (unported).**
-  `verdigris/atmos/src/turfs/superconduct.rs` is 490 lines of pre-byondapi auxtools
-  code (`byondapi_hooks::bind`, magic `src`, `#[init(partial)]`/`#[shutdown]`,
-  `src.raw.data.id`, `auxtools::ByondValue::world()`/`globals()`,
-  `src.read_number("..")`). It does not compile under byondapi 0.4.x and was never
-  built. The `superconductivity` cargo feature is turned OFF so the build is green and
-  matches the running library. Enabling it is a self-contained subsystem project: port
-  that whole file to byondapi, then wire the DM side (a `process_turf_heat` SSair step,
-  turf `thermal_conductivity`/`heat_capacity`/`initial_temperature` vars, a
-  `return_temperature` turf hook).
+- **Superconductivity / heat-conduction — ENABLED (ported to byondapi).**
+  `verdigris/atmos/src/turfs/superconduct.rs` is fully ported to byondapi 0.6.x and the
+  `superconductivity` cargo feature is ON. It runs turf-to-turf, turf-to-space
+  (radiation), and turf-to-gas heat sharing on a detached rayon worker; DM fires it via
+  a new `SSAIR_SUPERCONDUCTIVITY` step (`SSair.fire()` → `process_turf_heat()`), results
+  land through the atmos-callback queue. Turf vars used: `thermal_conductivity`,
+  `heat_capacity`, `temperature`, `conductivity_blocked_directions`,
+  `should_conduct_to_space()`, `to_be_destroyed`; turf temperature reads route through
+  `/turf/proc/return_temperature`. Unit-test boot: 222/222, no init crash, no
+  superconductivity runtimes.
+  - **BYOND-516 caveat baked into the port:** byondapi 0.4.11's error-fetch path
+    (`ByondError::get_last` → `CStr::from_ptr(Byond_LastError())`) hard-crashes DreamDaemon
+    whenever a `read_var_id` on the World value fails on BYOND 516. So the port never reads
+    world/global vars from Rust: DM pushes `world.maxx`/`maxy` in once at init via
+    `auxmos_set_world_dims()`, and the per-tick `cost_superconductivity` profiling writeback
+    (which read `SSair` off the global) was dropped.
 - The DM `.temperature` mirror is best-effort; correctness-sensitive reads should use
   `air.return_temperature()`.
+- **BYOND-516 byondapi crash — FIXED by upgrading byondapi + the BYOND runtime.** Previously
+  the unit boot crashed AFTER all 222 passed, during `dq_expedition_generates_site`, inside the
+  gas `update_visuals` callback: any `read_var_id` that *failed* hit `Byond_LastError` and
+  hard-crashed DreamDaemon. **Root cause:** the Rust atmos library was built with byondapi
+  0.4.11 / byondapi-sys 0.11.2, whose newest bindings are BYOND **515-1621** — the *515*
+  `CByondValue` struct layout and `Byond_LastError` ABI — but the runtime was BYOND **516**. The
+  ABI mismatch corrupted the failure path. (A first pass masked it by vendoring byondapi 0.4.11
+  and neutering `Error::get_last_byond_error()`; that shipped green but left us on the wrong ABI.)
+  **Proper fix:** upgraded to **byondapi 0.6.x (git, feature `byond-516-1682`)** — the modern 516
+  ABI (buffer-based `Byond_LastError`, `DecTempRef`/persistent-off-thread-ref handling) — and
+  bumped the pinned BYOND runtime **516.1681 → 516.1682** (`dependencies.sh`, `.tgs.yml`), the
+  build that first exports that ABI. Note the version knife-edge: `Byond_LastError` kept its old
+  pointer signature through 516.1681 and switched to the buffer form at 516.1682, while
+  `DecTempRef` also lands at 1682 — so 1682 is the *first* self-consistent runtime for modern
+  byondapi, and the auxmos source needed **zero** changes to compile against it. Boot on
+  516.1682 is crash-free (222/222, 0 crashes, 0 undefined symbols). The vendored byondapi and
+  the `is_valid_ref` guards were removed. byondapi is pinned to a git rev only because 0.6.x is
+  not yet on crates.io — switch to a crates.io release once one lands.
 
 ## How to iterate (see memory `ss13-gcp-vm`)
 

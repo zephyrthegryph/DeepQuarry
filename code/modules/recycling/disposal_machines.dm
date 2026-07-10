@@ -495,8 +495,8 @@
 	var/datum/gas_mixture/env = L.return_air()
 
 	var/power_draw = -1
-	if(env && env.temperature > 0)
-		var/transfer_moles = (PUMP_MAX_FLOW_RATE/env.volume)*env.total_moles()	//group_multiplier is divided out here
+	if(env && env.return_temperature() > 0)
+		var/transfer_moles = (PUMP_MAX_FLOW_RATE/env.return_volume())*env.total_moles()	//group_multiplier is divided out here
 		power_draw = pump_gas(src, env, air_contents, transfer_moles, active_power_usage)
 
 	if (power_draw > 0)

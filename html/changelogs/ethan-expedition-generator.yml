@@ -1,5 +1,0 @@
-author: "ethan"
-delete-after: true
-changes:
-  - rscdel: "Removed the Deep Quarry depth/elevator system (SSquarry) and its map."
-  - rscadd: "Added an on-demand expedition z-level generator (SSexpedition): procedurally carves a fresh cave site on request, scattered with ore, fauna, and loot. Triggerable via the Generate Expedition Site debug verb."

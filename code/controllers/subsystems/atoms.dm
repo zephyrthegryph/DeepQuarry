@@ -104,12 +104,18 @@ SUBSYSTEM_DEF(atoms)
 		for(var/I in 1 to length(atoms))
 			var/atom/A = atoms[I]
 			if(!(A.flags & ATOM_INITIALIZED))
-				// Unrolled CHECK_TICK setup to let us enable/disable mapload based off source
+				#ifndef UNIT_TESTS
+				// Unrolled CHECK_TICK setup to let us enable/disable mapload based off source.
+				// Skipped in unit-test builds: there are no clients to keep the tick
+				// smooth for, and under a loaded MC this per-atom stoplag() turns a
+				// 65k-turf template load (expedition z-alloc) into ~35 minutes of
+				// sleeps — the InitAtom work itself is seconds.
 				if(TICK_CHECK)
 					clear_tracked_initalize(mapload_source)
 					stoplag()
 					if(mapload_source)
 						set_tracked_initalized(INITIALIZATION_INNEW_MAPLOAD, mapload_source)
+				#endif
 				PROFILE_INIT_ATOM_BEGIN()
 				InitAtom(A, TRUE, mapload_arg)
 				PROFILE_INIT_ATOM_END(A)

@@ -1,0 +1,6 @@
+author: "ethan"
+delete-after: true
+changes:
+  - bugfix: "Web shuttles no longer runtime (or fly autopilot routes) to destinations whose map landmark doesn't exist — unreachable destinations and the autopaths through them are pruned at init, and jump procs refuse null landmarks."
+  - bugfix: "Fixed a family of garbage-collection leaks: skipped organ destruction on mob deletion (organs/children lists mutated mid-iteration), medical conditions cycling with their symptoms, storage accessories/PDA cartridges/e-cigs never releasing their internal storage, and mob headsets stranded in the radio listener list after a direct frequency write."
+  - code_imp: "Expedition site generation now logs a per-phase timing breakdown."

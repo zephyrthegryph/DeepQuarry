@@ -516,7 +516,8 @@
 /obj/effect/fusion_em_field/Destroy()
 	set_light(0)
 	RadiateAll()
-	for(var/obj/effect/fusion_particle_catcher/catcher in particle_catchers)
+	// Snapshot: catcher Destroy() removes itself from particle_catchers.
+	for(var/obj/effect/fusion_particle_catcher/catcher in particle_catchers.Copy())
 		qdel(catcher)
 	if(owned_core)
 		owned_core.owned_field = null
@@ -556,7 +557,7 @@
 /obj/effect/fusion_em_field/proc/temp_dump()
 	if(owned_core && owned_core.loc)
 		var/datum/gas_mixture/environment = owned_core.loc.return_air()
-		if(environment && environment.temperature < (T0C+FUSION_MAX_ENVIRO_HEAT))
+		if(environment && environment.return_temperature() < (T0C+FUSION_MAX_ENVIRO_HEAT))
 			environment.add_thermal_energy(plasma_temperature*5000)
 			check_instability()
 

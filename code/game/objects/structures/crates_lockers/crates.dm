@@ -323,10 +323,11 @@
 	if(!gas)	return null
 	var/datum/gas_mixture/newgas = new/datum/gas_mixture()
 	newgas.copy_from(gas)
-	if(newgas.temperature <= target_temp)	return
+	var/newgas_temperature = newgas.return_temperature()
+	if(newgas_temperature <= target_temp)	return
 
-	if((newgas.temperature - cooling_power) > target_temp)
-		newgas.set_temperature(newgas.temperature - cooling_power)
+	if((newgas_temperature - cooling_power) > target_temp)
+		newgas.set_temperature(newgas_temperature - cooling_power)
 	else
 		newgas.set_temperature(target_temp)
 	return newgas

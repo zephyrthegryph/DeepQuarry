@@ -25,39 +25,42 @@
 		to_chat(user, span_blue("A chill passes up your spine!"))
 		var/datum/gas_mixture/env = holder.loc.return_air()
 		if(env)
+			var/env_temperature = env.return_temperature()
 			var/temp_coef = 1 //The closer they are, the harder it is to cause a change.
-			if(temp_change == HOT && env.temperature < target_temp)
-				temp_coef = ((target_temp)/(env.temperature+1)) //TT = 300. ET = 250. TC = ~1 || TT = 3000. ET = 300 TT = 10. We multiply by 10 below to speed it up.
-				env.set_temperature(max(env.temperature + temp_coef*10, 0))
-			else if(temp_change == COLD && env.temperature > target_temp)
-				temp_coef = (env.temperature/(target_temp+1)) //ET = 300, TT = 25. TC = 12. Next: ET=288 TT = 25, TC = 11.52. ETC.
-				env.set_temperature(max(env.temperature - temp_coef, 0))
+			if(temp_change == HOT && env_temperature < target_temp)
+				temp_coef = ((target_temp)/(env_temperature+1)) //TT = 300. ET = 250. TC = ~1 || TT = 3000. ET = 300 TT = 10. We multiply by 10 below to speed it up.
+				env.set_temperature(max(env_temperature + temp_coef*10, 0))
+			else if(temp_change == COLD && env_temperature > target_temp)
+				temp_coef = (env_temperature/(target_temp+1)) //ET = 300, TT = 25. TC = 12. Next: ET=288 TT = 25, TC = 11.52. ETC.
+				env.set_temperature(max(env_temperature - temp_coef, 0))
 
 /datum/artifact_effect/temperature/DoEffectAura()
 	var/atom/holder = get_master_holder()
 	if(holder)
 		var/datum/gas_mixture/env = holder.loc.return_air()
 		if(env)
+			var/env_temperature = env.return_temperature()
 			var/temp_coef = 1 //The closer they are, the harder it is to cause a change.
-			if(temp_change == HOT && env.temperature < target_temp)
-				temp_coef = ((target_temp)/(env.temperature+1)) //TT = 300. ET = 250. TC = ~1 || TT = 3000. ET = 300 TT = 10. We multiply by 10 below to speed it up.
-				env.set_temperature(max(env.temperature + temp_coef*10, 0))
-			else if(temp_change == COLD && env.temperature > target_temp)
-				temp_coef = (env.temperature/(target_temp+1)) //ET = 300, TT = 25. TC = 12. Next: ET=288 TT = 25, TC = 11.52. ETC.
-				env.set_temperature(max(env.temperature - temp_coef, 0))
+			if(temp_change == HOT && env_temperature < target_temp)
+				temp_coef = ((target_temp)/(env_temperature+1)) //TT = 300. ET = 250. TC = ~1 || TT = 3000. ET = 300 TT = 10. We multiply by 10 below to speed it up.
+				env.set_temperature(max(env_temperature + temp_coef*10, 0))
+			else if(temp_change == COLD && env_temperature > target_temp)
+				temp_coef = (env_temperature/(target_temp+1)) //ET = 300, TT = 25. TC = 12. Next: ET=288 TT = 25, TC = 11.52. ETC.
+				env.set_temperature(max(env_temperature - temp_coef, 0))
 
 /datum/artifact_effect/temperature/DoEffectPulse() //Same as aura. Could probably be increased to be stronger with effect_range but eh, we don't want people to insta freeze/fry theirselves.
 	var/atom/holder = get_master_holder()
 	if(holder)
 		var/datum/gas_mixture/env = holder.loc.return_air()
 		if(env)
+			var/env_temperature = env.return_temperature()
 			var/temp_coef = 1 //The closer they are, the harder it is to cause a change.
-			if(temp_change == HOT && env.temperature < target_temp)
-				temp_coef = ((target_temp)/(env.temperature+1)) //TT = 300. ET = 250. TC = ~1 || TT = 3000. ET = 300 TT = 10. We multiply by 10 below to speed it up.
-				env.set_temperature(max(env.temperature + temp_coef*10, 0))
-			else if(temp_change == COLD && env.temperature > target_temp)
-				temp_coef = (env.temperature/(target_temp+1)) //ET = 300, TT = 25. TC = 12. Next: ET=288 TT = 25, TC = 11.52. ETC.
-				env.set_temperature(max(env.temperature - temp_coef, 0))
+			if(temp_change == HOT && env_temperature < target_temp)
+				temp_coef = ((target_temp)/(env_temperature+1)) //TT = 300. ET = 250. TC = ~1 || TT = 3000. ET = 300 TT = 10. We multiply by 10 below to speed it up.
+				env.set_temperature(max(env_temperature + temp_coef*10, 0))
+			else if(temp_change == COLD && env_temperature > target_temp)
+				temp_coef = (env_temperature/(target_temp+1)) //ET = 300, TT = 25. TC = 12. Next: ET=288 TT = 25, TC = 11.52. ETC.
+				env.set_temperature(max(env_temperature - temp_coef, 0))
 
 #undef COLD
 #undef HOT

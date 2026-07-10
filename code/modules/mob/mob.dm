@@ -12,7 +12,8 @@
 	unset_machine()
 	clear_fullscreen()
 	if(client)
-		for(var/atom/movable/screen/movable/spell_master/spell_master in spell_masters)
+		// Snapshot: spell_master Destroy() removes itself from spell_masters.
+		for(var/atom/movable/screen/movable/spell_master/spell_master in spell_masters?.Copy())
 			qdel(spell_master)
 		remove_screen_obj_references()
 		client.screen = list()

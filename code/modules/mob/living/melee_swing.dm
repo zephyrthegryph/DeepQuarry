@@ -81,7 +81,6 @@
 	if(!length(swing_tiles))
 		return FALSE
 
-	is_swinging = TRUE
 	face_atom(target)
 
 	// Telegraph the targeted tiles for the duration of the windup (auto-clears).
@@ -90,6 +89,12 @@
 
 	// Pull-back animation.
 	do_windup_animation(target, windup)
+
+	// Set the reentry gate as late as possible: nothing above sleeps (animations
+	// are async), so a second click can't race in before this line — and every
+	// statement between a TRUE flag and its clear is a potential permanent wedge
+	// if it runtimes.
+	is_swinging = TRUE
 
 	// Wait out the windup. do_after cancels if WE move, drop the weapon, or get incapacitated.
 	// Passing target = src means a dodging victim does NOT cancel it (they just leave the tiles).
@@ -101,6 +106,14 @@
 	if(QDELETED(weapon) || get_active_hand() != weapon)
 		is_swinging = FALSE
 		return FALSE
+
+	// The swing is committed: clear the gate and start recovery BEFORE resolving
+	// hits. resolve_item_attack/apply_hit_effect run arbitrary downstream code —
+	// a runtime in there used to leave is_swinging stuck TRUE forever, permanently
+	// disabling this mob's armed melee (attackby hard-gates on it with no reset
+	// path). The click cooldown already prevents a double-swing in the gap.
+	setClickCooldown(weapon.get_melee_recovery())
+	is_swinging = FALSE
 
 	// Swing: lunge + whoosh, then resolve against whoever is in the tiles NOW.
 	do_attack_animation(target)
@@ -114,6 +127,4 @@
 			if(hit_zone)
 				weapon.apply_hit_effect(victim, src, hit_zone, 1) // attack_modifier 1; null would zero the damage
 
-	setClickCooldown(weapon.get_melee_recovery())
-	is_swinging = FALSE
 	return TRUE

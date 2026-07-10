@@ -67,8 +67,12 @@
 	var/mob/living/lp = prey
 	if(istype(lp) && B.show_liquids && lp.liquidbelly_visuals)
 		var/mush_content = B.owner ? (B.owner.nutrition + LAZYLEN(B.contents) * B.item_mush_val) : 0
-		. += "|m[B.mush_overlay]:[round(mush_content)]:[B.mush_color]:[B.mush_alpha]"
-		. += "|l[B.liquid_overlay]:[round(B.reagents?.total_volume)]:[B.custom_reagentcolor || B.reagentcolor]:[B.custom_reagentalpha]"
+		// max/min_mush, max_liquid_level and custom_max_volume are runtime-editable
+		// (VorePanel liq-attribute setters) and feed the layers' pixel_y/alpha math —
+		// leave any out of the signature and an edit doesn't repaint until something
+		// else happens to move.
+		. += "|m[B.mush_overlay]:[round(mush_content)]:[B.mush_color]:[B.mush_alpha]:[B.max_mush]:[B.min_mush]"
+		. += "|l[B.liquid_overlay]:[round(B.reagents?.total_volume)]:[B.custom_reagentcolor || B.reagentcolor]:[B.custom_reagentalpha]:[B.max_liquid_level]:[B.custom_max_volume]"
 
 /datum/belly_overlay_tgui/proc/show(obj/belly/B, mob/prey, force = FALSE)
 	if(!owner?.client)

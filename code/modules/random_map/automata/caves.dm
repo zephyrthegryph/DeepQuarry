@@ -62,13 +62,20 @@
 	var/turf/simulated/mineral/T = locate((origin_x-1)+x,(origin_y-1)+y,origin_z)
 	if(istype(T) && !T.ignore_mapgen)
 		if(!T.ignore_cavegen)
+			// Only track cells whose density actually flipped: the post-carve
+			// update_icon pass is the expensive part (per-cell neighbor scans),
+			// and on a fresh all-wall substrate the majority of cells stay
+			// walls whose type-default icon/name are already correct. Changed
+			// cells refresh their unchanged neighbors via update_neighbors.
+			var/changed = FALSE
 			if(map[current_cell] == FLOOR_CHAR)
-				T.make_floor()
+				changed = T.make_floor()
 				if(prob(0.5)) // 1 in 200 chance
 					new /obj/structure/mob_spawner/scanner/mining_animals(T)
 			else
-				T.make_wall()
-			LAZYSET(turfs_changed, T, TRUE)
+				changed = T.make_wall()
+			if(changed)
+				LAZYSET(turfs_changed, T, TRUE)
 
 		if(T.density && !T.ignore_oregen)
 			if(map[current_cell] == DOOR_CHAR)

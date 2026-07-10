@@ -14,7 +14,7 @@ use gas::{
 };
 use reaction::react_by_id;
 
-// DQEdit: global_allocator declaration removed (was mimalloc::MiMalloc). A cdylib
+// global_allocator declaration removed (was mimalloc::MiMalloc). A cdylib
 // can have only one global_allocator and auxmos is now linked as an rlib into
 // libverdigris.so; the verdigris crate sets the allocator (or the system default
 // applies). See modular_dq/doc/atmos_migration.md decision §4.

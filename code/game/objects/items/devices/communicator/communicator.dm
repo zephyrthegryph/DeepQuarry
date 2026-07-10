@@ -382,7 +382,8 @@
 	else
 		QDEL_NULL(src.id)
 	// ITION END
-	for(var/mob/living/voice/voice in contents)
+	// Snapshot: qdel pulls the voice out of contents mid-iteration.
+	for(var/mob/living/voice/voice in contents.Copy())
 		voice_mobs.Remove(voice)
 		to_chat(voice, span_danger("[icon2html(src, voice.client)] Connection timed out with remote host."))
 		qdel(voice)

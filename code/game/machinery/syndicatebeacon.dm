@@ -48,8 +48,8 @@
 		if(charges < 1)
 			updateUsrDialog(usr)
 			return
-		var/mob/M = locate(href_list["traitormob"])
-		if(!istype(M))
+		var/mob/M = locate(href_list["traitormob"]) in GLOB.mob_list
+		if(!istype(M) || M != usr) // bounded locate + self-only: a crafted href must not traitor someone else
 			return
 		if(M.mind?.special_role || jobban_isbanned(M, JOB_SYNDICATE))
 			temptext = span_italics("We have no need for you at this time. Have a pleasant day.") + "<br>"

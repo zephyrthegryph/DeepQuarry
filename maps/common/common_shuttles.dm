@@ -126,21 +126,10 @@
 	icon_screen = "shuttle"
 	shuttle_tag = "Merchant"
 
-/datum/shuttle/autodock/multi/merchant
-	name = "Merchant"
-	current_location = "merchant_offsite"
-	warmup_time = 0
-	shuttle_area = /area/shuttle/merchant
-	docking_controller_tag = "trade_shuttle"
-	move_direction = WEST
-	destination_tags = list(
-		"merchant_offsite",
-		"d1_aux_b",
-		"d1_aux_c",
-		"d2_w1_e",
-		"d2_w2_e",
-		"d2_w3_e"
-	)
+// The old multi-destination Merchant shuttle was removed: southern_cross defines its
+// own /datum/shuttle/autodock/ferry/merchant (same "Merchant" name), and having both
+// register CRASHed at startup ("shuttle 'Merchant' already defined"). Consoles bind by
+// shuttle_tag/name, so the Southern Cross ferry version serves them unchanged.
 
 /obj/effect/shuttle_landmark/southern_cross/merchant_offsite
 	name = "Trade Station"
@@ -149,9 +138,14 @@
 	base_area = /area/space
 	base_turf = /turf/space
 
+// southern_cross uses /datum/shuttle/autodock/ferry/emergency/centcom as its "Escape"
+// emergency shuttle. The base /datum/shuttle/autodock/ferry/emergency/escape (code/modules/
+// shuttles/shuttle_emergency.dm) shares that name + the FERRY_LOCATION_OFFSITE landmark, so
+// letting it also auto-initialise CRASHes ("shuttle 'Escape' already defined" / "emergency
+// shuttle already defined"). It can't just be deleted — it lives in core code and its landmark
+// resolves on this map — so suppress its startup registration here (map-config layer).
 /datum/shuttle/autodock/ferry/emergency/escape
-	shuttle_area = /area/shuttle/escape/centcom
-	landmark_offsite = "escape_offsite"
+	defer_initialisation = TRUE
 
 /obj/effect/shuttle_landmark/southern_cross/escape/offsite
 	name = "Centcom"

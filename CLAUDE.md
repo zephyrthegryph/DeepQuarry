@@ -224,12 +224,29 @@ accident or assume they work:
   `USE_LINDA_ATMOS` gate anymore. Gas reactions are the CHOMP roster ported onto LINDA
   (`gasmixtures/reactions.dm`). Multi-z atmos is wired (`SSair.build_multiz_atmos_levels()`
   bridges `GLOB.z_levels` → `SSmapping.multiz_levels`; re-run when z-levels are added).
-  Known remaining gaps (not bugs): (a) the **Rust auxmos** gas-math backend is **not wired** —
-  `auxmos_bindings.dm` isn't compiled and `auxtools_atmos_init()` isn't called; gas math runs
-  in pure DM. Wiring it is a future perf project. (b) Legacy XGM-style callers are still bridged
-  by load-bearing shims (`xgm_compat.dm` ~67 callers of `assume_gas`/`update_nearby_tiles`/etc.,
-  `tg_infra_compat.dm`, `machine_shim.dm` ~39 `set_machine()` callers) rather than migrated to
-  native LINDA APIs. See `doc/atmos_migration.md`, `code/ATMOSPHERICS/README.md`.
+  The **Rust auxmos** gas-math backend is **fully wired** (the cutover is done): `/datum/gas_mixture`
+  is a handle over a Rust arena, turf processing / pressure equalisation (katmos) / multi-z sharing /
+  gas overlays and **superconductivity** (heat conduction) all run in Rust, driven from `SSair.fire()`.
+  **`/datum/gas_mixture` is an OPAQUE HANDLE (/tg/ model) — there is NO public `temperature`/`volume` var.**
+  The Rust arena is the single source of truth. READ via `air.return_temperature()` / `air.return_volume()`
+  and WRITE via `air.set_temperature(x)` / `air.set_volume(x)`; a bare `air.temperature = x` is a COMPILE
+  error. The accessors cross the FFI boundary, so cache the result in a local in hot loops
+  (`var/temp = air.return_temperature()`). Turf heat is the same: the superconductivity arena owns it — use
+  `/turf/proc/set_temperature()` / `return_temperature()`, not `turf.temperature = x`. A `check_grep.sh` lint
+  ("gas mixture mirror writes") is kept as a belt-and-suspenders guard for untyped access the compiler misses.
+  The FFI binds live in `dq_linda_turf_air.dm` (NOT `auxmos_bindings.dm`, which is the earlier
+  reference draft and is intentionally **not** `#include`d). The library is `verdigris`
+  (`verdigris/atmos/` = vendored auxmos) built on **byondapi 0.6.x** (feature `byond-516-1682`);
+  it therefore **requires BYOND 516.1682+** at runtime (older builds crash at atmos init on a missing
+  `ByondValue_DecTempRef` symbol — see `doc/auxmos_cutover_status.md`). Gas **reactions** still run in
+  DM (the CHOMP roster; `reaction_hooks` is off) — a deliberate split, not a gap. A set of CHOMP/ZAS-era
+  atmos callers reach LINDA through a **deliberate, documented compatibility API** — `xgm_compat.dm`
+  (`assume_gas`, `c_airblock`, `air_blocked`, `update_nearby_tiles`, `CanZASPass`, gas_mixture helpers)
+  and `tg_infra_compat.dm`. These are **not** temporary shims to migrate away: they carry real
+  ZAS→LINDA semantic translation (e.g. `assume_gas`'s weighted-temperature mix, `c_airblock`'s BLOCKED
+  bitfield), and `CanZASPass` is a hook point dozens of atoms override — there is no "more native" target
+  to point callers at, so treat these as the fork's stable atmos API. See `doc/atmos_migration.md`,
+  `doc/auxmos_cutover_status.md`, `code/ATMOSPHERICS/README.md`.
   The **`.air`-on-unsimulated-turf** family (Southern Cross has ~1188 `/turf/unsimulated/floor` that
   inherit `init_air` but are NOT `/turf/open`, so have no `air` var) is now guarded at all three sites:
   `setup_allturfs` append, the difference-pass neighbour loop, AND `add_to_active` (`SSair.dm` — the last
@@ -348,8 +365,11 @@ accident or assume they work:
   obj_integrity but with their own combat logic on top: `/obj/mecha` (component armor/deflect)
   and `/obj/item/uav`. Mob/plant/blob health is a separate system and untouched.
 - **verdigris (Rust FFI)** is a build artifact, gitignored per-platform. If `cargo` is absent
-  the build warns and skips it; cave-gen FFI then fails at runtime. (Atmos does **not** depend
-  on it — gas math is pure DM until the auxmos backend is wired.)
+  the build warns and skips it, and **both** subsystems that depend on it fail at runtime:
+  cave-gen (expedition) and — since the auxmos cutover — **atmospherics** (gas math + turf
+  processing + superconductivity all run in the Rust arena now, not pure DM). It builds on
+  **byondapi 0.6.x** for BYOND 516.1682+. (The whole library is one FFI framework: cave-gen was
+  migrated off `meowtonin` onto byondapi so `verdigris` links a single BYOND API.)
 
 Recent hardening (already landed): ban/admin/stats SQL is fully parameterized; all verdigris
 `#[byond_fn]` entry points are wrapped in `panic_safe!`; the tgui Rules-of-Hooks / XSS audit

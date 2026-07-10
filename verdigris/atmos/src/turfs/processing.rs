@@ -8,6 +8,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use tinyvec::TinyVec;
 
 /// Returns: If a processing thread is running or not.
+/// NOTE: the DM caller (SSair.thread_running) was removed as dead code; this
+/// bind is currently unused but kept as a harmless export.
 #[byondapi::bind("/datum/controller/subsystem/air/proc/thread_running")]
 #[auxmacros::panic_safe]
 fn thread_running_hook() -> Result<ByondValue> {

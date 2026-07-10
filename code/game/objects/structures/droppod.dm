@@ -139,11 +139,10 @@
 // `gas = list(...)`. LINDA stores gases in `gases[/datum/gas/X][MOLES]` and
 // total_moles is computed. Re-shape as adjust_gas calls in New().
 /datum/gas_mixture/pod_air
-	volume = 2500
-	temperature = 293.150
+	initial_volume = 2500
 
 /datum/gas_mixture/pod_air/New()
 	. = ..()
-	set_temperature(initial(src.temperature)) // arena default is TCMB; sync mirror initializer into the arena
+	set_temperature(T20C) // arena default is TCMB; set the intended initial temperature
 	adjust_gas(GAS_O2, 21) // literal "oxygen" doesn't match LINDA gas IDs; GAS_O2 is "o2"
 	adjust_gas(GAS_N2, 79)

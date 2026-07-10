@@ -26,7 +26,7 @@
 		else
 			GM.adjust_gas(GAS_N2, (100) - LINDA_GAS_AMT(GM, GAS_N2))
 	if(D.minimum_xgm_pressure)
-		GM.temperature = (D.minimum_xgm_pressure * CELL_VOLUME) / (LINDA_GAS_AMT(GM, D.require_xgm_gas) * R_IDEAL_GAS_EQUATION) // XGM .gas[id] → LINDA
+		GM.set_temperature((D.minimum_xgm_pressure * CELL_VOLUME) / (LINDA_GAS_AMT(GM, D.require_xgm_gas) * R_IDEAL_GAS_EQUATION)) // XGM .gas[id] → LINDA
 
 	// Try this 10 times, We need to know if something is blocking at multiple temps.
 	// If it passes unit test, it might still be awful to make though, gotta find the right gas mix!

@@ -26,11 +26,36 @@
 	QDEL_NULL(infused_substance)
 	return ..()
 
+// A substance's MATERIAL identity is fully determined by the axes that actually drive
+// its derived stats/behaviours + surface (family/trigger). Two substances with the same
+// content-key forge into an identical material, so they share ONE registered datum —
+// otherwise every substance_spawn_stack (loot fields, refiner output, and above all the
+// auto-firing fusion core, once per interval) mints a fresh /datum/material/substance
+// pinned forever in GLOB.name_to_material. Per-item state lives in the infusion
+// component (which clones), so sharing is safe.
+//
+// resonance is DELIBERATELY excluded: it is the combine-relationship axis only (the
+// resolver's res_delta) and feeds NOTHING in the material — not the derived stats, not
+// the behaviours, not the colour/class, not the discharge effect. The resolver also
+// randomises it hardest (rand(-40,40) / full scatter), so keying on it would splinter
+// functionally-identical fusion outputs into a new material every tick and defeat the
+// dedup entirely. Keying on the axes that DO shape the material collapses them.
+/proc/substance_material_content_key(datum/substance/S)
+	return "[S.family]:[S.trigger]:[S.energy]:[S.volatility]:[S.affinity]:[S.purity]"
+
+// Content-key -> registry key of the already-minted material embodying it.
+GLOBAL_LIST_EMPTY(substance_material_dedup)
+
 // Mint (or reuse) a registered material embodying `S` and return its registry key.
 // The key is stable for the round and usable anywhere a material name is accepted.
 /proc/substance_register_material(datum/substance/S)
 	if(!istype(S))
 		return null
+	// Reuse an identical material if one is already registered (see content-key note).
+	var/content_key = substance_material_content_key(S)
+	var/existing = GLOB.substance_material_dedup[content_key]
+	if(existing && GLOB.name_to_material[existing])
+		return existing
 	var/key = "substance_mat_[substance_next_material_id()]"
 	var/datum/material/substance/M = new()
 	M.name = key
@@ -45,6 +70,7 @@
 	substance_derive_material_stats(M, S)
 	substance_derive_material_behaviors(M, S)
 	GLOB.name_to_material[key] = M
+	GLOB.substance_material_dedup[content_key] = key
 	return key
 
 // Drive the (now working) material behaviour axes from the substance: radiant/discharge

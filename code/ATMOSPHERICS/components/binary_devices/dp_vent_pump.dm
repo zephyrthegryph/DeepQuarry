@@ -47,8 +47,8 @@
 	if(frequency)
 		set_frequency(frequency)
 
-	air1.volume = ATMOS_DEFAULT_VOLUME_PUMP
-	air2.volume = ATMOS_DEFAULT_VOLUME_PUMP
+	air1.set_volume(ATMOS_DEFAULT_VOLUME_PUMP)
+	air2.set_volume(ATMOS_DEFAULT_VOLUME_PUMP)
 	icon = null
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/Destroy()
@@ -60,8 +60,8 @@
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/high_volume/Initialize(mapload)
 	. = ..()
-	air1.volume = ATMOS_DEFAULT_VOLUME_PUMP + 800
-	air2.volume = ATMOS_DEFAULT_VOLUME_PUMP + 800
+	air1.set_volume(ATMOS_DEFAULT_VOLUME_PUMP + 800)
+	air2.set_volume(ATMOS_DEFAULT_VOLUME_PUMP + 800)
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/update_icon(safety = 0)
 	cut_overlays()
@@ -122,18 +122,18 @@
 
 	if(pressure_delta > 0.5)
 		if(pump_direction) //internal -> external
-			if (node1 && (environment.temperature || air1.temperature))
+			if (node1 && (environment.return_temperature() || air1.return_temperature()))
 				var/transfer_moles = calculate_transfer_moles(air1, environment, pressure_delta)
 				power_draw = pump_gas(src, air1, environment, transfer_moles, power_rating)
 
 				if(power_draw >= 0 && network1)
 					network1.update = 1
 		else //external -> internal
-			if (node2 && (environment.temperature || air2.temperature))
+			if (node2 && (environment.return_temperature() || air2.return_temperature()))
 				var/transfer_moles = calculate_transfer_moles(environment, air2, pressure_delta, (network2)? network2.volume : 0)
 
 				//limit flow rate from turfs
-				transfer_moles = min(transfer_moles, environment.total_moles()*air2.volume/environment.volume)	//group_multiplier gets divided out here
+				transfer_moles = min(transfer_moles, environment.total_moles()*air2.return_volume()/environment.return_volume())	//group_multiplier gets divided out here
 				power_draw = pump_gas(src, environment, air2, transfer_moles, power_rating)
 
 				if(power_draw >= 0 && network2)

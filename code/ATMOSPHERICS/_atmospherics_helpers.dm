@@ -43,7 +43,7 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 	//Update flow rate meter
 	if (istype(M, /obj/machinery/atmospherics))
 		var/obj/machinery/atmospherics/A = M
-		A.last_flow_rate = (transfer_moles/source.total_moles())*source.volume //group_multiplier gets divided out here
+		A.last_flow_rate = (transfer_moles/source.total_moles())*source.return_volume() //group_multiplier gets divided out here
 
 		if (A.debug)
 			A.visible_message("[A]: source entropy: [round(source.specific_entropy(), 0.01)] J/Kmol --> sink entropy: [round(sink.specific_entropy(), 0.01)] J/Kmol")
@@ -53,7 +53,7 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 
 	if (istype(M, /obj/machinery/portable_atmospherics))
 		var/obj/machinery/portable_atmospherics/P = M
-		P.last_flow_rate = (transfer_moles/source.total_moles())*source.volume //group_multiplier gets divided out here
+		P.last_flow_rate = (transfer_moles/source.total_moles())*source.return_volume() //group_multiplier gets divided out here
 
 	var/datum/gas_mixture/removed = source.remove(transfer_moles)
 	if (!removed) //Just in case
@@ -84,13 +84,13 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 	//Update flow rate meter
 	if (istype(M, /obj/machinery/atmospherics))
 		var/obj/machinery/atmospherics/A = M
-		A.last_flow_rate = (transfer_moles/source.total_moles())*source.volume //group_multiplier gets divided out here
+		A.last_flow_rate = (transfer_moles/source.total_moles())*source.return_volume() //group_multiplier gets divided out here
 		if (A.debug)
 			A.visible_message("[A]: moles transferred = [transfer_moles] mol")
 
 	if (istype(M, /obj/machinery/portable_atmospherics))
 		var/obj/machinery/portable_atmospherics/P = M
-		P.last_flow_rate = (transfer_moles/source.total_moles())*source.volume //group_multiplier gets divided out here
+		P.last_flow_rate = (transfer_moles/source.total_moles())*source.return_volume() //group_multiplier gets divided out here
 
 	var/datum/gas_mixture/removed = source.remove(transfer_moles)
 	if(!removed) //Just in case
@@ -155,10 +155,10 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 	//Update flow rate var
 	if (istype(M, /obj/machinery/atmospherics))
 		var/obj/machinery/atmospherics/A = M
-		A.last_flow_rate = (total_transfer_moles/source.total_moles())*source.volume //group_multiplier gets divided out here
+		A.last_flow_rate = (total_transfer_moles/source.total_moles())*source.return_volume() //group_multiplier gets divided out here
 	if (istype(M, /obj/machinery/portable_atmospherics))
 		var/obj/machinery/portable_atmospherics/P = M
-		P.last_flow_rate = (total_transfer_moles/source.total_moles())*source.volume //group_multiplier gets divided out here
+		P.last_flow_rate = (total_transfer_moles/source.total_moles())*source.return_volume() //group_multiplier gets divided out here
 
 	var/power_draw = 0
 	for (var/g in filtering)
@@ -168,7 +168,7 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 
 		//use update=0. All the filtered gasses are supposed to be added simultaneously, so we update after the for loop.
 		source.adjust_gas(g, -transfer_moles, update=0)
-		sink.adjust_gas_temp(g, transfer_moles, source.temperature, update=0)
+		sink.adjust_gas_temp(g, transfer_moles, source.return_temperature(), update=0)
 
 		power_draw += specific_power_gas[g]*transfer_moles
 
@@ -223,10 +223,10 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 	//Update flow rate var
 	if (istype(M, /obj/machinery/atmospherics))
 		var/obj/machinery/atmospherics/A = M
-		A.last_flow_rate = (total_transfer_moles/source.total_moles())*source.volume //group_multiplier gets divided out here
+		A.last_flow_rate = (total_transfer_moles/source.total_moles())*source.return_volume() //group_multiplier gets divided out here
 	if (istype(M, /obj/machinery/portable_atmospherics))
 		var/obj/machinery/portable_atmospherics/P = M
-		P.last_flow_rate = (total_transfer_moles/source.total_moles())*source.volume //group_multiplier gets divided out here
+		P.last_flow_rate = (total_transfer_moles/source.total_moles())*source.return_volume() //group_multiplier gets divided out here
 
 	var/datum/gas_mixture/removed = source.remove(total_transfer_moles)
 	if (!removed) //Just in case
@@ -239,7 +239,7 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 
 		if (g in filtering)
 			//use update=0. All the filtered gasses are supposed to be added simultaneously, so we update after the for loop.
-			sink_filtered.adjust_gas_temp(g, LINDA_GAS_AMT(removed, g), removed.temperature, update=0)
+			sink_filtered.adjust_gas_temp(g, LINDA_GAS_AMT(removed, g), removed.return_temperature(), update=0)
 			removed.adjust_gas(g, -LINDA_GAS_AMT(removed, g), update=0)
 			filtered_power_used += power_used
 		else
@@ -295,10 +295,10 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 	//Update Flow Rate var
 	if (istype(M, /obj/machinery/atmospherics))
 		var/obj/machinery/atmospherics/A = M
-		A.last_flow_rate = (total_transfer_moles/source.total_moles())*source.volume //group_multiplier gets divided out here
+		A.last_flow_rate = (total_transfer_moles/source.total_moles())*source.return_volume() //group_multiplier gets divided out here
 	if (istype(M, /obj/machinery/portable_atmospherics))
 		var/obj/machinery/portable_atmospherics/P = M
-		P.last_flow_rate = (total_transfer_moles/source.total_moles())*source.volume //group_multiplier gets divided out here
+		P.last_flow_rate = (total_transfer_moles/source.total_moles())*source.return_volume() //group_multiplier gets divided out here
 
 	var/datum/gas_mixture/removed = source.remove(total_transfer_moles)
 	if (!removed) //Just in case
@@ -312,7 +312,7 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 		if (g in filtering)
 			var/datum/gas_mixture/sink_filtered = filtering[g]
 			//use update=0. All the filtered gasses are supposed to be added simultaneously, so we update after the for loop.
-			sink_filtered.adjust_gas_temp(g, LINDA_GAS_AMT(removed, g), removed.temperature, update=1)
+			sink_filtered.adjust_gas_temp(g, LINDA_GAS_AMT(removed, g), removed.return_temperature(), update=1)
 			removed.adjust_gas(g, -LINDA_GAS_AMT(removed, g), update=0)
 			if (power_used)
 				filtered_power_used[sink_filtered] = power_used
@@ -355,7 +355,7 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 
 		source_specific_power[source] = calculate_specific_power(source, sink)*mix_ratio/ATMOS_FILTER_EFFICIENCY
 		total_specific_power += source_specific_power[source]
-		total_input_volume += source.volume
+		total_input_volume += source.return_volume()
 		total_input_moles += source.total_moles()
 
 	if (total_mixing_moles < MINIMUM_MOLES_TO_FILTER) //if we cant transfer enough gas just stop to avoid further processing
@@ -405,7 +405,8 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 //Calculates the amount of power needed to move one mole from source to sink.
 /proc/calculate_specific_power(datum/gas_mixture/source, datum/gas_mixture/sink)
 	//Calculate the amount of energy required
-	var/air_temperature = (sink.temperature > 0)? sink.temperature : source.temperature
+	var/sink_temperature = sink.return_temperature()
+	var/air_temperature = (sink_temperature > 0)? sink_temperature : source.return_temperature()
 	var/specific_entropy = sink.specific_entropy() - source.specific_entropy() //sink is gaining moles, source is loosing
 	var/specific_power = 0	// W/mol
 
@@ -418,7 +419,8 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 //Calculates the amount of power needed to move one mole of a certain gas from source to sink.
 /proc/calculate_specific_power_gas(gasid, datum/gas_mixture/source, datum/gas_mixture/sink)
 	//Calculate the amount of energy required
-	var/air_temperature = (sink.temperature > 0)? sink.temperature : source.temperature
+	var/sink_temperature = sink.return_temperature()
+	var/air_temperature = (sink_temperature > 0)? sink_temperature : source.return_temperature()
 	var/specific_entropy = sink.specific_entropy_gas(gasid) - source.specific_entropy_gas(gasid) //sink is gaining moles, source is loosing
 	var/specific_power = 0	// W/mol
 
@@ -432,38 +434,41 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 //If set, sink_volume_mod adjusts the effective output volume used in the calculation. This is useful when the output gas_mixture is
 //part of a pipenetwork, and so it's volume isn't representative of the actual volume since the gas will be shared across the pipenetwork when it processes.
 /proc/calculate_transfer_moles(datum/gas_mixture/source, datum/gas_mixture/sink, pressure_delta, sink_volume_mod=0)
-	if(source.temperature == 0 || source.total_moles() == 0) return 0 // XGM var → LINDA proc
+	var/source_temperature = source.return_temperature()
+	if(source_temperature == 0 || source.total_moles() == 0) return 0 // XGM var → LINDA proc
 
 	// `* sink.group_multiplier` / `* source.group_multiplier`
 	// dropped: group_multiplier was an XGM-era zone scalar (always 1 under
 	// LINDA), so multiplying was a no-op.
-	var/output_volume = sink.volume + sink_volume_mod
+	var/output_volume = sink.return_volume() + sink_volume_mod
 	var/source_total_moles = source.total_moles()
 
-	var/air_temperature = source.temperature
-	if(sink.total_moles() > 0 && sink.temperature > 0)
+	var/air_temperature = source_temperature
+	var/sink_temperature = sink.return_temperature()
+	if(sink.total_moles() > 0 && sink_temperature > 0)
 		//estimate the final temperature of the sink after transfer
-		var/estimate_moles = pressure_delta*output_volume/(sink.temperature * R_IDEAL_GAS_EQUATION)
+		var/estimate_moles = pressure_delta*output_volume/(sink_temperature * R_IDEAL_GAS_EQUATION)
 		var/sink_heat_capacity = sink.heat_capacity()
 		var/transfer_heat_capacity = source.heat_capacity()*estimate_moles/source_total_moles
-		air_temperature = (sink.temperature*sink_heat_capacity  + source.temperature*transfer_heat_capacity) / (sink_heat_capacity + transfer_heat_capacity)
+		air_temperature = (sink_temperature*sink_heat_capacity  + source_temperature*transfer_heat_capacity) / (sink_heat_capacity + transfer_heat_capacity)
 
 	//get the number of moles that would have to be transfered to bring sink to the target pressure
 	return pressure_delta*output_volume/(air_temperature * R_IDEAL_GAS_EQUATION)
 
 //Calculates the APPROXIMATE amount of moles that would need to be transferred to bring source and sink to the same pressure
 /proc/calculate_equalize_moles(datum/gas_mixture/source, datum/gas_mixture/sink)
-	if(source.temperature == 0) return 0
+	var/source_temperature = source.return_temperature()
+	if(source_temperature == 0) return 0
 
 	//Make the approximation that the sink temperature is unchanged after transferring gas
 	// group_multiplier dropped; see above.
-	var/source_volume = source.volume
-	var/sink_volume = sink.volume
+	var/source_volume = source.return_volume()
+	var/sink_volume = sink.return_volume()
 
 	var/source_pressure = source.return_pressure()
 	var/sink_pressure = sink.return_pressure()
 
-	return (source_pressure - sink_pressure)/(R_IDEAL_GAS_EQUATION * (source.temperature/source_volume + sink.temperature/sink_volume))
+	return (source_pressure - sink_pressure)/(R_IDEAL_GAS_EQUATION * (source_temperature/source_volume + sink.return_temperature()/sink_volume))
 
 //
 // Debugging helper procs

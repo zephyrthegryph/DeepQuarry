@@ -1,9 +1,12 @@
-use crate::panic_safe;
-use meowtonin::{ByondError, ByondResult, value::ByondValue};
+// The pure automata helpers below are consumed by the x86-only `ffi` module (the
+// byondapi bind) and by the unit tests. On a host, non-test `cargo check`/`build`
+// neither is compiled, so they read as dead — the real i686 build and `cargo test`
+// both use them. Silence the host-only noise rather than sprinkle per-item allows.
+#![allow(dead_code)]
+
+use eyre::{Result, bail, eyre};
 use rand_distr::{Bernoulli, Distribution};
-use rayon::iter::{
-    IndexedParallelIterator, IntoParallelRefIterator, IntoParallelRefMutIterator, ParallelIterator,
-};
+use rayon::iter::{IndexedParallelIterator, IntoParallelRefMutIterator, ParallelIterator};
 
 const CELL_THRESHOLD: usize = 5;
 
@@ -16,48 +19,46 @@ const MAX_DIMENSION: usize = 1024;
 const MAX_ITERATIONS: usize = 1024;
 
 /// Validate a BYOND number that must be a finite, non-negative integer within
-/// `ceiling`, returning it as a `usize`.
-fn validate_count(raw: f64, name: &str, ceiling: usize) -> ByondResult<usize> {
+/// `ceiling`, returning it as a `usize`. Pure (target-agnostic) so it and its
+/// unit tests build on the host without BYOND.
+fn validate_count(raw: f64, name: &str, ceiling: usize) -> Result<usize> {
     if !raw.is_finite() {
-        return Err(ByondError::boxed(VerdigrisMapError(format!(
-            "{name} must be a finite number, got {raw}"
-        ))));
+        bail!("{name} must be a finite number, got {raw}");
     }
     if raw < 0.0 {
-        return Err(ByondError::boxed(VerdigrisMapError(format!(
-            "{name} must be non-negative, got {raw}"
-        ))));
+        bail!("{name} must be non-negative, got {raw}");
     }
     let value = raw as usize;
     if value > ceiling {
-        return Err(ByondError::boxed(VerdigrisMapError(format!(
-            "{name} must be <= {ceiling}, got {value}"
-        ))));
+        bail!("{name} must be <= {ceiling}, got {value}");
     }
     Ok(value)
 }
 
-#[derive(Debug)]
-struct VerdigrisMapError(String);
+// BYOND FFI boundary — byondapi, so i686-only (byondapi-sys is 32-bit). The pure
+// automata logic above/below stays host-buildable + host-testable.
+#[cfg(target_arch = "x86")]
+mod ffi {
+    use super::{MAX_DIMENSION, MAX_ITERATIONS, seed_map, smooth_map, validate_count};
+    use byondapi::prelude::*;
+    use eyre::Result;
 
-impl std::fmt::Display for VerdigrisMapError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "verdigris map error: {}", self.0)
-    }
-}
-
-impl std::error::Error for VerdigrisMapError {}
-
-#[byond_fn]
-pub fn generate_automata(
-    limit_x: ByondValue,
-    limit_y: ByondValue,
-    iterations: ByondValue,
-    initial_wall_cell: ByondValue,
-) -> ByondResult<Vec<ByondValue>> {
-    panic_safe!({
-        // meowtonin's ByondValue::get_number() yields f32; widen to f64 so the
-        // validation/ceiling math has integer headroom.
+    /// Args: (limit_x, limit_y, iterations, initial_wall_cell). Returns a flat
+    /// row-major DM list of 1/0 (wall/floor) of length limit_x * limit_y.
+    ///
+    /// `#[auxmacros::panic_safe]` (below the bind) wraps the body in
+    /// `catch_unwind` so a bad DM arg / OOB index surfaces to DM as a runtime
+    /// instead of unwinding across the FFI boundary and aborting DreamDaemon.
+    #[byondapi::bind("/proc/generate_automata")]
+    #[auxmacros::panic_safe]
+    fn generate_automata(
+        limit_x: ByondValue,
+        limit_y: ByondValue,
+        iterations: ByondValue,
+        initial_wall_cell: ByondValue,
+    ) -> Result<ByondValue> {
+        // get_number() yields f32; widen to f64 so validation/ceiling math has
+        // integer headroom.
         let limit_x = validate_count(f64::from(limit_x.get_number()?), "limit_x", MAX_DIMENSION)?;
         let limit_y = validate_count(f64::from(limit_y.get_number()?), "limit_y", MAX_DIMENSION)?;
         let iterations = validate_count(
@@ -78,13 +79,14 @@ pub fn generate_automata(
             iterations,
         );
 
-        let byond_list: Vec<ByondValue> = map
+        let elems: Vec<ByondValue> = map
             .iter()
-            .map(|&b| ByondValue::new_num(if b { 1. } else { 0. }))
+            .map(|&b| ByondValue::from(if b { 1.0f32 } else { 0.0f32 }))
             .collect();
-
-        Ok(byond_list)
-    })
+        let list = ByondValue::new_list()?;
+        list.write_list(&elems)?;
+        Ok(list)
+    }
 }
 
 /// Run `iterations` smoothing passes of the cellular automaton over `map`.
@@ -134,12 +136,10 @@ fn wall_count(map: &[bool], i: usize, limit_x: usize, limit_y: usize) -> usize {
     count
 }
 
-fn seed_map(limit_x: usize, limit_y: usize, percent_chance: usize) -> ByondResult<Vec<bool>> {
-    let len = limit_x.checked_mul(limit_y).ok_or_else(|| {
-        ByondError::boxed(VerdigrisMapError(format!(
-            "map size overflow: {limit_x} * {limit_y}"
-        )))
-    })?;
+fn seed_map(limit_x: usize, limit_y: usize, percent_chance: usize) -> Result<Vec<bool>> {
+    let len = limit_x
+        .checked_mul(limit_y)
+        .ok_or_else(|| eyre!("map size overflow: {limit_x} * {limit_y}"))?;
 
     // percent_chance is validated to be <= 100 by the caller, so Bernoulli::new
     // cannot fail; clamp defensively anyway.

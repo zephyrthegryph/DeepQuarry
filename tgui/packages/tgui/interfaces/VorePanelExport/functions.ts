@@ -26,8 +26,12 @@ export function sanitizeColor(value: unknown): string | null {
 export function formatListItems(
   items: {
     label: string;
-    value: string | string[] | BooleanLike;
-    formatter?: (val: boolean) => string;
+    value: string | string[] | number | BooleanLike;
+    // Receives the item's raw value — callers declare the concrete param type
+    // (boolean, number, string[]). Never coerce before calling: the old
+    // `formatter(!!value)` turned numeric formatters into "true%" and made the
+    // whitelist formatter's `val.length` always falsy ("Anyone!").
+    formatter?: (val: never) => string;
     suffix?: string;
   }[],
 ): string {
@@ -38,7 +42,7 @@ export function formatListItems(
     // are already trusted HTML produced by the Get* helpers, so they are
     // interpolated as-is.
     const displayValue = formatter
-      ? formatter(!!value)
+      ? formatter(value as never)
       : Array.isArray(value)
         ? value.join(', ')
         : value;

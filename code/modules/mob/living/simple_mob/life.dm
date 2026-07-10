@@ -113,8 +113,9 @@
 	if(is_incorporeal())
 		return 1
 
-	if( abs(environment.temperature - bodytemperature) > temperature_range )
-		bodytemperature += ((environment.temperature - bodytemperature) / 5)
+	var/env_temperature = environment.return_temperature()
+	if( abs(env_temperature - bodytemperature) > temperature_range )
+		bodytemperature += ((env_temperature - bodytemperature) / 5)
 
 	// Accumulate (|=) failures across gas blocks so an earlier failing gas
 	// isn't masked by a later passing one.

@@ -252,7 +252,7 @@
 		if(!check_rights(R_BAN))
 			return
 
-		var/mob/M = locate(href_list["jobban2"])
+		var/mob/M = locate(href_list["jobban2"]) in GLOB.mob_list
 		if(!ismob(M))
 			to_chat(usr, span_filter_adminlog("This can only be used on instances of type /mob"))
 			return

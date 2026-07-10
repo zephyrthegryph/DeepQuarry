@@ -358,9 +358,10 @@
 // Normalizing cabin air temperature to 20 degrees celsius.
 // Called every fourth process() tick (20 deciseconds).
 /obj/mecha/proc/process_preserve_temp()
-	if (cabin_air && cabin_air.volume > 0)
-		var/delta = cabin_air.temperature - T20C
-		cabin_air.temperature -= max(-10, min(10, round(delta/4,0.1)))
+	if (cabin_air && cabin_air.return_volume() > 0)
+		var/cur = cabin_air.return_temperature()  // arena-authoritative; the DM mirror can lag
+		var/delta = cur - T20C
+		cabin_air.set_temperature(cur - max(-10, min(10, round(delta/4,0.1))))
 
 // Handles internal air tank action.
 // Called every third process() tick (15 deciseconds).
@@ -374,8 +375,8 @@
 		var/transfer_moles = 0
 
 		if(pressure_delta > 0) //cabin pressure lower than release pressure
-			if(tank_air.temperature > 0)
-				transfer_moles = pressure_delta*cabin_air.volume/(cabin_air.temperature * R_IDEAL_GAS_EQUATION)
+			if(tank_air.return_temperature() > 0)
+				transfer_moles = pressure_delta*cabin_air.return_volume()/(cabin_air.return_temperature() * R_IDEAL_GAS_EQUATION)
 				var/datum/gas_mixture/removed = tank_air.remove(transfer_moles)
 				cabin_air.merge(removed)
 
@@ -386,7 +387,7 @@
 			if(t_air)
 				pressure_delta = min(cabin_pressure - t_air.return_pressure(), pressure_delta)
 			if(pressure_delta > 0) //if location pressure is lower than cabin pressure
-				transfer_moles = pressure_delta*cabin_air.volume/(cabin_air.temperature * R_IDEAL_GAS_EQUATION)
+				transfer_moles = pressure_delta*cabin_air.return_volume()/(cabin_air.return_temperature() * R_IDEAL_GAS_EQUATION)
 
 				var/datum/gas_mixture/removed = cabin_air.remove(transfer_moles)
 				if(t_air)
@@ -421,12 +422,12 @@
 			var/datum/gas_mixture/int_tank_air = internal_tank.return_air()
 			if(int_tank_air && int_tank_air.return_pressure() > TANK_LEAK_PRESSURE && !(hasInternalDamage(MECHA_INT_TANK_BREACH)))
 				setInternalDamage(MECHA_INT_TANK_BREACH)
-			if(int_tank_air && int_tank_air.volume > 0) //heat the air_contents
-				int_tank_air.set_temperature(min(6000+T0C, int_tank_air.temperature+rand(10,15)))
-		if(cabin_air && cabin_air.volume>0)
-			cabin_air.set_temperature(min(6000+T0C, cabin_air.temperature+rand(10,15)))
-			if(cabin_air.temperature>max_temperature/2)
-				take_damage(4/round(max_temperature/cabin_air.temperature,0.1),"fire")
+			if(int_tank_air && int_tank_air.return_volume() > 0) //heat the air_contents
+				int_tank_air.set_temperature(min(6000+T0C, int_tank_air.return_temperature()+rand(10,15)))
+		if(cabin_air && cabin_air.return_volume()>0)
+			cabin_air.set_temperature(min(6000+T0C, cabin_air.return_temperature()+rand(10,15)))
+			if(cabin_air.return_temperature()>max_temperature/2)
+				take_damage(4/round(max_temperature/cabin_air.return_temperature(),0.1),"fire")
 
 	if(hasInternalDamage(MECHA_INT_TEMP_CONTROL))
 		stop_process(MECHA_PROC_INT_TEMP)
@@ -479,8 +480,10 @@
 	cabin_air.set_temperature(T20C)
 	cabin_air.set_volume(200)
 	// adjust_multi was XGM; LINDA's gas_mixture has adjust_gas per-call.
-	var/moles_o2 = O2STANDARD * cabin_air.volume / (R_IDEAL_GAS_EQUATION * cabin_air.temperature)
-	var/moles_n2 = N2STANDARD * cabin_air.volume / (R_IDEAL_GAS_EQUATION * cabin_air.temperature)
+	var/cabin_volume = cabin_air.return_volume()
+	var/cabin_temperature = cabin_air.return_temperature()
+	var/moles_o2 = O2STANDARD * cabin_volume / (R_IDEAL_GAS_EQUATION * cabin_temperature)
+	var/moles_n2 = N2STANDARD * cabin_volume / (R_IDEAL_GAS_EQUATION * cabin_temperature)
 	cabin_air.adjust_gas(GAS_O2, moles_o2)
 	cabin_air.adjust_gas(GAS_N2, moles_n2)
 	return cabin_air
@@ -1763,11 +1766,11 @@
 	. = 0
 	var/obj/item/mecha_parts/component/gas/GC = internal_components[MECH_GAS]
 	if(use_internal_tank && (GC && prob(GC.get_efficiency() * 100)))
-		. = cabin_air.temperature
+		. = cabin_air.return_temperature()
 	else
 		var/datum/gas_mixture/t_air = get_turf_air()
 		if(t_air)
-			. = t_air.temperature
+			. = t_air.return_temperature()
 	return
 
 // connect/disconnect plumb the mecha cabin atmosphere into a LINDA
@@ -2495,7 +2498,7 @@
 	// procs on it; read through air_contents (a /datum/gas_mixture).
 	var/datum/gas_mixture/tank_air = internal_tank?.return_air()
 	var/tank_pressure = tank_air ? round(tank_air.return_pressure(), 0.01) : "None"
-	var/tank_temperature = tank_air ? tank_air.temperature : "Unknown"
+	var/tank_temperature = tank_air ? tank_air.return_temperature() : "Unknown"
 	var/cabin_pressure = round(return_pressure(),0.01)
 
 	var/obj/item/mecha_parts/component/hull/HC = internal_components[MECH_HULL]

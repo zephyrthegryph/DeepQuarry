@@ -213,7 +213,7 @@
 	var/pressure_delta = get_pressure_delta(environment)
 	//src.visible_message("DEBUG >>> [src]: pressure_delta = [pressure_delta]")
 
-	if((environment.temperature || air_contents.temperature) && pressure_delta > 0.5)
+	if((environment.return_temperature() || air_contents.return_temperature()) && pressure_delta > 0.5)
 		if(pump_direction) //internal -> external
 			var/transfer_moles = calculate_transfer_moles(air_contents, environment, pressure_delta)
 			power_draw = pump_gas(src, air_contents, environment, transfer_moles, power_rating)
@@ -221,7 +221,7 @@
 			var/transfer_moles = calculate_transfer_moles(environment, air_contents, pressure_delta, (network)? network.volume : 0)
 
 			//limit flow rate from turfs
-			transfer_moles = min(transfer_moles, environment.total_moles()*air_contents.volume/environment.volume)	//group_multiplier gets divided out here
+			transfer_moles = min(transfer_moles, environment.total_moles()*air_contents.return_volume()/environment.return_volume())	//group_multiplier gets divided out here
 			power_draw = pump_gas(src, environment, air_contents, transfer_moles, power_rating)
 
 	else

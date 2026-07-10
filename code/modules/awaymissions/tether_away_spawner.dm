@@ -69,10 +69,11 @@
 			var/turf/T = get_turf(src)
 			var/datum/gas_mixture/env = T.return_air()
 			if(env)
-				if(my_mob.minbodytemp > env.temperature)
-					my_mob.minbodytemp = env.temperature * 0.8
-				if(my_mob.maxbodytemp < env.temperature)
-					my_mob.maxbodytemp = env.temperature * 1.2
+				var/env_temp = env.return_temperature()
+				if(my_mob.minbodytemp > env_temp)
+					my_mob.minbodytemp = env_temp * 0.8
+				if(my_mob.maxbodytemp < env_temp)
+					my_mob.maxbodytemp = env_temp * 1.2
 
 				// LINDA gas reads (post-atmos-rewrite): direct env.gas[...] list
 				// access is gone; LINDA_GAS_AMT(mix, id) returns a gas's moles.

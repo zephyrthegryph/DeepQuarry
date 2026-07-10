@@ -24,6 +24,13 @@
 	var/symptom_text			//Messages relayed to the patient about their symptoms
 	var/symptom_affect			//Visible effects on the patient such as vomiting or weakness
 
+/datum/medical_issue/Destroy()
+	// Both refs point at atoms that may be mid-deletion; leaving them set keeps
+	// the issue (and through `owner`, the whole mob) from garbage collecting.
+	owner = null
+	affectedorgan = null
+	return ..()
+
 /datum/medical_issue/proc/handle_effects()
 	if(!owner || !affectedorgan)
 		return

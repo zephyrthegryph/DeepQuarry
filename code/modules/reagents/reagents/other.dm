@@ -1189,12 +1189,13 @@
 	var/hotspot = (locate(/obj/fire) in T)
 	if(hotspot && !isspace(T))
 		var/datum/gas_mixture/lowertemp = T.remove_air(xgm_total_moles(T.return_air())) // XGM T.air → LINDA helper
-		lowertemp.temperature = max(min(lowertemp.temperature-2000, lowertemp.temperature / 2), 0)
+		var/lowertemp_temperature = lowertemp.return_temperature()
+		lowertemp.set_temperature(max(min(lowertemp_temperature-2000, lowertemp_temperature / 2), 0))
 		lowertemp.react()
 		T.assume_air(lowertemp)
 		qdel(hotspot)
 
-	if (environment && environment.temperature > min_temperature) // Abstracted as steam or something
+	if (environment && environment.return_temperature() > min_temperature) // Abstracted as steam or something
 		var/removed_heat = between(0, volume * 19000, -environment.get_thermal_energy_change(min_temperature))
 		environment.add_thermal_energy(-removed_heat)
 		if(prob(5))

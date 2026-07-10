@@ -344,6 +344,11 @@ GLOBAL_LIST_INIT(civilian_cartridges, list(
 	hold.max_storage_space = slots * 2
 	hold.max_w_class = ITEMSIZE_SMALL
 
+/obj/item/cartridge/storage/Destroy()
+	// Un-nulled `hold` pins the internal storage against GC (cf. suit pockets).
+	QDEL_NULL(hold)
+	return ..()
+
 /obj/item/cartridge/storage/attack_hand(mob/user)
 	if (hold.handle_attack_hand(user))	//otherwise interact as a regular storage item
 		..(user)

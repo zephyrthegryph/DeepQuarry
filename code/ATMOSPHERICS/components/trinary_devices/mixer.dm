@@ -45,9 +45,9 @@
 /obj/machinery/atmospherics/trinary/mixer/Initialize(mapload)
 	. = ..()
 
-	air1.volume = ATMOS_DEFAULT_VOLUME_MIXER
-	air2.volume = ATMOS_DEFAULT_VOLUME_MIXER
-	air3.volume = ATMOS_DEFAULT_VOLUME_MIXER * 1.5
+	air1.set_volume(ATMOS_DEFAULT_VOLUME_MIXER)
+	air2.set_volume(ATMOS_DEFAULT_VOLUME_MIXER)
+	air3.set_volume(ATMOS_DEFAULT_VOLUME_MIXER * 1.5)
 
 	if (!mixing_inputs)
 		mixing_inputs = list(src.air1 = node1_concentration, src.air2 = node2_concentration)
@@ -62,7 +62,7 @@
 		return
 
 	//Figure out the amount of moles to transfer
-	var/transfer_moles = (set_flow_rate*mixing_inputs[air1]/air1.volume)*air1.total_moles() + (set_flow_rate*mixing_inputs[air2]/air2.volume)*air2.total_moles()
+	var/transfer_moles = (set_flow_rate*mixing_inputs[air1]/air1.return_volume())*air1.total_moles() + (set_flow_rate*mixing_inputs[air2]/air2.return_volume())*air2.total_moles()
 
 	var/power_draw = -1
 	if (transfer_moles > MINIMUM_MOLES_TO_FILTER)
@@ -93,7 +93,7 @@
 	var/list/data = list()
 	data["on"] = use_power
 	data["set_pressure"] = round(set_flow_rate)
-	data["max_pressure"] = min(air1.volume, air2.volume)
+	data["max_pressure"] = min(air1.return_volume(), air2.return_volume())
 	data["node1_concentration"] = round(mixing_inputs[air1]*100, 1)
 	data["node2_concentration"] = round(mixing_inputs[air2]*100, 1)
 	var/list/node_connects = get_node_connect_dirs()
@@ -117,13 +117,13 @@
 		if("pressure")
 			var/pressure = params["pressure"]
 			if(pressure == "max")
-				pressure = min(air1.volume, air2.volume)
+				pressure = min(air1.return_volume(), air2.return_volume())
 				. = TRUE
 			else if(text2num(pressure) != null)
 				pressure = text2num(pressure)
 				. = TRUE
 			if(.)
-				set_flow_rate = clamp(pressure, 0, min(air1.volume, air2.volume))
+				set_flow_rate = clamp(pressure, 0, min(air1.return_volume(), air2.return_volume()))
 		if("node1")
 			var/value = text2num(params["concentration"])
 			mixing_inputs[air1] = max(0, min(1, value / 100))

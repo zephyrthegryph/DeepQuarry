@@ -96,7 +96,7 @@
 		return
 
 	//Figure out the amount of moles to transfer
-	var/transfer_moles = (set_flow_rate/air1.volume)*air1.total_moles()
+	var/transfer_moles = (set_flow_rate/air1.return_volume())*air1.total_moles()
 
 	var/power_draw = -1
 	if (transfer_moles > MINIMUM_MOLES_TO_FILTER)
@@ -138,7 +138,7 @@
 
 	data["on"] = use_power
 	data["rate"] = set_flow_rate
-	data["max_rate"] = air1.volume
+	data["max_rate"] = air1.return_volume()
 	data["last_flow_rate"] = round(last_flow_rate, 0.1)
 
 	data["filter_types"] = list()
@@ -162,13 +162,13 @@
 		if("rate")
 			var/rate = params["rate"]
 			if(rate == "max")
-				rate = air1.volume
+				rate = air1.return_volume()
 				. = TRUE
 			else if(text2num(rate) != null)
 				rate = text2num(rate)
 				. = TRUE
 			if(.)
-				set_flow_rate = clamp(rate, 0, air1.volume)
+				set_flow_rate = clamp(rate, 0, air1.return_volume())
 		if("filter")
 			. = TRUE
 			filter_type = text2num(params["filterset"])

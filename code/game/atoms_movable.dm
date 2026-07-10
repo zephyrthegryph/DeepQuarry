@@ -82,7 +82,10 @@
 
 	unbuckle_all_mobs()
 
-	for(var/atom/movable/AM in contents)
+	// Snapshot: each member's Destroy() pulls it out of contents mid-iteration
+	// (moveToNullspace), which makes DM's for-in skip members — skipped ones
+	// never run Destroy() and keep a loc ref to this deleted container.
+	for(var/atom/movable/AM in contents.Copy())
 		qdel(AM)
 
 	if(opacity)

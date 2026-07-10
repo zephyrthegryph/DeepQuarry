@@ -89,7 +89,8 @@
 	else if(target)
 		var/datum/gas_mixture/environment = target.return_air()
 		if(environment)
-			. += "The pressure gauge reads [round(environment.return_pressure(), 0.01)] kPa; [round(environment.temperature,0.01)]K ([round(environment.temperature-T0C,0.01)]&deg;C)"
+			var/environment_temperature = environment.return_temperature()
+			. += "The pressure gauge reads [round(environment.return_pressure(), 0.01)] kPa; [round(environment_temperature,0.01)]K ([round(environment_temperature-T0C,0.01)]&deg;C)"
 		else
 			. += "The sensor error light is blinking."
 	else

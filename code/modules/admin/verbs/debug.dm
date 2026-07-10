@@ -72,13 +72,15 @@ ADMIN_VERB(Cell, R_DEBUG, "Cell", "Display the atmos information of the current 
 
 	var/datum/gas_mixture/env = T.return_air()
 
+	var/env_temperature = env.return_temperature()
+	var/env_volume = env.return_volume()
 	var/t = span_blue("Coordinates: [T.x],[T.y],[T.z]\n")
-	t += span_red("Temperature: [env.temperature]\n")
+	t += span_red("Temperature: [env_temperature]\n")
 	t += span_red("Pressure: [env.return_pressure()]kPa\n")
 	// was env.gas[g] (XGM); under LINDA/auxmos, iterate get_gases() (id -> moles).
 	for(var/datum/gas/g as anything in env.get_gases())
 		var/moles = env.get_moles(g)
-		t += span_blue("[g]: [moles] / [moles * R_IDEAL_GAS_EQUATION * env.temperature / env.volume]kPa\n")
+		t += span_blue("[g]: [moles] / [moles * R_IDEAL_GAS_EQUATION * env_temperature / env_volume]kPa\n")
 
 	user.mob.show_message(t, 1)
 	feedback_add_details("admin_verb","ASL") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!

@@ -4,8 +4,13 @@
 #Final authority on what's required to fully build the project
 
 # byond version
+# 516.1682 is the minimum: it introduced the modern byondapi ABI (buffer-based
+# Byond_LastError + DecTempRef reference handling) that the Rust atmos library
+# (verdigris/auxmos, byondapi 0.6.x, feature byond-516-1682) links against. On
+# 516.1681 or earlier, DreamDaemon crashes at atmos init with "undefined symbol:
+# ByondValue_DecTempRef". Do not downgrade below 1682.
 export BYOND_MAJOR=516
-export BYOND_MINOR=1681
+export BYOND_MINOR=1682
 
 # Macro Count
 export MACRO_COUNT=7

@@ -27,6 +27,9 @@
 	//Properties for airtight tiles (/wall)
 	var/thermal_conductivity = 0.05
 	var/heat_capacity = 1
+	/// Bitfield of cardinal/multiz dirs where heat conduction is blocked (read by the
+	/// Rust superconductivity arena; 0 = conduct in every direction).
+	var/conductivity_blocked_directions = 0
 
 	//Properties for both
 	var/temperature = T20C      // Initial turf temperature.

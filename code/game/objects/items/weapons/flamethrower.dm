@@ -92,7 +92,7 @@
 			P.launch_projectile( target, BP_TORSO, user)
 
 			// suck out fuel and burn it
-			var/datum/gas_mixture/used_gas = ptank.air_contents.remove_ratio(volume_per_max_burn * thrower_spew_percent() / ptank.air_contents.volume)
+			var/datum/gas_mixture/used_gas = ptank.air_contents.remove_ratio(volume_per_max_burn * thrower_spew_percent() / ptank.air_contents.return_volume())
 			qdel(used_gas)
 			if(!check_fuel())
 				lit = FALSE

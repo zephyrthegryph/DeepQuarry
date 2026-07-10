@@ -47,6 +47,13 @@
 // How long a site may sit with no players aboard before it is auto-released
 // and its z-level recycled.
 #define EXP_AUTO_RELEASE_GRACE (90 SECONDS)
+// After a deploy, a site is protected from absence-based release for this long,
+// so the bluespace-travel window (or a momentary vacancy) can't trip wipe_z()
+// on a crew still mid-transit.
+#define EXP_DEPLOY_GRACE (60 SECONDS)
+// Hard cap on total live + pooled expedition z-levels, so runaway launches can't
+// grow world.maxz without bound.
+#define EXP_MAX_SITE_ZLEVELS 8
 // How many mission offers a launch console keeps on its board.
 #define EXP_OFFER_COUNT 3
 // Radius (tiles) around the console that counts as "on the launch pad".
