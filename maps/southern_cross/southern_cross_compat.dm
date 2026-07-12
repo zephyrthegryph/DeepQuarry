@@ -49,3 +49,68 @@
 
 /obj/item/storage/box/shotgunammo/large
 	name = "large box of shotgun slugs"
+
+/obj/item/storage/box/shotgunshells
+	name = "box of shotgun shells"
+
+/obj/item/storage/box/blanks
+	name = "box of blank shells"
+
+// Circuitboards for the stubbed R&D machines above.
+/obj/item/circuitboard/rdserver
+	name = "circuit board (R&D server)"
+
+/obj/item/circuitboard/protolathe
+	name = "circuit board (protolathe)"
+
+// --- Science / medical machines from frameworks the fork replaced ---
+// The old baystation R&D (/obj/machinery/r_n_d/*, /computer/rdconsole/*) and
+// disease2 virology systems were removed in favour of the tg R&D framework.
+// Southern Cross's science/medical bays still map the old types, so these are
+// inert placeholder stubs: the station boots and the rooms are walkable, but
+// R&D, robotics and virology are non-functional pending a port to the current
+// systems. Computers inherit the console sprite; the rest are bare markers.
+
+/obj/machinery/computer/rdconsole
+	name = "R&D console"
+/obj/machinery/computer/rdconsole/core
+/obj/machinery/computer/rdconsole/robotics
+/obj/machinery/computer/diseasesplicer
+	name = "disease splicer console"
+/obj/machinery/computer/centrifuge
+	name = "isolation centrifuge"
+
+/obj/machinery/r_n_d
+	name = "research machine"
+	density = TRUE
+	anchored = TRUE
+/obj/machinery/r_n_d/circuit_imprinter
+/obj/machinery/r_n_d/protolathe
+/obj/machinery/r_n_d/destructive_analyzer
+/obj/machinery/r_n_d/server
+/obj/machinery/r_n_d/server/core
+/obj/machinery/r_n_d/server/robotics
+
+/obj/machinery/disease2
+	name = "pathology machine"
+	density = TRUE
+	anchored = TRUE
+/obj/machinery/disease2/isolator
+/obj/machinery/disease2/incubator
+/obj/machinery/disease2/diseaseanalyser
+
+/obj/machinery/pros_fabricator
+	name = "prosthetics fabricator"
+	density = TRUE
+	anchored = TRUE
+
+/obj/item/antibody_scanner
+	name = "antibody scanner"
+
+/obj/item/virusdish
+	name = "virus dish"
+/obj/item/virusdish/random
+
+// The engine-submap loader landmark; the engine-submap system was dropped with
+// the quarry, so this is an inert marker (the engine room loads no engine).
+/obj/effect/landmark/engine_loader

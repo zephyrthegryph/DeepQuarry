@@ -38,14 +38,12 @@
 	#include "turfs/outdoors.dm"
 	#include "overmap/sectors.dm"
 
+	// Station decks only. The non-station z-levels (empty space, surface,
+	// mine, wild, misc, centcom) are dropped to keep boot fast; their
+	// z-level datums below are trimmed to match.
 	#include "southern_cross-1.dmm"
 	#include "southern_cross-2.dmm"
 	#include "southern_cross-3.dmm"
-	#include "southern_cross-4.dmm"
-	#include "southern_cross-5.dmm"
-	#include "southern_cross-6.dmm"
-	#include "southern_cross-7.dmm"
-	#include "southern_cross-8.dmm"
 
 	#define USING_MAP_DATUM /datum/map/southern_cross
 

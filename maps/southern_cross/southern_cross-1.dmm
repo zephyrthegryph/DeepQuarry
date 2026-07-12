@@ -52025,7 +52025,7 @@
 /turf/simulated/floor/tiled/white,
 /area/assembly/robotics)
 "bWQ" = (
-/obj/machinery/mecha_part_fabricator,
+/obj/machinery/mecha_part_fabricator_tg,
 /obj/effect/floor_decal/industrial/outline/yellow,
 /turf/simulated/floor/tiled,
 /area/assembly/robotics)
@@ -87939,7 +87939,7 @@
 /obj/machinery/light/small{
 	dir = 8
 	},
-/obj/structure/device/piano,
+/obj/structure/musician/piano,
 /turf/simulated/floor/plating,
 /area/construction/seconddeck/construction2)
 "dpR" = (

@@ -178,45 +178,9 @@
 	holomap_offset_x = HOLOMAP_ICON_SIZE - SOUTHERN_CROSS_HOLOMAP_MARGIN_X - SOUTHERN_CROSS_MAP_SIZE - 40
 	holomap_offset_y = SOUTHERN_CROSS_HOLOMAP_MARGIN_Y + SOUTHERN_CROSS_MAP_SIZE*1
 
-/datum/map_z_level/southern_cross/empty_space
-	z = Z_LEVEL_EMPTY_SPACE
-	name = "Empty"
-	flags = MAP_LEVEL_PLAYER
-	transit_chance = 76
-
-/datum/map_z_level/southern_cross/surface
-	z = Z_LEVEL_SURFACE
-	name = "Plains"
-	flags = MAP_LEVEL_CONTACT|MAP_LEVEL_PLAYER|MAP_LEVEL_SEALED|MAP_LEVEL_CONSOLES
-	base_turf = /turf/simulated/floor/outdoors/rocks
-
-/datum/map_z_level/southern_cross/surface_mine
-	z = Z_LEVEL_SURFACE_MINE
-	name = "Mountains"
-	flags = MAP_LEVEL_CONTACT|MAP_LEVEL_PLAYER|MAP_LEVEL_SEALED|MAP_LEVEL_CONSOLES
-	base_turf = /turf/simulated/floor/outdoors/rocks
-
-/datum/map_z_level/southern_cross/surface_wild
-	z = Z_LEVEL_SURFACE_WILD
-	name = "Wilderness"
-	flags = MAP_LEVEL_PLAYER|MAP_LEVEL_SEALED|MAP_LEVEL_CONTACT|MAP_LEVEL_CONSOLES
-	base_turf = /turf/simulated/floor/outdoors/rocks
-
-/datum/map_z_level/southern_cross/misc
-	z = Z_LEVEL_MISC
-	name = "Misc"
-	flags = MAP_LEVEL_PLAYER
-	transit_chance = 6
-
-/datum/map_z_level/southern_cross/centcom
-	z = Z_LEVEL_CENTCOM
-	name = "Centcom"
-	flags = MAP_LEVEL_ADMIN|MAP_LEVEL_CONTACT
-
-/datum/map_z_level/southern_cross/transit
-	z = Z_LEVEL_TRANSIT
-	name = "Transit"
-	flags = MAP_LEVEL_ADMIN|MAP_LEVEL_SEALED|MAP_LEVEL_PLAYER|MAP_LEVEL_CONTACT
+// Non-station z-levels (empty space, surface, mine, wild, misc, centcom,
+// transit) are not compiled in this station-only build, so their z-level
+// datums are omitted to keep the datum list aligned with the 3 real decks.
 
 //Teleport to Mine
 
