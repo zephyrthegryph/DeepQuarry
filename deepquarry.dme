@@ -5281,6 +5281,11 @@
 // gas_mixture.dm's bodies with these call_ext routes + adopting auxmos' Rust gas
 // arena (a re-architecture, not just an include). The slim init/lifecycle subset
 // lives in auxmos_init_bridge.dm. See doc/atmos_migration.md.
+// auxmos_bindings.dm stays uncompiled until the gas-arena cutover (Phase 3):
+// enabling it collides with the pure-DM gas_mixture.dm math bodies (~25 procs)
+// and only makes sense once those bodies are deleted AND the ~575 direct
+// .gases[]/.temperature/.total_moles() call sites are routed through the Rust
+// handle. See doc/atmos_migration.md.
 //#include "code\ATMOSPHERICS\auxmos_bindings.dm"
 #include "code\ATMOSPHERICS\xgm_compat.dm"
 // Slim init/lifecycle FFI bridge — calls into verdigris.dll to register gas
