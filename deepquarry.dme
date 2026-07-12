@@ -5162,8 +5162,6 @@
 #include "code\modules\quarry\exotic_materials\exotic_material_feature.dm"
 #include "code\modules\quarry\exotic_materials\exotic_material_analyzer.dm"
 #include "code\modules\quarry\exotic_materials\exotic_material_smelter.dm"
-#include "maps\submaps\deep_quarry\deep_quarry_areas.dm"
-#include "maps\submaps\deep_quarry\deep_quarry.dm"
 #include "code\modules\belly_overlay\belly_overlay_asset.dm"
 #include "code\modules\belly_overlay\belly_overlay_tgui.dm"
 #include "code\modules\client\tab_noop.dm"

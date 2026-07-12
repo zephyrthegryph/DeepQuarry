@@ -77,6 +77,13 @@ SUBSYSTEM_DEF(quarry)
 	var/next_frontier_roll = 0
 
 /datum/controller/subsystem/quarry/Initialize()
+	// The quarry only runs on maps that opt in via /datum/map.quarry_enabled.
+	// On any other map (e.g. a station) it stays dormant so it never digs
+	// the live map into layers.
+	if(!using_map.quarry_enabled)
+		flags |= SS_NO_FIRE
+		return SS_INIT_NO_NEED
+
 	// Wipe any leftover snapshots from a prior round before anything
 	// else touches the layer system. Snapshots are per-round artefacts
 	// so a restart should always start clean.

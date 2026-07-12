@@ -3,7 +3,7 @@
 // then carves the walkable space.
 /datum/map_template/quarry_layer
 	name = "Deep Quarry Layer"
-	mappath = "maps/deep_quarry/deep_quarry_layer.dmm"
+	mappath = "maps/quarry_layers/deep_quarry_layer.dmm"
 
 // Cave generator subtype.
 //
