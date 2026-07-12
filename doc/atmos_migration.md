@@ -12,31 +12,39 @@ atmos unit tests pass. Gas math currently runs in **pure DM** (the
 is not yet wired** (`auxmos_bindings.dm` uncompiled, `auxtools_atmos_init`
 uncalled) — that is the remaining perf work (Phases 3–4).
 
-> **BLOCKER — auxmos FFI is incompatible with the installed BYOND (found 2026-07-11).**
-> Wiring the backend was attempted (DM init in `SSair.Initialize` →
-> `_auxtools_register_gas`, `code/ATMOSPHERICS/auxmos_init_bridge.dm`, gated by
-> `AUXMOS_GAS_BACKEND`). Two blockers surfaced:
-> 1. *Init fns never ran* — auxmos's four `#[byondapi::init]` fns register via
->    `inventory`, whose link-section entries the linker drops when auxmos is an
->    rlib inside the meowtonin-based verdigris lib, leaving the gas/arena/turf
->    statics `None`. **Fixed** by calling them explicitly from `verdigris_init()`
->    (`verdigris/verdigris/src/verdigris.rs`, x86-gated).
-> 2. *ABI segfault (open)* — the first auxmos bind still hard-crashes DreamDaemon
->    with no catchable panic. Root cause: `byondapi = 0.4.11` pulls
->    `byondapi-sys 0.11.2`, which only ships the **BYOND 515** header/ABI
->    (`byond-515-1621`), but the server runs **516.1681**. `byond()` resolves
->    byondcore's C functions against the 515 struct layout → mismatched call →
->    segfault. Confirmed via a file-writing panic hook staying empty (segfault,
->    not panic).
+> **DONE — auxmos gas-math backend is live and unconditional (2026-07-12).**
+> Gas data lives in the Rust auxmos arena; `/datum/gas_mixture` is a handle and
+> all gas reads/writes route through the auxmos byondapi binds. Boots clean on
+> Southern Cross (22 gases + reaction table registered, 0 gas runtimes). No flag
+> — the backend is always on.
 >
-> **Unblock path:** bump to `byondapi 0.5.14` + `byondapi-sys 0.12.3`
-> (feature `byond-516-1651`), then port the vendored auxmos (`verdigris/atmos/`)
-> across the breaking byondapi 0.4→0.5 API (its ~55 `#[bind]`s + gas/turf/
-> reaction internals). Only after that does the DM re-architecture (arena handle
-> on `/datum/gas_mixture`, replacing the 2,714-line DM gas math, migrating the
-> ~152 call-site files, turf-graph processing) become reachable. The DM wiring +
-> the Rust init fix are committed and gated off; re-enable `AUXMOS_GAS_BACKEND`
-> once the byondapi upgrade lands.
+> How the two original blockers were cleared:
+> 1. *byondapi/BYOND ABI* — bumped the workspace `byondapi` dep to the git repo
+>    (**0.6.14** + byondapi-sys **0.12.3**, feature `byond-516-1651`), which
+>    matches the 516 server. The vendored auxmos (`verdigris/atmos/`) compiled
+>    unchanged. (byondapi-sys now runs bindgen, so builds need `LIBCLANG_PATH`.)
+> 2. *auxmos static init* — `verdigris_init()` (called from the game `/world/New`
+>    in `code/game/world.dm`, since it overrides the one in `_verdigris.dm`)
+>    explicitly runs auxmos's `#[byondapi::init]` fns and installs the panic hook.
+>
+> Key wiring, for future reference:
+> - Gases are registered (`auxmos_register_gases`) from `/world/New` BEFORE the
+>   Master Controller starts SSatoms — air is populated during atom init and a
+>   `set_moles` on an unregistered gas crashes.
+> - `/datum/gas` carries the fire/oxidation/flags fields auxmos reads (its
+>   `byond_string!` interning needs the names to exist).
+> - auxmos keys gases by **string id**; DM must never pass a `/datum/gas` type
+>   path to a handle proc. `xgm_gas_string_id()` normalises; parse_gas_string,
+>   the immutable parse, and the XGM shims were fixed to use it.
+> - Reactions: `auxtools_update_reactions()` at SSair init populates the Rust
+>   reaction table from `SSair.gas_reactions`; unparseable reactions are skipped.
+>
+> **Remaining (optional, Phase 5): turf-graph processing.** SSair.fire() still
+> orchestrates turf sharing in DM (calling the Rust mixture ops). Moving that
+> whole loop into auxmos's Rust turf processor (`process_turfs_auxtools` +
+> monstermos/putnamos) is the additional runtime-perf win, and a separate
+> SSair.fire() re-architecture — not required for the gas-math backend to be
+> live and correct.
 
 CHOMP/ZAS-era callers are served by the compat layer in
 `code/ATMOSPHERICS/xgm_compat.dm` (XGM/ZAS gas + airblock API → LINDA) and
