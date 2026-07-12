@@ -7,6 +7,15 @@
 								2 for preloading absolutely everything;
 								*/
 
+// Routes gas math through the Rust auxmos backend (verdigris.dll). Disabled:
+// blocked on a BYOND-version wall in the FFI stack — the vendored auxmos targets
+// byondapi 0.4 / byondapi-sys 0.11.2 (BYOND 515 ABI), but the server runs BYOND
+// 516.1681, so the first auxmos bind resolves BYOND's C functions against the
+// wrong ABI and segfaults. Unblocking needs byondapi 0.5.14 + byondapi-sys 0.12.3
+// (feature byond-516-1651) and auxmos ported across the 0.4->0.5 breaking API.
+// See doc/atmos_migration.md and auxmos_init_bridge.dm.
+//#define AUXMOS_GAS_BACKEND
+
 // ZAS Compile Options
 //#define FIREDBG		// Uncomment to turn on ZAS debugging related to fire stuff.
 //#define ZASDBG	 	// Uncomment to turn on super detailed ZAS debugging that probably won't even compile.

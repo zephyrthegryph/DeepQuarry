@@ -15,7 +15,20 @@ pub fn ensure_panic_hook() {
     HOOK_INSTALLED.get_or_init(|| {
         let previous = panic::take_hook();
         panic::set_hook(Box::new(move |info| {
-            eprintln!("[verdigris panic] {info}");
+            let msg = format!("[verdigris panic] {info}\n");
+            eprintln!("{msg}");
+            // Also persist to a file: a panic that unwinds through the FFI (e.g.
+            // an unwrapped auxmos byondapi bind) can crash DreamDaemon before any
+            // captured stdout/DM log flushes, so a file is the only reliable way
+            // to read the payload post-mortem.
+            use std::io::Write;
+            if let Ok(mut f) = std::fs::OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open("verdigris_panics.log")
+            {
+                let _ = f.write_all(msg.as_bytes());
+            }
             previous(info);
         }));
     });

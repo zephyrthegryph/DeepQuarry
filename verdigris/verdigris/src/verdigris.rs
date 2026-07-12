@@ -35,7 +35,23 @@ pub fn verdigris_features() -> &'static str {
 /// DM should call this in `/world/New()` before any other verdigris call.
 #[byond_fn]
 pub fn verdigris_init() -> ByondResult<()> {
-    panic_safe!({ Ok(()) })
+    panic_safe!({
+        // Auxmos allocates its gas registry, mixture arena, and turf graph in
+        // `#[byondapi::init]` functions. Those are meant to run via byondapi's
+        // init slice, but that slice is dropped by the linker when auxmos is
+        // force-linked into this (meowtonin-based) library as an rlib — so the
+        // statics stay `None` and the first auxmos FFI call unwraps `None` and
+        // panics through the C ABI, killing DreamDaemon. Run them explicitly
+        // here, before any auxmos bind can fire, so the statics are live. The
+        // functions are independent and idempotent at load time.
+        #[cfg(target_arch = "x86")]
+        {
+            auxmos::gas::types::initialize_gas_info_structs();
+            auxmos::gas::initialize_gases();
+            auxmos::turfs::initialize_turfs();
+        }
+        Ok(())
+    })
 }
 
 /// Drop transient Rust-side state. Currently a no-op; once the gas-mixture
