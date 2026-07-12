@@ -193,7 +193,7 @@
 
 	switch(action)
 		if("light")
-			if(!check_fuel() || LINDA_GAS_AMT(ptank.air_contents, GAS_PHORON) < 1 || !status)
+			if(!check_fuel() || ptank.air_contents.get_moles(GAS_PHORON) < 1 || !status)
 				return FALSE
 			lit = !lit
 			if(lit)

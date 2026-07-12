@@ -94,12 +94,12 @@
 ///Copies all gas info from the turf into a new gas_mixture, along with our temperature
 ///Returns the created gas_mixture
 /turf/proc/create_gas_mixture()
-	var/datum/gas_mixture/mix = SSair.parse_gas_string(initial_gas_mix, /datum/gas_mixture/turf)
+	var/datum/gas_mixture/mix = SSair.parse_gas_string(initial_gas_mix, /datum/gas_mixture)
 
 	//acounts for changes in temperature
 	var/turf/parent = parent_type
 	if(temperature != initial(temperature) || temperature != initial(parent.temperature))
-		mix.temperature = temperature
+		mix.set_temperature(temperature)
 
 	return mix
 
@@ -210,7 +210,7 @@
 			src.atmos_overlay_types = null
 		return
 
-	var/list/gases = air.gases
+	var/list/gases = air.get_gases()
 
 	var/list/new_overlay_types
 	GAS_OVERLAYS(gases, new_overlay_types, src)
@@ -401,7 +401,7 @@
 			// shares 4/5 of our difference in moles with the atmosphere
 			our_air.share(planetary_mix, 0.8, 0.8)
 			// temperature share with the atmosphere with an inflated heat capacity to simulate faster sharing with a large atmosphere
-			our_air.temperature_share(planetary_mix, OPEN_HEAT_TRANSFER_COEFFICIENT, planetary_mix.temperature_archived, planetary_mix.heat_capacity() * 5)
+			our_air.temperature_share(planetary_mix, OPEN_HEAT_TRANSFER_COEFFICIENT, planetary_mix.return_temperature(), planetary_mix.heat_capacity() * 5)
 			planetary_mix.garbage_collect()
 			PLANET_SHARE_CHECK
 
@@ -430,7 +430,7 @@
 			SSair.sleep_active_turf(src)
 
 	significant_share_ticker = cached_ticker //Save our changes
-	temperature_expose(our_air, our_air.temperature)
+	temperature_expose(our_air, our_air.return_temperature())
 
 //////////////////////////SPACEWIND/////////////////////////////
 
@@ -530,7 +530,6 @@
 	var/datum/gas_mixture/shared_mix = new
 
 	//make local for sanic speed
-	var/list/shared_gases = shared_mix.gases
 	var/list/turf_list = src.turf_list
 	var/turflen = turf_list.len
 	var/imumutable_in_group = FALSE
@@ -539,35 +538,31 @@
 
 	for(var/turf/open/group_member as anything in turf_list)
 		//Cache?
-		var/datum/gas_mixture/turf/mix = group_member.air
+		var/datum/gas_mixture/mix = group_member.air
 		if (roundstart)
 			if(istype(group_member.air, /datum/gas_mixture/immutable))
 				imumutable_in_group = TRUE
 				shared_mix.copy_from(group_member.air) //This had better be immutable young man
-				shared_gases = shared_mix.gases //update the cache
 				break
 			// If we're planetary use THAT mix, and stop here
 			if(group_member.planetary_atmos)
 				imumutable_in_group = TRUE
 				var/datum/gas_mixture/planetary_mix = SSair.planetary[group_member.initial_gas_mix]
 				shared_mix.copy_from(planetary_mix)
-				shared_gases = shared_mix.gases // Cache update
 				break
 		//"borrowing" this code from merge(), I need to play with the temp portion. Lets expand it out
 		//temperature = (giver.temperature * giver_heat_capacity + temperature * self_heat_capacity) / combined_heat_capacity
 		var/capacity = mix.heat_capacity()
-		energy += mix.temperature * capacity
+		energy += mix.return_temperature() * capacity
 		heat_cap += capacity
 
-		var/list/giver_gases = mix.gases
-		for(var/giver_id in giver_gases)
-			ASSERT_GAS_IN_LIST(giver_id, shared_gases)
-			shared_gases[giver_id][MOLES] += giver_gases[giver_id][MOLES]
+		for(var/giver_id in mix.get_gases())
+			shared_mix.adjust_moles(giver_id, mix.get_moles(giver_id))
 
 	if(!imumutable_in_group)
-		shared_mix.temperature = energy / heat_cap
-		for(var/id in shared_gases)
-			shared_gases[id][MOLES] /= turflen
+		shared_mix.set_temperature(energy / heat_cap)
+		for(var/id in shared_mix.get_gases())
+			shared_mix.set_moles(id, shared_mix.get_moles(id) / turflen)
 		shared_mix.garbage_collect()
 
 	for(var/turf/open/group_member as anything in turf_list)
@@ -721,7 +716,7 @@ Then we space some of our heat, and think about if we should stop conducting.
 	// guard air null when blocks_air is FALSE. Previously this
 	// nulldotref'd if the turf had been space-converted or otherwise had
 	// its air swept while a superconduction tick was in flight.
-	var/share_temp = blocks_air ? temperature : air?.temperature
+	var/share_temp = blocks_air ? temperature : air?.return_temperature()
 	if(isnull(share_temp))
 		return
 	if(..(share_temp) != FALSE && !blocks_air)
@@ -748,7 +743,7 @@ Then we space some of our heat, and think about if we should stop conducting.
 			return FALSE
 		SSair.active_super_conductivity |= src
 		return TRUE
-	if(air.temperature < (starting?MINIMUM_TEMPERATURE_START_SUPERCONDUCTION:MINIMUM_TEMPERATURE_FOR_SUPERCONDUCTION))
+	if(air.return_temperature() < (starting?MINIMUM_TEMPERATURE_START_SUPERCONDUCTION:MINIMUM_TEMPERATURE_FOR_SUPERCONDUCTION))
 		return FALSE
 	if(air.heat_capacity() < M_CELL_WITH_RATIO) // Was: MOLES_CELLSTANDARD*0.1*0.05 Since there are no variables here we can make this a constant.
 		return FALSE

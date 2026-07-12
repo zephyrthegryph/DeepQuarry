@@ -31,12 +31,11 @@
 	else
 		to_chat(user, span_warning("Pressure: [round(pressure,0.1)] kPa"))
 	if(total_moles)
-		// was XGM env.gas[g] iteration; under LINDA, env.gases keys are
-		// /datum/gas type paths and the moles live at gases[g][MOLES].
-		for(var/datum/gas/g as anything in environment.gases)
-			var/moles = environment.gases[g][MOLES]
-			to_chat(user, span_notice("[initial(g.name)]: [round((moles / total_moles) * 100)]%"))
-		to_chat(user, span_notice("Temperature: [round(environment.temperature-T0C,0.1)]&deg;C ([round(environment.temperature,0.1)]K)"))
+		for(var/gas_id in environment.get_gases())
+			var/moles = environment.get_moles(gas_id)
+			to_chat(user, span_notice("[gas_id]: [round((moles / total_moles) * 100)]%"))
+		var/env_temp = environment.return_temperature()
+		to_chat(user, span_notice("Temperature: [round(env_temp-T0C,0.1)]&deg;C ([round(env_temp,0.1)]K)"))
 
 /obj/item/boop_module/afterattack(obj/O, mob/user as mob, proximity)
 	if(!proximity)

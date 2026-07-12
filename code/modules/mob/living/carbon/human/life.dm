@@ -586,7 +586,7 @@
 	var/SA_sleep_min = 5
 	var/inhaled_gas_used = 0
 
-	var/breath_pressure = (breath_moles*R_IDEAL_GAS_EQUATION*breath.temperature)/BREATH_VOLUME
+	var/breath_pressure = (breath_moles*R_IDEAL_GAS_EQUATION*breath.return_temperature())/BREATH_VOLUME
 
 	var/inhaling
 	var/poison_toxin
@@ -604,20 +604,20 @@
 		breath_type = species.breath_type
 	else
 		breath_type = GAS_O2
-	inhaling = LINDA_GAS_AMT(breath, breath_type)
+	inhaling = breath.get_moles(breath_type)
 
 	if(species.poison_type)
 		poison_type = species.poison_type
 	else
 		poison_type = GAS_PHORON
-	poison_toxin = LINDA_GAS_AMT(breath, poison_type)
+	poison_toxin = breath.get_moles(poison_type)
 
 	if(species.breath_type != GAS_CH4)
-		poison_methane = LINDA_GAS_AMT(breath, GAS_CH4)
+		poison_methane = breath.get_moles(GAS_CH4)
 
 	if(species.exhale_type)
 		exhale_type = species.exhale_type
-		exhaling = LINDA_GAS_AMT(breath, exhale_type)
+		exhaling = breath.get_moles(exhale_type)
 	else
 		exhaling = 0
 
@@ -695,7 +695,7 @@
 
 	// Too much phoron in the air.
 	if(toxins_pp > safe_toxins_min)
-		var/SA_pp = (LINDA_GAS_AMT(breath, GAS_PHORON) / breath_moles) * breath_pressure
+		var/SA_pp = (breath.get_moles(GAS_PHORON) / breath_moles) * breath_pressure
 		if(SA_pp > 0.05)
 			if(prob(3))
 				to_chat(src,span_warning("Something burns as you breathe."))
@@ -710,7 +710,7 @@
 
 	// Too much methane in the air
 	if(methane_pp > safe_toxins_min)
-		var/SA_pp = (LINDA_GAS_AMT(breath, GAS_CH4) / breath_moles) * breath_pressure
+		var/SA_pp = (breath.get_moles(GAS_CH4) / breath_moles) * breath_pressure
 		if(SA_pp > 0.05)
 			if(prob(5))
 				to_chat(src,span_warning("You smell rotten eggs."))
@@ -719,14 +719,15 @@
 		adjustOxyLoss(CLAMP(ratio,0.1,10)) // Causes slow suffocation
 		if(prob(20))
 			emote("gasp")
-		breath.adjust_gas(GAS_CH4, -poison_methane/6, update = 0) // update after // removed duplicate line; poison_methane already equals LINDA_GAS_AMT(breath, GAS_CH4) from line 608
+		breath.adjust_gas(GAS_CH4, -poison_methane/6, update = 0) // update after
 		throw_alert("methane_in_air", /atom/movable/screen/alert/methane_in_air)
 	else
 		clear_alert("methane_in_air")
 
 	// If there's some other shit in the air lets deal with it here.
-	if(LINDA_GAS_AMT(breath, GAS_N2O))
-		var/SA_pp = (LINDA_GAS_AMT(breath, GAS_N2O) / breath_moles) * breath_pressure
+	var/n2o_moles = breath.get_moles(GAS_N2O)
+	if(n2o_moles)
+		var/SA_pp = (n2o_moles / breath_moles) * breath_pressure
 
 		// Enough to make us paralysed for a bit
 		if(SA_pp > SA_para_min)
@@ -743,7 +744,7 @@
 		else if(SA_pp > 0.15)
 			if(prob(20))
 				emote(pick("giggle", "laugh"))
-		breath.adjust_gas(GAS_N2O, -LINDA_GAS_AMT(breath, GAS_N2O)/6, update = 0) //update after
+		breath.adjust_gas(GAS_N2O, -n2o_moles/6, update = 0) //update after
 
 	if(get_hallucination_component()?.get_hud_state() == HUD_HALLUCINATION_OXY)
 		throw_alert("oxy", /atom/movable/screen/alert/not_enough_atmos)
@@ -770,24 +771,25 @@
 
 	// Hot air hurts :(
 	if(!isbelly(loc)) //None of this happens anyway whilst inside of a belly, belly temperatures are all handled as body temperature
-		if((breath.temperature <= species.cold_discomfort_level || breath.temperature >= species.heat_discomfort_level) && !(COLD_RESISTANCE in mutations))
+		var/breath_temp = breath.return_temperature()
+		if((breath_temp <= species.cold_discomfort_level || breath_temp >= species.heat_discomfort_level) && !(COLD_RESISTANCE in mutations))
 
-			if(breath.temperature <= species.breath_cold_level_1)
+			if(breath_temp <= species.breath_cold_level_1)
 				if(prob(20))
 					to_chat(src, span_danger("You feel your face freezing and icicles forming in your lungs!"))
-			else if(breath.temperature >= species.breath_heat_level_1)
+			else if(breath_temp >= species.breath_heat_level_1)
 				if(prob(20))
 					to_chat(src, span_danger("You feel your face burning and a searing heat in your lungs!"))
 
-			if(breath.temperature >= species.heat_discomfort_level)
+			if(breath_temp >= species.heat_discomfort_level)
 
-				if(breath.temperature >= species.breath_heat_level_3)
+				if(breath_temp >= species.breath_heat_level_3)
 					apply_damage(HEAT_GAS_DAMAGE_LEVEL_3, BURN, BP_HEAD)
 					throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_MAX)
-				else if(breath.temperature >= species.breath_heat_level_2)
+				else if(breath_temp >= species.breath_heat_level_2)
 					apply_damage(HEAT_GAS_DAMAGE_LEVEL_2, BURN, BP_HEAD)
 					throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_MODERATE)
-				else if(breath.temperature >= species.breath_heat_level_1)
+				else if(breath_temp >= species.breath_heat_level_1)
 					apply_damage(HEAT_GAS_DAMAGE_LEVEL_1, BURN, BP_HEAD)
 					throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_LOW)
 				else if(species.get_environment_discomfort(src, ENVIRONMENT_COMFORT_MARKER_HOT))
@@ -795,15 +797,15 @@
 				else
 					clear_alert("temp")
 
-			else if(breath.temperature <= species.cold_discomfort_level)
+			else if(breath_temp <= species.cold_discomfort_level)
 
-				if(breath.temperature <= species.breath_cold_level_3)
+				if(breath_temp <= species.breath_cold_level_3)
 					apply_damage(COLD_GAS_DAMAGE_LEVEL_3, BURN, BP_HEAD)
 					throw_alert("temp", /atom/movable/screen/alert/cold, COLD_ALERT_SEVERITY_MAX)
-				else if(breath.temperature <= species.breath_cold_level_2)
+				else if(breath_temp <= species.breath_cold_level_2)
 					apply_damage(COLD_GAS_DAMAGE_LEVEL_2, BURN, BP_HEAD)
 					throw_alert("temp", /atom/movable/screen/alert/cold, COLD_ALERT_SEVERITY_MODERATE)
-				else if(breath.temperature <= species.breath_cold_level_1)
+				else if(breath_temp <= species.breath_cold_level_1)
 					apply_damage(COLD_GAS_DAMAGE_LEVEL_1, BURN, BP_HEAD)
 					throw_alert("temp", /atom/movable/screen/alert/cold, COLD_ALERT_SEVERITY_LOW)
 				else if(species.get_environment_discomfort(src, ENVIRONMENT_COMFORT_MARKER_COLD))
@@ -812,7 +814,7 @@
 					clear_alert("temp")
 
 			//breathing in hot/cold air also heats/cools you a bit
-			var/temp_adj = breath.temperature - bodytemperature
+			var/temp_adj = breath_temp - bodytemperature
 			if (temp_adj < 0)
 				temp_adj /= (BODYTEMP_COLD_DIVISOR * 5)	//don't raise temperature as much as if we were directly exposed
 			else
@@ -889,7 +891,7 @@
 			loc_temp =  M.return_temperature()
 		else if(istype(loc, /obj/machinery/atmospherics/unary/cryo_cell))
 			var/obj/machinery/atmospherics/unary/cryo_cell/cc = loc
-			loc_temp = cc.air_contents.temperature
+			loc_temp = cc.air_contents.return_temperature()
 		else if(isbelly(loc))
 			var/obj/belly/b = loc
 			if(allowtemp)
@@ -897,7 +899,7 @@
 			else
 				loc_temp = species.body_temperature //Should be safe for just about anyone
 		else
-			loc_temp = environment.temperature
+			loc_temp = environment.return_temperature()
 
 		if(adjusted_pressure < species.warning_high_pressure && adjusted_pressure > species.warning_low_pressure && abs(loc_temp - bodytemperature) < 20 && bodytemperature < species.heat_level_1 && bodytemperature > species.cold_level_1 && (!isbelly(loc) || !allowtemp))
 			clear_alert("pressure")

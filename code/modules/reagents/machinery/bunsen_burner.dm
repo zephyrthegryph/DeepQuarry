@@ -87,7 +87,7 @@
 	current_temp = T0C
 	var/datum/gas_mixture/GM = return_air()
 	if(GM)
-		current_temp = GM.temperature
+		current_temp = GM.return_temperature()
 
 /obj/machinery/bunsen_burner/proc/drop_held_container()
 	if(!held_container)

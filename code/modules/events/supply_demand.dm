@@ -309,7 +309,7 @@ GLOBAL_LIST_EMPTY_TYPED(running_demand_events, /datum/event/supply_demand)
 
 /datum/event/supply_demand/proc/choose_atmos_items(differentTypes)
 	var/datum/gas_mixture/mixture = new
-	mixture.temperature = T20C
+	mixture.set_temperature(T20C)
 	var/unpickedTypes = GLOB.gas_data.gases.Copy()
 	unpickedTypes -= GAS_VOLATILE_FUEL // Don't do that one
 	for(var/i in 1 to differentTypes)
@@ -317,7 +317,7 @@ GLOBAL_LIST_EMPTY_TYPED(running_demand_events, /datum/event/supply_demand)
 		unpickedTypes -= gasId
 		// XGM mix.gas[id] = X → LINDA set_moles. gasId is a string XGM id.
 		var/datum/gas/_gtype = mixture.get_xgm_id_for_gas(gasId)
-		if(_gtype) mixture.set_moles(_gtype, (rand(1,1000) * mixture.volume) / (R_IDEAL_GAS_EQUATION * mixture.temperature))
+		if(_gtype) mixture.set_moles(_gtype, (rand(1,1000) * mixture.volume) / (R_IDEAL_GAS_EQUATION * mixture.return_temperature()))
 	// mixture.update_values() removed; no-op under LINDA.
 	var/datum/supply_demand_order/gas/O = new(qty = 1)
 	O.mixture = mixture

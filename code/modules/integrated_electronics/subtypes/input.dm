@@ -844,14 +844,14 @@
 	var/total_moles = environment.total_moles()
 
 	if (total_moles)
-		var/o2_level = LINDA_GAS_AMT(environment, GAS_O2)/total_moles
-		var/n2_level = LINDA_GAS_AMT(environment, GAS_N2)/total_moles
-		var/co2_level = LINDA_GAS_AMT(environment, GAS_CO2)/total_moles
-		var/methane_level = LINDA_GAS_AMT(environment, GAS_CH4)/total_moles
-		var/phoron_level = LINDA_GAS_AMT(environment, GAS_PHORON)/total_moles
+		var/o2_level = environment.get_moles(GAS_O2)/total_moles
+		var/n2_level = environment.get_moles(GAS_N2)/total_moles
+		var/co2_level = environment.get_moles(GAS_CO2)/total_moles
+		var/methane_level = environment.get_moles(GAS_CH4)/total_moles
+		var/phoron_level = environment.get_moles(GAS_PHORON)/total_moles
 		var/unknown_level =  1-(o2_level+n2_level+co2_level+phoron_level+methane_level)
 		set_pin_data(IC_OUTPUT, 1, pressure)
-		set_pin_data(IC_OUTPUT, 2, round(environment.temperature-T0C,0.1))
+		set_pin_data(IC_OUTPUT, 2, round(environment.return_temperature()-T0C,0.1))
 		set_pin_data(IC_OUTPUT, 3, round(o2_level*100,0.1))
 		set_pin_data(IC_OUTPUT, 4, round(n2_level*100,0.1))
 		set_pin_data(IC_OUTPUT, 5, round(co2_level*100,0.1))
@@ -921,7 +921,7 @@
 	var/total_moles = environment.total_moles()
 
 	if (total_moles)
-		set_pin_data(IC_OUTPUT, 1, round(environment.temperature-T0C,0.1))
+		set_pin_data(IC_OUTPUT, 1, round(environment.return_temperature()-T0C,0.1))
 	else
 		set_pin_data(IC_OUTPUT, 1, -273.15)
 	push_data()
@@ -949,7 +949,7 @@
 	var/total_moles = environment.total_moles()
 
 	if (total_moles)
-		var/o2_level = LINDA_GAS_AMT(environment, GAS_O2)/total_moles
+		var/o2_level = environment.get_moles(GAS_O2)/total_moles
 		set_pin_data(IC_OUTPUT, 1, round(o2_level*100,0.1))
 	else
 		set_pin_data(IC_OUTPUT, 1, 0)
@@ -978,7 +978,7 @@
 	var/total_moles = environment.total_moles()
 
 	if (total_moles)
-		var/co2_level = LINDA_GAS_AMT(environment, GAS_CO2)/total_moles
+		var/co2_level = environment.get_moles(GAS_CO2)/total_moles
 		set_pin_data(IC_OUTPUT, 1, round(co2_level*100,0.1))
 	else
 		set_pin_data(IC_OUTPUT, 1, 0)
@@ -1007,7 +1007,7 @@
 	var/total_moles = environment.total_moles()
 
 	if (total_moles)
-		var/n2_level = LINDA_GAS_AMT(environment, GAS_N2)/total_moles
+		var/n2_level = environment.get_moles(GAS_N2)/total_moles
 		set_pin_data(IC_OUTPUT, 1, round(n2_level*100,0.1))
 	else
 		set_pin_data(IC_OUTPUT, 1, 0)
@@ -1036,7 +1036,7 @@
 	var/total_moles = environment.total_moles()
 
 	if (total_moles)
-		var/phoron_level = LINDA_GAS_AMT(environment, GAS_PHORON)/total_moles
+		var/phoron_level = environment.get_moles(GAS_PHORON)/total_moles
 		set_pin_data(IC_OUTPUT, 1, round(phoron_level*100,0.1))
 	else
 		set_pin_data(IC_OUTPUT, 1, 0)
@@ -1065,7 +1065,7 @@
 	var/total_moles = environment.total_moles()
 
 	if (total_moles)
-		var/methane_level = LINDA_GAS_AMT(environment, GAS_CH4)/total_moles
+		var/methane_level = environment.get_moles(GAS_CH4)/total_moles
 		set_pin_data(IC_OUTPUT, 1, round(methane_level*100, 0.1))
 	else
 		set_pin_data(IC_OUTPUT, 1, 0)

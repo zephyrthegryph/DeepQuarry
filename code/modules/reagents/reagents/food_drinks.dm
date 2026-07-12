@@ -192,7 +192,7 @@
 	var/hotspot = (locate(/obj/fire) in T)
 	if(hotspot && !istype(T, /turf/space))
 		var/datum/gas_mixture/lowertemp = T.remove_air(xgm_total_moles(T.return_air())) // XGM T:air:total_moles → LINDA helper
-		lowertemp.temperature = max(min(lowertemp.temperature-2000, lowertemp.temperature / 2), 0)
+		lowertemp.set_temperature(max(min(lowertemp.return_temperature()-2000, lowertemp.return_temperature() / 2), 0))
 		lowertemp.react()
 		T.assume_air(lowertemp)
 		qdel(hotspot)

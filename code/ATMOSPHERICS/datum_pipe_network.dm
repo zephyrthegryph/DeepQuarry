@@ -112,28 +112,22 @@
 	for(var/datum/gas_mixture/mix in gases)
 		var/m = mix.total_moles()
 		total_moles += m
-		total_thermal += m * mix.temperature
+		total_thermal += m * mix.return_temperature()
 		total_volume += mix.volume
-		if(mix.gases)
-			for(var/datum/gas/g as anything in mix.gases)
-				pooled[g] = (pooled[g] || 0) + mix.gases[g][MOLES]
+		for(var/datum/gas/g as anything in mix.get_gases())
+			pooled[g] = (pooled[g] || 0) + mix.get_moles(g)
 	if(total_volume <= 0)
 		return
 	var/avg_temp = total_moles > 0 ? total_thermal / total_moles : T20C
 	for(var/datum/gas_mixture/mix in gases)
 		var/share = mix.volume / total_volume
 		// Zero out current gases first so removed gas types disappear.
-		for(var/datum/gas/g as anything in mix.gases)
-			mix.gases[g][MOLES] = 0
+		for(var/datum/gas/g as anything in mix.get_gases())
+			mix.set_moles(g, 0)
 		// Now redistribute pooled moles into this mixture by volume share.
 		for(var/datum/gas/g as anything in pooled)
 			var/redist = pooled[g] * share
 			if(redist <= 0)
 				continue
-			ASSERT_GAS(g, mix)
-			mix.gases[g][MOLES] = redist
-		// Drop any zero entries to keep gases dict clean.
-		for(var/datum/gas/g as anything in mix.gases)
-			if(mix.gases[g][MOLES] <= 0)
-				mix.gases -= g
+			mix.set_moles(g, redist)
 		mix.set_temperature(avg_temp)

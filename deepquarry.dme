@@ -5286,7 +5286,7 @@
 // and only makes sense once those bodies are deleted AND the ~575 direct
 // .gases[]/.temperature/.total_moles() call sites are routed through the Rust
 // handle. See doc/atmos_migration.md.
-//#include "code\ATMOSPHERICS\auxmos_bindings.dm"
+#include "code\ATMOSPHERICS\auxmos_bindings.dm"
 #include "code\ATMOSPHERICS\xgm_compat.dm"
 // Slim init/lifecycle FFI bridge — calls into verdigris.dll to register gas
 // singletons + reaction tables with Rust at SSair init time.

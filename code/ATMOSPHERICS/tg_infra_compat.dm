@@ -174,7 +174,7 @@ GLOBAL_LIST_INIT(contrast_colors, list("#ff0000", "#00ff00", "#0000ff", "#ffff00
 
 // === /datum/gas_mixture/proc/get_thermal_energy_change ===
 /datum/gas_mixture/proc/get_thermal_energy_change(new_temperature)
-	return heat_capacity() * (new_temperature - temperature)
+	return heat_capacity() * (new_temperature - return_temperature())
 
 
 // /tg/'s electrolyzer scaffolding (GLOB.electrolyzer_reactions, /datum/

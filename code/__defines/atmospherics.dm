@@ -13,12 +13,13 @@
 // — it maps CHOMP's string gas-id ("oxygen", "phoron") to /datum/gas type path.
 //
 // AMT keeps outer parens because the ternary needs grouping. ADJUST omits
-// outer parens so callers can chain. LINDA_GAS_LIST does NOT exist — DM's
-// preprocessor doesn't handle `MACRO(x).member` cleanly; whole-list `.gas`
-// references must be per-site rewritten to `.gases`.
+// outer parens so callers can chain.
+//
+// AMT resolves the XGM string id to a LINDA type path first, then delegates
+// to get_moles() so callers don't need to know the type path.
 
 #define LINDA_GAS_AMT(mix, gas_id_str) \
-	( mix && mix.gases && mix.get_xgm_id_for_gas(gas_id_str) && mix.gases[mix.get_xgm_id_for_gas(gas_id_str)] ? mix.gases[mix.get_xgm_id_for_gas(gas_id_str)][MOLES] : 0 )
+	( mix && mix.get_xgm_id_for_gas(gas_id_str) ? mix.get_moles(mix.get_xgm_id_for_gas(gas_id_str)) : 0 )
 #define LINDA_GAS_ADJUST(mix, gas_id_str, delta) mix.adjust_gas(gas_id_str, delta)
 
 // /tg/ helpers/plane defines/wet-floor constants are below in the consolidated block.

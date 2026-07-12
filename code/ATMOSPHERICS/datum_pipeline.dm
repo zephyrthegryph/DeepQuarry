@@ -156,21 +156,21 @@
 		var/turf/simulated/modeled_location = target
 
 		if (modeled_location.special_temperature)
-			air.temperature += thermal_conductivity * (modeled_location.special_temperature - air.temperature)
-			if (air.temperature < TCMB)
-				air.temperature = TCMB
+			air.set_temperature(air.return_temperature() + thermal_conductivity * (modeled_location.special_temperature - air.return_temperature()))
+			if (air.return_temperature() < TCMB)
+				air.set_temperature(TCMB)
 			if (network)
 				network.update = TRUE
 
 		if(modeled_location.blocks_air)
 
 			if((modeled_location.heat_capacity>0) && (partial_heat_capacity>0))
-				var/delta_temperature = air.temperature - modeled_location.temperature
+				var/delta_temperature = air.return_temperature() - modeled_location.temperature
 
 				var/heat = thermal_conductivity*delta_temperature* \
 					(partial_heat_capacity*modeled_location.heat_capacity/(partial_heat_capacity+modeled_location.heat_capacity))
 
-				air.temperature -= heat/total_heat_capacity
+				air.set_temperature(air.return_temperature() - heat/total_heat_capacity)
 				modeled_location.temperature += heat/modeled_location.heat_capacity
 
 		else
@@ -181,7 +181,7 @@
 			var/datum/gas_mixture/sharer_air = modeled_location.air
 			if(!sharer_air)
 				return 1
-			var/delta_temperature = air.temperature - sharer_air.temperature
+			var/delta_temperature = air.return_temperature() - sharer_air.return_temperature()
 			var/sharer_heat_capacity = sharer_air.heat_capacity()
 
 			var/self_temperature_delta = 0
@@ -196,18 +196,18 @@
 			else
 				return 1
 
-			air.temperature += self_temperature_delta
-			sharer_air.temperature += sharer_temperature_delta
+			air.set_temperature(air.return_temperature() + self_temperature_delta)
+			sharer_air.set_temperature(sharer_air.return_temperature() + sharer_temperature_delta)
 
 
 	else
 		if((target.heat_capacity>0) && (partial_heat_capacity>0))
-			var/delta_temperature = air.temperature - target.temperature
+			var/delta_temperature = air.return_temperature() - target.temperature
 
 			var/heat = thermal_conductivity*delta_temperature* \
 				(partial_heat_capacity*target.heat_capacity/(partial_heat_capacity+target.heat_capacity))
 
-			air.temperature -= heat/total_heat_capacity
+			air.set_temperature(air.return_temperature() - heat/total_heat_capacity)
 	if(network)
 		network.update = 1
 
@@ -223,7 +223,7 @@
 	// Previously, the temperature would enter equilibrium at 26C or 294K.
 	// Only would happen if both sides (all 2 square meters of surface area) were exposed to sunlight.  We now assume it aligned edge on.
 	// It currently should stabilise at 129.6K or -143.6C
-	heat_gain -= surface * STEFAN_BOLTZMANN_CONSTANT * thermal_conductivity * (air.temperature - COSMIC_RADIATION_TEMPERATURE) ** 4
+	heat_gain -= surface * STEFAN_BOLTZMANN_CONSTANT * thermal_conductivity * (air.return_temperature() - COSMIC_RADIATION_TEMPERATURE) ** 4
 
 	air.add_thermal_energy(heat_gain)
 	if(network)

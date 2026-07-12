@@ -171,8 +171,8 @@
 			if(ground.density || !ground.is_outdoors() || isspace(ground))
 				continue
 			var/datum/gas_mixture/gas_mix = ground.return_air()
-			if(gas_mix.temperature < planet_temp)
-				planet_temp = gas_mix.temperature
+			if(gas_mix.return_temperature() < planet_temp)
+				planet_temp = gas_mix.return_temperature()
 
 		// Check if we're in freezing weather, if above 0 start melting instead
 		if(planet_temp < (T0C - 15))

@@ -8,7 +8,7 @@
 
 
 /proc/byondapi_stack_trace(msg)
-	CRASH(msg)
+	stack_trace("[msg]")
 
 /// Args: (gas_id, moles, temp). Adjusts the given gas's amount by the given amount, with that gas being treated as if it is at the given temperature.
 /datum/gas_mixture/proc/adjust_moles_temp(id_val, num_val, temp_val)

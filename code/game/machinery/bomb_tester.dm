@@ -256,7 +256,7 @@
 		else
 			faketank_integrity -= 5
 
-	else if(pressure > TANK_LEAK_PRESSURE || faketank.temperature - T0C > 173)
+	else if(pressure > TANK_LEAK_PRESSURE || faketank.return_temperature() - T0C > 173)
 		faketank_integrity -= 1
 	return 0
 
@@ -370,7 +370,7 @@
 
 	results += "Pressure: [round(pressure,0.1)] kPa"
 	if(G.total_moles())
-		results += "<br>Temperature: [round(G.temperature-T0C)]&deg;C"
+		results += "<br>Temperature: [round(G.return_temperature()-T0C)]&deg;C"
 		// was iterating XGM `G.gas`; under LINDA use gas_ids().
 		for(var/mix in G.gas_ids())
 			results += "<br>[GLOB.gas_data.name[mix]]: [round((LINDA_GAS_AMT(G, mix) / G.total_moles()) * 100)]%"
