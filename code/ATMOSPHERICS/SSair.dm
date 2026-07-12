@@ -104,11 +104,12 @@ SUBSYSTEM_DEF(air)
 	gas_reactions = init_gas_reactions()
 	hotspot_reactions = init_hotspot_reactions()
 
-	// NOTE: gas math currently runs in pure DM (the /datum/gas_mixture bodies in
-	// gasmixtures/gas_mixture.dm). The optional Rust-accelerated auxmos backend
-	// is not wired: auxmos_bindings.dm is not compiled and the gas-arena init
-	// (auxtools_atmos_init in auxmos_init_bridge.dm) is not called. Wiring it is
-	// a future perf project — until then there is nothing to initialise here.
+	// Phase 1 of the auxmos backend cutover: populate the Rust gas + reaction
+	// registry now that gas_reactions exists. Gas math still runs in DM (the
+	// /datum/gas_mixture bodies in gasmixtures/gas_mixture.dm) until the arena
+	// cutover (Phase 2+); this only makes the Rust backend ready. Safe no-op if
+	// verdigris isn't loaded. See doc/atmos_migration.md and auxmos_init_bridge.dm.
+	init_auxmos_backend()
 
 	build_multiz_atmos_levels()
 	setup_allturfs()

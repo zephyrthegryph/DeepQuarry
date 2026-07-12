@@ -82,3 +82,73 @@
 	gases[gas_type][MOLES] += moles
 	if(temperature > 0 && moles > 0)
 		temperature = (temperature * total_moles() + temp * moles) / max(total_moles() + moles, 1)
+
+
+// === Phase 1: gas registry + reaction init ===
+//
+// Auxmos keeps its own Rust-side gas registry (specific heats, fire info, and a
+// parsed reaction table). It must be populated at SSair init before any gas-op
+// FFI call in later phases. auxtools_atmos_init(holder) iterates holder.datums,
+// registers each gas (reading id/specific_heat/fire fields off the instance),
+// then reads SSair.gas_reactions to build the Rust reaction cache.
+//
+// Gas math still runs in DM at this phase — this only makes the Rust backend
+// *ready* for the arena cutover (Phase 2+). It is safe to run standalone.
+
+/// Populate auxmos's Rust gas registry from the DM gas roster.
+///
+/// We register each gas individually via _auxtools_register_gas(), which reads
+/// id/specific_heat/fire fields off a live gas instance and returns a Result
+/// (a bad field surfaces as a DM runtime, not a crash).
+///
+/// We deliberately do NOT call auxtools_atmos_init() here yet. That entry point
+/// also parses SSair.gas_reactions into auxmos's Rust reaction table, and this
+/// fork keeps the CHOMP/XGM reaction roster (doc/atmos_migration.md Q6), whose
+/// datum shape doesn't match auxmos's Reaction parser. auxmos's byondapi binds
+/// are not wrapped in panic_safe! (doc §1.1c "What 1.1c did NOT do"), so a fault
+/// in that path takes down DreamDaemon natively with no catchable runtime —
+/// which is exactly what wiring it up produced. Reaction registration is
+/// deferred until the auxmos binds are panic-hardened and the reaction contract
+/// is adapted (Phase 2+). Gases-only registration is enough for the arena
+/// cutover to begin.
+///
+/// Returns the number of gases registered, or FALSE if verdigris isn't loaded /
+/// the backend is gated off.
+///
+/// BLOCKED — the FFI registration loop is gated behind AUXMOS_GAS_BACKEND
+/// (undefined by default) because it crashes DreamDaemon natively today:
+///
+///   auxmos allocates its gas registry + mixture arena in four
+///   `#[byondapi::init]` functions (verdigris/atmos/src/{lib,gas,gas/types,
+///   turfs}.rs). When auxmos is force-linked into verdigris as an rlib
+///   (`use auxmos as _;`), only its `#[byondapi::bind]` FFI symbols are pulled
+///   in — the linker drops the init-slice entries, so those init fns never run.
+///   Every bind then does `.unwrap()` on a still-`None` static, panics, and —
+///   because auxmos's binds are NOT wrapped in panic_safe! (doc §1.1c) — the
+///   panic unwinds through the C ABI and kills the process with no DM runtime.
+///   The very first `_auxtools_register_gas()` call is enough to crash boot.
+///
+/// Unblocking is Rust work in verdigris (no DM change fixes it):
+///   1. Ensure auxmos's `#[byondapi::init]` fns actually link + run in the
+///      combined library (force-reference them, or invoke them from
+///      verdigris_init()), so the registry/arena statics are `Some`.
+///   2. Wrap the auxmos binds in panic_safe! so a fault is a DM runtime, not a
+///      native crash — required before any atmos hot-path call is safe.
+///   3. Rebuild verdigris.dll, then define AUXMOS_GAS_BACKEND and re-test.
+/datum/controller/subsystem/air/proc/init_auxmos_backend()
+	var/version = verdigris_version()
+	if(!version)
+		log_world("auxmos: verdigris backend not loaded; gas registry stays DM-only")
+		return FALSE
+#ifdef AUXMOS_GAS_BACKEND
+	var/registered = 0
+	for(var/gas_path in subtypesof(/datum/gas))
+		var/datum/gas/gas = new gas_path
+		_auxtools_register_gas(gas)
+		registered++
+	log_world("auxmos: registered [registered] gases with the Rust backend (verdigris [version]); reactions deferred")
+	return registered
+#else
+	log_world("auxmos: Rust gas backend gated off (AUXMOS_GAS_BACKEND undefined); gas math stays DM. See auxmos_init_bridge.dm for the Rust init blocker.")
+	return FALSE
+#endif
