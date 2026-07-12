@@ -46,7 +46,9 @@
 	company_name  = "NanoTrasen"
 	company_short = "NT"
 	starsys_name  = "Vir"
-	use_overmap = TRUE
+	// Station-only build: no overmap, so we don't generate overmap/space
+	// z-levels or run the overmap subsystem at boot.
+	use_overmap = FALSE
 
 	shuttle_docked_message = "The scheduled shuttle to the %dock_name% has docked with the station at docks one and two. It will depart in approximately %ETD%."
 	shuttle_leaving_dock = "The Crew Transfer Shuttle has left the station. Estimate %ETA% until the shuttle docks at %dock_name%."
