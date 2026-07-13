@@ -344,13 +344,31 @@ export const DmTestTarget = new Juke.Target({
     } catch (err) {
       // Swallow — clean_run.lk check below is the real verdict.
     }
-    Juke.rm('*.test.*');
+    let cleanRun: string;
     try {
-      const cleanRun = fs.readFileSync('data/logs/ci/clean_run.lk', 'utf-8');
-      console.log(cleanRun);
+      cleanRun = fs.readFileSync('data/logs/ci/clean_run.lk', 'utf-8');
     } catch (err) {
       Juke.logger.error('Test run was not clean, exiting');
       throw new Juke.ExitCode(1);
+    }
+    console.log(cleanRun);
+
+    // DreamDaemon may take a moment to release its dynamic resource file after
+    // the watchdog observes unit_tests.json and terminates the process. Cleanup
+    // is best-effort and must not turn an authoritative clean run red on Windows.
+    for (let attempt = 0; attempt < 20; attempt++) {
+      try {
+        Juke.rm('*.test.*');
+        break;
+      } catch (err) {
+        if (attempt === 19) {
+          Juke.logger.warn(
+            'Could not remove all temporary test artifacts; they will be replaced on the next run.',
+          );
+          break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 250));
+      }
     }
   },
 });
