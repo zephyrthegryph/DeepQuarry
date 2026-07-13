@@ -81,7 +81,7 @@
 /obj/machinery/atmospherics/unary/vent_pump/Initialize(mapload)
 	. = ..()
 
-	air_contents.volume = ATMOS_DEFAULT_VOLUME_PUMP
+	air_contents.set_volume(ATMOS_DEFAULT_VOLUME_PUMP)
 
 	icon = null
 	initial_loc = get_area(loc)
@@ -118,7 +118,7 @@
 
 /obj/machinery/atmospherics/unary/vent_pump/high_volume/Initialize(mapload)
 	. = ..()
-	air_contents.volume = ATMOS_DEFAULT_VOLUME_PUMP + 800
+	air_contents.set_volume(ATMOS_DEFAULT_VOLUME_PUMP + 800)
 
 // Wall mounted vents
 /obj/machinery/atmospherics/unary/vent_pump/high_volume/wall_mounted
@@ -142,7 +142,7 @@
 
 /obj/machinery/atmospherics/unary/vent_pump/engine/Initialize(mapload)
 	. = ..()
-	air_contents.volume = ATMOS_DEFAULT_VOLUME_PUMP + 500 //meant to match air injector
+	air_contents.set_volume(ATMOS_DEFAULT_VOLUME_PUMP + 500) //meant to match air injector
 
 /obj/machinery/atmospherics/unary/vent_pump/update_icon(safety = 0)
 	cut_overlays()

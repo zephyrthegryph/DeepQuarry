@@ -26,7 +26,7 @@
 
 /obj/machinery/atmospherics/binary/circulator/Initialize(mapload)
 	. = ..()
-	air1.volume = 400
+	air1.set_volume(400)
 	AddElement(/datum/element/rotatable)
 
 /obj/machinery/atmospherics/binary/circulator/proc/return_transfer_air()

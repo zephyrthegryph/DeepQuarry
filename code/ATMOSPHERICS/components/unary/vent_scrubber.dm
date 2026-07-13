@@ -33,7 +33,7 @@
 
 /obj/machinery/atmospherics/unary/vent_scrubber/Initialize(mapload)
 	. = ..()
-	air_contents.volume = ATMOS_DEFAULT_VOLUME_FILTER
+	air_contents.set_volume(ATMOS_DEFAULT_VOLUME_FILTER)
 
 	icon = null
 	initial_loc = get_area(loc)

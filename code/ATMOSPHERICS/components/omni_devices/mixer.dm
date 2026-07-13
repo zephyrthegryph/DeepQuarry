@@ -54,7 +54,7 @@
 						con += max(0, tag_west_con)
 
 	for(var/datum/omni_port/P in ports)
-		P.air.volume = ATMOS_DEFAULT_VOLUME_MIXER
+		P.air.set_volume(ATMOS_DEFAULT_VOLUME_MIXER)
 
 /obj/machinery/atmospherics/omni/mixer/Destroy()
 	inputs.Cut()
@@ -80,7 +80,7 @@
 			P.concentration = 1 / max(1, inputs.len)
 
 	if(output)
-		output.air.volume = ATMOS_DEFAULT_VOLUME_MIXER * 0.75 * inputs.len
+		output.air.set_volume(ATMOS_DEFAULT_VOLUME_MIXER * 0.75 * inputs.len)
 		output.concentration = 1
 
 	rebuild_mixing_inputs()

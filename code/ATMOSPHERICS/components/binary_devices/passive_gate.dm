@@ -34,8 +34,8 @@
 
 /obj/machinery/atmospherics/binary/passive_gate/Initialize(mapload)
 	. = ..()
-	air1.volume = ATMOS_DEFAULT_VOLUME_PUMP * 2.5
-	air2.volume = ATMOS_DEFAULT_VOLUME_PUMP * 2.5
+	air1.set_volume(ATMOS_DEFAULT_VOLUME_PUMP * 2.5)
+	air2.set_volume(ATMOS_DEFAULT_VOLUME_PUMP * 2.5)
 	if(frequency)
 		set_frequency(frequency)
 

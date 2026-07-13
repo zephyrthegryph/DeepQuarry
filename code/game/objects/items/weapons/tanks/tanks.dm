@@ -62,7 +62,7 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 
 	src.init_proxy()
 	src.air_contents = new /datum/gas_mixture()
-	src.air_contents.volume = volume //liters
+	src.air_contents.set_volume(volume) //liters
 	src.air_contents.set_temperature(T20C)
 	update_gauge()
 

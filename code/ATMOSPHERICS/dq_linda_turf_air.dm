@@ -24,6 +24,13 @@
 	// current_cycle still 0 when the calc runs) every neighbor gets skipped and
 	// atmos_adjacent_turfs comes out empty — gases never spread.
 	current_cycle = times_fired
+	// Register this turf in the Rust auxmos arena before adjacency is built,
+	// so __update_auxtools_turf_adjacency_info() (called at the tail of the
+	// adjacency calc) has a registered turf to push edges for. Gate on `air`
+	// being non-null — update_air_ref() reads air._extools_pointer_gasmixture
+	// and will runtime on a turf with no gas mixture.
+	if(air)
+		update_air_ref(SIMULATION_ANY)
 	init_immediate_calculate_adjacent_turfs()
 
 

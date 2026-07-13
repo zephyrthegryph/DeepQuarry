@@ -62,9 +62,9 @@
 		if(5)//removing CH4
 			filtered_out = list(GAS_CH4)
 
-	air1.volume = ATMOS_DEFAULT_VOLUME_FILTER
-	air2.volume = ATMOS_DEFAULT_VOLUME_FILTER
-	air3.volume = ATMOS_DEFAULT_VOLUME_FILTER
+	air1.set_volume(ATMOS_DEFAULT_VOLUME_FILTER)
+	air2.set_volume(ATMOS_DEFAULT_VOLUME_FILTER)
+	air3.set_volume(ATMOS_DEFAULT_VOLUME_FILTER)
 	if(frequency)
 		set_frequency(frequency)
 

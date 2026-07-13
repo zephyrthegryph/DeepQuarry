@@ -8,9 +8,27 @@
 /datum/gas_mixture/immutable/New()
 	..()
 	garbage_collect()
+	// Flag this mixture immutable in the Rust arena too. The DM overrides above only
+	// stop DM-side mutation; under the handle model the Rust turf FDM writes gas
+	// directly into the arena slot, so without this a space-vacuum / planetary sink
+	// gets polluted (gas shared into it persists and flows back). mark_immutable()
+	// makes Rust no-op all writes to the slot, so it stays a constant source/sink.
+	// Deferred for subtypes (e.g. planetary) that set their contents AFTER New().
+	finalize_immutable()
+
+/// Mark the backing Rust mixture immutable once its contents are final. Base
+/// immutables are done after New()'s garbage_collect(); subtypes that populate
+/// themselves later override this to defer the mark until their own setup runs.
+/datum/gas_mixture/immutable/proc/finalize_immutable()
+	mark_immutable()
 
 /datum/gas_mixture/immutable/garbage_collect()
-	set_temperature(initial_temperature)
+	// Subtypes (planetary) are empty at New() and get initial_temperature later
+	// from parse_string_immutable(), so it's null on the first garbage_collect().
+	// The Rust set_temperature bind rejects a null arg, so skip the write until a
+	// real temperature exists.
+	if(!isnull(initial_temperature))
+		set_temperature(initial_temperature)
 	clear()
 
 /datum/gas_mixture/immutable/archive()
@@ -57,6 +75,12 @@
 /datum/gas_mixture/immutable/planetary
 	var/list/initial_gas = list()
 
+// A planetary mix is empty at New() and gets its real contents from
+// parse_string_immutable() afterwards, so don't lock the Rust slot yet — the mark
+// happens at the end of parse_string_immutable() once the gases are set.
+/datum/gas_mixture/immutable/planetary/finalize_immutable()
+	return
+
 /datum/gas_mixture/immutable/planetary/garbage_collect()
 	..()
 	for(var/id in initial_gas)
@@ -82,4 +106,8 @@
 
 	for(var/id in mix)
 		set_moles(id, mix[id])
+
+	// Contents are final now — lock the Rust slot so the turf FDM treats this
+	// planetary baseline as a constant source/sink instead of mutating it.
+	mark_immutable()
 

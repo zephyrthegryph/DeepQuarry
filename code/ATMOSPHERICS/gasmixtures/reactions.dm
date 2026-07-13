@@ -1,18 +1,14 @@
 //Most other defines used in reactions are located in ..\__DEFINES\reactions.dm
 #define SET_REACTION_RESULTS(amount) air.reaction_results[type] = amount
 
+/// Build the flat, priority-ordered reaction list auxmos reads from `SSair.gas_reactions`.
+/// auxmos keys its Rust reaction table by each reaction's numeric `priority` in a sorted
+/// map and drops duplicates, so every reaction gets a unique priority here. Reactions are
+/// ordered by priority_group (PRE_FORMATION first, FIRE last) and given descending
+/// priorities in that order — auxmos iterates the table highest-priority-first, so the
+/// group order is preserved.
 /proc/init_gas_reactions()
-	var/list/priority_reactions = list()
-
-	//Builds a list of gas id to reaction group
-	for(var/gas_id in GLOB.meta_gas_info)
-		priority_reactions[gas_id] = list(
-			/* PRIORITY_PRE_FORMATION = */ list(),
-			/* PRIORITY_FORMATION = */ list(),
-			/* PRIORITY_POST_FORMATION = */ list(),
-			/* PRIORITY_FIRE = */ list()
-		)
-
+	var/list/by_group = list(list(), list(), list(), list())
 	for(var/datum/gas_reaction/reaction as anything in subtypesof(/datum/gas_reaction))
 		if(initial(reaction.exclude))
 			continue
@@ -24,20 +20,20 @@
 				if (!reaction_key || initial(reaction_key.rarity) > initial(req_gas.rarity))
 					reaction_key = req_gas
 		reaction.major_gas = reaction_key
-		priority_reactions[reaction_key][reaction.priority_group] += reaction
+		var/group = reaction.priority_group
+		if(!(group >= 1 && group <= 4))
+			group = PRIORITY_POST_FORMATION
+		by_group[group] += reaction
 
-	//Culls empty gases
-	for(var/gas_id in GLOB.meta_gas_info)
-		var/passed = FALSE
-		for(var/list/priority_grouping in priority_reactions[gas_id])
-			if(length(priority_grouping))
-				passed = TRUE
-				break
-		if(passed)
-			continue
-		priority_reactions[gas_id] = null
+	var/list/result = list()
+	for(var/group in 1 to 4)
+		result += by_group[group]
 
-	return priority_reactions
+	var/next_priority = length(result)
+	for(var/datum/gas_reaction/reaction as anything in result)
+		reaction.priority = next_priority--
+
+	return result
 
 /datum/gas_reaction
 	/**
@@ -51,6 +47,13 @@
 	var/exclude = FALSE //do it this way to allow for addition/removal of reactions midmatch in the future
 	///The priority group this reaction is a part of. You can think of these as processing in batches, put your reaction into the one that's most fitting
 	var/priority_group
+	/// auxmos-side numeric priority (higher reacts first), unique per reaction. Assigned
+	/// by init_gas_reactions() in priority_group order.
+	var/priority
+	/// auxmos-side requirements list, keyed by gas string id + "TEMP"/"MAX_TEMP"/"ENER"/
+	/// "FIRE_REAGENTS". Built from `requirements` (which keys by /datum/gas type path and
+	/// uses "MIN_TEMP") so the Rust reaction table can register and gate this reaction.
+	var/list/min_requirements
 	var/name = "reaction"
 	var/id = "r"
 	/// Whether the presence of our reaction should make fires bigger or not.
@@ -72,6 +75,23 @@
 /datum/gas_reaction/New()
 	init_reqs()
 	init_factors()
+	build_auxmos_requirements()
+
+/// Translate the /tg/-style `requirements` list (type-path keys, "MIN_TEMP") into the
+/// `min_requirements` list auxmos reads (gas string-id keys, "TEMP"), and derive the
+/// numeric `priority` auxmos sorts on. auxmos iterates reactions high-priority-first,
+/// so a lower priority_group (PRE_FORMATION) must map to a higher numeric priority.
+/datum/gas_reaction/proc/build_auxmos_requirements()
+	min_requirements = list()
+	for(var/req in requirements)
+		var/val = requirements[req]
+		if(ispath(req, /datum/gas))
+			var/datum/gas/g = req
+			min_requirements[initial(g.id)] = val
+		else if(req == "MIN_TEMP")
+			min_requirements["TEMP"] = val
+		else
+			min_requirements[req] = val
 
 /datum/gas_reaction/proc/init_reqs() // Override this
 	CRASH("Reaction [type] made without specifying requirements.")
