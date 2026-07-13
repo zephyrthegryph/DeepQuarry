@@ -45,7 +45,7 @@
 /mob/living/simple_mob/mechanical/hivebot/tyr/meteor/bullet_act(obj/item/projectile/Proj)
 	if(!Proj)
 		return
-	projectiletype = Proj
+	projectiletype = Proj.type
 	..()
 
 /obj/item/projectile/energy/spikeenergy_ball/boss

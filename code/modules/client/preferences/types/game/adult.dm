@@ -5,7 +5,7 @@
 	default_value = TRUE //it IS a vore server
 
 /datum/preference/toggle/tummy_sprites/apply_to_client_updated(client/client, value)
-	client.mob.recalculate_vis()
+	client?.mob?.recalculate_vis()
 	. = ..()
 
 // Vorey sounds

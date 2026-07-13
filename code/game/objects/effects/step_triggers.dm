@@ -287,7 +287,7 @@ But for now, for what it's been used for, it works.
 		H.forceMove(Mtarget.loc)
 	var/obj/locker = new /obj/structure/closet/secure_closet/mind(target.loc, H.mind)
 	for(var/obj/item/W in H)
-		if(istype(W, /obj/item/implant/backup || istype(W, /obj/item/nif)))
+		if(istype(W, /obj/item/implant/backup) || istype(W, /obj/item/nif))
 			continue
 		if(H.drop_from_inventory(W))
 			W.forceMove(locker)
@@ -308,7 +308,7 @@ But for now, for what it's been used for, it works.
 			domutcheck(H,null,MUTCHK_FORCED)
 			H.UpdateAppearance()
 			H.update_mutations()
-	if(H.species.name == SPECIES_VOX || SPECIES_ZADDAT)	//Species that 'actually' require survival gear to live. The rest don't.
+	if(H.species.name == SPECIES_VOX || H.species.name == SPECIES_ZADDAT)	//Species that 'actually' require survival gear to live. The rest don't.
 		H.species.equip_survival_gear(H)
 	H.equip_to_slot_or_del(new /obj/item/clothing/under/chameleon(H), slot_w_uniform)
 	H.equip_to_slot_or_del(new /obj/item/clothing/shoes/sandal(H),slot_shoes)

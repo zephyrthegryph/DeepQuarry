@@ -106,6 +106,11 @@
 			holder.air_supply))
 		if(!istype(piece))
 			continue
+		// Orderly teardown: clear the back-ref so the piece's dropped() self-detach
+		// safety net stays inert while we deliberately drop and delete it.
+		if(istype(piece, /obj/item/clothing))
+			var/obj/item/clothing/deployed = piece
+			deployed.master_rig = null
 		var/mob/living/M = piece.loc
 		if(istype(M))
 			M.drop_from_inventory(piece)

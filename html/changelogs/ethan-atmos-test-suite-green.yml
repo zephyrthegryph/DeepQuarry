@@ -1,0 +1,6 @@
+author: "ethan"
+delete-after: true
+changes:
+  - code_imp: "The atmospherics unit-test suite is green on the CI test map. The harness now seals test floor pairs/lines by geometry (walling every neighbour, including space) and force-builds atmos adjacency on the turfs it picks, so conservation/spread/pressure tests get a genuinely interior, sealable space. The engine itself was already correct; the harness wasn't isolating properly."
+  - code_imp: "Exempted exotic runtime-generated material stacks (substance alloys, shell chitin) from the 'all sheets must be autolathe-printable' test — they're forged/crafted, not lathe-reprinted, so requiring a static print recipe was a false positive."
+  - code_imp: "Whole-station map-validity tests (APC/vent/scrubber coverage, wiring) now skip minimal CI harness maps that aren't complete stations, via a map-datum flag; they still run against the live station map."

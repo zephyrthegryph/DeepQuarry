@@ -378,7 +378,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 				return
 			if(effect == "Damage")
 				var/organ_damage = tgui_input_number(ui.user, "Add how much damage? It is currently at [our_organ.damage].", "Damage")
-				our_organ.damage = max((our_organ.damage - organ_damage), 0)
+				our_organ.damage = our_organ.damage + organ_damage
 			if(effect == "Kill")
 				our_organ.die()
 			if(effect == "Bruise")

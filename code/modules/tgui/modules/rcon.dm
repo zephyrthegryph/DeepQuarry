@@ -13,7 +13,7 @@
 	var/number_pages = 0
 
 /datum/tgui_module/rcon/proc/filter_smeslist(page)
-	number_pages = (length(known_SMESs) + SMES_PER_PAGE - 1) / SMES_PER_PAGE
+	number_pages = round((length(known_SMESs) + SMES_PER_PAGE - 1) / SMES_PER_PAGE)
 	var/page_index = page - 1
 
 	var/lower_bound = page_index * SMES_PER_PAGE + 1

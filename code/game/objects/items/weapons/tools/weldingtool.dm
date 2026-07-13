@@ -489,13 +489,14 @@
 	return ..()
 
 /obj/item/weldingtool/tubefed/process()
-	if(mounted_pack)
-		if(!ishuman(mounted_pack.loc))
+	if(!mounted_pack)
+		return
+	if(!ishuman(mounted_pack.loc))
+		mounted_pack.return_nozzle()
+	else
+		var/mob/living/carbon/human/H = mounted_pack.loc
+		if(H.back != mounted_pack)
 			mounted_pack.return_nozzle()
-		else
-			var/mob/living/carbon/human/H = mounted_pack.loc
-			if(H.back != mounted_pack)
-				mounted_pack.return_nozzle()
 
 	if(mounted_pack.loc != src.loc && src.loc != mounted_pack)
 		mounted_pack.return_nozzle()

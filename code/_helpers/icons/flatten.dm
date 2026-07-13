@@ -158,6 +158,7 @@
 			comparing = gathered[i]
 			if(current_layer < gathered[comparing])
 				gathered.Insert(i, copying)
+				break
 		// associate
 		gathered[copying] = current_layer
 
@@ -181,6 +182,7 @@
 			comparing = gathered[i]
 			if(current_layer < gathered[comparing])
 				gathered.Insert(i, copying)
+				break
 		// associate
 		gathered[copying] = current_layer
 

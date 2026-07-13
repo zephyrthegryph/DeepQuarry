@@ -104,7 +104,7 @@
 	return 0
 
 /obj/structure/cult/pylon/process()
-	if(!isbroken && (last_activation < world.time + activation_cooldown) && pylon_unique())
+	if(!isbroken && (last_activation + activation_cooldown < world.time) && pylon_unique())
 		flick("[initial(icon_state)]-surge",src)
 
 /obj/structure/cult/tome

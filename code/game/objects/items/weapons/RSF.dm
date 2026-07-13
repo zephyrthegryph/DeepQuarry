@@ -135,6 +135,8 @@ GLOBAL_LIST_INIT(robot_glass_options, list(
 			used_energy = 50
 
 	balloon_alert(user, "dispensing [product ? product : "product"]...")
+	if(!product)
+		return
 	product.loc = get_turf(A)
 
 	if(isrobot(user))

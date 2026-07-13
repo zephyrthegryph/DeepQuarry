@@ -96,7 +96,7 @@
 		pod = new(target)
 
 	for(var/i in 1 to amount)
-		if(istype(atom_to_spawn, /turf))
+		if(ispath(atom_to_spawn, /turf))
 			var/turf/original_turf = target
 			var/turf/created_turf = original_turf.ChangeTurf(atom_to_spawn.type)
 			if(created_turf && atom_name)
@@ -146,7 +146,7 @@
 		pod.podfall()
 
 	log_admin("[key_name(user)] created [amount == 1 ? "an instance" : "[amount] instances"] of [atom_to_spawn.type]")
-	if(istype(atom_to_spawn, /mob))
+	if(ispath(atom_to_spawn, /mob))
 		message_admins("[key_name_admin(user)] created [amount == 1 ? "an instance" : "[amount] instances"] of [atom_to_spawn.type]")
 
 #undef WHERE_FLOOR_BELOW_MOB

@@ -200,7 +200,7 @@
 
 	var/list/L = list()
 	for(var/mob/living/silicon/ai/AT in GLOB.mob_list)
-		if(L == A)
+		if(AT == A)
 			continue
 		L.Add(AT)
 	return L

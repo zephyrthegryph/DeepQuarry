@@ -4,7 +4,7 @@
 	icon_state = "signaller"
 	item_state = "signaler"
 	matter = list(MAT_STEEL = 1000, MAT_GLASS = 200)
-	wires = WIRE_RECEIVE | WIRE_PULSE | WIRE_RADIO_PULSE | WIRE_RADIO_RECEIVE
+	wires_type = WIRE_RECEIVE | WIRE_PULSE | WIRE_RADIO_PULSE | WIRE_RADIO_RECEIVE
 
 	secured = TRUE
 

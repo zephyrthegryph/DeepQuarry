@@ -16,14 +16,6 @@
 	projectile = /obj/item/projectile/beam/xray
 	fire_sound = 'sound/weapons/eLuger.ogg'
 
-/obj/item/mecha_parts/mecha_equipment/weapon/energy/laser/gamma // begin : adds Gamma Laser as proof of concept
-	equip_cooldown = 5
-	name = "\improper GA-X \"Render\" Experimental Gamma Laser"
-	desc = "A experimental suppression laser that fires blasts of radiation charged photons, extremely effective at punching through armor."
-	icon_state = "mecha_coil"
-	energy_drain = 80
-	projectile = /obj/item/projectile/beam/gamma
-	fire_sound = 'sound/weapons/emitter.ogg'
 
 /obj/item/mecha_parts/mecha_equipment/weapon/energy/laser/xray/rigged
 	equip_cooldown = 12

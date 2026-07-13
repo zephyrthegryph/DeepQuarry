@@ -168,7 +168,7 @@
 "aB" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/template_noop,
 /area/submap/lonehome)
@@ -228,7 +228,7 @@
 "aL" = (
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/item/material/shard,
 /turf/simulated/floor/outdoors/dirt/virgo3b,
@@ -305,7 +305,7 @@
 "aY" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor/outdoors/dirt/virgo3b,
 /area/submap/lonehome)
@@ -352,7 +352,7 @@
 "bf" = (
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor/outdoors/dirt/virgo3b,
 /area/submap/lonehome)
@@ -402,7 +402,7 @@
 "bm" = (
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/flora/pottedplant/fern{
 	pixel_y = 12
@@ -472,7 +472,7 @@
 "bx" = (
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/template_noop,
 /area/submap/lonehome)

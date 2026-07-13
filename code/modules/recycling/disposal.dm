@@ -10,7 +10,10 @@
 	level = 1			// underfloor only
 	var/dpdir = 0		// bitmask of pipe directions
 	dir = 0				// dir will contain dominant direction for junction pipes
-	var/health = 10 	// health points 0-10
+	max_integrity = 10
+	// Crossing this threshold leaves broken pipe segments in place (atom_break);
+	// reaching 0 clears the pipe entirely (atom_destruction).
+	integrity_failure = 0.1
 	plane = PLATING_PLANE
 	layer = DISPOSAL_LAYER	// slightly lower than wires and other pipes
 	var/base_icon_state	// initial icon state on map
@@ -177,22 +180,22 @@
 			broken(0)
 			return
 		if(2.0)
-			health -= rand(5,15)
-			healthcheck()
+			take_damage(rand(5,15), BRUTE, BOMB)
 			return
 		if(3.0)
-			health -= rand(0,15)
-			healthcheck()
+			take_damage(rand(0,15), BRUTE, BOMB)
 			return
 
 
-// test health for brokenness
-/obj/structure/disposalpipe/proc/healthcheck()
-	if(health < -2)
-		broken(0)
-	else if(health<1)
-		broken(1)
-	return
+// Light damage leaves broken pipe segments in place.
+/obj/structure/disposalpipe/atom_break(damage_flag)
+	. = ..()
+	broken(1)
+
+// Heavy damage clears the pipe entirely.
+/obj/structure/disposalpipe/atom_destruction(damage_flag)
+	broken(0)
+	return ..()
 
 //attack by item
 //weldingtool: unfasten and convert to obj/disposalconstruct

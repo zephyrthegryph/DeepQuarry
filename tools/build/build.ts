@@ -309,11 +309,7 @@ export const DmTestTarget = new Juke.Target({
   executes: async ({ get }) => {
     fs.copyFileSync(`${DME_NAME}.dme`, `${DME_NAME}.test.dme`);
     await DreamMaker(`${DME_NAME}.test.dme`, {
-      // Unit tests boot the tiny virgo_minitest map, not the full station —
-      // the suite tests game logic, not the live map, and a ~10s boot vs ~70s
-      // makes the test loop far faster. Map-specific tests are gated per map
-      // via /datum/map.skipped_tests.
-      defines: ['CBT', 'CIBUILDING', 'USE_MAP_MINITEST', ...get(DefineParameter)],
+      defines: ['CBT', 'CIBUILDING', ...get(DefineParameter)],
       warningsAsErrors: get(WarningParameter).includes('error'),
       ignoreWarningCodes: get(NoWarningParameter),
       namedDmVersion: get(DmVersionParameter),

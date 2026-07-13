@@ -64,6 +64,8 @@
 /obj/machinery/door/blast/puzzle/tyrdoor/keypad/proc/check_input(input)
 	if(length(input) != codelen)
 		return 0
+	if(length(code) < codelen) //unconfigured keypad (no code set) can never be opened
+		return 0
 
 	. = 1
 	lastattempt.Cut()
@@ -92,7 +94,7 @@
 	desc = "A strange door, but seems weaker then others. May break under extreme firepower.."
 	icon = 'icons/obj/weather_ruins.dmi'
 	icon_state_closed = "ultra_blast_door"
-	health = 4500
+	max_integrity = 4500
 
 /*
 //Funky Buildings

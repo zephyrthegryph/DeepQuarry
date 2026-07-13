@@ -285,7 +285,7 @@
 	target.update_inv_legcuffed()
 	if(target.m_intent != I_WALK)
 		target.m_intent = I_WALK
-		if(target.hud_used && user.hud_used.move_intent)
+		if(target.hud_used && target.hud_used.move_intent)
 			target.hud_used.move_intent.icon_state = "walking"
 	return 1
 
@@ -339,7 +339,7 @@
 	target.update_inv_legcuffed()
 	if(target.m_intent != I_WALK)
 		target.m_intent = I_WALK
-		if(target.hud_used && user.hud_used.move_intent)
+		if(target.hud_used && target.hud_used.move_intent)
 			target.hud_used.move_intent.icon_state = "walking"
 	return 1
 

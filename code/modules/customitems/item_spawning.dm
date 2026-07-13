@@ -47,7 +47,7 @@ GLOBAL_LIST_INIT(custom_items, load_custom_items())
 	if(item_desc)
 		item.desc = item_desc
 	if(item_icon)
-		if(!istype(item))
+		if(!istype(item, /obj/item/clothing))
 			item.icon = CUSTOM_ITEM_OBJ
 			item.icon_state = item_icon
 			return

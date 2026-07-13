@@ -158,7 +158,7 @@
 "D" = (
 /obj/structure/window/plastitanium/full,
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /turf/simulated/floor/plating,
@@ -229,7 +229,7 @@
 /area/shuttle/cybershuttle)
 "S" = (
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/structure/window/plastitanium/full,

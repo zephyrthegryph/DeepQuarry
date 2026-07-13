@@ -10,7 +10,7 @@
 	return ghost_captured
 
 /datum/experiment/ghost_capture/perform_experiment_actions(datum/source, atom/movable/captured_entity)
-	if(isobserver(captured_entity) || isliving(captured_entity) || isliving(/obj/effect/shadow_wight))
+	if(isobserver(captured_entity) || isliving(captured_entity) || istype(captured_entity, /obj/effect/shadow_wight))
 		// We don't actually care about the mob that's captured, just that something was captured.
 		ghost_captured = TRUE
 		return TRUE

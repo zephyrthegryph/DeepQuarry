@@ -92,7 +92,7 @@
 			P.launch_projectile( target, BP_TORSO, user)
 
 			// suck out fuel and burn it
-			var/datum/gas_mixture/used_gas = ptank.air_contents.remove_ratio(volume_per_max_burn * thrower_spew_percent() / ptank.air_contents.volume)
+			var/datum/gas_mixture/used_gas = ptank.air_contents.remove_ratio(volume_per_max_burn * thrower_spew_percent() / ptank.air_contents.return_volume())
 			qdel(used_gas)
 			if(!check_fuel())
 				lit = FALSE
@@ -193,7 +193,7 @@
 
 	switch(action)
 		if("light")
-			if(!check_fuel() || ptank.air_contents.get_moles(GAS_PHORON) < 1 || !status)
+			if(!check_fuel() || LINDA_GAS_AMT(ptank.air_contents, GAS_PHORON) < 1 || !status)
 				return FALSE
 			lit = !lit
 			if(lit)

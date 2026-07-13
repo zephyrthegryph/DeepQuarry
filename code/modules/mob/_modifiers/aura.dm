@@ -10,6 +10,7 @@ making it not expire ever, which is likely not what you want.
 /datum/modifier/aura/check_if_valid()
 	if(!origin)
 		expire()
+		return
 	var/atom/A = origin.resolve()
 	if(istype(A)) // Make sure we're not null.
 		if(get_dist(holder, A) > aura_max_distance)

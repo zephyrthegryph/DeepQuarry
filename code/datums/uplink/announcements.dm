@@ -69,7 +69,7 @@
 	var/datum/data/record/medical = GLOB.data_core.CreateMedicalRecord(general.fields["name"], general.fields["id"])
 	GLOB.data_core.CreateSecurityRecord(general.fields["name"], general.fields["id"])
 
-	if(!random_general_record)
+	if(random_general_record)
 		general.fields["citizenship"]	= random_general_record.fields["citizenship"]
 		general.fields["faction"] 		= random_general_record.fields["faction"]
 		general.fields["fingerprint"] 	= random_general_record.fields["fingerprint"]
@@ -78,7 +78,7 @@
 		general.fields["religion"] 		= random_general_record.fields["religion"]
 	if(random_medical_record)
 		medical.fields["b_type"]		= random_medical_record.fields["b_type"]
-		medical.fields["b_dna"]			= random_medical_record.fields["b_type"]
+		medical.fields["b_dna"]			= random_medical_record.fields["b_dna"]
 
 	if(I)
 		general.fields["fingerprint"] 	= I.fingerprint_hash

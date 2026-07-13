@@ -71,12 +71,17 @@
 	var/obj/item/mecha_parts/component/AC = chassis.internal_components[MECH_ARMOR]
 	var/obj/item/mecha_parts/component/HC = chassis.internal_components[MECH_HULL]
 
-	var/damaged_armor = AC.integrity < AC.max_integrity
+	var/damaged_armor = AC && AC.integrity < AC.max_integrity
 
-	var/damaged_hull = HC.integrity < HC.max_integrity
+	var/damaged_hull = HC && HC.integrity < HC.max_integrity
 
-	if(effective_boost<0 || chassis.health < initial(chassis.health) || damaged_armor || damaged_hull)
-		chassis.health += min(effective_boost, initial(chassis.health)-chassis.health)
+	if(effective_boost<0 || chassis.get_integrity() < chassis.max_integrity || damaged_armor || damaged_hull)
+		// A short circuit flips effective_boost negative — that must DAMAGE the chassis.
+		// repair_damage() early-returns on a non-positive amount, so branch on the sign.
+		if(effective_boost < 0)
+			chassis.take_damage(-effective_boost, BURN)
+		else
+			chassis.repair_damage(min(effective_boost, chassis.max_integrity - chassis.get_integrity()))
 
 		if(AC)
 			AC.adjust_integrity(round(effective_boost * 0.5, 0.5))

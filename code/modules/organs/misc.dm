@@ -9,6 +9,8 @@
 	vital = 1
 
 /obj/item/organ/internal/borer/process()
+	if(!owner || !owner.reagents)
+		return
 
 	// Borer husks regenerate health, feel no pain, and are resistant to stuns and brainloss.
 	for(var/chem in list(REAGENT_ID_TRICORDRAZINE,REAGENT_ID_TRAMADOL,REAGENT_ID_HYPERZINE,REAGENT_ID_ALKYSINE))
@@ -31,13 +33,14 @@
 			goo.update_icon()
 
 /obj/item/organ/internal/borer/removed(mob/living/user)
+	var/mob/living/prev_owner = owner
 
 	..()
 
-	var/mob/living/simple_mob/animal/borer/B = owner.has_brain_worms()
+	var/mob/living/simple_mob/animal/borer/B = prev_owner?.has_brain_worms()
 	if(B)
 		B.leave_host()
-		B.ckey = owner.ckey
+		B.ckey = prev_owner.ckey
 
 	spawn(0)
 		qdel(src)

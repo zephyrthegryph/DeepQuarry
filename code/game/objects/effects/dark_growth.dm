@@ -80,7 +80,7 @@
 /obj/effect/dark/proc/unlinked()
 	linked_node.children_effects -= src
 	linked_node = null
-	addtimer(CALLBACK(src, PROC_REF(perform_unlink), rand(20, 70), TIMER_DELETE_ME))
+	addtimer(CALLBACK(src, PROC_REF(perform_unlink)), rand(20, 70), TIMER_DELETE_ME)
 
 /obj/effect/dark/proc/perform_unlink()
 	PRIVATE_PROC(TRUE)

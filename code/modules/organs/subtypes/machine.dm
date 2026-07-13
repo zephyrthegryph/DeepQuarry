@@ -71,6 +71,7 @@
 	return .
 
 /obj/item/organ/internal/mmi_holder/proc/update_from_mmi()
+	if(!owner) return
 
 	if(!stored_mmi.brainmob)
 		stored_mmi.brainmob = new(stored_mmi)

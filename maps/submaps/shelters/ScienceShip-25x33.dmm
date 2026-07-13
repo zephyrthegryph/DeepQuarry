@@ -37,7 +37,7 @@
 /area/survivalpod/superpose/ScienceShip)
 "bP" = (
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/structure/shuttle/window,
@@ -924,7 +924,7 @@
 /area/survivalpod/superpose/ScienceShip)
 "Bn" = (
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/structure/shuttle/window,
@@ -1980,7 +1980,7 @@
 /area/survivalpod/superpose/ScienceShip)
 "Wj" = (
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/structure/shuttle/window,

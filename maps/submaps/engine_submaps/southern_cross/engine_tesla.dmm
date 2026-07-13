@@ -14,24 +14,6 @@
 /obj/structure/lattice,
 /turf/space,
 /area/space)
-"ae" = (
-/obj/effect/floor_decal/borderfloor{
-	dir = 4
-	},
-/obj/effect/floor_decal/corner/yellow/border{
-	dir = 4
-	},
-/obj/machinery/power/apc{
-	dir = 4;
-	name = "east bump";
-	pixel_x = 28
-	},
-/obj/effect/floor_decal/corner/yellow/bordercorner,
-/obj/structure/cable/cyan{
-	icon_state = "0-8"
-	},
-/turf/simulated/floor/tiled,
-/area/engineering/engine_room)
 "af" = (
 /turf/simulated/wall/r_wall,
 /area/engineering/engine_room)
@@ -82,7 +64,6 @@
 /area/engineering/engine_waste)
 "an" = (
 /obj/machinery/field_generator,
-/obj/machinery/atmospherics/unary/vent_scrubber/on,
 /turf/simulated/floor,
 /area/engineering/engine_waste)
 "ao" = (
@@ -112,12 +93,6 @@
 "as" = (
 /obj/structure/cable/green{
 	icon_state = "4-8"
-	},
-/obj/machinery/atmospherics/pipe/simple/hidden/supply{
-	dir = 6
-	},
-/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers{
-	dir = 5
 	},
 /turf/simulated/floor,
 /area/engineering/engine_waste)
@@ -155,9 +130,6 @@
 /obj/item/stack/cable_coil/random,
 /obj/item/tool/wrench,
 /obj/item/tool/screwdriver,
-/obj/machinery/atmospherics/unary/vent_pump/on{
-	dir = 1
-	},
 /turf/simulated/floor,
 /area/engineering/engine_waste)
 "ax" = (
@@ -440,6 +412,24 @@
 /obj/effect/floor_decal/corner/yellow/bordercorner{
 	dir = 4
 	},
+/turf/simulated/floor/tiled,
+/area/engineering/engine_room)
+"aZ" = (
+/obj/effect/floor_decal/borderfloor{
+	dir = 4
+	},
+/obj/effect/floor_decal/corner/yellow/border{
+	dir = 4
+	},
+/obj/machinery/power/apc{
+	dir = 4;
+	name = "east bump";
+	pixel_x = 28
+	},
+/obj/structure/cable/cyan{
+	icon_state = "0-8"
+	},
+/obj/effect/floor_decal/corner/yellow/bordercorner,
 /turf/simulated/floor/tiled,
 /area/engineering/engine_room)
 "ba" = (
@@ -750,7 +740,7 @@
 /obj/structure/window/reinforced/full,
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor,
 /area/engineering/engine_room)
@@ -1068,7 +1058,7 @@
 /obj/machinery/door/firedoor/glass,
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 1
@@ -1216,7 +1206,7 @@
 /obj/structure/window/reinforced/full,
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/machinery/door/blast/regular{
 	density = 0;
@@ -1300,7 +1290,7 @@
 /obj/machinery/door/firedoor/glass,
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced,
 /obj/machinery/door/blast/regular{
@@ -1483,7 +1473,7 @@
 /obj/structure/window/reinforced/full,
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/machinery/door/blast/regular{
 	density = 0;
@@ -2425,7 +2415,7 @@ az
 aF
 aN
 aV
-ae
+aZ
 bk
 cF
 cw

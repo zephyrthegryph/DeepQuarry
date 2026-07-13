@@ -14,7 +14,6 @@
 		return
 	primary_threat = M
 	add_personal(M, DQ_DISPOSITION_HOSTILE, 60 SECONDS, "given_target")
-	update_engagement() // engage the fast tick immediately (lord command / external aggro)
 	if(urgent)
 		invalidate_selection()
 
@@ -25,7 +24,6 @@
 		primary_threat = null
 		SEND_SIGNAL(holder, COMSIG_DQAI_TARGET_LOST, old)
 		invalidate_selection()
-		update_engagement() // no threat → drop off the fast tick
 
 /// Legacy name for lose_target — kept so direct sed-style migrations work.
 /datum/ai_brain/proc/remove_target()
@@ -67,8 +65,7 @@
 		return
 	if(holder.client && !autopilot)
 		return
-	manage_processing(DQAI_PROCESSING) // wake to the slow tick; engagement adds the fast tick on a threat
-	update_engagement()
+	manage_processing(DQAI_PROCESSING | DQAI_FASTPROCESSING)
 
 // ---------------------------------------------------------------------------
 // Legacy attribute proxies — getters/setters so caller code that reads or
@@ -99,8 +96,6 @@
 		return
 	if(!holder)
 		return
-	if(is_friendly_fire(attacker))
-		return // a packmate / coexisting fauna clipped us — don't start a feud
 	add_personal(attacker, DQ_DISPOSITION_HOSTILE, DQ_PERSONAL_DEFAULT_DURATION, "react_to_attack")
 	// Record in the world model so retaliate_to_attacker.evaluate() can see
 	// who struck us even when they're outside view() range.
@@ -110,7 +105,6 @@
 		var/mob/old = primary_threat
 		primary_threat = attacker
 		SEND_SIGNAL(holder, COMSIG_DQAI_TARGET_CHANGED, attacker, old)
-	update_engagement() // being attacked engages the fast tick immediately
 	invalidate_selection()
 
 // ---------------------------------------------------------------------------

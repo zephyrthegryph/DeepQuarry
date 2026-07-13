@@ -55,8 +55,7 @@ Protectiveness | Armor %
 		health = round(material.integrity/10)
 		if(applies_material_color)
 			color = material.icon_colour
-		if(material.products_need_process())
-			START_PROCESSING(SSobj, src)
+		material.dq_apply_material_behaviors(src) // light + a self-processing rad/tox component.
 		update_armor()
 
 // This is called when someone wearing the object gets hit in some form (melee, bullet_act(), etc).
@@ -68,6 +67,12 @@ Protectiveness | Armor %
 /obj/item/clothing/proc/material_impact(obj/source, damage)
 	if(!material || unbreakable)
 		return
+
+	// Substance-alloy armour discharges its effect when the wearer is struck — through the
+	// shared form-trigger emitter (IMPACT+PRESSURE), the same conditions a strike presents on a
+	// blade or bullet, instead of a one-off raw signal that only fired IMPACT.
+	if(istype(material, /datum/material/substance))
+		substance_emit_form_trigger(src, get_turf(src), source, SUB_TRIG_IMPACT, SUB_TRIG_PRESSURE)
 
 	if(istype(source, /obj/item/projectile))
 		var/obj/item/projectile/P = source

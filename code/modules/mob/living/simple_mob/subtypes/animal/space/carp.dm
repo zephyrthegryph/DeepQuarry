@@ -394,6 +394,6 @@
 	if(body_color == "orange")
 		color = "#FF6600"
 	if(body_color == "yellow")
-		color = "#00FF00"
+		color = "#FFFF00"
 	if(body_color == "blue")
 		color = "#0099CC"

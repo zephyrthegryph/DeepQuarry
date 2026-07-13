@@ -1,113 +1,60 @@
-//"immutable" gas mixture used for immutable calculations
-//it can be changed, but any changes will ultimately be undone before they can have any effect
+//"immutable" gas mixture — arena-backed (auxmos).
+//
+//Immutability is enforced Rust-side: after the mixture is populated we call
+//mark_immutable(), and the arena silently drops any future mutation (set_moles/
+//set_temperature/merge/react/etc. become no-ops once marked). The old DM
+//archive()/share()/temperature_share()/garbage_collect() overrides that faked
+//immutability by resetting the (now-deleted) `gases` list every share are gone —
+//the base no longer has those procs, and the arena + mark_immutable() replace the
+//behaviour. Turf sharing runs Rust-side (SSair.process_turfs_auxtools).
+//
+//IMPORTANT ordering: mark_immutable() is a one-way latch — once set, further
+//writes are ignored. So it must be the LAST thing done, after the mix is fully
+//populated. The base New() only registers the mix + sets its initial temperature;
+//each concrete subtype marks itself immutable once it is done being populated
+//(space immediately, since it's empty; planetary in parse_string_immutable()).
 
 /datum/gas_mixture/immutable
-	var/initial_temperature
-	gc_share = TRUE
+	var/initial_temperature = TCMB
 
 /datum/gas_mixture/immutable/New()
-	..()
-	garbage_collect()
-	// Flag this mixture immutable in the Rust arena too. The DM overrides above only
-	// stop DM-side mutation; under the handle model the Rust turf FDM writes gas
-	// directly into the arena slot, so without this a space-vacuum / planetary sink
-	// gets polluted (gas shared into it persists and flows back). mark_immutable()
-	// makes Rust no-op all writes to the slot, so it stays a constant source/sink.
-	// Deferred for subtypes (e.g. planetary) that set their contents AFTER New().
-	finalize_immutable()
-
-/// Mark the backing Rust mixture immutable once its contents are final. Base
-/// immutables are done after New()'s garbage_collect(); subtypes that populate
-/// themselves later override this to defer the mark until their own setup runs.
-/datum/gas_mixture/immutable/proc/finalize_immutable()
-	mark_immutable()
-
-/datum/gas_mixture/immutable/garbage_collect()
-	// Subtypes (planetary) are empty at New() and get initial_temperature later
-	// from parse_string_immutable(), so it's null on the first garbage_collect().
-	// The Rust set_temperature bind rejects a null arg, so skip the write until a
-	// real temperature exists.
-	if(!isnull(initial_temperature))
-		set_temperature(initial_temperature)
-	clear()
-
-/datum/gas_mixture/immutable/archive()
-	return TRUE //nothing changes, so we do nothing and the archive is successful
-
-/datum/gas_mixture/immutable/merge()
-	return FALSE //we're immutable.
-
-/datum/gas_mixture/immutable/share(datum/gas_mixture/sharer, our_coeff, sharer_coeff)
-	. = ..()
-	sharer.set_temperature(initial_temperature)
-	garbage_collect()
-
-/datum/gas_mixture/immutable/react()
-	return FALSE //we're immutable.
-
-/datum/gas_mixture/immutable/copy()
-	return new type //we're immutable, so we can just return a new instance.
-
-/datum/gas_mixture/immutable/copy_from()
-	return FALSE //we're immutable.
-
-/datum/gas_mixture/immutable/copy_from_ratio()
-	return FALSE //we're immutable.
-
-/datum/gas_mixture/immutable/temperature_share(datum/gas_mixture/sharer, conduction_coefficient, sharer_temperature, sharer_heat_capacity)
-	. = ..()
+	..() // register the mixture in the arena first
 	set_temperature(initial_temperature)
 
-//used by space tiles
+//used by space tiles — empty and fixed at construction, so mark immutable now.
 /datum/gas_mixture/immutable/space
 	initial_temperature = TCMB
 
-/datum/gas_mixture/immutable/space/heat_capacity()
+/datum/gas_mixture/immutable/space/New()
+	..()
+	mark_immutable()
+
+/datum/gas_mixture/immutable/space/heat_capacity(data = MOLES)
 	return HEAT_CAPACITY_VACUUM
 
-/datum/gas_mixture/immutable/space/remove()
+/datum/gas_mixture/immutable/space/remove(amount)
 	return copy() //we're always empty, so we can just return a copy.
 
-/datum/gas_mixture/immutable/space/remove_ratio()
+/datum/gas_mixture/immutable/space/remove_ratio(ratio)
 	return copy() //we're always empty, so we can just return a copy.
 
-//planet side stuff
+//planet side stuff — populated after construction via parse_string_immutable(),
+//which marks the mix immutable once its gases are loaded. NOT marked in New().
 /datum/gas_mixture/immutable/planetary
-	var/list/initial_gas = list()
-
-// A planetary mix is empty at New() and gets its real contents from
-// parse_string_immutable() afterwards, so don't lock the Rust slot yet — the mark
-// happens at the end of parse_string_immutable() once the gases are set.
-/datum/gas_mixture/immutable/planetary/finalize_immutable()
-	return
-
-/datum/gas_mixture/immutable/planetary/garbage_collect()
-	..()
-	for(var/id in initial_gas)
-		set_moles(id, initial_gas[id])
 
 /datum/gas_mixture/immutable/planetary/proc/parse_string_immutable(gas_string) //I know I know, I need this tho
 	gas_string = SSair.preprocess_gas_string(gas_string)
 
-	var/list/mix = initial_gas
 	var/list/gas = params2list(gas_string)
 	if(gas["TEMP"])
 		initial_temperature = text2num(gas["TEMP"])
-		set_temperature(initial_temperature)
 		gas -= "TEMP"
-	mix.Cut()
+	set_temperature(initial_temperature)
+
 	for(var/id in gas)
-		// Normalise each parsed key to the auxmos string gas id (auxmos keys its
-		// Rust gas table by strings); skip unknown gases.
-		var/gas_id = xgm_gas_string_id(id)
-		if(isnull(gas_id))
-			continue
-		mix[gas_id] = text2num(gas[id])
+		var/path = id
+		if(!ispath(path))
+			path = gas_id2path(path) //a lot of these strings can't have embedded expressions (especially for mappers), so support for IDs needs to stick around
+		set_moles(path, text2num(gas[id]))
 
-	for(var/id in mix)
-		set_moles(id, mix[id])
-
-	// Contents are final now — lock the Rust slot so the turf FDM treats this
-	// planetary baseline as a constant source/sink instead of mutating it.
 	mark_immutable()
-

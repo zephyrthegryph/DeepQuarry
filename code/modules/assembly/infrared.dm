@@ -6,7 +6,7 @@
 	icon_state = "infrared"
 	matter = list(MAT_STEEL = 1000, MAT_GLASS = 500)
 
-	wires = WIRE_PULSE
+	wires_type = WIRE_PULSE
 
 	secured = 0
 

@@ -328,8 +328,9 @@
 			. = TRUE
 
 		if("unlink")
-			if(text2num(params["unlink"]) <= length(links))
-				var/obj/machinery/telecomms/T = links[text2num(params["unlink"])]
+			var/unlink_index = text2num(params["unlink"])
+			if(unlink_index >= 1 && unlink_index <= length(links))
+				var/obj/machinery/telecomms/T = links[unlink_index]
 				set_temp("-% Removed \ref[T] [T.name] from linked entities. %-", "average")
 
 				// Remove link entries from both T and src.
@@ -355,13 +356,15 @@
 				. = TRUE
 
 		if("buffer")
-			P.buffer = src
-			set_temp("-% Successfully stored \ref[P.buffer] [P.buffer.name] in buffer %-", "average")
+			if(P)
+				P.buffer = src
+				set_temp("-% Successfully stored \ref[P.buffer] [P.buffer.name] in buffer %-", "average")
 			. = TRUE
 
 		if("flush")
-			set_temp("-% Buffer successfully flushed. %-", "average")
-			P.buffer = null
+			if(P)
+				set_temp("-% Buffer successfully flushed. %-", "average")
+				P.buffer = null
 			. = TRUE
 
 		if("cleartemp")

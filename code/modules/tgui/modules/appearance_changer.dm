@@ -1030,6 +1030,7 @@
 		qdel(src)
 
 /datum/tgui_module/appearance_changer/vore/update_active_camera_screen()
+	SIGNAL_HANDLER
 	cam_screen.vis_contents = list(owner)
 	cam_background.icon_state = "clear"
 	cam_background.fill_rect(1, 1, 1, 1)

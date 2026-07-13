@@ -65,7 +65,7 @@
 	var/selected_sound = null
 
 /obj/item/spell/audible_deception/on_use_cast(mob/user)
-	var/list/sound_options = available_sounds
+	var/list/sound_options = available_sounds.Copy()
 	if(check_for_scepter())
 		sound_options["!!AIR HORN!!"] = 'sound/items/AirHorn.ogg'
 	var/new_sound = tgui_input_list(user, "Select the sound you want to make.", "Sounds", sound_options)

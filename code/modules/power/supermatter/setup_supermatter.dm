@@ -216,7 +216,7 @@ GLOBAL_LIST_BOILERPLATE(all_engine_setup_markers, /obj/effect/engine_setup)
 		S.input_level = S.input_level_max
 
 	if(target_output_level)
-		if(target_output_level > S.input_level_max)
+		if(target_output_level > S.output_level_max)
 			S.output_level = S.output_level_max
 		else
 			S.output_level = target_output_level

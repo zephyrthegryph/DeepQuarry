@@ -250,7 +250,7 @@
 /obj/structure/window/reinforced,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/shuttle/plating,
 /area/shuttle/escape_pod1/station)
@@ -269,7 +269,7 @@
 /obj/structure/window/reinforced,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/shuttle/plating,
 /area/shuttle/escape_pod2/station)
@@ -2612,7 +2612,7 @@
 /obj/structure/window/reinforced,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/shuttle/plating,
 /area/shuttle/shuttle1/start)
@@ -3205,7 +3205,7 @@
 /obj/structure/window/reinforced,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/shuttle/plating,
 /area/shuttle/shuttle1/start)
@@ -5410,7 +5410,7 @@
 "alZ" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/bed/chair,
 /turf/simulated/shuttle/floor/white,
@@ -5519,7 +5519,7 @@
 "amp" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/shuttle/floor,
 /area/shuttle/large_escape_pod2/station)
@@ -5819,7 +5819,7 @@
 "amX" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/bed/chair{
 	dir = 1
@@ -7495,7 +7495,7 @@
 "aqd" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 1
@@ -8984,10 +8984,10 @@
 /obj/item/stock_parts/manipulator,
 /obj/item/stock_parts/manipulator,
 /obj/item/stock_parts/capacitor,
-/obj/item/stock_parts/micro_laser/high,
-/obj/item/stock_parts/micro_laser/high,
-/obj/item/stock_parts/micro_laser/high,
-/obj/item/stock_parts/micro_laser/high,
+/obj/item/stock_parts/micro_laser,
+/obj/item/stock_parts/micro_laser,
+/obj/item/stock_parts/micro_laser,
+/obj/item/stock_parts/micro_laser,
 /obj/machinery/alarm{
 	pixel_y = 22
 	},
@@ -12079,7 +12079,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/machinery/door/window/southleft,
 /turf/simulated/floor/tiled/techmaint,
@@ -12094,7 +12094,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/machinery/door/window/southright,
 /turf/simulated/floor/tiled/techmaint,
@@ -13657,7 +13657,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/item/clothing/mask/breath,
 /obj/item/mining_scanner,
@@ -15252,7 +15252,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor/airless,
 /area/shuttle/large_escape_pod1/station)
@@ -16403,7 +16403,7 @@
 "aIe" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/closet/emcloset,
 /obj/effect/floor_decal/borderfloor{
@@ -17521,7 +17521,7 @@
 /obj/structure/window/reinforced,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/shuttle/plating,
 /area/shuttle/shuttle2/start)
@@ -19457,8 +19457,8 @@
 	},
 /obj/item/circuitboard/rdconsole,
 /obj/item/circuitboard/destructive_analyzer,
-/obj/item/circuitboard/protolathe,
-/obj/item/circuitboard/rdserver{
+/obj/item/circuitboard/partslathe,
+/obj/item/circuitboard/rdservercontrol{
 	pixel_x = 3;
 	pixel_y = -3
 	},
@@ -19735,7 +19735,7 @@
 /obj/structure/window/reinforced,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/shuttle/plating,
 /area/shuttle/shuttle2/start)
@@ -21321,7 +21321,7 @@
 /obj/structure/window/reinforced,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/shuttle/plating,
 /area/shuttle/escape_pod3/station)
@@ -21590,7 +21590,7 @@
 /obj/structure/window/reinforced,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/shuttle/plating,
 /area/shuttle/escape_pod5/station)
@@ -22127,7 +22127,7 @@
 /obj/structure/window/reinforced,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/shuttle/plating,
 /area/shuttle/escape_pod4/station)
@@ -22422,7 +22422,7 @@
 /obj/structure/window/reinforced,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/shuttle/plating,
 /area/shuttle/escape_pod6/station)
@@ -23707,7 +23707,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/machinery/door/window/brigdoor/southright{
 	name = "Riot Armor"
@@ -23774,7 +23774,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/machinery/door/window/brigdoor/southright{
 	name = "Riot Armor"
@@ -23901,7 +23901,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/effect/floor_decal/corner/blue{
 	dir = 5
@@ -23925,7 +23925,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 1
@@ -24031,7 +24031,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 1
@@ -24295,7 +24295,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 1
@@ -24605,7 +24605,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced,
 /obj/effect/floor_decal/corner/yellow{
@@ -24845,7 +24845,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 1
@@ -24853,11 +24853,11 @@
 /obj/effect/floor_decal/corner/red/full{
 	dir = 1
 	},
-/obj/item/storage/box/flashshells,
-/obj/item/storage/box/beanbags,
-/obj/item/storage/box/beanbags,
-/obj/item/storage/box/stunshells,
-/obj/item/storage/box/stunshells,
+/obj/item/storage/box/scattershot,
+/obj/item/storage/box/scattershot,
+/obj/item/storage/box/scattershot,
+/obj/item/storage/box/scattershot,
+/obj/item/storage/box/scattershot,
 /obj/machinery/atmospherics/pipe/simple/hidden/supply{
 	dir = 4
 	},
@@ -24956,15 +24956,15 @@
 /obj/structure/window/reinforced,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/effect/floor_decal/corner/green/full{
 	dir = 4
 	},
-/obj/item/storage/box/shotgunshells,
-/obj/item/storage/box/shotgunshells,
-/obj/item/storage/box/shotgunammo,
-/obj/item/storage/box/shotgunammo,
+/obj/item/storage/box/scattershot,
+/obj/item/storage/box/scattershot,
+/obj/item/storage/box/scattershot,
+/obj/item/storage/box/scattershot,
 /obj/item/ammo_magazine/m45,
 /obj/item/ammo_magazine/m45,
 /obj/item/ammo_magazine/m45,
@@ -25220,7 +25220,7 @@
 /obj/structure/window/reinforced,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/effect/floor_decal/corner/red/full{
 	dir = 4
@@ -25341,7 +25341,7 @@
 /obj/structure/window/reinforced,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/effect/floor_decal/corner/green/full{
 	dir = 4
@@ -25830,7 +25830,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 8
@@ -26094,7 +26094,7 @@
 /obj/structure/cable/green{
 	icon_state = "4-8"
 	},
-/obj/item/book/codex/corp_regs,
+/obj/item/book/manual/wiki/security_space_law,
 /obj/item/dice,
 /obj/effect/floor_decal/industrial/warning{
 	dir = 8
@@ -26731,7 +26731,7 @@
 /obj/effect/floor_decal/industrial/outline/yellow,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/item/clothing/suit/storage/vest/heavy/officer,
 /obj/item/clothing/suit/storage/vest/heavy/officer,
@@ -26744,7 +26744,7 @@
 /obj/structure/window/reinforced,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/table/rack,
 /obj/machinery/door/window/brigdoor/northleft{
@@ -27482,7 +27482,7 @@
 	icon_state = "4-8"
 	},
 /obj/structure/table/steel_reinforced,
-/obj/item/book/codex/corp_regs,
+/obj/item/book/manual/wiki/security_space_law,
 /obj/item/stamp/denied{
 	pixel_x = 5
 	},
@@ -27893,7 +27893,7 @@
 /obj/structure/table/steel_reinforced,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/item/paper_bin{
 	pixel_x = -3;
@@ -27990,7 +27990,7 @@
 	dir = 8
 	},
 /obj/structure/table/standard,
-/obj/item/book/codex/corp_regs,
+/obj/item/book/manual/wiki/security_space_law,
 /turf/simulated/floor/tiled/red,
 /area/security/main)
 "bdV" = (
@@ -28162,8 +28162,8 @@
 	pixel_y = -26
 	},
 /obj/structure/table/steel_reinforced,
-/obj/item/storage/box/blanks,
-/obj/item/storage/box/blanks{
+/obj/item/storage/box/scattershot,
+/obj/item/storage/box/scattershot{
 	pixel_x = 2;
 	pixel_y = -2
 	},
@@ -28293,7 +28293,7 @@
 	name = "Visitation";
 	req_access = list(2)
 	},
-/obj/item/book/codex/corp_regs,
+/obj/item/book/manual/wiki/security_space_law,
 /obj/machinery/door/blast/regular{
 	density = 0;
 	icon_state = "pdoor0";
@@ -28782,7 +28782,7 @@
 /obj/structure/table/steel_reinforced,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/item/hand_labeler,
 /obj/machinery/door/firedoor/border_only,
@@ -29957,7 +29957,7 @@
 /obj/structure/window/reinforced,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/item/reagent_containers/spray/pepper,
 /obj/item/reagent_containers/spray/pepper,
@@ -32425,7 +32425,7 @@
 /obj/structure/cable/green{
 	icon_state = "4-8"
 	},
-/obj/item/book/codex/corp_regs,
+/obj/item/book/manual/wiki/security_space_law,
 /obj/structure/disposalpipe/segment,
 /obj/effect/floor_decal/borderfloor,
 /obj/effect/floor_decal/corner/red/border,
@@ -34356,7 +34356,7 @@
 /obj/machinery/portable_atmospherics/canister/empty,
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor/tiled,
 /area/engineering/atmos)
@@ -34385,7 +34385,7 @@
 "boU" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/machinery/computer/secure_data{
 	dir = 8
@@ -35000,7 +35000,7 @@
 /area/security/detectives_office)
 "bqh" = (
 /obj/structure/bookcase,
-/obj/item/book/codex/corp_regs,
+/obj/item/book/manual/wiki/security_space_law,
 /turf/simulated/floor/lino,
 /area/security/detectives_office)
 "bqi" = (
@@ -37721,11 +37721,11 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/item/clothing/mask/breath,
 /obj/item/rig/breacher,
@@ -38457,11 +38457,11 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/item/clothing/mask/breath,
 /obj/item/clothing/suit/space/skrell/white,
@@ -38479,7 +38479,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 4
@@ -38495,7 +38495,7 @@
 "bxa" = (
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 4
@@ -38515,7 +38515,7 @@
 "bxb" = (
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 4
@@ -38537,7 +38537,7 @@
 "bxc" = (
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 4
@@ -39188,7 +39188,7 @@
 /obj/structure/window/reinforced,
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/item/clothing/mask/breath,
 /obj/item/clothing/mask/breath,
@@ -40731,7 +40731,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor/tiled,
 /area/janitor)
@@ -41525,7 +41525,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/machinery/status_display{
 	pixel_y = 32
@@ -41794,7 +41794,7 @@
 /obj/machinery/door/firedoor/border_only,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced,
 /obj/structure/window/reinforced{
@@ -42174,7 +42174,7 @@
 /obj/item/stack/rods,
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 8
@@ -42803,7 +42803,7 @@
 /obj/item/tank/jetpack/carbondioxide,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 1
@@ -42829,7 +42829,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced,
 /turf/simulated/floor/tiled/dark,
@@ -43889,7 +43889,7 @@
 /obj/item/tank/jetpack/carbondioxide,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced,
 /obj/structure/table/rack{
@@ -44666,7 +44666,7 @@
 /obj/item/clothing/head/helmet/space/void/atmos,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 1
@@ -45221,7 +45221,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor/tiled/steel,
 /area/rnd/mixing)
@@ -45498,7 +45498,7 @@
 /obj/item/clothing/head/helmet/space/void/atmos,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced,
 /obj/machinery/door/window/westleft{
@@ -49247,7 +49247,7 @@
 /turf/simulated/floor/tiled/white,
 /area/assembly/robotics)
 "bRn" = (
-/obj/machinery/computer/rdconsole/robotics,
+/obj/machinery/computer/rdconsole_tg,
 /obj/effect/floor_decal/borderfloorwhite{
 	dir = 1
 	},
@@ -49257,7 +49257,7 @@
 /turf/simulated/floor/tiled/white,
 /area/assembly/robotics)
 "bRo" = (
-/obj/machinery/r_n_d/circuit_imprinter,
+/obj/machinery/rnd/production/circuit_imprinter,
 /obj/item/reagent_containers/glass/beaker/large,
 /obj/item/radio/intercom{
 	dir = 1;
@@ -49437,7 +49437,7 @@
 /obj/structure/window/reinforced,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/machinery/door/blast/regular{
 	density = 0;
@@ -51123,7 +51123,7 @@
 /turf/simulated/floor/plating,
 /area/maintenance/research)
 "bUM" = (
-/obj/machinery/r_n_d/protolathe,
+/obj/machinery/rnd/production/protolathe,
 /obj/effect/floor_decal/industrial/outline/yellow,
 /turf/simulated/floor/tiled,
 /area/rnd/lab)
@@ -51131,7 +51131,7 @@
 /turf/simulated/floor/tiled,
 /area/rnd/lab)
 "bUO" = (
-/obj/machinery/r_n_d/destructive_analyzer,
+/obj/machinery/rnd/destructive_analyzer,
 /obj/effect/floor_decal/industrial/outline/yellow,
 /turf/simulated/floor/tiled,
 /area/rnd/lab)
@@ -51514,7 +51514,7 @@
 "bVR" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/frame{
 	anchored = 1
@@ -51959,7 +51959,7 @@
 /turf/simulated/floor/plating,
 /area/maintenance/research)
 "bWK" = (
-/obj/machinery/r_n_d/circuit_imprinter,
+/obj/machinery/rnd/production/circuit_imprinter,
 /obj/item/reagent_containers/glass/beaker/sulphuric,
 /obj/machinery/light{
 	dir = 8
@@ -51973,7 +51973,7 @@
 /turf/simulated/floor/tiled,
 /area/rnd/lab)
 "bWM" = (
-/obj/machinery/computer/rdconsole/core{
+/obj/machinery/computer/rdconsole_tg{
 	dir = 8
 	},
 /obj/effect/floor_decal/industrial/outline/yellow,
@@ -52038,7 +52038,7 @@
 /turf/simulated/floor/tiled,
 /area/assembly/robotics)
 "bWS" = (
-/obj/machinery/pros_fabricator,
+/obj/machinery/robotic_fabricator,
 /obj/effect/floor_decal/industrial/outline/yellow,
 /turf/simulated/floor/tiled,
 /area/assembly/robotics)
@@ -52999,7 +52999,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/effect/floor_decal/industrial/outline/yellow,
 /turf/simulated/floor/tiled,
@@ -53619,7 +53619,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 1
@@ -53648,7 +53648,7 @@
 /turf/simulated/floor/reinforced,
 /area/rnd/misc_lab)
 "cau" = (
-/obj/machinery/r_n_d/server/robotics,
+/obj/machinery/rnd/server,
 /turf/simulated/floor/bluegrid{
 	name = "Server Base";
 	nitrogen = 500;
@@ -53661,7 +53661,7 @@
 /turf/simulated/floor/tiled/dark,
 /area/server)
 "caw" = (
-/obj/machinery/r_n_d/server/core,
+/obj/machinery/rnd/server/master,
 /turf/simulated/floor/bluegrid{
 	name = "Server Base";
 	nitrogen = 500;
@@ -53673,7 +53673,7 @@
 /turf/simulated/wall/r_wall,
 /area/rnd/workshop)
 "cay" = (
-/obj/machinery/computer/rdconsole/core,
+/obj/machinery/computer/rdconsole_tg,
 /obj/effect/floor_decal/borderfloorblack{
 	dir = 9
 	},
@@ -53786,7 +53786,7 @@
 "caS" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/table/steel_reinforced,
 /obj/item/stack/rods{
@@ -53898,7 +53898,7 @@
 /obj/structure/table/rack,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced,
 /obj/structure/window/reinforced{
@@ -56056,11 +56056,11 @@
 /area/medical/virology)
 "cfw" = (
 /obj/structure/table/glass,
-/obj/item/antibody_scanner{
+/obj/item/healthanalyzer{
 	pixel_x = 2;
 	pixel_y = 2
 	},
-/obj/item/antibody_scanner,
+/obj/item/healthanalyzer,
 /obj/machinery/atmospherics/unary/vent_pump/on{
 	dir = 8
 	},
@@ -57484,7 +57484,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/effect/floor_decal/industrial/outline/yellow,
 /turf/simulated/floor/tiled,
@@ -58481,7 +58481,7 @@
 /turf/simulated/floor/tiled/white,
 /area/medical/virology)
 "ckw" = (
-/obj/machinery/disease2/isolator,
+/obj/machinery/computer/pandemic,
 /obj/effect/floor_decal/borderfloorwhite{
 	dir = 5
 	},
@@ -59621,7 +59621,7 @@
 /turf/simulated/floor/tiled/white,
 /area/medical/virology)
 "cmu" = (
-/obj/machinery/computer/centrifuge,
+/obj/machinery/smart_centrifuge,
 /obj/machinery/camera/network/medbay{
 	c_tag = "MED - Virology Starboard";
 	dir = 8
@@ -60594,7 +60594,7 @@
 /turf/simulated/floor/tiled/white,
 /area/medical/virology)
 "cot" = (
-/obj/machinery/disease2/incubator,
+/obj/machinery/biogenerator,
 /obj/effect/floor_decal/borderfloorwhite{
 	dir = 6
 	},
@@ -61876,7 +61876,7 @@
 /area/medical/virology)
 "crx" = (
 /obj/structure/closet/crate/freezer,
-/obj/item/virusdish/random,
+/obj/item/reagent_containers/glass/beaker/vial,
 /obj/effect/floor_decal/borderfloorwhite{
 	dir = 4
 	},
@@ -62116,7 +62116,7 @@
 /obj/effect/floor_decal/corner/green/bordercorner{
 	dir = 1
 	},
-/obj/machinery/r_n_d/circuit_imprinter,
+/obj/machinery/rnd/production/circuit_imprinter,
 /obj/item/reagent_containers/glass/beaker/sulphuric,
 /turf/simulated/floor/tiled/dark,
 /area/rnd/workshop)
@@ -62165,11 +62165,11 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/machinery/door/window/eastleft,
 /obj/item/clothing/suit/space,
@@ -62921,7 +62921,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced,
 /obj/machinery/door/window/eastright,
@@ -63315,7 +63315,7 @@
 /turf/simulated/floor/tiled/white,
 /area/medical/virology)
 "cuO" = (
-/obj/machinery/computer/diseasesplicer{
+/obj/machinery/computer/pandemic{
 	dir = 8
 	},
 /obj/effect/floor_decal/borderfloorwhite{
@@ -64036,7 +64036,7 @@
 /obj/structure/table/reinforced,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/machinery/computer/med_data/laptop,
 /obj/effect/floor_decal/borderfloorwhite{
@@ -64366,7 +64366,7 @@
 /turf/simulated/floor/tiled/white,
 /area/medical/virology)
 "cwO" = (
-/obj/machinery/disease2/diseaseanalyser,
+/obj/machinery/computer/pandemic,
 /obj/effect/floor_decal/borderfloorwhite{
 	dir = 6
 	},
@@ -65752,7 +65752,7 @@
 "czP" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/table/reinforced,
 /obj/machinery/button/remote/airlock{
@@ -67565,7 +67565,7 @@
 /obj/structure/table/reinforced,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/machinery/computer/med_data/laptop,
 /obj/effect/floor_decal/borderfloorwhite{
@@ -71653,7 +71653,7 @@
 /obj/structure/window/reinforced,
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 4
@@ -77668,7 +77668,7 @@
 /area/crew_quarters/bar)
 "cVR" = (
 /obj/structure/table/woodentable,
-/obj/item/storage/box/beanbags,
+/obj/item/storage/box/scattershot,
 /obj/item/gun/projectile/shotgun/doublebarrel,
 /obj/item/tool/screwdriver,
 /obj/machinery/atmospherics/unary/vent_pump/on{
@@ -82394,7 +82394,7 @@
 /obj/item/stack/flag/blue,
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/item/radio/intercom{
 	dir = 4;
@@ -85908,7 +85908,7 @@
 /obj/structure/closet/coffin,
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor/tiled/dark,
 /area/chapel/main)
@@ -86368,7 +86368,7 @@
 /obj/item/book/codex/lore/vir,
 /obj/item/book/codex/lore/vir,
 /obj/item/book/codex/lore/robutt,
-/obj/item/book/codex/corp_regs,
+/obj/item/book/manual/wiki/security_space_law,
 /turf/simulated/floor/wood,
 /area/library)
 "dmq" = (
@@ -88254,7 +88254,7 @@
 /obj/structure/window/reinforced,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 8
@@ -88527,7 +88527,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 8
@@ -89056,7 +89056,7 @@
 /obj/structure/closet/wardrobe/pjs,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/disposalpipe/segment{
 	dir = 4
@@ -89066,7 +89066,7 @@
 "dsm" = (
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/machinery/disposal,
 /obj/structure/disposalpipe/trunk{
@@ -89332,14 +89332,14 @@
 /obj/structure/closet/wardrobe/grey,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor/tiled/dark,
 /area/construction/seconddeck/construction2)
 "dsN" = (
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor/tiled/dark,
 /area/construction/seconddeck/construction2)
@@ -89560,7 +89560,7 @@
 /obj/structure/closet/wardrobe/black,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor/tiled/dark,
 /area/construction/seconddeck/construction2)
@@ -95371,7 +95371,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/machinery/status_display{
 	pixel_y = 32
@@ -98630,7 +98630,7 @@
 /obj/structure/window/reinforced,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/shuttle/plating,
 /area/shuttle/escape_pod7/station)
@@ -99024,7 +99024,7 @@
 /obj/structure/window/reinforced,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/shuttle/plating,
 /area/shuttle/escape_pod8/station)
@@ -100229,7 +100229,7 @@
 /area/bridge/meeting_room)
 "dOy" = (
 /obj/structure/table/wooden_reinforced,
-/obj/item/book/codex/corp_regs,
+/obj/item/book/manual/wiki/security_space_law,
 /obj/machinery/atmospherics/pipe/simple/hidden/supply{
 	dir = 4
 	},
@@ -100455,7 +100455,7 @@
 /obj/structure/curtain/open/shower,
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/machinery/door/window/northright,
 /obj/item/bikehorn/rubberducky,
@@ -101378,7 +101378,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 4
@@ -102161,7 +102161,7 @@
 /area/crew_quarters/heads/sc/sd)
 "dSo" = (
 /obj/structure/table/woodentable,
-/obj/item/book/codex/corp_regs,
+/obj/item/book/manual/wiki/security_space_law,
 /obj/item/rectape/random,
 /obj/item/taperecorder,
 /turf/simulated/floor/carpet,
@@ -102424,7 +102424,7 @@
 "dSP" = (
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/effect/floor_decal/borderfloor{
 	dir = 10
@@ -103759,7 +103759,7 @@
 /obj/structure/closet/wardrobe/suit,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor/tiled/dark,
 /area/construction/seconddeck/construction2)
@@ -103767,7 +103767,7 @@
 /obj/structure/closet/secure_closet/personal,
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/item/clothing/head/kitty,
 /obj/item/clothing/head/kitty,
@@ -105903,7 +105903,7 @@
 /obj/structure/table/standard,
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/machinery/recharger,
 /turf/simulated/floor/tiled,
@@ -105912,7 +105912,7 @@
 /obj/structure/table/standard,
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/item/melee/baton/slime/loaded,
 /obj/item/gun/energy/taser/xeno,
@@ -106020,7 +106020,7 @@
 /obj/structure/table/standard,
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 8
@@ -108548,7 +108548,7 @@
 /turf/simulated/floor/tiled/dark,
 /area/hallway/secondary/entry/D3)
 "tZc" = (
-/obj/effect/landmark/engine_loader,
+/obj/effect/landmark/poi_loader,
 /turf/space,
 /area/space)
 "vTW" = (

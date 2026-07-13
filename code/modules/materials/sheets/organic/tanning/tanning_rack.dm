@@ -15,6 +15,9 @@
 	return ..()
 
 /obj/structure/tanning_rack/process()
+	if(QDELETED(drying))
+		drying = null
+		return
 	if(drying && drying.wetness)
 		drying.wetness = max(drying.wetness - 1, 0)
 		if(!drying.wetness)
@@ -23,7 +26,7 @@
 
 /obj/structure/tanning_rack/examine(mob/user)
 	. = ..()
-	if(drying)
+	if(drying && !QDELETED(drying))
 		. += "\The [drying] is [drying.get_dryness_text()]."
 
 /obj/structure/tanning_rack/update_icon()

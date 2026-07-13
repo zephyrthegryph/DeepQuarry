@@ -39,7 +39,7 @@ ADMIN_VERB(editappear, R_FUN, "Edit Appearance", "Edit a human's apperance.", AD
 		target_human.b_facial = hex2num(copytext(new_facial, 6, 8))
 
 	var/new_hair = tgui_color_picker(user, "Please select hair color.", "Character Generation")
-	if(new_facial)
+	if(new_hair)
 		target_human.r_hair = hex2num(copytext(new_hair, 2, 4))
 		target_human.g_hair = hex2num(copytext(new_hair, 4, 6))
 		target_human.b_hair = hex2num(copytext(new_hair, 6, 8))

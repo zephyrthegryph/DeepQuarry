@@ -25,7 +25,7 @@
 			to_chat(user, span_warning("\The [L] isn't dead!"))
 			return 0
 		if(pay_energy(5000))
-			if(L.tod > world.time + 30 MINUTES)
+			if(L.timeofdeath && world.time > L.timeofdeath + 30 MINUTES)
 				to_chat(user, span_danger("\The [L]'s been dead for too long, even this function cannot replace cloning at this point."))
 				return 0
 			to_chat(user, span_notice("You stab \the [L] with a hidden integrated hypo, attempting to bring them back..."))

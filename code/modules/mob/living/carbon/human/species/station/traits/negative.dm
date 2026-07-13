@@ -852,7 +852,7 @@
 
 /datum/trait/negative/light_sensitivity
 	custom_only = FALSE
-	banned_species = (SPECIES_ZADDAT)
+	banned_species = list(SPECIES_ZADDAT)
 
 /datum/trait/negative/haemophilia_plus
 	custom_only = FALSE

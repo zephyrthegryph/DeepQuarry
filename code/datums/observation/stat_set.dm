@@ -27,7 +27,7 @@ stat_set_event, /datum/decl/observ/stat_set, new)
 
 		if(isbelly(src.loc))
 			var/obj/belly/ourbelly = src.loc
-			if(!ourbelly.owner.client)
+			if(!ourbelly.owner || !ourbelly.owner.client)
 				return
 			if(stat == CONSCIOUS)
 				to_chat(ourbelly.owner, span_notice("\The [src.name] is awake."))

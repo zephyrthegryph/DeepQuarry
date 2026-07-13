@@ -337,7 +337,7 @@ includes scars and tattoos
 	icon_state = "lowercheek_l"
 	body_parts = list(BP_HEAD)
 
-/datum/sprite_accessory/marking/lowercheek_left
+/datum/sprite_accessory/marking/lowercheek_right
 	name = "Lower Cheek Right"
 	icon_state = "lowercheek_r"
 	body_parts = list(BP_HEAD)

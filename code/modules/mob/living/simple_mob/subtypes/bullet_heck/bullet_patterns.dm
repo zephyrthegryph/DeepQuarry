@@ -1,4 +1,4 @@
-/mob/living/simple_mob/mechanical/mecha/eclipse/proc/singleproj/(atom/target, next_cycle)
+/mob/living/simple_mob/mechanical/mecha/eclipse/proc/singleproj(atom/target, next_cycle)
 	if(!target)
 		return
 	var/obj/item/projectile/P = new specialattackprojectile(get_turf(src))
@@ -949,7 +949,7 @@
 	P.launch_projectile(target, BP_TORSO, src)
 	amount--
 	if(amount > 0)
-		addtimer(CALLBACK(src, PROC_REF(gattlingfire), target, next_cycle, fire_delay, amount), fire_delay, TIMER_DELETE_ME)
+		addtimer(CALLBACK(src, PROC_REF(gattlingfire), target, next_cycle, amount, fire_delay), fire_delay, TIMER_DELETE_ME)
 	else
 		attackcycle = next_cycle
 

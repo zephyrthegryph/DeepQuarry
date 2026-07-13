@@ -1,3 +1,8 @@
+// The fork keeps only the base /area/skipjack_station; this shuttle needs its
+// own start area, so define the subtype the heist shuttle docks into.
+/area/skipjack_station/start
+	name = "Skipjack"
+
 /obj/machinery/computer/shuttle_control/web/heist
 	name = "skipjack control console"
 	req_access = list(ACCESS_SYNDICATE)

@@ -688,7 +688,7 @@
 /datum/gear/suit/snowsuit/medical
 	display_name = "snowsuit, medical"
 	path = /obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/medical
-	allowed_roles = list(JOB_MEDICAL_DOCTOR,JOB_CHIEF_MEDICAL_OFFICER,JOB_CHEMIST,JOB_PARAMEDIC,JOB_GENETICIST, JOB_PSYCHIATRIST, JOB_SEARCH_AND_RESCUE)
+	allowed_roles = list(JOB_MEDICAL_DOCTOR,JOB_CHIEF_MEDICAL_OFFICER,JOB_CHEMIST,JOB_PARAMEDIC,JOB_GENETICIST, JOB_PSYCHIATRIST, JOB_SEARCH_AND_RESCUE, JOB_FIELD_MEDIC)
 	show_roles = FALSE
 
 /datum/gear/suit/snowsuit/science
@@ -821,9 +821,6 @@
 /datum/gear/suit/bomber_pilot
 	display_name = "bomber jacket, pilot"
 	path = /obj/item/clothing/suit/storage/toggle/bomber/pilot
-
-/datum/gear/suit/snowsuit/medical
-	allowed_roles = list(JOB_MEDICAL_DOCTOR,JOB_CHIEF_MEDICAL_OFFICER,JOB_CHEMIST,JOB_PARAMEDIC,JOB_GENETICIST, JOB_PSYCHIATRIST,JOB_FIELD_MEDIC) //CHOMP keep explo
 
 /datum/gear/suit/labcoat_colorable
 	display_name = "labcoat, colorable"
@@ -961,6 +958,7 @@ Talon winter coat
 	cost = 2 //It's got armor, yo.
 
 /datum/gear/suit/cyberpunk_recolorable/New()
+	..()
 	gear_tweaks += GLOB.gear_tweak_free_color_choice
 
 /datum/gear/suit/shrine_maiden
@@ -991,6 +989,7 @@ Talon winter coat
 	cost = 1
 
 /datum/gear/suit/cloak_half/New()
+	..()
 	gear_tweaks += GLOB.gear_tweak_free_color_choice
 
 //Shoulder cloak
@@ -1000,6 +999,7 @@ Talon winter coat
 	cost = 1
 
 /datum/gear/suit/cloak_shoulder/New()
+	..()
 	gear_tweaks += GLOB.gear_tweak_free_color_choice
 
 /datum/gear/suit/cloak_shoulder_right
@@ -1008,6 +1008,7 @@ Talon winter coat
 	cost = 1
 
 /datum/gear/suit/cloak_shoulder_right/New()
+	..()
 	gear_tweaks += GLOB.gear_tweak_free_color_choice
 
 //Mantles, mostly for heads of staff
@@ -1017,6 +1018,7 @@ Talon winter coat
 	cost = 1
 
 /datum/gear/suit/roles/mantle/New()
+	..()
 	gear_tweaks += GLOB.gear_tweak_free_color_choice
 
 /datum/gear/suit/roles/mantles
@@ -1085,6 +1087,7 @@ Talon winter coat
 	path = /obj/item/clothing/accessory/poncho/roles/cloak/shroud
 
 /datum/gear/suit/roles/shroud/New()
+	..()
 	gear_tweaks += GLOB.gear_tweak_free_color_choice
 
 /datum/gear/suit/roles/capshroud

@@ -29,8 +29,8 @@
 		icon_state = disabled ? "liquid_dispenser" : "liquid_dispenser_on"
 
 /obj/machinery/ai_slipper/proc/setState(enabled, uses)
-	disabled = disabled
-	uses = uses
+	disabled = !enabled
+	src.uses = uses
 	power_change()
 
 // TGUI migration. attack_hand opens AiSlipper.tsx; the

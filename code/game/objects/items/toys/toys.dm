@@ -1273,6 +1273,7 @@
 	if(.)
 		return TRUE
 	if(!cooldown)
+		cooldown = TRUE
 		var/answer = pick(possible_answers)
 		user.visible_message(span_notice("[user] focuses on their question and [use_action]..."))
 		user.visible_message(span_notice("The [src] says \"[answer]\""))

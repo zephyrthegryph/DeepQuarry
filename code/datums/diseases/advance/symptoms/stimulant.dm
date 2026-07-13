@@ -64,7 +64,7 @@ Bonus
 		return
 	switch(A.stage)
 		if(2 to 3)
-			if(prob(power) && H.stat)
+			if(prob(power) && !H.stat)
 				H.make_jittery(2 * power)
 				H.emote("twitch")
 				to_chat(H, span_notice("[pick("You feel energetic!", "You feel well-rested.", "You feel great!")]"))

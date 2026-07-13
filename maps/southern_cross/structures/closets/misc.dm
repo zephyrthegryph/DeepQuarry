@@ -28,8 +28,8 @@
 	req_one_access = list(ACCESS_EXPLORER,ACCESS_BRIG)
 
 	starts_with = list(
-		/obj/item/gun/energy/phasegun = 2,
-		/obj/item/gun/energy/phasegun/pistol,
+		/obj/item/gun/energy/locked/phasegun/unlocked = 2,
+		/obj/item/gun/energy/locked/phasegun/pistol/unlocked,
 		/obj/item/cell/device/weapon = 2,
 		/obj/item/clothing/accessory/permit/gun/planetside)
 

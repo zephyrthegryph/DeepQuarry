@@ -229,12 +229,7 @@
 		icon_state = "tranqgun"
 		return 1
 
-	if(!ammo_magazine.stored_ammo || ammo_magazine.stored_ammo.len)
-		icon_state = "tranqgun"
-	else if(ammo_magazine.stored_ammo.len > 5)
-		icon_state = "tranqgun"
-	else
-		icon_state = "tranqgun"
+	icon_state = "tranqgun"
 	return 1
 
 // This is to allow xenobio to activate slime cores via remote.

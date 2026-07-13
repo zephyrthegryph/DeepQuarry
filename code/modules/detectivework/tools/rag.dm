@@ -223,6 +223,7 @@
 	if(!can_ignite())
 		visible_message(span_warning("\The [src] burns out."))
 		extinguish()
+		return
 
 	//copied from matches
 	if(isliving(loc))

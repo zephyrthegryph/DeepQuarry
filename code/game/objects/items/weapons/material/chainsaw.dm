@@ -107,7 +107,7 @@
 			reagents.remove_reagent(REAGENT_ID_FUEL, 1)
 			playsound(src, 'sound/weapons/chainsaw_turnoff.ogg',15,1)
 		if(get_fuel() <= 0)
-			to_chat(usr, "\The [src] sputters to a stop!")
+			visible_message("\The [src] sputters to a stop!")
 			turnOff()
 
 /obj/item/chainsaw/proc/get_fuel()

@@ -436,7 +436,7 @@
 		if(!LAZYLEN(pocket.contents))
 			continue
 		for(var/obj/item/stack/stack in pocket.contents)
-			if(istype(stack_to_consolidate, stack))
+			if(istype(stack_to_consolidate, stack.type))
 				stack_to_consolidate.transfer_to(stack)
 				return
 

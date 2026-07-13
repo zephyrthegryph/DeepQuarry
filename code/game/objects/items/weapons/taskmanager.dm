@@ -368,7 +368,7 @@
 		deploy_voucher(get_turf(src))
 		scancount = 0
 		scanned = list()
-		del(P)
+		qdel(P)
 		to_chat(user, span_notice("Format accepted, printing voucher!"))
 		ready = 0
 		spawn(300 SECONDS)

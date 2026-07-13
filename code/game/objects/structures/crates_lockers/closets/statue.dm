@@ -5,9 +5,12 @@
 	icon_state = "human_male"
 	density = TRUE
 	anchored = TRUE
-	health = 0 //destroying the statue kills the mob within
 	blocks_emissive = EMISSIVE_BLOCK_UNIQUE
 	closet_appearance = null
+	// The statue starts at the encased mob's health + 100 integrity (set in Initialize).
+	// Structural damage taken while petrified is transferred back to the mob on release
+	// via atom_integrity (the mob's own health is frozen by the stasis field meanwhile).
+	max_integrity = 100
 	var/intialTox = 0 	//these are here to keep the mob from taking damage from things that logically wouldn't affect a rock
 	var/intialFire = 0	//it's a little sloppy I know but it was this or the GODMODE flag. Lesser of two evils.
 	var/intialBrute = 0
@@ -16,13 +19,16 @@
 
 /obj/structure/closet/statue/Initialize(mapload, mob/living/L)
 	. = ..()
+	var/found_target = FALSE
 	if(L && (ishuman(L) || L.isMonkey() || iscorgi(L)))
+		found_target = TRUE
 		if(L.buckled)
 			L.buckled = 0
 			L.anchored = FALSE
 		L.forceMove(src)
 		L.sdisabilities |= MUTE
-		health = L.health + 100 //stoning damaged mobs will result in easier to shatter statues
+		max_integrity = L.getMaxHealth() + 100
+		update_integrity(L.health + 100) //stoning damaged mobs will result in easier to shatter statues
 		intialTox = L.getToxLoss()
 		intialFire = L.getFireLoss()
 		intialBrute = L.getBruteLoss()
@@ -39,7 +45,7 @@
 			icon_state = "corgi"
 			desc = "If it takes forever, I will wait for you..."
 
-	if(health == 0) //meaning if the statue didn't find a valid target
+	if(!found_target) //meaning if the statue didn't find a valid target
 		return INITIALIZE_HINT_QDEL
 
 	START_PROCESSING(SSobj, src)
@@ -64,7 +70,7 @@
 	for(var/mob/living/M in src)
 		M.forceMove(loc) // Might be in a belly
 		M.sdisabilities &= ~MUTE
-		M.take_overall_damage((M.health - health - 100),0) //any new damage the statue incurred is transfered to the mob
+		M.take_overall_damage((M.health + 100 - get_integrity()),0) //any new damage the statue incurred is transfered to the mob
 		M.reset_perspective() // Fixes a blackscreen flicker
 
 /obj/structure/closet/statue/open()
@@ -76,15 +82,14 @@
 /obj/structure/closet/statue/toggle()
 	return
 
-/obj/structure/closet/statue/proc/check_health()
-	if(health <= 0)
-		for(var/mob/M in src)
-			shatter(M)
+// Reaching 0 integrity shatters the statue, dusting the trapped mob.
+/obj/structure/closet/statue/atom_destruction(damage_flag)
+	for(var/mob/M in src)
+		shatter(M)
+	return ..()
 
 /obj/structure/closet/statue/bullet_act(obj/item/projectile/Proj)
-	health -= Proj.get_structure_damage()
-	check_health()
-
+	take_damage(Proj.get_structure_damage(), Proj.damage_type, BULLET)
 	return
 
 /obj/structure/closet/statue/attack_generic(mob/user, damage, attacktext, environment_smash)
@@ -95,14 +100,12 @@
 /obj/structure/closet/statue/ex_act(severity)
 	for(var/mob/M in src)
 		M.ex_act(severity)
-		health -= 60 / severity
-		check_health()
+	take_damage(60 / severity, BRUTE, BOMB)
 
 /obj/structure/closet/statue/attackby(obj/item/I as obj, mob/user as mob)
-	health -= I.force
 	user.do_attack_animation(src)
 	visible_message(span_danger("[user] strikes [src] with [I]."))
-	check_health()
+	take_damage(I.force, I.damtype, MELEE, sound_effect = FALSE)
 
 /obj/structure/closet/statue/MouseDrop_T()
 	return

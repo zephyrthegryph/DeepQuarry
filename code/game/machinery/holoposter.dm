@@ -32,6 +32,7 @@ GLOBAL_LIST_EMPTY(holoposters)
 	mytimer = addtimer(CALLBACK(src, PROC_REF(set_rand_sprite)), 30 MINUTES + rand(0, 5 MINUTES), TIMER_STOPPABLE | TIMER_LOOP)
 
 /obj/machinery/holoposter/Destroy()
+	deltimer(mytimer)
 	GLOB.holoposters -= src
 	return ..()
 

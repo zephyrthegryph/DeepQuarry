@@ -39,8 +39,8 @@
 		desc = "You can't really tell what this is."
 
 	if(R.glass_center_of_mass_x || R.glass_center_of_mass_y)
-		center_of_mass_x = R.cup_center_of_mass_x
-		center_of_mass_y = R.cup_center_of_mass_y
+		center_of_mass_x = R.glass_center_of_mass_x
+		center_of_mass_y = R.glass_center_of_mass_y
 	else
 		center_of_mass_x = 16
 		center_of_mass_y = 10
@@ -60,6 +60,7 @@
 	center_of_mass_y = 16
 
 /obj/item/reagent_containers/food/drinks/cup/on_reagent_change()
+	..()
 	if (!length(reagents?.reagent_list))
 		icon_state = "cup_empty"
 		name = "coffee cup"

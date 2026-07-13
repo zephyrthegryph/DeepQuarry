@@ -108,7 +108,8 @@
 	var/obj/itm = first?.resolve()
 	var/datum/weakref/CW = halitem[first]
 	var/client/C = CW?.resolve()
-	C.screen -= itm
+	if(C)
+		C.screen -= itm
 	qdel(itm)
 	halitem.Cut()
 

@@ -88,7 +88,9 @@
 /obj/item/integrated_circuit/list/at/do_work()
 	var/list/input_list = get_pin_data(IC_INPUT, 1)
 	var/index = get_pin_data(IC_INPUT, 2)
-	var/item = input_list[index]
+	var/item
+	if(islist(input_list) && isnum(index) && index >= 1 && index <= input_list.len)
+		item = input_list[index]
 	set_pin_data(IC_OUTPUT, 1, item)
 	push_data()
 	activate_pin(2)
@@ -139,7 +141,8 @@
 	var/list/input_list = get_pin_data(IC_INPUT, 1)
 	var/index = get_pin_data(IC_INPUT, 2)
 	var/item = get_pin_data(IC_INPUT, 3)
-	input_list[index] = item
+	if(islist(input_list) && isnum(index) && index >= 1 && index <= input_list.len)
+		input_list[index] = item
 	set_pin_data(IC_OUTPUT, 1, input_list)
 	push_data()
 	activate_pin(2)

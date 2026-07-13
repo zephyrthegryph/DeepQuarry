@@ -16,11 +16,11 @@
 			if (!(stat & NOPOWER))
 				if(stat & BROKEN)
 					add_overlay("sparks_broken")
-				else if (health < maxhealth * 3/4)
+				else if (get_integrity() < max_integrity * 3/4)
 					add_overlay("sparks_damaged")
 			if(welded)
 				add_overlay("welded")
-		else if (health < maxhealth * 3/4 && !(stat & NOPOWER))
+		else if (get_integrity() < max_integrity * 3/4 && !(stat & NOPOWER))
 			add_overlay("sparks_damaged")
 	else if (locked)
 		icon_state = "o_door_locked"
@@ -148,7 +148,7 @@
 	icon_state_closed = "pdoor1"
 	icon_state_closing = "pdoorc1"
 	icon_state = "pdoor1"
-	maxhealth = 600
+	max_integrity = 600
 	heat_proof = 1 //just so repairing them doesn't try to fireproof something that never takes fire damage
 
 /obj/machinery/door/blast/angled/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume)
@@ -166,7 +166,7 @@
 	icon_state_closed = "shutter1"
 	icon_state_closing = "shutterc1"
 	icon_state = "shutter1"
-	maxhealth = 600
+	max_integrity = 600
 
 /obj/machinery/door/blast/angled_shutter/open
 	icon_state = "shutter0"

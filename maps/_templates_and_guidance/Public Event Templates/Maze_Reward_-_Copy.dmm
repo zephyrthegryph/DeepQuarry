@@ -3,13 +3,13 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 1;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 8;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /turf/simulated/floor/flesh/colour{
@@ -20,13 +20,13 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 4;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 1;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/effect/spider/stickyweb/dark{
@@ -42,12 +42,12 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 1;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/structure/fans/hardlight/colorable{
@@ -69,7 +69,7 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 4;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/effect/spider/stickyweb/dark{
@@ -85,12 +85,12 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 1;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/effect/spider/stickyweb{
@@ -114,12 +114,12 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 1;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/effect/spider/stickyweb{
@@ -139,7 +139,7 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 8;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/effect/spider/stickyweb{
@@ -158,13 +158,13 @@
 "fR" = (
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 8;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/effect/spider/stickyweb/dark{
@@ -185,7 +185,7 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 8;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/effect/spider/stickyweb/dark{
@@ -199,12 +199,12 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 8;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /turf/simulated/floor/gorefloor,
@@ -213,12 +213,12 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 1;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/effect/spider/stickyweb/dark{
@@ -238,7 +238,7 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 1;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/effect/spider/stickyweb/dark{
@@ -257,13 +257,13 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 8;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 4;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /turf/simulated/floor/flesh/colour{
@@ -278,12 +278,12 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 1;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/effect/spider/stickyweb/dark{
@@ -301,12 +301,12 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 4;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/effect/spider/stickyweb/dark{
@@ -321,13 +321,13 @@
 "nA" = (
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 8;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /turf/simulated/floor/gorefloor,
@@ -340,13 +340,13 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 8;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 1;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /turf/simulated/floor/gorefloor,
@@ -359,13 +359,13 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 1;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 4;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /turf/simulated/floor/gorefloor,
@@ -374,13 +374,13 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 8;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 4;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/effect/step_trigger/message{
@@ -395,7 +395,7 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 4;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/effect/map_effect/interval/sound_emitter/geiger/high,
@@ -408,13 +408,13 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 4;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 1;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /turf/simulated/floor/gorefloor,
@@ -423,12 +423,12 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 4;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/effect/spider/stickyweb/dark{
@@ -442,7 +442,7 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 1;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/effect/spider/stickyweb/dark{
@@ -465,12 +465,12 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 8;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /turf/simulated/floor/flesh/colour{
@@ -481,12 +481,12 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 4;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /turf/simulated/floor/flesh/colour{
@@ -497,13 +497,13 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 4;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 8;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/effect/step_trigger/message{
@@ -516,12 +516,12 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 4;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/effect/spider/stickyweb{
@@ -567,7 +567,7 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 8;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /turf/simulated/floor/flesh/colour{
@@ -578,13 +578,13 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 8;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 1;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /turf/simulated/floor/flesh/colour{
@@ -607,13 +607,13 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 8;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 4;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /turf/simulated/floor/flesh/colour{
@@ -628,12 +628,12 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 1;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /turf/simulated/floor/flesh/colour{
@@ -643,13 +643,13 @@
 "Dn" = (
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 4;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /turf/simulated/floor/gorefloor,
@@ -658,7 +658,7 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 1;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /turf/simulated/floor/gorefloor,
@@ -692,7 +692,7 @@
 "FX" = (
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /turf/simulated/floor/flesh/colour{
@@ -714,7 +714,7 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 1;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/effect/spider/stickyweb{
@@ -729,13 +729,13 @@
 "In" = (
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 4;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /turf/simulated/floor/flesh/colour{
@@ -769,7 +769,7 @@
 "KI" = (
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /turf/simulated/floor/gorefloor,
@@ -778,12 +778,12 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 4;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/effect/spider/stickyweb{
@@ -798,13 +798,13 @@
 "Lq" = (
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 8;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /turf/simulated/floor/flesh/colour{
@@ -820,13 +820,13 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 8;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 1;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /turf/simulated/floor/flesh/colour{
@@ -837,12 +837,12 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 1;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /turf/simulated/floor/gorefloor,
@@ -866,7 +866,7 @@
 "NI" = (
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/effect/spider/stickyweb/dark{
@@ -879,13 +879,13 @@
 "NO" = (
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 8;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/effect/spider/stickyweb{
@@ -901,7 +901,7 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 1;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /turf/simulated/floor/flesh/colour{
@@ -912,13 +912,13 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 8;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 1;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/effect/spider/stickyweb/dark{
@@ -932,13 +932,13 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 8;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 4;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/effect/step_trigger/message{
@@ -954,7 +954,7 @@
 "Sa" = (
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/effect/spider/stickyweb/dark{
@@ -970,13 +970,13 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 1;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 8;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /turf/simulated/floor/gorefloor,
@@ -990,13 +990,13 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 4;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 8;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/effect/step_trigger/message{
@@ -1015,7 +1015,7 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 4;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /turf/simulated/floor/flesh/colour{
@@ -1026,12 +1026,12 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 4;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /turf/simulated/floor/gorefloor,
@@ -1040,13 +1040,13 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 8;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 4;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/effect/spider/stickyweb/dark{
@@ -1065,13 +1065,13 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 1;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 4;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /turf/simulated/floor/flesh/colour{
@@ -1082,13 +1082,13 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 4;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 1;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /turf/simulated/floor/flesh/colour{
@@ -1103,13 +1103,13 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 8;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 1;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/effect/spider/stickyweb{
@@ -1131,7 +1131,7 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 8;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/effect/spider/stickyweb/dark{
@@ -1147,13 +1147,13 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 4;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 8;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /turf/simulated/floor/flesh/colour{
@@ -1174,13 +1174,13 @@
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 8;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/structure/window/phoronreinforced{
 	desc = "You gaze upon a nightmare of your own mind as it feels as if the horrors before you can harm you, yet the thought of keeping yourself alive cracks upon the glass you gaze at. You have to keep yourself sane. . .";
 	dir = 1;
-	maxhealth = 500;
+	max_integrity = 500;
 	name = "Veil of sanity"
 	},
 /obj/effect/spider/stickyweb{

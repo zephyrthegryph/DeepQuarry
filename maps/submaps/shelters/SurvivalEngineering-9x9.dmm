@@ -48,7 +48,7 @@
 /obj/item/clothing/head/helmet/space/void/atmos,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced,
 /obj/machinery/door/window/westleft{
@@ -194,7 +194,7 @@
 /obj/item/clothing/head/helmet/space/void/atmos,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 1

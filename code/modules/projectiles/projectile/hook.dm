@@ -122,7 +122,10 @@
 	if(istype(target,/turf))
 		if(launcher_intent)
 			if(launcher_intent != I_HELP && !done_mob_unique)
-				var/target_mob = pick(/mob/living in target.contents)
+				var/list/possible_mobs = list()
+				for(var/mob/living/possible_mob in target.contents)
+					possible_mobs += possible_mob
+				var/target_mob = length(possible_mobs) ? pick(possible_mobs) : null
 
 				if(!target_mob)
 					return

@@ -82,7 +82,6 @@
 	efficiency = mlrating
 	active_power_usage = max(100, 2000 / caprating)
 
-	dq_apply_material_synergies(src)
 /obj/machinery/microwave/Initialize(mapload)
 	. = ..()
 
@@ -501,7 +500,7 @@
 	return
 
 /obj/machinery/microwave/proc/wzhzhzh() // Whoever named this proc is fucking literally Satan. ~ Z
-	visible_message(span_notice("\The [src] " + visible_action + "."), span_notice("You hear a " + audible_action ? audible_action : "[src]" + "."))
+	visible_message(span_notice("\The [src] [visible_action]."), span_notice("You hear a [audible_action ? audible_action : "[src]"]."))
 	operating = TRUE
 	update_use_power(USE_POWER_ACTIVE)
 	post_state_change()

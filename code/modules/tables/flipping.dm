@@ -1,11 +1,11 @@
 
 /obj/structure/table/proc/straight_table_check(direction)
-	if(health > 100)
+	if(get_integrity() > 100)
 		return 0
 	var/obj/structure/table/T
 	for(var/angle in list(-90,90))
 		T = locate() in get_step(src.loc,turn(direction,angle))
-		if(T && T.flipped == 0 && T.material.name == material.name)
+		if(T && T.flipped == 0 && T.material && T.material.name == material.name)
 			return 0
 	T = locate() in get_step(src.loc,direction)
 	if (!T || T.flipped == 1 || T.material != material)

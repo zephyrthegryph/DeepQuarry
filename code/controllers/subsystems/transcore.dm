@@ -98,13 +98,11 @@ SUBSYSTEM_DEF(transcore)
 	var/list/current_run = src.current_run
 	while(length(current_run))
 		var/datum/transhuman/mind_record/curr_MR = current_run[length(current_run)]
-		var/datum/transcore_db/db = current_run[curr_MR]
 		current_run.len--
 
 		//Invalid record
 		if(!curr_MR)
-			log_runtime("Tried to process [name] in transcore w/o a record!")
-			db.backed_up -= curr_MR.mindname
+			log_runtime("Tried to process a null mind_record in transcore w/o a record!")
 			continue
 
 		//Onetimes do not get processing or notifications

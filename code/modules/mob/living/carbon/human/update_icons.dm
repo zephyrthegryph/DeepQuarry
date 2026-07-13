@@ -469,7 +469,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 	if(h_style)
 		var/datum/sprite_accessory/hair/hair_style = GLOB.hair_styles_list[h_style]
 		if(head && (head.flags_inv & BLOCKHEADHAIR))
-			if(!(hair_style.flags & HAIR_VERY_SHORT))
+			if(hair_style && !(hair_style.flags & HAIR_VERY_SHORT))
 				hair_style = GLOB.hair_styles_list["Short Hair"]
 
 		if(hair_style && (src.species.get_bodytype(src) in hair_style.species_allowed))
@@ -707,7 +707,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 		if(our_glasses.glasses_layer_above)
 			glasses_layer = GLASSES_LAYER_ALT
 
-	overlays_standing[glasses_layer] = glasses.make_worn_icon(body_type = species.get_bodytype(src), slot_name = slot_gloves_str, default_icon = INV_EYES_DEF_ICON, default_layer = glasses_layer)
+	overlays_standing[glasses_layer] = glasses.make_worn_icon(body_type = species.get_bodytype(src), slot_name = slot_glasses_str, default_icon = INV_EYES_DEF_ICON, default_layer = glasses_layer)
 
 	apply_layer(glasses_layer)
 
@@ -966,7 +966,6 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 /mob/living/carbon/human/update_inv_r_hand()
 	if(QDESTROYING(src))
 		return
-	refresh_combat_popup_menus() // a held weapon may have changed → re-evaluate the right-click menu
 
 	remove_layer(R_HAND_LAYER)
 
@@ -980,7 +979,6 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 /mob/living/carbon/human/update_inv_l_hand()
 	if(QDESTROYING(src))
 		return
-	refresh_combat_popup_menus() // a held weapon may have changed → re-evaluate the right-click menu
 
 	remove_layer(L_HAND_LAYER)
 

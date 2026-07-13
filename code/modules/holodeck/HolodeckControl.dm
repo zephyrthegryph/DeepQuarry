@@ -195,7 +195,7 @@
 	..()
 
 /obj/machinery/computer/HolodeckControl/power_change()
-	var/oldstat
+	var/oldstat = stat
 	..()
 	if (stat != oldstat && active && (stat & NOPOWER))
 		emergencyShutdown()
@@ -341,7 +341,7 @@
 				s.set_up(2, 1, T)
 				s.start()
 				if(T)
-					T.temperature = 5000
+					T.set_temperature(5000)  // arena-authoritative; not the stale DM mirror
 					T.hotspot_expose(50000,50000,1)
 		if(L.name=="Holocarp Spawn")
 			holographic_mobs += new /mob/living/simple_mob/animal/space/carp/holodeck(L.loc)

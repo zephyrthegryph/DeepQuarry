@@ -807,6 +807,8 @@
 			M = loc
 		if(ismob(loc.loc))
 			M = loc.loc // This is about as terse as I can make my solution to the whole 'collar won't work when attached as accessory' thing.
+		if(!M)
+			return
 		to_chat(M,span_danger("You feel a sharp shock!"))
 		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 		s.set_up(3, 1, M)
@@ -974,6 +976,8 @@
 		if(ismob(loc.loc))
 			M = loc.loc // This is about as terse as I can make my solution to the whole 'collar won't work when attached as accessory' thing.
 		var/mob/living/carbon/human/H = M
+		if(!istype(H))
+			return
 		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 		if(!H.resizable)
 			H.visible_message(span_warning("The space around [H] compresses for a moment but then nothing happens."),span_notice("The space around you distorts but nothing happens to you."))
@@ -1072,6 +1076,8 @@
 		if(ismob(loc.loc))
 			M = loc.loc // This is about as terse as I can make my solution to the whole 'collar won't work when attached as accessory' thing.
 		var/mob/living/carbon/human/H = M
+		if(!istype(H))
+			return
 		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 		if(!H.resizable)
 			H.visible_message(span_warning("The space around [H] compresses for a moment but then nothing happens."),span_notice("The space around you distorts but nothing happens to you."))
@@ -1144,6 +1150,8 @@
 		if(ismob(loc.loc))
 			M = loc.loc // This is about as terse as I can make my solution to the whole 'collar won't work when attached as accessory' thing.
 		var/mob/living/carbon/human/H = M
+		if(!istype(H))
+			return
 		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 		if(!H.resizable)
 			H.visible_message(span_warning("The space around [H] compresses for a moment but then nothing happens."),span_notice("The space around you distorts but nothing happens to you."))

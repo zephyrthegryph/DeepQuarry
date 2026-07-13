@@ -70,16 +70,9 @@
 /datum/antagonist/proc/print_player_full(datum/mind/ply)
 	var/text = print_player_lite(ply)
 
-	var/TC_uses = FALSE
-	var/uplink_true = FALSE
-	var/purchases = ""
-	for(var/mob/M in GLOB.player_list)
-		if(M.mind && M.mind.used_TC)
-			TC_uses += M.mind.used_TC
-			uplink_true = TRUE
-			purchases += get_uplink_purchases(M.mind)
-	if(uplink_true)
-		text += " (used [TC_uses] TC)"
+	if(ply && ply.used_TC)
+		text += " (used [ply.used_TC] TC)"
+		var/purchases = get_uplink_purchases(ply)
 		if(purchases)
 			text += "<br>[purchases]"
 

@@ -82,7 +82,6 @@
 		icon_state = "guest-invalid"
 		update_icon()
 		expired = 1
-		world.time = expiration_time
 		return
 
 /////////////////////////////////////////////

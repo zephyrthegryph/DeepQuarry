@@ -98,7 +98,7 @@
 			update_icon()
 			var/mob/living/M = loc // TGMC Ammo HUD
 			if(istype(M)) // TGMC Ammo HUD
-				M?.hud_used.update_ammo_hud(M, src) // TGMC Ammo HUD
+				M.hud_used?.update_ammo_hud(M, src) // TGMC Ammo HUD
 		else
 			charge_tick = 0
 	return 1
@@ -141,7 +141,7 @@
 					playsound(src, 'sound/weapons/flipblade.ogg', 50, 1)
 					update_icon()
 					update_held_icon()
-					user.hud_used.update_ammo_hud(user, src) // TGMC Ammo HUD
+					user.hud_used?.update_ammo_hud(user, src) // TGMC Ammo HUD
 		else
 			to_chat(user, span_notice("This cell is not fitted for [src]."))
 	return

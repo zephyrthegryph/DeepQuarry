@@ -41,7 +41,8 @@
 			L = holder
 		if(L)
 			var/datum/component/antag/changeling/comp = L.GetComponent(/datum/component/antag/changeling)
-			comp.chem_charges = between(0, comp.chem_charges - chem_maintenance, comp.chem_storage)
+			if(comp)
+				comp.chem_charges = between(0, comp.chem_charges - chem_maintenance, comp.chem_storage)
 
 /datum/modifier/changeling/thermal_sight
 	name = "Thermal Adaptation"

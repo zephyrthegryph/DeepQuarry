@@ -6,7 +6,7 @@
 	if(input > 0)
 		// Gain around one level per 50 nutrition.
 		if(prob(input * 2))
-			power_charge = min(power_charge++, 10)
+			power_charge = min(power_charge + 1, 10)
 			if(power_charge == 10)
 				adjustToxLoss(-10)
 

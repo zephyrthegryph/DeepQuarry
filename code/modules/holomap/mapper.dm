@@ -100,7 +100,7 @@
 	var/icon/canvas = icon(HOLOMAP_ICON, "blank")
 	canvas.Crop(1,1,world.maxx,world.maxy)
 	canvas.DrawBox("#A7BE97",1,1,world.maxx,world.maxy)
-	tmp.icon = icon
+	tmp.icon = canvas
 	map_image_cache["bad"] = tmp
 
 	if(uses_power && cell_type)
@@ -310,8 +310,8 @@
 				mob_indicator = HOLOMAP_OTHER
 
 		// The marker is worn by a human
-		else if(ishuman(loc))
-			var/mob/living/carbon/human/H = loc
+		else if(ishuman(HC.loc))
+			var/mob/living/carbon/human/H = HC.loc
 			if(H.stat == DEAD)
 				mob_indicator = HOLOMAP_DEAD
 			else
@@ -414,7 +414,7 @@
 	if(in_list) // mapped in turned on
 		in_list = TRUE
 		GLOB.mapping_beacons += src
-		icon_state = initial(icon_state) + in_list ? "_on" : ""
+		icon_state = initial(icon_state) + (in_list ? "_on" : "")
 
 /obj/item/holomap_beacon/attack_self(mob/user)
 	. = ..(user)

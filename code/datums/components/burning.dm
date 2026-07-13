@@ -70,6 +70,16 @@ GLOBAL_DATUM_INIT(fire_overlay, /mutable_appearance, mutable_appearance('icons/e
 
 /datum/component/burning/process(seconds_per_tick)
 	var/atom/atom_parent = parent
+	if(QDELETED(atom_parent))
+		return // parent's gone; the component tears down with it
+	// A burnt-down object can linger at <=0 integrity in a "broken"
+	// (integrity_failure) state without being qdel'd. take_damage() CRASHes on a
+	// <=0-integrity atom (atom_defense.dm), so stop burning it — put the fire out
+	// instead of re-damaging a wreck every tick (this was crashing repeatedly on
+	// benches/furniture caught in a sustained hotspot once atmos fires actually run).
+	if(atom_parent.uses_integrity && atom_parent.atom_integrity <= 0)
+		atom_parent.extinguish()
+		return
 	// Check if the parent somehow became fireproof, remove component if so
 	if(atom_parent.resistance_flags & FIRE_PROOF)
 		atom_parent.extinguish()

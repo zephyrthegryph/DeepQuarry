@@ -17,6 +17,8 @@
 
 /obj/item/gun/proc/get_dna(mob/user)
 	var/mob/living/M = user
+	if(!istype(M) || !M.dna)
+		return FALSE
 	if(!attached_lock.controller_lock)
 
 		if(attached_lock.stored_dna && (M.dna.unique_enzymes in attached_lock.stored_dna))

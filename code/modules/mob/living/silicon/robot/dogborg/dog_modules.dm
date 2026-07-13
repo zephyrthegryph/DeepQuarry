@@ -31,11 +31,13 @@
 	else
 		to_chat(user, span_warning("Pressure: [round(pressure,0.1)] kPa"))
 	if(total_moles)
-		for(var/gas_id in environment.get_gases())
-			var/moles = environment.get_moles(gas_id)
-			to_chat(user, span_notice("[gas_id]: [round((moles / total_moles) * 100)]%"))
-		var/env_temp = environment.return_temperature()
-		to_chat(user, span_notice("Temperature: [round(env_temp-T0C,0.1)]&deg;C ([round(env_temp,0.1)]K)"))
+		// was XGM env.gas[g] iteration; under LINDA, env.gases keys are
+		// /datum/gas type paths and the moles live at gases[g][MOLES].
+		for(var/datum/gas/g as anything in environment.get_gases())
+			var/moles = environment.get_moles(g)
+			to_chat(user, span_notice("[initial(g.name)]: [round((moles / total_moles) * 100)]%"))
+		var/environment_temperature = environment.return_temperature()
+		to_chat(user, span_notice("Temperature: [round(environment_temperature-T0C,0.1)]&deg;C ([round(environment_temperature,0.1)]K)"))
 
 /obj/item/boop_module/afterattack(obj/O, mob/user as mob, proximity)
 	if(!proximity)
@@ -211,7 +213,7 @@
 			if(do_after (user, 5 SECONDS, target))
 				user.visible_message("[user] finishes eating \the [target.name].", span_notice("You finish eating \the [target.name]."))
 				user << span_notice("You finish off \the [target.name].")
-				del(target)
+				qdel(target)
 				var/mob/living/silicon/robot/R = user
 				R.cell.charge = R.cell.charge + 250
 			busy = 0 // prevents abuse

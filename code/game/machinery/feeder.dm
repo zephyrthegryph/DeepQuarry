@@ -54,13 +54,13 @@
 /obj/machinery/feeder/attackby(obj/item/W as obj, mob/user as mob)
 	if(istype(W, /obj/item/reagent_containers))
 		if(!isnull(beaker))
-			. += "There is already a reagent container inserted!"
+			to_chat(user, span_warning("There is already a reagent container inserted!"))
 			return
 
 		user.drop_item()
 		W.loc = src
 		beaker = W
-		. += "You insert \the [W] into \the [src]."
+		to_chat(user, span_notice("You insert \the [W] into \the [src]."))
 		update_icon()
 		return
 

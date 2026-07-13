@@ -91,6 +91,8 @@
 
 // This creates a graphical warning to where the shuttle is about to land, in approximately five seconds.
 /datum/shuttle/proc/create_warning_effect(obj/effect/shuttle_landmark/destination)
+	if(!destination) // No landmark, no warning to draw — callers may legitimately pass a null interim.
+		return
 	destination.create_warning_effect(src)
 
 // Return false to abort a jump, before the 'warmup' phase.
@@ -112,6 +114,9 @@
 	return
 
 /datum/shuttle/proc/short_jump(obj/effect/shuttle_landmark/destination)
+	if(!destination) // Jumping to nowhere would runtime in attempt_move; refuse up front.
+		log_shuttle("Shuttle [src] refused short_jump(): null destination landmark.")
+		return
 	if(moving_status != SHUTTLE_IDLE)
 		return
 
@@ -150,6 +155,9 @@
 // TODO - Far Future - Would be great if this was driven by process too.
 /datum/shuttle/proc/long_jump(obj/effect/shuttle_landmark/destination, obj/effect/shuttle_landmark/interim, travel_time)
 	//to_world("shuttle/long_jump: current_location=[current_location], destination=[destination], interim=[interim], travel_time=[travel_time]")
+	if(!destination || !interim) // Both landmarks get dereferenced below; a null either way is a config error (e.g. a destination whose map landmark was trimmed).
+		log_shuttle("Shuttle [src] refused long_jump(): destination=[destination || "null"], interim=[interim || "null"].")
+		return
 	if(moving_status != SHUTTLE_IDLE)
 		return
 
@@ -243,6 +251,9 @@
 // Move the shuttle to destination if possible.
 // Returns TRUE if we actually moved, otherwise FALSE.
 /datum/shuttle/proc/attempt_move(obj/effect/shuttle_landmark/destination, interim = FALSE)
+	if(!destination)
+		log_shuttle("Shuttle [src] aborting attempt_move(): null destination landmark.")
+		return FALSE
 	if(current_location == destination)
 		if(debug_logging)
 			log_shuttle("Shuttle [src] attempted to move to [destination] but is already there!")

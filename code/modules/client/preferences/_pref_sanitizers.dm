@@ -221,7 +221,7 @@
 			value[loadout_key] = list()
 			continue
 		var/total_cost = 0
-		for(var/gear_name in active_gear_list)
+		for(var/gear_name in active_gear_list.Copy())
 			var/datum/gear/G = GLOB.gear_datums[gear_name]
 			if(!G)
 				active_gear_list -= gear_name

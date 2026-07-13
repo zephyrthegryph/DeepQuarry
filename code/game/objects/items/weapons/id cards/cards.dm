@@ -224,7 +224,7 @@
 			sprite_stack.Add("bar-blue")
 		else if(bandchoice == "purple")
 			sprite_stack.Add("bar-purple")
-		else if(bandchoice == "ran")
+		else if(bandchoice == "tan")
 			sprite_stack.Add("bar-tan")
 		else if(bandchoice == "pink")
 			sprite_stack.Add("bar-pink")

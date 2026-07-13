@@ -273,7 +273,4 @@
 		GLOB.entopic_users -= my_mob
 		if(my_mob.client)
 			my_mob.client.images -= GLOB.entopic_images
-
-/mob/Destroy()
-	. = ..()
-	GLOB.entopic_users -= src
+// /mob/Destroy() cleanup of GLOB.entopic_users folded into the canonical /mob/Destroy() in mob.dm

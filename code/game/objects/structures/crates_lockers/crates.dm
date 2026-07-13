@@ -323,10 +323,11 @@
 	if(!gas)	return null
 	var/datum/gas_mixture/newgas = new/datum/gas_mixture()
 	newgas.copy_from(gas)
-	if(newgas.return_temperature() <= target_temp)	return
+	var/newgas_temperature = newgas.return_temperature()
+	if(newgas_temperature <= target_temp)	return
 
-	if((newgas.return_temperature() - cooling_power) > target_temp)
-		newgas.set_temperature(newgas.return_temperature() - cooling_power)
+	if((newgas_temperature - cooling_power) > target_temp)
+		newgas.set_temperature(newgas_temperature - cooling_power)
 	else
 		newgas.set_temperature(target_temp)
 	return newgas
@@ -770,7 +771,7 @@
 	if(!(Proj.damage_type == BRUTE || Proj.damage_type == BURN))
 		return
 
-	if(locked && tamper_proof && health <= Proj.damage)
+	if(locked && tamper_proof && get_integrity() <= Proj.damage)
 		if(tamper_proof == 2) // Mainly used for events to prevent any chance of opening the box improperly.
 			visible_message(span_bolddanger("The anti-tamper mechanism of [src] triggers an explosion!"))
 			var/turf/T = get_turf(src.loc)

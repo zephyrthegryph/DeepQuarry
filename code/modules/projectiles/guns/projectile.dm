@@ -47,8 +47,8 @@
 		if(ispath(ammo_type) && (load_method & (SINGLE_CASING|SPEEDLOADER)))
 			for(var/i in 1 to max_shells)
 				loaded += new ammo_type(src)
-				if(random_start_ammo)
-					loaded.Cut(0,rand(0,max_shells))
+			if(random_start_ammo)
+				loaded.Cut(0,rand(0,max_shells))
 		if(ispath(magazine_type) && (load_method & MAGAZINE))
 			ammo_magazine = new magazine_type(src)
 			allowed_magazines += /obj/item/ammo_magazine/smart
@@ -517,10 +517,53 @@
 	else
 		return FALSE
 
+// Feeds rounds one at a time from a loose handful into a gun with an internal
+// store (revolver / shotgun / internal-mag), respecting capacity and bolt state.
+/obj/item/gun/projectile/proc/feed_from_handful(obj/item/ammo_magazine/handful/H, mob/user)
+	if(!(load_method & (SINGLE_CASING|SPEEDLOADER)) || (misc_loading_flags & INTERNAL_MAG_SEPARATE))
+		to_chat(user, span_warning("You can't thumb loose rounds into \the [src]."))
+		return
+	if(H.caliber != caliber)
+		to_chat(user, span_warning("\The [H] doesn't fit \the [src]."))
+		return
+	if(only_open_load && !bolt_open)
+		to_chat(user, span_warning("[src] must have its bolt open to be loaded!"))
+		return
+	if(loaded.len >= max_shells)
+		to_chat(user, span_warning("[src] is full."))
+		return
+	to_chat(user, span_notice("You start feeding rounds into \the [src]."))
+	var/count = 0
+	while(!QDELETED(H) && H.stored_ammo.len && loaded.len < max_shells)
+		var/obj/item/ammo_casing/rd = H.stored_ammo[H.stored_ammo.len]
+		if(rd.caliber != caliber)
+			break
+		if(!do_after(user, reload_time, src))
+			break
+		// re-validate after the wait; the stack may have shrunk or moved.
+		if(QDELETED(H) || !H.stored_ammo.len || loaded.len >= max_shells)
+			break
+		rd = H.stored_ammo[H.stored_ammo.len]
+		H.stored_ammo -= rd
+		rd.forceMove(src)
+		loaded.Insert(1, rd) //add to the head of the list
+		count++
+		playsound(src, 'sound/weapons/empty.ogg', 50, 1)
+		H.update_icon()
+		user.hud_used.update_ammo_hud(user, src)
+	if(count)
+		user.visible_message("[user] feeds [count] round\s into [src].", span_notice("You load [count] round\s into [src]."))
+	if(!QDELETED(H) && !H.stored_ammo.len)
+		qdel(H)
+	update_icon()
+
 // Attempts to load A into src, depending on the type of thing being loaded and the load_method.
 // Handles magazine/speedloader/single-casing/storage bulk loads, including the manual-chamber
 // and bolt mechanics keyed off auto_loading_type.
 /obj/item/gun/projectile/proc/load_ammo(obj/item/A, mob/user)
+	if(istype(A, /obj/item/ammo_magazine/handful)) //loose-round stack: deliberate per-round feed
+		feed_from_handful(A, user)
+		return
 	if(istype(A, /obj/item/ammo_magazine))
 		var/obj/item/ammo_magazine/AM = A
 		if(!(load_method & AM.mag_type) || caliber != AM.caliber || allowed_magazines && !is_type_in_list(A, allowed_magazines))

@@ -60,6 +60,10 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 	var/last_find_name
 	var/datum/artifact_find/artifact_find
 	var/ignore_mapgen
+	/// TRUE on blank generator-substrate turfs (expedition_blank.dmm): skips all
+	/// Initialize-time decor (ore rolls, detail, update_icon) because a carve
+	/// pass repaints the z-level immediately after load. See Initialize().
+	var/pregen_substrate = FALSE
 
 	var/static/list/ore_types = list(
 		ORE_HEMATITE = /obj/item/ore/iron,
@@ -166,9 +170,12 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 /turf/simulated/mineral/floor/ignore_mapgen
 	ignore_mapgen = 1
 
+// Both return TRUE only when the turf actually changed state — the cave carver
+// uses this to skip the post-carve update_icon pass for the (majority of)
+// cells that were already the right type.
 /turf/simulated/mineral/proc/make_floor()
 	if(!density && !opacity)
-		return
+		return FALSE
 	density = FALSE
 	opacity = 0
 	blocks_air = 0
@@ -183,10 +190,11 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 		air = create_gas_mixture()
 	clear_ore_effects()
 	update_general()
+	return TRUE
 
 /turf/simulated/mineral/proc/make_wall()
 	if(density && opacity)
-		return
+		return FALSE
 	density = TRUE
 	opacity = 1
 	blocks_air = 1
@@ -197,6 +205,7 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 	if(air)
 		QDEL_NULL(air)
 	update_general()
+	return TRUE
 
 /turf/simulated/mineral/proc/update_general()
 	recalculate_directional_opacity()
@@ -226,6 +235,12 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 
 /turf/simulated/mineral/Initialize(mapload)
 	. = ..()
+	if(pregen_substrate)
+		// Blank generator substrate (expedition_blank.dmm): the cave carver
+		// re-rolls ore, repaints icons and re-details every touched cell right
+		// after load, so decor work here is 65k redundant update_icon/neighbor
+		// scans per site generation. Skip it; the carve pass owns the visuals.
+		return
 	if(turf_resource_types & TURF_HAS_RARE_ORE)
 		make_ore(1)
 	else if (turf_resource_types & TURF_HAS_ORE)

@@ -29,7 +29,7 @@ GLOBAL_DATUM(borers, /datum/antagonist/borer)
 	..(1)
 	GLOB.borers = src
 
-/datum/antagonist/xenos/borer/get_extra_panel_options(datum/mind/player)
+/datum/antagonist/borer/get_extra_panel_options(datum/mind/player)
 	return "<a href='byond://?src=\ref[src];[HrefToken()];move_to_spawn=\ref[player.current]'>\[put in host\]</a>"
 
 /datum/antagonist/borer/create_objectives(datum/mind/player)
@@ -60,7 +60,9 @@ GLOBAL_DATUM(borers, /datum/antagonist/borer)
 			borer.host_brain.real_name = host.real_name
 			return
 		// Place them at a vent if they can't get a host.
-		borer.forceMove(get_turf(pick(get_vents())))
+		var/list/vents = get_vents()
+		if(vents.len)
+			borer.forceMove(get_turf(pick(vents)))
 
 /datum/antagonist/borer/attempt_random_spawn()
 	if(CONFIG_GET(flag/aliens_allowed)) ..()

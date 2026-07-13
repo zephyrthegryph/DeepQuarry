@@ -33,6 +33,16 @@
 		detect()
 	set_light(3, 1, newcolor)
 
+/obj/machinery/hyperpad/centre/Destroy()
+	if(map_pad_id && mapped_hyper_pads[map_pad_id] == src)
+		mapped_hyper_pads -= map_pad_id
+	for(var/obj/machinery/hyperpad/P in linked)
+		P.primary = null
+		qdel(P)
+	linked.Cut()
+	linked_pad = null
+	return ..()
+
 /obj/machinery/hyperpad/operable()
 	return 1
 

@@ -502,8 +502,7 @@
 		qdel(O)
 	else if(istype(O, /obj/effect/alien/weeds/))
 		var/obj/effect/alien/weeds/alien_weeds = O
-		alien_weeds.health -= rand(15, 35)
-		alien_weeds.healthcheck()
+		alien_weeds.take_damage(rand(15, 35), BRUTE)
 
 /datum/reagent/toxin/plantbgone/affect_blood(mob/living/carbon/M, alien, removed)
 	if(alien == IS_DIONA)

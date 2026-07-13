@@ -448,7 +448,7 @@
 	},
 /obj/structure/window/reinforced/survival_pod,
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/structure/window/reinforced/survival_pod{
@@ -581,7 +581,7 @@
 	},
 /obj/structure/window/reinforced/survival_pod,
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/structure/window/reinforced/survival_pod{
@@ -788,7 +788,7 @@
 	},
 /obj/structure/window/reinforced/survival_pod,
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/structure/window/reinforced/survival_pod{
@@ -869,7 +869,7 @@
 	dir = 4
 	},
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/structure/window/reinforced/survival_pod{
@@ -966,7 +966,7 @@
 	dir = 4
 	},
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/structure/window/reinforced/survival_pod{
@@ -985,7 +985,7 @@
 	dir = 1
 	},
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/structure/window/reinforced/survival_pod{
@@ -1090,7 +1090,7 @@
 	dir = 4
 	},
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/structure/window/reinforced/survival_pod{
@@ -1226,7 +1226,7 @@
 	dir = 4
 	},
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/structure/window/reinforced/survival_pod{
@@ -1781,7 +1781,7 @@
 	dir = 4
 	},
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/structure/window/reinforced/survival_pod{
@@ -1823,7 +1823,7 @@
 	dir = 4
 	},
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/structure/window/reinforced/survival_pod{
@@ -2295,7 +2295,7 @@
 	dir = 1
 	},
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/structure/window/reinforced/survival_pod{
@@ -2368,7 +2368,7 @@
 	},
 /obj/structure/window/reinforced/survival_pod,
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/machinery/door/firedoor/border_only,
@@ -2381,7 +2381,7 @@
 	},
 /obj/structure/window/reinforced/survival_pod,
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/machinery/door/firedoor/border_only,
@@ -2397,7 +2397,7 @@
 	},
 /obj/structure/window/reinforced/survival_pod,
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/machinery/door/firedoor/border_only,
@@ -6157,7 +6157,7 @@
 	},
 /obj/machinery/door/airlock/voidcraft/survival_pod{
 	id_tag = null;
-	maxhealth = 8000000000;
+	max_integrity = 8000000000;
 	normalspeed = 0;
 	req_one_access = null
 	},
@@ -7631,7 +7631,7 @@
 /area/survivalpod/superpose/LoneHome)
 "dZk" = (
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/structure/shuttle/window,
@@ -8866,7 +8866,7 @@
 /obj/item/clothing/head/helmet/space/void/atmos,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced,
 /obj/machinery/door/window/westleft{
@@ -9426,7 +9426,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/shuttle/plating,
 /area/survivalpod/superpose/CrashedQurantineShip)
@@ -9565,7 +9565,7 @@
 "fon" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor/outdoors/dirt,
 /area/survivalpod/superpose/LoneHome)
@@ -9906,7 +9906,7 @@
 "fzi" = (
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/flora/pottedplant/fern{
 	pixel_y = 12
@@ -10543,8 +10543,7 @@
 /obj/item/clothing/head/welding/knight,
 /obj/structure/railing/grey{
 	dir = 1;
-	health = 8000000000;
-	maxhealth = 8000000000;
+	max_integrity = 8000000000;
 	name = "durable grey railing"
 	},
 /obj/item/storage/toolbox/syndicate/powertools,
@@ -10565,7 +10564,7 @@
 /obj/structure/grille,
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 4
@@ -11234,8 +11233,7 @@
 "gxq" = (
 /obj/machinery/deployable/barrier{
 	desc = "A deployable barrier with strange undertones. Swipe your ID card to lock/unlock it.";
-	health = 8000000000;
-	maxhealth = 8000000000;
+	max_integrity = 8000000000;
 	name = "modified deployable barrier";
 	req_access = list(300)
 	},
@@ -11988,8 +11986,7 @@
 /obj/structure/table/reinforced,
 /obj/structure/railing/grey{
 	dir = 1;
-	health = 8000000000;
-	maxhealth = 8000000000;
+	max_integrity = 8000000000;
 	name = "durable grey railing"
 	},
 /obj/item/defib_kit/jumper_kit/loaded,
@@ -13936,7 +13933,7 @@
 	dir = 1
 	},
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/structure/window/reinforced/survival_pod{
@@ -15546,7 +15543,7 @@
 /obj/item/clothing/head/helmet/space/void/atmos,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 1
@@ -16335,7 +16332,7 @@
 /area/survivalpod/superpose/LoneHome)
 "kho" = (
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/structure/shuttle/window,
@@ -16666,7 +16663,7 @@
 "kqI" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/template_noop,
 /area/survivalpod/superpose/LoneHome)
@@ -20167,7 +20164,7 @@
 	hackProof = 1;
 	id_tag = "Teshnomancer_Private_doors";
 	id_tint = "tesh_private_tint";
-	maxhealth = 8000000000;
+	max_integrity = 8000000000;
 	name = "Electrochromic Airlock";
 	normalspeed = 0;
 	req_one_access = list(300);
@@ -21928,7 +21925,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/shuttle/plating,
 /area/survivalpod/superpose/CrashedQurantineShip)
@@ -22118,8 +22115,7 @@
 "olR" = (
 /obj/structure/railing/grey{
 	dir = 1;
-	health = 8000000000;
-	maxhealth = 8000000000;
+	max_integrity = 8000000000;
 	name = "durable grey railing"
 	},
 /obj/machinery/autolathe{
@@ -23031,7 +23027,7 @@
 /obj/structure/grille,
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced,
 /obj/structure/window/reinforced{
@@ -23317,7 +23313,7 @@
 	},
 /obj/structure/window/reinforced/survival_pod,
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/structure/window/reinforced/survival_pod{
@@ -24048,7 +24044,7 @@
 /obj/machinery/door/airlock/voidcraft/survival_pod{
 	hackProof = 1;
 	id_tag = "Teshnomancer_doors";
-	maxhealth = 8000000000;
+	max_integrity = 8000000000;
 	normalspeed = 0;
 	req_one_access = list(300);
 	secured_wires = 1
@@ -26287,7 +26283,7 @@
 /obj/machinery/door/airlock/voidcraft/survival_pod{
 	hackProof = 1;
 	id_tag = "Teshnomancer_doors";
-	maxhealth = 8000000000;
+	max_integrity = 8000000000;
 	normalspeed = 0;
 	req_one_access = list(300);
 	secured_wires = 1
@@ -26569,7 +26565,7 @@
 "qaj" = (
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/template_noop,
 /area/survivalpod/superpose/LoneHome)
@@ -28512,7 +28508,7 @@
 "rBR" = (
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/item/material/shard,
 /turf/simulated/floor/outdoors/dirt,
@@ -29714,8 +29710,7 @@
 "sCs" = (
 /obj/machinery/deployable/barrier{
 	desc = "A deployable barrier with strange undertones. Swipe your ID card to lock/unlock it.";
-	health = 8000000000;
-	maxhealth = 8000000000;
+	max_integrity = 8000000000;
 	name = "modified deployable barrier";
 	req_access = list(300)
 	},
@@ -29945,7 +29940,7 @@
 /obj/structure/window/reinforced,
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/shuttle/plating,
 /area/survivalpod/superpose/CrashedQurantineShip)
@@ -30972,7 +30967,7 @@
 /area/survivalpod/superpose/CrashedInfestedShip)
 "twL" = (
 /obj/machinery/door/airlock/voidcraft/survival_pod{
-	maxhealth = 8000000000;
+	max_integrity = 8000000000;
 	normalspeed = 0;
 	req_one_access = list(300)
 	},
@@ -32507,7 +32502,7 @@
 /obj/machinery/door/airlock/voidcraft/survival_pod{
 	hackProof = 1;
 	id_tag = "Teshnomancer_doors";
-	maxhealth = 8000000000;
+	max_integrity = 8000000000;
 	normalspeed = 0;
 	req_one_access = list(300);
 	secured_wires = 1
@@ -32874,7 +32869,7 @@
 "uXM" = (
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor/outdoors/dirt,
 /area/survivalpod/superpose/LoneHome)
@@ -35610,8 +35605,7 @@
 "wYI" = (
 /obj/structure/railing/grey{
 	dir = 1;
-	health = 8000000000;
-	maxhealth = 8000000000;
+	max_integrity = 8000000000;
 	name = "durable grey railing"
 	},
 /turf/simulated/shuttle/floor/voidcraft,
@@ -36103,7 +36097,7 @@
 /area/survivalpod/superpose/HydroCave)
 "xmO" = (
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/structure/shuttle/window,
@@ -36565,7 +36559,7 @@
 	dir = 8
 	},
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/structure/window/reinforced/survival_pod{

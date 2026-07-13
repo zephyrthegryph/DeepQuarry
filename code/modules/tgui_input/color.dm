@@ -139,7 +139,7 @@
 			return TRUE
 		if("preset")
 			var/raw_data = lowertext(params["color"])
-			var/index = lowertext(params["index"])
+			var/index = text2num(params["index"])
 			var/list/entries = splittext(preset_colors, ";")
 			while(LAZYLEN(entries) < 20)
 				entries += "#FFFFFF"

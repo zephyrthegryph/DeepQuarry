@@ -190,7 +190,7 @@ Any frequency works, it's self-setting, but it seems like people have decided AU
 	var/command
 
 /obj/effect/map_helper/airlock/button/setup()
-	var/obj/machinery/airlock_sensor/my_button = my_device
+	var/obj/machinery/access_button/my_button = my_device
 	my_button.master_tag = my_controller.id_tag
 	my_button.frequency = my_controller.frequency
 	my_button.set_frequency(my_controller.frequency)

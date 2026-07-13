@@ -40,6 +40,8 @@
 			if(!checked_turf.check_density())
 				valid_tele_targets.Add(checked_turf)
 
+		if(!valid_tele_targets.len)
+			return 0
 		tele_target = pick(valid_tele_targets)
 
 		//Pay for our teleport.

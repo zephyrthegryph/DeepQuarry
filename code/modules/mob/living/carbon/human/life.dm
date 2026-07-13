@@ -36,10 +36,6 @@
 	// update the current life tick, can be used to e.g. only do something every 4 ticks
 	life_tick++
 
-	// This is not an ideal place for this but it will do for now.
-	if(wearing_rig && wearing_rig.offline)
-		wearing_rig = null
-
 	..()
 
 	if(life_tick % 30)
@@ -604,20 +600,20 @@
 		breath_type = species.breath_type
 	else
 		breath_type = GAS_O2
-	inhaling = breath.get_moles(breath_type)
+	inhaling = LINDA_GAS_AMT(breath, breath_type)
 
 	if(species.poison_type)
 		poison_type = species.poison_type
 	else
 		poison_type = GAS_PHORON
-	poison_toxin = breath.get_moles(poison_type)
+	poison_toxin = LINDA_GAS_AMT(breath, poison_type)
 
 	if(species.breath_type != GAS_CH4)
-		poison_methane = breath.get_moles(GAS_CH4)
+		poison_methane = LINDA_GAS_AMT(breath, GAS_CH4)
 
 	if(species.exhale_type)
 		exhale_type = species.exhale_type
-		exhaling = breath.get_moles(exhale_type)
+		exhaling = LINDA_GAS_AMT(breath, exhale_type)
 	else
 		exhaling = 0
 
@@ -695,7 +691,7 @@
 
 	// Too much phoron in the air.
 	if(toxins_pp > safe_toxins_min)
-		var/SA_pp = (breath.get_moles(GAS_PHORON) / breath_moles) * breath_pressure
+		var/SA_pp = (LINDA_GAS_AMT(breath, GAS_PHORON) / breath_moles) * breath_pressure
 		if(SA_pp > 0.05)
 			if(prob(3))
 				to_chat(src,span_warning("Something burns as you breathe."))
@@ -710,7 +706,7 @@
 
 	// Too much methane in the air
 	if(methane_pp > safe_toxins_min)
-		var/SA_pp = (breath.get_moles(GAS_CH4) / breath_moles) * breath_pressure
+		var/SA_pp = (LINDA_GAS_AMT(breath, GAS_CH4) / breath_moles) * breath_pressure
 		if(SA_pp > 0.05)
 			if(prob(5))
 				to_chat(src,span_warning("You smell rotten eggs."))
@@ -719,15 +715,14 @@
 		adjustOxyLoss(CLAMP(ratio,0.1,10)) // Causes slow suffocation
 		if(prob(20))
 			emote("gasp")
-		breath.adjust_gas(GAS_CH4, -poison_methane/6, update = 0) // update after
+		breath.adjust_gas(GAS_CH4, -poison_methane/6, update = 0) // update after // removed duplicate line; poison_methane already equals LINDA_GAS_AMT(breath, GAS_CH4) from line 608
 		throw_alert("methane_in_air", /atom/movable/screen/alert/methane_in_air)
 	else
 		clear_alert("methane_in_air")
 
 	// If there's some other shit in the air lets deal with it here.
-	var/n2o_moles = breath.get_moles(GAS_N2O)
-	if(n2o_moles)
-		var/SA_pp = (n2o_moles / breath_moles) * breath_pressure
+	if(LINDA_GAS_AMT(breath, GAS_N2O))
+		var/SA_pp = (LINDA_GAS_AMT(breath, GAS_N2O) / breath_moles) * breath_pressure
 
 		// Enough to make us paralysed for a bit
 		if(SA_pp > SA_para_min)
@@ -744,7 +739,7 @@
 		else if(SA_pp > 0.15)
 			if(prob(20))
 				emote(pick("giggle", "laugh"))
-		breath.adjust_gas(GAS_N2O, -n2o_moles/6, update = 0) //update after
+		breath.adjust_gas(GAS_N2O, -LINDA_GAS_AMT(breath, GAS_N2O)/6, update = 0) //update after
 
 	if(get_hallucination_component()?.get_hud_state() == HUD_HALLUCINATION_OXY)
 		throw_alert("oxy", /atom/movable/screen/alert/not_enough_atmos)
@@ -762,7 +757,7 @@
 		var/obj/item/organ/internal/lungs/L = internal_organs_by_name[O_LUNGS]
 		var/turf = get_turf(src)
 		var/mob/living/carbon/human/M = src
-		if(L.robotic < ORGAN_ROBOT && is_below_sound_pressure(turf) && M.internal) // Only non-synthetic lungs, please, and only play these while the pressure is below that which we can hear sounds normally AND we're on internals.
+		if(L && L.robotic < ORGAN_ROBOT && is_below_sound_pressure(turf) && M.internal) // Only non-synthetic lungs, please, and only play these while the pressure is below that which we can hear sounds normally AND we're on internals.
 			if(!failed_inhale && (world.time >= (last_breath_sound + 7 SECONDS))) // Were we able to inhale successfully? Play inhale.
 				var/exhale = failed_exhale // Pass through if we passed exhale or not
 				play_inhale(M, exhale)
@@ -771,25 +766,25 @@
 
 	// Hot air hurts :(
 	if(!isbelly(loc)) //None of this happens anyway whilst inside of a belly, belly temperatures are all handled as body temperature
-		var/breath_temp = breath.return_temperature()
-		if((breath_temp <= species.cold_discomfort_level || breath_temp >= species.heat_discomfort_level) && !(COLD_RESISTANCE in mutations))
+		var/breath_temperature = breath.return_temperature()
+		if((breath_temperature <= species.cold_discomfort_level || breath_temperature >= species.heat_discomfort_level) && !(COLD_RESISTANCE in mutations))
 
-			if(breath_temp <= species.breath_cold_level_1)
+			if(breath_temperature <= species.breath_cold_level_1)
 				if(prob(20))
 					to_chat(src, span_danger("You feel your face freezing and icicles forming in your lungs!"))
-			else if(breath_temp >= species.breath_heat_level_1)
+			else if(breath_temperature >= species.breath_heat_level_1)
 				if(prob(20))
 					to_chat(src, span_danger("You feel your face burning and a searing heat in your lungs!"))
 
-			if(breath_temp >= species.heat_discomfort_level)
+			if(breath_temperature >= species.heat_discomfort_level)
 
-				if(breath_temp >= species.breath_heat_level_3)
+				if(breath_temperature >= species.breath_heat_level_3)
 					apply_damage(HEAT_GAS_DAMAGE_LEVEL_3, BURN, BP_HEAD)
 					throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_MAX)
-				else if(breath_temp >= species.breath_heat_level_2)
+				else if(breath_temperature >= species.breath_heat_level_2)
 					apply_damage(HEAT_GAS_DAMAGE_LEVEL_2, BURN, BP_HEAD)
 					throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_MODERATE)
-				else if(breath_temp >= species.breath_heat_level_1)
+				else if(breath_temperature >= species.breath_heat_level_1)
 					apply_damage(HEAT_GAS_DAMAGE_LEVEL_1, BURN, BP_HEAD)
 					throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_LOW)
 				else if(species.get_environment_discomfort(src, ENVIRONMENT_COMFORT_MARKER_HOT))
@@ -797,15 +792,15 @@
 				else
 					clear_alert("temp")
 
-			else if(breath_temp <= species.cold_discomfort_level)
+			else if(breath_temperature <= species.cold_discomfort_level)
 
-				if(breath_temp <= species.breath_cold_level_3)
+				if(breath_temperature <= species.breath_cold_level_3)
 					apply_damage(COLD_GAS_DAMAGE_LEVEL_3, BURN, BP_HEAD)
 					throw_alert("temp", /atom/movable/screen/alert/cold, COLD_ALERT_SEVERITY_MAX)
-				else if(breath_temp <= species.breath_cold_level_2)
+				else if(breath_temperature <= species.breath_cold_level_2)
 					apply_damage(COLD_GAS_DAMAGE_LEVEL_2, BURN, BP_HEAD)
 					throw_alert("temp", /atom/movable/screen/alert/cold, COLD_ALERT_SEVERITY_MODERATE)
-				else if(breath_temp <= species.breath_cold_level_1)
+				else if(breath_temperature <= species.breath_cold_level_1)
 					apply_damage(COLD_GAS_DAMAGE_LEVEL_1, BURN, BP_HEAD)
 					throw_alert("temp", /atom/movable/screen/alert/cold, COLD_ALERT_SEVERITY_LOW)
 				else if(species.get_environment_discomfort(src, ENVIRONMENT_COMFORT_MARKER_COLD))
@@ -814,7 +809,7 @@
 					clear_alert("temp")
 
 			//breathing in hot/cold air also heats/cools you a bit
-			var/temp_adj = breath_temp - bodytemperature
+			var/temp_adj = breath_temperature - bodytemperature
 			if (temp_adj < 0)
 				temp_adj /= (BODYTEMP_COLD_DIVISOR * 5)	//don't raise temperature as much as if we were directly exposed
 			else
@@ -979,7 +974,7 @@
 				burn_dam = HEAT_DAMAGE_LEVEL_1
 				throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_LOW)
 
-		take_overall_damage(burn=burn_dam * perk_mult(DQ_PERK_FX_HAZARD_HEAT), used_weapon = "High Body Temperature")
+		take_overall_damage(burn=burn_dam, used_weapon = "High Body Temperature")
 
 	else if(bodytemperature <= species.cold_discomfort_level)
 		//Body temperature is too cold.
@@ -999,7 +994,7 @@
 				else
 					cold_dam = COLD_DAMAGE_LEVEL_1
 
-			take_overall_damage(burn=cold_dam * perk_mult(DQ_PERK_FX_HAZARD_COLD), used_weapon = "Low Body Temperature")
+			take_overall_damage(burn=cold_dam, used_weapon = "Low Body Temperature")
 
 	else clear_alert("temp")
 
@@ -1013,7 +1008,7 @@
 		if(stat == DEAD)
 			pressure_damage = pressure_damage/2
 		if(!istype(loc, /obj/structure/closet/body_bag/cryobag))
-			take_overall_damage(brute=pressure_damage * perk_mult(DQ_PERK_FX_HAZARD_PRESSURE_HIGH), used_weapon = "High Pressure")
+			take_overall_damage(brute=pressure_damage, used_weapon = "High Pressure")
 		throw_alert("pressure", /atom/movable/screen/alert/highpressure, 2)
 	else if(adjusted_pressure >= species.warning_high_pressure)
 		throw_alert("pressure", /atom/movable/screen/alert/highpressure, 1)
@@ -1024,7 +1019,7 @@
 	else
 		if(!(COLD_RESISTANCE in mutations) && !istype(loc, /obj/structure/closet/body_bag/cryobag))
 			if(!isSynthetic() || !nif || !nif.flag_check(NIF_O_PRESSURESEAL,NIF_FLAGS_OTHER))
-				var/pressure_damage = LOW_PRESSURE_DAMAGE * perk_mult(DQ_PERK_FX_HAZARD_PRESSURE_LOW)
+				var/pressure_damage = LOW_PRESSURE_DAMAGE
 				if(stat==DEAD)
 					pressure_damage = pressure_damage/2
 				take_overall_damage(brute=pressure_damage, used_weapon = "Low Pressure")
@@ -1040,7 +1035,7 @@
 																		// Stronger protection (Closer to 0) results in a smaller fraction
 																		// Firesuits (Min protection = 0.2 atmospheres) decrease oxyloss to 1/5
 
-				adjustOxyLoss(pressure_dam * perk_mult(DQ_PERK_FX_HAZARD_PRESSURE_LOW))
+				adjustOxyLoss(pressure_dam)
 			throw_alert("pressure", /atom/movable/screen/alert/lowpressure, 2)
 		else
 			clear_alert("pressure")
@@ -1245,8 +1240,6 @@
 	else				//ALIVE. LIGHTS ARE ON
 		updatehealth()	//TODO
 
-		dq_check_crit_reactions() // Second Wind / Adrenal Reserve auto-fire before we resolve crit/death.
-
 		if(health <= (-getMaxHealth()) || (should_have_organ(O_BRAIN) && !has_brain()))
 			death()
 			blinded = 1
@@ -1415,18 +1408,16 @@
 		else if(ear_damage < 25)	//ear damage heals slowly under this threshold. otherwise you'll need earmuffs
 			ear_damage = max(ear_damage-0.05, 0)
 
-		// Handle ear ringing, standalone safety check.
+		// CHOMPEnable Start: Handle Ear ringing, standalone safety check.
 		if(ear_deaf <= 0)
 			deaf_loop.stop()
+		// CHOMPEnable End
 
 		//Resting
 		if(resting)
 			adjustHalLoss(-3)
 		else
 			adjustHalLoss(-1)
-
-		handle_stamina_regen()
-		dq_perk_regen() // Hearty / Quick Healer / Convalescent out-of-combat heal.
 
 		if (drowsyness)
 			drowsyness = max(0, drowsyness - 1)

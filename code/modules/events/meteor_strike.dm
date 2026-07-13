@@ -32,6 +32,9 @@
 	var/turf/current = get_turf(src)
 	if(isopenturf(current))
 		var/turf/below = GetBelow(src)
+		if(!below)
+			meteor_impact()
+			return
 		if(below.density)
 			meteor_impact()
 			return

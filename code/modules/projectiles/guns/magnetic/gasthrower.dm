@@ -33,11 +33,11 @@
 
 	var/turf/T = get_turf(src)
 
-	var/phoron_amt = Tank.air_contents.get_moles(GAS_PHORON)
-	var/co2_amt = Tank.air_contents.get_moles(GAS_CO2)
-	var/oxy_amt = Tank.air_contents.get_moles(GAS_O2)
-	var/n2o_amt = Tank.air_contents.get_moles(GAS_N2O)
-	var/ch4_amt = Tank.air_contents.get_moles(GAS_CH4)
+	var/phoron_amt = LINDA_GAS_AMT(Tank.air_contents, GAS_PHORON)
+	var/co2_amt = LINDA_GAS_AMT(Tank.air_contents, GAS_CO2)
+	var/oxy_amt = LINDA_GAS_AMT(Tank.air_contents, GAS_O2)
+	var/n2o_amt = LINDA_GAS_AMT(Tank.air_contents, GAS_N2O)
+	var/ch4_amt = LINDA_GAS_AMT(Tank.air_contents, GAS_CH4)
 
 	if(isnull(co2_amt))
 		co2_amt = 0

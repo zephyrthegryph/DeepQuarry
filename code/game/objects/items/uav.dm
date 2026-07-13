@@ -15,7 +15,7 @@
 	density = TRUE //Is dense, but not anchored, so you can swap with it
 	slowdown = 1.5 //Heevvee.
 
-	health = 100
+	max_integrity = 100
 
 	light_system = MOVABLE_LIGHT_DIRECTIONAL
 	light_cone_y_offset = 5
@@ -70,9 +70,9 @@
 	if(!cell)
 		. += span_warning("It appears to be missing a power cell.")
 
-	if(health <= (initial(health)/4))
+	if(get_integrity() <= (max_integrity/4))
 		. += span_warning("It looks like it might break at any second!")
-	else if(health <= (initial(health)/2))
+	else if(get_integrity() <= (max_integrity/2))
 		. += span_warning("It looks pretty beaten up...")
 
 /obj/item/uav/attack_hand(mob/user)
@@ -184,7 +184,7 @@
 		visible_message(span_warning("[src] sputters and thuds to the ground, inert."))
 		playsound(src, 'sound/items/drop/metalboots.ogg', 75, 1)
 		power_down()
-		health -= initial(health)*0.25 //Lose 25% of your original health
+		take_damage(max_integrity*0.25, sound_effect = FALSE) //Lose 25% of your original health
 
 	if(LAZYLEN(masters))
 		no_masters_time = 0
@@ -273,7 +273,7 @@
 	return FALSE
 
 /obj/item/uav/proc/get_status_string()
-	return "[nickname] - [get_x(src)],[get_y(src)],[get_z(src)] - I:[health]/[initial(health)] - C:[cell ? "[cell.charge]/[cell.maxcharge]" : "Not Installed"]"
+	return "[nickname] - [get_x(src)],[get_y(src)],[get_z(src)] - I:[get_integrity()]/[max_integrity] - C:[cell ? "[cell.charge]/[cell.maxcharge]" : "Not Installed"]"
 
 /obj/item/uav/proc/add_master(mob/living/M)
 	LAZYDISTINCTADD(masters, WEAKREF(M))
@@ -325,17 +325,11 @@
 		var/rendered = span_game(span_say(span_italics("UAV received, " + span_message("[msg]"))))
 		master.show_message(rendered, type)
 
-/obj/item/uav/take_damage(damage)
-	health -= damage
-	CheckHealth()
-	return
-
 /obj/item/uav/attack_generic(mob/user, damage, attack_verb)
 	visible_message(span_danger("[user] [attack_verb] the [src]!"))
 	playsound(src, 'sound/weapons/smash.ogg', 50, 1)
 	user.do_attack_animation(src)
-	health -= damage
-	CheckHealth()
+	take_damage(damage, BRUTE, MELEE, sound_effect = FALSE)
 	return
 
 /obj/item/uav/ex_act(severity)
@@ -343,12 +337,11 @@
 		if(1.0)
 			die()
 		if(2.0)
-			health -= 25
-			CheckHealth()
+			take_damage(25, BRUTE, BOMB)
 
-/obj/item/uav/proc/CheckHealth()
-	if(health <= 0)
-		die()
+/obj/item/uav/atom_destruction(damage_flag)
+	. = ..()
+	die()
 
 /obj/item/uav/proc/die()
 	visible_message(span_danger("[src] shorts out and explodes!"))

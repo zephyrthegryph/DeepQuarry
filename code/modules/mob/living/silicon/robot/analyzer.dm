@@ -184,7 +184,7 @@
 
 			var/obj/mecha/Mecha = M
 
-			var/integrity = Mecha.health/initial(Mecha.health)*100
+			var/integrity = Mecha.get_integrity()/Mecha.max_integrity*100
 			var/cell_charge = Mecha.get_charge()
 			var/tank_pressure = Mecha.internal_tank ? round(Mecha.internal_tank.return_pressure(),0.01) : "None"
 			var/tank_temperature = Mecha.internal_tank ? Mecha.internal_tank.return_temperature() : "Unknown"

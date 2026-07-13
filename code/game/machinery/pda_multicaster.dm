@@ -44,7 +44,8 @@
 	default_apply_parts()
 
 /obj/machinery/pda_multicaster/Destroy()
-	for(var/atom/movable/AM in contents)
+	// Snapshot: qdel pulls members out of contents mid-iteration.
+	for(var/atom/movable/AM in contents.Copy())
 		qdel(AM)
 	QDEL_NULL(soundloop)
 	. = ..()

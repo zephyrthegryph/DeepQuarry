@@ -252,7 +252,7 @@
 		if(!check_rights(R_BAN))
 			return
 
-		var/mob/M = locate(href_list["jobban2"])
+		var/mob/M = locate(href_list["jobban2"]) in GLOB.mob_list
 		if(!ismob(M))
 			to_chat(usr, span_filter_adminlog("This can only be used on instances of type /mob"))
 			return
@@ -683,6 +683,7 @@
 		var/mob/M = locate(href_list["forcespeech"])
 		if(!ismob(M))
 			to_chat(usr, span_filter_adminlog("this can only be used on instances of type /mob"))
+			return
 
 		var/speech = tgui_input_text(usr, "What will [key_name(M)] say?.", "Force speech", "") // Don't need to sanitize, since it does that in say(), we also trust our admins.
 		if(!speech)	return

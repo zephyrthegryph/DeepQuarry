@@ -59,7 +59,7 @@
 	for(var/mob/living/L in GLOB.player_list)
 		if(is_mob_in_relevant_area(L))
 			// Don't count them if they're in security.
-			if(!(L in GLOB.metric.count_people_in_department(DEPARTMENT_SECURITY)))
+			if(!(L in GLOB.metric.get_people_in_department(DEPARTMENT_SECURITY)))
 				. += 40
 
 
@@ -110,7 +110,7 @@
 	for(var/mob/living/L in GLOB.player_list)
 		if(is_mob_in_relevant_area(L))
 			// Don't count them if they're in medical.
-			if(!(L in GLOB.metric.count_people_in_department(DEPARTMENT_MEDICAL)))
+			if(!(L in GLOB.metric.get_people_in_department(DEPARTMENT_MEDICAL)))
 				. += 40
 
 

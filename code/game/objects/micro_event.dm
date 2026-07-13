@@ -10,10 +10,11 @@
 	if(!target && check_rights_for(user?.client, R_HOLDER))
 		if(tgui_alert(user, "Would you like to adjust the portal's size settings?", "Change portal size settings", list("No","Yes")) == "Yes")
 			var/our_message
-			if(tgui_alert(user, "Should this portal shrink people who are over the limit, or grow people who are under the limit?", "Change portal size settings", list("Shrink","Grow")) == "Shrink")
+			var/size_choice = tgui_alert(user, "Should this portal shrink people who are over the limit, or grow people who are under the limit?", "Change portal size settings", list("Shrink","Grow"))
+			if(size_choice == "Shrink")
 				shrinking = TRUE
 				our_message = "What should the size limit be? Anyone over this limit will be shrunk to this size. (1 = 100%, etc)"
-			else if (our_message == "Grow")
+			else if (size_choice == "Grow")
 				shrinking = FALSE
 				our_message = "What should the size limit be? Anyone under this limit will be grown to this size. (1 = 100%, etc)"
 			else

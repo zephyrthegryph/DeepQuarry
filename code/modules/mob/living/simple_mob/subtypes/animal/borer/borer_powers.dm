@@ -30,7 +30,7 @@
 		return
 	var/mob/living/carbon/human/attack_target = choices[1]
 	if(choices.len > 1)
-		tgui_input_list(src, "Who do you wish to dominate?", "Target Choice", choices)
+		attack_target = tgui_input_list(src, "Who do you wish to dominate?", "Target Choice", choices)
 
 	if(!attack_target || QDELETED(src))
 		return
@@ -94,6 +94,7 @@
 	var/obj/item/organ/external/E = infest_target.organs_by_name[BP_HEAD]
 	if(!E || E.is_stump())
 		to_chat(src, span_warning("\The [infest_target] does not have a head!"))
+		return
 
 	if(!infest_target.should_have_organ(O_BRAIN))
 		to_chat(src, span_warning("\The [infest_target] does not seem to have an ear canal to breach."))

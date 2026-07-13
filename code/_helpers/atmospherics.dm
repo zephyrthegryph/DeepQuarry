@@ -21,7 +21,7 @@
 		var/total_moles = mixture.total_moles()
 		results += span_notice("Pressure: [round(pressure,0.1)] kPa")
 		for(var/mix in mixture.gas_ids()) // mixture.gas (XGM) → mixture.gas_ids()
-			results += span_notice("[GLOB.gas_data.name[mix]]: [round((mixture.get_moles(mix) / total_moles) * 100)]% ([round(mixture.get_moles(mix), 0.01)] moles)")
+			results += span_notice("[GLOB.gas_data.name[mix]]: [round((LINDA_GAS_AMT(mixture, mix) / total_moles) * 100)]% ([round(LINDA_GAS_AMT(mixture, mix), 0.01)] moles)")
 		results += span_notice("Temperature: [round(mixture.return_temperature()-T0C)]&deg;C")
 		results += span_notice("Heat Capacity: [round(mixture.heat_capacity(),0.1)]")
 	else

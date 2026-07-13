@@ -47,7 +47,7 @@
 
 /mob/living/simple_mob/animal/sif/siffet/IIsAlly(mob/living/L)
 	. = ..()
-	if(!. && !istype(L, /mob/living))
+	if(!. && !isliving(L))
 		return TRUE
 	else
 		if(!. && L.mob_size > 10) //Attacks things it considers small enough to take on, otherwise only attacks if attacked.

@@ -384,7 +384,7 @@
 		return 0
 
 	choice = tgui_alert(user, "Forcing a shuttle launch while docked may result in severe injury, death and/or damage to property. Are you sure you wish to continue?", "Force Launch", list("Force Launch", "Cancel"))
-	if(choice || choice == "Cancel")
+	if(!choice || choice == "Cancel")
 		return 0
 
 	return 1

@@ -131,7 +131,10 @@ GLOBAL_VAR_INIT(universe_has_ended, 0)
 			APC.queue_icon_update()
 
 /datum/universal_state/supermatter_cascade/proc/PlayerSet()
-	for(var/datum/mind/M in GLOB.player_list)
+	for(var/mob/player in GLOB.player_list)
+		var/datum/mind/M = player.mind
+		if(!M)
+			continue
 		if(!isliving(M.current))
 			continue
 		if(M.current.stat!=2)

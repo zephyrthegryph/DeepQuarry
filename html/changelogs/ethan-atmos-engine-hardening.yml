@@ -1,0 +1,5 @@
+author: "ethan"
+delete-after: true
+changes:
+  - bugfix: "Fixed a runtime error in atmospherics heat conduction (temperature_share) when a gas mix exchanges heat with a turf that has no thermal mass — it tried to read heat capacity off a nonexistent gas mixture."
+  - bugfix: "Hardened excited-group breakdown: if a turf in an active atmos group is turned into a wall (losing its air) it's now dropped from the group instead of being counted in the gas-averaging, which previously could destroy a little gas and throw a runtime each breakdown."

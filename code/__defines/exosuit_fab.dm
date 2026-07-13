@@ -43,8 +43,8 @@
 /// Module is compatible with "Working" Exosuit models - Ripley
 #define EXOSUIT_MODULE_WORKING		EXOSUIT_MODULE_RIPLEY
 /// Module is compatible with "Combat" Exosuit models - Gygax, Durand and Phazon
-#define EXOSUIT_MODULE_COMBAT		EXOSUIT_MODULE_GYGAX  | EXOSUIT_MODULE_DURAND | EXOSUIT_MODULE_PHAZON
+#define EXOSUIT_MODULE_COMBAT		(EXOSUIT_MODULE_GYGAX | EXOSUIT_MODULE_DURAND | EXOSUIT_MODULE_PHAZON)
 /// Module is compatible with "Medical" Exosuit models - Odysseus
 #define EXOSUIT_MODULE_MEDICAL		EXOSUIT_MODULE_ODYSSEUS
 /// Module is compatible with "Fighter" Exosuit models - Pinnace, Baron
-#define EXOSUIT_MODULE_FIGHTER		EXOSUIT_MODULE_PINNACE | EXOSUIT_MODULE_BARON
+#define EXOSUIT_MODULE_FIGHTER		(EXOSUIT_MODULE_PINNACE | EXOSUIT_MODULE_BARON)

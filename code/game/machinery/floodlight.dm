@@ -31,6 +31,8 @@
 		turn_off(1)
 		return
 
+	cell.use(use * CELLRATE)
+
 	// If the cell is almost empty rarely "flicker" the light. Aesthetic only.
 	if((cell.percent() < 10) && prob(5))
 		set_light_range(brightness_on/2)
@@ -41,8 +43,6 @@
 	if(on)
 		set_light_range(brightness_on)
 		set_light_power(brightness_on/2)
-
-	cell.use(use*CELLRATE)
 
 
 // Returns 0 on failure and 1 on success

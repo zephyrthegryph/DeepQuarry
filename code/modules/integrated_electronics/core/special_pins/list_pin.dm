@@ -28,9 +28,9 @@
 	if(!my_list.len)
 		to_chat(user, span_warning("The list is empty, there's nothing to remove."))
 		return
-	if(!position)
+	if(!position || position < 1 || position > my_list.len)
 		return
-	var/target_entry = my_list.Find(position)
+	var/target_entry = my_list[position]
 	if(target_entry)
 		my_list.Remove(target_entry)
 
@@ -54,20 +54,22 @@
 	if(target_entry)
 		var/edited_entry = ask_for_data_type(user, target_entry)
 		if(edited_entry)
-			target_entry = edited_entry
+			var/idx = my_list.Find(target_entry)
+			if(idx)
+				my_list[idx] = edited_entry
 
 /datum/integrated_io/list/proc/edit_in_list_by_position(mob/user, position)
 	var/list/my_list = data
 	if(!my_list.len)
 		to_chat(user, span_warning("The list is empty, there's nothing to modify."))
 		return
-	if(!position)
+	if(!position || position < 1 || position > my_list.len)
 		return
-	var/target_entry = my_list.Find(position)
+	var/target_entry = my_list[position]
 	if(target_entry)
 		var/edited_entry = ask_for_data_type(user, target_entry)
 		if(edited_entry)
-			target_entry = edited_entry
+			my_list[position] = edited_entry
 
 /datum/integrated_io/list/proc/swap_inside_list(mob/user, first_target, second_target)
 	var/list/my_list = data

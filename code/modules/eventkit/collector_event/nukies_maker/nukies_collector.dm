@@ -18,7 +18,7 @@
 
 	type_to_spawn_on_complete = /obj/item/reagent_containers/food/drinks/cans/nukie_one
 
-/obj/structure/event_collector/update_icon()
+/obj/structure/event_collector/nukies/update_icon()
 	. = ..()
 	if(!current_step)
 		icon_state = "equipment_empty"

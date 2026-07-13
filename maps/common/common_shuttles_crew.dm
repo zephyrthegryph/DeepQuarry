@@ -106,16 +106,13 @@ GLOBAL_LIST_EMPTY(shuttdisp_list)
 /obj/machinery/status_display/shuttle_display/Initialize(mapload)
 	. = ..()
 	GLOB.shuttdisp_list |= src //Populates the global list for the roundstart hook.
+	get_my_shuttle()
+	update()
 
 /hook/roundstart/proc/shuttdisp_connect() //Initialize (and LateInitialize) call before the shuttle datums exist so this is needed to make shuttle displays work when mapped in
 	for(var/obj/machinery/status_display/shuttle_display/SD in GLOB.shuttdisp_list)
 		SD.get_my_shuttle()
 	return TRUE
-
-/obj/machinery/status_display/shuttle_display/Initialize(mapload)
-	. = ..()
-	get_my_shuttle()
-	update()
 
 /obj/machinery/status_display/shuttle_display/proc/get_my_shuttle() //Links the displays to their shuttles. Must be called after the shuttle datums exist.
 	var/datum/shuttle/autodock/shuttle = SSshuttles.shuttles[shuttle_tag]

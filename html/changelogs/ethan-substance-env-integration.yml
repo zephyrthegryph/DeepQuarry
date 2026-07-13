@@ -1,0 +1,5 @@
+author: "ethan"
+delete-after: true
+changes:
+  - rscadd: "Refining a substance in the particle accelerator and fusing two in the R-UST reactor now read their surroundings the same way the standalone benches do: the room's temperature and pressure shift how stable the result is (run it cold to tame a volatile push), and the machine's power rating caps how much energy the product can safely hold — overdrive it and the excess spills into volatility."
+  - code_imp: "Factored the substance environment reading (atmospherics + engineering context) into one shared helper used by the combiner, refiner, particle-accelerator refine and fusion-core combine paths."

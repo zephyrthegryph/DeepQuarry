@@ -236,7 +236,7 @@
 	return(span_red("[formatted_message]<BR>"))
 
 /obj/belly/proc/get_reagent_examine_msg2()
-	if(!fullness1_messages.len)
+	if(!fullness2_messages.len)
 		return ""
 	var/formatted_message
 	var/raw_message = pick(fullness2_messages)
@@ -247,7 +247,7 @@
 	return(span_red("[formatted_message]<BR>"))
 
 /obj/belly/proc/get_reagent_examine_msg3()
-	if(!fullness1_messages.len)
+	if(!fullness3_messages.len)
 		return ""
 	var/formatted_message
 	var/raw_message = pick(fullness3_messages)
@@ -258,7 +258,7 @@
 	return(span_red("[formatted_message]<BR>"))
 
 /obj/belly/proc/get_reagent_examine_msg4()
-	if(!fullness1_messages.len)
+	if(!fullness4_messages.len)
 		return ""
 	var/formatted_message
 	var/raw_message = pick(fullness4_messages)
@@ -269,7 +269,7 @@
 	return(span_red("[formatted_message]<BR>"))
 
 /obj/belly/proc/get_reagent_examine_msg5()
-	if(!fullness1_messages.len)
+	if(!fullness5_messages.len)
 		return ""
 	var/formatted_message
 	var/raw_message = pick(fullness5_messages)

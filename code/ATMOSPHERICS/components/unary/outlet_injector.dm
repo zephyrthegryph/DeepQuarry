@@ -27,7 +27,7 @@
 /obj/machinery/atmospherics/unary/outlet_injector/Initialize(mapload)
 	. = ..()
 
-	air_contents.set_volume(ATMOS_DEFAULT_VOLUME_PUMP + 500) //Give it a small reservoir for injecting. Also allows it to have a higher flow rate limit than vent pumps, to differentiate injectors a bit more.
+	air_contents.set_volume(ATMOS_DEFAULT_VOLUME_PUMP + 500)	//Give it a small reservoir for injecting. Also allows it to have a higher flow rate limit than vent pumps, to differentiate injectors a bit more.
 	if(frequency)
 		set_frequency(frequency)
 
@@ -68,7 +68,7 @@
 	var/datum/gas_mixture/environment = loc.return_air()
 
 	if(environment && air_contents.return_temperature() > 0)
-		var/transfer_moles = (volume_rate/air_contents.volume)*air_contents.total_moles() //apply flow rate limit
+		var/transfer_moles = (volume_rate/air_contents.return_volume())*air_contents.total_moles() //apply flow rate limit
 		power_draw = pump_gas(src, air_contents, environment, transfer_moles, power_rating)
 
 	if (power_draw >= 0)
@@ -154,7 +154,7 @@
 
 	if(signal.data["set_volume_rate"])
 		var/number = text2num(signal.data["set_volume_rate"])
-		volume_rate = between(0, number, air_contents.volume)
+		volume_rate = between(0, number, air_contents.return_volume())
 
 	if(signal.data["status"])
 		spawn(2)

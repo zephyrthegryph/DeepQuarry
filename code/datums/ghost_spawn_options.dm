@@ -102,7 +102,7 @@
 		return
 	if(chosen_fabricator.stat & NOPOWER || !chosen_fabricator.produce_drones)
 		return
-	if(!chosen_fabricator.drone_progress >= 100)
+	if(chosen_fabricator.drone_progress < 100)
 		return
 
 	chosen_fabricator.create_drone(user.client)

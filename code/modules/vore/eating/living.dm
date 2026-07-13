@@ -724,55 +724,55 @@
 	return ..()
 
 // This is about 0.896m^3 of atmosphere
-// Under LINDA, temperature lives in Rust; set it via set_temperature() in New().
-// Volume is still a DM var on gas_mixture.
+// was XGM (total_moles var, gas list). Under LINDA, set initial moles
+// via adjust_gas() in New(); total_moles is computed on demand.
 /datum/gas_mixture/belly_air
-	volume = 2500
+	initial_volume = 2500
 
 /datum/gas_mixture/belly_air/New()
 	. = ..()
-	set_temperature(293.150)
+	set_temperature(T20C) // arena default is TCMB; sync mirror initializer into the arena
 	adjust_gas(GAS_O2, 21)
 	adjust_gas(GAS_N2, 79)
 
 /datum/gas_mixture/belly_air/vox
-	volume = 2500
+	initial_volume = 2500
 
 /datum/gas_mixture/belly_air/vox/New()
 	. = ..()
-	set_temperature(293.150)
+	set_temperature(T20C)
 	adjust_gas(GAS_N2, 100)
 
 /datum/gas_mixture/belly_air/zaddat
-	volume = 2500
+	initial_volume = 2500
 
 /datum/gas_mixture/belly_air/zaddat/New()
 	. = ..()
-	set_temperature(293.150)
+	set_temperature(T20C)
 	adjust_gas(GAS_O2, 100)
 
 /datum/gas_mixture/belly_air/nitrogen_breather
-	volume = 2500
+	initial_volume = 2500
 
 /datum/gas_mixture/belly_air/nitrogen_breather/New()
 	. = ..()
-	set_temperature(293.150)
+	set_temperature(T20C)
 	adjust_gas(GAS_N2, 100)
 
 /datum/gas_mixture/belly_air/carbon_dioxide_breather
-	volume = 2500
+	initial_volume = 2500
 
-/datum/gas_mixture/carbon_dioxide_breather/New()
+/datum/gas_mixture/belly_air/carbon_dioxide_breather/New()
 	. = ..()
-	set_temperature(293.150)
+	set_temperature(T20C)
 	adjust_gas(GAS_CO2, 100)
 
 /datum/gas_mixture/belly_air/methane_breather
-	volume = 2500
+	initial_volume = 2500
 
 /datum/gas_mixture/belly_air/methane_breather/New()
 	. = ..()
-	set_temperature(293.150)
+	set_temperature(T20C)
 	adjust_gas(GAS_CH4, 100)
 
 /mob/living/proc/feed_grabbed_to_self_falling_nom(mob/living/user, mob/living/prey)
@@ -986,7 +986,7 @@
 			adjust_nutrition(nom["nutrition"])
 			qdel(I)
 
-			if(nom["WTF"]) //Bites back.
+			if(nom["WTF"] && istype(H)) //Bites back.
 				H.Weaken(2)
 				H.Confuse(nom["WTF"])
 				H.apply_effect(nom["WTF"], STUTTER)

@@ -124,7 +124,7 @@ SUBSYSTEM_DEF(explosions)
 				T = get_step(epicenter, turn(direction,90))
 				if(T)
 					append_currentrun(T.x,T.y,T.z,spread_power,direction,starting_power)
-				T = get_step(src, turn(direction,-90))
+				T = get_step(epicenter, turn(direction,-90))
 				if(T)
 					append_currentrun(T.x,T.y,T.z,spread_power,direction,starting_power)
 			// Make these feel a little more flashy

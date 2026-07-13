@@ -110,7 +110,7 @@
 	if(!is_raining)
 		return
 
-	if(selected_weather.sounds)
+	if(selected_weather.loop_sounds)
 		selected_weather.loop_sounds.stop()
 
 	for(var/turf/turf in affected_turfs)

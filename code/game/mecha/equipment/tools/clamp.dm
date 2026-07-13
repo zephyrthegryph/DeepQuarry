@@ -60,7 +60,7 @@
 								playsound(AD, 'sound/machines/door/airlock_creaking.ogg', 100, 1)
 								AD.visible_message(span_danger("\The [chassis] tears \the [AD] open!"))
 						if(!AD.welded)
-							if(density)
+							if(AD.density)
 								spawn(0)
 									AD.open(1)
 							else
@@ -162,7 +162,7 @@
 		if(chassis.occupant.a_intent == I_HURT)
 			chassis.occupant_message(span_danger("You obliterate [target] with [src.name], leaving blood and guts everywhere."))
 			chassis.visible_message(span_danger("[chassis] destroys [target] in an unholy fury."))
-		if(chassis.occupant.a_intent == I_DISARM)
+		else if(chassis.occupant.a_intent == I_DISARM)
 			chassis.occupant_message(span_danger("You tear [target]'s limbs off with [src.name]."))
 			chassis.visible_message(span_danger("[chassis] rips [target]'s arms off."))
 		else

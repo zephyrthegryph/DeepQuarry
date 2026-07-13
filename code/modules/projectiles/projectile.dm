@@ -359,7 +359,7 @@
 			stack_trace("WARNING: Projectile [type] deleted due to being unable to resolve a target after angle was null!")
 			qdel(src)
 			return
-		var/turf/target = locate(CLAMP(starting + xo, 1, world.maxx), CLAMP(starting + yo, 1, world.maxy), starting.z)
+		var/turf/target = locate(CLAMP(starting.x + xo, 1, world.maxx), CLAMP(starting.y + yo, 1, world.maxy), starting.z)
 		setAngle(Get_Angle(src, target))
 	if(dispersion)
 		setAngle(Angle + rand(-dispersion, dispersion))
@@ -409,7 +409,7 @@
 		var/atom/movable/MT = source
 		if(MT.locs && MT.locs.len)	// Multi tile!
 			for(var/turf/T in MT.locs)
-				if(get_dist(T, target) < get_turf(curloc))
+				if(get_dist(T, target) < get_dist(curloc, target))
 					curloc = get_turf(T)
 
 	trajectory_ignore_forcemove = TRUE
@@ -417,7 +417,7 @@
 	trajectory_ignore_forcemove = FALSE
 	starting = curloc
 	original = target
-	if(targloc || !params)
+	if(targloc)
 		yo = targloc.y - curloc.y
 		xo = targloc.x - curloc.x
 		setAngle(Get_Angle(src, targloc) + spread)
@@ -687,6 +687,16 @@
 		var/turf/T = get_turf(A)
 		if(T)
 			T.hotspot_expose(700, 5)
+
+	// A round forged from a substance alloy discharges where the bullet lands — the
+	// same form-trigger path a substance blade uses on a strike. Only fires if the
+	// bullet carries a substance infusion AND the substance's trigger is one a strike
+	// presents (IMPACT/PRESSURE, plus ENERGY for energy shots); inert otherwise.
+	var/turf/impact_turf = get_turf(A) || get_turf(src)
+	if(damage_type == BURN)
+		substance_emit_form_trigger(src, impact_turf, firer, SUB_TRIG_IMPACT, SUB_TRIG_PRESSURE, SUB_TRIG_ENERGY)
+	else
+		substance_emit_form_trigger(src, impact_turf, firer, SUB_TRIG_IMPACT, SUB_TRIG_PRESSURE)
 
 //Checks if the projectile is eligible for embedding. Not that it necessarily will.
 /obj/item/projectile/proc/can_embed()

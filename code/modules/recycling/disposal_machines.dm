@@ -160,9 +160,10 @@
 		if(istype(I, /obj/item/holder))
 			var/obj/item/holder/holder = I
 			var/mob/victim = holder.held_mob
-			if(victim.client)
-				log_and_message_admins("placed [victim] inside \the [src]", user)
-			victim.forceMove(src)
+			if(victim)
+				if(victim.client)
+					log_and_message_admins("placed [victim] inside \the [src]", user)
+				victim.forceMove(src)
 			qdel(I)
 			user.visible_message(
 				span_danger("[user] tosses \the [victim] into \the [src]."),
@@ -495,7 +496,7 @@
 
 	var/power_draw = -1
 	if(env && env.return_temperature() > 0)
-		var/transfer_moles = (PUMP_MAX_FLOW_RATE/env.volume)*env.total_moles()	//group_multiplier is divided out here
+		var/transfer_moles = (PUMP_MAX_FLOW_RATE/env.return_volume())*env.total_moles()	//group_multiplier is divided out here
 		power_draw = pump_gas(src, env, air_contents, transfer_moles, active_power_usage)
 
 	if (power_draw > 0)

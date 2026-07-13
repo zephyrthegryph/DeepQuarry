@@ -60,6 +60,7 @@
 		if(istype(src.loc, /mob))
 			src.dropped(src.loc)
 		qdel(src)
+		return
 	update_icon()
 	if(istype(loc, /turf)) //start a fire if possible
 		var/turf/T = loc

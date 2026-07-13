@@ -149,7 +149,7 @@ a creative player the means to solve many problems.  Circuits are held inside an
 	var/datum/integrated_io/pin = locate(params["pin"]) in inputs + outputs + activators
 	var/datum/integrated_io/linked = null
 
-	if(params["link"])
+	if(params["link"] && pin)
 		linked = locate(params["link"]) in pin.linked
 
 	var/obj/held_item = ui.user.get_active_hand()

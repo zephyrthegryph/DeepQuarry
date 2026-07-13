@@ -167,7 +167,6 @@
 	display_name = "plant"
 	material_class = MATCLASS_ORGANIC
 	sheet_singular_name = "fiber"
-	sheet_singular_name = MAT_FIBERS
 	icon_colour = "#006b0e"
 	flags = MATERIAL_PADDING|MATERIAL_BRITTLE
 	ignition_point = T0C+232

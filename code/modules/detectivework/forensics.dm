@@ -147,7 +147,7 @@
 	fibers |= o_fibers
 	fields["fibers"] = fibers
 
-	var/list/blood = other.fields["blood"]
+	var/list/blood = fields["blood"]
 	var/list/o_blood = other.fields["blood"]
 	blood |= o_blood
 	fields["blood"] = blood

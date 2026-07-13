@@ -84,7 +84,7 @@
 	var/p_y = Proj.p_y + pick(0,0,0,0,0,-1,1)
 	var/decaltype = 1 // 1 - scorch, 2 - bullet
 
-	if(istype(/obj/item/projectile/bullet, Proj))
+	if(istype(Proj, /obj/item/projectile/bullet))
 		decaltype = 2
 
 

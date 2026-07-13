@@ -65,6 +65,7 @@ GLOBAL_VAR(world_time_day)
 			animals = "seasonalwinter"
 			if(prob(snow_chance))
 				chill()
+				. = ..()
 				return
 
 			grass = "seasonalwinter"

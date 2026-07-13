@@ -9,8 +9,7 @@
 	step_in = 2
 	step_energy_drain = 5
 	max_temperature = 20000
-	health = 300
-	maxhealth = 300
+	max_integrity = 300
 	infra_luminosity = 6
 	wreckage = /obj/effect/decal/mecha_wreckage/shuttlecraft
 	cargo_capacity = 3
@@ -61,7 +60,7 @@
 		engine_paint_mask.color = engine_paint
 		add_overlay(engine_paint_mask)
 	if(central_paint)
-		if(!engine_paint_mask)
+		if(!central_paint_mask)
 			central_paint_mask = image(icon, "[initial_icon]-mask+central", src.layer + 2)
 		central_paint_mask.color = central_paint
 		add_overlay(central_paint_mask)

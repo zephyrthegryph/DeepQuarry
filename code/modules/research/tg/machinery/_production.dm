@@ -179,7 +179,6 @@
 
 	update_static_data_for_all_viewers()
 
-	dq_apply_material_synergies(src)
 ///Computes this machines cost efficiency based on the available parts
 /obj/machinery/rnd/production/proc/compute_efficiency()
 	PROTECTED_PROC(TRUE)
@@ -188,8 +187,6 @@
 	for(var/obj/item/stock_parts/manipulator/manip in component_parts)
 		efficiency -= manip.rating * 0.1
 
-	// uniform-class synergy bonus reduces material cost further.
-	efficiency = efficiency / dq_synergy_value(src, "uniform_bonus", 1)
 	return efficiency
 
 /**
@@ -248,7 +245,9 @@
 			"cost" = cost,
 			"id" = design.id,
 			"categories" = design.category,
-			"icon" = "[size == size32x32 ? "" : "[size] "][css_id]"
+			"icon" = "[size == size32x32 ? "" : "[size] "][css_id]",
+			"materialSelectable" = design.material_selectable,
+			"selectableAmount" = design.selectable_amount,
 		)
 
 	data["designs"] = designs
@@ -266,12 +265,34 @@
 	var/list/material_data = materials.mat_container?.tgui_data(user)
 	if(material_data)
 		data["materials"] = material_data
+	// Loaded materials offered in the per-design material picker (selectable designs).
+	data["materialChoices"] = material_choice_list()
 	data["onHold"] = FALSE //materials.on_hold()
 	data["busy"] = busy
 	data["materialMaximum"] = materials.local_size
 	data["queue"] = list()
 
 	return data
+
+/obj/machinery/rnd/production/proc/material_choice_list()
+	return lathe_material_choice_list(materials?.mat_container)
+
+// Shared: loaded materials (>= 1 sheet) offered in a lathe's per-design material
+// picker. Used by both the protolathe family and the autolathe.
+/proc/lathe_material_choice_list(datum/component/material_container/cont)
+	var/list/out = list()
+	if(!istype(cont))
+		return out
+	for(var/datum/material/mat as anything in cont.materials)
+		var/amount = cont.materials[mat]
+		if(amount < SHEET_MATERIAL_AMOUNT)
+			continue
+		out += list(list(
+			"id" = mat.name,
+			"label" = mat.display_name || mat.name,
+			"sheets" = round(amount / SHEET_MATERIAL_AMOUNT),
+		))
+	return out
 
 /obj/machinery/rnd/production/tgui_act(action, list/params, datum/tgui/ui)
 	. = ..()
@@ -328,20 +349,27 @@
 				return
 			print_quantity = clamp(print_quantity, 1, 50)
 
+			// Material-selectable designs let the user pick which loaded material to use.
+			var/chosen_material = design.material_selectable ? params["material"] : null
+			if(design.material_selectable && !design.material_choice_valid(chosen_material))
+				atom_say("Select a valid material for this design.")
+				return FALSE
+			var/list/effective_mats = design.effective_materials(chosen_material)
+
 			//efficiency for this design, stacks use exact materials
 			var/coefficient = build_efficiency(design.build_path)
 
 			//check for materials
 			if(!materials.can_use_resource())
 				return
-			if(!materials.mat_container.has_materials(design.materials, coefficient, print_quantity))
+			if(!materials.mat_container.has_materials(effective_mats, coefficient, print_quantity))
 				atom_say("Not enough materials to complete prototype[print_quantity > 1 ? "s" : ""].")
 				return FALSE
 
 			//compute power & time to print 1 item
 			var/charge_per_item = 0
-			for(var/material in design.materials)
-				charge_per_item += design.materials[material]
+			for(var/material in effective_mats)
+				charge_per_item += effective_mats[material]
 			charge_per_item = ROUND_UP((charge_per_item / (MAX_STACK_SIZE * SHEET_MATERIAL_AMOUNT)) * coefficient * active_power_usage)
 			var/build_time_per_item = (design.construction_time * design.lathe_time_factor * efficiency_coeff) ** 0.8
 
@@ -358,7 +386,7 @@
 					target_location = get_turf(src)
 			else
 				target_location = get_turf(src)
-			addtimer(CALLBACK(src, PROC_REF(do_make_item), design, print_quantity, build_time_per_item, coefficient, charge_per_item, target_location), build_time_per_item)
+			addtimer(CALLBACK(src, PROC_REF(do_make_item), design, print_quantity, build_time_per_item, coefficient, charge_per_item, target_location, chosen_material), build_time_per_item)
 
 			return TRUE
 
@@ -373,7 +401,7 @@
  * * charge_per_item - the amount of power to print 1 item
  * * turf/target - the location to drop the printed item on
 */
-/obj/machinery/rnd/production/proc/do_make_item(datum/design_techweb/design, items_remaining, build_time_per_item, material_cost_coefficient, charge_per_item, turf/target)
+/obj/machinery/rnd/production/proc/do_make_item(datum/design_techweb/design, items_remaining, build_time_per_item, material_cost_coefficient, charge_per_item, turf/target, chosen_material = null)
 	PROTECTED_PROC(TRUE)
 
 	if(!items_remaining) // how
@@ -401,7 +429,7 @@
 		return
 
 	var/is_stack = ispath(design.build_path, /obj/item/stack)
-	var/list/design_materials = design.materials
+	var/list/design_materials = design.effective_materials(chosen_material)
 	if(!materials.mat_container.has_materials(design_materials, material_cost_coefficient, is_stack ? items_remaining : 1))
 		atom_say("Unable to continue production, missing materials.")
 		finalize_build()
@@ -423,7 +451,7 @@
 
 		created = new stack_item(null, number_to_make)
 	else
-		created = design.create_item(null)
+		created = design.create_item(null, chosen_material)
 		split_materials_uniformly(design_materials, material_cost_coefficient, created)
 
 	if(isitem(created))
@@ -440,7 +468,7 @@
 	if(!items_remaining)
 		finalize_build()
 		return
-	addtimer(CALLBACK(src, PROC_REF(do_make_item), design, items_remaining, build_time_per_item, material_cost_coefficient, charge_per_item, target), build_time_per_item)
+	addtimer(CALLBACK(src, PROC_REF(do_make_item), design, items_remaining, build_time_per_item, material_cost_coefficient, charge_per_item, target, chosen_material), build_time_per_item)
 
 /// Resets the busy flag
 /// Called at the end of do_make_item's timer loop

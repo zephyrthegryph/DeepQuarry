@@ -79,7 +79,7 @@
 	if(valid_facialhairstyles.len)
 		f_style = pick(valid_facialhairstyles)
 
-		return f_style
+	return f_style
 
 /proc/sanitize_name(name, species = SPECIES_HUMAN, robot = 0)
 	var/datum/species/current_species

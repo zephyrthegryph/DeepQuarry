@@ -34,18 +34,6 @@
 			xgm_id_to_type[initial(gas_type.id)] = gas_type
 	return xgm_id_to_type[gas_id_string]
 
-/// The auxmos gas id (a string) for a gas reference that is either an id string
-/// already OR a /datum/gas type path. Returns null for an unknown gas. Auxmos
-/// keys its Rust gas table by these string ids, so every handle-proc call
-/// (get_moles/set_moles/adjust_moles) must be given the string, never a path.
-/datum/gas_mixture/proc/xgm_gas_string_id(gas_ref)
-	if (istext(gas_ref))
-		return get_xgm_id_for_gas(gas_ref) ? gas_ref : null
-	if (ispath(gas_ref, /datum/gas))
-		var/datum/gas/g = gas_ref
-		return initial(g.id)
-	return null
-
 
 // =====================================================================
 // 2. /datum/gas_mixture proc shims for XGM-style callers
@@ -55,23 +43,26 @@
 // LINDA's native adjust_gas(gas_type, amount) takes a type path. Override here
 // to accept BOTH so CHOMP and LINDA call sites coexist while migration runs.
 /datum/gas_mixture/adjust_gas(gas, amount, update = 1)
+	if (istext(gas))
+		var/datum/gas/gas_type = get_xgm_id_for_gas(gas)
+		if (isnull(gas_type) || amount == 0)
+			return
+		adjust_moles(gas_type, amount)
+		return
 	if (amount == 0)
 		return
-	var/gas_id = xgm_gas_string_id(gas)
-	if (isnull(gas_id))
-		return
-	adjust_moles(gas_id, amount)
+	adjust_moles(gas, amount)
 
 // XGM: adjust_gas_temp(gas_id, moles, temp) — add moles + their heat.
 // Weighted thermal energy: T_new = (n_old*T_old + n_new*T_new) / (n_old+n_new).
 /datum/gas_mixture/proc/adjust_gas_temp(gas_id, moles, temp, update = 1)
 	if (moles <= 0)
 		return
-	var/id = xgm_gas_string_id(gas_id)
-	if (isnull(id))
+	var/datum/gas/gas_type = istext(gas_id) ? get_xgm_id_for_gas(gas_id) : gas_id
+	if (isnull(gas_type))
 		return
 	var/old_total = total_moles()
-	adjust_moles(id, moles)
+	adjust_moles(gas_type, moles)
 	if (old_total > 0)
 		set_temperature((return_temperature() * old_total + temp * moles) / (old_total + moles))
 	else
@@ -84,7 +75,13 @@
 		return
 	set_temperature((return_temperature() * cap + joules) / cap)
 
-// adjust_multi — removed; auxmos_bindings.dm provides the Rust-backed version.
+// XGM: adjust_multi(g1, n1, g2, n2, ...) — variadic adjustment helper.
+/datum/gas_mixture/proc/adjust_multi(...)
+	var/list/L = args
+	var/i = 1
+	while(i < length(L))
+		adjust_gas(L[i], L[i + 1])
+		i += 2
 
 // update_values() removed. Every CHOMP caller has been migrated
 // to drop the no-op call (LINDA auto-archives on read).
@@ -92,13 +89,18 @@
 // XGM: remove_volume(removed_volume) — remove a fraction by volume.
 // LINDA's remove(amount) takes moles. Equivalent: removed_volume / volume.
 /datum/gas_mixture/proc/remove_volume(removed_volume)
+	var/volume = return_volume()
 	if (volume <= 0)
 		return null
 	return remove_ratio(min(1, removed_volume / volume))
 
 // share_ratio(giver, ratio) — weighted blend: self_new = (1-r)*self + r*giver.
 // giver is UNCHANGED — this is the "pull from infinite reservoir" share, used
-// for planetary-atmosphere share and transit_tubes "match the outside environment".
+// by /atmos/turfs/processing.rs:125 for planetary-atmosphere share and by
+// transit_tubes for "match the outside environment". Matches the Rust
+// /datum/gas_mixture/share_ratio impl in verdigris/atmos/src/gas/mixture.rs:279
+// exactly so the DM fallback and the auxmos byondapi-bound version produce
+// identical results.
 /datum/gas_mixture/proc/share_ratio(datum/gas_mixture/giver, ratio)
 	if(!giver || ratio <= 0)
 		return
@@ -106,20 +108,14 @@
 	var/inv_ratio = 1 - ratio
 	var/our_heat = heat_capacity() * inv_ratio
 	var/their_heat = giver.heat_capacity() * ratio
-
-	// Scale our gases by inv_ratio.
-	var/list/our_ids = get_gases()
-	if(our_ids)
-		for(var/datum/gas/gtype as anything in our_ids)
-			set_moles(gtype, get_moles(gtype) * inv_ratio)
-
-	// Add giver's gases * ratio.
-	var/list/their_ids = giver.get_gases()
-	if(their_ids)
-		for(var/datum/gas/gtype as anything in their_ids)
-			adjust_moles(gtype, giver.get_moles(gtype) * ratio)
-
-	// Update temperature via weighted heat capacity.
+	// Scale our existing moles by (1-r); add giver's moles * r. giver untouched.
+	// The arena auto-manages presence, so zero entries need no explicit GC.
+	var/list/our_gases = get_gases()
+	for(var/datum/gas/g as anything in our_gases)
+		set_moles(g, our_gases[g] * inv_ratio)
+	var/list/giver_gases = giver.get_gases()
+	for(var/datum/gas/g as anything in giver_gases)
+		adjust_moles(g, giver_gases[g] * ratio)
 	var/combined_heat = our_heat + their_heat
 	if(combined_heat > MINIMUM_HEAT_CAPACITY)
 		set_temperature((our_heat * return_temperature() + their_heat * giver.return_temperature()) / combined_heat)
@@ -134,9 +130,15 @@
 // gases.dm). GLOB.gas_data.flags[gas_id_string] gives the bitmask, populated
 // by /datum/xgm_gas_data/New() below.
 
-// get_by_flag — removed; auxmos_bindings.dm provides the Rust-backed version.
-// XGM callers that need flag-keyed mole sums should call get_by_flag() as before;
-// the Rust backend will handle it using the registered gas flag data.
+/datum/gas_mixture/proc/get_by_flag(flag)
+	if(!flag)
+		return 0
+	. = 0
+	var/list/cached = get_gases()
+	for(var/datum/gas/g as anything in cached)
+		var/gas_id = initial(g.id)
+		if(GLOB.gas_data.flags[gas_id] & flag)
+			. += cached[g]
 
 // XGM: remove moles of flag-matching gases up to `amount` total, proportionally.
 // Returns a /datum/gas_mixture containing only the removed moles.
@@ -147,39 +149,39 @@
 	if(total_matching <= 0)
 		return null
 	var/to_remove = min(amount, total_matching)
-	var/datum/gas_mixture/removed = new /datum/gas_mixture(volume)
+	var/datum/gas_mixture/removed = new
 	removed.set_temperature(return_temperature())
-	var/list/gas_ids = get_gases()
-	if(!gas_ids)
-		return removed
-	for(var/gas_id in gas_ids)
+	removed.set_volume(return_volume())
+	var/share_fraction = to_remove / total_matching
+	var/list/cached = get_gases()
+	for(var/datum/gas/g as anything in cached)
+		var/gas_id = initial(g.id)
 		if(!(GLOB.gas_data.flags[gas_id] & flag))
 			continue
-		var/share = get_moles(gas_id) * (to_remove / total_matching)
-		adjust_moles(gas_id, -share)
-		removed.set_moles(gas_id, share)
+		var/share = cached[g] * share_fraction
+		adjust_moles(g, -share)
+		removed.set_moles(g, share)
 	return removed
 
 // XGM: iteration over present gases. Used by air alarms / scrubbers / analyzers
 // that expected the XGM string-keyed .gas[] dict.
 /datum/gas_mixture/proc/gas_ids()
-	// auxmos get_gases() already returns the present gases' string ids.
-	return get_gases() || list()
+	. = list()
+	for(var/datum/gas/g as anything in get_gases())
+		. += initial(g.id)
 
 // XGM: get_mass() — sum of moles × molar mass across all gases. Used by
 // gas thruster (code/modules/overmap/ships/engines/gas_thruster.dm) for
 // exhaust momentum calculation.
 /datum/gas_mixture/proc/get_mass()
 	. = 0
-	var/list/gas_type_list = get_gases()
-	if(!gas_type_list)
-		return
-	for(var/gas_id in gas_type_list)
+	var/list/cached = get_gases()
+	for(var/datum/gas/g as anything in cached)
+		var/gas_id = initial(g.id)
 		var/molar_mass = GLOB.gas_data.molar_mass[gas_id]
 		if(!molar_mass)
-			var/gas_meta = GLOB.meta_gas_info[gas_id]
-			molar_mass = (gas_meta ? gas_meta[META_GAS_SPECIFIC_HEAT] : 20) * 0.05
-		. += get_moles(gas_id) * molar_mass
+			molar_mass = initial(g.specific_heat) * 0.05
+		. += cached[g] * molar_mass
 
 // XGM: check_combustability() — true iff this mixture can burn (oxidizer + fuel
 // both present at meaningful levels). Used by gas thruster to gate exhaust ignition.
@@ -305,10 +307,8 @@
 	var/list/molar_specific_volume = list()
 	var/list/flags = list()
 	var/list/overlay_limit = list()
-	// Read by the Rust auxmos post-process visual path (GLOB.gas_data.overlays). This
-	// fork computes overlays from meta_gas_info in return_visuals()/set_visuals(), so
-	// this stays empty — it exists only so the Rust-side read succeeds before it hands
-	// off to /turf/open/set_visuals(), which recomputes.
+	/// Rust turf visuals (update_visuals) reads GLOB.gas_data.overlays[gas_id][vis_factor].
+	/// Declare so the read resolves (empty -> no overlay, no per-turf error flood).
 	var/list/overlays = list()
 
 // Real molar masses (kg/mol) for the LINDA-only /datum/gas subtypes that
@@ -372,6 +372,27 @@ GLOBAL_LIST_INIT(dq_linda_only_molar_masses, list(
 
 GLOBAL_DATUM_INIT(gas_data, /datum/xgm_gas_data, new())
 
+// Populate GLOB.gas_data.overlays so the Rust turf-processing visuals path
+// (verdigris turfs.rs::update_visuals) can render gas clouds. It reads
+// overlays[registered_gas_id][visibility_step(moles)] -> an overlay appearance,
+// where the id is the STRING we registered the gas under (its type-path text)
+// and visibility_step is clamped to 1..FACTOR_GAS_VISIBLE_MAX. The per-gas
+// overlay objects already exist in GLOB.meta_gas_info[path][META_GAS_OVERLAY],
+// a list-of-[plane offset] each a fill list of TOTAL_VISIBLE_STATES overlays;
+// expose the base-plane fill list (Rust indexes it with no plane offset and
+// only reads 1..20, well within the fill list's range). Must run AFTER
+// meta_gas_list() has generated overlays (SSmapping ready) — SSair.Initialize
+// calls this.
+/proc/build_gas_data_overlays()
+	if(!GLOB.gas_data || !GLOB.meta_gas_info)
+		return
+	for(var/gas_path in GLOB.meta_gas_info)
+		var/list/meta = GLOB.meta_gas_info[gas_path]
+		var/list/overlay = meta[META_GAS_OVERLAY]
+		if(!length(overlay))
+			continue
+		GLOB.gas_data.overlays["[gas_path]"] = overlay[1]
+
 
 // =====================================================================
 // 6. Specific entropy
@@ -392,33 +413,35 @@ GLOBAL_DATUM_INIT(gas_data, /datum/xgm_gas_data, new())
 
 /datum/gas_mixture/proc/specific_entropy()
 	var/n_total = total_moles()
-	var/list/gas_type_list = get_gases()
-	if(!gas_type_list || n_total <= 0)
+	if(n_total <= 0)
 		return SPECIFIC_ENTROPY_VACUUM
 	. = 0
-	for(var/datum/gas/gtype as anything in gas_type_list)
-		var/n = get_moles(gtype)
+	var/list/cached = get_gases()
+	for(var/datum/gas/g as anything in cached)
+		var/n = cached[g]
 		if(n <= 0)
 			continue
-		. += n * specific_entropy_gas(gtype)
+		. += n * specific_entropy_gas(g)
 	. /= n_total
 
 /datum/gas_mixture/proc/specific_entropy_gas(gas_id_or_type)
-	var/cur_temp = return_temperature()
-	if(cur_temp <= 0 || volume <= 0)
+	var/temperature = return_temperature()
+	var/volume = return_volume()
+	if(temperature <= 0 || volume <= 0)
 		return SPECIFIC_ENTROPY_VACUUM
-	var/gas_id = xgm_gas_string_id(gas_id_or_type)
-	if(isnull(gas_id))
+	var/datum/gas/gas_type = istext(gas_id_or_type) ? get_xgm_id_for_gas(gas_id_or_type) : gas_id_or_type
+	if(isnull(gas_type))
 		return SPECIFIC_ENTROPY_VACUUM
-	var/n = get_moles(gas_id)
+	var/n = get_moles(gas_type)
 	if(n <= 0)
 		return SPECIFIC_ENTROPY_VACUUM
+	var/gas_id = initial(gas_type.id)
 	var/molar_mass = GLOB.gas_data.molar_mass[gas_id]
 	var/specific_heat = GLOB.gas_data.specific_heat[gas_id]
 	if(molar_mass <= 0 || specific_heat <= 0)
 		// Fallback for gases without xgm_gas decl metadata.
-		return R_IDEAL_GAS_EQUATION * (log(volume / n) + 1.5 * log(cur_temp)) + 15
-	return R_IDEAL_GAS_EQUATION * (log((IDEAL_GAS_ENTROPY_CONSTANT * volume / (n * cur_temp)) * (molar_mass * specific_heat * cur_temp) ** (2/3) + 1) + 15)
+		return R_IDEAL_GAS_EQUATION * (log(volume / n) + 1.5 * log(temperature)) + 15
+	return R_IDEAL_GAS_EQUATION * (log((IDEAL_GAS_ENTROPY_CONSTANT * volume / (n * temperature)) * (molar_mass * specific_heat * temperature) ** (2/3) + 1) + 15)
 
 
 // =====================================================================
@@ -443,8 +466,13 @@ GLOBAL_DATUM_INIT(gas_data, /datum/xgm_gas_data, new())
 // /datum/pipeline.building was a ZAS-era rebuild sentinel; zero
 // callers under LINDA, removed.
 
-// multiply — removed; auxmos_bindings.dm provides the Rust-backed version
-// via call_ext. CHOMP datum_pipeline.dm callers use the bindings version.
+// CHOMP datum_pipeline.dm calls multiply() during gas rebalancing. LINDA's
+// gas_mixture has multiply as a byondapi binding; this is the DM fallback
+// when running without verdigris.
+/datum/gas_mixture/proc/multiply(num_val)
+	if(num_val == 1)
+		return
+	call_ext(VERDIGRIS, "byond:multiply_hook_ffi")(src, num_val)
 
 // /obj/fire — ZAS-era fire effect. LINDA uses /obj/effect/hotspot at runtime;
 // CHOMP code that still references the legacy /obj/fire path (closet contents,

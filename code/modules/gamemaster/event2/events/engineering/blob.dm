@@ -136,7 +136,7 @@
 			var/datum/blob_type/blob_type = B.overmind.blob_type
 
 			blob_type_names += blob_type.name
-			if(danger_level > blob_type.difficulty) // The highest difficulty is used, if multiple blobs are present.
+			if(danger_level < blob_type.difficulty) // The highest difficulty is used, if multiple blobs are present.
 				danger_level = blob_type.difficulty
 
 		if(blob_type_names.len > 1) // More than one blob is harder.

@@ -5,7 +5,7 @@
 	icon = 'icons/obj/maintenance_panel.dmi'
 	icon_state = "panel"
 	basestate = "panel"
-	maxhealth = 350
+	max_integrity = 350
 	glasstype = /obj/item/stack/tile/maintenance_panel // Yes these are technically windows, drops into their panel on deconstruct and shatter
 	maximal_heat = /datum/material/steel::melting_point
 	force_threshold = 5
@@ -29,7 +29,7 @@
 		return // Cannot be screwed down
 	if(istype(W, /obj/item/stack/cable_coil))
 		return // Cannot be electrochromed
-	if(W.has_tool_quality(TOOL_WELDER) && (user.a_intent != I_HELP || health == maxhealth)) // If at max health or not on help
+	if(W.has_tool_quality(TOOL_WELDER) && (user.a_intent != I_HELP || get_integrity() >= max_integrity)) // If at max health or not on help
 		var/obj/item/weldingtool/WT = W.get_welder()
 		if(WT.remove_fuel(1, user))
 			to_chat(user, span_warning("You begin to [!anchored ? "weld" : "cut"] the [src] [!anchored ? "to" : "off"] the wall."))
@@ -44,27 +44,22 @@
 	. = ..()
 
 
-/obj/structure/window/maintenance_panel/take_damage(damage = 0,  sound_effect = 1)
-	var/initialhealth = health
-	health = max(0, health - damage)
-	if(health <= 0)
-		shatter()
-		return
+// Heavier panel takes a metal-scrape sound on big hits, glass tink on small ones.
+/obj/structure/window/maintenance_panel/play_attack_sound(damage_amount, damage_type, damage_flag)
+	if(damage_amount < 30)
+		playsound(src, 'sound/effects/Glasshit.ogg', 100, 1)
+	else
+		playsound(src, 'sound/effects/grillehit.ogg', 75, 1)
 
-	if(sound_effect)
-		if(damage < 30)
-			playsound(src, 'sound/effects/Glasshit.ogg', 100, 1)
-		else
-			playsound(src, 'sound/effects/grillehit.ogg', 75, 1)
-	if(health < maxhealth / 4 && initialhealth >= maxhealth / 4)
+/obj/structure/window/maintenance_panel/integrity_message(old_value, new_value)
+	if(new_value <= 0)
+		return
+	if(new_value < max_integrity / 4 && old_value >= max_integrity / 4)
 		visible_message("\the [src] is about to break free!")
-		update_icon()
-	else if(health < maxhealth / 2 && initialhealth >= maxhealth / 2)
+	else if(new_value < max_integrity / 2 && old_value >= max_integrity / 2)
 		visible_message("\the [src] looks seriously damaged!")
-		update_icon()
-	else if(health < maxhealth * 3/4 && initialhealth >= maxhealth * 3/4)
+	else if(new_value < max_integrity * 3/4 && old_value >= max_integrity * 3/4)
 		visible_message("\the [src] looks like it's taking damage!")
-		update_icon()
 
 /obj/structure/window/maintenance_panel/shatter(display_message = 1)
 	playsound(src, pick(list('sound/effects/metalscrape1.ogg','sound/effects/metalscrape2.ogg','sound/effects/metalscrape3.ogg')), 70, 1)

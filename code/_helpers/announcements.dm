@@ -37,10 +37,10 @@
 
 	if(encode_title && title && length(title) > 0)
 		title = html_encode(title)
-		if(encode_text)
-			text = html_encode(text)
-			if(!length(text))
-				return
+	if(encode_text)
+		text = html_encode(text)
+		if(!length(text))
+			return
 
 	announcement_strings += span_major_announcement_title(sender_override)
 	announcement_strings += span_subheader_announcement_text(title)

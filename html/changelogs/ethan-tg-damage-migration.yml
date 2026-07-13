@@ -1,0 +1,5 @@
+author: "ethan"
+delete-after: true
+changes:
+  - refactor: "Migrated all damageable objects, machines, doors, vehicles, and mechs off the old health/maxhealth damage model onto the unified TG obj_integrity system (take_damage/atom_break/atom_destruction). Damage behaviour is unchanged but now flows through one consistent code path."
+  - bugfix: "Xenomorph eggs are now actually destructible by gunfire (their bullet_act was switching on an undefined damage var, so bullets dealt no damage)."

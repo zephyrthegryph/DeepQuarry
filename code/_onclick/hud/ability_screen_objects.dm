@@ -22,7 +22,6 @@
 		message_admins("ERROR: ability_master's New() was not given an owner argument.  This is a bug.")
 
 /atom/movable/screen/movable/ability_master/Destroy()
-	. = ..()
 	//Get rid of the ability objects.
 	remove_all_abilities()
 	ability_objects.Cut()
@@ -33,6 +32,7 @@
 		if(my_mob.client && my_mob.client.screen)
 			my_mob.client.screen -= src
 		my_mob = null
+	return ..()
 
 /atom/movable/screen/movable/ability_master/MouseDrop()
 	if(showing)
@@ -106,7 +106,7 @@
 		invisibility = INVISIBILITY_ABSTRACT
 
 /atom/movable/screen/movable/ability_master/proc/add_ability(name_given)
-	if(!name) return
+	if(!name_given) return
 
 //	if(spell.connected_button) //we have one already, for some reason
 //		if(spell.connected_button in spell_objects)

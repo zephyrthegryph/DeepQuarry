@@ -1,0 +1,5 @@
+author: "ethan"
+delete-after: true
+changes:
+  - refactor: "Gas mixtures are now a fully opaque handle over the Rust atmos arena (the /tg/ auxmos model): the DM-side temperature/volume mirror vars are gone, so a stale-mirror read is impossible and every access goes through the arena-authoritative return_temperature()/return_volume()/set_temperature()/set_volume() accessors."
+  - code_imp: "Converted ~500 gas-mixture temperature/volume access sites across the codebase to the accessors, caching in hot loops to keep the FFI cost down."

@@ -129,6 +129,7 @@
 
 	if (!H)
 		to_chat(usr, span_warning("Something is very wrong."))
+		return
 
 	if(!H.holstered)
 		var/obj/item/W = usr.get_active_hand()

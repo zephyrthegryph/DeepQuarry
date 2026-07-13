@@ -18,13 +18,18 @@
 	attempt_connection()
 
 /obj/structure/ladder/proc/attempt_connection()
-	// the upper will connect to the lower
+	// The DOWN-allowing ladder links to the UP-allowing one below, wiring BOTH ends:
+	// our own target_down AND, reciprocally, the lower ladder's target_up. The reciprocal
+	// assignment had been dropped in a past refactor (the removed "legacy .target" line),
+	// which left every lower ladder with a null target_up — so up-climbing was broken
+	// game-wide and the ladder map test failed on the first UP ladder it checked.
 	if(allowed_directions & DOWN) //we only want to do the top one, as it will initialize the ones before it.
 		for(var/obj/structure/ladder/L in GetBelow(src))
 			if(L.allowed_directions & UP)
 				target_down = L
-				//legacy .target reference removed (no equivalent on /datum/ai_brain).
-				return
+				L.target_up = src
+				L.update_icon()
+				break
 	update_icon()
 
 /obj/structure/ladder/Destroy()

@@ -1552,7 +1552,6 @@
 	desc = "Nothing to see here."
 	icon = 'icons/obj/flags.dmi'
 	icon_state = "flag"
-	var/icon/ripped_outline = icon('icons/obj/flags.dmi', "ripped")
 	var/obj/structure/sign/flag/linked_flag //For double flags
 	var/obj/item/flag/flagtype //For returning your flag
 	var/ripped = FALSE //If we've been torn down
@@ -1967,7 +1966,7 @@
 	name = "Galactic Autonomy Party flag"
 	desc = "The flag of the libertarian Galactic Autonomy Party political party."
 	icon_state = "gap"
-	flagtype = /obj/item/flag/seo
+	flagtype = /obj/item/flag/gap
 
 /obj/item/flag/gap
 	name = "Galactic Autonomy Party flag"
@@ -2000,7 +1999,7 @@
 	desc = "A warning sign which reads 'NO SMOKING'."
 	icon_state = "nosmoking_small"
 
-/obj/structure/sign/small/nosmoking
+/obj/structure/sign/small/smoking
 	name = "\improper DESIGNATED SMOKING AREA"
 	desc = "A warning sign which reads 'DESIGNATED SMOKING AREA'."
 	icon_state = "smoking_small"

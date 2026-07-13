@@ -75,7 +75,7 @@
 		heat_gas_contents()
 		expel_gas()
 
-	if(abs(temperature_archived-air_contents.return_temperature()) > 1)
+	if(air_contents && abs(temperature_archived-air_contents.return_temperature()) > 1)
 		network.update = 1
 
 	return 1
@@ -124,11 +124,12 @@
 		occupantData["bodyTemperature"] = occupant.bodytemperature
 	data["occupant"] = occupantData;
 
-	data["cellTemperature"] = round(air_contents.return_temperature())
+	var/air_temperature = air_contents.return_temperature()
+	data["cellTemperature"] = round(air_temperature)
 	data["cellTemperatureStatus"] = "good"
-	if(air_contents.return_temperature() > T0C) // if greater than 273.15 kelvin (0 celcius)
+	if(air_temperature > T0C) // if greater than 273.15 kelvin (0 celcius)
 		data["cellTemperatureStatus"] = "bad"
-	else if(air_contents.return_temperature() > 225)
+	else if(air_temperature > 225)
 		data["cellTemperatureStatus"] = "average"
 
 	data["isBeakerLoaded"] = beaker ? TRUE : FALSE
@@ -214,8 +215,9 @@
 	if(occupant)
 		if(occupant.stat >= DEAD)
 			return
-		occupant.bodytemperature += 2*(air_contents.return_temperature() - occupant.bodytemperature)*current_heat_capacity/(current_heat_capacity + air_contents.heat_capacity())
-		occupant.bodytemperature = max(occupant.bodytemperature, air_contents.return_temperature()) // this is so ugly i'm sorry for doing it i'll fix it later i promise
+		var/air_temperature = air_contents.return_temperature()
+		occupant.bodytemperature += 2*(air_temperature - occupant.bodytemperature)*current_heat_capacity/(current_heat_capacity + air_contents.heat_capacity())
+		occupant.bodytemperature = max(occupant.bodytemperature, air_temperature) // this is so ugly i'm sorry for doing it i'll fix it later i promise
 		occupant.set_stat(UNCONSCIOUS)
 		occupant.dir = SOUTH
 		if(occupant.bodytemperature < T0C)

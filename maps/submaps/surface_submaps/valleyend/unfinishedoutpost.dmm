@@ -3,7 +3,7 @@
 /obj/effect/floor_decal/corner/green/diagonal,
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor/plating{
 	oxygen = 20.7263;
@@ -541,7 +541,7 @@
 "Zh" = (
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor/plating{
 	oxygen = 20.7263;

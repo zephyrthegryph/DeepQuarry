@@ -71,6 +71,7 @@
 		var/obj/item/reagent_containers/foodItem = new product_path
 
 		var/total = foodItem.reagents.total_volume
+		qdel(foodItem)
 
 		if(!container)
 			to_chat(user, span_warning("There is no container!"))
@@ -199,7 +200,6 @@
 	speed = cap_rating / 2
 
 
-	dq_apply_material_synergies(src)
 /obj/machinery/food_replicator/verb/eject_beaker()
 	set name = "Eject Beaker"
 	set category = "Object"

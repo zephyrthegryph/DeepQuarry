@@ -68,6 +68,30 @@ export type Design = {
    * 32x32.**
    */
   icon: string;
+
+  /**
+   * If set, this design lets the user pick which loaded material to build it
+   * from; `cost` covers only the fixed materials, and `selectableAmount` units of
+   * the chosen material are consumed on top.
+   */
+  materialSelectable?: BooleanLike;
+
+  /**
+   * Units of the chosen material consumed per item (material-selectable designs).
+   */
+  selectableAmount?: number;
+};
+
+/**
+ * A loaded material offered in a material-selectable design's picker.
+ */
+export type MaterialChoice = {
+  /** Registry id passed back to the server on build. */
+  id: string;
+  /** Human-readable label shown in the dropdown. */
+  label: string;
+  /** How many whole sheets are loaded. */
+  sheets: number;
 };
 
 /**
@@ -99,6 +123,11 @@ export type FabricatorData = {
    * The set of designs that this fabricator can print, indexed by their ID.
    */
   designs: Record<string, Design>;
+
+  /**
+   * Loaded materials offered in material-selectable designs' pickers.
+   */
+  materialChoices?: MaterialChoice[];
 
   /**
    * Whether the fabricator is currently printing an item.

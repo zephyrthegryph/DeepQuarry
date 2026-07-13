@@ -260,6 +260,8 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 			to_chat(user, span_notice("\The [name] already has a name!"))
 		else
 			var/tmp_name = sanitizeSafe(tgui_input_text(user, "Give \the [name] a name", "Name", null, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
+			if(named || !length(tmp_name)) // re-validate after the (sleeping) prompt
+				return
 			if(length(tmp_name) > 50)
 				to_chat(user, span_notice("The name can be at most 50 characters long."))
 			else

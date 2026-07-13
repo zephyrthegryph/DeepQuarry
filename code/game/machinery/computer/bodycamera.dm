@@ -103,7 +103,7 @@
 	var/tries = 10
 	var/atom/recursive_loc = thing
 	while(--tries)
-		recursive_loc = thing.loc
+		recursive_loc = recursive_loc.loc
 		if(!istype(recursive_loc, /atom/movable))
 			break
 	thing = recursive_loc // should get the topmost atom, which *should* be a mob, or a locker, or something that isnt just ~clothes~

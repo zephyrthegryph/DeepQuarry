@@ -41,7 +41,6 @@
 	if(!T)
 		return
 	destination = T
-	update_engagement() // walking to a destination needs the fast tick
 	invalidate_selection()
 
 /datum/ai_brain/proc/clear_destination()

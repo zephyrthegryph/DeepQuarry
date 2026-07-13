@@ -321,7 +321,7 @@
 	else
 		// If TFed, revert TF. Easier than coding mind transfer stuff for edge cases.
 		if(avatar.tfed_into_mob_check())
-			var/mob/living/M = loc
+			var/mob/living/M = avatar
 			if(istype(M)) // Sanity check, though shouldn't be needed since this is already checked by the proc.
 				M.revert_mob_tf()
 		occupant.enter_vr(avatar)

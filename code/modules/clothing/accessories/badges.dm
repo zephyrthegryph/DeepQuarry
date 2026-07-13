@@ -298,6 +298,8 @@
 	START_PROCESSING(SSobj, src)
 
 /obj/item/clothing/accessory/dosimeter/Destroy()
+	STOP_PROCESSING(SSobj, src)
+	QDEL_NULL(current_film)
 	return ..()
 
 /obj/item/clothing/accessory/dosimeter/process()
@@ -344,7 +346,6 @@
 			update_state(1)
 			visible_message(span_warning("The film of \the [src] starts to darken."))
 			desc = "This seems like a dosimeter, but the film has darkened."
-			sleep(30)
 		else if(current_film && (H.radiation >= 50) && (current_film.state == 1))
 			visible_message(span_warning("The film of \the [src] has turned black!"))
 			update_state(2)

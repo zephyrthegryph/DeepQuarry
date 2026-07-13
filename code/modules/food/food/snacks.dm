@@ -87,7 +87,7 @@
 
 		// Consume item TF mobs as raw nutrition if prefs align
 		if(possessed_voice && possessed_voice.len && eater.can_be_drop_pred && eater.food_vore && eater.vore_selected)
-			var/obj/item/reagent_containers/food/rawnutrition/NR = new /obj/item/reagent_containers/food/rawnutrition(usr)
+			var/obj/item/reagent_containers/food/rawnutrition/NR = new /obj/item/reagent_containers/food/rawnutrition(eater)
 			NR.name = "piece of food"
 			NR.stored_nutrition = 1
 			for(var/mob/living/voice/V in possessed_voice)
@@ -1563,7 +1563,6 @@
 	nutriment_desc = list("sweetness" = 2, "pie" = 3)
 	bitesize = 3
 
-/obj/item/reagent_containers/food/snacks/ber
 /obj/item/reagent_containers/food/snacks/berryclafoutis/berry/Initialize(mapload)
 	. = ..()
 	reagents.add_reagent(REAGENT_ID_BERRYJUICE, 5)
@@ -4226,7 +4225,7 @@
 				doimgtag = 1
 
 		if( doimgtag )
-			var/image/tagimg = image("food.dmi", icon_state = "pizzabox_tag")
+			var/image/tagimg = image('icons/obj/food.dmi', icon_state = "pizzabox_tag")
 			tagimg.pixel_y = boxes.len * 3
 			add_overlay(tagimg)
 
@@ -5914,7 +5913,7 @@
 /obj/item/reagent_containers/food/snacks/dip/attackby(obj/item/reagent_containers/food/snacks/item as obj, mob/user as mob)
 	. = ..()
 	var/obj/item/reagent_containers/food/snacks/returningitem
-	if(istype(item,/obj/item/reagent_containers/food/snacks/chip/nacho) && item.icon_state == "chip_nacho")
+	if(istype(item,/obj/item/reagent_containers/food/snacks/chip/nacho) && item.icon_state == "nacho")
 		returningitem = new nachotrans(src)
 	else if (istype(item,/obj/item/reagent_containers/food/snacks/chip) && (item.icon_state == "chip" || item.icon_state == "chip_half"))
 		returningitem = new chiptrans(src)
@@ -7437,7 +7436,7 @@
 	icon_state = "tomato"
 	desc = "Plain old unseasoned tomato soup. This can has no use-by date."
 	trash = /obj/item/trash/tomato
-	package_open_state = "tomato-open"
+	canned_open_state = "tomato-open"
 	filling_color = "#ae0000"
 	center_of_mass_x = 15
 	center_of_mass_y = 9

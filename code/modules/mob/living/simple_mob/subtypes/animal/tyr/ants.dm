@@ -448,7 +448,7 @@ ANT STRUCTURES
 	simultaneous_spawns = 5
 
 	destructible = 1
-	health = 50 //Unsure why you would want to break it but you can
+	max_integrity = 50 //Unsure why you would want to break it but you can
 
 /obj/structure/mob_spawner/ant_hill/creatable
 	simultaneous_spawns = 2
@@ -460,7 +460,7 @@ ANT STRUCTURES
 	icon_state = "hole"
 	anchored = TRUE
 	density = FALSE
-	var/health = 15 //1 thwack with sword, 2 with spear
+	max_integrity = 15 //1 thwack with sword, 2 with spear
 
 /obj/effect/ant_structure/attackby(obj/item/W, mob/user)
 	user.setClickCooldown(user.get_attack_speed(W))
@@ -479,21 +479,19 @@ ANT STRUCTURES
 			damage = 15
 			playsound(src, W.usesound, 100, 1)
 
-	health -= damage
-	healthcheck()
+	take_damage(damage, BRUTE, MELEE, sound_effect = FALSE)
 
 
 /obj/effect/ant_structure/bullet_act(obj/item/projectile/Proj)
 	..()
-	health -= Proj.get_structure_damage()
-	healthcheck()
+	take_damage(Proj.get_structure_damage(), Proj.damage_type, BULLET)
 
 /obj/effect/ant_structure/proc/die()
 	qdel(src)
 
-/obj/effect/ant_structure/proc/healthcheck()
-	if(health <= 0)
-		die()
+/obj/effect/ant_structure/atom_destruction(damage_flag)
+	. = ..()
+	die()
 /obj/effect/ant_structure/trap
 	name = "spore trap"
 	var/modifiertype = /datum/modifier/berserk
@@ -557,7 +555,7 @@ ANT STRUCTURES
 	name = "Metant wall"
 	icon_state = "wall"
 	density = TRUE
-	health = 25 //two hits with sword.
+	max_integrity = 25 //two hits with sword.
 
 /obj/random/ant_building
 	name = "ant stucture"
@@ -580,7 +578,7 @@ ANT STRUCTURES
 	icon_state = "antling"
 	anchored = FALSE
 	layer = HIDING_LAYER
-	health = 3
+	max_integrity = 3
 	grow_as = list(/mob/living/simple_mob/animal/tyr/mineral_ants/bronze,
 	/mob/living/simple_mob/animal/tyr/mineral_ants/builder,
 	/mob/living/simple_mob/animal/tyr/mineral_ants/copper,

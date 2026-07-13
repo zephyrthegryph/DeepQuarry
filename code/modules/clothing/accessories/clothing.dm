@@ -95,16 +95,16 @@
 /obj/item/clothing/accessory/hawaiian_random
 	name = "random hawaiian shirt"
 
-/obj/item/clothing/accessory/hawaii/random/Initialize(mapload)
+/obj/item/clothing/accessory/hawaiian_random/Initialize(mapload)
 	var/random_color = pick("blue", "pink", "red", "yellow", "cyan")
 	icon_state = "hawaiian_[random_color]"
 	name = "[random_color] hawaiian shirt"
 	. = ..()
 
-/obj/item/clothing/accessory/hawaii/random_flower
+/obj/item/clothing/accessory/hawaiian/random_flower
 	name = "flower-pattern shirt"
 
-/obj/item/clothing/accessory/hawaii/random_flower/Initialize(mapload)
+/obj/item/clothing/accessory/hawaiian/random_flower/Initialize(mapload)
 	if(prob(50))
 		icon_state = "hawaiian_red"
 	color = color_rotation(rand(-11,12)*15)

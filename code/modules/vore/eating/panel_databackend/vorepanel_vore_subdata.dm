@@ -416,9 +416,9 @@
 		var/list/tab_data = list(
 			"subtypes" = list()
 			)
-		if(selected.message_mode || selected.digest_mode == DM_DIGEST || DM_SELECT)
+		if(selected.message_mode || selected.digest_mode == DM_DIGEST || selected.digest_mode == DM_SELECT)
 			tab_data["subtypes"] += DIGEST_MESSAGE
-		if(selected.message_mode || selected.digest_mode == DM_ABSORB || DM_SELECT)
+		if(selected.message_mode || selected.digest_mode == DM_ABSORB || selected.digest_mode == DM_SELECT)
 			tab_data["subtypes"] += ABSORB_MESSAGE
 		if(selected.message_mode || selected.digest_mode == DM_UNABSORB)
 			tab_data["subtypes"] += UNABSORB_MESSAGE

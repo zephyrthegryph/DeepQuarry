@@ -59,7 +59,7 @@
 	var/other_old_temperature = partner.air_contents.return_temperature()
 
 	if(combined_heat_capacity > 0)
-		var/combined_energy = partner.air_contents.return_temperature()*other_air_heat_capacity + air_heat_capacity*air_contents.return_temperature()
+		var/combined_energy = other_old_temperature*other_air_heat_capacity + air_heat_capacity*old_temperature
 
 		var/new_temperature = combined_energy/combined_heat_capacity
 		air_contents.set_temperature(new_temperature)

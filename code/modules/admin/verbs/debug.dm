@@ -72,15 +72,22 @@ ADMIN_VERB(Cell, R_DEBUG, "Cell", "Display the atmos information of the current 
 
 	var/datum/gas_mixture/env = T.return_air()
 
+	var/env_temperature = env.return_temperature()
+	var/env_volume = env.return_volume()
 	var/t = span_blue("Coordinates: [T.x],[T.y],[T.z]\n")
-	t += span_red("Temperature: [env.return_temperature()]\n")
+	t += span_red("Temperature: [env_temperature]\n")
 	t += span_red("Pressure: [env.return_pressure()]kPa\n")
+	// was env.gas[g] (XGM); under LINDA/auxmos, iterate get_gases() (id -> moles).
 	for(var/datum/gas/g as anything in env.get_gases())
 		var/moles = env.get_moles(g)
-		t += span_blue("[g]: [moles] / [moles * R_IDEAL_GAS_EQUATION * env.return_temperature() / env.volume]kPa\n")
+		t += span_blue("[g]: [moles] / [moles * R_IDEAL_GAS_EQUATION * env_temperature / env_volume]kPa\n")
 
 	user.mob.show_message(t, 1)
 	feedback_add_details("admin_verb","ASL") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
+
+ADMIN_VERB(debug_atmospherics, R_DEBUG, "Debug Atmospherics", "Opens the SSair debug panel (excited groups, active turfs, fire count, freeze).", ADMIN_CATEGORY_DEBUG_INVESTIGATE)
+	SSair.tgui_interact(user.mob)
+	feedback_add_details("admin_verb","DBGATMOS") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_robotize, R_ADMIN|R_EVENT|R_DEBUG, "Make Robot", "Turns the target into a robot.", ADMIN_CATEGORY_FUN_EVENT_KIT, mob/living/carbon/human/target_human in GLOB.human_mob_list)
 	if(!SSticker)

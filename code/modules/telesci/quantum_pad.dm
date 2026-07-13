@@ -60,7 +60,6 @@
 	teleport_cooldown = initial(teleport_cooldown)
 	teleport_cooldown = max(50, (teleport_cooldown - (E * 100)))
 
-	dq_apply_material_synergies(src)
 /obj/machinery/power/quantumpad/attackby(obj/item/I, mob/user, params)
 	if(default_deconstruction_screwdriver(user, I))
 		return

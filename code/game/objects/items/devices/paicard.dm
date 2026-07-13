@@ -676,11 +676,11 @@
 			user.visible_message(span_warning("\The [user] removes \the [choice] from \the [src]."),span_warning("You remove \the [choice] from \the [src]."))
 			processor = PP_MISSING
 		if("board")
-			board = PP_MISSING
 			if(board == PP_FUNCTIONAL)
 				new /obj/item/paiparts/board(get_turf(user))
 			else
 				new /obj/item/paiparts(get_turf(user))
+			board = PP_MISSING
 			user.visible_message(span_warning("\The [user] removes \the [choice] from \the [src]."),span_warning("You remove \the [choice] from \the [src]."))
 
 		if("capacitor")
@@ -900,5 +900,5 @@
 	return pick(/obj/item/paicard ,/obj/item/paicard/typeb)
 
 /obj/item/paicard/digest_act(atom/movable/item_storage = null)
-	if(pai.digestable)
+	if(pai?.digestable)
 		return ..()

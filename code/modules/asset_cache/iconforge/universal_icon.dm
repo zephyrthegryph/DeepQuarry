@@ -94,9 +94,9 @@
 
 /datum/universal_icon/proc/map_colors_inferred(list/color_args)
 	var/num_args = length(color_args)
-	if(num_args <= 20 || num_args >= 16)
+	if(num_args >= 16 && num_args <= 20)
 		src.map_colors_rgba(arglist(color_args))
-	else if(num_args <= 12 || num_args >= 9)
+	else if(num_args >= 9 && num_args <= 12)
 		src.map_colors_rgb(arglist(color_args))
 	else if(num_args == 5)
 		src.map_colors_rgba_hex(arglist(color_args))
@@ -586,8 +586,8 @@
 				)
 
 				flatX1 = addX1
-				flatX2 = addY1
-				flatY1 = addX2
+				flatX2 = addX2
+				flatY1 = addY1
 				flatY2 = addY2
 
 			// Blend the overlay into the flattened icon

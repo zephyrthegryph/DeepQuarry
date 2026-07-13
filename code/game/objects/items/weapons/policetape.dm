@@ -21,7 +21,7 @@
 		if(!T)
 			return
 		var/obj/machinery/door/door = locate(/obj/machinery/door) in T
-		if((door == /obj/machinery/door/airlock) || (door == /obj/machinery/door/firedoor))
+		if(istype(door, /obj/machinery/door/airlock) || istype(door, /obj/machinery/door/firedoor))
 			afterattack(door, null, TRUE)
 		return INITIALIZE_HINT_QDEL
 

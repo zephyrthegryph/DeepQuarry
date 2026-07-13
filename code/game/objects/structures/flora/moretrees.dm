@@ -4,8 +4,7 @@
 	base_state = "tree"
 	product = /obj/item/stack/material/log
 	product_amount = 20
-	health = 400
-	max_health = 400
+	max_integrity = 400
 	pixel_x = -65
 	pixel_y = -8
 	layer = MOB_LAYER - 1

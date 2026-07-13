@@ -18,7 +18,10 @@ GLOBAL_LIST_EMPTY(solars_list)
 	idle_power_usage = 0
 	active_power_usage = 0
 	var/id = 0
-	var/health = 10
+	// 12 integrity with a 2-point "broken" buffer: ~10 damage cracks it (atom_break),
+	// then any further hit shatters it into shards (atom_destruction).
+	max_integrity = 12
+	integrity_failure = 0.167
 	var/obscured = 0
 	var/sunfrac = 0
 	var/adir = SOUTH // actual dir
@@ -34,7 +37,8 @@ GLOBAL_LIST_EMPTY(solars_list)
 /obj/machinery/power/solar/Initialize(mapload, glass_type)
 	. = ..()
 	if(glass_type == /obj/item/stack/material/glass/reinforced) //if the panel is in reinforced glass
-		health *= 2
+		max_integrity *= 2
+		update_integrity(max_integrity)
 	update_icon()
 	connect_to_network()
 	AddElement(/datum/element/climbable)
@@ -74,21 +78,21 @@ GLOBAL_LIST_EMPTY(solars_list)
 		user.visible_message(span_warning("[user] strikes the solar panel with [W]."))
 		user.setClickCooldown(user.get_attack_speed(W))
 		add_fingerprint(user)
-		health -= W.force
-		healthcheck()
+		take_damage(W.force, W.damtype, MELEE, sound_effect = FALSE)
 	..()
 
 
-/obj/machinery/power/solar/proc/healthcheck()
-	if (src.health <= 0)
-		if(!(stat & BROKEN))
-			broken()
-		else
-			new /obj/item/material/shard(src.loc)
-			new /obj/item/material/shard(src.loc)
-			qdel(src)
-			return
-	return
+// First time integrity bottoms out, the panel flips to its broken (cracked) state.
+/obj/machinery/power/solar/atom_break(damage_flag)
+	. = ..()
+	if(!(stat & BROKEN))
+		broken()
+
+// Once broken, further damage shatters it into shards.
+/obj/machinery/power/solar/atom_destruction(damage_flag)
+	new /obj/item/material/shard(src.loc)
+	new /obj/item/material/shard(src.loc)
+	return ..()
 
 
 /obj/machinery/power/solar/update_icon()

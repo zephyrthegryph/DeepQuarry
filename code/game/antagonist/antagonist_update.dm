@@ -87,7 +87,7 @@
 		if(SSticker.mode.antag_tags && (id in SSticker.mode.antag_tags))
 			cur_max = hard_cap_round
 
-	if(SSticker.mode.antag_scaling_coeff)
+	if(SSticker?.mode?.antag_scaling_coeff)
 
 		var/count = 0
 		for(var/mob/living/M in GLOB.player_list)

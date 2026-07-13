@@ -94,8 +94,11 @@
 		return
 
 	signal_strength = 0
+	if(current_uav)
+		UnregisterSignal(current_uav, COMSIG_MOVABLE_Z_CHANGED)
 	current_uav = U
-	RegisterSignal(U, COMSIG_MOVABLE_Z_CHANGED, PROC_REF(current_uav_changed_z))
+	if(U)
+		RegisterSignal(U, COMSIG_MOVABLE_Z_CHANGED, PROC_REF(current_uav_changed_z))
 	SEND_SIGNAL(src,COMSIG_REMOTE_VIEW_CLEAR)
 
 /datum/tgui_module/uav/proc/clear_current()
@@ -242,7 +245,7 @@
 	if(!tgui_owner?.current_uav)
 		MA.icon_state = "health7"
 	else
-		switch(tgui_owner.current_uav.health)
+		switch(tgui_owner.current_uav.get_integrity())
 			if(100 to INFINITY)
 				MA.icon_state = "health0"
 			if(80 to 100)

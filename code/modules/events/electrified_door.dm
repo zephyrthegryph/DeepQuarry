@@ -16,7 +16,7 @@
 		target_doors = shuffle(target_doors)
 
 		for(var/obj/machinery/door/airlock/target_door in target_doors)
-			if(!target_door.isElectrified() && target_door.arePowerSystemsOn() && target_door.maxhealth == target_door.health)
+			if(!target_door.isElectrified() && target_door.arePowerSystemsOn() && target_door.get_integrity() >= target_door.max_integrity)
 				chosen_door = target_door
 				return
 
@@ -28,6 +28,6 @@
 	if(severity >= EVENT_LEVEL_MODERATE)
 		chosen_door.electrify(-1)
 	chosen_door.lock()
-	chosen_door.health = chosen_door.maxhealth / 6
+	chosen_door.take_damage(chosen_door.max_integrity * 5/6, BRUTE)
 	chosen_door.aiControlDisabled = 1
 	chosen_door.update_icon()

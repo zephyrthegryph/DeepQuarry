@@ -473,7 +473,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 		// legacy browse(null) close removed; see /mob/Topic.
 		unset_machine()
 	if (href_list["switchcamera"])
-		switchCamera(locate(href_list["switchcamera"])) in GLOB.cameranet.cameras
+		switchCamera(locate(href_list["switchcamera"]) in GLOB.cameranet.cameras)
 	if (href_list["showalerts"])
 		subsystem_alarm_monitor()
 	//Carn: holopad requests

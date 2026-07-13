@@ -28,6 +28,7 @@
 //	if(token["age"] > entries_expire_at)
 //		fdel(png_filename)
 //		return FALSE
+	return TRUE
 
 /datum/persistent/paintings/Shutdown()
 	for(var/obj/structure/sign/painting/P in SSpersistence.painting_frames)

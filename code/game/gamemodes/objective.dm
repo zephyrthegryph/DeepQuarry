@@ -138,8 +138,9 @@ GLOBAL_LIST_EMPTY(all_objectives)
 	return target
 
 /datum/objective/anti_revolution/demote/check_completion()
-	if(target && target.current && ishuman(target))
-		var/obj/item/card/id/I = target.current:wear_id
+	if(target && target.current && ishuman(target.current))
+		var/mob/living/carbon/human/H = target.current
+		var/obj/item/card/id/I = H.wear_id
 		if(istype(I, /obj/item/pda))
 			var/obj/item/pda/P = I
 			I = P.id

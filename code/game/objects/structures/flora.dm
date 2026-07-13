@@ -9,8 +9,7 @@
 	base_state = "tree"
 	product = /obj/item/stack/material/log
 	product_amount = 15
-	health = 200
-	max_health = 200
+	max_integrity = 200
 	pixel_x = -32
 	pixel_y = 0
 	shake_animation_degrees = 2
@@ -23,8 +22,7 @@
 	base_state = "tree"
 	product = /obj/item/stack/material/log
 	product_amount = 25
-	health = 250
-	max_health = 250
+	max_integrity = 250
 	pixel_x = -48
 	pixel_y = -12
 	shake_animation_degrees = 2

@@ -6,13 +6,13 @@
 
 // Cleaning up the refs during deletion
 /mob/living/carbon/brain/caught_soul/vore/Destroy()
+	if(eyeobj)
+		QDEL_NULL(eyeobj)
+		gem?.notify_holder("[name] ended SR projection.")
 	if(gem)
 		gem.notify_holder("Mind unloaded: [name]")
 		gem.brainmobs -= src
 		gem = null
-	if(eyeobj)
-		QDEL_NULL(eyeobj)
-		gem.notify_holder("[name] ended SR projection.")
 	container = null
 	return ..()
 

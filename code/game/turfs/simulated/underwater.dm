@@ -134,7 +134,7 @@
 
 /turf/simulated/floor/water/underwater/indoors/handle_water_icons()
 	SHOULD_CALL_PARENT(FALSE)
-	var/atom/movable/weather_visuals/visuals = new(null)
+	visuals = new(null)
 	visuals.icon = overlay_icon
 	visuals.icon_state = overlay_state
 	vis_contents += visuals

@@ -47,7 +47,7 @@
 
 	countdown = new(src)
 	if(countdown_colour)
-		countdown_colour = countdown_colour
+		countdown.color = countdown_colour
 
 	if(immortal)
 		return

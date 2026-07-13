@@ -10,7 +10,7 @@
 	layer = ABOVE_JUNK_LAYER
 
 	//Maybe make these calculate based on material?
-	var/health = 100
+	max_integrity = 100
 
 	var/grave_name = ""		//Name of the intended occupant
 	var/epitaph = ""		//A quick little blurb
@@ -81,7 +81,7 @@
 		return
 
 	..()
-	damage(proj_damage)
+	take_damage(proj_damage, Proj.damage_type, BULLET)
 
 	return
 
@@ -99,11 +99,10 @@
 				qdel(src)
 			return
 
-/obj/structure/gravemarker/proc/damage(damage)
-	health -= damage
-	if(health <= 0)
-		visible_message(span_danger("\The [src] falls apart!"))
-		dismantle()
+/obj/structure/gravemarker/atom_destruction(damage_flag)
+	visible_message(span_danger("\The [src] falls apart!"))
+	dismantle()
+	return ..()
 
 /obj/structure/gravemarker/proc/dismantle()
 	material.place_dismantled_product(get_turf(src))

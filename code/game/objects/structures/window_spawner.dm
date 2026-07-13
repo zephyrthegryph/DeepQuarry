@@ -79,8 +79,8 @@
 	win_path = /obj/structure/window/reinforced
 
 /obj/effect/wingrille_spawn/reinforced/crescent/handle_window_spawn(obj/structure/window/W)
-	W.maxhealth = 1000000
-	W.health = 1000000
+	W.max_integrity = 1000000
+	W.update_integrity(1000000)
 
 /obj/effect/wingrille_spawn/phoron
 	name = "phoron window grille spawner"

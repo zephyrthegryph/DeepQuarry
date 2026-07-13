@@ -53,7 +53,7 @@
 				continue
 
 			var/on_x_bound = (x == 1 || x == limit_x)
-			var/on_y_bound = (y == 1 || y == limit_x)
+			var/on_y_bound = (y == 1 || y == limit_y)
 			var/draw_corners = (limit_x < 5 && limit_y < 5)
 			if(on_x_bound || on_y_bound)
 				// Draw access points in midpoint of each wall.

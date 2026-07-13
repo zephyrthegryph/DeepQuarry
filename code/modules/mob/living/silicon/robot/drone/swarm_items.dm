@@ -97,7 +97,7 @@
 		qdel(W)
 		grabbed_something = TRUE
 
-	if(istype(T,/turf/simulated/wall) && (last_field < world.time + field_cooldown))
+	if(istype(T,/turf/simulated/wall) && (last_field + field_cooldown < world.time))
 		if(!(locate(/obj/effect/temporary_effect/pulse/disintegrate)))
 			last_field = world.time
 			to_chat(user, span_alien("You deploy an energetic field through \the [T], beginning its deconstruction."))

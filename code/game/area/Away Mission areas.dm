@@ -49,6 +49,8 @@
 			var/ourgroup = pickweight(valid_mobs)
 			var/goodnum = rand(semirandom_group_min, semirandom_group_max)
 			for(var/mobscount = 1 to goodnum)
+				if(!length(valid_spawn_turfs))
+					break
 				M = pickweight(ourgroup)
 				Turf = pick(valid_spawn_turfs)
 				valid_spawn_turfs -= Turf
@@ -56,6 +58,8 @@
 				adjust_mob(ourmob)
 	else
 		for(var/mobscount = 1 to mobcountmax)
+			if(!length(valid_spawn_turfs))
+				break
 			M = pickweight(valid_mobs)
 			Turf = pick(valid_spawn_turfs)
 			valid_spawn_turfs -= Turf
@@ -89,6 +93,8 @@
 	var/obj/F
 	var/turf/Turf
 	for(var/floracount = 1 to floracountmax)
+		if(!length(valid_spawn_turfs))
+			break
 		F = pick(valid_flora)
 		Turf = pick(valid_spawn_turfs)
 		valid_spawn_turfs -= Turf

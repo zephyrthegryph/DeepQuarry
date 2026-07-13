@@ -1,0 +1,4 @@
+author: "ethan"
+delete-after: true
+changes:
+  - bugfix: "Water vapor / steam once again makes floors slippery. A check had been hardcoded so that every turf counted as no-slip, which silently disabled the condensation-wets-floor effect entirely (the reaction ran but never slicked anything)."

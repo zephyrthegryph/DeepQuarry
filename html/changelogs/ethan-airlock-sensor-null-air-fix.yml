@@ -1,0 +1,4 @@
+author: "ethan"
+delete-after: true
+changes:
+  - bugfix: "Fixed a class of atmospherics runtime crashes on airless tiles. After the turf-type refactor, walls and vacuum-exposed tiles could report their air as 'nothing' rather than 'empty vacuum', and the ~260 places that read a tile's air assumed there was always something there. Reading the air of an airless tile (e.g. an external dock airlock sensor checking pressure) crashed every process tick — dozens of runtimes per round, which also ate time the atmospherics subsystem needed. Airless tiles now report empty vacuum, so all those readers get 0-pressure vacuum instead of crashing."

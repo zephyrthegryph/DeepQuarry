@@ -62,7 +62,7 @@
 /datum/component/hose_connector/process()
 	// Return reagents to source if no hose, lossy to avoid exploits
 	if(!my_hose)
-		if(!reagents.total_volume)
+		if(reagents.total_volume)
 			reagents.trans_to_holder(connected_reagents(), reagents.maximum_volume)
 			reagents.clear_reagents() // Wipe it to avoid exploits
 		return

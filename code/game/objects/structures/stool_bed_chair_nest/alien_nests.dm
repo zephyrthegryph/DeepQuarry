@@ -5,7 +5,7 @@
 	desc = "It's a gruesome pile of thick, sticky resin shaped like a nest."
 	icon = 'icons/mob/alien.dmi'
 	icon_state = "nest"
-	var/health = 100
+	max_integrity = 100
 	unacidable = TRUE
 	flippable = FALSE
 
@@ -75,25 +75,21 @@
 	return
 
 /obj/structure/bed/nest/attackby(obj/item/W as obj, mob/user as mob)
-	var/aforce = W.force
-	health = max(0, health - aforce)
 	playsound(src, 'sound/effects/attackblob.ogg', 100, 1)
 	for(var/mob/M in viewers(src, 7))
 		M.show_message(span_warning("[user] hits [src] with [W]!"), 1)
-	healthcheck()
+	take_damage(W.force, W.damtype, MELEE, sound_effect = FALSE)
 
-/obj/structure/bed/nest/proc/healthcheck()
-	if(health <=0)
-		density = FALSE
-		qdel(src)
-	return
+/obj/structure/bed/nest/atom_destruction(damage_flag)
+	density = FALSE
+	return ..()
 
 // start - Allows xenos to clean nests.
 /obj/structure/bed/nest/attack_hand(mob/user as mob)
 	usr.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if (HULK in usr.mutations)
 		visible_message(span_warning("[usr] destroys the [name]!"))
-		health = 0
+		take_damage(get_integrity(), BRUTE, MELEE, sound_effect = FALSE)
 	else
 
 		// Aliens can get straight through these.
@@ -102,9 +98,7 @@
 				var/mob/living/carbon/M = usr
 				if(locate(/obj/item/organ/internal/xenos/hivenode) in M.internal_organs)
 					visible_message (span_warning("[usr] strokes the [name] and it melts away!"), 1)
-					health = 0
-					healthcheck()
+					take_damage(get_integrity(), BRUTE, MELEE, sound_effect = FALSE)
 					return
-	healthcheck()
 	return
 // end.

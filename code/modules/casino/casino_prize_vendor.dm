@@ -22,7 +22,6 @@
 	src.equipment_path = path
 	src.equipment_amt = amt
 	src.cost = cost
-	src.category = category
 	src.restriction = restriction
 
 /obj/machinery/casino_prize_dispenser
@@ -378,6 +377,9 @@
 	if(ispath(bi.equipment_path, /obj/item/stack))
 		new bi.equipment_path(loc, bi.equipment_amt)
 		playsound(src, 'sound/machines/vending/vending_drop.ogg', 100, 1)
+		currently_vending = null
+		use_power(vend_power_usage)	//actuators and stuff
+		flick("[icon_state]-vend",src)
 		return TRUE
 
 	for(var/i in 1 to bi.equipment_amt)

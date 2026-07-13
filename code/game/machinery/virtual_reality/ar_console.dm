@@ -62,7 +62,7 @@
 			return
 
 
-	avatar.exit_vr() //We don't poof! We're a actual, living entity that isn't restrained by VR zones!
+	avatar?.exit_vr() //We don't poof! We're a actual, living entity that isn't restrained by VR zones!
 	if(!occupant) //This whole thing needs cleaned up later, but this works for now.
 		return
 	occupant.forceMove(get_turf(src))

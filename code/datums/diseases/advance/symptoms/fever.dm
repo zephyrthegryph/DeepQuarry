@@ -70,6 +70,6 @@ Bonus
 
 /datum/symptom/fever/proc/set_body_temp(mob/living/M, datum/disease/advance/A)
 	if(!unsafe)
-		M.bodytemperature = min(M.bodytemperature + max((3 * power) * A.stage, (BODYTEMP_HEAT_DAMAGE_LIMIT - 1)))
+		M.bodytemperature = min(M.bodytemperature + (3 * power) * A.stage, BODYTEMP_HEAT_DAMAGE_LIMIT - 1)
 	else
-		M.bodytemperature = min(M.bodytemperature + max((3 * power) * A.stage, (BODYTEMP_HEAT_DAMAGE_LIMIT + 20)))
+		M.bodytemperature = min(M.bodytemperature + (3 * power) * A.stage, BODYTEMP_HEAT_DAMAGE_LIMIT + 20)

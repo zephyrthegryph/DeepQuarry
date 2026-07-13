@@ -139,7 +139,6 @@
 
 	update_static_data_for_all_viewers()
 
-	dq_apply_material_synergies(src)
 /obj/machinery/mecha_part_fabricator_tg/examine(mob/user)
 	. = ..()
 	if(in_range(user, src) || isobserver(user))
@@ -238,7 +237,7 @@
 		return FALSE
 
 	var/turf/exit = get_step(src, drop_direction)
-	if(exit.density)
+	if(exit && exit.density)
 		if(verbose)
 			atom_say("Warning. Exit port obstructed. Please clear obstructions or reorient machine, then retry.")
 		return FALSE
@@ -267,6 +266,8 @@
 
 /obj/machinery/mecha_part_fabricator_tg/process()
 	var/turf/exit = get_step(src, drop_direction)
+	if(!exit)
+		return
 	// If there's a stored part to dispense due to an obstruction, try to dispense it.
 	if(stored_part)
 		if(exit.density)

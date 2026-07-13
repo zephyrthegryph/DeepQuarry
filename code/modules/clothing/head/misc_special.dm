@@ -226,11 +226,13 @@
 
 /obj/item/clothing/head/kitty/update_icon(mob/living/carbon/human/user)
 	if(!istype(user)) return
+	cut_overlays()
 	var/icon/ears = new/icon("icon" = 'icons/inventory/head/mob.dmi', "icon_state" = "kitty")
 	ears.Blend(rgb(user.r_hair, user.g_hair, user.b_hair), ICON_ADD)
 
 	var/icon/earbit = new/icon("icon" = 'icons/inventory/head/mob.dmi', "icon_state" = "kittyinner")
 	ears.Blend(earbit, ICON_OVERLAY)
+	add_overlay(ears)
 
 /obj/item/clothing/head/richard
 	name = "chicken mask"

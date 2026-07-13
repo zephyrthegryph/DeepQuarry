@@ -302,7 +302,7 @@
 		return
 	if(user!=src.occupant)
 		return
-	if(health < initial(health) - initial(health)/3)//Same formula as in movement, just beforehand.
+	if(get_integrity() < max_integrity - max_integrity/3)//Same formula as in movement, just beforehand.
 		src.occupant_message(span_red("Leg actuators damage critical, unable to engage overload."))
 		overload = 0	//Just to be sure
 		return

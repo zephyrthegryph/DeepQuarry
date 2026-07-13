@@ -20,6 +20,12 @@
 	if (!hide_on_roll)
 		on_rolled["down"] = icon_state
 
+/obj/item/clothing/accessory/storage/Destroy()
+	// Without this the contents-qdel loop deletes the internal storage while
+	// `hold` still points at it, so it fails GC every time (cf. suit pockets).
+	QDEL_NULL(hold)
+	return ..()
+
 /obj/item/clothing/accessory/storage/attack_hand(mob/user)
 	if (has_suit)	//if we are part of a suit
 		hold.open(user)

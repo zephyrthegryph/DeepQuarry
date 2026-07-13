@@ -99,16 +99,19 @@
 		QDEL_LIST(wounds)
 
 	if(children)
-		for(var/obj/item/organ/external/C in children)
-			children -= C
+		// Iterate a snapshot: shrinking `children` mid-loop makes DM skip entries,
+		// leaving child limbs never-Destroy()'d (their owner ref then pins the mob).
+		for(var/obj/item/organ/external/C in children.Copy())
 			C.parent = null
 			qdel(C)
+		children = null
 
 	if(internal_organs)
-		for(var/obj/item/organ/O in internal_organs)
-			internal_organs -= O
+		// Same snapshot rule — organs remove themselves from this list in Destroy().
+		for(var/obj/item/organ/O in internal_organs.Copy())
 			if(isobj(O))
 				qdel(O)
+		internal_organs = null
 
 	if(splinted && splinted.loc == src)
 		splinted.loc = null
@@ -722,9 +725,6 @@ This function completely restores a damaged organ to perfect condition.
 	if(owner && (damage > 5 || damage + burn_dam >= 15) && type == BURN && (robotic < ORGAN_ROBOT) && !(data.get_species_flags() & NO_BLOOD))
 		var/fluid_loss = 0.1 * (damage/(owner.getMaxHealth() - (-owner.getMaxHealth()))) * owner.species.blood_volume*(1 - owner.species.blood_level_fatal) // reduce fluid loss 4-fold so lasers dont suck your blood
 		owner.remove_blood(fluid_loss)
-	// Thick Skin: a brute hit opens a bleeding wound less often.
-	if(owner && type == CUT && owner.has_perk(/datum/perk/body/str_thick_skin) && prob(DQ_PERK_THICK_SKIN_PROB))
-		return
 	// first check whether we can widen an existing wound
 	if(wounds.len > 0 && prob(max(50+(number_wounds-1)*10,90)))
 		if((type == CUT || type == BRUISE) && damage >= 5)

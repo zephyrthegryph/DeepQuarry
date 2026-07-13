@@ -31,7 +31,9 @@
 /// (kPa) Allowed pressure difference between input and output pipenets for overclocked volume pump.
 #define VOLUME_PUMP_OVERPRESSURE_ALLOWANCE 1000
 /// How many percent of the contents that an overclocked volume pumps leak into the air.
-#define VOLUME_PUMP_LEAK_AMOUNT 0.1
+/// 0.04 preserves this fork's original balance (the DreamChecker-dedup pass
+/// accidentally swapped in /tg/'s 0.1 when it removed volume_pump.dm's local shadow).
+#define VOLUME_PUMP_LEAK_AMOUNT 0.04
 //used for device_type vars
 #define UNARY 1
 #define BINARY 2

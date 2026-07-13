@@ -151,8 +151,6 @@
 /mob/living/proc/handle_stunned()
 	if(stunned)
 		AdjustStunned(-1)
-		if(has_perk(/datum/perk/body/vig_stalwart) && prob(DQ_PERK_STALWART_PROB))
-			AdjustStunned(-1) // Stalwart: shake off stuns faster.
 		if(!alert_state_stunned)
 			alert_state_stunned = TRUE
 			throw_alert("stunned", /atom/movable/screen/alert/stunned)

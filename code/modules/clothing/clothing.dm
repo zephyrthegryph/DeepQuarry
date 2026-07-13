@@ -62,12 +62,40 @@
 		for(var/trait in clothing_traits)
 			ADD_CLOTHING_TRAIT(user, trait)
 
+// Set while this clothing is deployed as part of a hardsuit. Lets the piece free
+// itself if the control module is removed, destroyed, or its owner dies, so a
+// deployed component is never left locked onto the wearer. See rig_self_detach().
+/obj/item/clothing
+	var/obj/item/rig/master_rig
+
+// The self-detach primitive. Gets a deployed rig piece off its wearer and somewhere
+// safe: retracted back into the control module if it still exists, otherwise dropped
+// to the floor as a normal item. After this runs the piece is never "stuck".
+/obj/item/clothing/proc/rig_self_detach()
+	var/obj/item/rig/owner_rig = master_rig
+	master_rig = null
+	canremove = TRUE
+	if(ismob(loc))
+		var/mob/M = loc
+		M.drop_from_inventory(src)
+	if(owner_rig && !QDELETED(owner_rig))
+		forceMove(owner_rig)   // retracted into the module (which may now be on the floor)
+		canremove = FALSE
+	else
+		forceMove(get_turf(src))   // module is gone; settle on the floor
+
 /obj/item/clothing/dropped(mob/user, equipping, slot)
 	..()
 	if(enables_planes)
 		user.recalculate_vis()
 	for(var/trait in clothing_traits)
 		REMOVE_CLOTHING_TRAIT(user, trait)
+	// Safety net: a deployed hardsuit piece pulled off by something other than its own
+	// control module (dismemberment, stripping, gibbing) frees itself instead of
+	// staying locked. The module's own retract clears master_rig first, so this no-ops
+	// for the normal path.
+	if(master_rig)
+		rig_self_detach()
 
 /obj/item/clothing/click_alt(mob/user)
 	if(Adjacent(user) || user == src.loc)
@@ -1325,7 +1353,7 @@
 	else
 		body_parts_covered = initial(body_parts_covered)
 		heat_protection = initial(heat_protection)
-		cold_protection = initial(heat_protection)
+		cold_protection = initial(cold_protection)
 		if(icon_override == rolled_down_icon)
 			icon_override = initial(icon_override)
 		LAZYSET(item_state_slots, slot_w_uniform_str, worn_state)
@@ -1361,7 +1389,7 @@
 	else
 		body_parts_covered = initial(body_parts_covered)
 		heat_protection = initial(heat_protection)
-		cold_protection = initial(heat_protection)
+		cold_protection = initial(cold_protection)
 		if(icon_override == rolled_down_sleeves_icon)
 			icon_override = initial(icon_override)
 		LAZYSET(item_state_slots, slot_w_uniform_str, worn_state)

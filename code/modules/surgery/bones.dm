@@ -9,6 +9,8 @@
 	if(!ishuman(target))
 		return FALSE
 	var/obj/item/organ/external/affected = target.get_organ(target_zone)
+	if(!affected)
+		return FALSE
 	if(!(affected.status & ORGAN_BROKEN))
 		return FALSE
 	if(coverage_check(user, target, affected, tool))

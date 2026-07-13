@@ -20,7 +20,7 @@
 
 	if(var_name == NAMEOF(src, button_icon_state))
 		// If someone vv's our icon either add or remove the component
-		if(isnull(var_name))
+		if(isnull(var_value))
 			AddComponent(/datum/component/action_item_overlay, target)
 		else
 			qdel(GetComponent(/datum/component/action_item_overlay))

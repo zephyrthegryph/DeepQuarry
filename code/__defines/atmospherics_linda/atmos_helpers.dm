@@ -50,37 +50,43 @@
 		T.pixel_z = (PipingLayer - PIPING_LAYER_DEFAULT) * PIPING_LAYER_P_Y; \
 	}
 
-///Calculate the thermal energy of a gas mixture (J). Routes through handle proc.
-#define THERMAL_ENERGY(gas) (gas.return_temperature() * gas.heat_capacity())
+///Calculate the thermal energy of the selected gas (J)
+#define THERMAL_ENERGY(gas) (gas.temperature * gas.heat_capacity())
 
-// ADD_GAS — no-op under the auxmos handle model. Rust auto-creates gas entries
-// on first set_moles/adjust_moles. Call sites that wrote a local gaslist cache
-// need to be migrated to use the handle procs directly (PHASE4 migration).
-// PHASE4: migrate remaining ADD_GAS(gas_id, local_list) call sites in external
-// files to use gas_mixture.set_moles() / gas_mixture.adjust_moles() directly.
-#define ADD_GAS(gas_id, out_list)
+///Directly adds a gas to a gas mixture without checking for its presence beforehand, use only if is certain the absence of said gas
+#define ADD_GAS(gas_id, out_list)\
+	var/list/tmp_gaslist = GLOB.gaslist_cache[gas_id]; out_list[gas_id] = tmp_gaslist.Copy();
 
-// ASSERT_GAS — no-op. Auxmos auto-allocates entries; pre-asserting is unnecessary.
-#define ASSERT_GAS(gas_id, gas_mixture)
+///Adds a gas to a gas mixture but checks if is already present, faster than the same proc
+#define ASSERT_GAS(gas_id, gas_mixture) ASSERT_GAS_IN_LIST(gas_id, gas_mixture.gases)
 
-// ASSERT_GAS_IN_LIST — no-op. Auxmos auto-allocates entries.
-#define ASSERT_GAS_IN_LIST(gas_id, gases)
+///Adds a gas to a gas LIST but checks if is already present, accepts a list instead of a datum, so faster if the list is locally cached
+#define ASSERT_GAS_IN_LIST(gas_id, gases) if (!gases[gas_id]) { ADD_GAS(gas_id, gases) };
 
-// TOTAL_MOLES — PHASE4: external callers pass a cached .gases list which no
-// longer exists under the handle model. Callers must switch to
-// gas_mixture.total_moles() (the Rust-backed proc). The macro is left here
-// to keep non-migrated files compiling if they capture a non-null list from
-// some other source; it will silently return 0 once the list is gone.
-// PHASE4: audit and remove every remaining TOTAL_MOLES(datum.gases, ...) call site.
+//prefer this to gas_mixture/total_moles in performance critical areas
+///Calculate the total moles of the gas mixture, faster than the proc, good for performance critical areas
 #define TOTAL_MOLES(cached_gases, out_var)\
 	out_var = 0;\
-	if(cached_gases){\
-		for(var/total_moles_id in cached_gases){\
-			out_var += cached_gases[total_moles_id][MOLES];\
-		}\
+	for(var/total_moles_id in cached_gases){\
+		out_var += cached_gases[total_moles_id][MOLES];\
 	}
 
 GLOBAL_LIST_INIT(nonoverlaying_gases, typecache_of_gases_with_no_overlays())
+///Returns a list of overlays of every gas in the mixture
+#define GAS_OVERLAYS(gases, out_var, z_layer_turf)\
+	do { \
+		out_var = list();\
+		var/offset = GET_TURF_PLANE_OFFSET(z_layer_turf) + 1;\
+		for(var/_ID in gases){\
+			if(GLOB.nonoverlaying_gases[_ID]) continue;\
+			var/_GAS = gases[_ID];\
+			var/_GAS_META = _GAS[GAS_META];\
+			if(_GAS[MOLES] <= _GAS_META[META_GAS_MOLES_VISIBLE]) continue;\
+			var/_GAS_OVERLAY = _GAS_META[META_GAS_OVERLAY][offset];\
+			out_var += _GAS_OVERLAY[min(TOTAL_VISIBLE_STATES, CEILING(_GAS[MOLES] / MOLES_GAS_VISIBLE_STEP, 1))];\
+		} \
+	}\
+	while (FALSE)
 
 #ifdef TESTING
 GLOBAL_LIST_INIT(atmos_adjacent_savings, list(0,0))

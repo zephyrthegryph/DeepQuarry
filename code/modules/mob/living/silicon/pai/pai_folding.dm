@@ -145,4 +145,4 @@
 	remove_verb(src, /mob/living/proc/vertical_nom)
 
 /mob/living/silicon/pai/proc/is_folding_unsafe(check_location)
-	return isbelly(check_location) || istype(check_location, /obj/machinery) || istype(check_location, /obj/item/storage/vore_egg || istype(check_location, /obj/item/pda))
+	return isbelly(check_location) || istype(check_location, /obj/machinery) || istype(check_location, /obj/item/storage/vore_egg) || istype(check_location, /obj/item/pda)

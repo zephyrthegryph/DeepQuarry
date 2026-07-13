@@ -221,7 +221,7 @@
 			var/transfer_moles = calculate_transfer_moles(environment, air_contents, pressure_delta, (network)? network.volume : 0)
 
 			//limit flow rate from turfs
-			transfer_moles = min(transfer_moles, environment.total_moles()*air_contents.volume/environment.volume)	//group_multiplier gets divided out here
+			transfer_moles = min(transfer_moles, environment.total_moles()*air_contents.return_volume()/environment.return_volume())	//group_multiplier gets divided out here
 			power_draw = pump_gas(src, environment, air_contents, transfer_moles, power_rating)
 
 	else

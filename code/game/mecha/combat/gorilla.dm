@@ -7,8 +7,7 @@
 	initial_icon = "pzrmech"
 	pixel_x = -16
 	step_in = 10
-	health = 5000
-	maxhealth = 5000
+	max_integrity = 5000
 	opacity = 0 // Because there's big tall legs to look through. Also it looks fucky if this is set to 1.
 	deflect_chance = 50
 	max_temperature = 35000 //Just a bit better than the Durand.

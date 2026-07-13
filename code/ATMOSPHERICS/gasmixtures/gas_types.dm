@@ -1,9 +1,6 @@
-/// Per-gas metadata table, keyed by the gas's string id ("o2", "plasma", ...) — the
-/// same id auxmos registers gases under and returns from get_gases(). Callers that
-/// hold a /datum/gas type path convert with `initial(gas.id)` first.
 /proc/meta_gas_list()
-	. = list()
-	for(var/gas_path in subtypesof(/datum/gas))
+	. = subtypesof(/datum/gas)
+	for(var/gas_path in .)
 		var/list/gas_info = new(8)
 		var/datum/gas/gas = gas_path
 
@@ -18,7 +15,7 @@
 		gas_info[META_GAS_DANGER] = initial(gas.dangerous)
 		gas_info[META_GAS_ID] = initial(gas.id)
 		gas_info[META_GAS_DESC] = initial(gas.desc)
-		.[initial(gas.id)] = gas_info
+		.[gas_path] = gas_info
 
 /proc/generate_gas_overlays(old_offset, new_offset, datum/gas/gas_type)
 	var/list/to_return = list()
@@ -36,6 +33,14 @@
 			fill += gas
 	return to_return
 
+/proc/gas_id2path(id)
+	var/list/meta_gas = GLOB.meta_gas_info
+	if(id in meta_gas)
+		return id
+	for(var/path in meta_gas)
+		if(meta_gas[path][META_GAS_ID] == id)
+			return path
+	return ""
 
 /*||||||||||||||/----------\||||||||||||||*\
 ||||||||||||||||[GAS DATUMS]||||||||||||||||
@@ -67,27 +72,6 @@
 	var/desc
 	///RGB code for use when a generic color representing the gas is needed. Colors taken from contants.ts
 	var/primary_color
-
-	// --- Auxmos gas-registry metadata (read by the Rust gas table at
-	// registration). auxmos interns each of these names via byond_string!,
-	// which panics if the string doesn't exist in BYOND's string tree — so
-	// these vars must be declared even where unused. ---
-	/// Gas flag bitmask (oxidizer/fuel classifications, etc.).
-	var/flags = 0
-	/// If set, the temperature at/above which this gas acts as a fire oxidizer.
-	var/oxidation_temperature = null
-	/// Oxidizing power per mole when acting as an oxidizer.
-	var/oxidation_rate = null
-	/// If set, the temperature at/above which this gas acts as fire fuel.
-	var/fire_temperature = null
-	/// Burn rate per mole when acting as fuel.
-	var/fire_burn_rate = null
-	/// Assoc list gas_id -> product ratios of combustion, or a number for plasma-style.
-	var/fire_products = null
-	/// Enthalpy (energy released) contribution when this gas burns.
-	var/enthalpy = 0
-	/// Radiation released when this gas burns.
-	var/fire_radiation_released = 0
 
 
 /datum/gas/oxygen

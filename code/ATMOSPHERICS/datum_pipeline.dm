@@ -15,7 +15,7 @@
 /datum/pipeline/Destroy()
 	QDEL_NULL(network)
 
-	if(air && air.volume)
+	if(air && air.return_volume())
 		temporarily_store_air()
 	for(var/obj/machinery/atmospherics/pipe/P in members)
 		P.parent = null
@@ -40,7 +40,7 @@
 		member.air_temporary = new
 		member.air_temporary.copy_from(air)
 		member.air_temporary.set_volume(member.volume)
-		member.air_temporary.multiply(member.volume / air.volume)
+		member.air_temporary.multiply(member.volume / air.return_volume())
 
 /datum/pipeline/proc/build_pipeline(obj/machinery/atmospherics/pipe/base)
 	air = new
@@ -127,19 +127,26 @@
 
 // rewrote off ZAS zones. ZAS branch was `if(target.zone) … modify
 // zone.air …`. Under LINDA, /turf.zone is always null, so we always take the
-// non-zone path: pull a sample from the pipe air, share it with the turf's
-// LINDA mixture (mutual exchange via share()), then merge the sample back
-// into the pipe.
+// non-zone path. Under the auxmos arena there is no share(); we do the mingle
+// with arena ops: pull a sample of the pipe air, merge it into the turf mix so
+// the combined contents fully equalise, then split the mingle share back out of
+// the (now equalised) turf mix by volume ratio and merge it into the pipe.
 /datum/pipeline/proc/mingle_with_turf(turf/target, mingle_volume)
 	var/datum/gas_mixture/turf_air = target.return_air()
 	if(!turf_air)
 		return
-	var/datum/gas_mixture/air_sample = air.remove_ratio(mingle_volume / air.volume)
+	// Sample the pipe air proportional to the mingle volume.
+	var/datum/gas_mixture/air_sample = air.remove_ratio(mingle_volume / air.return_volume())
 	air_sample.set_volume(mingle_volume)
 
-	// share() does symmetric exchange weighted by volume; both mixes converge.
-	air_sample.share(turf_air, 4, 4)
-	air.merge(air_sample)
+	// Merge the sample into the turf mix so both sets of contents fully mix,
+	// then reclaim the pipe's share back out by volume ratio.
+	turf_air.merge(air_sample)
+	var/turf_volume = turf_air.return_volume()
+	if(turf_volume > 0)
+		var/datum/gas_mixture/reclaimed = turf_air.remove_ratio(mingle_volume / (mingle_volume + turf_volume))
+		if(reclaimed)
+			air.merge(reclaimed)
 
 	// Mark the turf so SSair re-equalises it with its neighbours next tick.
 	if(SSair?.initialized)
@@ -150,28 +157,31 @@
 
 /datum/pipeline/proc/temperature_interact(turf/target, share_volume, thermal_conductivity)
 	var/total_heat_capacity = air.heat_capacity()
-	var/partial_heat_capacity = total_heat_capacity*(share_volume/air.volume)
+	var/partial_heat_capacity = total_heat_capacity*(share_volume/air.return_volume())
 
 	if(istype(target, /turf/simulated))
 		var/turf/simulated/modeled_location = target
 
 		if (modeled_location.special_temperature)
-			air.set_temperature(air.return_temperature() + thermal_conductivity * (modeled_location.special_temperature - air.return_temperature()))
-			if (air.return_temperature() < TCMB)
-				air.set_temperature(TCMB)
+			var/new_temp = air.return_temperature() + thermal_conductivity * (modeled_location.special_temperature - air.return_temperature())
+			if (new_temp < TCMB)
+				new_temp = TCMB
+			air.set_temperature(new_temp)
 			if (network)
 				network.update = TRUE
 
 		if(modeled_location.blocks_air)
 
 			if((modeled_location.heat_capacity>0) && (partial_heat_capacity>0))
-				var/delta_temperature = air.return_temperature() - modeled_location.temperature
+				// Read the wall turf's live (arena-authoritative) temperature, not the stale DM mirror.
+				var/wall_temp = modeled_location.return_temperature()
+				var/delta_temperature = air.return_temperature() - wall_temp
 
 				var/heat = thermal_conductivity*delta_temperature* \
 					(partial_heat_capacity*modeled_location.heat_capacity/(partial_heat_capacity+modeled_location.heat_capacity))
 
 				air.set_temperature(air.return_temperature() - heat/total_heat_capacity)
-				modeled_location.temperature += heat/modeled_location.heat_capacity
+				modeled_location.set_temperature(wall_temp + heat/modeled_location.heat_capacity)
 
 		else
 			// collapsed ZAS zone branch. zone is always null under LINDA;
@@ -213,7 +223,7 @@
 
 //surface must be the surface area in m^2
 /datum/pipeline/proc/radiate_heat_to_space(surface, thermal_conductivity)
-	var/gas_density = air.total_moles()/air.volume
+	var/gas_density = air.total_moles()/air.return_volume()
 	thermal_conductivity *= min(gas_density / ( RADIATOR_OPTIMUM_PRESSURE/(R_IDEAL_GAS_EQUATION*GAS_CRITICAL_TEMPERATURE) ), 1) //mult by density ratio
 
 	// We only get heat from the star on the exposed surface area.

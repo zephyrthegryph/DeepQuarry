@@ -52,5 +52,7 @@
 /datum/symptom/light/End(datum/disease/advance/A)
 	. = ..()
 	var/mob/living/carbon/human/H = A.affected_mob
+	if(!H)
+		return
 	H.maxHealth -= currenthealthmodifier
 	H.health -= currenthealthmodifier

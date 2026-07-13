@@ -4,8 +4,8 @@
 	icon_state = "gamble_preview"
 	var/datum/board_game/game_ui
 	var/static/list/possible_games = list(
-		GAME_SWEEPER = /datum/board_game/four_row,
-		GAME_FOUR_ROW = /datum/board_game/vore_sweeper,
+		GAME_SWEEPER = /datum/board_game/vore_sweeper,
+		GAME_FOUR_ROW = /datum/board_game/four_row,
 		GAME_SPACE_BATTLE = /datum/board_game/space_battle,
 		GAME_RGP_DICE = /datum/board_game/rpg_dice,
 		GAME_CHESS = /datum/board_game/chess,
@@ -30,7 +30,8 @@
 	if(isliving(user))
 		if(!game_ui)
 			pick_game(user)
-		game_ui.tgui_interact(user)
+		if(game_ui)
+			game_ui.tgui_interact(user)
 
 /obj/structure/casino_table/board_game/click_alt(mob/user)
 	pick_game(user)

@@ -51,6 +51,8 @@
 
 /turf/unsimulated/floor/sky/proc/do_fall(atom/movable/source)
 	//Bye
+	if(!LAZYLEN(skyfall_levels))
+		return
 	var/attempts = 100
 	var/turf/simulated/T
 	while(attempts && !T)

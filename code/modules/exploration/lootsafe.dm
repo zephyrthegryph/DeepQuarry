@@ -5,7 +5,7 @@
 	icon_state = "safe"
 	anchored = TRUE
 	density = TRUE
-	health = 500 //Cause in heavy defended areas and thermite resistaint
+	max_integrity = 500 //Cause in heavy defended areas and thermite resistaint
 	locked = 1
 	var/hackguard = 10
 

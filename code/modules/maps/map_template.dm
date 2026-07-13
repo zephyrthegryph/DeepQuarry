@@ -107,7 +107,9 @@
 	// up front: load_map() yields, and re-reading world.maxz afterward
 	// would pick up any z allocated meanwhile, building this map onto the
 	// wrong (possibly occupied) z-level. Use new_z everywhere and return it.
+	var/t_start = REALTIMEOFDAY
 	var/new_z = world.increment_max_z()
+	var/t_incz = REALTIMEOFDAY
 
 	on_map_preload(new_z)
 	var/datum/parsed_map/parsed = load_map(
@@ -119,6 +121,7 @@
 		place_on_top = FALSE, // should_place_on_top,
 		new_z = TRUE,
 	)
+	var/t_loadmap = REALTIMEOFDAY
 	var/list/bounds = parsed.bounds
 	if(!bounds)
 		return FALSE
@@ -127,6 +130,10 @@
 
 	//initialize things that are normally initialized after map load
 	initTemplateBounds(bounds)
+	// Phase timing (real seconds) — runtime z-loads are rare and were once
+	// pathologically slow; keep the breakdown in the log.
+	log_game("load_new_z timing: maxz++=[(t_incz - t_start) / 10]s load_map=[(t_loadmap - t_incz) / 10]s initTemplateBounds=[(REALTIMEOFDAY - t_loadmap) / 10]s")
+	log_world("load_new_z timing: maxz++=[(t_incz - t_start) / 10]s load_map=[(t_loadmap - t_incz) / 10]s initTemplateBounds=[(REALTIMEOFDAY - t_loadmap) / 10]s")
 	log_game("Z-level [name] loaded at at [x],[y],[new_z]")
 	on_map_loaded(new_z)
 	return new_z

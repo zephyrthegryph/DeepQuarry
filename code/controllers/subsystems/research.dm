@@ -219,7 +219,7 @@ SUBSYSTEM_DEF(research)
 /datum/controller/subsystem/research/proc/initialize_all_techweb_nodes(clearall = FALSE)
 	if(islist(techweb_nodes) && clearall)
 		QDEL_LIST(techweb_nodes)
-	if(islist(techweb_nodes_starting && clearall))
+	if(islist(techweb_nodes_starting) && clearall)
 		techweb_nodes_starting.Cut()
 	var/list/returned = list()
 	// First pass: validate IDs before allocating instances.

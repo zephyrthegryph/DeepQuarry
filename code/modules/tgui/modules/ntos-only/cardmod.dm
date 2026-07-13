@@ -170,13 +170,13 @@
 				computer.proc_eject_id(ui.user)
 			. = TRUE
 		if("terminate")
-			if(computer && program.can_run(ui.user, 1))
+			if(computer && program.can_run(ui.user, 1) && id_card)
 				id_card.assignment = "Dismissed" // setting adjustment
 				id_card.access = list()
 				SEND_GLOBAL_SIGNAL(COMSIG_GLOB_TERMINATE_EMPLOYEE_IDCARD, id_card)
 			. = TRUE
 		if("reg")
-			if(computer && program.can_run(ui.user, 1))
+			if(computer && program.can_run(ui.user, 1) && id_card)
 				var/temp_name = sanitizeName(params["reg"], allow_numbers = TRUE)
 				if(temp_name)
 					id_card.registered_name = temp_name
@@ -184,7 +184,7 @@
 					computer.visible_message(span_notice("[computer] buzzes rudely."))
 			. = TRUE
 		if("account")
-			if(computer && program.can_run(ui.user, 1))
+			if(computer && program.can_run(ui.user, 1) && id_card)
 				var/account_num = text2num(params["account"])
 				id_card.associated_account_number = account_num
 			. = TRUE
@@ -220,7 +220,7 @@
 				SEND_GLOBAL_SIGNAL(COMSIG_GLOB_REASSIGN_EMPLOYEE_IDCARD, id_card)
 			. = TRUE
 		if("access")
-			if(computer && program.can_run(ui.user, 1))
+			if(computer && program.can_run(ui.user, 1) && id_card)
 				var/access_type = text2num(params["access_target"])
 				var/access_allowed = text2num(params["allowed"])
 				if(access_type in SSaccess.get_access_ids(ACCESS_TYPE_STATION|ACCESS_TYPE_CENTCOM))

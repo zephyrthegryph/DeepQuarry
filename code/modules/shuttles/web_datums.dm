@@ -70,13 +70,15 @@
 	var/list/routes_to_make = list()
 
 /datum/shuttle_destination/New(new_master)
-	my_landmark = SSshuttles.get_landmark(my_landmark)
+	var/landmark_tag = my_landmark // Subtypes set this to the tag string; resolve it to the landmark obj.
+	my_landmark = SSshuttles.get_landmark(landmark_tag)
 	if(!my_landmark)
-		log_mapping("Web shuttle destination '[name]' could not find its landmark '[my_landmark]'.") // Important error message
+		log_mapping("Web shuttle destination '[name]' could not find its landmark '[landmark_tag]'.") // Important error message
 	master = new_master
 
 /datum/shuttle_destination/Destroy()
-	for(var/datum/shuttle_route/R in routes)
+	// Snapshot: each route's Destroy() removes it from both endpoints' routes.
+	for(var/datum/shuttle_route/R in routes.Copy())
 		qdel(R)
 	master = null
 	return ..()
@@ -198,13 +200,24 @@
 		var/datum/shuttle_destination/D = new_type
 		if(initial(D.skip_me))
 			continue
-		destinations += new new_type(src)
+		D = new new_type(src)
+		// A destination whose map landmark didn't resolve (e.g. it lived on a
+		// z-level this map doesn't load) is unreachable — pruning it here keeps
+		// routes, flight computers and autopaths from ever offering a null jump.
+		if(!D.my_landmark)
+			log_mapping("Web shuttle destination '[D.name]' ([new_type]) pruned: no landmark on this map.")
+			qdel(D)
+			continue
+		destinations += D
 
 	// Now start the process of connecting all of them.
 	for(var/datum/shuttle_destination/D in destinations)
 		for(var/type_to_link in D.routes_to_make)
+			var/datum/shuttle_destination/other = get_destination_by_type(type_to_link)
+			if(!other) // Pruned above (or a typo'd type) — skip the route instead of building a half-null one.
+				continue
 			var/travel_delay = D.routes_to_make[type_to_link]
-			D.link_destinations(get_destination_by_type(type_to_link), D.preferred_interim_tag, travel_delay)
+			D.link_destinations(other, D.preferred_interim_tag, travel_delay)
 
 /datum/shuttle_web_master/proc/on_shuttle_departure()
 	current_destination.exit()
@@ -231,9 +244,21 @@
 	init_subtypes(autopath_class, autopaths)
 	for(var/datum/shuttle_autopath/P in autopaths)
 		P.master = src
+	// Drop autopaths that reference destinations pruned in build_destinations()
+	// (landmark missing on this map) — walking one would dead-end mid-route.
+	for(var/datum/shuttle_autopath/P in autopaths)
+		var/valid = !isnull(get_destination_by_type(P.start))
+		for(var/node_type in P.path_nodes)
+			if(!get_destination_by_type(node_type))
+				valid = FALSE
+				break
+		if(!valid)
+			log_mapping("Web shuttle autopath [P.type] pruned: references a destination with no landmark on this map.")
+			autopaths -= P
+			qdel(P)
 
 /datum/shuttle_web_master/proc/choose_path()
-	if(!autopaths.len)
+	if(!autopaths.len || !current_destination)
 		return
 	for(var/datum/shuttle_autopath/path in autopaths)
 		if(path.start == current_destination.type)
@@ -244,10 +269,16 @@
 	autopath = null
 
 /datum/shuttle_web_master/proc/walk_path(target_type)
+	if(!current_destination)
+		return FALSE
 	var/datum/shuttle_route/R = current_destination.get_route_to(target_type)
 	if(!R)
 		return FALSE
 	future_destination = R.get_other_side(current_destination)
+	if(!future_destination?.my_landmark) // Nowhere to actually land; abort the hop rather than jumping to null.
+		log_shuttle("Web shuttle [my_shuttle] aborted a hop to [target_type]: destination has no landmark.")
+		future_destination = null
+		return FALSE
 
 	var/travel_time = R.travel_time * my_shuttle.flight_time_modifier * 2 // Autopilot is less efficent than having someone flying manually.
 	// TODO - Leshana - Change this to use proccess stuff of autodock!
@@ -260,6 +291,10 @@
 /datum/shuttle_web_master/proc/process_autopath()
 	if(!autopath) // If we don't have a path, get one.
 		if(!autopaths.len)
+			// No flyable route exists from anywhere (e.g. every autopath was pruned
+			// because its destinations aren't on this map). Autopiloting is pointless;
+			// switch it off so the shuttle stops announcing takeoffs it can't make.
+			my_shuttle.adjust_autopilot(FALSE)
 			return
 		choose_path()
 
@@ -269,6 +304,11 @@
 	var/datum/shuttle_destination/target = autopath.get_next_node()
 	if(walk_path(target))
 		autopath.walk_path()
+	else
+		// The hop failed (missing route/landmark). Drop the path so we re-plan
+		// instead of retrying the same broken hop every process tick.
+		autopath.reset_path()
+		autopath = null
 
 // Call this to reset everything related to autopiloting.
 /datum/shuttle_web_master/proc/reset_autopath()

@@ -132,6 +132,7 @@
 
 /mob/living/simple_mob/shadekin/Destroy()
 	QDEL_LIST_NULL(shadekin_abilities)
+	comp = null // Cached component ref; the component itself is qdel'd by /datum/Destroy.
 	. = ..()
 
 /mob/living/simple_mob/shadekin/load_default_bellies()

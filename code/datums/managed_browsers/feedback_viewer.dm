@@ -23,6 +23,7 @@ ADMIN_VERB(view_feedback, R_ADMIN|R_DEBUG|R_EVENT, "View Feedback", "Open the Fe
 	if(!check_rights_for(new_client, R_ADMIN|R_DEBUG|R_EVENT)) // Just in case someone figures out a way to spawn this as non-staff.
 		message_admins("[new_client] tried to view feedback with insufficent permissions.")
 		qdel(src)
+		return
 
 	..()
 

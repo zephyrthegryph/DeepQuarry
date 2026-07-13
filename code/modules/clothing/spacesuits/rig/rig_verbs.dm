@@ -21,7 +21,7 @@
 	set category = "Hardsuit"
 	set src = usr.contents
 
-	if(!istype(wearer) || (!wearer.back == src && !wearer.belt == src))
+	if(!istype(wearer) || (wearer.back != src && wearer.belt != src))
 		to_chat(usr, span_warning("The hardsuit is not being worn."))
 		return
 
@@ -51,7 +51,7 @@
 	set category = "Hardsuit"
 	set src = usr.contents
 
-	if(!istype(wearer) || (!wearer.back == src && !wearer.belt == src))
+	if(!istype(wearer) || (wearer.back != src && wearer.belt != src))
 		to_chat(usr, span_warning("The hardsuit is not being worn."))
 		return
 
@@ -79,7 +79,7 @@
 	set category = "Hardsuit"
 	set src = usr.contents
 
-	if(!istype(wearer) || (!wearer.back == src && !wearer.belt == src))
+	if(!istype(wearer) || (wearer.back != src && wearer.belt != src))
 		to_chat(usr, span_warning("The hardsuit is not being worn."))
 		return
 
@@ -95,7 +95,7 @@
 	set category = "Hardsuit"
 	set src = usr.contents
 
-	if(!istype(wearer) || (!wearer.back == src && !wearer.belt == src))
+	if(!istype(wearer) || (wearer.back != src && wearer.belt != src))
 		to_chat(usr, span_warning("The hardsuit is not being worn."))
 		return
 
@@ -111,7 +111,7 @@
 	set category = "Hardsuit"
 	set src = usr.contents
 
-	if(!istype(wearer) || (!wearer.back == src && !wearer.belt == src))
+	if(!istype(wearer) || (wearer.back != src && wearer.belt != src))
 		to_chat(usr, span_warning("The hardsuit is not being worn."))
 		return
 
@@ -130,7 +130,7 @@
 	set category = "Hardsuit"
 	set src = usr.contents
 
-	if(!istype(wearer) || (!wearer.back == src && !wearer.belt == src))
+	if(!istype(wearer) || (wearer.back != src && wearer.belt != src))
 		to_chat(usr, span_warning("The hardsuit is not being worn."))
 		return
 
@@ -183,7 +183,7 @@
 		to_chat(usr, span_warning("The suit is not active."))
 		return
 
-	if(!istype(wearer) || (!wearer.back == src && !wearer.belt == src))
+	if(!istype(wearer) || (wearer.back != src && wearer.belt != src))
 		to_chat(usr, span_warning("The hardsuit is not being worn."))
 		return
 
@@ -210,7 +210,7 @@
 		to_chat(usr, span_warning("The suit is not active."))
 		return
 
-	if(!istype(wearer) || (!wearer.back == src && !wearer.belt == src))
+	if(!istype(wearer) || (wearer.back != src && wearer.belt != src))
 		to_chat(usr, span_warning("The hardsuit is not being worn."))
 		return
 
@@ -246,7 +246,7 @@
 		to_chat(usr, span_warning("The suit is not active."))
 		return
 
-	if(!istype(wearer) || (!wearer.back == src && !wearer.belt == src))
+	if(!istype(wearer) || (wearer.back != src && wearer.belt != src))
 		to_chat(usr, span_warning("The hardsuit is not being worn."))
 		return
 
@@ -281,7 +281,7 @@
 		to_chat(usr, span_warning("The suit is not active."))
 		return
 
-	if(!istype(wearer) || (!wearer.back == src && !wearer.belt == src))
+	if(!istype(wearer) || (wearer.back != src && wearer.belt != src))
 		to_chat(usr, span_warning("The hardsuit is not being worn."))
 		return
 

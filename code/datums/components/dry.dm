@@ -14,6 +14,7 @@
 	T = get_turf(parent)
 	B = locate(/obj/effect/decal/cleanable/blood) in T
 
-	T.wet_floor_finish()
+	if(istype(T))
+		T.wet_floor_finish()
 	if(B)
 		B.dry()

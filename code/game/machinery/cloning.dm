@@ -111,7 +111,7 @@
 					return 0
 
 	for(var/modifier_type in BR.genetic_modifiers)	//Can't be cloned, even if they had a previous scan
-		if(istype(modifier_type, /datum/modifier/no_clone))
+		if(ispath(modifier_type, /datum/modifier/no_clone))
 			return 0
 
 	// Remove biomass when the cloning is started, rather than when the guy pops out
@@ -300,7 +300,6 @@
 		speed_coeff += P.rating
 	heal_level = max(min((efficiency * 15) + 10, 100), MINIMUM_HEAL_LEVEL)
 
-	dq_apply_material_synergies(src)
 /obj/machinery/clonepod/proc/get_completion()
 	. = (100 * ((get_occupant().health + 100) / (heal_level + 100)))
 

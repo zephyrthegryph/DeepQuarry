@@ -24,6 +24,7 @@
 
 	if(B.overmind != src)
 		to_chat(src, span_warning("This blob isn't controlled by you."))
+		return
 
 	if(!istype(B, /obj/structure/blob/normal))
 		to_chat(src, span_warning("Unable to use this blob, find a normal one."))

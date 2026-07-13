@@ -35,11 +35,10 @@
 
 /datum/event2/event/raise_funds/end()
 	var/money_at_end = count_money()
-	log_game("Funding Drive event logged a sum of [money_at_end] thalers in all station accounts at the end of the event, compared \
-	to [money_at_start] thalers. A difference of [money_at_end / money_at_start] was calculated.")
-
 	// A number above 1 indicates money was made, while below 1 does the opposite.
-	var/budget_shift = money_at_end / money_at_start
+	var/budget_shift = money_at_start ? money_at_end / money_at_start : 1
+	log_game("Funding Drive event logged a sum of [money_at_end] thalers in all station accounts at the end of the event, compared \
+	to [money_at_start] thalers. A difference of [budget_shift] was calculated.")
 
 	// Centcom will say different things based on if they gained or lost money.
 	var/message = null

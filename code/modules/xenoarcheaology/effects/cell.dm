@@ -37,12 +37,15 @@
 							C.charge = min(C.maxcharge, C.charge + amount)
 						else
 							to_chat(L, span_warning("SYSTEM ALERT: Energy drain detected!"))
-							C.charge = min(C.maxcharge, C.charge - amount)
+							C.charge = max(0, min(C.maxcharge, C.charge - amount))
 			continue
 
 		var/obj/item/cell/C = AM.get_cell()
 		if(C)
-			C.charge = min(C.maxcharge, C.charge + amount)
+			if(effect == CELL_CHARGE)
+				C.charge = min(C.maxcharge, C.charge + amount)
+			else
+				C.charge = max(0, C.charge - amount)
 
 	if(messaged_robots)
 		last_message = world.time
@@ -50,7 +53,7 @@
 /datum/artifact_effect/cell/DoEffectTouch(mob/living/user)
 	if(!user)
 		return
-	if(type == CELL_DRAIN)
+	if(charge_type == CELL_DRAIN)
 		effect_cells(100, CELL_DRAIN)
 	else
 		effect_cells(100, CELL_CHARGE)

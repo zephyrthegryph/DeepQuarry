@@ -5,7 +5,7 @@
 	if(invisibility == INVISIBILITY_OBSERVER)
 		invisibility = initial(invisibility)
 		to_chat(src, span_notice("You are now visible."))
-		alpha = max(alpha + 100, 255)
+		alpha = min(alpha + 100, 255)
 	else
 		invisibility = INVISIBILITY_OBSERVER
 		to_chat(src, span_notice("You are now invisible."))

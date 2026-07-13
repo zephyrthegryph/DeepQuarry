@@ -9,19 +9,13 @@
 #define VERDIGRIS (__verdigris || __detect_verdigris())
 #define VERDIGRIS_CALL(name, args...) call_ext(VERDIGRIS, "byond:" + name)(args)
 
-/proc/verdigris_version()	return VERDIGRIS_CALL("verdigris_version")
-/proc/verdigris_features()	return VERDIGRIS_CALL("verdigris_features")
-/proc/verdigris_init()		return VERDIGRIS_CALL("verdigris_init")
-/proc/verdigris_cleanup()	return VERDIGRIS_CALL("cleanup")
+// The Rust exports are byondapi binds; byondapi's #[bind] macro suffixes the
+// exported symbol with "_ffi" (e.g. fn verdigris_version -> verdigris_version_ffi).
+/proc/verdigris_version()	return VERDIGRIS_CALL("verdigris_version_ffi")
+/proc/verdigris_features()	return VERDIGRIS_CALL("verdigris_features_ffi")
+/proc/verdigris_init()		return VERDIGRIS_CALL("verdigris_init_ffi")
+/proc/verdigris_cleanup()	return VERDIGRIS_CALL("verdigris_cleanup_ffi")
 
-/world/New()
-	// Init must come before cleanup so the panic hook catches any failure inside cleanup itself.
-	verdigris_init()
-	verdigris_cleanup()
-	// log so we can confirm Rust loaded and read what features it has.
-	log_world("Verdigris loaded: [verdigris_version()] | features: [verdigris_features()]")
-	// Register the gas roster with auxmos's Rust gas table BEFORE the Master
-	// Controller starts SSatoms — turf air is created and populated during atom
-	// init, and a set_moles() on an unregistered gas segfaults the process.
-	auxmos_register_gases()
-	..()
+// NOTE: verdigris bring-up (verdigris_init/cleanup + version log) lives in the real
+// /world/New() in code/game/world.dm. A duplicate /world/New() here was silently
+// discarded by the compiler (last-include-wins), so verdigris_init() never ran at boot.

@@ -130,3 +130,7 @@
 		if(chosen_stamp)
 			name = chosen_stamp.name
 			icon_state = chosen_stamp.icon_state
+
+	// Clean up the temporary picker instances we created above.
+	for(var/stamp_key in stamps)
+		qdel(stamps[stamp_key])

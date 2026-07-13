@@ -9,7 +9,7 @@
 
 /datum/artifact_effect/electric_field/DoEffectTouch(mob/user)
 	var/atom/holder = get_master_holder()
-	if(last_used >= world.time + use_delay)
+	if(world.time < last_used + use_delay)
 		return
 	else
 		last_used = world.time
@@ -53,7 +53,7 @@
 
 /datum/artifact_effect/electric_field/DoEffectAura()
 	var/atom/holder = get_master_holder()
-	if(last_used >= world.time + use_delay)
+	if(world.time < last_used + use_delay)
 		return
 	else
 		last_used = world.time
@@ -106,7 +106,7 @@
 		user = utilizer.last_user_touched
 		battery.stored_charge = 0
 		use_delay = 0 //We're in an artifact, our delay is handled by the utilizer iself.
-	if(last_used >= world.time + use_delay)
+	if(world.time < last_used + use_delay)
 		return
 	else
 		last_used = world.time

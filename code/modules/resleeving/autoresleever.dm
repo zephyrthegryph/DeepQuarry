@@ -96,6 +96,10 @@ GLOBAL_LIST_EMPTY(active_autoresleevers)
 	if(pref_species) // In case we somehow don't have a species set here.
 		chosen_species = GLOB.all_species[pref_species]
 
+	if(!chosen_species)
+		to_chat(ghost, span_warning("No valid species is selected for resleeving!"))
+		return
+
 	if((chosen_species.spawn_flags & SPECIES_IS_WHITELISTED) || (chosen_species.spawn_flags & SPECIES_IS_RESTRICTED))
 		to_chat(ghost, span_warning("This species cannot be resleeved!"))
 		return
@@ -236,17 +240,17 @@ GLOBAL_LIST_EMPTY(active_autoresleevers)
 		if((world.time - record.last_notification) < 30 MINUTES)
 			GLOB.global_announcer.autosay("[new_character.name] has been resleeved by the automatic resleeving system.", "TransCore Oversight", new_character.isSynthetic() ? "Science" : "Medical")
 		spawn(0)	//Wait a second for nif to do its thing if there is one
-		if(record.nif_path)
-			var/obj/item/nif/nif
-			if(new_character.nif)
-				nif = new_character.nif
-			else
-				nif = new record.nif_path(new_character,null,record.nif_savedata)
-			spawn(0)	//Wait another second in case we just gave them a new nif
-			if(nif)	//Now restore the software
-				for(var/path in record.nif_software)
-					new path(nif)
-				nif.durability = record.nif_durability
+			if(record.nif_path)
+				var/obj/item/nif/nif
+				if(new_character.nif)
+					nif = new_character.nif
+				else
+					nif = new record.nif_path(new_character,null,record.nif_savedata)
+				spawn(0)	//Wait another second in case we just gave them a new nif
+					if(nif)	//Now restore the software
+						for(var/path in record.nif_software)
+							new path(nif)
+						nif.durability = record.nif_durability
 
 	if(!new_character.dna)
 		CRASH("[new_character] just came out of an autosleever and has no DNA! Species: [new_character.species] as mob: [new_character.type]. NIF Status: [new_character.nif]")

@@ -164,7 +164,7 @@
 			var/datum/gas_mixture/GM = new
 			for(var/gas in gas_field)
 				GM.adjust_multi(gas, drill_moles_per_tick)
-			GM.set_temperature(423)  // ~150C
+			GM.set_temperature(423)  // ~150C; must go through the arena, not the DM mirror
 			var/atom/location = src.loc
 			location.assume_air(GM)
 	else if(istype(get_turf(src), /turf/simulated))
@@ -198,8 +198,8 @@
 				update_icon()
 				return
 
-			if(contents.len + total_harvest >= capacity)
-				total_harvest = capacity - contents.len
+			if(current_capacity + total_harvest >= capacity)
+				total_harvest = capacity - current_capacity
 
 			if(total_harvest <= 0) break
 			if(harvesting.resources[metal])
@@ -343,7 +343,6 @@
 			charge_use -= 10 * P.rating
 	cell = locate(/obj/item/cell) in src
 
-	dq_apply_material_synergies(src)
 /obj/machinery/mining/drill/proc/check_supports()
 
 	supported = 0
@@ -458,7 +457,6 @@
 	for(var/obj/item/stock_parts/manipulator/M in component_parts)
 		brace_tier += M.rating
 
-	dq_apply_material_synergies(src)
 /obj/machinery/mining/brace/attackby(obj/item/W as obj, mob/user as mob)
 	if(connected && connected.active)
 		balloon_alert(user, "you can't work with the brace of a running drill.")

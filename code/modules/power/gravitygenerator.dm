@@ -69,13 +69,13 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 	var/obj/machinery/gravity_generator/main/main_part = null
 
 /obj/machinery/gravity_generator/part/attackby(obj/item/I, mob/user, params)
-	return main_part.attackby(I, user)
+	return main_part?.attackby(I, user)
 
 /obj/machinery/gravity_generator/part/get_status()
 	return main_part?.get_status()
 
 /obj/machinery/gravity_generator/part/attack_hand(mob/user)
-	return main_part.attack_hand(user)
+	return main_part?.attack_hand(user)
 
 /obj/machinery/gravity_generator/part/set_broken()
 	..()

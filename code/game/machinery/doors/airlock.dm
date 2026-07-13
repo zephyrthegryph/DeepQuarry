@@ -378,11 +378,11 @@ About the new airlock wires panel:
 			if (!(stat & NOPOWER))
 				if(stat & BROKEN)
 					add_overlay("sparks_broken")
-				else if (health < maxhealth * 3/4)
+				else if (get_integrity() < max_integrity * 3/4)
 					add_overlay("sparks_damaged")
 			if(welded)
 				add_overlay("welded")
-		else if (health < maxhealth * 3/4 && !(stat & NOPOWER))
+		else if (get_integrity() < max_integrity * 3/4 && !(stat & NOPOWER))
 			add_overlay("sparks_damaged")
 	else
 		icon_state = "door_open"
@@ -757,7 +757,7 @@ About the new airlock wires panel:
 
 	add_fingerprint(user)
 
-	if(!reinforcing && C.has_tool_quality(TOOL_WELDER) && !(operating > 0) && density && (health >= maxhealth || user.a_intent != I_HELP))
+	if(!reinforcing && C.has_tool_quality(TOOL_WELDER) && !(operating > 0) && density && (get_integrity() >= max_integrity || user.a_intent != I_HELP))
 		var/obj/item/weldingtool/W = C.get_welder()
 		if(W.remove_fuel(0,user))
 			if(!welded)
@@ -984,15 +984,14 @@ About the new airlock wires panel:
 
 /obj/machinery/portable_atmospherics/canister/airlock_crush(crush_damage)
 	. = ..()
-	health -= crush_damage
-	healthcheck()
+	take_damage(crush_damage, BRUTE)
 
 /obj/effect/energy_field/airlock_crush(crush_damage)
 	adjust_strength(crush_damage)
 
 /obj/structure/closet/airlock_crush(crush_damage)
 	..()
-	damage(crush_damage)
+	take_damage(crush_damage, BRUTE)
 	for(var/atom/movable/AM in src)
 		AM.airlock_crush()
 	return TRUE

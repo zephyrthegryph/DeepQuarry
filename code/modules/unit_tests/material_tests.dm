@@ -21,7 +21,15 @@
 	// Get the materials all the sheets can be broken down into
 	var/list/needed_materials = list()
 	for(var/path in subtypesof(/obj/item/stack))
-		var/obj/item/stack/material/sheet = new path()
+		var/obj/item/stack/sheet = new path()
+		// Skip exotic/runtime-material stacks (substance alloys, shellchitin) whose
+		// material has no static autolathe design — they're crafted/forged, not
+		// lathe-reprinted, so requiring a print recipe is a false positive.
+		if(istype(sheet, /obj/item/stack/material))
+			var/obj/item/stack/material/msheet = sheet
+			if(msheet.exotic_no_autolathe_reprint)
+				qdel(sheet)
+				continue
 		var/list/get_mats = sheet.get_material_composition()
 		for(var/mat in get_mats)
 			needed_materials |= mat

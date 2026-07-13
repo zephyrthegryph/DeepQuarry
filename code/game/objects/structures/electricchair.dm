@@ -16,9 +16,10 @@
 		var/obj/structure/bed/chair/C = new /obj/structure/bed/chair(loc)
 		playsound(src, W.usesound, 50, 1)
 		C.set_dir(dir)
-		part.loc = loc
-		part.master = null
-		part = null
+		if(part)
+			part.loc = loc
+			part.master = null
+			part = null
 		qdel(src)
 		return
 	return

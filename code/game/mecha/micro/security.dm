@@ -19,7 +19,7 @@
 	initial_icon = "polecat"
 	step_in = 2 // human running speed
 	dir_in = 2 //Facing south.
-	health = 150
+	max_integrity = 150
 	step_energy_drain = 4 // less efficient than base micromech, but still a micromech.
 	deflect_chance = 10
 	max_temperature = 15000
@@ -42,7 +42,7 @@
 	initial_icon = "weasel"
 	step_in = 1 // zoom zoom
 	dir_in = 2 //Facing south.
-	health = 100
+	max_integrity = 100
 	deflect_chance = 5
 	max_temperature = 5000
 	wreckage = /obj/effect/decal/mecha_wreckage/micro/sec/weasel

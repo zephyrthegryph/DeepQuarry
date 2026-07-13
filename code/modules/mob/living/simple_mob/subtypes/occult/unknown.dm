@@ -255,6 +255,9 @@
 		if(GA_SPEEDUP)
 			speed_up_boost(A)
 
+	// Choose a different attack for next time so the boss varies its moves.
+	next_special_attack = pick(all_special_attacks - recently_used_attack)
+
 
 
 /mob/living/simple_mob/glitch_boss_fake

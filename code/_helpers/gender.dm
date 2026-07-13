@@ -19,7 +19,7 @@
 	return "its"
 
 /datum/proc/p_Theirs(temp_gender)
-	return capitalize(p_Theirs(temp_gender))
+	return capitalize(p_theirs(temp_gender))
 
 /datum/proc/p_them(temp_gender)
 	return "it"
@@ -451,7 +451,7 @@
 // CARBON GENDER
 
 /mob/living/carbon/human/get_visible_gender(mob/user, force)
-	if(wear_suit && (wear_suit.flags_inv & HIDEJUMPSUIT) && (wear_mask && (wear_mask & HIDEFACE) || isobj(head) && (head.body_parts_covered & FACE)))
+	if(wear_suit && (wear_suit.flags_inv & HIDEJUMPSUIT) && (wear_mask && (wear_mask.flags_inv & HIDEFACE) || isobj(head) && (head.body_parts_covered & FACE)))
 		return PLURAL
 	return gender
 
@@ -463,7 +463,7 @@
 	temp_gender ||= get_visible_gender()
 	return ..()
 
-/mob/living/carbon/human/p_theirs(capitalized, temp_gender)
+/mob/living/carbon/human/p_theirs(temp_gender)
 	temp_gender ||= get_visible_gender()
 	return ..()
 

@@ -119,7 +119,7 @@
 		.+= list(list("Obstruction of airflow detected.", "bad"))
 
 	.+= "Propellant total mass: [round(air_contents.get_mass(),0.01)] kg."
-	.+= "Propellant used per burn: [round(air_contents.get_mass() * volume_per_burn * thrust_limit / air_contents.volume,0.01)] kg."
+	.+= "Propellant used per burn: [round(air_contents.get_mass() * volume_per_burn * thrust_limit / air_contents.return_volume(),0.01)] kg."
 	.+= "Propellant pressure: [round(air_contents.return_pressure()/1000,0.1)] MPa."
 
 /obj/machinery/atmospherics/unary/engine/power_change()
@@ -136,7 +136,7 @@
 /obj/machinery/atmospherics/unary/engine/proc/get_thrust()
 	if(!is_on() || !check_fuel())
 		return 0
-	var/used_part = volume_per_burn * thrust_limit / air_contents.volume
+	var/used_part = volume_per_burn * thrust_limit / air_contents.return_volume()
 	. = calculate_thrust(air_contents, used_part)
 	return
 
@@ -161,7 +161,7 @@
 		update_use_power(USE_POWER_OFF)
 		return 0
 
-	var/datum/gas_mixture/removed = air_contents.remove_ratio(volume_per_burn * thrust_limit / air_contents.volume)
+	var/datum/gas_mixture/removed = air_contents.remove_ratio(volume_per_burn * thrust_limit / air_contents.return_volume())
 	if(!removed)
 		return 0
 	. = calculate_thrust(removed)
@@ -189,7 +189,6 @@
 	charge_per_burn = initial(charge_per_burn) / energy_upgrade
 	change_power_consumption(initial(idle_power_usage) / energy_upgrade, USE_POWER_IDLE)
 
-	dq_apply_material_synergies(src)
 //Exhaust effect
 /obj/effect/engine_exhaust
 	name = "engine exhaust"

@@ -461,7 +461,8 @@
 			break
 		picked += pickweight(leftovers)
 	while(length(picked) > max_symptoms)
-		picked.Cut(rand(1, length(picked)), rand(1, length(picked)) + 1)
+		var/cut_idx = rand(1, length(picked))
+		picked.Cut(cut_idx, cut_idx + 1)
 	// Instantiate.
 	for(var/type in picked)
 		var/datum/medical_symptom/S = new type()
@@ -593,6 +594,16 @@
 		S.on_resolve(owner, src)
 	active_symptoms = null
 	..()
+
+/datum/medical_issue/condition/Destroy()
+	// cure_issue() isn't on the qdel path, so a condition deleted with its host
+	// organ still holds its symptoms while each symptom's `source_condition`
+	// points back — a reference cycle that pins both against GC forever.
+	for(var/datum/medical_symptom/S as anything in active_symptoms)
+		S.source_condition = null
+		qdel(S)
+	active_symptoms = null
+	return ..()
 
 // Lookup helper: walk all organs of a mob, gather conditions.
 /mob/living/carbon/human/proc/get_all_conditions()

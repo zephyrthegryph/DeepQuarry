@@ -162,7 +162,7 @@ GLOBAL_LIST_BOILERPLATE(all_darkportal_minions, /obj/structure/dark_portal/minio
 			to_chat(user, span_warning("No hub portals exist!"))
 			return
 		if(LAZYLEN(GLOB.all_darkportal_hubs) == 1)
-			SK.shadekin_adjust_energy(user, -10)
+			SK.shadekin_adjust_energy(-10)
 			var/obj/structure/dark_portal/target = GLOB.all_darkportal_hubs[1]
 			locked = target
 			locked_name = target.name

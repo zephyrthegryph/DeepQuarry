@@ -388,7 +388,7 @@
 			to_chat(user, span_notice("You take the cup dispenser off."))
 			new /obj/item/stack/material/plastic( src.loc )
 			if(cups)
-				for(var/i = 0 to cups)
+				for(var/i = 1 to cups)
 					new /obj/item/reagent_containers/food/drinks/sillycup(src.loc)
 			cups = 0
 			cupholder = 0

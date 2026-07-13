@@ -30,7 +30,10 @@
 	while(length(choice.contents) > 0) //For some reason it wouldn't let me do contents.len even when I defined it as a list.
 		var/specific = tgui_alert(user, "The location currently selected is [choice.name]. More specific options exist, would you like to pick a more specific location?", "Choose location", list("Yes", "No"))
 		if(specific == "Yes" && length(choice.contents) > 0)
-			choice = tgui_input_list(user, "Please choose a location.", "Locations", choice.contents)
+			var/datum/locations/picked = tgui_input_list(user, "Please choose a location.", "Locations", choice.contents)
+			if(!picked)
+				break
+			choice = picked
 		else
 			break
 	to_chat(user,choice.name)

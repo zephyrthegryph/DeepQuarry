@@ -155,7 +155,7 @@
 		if(istype(loc, /obj/machinery/power/apc)) //We're in an APC!
 			charged_object = loc
 		if(loc != user && !(user in orange(1,charged_object))) //If we have a user fed to us, they need to hold us or be in range of us.
-			if(loc.loc && !istype(loc.loc, user)) //Are we inside of something the user is holding?
+			if(loc.loc && loc.loc != user) //Are we inside of something the user is holding?
 				return
 	charge += 100 * multiplier
 	if(charge > maxcharge)

@@ -151,12 +151,12 @@
 	var/power_draw = -1
 	if(scrubbing)
 		//limit flow rate from turfs
-		var/transfer_moles = min(environment.total_moles(), environment.total_moles()*MAX_SCRUBBER_FLOWRATE/environment.volume)	//group_multiplier gets divided out here
+		var/transfer_moles = min(environment.total_moles(), environment.total_moles()*MAX_SCRUBBER_FLOWRATE/environment.return_volume())	//group_multiplier gets divided out here
 
 		power_draw = scrub_gas(src, scrubbing_gas, environment, air_contents, transfer_moles, power_rating)
 	else //Just siphon all air
 		//limit flow rate from turfs
-		var/transfer_moles = min(environment.total_moles(), environment.total_moles()*MAX_SIPHON_FLOWRATE/environment.volume)	//group_multiplier gets divided out here
+		var/transfer_moles = min(environment.total_moles(), environment.total_moles()*MAX_SIPHON_FLOWRATE/environment.return_volume())	//group_multiplier gets divided out here
 
 		power_draw = pump_gas(src, environment, air_contents, transfer_moles, power_rating)
 

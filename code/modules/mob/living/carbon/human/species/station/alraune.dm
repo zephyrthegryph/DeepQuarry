@@ -175,9 +175,9 @@
 	var/failed_inhale = 0
 	var/failed_exhale = 0
 
-	inhaling = breath.get_moles(GAS_CO2)
-	poison = breath.get_moles(poison_type)
-	exhaling = breath.get_moles(exhale_type)
+	inhaling = LINDA_GAS_AMT(breath, GAS_CO2)
+	poison = LINDA_GAS_AMT(breath, poison_type)
+	exhaling = LINDA_GAS_AMT(breath, exhale_type)
 
 	var/inhale_pp = (inhaling/breath_total)*breath_pressure // was breath.total_moles
 	var/toxins_pp = (poison/breath_total)*breath_pressure
@@ -234,9 +234,8 @@
 		H.clear_alert("tox_in_air")
 
 	// If there's some other shit in the air lets deal with it here.
-	var/n2o_moles = breath.get_moles(GAS_N2O)
-	if(n2o_moles)
-		var/SA_pp = (n2o_moles / breath_total) * breath_pressure
+	if(LINDA_GAS_AMT(breath, GAS_N2O)) // string "sleeping_agent" doesn't exist as a LINDA gas id; GAS_N2O = "n2o" is the real id
+		var/SA_pp = (LINDA_GAS_AMT(breath, GAS_N2O) / breath_total) * breath_pressure
 
 		// Enough to make us paralysed for a bit
 		if(SA_pp > SA_para_min)
@@ -252,7 +251,7 @@
 		else if(SA_pp > 0.15)
 			if(prob(20))
 				spawn(0) H.emote(pick("giggle", "laugh"))
-		breath.adjust_gas(GAS_N2O, -n2o_moles/6, update = 0) // update after
+		breath.adjust_gas(GAS_N2O, -LINDA_GAS_AMT(breath, GAS_N2O)/6, update = 0) // update after // was "sleeping_agent" string (XGM); LINDA uses GAS_N2O = "n2o"
 
 	// Were we able to breathe?
 	if (failed_inhale || failed_exhale)
@@ -263,36 +262,36 @@
 
 
 	// Hot air hurts :(
-	var/breath_temp = breath.return_temperature()
-	if((breath_temp < breath_cold_level_1 || breath_temp > breath_heat_level_1) && !(COLD_RESISTANCE in H.mutations))
+	var/breath_temperature = breath.return_temperature()
+	if((breath_temperature < breath_cold_level_1 || breath_temperature > breath_heat_level_1) && !(COLD_RESISTANCE in H.mutations))
 
-		if(breath_temp <= breath_cold_level_1)
+		if(breath_temperature <= breath_cold_level_1)
 			if(prob(20))
 				to_chat(H, span_danger("You feel icicles forming on your skin!"))
-		else if(breath_temp >= breath_heat_level_1)
+		else if(breath_temperature >= breath_heat_level_1)
 			if(prob(20))
 				to_chat(H, span_danger("You feel yourself smouldering in the heat!"))
 
 		var/bodypart = pick(BP_L_FOOT,BP_R_FOOT,BP_L_LEG,BP_R_LEG,BP_L_ARM,BP_R_ARM,BP_L_HAND,BP_R_HAND,BP_TORSO,BP_GROIN,BP_HEAD)
-		if(breath_temp >= breath_heat_level_1)
-			if(breath_temp < breath_heat_level_2)
+		if(breath_temperature >= breath_heat_level_1)
+			if(breath_temperature < breath_heat_level_2)
 				H.apply_damage(HEAT_GAS_DAMAGE_LEVEL_1, BURN, bodypart)
-			else if(breath_temp < breath_heat_level_3)
+			else if(breath_temperature < breath_heat_level_3)
 				H.apply_damage(HEAT_GAS_DAMAGE_LEVEL_2, BURN, bodypart)
 			else
 				H.apply_damage(HEAT_GAS_DAMAGE_LEVEL_3, BURN, bodypart)
 
-		else if(breath_temp <= breath_cold_level_1)
-			if(breath_temp > breath_cold_level_2)
+		else if(breath_temperature <= breath_cold_level_1)
+			if(breath_temperature > breath_cold_level_2)
 				H.apply_damage(COLD_GAS_DAMAGE_LEVEL_1, BURN, bodypart)
-			else if(breath_temp > breath_cold_level_3)
+			else if(breath_temperature > breath_cold_level_3)
 				H.apply_damage(COLD_GAS_DAMAGE_LEVEL_2, BURN, bodypart)
 			else
 				H.apply_damage(COLD_GAS_DAMAGE_LEVEL_3, BURN, bodypart)
 
 
 		//breathing in hot/cold air also heats/cools you a bit
-		var/temp_adj = breath_temp - H.bodytemperature
+		var/temp_adj = breath_temperature - H.bodytemperature
 		if (temp_adj < 0)
 			temp_adj /= (BODYTEMP_COLD_DIVISOR * 5)	//don't raise temperature as much as if we were directly exposed
 		else
@@ -306,9 +305,9 @@
 		//to_world("Breath: [breath.temperature], [src]: [bodytemperature], Adjusting: [temp_adj]")
 		H.bodytemperature += temp_adj
 
-	else if(breath_temp >= heat_discomfort_level)
+	else if(breath_temperature >= heat_discomfort_level)
 		get_environment_discomfort(src,"heat")
-	else if(breath_temp <= cold_discomfort_level)
+	else if(breath_temperature <= cold_discomfort_level)
 		get_environment_discomfort(src,"cold")
 
 	// breath.update_values() removed; no-op under LINDA.
@@ -391,9 +390,9 @@
 				do_generation()
 
 	if(reagents)
-		if(reagents.total_volume == reagents.maximum_volume * 0.05)
+		if(reagents.total_volume >= reagents.maximum_volume * 0.05 && before_gen < reagents.maximum_volume * 0.05)
 			to_chat(organ_owner, span_notice("[pick(empty_message)]"))
-		else if(reagents.total_volume == reagents.maximum_volume && before_gen < reagents.maximum_volume)
+		else if(reagents.total_volume >= reagents.maximum_volume && before_gen < reagents.maximum_volume)
 			to_chat(organ_owner, span_warning("[pick(full_message)]"))
 
 /obj/item/organ/internal/fruitgland/proc/do_generation()
@@ -456,7 +455,7 @@
 		else
 			S.harvest(usr,0,0,1)
 
-		var/index = rand(0,2)
+		var/index = rand(1,2)
 
 		if (usr != src)
 			var/emote = fruit_gland.emote_descriptor[index]

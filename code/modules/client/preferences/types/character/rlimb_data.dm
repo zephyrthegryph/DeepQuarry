@@ -14,12 +14,13 @@
 /datum/preference/rlimb_data/pref_deserialize(input, datum/preferences/preferences)
 	if(!islist(input))
 		return list()
+	var/list/input_list = input
 	// Sanitize: remove entries with invalid robolimb keys
-	for(var/limb in input)
-		var/key = input[limb]
+	for(var/limb in input_list.Copy())
+		var/key = input_list[limb]
 		if(!istext(key) || !LAZYACCESS(GLOB.all_robolimbs, key))
-			input -= limb
-	return input
+			input_list -= limb
+	return input_list
 
 /datum/preference/rlimb_data/pref_serialize(input)
 	if(!islist(input))

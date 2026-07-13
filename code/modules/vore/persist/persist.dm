@@ -229,7 +229,6 @@
 * without invoking the need for a bunch of different save file variables.
 */
 /proc/persist_nif_data(mob/living/carbon/human/H)
-	SIGNAL_HANDLER
 	if(!istype(H))
 		stack_trace("Persist (NIF): Given a nonhuman: [H]")
 		return

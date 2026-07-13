@@ -153,7 +153,7 @@ GLOBAL_LIST_INIT_TYPED(ai_icons, /datum/ai_icon, init_subtypes(/datum/ai_icon, a
 	name = "Static"
 	alive_icon = "ai-static"
 	alive_light = "#4784C1"
-	alive_icon = "ai-static-crash"
+	dead_icon = "ai-static-crash"
 
 /datum/ai_icon/text
 	name = "Text"

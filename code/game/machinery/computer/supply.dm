@@ -465,6 +465,8 @@
 			SSsupply.delete_export(E, ui.user)
 			. = TRUE
 		if("send_shuttle")
+			if(!(authorization & SUP_SEND_SHUTTLE))
+				return FALSE
 			switch(params["mode"])
 				if("send_away")
 					if (shuttle.forbidden_atoms_check())

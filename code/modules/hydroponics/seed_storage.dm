@@ -369,17 +369,20 @@
 					N.seeds -= O
 					if(N.amount <= 0 || N.seeds.len <= 0)
 						piles -= N
+						piles_contra -= N
 						qdel(N)
 					O.loc = src.loc
 				else
 					piles -= N
+					piles_contra -= N
 					qdel(N)
 				return TRUE
 			else if(action == "purge")
 				for(var/obj/O in N.seeds)
 					qdel(O)
-					piles -= N
-					qdel(N)
+				piles -= N
+				piles_contra -= N
+				qdel(N)
 				return TRUE
 			break
 
@@ -442,8 +445,9 @@
 	var/newID = 0
 
 	if(contraband)
-		var/datum/seed_pile/final_pile = piles[piles.len]
-		newID = final_pile.ID + 1
+		if(piles.len)
+			var/datum/seed_pile/final_pile = piles[piles.len]
+			newID = final_pile.ID + 1
 		for (var/datum/seed_pile/N in piles_contra)
 			if (N.matches(O))
 				++N.amount

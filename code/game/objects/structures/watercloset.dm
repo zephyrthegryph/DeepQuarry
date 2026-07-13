@@ -150,7 +150,7 @@
 			if(G.state <= GRAB_PASSIVE)
 				to_chat(user, span_notice("You need a tighter grip."))
 				return
-			if(!GM.loc == get_turf(src))
+			if(GM.loc != get_turf(src))
 				to_chat(user, span_notice("[GM.name] needs to be on the toilet."))
 				return
 			var/mob/living/swirlie = swirlie_mob?.resolve()
@@ -424,7 +424,7 @@
 		if(isliving(G.affecting))
 			var/mob/living/GM = G.affecting
 			if(G.state>1)
-				if(!GM.loc == get_turf(src))
+				if(GM.loc != get_turf(src))
 					to_chat(user, span_notice("[GM.name] needs to be on the urinal."))
 					return
 				user.visible_message(span_danger("[user] slams [GM.name] into the [src]!"), span_notice("You slam [GM.name] into the [src]!"))

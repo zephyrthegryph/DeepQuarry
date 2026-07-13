@@ -342,8 +342,9 @@ GLOBAL_LIST_EMPTY(runechat_image_cache)
 	if(QDELETED(speaker))
 		return
 	// Doesn't want to hear
-	if(ismob(speaker) && !client.prefs?.read_preference(/datum/preference/toggle/runechat_mob))
-		return
+	if(ismob(speaker))
+		if(!client.prefs?.read_preference(/datum/preference/toggle/runechat_mob))
+			return
 	// I know the pref is 'obj' but people dunno what turfs are
 	else if(!client.prefs?.read_preference(/datum/preference/toggle/runechat_obj))
 		return

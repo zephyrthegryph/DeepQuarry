@@ -1889,7 +1889,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = null
+	max_integrity = null
 	},
 /turf/unsimulated/floor/tiled/eris/cafe/turfpack/station,
 /area/template_noop)

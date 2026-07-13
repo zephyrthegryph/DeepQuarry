@@ -5,8 +5,7 @@
 	initial_icon = "durand"
 	step_in = 4
 	dir_in = 1 //Facing North.
-	health = 300
-	maxhealth = 300			//Don't forget to update the /old variant if  you change this number.
+	max_integrity = 300			//Don't forget to update the /old variant if  you change this number.
 	deflect_chance = 20
 	max_temperature = 30000
 	infra_luminosity = 8
@@ -81,6 +80,6 @@
 
 /obj/mecha/combat/durand/old/Initialize(mapload)
 	. = ..()
-	health = 25
-	maxhealth = 250	//Just slightly worse.
+	max_integrity = 250	//Just slightly worse.
+	update_integrity(25)
 	cell.charge = rand(0, (cell.charge/2))

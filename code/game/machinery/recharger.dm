@@ -303,7 +303,6 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 		E += C.rating
 	efficiency = active_power_usage * (1+ (E - 1)*0.5)
 
-	dq_apply_material_synergies(src)
 /obj/machinery/recharger/wallcharger
 	name = "wall recharger"
 	desc = "A more powerful recharger designed for energy weapons."

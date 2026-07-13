@@ -36,13 +36,13 @@
 			M.flash_eyes()
 			if(ishuman(M))
 				var/mob/living/carbon/human/H = M
-				flash_strength *= H.species.flash_mod
+				var/applied_strength = flash_strength * H.species.flash_mod
 
-				if(flash_strength > 0)
-					H.Confuse(flash_strength + 5)
-					H.Blind(flash_strength)
-					H.eye_blurry = max(H.eye_blurry, flash_strength + 5)
-					H.adjustHalLoss(22 * (flash_strength / 5)) // Five flashes to stun.  Bit weaker than melee flashes due to being ranged.
+				if(applied_strength > 0)
+					H.Confuse(applied_strength + 5)
+					H.Blind(applied_strength)
+					H.eye_blurry = max(H.eye_blurry, applied_strength + 5)
+					H.adjustHalLoss(22 * (applied_strength / 5)) // Five flashes to stun.  Bit weaker than melee flashes due to being ranged.
 
 	//snap pop
 	playsound(src, 'sound/effects/snap.ogg', 50, 1)

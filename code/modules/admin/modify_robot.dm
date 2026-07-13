@@ -50,7 +50,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 /datum/eventkit/modify_robot/tgui_data(mob/user)
 	. = list()
 	// Target section for general data
-	var/datum/asset/spritesheet_batched/robot_icons/spritesheet = GLOB.robot_sprite_sheets[target.modtype]
+	var/datum/asset/spritesheet_batched/robot_icons/spritesheet = target ? GLOB.robot_sprite_sheets[target.modtype] : null
 
 	if(target)
 		.["theme"] = target.get_ui_theme()

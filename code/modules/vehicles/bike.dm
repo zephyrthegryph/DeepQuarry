@@ -8,8 +8,7 @@
 
 	load_item_visible = 1
 	mob_offset_y = 5
-	health = 100
-	maxhealth = 100
+	max_integrity = 100
 
 	locked = 0
 	powered = 1

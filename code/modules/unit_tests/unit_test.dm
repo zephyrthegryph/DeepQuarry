@@ -41,10 +41,6 @@ GLOBAL_VAR_INIT(focused_tests, focused_tests())
 	var/turf/run_loc_floor_top_right
 	///The priority of the test, the larger it is the later it fires
 	var/priority = TEST_DEFAULT
-	/// Multi-second integration/benchmark tests set this TRUE. Local `bin/test.cmd`
-	/// runs skip them (SKIP_SLOW_TESTS) for fast iteration; CI passes -DFULL_TESTS to
-	/// run them. Keep unit-level tests slow = FALSE so they always run locally.
-	var/slow = FALSE
 	//internal shit
 	var/focus = FALSE
 	var/succeeded = TRUE
@@ -200,12 +196,6 @@ GLOBAL_VAR_INIT(focused_tests, focused_tests())
 	GLOB.current_test = test
 	var/duration = REALTIMEOFDAY
 	var/skip_test = (test_path in SSmapping.current_map.skipped_tests)
-#ifdef SKIP_SLOW_TESTS
-	// Fast local runs skip the multi-second integration/benchmark tests; CI builds
-	// with -DFULL_TESTS to clear SKIP_SLOW_TESTS and run them.
-	if(initial(test_path.slow))
-		skip_test = TRUE
-#endif
 	var/test_output_desc = "[test_path]"
 	var/message = ""
 
@@ -408,11 +398,3 @@ GLOBAL_VAR_INIT(focused_tests, focused_tests())
 /datum/map_template/unit_tests
 	name = "Unit Tests Zone"
 	mappath = "maps/templates/unit_tests.dmm"
-
-// Area for the sealed unit-test room in maps/templates/unit_tests.dmm. Always
-// powered so atmos / machinery tests aren't gated on an APC. Defined in the core
-// tree (not a map file) so both the template and the test code can reference it.
-/area/misc/testroom
-	name = "Unit Test Zone"
-	requires_power = 0
-	icon_state = "yellow"

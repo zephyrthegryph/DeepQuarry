@@ -2200,11 +2200,11 @@
 "ri" = (
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+06
+	max_integrity = 1e+06
 	},
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+06
+	max_integrity = 1e+06
 	},
 /obj/structure/window/reinforced,
 /obj/structure/grille,
@@ -2460,7 +2460,7 @@
 "ux" = (
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+06
+	max_integrity = 1e+06
 	},
 /obj/structure/window/reinforced{
 	dir = 8
@@ -2924,7 +2924,7 @@
 /obj/structure/grille/broken,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+06
+	max_integrity = 1e+06
 	},
 /obj/item/material/shard,
 /obj/item/material/shard{
@@ -3022,7 +3022,7 @@
 /obj/structure/grille,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+06
+	max_integrity = 1e+06
 	},
 /obj/structure/window/reinforced{
 	dir = 1
@@ -3518,7 +3518,7 @@
 "Ha" = (
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+06
+	max_integrity = 1e+06
 	},
 /obj/structure/window/reinforced,
 /obj/structure/grille,
@@ -3847,7 +3847,7 @@
 /obj/structure/grille,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+06
+	max_integrity = 1e+06
 	},
 /obj/item/material/shard{
 	icon_state = "small"
@@ -4033,11 +4033,11 @@
 /obj/structure/grille,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+06
+	max_integrity = 1e+06
 	},
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+06
+	max_integrity = 1e+06
 	},
 /turf/simulated/floor/plating/external/thor{
 	icon_state = "dmg3"
@@ -4708,7 +4708,7 @@
 "TY" = (
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+06
+	max_integrity = 1e+06
 	},
 /obj/structure/grille,
 /obj/structure/window/reinforced,
@@ -4965,14 +4965,14 @@
 /obj/structure/window/reinforced,
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+06
+	max_integrity = 1e+06
 	},
 /obj/structure/window/reinforced{
 	dir = 4
 	},
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+06
+	max_integrity = 1e+06
 	},
 /obj/machinery/atmospherics/pipe/simple/hidden/yellow{
 	dir = 4
@@ -5132,7 +5132,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 1;
-	health = 1e+06
+	max_integrity = 1e+06
 	},
 /obj/structure/window/reinforced,
 /obj/structure/grille,

@@ -110,7 +110,7 @@
 	name = MAT_SHELLCHITIN
 	material_class = MATCLASS_ORGANIC // class assignment
 	icon_colour = "#006633"
-	stack_type = /obj/item/stack/material/dreamscale
+	stack_type = /obj/item/stack/material/shellchitin
 	icon_base = "solid"
 	icon_reinf = "reinf_mesh"
 	integrity = 250
@@ -130,6 +130,8 @@
 	no_variants = FALSE
 	pass_color = TRUE
 	strict_color_stacking = TRUE
+	// Mob-grinding by-product with no autolathe design — crafted, not lathe-printed.
+	exotic_no_autolathe_reprint = TRUE
 
 //Putting this here for now because in intial PRs, I enjoy making/altering as few files as possible.
 //Solar ray stuff

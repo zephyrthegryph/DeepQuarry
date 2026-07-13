@@ -193,7 +193,7 @@
 		reference = location.air // Our color and volume will depend on the turf's gasmix
 	//Active mode
 	else
-		var/datum/gas_mixture/affected = location.air.remove_ratio(volume/location.air.volume)
+		var/datum/gas_mixture/affected = location.air.remove_ratio(volume/location.air.return_volume())
 		if(affected) //in case volume is 0
 			reference = affected // Our color and volume will depend on this small sparked gasmix
 			affected.set_temperature(temperature)
@@ -303,8 +303,9 @@
 		qdel(src)
 		return
 
-	if(location.excited_group)
-		location.excited_group.reset_cooldowns()
+	// Excited groups live in the Rust arena now; there's no DM group to poke a
+	// cooldown reset on. Re-registering the burning turf keeps auxmos processing it.
+	SSair.add_to_active(location)
 
 	cold_fire = FALSE
 	if(temperature <= FREON_MAXIMUM_BURN_TEMPERATURE)
@@ -329,10 +330,11 @@
 			sim_loc.burn_tile()
 
 		//Possible spread due to radiated heat.
-		if(location.air.return_temperature() > FIRE_MINIMUM_TEMPERATURE_TO_SPREAD || cold_fire)
-			var/radiated_temperature = location.air.return_temperature()*FIRE_SPREAD_RADIOSITY_SCALE
+		var/air_temperature = location.air.return_temperature()
+		if(air_temperature > FIRE_MINIMUM_TEMPERATURE_TO_SPREAD || cold_fire)
+			var/radiated_temperature = air_temperature*FIRE_SPREAD_RADIOSITY_SCALE
 			if(cold_fire)
-				radiated_temperature = location.air.return_temperature() * COLD_FIRE_SPREAD_RADIOSITY_SCALE
+				radiated_temperature = air_temperature * COLD_FIRE_SPREAD_RADIOSITY_SCALE
 			for(var/t in location.atmos_adjacent_turfs)
 				var/turf/open/T = t
 				if(!T.active_hotspot)

@@ -259,6 +259,7 @@
 		var/obj/item/organ/external/E = H.organs_by_name[infest_target]
 		if(!E || E.is_stump() || E.robotic >= ORGAN_ROBOT)
 			to_chat(src,"\The [H] does not have an infestable [infest_target]!")
+			return
 
 		var/list/covering_clothing = E.get_covering_clothing()
 		for(var/obj/item/clothing/C in covering_clothing)
@@ -313,8 +314,9 @@
 	if(!host)
 		return
 
-	host_bodypart.implants -= src
-	host_bodypart = null
+	if(host_bodypart)
+		host_bodypart.implants -= src
+		host_bodypart = null
 
 	forceMove(get_turf(host))
 
@@ -355,10 +357,12 @@
 
 	if(!istype(H) || H.isSynthetic())
 		to_chat(user, span_warning("You cannot inject this target..."))
+		return
 
 	var/obj/item/organ/external/E = H.organs_by_name[infest_target]
 	if(!E || E.is_stump() || E.robotic >= ORGAN_ROBOT)
 		to_chat(src,"\The [H] does not have an infestable [infest_target]!")
+		return
 
 	var/list/covering_clothing = E.get_covering_clothing()
 	for(var/obj/item/clothing/C in covering_clothing)

@@ -1,0 +1,4 @@
+author: "ethan"
+delete-after: true
+changes:
+  - maptweak: "Southern Cross is now station-only: the empty-space, planetary surface (Plains/Mountains/Wilderness) and misc/derelict z-levels — whose procedural generation was already stubbed — were removed. The three station decks plus CentCom and Transit remain, so escape/supply/arrivals shuttles are unaffected. Fewer z-levels means a noticeably faster round start."

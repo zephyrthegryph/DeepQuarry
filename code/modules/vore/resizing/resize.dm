@@ -132,10 +132,10 @@
 	if(size_multiplier == new_size)
 		return 1
 
+	var/change = new_size - size_multiplier
 	size_multiplier = new_size //Change size_multiplier so that other items can interact with them
 
 	if(animate)
-		var/change = new_size - size_multiplier
 		var/duration = (abs(change)+0.25) SECONDS
 		var/matrix/resize = matrix() // Defines the matrix to change the player's size
 		var/special_x = 1
@@ -170,7 +170,7 @@
 	var/previous_scale = size_multiplier
 	. = ..()
 	var/size_difference = previous_scale - size_multiplier
-	if((allow_stripping == TRUE) && (size_difference >= 0.3) || (size_difference <= -0.3))
+	if((allow_stripping == TRUE) && ((size_difference >= 0.3) || (size_difference <= -0.3)))
 		if(size_strip_preference == SIZESTRIP_ITEMS)
 			drop_all_clothing(FALSE)
 		else if(size_strip_preference == SIZESTRIP_ALL)

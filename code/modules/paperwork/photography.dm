@@ -214,7 +214,7 @@ GLOBAL_VAR_INIT(photo_count, 0)
 	// Sort the atoms into their layers
 	var/list/sorted = sort_atoms_by_layer(atoms)
 	var/center_offset = (size-1)/2 * 32 + 1
-	for(var/i; i <= sorted.len; i++)
+	for(var/i = 1; i <= sorted.len; i++)
 		var/atom/A = sorted[i]
 		if(A)
 			var/icon/img = getFlatIcon(A, no_anim = TRUE) // picture_planes = picture_planes)//build_composite_icon(A) //

@@ -193,7 +193,7 @@ GLOBAL_LIST_EMPTY(Holiday) //Holidays are lists now, so we can have more than on
 					GLOB.Holiday["Appreciation Day"] = "Originally an old holiday from Earth, Appreciation Day follows many of the \
 					traditions that its predecessor did, such as having a large feast (turkey often included), gathering with family, and being thankful \
 					for what one has in life."
-			if(28 > DD > 20)
+			if(DD > 20 && DD < 28)
 				if(time2text(world.timeofday, "Day") == "Thursday")
 					GLOB.Holiday["Thanksgiving"] = "Originally an old holiday from Earth, Thanksgiving follows many of the \
 					traditions that its predecessor did, such as having a large feast (turkey often included), gathering with family, and being thankful \
@@ -264,11 +264,9 @@ ADMIN_VERB(Set_Holiday, R_SERVER, "Set Holiday", "Force-set the Holiday variable
 		if(holiday_blurbs.len != 0)
 			for(var/blurb in holiday_blurbs)
 				to_chat(world, span_filter_system(span_blue("<div align='center'>[blurb]</div>")))
-		switch(GLOB.Holiday)			//special holidays
-			//if("Easter")
-				//do easter stuff
-			if("Christmas Eve","Christmas")
-				Christmas_Game_Start()
+		//special holidays — GLOB.Holiday is an assoc list keyed by holiday name
+		if(("Christmas Eve" in GLOB.Holiday) || ("Christmas" in GLOB.Holiday))
+			Christmas_Game_Start()
 
 	return
 
@@ -276,7 +274,7 @@ ADMIN_VERB(Set_Holiday, R_SERVER, "Set Holiday", "Force-set the Holiday variable
 /proc/Holiday_Random_Event()
 	if(isemptylist(GLOB.Holiday))
 		return 0
-	switch(GLOB.Holiday)			//special holidays
+	//special holidays — GLOB.Holiday is an assoc list keyed by holiday name
 		//if("Easter")		//I'll make this into some helper procs at some point
 /*			var/list/turf/simulated/floor/Floorlist = list()
 			for(var/turf/simulated/floor/T)
@@ -295,8 +293,8 @@ ADMIN_VERB(Set_Holiday, R_SERVER, "Set Holiday", "Force-set the Holiday variable
 				containers += S
 
 			message_admins(span_notice("DEBUG: Event: Egg spawned at [Egg.loc] ([Egg.x],[Egg.y],[Egg.z])"))*/
-		if("End of the World")
-			if(prob(GLOB.eventchance))	GameOver()
+	if("End of the World" in GLOB.Holiday)
+		if(prob(GLOB.eventchance))	GameOver()
 
-		if("Christmas","Christmas Eve")
-			if(prob(GLOB.eventchance))	ChristmasEvent()
+	if(("Christmas" in GLOB.Holiday) || ("Christmas Eve" in GLOB.Holiday))
+		if(prob(GLOB.eventchance))	ChristmasEvent()

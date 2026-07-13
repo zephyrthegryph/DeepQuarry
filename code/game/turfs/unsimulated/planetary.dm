@@ -26,10 +26,10 @@
 	SSplanets.removeTurf(src)
 	return ..()
 
-/turf/unsimulated/wall/planetary/proc/set_temperature(new_temperature)
+/turf/unsimulated/wall/planetary/set_temperature(new_temperature)
 	if(new_temperature == temperature)
 		return
-	temperature = new_temperature
+	. = ..()  // base: set the DM mirror AND push the value into the heat arena
 	// was: ZAS connections.erase_all() + SSair.mark_for_update.
 	// LINDA equivalent: rebuild this turf's adjacency (so superconductivity
 	// re-evaluates with the new temperature) and queue it for the next SSair

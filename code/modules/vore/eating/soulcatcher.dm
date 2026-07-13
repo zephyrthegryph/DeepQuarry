@@ -42,7 +42,7 @@
 	if(apply_stored_belly(data["linked_belly"], TRUE))
 		return
 	linked_belly = null
-	owner.recalculate_vis()
+	owner?.recalculate_vis()
 
 /obj/soulgem/proc/apply_stored_belly(belly_string, skip_unreg = FALSE)
 	for(var/obj/belly in owner.vore_organs)

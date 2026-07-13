@@ -33,6 +33,8 @@
 
 /obj/item/buttonofnormal/proc/do_size_effect(atom/A)
 	var/mob/living/capsulehit = A
+	if(!istype(capsulehit))
+		return
 	capsulehit.resize(sizetouse)
 	sizetouse = rand(25,200)/100 //randmization occurs after press
 
@@ -101,6 +103,7 @@
 		if(9)
 			new	/obj/item/gun/energy/sizegun/not_advanced(capsuleowner.loc)
 			qdel(src)
+			return
 		if(777)	new	/obj/item/spacecash/c1000(capsuleowner.loc) //for rigging
 		else luckynumber7 = (rand(0,10))
 	luckynumber7 = rand(0,10)

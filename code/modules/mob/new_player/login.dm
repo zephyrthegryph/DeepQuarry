@@ -71,8 +71,7 @@
 				problems = "potential network disconnects. If you experience some, try another version"
 
 		if(1566 to 1568)
-			if(world.byond_build == 1569)
-				problems = "frequent crashes, usually when transitioning between z-levels"
+			problems = "frequent crashes, usually when transitioning between z-levels"
 
 		if(1652 to 1654)
 			problems = "various webview graphics issues and client hanging (1652 to 1654 are all affected). 516.1651 is known to be safe from these issues if a newer version than 1654 is not available."

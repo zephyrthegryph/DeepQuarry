@@ -499,7 +499,6 @@
 	if(cashmoney.worth <= 0)
 		user.drop_from_inventory(cashmoney)
 		qdel(cashmoney)
-		cashmoney.update_icon()
 
 	lottery_entries++
 	lottery_tickets += "Number.[lottery_entries] [user.name]"
@@ -831,7 +830,6 @@
 	if(cashmoney.worth <= 0)
 		user.drop_from_inventory(cashmoney)
 		qdel(cashmoney)
-		cashmoney.update_icon()
 
 	if(buystate == "selfbuy")
 		to_chat(user,span_notice("You put [charge] credits worth of chips into the SPASM and nullify your collar!"))
@@ -851,7 +849,7 @@
 		if(do_tf)
 			var/mob/living/sentient_prize = collar.wearer?.resolve()
 			if(sentient_prize)
-				do_item_tf(collar.wearer, tf_choice)
+				do_item_tf(sentient_prize, tf_choice)
 			else
 				log_runtime(EXCEPTION("Casino sentient prize collar \"[collar]\" didn't have a living mob as its wearer and couldn't item TF!"))
 				to_chat(user,span_warning("\The [src] couldn't transform your prize due to the prize's collar not being able to resolve its wearer as a living mob. Contact a coder."))

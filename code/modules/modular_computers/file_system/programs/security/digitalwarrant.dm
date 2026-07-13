@@ -129,14 +129,18 @@ GLOBAL_VAR_INIT(warrant_uid, 0)
 
 		if("editwarrantcharges")
 			. = TRUE
+			if(!activewarrant)
+				return
 			var/new_charges = tgui_input_text(ui.user, "Please input charges", "Charges", activewarrant.fields["charges"], max_length = MAX_MESSAGE_LEN)
 			if(tgui_status(ui.user, state) == STATUS_INTERACTIVE)
-				if (!new_charges)
+				if (!new_charges || !activewarrant)
 					return
 				activewarrant.fields["charges"] = new_charges
 
 		if("editwarrantauth")
 			. = TRUE
+			if(!activewarrant)
+				return
 			if(!(ACCESS_HOS in I.GetAccess())) // begin
 				to_chat(ui.user, span_warning("You don't have the access to do this!"))
 				return // end

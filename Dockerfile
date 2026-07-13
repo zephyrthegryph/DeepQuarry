@@ -70,7 +70,13 @@ RUN git init -q . \
     && git config user.name "docker build" \
     && git commit -q --allow-empty -m "docker build provenance"
 
-RUN env TG_BOOTSTRAP_NODE_LINUX=1 tools/build/build.sh
+RUN env TG_BOOTSTRAP_NODE_LINUX=1 tools/build/build.sh \
+    # Drop build-only artifacts in the SAME layer so they never persist in a
+    # committed layer (the final stage COPYs all of /vorestation). build.sh already
+    # copied the compiled libverdigris.so to /vorestation/; verdigris/target (multi-GB
+    # of Rust intermediates), tgui/node_modules, and the throwaway provenance .git are
+    # not needed at runtime. Without this the image is ~5GB and won't fit smaller disks.
+    && rm -rf verdigris/target tgui/node_modules .git
 
 FROM base AS rust
 RUN apt-get install -y --no-install-recommends \

@@ -110,6 +110,8 @@
 
 /obj/effect/anomaly/dimensional/proc/pulse_change(count)
 	var/turf/turf
+	if(!LAZYLEN(target_turfs))
+		return
 
 	for(var/i in 1 to count)
 		turf = pick(target_turfs)

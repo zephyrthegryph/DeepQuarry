@@ -25,7 +25,7 @@ The "dust" will damage the hull of the station causin minor hull breaches.
 			dust_type = /obj/effect/space_dust/super
 
 	var/startside = pick(GLOB.cardinal)
-	for(var/i = 0 to numbers)
+	for(var/i = 1 to numbers)
 		var/startx = 0
 		var/starty = 0
 		var/endy = 0
@@ -52,7 +52,7 @@ The "dust" will damage the hull of the station causin minor hull breaches.
 				endy = rand(TRANSITIONEDGE, world.maxy-TRANSITIONEDGE)
 				endx = world.maxx-TRANSITIONEDGE
 
-		if(!affecting_z.len)
+		if(!LAZYLEN(affecting_z))
 			return
 		var/randomz = pick(affecting_z)
 		var/turf/startloc = locate(startx, starty, randomz)

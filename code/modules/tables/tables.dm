@@ -11,14 +11,16 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 	throwpass = 1
 	surgery_cleanliness = 50
 	var/flipped = 0
-	var/maxhealth = 10
-	var/health = 10
+	max_integrity = 10
 
 	// For racks.
 	var/can_reinforce = 1
 	var/can_plate = 1
 
 	var/manipulating = 0
+	/// Transient hand-off: shards produced by the most recent break_to_parts(), read
+	/// by callers (e.g. tableslam) that previously consumed take_damage()'s return.
+	var/list/last_break_shards
 	var/datum/material/material = null
 	var/datum/material/reinforced = null
 
@@ -31,32 +33,37 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 	return icon(icon=initial(icon), icon_state=initial(icon_state)) //Basically the map preview version
 
 /obj/structure/table/proc/update_material()
-	var/old_maxhealth = maxhealth
+	var/old_max = max_integrity
 	if(!material)
-		maxhealth = 10
+		max_integrity = 10
 	else
-		maxhealth = material.integrity / 2
+		max_integrity = material.integrity / 2
 
 		if(reinforced)
-			maxhealth += reinforced.integrity / 2
+			max_integrity += reinforced.integrity / 2
 
-	health += maxhealth - old_maxhealth
+	// Preserve absolute damage accrued so far when the max changes (mirrors the old
+	// `health += maxhealth - old_maxhealth` behaviour).
+	update_integrity(get_integrity() + (max_integrity - old_max))
 
-/obj/structure/table/take_damage(amount)
+/obj/structure/table/take_damage(damage_amount, damage_type = BRUTE, damage_flag, sound_effect = TRUE, attack_dir, armour_penetration = 0)
 	// If the table is made of a brittle material, and is *not* reinforced with a non-brittle material, damage is multiplied by TABLE_BRITTLE_MATERIAL_MULTIPLIER
 	if(material && material.is_brittle())
 		if(reinforced)
 			if(reinforced.is_brittle())
-				amount *= TABLE_BRITTLE_MATERIAL_MULTIPLIER
+				damage_amount *= TABLE_BRITTLE_MATERIAL_MULTIPLIER
 		else
-			amount *= TABLE_BRITTLE_MATERIAL_MULTIPLIER
-	health -= amount
-	if(health <= 0)
-		visible_message(span_warning("\The [src] breaks down!"))
-		return break_to_parts() // if we break and form shards, return them to the caller to do !FUN! things with
+			damage_amount *= TABLE_BRITTLE_MATERIAL_MULTIPLIER
+	return ..()
+
+// Reaching 0 integrity breaks the table into shards/sheets.
+/obj/structure/table/atom_destruction(damage_flag)
+	visible_message(span_warning("\The [src] breaks down!"))
+	break_to_parts()
+	return ..()
 
 /obj/structure/table/blob_act()
-	take_damage(100)
+	take_damage(100, BRUTE, MELEE)
 
 /obj/structure/table/Initialize(mapload)
 	. = ..()
@@ -89,8 +96,8 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 
 /obj/structure/table/examine(mob/user)
 	. = ..()
-	if(health < maxhealth)
-		switch(health / maxhealth)
+	if(get_integrity() < max_integrity)
+		switch(get_integrity() / max_integrity)
 			if(0.0 to 0.5)
 				. += span_warning("It looks severely damaged!")
 			if(0.25 to 0.5)
@@ -143,7 +150,7 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 		dismantle(W, user)
 		return 1
 
-	if(health < maxhealth && W.has_tool_quality(TOOL_WELDER))
+	if(get_integrity() < max_integrity && W.has_tool_quality(TOOL_WELDER))
 		var/obj/item/weldingtool/F = W.get_welder()
 		if(F.welding)
 			to_chat(user, span_notice("You begin reparing damage to \the [src]."))
@@ -152,7 +159,7 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 				return
 			user.visible_message(span_infoplain(span_bold("\The [user]") + " repairs some damage to \the [src]."),
 									span_notice("You repair some damage to \the [src]."))
-			health = max(health+(maxhealth/5), maxhealth) // 20% repair per application
+			repair_damage(max_integrity/5) // 20% repair per application
 			return 1
 
 	if(!material && can_plate && istype(W, /obj/item/stack/material))
@@ -318,6 +325,7 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 		var/datum/material/M = get_material_by_name(MAT_STEEL)
 		S = M.place_shard(loc)
 		if(S) shards += S
+	last_break_shards = shards
 	qdel(src)
 	return shards
 

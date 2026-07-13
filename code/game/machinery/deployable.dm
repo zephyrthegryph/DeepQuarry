@@ -16,8 +16,7 @@ Deployable items
 	anchored = FALSE
 	density = TRUE
 	icon_state = "barrier0"
-	var/health = 100.0
-	var/maxhealth = 100.0
+	max_integrity = 100
 	var/locked = 0.0
 //	req_access = list(ACCESS_MAINT_TUNNELS)
 
@@ -47,8 +46,8 @@ Deployable items
 				return
 		return
 	else if(W.has_tool_quality(TOOL_WRENCH))
-		if(health < maxhealth)
-			health = maxhealth
+		if(get_integrity() < max_integrity)
+			repair_damage(max_integrity)
 			emagged = 0
 			req_access = list(ACCESS_SECURITY)
 			visible_message(span_warning("[user] repairs \the [src]!"))
@@ -62,29 +61,22 @@ Deployable items
 	else
 		switch(W.damtype)
 			if(BURN)
-				health -= W.force * 0.75
+				take_damage(W.force * 0.75, BURN, MELEE, sound_effect = FALSE)
 			if(BRUTE)
-				health -= W.force * 0.5
+				take_damage(W.force * 0.5, BRUTE, MELEE, sound_effect = FALSE)
 		playsound(src, 'sound/weapons/smash.ogg', 50, 1)
-		CheckHealth()
 		..()
 
-/obj/machinery/deployable/barrier/proc/CheckHealth()
-	if(health <= 0)
-		explode()
-	return
+// At zero integrity the barrier blows apart.
+/obj/machinery/deployable/barrier/atom_destruction(damage_flag)
+	. = ..()
+	explode()
 
 /obj/machinery/deployable/barrier/attack_generic(mob/user, damage, attack_verb)
 	visible_message(span_danger("[user] [attack_verb] the [src]!"))
 	playsound(src, 'sound/weapons/smash.ogg', 50, 1)
 	user.do_attack_animation(src)
-	health -= damage
-	CheckHealth()
-	return
-
-/obj/machinery/deployable/barrier/take_damage(damage)
-	health -= damage
-	CheckHealth()
+	take_damage(damage, BRUTE, MELEE, sound_effect = FALSE)
 	return
 
 /obj/machinery/deployable/barrier/ex_act(severity)
@@ -93,8 +85,7 @@ Deployable items
 			explode()
 			return
 		if(2.0)
-			health -= 25
-			CheckHealth()
+			take_damage(25, BRUTE, BOMB)
 			return
 
 /obj/machinery/deployable/barrier/emp_act(severity, recursive)
@@ -155,7 +146,7 @@ Deployable items
 	icon = 'icons/obj/cardboard_cutout.dmi'
 	icon_state = "cutout_basic"
 
-	maxhealth = 15 //Weaker than normal barricade
+	max_integrity = 15 //Weaker than normal barricade
 	anchored = FALSE
 
 	var/fake_name = "unknown"
@@ -203,10 +194,10 @@ Deployable items
 	desc = fake_desc
 	visible_message(span_warning("[src] is uprighted to their proper position."))
 
-/obj/structure/barricade/cutout/CheckHealth()
-	if(!toppled && (health < (maxhealth/2)))
+/obj/structure/barricade/cutout/on_update_integrity(old_value, new_value)
+	. = ..()
+	if(!toppled && (new_value < (max_integrity/2)))
 		topple()
-	..()
 
 /obj/structure/barricade/cutout/attack_hand(mob/user)
 	if((. = ..()))

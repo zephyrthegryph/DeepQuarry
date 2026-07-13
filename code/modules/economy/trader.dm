@@ -50,7 +50,8 @@
 	LAZYCLEARLIST(start_products)
 	LAZYCLEARLIST(prices)
 	LAZYCLEARLIST(multiple)
-	for(var/item in contents)
+	// Snapshot: qdel pulls members out of contents mid-iteration.
+	for(var/item in contents.Copy())
 		qdel(item)
 
 /obj/trader/attack_hand(mob/living/user)

@@ -1,6 +1,10 @@
 /mob/living/simple_mob/clowns/big/c_shift
 	var/datum/component/shadekin/comp = /datum/component/shadekin/phase_only //Component that holds all the shadekin vars.
 
+/mob/living/simple_mob/clowns/big/c_shift/Destroy()
+	comp = null // Cached component ref; the component itself is qdel'd by /datum/Destroy.
+	return ..()
+
 /mob/living/simple_mob/clowns/big/c_shift/UnarmedAttack()
 	if(comp.in_phase)
 		return FALSE //Nope.

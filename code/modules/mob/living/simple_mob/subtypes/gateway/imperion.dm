@@ -565,7 +565,7 @@
 			O.heal_damage(-0.1, -0.1, 0, 0)
 	else
 		holder.adjustBruteLoss(0.1)
-		holder.adjustFireLoss(0,1)
+		holder.adjustFireLoss(0.1)
 
 /mob/living/simple_mob/mechanical/mecha/imperion/phase3/proc/heal_aura()
 	for(var/mob/living/L in view(src, 28))

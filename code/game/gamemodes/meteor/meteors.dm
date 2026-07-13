@@ -394,7 +394,7 @@ GLOBAL_LIST_INIT(meteors_catastrophic, list(
 	if(gib)
 		new /obj/effect/gibspawner/human(get_turf(src))
 
-/obj/effect/meteor/flaming/
+/obj/effect/meteor/flaming/meatyore
 	name = "flaming meatyore"
 	icon = 'icons/obj/meteor.dmi'
 	icon_state = "meaty_flaming"
@@ -437,7 +437,7 @@ GLOBAL_LIST_INIT(meteors_catastrophic, list(
 /obj/effect/meteor/emp/meatyore/meteor_effect(gib)
 	..()
 	if(gib)
-		new /obj/effect/gibspawner/human
+		new /obj/effect/gibspawner/human(get_turf(src))
 
 /obj/effect/meteor/tunguska/meatyore
 	name = "tunguska meatyore"

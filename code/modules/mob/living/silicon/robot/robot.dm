@@ -1253,7 +1253,8 @@
 
 	if(is_component_functioning("comms"))
 		var/datum/robot_component/RC = get_component("comms")
-		use_power(RC.active_usage)
+		if(cell)
+			cell.use(RC.active_usage)
 		return 1
 	return 0
 
@@ -1737,7 +1738,7 @@
 	balloon_alert(user, "dropping hat...")
 	if(!do_after(user, 3 SECONDS, src))
 		return
-	if(QDELETED(src) || !Adjacent(user) || user.incapacitated || isnull(hat))
+	if(QDELETED(src) || !Adjacent(user) || user.incapacitated() || isnull(hat))
 		return
 	hat.forceMove(get_turf(src))
 	hat = null

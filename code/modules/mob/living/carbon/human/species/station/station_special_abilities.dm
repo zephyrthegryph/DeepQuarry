@@ -1313,13 +1313,13 @@
 		return
 
 	if(do_after(src, 30 SECONDS, target = src)) //Thrirty seconds.
-		if(choice == "Make a Egg")
+		if(choice == "Make a Egg" && eggs > 5)
+			src.show_message(span_warning("Your Belly is full of Eggs you cant have more!!"))
+			return 0
+		else if(choice == "Make a Egg")
 			src.show_message(span_warning("You feel your belly bulging a bit, you made an egg!"))
 			C.nutrition -=150
 			eggs += 1
-			return 0
-		else if(choice == "Make a Egg" && eggs > 5)
-			src.show_message(span_warning("Your Belly is full of Eggs you cant have more!!"))
 			return 0
 		else if(choice == "lay your Eggs" && eggs > 0)
 			src.visible_message(span_infoplain(span_white("[src] freezes and vissibly tries to squat down")))

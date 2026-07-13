@@ -34,9 +34,6 @@ GLOBAL_VAR_INIT(total_runtimes_skipped, 0)
 												If negative, starts at -1, and goes down by 1 each time that error gets skipped*/
 
 	if(!error_last_seen) // A runtime is occurring too early in start-up initialization
-		// Still surface it — early-init runtimes are otherwise invisible (no stack in
-		// the CI log) yet still count toward total_runtimes and fail a clean test run.
-		log_world("early-init runtime error: [E.name] ([E.file]:[E.line])")
 		return ..()
 
 	if(stack_workaround.Find(E.name))

@@ -72,7 +72,7 @@
 	if (reagents.reagent_list.len > 0)
 		color = reagents.get_color()
 		var/datum/reagent/R = reagents.get_master_reagent()
-		var/new_name = lowertext(R)
+		var/new_name = lowertext(R.name)
 		name = "powdered [new_name]"
 
 /// Snorting.

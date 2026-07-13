@@ -116,6 +116,7 @@
 	var/turf/newturf = get_turf(master)
 	if(!newturf)
 		qdel(src)
+		return
 
 	// Handling the signals of stuff holding us (or not anymore)
 	// These are prety rarely activated, how often are you following something in a bag?

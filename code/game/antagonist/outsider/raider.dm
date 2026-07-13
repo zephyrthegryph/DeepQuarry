@@ -240,6 +240,8 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 
 /datum/antagonist/raider/proc/equip_weapons(mob/living/carbon/human/player)
 	var/new_gun = pick(raider_guns)
+	if(islist(new_gun)) // some entries are bundles of variants; pick one concrete type
+		new_gun = pick(new_gun)
 	var/new_holster = pick(raider_holster) //raiders don't start with any backpacks, so let's be nice and give them a holster if they can use it.
 	var/turf/T = get_turf(player)
 

@@ -116,6 +116,10 @@
 	. = ..()
 	med_analyzer = new /obj/item/healthanalyzer/advanced
 
+/obj/item/organ/internal/augment/bioaugment/health_scan/Destroy()
+	QDEL_NULL(med_analyzer)
+	return ..()
+
 /obj/item/organ/internal/augment/bioaugment/health_scan/augment_action()
 	if(!owner)
 		return

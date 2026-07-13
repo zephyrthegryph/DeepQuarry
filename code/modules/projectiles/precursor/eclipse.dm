@@ -46,6 +46,7 @@
 	detonator = new/obj/item/assembly_holder/timer_igniter(src)
 
 	beakers += B1
+	beakers += B2
 
 /obj/item/projectile/bullet/frostshotgun
 	use_submunitions = 1

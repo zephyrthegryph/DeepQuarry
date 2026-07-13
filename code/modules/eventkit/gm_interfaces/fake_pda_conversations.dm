@@ -43,9 +43,9 @@ ADMIN_VERB(fake_pdaconvos, R_FUN, "Manage PDA identities", "Creates fake identit
 		var/ref = tgui_input_list(user, "Pick which identity to delete (details are printed to chat)", "identities", FPC.fakeRefs)
 		if(tgui_alert(user, "You are deleting [ref]. Current name: [FPC.names[ref]]. Current assignment: [FPC.fakeJobs[ref]]",
 		"are you sure?", list("Yes", "No"))=="Yes")
-			FPC.fakeRefs =- ref
-			FPC.fakeJobs =- ref
-			FPC.names =- ref
+			FPC.fakeRefs -= ref
+			FPC.fakeJobs -= ref
+			FPC.names -= ref
 		return
 
 

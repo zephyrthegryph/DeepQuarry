@@ -102,7 +102,7 @@
 			return FALSE
 
 		var/mob/living/carbon/human/H = user
-		if(!H.nif || !H.nif.stat == NIF_WORKING)
+		if(!H.nif || H.nif.stat != NIF_WORKING)
 			to_chat(H, span_warning("[src] seems unable to connect to your NIF..."))
 			return FALSE
 

@@ -179,6 +179,8 @@ ADMIN_VERB(play_server_sound, R_SOUNDS, "Play Server Sound", "Plays a sound from
 		for(var/m in GLOB.player_list)
 			var/mob/M = m
 			var/client/C = M.client
+			if(!C)
+				continue
 			if(C.prefs?.read_preference(/datum/preference/toggle/play_admin_midis))
 				if(!stop_web_sounds)
 					C.tgui_panel?.play_music(web_sound_url, music_extra_data)

@@ -81,7 +81,7 @@
 
 /datum/decl/emote/audible/synth/ding
 	key = "ding"
-	emote_message_1p = "You ding at TARGET!"
+	emote_message_1p_target = "You ding at TARGET!"
 	emote_message_1p = "You ding."
 	emote_message_3p_target = "dings at TARGET!"
 	emote_message_3p = "dings."
@@ -90,7 +90,7 @@
 
 /datum/decl/emote/audible/synth/microwave
 	key = "microwave"
-	emote_message_1p = "You make microwave noises at TARGET!"
+	emote_message_1p_target = "You make microwave noises at TARGET!"
 	emote_message_1p = "You make microwave noises."
 	emote_message_3p_target = "makes microwave noises at TARGET!"
 	emote_message_3p = "makes microwave noises."

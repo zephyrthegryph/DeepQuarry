@@ -55,7 +55,7 @@
 	icon = 'icons/obj/props/decor.dmi'
 	icon_state = "nt_biocan"
 
-/obj/structure/prop/nt_biocan/change_state(state)
+/obj/structure/prop/machine/nt_biocan/change_state(state)
 	. = ..()
 	switch(state)
 		if("panel_open")
@@ -310,7 +310,7 @@
 		if("panel_closed")
 			cut_overlay("nt_optable_panel")
 
-/obj/structure/prop/nt_optable/starts_active
+/obj/structure/prop/machine/nt_optable/starts_active
 	icon_state = "nt_optable-active"
 
 /**

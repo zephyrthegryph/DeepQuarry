@@ -18,6 +18,10 @@
 	..()
 	message_core = new
 
+/datum/computer_file/program/comm/Destroy()
+	QDEL_NULL(message_core)
+	return ..()
+
 /datum/computer_file/program/comm/clone()
 	var/datum/computer_file/program/comm/temp = ..()
 	temp.message_core.messages = null
@@ -48,6 +52,10 @@ General message handling stuff
 	..()
 	messages = list()
 	GLOB.comm_message_listeners.Add(src)
+
+/datum/comm_message_listener/Destroy()
+	GLOB.comm_message_listeners.Remove(src)
+	return ..()
 
 /datum/comm_message_listener/proc/Add(list/message)
 	messages[++messages.len] = message

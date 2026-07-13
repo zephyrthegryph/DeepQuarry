@@ -81,7 +81,7 @@
 
 /datum/decl/emote/audible/beep
 	key = "bbeep"
-	emote_message_3p = "You beep."
+	emote_message_1p = "You beep."
 	emote_message_3p = "beeps."
 	emote_sound = 'sound/machines/twobeep.ogg'
 

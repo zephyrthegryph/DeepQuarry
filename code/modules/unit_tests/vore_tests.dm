@@ -18,7 +18,6 @@
 	return test_human
 
 /datum/unit_test/belly_nonsuffocation
-	slow = TRUE
 
 /datum/unit_test/belly_nonsuffocation/Run()
 	var/mob/living/carbon/human/pred = create_test_human()
@@ -44,7 +43,6 @@
 		TEST_FAIL("Prey took oxygen damage in belly (before: [start_oxy], after: [end_oxy])")
 
 /datum/unit_test/belly_spacesafe
-	slow = TRUE
 
 /datum/unit_test/belly_spacesafe/Run()
 	var/mob/living/carbon/human/pred = create_test_human()
@@ -83,7 +81,6 @@
 		TEST_FAIL("Prey took oxygen damage in space belly (before: [start_oxy], after: [end_oxy])")
 
 /datum/unit_test/belly_damage
-	slow = TRUE
 
 /datum/unit_test/belly_damage/Run()
 	var/mob/living/carbon/human/pred = create_test_human()

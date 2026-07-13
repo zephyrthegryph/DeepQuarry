@@ -62,7 +62,7 @@
 
 	var/mob/M = usr
 	if(!M.mind)	return 0
-	if(!M.mind.assigned_role == JOB_DETECTIVE)
+	if(M.mind.assigned_role != JOB_DETECTIVE)
 		to_chat(M, span_notice("You don't feel cool enough to name this gun, chump."))
 		return 0
 

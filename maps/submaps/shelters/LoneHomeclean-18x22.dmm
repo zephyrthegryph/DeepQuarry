@@ -2,7 +2,7 @@
 "ab" = (
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor/outdoors/grass/heavy,
 /area/survivalpod/superpose/LoneHomeclean)
@@ -140,7 +140,7 @@
 "aB" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor/outdoors/grass/heavy,
 /area/survivalpod/superpose/LoneHomeclean)
@@ -279,14 +279,14 @@
 /obj/structure/table/bench/wooden,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor/wood,
 /area/survivalpod/superpose/LoneHomeclean)
 "bm" = (
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/flora/pottedplant/fern{
 	pixel_y = 12

@@ -43,7 +43,6 @@
 	desc = "A bulbous construct dedicated to building and maintaining temples to their otherworldly lords. Its central eye glows with unknowable power."
 	icon_state = "caster_artificer"
 	icon_living = "caster_artificer"
-	projectiletype = /obj/item/projectile/energy/inversion
 	projectiletype = /obj/item/projectile/beam/inversion
 	projectilesound = 'sound/weapons/spiderlunge.ogg'
 

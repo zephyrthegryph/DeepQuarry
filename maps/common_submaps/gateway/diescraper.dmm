@@ -1358,7 +1358,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/item/reagent_containers/food/snacks/tossedsalad,
 /obj/item/reagent_containers/food/snacks/tossedsalad{
@@ -1915,7 +1915,7 @@
 "fQ" = (
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/machinery/telecomms/server,
 /turf/simulated/floor/bluegrid{
@@ -2271,10 +2271,10 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
-	health = 1e+006;
+	max_integrity = 1e+006;
 	req_access = list(5)
 	},
 /obj/machinery/telecomms/processor,
@@ -2435,7 +2435,7 @@
 /obj/structure/table/marble,
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor/tiled/white,
 /area/awaymission/diescraper/indoors/floor4)
@@ -3515,7 +3515,7 @@
 /obj/structure/table/hardwoodtable,
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = null
+	max_integrity = null
 	},
 /obj/item/reagent_containers/food/snacks/generalschicken{
 	pixel_y = 4
@@ -5039,7 +5039,7 @@
 /obj/structure/table/hardwoodtable,
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = null
+	max_integrity = null
 	},
 /obj/item/reagent_containers/food/snacks/kitsuneudon{
 	pixel_y = 4
@@ -5218,7 +5218,7 @@
 	dir = 4
 	},
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /turf/simulated/floor,
@@ -6269,7 +6269,7 @@
 "sK" = (
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 1
@@ -6933,7 +6933,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor/tiled/white,
 /area/awaymission/diescraper/indoors/floor4)
@@ -7086,7 +7086,7 @@
 /obj/structure/table/hardwoodtable,
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = null
+	max_integrity = null
 	},
 /obj/item/reagent_containers/food/snacks/chickenkatsu{
 	pixel_y = 2
@@ -8172,7 +8172,7 @@
 /obj/structure/window/reinforced,
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/item/storage/firstaid/fire{
 	pixel_x = 5;
@@ -8538,7 +8538,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor/wood,
 /area/awaymission/diescraper/indoors/floor4)
@@ -10093,7 +10093,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor/tiled/white,
 /area/awaymission/diescraper/indoors/floor4)
@@ -11338,7 +11338,7 @@
 	dir = 4
 	},
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/item/material/shard{
@@ -12772,7 +12772,7 @@
 /obj/structure/table/hardwoodtable,
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor/wood,
 /area/awaymission/diescraper/indoors/floor4)
@@ -13270,7 +13270,7 @@
 	dir = 4
 	},
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/item/material/shard{
@@ -14266,7 +14266,7 @@
 "Pw" = (
 /obj/machinery/door/blast/angled{
 	dir = 4;
-	maxhealth = 69420
+	max_integrity = 69420
 	},
 /turf/space,
 /area/awaymission/diescraper/outside)
@@ -15236,7 +15236,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor/wood,
 /area/awaymission/diescraper/indoors/floor4)
@@ -16668,7 +16668,7 @@
 /obj/structure/table/marble,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/effect/floor_decal/corner/grey/diagonal{
 	dir = 4
@@ -17642,7 +17642,7 @@
 /obj/structure/table/reinforced,
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/item/storage/firstaid/adv{
 	pixel_x = 5;

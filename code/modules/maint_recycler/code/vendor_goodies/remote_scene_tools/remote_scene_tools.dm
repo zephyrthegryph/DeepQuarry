@@ -151,17 +151,17 @@ why aren't these accessories?
 
 /obj/item/remote_scene_tool/examine(mob/user)
 	. = ..()
-	var/mob/living/carbon/human/lw = linked?.getWearer()
+	if(!linked)
+		. += span_warning("This is not linked to anything!")
+		return
 
+	var/mob/living/carbon/human/lw = linked.getWearer()
 	if(lw)
 		. += span_notice("This is linked to [lw]'s [linked.name].")
 		if(!lw.client || lw.stat == UNCONSCIOUS || lw.stat == DEAD)
 			. += span_warning("The wearer of \the [src]'s counterpart doesn't appear to be conscious!")
 	else
 		. += span_notice("Its counterpart seems to be in \the [get_area(linked).name]")
-
-	if(!linked)
-		. += span_warning("This is not linked to anything!")
 
 	if(!ismob(linked.loc))
 		. += span_warning("\The [src]'s counterpart isn't being worn or carried by anyone!")

@@ -103,7 +103,7 @@
 	cost = 10
 	allow_duplicates = TRUE
 
-/datum/map_template/surface/mountains/normal/crystal2
+/datum/map_template/surface/mountains/normal/crystal3
 	name = "Crystal Cave 3"
 	desc = "A large spiral of crystals with diamonds in the center."
 	mappath = "maps/submaps/surface_submaps/mountains/crystal3.dmm"

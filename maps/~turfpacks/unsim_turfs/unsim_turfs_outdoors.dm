@@ -107,7 +107,8 @@
 	icon_state = "ice_dark_smooth"
 	desc = "Dark rock that has been smoothened to be perfectly even. It's coated in a layer of slippey ice"
 
-/turf/unsimulated/floor/outdoors/ice/Entered(mob/living/M)
+/turf/unsimulated/floor/outdoors/ice/Entered(atom/movable/M, atom/oldloc)
+	. = ..()
 	addtimer(CALLBACK(src, PROC_REF(do_slip), M), (1 * world.tick_lag), TIMER_DELETE_ME)
 
 /turf/unsimulated/floor/outdoors/ice/proc/do_slip(mob/living/M)

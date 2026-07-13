@@ -328,7 +328,7 @@
 
 				if("reset")
 					var/confirm = tgui_alert(user,"This will delete any custom messages. Are you sure?","Confirmation",list("Cancel","DELETE"))
-					if(!confirm == "DELETE")
+					if(confirm != "DELETE")
 						return FALSE
 					host.vore_selected.digest_messages_prey = /obj/belly::digest_messages_prey
 					host.vore_selected.digest_messages_owner = /obj/belly::digest_messages_owner

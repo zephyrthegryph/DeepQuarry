@@ -9,6 +9,8 @@
 	var/obj/item/complete
 	if(istype(W, /obj/item/reagent_containers/food/snacks/grown))
 		var/obj/item/reagent_containers/food/snacks/grown/G = W
+		if(!G.seed)
+			return ..()
 		if(G.seed.kitchen_tag == PLANT_POPPIES)
 			to_chat(user, "You attach the poppy to the circlet and create a beautiful flower crown.")
 			complete = new /obj/item/clothing/head/poppy_crown(get_turf(user))
@@ -21,6 +23,8 @@
 		else if(G.seed.kitchen_tag == PLANT_ROSE)
 			to_chat(user, "You attach the rose to the circlet and create a beautiful flower crown.")
 			complete = new /obj/item/clothing/head/rose_crown(get_turf(user))
+		if(!complete)
+			return ..()
 		user.drop_from_inventory(W)
 		user.drop_from_inventory(src)
 		qdel(W)

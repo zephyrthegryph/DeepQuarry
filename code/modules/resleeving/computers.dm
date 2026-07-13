@@ -265,8 +265,9 @@
 				. = TRUE
 		if("ejectdisk")
 			current_br = null
-			disk.forceMove(get_turf(src))
-			disk = null
+			if(disk)
+				disk.forceMove(get_turf(src))
+				disk = null
 			. = TRUE
 		if("create")
 			. = TRUE

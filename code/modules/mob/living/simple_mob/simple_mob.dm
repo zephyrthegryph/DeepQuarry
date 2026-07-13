@@ -113,15 +113,6 @@
 	var/attack_edge = FALSE				// Does the attack have an edge?
 
 	var/melee_attack_delay = 2			// If set, the mob will do a windup animation and can miss if the target moves out of the way.
-	// Interactive-melee tunables (see code/modules/combat_ai/behaviors/interactive_melee.dm).
-	var/telegraph_windup = 0.7 SECONDS	// Readable windup before a telegraphed heavy lands.
-	var/heavy_cooldown = 6 SECONDS		// Time between telegraphed heavies.
-	var/dodge_chance = 25				// Percent chance to sidestep an incoming telegraphed swing.
-	var/heavy_strike_mult = 0			// Transient damage multiplier set during a telegraphed heavy.
-	var/incoming_block_at = 0			// world.time a brace flagged the next incoming hit for halving.
-	var/incoming_attack_at = 0			// world.time deadline by which to sidestep an incoming swing.
-	var/quarry_fauna = FALSE			// Set on SSquarry-spawned wildlife: different species coexist (neutral) instead of infighting. See /datum/ai_brain/proc/disposition_to.
-	var/siege_reinforcement = FALSE		// Set on reinforcement-wave mobs (a subset of quarry_fauna) so the siege loop can cap the active swarm without counting ambient gen fauna.
 	var/ranged_attack_delay = null
 	var/special_attack_delay = null
 	var/ranged_cooldown = 0
@@ -198,12 +189,6 @@
 /mob/living/simple_mob/Initialize(mapload)
 	remove_verb(src, /mob/verb/observe)
 	health = maxHealth
-
-	// Scale the poise ceiling to this mob's toughness instead of the flat PvP default, so fauna
-	// stagger open (and become executable) before they're killed outright. A subtype that pins its
-	// own max_stagger to a non-default value keeps it; everything else derives it from maxHealth.
-	if(max_stagger == DQ_STAGGER_MAX)
-		max_stagger = max(round(maxHealth * DQ_STAGGER_FAUNA_FRAC), 1)
 
 	if(ID_provided)
 		myid = new /obj/item/card/id(src)
@@ -633,14 +618,6 @@
 		if(!vore_active)
 			return ..()
 
-		// The modern AI owns vore through the deliberate predation behavior (a telegraphed
-		// grapple, gated on the prey being worn down). An AI mob must NEVER auto-pounce/eat
-		// on a plain melee hit — that's the old "down them and instantly swallow" path the
-		// grapple replaces. Only player-piloted mobs keep the classic verb path here.
-		if(!client)
-			dqai_pdbg(src, "VORE", "melee hit (auto-eat guard active) — prey stamina=[round(L.stamina)]/[L.max_stamina] exhausted=[dq_prey_exhausted(L)] staggered=[L.is_stagger_broken()] (grapple needs exhausted/staggered)", L)
-			return ..()
-
 		// If target is standing we might pounce and knock them down instead of attacking
 		var/pouncechance = CanPounceTarget(L)
 		if(pouncechance)
@@ -672,7 +649,6 @@
 
 
 /mob/living/simple_mob/proc/PounceTarget(mob/living/M, successrate = 100)
-	dqai_pdbg(src, "VORE", "PounceTarget (successrate=[successrate]%, standing_too=[vore_standing_too])", M)
 	vore_pounce_cooldown = world.time + 20 SECONDS // don't attempt another pounce for a while
 	if(prob(successrate)) // pounce success!
 		M.Weaken(5)
@@ -690,7 +666,6 @@
 // Attempt to eat target
 // TODO - Review this.  Could be some issues here
 /mob/living/simple_mob/proc/EatTarget(mob/living/M)
-	dqai_pdbg(src, "VORE", "EatTarget -> animal_nom (swallowing)", M)
 	// ai_log("vr/EatTarget() [M]",2) // AI TEMPORARY REMOVAL
 	// stop_automated_movement = 1 // AI TEMPORARY REMOVAL
 	var/old_target = M
@@ -793,15 +768,9 @@
 
 /mob/living/simple_mob/proc/tryBumpNom(mob/tmob)
 	//returns TRUE if we actually start an attempt to bumpnom, FALSE if checks fail or the random bump nom chance fails
-	// Modern-AI mobs never instant-swallow on contact — vore goes through the deliberate
-	// predation grapple (knock down -> pin -> reinforce -> devour), gated on the prey being
-	// worn down. Bump-nom is a player-piloted / legacy-AI convenience only.
-	if(ai_brain && use_modern_ai && !ckey)
-		return FALSE
 	if(istype(tmob) && will_eat(tmob) && !istype(tmob, type) && prob(vore_bump_chance) && !ckey) //check if they decide to eat. Includes sanity check to prevent cannibalism.
 		if(!faction_bump_vore && faction == tmob.faction)
 			return FALSE
-		dqai_pdbg(src, "VORE", "BUMP-NOM fired (vore_bump_chance=[vore_bump_chance]%) — instant swallow on contact, NO grapple/stagger", tmob)
 		if(tmob.canmove && prob(vore_pounce_chance)) //if they'd pounce for other noms, pounce for these too, otherwise still try and eat them if they hold still
 			tmob.Weaken(5)
 		tmob.visible_message(span_danger("\The [src] [vore_bump_emote] \the [tmob]!"))

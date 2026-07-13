@@ -316,17 +316,18 @@
 			var/turf/T = get_turf(src)
 			var/datum/gas_mixture/env = T.return_air()
 			if(env)
-				my_mob.minbodytemp = env.return_temperature() * 0.8
-				my_mob.maxbodytemp = env.return_temperature() * 1.2
+				var/env_temp = env.return_temperature()
+				my_mob.minbodytemp = env_temp * 0.8
+				my_mob.maxbodytemp = env_temp * 1.2
 
-				my_mob.min_oxy = env.get_moles(GAS_O2) * 0.8
-				my_mob.min_tox = env.get_moles(GAS_PHORON) * 0.8
-				my_mob.min_n2 = env.get_moles(GAS_N2) * 0.8
-				my_mob.min_co2 = env.get_moles(GAS_CO2) * 0.8
-				my_mob.max_oxy = env.get_moles(GAS_O2) * 1.2
-				my_mob.max_tox = env.get_moles(GAS_PHORON) * 1.2
-				my_mob.max_n2 = env.get_moles(GAS_N2) * 1.2
-				my_mob.max_co2 = env.get_moles(GAS_CO2) * 1.2
+				my_mob.min_oxy = LINDA_GAS_AMT(env, GAS_O2) * 0.8
+				my_mob.min_tox = LINDA_GAS_AMT(env, GAS_PHORON) * 0.8
+				my_mob.min_n2 = LINDA_GAS_AMT(env, GAS_N2) * 0.8
+				my_mob.min_co2 = LINDA_GAS_AMT(env, GAS_CO2) * 0.8
+				my_mob.max_oxy = LINDA_GAS_AMT(env, GAS_O2) * 1.2
+				my_mob.max_tox = LINDA_GAS_AMT(env, GAS_PHORON) * 1.2
+				my_mob.max_n2 = LINDA_GAS_AMT(env, GAS_N2) * 1.2
+				my_mob.max_co2 = LINDA_GAS_AMT(env, GAS_CO2) * 1.2
 /* // AI TEMPORARY REMOVAL
 		if(guard)
 			my_mob.returns_home = TRUE

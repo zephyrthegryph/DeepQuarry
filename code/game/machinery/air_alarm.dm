@@ -284,7 +284,8 @@
 			environment.merge(gas)
 
 /obj/machinery/alarm/proc/overall_danger_level(datum/gas_mixture/environment)
-	var/partial_pressure = R_IDEAL_GAS_EQUATION * environment.return_temperature()/environment.volume
+	var/environment_temperature = environment.return_temperature()
+	var/partial_pressure = R_IDEAL_GAS_EQUATION * environment_temperature/environment.return_volume()
 	var/environment_pressure = environment.return_pressure()
 
 	var/other_moles = 0
@@ -302,7 +303,7 @@
 	var/phoron_dangerlevel = TEST_TLV_VALUES
 	LOAD_TLV_VALUES(TLV[GAS_CH4], LINDA_GAS_AMT(environment, GAS_CH4)*partial_pressure)
 	var/methane_dangerlevel = TEST_TLV_VALUES
-	LOAD_TLV_VALUES(TLV["temperature"], environment.return_temperature())
+	LOAD_TLV_VALUES(TLV["temperature"], environment_temperature)
 	var/temperature_dangerlevel = TEST_TLV_VALUES
 	LOAD_TLV_VALUES(TLV["other"], other_moles*partial_pressure)
 	var/other_dangerlevel = TEST_TLV_VALUES
@@ -508,7 +509,7 @@
 	if(report_danger_level && alarm_area.atmosalert(new_danger_level, src))
 		post_alert(new_danger_level)
 	for(var/obj/machinery/alarm/AA in alarm_area.air_alarms)
-		update_icon()
+		AA.update_icon()
 
 /obj/machinery/alarm/proc/post_alert(alert_level)
 	var/datum/radio_frequency/frequency = SSradio.return_frequency(alarm_frequency)
@@ -599,7 +600,7 @@
 	)))
 
 	var/total_moles = environment.total_moles()
-	var/partial_pressure = R_IDEAL_GAS_EQUATION * environment.return_temperature() / environment.volume
+	var/partial_pressure = R_IDEAL_GAS_EQUATION * temperature / environment.return_volume()
 	for(var/gas_id in environment.gas_ids()) // environment.gas (XGM) → environment.gas_ids()
 		if(!(gas_id in TLV))
 			continue
@@ -796,7 +797,7 @@
 			atmos_reset()
 			. = TRUE
 	for(var/obj/machinery/alarm/AA in alarm_area.air_alarms)
-		update_icon()
+		AA.update_icon()
 
 // This big ol' mess just ensures that TLV always makes sense. If you set the max value below the min value,
 // it'll automatically update all the other values to keep it sane.
@@ -839,7 +840,7 @@
 	if(alarm_area.atmosalert(0, src))
 		apply_danger_level(0)
 	for(var/obj/machinery/alarm/AA in alarm_area.air_alarms)
-		update_icon()
+		AA.update_icon()
 
 /obj/machinery/alarm/attackby(obj/item/W as obj, mob/user)
 	add_fingerprint(user)

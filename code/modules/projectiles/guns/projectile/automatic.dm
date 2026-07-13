@@ -8,6 +8,7 @@
 	load_method = SPEEDLOADER
 	ammo_type = /obj/item/ammo_casing/a9mm
 	projectile_type = /obj/item/projectile/bullet/pistol
+	automatic = 1	//Hold-to-fire (see autofire.dm). Semi-only subtypes can set automatic = 0 to opt out.
 
 //Burst is the number of bullets fired; Fire delay is the time you have to wait to shoot the gun again, Move delay is the same but for moving after shooting. .
 //Burst accuracy is the accuracy of each bullet fired in the burst. Dispersion is how much the bullets will 'spread' away from where you aimed.
@@ -171,7 +172,7 @@
 	w_class = ITEMSIZE_NORMAL
 	caliber = "9mm"
 	slot_flags = SLOT_BELT
-	ammo_type = "/obj/item/ammo_casing/a9mmr"
+	ammo_type = /obj/item/ammo_casing/a9mm/rubber
 	load_method = MAGAZINE
 	magazine_type = /obj/item/ammo_magazine/m9mmt/rubber
 	allowed_magazines = list(/obj/item/ammo_magazine/m9mmt)

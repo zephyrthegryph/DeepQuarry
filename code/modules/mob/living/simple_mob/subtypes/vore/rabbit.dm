@@ -64,7 +64,7 @@
 /mob/living/simple_mob/vore/rabbit/Life()
 	. = ..()
 
-	if(grumpiness > 0 && last_pet > (world.time + grump_decay))
+	if(grumpiness > 0 && last_pet + grump_decay < world.time)
 		grumpiness = max(0, grumpiness-rand(5,10)) // Subtract grumpiness randomly in a range of 5-10 if we've not been PAT in the last 5 seconds.
 
 /mob/living/simple_mob/vore/rabbit/examine(mob/user)

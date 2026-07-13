@@ -115,7 +115,6 @@ GLOBAL_LIST_EMPTY(all_maps)
 	var/datum/spawnpoint/spawnpoint_left = /datum/spawnpoint/arrivals 	// Used of you end the round at centcom.
 	var/datum/spawnpoint/spawnpoint_stayed = /datum/spawnpoint/cryo 	// Used if you end the round on the station.
 
-	var/quarry_enabled = FALSE // If the procedural quarry (SSquarry) digs this map into layers. Only quarry maps set this.
 	var/use_overmap = 0		  // If overmap should be used (including overmap space travel override)
 	var/overmap_size = 20		 // Dimensions of overmap zlevel if overmap is used.
 	var/overmap_z = 0			 // If 0 will generate overmap zlevel on init. Otherwise will populate the zlevel provided.
@@ -135,6 +134,10 @@ GLOBAL_LIST_EMPTY(all_maps)
 	var/list/unit_test_exempt_from_apc = list()
 	var/list/unit_test_exempt_from_wires = list()
 	var/list/unit_test_z_levels //To test more than Z1, set your z-levels to test here.
+	/// Skip the whole-station map-validity tests (APC/vent/scrubber coverage, wiring).
+	/// Set on minimal CI harness maps (virgo_minitest) that aren't complete stations —
+	/// those checks are meant for the live playable map and run under its own build.
+	var/skip_map_validity_tests = FALSE
 
 	var/list/planet_datums_to_make = list() // Types of `/datum/planet`s that will be instantiated by SSPlanets.
 

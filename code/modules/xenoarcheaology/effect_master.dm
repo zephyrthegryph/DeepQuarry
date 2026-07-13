@@ -248,7 +248,7 @@
 /datum/component/artifact_master/proc/on_bullet()
 	SIGNAL_HANDLER
 	var/obj/item/projectile/P = args[2]
-	var/triggered = TRUE
+	var/triggered = FALSE
 	for(var/datum/artifact_effect/my_effect in my_effects)
 		if(istype(P,/obj/item/projectile/bullet))
 			if(my_effect.trigger == TRIGGER_FORCE)
@@ -452,9 +452,10 @@
 	var/turf/T = get_turf(holder)
 	var/datum/gas_mixture/env = T.return_air()
 	if(env)
-		if(env.return_temperature() < ARTIFACT_COLD_TRIGGER)
+		var/env_temp = env.return_temperature()
+		if(env_temp < ARTIFACT_COLD_TRIGGER)
 			trigger_cold = 1
-		else if(env.return_temperature() > ARTIFACT_HEAT_TRIGGER)
+		else if(env_temp > ARTIFACT_HEAT_TRIGGER)
 			trigger_hot = 1
 
 	for(var/datum/artifact_effect/my_effect in my_effects)

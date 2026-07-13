@@ -661,7 +661,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/table/rack/shelf/steel,
 /obj/random/medical/pillbottle,
@@ -1660,7 +1660,7 @@
 /obj/item/material/shard,
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/item/material/shard{
 	icon_state = "medium"
@@ -2601,12 +2601,12 @@
 /obj/structure/table/reinforced,
 /obj/item/clothing/head/fishing,
 /obj/structure/window/reinforced{
-	health = 1e+006;
+	max_integrity = 1e+006;
 	req_access = list(5)
 	},
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor/tiled/techfloor/grid,
 /area/awaymission/darkrp/downtowngunshop)
@@ -3356,7 +3356,7 @@
 /obj/effect/floor_decal/corner/blue/border,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor/tiled/neutral,
 /area/awaymission/darkrp/downtownwarehouse)
@@ -3530,7 +3530,7 @@
 /obj/structure/window/reinforced,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/item/ammo_magazine/ammo_box/b12g/pellet,
 /obj/item/ammo_magazine/ammo_box/b12g/pellet,
@@ -3659,7 +3659,7 @@
 	req_access = null
 	},
 /obj/structure/window/reinforced{
-	health = 1e+006;
+	max_integrity = 1e+006;
 	req_access = list(5)
 	},
 /obj/structure/table/rack/shelf/steel,
@@ -4044,7 +4044,7 @@
 	},
 /obj/structure/window/reinforced/survival_pod,
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/machinery/door/blast/regular/open{
@@ -4486,7 +4486,7 @@
 "fYS" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/table/rack{
 	dir = 8;
@@ -4496,7 +4496,7 @@
 	dir = 1
 	},
 /obj/structure/window/reinforced{
-	health = 1e+006;
+	max_integrity = 1e+006;
 	req_access = list(5)
 	},
 /obj/item/gun/projectile/automatic/serdy/m41ab{
@@ -5419,7 +5419,7 @@
 "hkE" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/machinery/light/floortube{
 	dir = 4
@@ -5851,7 +5851,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/effect/floor_decal/borderfloorwhite{
 	dir = 4
@@ -5933,7 +5933,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/machinery/door/window/brigdoor/westleft{
 	name = "PD Armory";
@@ -5943,7 +5943,7 @@
 	dir = 1
 	},
 /obj/structure/window/reinforced{
-	health = 1e+006;
+	max_integrity = 1e+006;
 	req_access = list(5)
 	},
 /obj/item/gun/projectile/shotgun/pump/combat,
@@ -6726,7 +6726,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 1
@@ -6736,7 +6736,7 @@
 	req_access = list(860)
 	},
 /obj/structure/window/reinforced{
-	health = 1e+006;
+	max_integrity = 1e+006;
 	req_access = list(5)
 	},
 /obj/item/gun/projectile/automatic/serdy/m16a2{
@@ -7649,7 +7649,7 @@
 "kjE" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/effect/floor_decal/borderfloorwhite{
 	dir = 6
@@ -9559,7 +9559,7 @@
 "mJw" = (
 /obj/structure/table/reinforced,
 /obj/structure/window/reinforced{
-	health = 1e+006;
+	max_integrity = 1e+006;
 	req_access = list(5)
 	},
 /obj/structure/window/reinforced{
@@ -9724,7 +9724,7 @@
 /obj/structure/window/plastitanium/full,
 /obj/structure/window/reinforced/survival_pod,
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/machinery/door/blast/regular/open{
@@ -9771,13 +9771,13 @@
 "mXk" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/machinery/door/window/brigdoor/northright{
 	req_access = null
 	},
 /obj/structure/window/reinforced{
-	health = 1e+006;
+	max_integrity = 1e+006;
 	req_access = list(5)
 	},
 /obj/structure/table/rack/shelf/steel,
@@ -10289,7 +10289,7 @@
 	req_access = null
 	},
 /obj/structure/window/reinforced{
-	health = 1e+006;
+	max_integrity = 1e+006;
 	req_access = list(5)
 	},
 /obj/structure/table/rack/shelf/steel,
@@ -10365,7 +10365,7 @@
 /area/awaymission/darkrp/ghettoapartments)
 "nFn" = (
 /obj/structure/window/reinforced{
-	health = 1e+006;
+	max_integrity = 1e+006;
 	req_access = list(5)
 	},
 /obj/structure/closet/crate/bin,
@@ -12684,7 +12684,7 @@
 	req_access = null
 	},
 /obj/structure/window/reinforced{
-	health = 1e+006;
+	max_integrity = 1e+006;
 	req_access = list(5)
 	},
 /obj/structure/table/rack/shelf/steel,
@@ -13851,7 +13851,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 8
@@ -14742,7 +14742,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/effect/floor_decal/borderfloorwhite{
 	dir = 4
@@ -16808,7 +16808,7 @@
 /obj/structure/table/reinforced,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 1
@@ -18457,7 +18457,7 @@
 /area/awaymission/darkrp/outside)
 "xMz" = (
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/structure/window/reinforced/survival_pod{

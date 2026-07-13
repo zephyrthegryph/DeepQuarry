@@ -43,8 +43,15 @@
 	if (A)
 		if(ismob(A))
 			toxmob(A)
-		if((istype(A,/obj/machinery/the_singularitygen))||(istype(A,/obj/singularity/))||(istype(A, /obj/machinery/particle_smasher)))
-			A:energy += energy
+		if(istype(A,/obj/machinery/the_singularitygen))
+			var/obj/machinery/the_singularitygen/G = A
+			G.energy += energy
+		else if(istype(A,/obj/singularity))
+			var/obj/singularity/G = A
+			G.energy += energy
+		else if(istype(A, /obj/machinery/particle_smasher))
+			var/obj/machinery/particle_smasher/G = A
+			G.energy += energy
 		// R-UST fusion core and particle catcher deleted with the fusion
 		// subsystem (depended on /obj/effect/fusion_em_field in core_field.dm).
 		// Particles passing through where a fusion core used to be just continue

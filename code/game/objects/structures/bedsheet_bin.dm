@@ -220,7 +220,7 @@ LINEN BINS
 /obj/structure/bedsheetbin/update_icon()
 	if(amount == 0)
 		icon_state = "linenbin-empty"
-	else if(amount <= (amount / 2))
+	else if(amount <= (initial(amount) / 2))
 		icon_state = "linenbin-half"
 	else
 		icon_state = "linenbin-full"

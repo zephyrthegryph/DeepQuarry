@@ -7,8 +7,7 @@
 	plane = MOB_PLANE // You know what, let's play it safe.
 	layer = ABOVE_MOB_LAYER
 	var/base_state = null	// Used for stumps.
-	var/health = 200		// Used for chopping down trees.
-	var/max_health = 200
+	max_integrity = 200		// Used for chopping down trees.
 	var/shake_animation_degrees = 4	// How much to shake the tree when struck.  Larger trees should have smaller numbers or it looks weird.
 	var/obj/item/stack/material/product = null	// What you get when chopping this tree down.  Generally it will be a type of wood.
 	var/product_amount = 10 // How much of a stack you get, if the above is defined.
@@ -80,7 +79,8 @@
 	animate(src, transform=turn(M, shake_animation_degrees * shake_dir), pixel_x=init_px + 2*shake_dir, time=1)
 	animate(transform=M, pixel_x=init_px, time=6, easing=ELASTIC_EASING)
 
-// Used when the tree gets hurt.
+// Used when the tree gets hurt.  amount is the (negative) health delta, kept for the
+// legacy callers and the product-degradation math.
 /obj/structure/flora/tree/proc/adjust_health(amount, damage_wood = FALSE)
 	if(is_stump || indestructable)
 		return
@@ -88,12 +88,16 @@
 	// Bullets and lasers ruin some of the wood
 	if(damage_wood && product_amount > 0)
 		var/wood = initial(product_amount)
-		product_amount -= round(wood * (abs(amount)/max_health))
+		product_amount -= round(wood * (abs(amount)/max_integrity))
 
-	health = between(0, health + amount, max_health)
-	if(health <= 0)
-		die()
+	take_damage(abs(amount), BRUTE, MELEE, sound_effect = FALSE)
+
+// Felling the tree at 0 integrity turns it into a persistent stump rather than
+// deleting it, so we handle it here instead of letting the base qdel the tree.
+/obj/structure/flora/tree/atom_destruction(damage_flag)
+	if(is_stump || indestructable)
 		return
+	die()
 
 // Called when the tree loses all health, for whatever reason.
 /obj/structure/flora/tree/proc/die()
@@ -118,7 +122,7 @@
 	set_light(0)
 
 /obj/structure/flora/tree/ex_act(severity)
-	adjust_health(-(max_health / severity), TRUE)
+	adjust_health(-(max_integrity / severity), TRUE)
 
 /obj/structure/flora/tree/bullet_act(obj/item/projectile/Proj)
 	if(Proj.get_structure_damage())
@@ -194,8 +198,7 @@
 	base_state = "palm"
 	product = /obj/item/stack/material/log
 	product_amount = 5
-	health = 200
-	max_health = 200
+	max_integrity = 200
 	pixel_x = 0
 
 /obj/structure/flora/tree/palm/choose_icon_state()
@@ -210,8 +213,7 @@
 	base_state = "tree"
 	product = /obj/item/stack/material/log
 	product_amount = 5
-	health = 200
-	max_health = 200
+	max_integrity = 200
 
 /obj/structure/flora/tree/dead/choose_icon_state()
 	return "[base_state]_[rand(1, 6)]"
@@ -230,8 +232,7 @@
 	base_state = "tree"
 	product = /obj/item/stack/material/log
 	product_amount = 10
-	health = 400
-	max_health = 400
+	max_integrity = 400
 	pixel_x = -32
 
 /obj/structure/flora/tree/jungle_small/choose_icon_state()
@@ -245,8 +246,7 @@
 	base_state = "tree"
 	product = /obj/item/stack/material/log
 	product_amount = 20
-	health = 800
-	max_health = 800
+	max_integrity = 800
 	pixel_x = -48
 	pixel_y = -16
 	shake_animation_degrees = 2
@@ -262,8 +262,7 @@
 	base_state = "tree"
 	product = /obj/item/stack/material/log
 	product_amount = 20
-	health = 800
-	max_health = 800
+	max_integrity = 800
 	pixel_x = -48
 	pixel_y = -16
 	shake_animation_degrees = 2
@@ -279,8 +278,7 @@
 	base_state = "tree"
 	product = /obj/item/stack/material/log
 	product_amount = 20
-	health = 800
-	max_health = 800
+	max_integrity = 800
 	pixel_x = -48
 	pixel_y = -16
 	shake_animation_degrees = 2

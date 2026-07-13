@@ -64,41 +64,6 @@
 	/// ai_holder lose_target_timeout: the mob keeps pursuing for
 	/// DQ_LOSE_THREAT_TIMEOUT deciseconds before dropping the target.
 	var/lose_threat_at = 0
-	/// world.time of the last event-driven react_now() re-selection. Debounces a
-	/// burst of same-tick events down to a single re-pick (and stops synchronous
-	/// re-entry, since behaviors don't sleep so all re-entry is same-tick).
-	var/last_react_tick = 0
-
-	/// Combo pressure: consecutive hits taken from primary_threat inside DQ_COMBO_WINDOW.
-	/// Read by sidestep_dodge (force a dodge once it's high) and the predation grapple
-	/// (the predator bails when it's being beaten off). Reset when the chain lapses.
-	var/combo_hits = 0
-	var/combo_last = 0  // world.time of the last counted hit in the chain
-
-	/// Current combat stance (DQ_STANCE_*). Re-derived from HP / combo pressure each
-	/// strategic tick; biases behavior selection and sets a_intent. See update_stance.
-	var/combat_stance = DQ_STANCE_NEUTRAL
-
-	/// Pack role assigned by the lord while it has a focus (DQ_ROLE_*). FLANKERs also
-	/// carry a flank_dir — the side of the target they're told to attack from — so the
-	/// pack encircles instead of stacking up. Both cleared on standdown.
-	var/pack_role = DQ_ROLE_NONE
-	var/flank_dir = 0
-
-	/// Active predation grapple this mob (as predator) is running, or null. It drives a real
-	/// /obj/item/grab on the prey, so the prey escapes via the standard Resist path.
-	var/datum/dq_predation/grapple = null
-
-	/// Pending predation TACKLE resolve timer (the telegraph windup), or null. Stored on the brain
-	/// (not the flyweight behavior, which is shared by every predator) so predation/stop can cancel
-	/// it — otherwise a predation stopped mid-windup leaves an orphan timer that still spawns a grab,
-	/// and a re-selected predation stacks a second one (the double-pin bug).
-	var/tackle_timer = null
-
-	/// The /datum/ai_lord coordinating this mob's pack, if any. The lord pushes
-	/// shared targets/orders down; the brain itself never touches it beyond
-	/// dropping out on Destroy.
-	var/datum/ai_lord/lord = null
 
 /datum/ai_brain/New(mob/living/owner)
 	if(!owner)
@@ -109,11 +74,7 @@
 	model = new /datum/world_model(owner)
 	target_selector_chain = list(/datum/target_selector/closest)
 	home_turf = get_turf(owner)
-	// Slow (strategic) tick only by default. The fast (250ms tactical) tick is added
-	// on demand once the mob actually engages a threat — see update_engagement. A
-	// layer can hold thousands of idle fauna without all of them grinding the 250ms
-	// tick; only the ones fighting cost a fast tick.
-	manage_processing(DQAI_PROCESSING)
+	manage_processing(DQAI_PROCESSING | DQAI_FASTPROCESSING)
 	RegisterSignal(holder, COMSIG_MOB_STATCHANGE, PROC_REF(on_stat_change))
 	// Lazily add the player-castable-moves dispatcher verb on login — avoids
 	// bloating the verbs list of every wild simple_mob in the round.
@@ -124,18 +85,9 @@
 	return ..()
 
 /datum/ai_brain/Destroy()
-	if(tackle_timer)
-		deltimer(tackle_timer)
-		tackle_timer = null
-	if(grapple)
-		qdel(grapple) // free a pinned prey rather than leave it stuck; do this BEFORE the
-		grapple = null // active-behavior stop() below so its safety-net qdel is a clean no-op
 	if(active_behavior_type)
 		var/datum/ai_behavior/B = dq_get_behavior(active_behavior_type)
 		B.stop(src, active_target, active_source, DQ_BEHAVIOR_STOP_QDEL)
-	if(lord)
-		lord.remove_member(holder) // drop out of the pack (may disband it if last)
-		lord = null
 	if(holder)
 		UnregisterSignal(holder, COMSIG_MOB_STATCHANGE)
 		UnregisterSignal(holder, COMSIG_MOB_LOGIN)
@@ -174,22 +126,6 @@
 	else
 		DQAI_STOP_FASTPROCESSING(src)
 
-/// Engagement gate: a mob needs the 250ms tactical tick only while it has a threat
-/// to act on. Idle mobs ride the 2s strategic tick alone (which still perceives,
-/// targets, and can re-engage). Called every strategic tick for steady-state, and
-/// the instant a threat is acquired (give_target / damage) for immediate reaction.
-/// This is what keeps a layer's worth of idle fauna off the fast tick so the few
-/// actually fighting the player are serviced every 250ms instead of every several
-/// seconds.
-/datum/ai_brain/proc/update_engagement()
-	// A mob needs the fast tick while it has something to act on: a threat to fight,
-	// a destination to walk to (lord pursuit / migration), or a heard noise to
-	// investigate (going loud draws them). Otherwise it idles on the slow tick alone.
-	if(holder && (primary_threat || destination || noise_turf))
-		DQAI_START_FASTPROCESSING(src)
-	else
-		DQAI_STOP_FASTPROCESSING(src)
-
 /// SSai calls this when sleeping the mob; accept gracefully. Brain has no
 /// stance enum — sleeping just halts behavior selection naturally.
 /datum/ai_brain/proc/set_stance(_stance)
@@ -207,63 +143,6 @@
 	expire_personal()
 	update_primary_threat()
 	selection_dirty = TRUE
-	update_stance() // re-read our mind-set from HP / pressure before the fast tick acts on it
-	update_engagement() // join/leave the fast tick based on whether we have a threat
-
-/// Re-derive the combat stance from the current situation and push it onto a_intent.
-/// AGGRESSIVE when healthy and unpressured, DEFENSIVE when being comboed or worn down,
-/// DESPERATE at low HP, NEUTRAL when not fighting. The stance biases behavior scores in
-/// apply_stance and is reflected in the mob's intent the way a player swaps intents.
-/datum/ai_brain/proc/update_stance()
-	if(!holder)
-		return
-	var/desired = DQ_STANCE_NEUTRAL
-	if(primary_threat)
-		var/hp_frac = holder.maxHealth ? holder.health / holder.maxHealth : 1
-		if(hp_frac <= DQ_LOW_HP_THRESHOLD)
-			desired = DQ_STANCE_DESPERATE
-		else if(combo_hits >= 2 || hp_frac <= 0.6)
-			desired = DQ_STANCE_DEFENSIVE
-		else
-			desired = DQ_STANCE_AGGRESSIVE
-	if(desired == combat_stance)
-		return
-	dqai_pdbg(holder, "STANCE", "[combat_stance] -> [desired] (hp=[holder.maxHealth ? round(100 * holder.health / holder.maxHealth) : "?"]% combo=[combo_hits])", primary_threat)
-	combat_stance = desired
-	selection_dirty = TRUE
-	// Mirror the stance onto a_intent so intent-sensitive code (and onlookers) see the
-	// shift. A grappling predator wants GRAB; an aggressor HURT; the cautious DISARM.
-	if(istype(holder, /mob/living/simple_mob))
-		var/mob/living/simple_mob/SM = holder
-		switch(combat_stance)
-			if(DQ_STANCE_AGGRESSIVE)
-				// A vore-capable predator squaring up against edible prey reads GRAB.
-				SM.a_intent = (grapple || (SM.vore_active && isliving(primary_threat) && SM.will_eat(primary_threat))) ? I_GRAB : I_HURT
-			if(DQ_STANCE_DEFENSIVE)
-				SM.a_intent = I_DISARM
-			if(DQ_STANCE_DESPERATE)
-				SM.a_intent = I_HURT
-			else
-				SM.a_intent = I_HELP
-
-/// Bias a behavior's score by the current stance — the lever that makes a stance
-/// actually change what the mob does. Modest multipliers so selection stays stable.
-/datum/ai_brain/proc/apply_stance(btype, score)
-	switch(combat_stance)
-		if(DQ_STANCE_AGGRESSIVE)
-			if(btype == /datum/ai_behavior/predation || btype == /datum/ai_behavior/telegraphed_strike || btype == /datum/ai_behavior/melee_attack || btype == /datum/ai_behavior/charge_slam || btype == /datum/ai_behavior/ranged_attack)
-				return score * 1.3
-			if(btype == /datum/ai_behavior/back_off || btype == /datum/ai_behavior/flee_low_hp)
-				return score * 0.7
-		if(DQ_STANCE_DEFENSIVE)
-			if(btype == /datum/ai_behavior/sidestep_dodge || btype == /datum/ai_behavior/brace_guard || btype == /datum/ai_behavior/back_off)
-				return score * 1.4
-			if(btype == /datum/ai_behavior/predation || btype == /datum/ai_behavior/telegraphed_strike)
-				return score * 0.8
-		if(DQ_STANCE_DESPERATE)
-			if(btype == /datum/ai_behavior/flee_low_hp)
-				return score * 2
-	return score
 
 /// Tactical tick. Fast — 250ms.
 /datum/ai_brain/proc/handle_tactics()
@@ -278,21 +157,18 @@
 		var/datum/ai_behavior/B = dq_get_behavior(active_behavior_type)
 		var/result = B.tick(src, active_target, active_source)
 		switch(result)
+			if(DQ_BEHAVIOR_CONTINUE)
+				return
 			if(DQ_BEHAVIOR_DONE)
 				stop_active(DQ_BEHAVIOR_STOP_COMPLETED)
 			if(DQ_BEHAVIOR_INTERRUPTED)
 				stop_active(DQ_BEHAVIOR_STOP_INTERRUPTED)
 			if(DQ_BEHAVIOR_FAILED)
 				stop_active(DQ_BEHAVIOR_STOP_FAILED)
-			// DQ_BEHAVIOR_CONTINUE: the behavior wants to keep going, but it stays preemptible —
-			// fall through to pick_and_run so a higher-priority behavior that just became eligible
-			// can take the slot. A behavior that must NOT be interrupted sets blocks_reselection
-			// (→ busy), which short-circuits this whole proc above before we ever reach here.
 
-	// Re-pick every tick. pick_and_run keeps the current behavior in place (with a stickiness
-	// bonus) unless a clearly-better or higher-class one is eligible, so selection is continuous
-	// rather than sticky-until-signal — which is what lets priority_class preemption actually work
-	// against a CONTINUE-looping behavior.
+	if(!selection_dirty && active_behavior_type)
+		return
+
 	pick_and_run()
 
 // ---------------------------------------------------------------------------
@@ -334,14 +210,6 @@
 		effective_behaviors[/datum/ai_behavior/maul_unconscious] = null
 	if(returns_home && !effective_behaviors[/datum/ai_behavior/return_home])
 		effective_behaviors[/datum/ai_behavior/return_home] = null
-	// Every vore-active mob gets the staged grapple→devour sequence, whether it uses the
-	// default kit or a hand-authored get_ai_behaviors() list — so a predator hunts
-	// deliberately (and only on a worn-down target) instead of pouncing on any melee hit.
-	// The tackle is a knockdown, not a melee strike, so even a no-melee ambusher qualifies.
-	if(istype(holder, /mob/living/simple_mob))
-		var/mob/living/simple_mob/SM = holder
-		if(SM.vore_active && !effective_behaviors[/datum/ai_behavior/predation])
-			effective_behaviors[/datum/ai_behavior/predation] = null
 
 	resync_behavior_signals(old, effective_behaviors)
 
@@ -385,26 +253,12 @@
 	var/atom/best_target = null
 	var/atom/best_source = null
 
-	// Shared per-tick precondition facts, computed once instead of in every behavior's evaluate():
-	// is our current target one a packmate has grabbed to eat / already swallowed (off-limits to us)?
-	var/threat_locked = primary_threat && dq_prey_locked_by_other(holder, primary_threat)
-	var/threat_adjacent = primary_threat && holder.Adjacent(primary_threat)
-	var/off_balance = world.time < holder.melee_locked_until
-
 	for(var/btype as anything in effective_behaviors)
 		var/source = effective_behaviors[btype]
 		var/datum/ai_behavior/B = dq_get_behavior(btype)
 		if(B.requires_held_source && !source)
 			continue
 		if(!B.no_threat_required && !primary_threat && B.priority_class >= DQ_BEHAVIOR_PRIORITY_NORMAL)
-			continue
-		// Shared preconditions (so each evaluate() carries only its unique scoring):
-		if(primary_threat && !B.no_threat_required)
-			if(threat_locked) // a packmate has it grabbed/swallowed — off-limits to every attack behavior
-				continue
-			if(B.requires_adjacent && !threat_adjacent)
-				continue
-		if(B.blocked_by_melee_lock && off_balance)
 			continue
 		if(!B.applicable_to(holder))
 			continue
@@ -416,14 +270,6 @@
 		var/score = result["score"]
 		if(score <= 0)
 			continue
-		// Bias by the current stance — the same eligible behavior is weighted up or down
-		// by the mob's mind-set (press the attack vs. cover up) within its priority class.
-		if(combat_stance != DQ_STANCE_NEUTRAL)
-			score = apply_stance(btype, score)
-		// Hysteresis: the behavior already running keeps a small edge so continuous re-selection
-		// doesn't flap between same-class near-ties every tick. Doesn't cross class lines.
-		if(btype == active_behavior_type)
-			score *= DQ_AI_ACTIVE_STICKINESS
 		if(B.priority_class > best_class || (B.priority_class == best_class && score > best_score))
 			best_class = B.priority_class
 			best_score = score
@@ -454,7 +300,6 @@
 	active_target = target
 	active_source = source
 	var/datum/ai_behavior/B = dq_get_behavior(btype)
-	dqai_pdbg(holder, "SELECT", "run [B.name] (stance=[combat_stance])[target ? " on [target.name] d=[get_dist(holder, target)]" : ""]", target)
 	var/result = B.start(src, target, source)
 	if(result == DQ_BEHAVIOR_DONE)
 		stop_active(DQ_BEHAVIOR_STOP_COMPLETED)
@@ -480,97 +325,39 @@
 /datum/ai_brain/proc/invalidate_selection()
 	selection_dirty = TRUE
 
-/// Re-decide and act THIS instant instead of waiting up to a tactical tick (~250ms). Combat is
-/// sub-second, so reactions (retaliating to a hit, dodging an incoming swing) must be event-driven
-/// or the mob is always a beat behind. handle_tactics() keeps its own guards (busy / dead / client),
-/// and selection_dirty stays set so a busy mob still re-picks on its next tick.
-/datum/ai_brain/proc/react_now()
-	selection_dirty = TRUE
-	// Collapse a burst of same-tick events into one re-selection. Set the stamp
-	// BEFORE handle_tactics so a synchronous re-entrant react_now (a behavior that
-	// deals damage notifying through this same brain) is debounced out — behaviors
-	// don't sleep, so all re-entry lands in this same tick. selection_dirty stays
-	// set, so anything skipped is picked up on the next tactical tick.
-	if(last_react_tick == world.time)
-		return
-	last_react_tick = world.time
-	update_stance() // a fresh hit may have flipped us to DEFENSIVE — react in that stance
-	handle_tactics()
-
 // ---------------------------------------------------------------------------
 // Targeting.
 // ---------------------------------------------------------------------------
 
 /datum/ai_brain/proc/update_primary_threat()
-	// Layer-1 target validity: a prey a packmate has grabbed to eat, or already swallowed, is
-	// no longer ours — drop it now so we don't stay "engaged" on a meal we can't touch (and so
-	// we can re-acquire a different target). The attack behaviors no longer re-check this.
-	if(primary_threat && dq_prey_locked_by_other(holder, primary_threat))
-		var/mob/living/dropped = primary_threat
-		primary_threat = null
-		lose_threat_at = 0
-		dqai_pdbg(holder, "PERCEIVE", "dropped target [dropped.name] — grabbed/devoured by a packmate", dropped)
-		SEND_SIGNAL(holder, COMSIG_DQAI_TARGET_LOST, dropped)
-
-	// A target on another z-level (the player descended a quarry layer) is unreachable — drop it
-	// instead of clinging cross-z, which would otherwise keep a member engaged (and pinned to the
-	// lord's focus below) on a foe it can never close on. dview perception is same-z anyway.
-	if(primary_threat)
-		var/turf/our_turf = get_turf(holder)
-		var/turf/threat_turf = get_turf(primary_threat)
-		if(our_turf && threat_turf && our_turf.z != threat_turf.z)
-			var/mob/living/gone = primary_threat
-			primary_threat = null
-			lose_threat_at = 0
-			dqai_pdbg(holder, "PERCEIVE", "dropped target [gone.name] — left to another z-level", gone)
-			SEND_SIGNAL(holder, COMSIG_DQAI_TARGET_LOST, gone)
-
-	// Valid candidates = visible hostiles minus any a packmate has claimed/swallowed.
-	var/list/valid = null
-	if(model)
-		for(var/mob/living/H as anything in model.visible_hostiles)
-			if(!dq_prey_locked_by_other(holder, H))
-				LAZYADD(valid, H)
-
-	if(!LAZYLEN(valid))
+	if(!model || !length(model.visible_hostiles))
 		if(primary_threat)
-			// The lord coordinates pack standdown. While our lord still holds this exact
-			// focus, hold the target steadily and let the LORD decide when to release us.
-			// Our perception only refreshes on the 2s strategic tick but we move every
-			// 250ms, so a member that has closed on the player can carry stale empty
-			// sight for a beat; dropping on that would churn against the lord re-commanding
-			// it. The lord's own 6s grace outlasts the 2s perception gap.
-			if(lord && lord.focus && lord.focus == primary_threat)
-				lose_threat_at = 0
-				return
-			// Mirror legacy lose_target_timeout: hold the target for DQ_LOSE_THREAT_TIMEOUT
-			// after it leaves view before giving up, so a dark cave doesn't drop it instantly.
+			// Mirror legacy ai_holder lose_target_timeout: hold the target for
+			// DQ_LOSE_THREAT_TIMEOUT after it leaves view before giving up.
+			// This prevents caves-are-dark from dropping the target the instant
+			// the player steps one tile out of the narrow view() cone.
 			if(!lose_threat_at)
 				lose_threat_at = world.time
-				return
+				return  // Start the grace timer; don't drop yet.
 			if(world.time < lose_threat_at + DQ_LOSE_THREAT_TIMEOUT)
-				return
+				return  // Still within the grace period.
+			// Grace period expired — drop the target.
 			lose_threat_at = 0
-			var/mob/living/old = primary_threat
+			var/old = primary_threat
 			primary_threat = null
-			dqai_pdbg(holder, "PERCEIVE", "lost target [old ? old.name : "?"] — grace expired, standing down", old)
 			SEND_SIGNAL(holder, COMSIG_DQAI_TARGET_LOST, old)
 		return
-	// Valid target in sight — reset the grace timer and run the selector chain over it.
+	// Target is visible again — reset the grace timer.
 	lose_threat_at = 0
 	var/new_threat = null
 	for(var/typepath as anything in target_selector_chain)
 		var/datum/target_selector/S = dq_get_selector(typepath)
-		new_threat = S.select(src, valid)
+		new_threat = S.select(src, model.visible_hostiles)
 		if(new_threat)
 			break
 	if(new_threat != primary_threat)
-		var/mob/living/old = primary_threat
+		var/old = primary_threat
 		primary_threat = new_threat
-		if(new_threat)
-			dqai_pdbg(holder, "PERCEIVE", "acquired target (was [old ? old.name : "none"]) dist=[get_dist(holder, new_threat)] hostiles=[LAZYLEN(valid)]", new_threat)
-		else if(old)
-			dqai_pdbg(holder, "PERCEIVE", "dropped target [old.name] (selectors found none)", old)
 		SEND_SIGNAL(holder, COMSIG_DQAI_TARGET_CHANGED, new_threat, old)
 
 // ---------------------------------------------------------------------------
@@ -589,13 +376,6 @@
 				UNSETEMPTY(personal)
 			else
 				return entry["disp"]
-	// A shared non-null faction string means teammates, registry or not. The
-	// faction_data tables describe CROSS-faction stances; without this, mobs whose
-	// faction isn't enumerated (most wildlife) fall through to the default data,
-	// whose null faction_key never matches, so packmates resolve NEUTRAL instead of
-	// ALLY — which silently kills pack cohesion and call_for_help (visible_friendlies).
-	if(holder.faction && other.faction == holder.faction)
-		return DQ_DISPOSITION_ALLY
 	var/datum/faction_data/data = dq_faction_data_for(holder.faction)
 	var/result
 	if(other.client)
@@ -610,13 +390,6 @@
 	if(result == DQ_DISPOSITION_NEUTRAL && istype(holder, /mob/living/simple_mob))
 		var/mob/living/simple_mob/SM = holder
 		if(SM.ai_attack_on_sight && holder.faction != other.faction)
-			// Quarry-spawned fauna of different species coexist rather than tearing
-			// the layer's ecosystem apart: stay NEUTRAL toward each other. Same
-			// species is ALLY (handled above), and players aren't fauna, so they're
-			// still engaged on sight.
-			var/mob/living/simple_mob/other_sm = other
-			if(SM.quarry_fauna && istype(other_sm) && other_sm.quarry_fauna)
-				return DQ_DISPOSITION_NEUTRAL
 			result = DQ_DISPOSITION_HOSTILE
 	return result
 
@@ -689,79 +462,27 @@
 		manage_processing(0)
 		stop_active(DQ_BEHAVIOR_STOP_INTERRUPTED)
 	else if(old_stat >= DEAD)
-		manage_processing(DQAI_PROCESSING) // revived: slow tick; engagement re-adds the fast tick if it has a threat
-		update_engagement()
+		manage_processing(DQAI_PROCESSING | DQAI_FASTPROCESSING)
 
 /// Called by /mob/living/dq_notify_damage when the mob takes a hit.
-/// TRUE when `attacker` is a packmate / ally / coexisting fauna whose hit on us
-/// should NOT start a grudge. Accidental friendly fire — a packmate's cleave or a
-/// telegraphed heavy landing on an ally standing on the struck tile — would
-/// otherwise add a personal HOSTILE entry that overrides faction ALLY and turns the
-/// pack on itself. Players and genuine enemies are never friendly fire, so being
-/// provoked still aggros a neutral animal as expected.
-/datum/ai_brain/proc/is_friendly_fire(atom/attacker)
-	if(!ismob(attacker) || attacker == holder)
-		return FALSE
-	if(disposition_to(attacker) >= DQ_DISPOSITION_FRIENDLY)
-		return TRUE // a faction-mate / ally clipped us
-	// Coexisting quarry wildlife tolerate accidental cross-species hits rather than
-	// turning the whole layer into a brawl.
-	if(istype(holder, /mob/living/simple_mob) && istype(attacker, /mob/living/simple_mob))
-		var/mob/living/simple_mob/h = holder
-		var/mob/living/simple_mob/a = attacker
-		if(h.quarry_fauna && a.quarry_fauna)
-			return TRUE
-	return FALSE
-
 /datum/ai_brain/proc/notify_damage(amount, damagetype, atom/attacker)
 	if(!model || !holder)
 		return
-	var/ally_fire = is_friendly_fire(attacker)
-	// Record the damage for low-HP/flee logic, but for friendly fire pass no
-	// attacker so last_attacker (which retaliate_to_attacker targets) isn't bound to
-	// the packmate.
-	model.record_damage(amount, damagetype, ally_fire ? null : attacker)
-	if(ismob(attacker) && attacker != holder && !ally_fire)
+	model.record_damage(amount, damagetype, attacker)
+	if(ismob(attacker) && attacker != holder)
 		add_personal(attacker, DQ_DISPOSITION_HOSTILE, DQ_PERSONAL_DEFAULT_DURATION, "hit me")
-		if(!primary_threat && isliving(attacker))
-			primary_threat = attacker // target the attacker NOW so react_now() can act this instant
-		update_engagement() // a real attacker engages the fast tick immediately
-		// Combo pressure: chain consecutive hits from OUR CURRENT FOE inside the window. Drives
-		// the "dodge once you've been comboed" reflex and makes a grappling predator bail. The
-		// first hit (which also makes them our foe) opens the chain; a DIFFERENT attacker while we
-		// already have a foe doesn't, since primary_threat stays put.
-		if(attacker == primary_threat)
-			combo_hits = (world.time - combo_last <= DQ_COMBO_WINDOW) ? (combo_hits + 1) : 1
-			combo_last = world.time
 	SEND_SIGNAL(holder, COMSIG_DQAI_DAMAGE_TAKEN, amount, damagetype, attacker)
 	dispatch_behavior_signal(COMSIG_DQAI_DAMAGE_TAKEN, amount, damagetype, attacker)
 	if(holder.maxHealth && holder.health / holder.maxHealth <= DQ_LOW_HP_THRESHOLD)
 		dispatch_behavior_signal(COMSIG_DQAI_LOW_HEALTH, holder.health / holder.maxHealth)
-	if(!ally_fire)
-		react_now() // retaliate immediately instead of on the next tactical tick
+	invalidate_selection()
 
 /// Forwards a behavior signal to every subscribed behavior. `args` after
 /// sig_type are passed through verbatim.
-/// Cancel the active behavior IFF it opted into being interrupted by sig_type
-/// (interruptible_by). Called by a reaction behavior the moment it COMMITS — so an
-/// elite's flinch-cancellable heavy is yanked only when the mob actually dodges/braces,
-/// not for free on every passing swing. Returns TRUE if it interrupted something.
-/datum/ai_brain/proc/interrupt_if_opted_in(sig_type)
-	if(!active_behavior_type)
-		return FALSE
-	var/datum/ai_behavior/active = dq_get_behavior(active_behavior_type)
-	if(active.interruptible_by && (sig_type in active.interruptible_by))
-		stop_active(DQ_BEHAVIOR_STOP_INTERRUPTED)
-		return TRUE
-	return FALSE
-
 /datum/ai_brain/proc/dispatch_behavior_signal(sig_type)
 	if(!subscribed_signals || !subscribed_signals[sig_type])
 		return
 	var/list/tail = args.Copy(2)
-	// Copy the subscriber list: a handler can interrupt/rebuild behaviors, which mutates
-	// subscribed_signals[sig_type] mid-iteration.
-	var/list/subs = subscribed_signals[sig_type]
-	for(var/btype in subs.Copy())
+	for(var/btype in subscribed_signals[sig_type])
 		var/datum/ai_behavior/B = dq_get_behavior(btype)
 		B.on_signal(arglist(list(src, sig_type) + tail))

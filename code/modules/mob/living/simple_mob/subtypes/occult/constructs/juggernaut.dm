@@ -73,7 +73,7 @@
 			if(!(P.damage_type == BRUTE || P.damage_type == BURN))
 				projectile_dam_type = BURN
 				incoming_damage = round(incoming_damage / 4) //Damage from strange sources is converted to burn for energy-type projectiles, though severely decreased.
-			apply_damage(incoming_damage, P.damage_type, null, armorcheck, is_sharp(P), has_edge(P), P)
+			apply_damage(incoming_damage, projectile_dam_type, null, armorcheck, is_sharp(P), has_edge(P), P)
 
 		// Find a turf near or on the original location to bounce to
 		if(P.starting)

@@ -90,8 +90,9 @@
 						ore_chunk.icon_state = "boulder[rand(1,4)]"
 
 
+					i++
 					if (i>=3) //Let's make it staggered so it looks like a lot is happening.
-						return
+						break
 		if (locate(/obj/item, input.loc))
 			var/obj/item/O
 			var/i

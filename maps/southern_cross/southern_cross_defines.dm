@@ -1,28 +1,17 @@
 // To be filled out when more progress on the new map occurs.
 
+// Station-only trim (2026-07-01): the planetary surface (Plains/Mountains/
+// Wilderness), the empty-space and misc/derelict levels were removed — their
+// procedural generation was stubbed at the hard fork and they only cost boot
+// time. Kept: the 3 station decks, plus CentCom + Transit (load-bearing for the
+// escape/supply/admin shuttles and arrivals). z-levels load in southern_cross.dm
+// include order (dmm -1 = decks z1-3, -6 = CentCom, -7 = Transit), so CentCom and
+// Transit renumbered 8/9 -> 4/5. All references go through these defines.
 #define Z_LEVEL_STATION_ONE				1
 #define Z_LEVEL_STATION_TWO				2
 #define Z_LEVEL_STATION_THREE			3
-#define Z_LEVEL_EMPTY_SPACE				4
-#define Z_LEVEL_SURFACE					5
-#define Z_LEVEL_SURFACE_MINE			6
-#define Z_LEVEL_MISC					7
-#define Z_LEVEL_CENTCOM					8
-#define Z_LEVEL_TRANSIT					9
-#define Z_LEVEL_SURFACE_WILD			10
-
-// Southern Cross telecomms presets reference these SC-prefixed aliases.
-#define Z_LEVEL_SC_STATION_ONE			Z_LEVEL_STATION_ONE
-#define Z_LEVEL_SC_STATION_TWO			Z_LEVEL_STATION_TWO
-#define Z_LEVEL_SC_STATION_THREE		Z_LEVEL_STATION_THREE
-#define Z_LEVEL_SC_SURFACE				Z_LEVEL_SURFACE
-#define Z_LEVEL_SC_SURFACE_MINE			Z_LEVEL_SURFACE_MINE
-#define Z_LEVEL_SC_SURFACE_WILD			Z_LEVEL_SURFACE_WILD
-#define Z_LEVEL_SC_CENTCOM				Z_LEVEL_CENTCOM
-#define Z_LEVEL_SC_TRANSIT				Z_LEVEL_TRANSIT
-
-// Alt job title used by Southern Cross loadout gating.
-#define JOB_ALT_SEARCH_AND_RESCUE		JOB_SEARCH_AND_RESCUE
+#define Z_LEVEL_CENTCOM					4
+#define Z_LEVEL_TRANSIT					5
 
 /datum/map/southern_cross
 	name = "Southern Cross"
@@ -46,9 +35,7 @@
 	company_name  = "NanoTrasen"
 	company_short = "NT"
 	starsys_name  = "Vir"
-	// Station-only build: no overmap, so we don't generate overmap/space
-	// z-levels or run the overmap subsystem at boot.
-	use_overmap = FALSE
+	use_overmap = TRUE
 
 	shuttle_docked_message = "The scheduled shuttle to the %dock_name% has docked with the station at docks one and two. It will depart in approximately %ETD%."
 	shuttle_leaving_dock = "The Crew Transfer Shuttle has left the station. Estimate %ETA% until the shuttle docks at %dock_name%."
@@ -100,44 +87,21 @@
 	unit_test_exempt_areas = list(/area/ninja_dojo, /area/ninja_dojo/firstdeck, /area/ninja_dojo/arrivals_dock)
 	unit_test_exempt_from_atmos = list(/area/tcomm/chamber)
 
-	planet_datums_to_make = list(/datum/planet/sif)
+	// No planet: the Sif surface z-levels were removed in the station-only trim.
+	planet_datums_to_make = list()
 
 	map_levels = list(
 			Z_LEVEL_STATION_ONE,
 			Z_LEVEL_STATION_TWO,
-			Z_LEVEL_STATION_THREE,
-			Z_LEVEL_SURFACE,
-			Z_LEVEL_SURFACE_MINE
+			Z_LEVEL_STATION_THREE
 		)
 
-// Commented out due to causing a lot of bugs. The base proc plus overmap achieves this functionality anyways.
-/*
-// Short range computers see only the six main levels, others can see the surrounding surface levels.
-/datum/map/southern_cross/get_map_levels(srcz, long_range = TRUE)
-	if (long_range && (srcz in map_levels))
-		return map_levels
-	else if (srcz == Z_LEVEL_TRANSIT && !long_range)
-		return list() // Nothing on these z-levels- sensors won't show, and GPSes won't see each other.
-	else if (srcz >= Z_LEVEL_STATION_ONE && srcz <= Z_LEVEL_STATION_THREE) // Station can see other decks.
-		return list(
-				Z_LEVEL_STATION_ONE,
-				Z_LEVEL_STATION_TWO,
-				Z_LEVEL_STATION_THREE,
-			)
-	else if(srcz in list(Z_LEVEL_SURFACE, Z_LEVEL_SURFACE_MINE, Z_LEVEL_SURFACE_WILD)) // Being on the surface lets you see other surface Zs.
-		return list(
-				Z_LEVEL_SURFACE,
-				Z_LEVEL_SURFACE_MINE,
-				Z_LEVEL_SURFACE_WILD
-			)
-	else
-		return list(srcz) //prevents runtimes when using CMC. any Z-level not defined above will be 'isolated' and only show to GPSes/CMCs on that same Z (e.g. CentCom).
-*/
 /datum/map/southern_cross/perform_map_generation()
-	// Station-only Southern Cross: the procedural planet surface (mountains/
-	// plains/wilderness submaps + mining tunnels) depended on the surface
-	// submap templates that were removed at the fork, so surface generation
-	// is disabled. The station z-levels are hand-mapped and need no gen.
+	// Station-only port: the original procedural planet surface (cave/plains/
+	// wilderness submap seeding + ore/tunnel random maps) depended on the
+	// /datum/map_template/surface/* templates and /area/surface/* areas that the
+	// hard fork removed. Those are intentionally not generated here, so the
+	// surface z-levels stay empty. Revive that subsystem to restore the planet.
 	return 1
 
 // Skybox Settings
@@ -180,44 +144,18 @@
 	holomap_offset_x = HOLOMAP_ICON_SIZE - SOUTHERN_CROSS_HOLOMAP_MARGIN_X - SOUTHERN_CROSS_MAP_SIZE - 40
 	holomap_offset_y = SOUTHERN_CROSS_HOLOMAP_MARGIN_Y + SOUTHERN_CROSS_MAP_SIZE*1
 
-// Non-station z-levels (empty space, surface, mine, wild, misc, centcom,
-// transit) are not compiled in this station-only build, so their z-level
-// datums are omitted to keep the datum list aligned with the 3 real decks.
+/datum/map_z_level/southern_cross/centcom
+	z = Z_LEVEL_CENTCOM
+	name = "Centcom"
+	flags = MAP_LEVEL_ADMIN|MAP_LEVEL_CONTACT
 
-//Teleport to Mine
+/datum/map_z_level/southern_cross/transit
+	z = Z_LEVEL_TRANSIT
+	name = "Transit"
+	flags = MAP_LEVEL_ADMIN|MAP_LEVEL_SEALED|MAP_LEVEL_PLAYER|MAP_LEVEL_CONTACT
 
-/obj/effect/step_trigger/teleporter/mine/to_mining/Initialize(mapload)
-	. = ..()
-	teleport_x = src.x
-	teleport_y = 2
-	teleport_z = Z_LEVEL_SURFACE_MINE
-
-/obj/effect/step_trigger/teleporter/mine/from_mining/Initialize(mapload)
-	. = ..()
-	teleport_x = src.x
-	teleport_y = world.maxy - 1
-	teleport_z = Z_LEVEL_SURFACE
-
-//Teleport to Wild
-
-/obj/effect/step_trigger/teleporter/wild/to_wild/Initialize(mapload)
-	. = ..()
-	teleport_x = src.x
-	teleport_y = 2
-	teleport_z = Z_LEVEL_SURFACE_WILD
-
-/obj/effect/step_trigger/teleporter/wild/from_wild/Initialize(mapload)
-	. = ..()
-	teleport_x = src.x
-	teleport_y = world.maxy - 1
-	teleport_z = Z_LEVEL_SURFACE_MINE
-
-/datum/planet/sif
-	expected_z_levels = list(
-		Z_LEVEL_SURFACE,
-		Z_LEVEL_SURFACE_MINE,
-		Z_LEVEL_SURFACE_WILD
-	)
+// Surface-level teleporters (mine/wild) and the Sif planet datum removed with the
+// planetary z-levels in the station-only trim.
 
 /obj/effect/step_trigger/teleporter/bridge/east_to_west/Initialize(mapload)
 	teleport_x = src.x - 4

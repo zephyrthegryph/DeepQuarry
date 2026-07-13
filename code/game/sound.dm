@@ -455,7 +455,7 @@ GLOBAL_LIST_INIT(species_sound_map, list(
 	// First, we determine if we're custom-choosing a body or if we're a base game species.
 	var/pref_species = pref.read_preference(/datum/preference/choiced/species)
 	var/datum/species/valid = GLOB.all_species[pref_species]
-	if(valid.selects_bodytype == (SELECTS_BODYTYPE_CUSTOM || SELECTS_BODYTYPE_SHAPESHIFTER)) // Custom species or xenochimera handling here
+	if(valid.selects_bodytype == SELECTS_BODYTYPE_CUSTOM || valid.selects_bodytype == SELECTS_BODYTYPE_SHAPESHIFTER) // Custom species or xenochimera handling here
 		valid = coalesce(GLOB.all_species[pref.read_preference(/datum/preference/text/human/custom_base)], GLOB.all_species[pref_species]) // migrated pref
 	// Now we start getting our sounds.
 	var/id_gender = pref.read_preference(/datum/preference/choiced/gender/identifying)

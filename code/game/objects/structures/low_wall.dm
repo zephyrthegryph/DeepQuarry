@@ -16,7 +16,7 @@
 
 	var/icon/frame_masks = 'icons/obj/wall_frame_bay.dmi'
 
-	var/health = 100
+	max_integrity = 100
 	var/stripe_color
 	//rad_resistance_modifier = 0.5
 
@@ -40,7 +40,8 @@
 
 	material = get_material_by_name(materialtype)
 
-	health = material.integrity
+	max_integrity = material.integrity
+	update_integrity(max_integrity)
 
 	AddElement(/datum/element/climbable)
 
@@ -61,10 +62,10 @@
 /obj/structure/low_wall/examine(mob/user)
 	. = ..()
 
-	if(health == material.integrity)
+	if(get_integrity() >= max_integrity)
 		to_chat(user, span_notice("It seems to be in fine condition."))
 	else
-		var/dam = health / material.integrity
+		var/dam = get_integrity() / max_integrity
 		if(dam <= 0.3)
 			to_chat(user, span_notice("It's got a few dents and scratches."))
 		else if(dam <= 0.7)
@@ -254,7 +255,7 @@
 /obj/structure/low_wall/bullet_act(obj/item/projectile/Proj)
 	var/proj_damage = Proj.get_structure_damage()
 	var/damage = min(proj_damage, 100)
-	take_damage(damage)
+	take_damage(damage, Proj.damage_type, BULLET)
 	return
 
 /obj/structure/low_wall/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
@@ -271,15 +272,14 @@
 		return
 	take_damage(tforce)
 
-/obj/structure/low_wall/take_damage(damage)
-	health -= damage
-	if(health <= 0)
-		dismantle()
+/obj/structure/low_wall/atom_destruction(damage_flag)
+	dismantle()
+	return ..()
 
 /obj/structure/low_wall/attack_generic(mob/user, damage, attack_verb)
 	visible_message(span_danger("[user] [attack_verb] the [src]!"))
 	user.do_attack_animation(src)
-	take_damage(damage)
+	take_damage(damage, BRUTE, MELEE)
 	return ..()
 
 /obj/structure/low_wall/proc/dismantle()
@@ -292,8 +292,7 @@
 			W.shatter()
 	for(var/obj/structure/grille/G in loc)
 		if(G.anchored)
-			G.health = 0
-			G.healthcheck()
+			G.take_damage(G.max_integrity) // Smash it apart with the wall.
 	qdel(src)
 
 /**
@@ -400,7 +399,7 @@
 	alpha = 180
 	flags = NONE
 	fulltile = TRUE
-	maxhealth = 24
+	max_integrity = 24
 	glasstype = /obj/item/stack/material/glass
 
 /obj/structure/window/bay/Initialize(mapload)
@@ -424,8 +423,8 @@
 
 	var/percent_damage = 0 // Used for icon state of damage layer
 	var/damage_alpha = 0 // Used for alpha blending of damage layer
-	if (maxhealth && health < maxhealth)
-		percent_damage = (maxhealth - health) / maxhealth // Percentage of damage received (Not health remaining)
+	if (max_integrity && get_integrity() < max_integrity)
+		percent_damage = (max_integrity - get_integrity()) / max_integrity // Percentage of damage received (Not health remaining)
 		percent_damage = round(percent_damage, 0.25) // Round to nearest multiple of 25
 		damage_alpha = 256 * percent_damage - 1
 
@@ -453,7 +452,7 @@
 	desc = "It looks rather strong. Might take a few good hits to shatter it."
 	icon_state = "preview_rglass"
 	basestate = "rwindow"
-	maxhealth = 80
+	max_integrity = 80
 	reinf = 1
 	maximal_heat = T0C + 750
 	damage_per_fire_tick = 2.0
@@ -468,9 +467,9 @@
 	glasstype = /obj/item/stack/material/glass/phoronglass
 	maximal_heat = T0C + 2000
 	damage_per_fire_tick = 1.0
-	maxhealth = 40.0
+	max_integrity = 40.0
 	force_threshold = 5
-	maxhealth = 80
+	max_integrity = 80
 
 /obj/structure/window/bay/phoronreinforced
 	name = "reinforced borosilicate window"
@@ -482,7 +481,7 @@
 	reinf = 1
 	maximal_heat = T0C + 4000
 	damage_per_fire_tick = 1.0 // This should last for 80 fire ticks if the window is not damaged at all. The idea is that borosilicate windows have something like ablative layer that protects them for a while.
-	maxhealth = 160
+	max_integrity = 160
 	force_threshold = 10
 
 
@@ -493,7 +492,7 @@
 	icon_state = "preview_glass"
 	basestate = "window"
 	fulltile = TRUE
-	maxhealth = 24
+	max_integrity = 24
 	alpha = 150
 
 /obj/structure/window/eris/Initialize(mapload)
@@ -527,7 +526,7 @@
 	desc = "It looks rather strong. Might take a few good hits to shatter it."
 	icon_state = "preview_rglass"
 	basestate = "rwindow"
-	maxhealth = 80
+	max_integrity = 80
 	reinf = 1
 	maximal_heat = T0C + 750
 	damage_per_fire_tick = 2.0
@@ -543,9 +542,9 @@
 	glasstype = /obj/item/stack/material/glass/phoronglass
 	maximal_heat = T0C + 2000
 	damage_per_fire_tick = 1.0
-	maxhealth = 40.0
+	max_integrity = 40.0
 	force_threshold = 5
-	maxhealth = 80
+	max_integrity = 80
 
 /obj/structure/window/eris/phoronreinforced
 	name = "reinforced borosilicate window"
@@ -557,7 +556,7 @@
 	reinf = 1
 	maximal_heat = T0C + 4000
 	damage_per_fire_tick = 1.0 // This should last for 80 fire ticks if the window is not damaged at all. The idea is that borosilicate windows have something like ablative layer that protects them for a while.
-	maxhealth = 160
+	max_integrity = 160
 	force_threshold = 10
 
 /**

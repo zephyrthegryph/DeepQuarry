@@ -1,8 +1,10 @@
 /obj/item/gun/proc/describe_firepower()
 	var/obj/item/projectile/P
+	var/created_projectile = FALSE
 	if(istype(src, /obj/item/gun/energy))
 		var/obj/item/gun/energy/energy_gun = src
 		P = new energy_gun.projectile_type()
+		created_projectile = TRUE
 	else if(istype(src, /obj/item/gun/projectile/shotgun/pump))
 		var/obj/item/gun/projectile/shotgun/pump/projectile_gun = src
 		if(isnull(projectile_gun.chambered) || isnull(projectile_gun.chambered.BB))
@@ -20,7 +22,10 @@
 		P = ammo.BB
 	if(!P)
 		return "no"
-	switch(P.damage)
+	var/firepower = P.damage
+	if(created_projectile)
+		qdel(P)
+	switch(firepower)
 		if(0)
 			return "no"
 		if(1 to 5)
@@ -37,13 +42,14 @@
 			return "a lot of"
 		if(81 to 2000)
 			return "a ruinous amount of"
-	qdel(P)
 
 /obj/item/gun/proc/describe_proj_penetration()
 	var/obj/item/projectile/P
+	var/created_projectile = FALSE
 	if(istype(src, /obj/item/gun/energy))
 		var/obj/item/gun/energy/energy_gun = src
 		P = new energy_gun.projectile_type()
+		created_projectile = TRUE
 	else if(istype(src, /obj/item/gun/projectile/shotgun/pump))
 		var/obj/item/gun/projectile/shotgun/pump/projectile_gun = src
 		if(isnull(projectile_gun.chambered) || isnull(projectile_gun.chambered.BB))
@@ -61,7 +67,10 @@
 		P = ammo.BB
 	if(!P)
 		return "no"
-	switch(P.armor_penetration)
+	var/penetration = P.armor_penetration
+	if(created_projectile)
+		qdel(P)
+	switch(penetration)
 		if(0)
 			return "cannot pierce armor"
 		if(1 to 20)
@@ -82,7 +91,6 @@
 			return "almost completely pierces all armor"
 		if(100 to 1000)
 			return "completely and utterly pierces all armor"
-	qdel(P)
 
 /obj/item/gun/proc/describe_firerate()
 	switch(fire_delay)

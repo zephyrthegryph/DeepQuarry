@@ -34,8 +34,7 @@
 	},
 /obj/machinery/atmospherics/pipe/simple/hidden{
 	dir = 10;
-	icon_state = "intact";
-
+	icon_state = "intact"
 	},
 /turf/simulated/floor,
 /area/engineering/engine_gas)
@@ -92,8 +91,7 @@
 /obj/machinery/portable_atmospherics/canister/phoron,
 /obj/machinery/atmospherics/pipe/manifold/hidden{
 	dir = 4;
-	icon_state = "map";
-
+	icon_state = "map"
 	},
 /turf/simulated/floor,
 /area/engineering/engine_gas)
@@ -199,8 +197,7 @@
 	},
 /obj/machinery/atmospherics/pipe/simple/hidden{
 	dir = 10;
-	icon_state = "intact";
-
+	icon_state = "intact"
 	},
 /obj/effect/floor_decal/borderfloor{
 	dir = 1
@@ -316,7 +313,7 @@
 /obj/machinery/door/firedoor/glass,
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor,
 /area/engineering/engine_room)
@@ -393,8 +390,7 @@
 /obj/effect/floor_decal/borderfloor{
 	dir = 1;
 	icon_state = "borderfloor";
-	pixel_y = 0;
-
+	pixel_y = 0
 	},
 /obj/effect/floor_decal/corner/yellow/border{
 	dir = 1
@@ -483,8 +479,7 @@
 	},
 /obj/machinery/atmospherics/pipe/simple/hidden{
 	dir = 5;
-	icon_state = "intact";
-
+	icon_state = "intact"
 	},
 /turf/simulated/floor/tiled,
 /area/engineering/engine_room)
@@ -543,8 +538,7 @@
 	},
 /obj/machinery/atmospherics/pipe/manifold/hidden{
 	dir = 4;
-	icon_state = "map";
-
+	icon_state = "map"
 	},
 /turf/simulated/floor/tiled,
 /area/engineering/engine_room)
@@ -648,7 +642,7 @@
 /obj/machinery/door/firedoor/glass,
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 1
@@ -731,7 +725,7 @@
 /obj/structure/window/reinforced/full,
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/machinery/door/blast/regular{
 	density = 0;
@@ -996,7 +990,7 @@
 /obj/structure/window/reinforced/full,
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/machinery/door/blast/regular{
 	density = 0;
@@ -1077,7 +1071,7 @@
 /obj/machinery/door/firedoor/glass,
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced,
 /turf/simulated/floor,
@@ -1220,8 +1214,7 @@
 	},
 /obj/machinery/atmospherics/pipe/simple/hidden{
 	dir = 9;
-	icon_state = "intact";
-
+	icon_state = "intact"
 	},
 /turf/simulated/floor/tiled,
 /area/engineering/engine_room)
@@ -1397,8 +1390,7 @@
 	},
 /obj/machinery/atmospherics/pipe/simple/hidden{
 	dir = 9;
-	icon_state = "intact";
-
+	icon_state = "intact"
 	},
 /obj/effect/floor_decal/borderfloor,
 /obj/effect/floor_decal/corner/yellow/border,

@@ -46,7 +46,7 @@
 			return TRUE
 
 		if("add_supplied_law")
-			if(supplied_law && supplied_law_position >= 1 && MIN_SUPPLIED_LAW_NUMBER <= MAX_SUPPLIED_LAW_NUMBER && is_malf(ui.user))
+			if(supplied_law && supplied_law_position >= 1 && supplied_law_position <= MAX_SUPPLIED_LAW_NUMBER && is_malf(ui.user))
 				owner.add_supplied_law(supplied_law_position, supplied_law)
 			return TRUE
 
@@ -181,7 +181,7 @@
 	return (is_admin(user) && !owner.is_slaved()) || is_special_role(user)
 
 /datum/tgui_module/law_manager/proc/is_special_role(mob/user)
-	if(user.mind.special_role)
+	if(user.mind && user.mind.special_role)
 		return TRUE
 	else
 		return FALSE

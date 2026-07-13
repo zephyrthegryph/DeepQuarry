@@ -80,7 +80,7 @@
 		if(is_type_in_list(our_position, banned_positions))
 			return
 	//Prevents shoving 40 of these into a closet, opening it, and having it annihilate some poor sap.
-	else if(isturf(our_position) && (/obj/structure/closet in range(0, our_position)))
+	else if(isturf(our_position) && (locate(/obj/structure/closet) in range(0, our_position)))
 		return
 
 	var/datum/integrated_io/target_x = inputs[1]
@@ -215,7 +215,7 @@
 // These procs do not relocate the grenade, that's the callers responsibility
 /obj/item/integrated_circuit/manipulation/grenade/proc/attach_grenade(obj/item/grenade/G)
 	attached_grenade = G
-	RegisterSignal(attached_grenade, COMSIG_OBSERVER_DESTROYED, /obj/item/integrated_circuit/manipulation/grenade/proc/detach_grenade)
+	RegisterSignal(attached_grenade, COMSIG_OBSERVER_DESTROYED, PROC_REF(detach_grenade))
 	size += G.w_class
 	desc += " \An [attached_grenade] is attached to it!"
 
@@ -253,6 +253,8 @@
 	var/size = get_pin_data(IC_INPUT, 2)
 	var/turf/tt = get_turf(target)
 	var/turf/st = get_turf(src)
+	if(!tt || !st)
+		return
 
 	var/distance = sqrt((st.x - tt.x)**2 + (st.y - tt.y)**2)
 	if (distance >= 6)

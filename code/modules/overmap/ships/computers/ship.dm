@@ -94,7 +94,7 @@ somewhere on that shuttle. Subtypes of these can be then used to perform ship ov
 // Management of mob view displacement. look to shift view to the ship on the overmap; unlook to shift back.
 
 /obj/machinery/computer/ship/look(mob/user)
-	if(linked.real_appearance)
+	if(linked && linked.real_appearance)
 		user.client?.images += linked.real_appearance
 	user.set_viewsize(world.view + extra_view)
 

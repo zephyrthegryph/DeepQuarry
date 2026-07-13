@@ -112,7 +112,7 @@
 //			Vox Ranged
 ////////////////////////////////
 
-/mob/living/simple_mob/humanoid/merc/voxpirate/boarder
+/mob/living/simple_mob/humanoid/merc/voxpirate/boarder/ranged
 	name = "vox ranged boarder"
 	desc = "A howling Vox with a shotgun. Get to cover!"
 	icon_state = "voxboarder_r"

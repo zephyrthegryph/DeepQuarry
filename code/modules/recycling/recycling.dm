@@ -89,7 +89,6 @@
 
 	effic_factor = CLAMP01(initial(effic_factor)+total_rating)
 
-	dq_apply_material_synergies(src)
 /obj/machinery/recycling/crusher/can_accept_item(obj/item/O)
 	if(LAZYLEN(O.matter))
 		return ..()

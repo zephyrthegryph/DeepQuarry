@@ -102,8 +102,9 @@
 	// this is the data which will be sent to the ui
 	var/data[0]
 	data["on"] = use_power ? 1 : 0
+	var/air_temperature = air_contents.return_temperature()
 	data["gasPressure"] = round(air_contents.return_pressure())
-	data["gasTemperature"] = round(air_contents.return_temperature())
+	data["gasTemperature"] = round(air_temperature)
 	data["minGasTemperature"] = 0
 	data["maxGasTemperature"] = round(max_temperature)
 	data["targetGasTemperature"] = round(set_temperature)
@@ -114,7 +115,7 @@
 	data["reagentPower"] = reagent_cooling
 
 	var/temp_class = "average"
-	if(air_contents.return_temperature() > (T20C+40))
+	if(air_temperature > (T20C+40))
 		temp_class = "bad"
 	data["gasTemperatureClass"] = temp_class
 
@@ -163,7 +164,6 @@
 	heating_efficiency = max(initial(heating_efficiency), (laser_rating-1))
 	set_power_level(power_setting)
 
-	dq_apply_material_synergies(src)
 /obj/machinery/atmospherics/unary/heater/proc/set_power_level(new_power_setting)
 	power_setting = new_power_setting
 	power_rating = max_power_rating * (power_setting/100)

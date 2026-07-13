@@ -31,7 +31,7 @@
 	var/list/event = listgetindex(events,args[1])
 	if(istype(event))
 		spawn(-1)
-			for(var/datum/event/E in event)
+			for(var/datum/event/E in event.Copy())
 				if(!E.Fire(arglist(args.Copy(2))))
 					clearEvent(args[1],E)
 	return

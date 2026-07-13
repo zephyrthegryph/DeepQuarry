@@ -7,7 +7,7 @@
 /area/submap/asteroid4)
 "bM" = (
 /obj/structure/window/reinforced{
-	health = 1e+006;
+	max_integrity = 1e+006;
 	req_access = list(5)
 	},
 /obj/effect/floor_decal/industrial/warning,

@@ -43,7 +43,7 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 	. = ..()
 	if(.)
 		return
-	if((action != "admin_log" || action != "show_admins") && !check_rights(R_ADMIN))
+	if((action != "admin_log" && action != "show_admins") && !check_rights(R_ADMIN))
 		return
 	switch(action)
 		//Generic Buttons anyone can use.

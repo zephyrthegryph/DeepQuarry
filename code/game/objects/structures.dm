@@ -45,6 +45,13 @@
 		if(3.0)
 			return
 
+// Default destruction for integrity-using structures: drop any parts (via Destroy) and delete.
+// Subtypes that shatter into shards / drop rods override this and call ..() or qdel themselves.
+/obj/structure/atom_destruction(damage_flag)
+	. = ..()
+	if(!QDELETED(src))
+		qdel(src)
+
 /obj/structure/proc/can_touch(mob/user)
 	if (!user)
 		return 0

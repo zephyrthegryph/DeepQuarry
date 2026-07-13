@@ -242,7 +242,7 @@
 /mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/expirments/barrier/bullet_act(obj/item/projectile/P)
 	if(fullshield > 0)
 		fullshield -= P.damage
-		if(P == /obj/item/projectile/ion)
+		if(istype(P, /obj/item/projectile/ion))
 			fullshield -= 300
 			visible_message(span_boldwarning(span_orange("[P] breaks the shield!!.")))
 			icon_state = "shield_boss"

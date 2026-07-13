@@ -38,7 +38,7 @@
 	icon = 'icons/obj/inflatable.dmi'
 	icon_state = "wall"
 
-	var/health = 50.0
+	max_integrity = 50
 
 
 /obj/structure/inflatable/Initialize(mapload)
@@ -53,10 +53,8 @@
 	var/proj_damage = Proj.get_structure_damage()
 	if(!proj_damage) return
 
-	health -= proj_damage
+	take_damage(proj_damage, Proj.damage_type, BULLET)
 	..()
-	if(health <= 0)
-		puncture()
 	return
 
 /obj/structure/inflatable/ex_act(severity)
@@ -86,16 +84,10 @@
 		visible_message(span_danger("[user] pierces [src] with [W]!"))
 		puncture()
 	if(W.damtype == BRUTE || W.damtype == BURN)
-		hit(W.force)
+		playsound(src, 'sound/effects/Glasshit.ogg', 75, 1)
+		take_damage(W.force, W.damtype, MELEE, sound_effect = FALSE)
 		..()
 	return
-
-/obj/structure/inflatable/proc/hit(damage, sound_effect = 1)
-	health = max(0, health - damage)
-	if(sound_effect)
-		playsound(src, 'sound/effects/Glasshit.ogg', 75, 1)
-	if(health <= 0)
-		puncture()
 
 /obj/structure/inflatable/click_ctrl()
 	hand_deflate()
@@ -138,21 +130,18 @@
 	deflate()
 
 /obj/structure/inflatable/attack_generic(mob/user, damage, attack_verb)
-	health -= damage
 	user.do_attack_animation(src)
-	if(health <= 0)
+	if(get_integrity() - damage <= 0)
 		user.visible_message(span_danger("[user] [attack_verb] open the [src]!"))
-		addtimer(CALLBACK(src, PROC_REF(puncture)), 1)
 	else
 		user.visible_message(span_danger("[user] [attack_verb] at [src]!"))
+	take_damage(damage, BRUTE, MELEE, sound_effect = FALSE)
 	return 1
 
-/obj/structure/inflatable/take_damage(damage)
-	health -= damage
-	if(health <= 0)
-		visible_message(span_danger("The [src] deflates!"))
-		addtimer(CALLBACK(src, PROC_REF(puncture)), 1)
-	return 1
+// Reaching 0 integrity tears the membrane open.
+/obj/structure/inflatable/atom_destruction(damage_flag)
+	puncture()
+	return ..()
 
 /obj/item/inflatable/door/
 	name = "inflatable door"

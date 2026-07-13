@@ -458,7 +458,6 @@
 	var/crit_point = -(getMaxHealth()*0.5)
 	if(species.crit_mod)
 		crit_point *= species.crit_mod
-	crit_point -= dq_crit_point_bonus() // Pain Tolerance / Survivor / Death's Door: stay up longer.
 	return crit_point
 
 /mob/living/proc/setMaxHealth(newMaxHealth)
@@ -1100,8 +1099,6 @@
 
 	if(incapacitated(INCAPACITATION_KNOCKOUT) || incapacitated(INCAPACITATION_STUNNED)) // Making sure we're in good condition to crawl
 		canmove = FALSE
-	else
-		canmove = TRUE
 
 	if(is_paralyzed())
 		lying = TRUE
@@ -1258,9 +1255,6 @@
 	var/obj/item/I = get_inactive_hand()
 	if(I)
 		I.in_inactive_hand(src)	//This'll do specific things, determined by the item
-	// Active hand changed → the weapon governing the right-click guard may have too,
-	// so re-evaluate whether the BYOND context menu is suppressed.
-	refresh_combat_popup_menus()
 	return
 
 /mob/living/proc/activate_hand(selhand) //0 or "r" or "right" for right hand; 1 or "l" or "left" for left hand.
@@ -1285,7 +1279,7 @@
 	if(!item || istype(item, /obj/item/tk_grab))
 		return FALSE
 
-	var/throw_range = item.throw_range + perk_add(DQ_PERK_FX_THROW_RANGE) // Throwing Arm: throw farther.
+	var/throw_range = item.throw_range
 	if (istype(item, /obj/item/grab))
 		var/obj/item/grab/G = item
 		item = G.throw_held() //throw the person instead of the grab
@@ -1302,9 +1296,6 @@
 				var/mob/living/carbon/human/N = M
 				if((N.health + N.halloss) < N.get_crit_point() || N.stat == DEAD)
 					N.adjustBruteLoss(rand(10,30))
-			if(isliving(M) && has_perk(/datum/perk/body/str_wrestler)) // Wrestler: thrown bodies hit harder.
-				var/mob/living/thrown_mob = M
-				thrown_mob.adjustBruteLoss(rand(8,16))
 			src.drop_from_inventory(G)
 
 			src.visible_message(span_warning("[src] has thrown [item]."))
@@ -1795,6 +1786,7 @@ Maybe later, gotta figure out a way to click yourself when in a locker etc.
 	var/choice = tgui_input_list(src, "Which set of sounds would you like to use for your character's speech sounds?", "Voice Sounds", SSsounds.talk_sound_map)
 	if(!choice)
 		voice_sounds_list = DEFAULT_TALK_SOUNDS
+		return
 	voice_sounds_list = get_talk_sound(choice)
 
 /mob/living/proc/save_private_notes(mob/user)

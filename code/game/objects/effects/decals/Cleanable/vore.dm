@@ -36,6 +36,10 @@
 	update_icon()
 	START_PROCESSING(SSobj, src)
 
+/obj/effect/decal/cleanable/blood/reagent/Destroy()
+	STOP_PROCESSING(SSobj, src)
+	return ..()
+
 /obj/effect/decal/cleanable/blood/reagent/update_icon()
 	if(custombasecolor == "rainbow") custombasecolor = get_random_colour(1)
 

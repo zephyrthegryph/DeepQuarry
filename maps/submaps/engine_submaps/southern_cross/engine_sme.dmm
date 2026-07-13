@@ -184,7 +184,7 @@
 "hB" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/effect/floor_decal/industrial/warning{
 	dir = 4
@@ -1595,7 +1595,7 @@
 "Wr" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/effect/floor_decal/industrial/warning{
 	dir = 4

@@ -51,7 +51,7 @@
 		var/obj/item/organ/I = target.internal_organs_by_name[name]
 		if(istype(I, /obj/item/organ/internal/brain))
 			var/obj/item/organ/external/E = target.get_organ(I.parent_organ)
-			if(E.robotic < ORGAN_ASSISTED)
+			if(!E || E.robotic < ORGAN_ASSISTED)
 				continue
 		if(I)
 			if(status == FBP_ASSISTED)

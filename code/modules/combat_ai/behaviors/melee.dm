@@ -11,8 +11,6 @@
 	target_kind = DQ_TARGET_MOB
 	min_range = 0
 	max_range = 1
-	requires_adjacent = TRUE       // central gate: only when in melee reach
-	blocked_by_melee_lock = TRUE   // central gate: not while off-balance
 
 /datum/ai_behavior/melee_attack/applicable_to(mob/living/owner)
 	if(!istype(owner, /mob/living/simple_mob))
@@ -25,10 +23,11 @@
 	var/mob/threat = brain.primary_threat
 	if(!owner || !threat)
 		return null
-	if(!owner.checkClickCooldown()) // attack-rate gate (mob's own swing speed)
+	if(!owner.Adjacent(threat))
 		return null
-	// Adjacency, off-balance lock, and target-validity are enforced centrally in pick_and_run.
-	// Mid-band score; charge_slam/telegraphed_strike beat plain melee when eligible.
+	if(!owner.checkClickCooldown())
+		return null
+	// Mid-band score; charge_slam/web_spit beat plain melee when in their range.
 	return DQAI_RESULT(40, threat)
 
 /datum/ai_behavior/melee_attack/start(datum/ai_brain/brain, atom/target, atom/source)
@@ -73,7 +72,6 @@
 	var/mob/threat = brain.primary_threat
 	if(!owner || !threat)
 		return null
-	// Target-validity (claimed/devoured) is enforced centrally in pick_and_run.
 	var/dist = get_dist(owner, threat)
 	if(dist < min_range || dist > max_range)
 		return null
@@ -105,11 +103,6 @@
 		if(state && state["dash_timer"])
 			deltimer(state["dash_timer"])
 			state["dash_timer"] = null
-	// A charge cancelled mid-windup (INTERRUPTED) is spent too: set the cooldown so the mob can't
-	// instantly re-wind and race its own still-pending dash timer. (COMPLETED/FAILED are handled by
-	// the base stop via the `cooldown` var.)
-	if(reason == DQ_BEHAVIOR_STOP_INTERRUPTED && cooldown)
-		brain.set_cooldown(type, source, cooldown)
 	return ..()
 
 /datum/ai_behavior/charge_slam/proc/execute_dash(datum/ai_brain/brain, atom/target)
@@ -127,12 +120,6 @@
 		state["dash_timer"] = null
 	if(QDELETED(brain.holder))
 		brain.stop_active(DQ_BEHAVIOR_STOP_FAILED)
-		return
-	// The windup timer is a bare addtimer on the shared flyweight — it can't be cancelled per-mob,
-	// so a charge_slam that was stopped (death / re-selected) before this fired still gets here. If
-	// the brain is no longer committed to THIS charge, the windup was cancelled: don't dash. (Mirror
-	// of telegraphed_strike's guard; without it a stale timer dashes + stop_actives the wrong behavior.)
-	if(brain.active_behavior_type != type)
 		return
 	var/mob/living/simple_mob/SM = brain.holder
 	if(!istype(SM) || QDELETED(target))

@@ -1543,12 +1543,6 @@
 	result = REAGENT_ID_EDENSNAKE
 	required_reagents = list(REAGENT_ID_EDEN = 1, REAGENT_ID_ETHANOL = 1)
 
-/datum/decl/chemical_reaction/instant/tercozolam
-	id = REAGENT_ID_TERCOZOLAM
-	result = REAGENT_ID_TERCOZOLAM
-	required_reagents = list(REAGENT_ID_ANTITOXIN = 1, REAGENT_ID_ETHANOL = 1, REAGENT_ID_LITHIUM = 1)
-	result_amount = 3
-
 /datum/decl/chemical_reaction/instant/peridaxon_ch
 	name = REAGENT_PERIDAXON
 	id = "peridaxon_ch"

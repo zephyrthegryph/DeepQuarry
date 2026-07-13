@@ -48,13 +48,15 @@ These should come standard with the Protean rigsuit, unless you want them to wor
 /obj/item/rig_module/protean/syphon/process()
 	if(active)
 		var/mob/living/carbon/human/H = holder.wearer
+		if(!H)
+			return
 		var/mob/living/P = holder?:myprotean
 		if(istype(H.species, /datum/species/protean))
 			to_chat(H, span_warning("Your Protean modules do not function on yourself."))
 			deactivate(1)
 		else
 			P = P?:humanform
-			if((H.nutrition >= 100) && (P.nutrition <= 5000))
+			if(P && (H.nutrition >= 100) && (P.nutrition <= 5000))
 				H.nutrition -= 10
 				P.nutrition += 10
 

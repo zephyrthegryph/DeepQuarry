@@ -509,7 +509,7 @@ GLOBAL_LIST_BOILERPLATE(allCasters, /obj/machinery/newscaster)
 			var/choice = tgui_alert(ui.user, "Please confirm Wanted Issue change.", "Network Security Handler", list("Confirm", "Cancel"))
 			if(choice == "Confirm")
 				if(GLOB.news_network.wanted_issue)
-					if(GLOB.news_network.wanted_issue.is_admin_message)
+					if(GLOB.news_network.wanted_issue && GLOB.news_network.wanted_issue.is_admin_message)
 						tgui_alert_async(ui.user, "The wanted issue has been distributed by a [using_map.company_name] higherup. You cannot edit it.")
 						return
 					GLOB.news_network.wanted_issue.author = channel_name

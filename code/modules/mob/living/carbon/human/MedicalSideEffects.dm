@@ -41,15 +41,19 @@
 			return
 
 
-	var/T = side_effects[name]
-	if (!T)
+	// side_effects holds instances, not a name->type map; find the matching type by name.
+	var/datum/medical_effect/new_effect
+	for(var/effect_type in subtypesof(/datum/medical_effect))
+		var/datum/medical_effect/candidate = new effect_type
+		if(candidate.name == name)
+			new_effect = candidate
+			break
+		qdel(candidate)
+	if(!new_effect)
 		return
-
-	var/datum/medical_effect/M = new T
-	if(M.name == name)
-		M.strength = strength
-		M.start = life_tick
-		side_effects += M
+	new_effect.strength = strength
+	new_effect.start = life_tick
+	side_effects += new_effect
 
 /mob/living/carbon/human/proc/handle_medical_side_effects()
 	//Going to handle those things only every few ticks.

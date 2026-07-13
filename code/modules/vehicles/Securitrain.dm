@@ -12,8 +12,7 @@
 	move_delay = 0.5
 
 	//Health stuff
-	health = 100
-	maxhealth = 100
+	max_integrity = 100
 	fire_dam_coeff = 0.6
 	brute_dam_coeff = 0.5
 
@@ -229,7 +228,7 @@
 	if (on)
 		to_chat(usr, "You start [src]'s engine.")
 	else
-		if(cell.charge < charge_use)
+		if(cell && cell.charge < charge_use)
 			to_chat(usr, "[src] is out of power.")
 		else
 			to_chat(usr, "[src]'s engine won't start.")

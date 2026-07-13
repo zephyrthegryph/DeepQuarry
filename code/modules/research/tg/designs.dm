@@ -31,6 +31,15 @@ other types of metals and chemistry for reagents).
 	var/build_type = null
 	/// List of materials required to create one unit of the product. Format is (typepath or caregory) -> amount
 	var/list/materials = list()
+	/// If TRUE, the lathe lets the user pick which loaded material to build this design
+	/// from, instead of baking in a specific one. The chosen material is consumed
+	/// (selectable_amount units) and applied to the product (set_material on material
+	/// items, so exotic/substance alloys carry their properties + effects).
+	var/material_selectable = FALSE
+	/// Units of the chosen material consumed per item when material_selectable.
+	var/selectable_amount = 0
+	/// Optional MATCLASS_* the chosen material must belong to (null = any).
+	var/selectable_class = null
 	/// The amount of time required to create one unit of the product.
 	var/construction_time = 3.2 SECONDS
 	/// The typepath of the object produced by this design
@@ -93,5 +102,31 @@ other types of metals and chemistry for reagents).
 
 	return isnull(desc) ? initial(object_build_item_path.desc) : desc
 
-/datum/design_techweb/proc/create_item(target)
+/datum/design_techweb/proc/create_item(target, chosen_material)
+	// Material items (and material clothing) take a material key as their second
+	// Initialize arg, so passing the chosen material makes the product be made of it.
+	if(material_selectable && chosen_material)
+		return new build_path(target, chosen_material)
 	return new build_path(target)
+
+// Effective per-unit material cost given the user's chosen material (selectable designs
+// fold selectable_amount of the chosen material into the fixed cost).
+/datum/design_techweb/proc/effective_materials(chosen_id)
+	if(!material_selectable)
+		return materials
+	var/list/out = materials.Copy()
+	var/datum/material/cm = chosen_id ? GET_MATERIAL_REF(chosen_id) : null
+	if(cm && selectable_amount)
+		out[cm] = (out[cm] || 0) + selectable_amount
+	return out
+
+// Is the chosen material a valid pick for this design (exists, and matches the class filter)?
+/datum/design_techweb/proc/material_choice_valid(chosen_id)
+	if(!material_selectable)
+		return TRUE
+	var/datum/material/cm = chosen_id ? GET_MATERIAL_REF(chosen_id) : null
+	if(!cm)
+		return FALSE
+	if(selectable_class && cm.material_class != selectable_class)
+		return FALSE
+	return TRUE

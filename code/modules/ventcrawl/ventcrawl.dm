@@ -236,7 +236,8 @@
 				A.pipe_image = image(A, A.loc, dir = A.dir)
 				A.pipe_image.plane = PLANE_LIGHTING_ABOVE
 			pipes_shown += A.pipe_image
-			client.images += A.pipe_image
+			if(client)
+				client.images += A.pipe_image
 	if(client)
 		client.screen += GLOB.global_hud.centermarker
 

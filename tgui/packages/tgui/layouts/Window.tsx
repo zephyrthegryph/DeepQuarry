@@ -99,11 +99,17 @@ export function Window(props: Props) {
         }
         // Apply size/position BEFORE revealing — awaited so the window never
         // paints at default geometry first and then resizes (cold-open flicker).
-        if (!fitted) {
-          await recallWindowGeometry(options);
+        // try/finally: if the geometry recall throws, the window must STILL
+        // reveal — the resume() failsafe only covers previously-suspended
+        // windows, so a fresh window would otherwise stay invisible forever.
+        try {
+          if (!fitted) {
+            await recallWindowGeometry(options);
+          }
+        } finally {
+          revealWindow();
+          logger.log('set to visible');
         }
-        revealWindow();
-        logger.log('set to visible');
       };
 
       Byond.winset(Byond.windowId, {

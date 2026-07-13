@@ -67,7 +67,7 @@
 		return
 
 	var/list/work = map[x][y]
-	work.Add(thing)
+	work.Remove(thing)
 
 //Just removes everything from a spot in the asteroid map
 /datum/rogue/asteroid/proc/spot_clear(x,y)

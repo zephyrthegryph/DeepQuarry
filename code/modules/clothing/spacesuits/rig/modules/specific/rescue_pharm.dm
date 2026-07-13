@@ -63,8 +63,9 @@
 		to_chat(H,span_danger("Insufficient chems!"))
 		return 0
 
-	else if(charge.charges < chems_to_use)
-		chems_to_use = charge.charges
+	var/use_amount = chems_to_use
+	if(charge.charges < use_amount)
+		use_amount = charge.charges
 
 	var/mob/living/carbon/target_mob
 	if(istype(target,/mob/living/carbon))
@@ -72,11 +73,11 @@
 	else
 		return 0
 
-	to_chat(H,span_notice("You inject [target_mob == H ? "yourself" : target_mob] with [chems_to_use] unit\s of [charge.short_name]."))
+	to_chat(H,span_notice("You inject [target_mob == H ? "yourself" : target_mob] with [use_amount] unit\s of [charge.short_name]."))
 	to_chat(target_mob,span_notice("You feel a rushing in your veins as you're injected by \the [src]."))
-	target_mob.reagents.add_reagent(charge.display_name, chems_to_use)
+	target_mob.reagents.add_reagent(charge.display_name, use_amount)
 
-	charge.charges -= chems_to_use
+	charge.charges -= use_amount
 	if(charge.charges < 0) charge.charges = 0
 
 	return 1

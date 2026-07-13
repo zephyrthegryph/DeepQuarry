@@ -40,6 +40,9 @@
 	var/mob/living/target = tgui_input_list(src,"Pick someone to mend:","Mend Other", targets)
 	if(!target)
 		return FALSE
+	if(stat || SK.in_phase || SK.shadekin_get_energy() < ability_cost || !(target in oview(1)))
+		to_chat(src, span_warning("You can no longer mend \the [target]."))
+		return FALSE
 
 	target.add_modifier(/datum/modifier/shadekin/heal_boop,1 MINUTE)
 	playsound(src, 'sound/effects/EMPulse.ogg', 75, 1)

@@ -15,6 +15,8 @@
 		num = 0
 	else
 		num = rand(2,6)
+	if(!length(possible_spawns))
+		return
 	for(var/i=0, i<num, i++)
 		var/mob/living/simple_mob/mechanical/combat_drone/event/D = new(get_turf(pick(possible_spawns)))
 		drones_list.Add(D)

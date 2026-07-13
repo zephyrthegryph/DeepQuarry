@@ -48,7 +48,7 @@
 	return
 
 /obj/item/implant/freedom/post_implant(mob/source)
-	source.mind.store_memory("Freedom implant can be activated by using the [src.activation_emote] emote, " + span_bold("say *[src.activation_emote] ") + "to attempt to activate.", 0, 0)
+	source.mind?.store_memory("Freedom implant can be activated by using the [src.activation_emote] emote, " + span_bold("say *[src.activation_emote] ") + "to attempt to activate.", 0, 0)
 	to_chat(source, "The implanted freedom implant can be activated by using the [src.activation_emote] emote, " + span_bold("say *[src.activation_emote]") + "to attempt to activate.")
 
 /obj/item/implant/freedom/get_data()

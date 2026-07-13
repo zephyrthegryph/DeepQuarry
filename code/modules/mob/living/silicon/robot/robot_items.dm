@@ -513,8 +513,9 @@
 		overload_time = 0
 
 		var/mob/living/user = src.loc
-		user.visible_message(span_danger("[user]'s shield reactivates!"), span_danger("Your shield reactivates!"))
-		user.update_icon()
+		if(isliving(user))
+			user.visible_message(span_danger("[user]'s shield reactivates!"), span_danger("Your shield reactivates!"))
+			user.update_icon()
 
 /obj/item/borg/combat/shield/proc/adjust_flash_count(mob/living/user, amount)
 	if(active)			//Can't destabilize a shield that's not on

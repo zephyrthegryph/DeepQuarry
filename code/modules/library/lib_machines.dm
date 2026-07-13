@@ -554,7 +554,8 @@
 			sleep(rand(200,400))
 			src.visible_message("[src] whirs as it prints and binds a new book.")
 			var/obj/item/book/b = new(src.loc)
-			b.dat = O:info
+			var/obj/item/paper/source_paper = O
+			b.dat = source_paper.info
 			b.name = "Print Job #" + "[rand(100, 999)]"
 			b.icon_state = "book[rand(1,7)]"
 			qdel(O)
@@ -566,7 +567,8 @@
 			sleep(rand(300,500))
 			src.visible_message("[src] whirs as it prints and binds a new book.")
 			var/obj/item/book/bundle/b = new(src.loc)
-			b.pages = O:pages
+			var/obj/item/paper_bundle/source_bundle = O
+			b.pages = source_bundle.pages
 			for(var/obj/item/paper/P in O.contents)
 				P.forceMove(b)
 			for(var/obj/item/photo/P in O.contents)

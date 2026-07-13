@@ -80,7 +80,16 @@
 
 /mob/living/carbon/human/Destroy()
 	GLOB.human_mob_list -= src
-	QDEL_NULL_LIST(organs)
+	// Each organ's Destroy() removes itself (and qdels its children/internals)
+	// out of src.organs, so iterating the live list skips entries — skipped
+	// organs never run Destroy() and their lingering `owner` ref pins this mob
+	// (and their medical issues) against GC. Snapshot first. Each organ also
+	// scrubs itself out of the *_by_name lookup tables, so those end up empty
+	// here — do NOT null them: the parent Destroy chain (equipment drops →
+	// update_icons, should_have_organ) still indexes them.
+	if(organs)
+		for(var/o in organs.Copy())
+			qdel(o)
 	if(nif)
 		QDEL_NULL(nif)
 	GLOB.alt_farmanimals -= src
@@ -208,7 +217,7 @@
 				b_loss = b_loss/1.5
 				f_loss = f_loss/1.5
 
-			if (!get_ear_protection() >= 2)
+			if (get_ear_protection() < 2)
 				ear_damage += 30
 				ear_deaf += 120
 				deaf_loop.start() // CHOMPEnable: Ear Ringing/Deafness
@@ -220,7 +229,7 @@
 			b_loss += 30
 			if (prob(getarmor(null, "bomb")))
 				b_loss = b_loss/2
-			if (!get_ear_protection() >= 2)
+			if (get_ear_protection() < 2)
 				ear_damage += 15
 				ear_deaf += 60
 				deaf_loop.start() // CHOMPEnable: Ear Ringing/Deafness
@@ -904,7 +913,7 @@
 		b_facial = hex2num(copytext(new_facial, 6, 8))
 
 	var/new_hair = tgui_color_picker(src, "Please select hair color.", "Character Generation",rgb(r_hair,g_hair,b_hair))
-	if(new_facial)
+	if(new_hair)
 		r_hair = hex2num(copytext(new_hair, 2, 4))
 		g_hair = hex2num(copytext(new_hair, 4, 6))
 		b_hair = hex2num(copytext(new_hair, 6, 8))
@@ -1324,13 +1333,12 @@
 /mob/living/carbon/human/proc/initialize_vessel() //This needs fixing. For some reason mob species is not immediately set in set_species.
 	SHOULD_NOT_OVERRIDE(TRUE)
 	make_blood()
-	var/max_blood = dq_max_blood() // Juice Box raises the ceiling.
-	if(vessel.total_volume < max_blood)
-		vessel.maximum_volume = max_blood
-		vessel.add_reagent(REAGENT_ID_BLOOD, max_blood - vessel.total_volume)
-	else if(vessel.total_volume > max_blood)
-		vessel.remove_reagent(REAGENT_ID_BLOOD,vessel.total_volume - max_blood) //This one should stay remove_reagent to work even lack of a O_heart
-		vessel.maximum_volume = max_blood
+	if(vessel.total_volume < species.blood_volume)
+		vessel.maximum_volume = species.blood_volume
+		vessel.add_reagent(REAGENT_ID_BLOOD, species.blood_volume - vessel.total_volume)
+	else if(vessel.total_volume > species.blood_volume)
+		vessel.remove_reagent(REAGENT_ID_BLOOD,vessel.total_volume - species.blood_volume) //This one should stay remove_reagent to work even lack of a O_heart
+		vessel.maximum_volume = species.blood_volume
 	fixblood()
 	species.update_attack_types() //Required for any trait that updates unarmed_types in setup.
 	species.update_vore_belly_def_variant()
@@ -1488,8 +1496,6 @@
 	return FALSE
 
 /mob/living/carbon/human/slip(slipped_on, stun_duration=8)
-	if(has_perk(/datum/perk/body/spd_sure_footed)) // Sure-Footed: you keep your footing.
-		return FALSE
 	var/list/equipment = list(src.w_uniform,src.wear_suit,src.shoes)
 	var/footcoverage_check = FALSE
 	for(var/obj/item/clothing/C in equipment)

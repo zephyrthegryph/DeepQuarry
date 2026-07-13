@@ -56,7 +56,7 @@
 /obj/item/weldpack/attackby(obj/item/W as obj, mob/user as mob)
 	if(istype(W, /obj/item/weldingtool) && !(W == nozzle))
 		var/obj/item/weldingtool/T = W
-		if(T.welding & prob(50))
+		if(T.welding && prob(50))
 			message_admins("[key_name_admin(user)] triggered a fueltank explosion.")
 			log_game("[key_name(user)] triggered a fueltank explosion.")
 			to_chat(user, span_danger("That was stupid of you."))

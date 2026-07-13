@@ -5,50 +5,12 @@ with /tg/-lineage LINDA atmospherics backed by an in-tree Rust port of
 [auxmos](https://github.com/Putnam3145/auxmos). It is the authoritative
 document for sequencing, decisions, and compat-layer scope.
 
-**Status**: Phases 0–4 ✅. The fork is **LINDA-only**: ZAS (`code/ZAS/`) and
+**Status**: Phases 0–2 ✅. The fork is **LINDA-only**: ZAS (`code/ZAS/`) and
 XGM (`code/modules/xgm/`) are deleted, the tree compiles and boots, and the
-atmos unit tests pass. Gas math and turf processing run in the Rust-accelerated
-**auxmos backend**, wired and unconditional (`auxmos_bindings.dm` compiled,
-`auxtools_atmos_init`/`auxmos_register_gases` called from `/world/New()` and
-`SSair` init) — see the callout below for how it landed.
-
-> **DONE — auxmos gas-math backend is live and unconditional (2026-07-12).**
-> Gas data lives in the Rust auxmos arena; `/datum/gas_mixture` is a handle and
-> all gas reads/writes route through the auxmos byondapi binds. Boots clean on
-> Southern Cross (22 gases + reaction table registered, 0 gas runtimes). No flag
-> — the backend is always on.
->
-> How the two original blockers were cleared:
-> 1. *byondapi/BYOND ABI* — bumped the workspace `byondapi` dep to the git repo
->    (**0.6.14** + byondapi-sys **0.12.3**, feature `byond-516-1651`), which
->    matches the 516 server. The vendored auxmos (`verdigris/atmos/`) compiled
->    unchanged. (byondapi-sys now runs bindgen, so builds need `LIBCLANG_PATH`.)
-> 2. *auxmos static init* — `verdigris_init()` (called from the game `/world/New`
->    in `code/game/world.dm`, since it overrides the one in `_verdigris.dm`)
->    explicitly runs auxmos's `#[byondapi::init]` fns and installs the panic hook.
->
-> Key wiring, for future reference:
-> - Gases are registered (`auxmos_register_gases`) from `/world/New` BEFORE the
->   Master Controller starts SSatoms — air is populated during atom init and a
->   `set_moles` on an unregistered gas crashes.
-> - `/datum/gas` carries the fire/oxidation/flags fields auxmos reads (its
->   `byond_string!` interning needs the names to exist).
-> - auxmos keys gases by **string id**; DM must never pass a `/datum/gas` type
->   path to a handle proc. `xgm_gas_string_id()` normalises; parse_gas_string,
->   the immutable parse, and the XGM shims were fixed to use it.
-> - Reactions: `auxtools_update_reactions()` at SSair init populates the Rust
->   reaction table from `SSair.gas_reactions`; unparseable reactions are skipped.
->
-> **DONE — turf-graph processing is also Rust.** `SSair.fire()` dispatches turf
-> diffusion, excited groups, and katmos pressure-equalization to the Rust turf
-> processor (`process_turfs_auxtools` / `finish_turf_processing_auxtools` /
-> `process_excited_groups_auxtools` / `process_turf_equalize_auxtools`). Space
-> turfs are immutable vacuum sinks and planetary turfs share toward a Rust-side
-> immutable baseline. Remaining, genuinely open: **superconductivity** stays DM
-> (auxmos's `superconductivity` feature is off), **reaction dispatch** stays DM
-> (`reaction_hooks` is off, so reactions call back into DM `react()`), hotspots
-> (fire) and pipenets remain DM subsystems, and boot-time gas/reaction
-> registration overhead is unoptimized.
+atmos unit tests pass. Gas math currently runs in **pure DM** (the
+`/datum/gas_mixture` bodies); the optional Rust-accelerated **auxmos backend
+is not yet wired** (`auxmos_bindings.dm` uncompiled, `auxtools_atmos_init`
+uncalled) — that is the remaining perf work (Phases 3–4).
 
 CHOMP/ZAS-era callers are served by the compat layer in
 `code/ATMOSPHERICS/xgm_compat.dm` (XGM/ZAS gas + airblock API → LINDA) and

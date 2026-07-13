@@ -264,13 +264,6 @@
 		healths.screen_loc = ui_health
 		hud_elements |= healths
 
-		// Runtime-drawn stamina bar (see code/modules/mob/living/stamina.dm).
-		stamina_meter = new /atom/movable/screen/stamina()
-		stamina_meter.style = HUD.ui_style
-		stamina_meter.screen_loc = ui_stamina
-		stamina_meter.update(max_stamina ? stamina / max_stamina : 0)
-		hud_elements |= stamina_meter
-
 	autowhisper_display = new /atom/movable/screen()
 	autowhisper_display.icon = 'icons/mob/screen/minimalist.dmi'
 	autowhisper_display.icon_state = "autowhisper"
@@ -324,9 +317,9 @@
 	aw.icon_state = "use"
 	aw.name = "use held item on self"
 	aw.screen_loc = ui_swaphand2
-	using.color = HUD.ui_color
-	using.alpha = HUD.ui_alpha
-	adding |= using
+	aw.color = HUD.ui_color
+	aw.alpha = HUD.ui_alpha
+	adding |= aw
 
 	//Component hud elements. Made in /mob/living/create_mob_hud
 	hud_elements |= shadekin_display

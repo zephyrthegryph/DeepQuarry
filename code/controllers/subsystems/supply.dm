@@ -252,9 +252,10 @@ SUBSYSTEM_DEF(supply)
 	O.approved_by = idname
 	O.approved_at = stationdate2text() + " - " + stationtime2text()
 	// Update admin-side mirror
-	adm_order.status = SUP_ORDER_APPROVED
-	adm_order.approved_by = idname
-	adm_order.approved_at = stationdate2text() + " - " + stationtime2text()
+	if(adm_order)
+		adm_order.status = SUP_ORDER_APPROVED
+		adm_order.approved_by = idname
+		adm_order.approved_at = stationdate2text() + " - " + stationtime2text()
 
 	// Deduct cost
 	points -= O.object.cost
@@ -281,9 +282,10 @@ SUBSYSTEM_DEF(supply)
 	O.approved_by = idname
 	O.approved_at = stationdate2text() + " - " + stationtime2text()
 	// Update admin-side mirror
-	adm_order.status = SUP_ORDER_DENIED
-	adm_order.approved_by = idname
-	adm_order.approved_at = stationdate2text() + " - " + stationtime2text()
+	if(adm_order)
+		adm_order.status = SUP_ORDER_DENIED
+		adm_order.approved_by = idname
+		adm_order.approved_at = stationdate2text() + " - " + stationtime2text()
 	return
 
 // Will deny all requested orders

@@ -355,10 +355,11 @@
 // Proc: end_video()
 // Parameters: reason - the text reason to print for why it ended
 // Description: Ends the video call by clearing video_source
-/obj/item/communicator/proc/end_video()
+/obj/item/communicator/proc/end_video(reason)
 	UnregisterSignal(video_source, COMSIG_MOVABLE_ATTEMPTED_MOVE)
 	show_static()
 	video_source = null
 
-	visible_message(.)
+	if(reason)
+		visible_message(reason)
 	update_icon()

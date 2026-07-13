@@ -147,10 +147,11 @@
 	if(get_integrity() < 50)
 		return SUPERMATTER_DANGER
 
-	if((get_integrity() < 100) || (air.return_temperature() > CRITICAL_TEMPERATURE))
+	var/air_temperature = air.return_temperature()
+	if((get_integrity() < 100) || (air_temperature > CRITICAL_TEMPERATURE))
 		return SUPERMATTER_WARNING
 
-	if(air.return_temperature() > (CRITICAL_TEMPERATURE * 0.8))
+	if(air_temperature > (CRITICAL_TEMPERATURE * 0.8))
 		return SUPERMATTER_NOTIFY
 
 	if(power > 5)
@@ -239,7 +240,6 @@
 		if(!(S.z in affected_z))
 			continue
 		if(prob(DETONATION_SOLAR_BREAK_CHANCE))
-			S.health = -1
 			S.broken()
 
 	// Effect 4: Medium scale explosion
@@ -261,7 +261,9 @@
 	if(lum != light_range || clr != light_color)
 		set_light(lum, l_color = clr)
 
-/obj/machinery/power/supermatter/proc/get_integrity()
+// Supermatter reports integrity as 0-100% of its meltdown threshold; this overrides the
+// atom get_integrity() (the SM is not damaged through the atom_integrity system).
+/obj/machinery/power/supermatter/get_integrity()
 	var/integrity = damage / explosion_point
 	integrity = round(100 - integrity * 100)
 	integrity = integrity < 0 ? 0 : integrity

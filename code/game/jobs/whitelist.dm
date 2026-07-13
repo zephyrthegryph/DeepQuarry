@@ -295,6 +295,8 @@ ADMIN_VERB(open_whitelist_editor, R_ADMIN|R_SERVER, "Open Whitelist Editor", "Op
 /proc/is_job_whitelisted(mob/M, rank)
 	// Check if the job actually requires a whitelist
 	var/datum/job/job = SSjob.get_job(rank)
+	if(!job)
+		return TRUE
 	if(!job.whitelist_only)
 		return TRUE
 

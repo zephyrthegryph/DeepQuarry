@@ -48,15 +48,6 @@
 	var/resolved_z = GLOB.map_templates_loaded[Z_NAME_KARA_AEROSTAT_CH]
 	if(isnum(resolved_z))
 		map_z = list(Z_NAME_KARA_AEROSTAT_CH) // Using the aerostat as the map as it is the only z-level in the atmosphere. Located in /maps/southern_cross/overmap/planets/kara/aerostat/
-	return ..()
-
-/obj/effect/overmap/visitable/planet/kara/get_skybox_representation()
-	var/image/tmp = ..()
-	tmp.pixel_x = skybox_offset_x
-	tmp.pixel_y = skybox_offset_y
-	return tmp
-
-/obj/effect/overmap/visitable/planet/kara/Initialize(mapload)
 	atmosphere = new(CELL_VOLUME) // Necessary for the planet overmap icon to generate properly, but gas type does not seem to matter.
 	atmosphere.adjust_gas_temp(GAS_CO2, KARA_MOL_CO2, KARA_AVG_TEMP)
 	atmosphere.adjust_gas_temp(GAS_N2, KARA_MOL_N2, KARA_AVG_TEMP)
@@ -65,6 +56,12 @@
 	. = ..()
 
 	docking_codes = null
+
+/obj/effect/overmap/visitable/planet/kara/get_skybox_representation()
+	var/image/tmp = ..()
+	tmp.pixel_x = skybox_offset_x
+	tmp.pixel_y = skybox_offset_y
+	return tmp
 
 
 /turf/unsimulated/floor/sky/kara_sky

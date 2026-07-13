@@ -41,9 +41,12 @@
 /datum/genetics/side_effect/genetic_burn/finish(datum/weakref/WR)
 	if(..()) return
 	var/mob/living/carbon/human/H = WR.resolve()
+	if(!ishuman(H))
+		return
 	for(var/organ_name in BP_ALL)
 		var/obj/item/organ/external/E = H.get_organ(organ_name)
-		E.take_damage(0, 5, 0)
+		if(E)
+			E.take_damage(0, 5, 0)
 
 /datum/genetics/side_effect/bone_snap
 	name = "Genetic Bone Snap"

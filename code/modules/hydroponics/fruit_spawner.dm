@@ -12,7 +12,7 @@
 	var/turf/T = get_turf(src)
 	var/obj/structure/closet/C = locate() in T
 	var/datum/seed/S = SSplants.seeds[seedtype]
-	S.harvest(T || C,0,0,1)
+	S.harvest(C || T,0,0,1)
 	return INITIALIZE_HINT_QDEL
 
 /obj/fruitspawner/cabbage

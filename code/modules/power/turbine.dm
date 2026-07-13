@@ -112,7 +112,6 @@
 		E += M.rating
 	efficiency = E / 6
 
-	dq_apply_material_synergies(src)
 /obj/machinery/compressor/attackby(obj/item/W, mob/user)
 	src.add_fingerprint(user)
 
@@ -209,7 +208,6 @@
 		P += C.rating
 	productivity = P / 6
 
-	dq_apply_material_synergies(src)
 /obj/machinery/power/turbine/proc/locate_machinery()
 	if(compressor)
 		return
@@ -259,7 +257,7 @@
 	add_avail(lastgen)
 
 	// Weird function but it works. Should be something else...
-	var/newrpm = (compressor.gas_contained.return_temperature() * compressor.gas_contained.total_moles())/4
+	var/newrpm = ((compressor.gas_contained.return_temperature()) * compressor.gas_contained.total_moles())/4
 
 	newrpm = max(0, newrpm)
 

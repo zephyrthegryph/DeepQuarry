@@ -24,8 +24,7 @@
 
 	var/dir_in = 2						//What direction will the mech face when entered/powered on? Defaults to South.
 	var/step_energy_drain = 10
-	var/health = 300 					//Health is health
-	var/maxhealth = 300 				//Maxhealth is maxhealth.
+	max_integrity = 300 				//Chassis HP, backed by the TG atom_integrity system.
 	var/deflect_chance = 10 			//Chance to deflect the incoming projectiles, hits, or lesser the effect of ex_act.
 
 	var/damage_minimum = 10				//Incoming damage lower than this won't actually deal damage. Scrapes shouldn't be a real thing.
@@ -359,9 +358,10 @@
 // Normalizing cabin air temperature to 20 degrees celsius.
 // Called every fourth process() tick (20 deciseconds).
 /obj/mecha/proc/process_preserve_temp()
-	if (cabin_air && cabin_air.volume > 0)
-		var/delta = cabin_air.return_temperature() - T20C
-		cabin_air.set_temperature(cabin_air.return_temperature() - max(-10, min(10, round(delta/4,0.1))))
+	if (cabin_air && cabin_air.return_volume() > 0)
+		var/cur = cabin_air.return_temperature()  // arena-authoritative; the DM mirror can lag
+		var/delta = cur - T20C
+		cabin_air.set_temperature(cur - max(-10, min(10, round(delta/4,0.1))))
 
 // Handles internal air tank action.
 // Called every third process() tick (15 deciseconds).
@@ -376,7 +376,7 @@
 
 		if(pressure_delta > 0) //cabin pressure lower than release pressure
 			if(tank_air.return_temperature() > 0)
-				transfer_moles = pressure_delta*cabin_air.volume/(cabin_air.return_temperature() * R_IDEAL_GAS_EQUATION)
+				transfer_moles = pressure_delta*cabin_air.return_volume()/(cabin_air.return_temperature() * R_IDEAL_GAS_EQUATION)
 				var/datum/gas_mixture/removed = tank_air.remove(transfer_moles)
 				cabin_air.merge(removed)
 
@@ -387,7 +387,7 @@
 			if(t_air)
 				pressure_delta = min(cabin_pressure - t_air.return_pressure(), pressure_delta)
 			if(pressure_delta > 0) //if location pressure is lower than cabin pressure
-				transfer_moles = pressure_delta*cabin_air.volume/(cabin_air.return_temperature() * R_IDEAL_GAS_EQUATION)
+				transfer_moles = pressure_delta*cabin_air.return_volume()/(cabin_air.return_temperature() * R_IDEAL_GAS_EQUATION)
 
 				var/datum/gas_mixture/removed = cabin_air.remove(transfer_moles)
 				if(t_air)
@@ -422,9 +422,9 @@
 			var/datum/gas_mixture/int_tank_air = internal_tank.return_air()
 			if(int_tank_air && int_tank_air.return_pressure() > TANK_LEAK_PRESSURE && !(hasInternalDamage(MECHA_INT_TANK_BREACH)))
 				setInternalDamage(MECHA_INT_TANK_BREACH)
-			if(int_tank_air && int_tank_air.volume > 0) //heat the air_contents
+			if(int_tank_air && int_tank_air.return_volume() > 0) //heat the air_contents
 				int_tank_air.set_temperature(min(6000+T0C, int_tank_air.return_temperature()+rand(10,15)))
-		if(cabin_air && cabin_air.volume>0)
+		if(cabin_air && cabin_air.return_volume()>0)
 			cabin_air.set_temperature(min(6000+T0C, cabin_air.return_temperature()+rand(10,15)))
 			if(cabin_air.return_temperature()>max_temperature/2)
 				take_damage(4/round(max_temperature/cabin_air.return_temperature(),0.1),"fire")
@@ -480,8 +480,10 @@
 	cabin_air.set_temperature(T20C)
 	cabin_air.set_volume(200)
 	// adjust_multi was XGM; LINDA's gas_mixture has adjust_gas per-call.
-	var/moles_o2 = O2STANDARD * cabin_air.volume / (R_IDEAL_GAS_EQUATION * cabin_air.return_temperature())
-	var/moles_n2 = N2STANDARD * cabin_air.volume / (R_IDEAL_GAS_EQUATION * cabin_air.return_temperature())
+	var/cabin_volume = cabin_air.return_volume()
+	var/cabin_temperature = cabin_air.return_temperature()
+	var/moles_o2 = O2STANDARD * cabin_volume / (R_IDEAL_GAS_EQUATION * cabin_temperature)
+	var/moles_n2 = N2STANDARD * cabin_volume / (R_IDEAL_GAS_EQUATION * cabin_temperature)
 	cabin_air.adjust_gas(GAS_O2, moles_o2)
 	cabin_air.adjust_gas(GAS_N2, moles_n2)
 	return cabin_air
@@ -543,7 +545,7 @@
 		. += "It does not seem to have a completed hull."
 
 
-	var/integrity = health/initial(health)*100
+	var/integrity = get_integrity()/max_integrity*100
 	switch(integrity)
 		if(85 to 100)
 			. += "It's fully intact."
@@ -834,8 +836,8 @@
 		return 0
 
 	if(overload)//Check if you have leg overload
-		health--
-		if(health < initial(health) - initial(health)/3)
+		update_integrity(get_integrity() - 1)
+		if(get_integrity() < max_integrity - max_integrity/3)
 			overload = 0
 			step_energy_drain = initial(step_energy_drain)
 			src.occupant_message(span_red("Leg actuators damage threshold exceded. Disabling overload."))
@@ -978,7 +980,7 @@
 /obj/mecha/proc/check_for_internal_damage(list/possible_int_damage,ignore_threshold=null)
 	if(!islist(possible_int_damage) || isemptylist(possible_int_damage)) return
 	if(prob(30))
-		if(ignore_threshold || src.health*100/initial(src.health) < src.internal_damage_threshold)
+		if(ignore_threshold || src.get_integrity()*100/max_integrity < src.internal_damage_threshold)
 			for(var/T in possible_int_damage)
 				if(internal_damage & T)
 					possible_int_damage -= T
@@ -988,7 +990,7 @@
 			return	//It already hurts to get some, lets not get both.
 
 	if(prob(10))
-		if(ignore_threshold || src.health*100/initial(src.health) < src.internal_damage_threshold)
+		if(ignore_threshold || src.get_integrity()*100/max_integrity < src.internal_damage_threshold)
 			var/obj/item/mecha_parts/mecha_equipment/destr = safepick(equipment)
 			if(destr)
 				destr.destroy()
@@ -1029,7 +1031,7 @@
 
 		damage = components_handle_damage(damage,type)
 
-		health -= damage
+		update_integrity(get_integrity() - damage)
 
 		update_health()
 		log_append_to_last("Took [damage] points of damage. Damage type: \"[type]\".",1)
@@ -1079,7 +1081,7 @@
 	return 1
 
 /obj/mecha/proc/update_health()
-	if(src.health > 0)
+	if(get_integrity() > 0)
 		src.spark_system.start()
 	else
 		qdel(src)
@@ -1314,18 +1316,18 @@
 		src.log_append_to_last("Armor saved, changing severity to [severity].")
 	switch(severity)
 		if(1.0)
-			src.take_damage(initial(src.health), "bomb")
+			src.take_damage(max_integrity, "bomb")
 		if(2.0)
 			if (prob(30))
-				src.take_damage(initial(src.health), "bomb")
+				src.take_damage(max_integrity, "bomb")
 			else
-				src.take_damage(initial(src.health)/2, "bomb")
+				src.take_damage(max_integrity/2, "bomb")
 				src.check_for_internal_damage(list(MECHA_INT_FIRE,MECHA_INT_TEMP_CONTROL,MECHA_INT_TANK_BREACH,MECHA_INT_CONTROL_LOST,MECHA_INT_SHORT_CIRCUIT),1)
 		if(3.0)
 			if (prob(5))
 				qdel(src)
 			else
-				src.take_damage(initial(src.health)/5, "bomb")
+				src.take_damage(max_integrity/5, "bomb")
 				src.check_for_internal_damage(list(MECHA_INT_FIRE,MECHA_INT_TEMP_CONTROL,MECHA_INT_TANK_BREACH,MECHA_INT_CONTROL_LOST,MECHA_INT_SHORT_CIRCUIT),1)
 	return
 
@@ -1569,10 +1571,10 @@
 				to_chat(user, span_notice("You repair the damaged gas tank."))
 		else
 			return
-		if((src.health<initial(src.health)) || (HC.integrity<HC.max_integrity) || (AC.integrity<AC.max_integrity))
-			if(src.health<initial(src.health))
+		if((get_integrity()<max_integrity) || (HC.integrity<HC.max_integrity) || (AC.integrity<AC.max_integrity))
+			if(get_integrity()<max_integrity)
 				to_chat(user, span_notice("You repair some damage to [src.name]."))
-				src.health += min(10, initial(src.health)-src.health)
+				repair_damage(min(10, max_integrity - get_integrity()))
 				update_damage_alerts()
 			else	if(HC.integrity<HC.max_integrity)
 				to_chat(user, span_notice("You repair some damage to [HC.name]."))
@@ -2310,7 +2312,7 @@
 	data["armor_percent"] = AC ? round(AC.integrity / AC.max_integrity * 100, 0.1) : 0
 	data["has_hull"] = !!HC
 	data["hull_percent"] = HC ? round(HC.integrity / HC.max_integrity * 100, 0.1) : 0
-	data["integrity_percent"] = round(health / initial(health) * 100, 0.1)
+	data["integrity_percent"] = round(get_integrity() / max_integrity * 100, 0.1)
 	// Power.
 	var/cell_charge = get_charge()
 	data["cell_percent"] = isnull(cell_charge) ? null : cell.percent()
@@ -2490,7 +2492,7 @@
 
 
 /obj/mecha/proc/get_stats_part()
-	var/integrity = health/initial(health)*100
+	var/integrity = get_integrity()/max_integrity*100
 	var/cell_charge = get_charge()
 	// internal_tank is now /obj/item/tank, no return_pressure/return_temperature
 	// procs on it; read through air_contents (a /datum/gas_mixture).
@@ -2819,7 +2821,9 @@
 				internal_tank_valve = new_pressure
 				to_chat(user, "The internal pressure valve has been set to [internal_tank_valve]kPa.")
 	if(href_list["remove_passenger"] && state >= MECHA_BOLTS_SECURED)
-		var/mob/user = top_filter.getMob("user")
+		if(!in_range(src, usr))
+			return
+		var/mob/user = usr
 		var/list/passengers = list()
 		for (var/obj/item/mecha_parts/mecha_equipment/tool/passenger/P in contents)
 			if (P.occupant)
@@ -3089,7 +3093,7 @@
 
 /obj/mecha/proc/update_damage_alerts()
 	if(occupant)
-		var/integrity = health/initial(health)*100
+		var/integrity = get_integrity()/max_integrity*100
 		switch(integrity)
 			if(30 to 45)
 				occupant.throw_alert("mech damage", /atom/movable/screen/alert/low_mech_integrity, 1)

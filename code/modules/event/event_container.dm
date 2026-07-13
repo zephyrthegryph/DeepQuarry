@@ -85,9 +85,9 @@
 		new /datum/event_meta(EVENT_LEVEL_MODERATE, "Maintenance Critter",		/datum/event/maintenance_critter,		175,	list(DEPARTMENT_ANY = 5), FALSE),
 		new /datum/event_meta(EVENT_LEVEL_MODERATE, "Meteor Shower",			/datum/event/meteor_wave,				-50,	list(DEPARTMENT_ENGINEERING = 45, DEPARTMENT_ANY = 2), TRUE, min_jobs = list(DEPARTMENT_ENGINEERING = 2)),
 		//New CHOMPStation event. Mice and lizards grow into rats and lizardmen respectively.
-		new /datum/event_meta(EVENT_LEVEL_MODERATE, "Mutants",					/datum/event/mutants,					20,		list(DEPARTMENT_ANY = 15, DEPARTMENT_SECURITY = 25, DEPARTMENT_ANY = 2), TRUE),
+		new /datum/event_meta(EVENT_LEVEL_MODERATE, "Mutants",					/datum/event/mutants,					20,		list(DEPARTMENT_ANY = 15, DEPARTMENT_SECURITY = 25), TRUE),
 		new /datum/event_meta(EVENT_LEVEL_MODERATE, "Pyroclastic Anomaly", 		/datum/event/anomaly/pyro,				-40,	list(DEPARTMENT_ENGINEERING = 30, JOB_CHIEF_ENGINEER = 20, DEPARTMENT_RESEARCH = 20, JOB_RESEARCH_DIRECTOR = 10, DEPARTMENT_ANY = 2), TRUE, min_jobs = list(DEPARTMENT_ENGINEERING = 2)),
-		new /datum/event_meta(EVENT_LEVEL_MODERATE, "Radiation Storm",			/datum/event/radiation_storm, 			50,		list(DEPARTMENT_MEDICAL = 50, DEPARTMENT_MEDICAL = 2), TRUE),
+		new /datum/event_meta(EVENT_LEVEL_MODERATE, "Radiation Storm",			/datum/event/radiation_storm, 			50,		list(DEPARTMENT_MEDICAL = 50, DEPARTMENT_ANY = 2), TRUE),
 		new /datum/event_meta(EVENT_LEVEL_MODERATE, "Rogue Drones",				/datum/event/rogue_drone, 				-30,	list(DEPARTMENT_SECURITY = 25, JOB_HEAD_OF_SECURITY = 35, JOB_WARDEN = 35, DEPARTMENT_ANY = 2), min_jobs = list(DEPARTMENT_SECURITY = 2)),
 		// Radiation, but only in space.
 		new /datum/event_meta(EVENT_LEVEL_MODERATE, "Solar Storm",				/datum/event/solar_storm, 				20,		list(DEPARTMENT_ENGINEERING = 40, DEPARTMENT_SECURITY = 20, DEPARTMENT_ANY = 2), TRUE),
@@ -109,7 +109,7 @@
 		new /datum/event_meta(EVENT_LEVEL_MODERATE, "Disease Outbreak",			/datum/event/disease_outbreak,			-30,	list(DEPARTMENT_MEDICAL = 30, DEPARTMENT_ANY = 1), TRUE, min_jobs = list(DEPARTMENT_MEDICAL = 2)),
 		new /datum/event_meta(EVENT_LEVEL_MODERATE, "Virology Breach",			/datum/event/prison_break/virology,		0,		list(DEPARTMENT_MEDICAL = 100), TRUE, min_jobs = list(DEPARTMENT_MEDICAL = 1)),
 		new /datum/event_meta(EVENT_LEVEL_MODERATE, "Wormholes",				/datum/event/wormholes,	 				20,		list(DEPARTMENT_ANY = 5)),
-		new /datum/event_meta(EVENT_LEVEL_MODERATE, "Xenobiology Breach",		/datum/event/prison_break/xenobiology,	0,		list(DEPARTMENT_RESEARCH = 100), TRUE, min_jobs = list(DEPARTMENT_RESEARCH = 1), min_jobs = list(DEPARTMENT_RESEARCH = 1, DEPARTMENT_SECURITY =1)),
+		new /datum/event_meta(EVENT_LEVEL_MODERATE, "Xenobiology Breach",		/datum/event/prison_break/xenobiology,	0,		list(DEPARTMENT_RESEARCH = 100), TRUE, min_jobs = list(DEPARTMENT_RESEARCH = 1, DEPARTMENT_SECURITY =1)),
 // new /datum/event_meta(EVENT_LEVEL_MODERATE, "Lost Spiders", /datum/event/spider_migration, 0, list(DEPARTMENT_SECURITY = 30), 1), // // Moved to disabled. This is a YW feature that spawns spiders on carp spawns.
 	))
 

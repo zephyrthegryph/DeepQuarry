@@ -451,7 +451,8 @@
 		if(O)
 			to_chat(user, span_notice("There is already a pen in \the [src]."))
 		else
-			user.drop_item(src)
+			user.drop_item(C)
+			C.forceMove(src)
 			to_chat(user, span_notice("You slot \the [C] into \the [src]."))
 			add_overlay("pda-pen")
 	return

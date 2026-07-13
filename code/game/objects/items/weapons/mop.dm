@@ -39,10 +39,9 @@ GLOBAL_LIST_BOILERPLATE(all_mops, /obj/item/mop)
 			user.balloon_alert(user, "you have finished mopping!")
 
 
-/obj/effect/attackby(obj/item/I, mob/user)
-	if(istype(I, /obj/item/mop) || istype(I, /obj/item/soap))
-		return
-	..()
+// NOTE: the /obj/effect/attackby(mop/soap) no-op override lives in mop_deploy.dm (included later, so it
+// wins under DM's last-include-wins). A duplicate here was silently discarded — and is a hard
+// DuplicateProcDefinition error under OpenDream — so it has been removed.
 
 /*
  * Advanced Mop

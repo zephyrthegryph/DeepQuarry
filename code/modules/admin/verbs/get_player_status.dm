@@ -10,6 +10,8 @@ ADMIN_VERB(getPlayerStatus, R_FUN, "Report Player Status", "Get information on a
 
 	//Initializing our working list
 	for(var/mob/living/player in GLOB.player_list)
+		if(!player.client)
+			continue
 		players += 1
 		if(player.client.inactivity > INACTIVITY_CAP)
 			inactives += 1

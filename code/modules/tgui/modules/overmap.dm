@@ -281,11 +281,11 @@
 	if(sensors)
 		data["on"] = sensors.use_power
 		data["range"] = sensors.range
-		data["health"] = sensors.health
-		data["max_health"] = sensors.max_health
+		data["health"] = sensors.get_integrity()
+		data["max_health"] = sensors.max_integrity
 		data["heat"] = sensors.heat
 		data["critical_heat"] = sensors.critical_heat
-		if(sensors.health == 0)
+		if(sensors.get_integrity() <= 0)
 			data["status"] = "DESTROYED"
 		else if(!sensors.powered())
 			data["status"] = "NO POWER"
@@ -432,17 +432,19 @@
 
 		if("set_limit")
 			var/datum/ship_engine/E = locate(params["engine"])
+			if(!istype(E))
+				return TRUE
 			var/newlim = tgui_input_number(ui.user, "Input new thrust limit (0..100)", "Thrust limit", E.get_thrust_limit(), 100, 0)
 			var/limit = clamp(newlim/100, 0, 1)
-			if(istype(E))
-				E.set_thrust_limit(limit)
+			E.set_thrust_limit(limit)
 			. = TRUE
 
 		if("limit")
 			var/datum/ship_engine/E = locate(params["engine"])
+			if(!istype(E))
+				return TRUE
 			var/limit = clamp(E.get_thrust_limit() + text2num(params["limit"]), 0, 1)
-			if(istype(E))
-				E.set_thrust_limit(limit)
+			E.set_thrust_limit(limit)
 			. = TRUE
 
 		if("toggle_engine")

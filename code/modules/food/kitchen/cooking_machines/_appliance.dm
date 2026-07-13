@@ -528,7 +528,7 @@
 					totalcolour = S.filling_color
 				else
 					var/t = buffer.total_volume + S.reagents.total_volume
-					t = buffer.total_volume / y
+					t = buffer.total_volume / t
 					totalcolour = BlendRGB(totalcolour, S.filling_color, t)
 					//Blend colours in order to find a good filling color
 
@@ -893,7 +893,6 @@
 	// to_world("RefreshParts returned cooking power of [cooking_power] during this step.") // Debug lines, uncomment if you need to test.
 
 
-	dq_apply_material_synergies(src)
 /obj/machinery/appliance/proc/toggle_safety(mob/user)
 	food_safety = !food_safety
 	to_chat(user, span_notice("You flip \the [src]'s safe mode switch. Safe mode is now [food_safety ? "on" : "off"]."))

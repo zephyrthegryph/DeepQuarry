@@ -49,7 +49,7 @@
 		return
 	if (!loading?.reagents?.total_volume)
 		to_chat(user, span_notice("Nothing to scoop up in \the [loading]!"))
-
+		return
 
 	loaded = "\the [loading]"
 	user.visible_message( \

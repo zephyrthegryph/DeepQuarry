@@ -190,7 +190,7 @@
 		if("auth")
 			var/dkey = params["key"]
 			if(dkey && dkey != "")
-				if(linkedServer.decryptkey == dkey)
+				if(linkedServer && linkedServer.decryptkey == dkey)
 					auth = TRUE
 				else
 					temp = incorrectkey

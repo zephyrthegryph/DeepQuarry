@@ -44,7 +44,7 @@
 			else
 				T.emp_act(EMP_MEDIUM)
 		//Slightly less painful
-		else if(distance <= second_range)
+		else if(distance < second_range)
 			T.emp_act(EMP_MEDIUM)
 		else if(distance == second_range)
 			if(prob(50))
@@ -52,7 +52,7 @@
 			else
 				T.emp_act(EMP_LIGHT)
 		//Even less slightly less painful
-		else if(distance <= third_range)
+		else if(distance < third_range)
 			T.emp_act(EMP_LIGHT)
 		else if(distance == third_range)
 			if(prob(50))

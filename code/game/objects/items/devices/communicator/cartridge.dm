@@ -64,7 +64,10 @@
 							S.code = newVal
 
 						if("Frequency")
-							S.frequency = newVal
+							// set_frequency() re-registers with SSradio; a bare var
+							// write leaves the signaler listening (and later stranded,
+							// unable to GC) on its old frequency.
+							S.set_frequency(sanitize_frequency(newVal, RADIO_LOW_FREQ, RADIO_HIGH_FREQ))
 
 	// Refresh list of powernet sensors
 	if(href_list["powernet_refresh"])
@@ -791,7 +794,7 @@
 
 /obj/item/commcard/head/ce/Initialize(mapload)
 	..()
-	internal_devices |= new /obj.item/analyzer(src)
+	internal_devices |= new /obj/item/analyzer(src)
 	internal_devices |= new /obj/item/halogen_counter(src)
 	return INITIALIZE_HINT_LATELOAD
 
@@ -846,7 +849,7 @@
 
 /obj/item/commcard/head/captain/Initialize(mapload)
 	. = ..()
-	internal_devices += new /obj.item/analyzer(src)
+	internal_devices += new /obj/item/analyzer(src)
 	internal_devices += new /obj/item/healthanalyzer(src)
 	internal_devices += new /obj/item/reagent_scanner(src)
 	internal_devices += new /obj/item/halogen_counter(src)

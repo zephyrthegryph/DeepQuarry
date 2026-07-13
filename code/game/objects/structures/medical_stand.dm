@@ -188,6 +188,8 @@
 				user.visible_message(span_warningplain(span_bold("\The [user]") + " removes \the [tank] from \the [src]."), span_warning("You remove \the [tank] from \the [src]."))
 				user.put_in_hands(tank)
 				tank = null
+				valve_opened = FALSE
+				STOP_PROCESSING(SSobj, src)
 				update_icon()
 				return
 			else if (!is_loosen)

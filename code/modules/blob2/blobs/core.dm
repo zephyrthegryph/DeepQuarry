@@ -115,7 +115,7 @@ GLOBAL_LIST_EMPTY(blob_cores)
 
 /obj/structure/blob/core/Destroy()
 	var/turf/T = get_turf(src)
-	new /obj/item/blobcore_chunk(T, overmind.blob_type)
+	new /obj/item/blobcore_chunk(T, overmind?.blob_type)
 
 	GLOB.blob_cores -= src
 	if(overmind)

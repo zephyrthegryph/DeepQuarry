@@ -141,9 +141,9 @@ GLOBAL_LIST_EMPTY(fake_sunlight_zs)
 	var/max = z
 	for(var/zee in zees)
 		if(zee < min)
-			min = z
+			min = zee
 		if(zee > max)
-			max = z
+			max = zee
 
 	var/list/all_turfs = block(locate(1, 1, min), locate(world.maxx, world.maxy, max))
 	var/list/turfs_to_use = list()

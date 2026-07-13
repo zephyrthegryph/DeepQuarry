@@ -145,11 +145,11 @@
 		M.apply_damages(8 / move_delay)		// Smaller amount of damage than a tug, since this will always be possible because Quads don't have safeties.
 		var/list/throw_dirs = list(1, 2, 4, 8, 5, 6, 9, 10)
 		if(!emagged)						// By the power of Bumpers TM, it won't throw them ahead of the quad's path unless it's emagged or the person turns.
-			health -= round(M.mob_size / 2)
+			take_damage(round(M.mob_size / 2), BRUTE)
 			throw_dirs -= dir
 			throw_dirs -= get_dir(M, src) //Don't throw it AT the quad either.
 		else
-			health -= round(M.mob_size / 4) // Less damage if they actually put the point in to emag it.
+			take_damage(round(M.mob_size / 4), BRUTE) // Less damage if they actually put the point in to emag it.
 		var/turf/T2 = get_step(A, pick(throw_dirs))
 		M.throw_at(T2, 1, 1, src)
 		if(ishuman(load))

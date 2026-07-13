@@ -225,7 +225,7 @@
 	else
 		if(W.damtype == BRUTE || W.damtype == BURN)
 			hit(W.force)
-			if(health <= 7)
+			if(get_integrity() <= 7)
 				anchored = FALSE
 				update_nearby_icons()
 				step(src, get_dir(user, src))
@@ -456,6 +456,7 @@
 	currentarea = get_area(src.loc)
 	if(!currentarea)
 		qdel(src)
+		return
 
 	if(eventstarted)
 		to_chat(user, "The event has already begun!")

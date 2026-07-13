@@ -490,7 +490,7 @@
 
 /obj/machinery/sleeper/proc/go_out()
 	if(!occupant || occupant.loc != src)
-		occupant.cozyloop.stop() // Cozy Music
+		occupant?.cozyloop?.stop() // Cozy Music
 		occupant = null // JUST IN CASE
 		return
 	occupant.Stasis(0)

@@ -33,13 +33,16 @@
 	var/pressure_difference = 0
 	///Where the difference come from (from higher pressure to lower pressure)
 	var/pressure_direction = 0
-	///Target pressure the Rust katmos equalize pass drives this turf toward during a
-	///zoned decompression/equalization cycle. Written and read by process_turf_equalize_auxtools.
-	var/pressure_specific_target = 0
+	/// katmos target turf ref, written/read by the Rust equalize pass
+	/// (turf.pressure_specific_target). Declared so the auxmos read/write_var_id
+	/// calls don't panic (NonExistentString); DM never sets it directly.
+	var/pressure_specific_target
 
-	///Excited group we are part of
-	var/datum/excited_group/excited_group
-	///Are we active?
+	/// Excited-group tracking moved to the Rust arena. This var is retained
+	/// (untyped) only so lingering external readers (e.g. LINDA_fire hotspot
+	/// processing) still resolve; the DM engine no longer maintains it.
+	var/excited_group
+	///Are we active? Retained for legacy readers; auxmos owns activity now.
 	var/excited = FALSE
 	///Our gas mix
 	var/datum/gas_mixture/air
@@ -69,25 +72,33 @@
 				var/datum/gas_mixture/immutable/planetary/mix = new
 				mix.parse_string_immutable(initial_gas_mix)
 				SSair.planetary[initial_gas_mix] = mix
-	return ..()
+	. = ..()
+	// Register this turf's air ref in the Rust arena. During roundstart mapload
+	// SSair isn't initialised yet — setup_allturfs/Initalize_Atmos registers every
+	// turf then. For turfs created AFTER SSair init (ChangeTurf, runtime spawns)
+	// we register here so auxmos picks them up. air_update_turf (called by the
+	// ChangeTurf path) then rebuilds + pushes adjacency.
+	if(SSair.initialized)
+		update_air_ref(0)
 
 /turf/open/Destroy()
 	if(active_hotspot)
 		QDEL_NULL(active_hotspot)
-	// Remove src from SSair.active_turfs BEFORE clearing adjacency so the next
-	// SSair tick doesn't process this turf. ChangeTurf-style replacement swaps
-	// a new turf into the same world coords; if the old turf was active when
-	// it got swapped, active_turfs ends up holding a ref that BYOND resolves
-	// to the NEW turf (which may be a wall with null air → process_cell crash).
+	// Unregister src's air ref from the Rust arena BEFORE clearing adjacency so the
+	// next SSair tick doesn't process this dying turf. ChangeTurf-style replacement
+	// swaps a new turf into the same world coords; unregistering here drops the old
+	// slot cleanly (remove_from_active -> update_air_ref(-1)).
 	if(SSair)
 		SSair.remove_from_active(src)
-	// Adds the adjacent turfs to the current atmos processing AND clears src
-	// out of each neighbor's atmos_adjacent_turfs so a future process_cell on
-	// the neighbor doesn't try to archive the dead turf's null air.
+	// Clear src out of each neighbour's atmos_adjacent_turfs, push the corrected
+	// adjacency to the arena, and re-register the neighbour so auxmos reconsiders
+	// it now that a bordering turf is gone.
 	for(var/turf/near_turf as anything in atmos_adjacent_turfs)
 		if(near_turf.atmos_adjacent_turfs)
 			near_turf.atmos_adjacent_turfs -= src
 			UNSETEMPTY(near_turf.atmos_adjacent_turfs)
+		if(SSair?.initialized)
+			near_turf.__update_auxtools_turf_adjacency_info()
 		SSair.add_to_active(near_turf)
 	atmos_adjacent_turfs = null
 	return ..()
@@ -97,24 +108,13 @@
 ///Copies all gas info from the turf into a new gas_mixture, along with our temperature
 ///Returns the created gas_mixture
 /turf/proc/create_gas_mixture()
-	var/datum/gas_mixture/mix = SSair.parse_gas_string(initial_gas_mix, /datum/gas_mixture)
+	var/datum/gas_mixture/mix = SSair.parse_gas_string(initial_gas_mix, /datum/gas_mixture/turf)
 
 	//acounts for changes in temperature
 	var/turf/parent = parent_type
 	if(temperature != initial(temperature) || temperature != initial(parent.temperature))
-		mix.set_temperature(temperature)
+		mix.set_temperature(temperature) // arena-backed write (no DM mirror under the opaque-handle model)
 
-	return mix
-
-// Space turfs are constant vacuum sinks: gas that vents into space is gone, and
-// the Rust turf engine identifies space (for explosive decompression and to
-// no-op writes into it) by the mixture's immutable flag. create_gas_mixture()
-// hands out a plain mutable mixture, so mark space's Rust slot immutable here —
-// otherwise space acts as a finite tank and a room breached to space equalizes
-// with it instead of depressurising.
-/turf/space/create_gas_mixture()
-	var/datum/gas_mixture/mix = ..()
-	mix.mark_immutable()
 	return mix
 
 /turf/open/assume_air(datum/gas_mixture/giver) //use this for machines to adjust air
@@ -122,6 +122,10 @@
 		return FALSE
 	air.merge(giver)
 	update_visuals()
+	// air_update_turf now (re)pushes arena adjacency both directions even with
+	// update=FALSE, so a turf that just received gas has live neighbour edges and
+	// auxmos will spread the gas out (critical on runtime-built turfs whose edges
+	// were never pushed). No need for the expensive update=TRUE geometry rescan.
 	air_update_turf(FALSE, FALSE)
 	return TRUE
 
@@ -147,7 +151,16 @@
 
 /turf/open/return_air()
 	RETURN_TYPE(/datum/gas_mixture)
-	return air
+	// After the /turf/simulated → /turf/open reparent, walls / dense / vacuum tiles
+	// are /turf/open subtypes with air = null. Stock /tg/ never hits this (walls are
+	// a separate /turf/closed type with no return_air), so its ~260 return_air()
+	// callers assume a non-null mixture and deref it directly — every one of them is
+	// a latent null-crash on an airless tile (the external dock airlock sensors hit
+	// it every tick). Fall back to the base turf's non-null empty (vacuum) mixture
+	// for airless tiles instead of returning null: consumers read 0-pressure vacuum,
+	// which is the correct answer for a wall/space tile, rather than runtiming. The
+	// atmos hot path (share/process_cell) uses .air directly and is unaffected.
+	return air || ..()
 
 /turf/open/return_analyzable_air()
 	return return_air()
@@ -199,32 +212,64 @@
 	if(should_atmos_process(air, exposed_temperature))
 		atmos_expose(air, exposed_temperature)
 
-/turf/proc/archive()
-	temperature_archived = temperature
-
-/turf/open/archive()
-	// walls/rocks (blocks_air=1, air=null) dispatch through here
-	// after the /turf/simulated → /turf/open reparent. Fall through to the
-	// base implementation that just records temperature_archived.
-	if(!air)
-		temperature_archived = temperature
-		return
-	LINDA_CYCLE_ARCHIVE(src)
+// /turf/proc/archive + /turf/open/archive removed — turf FDM archiving is Rust-side
+// now (auxmos snapshots inside process_turfs). temperature_archived is still
+// declared on /turf for legacy readers but is no longer maintained by an archive
+// pass; nothing in the (deleted) DM turf engine reads it anymore.
 
 /////////////////////////GAS OVERLAYS//////////////////////////////
 
 
+/**
+ * Recompute this turf's gas overlays from its (arena-backed) air contents and
+ * apply the diff to vis_contents. Called directly by ~56 DM atmos callers
+ * (pumps, scrubbers, canisters, vents) after they mutate a turf's air. The Rust
+ * turf-processing path does NOT call this — it calls set_visuals() with a
+ * precomputed overlay list (see below).
+ */
 /turf/open/proc/update_visuals()
+	set_visuals()
+
+/**
+ * Recompute this turf's gas overlays from its (arena-backed) air and diff the
+ * result into vis_contents. This is the single source of truth for gas visuals.
+ *
+ * It's called two ways: (a) directly by ~56 DM atmos callers (pumps, canisters,
+ * vents) via update_visuals() after they mutate air; (b) by the auxmos turf-
+ * processing loop (verdigris turfs.rs::update_visuals -> turf.set_visuals(list))
+ * for every turf whose gas changed during the FDM share — this is how a turf that
+ * RECEIVED gas from a neighbour (not the injector) gets its overlay updated.
+ *
+ * The Rust callback passes its own computed overlay list, but we IGNORE it and
+ * recompute from air: the Rust-side gas_data.overlays table is a compat shim and
+ * the turf's arena air is authoritative, so recomputing here is always correct and
+ * keeps the DM path and the Rust-triggered path identical. Empty air clears.
+ */
+/turf/open/proc/set_visuals(list/_rust_overlay_types)
+	// (Formerly refreshed a DM temperature mirror here. Under the /tg/ opaque-handle
+	// model there is no mirror — the arena is authoritative and read via
+	// return_temperature() — so this per-turf sync is gone. Do NOT re-add a
+	// set_temperature() here: writing the arena its own value re-marks the turf active
+	// and causes endless re-processing/re-visualising.)
+	var/list/new_overlay_types
+	if(air)
+		// get_gases() returns an assoc id -> moles (id = gas-type path). Per-gas meta
+		// lives in the global meta table keyed by the same path.
+		var/list/gases = air.get_gases()
+		var/offset = GET_TURF_PLANE_OFFSET(src) + 1
+		for(var/id in gases)
+			if(GLOB.nonoverlaying_gases[id])
+				continue
+			var/list/gas_meta = GLOB.meta_gas_info[id]
+			if(!gas_meta)
+				continue
+			var/moles = gases[id]
+			if(moles <= gas_meta[META_GAS_MOLES_VISIBLE])
+				continue
+			var/list/gas_overlay = gas_meta[META_GAS_OVERLAY][offset]
+			LAZYADD(new_overlay_types, gas_overlay[min(TOTAL_VISIBLE_STATES, CEILING(moles / MOLES_GAS_VISIBLE_STEP, 1))])
+
 	var/list/atmos_overlay_types = src.atmos_overlay_types // Cache for free performance
-
-	if(!air) // 2019-05-14: was not able to get this path to fire in testing. Consider removing/looking at callers -Naksu
-		if (atmos_overlay_types)
-			for(var/overlay in atmos_overlay_types)
-				vis_contents -= overlay
-			src.atmos_overlay_types = null
-		return
-
-	var/list/new_overlay_types = air.return_visuals(src)
 
 	if (atmos_overlay_types)
 		for(var/overlay in atmos_overlay_types-new_overlay_types) //doesn't remove overlays that would only be added
@@ -239,41 +284,59 @@
 	UNSETEMPTY(new_overlay_types)
 	src.atmos_overlay_types = new_overlay_types
 
-/// Callback the Rust auxmos post-process visual path invokes on a turf whose visible
-/// gas state changed. auxmos builds an overlay list from GLOB.gas_data.overlays (an
-/// upstream-shaped structure this fork doesn't populate) and hands it here; we ignore
-/// it and recompute overlays from our own meta_gas_info-based return_visuals() path.
-/turf/open/proc/set_visuals(list/overlay_types)
-	update_visuals()
-
-// Callbacks the Rust katmos equalize/decompression path calls back into DM. Equalize
-// is currently disabled (SSair.equalize_enabled = FALSE), so these are stubs that keep
-// the FFI surface from runtiming if a call ever slips through; Phase 3 implements them.
-/turf/proc/consider_firelocks(turf/other)
-	return
-/turf/open/proc/handle_decompression_floor_rip(sum)
-	return
-/turf/proc/should_conduct_to_space()
-	return FALSE
-
-/// Set of gases (by string id) that never draw a turf overlay, so update_visuals can
-/// skip them. Keyed by the same string id get_gases() returns.
 /proc/typecache_of_gases_with_no_overlays()
 	. = list()
 	for (var/gastype in subtypesof(/datum/gas))
 		var/datum/gas/gasvar = gastype
 		if (!initial(gasvar.gas_overlay))
-			.[initial(gasvar.id)] = TRUE
+			.[gastype] = TRUE
 
 /////////////////////////////SIMULATION///////////////////////////////////
+// The DM turf-sharing engine (process_cell, LAST_SHARE_CHECK/PLANET_SHARE_CHECK
+// macros, archive-based compare/share, the planetary-mix share pass) is DELETED.
+// Turf FDM gas sharing, excited groups and equalize all run in the Rust arena now,
+// driven by SSair.fire() via process_turfs_auxtools / process_excited_groups_auxtools
+// / process_turf_equalize_auxtools. The Rust side dispatches back into DM through
+// three callbacks that live in this file: consider_pressure_difference (below),
+// air.react(turf) (gas_mixture.dm react bind -> DM /datum/gas_reaction), and
+// turf.set_visuals(overlay_list) (above).
 
 //////////////////////////SPACEWIND/////////////////////////////
+// consider_pressure_difference is a Rust->DM callback: the arena's FDM/katmos loop
+// calls it (turf.consider_pressure_difference(enemy, diff)) for turfs with a
+// pressure delta big enough to blow things around. It appends src to
+// SSair.high_pressure_delta, which the SSAIR_HIGHPRESSURE fire() step drains into
+// high_pressure_movements().
 
 /turf/open/proc/consider_pressure_difference(turf/target_turf, difference)
 	SSair.high_pressure_delta |= src
 	if(difference > pressure_difference)
 		pressure_direction = get_dir(src, target_turf)
 		pressure_difference = difference
+
+// consider_firelocks / handle_decompression_floor_rip are Rust->DM callbacks the baked
+// auxmos katmos (equalize/decompression) loop invokes by name via call_id. They exist in
+// /tg/ and the auxmos katmos.rs still calls them:
+//   turf.consider_firelocks(other)              (katmos equalize + explosively_depressurize)
+//   turf.handle_decompression_floor_rip(sum)    (explosively_depressurize)
+// Neither had a DM definition here, so the very first equalize/decompression event would
+// hit a NonExistentString / missing-proc and panic the FFI call. These are defined on the
+// base /turf (not just /turf/open) so the string resolves for any turf the arena hands us.
+//
+// STUB: safe no-ops. DeepQuarry's firedoors (Baystation/Polaris lineage) don't use /tg's
+// automatic pressure-triggered firelock closing, and this fork doesn't rip up floor tiles
+// on decompression, so doing nothing preserves current behavior. Give either real behavior
+// later if desired — the contract is just "must not runtime/panic when called".
+
+/// Rust katmos hook: called on a turf when an adjacent turf has a large enough pressure
+/// delta that /tg would auto-close firelocks between them. No-op stub (see note above).
+/turf/proc/consider_firelocks(turf/other)
+	return
+
+/// Rust katmos hook: called during explosive depressurization; /tg rips up floor tiles
+/// under strong decompression. No-op stub (see note above). `sum` is the summed transfer.
+/turf/proc/handle_decompression_floor_rip(sum)
+	return
 
 /turf/open/proc/high_pressure_movements()
 	var/atom/movable/moving_atom
@@ -306,309 +369,34 @@
 		last_high_pressure_movement_air_cycle = SSair.times_fired
 
 ///////////////////////////EXCITED GROUPS/////////////////////////////
-
-/datum/excited_group
-	///Stores a reference to the turfs we are controlling
-	var/list/turf_list = list()
-	///If this is over EXCITED_GROUP_BREAKDOWN_CYCLES we call self_breakdown()
-	var/breakdown_cooldown = 0
-	///If this is over EXCITED_GROUP_DISMANTLE_CYCLES we call dismantle()
-	var/dismantle_cooldown = 0
-	///Used for debug to show the excited groups active and their turfs
-	var/should_display = FALSE
-	///Id of the index color of the displayed group
-	var/display_id = 0
-	///Wrapping loop of the index colors
-	var/static/wrapping_id = 0
-	///All turf reaction flags we have received.
-	var/turf_reactions = NONE
-
-/datum/excited_group/New()
-	SSair.excited_groups += src
-
-/datum/excited_group/proc/add_turf(turf/open/target_turf)
-	turf_list += target_turf
-	target_turf.excited_group = src
-	dismantle_cooldown = 0
-	if(should_display || SSair.display_all_groups)
-		display_turf(target_turf)
-
-/datum/excited_group/proc/merge_groups(datum/excited_group/target_group)
-	if(turf_list.len > target_group.turf_list.len)
-		SSair.excited_groups -= target_group
-		for(var/turf/open/group_member as anything in target_group.turf_list)
-			group_member.excited_group = src
-			turf_list += group_member
-		should_display = target_group.should_display | should_display
-		if(should_display || SSair.display_all_groups)
-			target_group.hide_turfs()
-			display_turfs()
-		breakdown_cooldown = min(breakdown_cooldown, target_group.breakdown_cooldown) //Take the smaller of the two options
-		dismantle_cooldown = 0
-	else
-		SSair.excited_groups -= src
-		for(var/turf/open/group_member as anything in turf_list)
-			group_member.excited_group = target_group
-			target_group.turf_list += group_member
-		target_group.should_display = target_group.should_display | should_display
-		if(target_group.should_display || SSair.display_all_groups)
-			hide_turfs()
-			target_group.display_turfs()
-		target_group.breakdown_cooldown = min(breakdown_cooldown, target_group.breakdown_cooldown)
-		target_group.dismantle_cooldown = 0
-
-/datum/excited_group/proc/reset_cooldowns()
-	breakdown_cooldown = 0
-	dismantle_cooldown = 0
-
-/datum/excited_group/proc/self_breakdown(roundstart = FALSE, poke_turfs = FALSE)
-	var/datum/gas_mixture/shared_mix = new
-
-	//make local for sanic speed
-	var/list/turf_list = src.turf_list
-	var/turflen = turf_list.len
-	var/imumutable_in_group = FALSE
-	var/energy = 0
-	var/heat_cap = 0
-
-	for(var/turf/open/group_member as anything in turf_list)
-		//Cache?
-		var/datum/gas_mixture/mix = group_member.air
-		if (roundstart)
-			if(istype(group_member.air, /datum/gas_mixture/immutable))
-				imumutable_in_group = TRUE
-				shared_mix.copy_from(group_member.air) //This had better be immutable young man
-				break
-			// If we're planetary use THAT mix, and stop here
-			if(group_member.planetary_atmos)
-				imumutable_in_group = TRUE
-				var/datum/gas_mixture/planetary_mix = SSair.planetary[group_member.initial_gas_mix]
-				shared_mix.copy_from(planetary_mix)
-				break
-		//"borrowing" this code from merge(), I need to play with the temp portion. Lets expand it out
-		//temperature = (giver.temperature * giver_heat_capacity + temperature * self_heat_capacity) / combined_heat_capacity
-		var/capacity = mix.heat_capacity()
-		energy += mix.return_temperature() * capacity
-		heat_cap += capacity
-
-		for(var/giver_id in mix.get_gases())
-			shared_mix.adjust_moles(giver_id, mix.get_moles(giver_id))
-
-	if(!imumutable_in_group)
-		shared_mix.set_temperature(energy / heat_cap)
-		for(var/id in shared_mix.get_gases())
-			shared_mix.set_moles(id, shared_mix.get_moles(id) / turflen)
-		shared_mix.garbage_collect()
-
-	for(var/turf/open/group_member as anything in turf_list)
-		if(group_member.planetary_atmos) //We do this as a hack to try and minimize unneeded excited group spread over planetary turfs
-			group_member.air.copy_from(SSair.planetary[group_member.initial_gas_mix]) //Comes with a cost of "slower" drains, but it's worth it
-		else
-			group_member.air.copy_from(shared_mix) //Otherwise just set the mix to a copy of our equalized mix
-		group_member.update_visuals()
-		if(poke_turfs) //Because we only activate all these once every breakdown, in event of lag due to this code and slow space + vent things, increase the wait time for breakdowns
-			SSair.add_to_active(group_member)
-			group_member.significant_share_ticker = EXCITED_GROUP_DISMANTLE_CYCLES //Max out the ticker, if they don't share next tick, nuke em
-
-	breakdown_cooldown = 0
-
-///Dismantles the excited group, puts allll the turfs to sleep
-/datum/excited_group/proc/dismantle()
-	for(var/turf/open/current_turf as anything in turf_list)
-		current_turf.excited = FALSE
-		current_turf.significant_share_ticker = 0
-		SSair.active_turfs -= current_turf
-		#ifdef VISUALIZE_ACTIVE_TURFS //Use this when you want details about how the turfs are moving, display_all_groups should work for normal operation
-		current_turf.remove_atom_colour(TEMPORARY_COLOUR_PRIORITY, COLOR_VIBRANT_LIME)
-		#endif
-	garbage_collect()
-
-//Breaks down the excited group, this doesn't sleep the turfs mind, just removes them from the group
-/datum/excited_group/proc/garbage_collect()
-	if(display_id) //If we ever did make those changes
-		hide_turfs()
-	for(var/turf/open/current_turf as anything in turf_list)
-		current_turf.excited_group = null
-	turf_list.Cut()
-	SSair.excited_groups -= src
-	if(SSair.currentpart == SSAIR_EXCITEDGROUPS)
-		SSair.currentrun -= src
-
-/datum/excited_group/proc/display_turfs()
-	if(display_id == 0) //Hasn't been shown before
-		wrapping_id = wrapping_id % GLOB.colored_turfs.len
-		wrapping_id++ //We do this after because lists index at 1
-		display_id = wrapping_id
-	for(var/thing in turf_list)
-		var/turf/display = thing
-		var/offset = GET_Z_PLANE_OFFSET(display.z) + 1
-		display.vis_contents += GLOB.colored_turfs[display_id][offset]
-
-/datum/excited_group/proc/hide_turfs()
-	for(var/thing in turf_list)
-		var/turf/display = thing
-		var/offset = GET_Z_PLANE_OFFSET(display.z) + 1
-		display.vis_contents -= GLOB.colored_turfs[display_id][offset]
-	display_id = 0
-
-/datum/excited_group/proc/display_turf(turf/thing)
-	if(display_id == 0) //Hasn't been shown before
-		wrapping_id = wrapping_id % GLOB.colored_turfs.len
-		wrapping_id++ //We do this after because lists index at 1
-		display_id = wrapping_id
-	var/offset = GET_Z_PLANE_OFFSET(thing.z) + 1
-	thing.vis_contents += GLOB.colored_turfs[display_id][offset]
+// The /datum/excited_group type and its self_breakdown/dismantle/merge_groups/
+// garbage_collect/display machinery are DELETED — excited groups are tracked in
+// the Rust arena (process_excited_groups_auxtools). Nothing in DM references a
+// /datum/excited_group anymore.
 
 ////////////////////////SUPERCONDUCTIVITY/////////////////////////////
+// LINDA's DM superconduction engine (super_conduct, conductivity_directions,
+// neighbor_conduct_with_src, temperature_share_open_to_solid,
+// share_temperature_mutual_solid, radiate_to_spess, finish_superconduction,
+// consider_superconductivity) is DELETED. Heat conduction now runs in RUST and
+// IS live: the auxmos superconductivity feature is compiled in and SSair.fire()
+// drives it via the SSAIR_SUPERCONDUCTIVITY step (process_turf_heat() — see
+// SSair.dm). Turf heat lives in the Rust superconductivity arena; read/write it
+// via /turf/proc/return_temperature() / set_temperature(), never a raw var.
+//
+// should_conduct_to_space() is a Rust->DM callback: auxmos superconduct.rs's
+// supercond_update_ref() invokes turf.should_conduct_to_space() by name via
+// call_id to decide whether a turf radiates heat to space. Reports whether this
+// turf is space-exposed: /turf/space (and the base /turf, treated as
+// unsimulated) return TRUE; simulated open turfs return FALSE.
 
-/**
-ALLLLLLLLLLLLLLLLLLLLRIGHT HERE WE GOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
-
-Read the code for more details, but first, a brief concept discussion/area
-
-Our goal here is to "model" heat moving through solid objects, so walls, windows, and sometimes doors.
-We do this by heating up the floor itself with the heat of the gasmix ontop of it, this is what the coeffs are for here, they slow that movement
-Then we go through the process below.
-
-If an active turf is fitting, we add it to processing, conduct with any covered tiles, (read windows and sometimes walls)
-Then we space some of our heat, and think about if we should stop conducting.
-**/
-
-/turf/proc/conductivity_directions()
-	if(archived_cycle < SSair.times_fired)
-		archive()
-	return ALL_CARDINALS
-
-///Returns a set of directions that we should be conducting in, NOTE, atmos_supeconductivity is ACTUALLY inversed, don't worrry about it
-/turf/open/conductivity_directions()
-	if(blocks_air)
-		return ..()
-	for(var/direction in GLOB.cardinals)
-		var/turf/checked_turf = get_step(src, direction)
-		if(!(checked_turf in atmos_adjacent_turfs) && !(atmos_supeconductivity & direction))
-			. |= direction
-
-///These two procs are a bit of a web, I belive in you
-/turf/proc/neighbor_conduct_with_src(turf/open/other)
-	if(!other.blocks_air) //Solid but neighbor is open
-		other.temperature_share_open_to_solid(src)
-	else //Both tiles are solid
-		other.share_temperature_mutual_solid(src, thermal_conductivity)
-	temperature_expose(null, temperature)
-
-/turf/open/neighbor_conduct_with_src(turf/other)
-	if(blocks_air)
-		return ..()
-
-	if(!other.blocks_air) //Both tiles are open
-		var/turf/open/open_other = other
-		open_other.air.temperature_share(air, WINDOW_HEAT_TRANSFER_COEFFICIENT)
-	else //Open but neighbor is solid
-		temperature_share_open_to_solid(other)
-	SSair.add_to_active(src)
-
-/turf/proc/super_conduct()
-	var/conductivity_directions = conductivity_directions()
-
-	if(conductivity_directions)
-		//Conduct with tiles around me
-		for(var/direction in GLOB.cardinals)
-			if(!(conductivity_directions & direction))
-				continue
-			var/turf/neighbor = get_step(src, direction)
-
-			// guard against off-map/null neighbor. get_step returns
-			// null at the world edge; rocks/walls under the reparent dispatch
-			// through /turf/open/archive which deref's .air → null crash.
-			if(!neighbor || !neighbor.thermal_conductivity)
-				continue
-			// archive() only makes sense on a turf with an air mixture; rocks
-			// (blocks_air=1, air=null) shouldn't archive even though they
-			// have a thermal_conductivity for super-conduction purposes.
-			if(istype(neighbor, /turf/open))
-				var/turf/open/open_neighbor = neighbor
-				if(open_neighbor.air && open_neighbor.archived_cycle < SSair.times_fired)
-					open_neighbor.archive()
-			else if(neighbor.archived_cycle < SSair.times_fired)
-				neighbor.archive()
-
-			neighbor.neighbor_conduct_with_src(src)
-
-			neighbor.consider_superconductivity()
-
-	radiate_to_spess()
-
-	finish_superconduction()
-
-/turf/proc/finish_superconduction(temp = temperature)
-	//Make sure still hot enough to continue conducting heat
-	if(temp < MINIMUM_TEMPERATURE_FOR_SUPERCONDUCTION)
-		SSair.active_super_conductivity -= src
-		return FALSE
-
-/turf/open/finish_superconduction()
-	//Conduct with air on my tile if I have it
-	// guard air null when blocks_air is FALSE. Previously this
-	// nulldotref'd if the turf had been space-converted or otherwise had
-	// its air swept while a superconduction tick was in flight.
-	var/share_temp = blocks_air ? temperature : air?.return_temperature()
-	if(isnull(share_temp))
-		return
-	if(..(share_temp) != FALSE && !blocks_air)
-		temperature = air.temperature_share(null, thermal_conductivity, temperature, heat_capacity)
-
-///Should we attempt to superconduct?
-/turf/proc/consider_superconductivity(starting)
-	if(!thermal_conductivity)
-		return FALSE
-
-	SSair.active_super_conductivity |= src
+/// Rust superconductivity hook: TRUE if this turf should radiate heat directly to space.
+/turf/proc/should_conduct_to_space()
 	return TRUE
 
-/turf/open/consider_superconductivity(starting)
-	// after the /turf/simulated → /turf/open reparent, walls/rocks
-	// dispatch through /turf/open but have air=null. Defer to /turf/closed
-	// behaviour (use src.temperature instead of air.temperature) so super-
-	// conduction works on walls without a null.temperature deref.
-	if(!air)
-		if(temperature < (starting ? MINIMUM_TEMPERATURE_START_SUPERCONDUCTION : MINIMUM_TEMPERATURE_FOR_SUPERCONDUCTION))
-			return FALSE
-		// Fall through to /turf base impl that just sets the active list.
-		if(!thermal_conductivity)
-			return FALSE
-		SSair.active_super_conductivity |= src
-		return TRUE
-	if(air.return_temperature() < (starting?MINIMUM_TEMPERATURE_START_SUPERCONDUCTION:MINIMUM_TEMPERATURE_FOR_SUPERCONDUCTION))
-		return FALSE
-	if(air.heat_capacity() < M_CELL_WITH_RATIO) // Was: MOLES_CELLSTANDARD*0.1*0.05 Since there are no variables here we can make this a constant.
-		return FALSE
-	return ..()
+/turf/open/should_conduct_to_space()
+	return FALSE
 
-/turf/closed/consider_superconductivity(starting)
-	if(temperature < (starting?MINIMUM_TEMPERATURE_START_SUPERCONDUCTION:MINIMUM_TEMPERATURE_FOR_SUPERCONDUCTION))
-		return FALSE
-	return ..()
+/turf/space/should_conduct_to_space()
+	return TRUE
 
-/// Radiate excess tile heat to space.
-/turf/proc/radiate_to_spess()
-	if(temperature <= T0C) // Considering 0 degC as the break even point for radiation in and out.
-		return
-	// Because we keep losing energy, makes more sense for us to be the T2 here.
-	var/delta_temperature = temperature_archived - TCMB //hardcoded space temperature
-	if(heat_capacity <= 0 || abs(delta_temperature) <= MINIMUM_TEMPERATURE_DELTA_TO_CONSIDER)
-		return
-	// Heat should be positive in most cases
-	// coefficient applied first because some turfs have very big heat caps.
-	var/heat = CALCULATE_CONDUCTION_ENERGY(thermal_conductivity * delta_temperature, HEAT_CAPACITY_VACUUM, heat_capacity)
-	temperature -= heat / heat_capacity
-
-/turf/open/proc/temperature_share_open_to_solid(turf/sharer)
-	sharer.temperature = air.temperature_share(null, sharer.thermal_conductivity, sharer.temperature, sharer.heat_capacity)
-
-/turf/proc/share_temperature_mutual_solid(turf/sharer, conduction_coefficient) //This is all just heat sharing, don't get freaked out
-	var/delta_temperature = sharer.temperature_archived - temperature_archived
-	if(abs(delta_temperature) <= MINIMUM_TEMPERATURE_DELTA_TO_CONSIDER || !heat_capacity || !sharer.heat_capacity)
-		return
-	var/heat = conduction_coefficient * CALCULATE_CONDUCTION_ENERGY(delta_temperature, heat_capacity, sharer.heat_capacity)
-	temperature += heat / heat_capacity //The higher your own heat cap the less heat you get from this arrangement
-	sharer.temperature -= heat / sharer.heat_capacity

@@ -39,7 +39,6 @@
 	chaos_eff = cap_rating
 
 
-	dq_apply_material_synergies(src)
 /obj/machinery/paradoxrift/process()
 	if(!(stat & NOPOWER))
 		return

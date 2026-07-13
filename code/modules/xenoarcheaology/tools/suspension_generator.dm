@@ -140,7 +140,7 @@
 			return 1
 
 /obj/machinery/suspension_gen/emag_act(remaining_charges, mob/user)
-	if(cell.charge > 0 && locked)
+	if(cell && cell.charge > 0 && locked)
 		locked = 0
 		return 1
 

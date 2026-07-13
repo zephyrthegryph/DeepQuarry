@@ -30,7 +30,7 @@
 	var/obj/machinery/camera/C = pick(GLOB.cameranet.cameras)
 	if(is_valid_camera(C))
 		return C
-	return acquire_random_camera(remaining_attempts--)
+	return acquire_random_camera(remaining_attempts - 1)
 
 /datum/event/camera_damage/proc/is_valid_camera(obj/machinery/camera/C)
 	// Only return a functional camera, not installed in a silicon/hardsuit/circuit/etc, and that exists somewhere players have access

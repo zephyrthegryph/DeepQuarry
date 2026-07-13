@@ -541,6 +541,10 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	var/list/following_mobs = list()
 
 /mob/observer/dead/Destroy()
+	if(exonet)
+		exonet.remove_address()
+		QDEL_NULL(exonet)
+	QDEL_NULL(dq_exonet_log_panel_cache)
 	if(body_backup)
 		body_backup.moveToNullspace() //YEET
 		qdel(body_backup)
@@ -639,11 +643,11 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	else
 		gas_analyzing += span_red("Pressure: [round(pressure,0.1)] kPa")
 	if(total_moles)
-		for(var/gas_id in environment.get_gases())
-			var/_moles = environment.get_moles(gas_id)
-			gas_analyzing += "[gas_id]: [round((_moles / total_moles) * 100)]% ([round(_moles, 0.01)] moles)"
-		var/env_temp = environment.return_temperature()
-		gas_analyzing += "Temperature: [round(env_temp-T0C,0.1)]&deg;C ([round(env_temp,0.1)]K)"
+		// XGM env.gas[g] iteration → LINDA env.gases[/datum/gas/X][MOLES].
+		for(var/datum/gas/g as anything in environment.get_gases())
+			var/_moles = environment.get_moles(g)
+			gas_analyzing += "[initial(g.name)]: [round((_moles / total_moles) * 100)]% ([round(_moles, 0.01)] moles)"
+		gas_analyzing += "Temperature: [round(environment.return_temperature()-T0C,0.1)]&deg;C ([round(environment.return_temperature(),0.1)]K)"
 		gas_analyzing += "Heat Capacity: [round(environment.heat_capacity(),0.1)]"
 	to_chat(src, span_notice("[jointext(gas_analyzing, "<br>")]"))
 /*

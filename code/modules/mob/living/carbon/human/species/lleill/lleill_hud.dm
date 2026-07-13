@@ -44,5 +44,5 @@
 	if(arguments)
 		A.arguments_to_use = arguments
 	ability_objects.Add(A)
-	if(my_mob.client)
+	if(my_mob && my_mob.client)
 		toggle_open(2)

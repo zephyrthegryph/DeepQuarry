@@ -38,6 +38,7 @@
 
 /obj/machinery/power/hydromagnetic_trap/proc/Search()//let's not have +100 instances of the same field in active_field.
 	things_in_range = range(7, src)
+	fields_in_range.Cut() // rebuild fresh each tick so in-range fields don't accumulate as duplicates
 	for (var/obj/effect/fusion_em_field/FFF in things_in_range)
 		fields_in_range.Add(FFF)
 

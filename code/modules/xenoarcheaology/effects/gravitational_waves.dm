@@ -38,7 +38,7 @@
 
 /datum/artifact_effect/extreme/gravity_wave/DoEffectAura()
 	var/atom/holder = get_master_holder()
-	var/seconds_since_last_pull = max(0, round((last_wave_pull - world.time) / 10))
+	var/seconds_since_last_pull = max(0, round((world.time - last_wave_pull) / 10))
 	if(istype(holder, /obj/item/anobattery))
 		holder = holder.loc
 	if(prob(10 + seconds_since_last_pull))

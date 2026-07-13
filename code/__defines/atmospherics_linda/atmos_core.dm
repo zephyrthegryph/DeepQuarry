@@ -182,14 +182,3 @@
 #define ATMOS_PRESSURE_APPROXIMATION_ITERATIONS 20
 /// We deal with big numbers and a lot of math, things are bound to get imprecise. Take this traveller.
 #define ATMOS_PRESSURE_ERROR_TOLERANCE 0.01
-
-//Auxmos turf simulation flags (mirrors verdigris/atmos/src/turfs.rs SimulationFlags)
-/// Turf participates in diffusion-only gas sharing (e.g. planetary/space edges).
-#define SIMULATION_DIFFUSE 1
-/// Turf participates in full turf-to-turf gas sharing.
-#define SIMULATION_ALL 2
-/// Turf participates in some form of gas simulation (diffuse and/or full sharing).
-#define SIMULATION_ANY (SIMULATION_DIFFUSE | SIMULATION_ALL)
-
-/// Fraction of a pressure/mole delta shared per auxmos processing tick. Mirrors verdigris/atmos/src/gas/constants.rs GAS_DIFFUSION_CONSTANT.
-#define GAS_DIFFUSION_CONSTANT 0.125

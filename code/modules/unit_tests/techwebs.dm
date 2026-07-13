@@ -133,8 +133,10 @@
 		if(!(design.id in used_designs))
 			TEST_NOTICE(src, "TECHWEB DESIGN - WARNING [design.type] is orphaned and not accessible from any techweb node. Is this intended?")
 
-		// Design must have materials
-		if(!length(design.materials))
+		// Design must have materials — EXCEPT material-selectable designs, whose cost is
+		// the chosen loaded material (selectable_amount units), not a fixed materials list.
+		// (A material-selectable design with no selectable_amount is still a bug.)
+		if(!length(design.materials) && !(design.material_selectable && design.selectable_amount))
 			TEST_NOTICE(src, "TECHWEB DESIGN - [design.type] has no materials assigned.")
 			failed = TRUE
 		else
@@ -157,17 +159,19 @@
 			TEST_NOTICE(src, "TECHWEB DESIGN - [design.type] had a buildpath that directly prints a machine: \"[design.build_path]\"")
 			failed = TRUE
 
-		// Design must be a unique path produced — EXCEPT stock parts. This fork
-		// uses rating-based stock parts (a single /obj/item/stock_parts/<type>
-		// with a `rating` var) rather than /tg/'s per-tier subtypes, so the
-		// tiered research ladder (basic/adv/super/hyper/omni) intentionally has
-		// several designs that build the same base stock-part type with distinct
-		// materials and research categories. That is not a duplicate-path bug.
-		if(!(design.build_path in subtypesof(/obj/item/stock_parts)) && (design.build_path in used_design_paths))
-			TEST_NOTICE(src, "TECHWEB DESIGN - [design.type] had a build_path that was already used by another design: \"[design.build_path]\"")
-			failed = TRUE
+		// Design must be a unique path produced — EXCEPT stock parts and material-selectable
+		// designs. This fork uses rating-based stock parts (a single /obj/item/stock_parts/<type>
+		// with a `rating` var) rather than /tg/'s per-tier subtypes, so the tiered research ladder
+		// (basic/adv/super/hyper/omni) intentionally has several designs that build the same base
+		// stock-part type. Likewise a material-selectable design intentionally produces the same
+		// output type as its plain counterpart, only from a chosen loaded alloy — a parallel recipe,
+		// not a duplicate-path bug — so it is neither checked against nor added to the used set.
+		if(!design.material_selectable)
+			if(!(design.build_path in subtypesof(/obj/item/stock_parts)) && (design.build_path in used_design_paths))
+				TEST_NOTICE(src, "TECHWEB DESIGN - [design.type] had a build_path that was already used by another design: \"[design.build_path]\"")
+				failed = TRUE
 
-		used_design_paths += design.build_path
+			used_design_paths += design.build_path
 
 	if(failed)
 		TEST_FAIL("All techweb entries must be valid")

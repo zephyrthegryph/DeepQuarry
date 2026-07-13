@@ -17,7 +17,7 @@
 				D.cure()
 		M.AddResistances(data)
 
-/datum/reagent/vaccines/mix_data(newdata, newamount)
+/datum/reagent/vaccine/mix_data(newdata, newamount)
 	if(islist(newdata))
 		var/list/newdatalist = newdata
 		data |= newdatalist.Copy()

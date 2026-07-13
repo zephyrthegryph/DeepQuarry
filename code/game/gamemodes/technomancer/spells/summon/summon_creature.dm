@@ -52,7 +52,7 @@
 
 	var/new_size = calculate_spell_power(1)
 	if(new_size != 1)
-		adjust_scale(new_size)
+		summoned.adjust_scale(new_size)
 
 
 	// Now we hurt their new pal, because being forcefully abducted by teleportation can't be healthy.

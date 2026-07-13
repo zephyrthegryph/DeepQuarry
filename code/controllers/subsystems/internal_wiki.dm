@@ -1197,6 +1197,7 @@ SUBSYSTEM_DEF(internal_wiki)
 	body += print_allergens(data["allergen"])
 	body += "<br>"
 	body += print_reaction_data(data)
+	return body
 
 // DRINK REAGENTS
 ////////////////////////////////////////////

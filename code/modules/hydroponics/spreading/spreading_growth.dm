@@ -5,7 +5,7 @@
 	for(var/check_dir in GLOB.cardinal)
 		var/turf/simulated/T = get_step(get_turf(src), check_dir)
 		// Vines can go up/down stairs, but don't register that they have done this, so do so infinitely, which is annoying and laggy.
-		if(istype(T) && !isopenturf(check_dir)) //Let's not have them go on open space where you can't really get to them.
+		if(istype(T) && !isopenturf(T)) //Let's not have them go on open space where you can't really get to them.
 			cardinal_neighbors |= T
 	return cardinal_neighbors
 

@@ -1406,7 +1406,7 @@
 /area/vr/powered/mall)
 "biV" = (
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/structure/shuttle/window,
@@ -1544,7 +1544,7 @@
 	},
 /obj/structure/window/reinforced/survival_pod,
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/structure/window/reinforced/survival_pod{
@@ -3274,7 +3274,7 @@
 /obj/structure/window/plastitanium/full,
 /obj/structure/window/reinforced/survival_pod,
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/machinery/door/blast/regular/open{
@@ -3516,7 +3516,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/machinery/door/window/westright{
 	dir = 2
@@ -5074,7 +5074,7 @@
 	},
 /obj/structure/window/reinforced/survival_pod,
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/structure/window/reinforced/survival_pod{
@@ -6920,7 +6920,7 @@
 /area/vr/powered/vet)
 "fHz" = (
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/structure/shuttle/window,
@@ -6991,10 +6991,10 @@
 /obj/structure/table/marble,
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
-	health = 1e+006;
+	max_integrity = 1e+006;
 	req_access = list(5)
 	},
 /obj/item/reagent_containers/food/snacks/cutlet{
@@ -7643,7 +7643,7 @@
 "gsE" = (
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/flora/pottedplant/fern{
 	pixel_y = 12
@@ -8531,7 +8531,7 @@
 	dir = 8
 	},
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/structure/fans/hardlight,
@@ -8807,7 +8807,7 @@
 	dir = 8
 	},
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/structure/fans/hardlight,
@@ -8916,7 +8916,7 @@
 	},
 /obj/structure/window/reinforced/survival_pod,
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/structure/fans/hardlight,
@@ -9320,7 +9320,7 @@
 /obj/structure/table/marble,
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/item/reagent_containers/food/snacks/cheesewedge{
 	pixel_x = 9;
@@ -10087,7 +10087,7 @@
 	},
 /obj/structure/window/reinforced/survival_pod,
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/structure/window/reinforced/survival_pod{
@@ -10518,7 +10518,7 @@
 "iWn" = (
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/flora/pottedplant/unusual,
 /obj/structure/table/bench/marble,
@@ -10750,7 +10750,7 @@
 	dir = 1
 	},
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /turf/simulated/shuttle/plating,
@@ -11116,7 +11116,7 @@
 	},
 /obj/structure/window/reinforced/survival_pod,
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/structure/window/reinforced/survival_pod{
@@ -12639,7 +12639,7 @@
 	},
 /obj/structure/window/reinforced/survival_pod,
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/structure/window/reinforced/survival_pod{
@@ -12808,7 +12808,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/item/reagent_containers/food/snacks/chickenkatsu{
 	pixel_y = 2
@@ -13318,7 +13318,7 @@
 	dir = 8
 	},
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/structure/window/reinforced/survival_pod{
@@ -14162,7 +14162,7 @@
 /obj/structure/table/marble,
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/item/reagent_containers/food/condiment/small/saltshaker{
 	pixel_x = -8;
@@ -14892,7 +14892,7 @@
 	},
 /obj/structure/window/reinforced/survival_pod,
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/structure/window/reinforced/survival_pod{
@@ -15726,7 +15726,7 @@
 "nfv" = (
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor/outdoors/dirt/thor,
 /area/vr/outdoors/powered)
@@ -15746,7 +15746,7 @@
 	},
 /obj/structure/window/reinforced/survival_pod,
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /turf/simulated/shuttle/plating,
@@ -17026,7 +17026,7 @@
 /obj/structure/table/reinforced,
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 1
@@ -17596,7 +17596,7 @@
 /area/vr/powered/mall/dorms/dorms2)
 "owa" = (
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/structure/shuttle/window,
@@ -18114,12 +18114,12 @@
 /obj/structure/table/reinforced,
 /obj/item/clothing/head/fishing,
 /obj/structure/window/reinforced{
-	health = 1e+006;
+	max_integrity = 1e+006;
 	req_access = list(5)
 	},
 /obj/structure/window/reinforced{
 	dir = 4;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor/tiled/techfloor/grid,
 /area/vr/powered/gunshop)
@@ -18304,7 +18304,7 @@
 	},
 /obj/structure/window/reinforced/survival_pod,
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/machinery/door/blast/regular{
@@ -18577,7 +18577,7 @@
 /area/vr/powered/mall)
 "pmE" = (
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/structure/window/reinforced/survival_pod{
@@ -19752,7 +19752,7 @@
 	},
 /obj/structure/window/reinforced/survival_pod,
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/machinery/door/blast/regular{
@@ -20546,7 +20546,7 @@
 	},
 /obj/structure/window/reinforced/survival_pod,
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/machinery/door/blast/regular{
@@ -21622,7 +21622,7 @@
 	},
 /obj/structure/window/reinforced/survival_pod,
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/machinery/door/blast/regular{
@@ -22457,7 +22457,7 @@
 "sxm" = (
 /obj/structure/table/reinforced,
 /obj/structure/window/reinforced{
-	health = 1e+006;
+	max_integrity = 1e+006;
 	req_access = list(5)
 	},
 /obj/structure/window/reinforced{
@@ -23843,7 +23843,7 @@
 /obj/structure/table/marble,
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced{
 	dir = 1
@@ -24053,7 +24053,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/random/plushie{
 	pixel_y = 4
@@ -24176,7 +24176,7 @@
 "tVO" = (
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/table/bench/marble,
 /turf/simulated/floor/wood{
@@ -24511,7 +24511,7 @@
 	},
 /obj/structure/window/reinforced/survival_pod,
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/structure/window/reinforced/survival_pod{
@@ -24698,7 +24698,7 @@
 	},
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /obj/structure/window/reinforced,
 /obj/structure/table/rack/shelf/steel,
@@ -25685,7 +25685,7 @@
 	},
 /obj/structure/window/reinforced/survival_pod,
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/machinery/door/blast/regular{
@@ -26084,7 +26084,7 @@
 "vvR" = (
 /obj/structure/window/reinforced{
 	dir = 8;
-	health = 1e+006
+	max_integrity = 1e+006
 	},
 /turf/simulated/floor/outdoors/dirt/thor,
 /area/vr/outdoors/powered)
@@ -26532,7 +26532,7 @@
 	},
 /obj/structure/window/reinforced/survival_pod,
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/machinery/door/blast/regular{
@@ -27555,7 +27555,7 @@
 	},
 /obj/structure/window/reinforced/survival_pod,
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/machinery/door/blast/regular/open{
@@ -27578,7 +27578,7 @@
 /obj/structure/window/plastitanium/full,
 /obj/structure/window/reinforced/survival_pod,
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/structure/window/reinforced/survival_pod{
@@ -27843,7 +27843,7 @@
 /obj/structure/window/plastitanium/full,
 /obj/structure/window/reinforced/survival_pod,
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/structure/window/reinforced/survival_pod{
@@ -28958,7 +28958,7 @@
 	dir = 1
 	},
 /obj/structure/grille/rustic{
-	health = 25;
+	max_integrity = 25;
 	name = "reinforced grille"
 	},
 /obj/machinery/door/blast/regular{

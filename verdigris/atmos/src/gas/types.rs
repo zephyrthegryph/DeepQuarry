@@ -236,6 +236,7 @@ pub fn destroy_gas_info_structs() {
 }
 /// For registering gases, do not touch this.
 #[byondapi::bind("/proc/_auxtools_register_gas")]
+#[auxmacros::panic_safe]
 fn hook_register_gas(gas: ByondValue) -> Result<ByondValue> {
 	let gas_id = gas.read_string_id(byond_string!("id"))?;
 	match GAS_INFO_BY_STRING
@@ -275,6 +276,7 @@ fn hook_register_gas(gas: ByondValue) -> Result<ByondValue> {
 
 /// Registers gases, and get reaction infos for auxmos, only call when ssair is initing.
 #[byondapi::bind("/proc/auxtools_atmos_init")]
+#[auxmacros::panic_safe]
 fn hook_init(gas_data: ByondValue) -> Result<ByondValue> {
 	let data = gas_data.read_var_id(byond_string!("datums"))?;
 	data.iter()?
@@ -320,6 +322,7 @@ fn get_reaction_info() -> BTreeMap<ReactionPriority, Reaction> {
 
 /// For updating reaction informations for auxmos, only call this when it is changed.
 #[byondapi::bind("/datum/controller/subsystem/air/proc/auxtools_update_reactions")]
+#[auxmacros::panic_safe]
 fn update_reactions() -> Result<ByondValue> {
 	*REACTION_INFO.write() = Some(get_reaction_info());
 	Ok(true.into())
@@ -423,6 +426,7 @@ pub fn update_gas_refs() {
 }
 /// For updating reagent gas fire products, do not use for now.
 #[byondapi::bind("/proc/finalize_gas_refs")]
+#[auxmacros::panic_safe]
 fn finalize_gas_refs() -> Result<ByondValue> {
 	update_gas_refs();
 	Ok(ByondValue::null())
@@ -451,17 +455,12 @@ pub fn gas_idx_from_string(id: &str) -> Result<GasIDX> {
 /// If the given string is not a string or is not a valid gas ID.
 pub fn gas_idx_from_value(string_val: &ByondValue) -> Result<GasIDX> {
 	CACHED_GAS_IDS.with_borrow_mut(|cache| {
-		// Propagate (DM runtime with stack trace) instead of panicking when a
-		// non-string gas id is passed — surfaces the offending call site.
-		let strid = string_val
-			.get_strid()
-			.map_err(|_| eyre::eyre!("gas id passed to auxmos is not a string: {string_val:?}"))?;
-		if let Some(idx) = cache.get(&strid) {
+		if let Some(idx) = cache.get(&string_val.get_strid().unwrap()) {
 			Ok(*idx)
 		} else {
 			let id = &string_val.get_string()?;
 			let idx = gas_idx_from_string(id)?;
-			cache.insert(strid, idx);
+			cache.insert(string_val.get_strid().unwrap(), idx);
 			Ok(idx)
 		}
 	})

@@ -1,0 +1,5 @@
+author: "ethan"
+delete-after: true
+changes:
+  - refactor: "Gas reactions now read/write the auxmos gas arena (get_moles/adjust_moles/set_temperature) instead of the removed per-mixture gas list."
+  - code_imp: "Re-enabled auxmos reaction parsing: SSair now hands the real gas_reactions to the arena, which dispatches reactions back into DM."

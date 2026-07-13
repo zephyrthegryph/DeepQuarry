@@ -447,8 +447,10 @@ the implant may become unstable and either pre-maturely inject the subject or si
 /obj/item/implant/loyalty/handle_implant(mob/M, target_zone = BP_TORSO)
 	. = ..(M, target_zone)
 	if(!ishuman(M))
-		. = FALSE
+		return FALSE
 	var/mob/living/carbon/human/H = M
+	if(!H.mind)
+		return
 	var/datum/antagonist/antag_data = SSantag_job.get_antag_data(H.mind.special_role)
 	if(antag_data && (antag_data.flags & ANTAG_IMPLANT_IMMUNE))
 		H.visible_message("[H] seems to resist the implant!", "You feel the corporate tendrils of [using_map.company_name] try to invade your mind!")

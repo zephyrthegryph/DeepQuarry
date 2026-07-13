@@ -128,6 +128,13 @@ GLOBAL_VAR(restart_counter)
 /world/New()
 	log_world("World loaded at [time_stamp()]!")
 
+	// Verdigris (Rust FFI) bring-up. Init must come before cleanup so the panic hook
+	// catches any failure inside cleanup itself. (Was a duplicate /world/New() in
+	// _verdigris.dm that the compiler silently discarded; folded in here.)
+	verdigris_init()
+	verdigris_cleanup()
+	log_world("Verdigris loaded: [verdigris_version()] | features: [verdigris_features()]")
+
 	GLOB.world_startup_time = world.timeofday
 	GLOB.rollover_safety_date = world.realtime - world.timeofday // 00:00 today (ish, since floating point error with world.realtime) of today
 
@@ -182,16 +189,6 @@ GLOBAL_VAR(restart_counter)
 	log_test("Unit Tests Enabled. This will destroy the world when testing is complete.")
 	log_test("If you did not intend to enable this please check code/__defines/unit_testing.dm")
 #endif
-
-	// Install the verdigris panic hook + init the Rust atmos statics, then
-	// register the gas roster with auxmos's Rust gas table — all BEFORE the
-	// Master Controller initializes subsystems. SSatoms creates and populates
-	// turf air during its init, and set_moles() on a gas auxmos hasn't been told
-	// about indexes past the Rust gas table and crashes.
-	// (This runs here because the game /world/New overrides the one in
-	// _verdigris.dm, so verdigris_init would otherwise never fire.)
-	verdigris_init()
-	auxmos_register_gases()
 
 	Master.Initialize(10, FALSE, TRUE)
 

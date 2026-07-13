@@ -199,7 +199,10 @@ GLOBAL_LIST_EMPTY_TYPED(allConsoles, /obj/machinery/requests_console)
 
 		//Handle printing
 		if("print")
-			var/msg = message_log[text2num(params["print"])];
+			var/print_index = text2num(params["print"])
+			if(!print_index || print_index < 1 || print_index > length(message_log))
+				return
+			var/msg = message_log[print_index]
 			if(msg)
 				msg = span_bold("[msg[1]]:") + "<br>[msg[2]]"
 				msg = replacetext(msg, "<BR>", "\n")
@@ -243,7 +246,6 @@ GLOBAL_LIST_EMPTY_TYPED(allConsoles, /obj/machinery/requests_console)
 		announcement.newscast = 1
 
 		name = "[department] Requests Console"
-		GLOB.allConsoles += src
 		if(departmentType & RC_ASSIST)
 			GLOB.req_console_assistance |= department
 		if(departmentType & RC_SUPPLY)

@@ -20,6 +20,10 @@
 
 	zlevel_datum_type = /datum/map_z_level/minitest
 
+	// Minimal CI harness, not a complete station — skip the whole-station APC/vent/
+	// scrubber-coverage and wiring validity tests (they run against the live map).
+	skip_map_validity_tests = TRUE
+
 	station_name  = "NSS Ade-testing"
 	station_short = "VORE-testing"
 	dock_name     = "Virgo-test CC"
@@ -61,20 +65,9 @@
 
 	allowed_spawns = list("Arrivals Shuttle","Gateway","Cryogenic Storage","Cyborg Storage")
 
-	// Full-station map-validation tests: they scan every station area for an APC
-	// and every cable tile for stacking faults. This stripped test map isn't a
-	// complete station, so they can't pass here — they run against the live map.
-	skipped_tests = list(
-		/datum/unit_test/apc_area_test,
-		/datum/unit_test/wire_test,
-	)
-
 /datum/map/virgo_minitest/New()
 	..()
-	// The map datum is constructed (via the `using_map` global) before the Master
-	// Controller brings up SSticker, so it isn't safe to touch here. Unit-test runs
-	// get start_immediately from world/HandleTestRun(); a live boot starts from the
-	// lobby as usual.
+	SSticker.start_immediately = TRUE
 
 /datum/map_z_level/minitest/station
 	z = Z_LEVEL_MAIN_VIRGO_TESTING

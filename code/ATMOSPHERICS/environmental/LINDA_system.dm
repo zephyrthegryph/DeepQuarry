@@ -119,11 +119,6 @@
 	UNSETEMPTY(atmos_adjacent_turfs)
 	src.atmos_adjacent_turfs = atmos_adjacent_turfs
 	SEND_SIGNAL(src, COMSIG_TURF_CALCULATED_ADJACENT_ATMOS)
-	// NOTE: no Rust adjacency push here. This is the boot-time init pass, run per
-	// turf before all neighbors are registered — pushing now would drop edges to
-	// not-yet-registered turfs. setup_allturfs() does a single second pass over all
-	// registered turfs instead. The runtime variant below DOES push, since by then
-	// every turf is already registered.
 
 /turf/proc/immediate_calculate_adjacent_turfs()
 	LAZYINITLIST(src.atmos_adjacent_turfs)
@@ -150,23 +145,6 @@
 	UNSETEMPTY(atmos_adjacent_turfs)
 	src.atmos_adjacent_turfs = atmos_adjacent_turfs
 	SEND_SIGNAL(src, COMSIG_TURF_CALCULATED_ADJACENT_ATMOS)
-	// Keep the Rust auxmos arena in sync with this runtime topology change.
-	// update_air_ref() reads blocks_air: a turf that just became a wall is removed
-	// from the graph — StableDiGraph::remove_node drops all its incident edges, so
-	// its former neighbors are correctly disconnected (this is what makes runtime
-	// walling, e.g. a breach or a test isolating a room, actually isolate in Rust).
-	// The Rust graph is per-turf, but the DM lists above were updated on BOTH sides
-	// of every edge — so we must re-push src AND each cardinal neighbor, or a
-	// neighbor keeps a stale edge to src and diffusion becomes asymmetric/leaky.
-	var/turf/open/registered_turf = src
-	if(istype(registered_turf))
-		registered_turf.update_air_ref(SIMULATION_ANY)
-		if(registered_turf.air && !registered_turf.blocks_air)
-			registered_turf.__update_auxtools_turf_adjacency_info()
-	for(var/direction in GLOB.cardinals_multiz)
-		var/turf/open/neighbor = get_step_multiz(src, direction)
-		if(istype(neighbor) && neighbor.air && !neighbor.blocks_air)
-			neighbor.__update_auxtools_turf_adjacency_info()
 
 /**
  * returns a list of adjacent turfs that can share air with this one.
@@ -225,12 +203,42 @@
 /turf/air_update_turf(update = FALSE, remove = FALSE)
 	if(!SSair.initialized) // I'm sorry for polutting user code, I'll do 10 hail giacom's
 		return
+	// Under the DM engine `remove` meant "deactivate this turf" (excited = FALSE);
+	// it never destroyed the turf's air. Auxmos owns activity now, so `remove` no
+	// longer needs a distinct arena action — a live turf that stopped being able to
+	// share simply falls out of processing on its own once its (rebuilt) adjacency
+	// shows no neighbours. Genuine air teardown (a turf becoming a wall) goes
+	// through /turf/open/Destroy -> remove_from_active -> update_air_ref(-1), not
+	// this proc. So both cases here just refresh the arena registration + adjacency.
+	//
+	// Register the air ref FIRST — auxmos' update_adjacencies can only attach edges
+	// to turfs already present in the arena, so the air ref must land before the
+	// adjacency push.
+	update_air_ref(0)
+	// Rebuild the DM adjacency graph only when the world geometry actually changed
+	// (update=TRUE) — that's the expensive scan, so gas-only updates skip it.
 	if(update)
 		immediate_calculate_adjacent_turfs()
-	if(remove)
-		SSair.remove_from_active(src)
-	else
-		SSair.add_to_active(src)
+	// ALWAYS (re)push adjacency into the Rust arena, both directions. auxmos stores
+	// adjacency as DIRECTED graph edges and the FDM shares across them; a turf built
+	// at runtime (ChangeTurf, a freshly loaded z-level like an expedition site or the
+	// unit-test room) may have a correct DM adjacency list that was never pushed to
+	// the arena, or only its own out-edges pushed — so the reverse edge (neighbour ->
+	// src) is missing and gas never flows back. Pushing src plus each neighbour keeps
+	// the arena graph symmetric. This is just the FFI push (reads the existing DM
+	// list) — NOT a recursive air_update_turf — so it's cheap and can't loop.
+	__update_auxtools_turf_adjacency_info()
+	// Also register + push each neighbour. Beyond making the adjacency graph
+	// symmetric, update_air_ref(0) ENABLES the neighbour (SIMULATION_ANY) in the
+	// arena. This matters because auxmos' FDM pushes gas INTO a neighbour from the
+	// active turf's process_cell without the neighbour itself being active — and the
+	// arena's post_process pass (which fires the gas-overlay + reaction callbacks)
+	// only visits ENABLED turfs. So a tile that merely RECEIVES gas would never get
+	// its overlay refreshed unless we enable it here when its active neighbour is
+	// (re)wired.
+	for(var/turf/open/near_turf as anything in atmos_adjacent_turfs)
+		near_turf.update_air_ref(0)
+		near_turf.__update_auxtools_turf_adjacency_info()
 
 /atom/movable/proc/move_update_air(turf/target_turf)
 	if(isturf(target_turf))
@@ -247,8 +255,8 @@
 	if(!text || !air)
 		return
 
-	var/datum/gas_mixture/turf_mixture = SSair.parse_gas_string(text, /datum/gas_mixture)
+	var/datum/gas_mixture/turf_mixture = SSair.parse_gas_string(text, /datum/gas_mixture/turf)
 
 	air.merge(turf_mixture)
-	archive()
+	// archive() removed — turf FDM archiving is Rust-side now.
 	SSair.add_to_active(src)

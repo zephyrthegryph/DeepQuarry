@@ -101,7 +101,7 @@
 	new /obj/item/soulstone(get_turf(holder.my_atom))
 	..()
 
-/datum/decl/chemical_reaction/instant/slime/obj/item/slime_extract/redspace_smoke
+/datum/decl/chemical_reaction/instant/slime/redspace_smoke
 	name = "Slime Smoke"
 	id = "m_redspace_smoke"
 	required_reagents = list(REAGENT_ID_WATER = 5)
@@ -455,7 +455,7 @@
 	result_amount = 1
 	required = /obj/item/slime_extract/green
 
-/datum/decl/chemical_reaction/instant/slime/green_emitter/on_reaction(datum/reagents/holder)
+/datum/decl/chemical_reaction/instant/slime/nuclear_emitter/on_reaction(datum/reagents/holder)
 	log_and_message_admins("Green extract reaction (radiation emitter) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
 	new /obj/item/slime_irradiator(get_turf(holder.my_atom))
 	..()

@@ -29,10 +29,10 @@ GLOBAL_VAR_INIT(floorIsLava, 0)
 		var/C = M.client
 
 		if(!C)
-			return
+			continue
 
 		if(!(istype(C, /client)))
-			return
+			continue
 
 		if(check_rights_for(C, rights))
 			to_chat(C, message)

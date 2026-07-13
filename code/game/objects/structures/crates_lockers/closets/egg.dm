@@ -12,7 +12,7 @@
 	close_sound = 'sound/vore/schlorp.ogg'
 	opened = 0
 	sealed = 0 //Don't touch this.
-	health = 100
+	max_integrity = 100
 
 /obj/structure/closet/secure_closet/egg/update_icon()
 	if(opened)

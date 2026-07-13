@@ -1516,7 +1516,7 @@
 	icon_state = "dshotgunPR"
 	shotgun_variant = "PR"
 
-/obj/item/gun/projectile/shotgun/doublebarrel/rosewood_weathered
+/obj/item/gun/projectile/shotgun/doublebarrel/oak_weathered
 	desc = "A classic, external hammer double barrel shotgun. This one has weathered oak furniture. Chambered in 12 gauge."
 	icon_state = "dshotgunPW"
 	shotgun_variant = "PW"

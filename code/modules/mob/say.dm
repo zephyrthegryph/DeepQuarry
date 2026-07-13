@@ -568,7 +568,7 @@
 		return say_dead(message)
 	if(!isliving(src))
 		forced_psay = FALSE
-		say(message)
+		return say(message)
 	var/f = FALSE		//did we find someone to send the message to other than ourself?
 	var/mob/living/pb	//predator body
 	var/mob/living/M = src
@@ -681,7 +681,7 @@
 		return say_dead(message)
 	if(!isliving(src))
 		forced_psay = FALSE
-		me_verb(message)
+		return me_verb(message)
 	var/f = FALSE		//did we find someone to send the message to other than ourself?
 	var/mob/living/pb	//predator body
 	var/mob/living/M = src

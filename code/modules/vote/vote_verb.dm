@@ -45,5 +45,6 @@ ADMIN_VERB(start_vote, R_HOLDER, "Start Vote", "Start a vote on the server.", AD
 
 	var/datum/vote/V = new /datum/vote(user.ckey, question, choices, TRUE)
 	V.show_counts = (c2 == "Yes")
-	V.vote_result_type = c3
+	if(c3)
+		V.vote_result_type = c3
 	SSvote.start_vote(V)

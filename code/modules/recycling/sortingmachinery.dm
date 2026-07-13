@@ -32,7 +32,7 @@
 	flush()
 
 /obj/machinery/disposal/deliveryChute/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
-	if(!QDELETED(source) || (isitem(source) || isliving(source)) && !istype(source, /obj/item/projectile))
+	if(!QDELETED(source) && (isitem(source) || isliving(source)) && !istype(source, /obj/item/projectile))
 		switch(dir)
 			if(NORTH)
 				if(source.loc.y != src.loc.y+1) return ..()

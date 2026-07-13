@@ -5,6 +5,8 @@
 /datum/unit_test/apc_area_test
 
 /datum/unit_test/apc_area_test/Run()
+	if(using_map.skip_map_validity_tests)
+		return // minimal CI harness map — station-completeness checks run on the live map
 	var/list/exempt_areas = typesof(/area/space,
 					/area/syndicate_station,
 					/area/skipjack_station,
@@ -110,6 +112,9 @@
 
 /datum/unit_test/wire_test/Run()
 	set background = 1
+
+	if(using_map.skip_map_validity_tests)
+		return // minimal CI harness map — wiring validity runs on the live map
 
 	exempt_from_wires += using_map.unit_test_exempt_from_wires.Copy()
 

@@ -252,11 +252,9 @@
 	if(operating)
 		return//Already doing something.
 	if(C.has_tool_quality(TOOL_WELDER))
-		//VOREstation Edit: Removing Material requirements on repairs
-		if(health < maxhealth)
+		if(get_integrity() < max_integrity)
 			..()
 			return
-		//VOREstation Edit End
 		if(prying)
 			to_chat(user, span_notice("Someone's busy prying that [density ? "open" : "closed"]!"))
 		var/obj/item/weldingtool/W = C.get_welder()
@@ -377,7 +375,7 @@
 				changed = 1 // update_icon()
 
 		tile_info = getCardinalAirInfo(src.loc,list("temperature","pressure"))
-		var/old_alerts = dir_alerts
+		var/old_alerts = dir_alerts.Copy()
 		for(var/index = 1; index <= 4; index++)
 			var/list/tileinfo=tile_info[index]
 			if(tileinfo==null)

@@ -113,7 +113,7 @@
 			notes_add(banckey, banreason, ui.user)
 
 			admin_datum.DB_ban_record(bantype, playermob, banduration, banreason, banjob, null, banckey, banip, bancid )
-			if((bantype == BANTYPE_PERMA || bantype == BANTYPE_TEMP) && playermob.client)
+			if((bantype == BANTYPE_PERMA || bantype == BANTYPE_TEMP) && playermob?.client)
 				qdel(playermob.client)
 
 			return TRUE

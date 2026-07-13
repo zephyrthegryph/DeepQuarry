@@ -40,7 +40,7 @@
 
 /datum/blob_type/ravenous_macrophage/on_chunk_tick(obj/item/blobcore_chunk/B)
 	var/mob/living/L = locate() in range(world.view, B)
-	if(prob(5) && !L.stat)	// There's some active living thing nearby, produce offgas.
+	if(prob(5) && L && !L.stat)	// There's some active living thing nearby, produce offgas.
 		B.visible_message(span_alien("[icon2html(B,viewers(B))] \The [B] disgorches a cloud of noxious gas!"))
 		var/turf/T = get_turf(B)
 		var/datum/effect/effect/system/smoke_spread/noxious/BS = new /datum/effect/effect/system/smoke_spread/noxious

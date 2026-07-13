@@ -86,14 +86,14 @@
 		if("resync")
 			var/mob/living/silicon/robot/drone/D = locate(params["ref"])
 
-			if(D.stat != 2)
+			if(istype(D) && D.stat != 2)
 				to_chat(ui.user, span_danger("You issue a law synchronization directive for the drone."))
 				D.law_resync()
 
 		if("shutdown")
 			var/mob/living/silicon/robot/drone/D = locate(params["ref"])
 
-			if(D.stat != 2)
+			if(istype(D) && D.stat != 2)
 				to_chat(ui.user, span_danger("You issue a kill command for the unfortunate drone."))
 				message_admins("[key_name_admin(ui.user)] issued kill order for drone [key_name_admin(D)] from control console.")
 				log_game("[key_name(ui.user)] issued kill order for [key_name(src)] from control console.")

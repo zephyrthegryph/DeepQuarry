@@ -8,7 +8,7 @@
 	icon_state_closed = "pdoor1"
 	icon_state_closing = "pdoorc1"
 	icon_state = "pdoor1"
-	maxhealth = 600
+	max_integrity = 600
 	rad_insulation = 0
 	id = "EngineShroud"
 

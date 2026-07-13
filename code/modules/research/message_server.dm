@@ -130,7 +130,7 @@
 	return result
 
 /obj/machinery/message_server/proc/send_rc_message(recipient = "",sender = "",message = "",stamp = "", id_auth = "", priority = 1)
-	rc_msgs += new/datum/data_rc_msg(recipient,sender,message,stamp,id_auth)
+	rc_msgs += new/datum/data_rc_msg(recipient,sender,message,stamp,id_auth,priority)
 	var/authmsg = "[message]\n"
 	if (id_auth)
 		authmsg += "([id_auth])\n"

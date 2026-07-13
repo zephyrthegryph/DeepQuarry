@@ -409,7 +409,7 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 			pressure = air_contents.return_pressure()
 			var/strength = ((pressure-TANK_FRAGMENT_PRESSURE)/TANK_FRAGMENT_SCALE)
 
-			var/mult = ((src.air_contents.volume/140)**(1/2)) * (air_contents.total_moles()**(2/3))/((29*0.64) **(2/3)) //tanks appear to be experiencing a reduction on scale of about 0.64 total moles
+			var/mult = ((src.air_contents.return_volume()/140)**(1/2)) * (air_contents.total_moles()**(2/3))/((29*0.64) **(2/3)) //tanks appear to be experiencing a reduction on scale of about 0.64 total moles
 			//tanks appear to be experiencing a reduction on scale of about 0.64 total moles
 
 
@@ -549,8 +549,8 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 		oxygen_amt = 4.5
 
 
-	src.air_contents.adjust_gas(GAS_PHORON, (phoron_amt) - src.air_contents.get_moles(GAS_PHORON))
-	src.air_contents.adjust_gas(GAS_O2, (oxygen_amt) - src.air_contents.get_moles(GAS_O2))
+	src.air_contents.adjust_gas(GAS_PHORON, (phoron_amt) - LINDA_GAS_AMT(src.air_contents, GAS_PHORON))
+	src.air_contents.adjust_gas(GAS_O2, (oxygen_amt) - LINDA_GAS_AMT(src.air_contents, GAS_O2))
 	// update_values() removed; no-op under LINDA.
 	src.valve_welded = 1
 	src.air_contents.set_temperature(PHORON_MINIMUM_BURN_TEMPERATURE-1)

@@ -42,7 +42,7 @@
 
 /obj/item/circuitboard/security/telescreen/entertainment/Initialize(mapload)
 	. = ..()
-	network = NETWORK_THUNDER
+	network = list(NETWORK_THUNDER)
 
 // Bodycam
 /obj/item/circuitboard/security/telescreen/bodycamera
@@ -53,7 +53,7 @@
 
 /obj/item/circuitboard/security/telescreen/bodycamera/Initialize(mapload)
 	. = ..()
-	network = NETWORK_BODYCAM
+	network = list(NETWORK_BODYCAM)
 
 /obj/item/circuitboard/security/construct(obj/machinery/computer/security/C)
 	if (..(C))

@@ -9,6 +9,13 @@
 	/// Linked experiment handler
 	var/datum/component/experiment_handler/linked_experiment_handler
 
+/datum/experiment/physical/Destroy()
+	if(currently_scanned_atom)
+		unregister_events()
+	currently_scanned_atom = null
+	linked_experiment_handler = null
+	return ..()
+
 /datum/experiment/physical/is_complete()
 	return completed
 

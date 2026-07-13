@@ -206,6 +206,7 @@
 			var/type = pick_n_take(core_types)
 			var/obj/effect/anomaly/anom = new type
 			choices[capitalize(anom.name)] = type
+			qdel(anom) // only the type is kept; don't leak the sample object
 
 	var/choice = tgui_input_list(user, "Choose an anomaly core.", "Anomaly Core Selection", choices)
 
@@ -214,6 +215,5 @@
 		picked = TRUE
 
 /obj/item/assembly/signaler/anomaly/choice/Destroy()
-	for(var/obj/effect/anomaly/anom in options)
-		qdel(anom)
+	// Sample anomaly objects are qdel'd at creation; `choices` only holds type paths, so nothing to clean here.
 	. = ..()

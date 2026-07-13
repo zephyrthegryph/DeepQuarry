@@ -38,7 +38,7 @@
 		for(var/obj/item/pda/P as anything in GLOB.PDAs)
 			var/datum/data/pda/app/messenger/PM = P.find_program(/datum/data/pda/app/messenger)
 
-			if(!P.owner || PM.toff || P == pda || PM.m_hidden)
+			if(!PM || !P.owner || PM.toff || P == pda || PM.m_hidden)
 				continue
 			if(conversations.Find("\ref[P]"))
 				convopdas.Add(list(list("Name" = "[P]", "Reference" = "\ref[P]", "Detonate" = "[P.detonate]", "inconvo" = "1")))
