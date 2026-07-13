@@ -87,7 +87,7 @@
 		'sound/weapons/gunshot_generic_rifle.ogg',
 		'sound/weapons/gunshot_sniper.ogg',
 		'sound/weapons/gunshot_shotgun.ogg',
-		'sound/weapons/Gunshot3.ogg',
+		'sound/weapons/gunshot3.ogg',
 		'sound/weapons/gunshot_machinegun.ogg'
 		)
 	interval_lower_bound = 5
@@ -96,7 +96,7 @@
 /obj/effect/map_effect/interval/sound_emitter/energy_gunfight
 	sounds_to_play = list(
 		'sound/weapons/taser.ogg',
-		'sound/weapons/laser.ogg',
+		'sound/weapons/Laser.ogg',
 		'sound/weapons/eLuger.ogg',
 		'sound/weapons/laser3.ogg',
 		'sound/weapons/pulse.ogg',

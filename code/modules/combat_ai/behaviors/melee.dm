@@ -11,6 +11,8 @@
 	target_kind = DQ_TARGET_MOB
 	min_range = 0
 	max_range = 1
+	requires_adjacent = TRUE       // central gate: only when in melee reach
+	blocked_by_melee_lock = TRUE   // central gate: not while off-balance
 
 /datum/ai_behavior/melee_attack/applicable_to(mob/living/owner)
 	if(!istype(owner, /mob/living/simple_mob))
@@ -23,11 +25,10 @@
 	var/mob/threat = brain.primary_threat
 	if(!owner || !threat)
 		return null
-	if(!owner.Adjacent(threat))
+	if(!owner.checkClickCooldown()) // attack-rate gate (mob's own swing speed)
 		return null
-	if(!owner.checkClickCooldown())
-		return null
-	// Mid-band score; charge_slam/web_spit beat plain melee when in their range.
+	// Adjacency, off-balance lock, and target-validity are enforced centrally in pick_and_run.
+	// Mid-band score; charge_slam/telegraphed_strike beat plain melee when eligible.
 	return DQAI_RESULT(40, threat)
 
 /datum/ai_behavior/melee_attack/start(datum/ai_brain/brain, atom/target, atom/source)
@@ -72,6 +73,7 @@
 	var/mob/threat = brain.primary_threat
 	if(!owner || !threat)
 		return null
+	// Target-validity (claimed/devoured) is enforced centrally in pick_and_run.
 	var/dist = get_dist(owner, threat)
 	if(dist < min_range || dist > max_range)
 		return null
@@ -87,8 +89,28 @@
 		span_danger("[owner] crouches, focused on [target]!"),
 		blind_message = span_warning("You hear something heavy shift its weight."),
 	)
-	addtimer(CALLBACK(src, PROC_REF(execute_dash), brain, target), windup)
+	// This datum is a flyweight singleton shared by every charging mob, so the
+	// windup timer can't live on `src`. Stash its id in the brain's per-behavior
+	// state and cancel it in stop() if the telegraph gets interrupted.
+	LAZYINITLIST(brain.behavior_state)
+	if(!brain.behavior_state[type])
+		brain.behavior_state[type] = list("cooldown" = 0, "charges" = null)
+	brain.behavior_state[type]["dash_timer"] = addtimer(CALLBACK(src, PROC_REF(execute_dash), brain, target), windup, TIMER_STOPPABLE)
 	return DQ_BEHAVIOR_CONTINUE
+
+/datum/ai_behavior/charge_slam/stop(datum/ai_brain/brain, atom/target, atom/source, reason)
+	// Cancel any pending dash so a cancelled telegraph can't still land.
+	if(!QDELETED(brain))
+		var/list/state = LAZYACCESS(brain.behavior_state, type)
+		if(state && state["dash_timer"])
+			deltimer(state["dash_timer"])
+			state["dash_timer"] = null
+	// A charge cancelled mid-windup (INTERRUPTED) is spent too: set the cooldown so the mob can't
+	// instantly re-wind and race its own still-pending dash timer. (COMPLETED/FAILED are handled by
+	// the base stop via the `cooldown` var.)
+	if(reason == DQ_BEHAVIOR_STOP_INTERRUPTED && cooldown)
+		brain.set_cooldown(type, source, cooldown)
+	return ..()
 
 /datum/ai_behavior/charge_slam/proc/execute_dash(datum/ai_brain/brain, atom/target)
 	// The 1.2s windup means the brain/holder/target can be gone by the time
@@ -96,7 +118,21 @@
 	// a still-live brain.
 	if(QDELETED(brain))
 		return
+	// Confirm this telegraph is still the brain's committed behavior — a
+	// cancelled/superseded charge must not deal damage even if its timer leaked.
+	if(brain.active_behavior_type != type)
+		return
+	var/list/state = LAZYACCESS(brain.behavior_state, type)
+	if(state)
+		state["dash_timer"] = null
 	if(QDELETED(brain.holder))
+		brain.stop_active(DQ_BEHAVIOR_STOP_FAILED)
+		return
+	// The windup timer is a bare addtimer on the shared flyweight — it can't be cancelled per-mob,
+	// so a charge_slam that was stopped (death / re-selected) before this fired still gets here. If
+	// the brain is no longer committed to THIS charge, the windup was cancelled: don't dash. (Mirror
+	// of telegraphed_strike's guard; without it a stale timer dashes + stop_actives the wrong behavior.)
+	if(brain.active_behavior_type != type)
 		return
 	var/mob/living/simple_mob/SM = brain.holder
 	if(!istype(SM) || QDELETED(target))

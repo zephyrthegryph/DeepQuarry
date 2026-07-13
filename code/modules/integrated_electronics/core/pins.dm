@@ -121,9 +121,9 @@ list[](
 	for(var/datum/integrated_io/io in linked)
 		io.write_data_to_pin(data)
 
-/datum/integrated_io/activate/push_data()
+/datum/integrated_io/activate/push_data(work_left = IC_MAX_PULSE_CIRCUITS)
 	for(var/datum/integrated_io/io in linked)
-		io.holder.check_then_do_work()
+		io.holder.check_then_do_work(work_left = work_left)
 
 /datum/integrated_io/proc/pull_data()
 	for(var/datum/integrated_io/io in linked)

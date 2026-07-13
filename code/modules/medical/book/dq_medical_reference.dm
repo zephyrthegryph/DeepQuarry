@@ -31,6 +31,7 @@
 	special_handling = TRUE
 
 /obj/item/book/dq_medical_reference/attack_self(mob/user)
+	. = ..()
 	tgui_interact(user)
 
 /obj/item/book/dq_medical_reference/tgui_state(mob/user)

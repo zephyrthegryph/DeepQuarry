@@ -54,6 +54,19 @@
 			var/confirm = tgui_alert(usr, "This ckey hasn't been seen, are you sure?", "Confirm Badmin", list("Yes", "No"))
 			if(confirm != "Yes")
 				return
+			// The alert above sleeps; the target may have disconnected or been deleted.
+			// Re-read the identifiers from the (possibly now-absent) client so we never
+			// record a stale or partially-populated computerid/ip snapshot.
+			if(ismob(banned_mob))
+				if(QDELETED(banned_mob))
+					return
+				ckey = banned_mob.ckey
+				if(banned_mob.client)
+					computerid = banned_mob.client.computer_id
+					ip = banned_mob.client.address
+				else
+					computerid = null
+					ip = null
 
 	var/a_ckey
 	var/a_computerid

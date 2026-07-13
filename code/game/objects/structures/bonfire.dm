@@ -248,7 +248,7 @@
 		var/W = get_fuel_amount()
 		if(W >= 5)
 			var/datum/gas_mixture/env = loc.return_air()
-			if(env && abs(env.temperature - set_temperature) > 0.1)
+			if(env && abs(env.return_temperature() - set_temperature) > 0.1)
 				var/transfer_moles = 0.25 * env.total_moles()
 				var/datum/gas_mixture/removed = env.remove(transfer_moles)
 
@@ -431,7 +431,7 @@
 		var/W = get_fuel_amount()
 		if(W >= 5)
 			var/datum/gas_mixture/env = loc.return_air()
-			if(env && abs(env.temperature - set_temperature) > 0.1)
+			if(env && abs(env.return_temperature() - set_temperature) > 0.1)
 				var/transfer_moles = 0.25 * env.total_moles()
 				var/datum/gas_mixture/removed = env.remove(transfer_moles)
 

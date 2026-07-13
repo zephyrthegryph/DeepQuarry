@@ -82,14 +82,15 @@ avoid code duplication. This includes items that may sometimes act as a standard
 	if(vore_attackby(I, user)) // The vore, of course.
 		return
 
-	// Phased melee: a harm-intent attack with a real weapon winds up, telegraphs its swing
-	// tiles, then resolves (see code/modules/mob/living/melee_swing.dm). Diverts the instant
-	// attack. Non-harm intents, unarmed, and item-use on objects never reach this branch.
-	if(isliving(user) && user.a_intent == I_HURT && I.force && !(I.flags & NOBLUDGEON))
+	// Phased melee: an attack with a real weapon winds up, telegraphs its swing tiles, then
+	// resolves (see code/modules/mob/living/melee_swing.dm). Diverts the instant attack. Help,
+	// Disarm and Harm all swing (as intent stances); Grab keeps its grab path, and unarmed or
+	// item-use on objects never reaches this branch.
+	if(isliving(user) && user.a_intent != I_GRAB && I.force && !(I.flags & NOBLUDGEON))
 		var/mob/living/attacker = user
 		if(attacker.is_swinging)
 			return FALSE // already mid-swing — ignore the queued attack click
-		attacker.begin_melee_swing(src, I)
+		attacker.begin_melee_swing(src, I) // left-click swings on every combat intent; the shove is right-click on Disarm
 		return ITEM_INTERACT_SUCCESS // suppress afterattack; the swing applies its own hit
 
 	return I.attack(src, user, user.zone_sel.selecting, attack_modifier)
@@ -155,5 +156,16 @@ avoid code duplication. This includes items that may sometimes act as a standard
 		power *= 2
 
 	power *= attack_modifier
+
+	// A soft block (the tail of a raised guard) stops half the hit; the flag is set same-tick by
+	// melee_block_intercepts and consumed here.
+	if(target.block_soft_at == world.time)
+		power *= 0.5
+		target.block_soft_at = 0
+	else if(istype(target, /mob/living/simple_mob)) // a braced mob softens the next hit (interactive_melee.dm)
+		var/mob/living/simple_mob/braced = target
+		if(braced.incoming_block_at && world.time <= braced.incoming_block_at)
+			power *= 0.5
+			braced.incoming_block_at = 0
 
 	return target.hit_with_weapon(src, user, power, hit_zone)

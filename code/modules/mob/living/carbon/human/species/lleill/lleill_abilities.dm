@@ -513,7 +513,7 @@
 	if(!tf_mob_holder)
 		return
 	var/mob/living/ourmob = tf_mob_holder
-	// DQEdit - legacy ai_holder.set_stance(STANCE_SLEEP) removed; brain auto-sleeps on
+	//legacy ai_holder.set_stance(STANCE_SLEEP) removed; brain auto-sleeps on
 	// stat change via its COMSIG_MOB_STATCHANGE handler.
 	tf_mob_holder = null
 	ourmob.ckey = ckey

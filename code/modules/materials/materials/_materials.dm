@@ -250,9 +250,9 @@ GLOBAL_LIST_INIT(name_to_material, populate_material_list())
 	// return the component magnitude or 0.
 	var/material_class = MATCLASS_METAL
 	// Mechanical
-	var/hardness = 0
-	var/density = 0                  // Was upstream `weight`.
-	var/integrity = 0
+	var/hardness = 60                // Edge-weapon damage (get_edge_damage) and bullet/laser armor.
+	var/density = 20                 // Blunt/throw damage (get_blunt_damage), wearer slowdown, whetstone times.
+	var/integrity = 150              // Product HP (health = integrity / 10).
 	var/elasticity = 0
 	var/brittleness = 0              // Debuff stat: high brittleness = parts can shatter.
 	// Thermal

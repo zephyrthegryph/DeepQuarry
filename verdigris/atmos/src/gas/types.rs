@@ -451,12 +451,17 @@ pub fn gas_idx_from_string(id: &str) -> Result<GasIDX> {
 /// If the given string is not a string or is not a valid gas ID.
 pub fn gas_idx_from_value(string_val: &ByondValue) -> Result<GasIDX> {
 	CACHED_GAS_IDS.with_borrow_mut(|cache| {
-		if let Some(idx) = cache.get(&string_val.get_strid().unwrap()) {
+		// Propagate (DM runtime with stack trace) instead of panicking when a
+		// non-string gas id is passed — surfaces the offending call site.
+		let strid = string_val
+			.get_strid()
+			.map_err(|_| eyre::eyre!("gas id passed to auxmos is not a string: {string_val:?}"))?;
+		if let Some(idx) = cache.get(&strid) {
 			Ok(*idx)
 		} else {
 			let id = &string_val.get_string()?;
 			let idx = gas_idx_from_string(id)?;
-			cache.insert(string_val.get_strid().unwrap(), idx);
+			cache.insert(strid, idx);
 			Ok(idx)
 		}
 	})

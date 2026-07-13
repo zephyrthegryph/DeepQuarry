@@ -20,4 +20,8 @@
 	verdigris_cleanup()
 	// log so we can confirm Rust loaded and read what features it has.
 	log_world("Verdigris loaded: [verdigris_version()] | features: [verdigris_features()]")
+	// Register the gas roster with auxmos's Rust gas table BEFORE the Master
+	// Controller starts SSatoms — turf air is created and populated during atom
+	// init, and a set_moles() on an unregistered gas segfaults the process.
+	auxmos_register_gases()
 	..()

@@ -12,6 +12,40 @@ atmos unit tests pass. Gas math currently runs in **pure DM** (the
 is not yet wired** (`auxmos_bindings.dm` uncompiled, `auxtools_atmos_init`
 uncalled) — that is the remaining perf work (Phases 3–4).
 
+> **DONE — auxmos gas-math backend is live and unconditional (2026-07-12).**
+> Gas data lives in the Rust auxmos arena; `/datum/gas_mixture` is a handle and
+> all gas reads/writes route through the auxmos byondapi binds. Boots clean on
+> Southern Cross (22 gases + reaction table registered, 0 gas runtimes). No flag
+> — the backend is always on.
+>
+> How the two original blockers were cleared:
+> 1. *byondapi/BYOND ABI* — bumped the workspace `byondapi` dep to the git repo
+>    (**0.6.14** + byondapi-sys **0.12.3**, feature `byond-516-1651`), which
+>    matches the 516 server. The vendored auxmos (`verdigris/atmos/`) compiled
+>    unchanged. (byondapi-sys now runs bindgen, so builds need `LIBCLANG_PATH`.)
+> 2. *auxmos static init* — `verdigris_init()` (called from the game `/world/New`
+>    in `code/game/world.dm`, since it overrides the one in `_verdigris.dm`)
+>    explicitly runs auxmos's `#[byondapi::init]` fns and installs the panic hook.
+>
+> Key wiring, for future reference:
+> - Gases are registered (`auxmos_register_gases`) from `/world/New` BEFORE the
+>   Master Controller starts SSatoms — air is populated during atom init and a
+>   `set_moles` on an unregistered gas crashes.
+> - `/datum/gas` carries the fire/oxidation/flags fields auxmos reads (its
+>   `byond_string!` interning needs the names to exist).
+> - auxmos keys gases by **string id**; DM must never pass a `/datum/gas` type
+>   path to a handle proc. `xgm_gas_string_id()` normalises; parse_gas_string,
+>   the immutable parse, and the XGM shims were fixed to use it.
+> - Reactions: `auxtools_update_reactions()` at SSair init populates the Rust
+>   reaction table from `SSair.gas_reactions`; unparseable reactions are skipped.
+>
+> **Remaining (optional, Phase 5): turf-graph processing.** SSair.fire() still
+> orchestrates turf sharing in DM (calling the Rust mixture ops). Moving that
+> whole loop into auxmos's Rust turf processor (`process_turfs_auxtools` +
+> monstermos/putnamos) is the additional runtime-perf win, and a separate
+> SSair.fire() re-architecture — not required for the gas-math backend to be
+> live and correct.
+
 CHOMP/ZAS-era callers are served by the compat layer in
 `code/ATMOSPHERICS/xgm_compat.dm` (XGM/ZAS gas + airblock API → LINDA) and
 `code/ATMOSPHERICS/tg_infra_compat.dm` (the `/tg/` infrastructure the vendored

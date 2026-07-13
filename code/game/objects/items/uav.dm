@@ -129,7 +129,7 @@
 	else if(istype(I, /obj/item/cell) && !cell)
 		if(do_after(user, 3 SECONDS, target = src))
 			to_chat(user, span_notice("You insert [I] into [nickname]."))
-			playsound(src, 'sound/items/deconstruct.ogg', 50, 1)
+			playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
 			power_down()
 			user.remove_from_mob(I)
 			I.forceMove(src)

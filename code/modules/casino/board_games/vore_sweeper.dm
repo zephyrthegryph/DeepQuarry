@@ -296,8 +296,14 @@
 /datum/board_game/vore_sweeper/proc/validate_mine_count(mines, size)
 	var/total_tiles = size * size
 	var/max_mines = round(total_tiles * MAX_MINE_RATE)
+	// Reject non-numeric/sub-1 counts: a negative or zero count would otherwise slip
+	// past the upper bound and break grid generation.
+	if(!isnum(mines) || mines < 1)
+		parent.atom_say("The grid must have at least one mine.")
+		mine_count = 1
+		return
 	if(mines <= max_mines)
-		mine_count = mines
+		mine_count = round(mines)
 		return
 	parent.atom_say("The grid with [total_tiles] tiles only supports a maximum of [max_mines] mines.")
 	mine_count = max_mines

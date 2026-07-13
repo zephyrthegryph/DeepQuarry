@@ -162,7 +162,7 @@
 /datum/decl/emote/audible/bug_buzz
 	key = "bbuzz"
 	emote_message_3p = "buzzes USER_THEIR wings."
-	emote_sound = 'sound/voice/BugBuzz.ogg'
+	emote_sound = 'sound/voice/bugbuzz.ogg'
 
 /datum/decl/emote/audible/bug_chitter
 	key = "chitter"

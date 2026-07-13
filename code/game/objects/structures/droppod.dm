@@ -140,9 +140,9 @@
 // total_moles is computed. Re-shape as adjust_gas calls in New().
 /datum/gas_mixture/pod_air
 	volume = 2500
-	temperature = 293.150
 
 /datum/gas_mixture/pod_air/New()
 	. = ..()
-	adjust_gas(GAS_O2, 21) // literal "oxygen" doesn't match LINDA gas IDs; GAS_O2 is "o2"
+	set_temperature(293.150)
+	adjust_gas(GAS_O2, 21)
 	adjust_gas(GAS_N2, 79)

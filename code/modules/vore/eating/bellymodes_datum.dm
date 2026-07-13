@@ -11,7 +11,7 @@ GLOBAL_LIST_INIT(digest_modes, list())
  * where to_update is whether or not a updateVorePanel() call is necessary,
  * and soundToPlay will play the given sound at the end of the process tick.
  */
-/datum/digest_mode/proc/process_mob(obj/belly/B, mob/living/L)
+/datum/digest_mode/proc/process_mob(obj/belly/B, mob/living/L, delta_factor = 1)
 	return null
 
 /datum/digest_mode/proc/handle_atoms(obj/belly/B, list/touchable_atoms)
@@ -21,7 +21,7 @@ GLOBAL_LIST_INIT(digest_modes, list())
 	id = DM_DIGEST
 	noise_chance = 50
 
-/datum/digest_mode/digest/process_mob(obj/belly/B, mob/living/L)
+/datum/digest_mode/digest/process_mob(obj/belly/B, mob/living/L, delta_factor = 1)
 	var/oldstat = L.stat
 	//Pref protection!
 	if(!L.digestable || L.absorbed)
@@ -50,13 +50,13 @@ GLOBAL_LIST_INIT(digest_modes, list())
 		//Parasitic digestion immunity hook, used to be a synx istype check but this is more optimized.
 	if(L.parasitic)
 		if(isliving(L))
-			var/paratox = B.digest_brute+B.digest_burn
+			var/paratox = (B.digest_brute+B.digest_burn) * delta_factor
 			B.owner.adjust_nutrition(-paratox)
 			L.adjust_nutrition(paratox)
 			L.adjustBruteLoss(-paratox*2) //Should automaticaly clamp to 0
 			L.adjustFireLoss(-paratox*2) //Should automaticaly clamp to 0
 			if(B.health_impacts_size) //Health probably changed so...
-				B.owner.handle_belly_update() //This is run whenever a belly's contents are changed.
+				B.owner.handle_belly_update_buckets() //Only rebuilds the icon when a fullness bucket actually crosses a boundary.
 			return
 
 	// Deal digestion damage (and feed the pred)
@@ -66,11 +66,11 @@ GLOBAL_LIST_INIT(digest_modes, list())
 	var/old_oxy = L.getOxyLoss()
 	var/old_tox = L.getToxLoss()
 	var/old_clone = L.getCloneLoss()
-	L.adjustBruteLoss(B.digest_brute)
-	L.adjustFireLoss(B.digest_burn)
-	L.adjustOxyLoss(B.digest_oxy)
-	L.adjustToxLoss(B.digest_tox)
-	L.adjustCloneLoss(B.digest_clone)
+	L.adjustBruteLoss(B.digest_brute * delta_factor)
+	L.adjustFireLoss(B.digest_burn * delta_factor)
+	L.adjustOxyLoss(B.digest_oxy * delta_factor)
+	L.adjustToxLoss(B.digest_tox * delta_factor)
+	L.adjustCloneLoss(B.digest_clone * delta_factor)
 	L.attempt_multishock(SHOCKFLAG_DIGESTION)
 	// Send a message when a prey-thing enters hard crit.
 	if(iscarbon(L) && old_health > 0 && L.health <= 0)
@@ -87,7 +87,7 @@ GLOBAL_LIST_INIT(digest_modes, list())
 	var/difference = B.owner.size_multiplier / L.size_multiplier
 
 	if(B.health_impacts_size)
-		B.owner.handle_belly_update()
+		B.owner.handle_belly_update_buckets()
 
 	consider_healthbar(L, old_health, B.owner)
 	if(offset && damage_gain > 0) // If any different than default weight, multiply the % of offset.
@@ -106,12 +106,12 @@ GLOBAL_LIST_INIT(digest_modes, list())
 	id = DM_ABSORB
 	noise_chance = 10
 
-/datum/digest_mode/absorb/process_mob(obj/belly/B, mob/living/L)
+/datum/digest_mode/absorb/process_mob(obj/belly/B, mob/living/L, delta_factor = 1)
 	if(!L.absorbable || L.absorbed)
 		return null
 
 	var/old_nutrition = L.nutrition
-	B.steal_nutrition(L)
+	B.steal_nutrition(L, delta_factor)
 	if(L.nutrition < 100)
 		B.absorb_living(L)
 		if(B.show_liquids && B.reagent_mode_flags & DM_FLAG_REAGENTSABSORB && B.reagents.total_volume < B.reagents.maximum_volume) //absorption reagent production
@@ -124,7 +124,7 @@ GLOBAL_LIST_INIT(digest_modes, list())
 /datum/digest_mode/unabsorb
 	id = DM_UNABSORB
 
-/datum/digest_mode/unabsorb/process_mob(obj/belly/B, mob/living/L)
+/datum/digest_mode/unabsorb/process_mob(obj/belly/B, mob/living/L, delta_factor = 1)
 	if(L.absorbed)
 		if(B.owner.nutrition >= 100)
 			B.owner.adjust_nutrition(-100)
@@ -140,17 +140,17 @@ GLOBAL_LIST_INIT(digest_modes, list())
 	id = DM_DRAIN
 	noise_chance = 10
 
-/datum/digest_mode/drain/process_mob(obj/belly/B, mob/living/L)
+/datum/digest_mode/drain/process_mob(obj/belly/B, mob/living/L, delta_factor = 1)
 	var/old_nutrition = L.nutrition
-	B.steal_nutrition(L)
+	B.steal_nutrition(L, delta_factor)
 	consider_healthbar(L, old_nutrition, B.owner)
 
 /datum/digest_mode/drain/shrink
 	id = DM_SHRINK
 
-/datum/digest_mode/drain/shrink/process_mob(obj/belly/B, mob/living/L)
+/datum/digest_mode/drain/shrink/process_mob(obj/belly/B, mob/living/L, delta_factor = 1)
 	if(L.size_multiplier > B.shrink_grow_size)
-		L.resize(L.size_multiplier - 0.01) // Shrink by 1% per tick
+		L.resize(L.size_multiplier - (0.01 * delta_factor)) // Shrink by 1% per baseline tick
 		if(L.size_multiplier <= B.shrink_grow_size) // Adds some feedback so the pred knows their prey has stopped shrinking.
 			to_chat(B.owner, span_vnotice("You feel [L] get as small as you would like within your [lowertext(B.name)]."))
 		B.owner.handle_belly_update()
@@ -160,9 +160,9 @@ GLOBAL_LIST_INIT(digest_modes, list())
 	id = DM_GROW
 	noise_chance = 10
 
-/datum/digest_mode/grow/process_mob(obj/belly/B, mob/living/L)
+/datum/digest_mode/grow/process_mob(obj/belly/B, mob/living/L, delta_factor = 1)
 	if(L.size_multiplier < B.shrink_grow_size)
-		L.resize(L.size_multiplier + 0.01) // Shrink by 1% per tick
+		L.resize(L.size_multiplier + (0.01 * delta_factor)) // Grow by 1% per baseline tick
 		if(L.size_multiplier >= B.shrink_grow_size) // Adds some feedback so the pred knows their prey has stopped growing.
 			to_chat(B.owner, span_vnotice("You feel [L] get as big as you would like within your [lowertext(B.name)]."))
 	B.owner.handle_belly_update()
@@ -170,12 +170,12 @@ GLOBAL_LIST_INIT(digest_modes, list())
 /datum/digest_mode/drain/sizesteal
 	id = DM_SIZE_STEAL
 
-/datum/digest_mode/drain/sizesteal/process_mob(obj/belly/B, mob/living/L)
+/datum/digest_mode/drain/sizesteal/process_mob(obj/belly/B, mob/living/L, delta_factor = 1)
 	if(L.size_multiplier > B.shrink_grow_size && B.owner.size_multiplier < RESIZE_MAXIMUM) //Grow until either pred is large or prey is small.
-		B.owner.resize(B.owner.size_multiplier + 0.01) //Grow by 1% per tick.
+		B.owner.resize(B.owner.size_multiplier + (0.01 * delta_factor)) //Grow by 1% per baseline tick.
 		if(B.owner.size_multiplier >= RESIZE_MAXIMUM) // Adds some feedback so the pred knows they can't grow anymore.
 			to_chat(B.owner, span_vnotice("You feel you have grown as much as you can."))
-		L.resize(L.size_multiplier - 0.01) //Shrink by 1% per tick
+		L.resize(L.size_multiplier - (0.01 * delta_factor)) //Shrink by 1% per baseline tick
 		if(L.size_multiplier <= B.shrink_grow_size) // Adds some feedback so the pred knows their prey has stopped shrinking.
 			to_chat(B.owner, span_vnotice("You feel [L] get as small as you would like within your [lowertext(B.name)]."))
 		B.owner.handle_belly_update()
@@ -185,7 +185,7 @@ GLOBAL_LIST_INIT(digest_modes, list())
 	id = DM_HEAL
 	noise_chance = 50 //Wet heals! The secret is you can leave this on for gurgle noises for fun.
 
-/datum/digest_mode/heal/process_mob(obj/belly/B, mob/living/L)
+/datum/digest_mode/heal/process_mob(obj/belly/B, mob/living/L, delta_factor = 1)
 	var/oldstat = L.stat
 	if(L.stat == DEAD || !L.permit_healbelly) //healpref check
 		return null // Can't heal the dead with healbelly
@@ -194,31 +194,31 @@ GLOBAL_LIST_INIT(digest_modes, list())
 		for(var/obj/item/organ/external/E in H.organs) //Needed for healing prosthetics
 			var/obj/item/organ/external/O = E
 			if(O.brute_dam > 0 || O.burn_dam > 0) //Making sure healing continues until fixed.
-				O.heal_damage(0.5, 0.5, 0, 1) // Less effective healing as able to fix broken limbs
-				B.owner.adjust_nutrition(-5)  // More costly for the pred, since metals and stuff
+				O.heal_damage(0.5 * delta_factor, 0.5 * delta_factor, 0, 1) // Less effective healing as able to fix broken limbs
+				B.owner.adjust_nutrition(-5 * delta_factor)  // More costly for the pred, since metals and stuff
 				if(B.health_impacts_size)
-					B.owner.handle_belly_update()
+					B.owner.handle_belly_update_buckets()
 			if(L.health < L.getMaxHealth())
-				L.adjustToxLoss(-2)
-				L.adjustOxyLoss(-2)
-				L.adjustCloneLoss(-1)
-				B.owner.adjust_nutrition(-1)  // Normal cost per old functionality
+				L.adjustToxLoss(-2 * delta_factor)
+				L.adjustOxyLoss(-2 * delta_factor)
+				L.adjustCloneLoss(-1 * delta_factor)
+				B.owner.adjust_nutrition(-1 * delta_factor)  // Normal cost per old functionality
 				if(B.health_impacts_size)
-					B.owner.handle_belly_update()
+					B.owner.handle_belly_update_buckets()
 	if(B.owner.nutrition > 90 && (L.health < L.getMaxHealth()) && !H.isSynthetic())
-		L.adjustBruteLoss(-2.5)
-		L.adjustFireLoss(-2.5)
-		L.adjustToxLoss(-5)
-		L.adjustOxyLoss(-5)
-		L.adjustCloneLoss(-1.25)
-		B.owner.adjust_nutrition(-2)
+		L.adjustBruteLoss(-2.5 * delta_factor)
+		L.adjustFireLoss(-2.5 * delta_factor)
+		L.adjustToxLoss(-5 * delta_factor)
+		L.adjustOxyLoss(-5 * delta_factor)
+		L.adjustCloneLoss(-1.25 * delta_factor)
+		B.owner.adjust_nutrition(-2 * delta_factor)
 		if(B.health_impacts_size)
-			B.owner.handle_belly_update()
+			B.owner.handle_belly_update_buckets()
 		if(L.nutrition <= 400)
-			L.adjust_nutrition(1)
+			L.adjust_nutrition(1 * delta_factor)
 	else if(B.owner.nutrition > 90 && (L.nutrition <= 400))
-		B.owner.adjust_nutrition(-1)
-		L.adjust_nutrition(1)
+		B.owner.adjust_nutrition(-1 * delta_factor)
+		L.adjust_nutrition(1 * delta_factor)
 	if(L.stat != oldstat)
 		return list("to_update" = TRUE)
 
@@ -323,7 +323,7 @@ GLOBAL_LIST_INIT(digest_modes, list())
 	noise_chance = 50
 
 
-/datum/digest_mode/selective/process_mob(obj/belly/B, mob/living/L)
+/datum/digest_mode/selective/process_mob(obj/belly/B, mob/living/L, delta_factor = 1)
 	var/datum/digest_mode/tempmode = GLOB.digest_modes[DM_HOLD]			// Default to Hold in case of big oof fallback
 	//if not absorbed, see if they're food
 	switch(L.selective_preference)										// First, we respect prey prefs
@@ -355,7 +355,7 @@ GLOBAL_LIST_INIT(digest_modes, list())
 						tempmode = GLOB.digest_modes[DM_DIGEST]			// If not absorbable, are they digestible? Then digest.
 					else
 						tempmode = GLOB.digest_modes[DM_DRAIN]			// Otherwise drain.
-	return tempmode.process_mob(B, L)
+	return tempmode.process_mob(B, L, delta_factor)
 
 /datum/digest_mode/selective/proc/get_selective_mode(obj/belly/B, mob/living/L)
 	var/tempmode = DM_HOLD			// Default to Hold in case of big oof fallback

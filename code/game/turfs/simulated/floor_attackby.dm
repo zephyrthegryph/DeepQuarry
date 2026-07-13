@@ -13,7 +13,12 @@
 			if(L.a_intent == I_GRAB)
 				try_graffiti(L, C, click_parameters) // back by unpopular demand - Add - Click parameters
 				return
-			attack_tile(C, L) // Be on help intent if you want to decon something.
+			// A real melee weapon does a phased swing at this tile: costs stamina and hits whoever
+			// is standing on it (so you can swipe the floor to reach a target you can't click).
+			if(C.force && !(C.flags & NOBLUDGEON))
+				L.begin_melee_swing(src, C)
+				return
+			attack_tile(C, L) // Non-weapon items still do the instant tile swipe. Be on help intent to decon.
 			return
 
 	// Multi-z roof building

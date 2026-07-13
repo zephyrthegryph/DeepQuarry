@@ -1,0 +1,13 @@
+author: "ethan"
+delete-after: true
+changes:
+  - bugfix: "Casino prize vendors, registers, EFTPOS, ATMs and the money bag can no longer be tricked into free/underpriced purchases, negative-amount transfers, remote coin theft, or skipping the PIN — amounts and prices are now validated and authoritative server-side."
+  - bugfix: "Closed a window where buying a sentient prize could charge your chips without giving the prize if someone else claimed it mid-dialog."
+  - bugfix: "The casino trader no longer hangs the server on a zero-value trade good, and chip/credit balances can no longer go negative."
+  - bugfix: "Fixed the research console silently failing (and erroring) when a design or node was deleted."
+  - bugfix: "Charging AI enemies no longer land their telegraphed slam after the wind-up was interrupted."
+  - bugfix: "Simple animals now react correctly to dangerous methane levels."
+  - bugfix: "Fixed the cave generator producing subtly corrupted layer edges and rejecting valid generation parameters."
+  - balance: "Decoupled belly digestion, quarry hazards/danger, and integrated-circuit idle power from the server tick rate so they run at a consistent real-time rate (present-day balance unchanged)."
+  - code_imp: "Hardened foundational list/math macros against precedence and dangling-else footguns; trimmed redundant per-tick work in mob life, atmospherics, quarry, and the belly UI."
+  - bugfix: "tgui: fixed a stored-XSS vector in belly/soulcatcher exports, a crash in the prey panel on unknown abilities, and several smaller UI logic bugs."

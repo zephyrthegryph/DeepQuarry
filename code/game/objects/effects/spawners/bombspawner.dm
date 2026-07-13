@@ -66,11 +66,11 @@ ADMIN_VERB(spawn_tanktransferbomb, R_SPAWN, "Instant TTV", "Spawn a tank transfe
 	// auxmos archiving.
 	PT.air_contents.adjust_gas(GAS_PHORON, (phoron_amt) - LINDA_GAS_AMT(PT.air_contents, GAS_PHORON))
 	PT.air_contents.adjust_gas(GAS_CO2, (carbon_amt) - LINDA_GAS_AMT(PT.air_contents, GAS_CO2))
-	PT.air_contents.temperature = PHORON_MINIMUM_BURN_TEMPERATURE+1
+	PT.air_contents.set_temperature(PHORON_MINIMUM_BURN_TEMPERATURE+1)
 
 	OT.valve_welded = 1
 	OT.air_contents.adjust_gas(GAS_O2, (oxygen_amt) - LINDA_GAS_AMT(OT.air_contents, GAS_O2))
-	OT.air_contents.temperature = PHORON_MINIMUM_BURN_TEMPERATURE+1
+	OT.air_contents.set_temperature(PHORON_MINIMUM_BURN_TEMPERATURE+1)
 
 	var/obj/item/assembly/S = new assembly_type(V)
 	V.attached_device = S

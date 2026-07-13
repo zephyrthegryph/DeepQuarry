@@ -1,7 +1,10 @@
 /mob/living/proc/get_visible_name()
-	var/list/name_data = list(null)
-	if(SEND_SIGNAL(src, COMSIG_HUMAN_GET_VISIBLE_NAME, name_data) & COMPONENT_VISIBLE_NAME_CHANGED)
-		return name_data[1]
+	// Only allocate the signal payload list when a handler is actually registered.
+	// This proc runs every Life() tick per human; the list(null) alloc is otherwise wasted.
+	if(_listen_lookup?[COMSIG_HUMAN_GET_VISIBLE_NAME])
+		var/list/name_data = list(null)
+		if(SEND_SIGNAL(src, COMSIG_HUMAN_GET_VISIBLE_NAME, name_data) & COMPONENT_VISIBLE_NAME_CHANGED)
+			return name_data[1]
 
 	if(real_name)
 		return real_name
@@ -24,7 +27,7 @@
 	if(ai_brain)
 		ai_brain.holder = null
 		ai_brain.UnregisterSignal(src,COMSIG_MOB_STATCHANGE)
-		// DQEdit: legacy faction_friends list cleanup removed — the modern
+		//legacy faction_friends list cleanup removed — the modern
 		// brain stores relationships as weakrefs in personal[], which
 		// invalidate automatically when the referenced mob qdels.
 		QDEL_NULL(ai_brain)
@@ -455,6 +458,7 @@
 	var/crit_point = -(getMaxHealth()*0.5)
 	if(species.crit_mod)
 		crit_point *= species.crit_mod
+	crit_point -= dq_crit_point_bonus() // Pain Tolerance / Survivor / Death's Door: stay up longer.
 	return crit_point
 
 /mob/living/proc/setMaxHealth(newMaxHealth)
@@ -1254,6 +1258,9 @@
 	var/obj/item/I = get_inactive_hand()
 	if(I)
 		I.in_inactive_hand(src)	//This'll do specific things, determined by the item
+	// Active hand changed → the weapon governing the right-click guard may have too,
+	// so re-evaluate whether the BYOND context menu is suppressed.
+	refresh_combat_popup_menus()
 	return
 
 /mob/living/proc/activate_hand(selhand) //0 or "r" or "right" for right hand; 1 or "l" or "left" for left hand.
@@ -1278,7 +1285,7 @@
 	if(!item || istype(item, /obj/item/tk_grab))
 		return FALSE
 
-	var/throw_range = item.throw_range
+	var/throw_range = item.throw_range + perk_add(DQ_PERK_FX_THROW_RANGE) // Throwing Arm: throw farther.
 	if (istype(item, /obj/item/grab))
 		var/obj/item/grab/G = item
 		item = G.throw_held() //throw the person instead of the grab
@@ -1295,6 +1302,9 @@
 				var/mob/living/carbon/human/N = M
 				if((N.health + N.halloss) < N.get_crit_point() || N.stat == DEAD)
 					N.adjustBruteLoss(rand(10,30))
+			if(isliving(M) && has_perk(/datum/perk/body/str_wrestler)) // Wrestler: thrown bodies hit harder.
+				var/mob/living/thrown_mob = M
+				thrown_mob.adjustBruteLoss(rand(8,16))
 			src.drop_from_inventory(G)
 
 			src.visible_message(span_warning("[src] has thrown [item]."))

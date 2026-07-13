@@ -104,7 +104,9 @@
 				to_chat(user, span_notice("You decided not to."))
 				trading = FALSE
 				return
-			else if (coin_value < p)
+			// Re-read the current banked value after the sleeping dialog; the snapshot
+			// taken before the prompts can be stale if the bank was drained meanwhile.
+			else if (get_value(accepts) < p)
 				to_chat(user, span_warning("You haven't provided enough funds!"))
 				trading = FALSE
 				return
@@ -194,7 +196,7 @@
 /obj/trader/proc/deduct_value(amount)
 	switch(accepts)
 		if("coin")
-			coinbalance -= amount
+			coinbalance = max(0, coinbalance - amount)
 		if("money")
 			for(var/obj/c in bank)
 				if(istype(c, /obj/item/spacecash))
@@ -205,13 +207,23 @@
 						bank -= a
 						qdel(a)
 		if("item")
+			// Guard against a non-positive item worth, which would never decrement v
+			// and spin forever (DoS). Also stop if the bank runs out of matching items.
+			if(accepted_item_worth <= 0)
+				return
 			var/v = amount
 			while(v > 0)
+				var/removed_any = FALSE
 				for(var/obj/c in bank)
 					if(istype(c, accepted_itemtype))
 						c.forceMove(get_turf(loc))
 						qdel(c)
 						v -= accepted_item_worth
+						removed_any = TRUE
+						if(v <= 0)
+							break
+				if(!removed_any)
+					break
 
 /obj/trader/proc/return_funds()
 	var/u_get_refund = FALSE

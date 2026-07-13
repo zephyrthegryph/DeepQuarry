@@ -196,7 +196,7 @@
 /obj/structure/closet/proc/store_mobs(stored_units)
 	var/added_units = 0
 	for(var/mob/living/M in loc)
-		if(M.buckled || M.pinned.len)
+		if(M.buckled || LAZYLEN(M.pinned))
 			continue
 		if(stored_units + added_units + M.mob_size > storage_capacity)
 			break

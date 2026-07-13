@@ -75,7 +75,7 @@
 /obj/item/projectile/energy/electrode
 	name = "electrode"
 	icon_state = "spark"
-	fire_sound = 'sound/weapons/Gunshot2.ogg'
+	fire_sound = 'sound/weapons/gunshot2.ogg'
 	taser_effect = 1
 	agony = 40
 	light_range = 2

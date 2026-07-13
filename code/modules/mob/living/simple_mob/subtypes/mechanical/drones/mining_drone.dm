@@ -129,7 +129,7 @@
 							break
 		return has_tool
 
-// DQEdit - the IFF retaliation hooks (attack_hand / bullet_act / hit_with_weapon)
+//the IFF retaliation hooks (attack_hand / bullet_act / hit_with_weapon)
 // poked legacy ai_brain.check_attacker / add_attacker. The modern brain handles
 // retaliation automatically via dq_notify_damage; these wrappers are noops now.
 /mob/living/simple_mob/mechanical/mining_drone/attack_hand(mob/living/L)
@@ -197,8 +197,8 @@
 	say_threaten = list("This area is condemned by Vir System Authority. Please leave immediately. You have 20 seconds to comply.")
 	say_stand_down = list("Visual lost.", "Error: Target not found.")
 	say_escalate = list("Intruder is tresspassing. Maximum force authorized by Vir System Suthority.")
-	threaten_sound = 'sound/mob/robots/DroneFreezeLong.ogg'
-	stand_down_sound = 'sound/mob/robots/DroneLostTarget.ogg'
+	threaten_sound = 'sound/mob/robots/dronefreezelong.ogg'
+	stand_down_sound = 'sound/mob/robots/dronelosttarget.ogg'
 /* Combat refactor walkback
 /mob/living/simple_mob/mechanical/combat_drone
 	maxHealth = 25

@@ -291,7 +291,7 @@
 	magazine_type = /obj/item/ammo_magazine/m545saw
 	allowed_magazines = list(/obj/item/ammo_magazine/m545saw, /obj/item/ammo_magazine/m545)
 	projectile_type = /obj/item/projectile/bullet/rifle/a545
-	fire_sound = "sound/weapons/Gunshot_light.ogg"
+	fire_sound = "sound/weapons/gunshot_light.ogg"
 
 	one_handed_penalty = 90
 
@@ -490,7 +490,7 @@
 	load_method = MAGAZINE
 	magazine_type = /obj/item/ammo_magazine/m45tommy
 	allowed_magazines = list(/obj/item/ammo_magazine/m45tommy, /obj/item/ammo_magazine/m45tommydrum)
-	fire_sound = "sound/weapons/Gunshot1.ogg"
+	fire_sound = "sound/weapons/gunshot1.ogg"
 
 	firemodes = list(
 		list(mode_name="semiauto", burst=1, fire_delay=0.1),
@@ -558,7 +558,7 @@
 	caliber = "9mm"
 	magazine_type = /obj/item/ammo_magazine/m9mmt
 	allowed_magazines = list(/obj/item/ammo_magazine/m9mmt)
-	fire_sound = "sound/weapons/Gunshot1.ogg"
+	fire_sound = "sound/weapons/gunshot1.ogg"
 
 	firemodes = list(
 		list(mode_name="semiauto", burst=1, fire_delay=0.1),
@@ -613,7 +613,7 @@
 	load_method = MAGAZINE
 	magazine_type = /obj/item/ammo_magazine/m9mmp90 // The magazine type it spawns with.
 	allowed_magazines = list(/obj/item/ammo_magazine/m9mmp90, /obj/item/ammo_magazine/m9mmt) // What kind of magazine(s) it can load.
-	fire_sound = "sound/weapons/Gunshot1.ogg"
+	fire_sound = "sound/weapons/gunshot1.ogg"
 
 	firemodes = list(
 		list(mode_name="semi-automatic", burst=1, fire_delay=0, move_delay=0),
@@ -653,7 +653,7 @@
 	load_method = MAGAZINE
 	magazine_type = /obj/item/ammo_magazine/m10mm
 	allowed_magazines = list(/obj/item/ammo_magazine/m10mm)
-	fire_sound = "sound/weapons/Gunshot1.ogg"
+	fire_sound = "sound/weapons/gunshot1.ogg"
 
 	firemodes = list(
 		list(mode_name="semi-automatic", burst=1, fire_delay=0, move_delay=0),

@@ -14,6 +14,18 @@ This saves us from having to call add_fingerprint() any time something is put in
 			to_chat(H, span_notice("You are not holding anything to equip."))
 			return
 
+		// Stowing/readying gear takes a moment. Quickened Hands speeds the swap; Quick Draw
+		// makes handling a weapon instant.
+		var/equip_delay = DQ_EQUIP_DELAY
+		if(H.has_perk(/datum/perk/body/spd_quickened_hands))
+			equip_delay = round(equip_delay * DQ_PERK_QUICKENED_HANDS_MULT)
+		if(H.has_perk(/datum/perk/body/spd_quick_draw) && (istype(I, /obj/item/gun) || I.force >= 10))
+			equip_delay = 0
+		if(equip_delay > 0 && !do_after(H, equip_delay, target = H))
+			return
+		if(H.get_active_hand() != I) // moved out of our hand during the swap
+			return
+
 		var/moved = FALSE
 
 		// Try an equipment slot

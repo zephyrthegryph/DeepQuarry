@@ -46,7 +46,8 @@
 			filtered += M
 	if(!length(filtered))
 		return null
-	return dq_get_selector(/datum/target_selector/closest).select(brain, filtered)
+	var/datum/target_selector/closest_selector = dq_get_selector(/datum/target_selector/closest)
+	return closest_selector.select(brain, filtered)
 
 /mob/living/simple_mob/animal/sif/siffet/get_ai_behaviors()
 	var/static/list/L = list(

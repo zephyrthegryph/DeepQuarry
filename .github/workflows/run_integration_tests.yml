@@ -72,7 +72,9 @@ jobs:
         id: run_tests
         run: tools/ci/compile_and_run.sh
         env:
-          EXTRA_ARGS: "-DUNIT_TESTS -D${{ inputs.map }}"
+          # FULL_TESTS clears SKIP_SLOW_TESTS so CI runs the slow integration/benchmark
+          # tests that local `bin/test.cmd` skips for speed.
+          EXTRA_ARGS: "-DUNIT_TESTS -DFULL_TESTS -D${{ inputs.map }}"
           RUN: "1"
       - name: On test fail, write a step summary
         if: always() && steps.run_tests.outcome == 'failure'

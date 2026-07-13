@@ -183,6 +183,16 @@ GLOBAL_VAR(restart_counter)
 	log_test("If you did not intend to enable this please check code/__defines/unit_testing.dm")
 #endif
 
+	// Install the verdigris panic hook + init the Rust atmos statics, then
+	// register the gas roster with auxmos's Rust gas table — all BEFORE the
+	// Master Controller initializes subsystems. SSatoms creates and populates
+	// turf air during its init, and set_moles() on a gas auxmos hasn't been told
+	// about indexes past the Rust gas table and crashes.
+	// (This runs here because the game /world/New overrides the one in
+	// _verdigris.dm, so verdigris_init would otherwise never fire.)
+	verdigris_init()
+	auxmos_register_gases()
+
 	Master.Initialize(10, FALSE, TRUE)
 
 	RunUnattendedFunctions()

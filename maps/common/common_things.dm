@@ -316,18 +316,17 @@
 			var/turf/T = get_turf(src)
 			var/datum/gas_mixture/env = T.return_air()
 			if(env)
-				my_mob.minbodytemp = env.temperature * 0.8
-				my_mob.maxbodytemp = env.temperature * 1.2
+				my_mob.minbodytemp = env.return_temperature() * 0.8
+				my_mob.maxbodytemp = env.return_temperature() * 1.2
 
-				var/list/gaslist = env.gases
-				my_mob.min_oxy = gaslist[GAS_O2] * 0.8
-				my_mob.min_tox = gaslist[GAS_PHORON] * 0.8
-				my_mob.min_n2 = gaslist[GAS_N2] * 0.8
-				my_mob.min_co2 = gaslist[GAS_CO2] * 0.8
-				my_mob.max_oxy = gaslist[GAS_O2] * 1.2
-				my_mob.max_tox = gaslist[GAS_PHORON] * 1.2
-				my_mob.max_n2 = gaslist[GAS_N2] * 1.2
-				my_mob.max_co2 = gaslist[GAS_CO2] * 1.2
+				my_mob.min_oxy = env.get_moles(GAS_O2) * 0.8
+				my_mob.min_tox = env.get_moles(GAS_PHORON) * 0.8
+				my_mob.min_n2 = env.get_moles(GAS_N2) * 0.8
+				my_mob.min_co2 = env.get_moles(GAS_CO2) * 0.8
+				my_mob.max_oxy = env.get_moles(GAS_O2) * 1.2
+				my_mob.max_tox = env.get_moles(GAS_PHORON) * 1.2
+				my_mob.max_n2 = env.get_moles(GAS_N2) * 1.2
+				my_mob.max_co2 = env.get_moles(GAS_CO2) * 1.2
 /* // AI TEMPORARY REMOVAL
 		if(guard)
 			my_mob.returns_home = TRUE

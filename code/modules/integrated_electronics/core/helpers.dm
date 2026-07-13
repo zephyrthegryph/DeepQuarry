@@ -35,7 +35,9 @@
 
 /obj/item/integrated_circuit/proc/activate_pin(pin_number)
 	var/datum/integrated_io/activate/A = activators[pin_number]
-	A.push_data()
+	// Forward the remaining per-propagation work budget so a chain of activations
+	// can't exceed IC_MAX_PULSE_CIRCUITS in a single synchronous pulse.
+	A.push_data(ic_work_budget)
 
 /datum/integrated_io/proc/get_data()
 	if(isnull(data))

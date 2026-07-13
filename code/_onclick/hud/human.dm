@@ -264,6 +264,13 @@
 		healths.screen_loc = ui_health
 		hud_elements |= healths
 
+		// Runtime-drawn stamina bar (see code/modules/mob/living/stamina.dm).
+		stamina_meter = new /atom/movable/screen/stamina()
+		stamina_meter.style = HUD.ui_style
+		stamina_meter.screen_loc = ui_stamina
+		stamina_meter.update(max_stamina ? stamina / max_stamina : 0)
+		hud_elements |= stamina_meter
+
 	autowhisper_display = new /atom/movable/screen()
 	autowhisper_display.icon = 'icons/mob/screen/minimalist.dmi'
 	autowhisper_display.icon_state = "autowhisper"

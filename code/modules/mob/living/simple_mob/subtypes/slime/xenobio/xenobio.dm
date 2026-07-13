@@ -9,8 +9,8 @@
 	var/power_charge = 0 // Disarm attacks can shock someone if high/lucky enough.
 	var/mob/living/victim = null // the person the slime is currently feeding on
 	var/rainbow_core_candidate = TRUE // If false, rainbow cores cannot make this type randomly.
-	var/mutation_chance = 30 // Odds of spawning as a new color when reproducing. Can be modified by certain xenobio products. Carried across generations of slimes.//
-	var/split_amount = 5 // Amount of children we will normally have. Half of that for dead adult slimes. Is NOT carried across generations. //
+	var/mutation_chance = 30 // Odds of spawning as a new color when reproducing. Can be modified by certain xenobio products. Carried across generations of slimes.
+	var/split_amount = 5 // Amount of children we will normally have. Half of that for dead adult slimes. Is NOT carried across generations.
 	var/untamable = FALSE //Makes slime untamable via discipline.
 	var/untamable_inheirit = FALSE //Makes slime inheirit its untamability.
 	var/list/slime_mutation = list(
@@ -24,7 +24,7 @@
 	var/harmless = FALSE // Set to true when pacified. Makes the slime harmless, not get hungry, and not be able to grow/reproduce.
 
 /mob/living/simple_mob/slime/xenobio/Initialize(mapload, mob/living/simple_mob/slime/xenobio/my_predecessor)
-	// DQEdit - legacy ASSERT against ai_holder_type removed; slimes now use the
+	//legacy ASSERT against ai_holder_type removed; slimes now use the
 	// brain framework and /datum/slime_state for discipline.
 	number = rand(1, 1000)
 	update_name()
@@ -40,7 +40,7 @@
 		stop_consumption() // Unbuckle us from our victim.
 	return ..()
 
-// DQEdit - body moved to modular_dq/.../ports/slime_mob_overrides.dm where it
+//body moved to modular_dq/.../ports/slime_mob_overrides.dm where it
 // uses /datum/slime_state instead of the deleted ai_brain. Empty stub here so
 // any direct caller still finds the proc.
 /mob/living/simple_mob/slime/xenobio/proc/inherit_information(mob/living/simple_mob/slime/xenobio/predecessor)
@@ -74,7 +74,7 @@
 		. += "It appears to be incapacitated."
 	else if(harmless)
 		. += "It appears to have been pacified."
-	// DQEdit - discipline/obedience/rabid mood lines moved into the modular
+	//discipline/obedience/rabid mood lines moved into the modular
 	// /mob/living/simple_mob/slime/xenobio/examine override which reads
 	// /datum/slime_state instead of the deleted ai_holder.
 
@@ -112,7 +112,7 @@
 	name = "[slime_color] [is_adult ? "adult" : "baby"] [initial(name)] ([number])"
 	real_name = name
 
-// DQEdit - body moved to modular_dq/.../ports/slime_mob_overrides.dm where it
+//body moved to modular_dq/.../ports/slime_mob_overrides.dm where it
 // reads /datum/slime_state instead of the deleted ai_holder.
 /mob/living/simple_mob/slime/xenobio/update_mood()
 	return
@@ -126,7 +126,7 @@
 	drop_vore = allowed
 	throw_vore = allowed
 
-// DQEdit - enrage / relax / pacify bodies moved to
+//enrage / relax / pacify bodies moved to
 // modular_dq/.../ports/slime_mob_overrides.dm; they now drive slime_state.
 /mob/living/simple_mob/slime/xenobio/proc/enrage()
 	return

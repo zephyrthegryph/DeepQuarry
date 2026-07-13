@@ -498,7 +498,12 @@ GLOBAL_LIST_EMPTY(all_objectives)
 
 			for(var/obj/item/I in all_items) //Check for phoron tanks
 				if(istype(I, steal_target))
-					found_amount += (target_name=="28 moles of phoron (full tank)" ? LINDA_GAS_AMT(I:air_contents, GAS_PHORON) : (I:amount)) // XGM .gas[id] → LINDA
+					if(target_name=="28 moles of phoron (full tank)")
+						var/obj/item/tank/phoron_tank = I
+						found_amount += LINDA_GAS_AMT(phoron_tank.air_contents, GAS_PHORON) // XGM .gas[id] → LINDA
+					else
+						var/obj/item/stack/counted_stack = I
+						found_amount += counted_stack.amount
 			return found_amount>=target_amount
 
 		if("50 coins (in bag)")

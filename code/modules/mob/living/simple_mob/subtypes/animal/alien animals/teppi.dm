@@ -760,7 +760,7 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 	GLOB.teppi_count --
 	friend_zone = null
 	GLOB.active_ghost_pods -= src
-	// DQEdit: legacy .leader reference removed (no equivalent on /datum/ai_brain).
+	//legacy .leader reference removed (no equivalent on /datum/ai_brain).
 	return ..()
 
 /mob/living/simple_mob/vore/alienanimals/teppi/lay_down()
@@ -855,7 +855,7 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 	if(current_affinity >= 250)	//At this point the Teppi has joined your team
 		faction = person.faction
 	if(current_affinity <= -500 && !client)	//You're doing this on purpose or really not paying attention and I'm going to kick your ass.
-		// DQEdit - legacy ai_holder.target = person; .track_target_position; .set_stance(STANCE_FIGHT)
+		//legacy ai_holder.target = person; .track_target_position; .set_stance(STANCE_FIGHT)
 		// became a single brain.give_target with urgent=TRUE which auto-aggros.
 		ai_brain?.give_target(person, TRUE)
 		affinity[person.real_name] = -100	//Don't hold a grudge though.
@@ -980,7 +980,6 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 //I ran a vote with the headmins, and this option won out considering the restrictions.
 //I don't think this is a GOOD idea, but in pursuit of preserving Teppi's mechanical functionality while player controlled, there is a verb!
 //This gives a strongly worded warning the first time you push the button, and has similar restrictons to AI controlled Teppi for use which will prevent spamming.
-//
 /mob/living/simple_mob/vore/alienanimals/teppi/proc/produce_offspring()
 	set name = "Produce Offspring"
 	set category = "Abilities.Teppi"

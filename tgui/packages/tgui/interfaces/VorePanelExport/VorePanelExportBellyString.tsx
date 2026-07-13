@@ -5,10 +5,12 @@ import {
   STRUGGLE_OUTSIDE_MESSAGE,
 } from './constants';
 import {
+  escapeHtml,
   formatListEmotes,
   formatListItems,
   formatListMessages,
   getYesNo,
+  sanitizeColor,
 } from './functions';
 import type { Belly, EmoteEntry, SettingItem } from './types';
 
@@ -252,7 +254,7 @@ export const generateBellyString = (belly: Belly, index: number) => {
   const temperatureCelsius = Math.round((bellytemperature - 273.15) * 10) / 10;
   const temperatureSpan = `<span${temperature_damage ? ' style="color: red;"' : ''}>${temperatureCelsius}°C</span>`;
 
-  result += `${name} - (${damageSpans}/${temperatureSpan}) - ${ModeSpan[mode]} - ${ItemModeSpan[item_mode]}`;
+  result += `${escapeHtml(name)} - (${damageSpans}/${temperatureSpan}) - ${ModeSpan[mode] ?? ''} - ${ItemModeSpan[item_mode] ?? ''}`;
 
   result += '</button></h2>';
 
@@ -263,10 +265,10 @@ export const generateBellyString = (belly: Belly, index: number) => {
   result += '<b>== Descriptions ==</b><br>';
 
   const infoFields = [
-    { label: 'Vore Verb', value: vore_verb },
-    { label: 'Release Verb', value: release_verb },
-    { label: 'Description', value: `"${desc}"` },
-    { label: 'Absorbed Description', value: `"${absorbed_desc}"` },
+    { label: 'Vore Verb', value: escapeHtml(vore_verb) },
+    { label: 'Release Verb', value: escapeHtml(release_verb) },
+    { label: 'Description', value: `"${escapeHtml(desc)}"` },
+    { label: 'Absorbed Description', value: `"${escapeHtml(absorbed_desc)}"` },
   ];
 
   infoFields.forEach(({ label, value }) => {
@@ -519,8 +521,8 @@ export const generateBellyString = (belly: Belly, index: number) => {
       value: contaminates,
       formatter: (val: boolean): string => getYesNo(val),
     },
-    { label: 'Contamination Flavor', value: contamination_flavor },
-    { label: 'Contamination Color', value: contamination_color },
+    { label: 'Contamination Flavor', value: escapeHtml(contamination_flavor) },
+    { label: 'Contamination Color', value: escapeHtml(contamination_color) },
     {
       label: 'Nutritional Gain',
       value: nutrition_percent,
@@ -574,7 +576,7 @@ export const generateBellyString = (belly: Belly, index: number) => {
       label: 'Vore Spawn Whitelist',
       value: vorespawn_whitelist,
       formatter: (val: string[]): string =>
-        val.length ? val.join(', ') : 'Anyone!',
+        val.length ? val.map(escapeHtml).join(', ') : 'Anyone!',
     },
     {
       label: 'Vore Spawn Absorbed',
@@ -586,8 +588,8 @@ export const generateBellyString = (belly: Belly, index: number) => {
             ? '<span style="color: green;">Yes</span>'
             : '<span style="color: orange;">Prey Choice</span>',
     },
-    { label: 'Egg Type', value: egg_type },
-    { label: 'Selective Mode Preference', value: selective_preference },
+    { label: 'Egg Type', value: escapeHtml(egg_type) },
+    { label: 'Selective Mode Preference', value: escapeHtml(selective_preference) },
   ];
 
   result += formatListItems(settingItem);
@@ -612,8 +614,8 @@ export const generateBellyString = (belly: Belly, index: number) => {
     { label: 'Fleshy Belly', value: is_wet, formatter: getYesNo },
     { label: 'Internal Loop', value: wet_loop, formatter: getYesNo },
     { label: 'Use Fancy Sounds', value: fancy_vore, formatter: getYesNo },
-    { label: 'Vore Sound', value: vore_sound },
-    { label: 'Release Sound', value: release_sound },
+    { label: 'Vore Sound', value: escapeHtml(vore_sound) },
+    { label: 'Release Sound', value: escapeHtml(release_sound) },
   ];
 
   result += formatListItems(soundItems);
@@ -652,7 +654,7 @@ export const generateBellyString = (belly: Belly, index: number) => {
       formatter: getYesNo,
     },
     { label: 'Vore Sprite Size Factor', value: size_factor_for_sprite },
-    { label: 'Belly Sprite to affect', value: belly_sprite_to_affect },
+    { label: 'Belly Sprite to affect', value: escapeHtml(belly_sprite_to_affect) },
   ];
 
   result += formatListItems(visualItems);
@@ -670,9 +672,12 @@ export const generateBellyString = (belly: Belly, index: number) => {
   ];
 
   bellyColorItems.forEach(({ label, value }) => {
-    const isColorCode = typeof value === 'string' && value.startsWith('#');
+    const safeColor = sanitizeColor(value);
+    const displayValue = escapeHtml(value);
     result += `<li class="list-group-item">${label}: ${
-      isColorCode ? `<span style="color: ${value};">${value}</span>` : value
+      safeColor
+        ? `<span style="color: ${safeColor};">${displayValue}</span>`
+        : displayValue
     }</li>`;
   });
 
@@ -713,13 +718,16 @@ export const generateBellyString = (belly: Belly, index: number) => {
     },
     { label: 'Escape Time', value: escapetime / 10, suffix: 's' },
     { label: 'Transfer Chance', value: transferchance, suffix: '%' },
-    { label: 'Transfer Location', value: transferlocation },
+    { label: 'Transfer Location', value: escapeHtml(transferlocation) },
     {
       label: 'Secondary Transfer Chance',
       value: transferchance_secondary,
       suffix: '%',
     },
-    { label: 'Secondary Transfer Location', value: transferlocation_secondary },
+    {
+      label: 'Secondary Transfer Location',
+      value: escapeHtml(transferlocation_secondary),
+    },
     { label: 'Absorb Chance', value: absorbchance, suffix: '%' },
     { label: 'Digest Chance', value: digestchance, suffix: '%' },
     { label: 'Belch Chance', value: belchchance, suffix: '%' },
@@ -739,7 +747,7 @@ export const generateBellyString = (belly: Belly, index: number) => {
   const transferItems = [
     { label: 'Auto-Transfer Time', value: autotransferwait / 10, suffix: 's' },
     { label: 'Auto-Transfer Chance', value: autotransferchance, suffix: '%' },
-    { label: 'Auto-Transfer Location', value: autotransferlocation },
+    { label: 'Auto-Transfer Location', value: escapeHtml(autotransferlocation) },
     {
       label: 'Auto-Transfer Chance (Secondary)',
       value: autotransferchance_secondary,
@@ -747,7 +755,7 @@ export const generateBellyString = (belly: Belly, index: number) => {
     },
     {
       label: 'Auto-Transfer Location (Secondary)',
-      value: autotransferlocation_secondary,
+      value: escapeHtml(autotransferlocation_secondary),
     },
     { label: 'Auto-Transfer Min Amount', value: autotransfer_min_amount },
     { label: 'Auto-Transfer Max Amount', value: autotransfer_max_amount },
@@ -757,10 +765,13 @@ export const generateBellyString = (belly: Belly, index: number) => {
       value: autotransferchance,
       suffix: '%',
     },
-    { label: 'Auto-Transfer Primary Location', value: autotransferlocation },
+    {
+      label: 'Auto-Transfer Primary Location',
+      value: escapeHtml(autotransferlocation),
+    },
     {
       label: 'Auto-Transfer Primary Location Extras',
-      value: autotransferextralocation.join(', '),
+      value: autotransferextralocation.map((v) => escapeHtml(v)).join(', '),
     },
 
     {
@@ -787,11 +798,13 @@ export const generateBellyString = (belly: Belly, index: number) => {
     },
     {
       label: 'Auto-Transfer Secondary Location',
-      value: autotransferlocation_secondary,
+      value: escapeHtml(autotransferlocation_secondary),
     },
     {
       label: 'Auto-Transfer Secondary Location Extras',
-      value: autotransferextralocation_secondary.join(', '),
+      value: autotransferextralocation_secondary
+        .map((v) => escapeHtml(v))
+        .join(', '),
     },
 
     {
@@ -843,10 +856,10 @@ export const generateBellyString = (belly: Belly, index: number) => {
   }</li>`;
 
   const liquidItems = [
-    { label: 'Liquid Type', value: reagent_chosen },
-    { label: 'Liquid Name', value: reagent_name },
-    { label: 'Transfer Verb', value: reagent_transfer_verb },
-    { label: 'Generation Time', value: gen_time_display },
+    { label: 'Liquid Type', value: escapeHtml(reagent_chosen) },
+    { label: 'Liquid Name', value: escapeHtml(reagent_name) },
+    { label: 'Transfer Verb', value: escapeHtml(reagent_transfer_verb) },
+    { label: 'Generation Time', value: escapeHtml(gen_time_display) },
     { label: 'Liquid Capacity', value: custom_max_volume },
     {
       label: 'Generation Limit (Nutrition / Charge) %',
@@ -919,7 +932,7 @@ export const generateBellyString = (belly: Belly, index: number) => {
     const classes = i === 0 ? 'tab-pane fade show active' : 'tab-pane fade';
     result += `<div class="${classes}" id="${idPrefix}${index}" role="liquidMessagesTabpanel">`;
     messages?.forEach((msg) => {
-      result += `${msg}<br>`;
+      result += `${escapeHtml(msg)}<br>`;
     });
     result += '</div>';
   });

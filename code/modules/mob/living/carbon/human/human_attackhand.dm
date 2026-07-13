@@ -396,6 +396,7 @@
 				real_damage *= species.brute_mod
 				rand_damage *= species.brute_mod
 
+	real_damage *= H.perk_mult(DQ_PERK_FX_UNARMED_DMG) // Powerful Build (+ any future unarmed-force perk)
 	real_damage *= damage_multiplier
 	rand_damage *= damage_multiplier
 	if(HULK in H.mutations)
@@ -404,11 +405,15 @@
 	real_damage = max(1, real_damage)
 
 	var/armour = run_armor_check(hit_zone, "melee")
+	if(H.perk_add(DQ_PERK_FX_ARMOR_PEN)) // Sundering Blows: pierce the target's armor.
+		armour = round(armour * (1 - H.perk_add(DQ_PERK_FX_ARMOR_PEN)))
 	// Apply additional unarmed effects.
 	attack.apply_effects(H, src, armour, rand_damage, hit_zone)
 
 	// Finally, apply damage to target
 	apply_damage(real_damage, hit_dam_type, hit_zone, armour, attack.sharp, attack.edge)
+	if(H.has_perk(/datum/perk/body/str_brawler) && src != H) // Brawler: bare-handed blows rattle the guard.
+		add_stagger(DQ_PERK_BRAWLER_STAGGER, H)
 
 /// INTENTS END
 

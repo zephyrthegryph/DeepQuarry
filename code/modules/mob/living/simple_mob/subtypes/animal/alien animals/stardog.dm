@@ -122,7 +122,7 @@
 		if(!invisibility)
 			invisibility = INVISIBILITY_ABSTRACT
 			child_om_marker.invisibility = INVISIBILITY_NONE
-			// DQEdit - legacy ai_holder wander tuning removed.
+			//legacy ai_holder wander tuning removed.
 			melee_damage_lower = 50
 			melee_damage_upper = 100
 			mob_size = MOB_HUGE
@@ -132,7 +132,7 @@
 	else if(invisibility)
 		invisibility = INVISIBILITY_NONE
 		child_om_marker.invisibility = INVISIBILITY_ABSTRACT
-		// DQEdit - legacy ai_holder wander tuning removed.
+		//legacy ai_holder wander tuning removed.
 		melee_damage_lower = 1
 		melee_damage_upper = 5
 		mob_size = MOB_SMALL
@@ -590,7 +590,7 @@
 		var/ourmob = pickweight(mob_list)
 		var/mob/living/simple_mob/s = new ourmob(get_turf(src))
 		visible_message(span_danger("\The [s] tumbles out of \the [src]!"))
-		// DQEdit - legacy ai_holder.hostile/retaliate replaced with brain API.
+		//legacy ai_holder.hostile/retaliate replaced with brain API.
 		s.ai_brain?.set_hostile(FALSE)
 		s.ghostjoin = TRUE
 		s.ghostjoin_icon()

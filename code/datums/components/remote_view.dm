@@ -445,7 +445,8 @@
 		return
 
 /datum/component/remote_view/mob_holding_item/handle_recursive_moved(atom/source, atom/oldloc, atom/new_loc)
-	SIGNAL_HANDLER
+	// SIGNAL_HANDLER is declared on the base proc; overrides inherit the contract
+	// and must not re-set the should_not_sleep pragma.
 	if(!host_mob)
 		return
 	// default moved signal will handle this

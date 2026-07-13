@@ -45,10 +45,3 @@
 	robotic = ORGAN_ROBOT
 
 	standard_pulse_level = PULSE_NONE
-
-/obj/item/organ/internal/stomach/machine/handle_organ_proc_special()
-	..()
-	if(owner && owner.stat != DEAD)
-		owner.bodytemperature += round(owner.robobody_count * 0.25, 0.1)
-
-	return

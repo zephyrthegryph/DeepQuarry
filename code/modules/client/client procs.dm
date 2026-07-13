@@ -143,9 +143,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 			to_chat(src, span_warning("Sorry, that link doesn't appear to be valid. Please try again."))
 			return
 
-		var/sql_discord = sql_sanitize_text(their_id)
-		var/sql_ckey = sql_sanitize_text(ckey)
-		var/datum/db_query/query = SSdbcore.NewQuery("UPDATE erro_player SET discord_id = '[sql_discord]' WHERE ckey = '[sql_ckey]'")
+		var/datum/db_query/query = SSdbcore.NewQuery("UPDATE erro_player SET discord_id = :discord_id WHERE ckey = :ckey", list("discord_id" = their_id, "ckey" = ckey))
 		if(query.Execute())
 			to_chat(src, span_notice("Registration complete! Thank you for taking the time to register your Discord ID."))
 			log_and_message_admins("[ckey] has registered their Discord ID. Their Discord snowflake ID is: [their_id]", src)
@@ -241,6 +239,10 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 
 	winset(src, null, "browser-options=[DEFAULT_CLIENT_BROWSER_OPTIONS]")
 
+	// The right-click context menu is suppressed only while a melee weapon is held (so a bare
+	// right-click is a guard) and restored when unarmed — see /mob/living/refresh_combat_popup_menus,
+	// driven by the hand-HUD updates. Left at BYOND's default here.
+
 	if(!(connection in list("seeker", "web")))					//Invalid connection type.
 		return null
 	if(byond_version < MIN_CLIENT_VERSION)		//Out of date client.
@@ -270,6 +272,15 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		chatlog_token = vchatlog_generate_token(ckey, GLOB.round_id)
 
 	winset(src, null, list("browser-options" = "find,refresh"))
+	// Transient mapwindow overlays (belly vore overlay, hover tooltip) are toggled
+	// visible via winset at runtime. A world reboot keeps the client's live skin
+	// state, so an overlay left visible when the server restarted stays pinned over
+	// the whole map on reconnect — a transparent BROWSER that silently eats every
+	// click (e.g. the lobby/start menu) until a full client reload resets the skin.
+	// Force them hidden the moment the client (re)connects so stale state can't leak
+	// across a reboot.
+	winset(src, "mapwindow.belly_overlay", "is-visible=false")
+	winset(src, "mapwindow.tooltip", "is-visible=false")
 	// Instantiate stat panel
 	stat_panel = new(src, "statbrowser")
 	stat_panel.subscribe(src, PROC_REF(on_stat_panel_message))
@@ -438,9 +449,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	if(!SSdbcore.IsConnected())
 		return null
 
-	var/sql_ckey = sql_sanitize_text(ckey(key))
-
-	var/datum/db_query/query = SSdbcore.NewQuery("SELECT datediff(Now(),firstseen) as age FROM erro_player WHERE ckey = '[sql_ckey]'")
+	var/datum/db_query/query = SSdbcore.NewQuery("SELECT datediff(Now(),firstseen) as age FROM erro_player WHERE ckey = :ckey", list("ckey" = ckey(key)))
 	query.Execute()
 
 	var/player_age = -1
@@ -458,9 +467,9 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	if(!SSdbcore.IsConnected())
 		return
 
-	var/sql_ckey = sql_sanitize_text(src.ckey)
+	var/sql_ckey = src.ckey
 
-	var/datum/db_query/query = SSdbcore.NewQuery("SELECT id, datediff(Now(),firstseen) as age FROM erro_player WHERE ckey = '[sql_ckey]'")
+	var/datum/db_query/query = SSdbcore.NewQuery("SELECT id, datediff(Now(),firstseen) as age FROM erro_player WHERE ckey = :ckey", list("ckey" = sql_ckey))
 	if(!query.Execute())
 		qdel(query)
 		return
@@ -472,9 +481,9 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		break
 
 	qdel(query)
-	account_join_date = sanitizeSQL(findJoinDate())
+	account_join_date = findJoinDate()
 	if(account_join_date && SSdbcore.IsConnected())
-		var/datum/db_query/query_datediff = SSdbcore.NewQuery("SELECT DATEDIFF(Now(),'[account_join_date]')")
+		var/datum/db_query/query_datediff = SSdbcore.NewQuery("SELECT DATEDIFF(Now(), :join_date)", list("join_date" = account_join_date))
 		if(!query_datediff.Execute())
 			qdel(query)
 			return
@@ -482,7 +491,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 			account_age = text2num(query_datediff.item[1])
 		qdel(query_datediff)
 
-	var/datum/db_query/query_ip = SSdbcore.NewQuery("SELECT ckey FROM erro_player WHERE ip = '[address]'")
+	var/datum/db_query/query_ip = SSdbcore.NewQuery("SELECT ckey FROM erro_player WHERE ip = :ip", list("ip" = address))
 	if(!query_ip.Execute())
 		qdel(query)
 		return
@@ -493,7 +502,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		break
 	qdel(query_ip)
 
-	var/datum/db_query/query_cid = SSdbcore.NewQuery("SELECT ckey FROM erro_player WHERE computerid = '[computer_id]'")
+	var/datum/db_query/query_cid = SSdbcore.NewQuery("SELECT ckey FROM erro_player WHERE computerid = :computerid", list("computerid" = computer_id))
 	if(!query_cid.Execute())
 		qdel(query)
 		return
@@ -515,9 +524,9 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	if(src.holder)
 		admin_rank = src.holder.rank_names()
 
-	var/sql_ip = sql_sanitize_text(src.address)
-	var/sql_computerid = sql_sanitize_text(src.computer_id)
-	var/sql_admin_rank = sql_sanitize_text(admin_rank)
+	var/sql_ip = src.address
+	var/sql_computerid = src.computer_id
+	var/sql_admin_rank = admin_rank
 
 	// If you're about to disconnect the player, you have to use to_chat_immediate otherwise they won't get the message (SSchat will queue it)
 
@@ -552,7 +561,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		else
 			log_admin("Couldn't perform IP check on [key] with [address]")
 
-	var/datum/db_query/query_hours = SSdbcore.NewQuery("SELECT department, hours, total_hours FROM vr_player_hours WHERE ckey = '[sql_ckey]'")
+	var/datum/db_query/query_hours = SSdbcore.NewQuery("SELECT department, hours, total_hours FROM vr_player_hours WHERE ckey = :ckey", list("ckey" = sql_ckey))
 	if(query_hours.Execute())
 		while(query_hours.NextRow())
 			department_hours[query_hours.item[1]] = text2num(query_hours.item[2])
@@ -564,18 +573,18 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	qdel(query_hours)
 	if(sql_id)
 		//Player already identified previously, we need to just update the 'lastseen', 'ip' and 'computer_id' variables
-		var/datum/db_query/query_update = SSdbcore.NewQuery("UPDATE erro_player SET lastseen = Now(), ip = '[sql_ip]', computerid = '[sql_computerid]', lastadminrank = '[sql_admin_rank]' WHERE id = [sql_id]")
+		var/datum/db_query/query_update = SSdbcore.NewQuery("UPDATE erro_player SET lastseen = Now(), ip = :ip, computerid = :computerid, lastadminrank = :admin_rank WHERE id = :id", list("ip" = sql_ip, "computerid" = sql_computerid, "admin_rank" = sql_admin_rank, "id" = sql_id))
 		query_update.Execute()
 		qdel(query_update)
 	else
 		//New player!! Need to insert all the stuff
-		var/datum/db_query/query_insert = SSdbcore.NewQuery("INSERT INTO erro_player (id, ckey, firstseen, lastseen, ip, computerid, lastadminrank) VALUES (null, '[sql_ckey]', Now(), Now(), '[sql_ip]', '[sql_computerid]', '[sql_admin_rank]')")
+		var/datum/db_query/query_insert = SSdbcore.NewQuery("INSERT INTO erro_player (id, ckey, firstseen, lastseen, ip, computerid, lastadminrank) VALUES (null, :ckey, Now(), Now(), :ip, :computerid, :admin_rank)", list("ckey" = sql_ckey, "ip" = sql_ip, "computerid" = sql_computerid, "admin_rank" = sql_admin_rank))
 		query_insert.Execute()
 		qdel(query_insert)
 
 	//Logging player access
 	var/serverip = "[world.internet_address]:[world.port]"
-	var/datum/db_query/query_accesslog = SSdbcore.NewQuery("INSERT INTO `erro_connection_log`(`id`,`datetime`,`serverip`,`ckey`,`ip`,`computerid`) VALUES(null,Now(),'[serverip]','[sql_ckey]','[sql_ip]','[sql_computerid]');")
+	var/datum/db_query/query_accesslog = SSdbcore.NewQuery("INSERT INTO `erro_connection_log`(`id`,`datetime`,`serverip`,`ckey`,`ip`,`computerid`) VALUES(null,Now(),:serverip,:ckey,:ip,:computerid)", list("serverip" = serverip, "ckey" = sql_ckey, "ip" = sql_ip, "computerid" = sql_computerid))
 	query_accesslog.Execute()
 	qdel(query_accesslog)
 
@@ -588,12 +597,69 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	if(inactivity > duration)	return inactivity
 	return 0
 
+/// world.time of the most recent mouse press, for the click-drag grace window.
+/client/var/tmp/mouse_down_time = 0
+/// world.time a right-press combat action fired, so the matching click doesn't double-handle it.
+/client/var/tmp/combat_right_at = 0
+/// TRUE once a right-press was handled on MouseDown, so the release Click skips its fallback guard
+/// (a feint, a guard, etc. is one action — the release must NOT raise a second guard).
+/client/var/tmp/combat_right_handled = FALSE
+/// world.time a left-press melee attack fired, so the matching release click doesn't double-swing.
+/client/var/tmp/combat_left_at = 0
+/// The atom a held left-press is attacking; while set, the swing auto-repeats. Cleared on MouseUp.
+/client/var/tmp/atom/held_attack_target = null
+
+/client/MouseDown(object, location, control, params)
+	mouse_down_time = world.time
+	if(isliving(mob) && !istype(object, /atom/movable/screen))
+		var/list/mods = params2list(params)
+		var/bare = !mods[SHIFT_CLICK] && !mods[CTRL_CLICK] && !mods[ALT_CLICK]
+		// A bare right-press raises a HELD guard (or feints/shoves). The matching MouseUp drops it,
+		// so holding keeps the block up. The click handler is a fallback if the press isn't delivered.
+		if(mods[RIGHT_CLICK] && bare)
+			combat_right_at = world.time
+			combat_right_handled = TRUE // the release Click must not also fire the guard fallback
+			var/mob/living/L = mob
+			L.melee_rightclick(object, TRUE)
+		// A bare LEFT-press winds up a swing that HOLDS until release (hold-to-charge). Mark the held
+		// target BEFORE starting the swing so begin_melee_swing reliably sees it (no async race), and
+		// clear it if this click wasn't a real swing (UI / item / ranged / non-adjacent).
+		else if(!mods[RIGHT_CLICK] && bare)
+			var/mob/living/L = mob
+			held_attack_target = object
+			combat_left_at = world.time
+			if(!L.dq_try_held_attack(object))
+				held_attack_target = null
+				combat_left_at = 0
+	. = ..()
+
+/client/MouseUp(object, location, control, params)
+	if(isliving(mob))
+		var/mob/living/L = mob
+		if(L.blocking) // releasing the mouse drops a held guard
+			L.release_block()
+		if(held_attack_target) // stop the held-attack loop; suppress the release click's extra swing
+			held_attack_target = null
+			combat_left_at = world.time
+	. = ..()
+
 //Called when the client performs a drag-and-drop operation.
 /client/MouseDrop(start_object,end_object,start_location,end_location,start_control,end_control,params)
 	if(buildmode && start_control == "mapwindow.map" && start_control == end_control)
 		build_drag(src,buildmode,start_object,end_object,start_location,end_location,start_control,end_control,params)
-	else
-		. = ..()
+		return
+	// A right-button drag is a held guard (handled in MouseDown/MouseUp), not a drag interaction.
+	if(LAZYACCESS(params2list(params), RIGHT_CLICK))
+		// A drag delivers no release Click, so clear the press flag here — otherwise it stays stuck
+		// TRUE and the Click fallback eats the NEXT right-click (a swallowed guard/examine/menu).
+		combat_right_handled = FALSE
+		return
+	// Grace window: a drag released on the same atom it started on, within CLICK_DRAG_GRACE, is a
+	// twitch while trying to click — treat it as a click so it doesn't get eaten as a drag.
+	if(start_object && start_object == end_object && (world.time - mouse_down_time) <= CLICK_DRAG_GRACE)
+		Click(end_object, end_location, end_control, params)
+		return
+	. = ..()
 
 /client/proc/last_activity_seconds()
 	return inactivity / 10
@@ -811,6 +877,11 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 			to_chat(src, span_danger("Your previous click was ignored because you've done too many in a second"))
 			return
 	SEND_SIGNAL(src, COMSIG_CLIENT_CLICK, object, location, control, params, usr)
+	// Dispatch right-clicks ourselves so BYOND's default "objects under the cursor" context popup
+	// never shows; ClickOn routes them (bare right-click = melee block, alt/ctrl-right as before).
+	if(object && params && LAZYACCESS(params2list(params), RIGHT_CLICK))
+		object.Click(location, control, params)
+		return
 	. = ..()
 
 /// This grabs the DPI of the user per their skin

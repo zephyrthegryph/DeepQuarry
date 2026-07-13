@@ -17,6 +17,10 @@
 	category = LOG_CATEGORY_DEBUG_MOBTAG
 	master_category = /datum/log_category/debug
 
+/datum/log_category/debug_dqai
+	category = LOG_CATEGORY_DEBUG_DQAI
+	master_category = /datum/log_category/debug
+
 /datum/log_category/debug_asset
 	category = LOG_CATEGORY_DEBUG_ASSET
 	config_flag = /datum/config_entry/flag/log_asset

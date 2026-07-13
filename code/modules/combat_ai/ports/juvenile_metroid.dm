@@ -69,7 +69,8 @@
 		var/mob/living/carbon/human/H = M
 		if(istype(H.species, /datum/species/monkey))
 			return H
-	return dq_get_selector(/datum/target_selector/closest).select(brain, candidates)
+	var/datum/target_selector/closest_selector = dq_get_selector(/datum/target_selector/closest)
+	return closest_selector.select(brain, candidates)
 
 // ---------------------------------------------------------------------------
 // Smart attack — intent machine. Prefers to close to melee (so it can shock /

@@ -74,6 +74,8 @@
 // Respects move cooldowns as if it had a client.
 // Also tries to avoid being superdumb with moving into certain tiles (unless that's desired).
 /mob/living/proc/IMove(turf/newloc, safety = TRUE)
+	if(anchored) // anchored mobs don't self-move; Move() itself doesn't enforce this
+		return MOVEMENT_FAILED
 	if(!checkMoveCooldown())
 		return MOVEMENT_ON_COOLDOWN
 

@@ -45,7 +45,7 @@
 /obj/item/projectile/energy/mob/electric_spider
 	name = "stun beam"
 	icon_state = "impact_stun"
-	fire_sound = 'sound/weapons/Taser.ogg'
+	fire_sound = 'sound/weapons/taser.ogg'
 	nodamage = 1
 	taser_effect = 1
 	damage_type = HALLOSS

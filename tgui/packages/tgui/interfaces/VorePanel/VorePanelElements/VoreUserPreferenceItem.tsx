@@ -53,14 +53,17 @@ export const VoreUserPreferenceDropdown = (props: {
     }),
   );
 
+  const active = spec.data[currentActive];
+  if (!active) return null;
+
   return (
     <VorePanelEditDropdown
       editMode={true}
-      icon={spec.data[currentActive].enabled ? 'toggle-on' : 'toggle-off'}
+      icon={active.enabled ? 'toggle-on' : 'toggle-off'}
       action={spec.action}
       options={options}
-      color={spec.data[currentActive].color}
-      entry={`${spec.prefix}: ${spec.data[currentActive].displayText}`}
+      color={active.color}
+      entry={`${spec.prefix}: ${active.displayText}`}
       tooltip={spec.tooltip}
       tooltipPosition={tooltipPosition}
     />

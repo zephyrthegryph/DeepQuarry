@@ -121,7 +121,7 @@
 
 /obj/item/clothing/glasses/omnihud/prescribe(mob/user)
 	prescription = !prescription
-	playsound(src,'sound/items/screwdriver.ogg', 50, 1)
+	playsound(src,'sound/items/Screwdriver.ogg', 50, 1)
 	if(prescription)
 		user.visible_message("[user] uploads new prescription data to the [src.name] and resets the lenses.")
 		name = "[initial(name)] (pr)" //change the name *after* the text so the message above is accurate

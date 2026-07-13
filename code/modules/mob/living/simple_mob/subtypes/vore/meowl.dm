@@ -134,4 +134,4 @@
 	Despite this, these creatues can be rather docile in the right conditions, and will not attack those who it believes it can get food from reliably."
 	value = CATALOGUER_REWARD_HARD
 
-// DQEdit - legacy engage_target override body removed.
+//legacy engage_target override body removed.

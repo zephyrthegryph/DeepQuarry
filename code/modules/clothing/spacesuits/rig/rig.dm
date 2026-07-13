@@ -889,7 +889,7 @@
 					else
 						M.stop_pulling()
 
-	if(wearer.pinned.len)
+	if(LAZYLEN(wearer.pinned))
 		to_chat(src, span_notice("Your host is pinned to a wall by [wearer.pinned[1]]!"))
 		return 0
 

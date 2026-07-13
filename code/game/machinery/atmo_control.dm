@@ -52,7 +52,7 @@
 		if(output&1)
 			signal.data["pressure"] = num2text(round(air_sample.return_pressure(),0.1),)
 		if(output&2)
-			signal.data["temperature"] = round(air_sample.temperature,0.1)
+			signal.data["temperature"] = round(air_sample.return_temperature(),0.1)
 
 		if(output>4)
 			var/total_moles = air_sample.total_moles()
@@ -107,7 +107,7 @@
 	gsensor.id_tag = id_tag
 	gsensor.output = output
 	qdel(src)
-	playsound(src, 'sound/items/deconstruct.ogg', 50, 1)
+	playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
 
 #define ONOFF_TOGGLE(flag) "\[[(output & flag) ? "YES" : "NO"]]"
 /obj/machinery/air_sensor/proc/multitool_act(mob/living/user, obj/item/multitool/tool)

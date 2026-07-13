@@ -149,7 +149,7 @@
 /mob/living/simple_mob/animal/giant_spider/nurse/handle_special()
 	set waitfor = FALSE
 	if((ai_brain ? (ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) == STANCE_IDLE && !(ai_brain && ai_brain.busy) && isturf(loc))
-		if(fed && can_lay_eggs)			//VOREStation Edit
+		if(fed && can_lay_eggs)
 			lay_eggs(loc)
 		else
 			web_tile(loc)

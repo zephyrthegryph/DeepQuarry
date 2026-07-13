@@ -62,6 +62,17 @@
 	var/glow_range = 2
 	var/glow_intensity = null
 	var/glow_color = "#FFFFFF"			// The color they're glowing!
+	// Last params applied by handle_light(), so we can skip redundant set_light() calls each tick.
+	var/last_glow_range = null
+	var/last_glow_intensity = null
+	var/last_glow_color = null
+
+	// Edge-detection cache for status alerts so throw_alert/clear_alert only fire on state transition.
+	var/alert_state_stunned = FALSE
+	var/alert_state_weakened = FALSE
+	var/alert_state_paralysed = FALSE
+	var/alert_state_drugged = FALSE
+	var/alert_state_confused = FALSE
 
 	var/see_invisible_default = SEE_INVISIBLE_LIVING
 

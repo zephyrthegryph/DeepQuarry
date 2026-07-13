@@ -331,7 +331,7 @@ GLOBAL_LIST_EMPTY(all_blobs)
 				damage *= 2
 
 			if(damage > 0)
-				playsound(src, 'sound/items/welder.ogg', 100, 1)
+				playsound(src, 'sound/items/Welder.ogg', 100, 1)
 			else
 				playsound(src, 'sound/weapons/tap.ogg', 50, 1)
 		if(BRUTE, SEARING, TOX, CLONE)

@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 
@@ -17,6 +18,14 @@ export const VoreSelectedBellyLiquidOptions = (props: {
 
   const { editMode, bellyLiquidData, presets } = props;
   const { show_liq, liq_gen_resources, liq_interacts } = bellyLiquidData;
+
+  // Copy before sorting — sorting in place would mutate backend state during
+  // render.
+  const sortedReagents = useMemo(
+    () =>
+      [...liq_interacts.current_reagents].sort((a, b) => a.volume - b.volume),
+    [liq_interacts.current_reagents],
+  );
 
   return (
     <Stack vertical fill>
@@ -101,15 +110,13 @@ export const VoreSelectedBellyLiquidOptions = (props: {
           title="Current Liquids"
         >
           <LabeledList>
-            {liq_interacts.current_reagents
-              .sort((a, b) => a.volume - b.volume)
-              .map((reagent) => (
-                <LabeledList.Item key={reagent.name} label={reagent.name}>
-                  <Box color={reagentToColor[reagent.name]}>
-                    {reagent.volume} u
-                  </Box>
-                </LabeledList.Item>
-              ))}
+            {sortedReagents.map((reagent) => (
+              <LabeledList.Item key={reagent.name} label={reagent.name}>
+                <Box color={reagentToColor[reagent.name]}>
+                  {reagent.volume} u
+                </Box>
+              </LabeledList.Item>
+            ))}
             {!!liq_interacts.current_reagents.length && <LabeledList.Divider />}
             <LabeledList.Item label="Total volume">
               {liq_interacts.total_volume} u

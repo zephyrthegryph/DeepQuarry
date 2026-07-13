@@ -68,7 +68,7 @@ GLOBAL_DATUM_INIT(generic_pathfinding_actor, /atom/movable/pathfinding_predicate
 	src.actor = actor
 	src.start = start
 	src.goal = goal
-	// DQEdit: legacy .target reference removed (no equivalent on /datum/ai_brain).
+	//legacy .target reference removed (no equivalent on /datum/ai_brain).
 	src.max_path_length = max_path_length
 
 /**

@@ -202,7 +202,7 @@ export const VoreSelectedBellyInteractions = (props: {
                       editMode={editMode}
                       options={locationNames}
                       color={
-                        !editMode && !interacts.transferlocation
+                        !editMode && !interacts.transferlocation_secondary
                           ? 'red'
                           : undefined
                       }

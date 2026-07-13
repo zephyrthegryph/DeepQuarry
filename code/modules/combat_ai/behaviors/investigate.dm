@@ -24,6 +24,7 @@
 		return
 	noise_turf = T
 	noise_expiry = world.time + DQ_NOISE_INVESTIGATE_TTL
+	update_engagement() // a heard noise needs the fast tick to walk toward it
 	dispatch_behavior_signal(COMSIG_DQAI_HEARD_HAZARD, T)
 
 /// Fan a loud noise out to nearby AI simple_mobs so they investigate. Called
@@ -32,13 +33,17 @@
 /proc/dq_ai_propagate_noise(atom/source, turf/origin, loudness)
 	if(!origin)
 		return
-	var/r = clamp(round(loudness / 8), 4, 8)
+	// Alert radius scales with loudness but stays tight — ambient combat (a knife swing, a
+	// melee hit ~50-75 vol) should only wake mobs a few tiles off, not the whole room. Loud
+	// quarry actions (gunfire/mining/vents) use their own, larger emit_noise radius on top.
+	var/r = clamp(round(loudness / 16), 2, 6)
 	for(var/mob/living/simple_mob/SM in range(r, origin))
 		if(SM == source || SM.client || SM.stat != CONSCIOUS)
 			continue
 		var/datum/ai_brain/B = SM.ai_brain
 		if(!B || B.primary_threat)
 			continue
+		dqai_pdbg(SM, "NOISE", "heard noise (vol=[loudness], radius=[r]) at dist=[get_dist(SM, origin)] — creeping to investigate", source)
 		B.notify_noise(origin)
 
 /datum/ai_behavior/investigate_noise
@@ -76,11 +81,19 @@
 	var/mob/living/owner = brain.holder
 	if(!owner || !target || brain.primary_threat || world.time > brain.noise_expiry)
 		brain.noise_turf = null
+		brain.update_engagement() // nothing left to investigate — fall back to the slow idle tick
 		return DQ_BEHAVIOR_DONE
 	if(get_dist(owner, target) <= 1)
 		owner.face_atom(target)        // arrived — peer around, then resume idling
 		brain.noise_turf = null
+		brain.update_engagement() // arrived; drop off the fast tick so we idle leisurely
 		return DQ_BEHAVIOR_DONE
+	if(world.time < owner.next_move)   // honor the inflated investigate creep cooldown
+		return DQ_BEHAVIOR_CONTINUE
+	// Creep toward the sound; the throttled fallback never steps unthrottled.
 	if(!brain.smart_step_toward(target, 1))
-		step_to(owner, target)
+		dq_ai_step_to(owner, target)
+	// Investigating is a wary creep, not a charge — stretch the cooldown well past the combat
+	// pace so a noise-drawn mob approaches slowly and is easy to see coming.
+	owner.setMoveCooldown(dq_ai_move_delay(owner) * DQ_AI_INVESTIGATE_SLOW_MULT)
 	return DQ_BEHAVIOR_CONTINUE

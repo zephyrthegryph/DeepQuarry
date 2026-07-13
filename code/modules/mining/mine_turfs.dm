@@ -6,15 +6,15 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 	icon = 'icons/turf/walls.dmi'
 	icon_state = "rock-dark"
 	density = TRUE
-	opacity = 1 // YW edit. Stops all my unsimulated tiles from being seethrough.
+	opacity = 1 //Stops all my unsimulated tiles from being seethrough.
 
-//YW add start
+//add start
 /turf/unsimulated/mineral/ice
 	name = "Ice wall"
 	desc = "Frigid Ice that seems to be stronger than most manmade structures."
 	icon = 'icons/turf/snow_new.dmi'
 	icon_state = "Icerock"
-//YW add end
+//add end
 
 //For the tram
 /turf/unsimulated/mineral/moving

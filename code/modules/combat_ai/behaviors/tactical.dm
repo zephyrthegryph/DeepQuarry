@@ -56,6 +56,9 @@
 	var/kite_distance = 4
 
 /datum/ai_behavior/kite_away/evaluate(datum/ai_brain/brain, atom/source)
+#if DQ_AI_RETREAT_DISABLED
+	return null // no kiting — close in and stay in
+#else
 	var/mob/threat = brain.primary_threat
 	if(!threat)
 		return null
@@ -71,6 +74,7 @@
 		if(!SM.projectiletype)
 			return null
 	return DQAI_RESULT(65, threat)
+#endif
 
 /datum/ai_behavior/kite_away/start(datum/ai_brain/brain, atom/target, atom/source)
 	var/mob/living/owner = brain.get_owner()
@@ -78,7 +82,7 @@
 		return DQ_BEHAVIOR_FAILED
 	var/turf/away = get_step_away(owner, target, kite_distance)
 	if(away && !away.density)
-		step_to(owner, away)
+		dq_ai_step_to(owner, away) // throttled to the AI move pace
 	owner.face_atom(target)
 	return DQ_BEHAVIOR_DONE
 
@@ -94,6 +98,9 @@
 	cooldown = 5 SECONDS
 
 /datum/ai_behavior/hit_and_run/evaluate(datum/ai_brain/brain, atom/source)
+#if DQ_AI_RETREAT_DISABLED
+	return null // no darting away after a hit
+#else
 	var/mob/threat = brain.primary_threat
 	if(!threat || !ismob(threat))
 		return null
@@ -109,6 +116,7 @@
 		if(L.incapacitated(INCAPACITATION_DISABLED))
 			return null  // target is stunned; keep attacking
 	return DQAI_RESULT(75, threat)
+#endif
 
 /datum/ai_behavior/hit_and_run/start(datum/ai_brain/brain, atom/target, atom/source)
 	var/mob/living/owner = brain.get_owner()
@@ -116,7 +124,7 @@
 		return DQ_BEHAVIOR_FAILED
 	var/turf/away = get_step_away(owner, target)
 	if(away && !away.density)
-		step_to(owner, away)
+		dq_ai_step_to(owner, away) // throttled to the AI move pace
 	return DQ_BEHAVIOR_CONTINUE
 
 /datum/ai_behavior/hit_and_run/tick(datum/ai_brain/brain, atom/target, atom/source)
@@ -127,7 +135,7 @@
 		return DQ_BEHAVIOR_DONE
 	var/turf/away = get_step_away(owner, target)
 	if(away && !away.density)
-		step_to(owner, away)
+		dq_ai_step_to(owner, away) // throttled to the AI move pace
 	return DQ_BEHAVIOR_CONTINUE
 
 // --- Pack flee (on dying / outmatched) -------------------------------------
@@ -142,13 +150,19 @@
 	cooldown = 3 SECONDS
 
 /datum/ai_behavior/pack_retreat/evaluate(datum/ai_brain/brain, atom/source)
+#if DQ_AI_RETREAT_DISABLED
+	return null // packs don't fall back — they commit
+#else
 	var/mob/living/owner = brain.get_owner()
 	var/mob/threat = brain.primary_threat
 	if(!owner || !threat || !owner.maxHealth)
 		return null
 	var/dying = owner.health / owner.maxHealth < 0.3
-	// "Outmatched" — we have no nearby faction allies and the target is robust.
-	var/no_backup = brain.model && !length(brain.model.visible_friendlies)
+	// "Outmatched" — genuinely alone (no pack), not merely unable to SEE allies. A pack
+	// that spreads out to flank loses line of sight to its own members, so reading
+	// visible_friendlies made the whole pack think it was solo and flee at once. The lord
+	// is the real source of truth for "do I have backup", so trust it.
+	var/no_backup = !brain.lord || length(brain.lord.members) <= 1
 	var/outmatched = FALSE
 	if(no_backup && isliving(threat))
 		var/mob/living/threat_living = threat
@@ -156,6 +170,7 @@
 	if(!dying && !outmatched)
 		return null
 	return DQAI_RESULT(120, threat)  // overrides plain flee_low_hp
+#endif
 
 /datum/ai_behavior/pack_retreat/tick(datum/ai_brain/brain, atom/target, atom/source)
 	var/mob/living/owner = brain.get_owner()
@@ -165,7 +180,7 @@
 		return DQ_BEHAVIOR_DONE
 	var/turf/away = get_step_away(owner, target)
 	if(away && !away.density)
-		step_to(owner, away)
+		dq_ai_step_to(owner, away) // throttled to the AI move pace
 	return DQ_BEHAVIOR_CONTINUE
 
 // --- Return home -----------------------------------------------------------
@@ -185,7 +200,10 @@
 		return null  // in combat, don't run home
 	var/mob/living/owner = brain.get_owner()
 	var/turf/home = brain.home_turf
-	if(!owner || !home || owner.z != home.z)
+	if(!owner || !home)
+		return null
+	var/turf/owner_turf = get_turf(owner) // get_turf, not owner.z: a contained mob reports z 0
+	if(!owner_turf || owner_turf.z != home.z)
 		return null
 	// Use brain.max_home_distance as override when set; defaults to return_threshold.
 	var/threshold = brain.max_home_distance || return_threshold
@@ -220,7 +238,13 @@
 	if(!leader)
 		return null
 	var/mob/living/owner = brain.get_owner()
-	if(!owner || owner.z != leader.z)
+	if(!owner)
+		return null
+	// get_turf both sides: either the follower or the leader could be inside a
+	// container (a contained mob's .z is 0, which would falsely read cross-z).
+	var/turf/owner_turf = get_turf(owner)
+	var/turf/leader_turf = get_turf(leader)
+	if(!owner_turf || !leader_turf || owner_turf.z != leader_turf.z)
 		return null
 	if(get_dist(owner, leader) <= follow_distance)
 		return null

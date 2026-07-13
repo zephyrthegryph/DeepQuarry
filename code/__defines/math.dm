@@ -53,7 +53,7 @@
 	return b ? GCD(b, (a) % (b)) : a
 
 // Least Common Multiple
-#define LCM(a, b) (abs(a) / GCD(a, b) * abs(b))
+#define LCM(a, b) (abs(a) / GCD(a, b) * abs(b)) // pure args only
 
 #define IS_CARDINAL(x) ((x & (x - 1)) == 0)
 
@@ -213,12 +213,14 @@
 
 // )
 
-#define RAND_F(LOW, HIGH) (rand()*(HIGH-LOW) + LOW)
+#define RAND_F(LOW, HIGH) (rand()*((HIGH)-(LOW)) + (LOW))
 
-#define SQUARE(x) (x*x)
+// Note: double-evaluates its arg(s); pass pure args only.
+#define SQUARE(x) ((x)*(x))
 
 //Vector Algebra
-#define SQUAREDNORM(x, y) (x*x+y*y)
+// Note: double-evaluates its args; pass pure args only.
+#define SQUAREDNORM(x, y) ((x)*(x)+(y)*(y))
 #define NORM(x, y) (sqrt(SQUAREDNORM(x,y)))
 #define ISPOWEROFTWO(x) ((x & (x - 1)) == 0)
 #define ROUNDUPTOPOWEROFTWO(x) (2 ** -round(-log(2,x)))

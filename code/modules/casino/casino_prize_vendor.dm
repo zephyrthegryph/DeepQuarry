@@ -315,8 +315,12 @@
 			var/restriction_check = 0
 			var/item_given = FALSE
 			var/name = params["name"]
-			var/price = params["price"]
 			var/datum/data/casino_prize/bi = item_list[category][name]
+			if(!istype(bi))
+				to_chat(ui.user, span_warning("Prize checkout error has occurred, purchase cancelled."))
+				return FALSE
+			// Authoritative server-side price; never trust params["price"].
+			var/price = bi.cost
 			switch(restriction_category)
 				if("weapons")
 					restriction_check = category_weapons
@@ -346,9 +350,9 @@
 			if(restriction_check > 1)
 				item_given = TRUE
 
-			if(price <= 0 && item_given == TRUE)
-				vend(bi, ui.user)
-				return TRUE
+			if(price <= 0)
+				to_chat(ui.user, span_warning("Prize checkout error has occurred, purchase cancelled."))
+				return FALSE
 
 			currently_vending = bi
 

@@ -67,7 +67,7 @@ BLOOD_VOLUME_SURVIVE = 40
 		var/blood_volume = round((blood_volume_raw/species.blood_volume)*100) // Percentage.
 
 		//Blood regeneration if there is some space
-		if(blood_volume_raw < species.blood_volume)
+		if(blood_volume_raw < dq_max_blood()) // Juice Box raises the regen ceiling.
 			var/datum/reagent/blood/B = locate() in vessel.reagent_list //Grab some blood
 			if(B) // Make sure there's some blood at all
 				if(B.data["donor"] != src) //If it's not theirs, then we look for theirs
@@ -76,7 +76,7 @@ BLOOD_VOLUME_SURVIVE = 40
 							B = D
 							break
 
-				B.volume += 0.1 // regenerate blood VERY slowly
+				B.volume += 0.1 * perk_mult(DQ_PERK_FX_BLOOD_REGEN) // Marrow Pack regenerates blood faster.
 				if(CE_BLOODRESTORE in chem_effects)
 					B.volume += chem_effects[CE_BLOODRESTORE]
 
@@ -172,6 +172,7 @@ BLOOD_VOLUME_SURVIVE = 40
 			blood_loss_modifier_multiplier += (M.bleeding_rate_percent - 1.0)
 
 	blood_loss_divisor /= blood_loss_modifier_multiplier
+	blood_loss_divisor *= perk_mult(DQ_PERK_FX_CLOT) // Strong Bloodflow / Coagulation: clot faster.
 	return blood_loss_divisor
 
 ///Calculates how much blood we should lose from our wounds and makes us bleed that amount if bleed is TRUE

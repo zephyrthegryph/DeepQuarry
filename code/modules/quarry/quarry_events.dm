@@ -44,8 +44,15 @@
 	if(!L?.loaded)
 		return null
 	var/list/bay = exclude_bay ? SSquarry.elevator?.bay_at(L.depth) : null
+	// Prefer the per-layer floor cache built at generation/restore. Re-walk
+	// the 65k-tile block() only if the cache is missing (legacy / failed
+	// capture). Cached tiles are re-validated below since mining/cave-ins
+	// can make the cache slightly stale.
+	var/list/source = _quarry_event_floor_source(L)
 	var/list/floors = list()
-	for(var/turf/simulated/floor/T in block(locate(1, 1, L.z), locate(QUARRY_LAYER_SIZE, QUARRY_LAYER_SIZE, L.z)))
+	for(var/turf/simulated/floor/T as anything in source)
+		if(!istype(T))
+			continue
 		if(bay && (T in bay))
 			continue
 		// Player-built safe rooms (with powered APC) are spawn-safe.
@@ -55,6 +62,18 @@
 	if(!length(floors))
 		return null
 	return pick(floors)
+
+
+// The tile source for event floor-picks: the layer's cached floor list if
+// present, otherwise a fresh block() scan of the z. Returned as-is (callers
+// re-validate each turf with istype since the cache can drift).
+/datum/quarry_event/proc/_quarry_event_floor_source(datum/quarry_layer/L)
+	if(length(L.floor_cache))
+		return L.floor_cache
+	var/list/floors = list()
+	for(var/turf/simulated/floor/T in block(locate(1, 1, L.z), locate(QUARRY_LAYER_SIZE, QUARRY_LAYER_SIZE, L.z)))
+		floors += T
+	return floors
 
 
 /// Helper: pick a random floor turf on the layer that's at least
@@ -67,14 +86,22 @@
 		return null
 	var/list/players = list()
 	for(var/mob/M in GLOB.mob_list)
-		if(M.z == L.z && M.client)
+		// get_turf resolves through containers: a swallowed player still anchors
+		// "far from players" so an event doesn't spawn on their predator.
+		if(!M.client)
+			continue
+		var/turf/MT = get_turf(M)
+		if(MT && MT.z == L.z)
 			players += M
 	if(!length(players))
 		// No players means no anchor for "far"; fall back to any floor.
 		return pick_layer_floor(L)
 	var/list/bay = SSquarry.elevator?.bay_at(L.depth)
+	var/list/source = _quarry_event_floor_source(L)
 	var/list/eligible = list()
-	for(var/turf/simulated/floor/T in block(locate(1, 1, L.z), locate(QUARRY_LAYER_SIZE, QUARRY_LAYER_SIZE, L.z)))
+	for(var/turf/simulated/floor/T as anything in source)
+		if(!istype(T))
+			continue
 		if(bay && (T in bay))
 			continue
 		if(length(T.contents))
@@ -90,6 +117,10 @@
 		if(too_close)
 			continue
 		eligible += T
+		// We only need a handful to pick from — stop once we have enough
+		// rather than scanning the whole floor set every call.
+		if(length(eligible) >= 32)
+			break
 	if(!length(eligible))
 		return null
 	return pick(eligible)
@@ -121,7 +152,8 @@
 /datum/quarry_event/tremor/fire(datum/quarry_layer/L)
 	// Camera shake + distant rumble is the whole tell. No text.
 	for(var/mob/M in GLOB.mob_list)
-		if(M.z != L.z)
+		var/turf/MT = get_turf(M) // resolve through containers so a swallowed player still feels it
+		if(!MT || MT.z != L.z)
 			continue
 		if(M.client)
 			shake_camera(M, 12, 1)
@@ -135,6 +167,10 @@
 	min_danger = QUARRY_DANGER_RESTLESS
 
 /datum/quarry_event/gas_leak/fire(datum/quarry_layer/L)
+	// Cheap gate: only layers that rolled a gas-crack pool feature can leak.
+	// Skips the 65k-tile block() walk on the (common) layers that have none.
+	if(!L.has_gas_pools)
+		return
 	// Find a pool turf and amplify its existing gas signature. For
 	// generic pools we just push phoron into adjacent air.
 	var/list/pools = list()
@@ -236,6 +272,7 @@
 	var/pack_size = rand(3, 5)
 	var/spawned = 0
 	var/list/candidates = list(seed)
+	var/list/pack_mobs = list()
 	for(var/dir in GLOB.cardinal)
 		var/turf/N = get_step(seed, dir)
 		if(istype(N, /turf/simulated/floor) && !length(N.contents))
@@ -243,8 +280,12 @@
 	while(spawned < pack_size && length(candidates))
 		var/turf/T = candidates[1]
 		candidates.Cut(1, 2)
-		new mob_type(T)
+		var/mob/living/spawned_mob = new mob_type(T)
+		SSquarry.tag_fauna(spawned_mob) // coexist with other fauna; hunt players, not each other
+		pack_mobs += spawned_mob
 		spawned++
+	// One coordinator per roaming pack: shared awareness + coordinated aggro.
+	dq_assign_lord(pack_mobs)
 
 
 // --- Stalker: single elite mob from a depth-appropriate roster spawns
@@ -268,6 +309,7 @@
 	if(!spawn_tile)
 		return
 	var/mob/living/S = new stalker_type(spawn_tile)
+	SSquarry.tag_fauna(S) // coexist with other fauna; hunt players, not each other
 	L.active_stalker = S
 	// No announcement — players discover the stalker when they meet it.
 	// A subtle distant snarl on spawn so they have *some* chance to
@@ -282,6 +324,10 @@
 	min_danger = QUARRY_DANGER_DANGEROUS
 
 /datum/quarry_event/pump_malfunction/fire(datum/quarry_layer/L)
+	// Cheap gate: pumps are only worth running on layers that rolled a pool
+	// feature (the reagent source). Skips the GLOB.machines scan otherwise.
+	if(!L.has_pools)
+		return
 	var/list/pumps = list()
 	for(var/obj/machinery/pump/P in GLOB.machines)
 		if(P.z == L.z && P.on && P.cell?.charge)
@@ -319,14 +365,14 @@
 
 /// Per SS-tick driver. For each loaded layer with at least one
 /// player, roll an event with probability scaling from danger.
-/datum/controller/subsystem/quarry/proc/tick_layer_events()
+/datum/controller/subsystem/quarry/proc/tick_layer_events(list/occupancy)
 	if(!length(events))
 		return
 	for(var/key in layers)
 		var/datum/quarry_layer/L = layers[key]
 		if(!L?.loaded || L.unloading)
 			continue
-		if(is_layer_empty(L.z))
+		if(layer_empty_cached(occupancy, L.z))
 			continue
 		if(!prob(100 * QUARRY_EVENT_BASE_CHANCE * (L.danger / 100)))
 			continue

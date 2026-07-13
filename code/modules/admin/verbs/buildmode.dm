@@ -20,7 +20,7 @@ GLOBAL_LIST_EMPTY(active_buildmode_holders)
 		if(M.client.buildmode)
 			log_admin("[key_name(M)] exited build mode.")
 			M.client.buildmode = 0
-			M.client.show_popup_menus = 1
+			M.client.show_popup_menus = 0
 			M.plane_holder.set_vis(VIS_BUILDMODE, FALSE)
 			for(var/obj/effect/bmode/buildholder/H in GLOB.active_buildmode_holders)
 				if(H.cl == M.client)

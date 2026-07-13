@@ -80,11 +80,11 @@
 		if(direction_out)
 			pressure_delta = target_pressure - environment.return_pressure()
 			output_volume = environment.volume
-			air_temperature = environment.temperature? environment.temperature : air_contents.temperature
+			air_temperature = environment.return_temperature()? environment.return_temperature() : air_contents.return_temperature()
 		else
 			pressure_delta = environment.return_pressure() - target_pressure
 			output_volume = air_contents.volume
-			air_temperature = air_contents.temperature? air_contents.temperature : environment.temperature
+			air_temperature = air_contents.return_temperature()? air_contents.return_temperature() : environment.return_temperature()
 
 		var/transfer_moles = pressure_delta*output_volume/(air_temperature * R_IDEAL_GAS_EQUATION)
 
@@ -263,11 +263,11 @@
 	if(direction_out)
 		pressure_delta = target_pressure - environment.return_pressure()
 		output_volume = environment.volume
-		air_temperature = environment.temperature? environment.temperature : air_contents.temperature
+		air_temperature = environment.return_temperature()? environment.return_temperature() : air_contents.return_temperature()
 	else
 		pressure_delta = environment.return_pressure() - target_pressure
 		output_volume = air_contents.volume
-		air_temperature = air_contents.temperature? air_contents.temperature : environment.temperature
+		air_temperature = air_contents.return_temperature()? air_contents.return_temperature() : environment.return_temperature()
 
 	var/transfer_moles = pressure_delta*output_volume/(air_temperature * R_IDEAL_GAS_EQUATION)
 

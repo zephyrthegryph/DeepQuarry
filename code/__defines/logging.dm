@@ -113,6 +113,7 @@ GLOBAL_ALIST_INIT(logtype_to_string, alist(
 #define LOG_CATEGORY_DEBUG_MAPPING "debug-mapping"
 #define LOG_CATEGORY_DEBUG_MOBTAG "debug-mobtag"
 #define LOG_CATEGORY_DEBUG_SQL "debug-sql"
+#define LOG_CATEGORY_DEBUG_DQAI "debug-dqai"
 
 // Compatibility categories, for when stuff is changed and you need existing functionality to work
 #define LOG_CATEGORY_COMPAT_GAME "game-compat"

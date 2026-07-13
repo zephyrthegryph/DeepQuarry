@@ -33,6 +33,8 @@
 
 	if(istype(I))
 		breakouttime = I.breakouttime
+	if(has_perk(/datum/perk/body/spd_eel_shape)) // Eel Shape: slip restraints faster.
+		breakouttime = round(breakouttime * 0.5)
 
 	var/displaytime = breakouttime / 10
 

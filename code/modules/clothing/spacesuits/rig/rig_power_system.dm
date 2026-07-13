@@ -57,7 +57,7 @@
 			return M.return_temperature()
 		if(istype(H.loc, /obj/machinery/atmospherics/unary/cryo_cell))
 			var/obj/machinery/atmospherics/unary/cryo_cell/cryo = H.loc
-			return cryo.air_contents.temperature
+			return cryo.air_contents.return_temperature()
 
 	var/turf/T = get_turf(holder)
 	if(!T)
@@ -69,7 +69,7 @@
 	if(!environment)
 		return 0
 
-	return environment.temperature
+	return environment.return_temperature()
 
 /*
  * proc/run_cooling(mob/living/carbon/human/H)

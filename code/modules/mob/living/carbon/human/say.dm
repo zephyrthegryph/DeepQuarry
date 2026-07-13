@@ -89,10 +89,13 @@
 	return ..()
 
 /mob/living/carbon/human/GetVoice()
-	// Allow components to override voice (e.g., shadekin phase hiding)
-	var/list/voice_data = list(null)
-	if(SEND_SIGNAL(src, COMSIG_HUMAN_GET_VOICE, voice_data) & COMPONENT_VOICE_CHANGED)
-		return voice_data[1]
+	// Allow components to override voice (e.g., shadekin phase hiding).
+	// Only allocate the signal payload list when a handler is actually registered
+	// (GetVoice runs every Life() tick per human; the list(null) alloc is otherwise wasted).
+	if(_listen_lookup?[COMSIG_HUMAN_GET_VOICE])
+		var/list/voice_data = list(null)
+		if(SEND_SIGNAL(src, COMSIG_HUMAN_GET_VOICE, voice_data) & COMPONENT_VOICE_CHANGED)
+			return voice_data[1]
 
 	// Normal voice determination logic
 	var/voice_sub

@@ -731,7 +731,7 @@
 	)
 	auto_loading_type = OPEN_BOLT
 	load_method = MAGAZINE
-	fire_sound = "sound/weapons/Gunshot1.ogg"
+	fire_sound = "sound/weapons/gunshot1.ogg"
 
 /obj/item/gun/projectile/automatic/serdy/mp5
 	name = "MP5"
@@ -753,7 +753,7 @@
 	)
 	load_method = MAGAZINE
 	is_long = FALSE
-	fire_sound = "sound/weapons/Gunshot1.ogg"
+	fire_sound = "sound/weapons/gunshot1.ogg"
 
 /obj/item/gun/projectile/automatic/serdy/pitchgun
 	name = "Pitch-gun"

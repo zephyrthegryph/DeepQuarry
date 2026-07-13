@@ -266,7 +266,7 @@
 	var/new_mob = new tf_type(get_turf(target))
 	return new_mob
 
-// DQEdit - legacy engage_target override body removed.
+//legacy engage_target override body removed.
 ////////////////////////////Player controlled verbs///////////////////////////////
 
 /mob/living/proc/polymorph()

@@ -99,8 +99,11 @@ DreamDaemon with no DM-side stack. `panic_safe!` catches and converts to a
 The hook is installed lazily on first `panic_safe!` invocation and eagerly via
 `verdigris_init()` (called from `/world/New()` in `_verdigris.dm`).
 
-All current `#[byond_fn]` entry points (`verdigris_version`, `verdigris_features`,
-`verdigris_init`, `cleanup`, `generate_automata`) are wrapped in `panic_safe!`.
+Every `#[byond_fn]` entry point that can panic is wrapped in `panic_safe!`
+(`verdigris_init`, `cleanup`, `generate_automata`). The two metadata helpers
+`verdigris_version()` and `verdigris_features()` return a `&'static str` built
+entirely from compile-time constants — they are panic-free by construction and
+so are intentionally left unwrapped.
 
 ### Rule 2 — No strings in hot paths
 

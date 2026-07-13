@@ -24,6 +24,7 @@
 
 /mob/living/simple_mob/vore/fluffball/get_ai_behaviors()
 	var/static/list/L = list(
+		/datum/ai_behavior/predation/pounce,    // cornered eat = the escapable grab, not an instant swallow
 		/datum/ai_behavior/fluffball_flee_pounce,
 		/datum/ai_behavior/retaliate_to_attacker,
 		/datum/ai_behavior/idle_wander,
@@ -42,7 +43,10 @@
 
 /datum/ai_behavior/fluffball_flee_pounce
 	name = "skittish flee"
-	priority_class = DQ_BEHAVIOR_PRIORITY_INTERRUPT
+	// NORMAL, not INTERRUPT: the OVERRIDE predation/pounce must outrank fleeing so a cornered
+	// fluffball commits the grab. (INTERRUPT — 4 — would beat OVERRIDE — 3 — and the corner-grab
+	// would never fire; the scrubble has the same note.)
+	priority_class = DQ_BEHAVIOR_PRIORITY_NORMAL
 	target_kind = DQ_TARGET_MOB
 	no_threat_required = TRUE
 	/// How close another creature has to be to spook the fluffball.
@@ -61,7 +65,7 @@
 		return null
 	var/mob/living/best = null
 	var/best_dist = INFINITY
-	for(var/mob/living/L in view(spook_range, F))
+	for(var/mob/living/L in dview(spook_range, F)) // dview: senses prey in unlit caves, like the perception layer
 		if(L == F || L.stat >= DEAD)
 			continue
 		// Calm around food-bearers — they might feed it.
@@ -79,6 +83,9 @@
 	return best
 
 /datum/ai_behavior/fluffball_flee_pounce/evaluate(datum/ai_brain/brain, atom/source)
+	// Pure scoring — no side effects. The fright is published to brain.primary_threat in tick() so
+	// the OVERRIDE predation/pounce can read it and preempt this (NORMAL) flee the instant the
+	// fluffball is cornered adjacent to edible prey.
 	var/mob/living/scary = find_scary(brain)
 	if(!scary)
 		return null
@@ -99,14 +106,13 @@
 	// Re-check that this creature is still worth fearing; otherwise calm down.
 	if(prey.stat >= DEAD || get_dist(F, prey) > F.ai_brain?.vision_range)
 		return DQ_BEHAVIOR_DONE
-	// Cornered: whirl and tail-pounce. The mob's PounceTarget override eats
-	// edible prey and applies the weaken; otherwise it just bops them.
-	if(get_dist(F, prey) <= 1)
-		if(F.will_eat(prey) && F.CanPounceTarget(prey))
-			F.face_atom(prey)
-			F.PounceTarget(prey)
-			return DQ_BEHAVIOR_CONTINUE
-	// Otherwise keep running.
-	step_away(F, prey, flee_distance)
+	// Publish the fright as our threat so the OVERRIDE predation/pounce grabs it the moment we're
+	// cornered adjacent to edible prey (it reads brain.primary_threat); until then we just run.
+	brain.primary_threat = prey
+	// Flee ONE throttled, glided step away — not raw step_away(…, distance), which jumps several
+	// tiles every 250ms tick and reads as teleporting.
+	var/turf/away = get_step_away(F, prey)
+	if(away && !away.density)
+		dq_ai_step_to(F, away)
 	F.face_atom(prey)
 	return DQ_BEHAVIOR_CONTINUE

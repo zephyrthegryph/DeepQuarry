@@ -9,20 +9,28 @@
 	icon_state ="casino_atm" //CHOMNPEdit
 	anchored = 1
 
+// Cap the worth used in the *5 / /5 conversion so the result stays within BYOND's
+// exact-integer float range (2**24 - 1) and can't lose precision or overflow.
+#define CHIPMACHINE_MAX_WORTH 16777215
+
 /obj/machinery/chipmachine/attackby(obj/item/I as obj, mob/user as mob)
-	if(istype(I,/obj/item/spacecash) && (I:worth >= 5))
-		//consume the money
-		if(prob(50))
-			playsound(loc, 'sound/items/polaroid1.ogg', 50, 1)
-		else
-			playsound(loc, 'sound/items/polaroid2.ogg', 50, 1)
+	if(istype(I, /obj/item/spacecash))
+		var/obj/item/spacecash/cash = I
+		var/worth = clamp(cash.worth, 0, CHIPMACHINE_MAX_WORTH)
+		if(worth >= 5)
+			//consume the money
+			if(prob(50))
+				playsound(loc, 'sound/items/polaroid1.ogg', 50, 1)
+			else
+				playsound(loc, 'sound/items/polaroid2.ogg', 50, 1)
 
-		to_chat(user, span_info("You insert [I] into [src]."))
-		spawn_casinochips(round(I:worth/5), src.loc)
-		src.attack_hand(user)
-		qdel(I)
+			to_chat(user, span_info("You insert [I] into [src]."))
+			spawn_casinochips(round(worth / 5), src.loc)
+			src.attack_hand(user)
+			qdel(I)
 
-	if(istype(I,/obj/item/spacecasinocash))
+	if(istype(I, /obj/item/spacecasinocash))
+		var/obj/item/spacecasinocash/chips = I
 		//consume the chips
 		if(prob(50))
 			playsound(loc, 'sound/items/polaroid1.ogg', 50, 1)
@@ -30,7 +38,9 @@
 			playsound(loc, 'sound/items/polaroid2.ogg', 50, 1)
 
 		to_chat(user, span_info("You insert [I] into [src]."))
-		spawn_money(round(I:worth*5), src.loc)
+		// Bound the input worth so worth*5 stays exactly representable.
+		var/worth = clamp(chips.worth, 0, round(CHIPMACHINE_MAX_WORTH / 5))
+		spawn_money(round(worth * 5), src.loc)
 		src.attack_hand(user)
 		qdel(I)
 
@@ -356,3 +366,5 @@
 	icon_state = "spacecasinocash1000"
 	desc = "It's worth 1000 credits."
 	worth = 1000
+
+#undef CHIPMACHINE_MAX_WORTH

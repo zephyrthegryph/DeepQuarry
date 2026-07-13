@@ -361,7 +361,7 @@
 	slot_flags = SLOT_BELT
 	accuracy = 100
 	fire_delay = 12
-	fire_sound = 'sound/weapons/eluger.ogg'
+	fire_sound = 'sound/weapons/eLuger.ogg'
 
 	projectile_type = /obj/item/projectile/beam/medigun
 
@@ -492,7 +492,7 @@
 	damage = 0
 	check_armour = "energy"
 	hud_state = "pistol_tranq"
-	fire_sound = 'sound/weapons/Taser.ogg'
+	fire_sound = 'sound/weapons/taser.ogg'
 	nodamage = 1
 	modifier_type_to_apply = /datum/modifier/rednet
 	modifier_duration = 0.5 MINUTE
@@ -537,7 +537,7 @@
 	item_state = "supercannon"
 	wielded_item_state = "supercannon-wielded"
 	w_class = ITEMSIZE_HUGE
-	fire_sound = 'sound/weapons/Gunshot_cannon.ogg'
+	fire_sound = 'sound/weapons/gunshot_cannon.ogg'
 	slot_flags = SLOT_BELT|SLOT_BACK
 	charge_cost = 2400 //You got 1 shot...
 	self_recharge = TRUE

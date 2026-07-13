@@ -34,7 +34,7 @@
 	*/
 
 	var/datum/gas_mixture/env = loc.return_air()
-	if(!env || abs(env.temperature - target_temp) < 1)
+	if(!env || abs(env.return_temperature() - target_temp) < 1)
 		change_mode(MODE_IDLE)
 		return
 
@@ -54,7 +54,7 @@
 	else
 		change_mode(MODE_COOLING)
 		heat_transfer = abs(heat_transfer)
-		var/cop = removed.temperature/TN60C
+		var/cop = removed.return_temperature()/TN60C
 		var/actual_heat_transfer = heat_transfer
 		heat_transfer = min(heat_transfer, active_power_usage*cop)
 		// power_avail = draw_power(heat_transfer/cop)
@@ -159,7 +159,7 @@
 		return
 
 	var/datum/gas_mixture/env = loc.return_air()
-	if(!env || abs(env.temperature - target_temp) < 1)
+	if(!env || abs(env.return_temperature() - target_temp) < 1)
 		change_mode(MODE_IDLE)
 		return
 
@@ -179,7 +179,7 @@
 	else
 		change_mode(MODE_COOLING)
 		heat_transfer = abs(heat_transfer)
-		var/cop = removed.temperature/TN60C
+		var/cop = removed.return_temperature()/TN60C
 		var/actual_heat_transfer = heat_transfer
 		heat_transfer = min(heat_transfer, active_power_usage*cop)
 		power_avail = draw_power(heat_transfer/cop)

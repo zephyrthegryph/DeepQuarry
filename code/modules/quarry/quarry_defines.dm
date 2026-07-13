@@ -16,6 +16,20 @@
 // (tick_frontier_roll / begin_frontier_roll / frontier_candidate_depth).
 #define QUARRY_FRONTIER_ROLL_INTERVAL (2 MINUTES)
 
+// Layer fauna spawns as single-species packs rather than per-tile random
+// scatter: pick one type at a seed tile, then fill a contiguous cluster of
+// this many with it. Same-species packmates are faction allies, so they don't
+// infight and a player attack pack-aggros the rest (call_for_help).
+#define QUARRY_PACK_SIZE_MIN 2
+#define QUARRY_PACK_SIZE_MAX 4
+
+// Passive eyes-only sight range for quarry fauna (default brain vision is 7). Kept
+// very short so a quiet player can slip between packs — detection is led by NOISE
+// (gunfire/mining → notify_noise draws them from much farther). With thousands of
+// mobs per layer, anything longer means a pack is always in sight as you walk.
+// See tag_fauna.
+#define QUARRY_FAUNA_VISION_RANGE 2
+
 // Raw-chemistry mineral names. These index GLOB.ore_data the same way
 // the upstream ORE_HEMATITE / ORE_PHORON defines do, and have to be
 // available at parse time wherever a quarry feature lists them in
@@ -41,6 +55,32 @@
 #define QUARRY_DANGER_PER_MOB_KILL 0.3
 
 #define QUARRY_DANGER_DECAY 1.0
+
+// Reinforcement siege ("going loud"). Above QUARRY_REINFORCE_MIN_DANGER heat a
+// layer lays siege: waves of mobs spawn just off-screen and beeline the nearest
+// player, on a cadence and in sizes that tighten as heat climbs to 100. The loop
+// runs on its own heat-scaled timer (not the 30s SS tick) so it feels continuous.
+// Heat bleeds off once the layer goes quiet (no noise for QUARRY_QUIET_PERIOD),
+// so breaking contact / going quiet ends the swarm — the core go-loud/go-quiet loop.
+#define QUARRY_REINFORCE_MIN_DANGER 55              // heat at/above which the siege runs
+#define QUARRY_REINFORCE_INTERVAL_SLOW (40 SECONDS) // wave spacing at MIN heat
+#define QUARRY_REINFORCE_INTERVAL_FAST (8 SECONDS)  // wave spacing at 100 heat
+#define QUARRY_REINFORCE_WAVE_MIN 2                 // mobs per wave at MIN heat
+#define QUARRY_REINFORCE_WAVE_MAX 6                 // mobs per wave at 100 heat
+#define QUARRY_REINFORCE_RING 8                     // spawn this many tiles from the player (just off-screen)
+#define QUARRY_QUIET_PERIOD (25 SECONDS)            // no noise for this long => heat cools instead of rising
+#define QUARRY_QUIET_DECAY 6                        // heat lost per SS tick while quiet (beats passive accrual)
+#define QUARRY_HEAT_FLOOR_PER_DEPTH 4               // quiet heat settles toward depth*this (capped below the siege threshold)
+#define QUARRY_HEAT_FLOOR_MAX 45                    // cap on the depth heat floor, so going quiet can always end a siege
+#define QUARRY_REINFORCE_MAX_ALIVE 28               // stop spawning waves past this many reinforcement mobs alive on a layer (perf + fairness cap)
+// Per-tick hazard/danger magnitudes above are authored for the CURRENT
+// SSquarry wait of 30 SECONDS. BYOND subsystem `wait` is in deciseconds
+// (30 SECONDS == 300 ds), and callers pass `seconds = wait/10 == 30`. To
+// decouple the magnitudes from the scheduler without rebalancing, callers
+// multiply by the tick's `seconds` and divide by this normalization constant
+// — so at the 30s wait the factor is exactly 1 (present-day balance preserved)
+// and any other wait scales proportionally. If the wait define changes, update this too.
+#define QUARRY_TICK_NORMALIZE_SECONDS 30
 
 // Noise system loudness presets. Used at the call site to keep the
 // per-source values consistent. Each value is both the alert radius

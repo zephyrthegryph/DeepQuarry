@@ -16,7 +16,7 @@
 	throw_speed = 3
 	throw_range = 5
 	hitsound = 'sound/weapons/bladeslice.ogg'
-	usesound = 'sound/items/screwdriver.ogg'
+	usesound = 'sound/items/Screwdriver.ogg'
 	drop_sound = 'sound/items/drop/screwdriver.ogg'
 	pickup_sound = 'sound/items/pickup/screwdriver.ogg'
 	matter = list(MAT_STEEL = 75)

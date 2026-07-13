@@ -359,9 +359,11 @@ GLOBAL_LIST_EMPTY(chardirectory_photos)
 			return TRUE
 		if ("editAd")
 			if (can_set_prefs)
+				// The prefs path strips HTML in /datum/preference/text/sanitize_input;
+				// mirror that here so the mind write can't store raw markup.
 				user.client.prefs.update_preference_by_type(/datum/preference/text/human/directory_ad, new_value)
 			if (can_set_mind)
-				user.mind.directory_ad = new_value
+				user.mind.directory_ad = STRIP_HTML_SIMPLE(new_value, MAX_MESSAGE_LEN)
 			return TRUE
 		if ("setEventTag")
 			if (can_set_prefs)

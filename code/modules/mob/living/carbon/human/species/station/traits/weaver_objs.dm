@@ -131,7 +131,7 @@
 	icon_state = "web_bindings"
 	body_parts_covered = CHEST|LEGS|FEET|ARMS|HANDS
 	flags_inv = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETAIL
-	// Teshari sprite, this was originally a YW edit of the old web bindings
+	// Teshari sprite, this was originally aof the old web bindings
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/vore/custom_onmob_yw.dmi'
 		)

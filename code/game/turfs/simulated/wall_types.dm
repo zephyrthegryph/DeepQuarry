@@ -1045,7 +1045,8 @@ GLOBAL_LIST_EMPTY(flesh_overlay_cache)
 	. = ..()
 
 /turf/simulated/wall/uranium/radiate()
-	SIGNAL_HANDLER
+	// SIGNAL_HANDLER is declared on /turf/simulated/wall/radiate(); this override
+	// inherits the contract and must not re-set the should_not_sleep pragma.
 	if(active)
 		return
 	if(world.time <= last_event + 1.5 SECONDS)

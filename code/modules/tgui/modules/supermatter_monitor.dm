@@ -52,17 +52,17 @@
 		data["SM_area"] = get_area(active)
 		data["SM_integrity"] = active.get_integrity()
 		data["SM_power"] = active.power
-		data["SM_ambienttemp"] = air.temperature
+		data["SM_ambienttemp"] = air.return_temperature()
 		data["SM_ambientpressure"] = air.return_pressure()
 		data["SM_EPR"] = active.get_epr()
 		//data["SM_EPR"] = active.get_epr()
 		if(air.total_moles())
-			data["SM_gas_O2"] = round(100*LINDA_GAS_AMT(air, GAS_O2)/air.total_moles(),0.01)
-			data["SM_gas_CO2"] = round(100*LINDA_GAS_AMT(air, GAS_CO2)/air.total_moles(),0.01)
-			data["SM_gas_N2"] = round(100*LINDA_GAS_AMT(air, GAS_N2)/air.total_moles(),0.01)
-			data["SM_gas_PH"] = round(100*LINDA_GAS_AMT(air, GAS_PHORON)/air.total_moles(),0.01)
-			data["SM_gas_CH4"] = round(100*LINDA_GAS_AMT(air, GAS_CH4)/air.total_moles(),0.01)
-			data["SM_gas_N2O"] = round(100*LINDA_GAS_AMT(air, GAS_N2O)/air.total_moles(),0.01) // "sleeping_agent" string is not a LINDA gas id; GAS_N2O = "n2o" is the real id
+			data["SM_gas_O2"] = round(100*air.get_moles(GAS_O2)/air.total_moles(),0.01)
+			data["SM_gas_CO2"] = round(100*air.get_moles(GAS_CO2)/air.total_moles(),0.01)
+			data["SM_gas_N2"] = round(100*air.get_moles(GAS_N2)/air.total_moles(),0.01)
+			data["SM_gas_PH"] = round(100*air.get_moles(GAS_PHORON)/air.total_moles(),0.01)
+			data["SM_gas_CH4"] = round(100*air.get_moles(GAS_CH4)/air.total_moles(),0.01)
+			data["SM_gas_N2O"] = round(100*air.get_moles(GAS_N2O)/air.total_moles(),0.01) // "sleeping_agent" string is not a LINDA gas id; GAS_N2O = "n2o" is the real id
 		else
 			data["SM_gas_O2"] = 0
 			data["SM_gas_CO2"] = 0

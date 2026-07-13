@@ -21,7 +21,9 @@
 	item_flags = DROPDEL | NOSTRIP
 	var/atom/movable/screen/grab/hud = null
 	var/mob/living/affecting = null
-	var/mob/living/carbon/human/assailant = null
+	// Any living mob can hold a grab, not just humans — a simple_mob predator pins prey
+	// through the same system the player grabs with. Human-only reads below are istype-guarded.
+	var/mob/living/assailant = null
 	var/state = GRAB_PASSIVE
 
 	var/allow_upgrade = 1
@@ -67,6 +69,25 @@
 
 	adjust_position()
 
+
+/// Universal grab primitive: make `src` (any living mob) grab `victim`, returning the grab
+/// or null. Humans/mobs with a free hand hold it there (so the existing hand/HUD machinery
+/// works); a handless mob (most fauna) just holds the ref while `victim.grabbed_by` tracks
+/// it, so a player can still Resist out of it through the normal path. `start_state` can
+/// pre-escalate the grab (e.g. straight to AGGRESSIVE for a pin).
+/mob/living/proc/dq_grab(mob/living/victim, start_state = GRAB_PASSIVE)
+	if(!istype(victim) || victim == src || !Adjacent(victim) || victim.anchored)
+		return null
+	var/obj/item/grab/G = new /obj/item/grab(src, victim)
+	if(QDELETED(G)) // Initialize bailed (not adjacent etc.)
+		return null
+	// Prefer a real hand slot so the grab HUD / upgrade clicks work for hand-having mobs.
+	if(get_active_hand() == null && put_in_active_hand(G))
+		G.synch()
+	if(start_state > GRAB_PASSIVE)
+		G.state = min(start_state, GRAB_KILL)
+		G.adjust_position()
+	return G
 
 //Used by throw code to hand over the mob, instead of throwing the grab. The grab is then deleted by the throw code.
 /obj/item/grab/proc/throw_held()
@@ -133,7 +154,14 @@
 		affecting.drop_l_hand()
 		affecting.drop_r_hand()
 
-		if(iscarbon(affecting))
+		// Crushing Embrace: a held aggressive grab slowly crushes the victim.
+		if(assailant.has_perk(/datum/perk/body/str_crushing_embrace))
+			affecting.adjustBruteLoss(DQ_PERK_CRUSHING_BRUTE)
+		// Pin: a downed, grabbed victim can't crawl away.
+		if(assailant.has_perk(/datum/perk/body/str_pin) && affecting.lying)
+			affecting.Weaken(2)
+
+		if(iscarbon(affecting) && assailant.zone_sel) // NPC assailants have no zone HUD
 			handle_eye_mouth_covering(affecting, assailant, assailant.zone_sel.selecting)
 
 		if(force_down)
@@ -238,7 +266,10 @@
 		return
 	if(state == GRAB_UPGRADING)
 		return
-	if(world.time < (last_action + UPGRADE_COOLDOWN))
+	var/upgrade_cd = UPGRADE_COOLDOWN
+	if(assailant.has_perk(/datum/perk/body/str_choke_hold)) // Choke Hold: reinforce your grip faster.
+		upgrade_cd *= DQ_PERK_CHOKE_UPGRADE_MULT
+	if(world.time < (last_action + upgrade_cd))
 		return
 	if(!assailant.canmove || assailant.lying)
 		qdel(src)
@@ -385,6 +416,13 @@
 		break_strength += grabber.species.grab_power_victims
 
 	var/break_chance = CLAMP(prob_mult*break_chance_table[CLAMP(break_strength, 1, break_chance_table.len)],0,100)
+	// Perks: Vise Hands tightens the grip; the escapist line (Slippery/Wriggler) loosens it.
+	if(assailant.has_perk(/datum/perk/body/str_vise_hands))
+		break_chance *= DQ_PERK_VISE_BREAK_MULT
+	if(isliving(affecting))
+		var/mob/living/escapee = affecting
+		break_chance += escapee.perk_add(DQ_PERK_FX_GRAB_ESCAPE)
+	break_chance = CLAMP(break_chance, 0, 100)
 	if(prob(break_chance))
 		if(state == GRAB_KILL)
 			reset_kill_state()
@@ -398,9 +436,9 @@
 	return mob_size_difference(A.mob_size, B.mob_size)
 
 /obj/item/grab/Destroy()
-	animate(affecting, pixel_x = initial(affecting.pixel_x), pixel_y = initial(affecting.pixel_y), 4, 1, LINEAR_EASING)
-	affecting.reset_plane_and_layer()
-	if(affecting)
+	if(affecting) // a qdeleted prey leaves affecting null — don't animate/reset a null
+		animate(affecting, pixel_x = initial(affecting.pixel_x), pixel_y = initial(affecting.pixel_y), 4, 1, LINEAR_EASING)
+		affecting.reset_plane_and_layer()
 		affecting.grabbed_by -= src
 		affecting = null
 	if(assailant)

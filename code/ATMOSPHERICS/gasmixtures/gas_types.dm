@@ -73,6 +73,27 @@
 	///RGB code for use when a generic color representing the gas is needed. Colors taken from contants.ts
 	var/primary_color
 
+	// --- Auxmos gas-registry metadata (read by the Rust gas table at
+	// registration). auxmos interns each of these names via byond_string!,
+	// which panics if the string doesn't exist in BYOND's string tree — so
+	// these vars must be declared even where unused. ---
+	/// Gas flag bitmask (oxidizer/fuel classifications, etc.).
+	var/flags = 0
+	/// If set, the temperature at/above which this gas acts as a fire oxidizer.
+	var/oxidation_temperature = null
+	/// Oxidizing power per mole when acting as an oxidizer.
+	var/oxidation_rate = null
+	/// If set, the temperature at/above which this gas acts as fire fuel.
+	var/fire_temperature = null
+	/// Burn rate per mole when acting as fuel.
+	var/fire_burn_rate = null
+	/// Assoc list gas_id -> product ratios of combustion, or a number for plasma-style.
+	var/fire_products = null
+	/// Enthalpy (energy released) contribution when this gas burns.
+	var/enthalpy = 0
+	/// Radiation released when this gas burns.
+	var/fire_radiation_released = 0
+
 
 /datum/gas/oxygen
 	id = GAS_O2

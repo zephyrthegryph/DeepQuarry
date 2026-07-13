@@ -30,7 +30,7 @@
 		user.show_message(span_warning("Warning: Subject is hungry."))
 	user.show_message("Electric change strength: [S.power_charge]")
 
-	// DQEdit - resentment/rabid moved to /datum/slime_state on the slime mob.
+	//resentment/rabid moved to /datum/slime_state on the slime mob.
 	if(S.slime_state)
 		if(S.slime_state.resentment)
 			user.show_message(span_warning("Warning: Subject is harboring resentment."))

@@ -866,7 +866,7 @@ I think I covered everything.
 
 	handle_tame_item(O, user)
 
-	// DQEdit - legacy ai_brain swap removed. Modern brain uses set_hostile() /
+	//legacy ai_brain swap removed. Modern brain uses set_hostile() /
 	// personal disposition for state changes.
 	faction = FACTION_NEUTRAL
 	norange = 1		//Don't start fires while friendly
@@ -884,7 +884,7 @@ I think I covered everything.
 	norange = 0
 	faction = FACTION_DRAGON
 	say("HAVE IT YOUR WAY THEN")
-	// DQEdit - legacy ai_brain swap removed; brain stays put.
+	//legacy ai_brain swap removed; brain stays put.
 	ai_brain?.set_hostile(TRUE)
 	vore_selected = gut1
 	if(attacker)

@@ -58,6 +58,10 @@ GLOBAL_LIST_INIT(all_integrated_circuits, initialize_integrated_circuits_list())
 	var/list/outputs_default = list()		// Ditto, for output.
 	var/list/activators = list()
 	var/next_use = 0 //Uses world.time
+	/// Transient: circuits remaining in the current synchronous pulse propagation
+	/// budget. Set by check_then_do_work() right before do_work(), read by
+	/// activate_pin() to forward downstream. Not meaningful between pulses.
+	var/tmp/ic_work_budget = IC_MAX_PULSE_CIRCUITS
 	var/complexity = 1 				//This acts as a limitation on building machines, more resource-intensive components cost more 'space'.
 	var/size = null					//This acts as a limitation on building machines, bigger components cost more 'space'. -1 for size 0
 	var/cooldown_per_use = 1 SECOND // Circuits are limited in how many times they can be work()'d by this variable.

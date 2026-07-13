@@ -122,7 +122,7 @@
 	else
 		// T.air was XGM's per-turf mixture; under LINDA call return_air().
 		var/datum/gas_mixture/turf_air = istype(T) ? T.return_air() : null
-		T.assume_gas(GAS_PHORON, 5, turf_air ? turf_air.temperature : T20C)
+		T.assume_gas(GAS_PHORON, 5, turf_air ? turf_air.return_temperature() : T20C)
 		T.visible_message("The [src] suddenly disgorges a cloud of phoron.")
 	T.assume_air(GM)
 	return

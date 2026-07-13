@@ -24,6 +24,13 @@
 #define UNIT_TESTS
 #endif
 
+// Skip the slow (multi-second) integration/benchmark unit tests for fast local
+// `bin/test.cmd` iteration. CI passes -DFULL_TESTS to run the complete suite.
+// Drives the `slow` gate in code/modules/unit_tests/unit_test.dm.
+#if defined(UNIT_TESTS) && !defined(FULL_TESTS)
+#define SKIP_SLOW_TESTS
+#endif
+
 // Comment/Uncomment this to turn off/on shuttle code debugging logs
 #define DEBUG_SHUTTLES
 

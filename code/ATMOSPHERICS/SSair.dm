@@ -104,11 +104,12 @@ SUBSYSTEM_DEF(air)
 	gas_reactions = init_gas_reactions()
 	hotspot_reactions = init_hotspot_reactions()
 
-	// NOTE: gas math currently runs in pure DM (the /datum/gas_mixture bodies in
-	// gasmixtures/gas_mixture.dm). The optional Rust-accelerated auxmos backend
-	// is not wired: auxmos_bindings.dm is not compiled and the gas-arena init
-	// (auxtools_atmos_init in auxmos_init_bridge.dm) is not called. Wiring it is
-	// a future perf project — until then there is nothing to initialise here.
+	// Phase 1 of the auxmos backend cutover: populate the Rust gas + reaction
+	// registry now that gas_reactions exists. Gas math still runs in DM (the
+	// /datum/gas_mixture bodies in gasmixtures/gas_mixture.dm) until the arena
+	// cutover (Phase 2+); this only makes the Rust backend ready. Safe no-op if
+	// verdigris isn't loaded. See doc/atmos_migration.md and auxmos_init_bridge.dm.
+	init_auxmos_backend()
 
 	build_multiz_atmos_levels()
 	setup_allturfs()
@@ -689,7 +690,8 @@ GLOBAL_LIST_EMPTY(colored_images)
 
 /// Takes a gas string, returns the matching mutable gas_mixture
 /datum/controller/subsystem/air/proc/parse_gas_string(gas_string, gastype = /datum/gas_mixture)
-	var/datum/gas_mixture/cached = strings_to_mix["[gas_string]-[gastype]"]
+	var/cache_key = "[gas_string]-[gastype]"
+	var/datum/gas_mixture/cached = strings_to_mix[cache_key]
 
 	if(cached)
 		if(istype(cached, /datum/gas_mixture/immutable))
@@ -698,23 +700,23 @@ GLOBAL_LIST_EMPTY(colored_images)
 
 	var/datum/gas_mixture/canonical_mix = new gastype()
 	// We set here so any future key changes don't fuck us
-	strings_to_mix["[gas_string]-[gastype]"] = canonical_mix
+	strings_to_mix[cache_key] = canonical_mix
 	gas_string = preprocess_gas_string(gas_string)
 
-	var/list/gases = canonical_mix.gases
 	var/list/gas = params2list(gas_string)
 	if(gas["TEMP"])
-		canonical_mix.temperature = text2num(gas["TEMP"])
-		canonical_mix.temperature_archived = canonical_mix.temperature
+		canonical_mix.set_temperature(text2num(gas["TEMP"]))
 		gas -= "TEMP"
 	else // if we do not have a temp in the new gas mix lets assume room temp.
-		canonical_mix.temperature = T20C
+		canonical_mix.set_temperature(T20C)
 	for(var/id in gas)
-		var/path = id
-		if(!ispath(path))
-			path = gas_id2path(path) //a lot of these strings can't have embedded expressions (especially for mappers), so support for IDs needs to stick around
-		ADD_GAS(path, gases)
-		gases[path][MOLES] = text2num(gas[id])
+		// The parsed key is the auxmos string gas id ("o2"); normalise it (and
+		// any mapper-written /datum/gas type path) to the string id auxmos keys
+		// its Rust gas table by, then set the moles. Unknown gases are skipped.
+		var/gas_id = canonical_mix.xgm_gas_string_id(id)
+		if(isnull(gas_id))
+			continue
+		canonical_mix.set_moles(gas_id, text2num(gas[id]))
 
 	if(istype(canonical_mix, /datum/gas_mixture/immutable))
 		return canonical_mix
@@ -783,7 +785,7 @@ GLOBAL_LIST_EMPTY(colored_images)
 	data["showing_user"] = user.hud_used.atmos_debug_overlays
 	return data
 
-/datum/controller/subsystem/air/proc/ui_act(action, list/params, datum/tgui/ui, datum/ui_state/state)
+/datum/controller/subsystem/air/proc/ui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	// was . = ..(); but as a fresh declaration there's no parent to
 	// chain to. The /tg/ ..() called /datum/ui_state ancestry which CHOMP's
 	// TGUI doesn't have. Skip the parent chain; rights check below handles

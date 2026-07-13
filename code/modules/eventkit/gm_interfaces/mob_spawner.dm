@@ -59,7 +59,7 @@
 				if(isliving(M))
 					var/mob/living/L = M
 
-					// DQEdit - legacy ai_holder_type removed; modern brain has no
+					//legacy ai_holder_type removed; modern brain has no
 					// equivalent of swapping AI subtype at runtime.
 					ai_type = null
 					faction = (L.faction ? L.faction : "neutral")
@@ -106,7 +106,7 @@
 			intent = tgui_input_list(ui.user, "Please select preferred intent", "Select Intent", list(I_HELP, I_HURT), (intent ? intent : I_HELP))
 			return TRUE
 		if("set_ai_path")
-			// DQEdit - modern brain has no equivalent of "swap AI subtype at runtime";
+			//modern brain has no equivalent of "swap AI subtype at runtime";
 			// behaviors are declared per mob subtype via get_ai_behaviors().
 			to_chat(ui.user, span_warning("AI path selection no longer available; mob behaviors are per-subtype."))
 			return TRUE

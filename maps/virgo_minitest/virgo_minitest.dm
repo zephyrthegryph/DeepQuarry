@@ -7,6 +7,7 @@
 	#include "virgo_minitest_defines.dm"
 	#include "virgo_minitest_shuttles.dm"
 	#include "virgo_minitest_sectors.dm"
+	#include "virgo_minitest_compat.dm"
 
 	#define USING_MAP_DATUM /datum/map/virgo_minitest
 

@@ -28,11 +28,14 @@
 
 /// Used for modifying movement speed for mobs.
 /// Universal modifiers
+// Base move delay (deciseconds) added to movement_delay. 0 makes players move far
+// too fast; these match config/example/game_options.txt, so the game plays at the
+// intended speed even when a server hasn't copied that file into config/.
 /datum/config_entry/number/run_speed
-	default = 0
+	default = 2
 
 /datum/config_entry/number/walk_speed
-	default = 0
+	default = 4
 
 /datum/config_entry/flag/force_random_names
 

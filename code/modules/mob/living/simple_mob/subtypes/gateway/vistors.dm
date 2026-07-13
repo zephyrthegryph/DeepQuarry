@@ -1,6 +1,6 @@
 /mob/living/simple_mob/mechanical/mecha/vistor/vistorblue/shielded
 	name = "vistor blue"
-	icon = 'icons/mob/animal_vg.dmi'
+	icon = 'icons/mob/animal_VG.dmi'
 	icon_state = "drone3"
 	icon_living = "drone3"
 	maxHealth = 50 //Old 25
@@ -58,7 +58,7 @@
 
 /mob/living/simple_mob/mechanical/mecha/vistor/vistorblue
 	name = "vistor blue"
-	icon = 'icons/mob/animal_vg.dmi'
+	icon = 'icons/mob/animal_VG.dmi'
 	icon_state = "drone0"
 	icon_living = "drone0"
 
@@ -131,7 +131,7 @@
 
 /mob/living/simple_mob/mechanical/mecha/vistor/vistorgreen
 	name = "vistor green"
-	icon = 'icons/mob/animal_vg.dmi'
+	icon = 'icons/mob/animal_VG.dmi'
 	icon_state = "mushroom"
 	icon_living = "mushroom"
 	maxHealth = 200 //Old 100
@@ -161,7 +161,7 @@
 
 /mob/living/simple_mob/mechanical/mecha/vistor/vistorpurple
 	name = "vistor purple"
-	icon = 'icons/mob/animal_vg.dmi'
+	icon = 'icons/mob/animal_VG.dmi'
 	icon_state = "scarybat"
 	icon_living = "scarybat"
 	maxHealth = 200 //Old 100

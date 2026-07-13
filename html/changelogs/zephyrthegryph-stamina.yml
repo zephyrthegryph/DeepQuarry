@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - rscadd: "Added a stamina system: melee swings, blocking, and running drain a stamina pool shown on the HUD."
+  - rscadd: "Running out of stamina collapses you (knockdown) until you recover; stamina regenerates when you disengage, faster while resting or sleeping."
+  - balance: "A clean parry refunds stamina while a whiffed block costs extra, rewarding well-timed defense."

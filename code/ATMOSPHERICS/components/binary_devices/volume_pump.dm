@@ -11,8 +11,6 @@ Thus, the two variables affect pump operation are set in New():
 		Higher quantities of this cause more air to be perfected later
 		but overall network volume is also increased as this increases...
 */
-#define VOLUME_PUMP_MAX_OUTPUT_PRESSURE 9000 // kpa
-#define VOLUME_PUMP_LEAK_AMOUNT 0.04 // About 4% of the volume moved will leak.
 
 /obj/machinery/atmospherics/binary/volume_pump
 	icon = 'icons/atmos/volume_pump.dmi'

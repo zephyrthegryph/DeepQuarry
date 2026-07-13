@@ -144,8 +144,13 @@ ADMIN_VERB(advanced_proc_call, R_DEBUG, "Advanced ProcCall", "Call a proc on any
 		return
 
 	if(targetselected)
-		if(!target)
+		// The tgui prompts above sleep; the target may have been qdel'd or had its
+		// type swapped out from under us. Re-validate before calling into it.
+		if(!target || QDELETED(target) || !istype(target) || !is_valid_src(target))
 			to_chat(usr, span_red("Error: callproc(): owner of proc no longer exists."), confidential = TRUE)
+			return
+		if(!hascall(target, procname))
+			to_chat(usr, span_warning("Error: callproc(): type [target.type] has no [proctype] named [procpath]."), confidential = TRUE)
 			return
 		var/msg = "[key_name(src)] called [target]'s [procname]() with [lst.len ? "the arguments [list2params(lst)]":"no arguments"]."
 		log_admin(msg)

@@ -3,6 +3,12 @@
 	recent_sound = FALSE
 	cycle_sloshed = FALSE
 
+	// Normalize all per-tick digestion/resize/drain deltas to the SSbellies cadence
+	// (BELLY_BASELINE_TICK). On the normal path this is exactly 1 (no behavior change);
+	// on the DM_FLAG_TURBOMODE/SSobj path the shorter wait yields a proportionally
+	// smaller factor so the same flat constants don't digest faster there.
+	var/delta_factor = wait ? (wait / BELLY_BASELINE_TICK) : 1
+
 	if(loc != owner)
 		if(isAI(owner))
 			var/mob/living/silicon/ai/AI = owner
@@ -88,7 +94,7 @@
 
 	var/list/touchable_mobs = null
 
-	var/list/hta_returns = handle_touchable_atoms(touchable_atoms)
+	var/list/hta_returns = handle_touchable_atoms(touchable_atoms, delta_factor)
 	if(islist(hta_returns))
 		if(hta_returns["digestion_noise_chance"])
 			digestion_noise_chance = hta_returns["digestion_noise_chance"]
@@ -134,7 +140,7 @@
 		if(!istype(L))
 			stack_trace("Touchable mobs had a nonmob: [L]")
 			continue
-		var/list/returns = DM.process_mob(src, L)
+		var/list/returns = DM.process_mob(src, L, delta_factor)
 		if(istype(returns) && returns["to_update"])
 			to_update = TRUE
 		if(istype(returns) && returns["soundToPlay"] && !play_sound)
@@ -178,7 +184,7 @@
 		updateVRPanels()
 
 
-/obj/belly/proc/handle_touchable_atoms(list/touchable_atoms)
+/obj/belly/proc/handle_touchable_atoms(list/touchable_atoms, delta_factor = 1)
 	var/did_an_item = FALSE // Only do one item per cycle.
 	var/to_update = FALSE
 	var/digestion_noise_chance = 0
@@ -234,7 +240,7 @@
 						if(!I || I.flags & NOSTRIP)
 							continue
 						if(H.unEquip(I, force = FALSE))
-							handle_digesting_item(I)
+							handle_digesting_item(I, delta_factor = delta_factor)
 							digestion_noise_chance = 25
 							to_update = TRUE
 							break // Digest off one by one, not all at once
@@ -244,9 +250,9 @@
 		if(isitem(A))
 			if(item_digest_mode == IM_DIGEST_PARALLEL)
 				var/touchable_amount = touchable_atoms.len
-				did_an_item = handle_digesting_item(A, touchable_amount)
+				did_an_item = handle_digesting_item(A, touchable_amount, delta_factor)
 			else if(!did_an_item)
-				did_an_item = handle_digesting_item(A, 1)
+				did_an_item = handle_digesting_item(A, 1, delta_factor)
 			if(did_an_item)
 				to_update = TRUE
 
@@ -280,7 +286,7 @@
 			M.playsound_local(get_turf(src), preyloop, 80, 0, channel = CHANNEL_PREYLOOP, frequency = noise_freq)
 			M.next_preyloop = (world.time + (52 SECONDS))
 
-/obj/belly/proc/handle_digesting_item(obj/item/I, touchable_amount)
+/obj/belly/proc/handle_digesting_item(obj/item/I, touchable_amount, delta_factor = 1)
 	var/did_an_item = FALSE
 	// We always contaminate IDs.
 	if(contaminates || istype(I, /obj/item/card/id))
@@ -295,11 +301,11 @@
 				if(istype(R) && R.robotic >= ORGAN_ROBOT)
 					items_preserved |= I
 				else
-					did_an_item = digest_item(I, touchable_amount)
+					did_an_item = digest_item(I, touchable_amount, delta_factor)
 			else
 				items_preserved |= I
 		if(IM_DIGEST,IM_DIGEST_PARALLEL)
-			did_an_item = digest_item(I, touchable_amount)
+			did_an_item = digest_item(I, touchable_amount, delta_factor)
 	return did_an_item
 
 /obj/belly/proc/handle_digestion_death(mob/living/M, instant = FALSE)
@@ -367,24 +373,29 @@
 	else
 		owner_adjust_nutrition((nutrition_percent / 100) * compensation * 4.5 * personal_nutrition_modifier * pred_digestion_efficiency)
 
-/obj/belly/proc/steal_nutrition(mob/living/L)
+/obj/belly/proc/steal_nutrition(mob/living/L, delta_factor = 1)
 	if(L.nutrition <= 110)
 		if(drainmode == DR_SLEEP && ishuman(L)) //Slowly put prey to sleep
 			if(L.tiredness <= 105)
-				L.tiredness = (L.tiredness + 6)
+				L.tiredness = (L.tiredness + 6 * delta_factor)
 			if(L.tiredness <= 90 && L.tiredness >= 75)
 				to_chat(L, span_warning("You are about to fall unconscious!"))
 				to_chat(owner, span_warning("[L] is about to fall unconscious!"))
 		if(drainmode == DR_FAKE && ishuman(L)) //Slowly bring prey to the edge of sleep without crossing it
 			if(L.tiredness <= 93)
-				L.tiredness = (L.tiredness + 6)
+				L.tiredness = (L.tiredness + 6 * delta_factor)
 		if(drainmode == DR_WEIGHT && ishuman(L)) //Slowly drain your prey's weight and add it to your own
 			if(L.weight > 70)
-				L.weight -= (0.01 * L.weight_loss)
-				owner.weight += (0.01 * L.weight_loss) //intentionally dependant on the prey's weight loss ratio rather than the preds weight gain to keep them in pace with one another.
+				L.weight -= (0.01 * L.weight_loss * delta_factor)
+				owner.weight += (0.01 * L.weight_loss * delta_factor) //intentionally dependant on the prey's weight loss ratio rather than the preds weight gain to keep them in pace with one another.
 	if(L.nutrition >= 100)
-		var/oldnutrition = (L.nutrition * 0.05)
-		L.nutrition = (L.nutrition * 0.95)
+		// Multiplicative drain: prey loses 5% of nutrition per baseline tick. Convert
+		// to a per-tick rate raised to delta_factor so a faster subsystem drains the
+		// equivalent fraction per real second instead of a flat 5% per (shorter) tick.
+		// At delta_factor == 1 this is exactly the original 0.95 multiplier.
+		var/keep_fraction = 0.95 ** delta_factor
+		var/oldnutrition = (L.nutrition * (1 - keep_fraction))
+		L.nutrition = (L.nutrition * keep_fraction)
 		if(show_liquids && reagent_mode_flags & DM_FLAG_REAGENTSDRAIN && reagents.total_volume < reagents.maximum_volume)   // draining reagent production //Added to this proc now since it's used for draining
 			owner_adjust_nutrition(oldnutrition * 0.75) //keeping the price static, due to how much nutrition can flunctuate
 			GenerateBellyReagents_absorbing() //Dont need unique proc so far

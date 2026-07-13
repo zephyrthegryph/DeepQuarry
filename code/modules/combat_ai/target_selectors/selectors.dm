@@ -42,7 +42,8 @@
 	var/atom/attacker = brain.model?.get_last_attacker()
 	if(attacker && (attacker in candidates))
 		return attacker
-	return dq_get_selector(/datum/target_selector/closest).select(brain, candidates)
+	var/datum/target_selector/closest_selector = dq_get_selector(/datum/target_selector/closest)
+	return closest_selector.select(brain, candidates)
 
 /// Prefer client-controlled mobs over NPCs. For aggressive boss-style mobs.
 /datum/target_selector/prefer_players
@@ -55,9 +56,10 @@
 	for(var/mob/living/M as anything in candidates)
 		if(M.client)
 			players += M
+	var/datum/target_selector/closest_selector = dq_get_selector(/datum/target_selector/closest)
 	if(length(players))
-		return dq_get_selector(/datum/target_selector/closest).select(brain, players)
-	return dq_get_selector(/datum/target_selector/closest).select(brain, candidates)
+		return closest_selector.select(brain, players)
+	return closest_selector.select(brain, candidates)
 
 /// Highest threat — scores by held items granting behaviors + max HP. Cheap
 /// approximation, but enough to make mobs target the armed/dangerous first.

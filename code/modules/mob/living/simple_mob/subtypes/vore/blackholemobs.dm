@@ -900,8 +900,8 @@ GLOBAL_LIST_INIT(obelisk_lure_messages, list(
 	say_stand_down = list("Come back here!")
 	say_escalate = list("Die, heathen!", "Thy end is now!", "The Monolith commands your death!", "Come here!!", "Get some!!", "Die!", "This will hurt!", "Embrace oblivion!", "Suffering awaits!", "Destroy!")
 
-	threaten_sound = 'sound/weapons/TargetOn.ogg'
-	stand_down_sound = 'sound/weapons/TargetOff.ogg'
+	threaten_sound = 'sound/weapons/targeton.ogg'
+	stand_down_sound = 'sound/weapons/targetoff.ogg'
 
 /datum/say_list/merc/blackhole/grotesque
 	speak = list("AAAAAAAAAA!!",
@@ -919,8 +919,8 @@ GLOBAL_LIST_INIT(obelisk_lure_messages, list(
 	say_stand_down = list("NO, COME BACK!!")
 	say_escalate = list("KILL KILL KILL KILL!!", "SUFFER AS I DO!!", "GET OVER HERE!!", "RIP AND TEAR!!", "KILL ME!!", "REND AND RIP!!", "AAAAAAAAAAAAAAAAAAAAA!!!", "DIE!!")
 
-	threaten_sound = 'sound/weapons/TargetOn.ogg'
-	stand_down_sound = 'sound/weapons/TargetOff.ogg'
+	threaten_sound = 'sound/weapons/targeton.ogg'
+	stand_down_sound = 'sound/weapons/targetoff.ogg'
 
 /datum/category_item/catalogue/fauna/mercenary/blackhole
 	name = "Black Hole fanatics"

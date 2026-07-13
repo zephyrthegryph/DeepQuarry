@@ -1,0 +1,7 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - rscadd: "Mind & Body perks are now real, working skills instead of flavor text. Body perks (Strength, Vigor, Speed, Endurance) all have concrete mechanical effects — brute/hazard mitigation, grappling and shoves, executions, evasion and footwork, crit survival, bleeding and blood, status resistance, and more — read live at the relevant gameplay moment."
+  - rscadd: "Spend-gated capstones: invest enough in a Body category and its capstone (Juggernaut, Undying, Blur, Immovable) unlocks, reachable by any build."
+  - rscadd: "Gearing up now takes a brief moment; Quickened Hands speeds the swap and Quick Draw makes handling a weapon instant."
+  - balance: "Thrown items land on the zone you have targeted, and a strong enough thrower can knock a target down or hurl a grabbed body into others."

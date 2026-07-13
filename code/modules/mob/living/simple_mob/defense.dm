@@ -73,6 +73,7 @@
 				L.do_attack_animation(src)
 				return
 			apply_damage(damage = harm_intent_damage, damagetype = BRUTE, def_zone = null, blocked = armor, blocked = resistance, sharp = FALSE, edge = FALSE, used_weapon = null) // EDIT Somebody set this to burn instead of brute.
+			add_stagger(harm_intent_damage, L) // unarmed blows still build poise
 			L.visible_message(span_warning("\The [L] [response_harm] \the [src]!"))
 			L.do_attack_animation(src)
 

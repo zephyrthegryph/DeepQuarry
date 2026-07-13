@@ -22,9 +22,12 @@
 	var/force_process = recheck_bad_external_organs()
 
 	if(force_process || force)
+		// Populate directly from organs that need processing instead of adding all
+		// then pruning the ones that don't (the old "Silly and slow" approach).
 		bad_external_organs.Cut()
 		for(var/obj/item/organ/external/Ex in organs)
-			bad_external_organs += Ex // Silly and slow to |= this
+			if(Ex.need_process())
+				bad_external_organs += Ex
 
 	//processing internal organs is pretty cheap, do that first.
 	for(var/obj/item/organ/I in internal_organs)

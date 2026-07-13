@@ -279,7 +279,7 @@
 			src.force = 15
 			src.damtype = BURN
 			src.w_class = ITEMSIZE_LARGE
-			src.hitsound = 'sound/items/welder.ogg'
+			src.hitsound = 'sound/items/Welder.ogg'
 			welding = 1
 			update_icon()
 			if(!always_process)

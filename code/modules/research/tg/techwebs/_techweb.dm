@@ -38,6 +38,12 @@
 	var/list/discovered_mutations = list()
 	/// Assoc list, id = number, 1 is available, 2 is all reqs are 1, so on
 	var/list/tiers = list()
+	/// When >0, update_node_status() defers tier recomputation instead of running a
+	/// full descendant BFS per call. Set of node datums whose tiers must be refreshed
+	/// is accumulated in deferred_tier_roots and flushed once via flush_deferred_tiers().
+	var/tier_recompute_deferred = 0
+	/// Node datums queued for a deferred update_tiers() sweep; see tier_recompute_deferred.
+	var/list/deferred_tier_roots = list()
 	/// This is a list of all incomplete experiment datums that are accessible for scientists to complete
 	var/list/datum/experiment/available_experiments = list()
 	/// A list of all experiment datums that have been complete
@@ -107,9 +113,11 @@
 		researched_designs = custom_designs.Copy()
 		if(wipe_custom_designs)
 			custom_designs = list()
+	defer_tier_recompute()
 	for(var/id in processing)
 		update_node_status(SSresearch.techweb_node_by_id(id))
 		CHECK_TICK
+	flush_deferred_tiers()
 
 /datum/techweb/proc/add_point_list(list/pointlist)
 	for(var/i in pointlist)
@@ -375,9 +383,13 @@
 	// An unregistered node means SSresearch state is inconsistent — error early.
 	if(node.id != "ERROR" && !SSresearch.techweb_nodes[node.id])
 		CRASH("research_node called with unregistered node '[node.id]' ([node.type]) on techweb '[id]' — node is not in SSresearch.techweb_nodes")
+	// Defer the per-node tier BFS until the whole unlock batch below has run, so the
+	// many overlapping update_node_status() calls only trigger one coalesced sweep.
+	defer_tier_recompute()
 	update_node_status(node)
 	if(!force)
 		if(!available_nodes[node.id] || (auto_adjust_cost && (!can_afford(node.get_price(src)))) || !have_experiments_for_node(node))
+			flush_deferred_tiers()
 			return FALSE
 	var/log_message = "[id]/[organization] researched node [node.id]"
 	if(auto_adjust_cost)
@@ -425,6 +437,7 @@
 	if(node.id in research_queue_nodes)
 		research_queue_nodes.Remove(node.id)
 
+	flush_deferred_tiers()
 	return TRUE
 
 /datum/techweb/proc/unresearch_node_id(id)
@@ -474,6 +487,27 @@
 					next += SSresearch.techweb_node_by_id(id)
 		current = next
 
+/// Begin a batch during which update_node_status() defers its per-node update_tiers()
+/// BFS. Nest-safe via a counter; pair every call with flush_deferred_tiers().
+/datum/techweb/proc/defer_tier_recompute()
+	tier_recompute_deferred++
+
+/// End a deferred-tier batch. When the outermost batch closes, run update_tiers()
+/// once per queued root, coalescing the redundant overlapping BFS sweeps that would
+/// otherwise run on every update_node_status() call during a research_node() batch.
+/datum/techweb/proc/flush_deferred_tiers()
+	if(tier_recompute_deferred <= 0)
+		return
+	tier_recompute_deferred--
+	if(tier_recompute_deferred > 0)
+		return
+	if(!length(deferred_tier_roots))
+		return
+	var/list/roots = deferred_tier_roots
+	deferred_tier_roots = list()
+	for(var/datum/techweb_node/root as anything in roots)
+		update_tiers(root)
+
 /datum/techweb/proc/update_node_status(datum/techweb_node/node)
 	var/researched = FALSE
 	var/available = FALSE
@@ -502,7 +536,10 @@
 		else
 			if(visible)
 				visible_nodes[node.id] = TRUE
-	update_tiers(node)
+	if(tier_recompute_deferred)
+		deferred_tier_roots[node] = TRUE // Coalesced and flushed by flush_deferred_tiers().
+	else
+		update_tiers(node)
 
 //Laggy procs to do specific checks, just in case. Don't use them if you can just use the vars that already store all this!
 /datum/techweb/proc/designHasReqs(datum/design_techweb/D)

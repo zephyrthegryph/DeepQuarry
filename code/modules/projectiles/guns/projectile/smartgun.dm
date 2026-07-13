@@ -95,7 +95,7 @@
 	name = "smartgun rail"
 	icon_state = "smartgunproj"
 	icon = 'icons/obj/guns/projectile/smartgun_32.dmi'
-	fire_sound = 'sound/weapons/Gunshot4.ogg' // hmm
+	fire_sound = 'sound/weapons/gunshot4.ogg' // hmm
 
 	// Slight damage and big stun
 	damage_type = BRUTE

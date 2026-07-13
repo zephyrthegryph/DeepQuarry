@@ -1324,12 +1324,13 @@
 /mob/living/carbon/human/proc/initialize_vessel() //This needs fixing. For some reason mob species is not immediately set in set_species.
 	SHOULD_NOT_OVERRIDE(TRUE)
 	make_blood()
-	if(vessel.total_volume < species.blood_volume)
-		vessel.maximum_volume = species.blood_volume
-		vessel.add_reagent(REAGENT_ID_BLOOD, species.blood_volume - vessel.total_volume)
-	else if(vessel.total_volume > species.blood_volume)
-		vessel.remove_reagent(REAGENT_ID_BLOOD,vessel.total_volume - species.blood_volume) //This one should stay remove_reagent to work even lack of a O_heart
-		vessel.maximum_volume = species.blood_volume
+	var/max_blood = dq_max_blood() // Juice Box raises the ceiling.
+	if(vessel.total_volume < max_blood)
+		vessel.maximum_volume = max_blood
+		vessel.add_reagent(REAGENT_ID_BLOOD, max_blood - vessel.total_volume)
+	else if(vessel.total_volume > max_blood)
+		vessel.remove_reagent(REAGENT_ID_BLOOD,vessel.total_volume - max_blood) //This one should stay remove_reagent to work even lack of a O_heart
+		vessel.maximum_volume = max_blood
 	fixblood()
 	species.update_attack_types() //Required for any trait that updates unarmed_types in setup.
 	species.update_vore_belly_def_variant()
@@ -1487,6 +1488,8 @@
 	return FALSE
 
 /mob/living/carbon/human/slip(slipped_on, stun_duration=8)
+	if(has_perk(/datum/perk/body/spd_sure_footed)) // Sure-Footed: you keep your footing.
+		return FALSE
 	var/list/equipment = list(src.w_uniform,src.wear_suit,src.shoes)
 	var/footcoverage_check = FALSE
 	for(var/obj/item/clothing/C in equipment)

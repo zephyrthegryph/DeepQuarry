@@ -31,7 +31,7 @@
 		var/obj/effect/decal/cleanable/blood/splatter/animated/B = new(M.loc)
 		B.basecolor = M.species.get_blood_colour(M)
 		B.color = M.species.get_blood_colour(M)
-		// DQEdit: legacy .target reference removed (no equivalent on /datum/ai_brain).
+		//legacy .target reference removed (no equivalent on /datum/ai_brain).
 		B.add_blooddna(M.dna,M)
 		var/blood_to_remove = (rand(10,30))
 		M.remove_blood(blood_to_remove)

@@ -80,5 +80,5 @@
 	else
 		return //just leave them
 
-// DQEdit - legacy /datum/ai_brain/.../find_target / can_attack / engage_target
+//legacy /datum/ai_brain/.../find_target / can_attack / engage_target
 // overrides removed in the combat migration. The brain handles targeting.

@@ -145,7 +145,7 @@
 		M.apply_damage(rand(5, 10), BRUTE, target)
 		to_chat(M, span_red("The skin on your [parse_zone(target)] feels like it's ripping apart, and a stream of blood flies out."))
 		var/obj/effect/decal/cleanable/blood/splatter/animated/B = new(M.loc)
-		// DQEdit: legacy .target reference removed (no equivalent on /datum/ai_brain).
+		//legacy .target reference removed (no equivalent on /datum/ai_brain).
 		B.add_blooddna(M.dna,M)
 		M.remove_blood(rand(25,50))
 

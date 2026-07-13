@@ -24,8 +24,12 @@
 		return null
 	// Look for unconscious living mobs in melee reach. Prefer faction-enemies but
 	// don't strictly require the disposition check — pack predators don't care.
-	for(var/mob/living/L in view(1, owner))
+	for(var/mob/living/L in dview(1, owner)) // dview: finish a downed body even in an unlit cave, like perception
 		if(L == owner || L.stat == CONSCIOUS || L.stat >= DEAD)
+			continue
+		if(L.client) // never maul a player — a vore mob grapples/devours them, others leave them be
+			continue
+		if(dq_prey_locked_by_other(owner, L)) // a packmate has it grabbed to eat — don't pile on
 			continue
 		if(brain.disposition_to(L) >= DQ_DISPOSITION_FRIENDLY)
 			continue

@@ -1,7 +1,4 @@
 
-#define AUTOHISS_OFF 0
-#define AUTOHISS_BASIC 1
-#define AUTOHISS_FULL 2
 
 #define AUTOHISS_NUM 3
 
@@ -91,7 +88,7 @@
 			"th" = list("zk", "szk"),
 			"r" = list("rk")
 		)
-//YW edit over.
+//over.
 
 /datum/species/proc/handle_autohiss(message, datum/language/lang, mode)
 	if(!autohiss_basic_map)
@@ -133,7 +130,4 @@
 
 	return jointext(., null)
 
-#undef AUTOHISS_OFF
-#undef AUTOHISS_BASIC
-#undef AUTOHISS_FULL
 #undef AUTOHISS_NUM

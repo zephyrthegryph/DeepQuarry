@@ -77,6 +77,7 @@
 			"category" = P.category,
 			"tree" = P.tree,
 			"requires" = requires_text,
+			"category_spend_required" = P.category_spend_required,
 			"sort_priority" = P.sort_priority,
 			"tree_x" = isnull(P.tree_x) ? null : P.tree_x,
 			"tree_y" = isnull(P.tree_y) ? null : P.tree_y,

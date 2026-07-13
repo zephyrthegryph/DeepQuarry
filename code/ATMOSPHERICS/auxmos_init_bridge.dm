@@ -1,84 +1,42 @@
 // Auxmos init/lifecycle bridge.
 //
-// auxmos_bindings.dm has the full call_ext routes for every gas_mixture proc,
-// but including it would re-declare procs already defined in /tg/'s vendored
-// gas_mixture.dm (a duplicate-definition compile error).
+// auxmos_bindings.dm has the full call_ext routes for every gas_mixture proc
+// and all the init/lifecycle free procs. This file provides only the
+// DM-side subsystem proc that bootstraps the Rust gas registry at SSair init,
+// which is not part of the auto-generated bindings file.
 //
-// IMPORTANT — the gas-math backend is NOT live. byondapi does NOT transparently
-// swap DM proc bodies at DLL load (that was auxtools' detour hooking; byondapi is
-// pull-based — a #[byondapi::bind] only exports an FFI symbol reachable via
-// call_ext). So the pure-DM bodies in gas_mixture.dm are what actually run today;
-// gas math is NOT routed through Rust. Making it Rust-backed requires REPLACING
-// those DM bodies with the call_ext routes from auxmos_bindings.dm AND adopting
-// auxmos' Rust gas-arena data model (mixtures live in Rust, the DM datum is a
-// handle) — a core re-architecture, not a drop-in. See doc/atmos_migration.md.
-//
-// What this bridge DOES provide: the small set of init/lifecycle FREE procs
-// (auxtools_atmos_init etc.) declared as thin call_ext stubs. These are wired
-// targets but auxtools_atmos_init() is still not CALLED from SSair, so the Rust
-// gas registry is currently unpopulated (see SSair.Initialize).
-//
-// DO NOT add proc declarations that conflict with gas_mixture.dm here.
+// DO NOT re-declare procs that auxmos_bindings.dm already defines here.
 // Generation source: verdigris/atmos/bindings.dm (selected procs only).
 
 
-/// Registers gases, and get reaction infos for auxmos, only call when ssair is initing.
-/proc/auxtools_atmos_init(gas_data)
-	return call_ext(VERDIGRIS, "byond:hook_init_ffi")(gas_data)
+/// Register the DM gas roster with auxmos's Rust gas registry.
+///
+/// This MUST run before any gas mixture is populated. Turf air is created and
+/// filled during SSatoms init, and `set_moles(gas)` on a gas auxmos hasn't been
+/// told about indexes past the (empty) Rust gas table via an unchecked access
+/// and segfaults the process. So this is called from /world/New — before the
+/// Master Controller starts any subsystem — not from SSair.Initialize.
+/// Idempotent: `_auxtools_register_gas` updates an existing entry in place.
+/proc/auxmos_register_gases()
+	if(!verdigris_version())
+		log_world("auxmos: verdigris backend not loaded; gas math stays DM-only")
+		return FALSE
+	var/registered = 0
+	for(var/gas_path in subtypesof(/datum/gas))
+		var/datum/gas/gas = new gas_path
+		_auxtools_register_gas(gas)
+		registered++
+	log_world("auxmos: registered [registered] gases with the Rust backend (verdigris [verdigris_version()])")
+	return registered
 
-/// For registering gases, do not touch this.
-/proc/_auxtools_register_gas(gas)
-	return call_ext(VERDIGRIS, "byond:hook_register_gas_ffi")(gas)
-
-/// For updating reagent gas fire products, do not use for now.
-/proc/finalize_gas_refs()
-	return call_ext(VERDIGRIS, "byond:finalize_gas_refs_ffi")()
-
-/// Args: (ms). Runs callbacks until time limit is reached. If time limit is omitted, runs all callbacks.
-/proc/process_atmos_callbacks(remaining)
-	return call_ext(VERDIGRIS, "byond:atmos_callback_handle_ffi")(remaining)
-
-/// For updating reaction information for auxmos, call after gas_reactions list changes.
-/datum/controller/subsystem/air/proc/auxtools_update_reactions()
-	return call_ext(VERDIGRIS, "byond:update_reactions_ffi")()
-
-// byondapi_stack_trace — auxmos panic handler routes back into DM via this proc.
-// Logging-only; do not raise.
-/proc/byondapi_stack_trace(msg)
-	stack_trace("[msg]")
-
-
-// === auxmos-only gas_mixture procs ===
-//
-// /tg/'s gas_mixture.dm doesn't declare these — they live ONLY in auxmos's
-// byondapi bindings. The DM-side declarations below are required so byondapi
-// has a target proc to swap at DLL load. CHOMP/DQ code uses these for
-// Rust-state-aware reads/writes — `adjust_gas` from gas_mixture.dm only
-// mutates the DM dict and is invisible to the Rust-backed total_moles/pressure.
-//
-// USE THESE for any read/write that needs to round-trip through Rust:
-//   - get_moles(gas_type) — current moles
-//   - set_moles(gas_type, value) — overwrite moles
-//   - adjust_moles(gas_type, delta) — add to moles
-//   - adjust_moles_temp(gas_type, moles, temp) — add moles at temp
-//   - set_temperature(value) — set temperature
-//   - merge(other) — combine moles + temperature from `other`
-
-/datum/gas_mixture/proc/get_moles(gas_type)
-	// Body is replaced at DLL load by auxmos byondapi bind.
-	// Fallback: read DM dict if Rust isn't loaded.
-	return gases[gas_type] ? gases[gas_type][MOLES] : 0
-
-/datum/gas_mixture/proc/set_moles(gas_type, amount)
-	ASSERT_GAS(gas_type, src)
-	gases[gas_type][MOLES] = amount
-
-/datum/gas_mixture/proc/adjust_moles(gas_type, delta)
-	ASSERT_GAS(gas_type, src)
-	gases[gas_type][MOLES] += delta
-
-/datum/gas_mixture/proc/adjust_moles_temp(gas_type, moles, temp)
-	ASSERT_GAS(gas_type, src)
-	gases[gas_type][MOLES] += moles
-	if(temperature > 0 && moles > 0)
-		temperature = (temperature * total_moles() + temp * moles) / max(total_moles() + moles, 1)
+/// Build auxmos's Rust reaction table from SSair.gas_reactions. Runs at SSair
+/// init (gases are already registered by auxmos_register_gases in /world/New,
+/// and SSair.gas_reactions is populated by now). Every gas_mixture/react() is a
+/// Rust bind that reads this table; reactions that don't fit auxmos's parser are
+/// logged and skipped (non-fatal), leaving the table with whatever parsed.
+/datum/controller/subsystem/air/proc/init_auxmos_backend()
+	if(!verdigris_version())
+		return FALSE
+	auxtools_update_reactions()
+	log_world("auxmos: reaction table registered with the Rust backend")
+	return TRUE

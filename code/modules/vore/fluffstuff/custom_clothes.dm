@@ -928,7 +928,7 @@
 	desc = "ROW ROW, FIGHT THE POWER."
 	flash_prot = 1 //Why not.
 
-//Kitsuhana Uniforms - Despite the fact that we removed KHI, we're keeping these. -YW
+//Kitsuhana Uniforms - Despite the fact that we removed KHI, we're keeping these.
 /obj/item/clothing/under/rank/khi
 	name = DEVELOPER_WARNING_NAME
 	desc = "Why did you spawn this one? Dork."
@@ -982,7 +982,7 @@
 
 /obj/item/clothing/under/rank/khi/fluff/aronai //Aro fluff version
 	name = "KHI meditech suit"
-	desc = "An outdated uniform of some sort. You get the sense that whoever wore this must've been very full of themselves" //YW edit
+	desc = "An outdated uniform of some sort. You get the sense that whoever wore this must've been very full of themselves"
 	icon_state = "khi_uniform_aro"
 	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 10, rad = 0)
 

@@ -121,8 +121,8 @@
 	var/canmove = 1
 	//Allows mobs to move through dense areas without restriction. For instance, in space or out of holder objects.
 	var/incorporeal_move = 0 //0 is off, 1 is normal, 2 is for ninjas.
-	var/list/pinned = list()            // List of things pinning this creature to walls (see living_defense.dm)
-	var/list/embedded = list()          // Embedded items, since simple mobs don't have organs.
+	var/list/pinned                     // Lazylist of things pinning this creature to walls (see living_defense.dm). Usually empty.
+	var/list/embedded                   // Lazylist of embedded items, since simple mobs don't have organs. Usually empty.
 	var/list/languages = list()         // For speaking/listening.
 	var/list/language_keys = list()		// List of language keys indexing languages
 	var/species_language = null			// For species who want reset to use a specified default.
@@ -157,7 +157,7 @@
 
 	var/list/grabbed_by = list()
 
-	var/list/mapobjs = list()
+	var/list/mapobjs                    // Lazylist of overview screen objects. Usually empty/null.
 
 	var/in_throw_mode = 0
 
@@ -223,7 +223,7 @@
 
 	var/digitalcamo = 0 // Can they be tracked by the AI?
 
-	var/list/radar_blips = list() // list of screen objects, radar blips
+	var/list/radar_blips // list of screen objects, radar blips (currently unused; null until populated)
 	var/radar_open = 0 	// nonzero is radar is open
 
 

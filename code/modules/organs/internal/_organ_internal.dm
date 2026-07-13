@@ -13,7 +13,7 @@
 		AddElement(/datum/element/sellable/organ)
 
 /obj/item/organ/internal/process()
-	..()
+	. = ..()
 	passive_heal()
 
 // Heals the internal organ passively as long as it's under the bruised threshold
@@ -33,11 +33,8 @@
 
 /obj/item/organ/internal/Destroy()
 	if(owner)
-		owner.internal_organs.Remove(src)
-		owner.internal_organs_by_name[organ_tag] = null
+		owner.internal_organs -= src
 		owner.internal_organs_by_name -= organ_tag
-		while(null in owner.internal_organs)
-			owner.internal_organs -= null
 		var/obj/item/organ/external/E = owner.organs_by_name[parent_organ]
 		if(istype(E)) E.internal_organs -= src
 	return ..()
@@ -45,10 +42,7 @@
 /obj/item/organ/internal/remove_rejuv()
 	if(owner)
 		owner.internal_organs -= src
-		owner.internal_organs_by_name[organ_tag] = null
 		owner.internal_organs_by_name -= organ_tag
-		while(null in owner.internal_organs)
-			owner.internal_organs -= null
 		var/obj/item/organ/external/E = owner.organs_by_name[parent_organ]
 		if(istype(E)) E.internal_organs -= src
 	..()

@@ -1,3 +1,6 @@
+/// Maximum value a single EFTPOS transaction may be set to. Prevents overflow/abuse.
+#define EFTPOS_MAX_TRANSACTION 1000000
+
 /obj/item/eftpos
 	name = "\improper EFTPOS scanner"
 	desc = "Swipe your ID card to make purchases electronically."
@@ -115,7 +118,9 @@
 		if (linked_account)
 			if(!linked_account.suspended)
 				if(transaction_locked && !transaction_paid)
-					if(transaction_amount <= E.worth)
+					if(transaction_amount <= 0 || transaction_amount > EFTPOS_MAX_TRANSACTION)
+						to_chat(user, "[icon2html(src, user.client)]" + span_warning("Invalid transaction amount."))
+					else if(transaction_amount <= E.worth)
 						playsound(src, 'sound/machines/chime.ogg', 50, 1)
 						src.visible_message("[icon2html(src,viewers(src))] \The [src] chimes.")
 						transaction_paid = 1
@@ -187,10 +192,10 @@
 			return TRUE
 		if("trans_value")
 			var/try_num = tgui_input_number(usr, "Enter amount for EFTPOS transaction", "Transaction amount")
-			if(try_num < 0)
+			if(!isnum(try_num) || try_num <= 0 || try_num > EFTPOS_MAX_TRANSACTION)
 				tgui_alert_async(usr, "That is not a valid amount!")
 			else
-				transaction_amount = try_num
+				transaction_amount = round(try_num)
 			return TRUE
 		if("toggle_lock")
 			if(transaction_locked)
@@ -237,31 +242,43 @@
 		if(transaction_locked && !transaction_paid)
 			if(linked_account)
 				if(!linked_account.suspended)
+					// Snapshot the authoritative amount before any sleeping input; the
+					// transaction can't be silently re-priced while the PIN dialog is open.
+					var/charge_amount = transaction_amount
+					if(charge_amount <= 0 || charge_amount > EFTPOS_MAX_TRANSACTION)
+						to_chat(usr, "[icon2html(src, usr.client)]" + span_warning("Invalid transaction amount."))
+						return
+					var/mob/swiper = usr
 					var/attempt_pin = ""
 					var/datum/money_account/D = get_account(C.associated_account_number)
 					if(D.security_level)
 						attempt_pin = tgui_input_number(usr, "Enter pin code", "EFTPOS transaction")
 						D = null
+						// Re-validate card presence/adjacency and transaction state after the sleep.
+						if(QDELETED(C) || QDELETED(src) || !swiper || !(C in swiper) || !swiper.Adjacent(src))
+							return
+						if(!transaction_locked || transaction_paid || charge_amount != transaction_amount)
+							return
 					D = attempt_account_access(C.associated_account_number, attempt_pin, 2)
 					if(D)
 						if(!D.suspended)
-							if(transaction_amount <= D.money)
+							if(charge_amount <= D.money)
 								playsound(src, 'sound/machines/chime.ogg', 50, 1)
 								src.visible_message("[icon2html(src,viewers(src))] \The [src] chimes.")
 								transaction_paid = 1
 
 								//transfer the money
-								D.money -= transaction_amount
-								linked_account.money += transaction_amount
+								D.money -= charge_amount
+								linked_account.money += charge_amount
 
 								//create entries in the two account transaction logs
 								var/datum/transaction/T = new()
 								T.target_name = "[linked_account.owner_name] (via [eftpos_name])"
 								T.purpose = transaction_purpose
-								if(transaction_amount > 0)
-									T.amount = "([transaction_amount])"
+								if(charge_amount > 0)
+									T.amount = "([charge_amount])"
 								else
-									T.amount = "[transaction_amount]"
+									T.amount = "[charge_amount]"
 								T.source_terminal = machine_id
 								T.date = GLOB.current_date_string
 								T.time = stationtime2text()
@@ -270,7 +287,7 @@
 								T = new()
 								T.target_name = D.owner_name
 								T.purpose = transaction_purpose
-								T.amount = "[transaction_amount]"
+								T.amount = "[charge_amount]"
 								T.source_terminal = machine_id
 								T.date = GLOB.current_date_string
 								T.time = stationtime2text()
@@ -298,3 +315,5 @@
 				transaction_paid = 1
 
 	//emag?
+
+#undef EFTPOS_MAX_TRANSACTION

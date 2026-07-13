@@ -1,4 +1,3 @@
-#define LAVALAND_EQUIPMENT_EFFECT_PRESSURE 50 //what pressure you have to be under to increase the effect of equipment meant for lavaland
 #define HEATMODE_ATMOSPHERE		312.1 //kPa. basically virgo 2's
 #define HEATMODE_TEMP			612 //kelvin. basically virgo 2's
 /**
@@ -14,7 +13,7 @@
 	var/pressure = environment.return_pressure()
 	if(pressure > LAVALAND_EQUIPMENT_EFFECT_PRESSURE)
 		. = FALSE
-	if(environment.temperature < (T20C - 30))
+	if(environment.return_temperature() < (T20C - 30))
 		. = TRUE
 
 /proc/virgotwo_environment_check(turf/simulated/T)
@@ -27,7 +26,7 @@
 	var/pressure = environment.return_pressure()
 	if(pressure < HEATMODE_ATMOSPHERE - 20)
 		. = FALSE
-	if(environment.temperature > HEATMODE_TEMP - 30)
+	if(environment.return_temperature() > HEATMODE_TEMP - 30)
 		. = TRUE
 
 #undef LAVALAND_EQUIPMENT_EFFECT_PRESSURE
@@ -396,7 +395,7 @@
 			// if(!user.transferItemToLoc(src, KA))
 				// return FALSE
 			to_chat(user, span_notice("You install the modkit."))
-			playsound(loc, 'sound/items/screwdriver.ogg', 100, 1)
+			playsound(loc, 'sound/items/Screwdriver.ogg', 100, 1)
 			KA.modkits += src
 		else
 			to_chat(user, span_notice("The modkit you're trying to install would conflict with an already installed modkit. Use a crowbar to remove existing modkits."))

@@ -1,3 +1,6 @@
+#ifndef DQ_MEDICAL_DEFINES_DM
+#define DQ_MEDICAL_DEFINES_DM
+
 // Audiences a symptom can present to. A symptom may light up any subset
 // of the three. Patient-only sensations rely on the player narrating;
 // emotes are visible to anyone in view; scanner-visible vitals are read
@@ -41,3 +44,5 @@
 // accumulates overdose risk. Pure ramp from 0 (no chem) → 1 (standard
 // dose) → 4 (cap dose).
 #define DQ_CHEM_DOSE_CAP 4.0
+
+#endif // DQ_MEDICAL_DEFINES_DM

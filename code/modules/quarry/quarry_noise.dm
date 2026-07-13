@@ -11,10 +11,9 @@
 //             danger bump (divided by a tunable factor)
 //   source  : optional atom that caused it, for log clarity
 //
-// Mobs in the radius that are currently idle / sleeping are given
-// origin as a wander destination so they investigate. Mobs already
-// in combat are left alone — they have a real target, no need to
-// redirect them.
+// Idle / sleeping mobs in the radius are sent to investigate the noise origin
+// (a slow, wary creep — see investigate_noise). Mobs already in combat are left
+// alone — they have a real target, no need to redirect them.
 //
 // Noise events don't cross z-levels: only mobs on origin.z are
 // affected, and only the layer at origin.z gets the danger bump.
@@ -34,6 +33,10 @@
 		// Not a quarry z. Noise is a no-op outside the mine.
 		return
 
+	// Mark the layer loud regardless of the danger bump's magnitude — even
+	// sub-threshold noise (a pickaxe) keeps heat rising rather than cooling.
+	L.last_noise_at = world.time
+
 	// (B) Aggregate danger bump. Sub-1 contributions still round to 0
 	// for small noise; that's fine — only meaningful actions move the
 	// danger meter.
@@ -46,7 +49,8 @@
 	// layer has at most a few dozen hostiles. Skip mobs that are
 	// already engaged with a target.
 	for(var/mob/living/simple_mob/M in GLOB.living_mob_list)
-		if(M.z != origin.z)
+		var/turf/MT = get_turf(M) // resolve through containers (a held/swallowed mob's .z is 0)
+		if(!MT || MT.z != origin.z)
 			continue
 		if(M.stat == DEAD)
 			continue
@@ -57,7 +61,9 @@
 		// Already fighting something — don't redirect.
 		if(M.ai_brain.primary_threat)
 			continue
-		// Wake sleeping mobs and walk them toward the noise.
+		// Wake sleeping mobs and send them to investigate the noise — a slow, wary creep
+		// (the investigate behavior), NOT a full-speed destination march, so a loud action
+		// draws mobs in at a readable pace you can see coming rather than a sudden swarm.
 		if(M.ai_brain.process_flags == 0)
 			M.ai_brain.go_wake()
-		M.ai_brain.give_destination(origin)
+		M.ai_brain.notify_noise(origin)

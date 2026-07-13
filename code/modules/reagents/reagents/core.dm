@@ -65,6 +65,8 @@
 		if(H.species.bloodsucker)
 			H.adjust_nutrition(removed*30)
 			is_vampire = TRUE
+		if(H.has_perk(/datum/perk/body/vig_blood_freak)) // Blood Freak: drinking blood restores your own.
+			H.inject_blood(src, removed * 3)
 	if(alien == IS_SLIME)	// Treat it like nutriment for the jello, but not equivalent.
 		if(data["species"] == M.species.name)	// Unless it's Promethean goo, then refill this one's goo.
 			M.inject_blood(src, volume * volume_mod)
@@ -274,12 +276,12 @@
 	var/hotspot = (locate(/obj/fire) in T)
 	if(hotspot && !istype(T, /turf/space))
 		var/datum/gas_mixture/lowertemp = T.remove_air(xgm_total_moles(T.return_air())) // XGM T:air:total_moles → LINDA helper
-		lowertemp.temperature = max(min(lowertemp.temperature-2000, lowertemp.temperature / 2), 0)
+		lowertemp.set_temperature(max(min(lowertemp.return_temperature()-2000, lowertemp.return_temperature() / 2), 0))
 		lowertemp.react()
 		T.assume_air(lowertemp)
 		qdel(hotspot)
 
-	if (environment && environment.temperature > min_temperature) // Abstracted as steam or something
+	if (environment && environment.return_temperature() > min_temperature) // Abstracted as steam or something
 		var/removed_heat = between(0, volume * WATER_LATENT_HEAT, -environment.get_thermal_energy_change(min_temperature))
 		environment.add_thermal_energy(-removed_heat)
 		if (prob(5))

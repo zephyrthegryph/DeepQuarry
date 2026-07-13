@@ -121,6 +121,13 @@ SUBSYSTEM_DEF(mobs)
 	var/area/placeofdeath = get_area(L)
 	var/podname = placeofdeath ? placeofdeath.name : "Unknown area"
 
+	var/laname = ""
+	var/lakey = ""
+	var/mob/lastattacker = L.lastattacker
+	if(istype(lastattacker))
+		laname = lastattacker.real_name
+		lakey = lastattacker.key
+
 	var/list/data = list(
 	"name" = "[L.real_name]",
 	"byondkey" = "[L.key]",
@@ -128,8 +135,8 @@ SUBSYSTEM_DEF(mobs)
 	"special" = "[L.mind.special_role]",
 	"pod" = podname,
 	"tod" = time2text(world.realtime, "YYYY-MM-DD hh:mm:ss"),
-	"laname" = L.lastattacker ? L.lastattacker:real_name : "",
-	"lakey" = L.lastattacker ? L.lastattacker:key : "",
+	"laname" = laname,
+	"lakey" = lakey,
 	"gender" = L.gender,
 	"bruteloss" = L.getBruteLoss(),
 	"fireloss" = L.getFireLoss(),

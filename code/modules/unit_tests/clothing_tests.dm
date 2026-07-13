@@ -3,6 +3,7 @@
 
 /// Test that checks if all clothing is valid
 /datum/unit_test/all_clothing_shall_be_valid
+	slow = TRUE // iterates every clothing type across species — multi-second
 	/// Set TRUE by get_signal_data when a worn icon_state is missing. Reported as a
 	/// notice (non-failing); see the art-check rationale below.
 	var/signal_failed = FALSE

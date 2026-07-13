@@ -5,13 +5,9 @@
 
 
 // Gasses
-#define GAS_CO2 "carbon_dioxide"
 #define GASNAME_CO2 "Carbon Dioxide"
-#define GAS_N2 "nitrogen"
 #define GASNAME_N2 "Nitrogen"
-#define GAS_N2O "nitrous_oxide"
 #define GASNAME_N2O "Nitrous Oxide"
-#define GAS_O2 "oxygen"
 #define GASNAME_O2 "Oxygen"
 #define GAS_PHORON "phoron"
 #define GASNAME_PHORON "Phoron"

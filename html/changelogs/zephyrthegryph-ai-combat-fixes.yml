@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Quarry mobs no longer crawl one-at-a-time — AI pathfinding no longer serializes the whole pack behind a single global pathfinder, so a swarm moves together."
+  - bugfix: "Mobs no longer turn on their own pack from accidental friendly fire (a cleave or a telegraphed heavy clipping an ally no longer starts a feud); coexisting cave wildlife tolerate stray hits too."
+  - bugfix: "The right-click context menu is now correctly suppressed when holding a melee weapon you spawned with or swapped to, so a bare right-click is a guard."

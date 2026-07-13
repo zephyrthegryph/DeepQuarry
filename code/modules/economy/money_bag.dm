@@ -54,6 +54,13 @@
 /obj/item/moneybag/Topic(href, href_list)
 	if(..())
 		return 1
+	// Standard interaction gating: the actor must be a conscious, unrestrained mob
+	// adjacent to the bag before any contents can be moved.
+	if(!isliving(usr))
+		return
+	var/mob/living/user = usr
+	if(user.stat != CONSCIOUS || user.restrained() || !user.Adjacent(src))
+		return
 	usr.set_machine(src)
 	src.add_fingerprint(usr)
 	if(href_list["remove"])

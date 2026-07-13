@@ -15,6 +15,7 @@
 import { useEffect, useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Box, Button, Input, Stack } from 'tgui-core/components';
+import { HtmlRenderer } from '../../../common/HtmlRenderer';
 import type { EditorProps } from './index';
 
 type Data = {
@@ -311,11 +312,12 @@ const SpeciesCard = ({
             fontSize: '0.85em',
             lineHeight: '1.35',
           }}
-          // Species blurbs are server-authored markup (span_italics, span_bold,
-          // etc.). The strings come from compile-time DM code, not user input,
-          // so dangerouslySetInnerHTML is safe here.
-          dangerouslySetInnerHTML={{ __html: meta.blurb }}
-        />
+        >
+          {/* Species blurbs are server-authored markup (span_italics,
+              span_bold, etc.). Route through the sanitizing HtmlRenderer
+              instead of dangerouslySetInnerHTML. */}
+          <HtmlRenderer html={meta.blurb} />
+        </Box>
       )}
     </Box>
   );

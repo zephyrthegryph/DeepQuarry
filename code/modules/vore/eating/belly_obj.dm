@@ -458,11 +458,18 @@
 			I.cut_overlay(GLOB.gurgled_overlays[I.gurgled_color]) //No double-overlay for worn items.
 			I.add_overlay(GLOB.gurgled_overlays[I.gurgled_color])
 		if(I.d_mult < 1)
-			if(I.d_stage_overlay)
-				I.cut_overlay(I.d_stage_overlay)
-			var/image/temp = new /image(GLOB.gurgled_overlays[I.gurgled_color ? I.gurgled_color : "green"])
-			temp.filters += filter(type = "alpha", icon = icon(I.icon, I.icon_state))
-			I.d_stage_overlay = temp
+			var/overlay_color = I.gurgled_color ? I.gurgled_color : "green"
+			// The d_stage_overlay only depends on the item's (icon, icon_state, color).
+			// Reuse the cached image+icon() snapshot when none of those changed instead
+			// of rebuilding a fresh /image and icon() every single exit.
+			var/cache_key = "[I.icon]|[I.icon_state]|[overlay_color]"
+			if(!I.d_stage_overlay || I.d_stage_overlay_key != cache_key)
+				if(I.d_stage_overlay)
+					I.cut_overlay(I.d_stage_overlay)
+				var/image/temp = new /image(GLOB.gurgled_overlays[overlay_color])
+				temp.filters += filter(type = "alpha", icon = icon(I.icon, I.icon_state))
+				I.d_stage_overlay = temp
+				I.d_stage_overlay_key = cache_key
 			for(var/count in I.d_mult to 1 step 0.25)
 				// Note, this should be refactored to drop priority overlays
 				I.add_overlay(I.d_stage_overlay, TRUE)
@@ -860,8 +867,10 @@
 //Digest a single item
 //Receives a return value from digest_act that's how much nutrition
 //the item should be worth
-/obj/belly/proc/digest_item(obj/item/item, touchable_amount)
-	var/digested = item.digest_act(src, touchable_amount)
+/obj/belly/proc/digest_item(obj/item/item, touchable_amount, delta_factor = 1)
+	// digest_rate_mult passed positionally (with splashing=0, its default): digest_act has
+	// 26 lenient overrides that don't declare the keyword, so a keyword call trips DreamChecker.
+	var/digested = item.digest_act(src, touchable_amount, 0, delta_factor)
 	if(digested == FALSE)
 		items_preserved |= item
 	else
@@ -1106,6 +1115,12 @@
 
 // Belly copies and then returns the copy
 // Needs to be updated for any var changes
+// NOTE: This is a hand-maintained per-var clone and WILL silently drift out of sync
+// whenever a var is added to /obj/belly without a matching line here. The
+// belly_serializer schema (get_schema() in belly_serializer.dm) is the single source
+// of truth elsewhere; migrating copy() onto it would remove this drift risk but is a
+// large, hard-to-test change — do not attempt it piecemeal. When adding a /obj/belly
+// var, add it to BOTH this proc and the serializer schema.
 /obj/belly/proc/copy(mob/new_owner)
 	var/obj/belly/dupe = new /obj/belly(new_owner)
 
@@ -1532,9 +1547,8 @@
 	if(istype(O, /obj/item/ore))
 		var/obj/item/ore/ore = O
 		for(var/obj/item/ore_chunk/C in contents)
-			if(istype(C))
-				C.stored_ore[ore.material]++
-				return TRUE
+			C.stored_ore[ore.material]++
+			return TRUE
 		var/obj/item/ore_chunk/newchunk = new /obj/item/ore_chunk(src)
 		newchunk.stored_ore[ore.material]++
 		return TRUE
@@ -1549,17 +1563,16 @@
 		for(var/mat in O.matter)
 			modified_mats[mat] = O.matter[mat] * trash
 		for(var/obj/item/debris_pack/digested/D in contents)
-			if(istype(D))
-				for(var/mat in modified_mats)
-					D.matter[mat] += modified_mats[mat]
-				if(O.w_class > D.w_class)
-					D.w_class = O.w_class
-				if(O.possessed_voice && O.possessed_voice.len)
-					for(var/mob/living/voice/V in O.possessed_voice)
-						D.inhabit_item(V, null, V.tf_mob_holder)
-						qdel(V)
-					O.possessed_voice = list()
-				return TRUE
+			for(var/mat in modified_mats)
+				D.matter[mat] += modified_mats[mat]
+			if(O.w_class > D.w_class)
+				D.w_class = O.w_class
+			if(O.possessed_voice && O.possessed_voice.len)
+				for(var/mob/living/voice/V in O.possessed_voice)
+					D.inhabit_item(V, null, V.tf_mob_holder)
+					qdel(V)
+				O.possessed_voice = list()
+			return TRUE
 		var/obj/item/debris_pack/digested/D = new /obj/item/debris_pack/digested(src, modified_mats)
 		if(O.possessed_voice && O.possessed_voice.len)
 			for(var/mob/living/voice/V in O.possessed_voice)
@@ -1571,9 +1584,8 @@
 /obj/belly/proc/owner_adjust_nutrition(amount = 0)
 	if(storing_nutrition && amount > 0)
 		for(var/obj/item/reagent_containers/food/rawnutrition/R in contents)
-			if(istype(R))
-				R.stored_nutrition += amount
-				return
+			R.stored_nutrition += amount
+			return
 		var/obj/item/reagent_containers/food/rawnutrition/NR = new /obj/item/reagent_containers/food/rawnutrition(src)
 		NR.stored_nutrition += amount
 		return

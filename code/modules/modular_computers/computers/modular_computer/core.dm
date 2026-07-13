@@ -262,7 +262,24 @@
 	else
 		SStgui.update_uis(src)
 
+/// TRUE if anyone is actually viewing this computer's tgui — the UI is hosted on
+/// the active program (and its TM), or on the computer itself when idle.
+/obj/item/modular_computer/proc/has_open_ui()
+	if(active_program)
+		if(LAZYLEN(active_program.open_tguis))
+			return TRUE
+		if(active_program.TM && LAZYLEN(active_program.TM.open_tguis))
+			return TRUE
+		return FALSE
+	return LAZYLEN(open_tguis)
+
 /obj/item/modular_computer/proc/check_update_ui_need()
+	// Nobody's looking — don't build stationtime strings / header-icon lists every
+	// 2s for a computer with no open tgui window. update_uis() is itself a no-op
+	// without an open UI, so the only thing this proc accomplished for unviewed
+	// computers was wasted allocation.
+	if(!has_open_ui())
+		return
 	var/ui_update_needed = 0
 	if(battery_module)
 		var/batery_percent = battery_module.battery.percent()

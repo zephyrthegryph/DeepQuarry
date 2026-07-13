@@ -17,8 +17,8 @@
 	w_class = ITEMSIZE_SMALL
 	matter = list(MAT_STEEL = 80)
 	attack_verb = list("pinched", "nipped")
-	hitsound = 'sound/items/wirecutter.ogg'
-	usesound = 'sound/items/wirecutter.ogg'
+	hitsound = 'sound/items/Wirecutter.ogg'
+	usesound = 'sound/items/Wirecutter.ogg'
 	drop_sound = 'sound/items/drop/wirecutter.ogg'
 	pickup_sound = 'sound/items/pickup/wirecutter.ogg'
 	sharp = TRUE

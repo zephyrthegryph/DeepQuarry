@@ -44,7 +44,7 @@
 
 // Subtypes.
 
-// DQEdit: legacy duplicate /datum/say_list/pirate (single-line "Yarr!" variant)
+//legacy duplicate /datum/say_list/pirate (single-line "Yarr!" variant)
 // removed — the fuller pirate say_list defined later in this file wins via
 // DM's last-included rule. Same applies to /datum/say_list/cyber_horror,
 // which had an identical-content duplicate further down — kept only one.
@@ -162,7 +162,7 @@
 	say_escalate = list("Skrek!", "Bringings it!", "Takings shot", "Lock claws!")
 
 
-// DQEdit: legacy duplicate /datum/say_list/cyber_horror removed here — its
+//legacy duplicate /datum/say_list/cyber_horror removed here — its
 // identical twin further down in this file was the surviving copy.
 
 //Roach Saylists Woo Hoo

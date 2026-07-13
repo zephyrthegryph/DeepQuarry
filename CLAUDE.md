@@ -129,6 +129,18 @@ lazylist instead. For per-subtype constant tables (which DM can't express as a
   any `input()` / `tgui_input_*` returns. Validate `Topic()` hrefs (`locate(ref) in …`).
 - Parameterized SQL only; `format_table_name()` for table names.
 
+### 3g. Comments
+
+- Comments describe what the code **currently does and why**, for someone reading it
+  fresh — never the history of how it got there. No "was X before", "renamed from Y",
+  "the rework zeroed this", "fixed bug Z", "upstream had…", "previously…". That belongs
+  in the commit message and git history, not the source.
+- A var/proc comment should state its purpose and any non-obvious contract (units,
+  side effects, what reads it) — e.g. `var/hardness = 60  // Edge-weapon damage + armor.`,
+  not `// restored after the migration zeroed it`.
+- Don't narrate the change you're making ("now also handles…", "moved this up so…").
+  Write the comment as if the code had always looked this way.
+
 ---
 
 ## 4. Build pipeline

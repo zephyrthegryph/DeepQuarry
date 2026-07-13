@@ -16,6 +16,12 @@ emp_act
 
 	var/obj/item/organ/external/organ = get_organ()
 
+	// Reflexes / Blur: twist clear of STRAY gunfire (a shot not aimed at you). An aimed
+	// shot (P.original == src) can't be freely dodged — that's what cover/shields are for.
+	if(!P.nodamage && P.original != src && prob(perk_add(DQ_PERK_FX_EVADE_RANGED)))
+		visible_message(span_warning("\The [src] twists clear of \the [P]!"))
+		return PROJECTILE_FORCE_MISS
+
 	//Shields
 	var/shield_check = check_shields(P.damage, P, null, def_zone, "the [P.name]")
 	if(shield_check) // If the block roll succeeded, this is true.
@@ -202,6 +208,13 @@ emp_act
 	return null
 
 /mob/living/carbon/human/proc/check_shields(damage = 0, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
+	// A raised melee guard intercepts an incoming melee attack (negate; a parry also staggers).
+	if(melee_block_intercepts(damage_source, attacker))
+		return 1
+	// Dodge / Blur: a chance to slip aside from an unblocked melee attack entirely.
+	if(attacker && attacker.Adjacent(src) && prob(perk_add(DQ_PERK_FX_EVADE_MELEE)))
+		visible_message(span_warning("\The [src] nimbly dodges [attack_text]!"))
+		return 1
 	for(var/obj/item/shield in list(l_hand, r_hand, wear_suit, l_ear, r_ear)) // included ears for the headset/event item
 		if(!shield) continue
 		. = shield.handle_shield(src, damage, damage_source, attacker, def_zone, attack_text)
@@ -241,6 +254,8 @@ emp_act
 	visible_message(span_danger("[src] has been [LAZYLEN(I.attack_verb) ? pick(I.attack_verb) : "attacked"] in the [affecting.name] with [I.name] by [user]!"))
 
 	var/blocked = run_armor_check(hit_zone, "melee", I.armor_penetration, "Your armor has protected your [affecting.name].", "Your armor has softened the blow to your [affecting.name].")
+	if(isliving(user) && user.perk_add(DQ_PERK_FX_ARMOR_PEN)) // Sundering Blows: pierce the target's armor.
+		blocked = round(blocked * (1 - user.perk_add(DQ_PERK_FX_ARMOR_PEN)))
 
 	standard_weapon_hit_effects(I, user, effective_force, blocked, hit_zone)
 
@@ -347,6 +362,10 @@ emp_act
 /mob/living/carbon/human/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	if(src.is_incorporeal())
 		return
+	// Reflexes / Blur: dodge a thrown object outright.
+	if(isitem(source) && prob(perk_add(DQ_PERK_FX_EVADE_RANGED)))
+		visible_message(span_warning("\The [src] dodges \the [source]!"))
+		return
 //	if(buckled && buckled == AM)
 //		return // Don't get hit by the thing we're buckled to.
 
@@ -446,7 +465,7 @@ emp_act
 					src.loc = T
 					visible_message(span_warning("[src] is pinned to the wall by [thrown_object]!"),span_warning("You are pinned to the wall by [thrown_object]!"))
 					src.anchored = TRUE
-					src.pinned += thrown_object
+					LAZYADD(src.pinned, thrown_object)
 
 // This does a prob check to catch the thing flying at you, with a minimum of 1%
 /mob/living/carbon/human/proc/can_catch(obj/item/O)

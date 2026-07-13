@@ -23,7 +23,7 @@
 		for(var/obj/structure/ladder/L in GetBelow(src))
 			if(L.allowed_directions & UP)
 				target_down = L
-				// DQEdit: legacy .target reference removed (no equivalent on /datum/ai_brain).
+				//legacy .target reference removed (no equivalent on /datum/ai_brain).
 				return
 	update_icon()
 

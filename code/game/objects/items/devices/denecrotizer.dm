@@ -150,7 +150,7 @@
 		if(!advanced)
 			to_chat(user, span_notice("[src] doesn't seem to work on that."))
 			return FALSE
-		// DQEdit: legacy `.retaliate` is dead in the modern brain (every brain
+		//legacy `.retaliate` is dead in the modern brain (every brain
 		// mob retaliates on damage automatically). Only refuse to revive
 		// aggro-on-sight mobs. Null-safe on ai_brain since mobs without a
 		// brain (e.g. opted-out subtypes) are by definition not aggressive.

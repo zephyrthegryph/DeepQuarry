@@ -562,7 +562,8 @@ ADMIN_VERB(delbook, R_ADMIN, "Delete Book", "Permamently deletes a book from the
 	if(!SSdbcore.IsConnected())
 		error_msg = "Unable to contact External Archive. Please contact your system administrator for assistance."
 	else
-		var/datum/db_query/query = SSdbcore.NewQuery("SELECT id, author, title, category FROM library ORDER BY [our_comp.sortby]")
+		// Map sortby to a fixed column literal so ORDER BY can never be injected.
+		var/datum/db_query/query = SSdbcore.NewQuery("SELECT id, author, title, category FROM library ORDER BY [our_comp.safe_sortby_column()]")
 		query.Execute()
 		while(query.NextRow())
 			book_rows += list(list(
