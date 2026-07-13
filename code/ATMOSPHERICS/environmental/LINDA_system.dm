@@ -119,11 +119,6 @@
 	UNSETEMPTY(atmos_adjacent_turfs)
 	src.atmos_adjacent_turfs = atmos_adjacent_turfs
 	SEND_SIGNAL(src, COMSIG_TURF_CALCULATED_ADJACENT_ATMOS)
-	// NOTE: no Rust adjacency push here. This is the boot-time init pass, run per
-	// turf before all neighbors are registered — pushing now would drop edges to
-	// not-yet-registered turfs. setup_allturfs() does a single second pass over all
-	// registered turfs instead. The runtime variant below DOES push, since by then
-	// every turf is already registered.
 
 /turf/proc/immediate_calculate_adjacent_turfs()
 	LAZYINITLIST(src.atmos_adjacent_turfs)
@@ -150,23 +145,6 @@
 	UNSETEMPTY(atmos_adjacent_turfs)
 	src.atmos_adjacent_turfs = atmos_adjacent_turfs
 	SEND_SIGNAL(src, COMSIG_TURF_CALCULATED_ADJACENT_ATMOS)
-	// Keep the Rust auxmos arena in sync with this runtime topology change.
-	// update_air_ref() reads blocks_air: a turf that just became a wall is removed
-	// from the graph — StableDiGraph::remove_node drops all its incident edges, so
-	// its former neighbors are correctly disconnected (this is what makes runtime
-	// walling, e.g. a breach or a test isolating a room, actually isolate in Rust).
-	// The Rust graph is per-turf, but the DM lists above were updated on BOTH sides
-	// of every edge — so we must re-push src AND each cardinal neighbor, or a
-	// neighbor keeps a stale edge to src and diffusion becomes asymmetric/leaky.
-	var/turf/open/registered_turf = src
-	if(istype(registered_turf))
-		registered_turf.update_air_ref(SIMULATION_ANY)
-		if(registered_turf.air && !registered_turf.blocks_air)
-			registered_turf.__update_auxtools_turf_adjacency_info()
-	for(var/direction in GLOB.cardinals_multiz)
-		var/turf/open/neighbor = get_step_multiz(src, direction)
-		if(istype(neighbor) && neighbor.air && !neighbor.blocks_air)
-			neighbor.__update_auxtools_turf_adjacency_info()
 
 /**
  * returns a list of adjacent turfs that can share air with this one.

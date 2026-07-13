@@ -398,11 +398,3 @@ GLOBAL_VAR_INIT(focused_tests, focused_tests())
 /datum/map_template/unit_tests
 	name = "Unit Tests Zone"
 	mappath = "maps/templates/unit_tests.dmm"
-
-// Area for the sealed unit-test room in maps/templates/unit_tests.dmm. Always
-// powered so atmos / machinery tests aren't gated on an APC. Defined in the core
-// tree (not a map file) so both the template and the test code can reference it.
-/area/misc/testroom
-	name = "Unit Test Zone"
-	requires_power = 0
-	icon_state = "yellow"

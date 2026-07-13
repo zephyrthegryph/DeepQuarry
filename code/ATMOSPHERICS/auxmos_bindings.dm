@@ -4,12 +4,6 @@
 // Post-processed by tools/verdigris/generate_atmos_bindings.sh to route via VERDIGRIS.
 // To regenerate: bash tools/verdigris/generate_atmos_bindings.sh
 // See doc/atmos_migration.md.
-//
-// HAND-PATCH: the gas-id-taking binds (get_moles/set_moles/adjust_moles/
-// adjust_moles_temp/partial_heat_capacity) wrap their gas id in
-// auxmos_norm_gas_id() so callers may pass EITHER an auxmos string id ("o2") OR
-// a /datum/gas type path (the vendored /tg/ reactions/fire/alarm code does the
-// latter). Re-apply this when regenerating. See auxmos_init_bridge.dm.
 
 
 
@@ -18,7 +12,7 @@
 
 /// Args: (gas_id, moles, temp). Adjusts the given gas's amount by the given amount, with that gas being treated as if it is at the given temperature.
 /datum/gas_mixture/proc/adjust_moles_temp(id_val, num_val, temp_val)
-	return call_ext(VERDIGRIS, "byond:adjust_moles_temp_hook_ffi")(src, auxmos_norm_gas_id(id_val), num_val, temp_val)
+	return call_ext(VERDIGRIS, "byond:adjust_moles_temp_hook_ffi")(src, id_val, num_val, temp_val)
 
 /// Args: (ms). Runs callbacks until time limit is reached. If time limit is omitted, runs all callbacks.
 /proc/process_atmos_callbacks(remaining)
@@ -133,7 +127,7 @@
 
 /// Args: (gas_id, moles). Adjusts the given gas's amount by the given amount, e.g. (GAS_O2, -0.1) will remove 0.1 moles of oxygen from the mixture.
 /datum/gas_mixture/proc/adjust_moles(id_val, num_val)
-	return call_ext(VERDIGRIS, "byond:adjust_moles_hook_ffi")(src, auxmos_norm_gas_id(id_val), num_val)
+	return call_ext(VERDIGRIS, "byond:adjust_moles_hook_ffi")(src, id_val, num_val)
 
 /// Args: (src, mixture, conductivity) or (src, conductivity, temperature, heat_capacity). Adjusts temperature of src based on parameters. Returns: temperature of sharer after sharing is complete.
 /datum/gas_mixture/proc/temperature_share(...)
@@ -175,14 +169,10 @@
 
 /// Args: (gas_id). Returns: the amount of substance of the given gas, in moles.
 /datum/gas_mixture/proc/get_moles(gas_id)
-	return call_ext(VERDIGRIS, "byond:get_moles_hook_ffi")(src, auxmos_norm_gas_id(gas_id))
+	return call_ext(VERDIGRIS, "byond:get_moles_hook_ffi")(src, gas_id)
 
-/// Args: (volume). Sets the volume of the gas. Keeps the DM `volume` var and the
-/// Rust arena volume in sync — pressure and remove() are computed Rust-side from the
-/// arena volume, so writing the DM var alone (`mix.volume = x`) would desync them.
-/// Assign volume through this proc, never the bare var.
+/// Args: (volume). Sets the volume of the gas.
 /datum/gas_mixture/proc/set_volume(vol_arg)
-	volume = vol_arg
 	return call_ext(VERDIGRIS, "byond:set_volume_hook_ffi")(src, vol_arg)
 
 /// Args: (list). Takes every gas in the list and makes them all identical, scaled to their respective volumes. The total heat and amount of substance in all of the combined gases is conserved.
@@ -191,11 +181,11 @@
 
 /// Args: (gas_id, moles). Sets the amount of substance of the given gas, in moles.
 /datum/gas_mixture/proc/set_moles(gas_id, amt_val)
-	return call_ext(VERDIGRIS, "byond:set_moles_hook_ffi")(src, auxmos_norm_gas_id(gas_id), amt_val)
+	return call_ext(VERDIGRIS, "byond:set_moles_hook_ffi")(src, gas_id, amt_val)
 
 /// Args: (gas_id). Returns the heat capacity from the given gas, in J/K (probably).
 /datum/gas_mixture/proc/partial_heat_capacity(gas_id)
-	return call_ext(VERDIGRIS, "byond:partial_heat_capacity_ffi")(src, auxmos_norm_gas_id(gas_id))
+	return call_ext(VERDIGRIS, "byond:partial_heat_capacity_ffi")(src, gas_id)
 
 /// Returns: the mix's thermal energy, the product of the mixture's heat capacity and its temperature.
 /datum/gas_mixture/proc/thermal_energy()

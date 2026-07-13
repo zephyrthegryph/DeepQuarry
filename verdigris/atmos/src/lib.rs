@@ -174,20 +174,6 @@ fn temperature_share_hook() -> Result<ByondValue> {
 				)
 				.into())
 		}),
-		// LINDA convention (src, sharer_or_null, coeff, temperature, heat_capacity):
-		// heat exchange against an explicit temperature/heat-capacity reservoir. Used
-		// for turf<->solid (null sharer) and turf<->planetary superconduction, where
-		// the caller supplies the reservoir's temp/hcap directly. Returns the
-		// reservoir's post-exchange temperature.
-		5 => with_mix_mut(&args[0], |mix| {
-			Ok(mix
-				.temperature_share_non_gas(
-					args[2].get_number().unwrap_or_default(),
-					args[3].get_number().unwrap_or_default(),
-					args[4].get_number().unwrap_or_default(),
-				)
-				.into())
-		}),
 		_ => Err(eyre::eyre!("Invalid args for temperature_share")),
 	}
 }
@@ -252,14 +238,9 @@ fn set_volume_hook(src: ByondValue, vol_arg: ByondValue) -> Result<ByondValue> {
 #[byondapi::bind("/datum/gas_mixture/proc/get_moles")]
 #[auxmacros::panic_safe]
 fn get_moles_hook(src: ByondValue, gas_id: ByondValue) -> Result<ByondValue> {
-	// Parity with the old DM `gases[gas_id]` assoc-list read: a null/unknown gas
-	// id is simply absent from the mix, i.e. 0 moles — not an error. Callers such
-	// as the atmos analyzer and gas filter legitimately probe with a null id.
-	let idx = match gas_idx_from_value(&gas_id) {
-		Ok(idx) => idx,
-		Err(_) => return Ok(0.0f32.into()),
-	};
-	with_mix(&src, |mix| Ok(mix.get_moles(idx).into()))
+	with_mix(&src, |mix| {
+		Ok(mix.get_moles(gas_idx_from_value(&gas_id)?).into())
+	})
 }
 
 /// Args: (gas_id, moles). Sets the amount of substance of the given gas, in moles.
@@ -273,12 +254,8 @@ fn set_moles_hook(src: ByondValue, gas_id: ByondValue, amt_val: ByondValue) -> R
 	if vf < 0.0 {
 		return Err(eyre::eyre!("Attempted to set moles to a negative number."));
 	}
-	let idx = match gas_idx_from_value(&gas_id) {
-		Ok(idx) => idx,
-		Err(_) => return Ok(ByondValue::null()),
-	};
 	with_mix_mut(&src, |mix| {
-		mix.set_moles(idx, vf);
+		mix.set_moles(gas_idx_from_value(&gas_id)?, vf);
 		Ok(ByondValue::null())
 	})
 }
@@ -291,12 +268,8 @@ fn adjust_moles_hook(
 	num_val: ByondValue,
 ) -> Result<ByondValue> {
 	let vf = num_val.get_number().unwrap_or_default();
-	let idx = match gas_idx_from_value(&id_val) {
-		Ok(idx) => idx,
-		Err(_) => return Ok(ByondValue::null()),
-	};
 	with_mix_mut(&src, |mix| {
-		mix.adjust_moles(idx, vf);
+		mix.adjust_moles(gas_idx_from_value(&id_val)?, vf);
 		Ok(ByondValue::null())
 	})
 }
@@ -320,12 +293,8 @@ fn adjust_moles_temp_hook(
 	if !vf.is_normal() {
 		return Ok(ByondValue::null());
 	}
-	let idx = match gas_idx_from_value(&id_val) {
-		Ok(idx) => idx,
-		Err(_) => return Ok(ByondValue::null()),
-	};
 	let mut new_mix = Mixture::new();
-	new_mix.set_moles(idx, vf);
+	new_mix.set_moles(gas_idx_from_value(&id_val)?, vf);
 	new_mix.set_temperature(temp);
 	with_mix_mut(&src, |mix| {
 		mix.merge(&new_mix);
