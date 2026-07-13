@@ -65,9 +65,20 @@
 
 	allowed_spawns = list("Arrivals Shuttle","Gateway","Cryogenic Storage","Cyborg Storage")
 
+	// Full-station map-validation tests: they scan every station area for an APC
+	// and every cable tile for stacking faults. This stripped test map isn't a
+	// complete station, so they can't pass here — they run against the live map.
+	skipped_tests = list(
+		/datum/unit_test/apc_area_test,
+		/datum/unit_test/wire_test,
+	)
+
 /datum/map/virgo_minitest/New()
 	..()
-	SSticker.start_immediately = TRUE
+	// The map datum is constructed (via the `using_map` global) before the Master
+	// Controller brings up SSticker, so it isn't safe to touch here. Unit-test runs
+	// get start_immediately from world/HandleTestRun(); a live boot starts from the
+	// lobby as usual.
 
 /datum/map_z_level/minitest/station
 	z = Z_LEVEL_MAIN_VIRGO_TESTING

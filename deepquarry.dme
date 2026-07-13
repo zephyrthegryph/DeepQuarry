@@ -5253,14 +5253,18 @@
 // on 2026-05-24 — it depended on /tg/'s framework (signals, components, GAGS,
 // spatial grid, integrated circuits) that CHOMP doesn't have.
 //
-// auxmos_bindings.dm intentionally NOT compiled: it re-declares the gas_mixture
-// procs already defined (as pure DM) in /tg/'s gas_mixture.dm, which would be a
-// duplicate-proc error. NOTE: byondapi does NOT auto-swap these DM bodies at DLL
-// load — gas math runs in pure DM today. Routing it through Rust means replacing
-// gas_mixture.dm's bodies with these call_ext routes + adopting auxmos' Rust gas
-// arena (a re-architecture, not just an include). The slim init/lifecycle subset
+// auxmos_bindings.dm IS compiled: it provides the Rust-backed /datum/gas_mixture
+// and turf-processing proc bodies (moles, temperature, merge, share, react,
+// process_turfs_auxtools, etc.), routed via byondapi call_ext into verdigris.dll's
+// auxmos gas arena. The pure-DM gas math bodies that used to live in
+// gas_mixture.dm were removed so there's no duplicate-proc collision with these
+// definitions. The slim init/lifecycle subset (gas + reaction registration)
 // lives in auxmos_init_bridge.dm. See doc/atmos_migration.md.
+<<<<<<< HEAD
 //#include "code\ATMOSPHERICS\auxmos_bindings.dm"
+=======
+#include "code\ATMOSPHERICS\auxmos_bindings.dm"
+>>>>>>> 6dc2efa655 (atmos: complete Rust turf-processing migration)
 #include "code\ATMOSPHERICS\xgm_compat.dm"
 // Slim init/lifecycle FFI bridge — calls into verdigris.dll to register gas
 // singletons + reaction tables with Rust at SSair init time.

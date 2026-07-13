@@ -1,6 +1,9 @@
+/// Per-gas metadata table, keyed by the gas's string id ("o2", "plasma", ...) — the
+/// same id auxmos registers gases under and returns from get_gases(). Callers that
+/// hold a /datum/gas type path convert with `initial(gas.id)` first.
 /proc/meta_gas_list()
-	. = subtypesof(/datum/gas)
-	for(var/gas_path in .)
+	. = list()
+	for(var/gas_path in subtypesof(/datum/gas))
 		var/list/gas_info = new(8)
 		var/datum/gas/gas = gas_path
 
@@ -15,7 +18,7 @@
 		gas_info[META_GAS_DANGER] = initial(gas.dangerous)
 		gas_info[META_GAS_ID] = initial(gas.id)
 		gas_info[META_GAS_DESC] = initial(gas.desc)
-		.[gas_path] = gas_info
+		.[initial(gas.id)] = gas_info
 
 /proc/generate_gas_overlays(old_offset, new_offset, datum/gas/gas_type)
 	var/list/to_return = list()
@@ -33,14 +36,6 @@
 			fill += gas
 	return to_return
 
-/proc/gas_id2path(id)
-	var/list/meta_gas = GLOB.meta_gas_info
-	if(id in meta_gas)
-		return id
-	for(var/path in meta_gas)
-		if(meta_gas[path][META_GAS_ID] == id)
-			return path
-	return ""
 
 /*||||||||||||||/----------\||||||||||||||*\
 ||||||||||||||||[GAS DATUMS]||||||||||||||||

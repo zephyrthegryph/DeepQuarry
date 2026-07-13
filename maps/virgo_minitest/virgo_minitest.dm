@@ -3,6 +3,11 @@
 	#include "virgo_minitest-1.dmm"
 	#include "virgo_minitest-sector-2.dmm"
 	#include "virgo_minitest-sector-3.dmm"
+	// Sealed unit-test room (z4): indestructible walls + the unit_test_bottom_left/
+	// top_right landmarks the atmos tests seed into. The full station provides an
+	// enclosed room by chance; this tiny map needs an explicit one so turf-spread /
+	// pressure / reaction-propagation tests aren't leaking gas to space.
+	#include "../templates/unit_tests.dmm"
 
 	#include "virgo_minitest_stubs.dm"
 	#include "virgo_minitest_defines.dm"
