@@ -478,7 +478,7 @@
 /obj/mecha/proc/add_cabin()
 	cabin_air = new
 	cabin_air.set_temperature(T20C)
-	cabin_air.volume = 200
+	cabin_air.set_volume(200)
 	// adjust_multi was XGM; LINDA's gas_mixture has adjust_gas per-call.
 	var/moles_o2 = O2STANDARD * cabin_air.volume / (R_IDEAL_GAS_EQUATION * cabin_air.return_temperature())
 	var/moles_n2 = N2STANDARD * cabin_air.volume / (R_IDEAL_GAS_EQUATION * cabin_air.return_temperature())

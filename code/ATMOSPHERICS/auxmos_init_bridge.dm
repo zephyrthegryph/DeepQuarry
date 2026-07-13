@@ -9,6 +9,22 @@
 // Generation source: verdigris/atmos/bindings.dm (selected procs only).
 
 
+/// Normalise a gas reference to the string id auxmos keys its Rust gas table by.
+/// auxmos gases are registered by their `id` string ("o2", "plasma", ...), but a
+/// lot of the vendored /tg/ atmos code (reactions, fire, air alarm) refers to
+/// gases by their `/datum/gas` TYPE PATH. This maps a type path to its id string;
+/// a string id is passed through unchanged. The gas-id-taking binds route through
+/// this so both conventions work. Returns the input unchanged if unrecognised, so
+/// a genuinely bad id still surfaces as a (non-fatal) DM runtime from Rust.
+/proc/auxmos_norm_gas_id(gas_ref)
+	if(istext(gas_ref))
+		return gas_ref
+	if(ispath(gas_ref, /datum/gas))
+		var/datum/gas/g = gas_ref
+		return initial(g.id)
+	return gas_ref
+
+
 /// Register the DM gas roster with auxmos's Rust gas registry.
 ///
 /// This MUST run before any gas mixture is populated. Turf air is created and

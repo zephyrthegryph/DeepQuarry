@@ -28,6 +28,29 @@ SUBSYSTEM_DEF(air)
 	var/cost_pipenets = 0
 	var/cost_rebuilds = 0
 	var/cost_adjacent = 0
+	/// Feeds the Rust turf engine: max equalize/diffusion steps per share pass.
+	var/share_max_steps = 1
+	/// Feeds the Rust turf engine: gates whether katmos pressure-equalize processing
+	/// (fast zoned equalization + explosive decompression / space-wind) runs.
+	var/equalize_enabled = TRUE
+	/// Feeds the Rust turf engine: fraction of a delta shared against planetary atmos.
+	var/planet_share_ratio = GAS_DIFFUSION_CONSTANT
+	/// Feeds the Rust turf engine: MC cost tracker for its post-process step.
+	var/cost_post_process = 0
+	/// Feeds the Rust turf engine: count of turfs below the low-pressure threshold this cycle.
+	var/low_pressure_turfs = 0
+	/// Feeds the Rust turf engine: count of turfs above the high-pressure threshold this cycle.
+	var/high_pressure_turfs = 0
+	/// Feeds the Rust turf engine: pressure delta goal used to seed/dismantle excited groups.
+	var/excited_group_pressure_goal = 0.5
+	/// Feeds the Rust turf engine: count of turfs processed via excited groups this cycle.
+	var/num_group_turfs_processed = 0
+	/// Feeds the Rust turf engine: hard cap on turfs touched per equalize cycle.
+	var/equalize_hard_turf_limit = 2000
+	/// Feeds the Rust turf engine: MC cost tracker for its equalize step.
+	var/cost_equalize = 0
+	/// Feeds the Rust turf engine: count of turfs processed via equalize this cycle.
+	var/num_equalize_processed = 0
 
 	var/list/excited_groups = list()
 	var/list/active_turfs = list()
@@ -318,40 +341,45 @@ SUBSYSTEM_DEF(air)
 		if(MC_TICK_CHECK)
 			return
 
+/// Milliseconds left in the current MC tick, for handing to the auxmos FFI
+/// hooks as a processing budget. TICK_USAGE (world.tick_usage) and
+/// Master.current_ticklimit are both percentages of a tick (0-100 scale);
+/// TICK_DELTA_TO_MS() turns a percentage-of-tick into milliseconds by
+/// multiplying by world.tick_lag (tick_lag is in deciseconds — the /100 to
+/// go from percent to fraction and the *100 to go from deciseconds to
+/// milliseconds cancel out, see code/__defines/math.dm). Clamped to a 1ms
+/// floor (auxmos wants a positive budget every call) and a 50ms ceiling so a
+/// generous current_ticklimit (eg. during init) can't hand the Rust FDM pass
+/// an effectively unbounded slice of wall-clock time.
+/datum/controller/subsystem/air/proc/turf_process_ms_budget()
+	var/remaining_ms = TICK_DELTA_TO_MS(Master.current_ticklimit - TICK_USAGE)
+	return CLAMP(remaining_ms, 1, 50)
+
 /datum/controller/subsystem/air/proc/process_active_turfs(resumed = FALSE)
-	//cache for sanic speed
-	var/fire_count = times_fired
-	if (!resumed)
-		src.currentrun = active_turfs.Copy()
-	//cache for sanic speed (lists are references anyways)
-	var/list/currentrun = src.currentrun
-	while(currentrun.len)
-		var/turf/open/T = currentrun[currentrun.len]
-		currentrun.len--
-		if (T)
-			T.process_cell(fire_count)
-		if (MC_TICK_CHECK)
-			return
+	// The Rust FDM pass processes the whole registered turf arena in one call —
+	// there's no per-turf DM loop to resume, so `resumed` goes unused here.
+	var/budget = turf_process_ms_budget()
+	process_turfs_auxtools(budget)
+	// Drains/executes the reaction + visual-update callback queue that
+	// process_turfs_auxtools enqueued. Must run every call or reactions and
+	// turf visuals silently stop updating.
+	finish_turf_processing_auxtools(budget)
 
 /datum/controller/subsystem/air/proc/process_excited_groups(resumed = FALSE)
-	if (!resumed)
-		src.currentrun = excited_groups.Copy()
-	//cache for sanic speed (lists are references anyways)
-	var/list/currentrun = src.currentrun
-	while(currentrun.len)
-		var/datum/excited_group/EG = currentrun[currentrun.len]
-		currentrun.len--
-		var/volatile_reaction = EG.turf_reactions & VOLATILE_REACTION
-		EG.breakdown_cooldown++
-		if(!volatile_reaction)
-			EG.dismantle_cooldown++
-		if(EG.breakdown_cooldown >= EXCITED_GROUP_BREAKDOWN_CYCLES && !volatile_reaction)
-			EG.self_breakdown(poke_turfs = TRUE)
-		else if(EG.dismantle_cooldown >= EXCITED_GROUP_DISMANTLE_CYCLES && !(EG.turf_reactions & (REACTING | STOP_REACTIONS)))
-			EG.dismantle()
-		EG.turf_reactions = NONE
-		if (MC_TICK_CHECK)
-			return
+	// Mixes the low-pressure excited-group clusters bucketed by the most
+	// recent process_turfs_auxtools call. Rust-side, so no DM currentrun loop.
+	var/budget = turf_process_ms_budget()
+	process_excited_groups_auxtools(budget)
+	// Katmos zoned pressure-equalization: consumes the high-pressure turf set bucketed
+	// by the same process_turfs_auxtools pass and runs fast flood-fill equalize +
+	// explosively_depressurize for space breaches. It writes each turf's
+	// pressure_difference/pressure_direction and appends to high_pressure_delta, which
+	// the DM SSAIR_HIGHPRESSURE step (process_high_pressure_delta -> high_pressure_movements)
+	// then turns into space-wind shoves. Gated on equalize_enabled.
+	if(equalize_enabled)
+		process_turf_equalize_auxtools(budget)
+		// Drain the decompression/firelock callbacks the equalize pass enqueued.
+		finish_turf_processing_auxtools(budget)
 
 // process_rebuilds + expand_pipeline removed — /tg/-style pipenet expansion
 // (rebuild_pipes / set_pipenet / replace_pipenet / pipeline_expansion / etc.)
@@ -480,10 +508,26 @@ SUBSYSTEM_DEF(air)
 		// We pass the tick as the current step so if we sleep the step changes
 		// This way we can make setting up adjacent turfs O(n) rather then O(n^2)
 		setup.Initalize_Atmos(time)
-		// We assert that we'll only get open turfs here
-		difference_check += setup
+		// Only open turfs carry an `air` mix; the difference pass below casts every
+		// entry to /turf/open and reads .air. Unsimulated walls (e.g. map-edge or
+		// template walls) have init_air but aren't /turf/open, so skip them here or
+		// the .air read runtimes and aborts the whole setup pass.
+		if(istype(setup, /turf/open))
+			difference_check += setup
 		if(CHECK_TICK)
 			time--
+
+	// Second pass: now that EVERY open turf is registered in the Rust auxmos arena
+	// (pass 1 above, via Initalize_Atmos -> update_air_ref), push each turf's
+	// adjacency into the Rust graph. This must be a separate pass because
+	// update_adjacencies() drops edges to neighbors that aren't registered yet — so
+	// pushing adjacency during pass 1 (when later turfs don't exist in the arena)
+	// would silently lose half the graph and the Rust FDM would never diffuse.
+	for(var/turf/open/registered as anything in difference_check)
+		if(registered.air)
+			registered.__update_auxtools_turf_adjacency_info()
+		if(CHECK_TICK)
+			continue
 
 	// Now we're gonna compare for differences
 	// Taking advantage of current cycle being set to negative before this run to do A->B B->A prevention

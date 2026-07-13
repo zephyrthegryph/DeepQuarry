@@ -5,12 +5,12 @@ with /tg/-lineage LINDA atmospherics backed by an in-tree Rust port of
 [auxmos](https://github.com/Putnam3145/auxmos). It is the authoritative
 document for sequencing, decisions, and compat-layer scope.
 
-**Status**: Phases 0–2 ✅. The fork is **LINDA-only**: ZAS (`code/ZAS/`) and
+**Status**: Phases 0–4 ✅. The fork is **LINDA-only**: ZAS (`code/ZAS/`) and
 XGM (`code/modules/xgm/`) are deleted, the tree compiles and boots, and the
-atmos unit tests pass. Gas math currently runs in **pure DM** (the
-`/datum/gas_mixture` bodies); the optional Rust-accelerated **auxmos backend
-is not yet wired** (`auxmos_bindings.dm` uncompiled, `auxtools_atmos_init`
-uncalled) — that is the remaining perf work (Phases 3–4).
+atmos unit tests pass. Gas math and turf processing run in the Rust-accelerated
+**auxmos backend**, wired and unconditional (`auxmos_bindings.dm` compiled,
+`auxtools_atmos_init`/`auxmos_register_gases` called from `/world/New()` and
+`SSair` init) — see the callout below for how it landed.
 
 > **DONE — auxmos gas-math backend is live and unconditional (2026-07-12).**
 > Gas data lives in the Rust auxmos arena; `/datum/gas_mixture` is a handle and
@@ -39,12 +39,16 @@ uncalled) — that is the remaining perf work (Phases 3–4).
 > - Reactions: `auxtools_update_reactions()` at SSair init populates the Rust
 >   reaction table from `SSair.gas_reactions`; unparseable reactions are skipped.
 >
-> **Remaining (optional, Phase 5): turf-graph processing.** SSair.fire() still
-> orchestrates turf sharing in DM (calling the Rust mixture ops). Moving that
-> whole loop into auxmos's Rust turf processor (`process_turfs_auxtools` +
-> monstermos/putnamos) is the additional runtime-perf win, and a separate
-> SSair.fire() re-architecture — not required for the gas-math backend to be
-> live and correct.
+> **DONE — turf-graph processing is also Rust.** `SSair.fire()` dispatches turf
+> diffusion, excited groups, and katmos pressure-equalization to the Rust turf
+> processor (`process_turfs_auxtools` / `finish_turf_processing_auxtools` /
+> `process_excited_groups_auxtools` / `process_turf_equalize_auxtools`). Space
+> turfs are immutable vacuum sinks and planetary turfs share toward a Rust-side
+> immutable baseline. Remaining, genuinely open: **superconductivity** stays DM
+> (auxmos's `superconductivity` feature is off), **reaction dispatch** stays DM
+> (`reaction_hooks` is off, so reactions call back into DM `react()`), hotspots
+> (fire) and pipenets remain DM subsystems, and boot-time gas/reaction
+> registration overhead is unoptimized.
 
 CHOMP/ZAS-era callers are served by the compat layer in
 `code/ATMOSPHERICS/xgm_compat.dm` (XGM/ZAS gas + airblock API → LINDA) and

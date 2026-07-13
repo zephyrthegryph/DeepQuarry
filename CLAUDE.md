@@ -230,15 +230,23 @@ YAML into the master changelog and deletes the stub.
 Things that are deliberately mid-flight or disabled, so you don't "fix" them by
 accident or assume they work:
 
-- **Atmospherics — LINDA-only.** LINDA (the vendored /tg/ atmos: `/datum/gas_mixture`,
-  `gas_types`, `SSair`, environmental/pipes/components under `code/ATMOSPHERICS/`) is
-  the **live and only** engine. The old CHOMP/ZAS/XGM engine is **deleted**; there is no
-  `USE_LINDA_ATMOS` gate anymore. Gas reactions are the CHOMP roster ported onto LINDA
-  (`gasmixtures/reactions.dm`). Multi-z atmos is wired (`SSair.build_multiz_atmos_levels()`
-  bridges `GLOB.z_levels` → `SSmapping.multiz_levels`; re-run when z-levels are added).
-  Known remaining gaps (not bugs): (a) the **Rust auxmos** gas-math backend is **not wired** —
-  `auxmos_bindings.dm` isn't compiled and `auxtools_atmos_init()` isn't called; gas math runs
-  in pure DM. Wiring it is a future perf project. (b) Legacy XGM-style callers are still bridged
+- **Atmospherics — LINDA framework, Rust auxmos gas + turf math.** LINDA (the vendored
+  /tg/ atmos: `/datum/gas_mixture`, `gas_types`, `SSair`, environmental/pipes/components
+  under `code/ATMOSPHERICS/`) is the **live and only** turf/pipe/component framework. The
+  old CHOMP/ZAS/XGM engine is **deleted**; there is no `USE_LINDA_ATMOS` gate anymore. Gas
+  reactions are the CHOMP roster ported onto LINDA (`gasmixtures/reactions.dm`). Multi-z
+  atmos is wired (`SSair.build_multiz_atmos_levels()` bridges `GLOB.z_levels` →
+  `SSmapping.multiz_levels`; re-run when z-levels are added).
+  The **Rust auxmos** backend is wired and always on: `auxmos_bindings.dm` is compiled
+  unconditionally and provides the `/datum/gas_mixture` proc bodies, so gas math (moles,
+  temperature, merge, share, react, …) runs in Rust via byondapi FFI against a Rust-side
+  gas arena — `/datum/gas_mixture` is a handle, not a DM data holder. Turf processing is
+  also Rust: `SSair.fire()` dispatches turf diffusion, excited groups, and katmos
+  pressure-equalization to `process_turfs_auxtools` / `finish_turf_processing_auxtools` /
+  `process_excited_groups_auxtools` / `process_turf_equalize_auxtools`. Space turfs are
+  immutable vacuum sinks and planetary turfs share toward a Rust-side immutable baseline.
+  Superconductivity and reaction dispatch (reactions call back into DM `react()`) remain in
+  DM, as do hotspots (fire) and pipenets. Legacy XGM-style callers are still bridged
   by load-bearing shims (`xgm_compat.dm` ~67 callers of `assume_gas`/`update_nearby_tiles`/etc.,
   `tg_infra_compat.dm`, `machine_shim.dm` ~39 `set_machine()` callers) rather than migrated to
   native LINDA APIs. See `doc/atmos_migration.md`, `code/ATMOSPHERICS/README.md`.
@@ -255,8 +263,9 @@ accident or assume they work:
   (`busy_space/atc_chatter*`, `chatter_*`) are deleted. The `loremaster`/`organizations` lore
   datums that lived alongside it in `busy_space/` are kept (used codebase-wide).
 - **verdigris (Rust FFI)** is a build artifact, gitignored per-platform. If `cargo` is absent
-  the build warns and skips it; cave-gen FFI then fails at runtime. (Atmos does **not** depend
-  on it — gas math is pure DM until the auxmos backend is wired.)
+  the build warns and skips it; cave-gen FFI then fails at runtime. Atmos now **does** depend
+  on it too — gas math and turf processing run in the Rust auxmos backend, so a missing/skipped
+  `verdigris.dll`/`libverdigris.so` breaks atmos at runtime, not just cave-gen.
 
 Recent hardening (already landed): ban/admin/stats SQL is fully parameterized; all verdigris
 `#[byond_fn]` entry points are wrapped in `panic_safe!`; the tgui Rules-of-Hooks / XSS audit

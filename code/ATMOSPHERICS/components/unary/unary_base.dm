@@ -17,7 +17,7 @@
 	. = ..()
 
 	air_contents = new
-	air_contents.volume = 200
+	air_contents.set_volume(200)
 
 /obj/machinery/atmospherics/unary/init_dir()
 	initialize_directions = dir

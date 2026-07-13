@@ -41,8 +41,10 @@
 /datum/gas_mixture/proc/xgm_gas_string_id(gas_ref)
 	if (istext(gas_ref))
 		return get_xgm_id_for_gas(gas_ref) ? gas_ref : null
-	var/list/meta = GLOB.meta_gas_info[gas_ref]
-	return meta ? meta[META_GAS_ID] : null
+	if (ispath(gas_ref, /datum/gas))
+		var/datum/gas/g = gas_ref
+		return initial(g.id)
+	return null
 
 
 // =====================================================================
@@ -150,24 +152,19 @@
 	var/list/gas_ids = get_gases()
 	if(!gas_ids)
 		return removed
-	for(var/datum/gas/gtype as anything in gas_ids)
-		var/gas_id_str = initial(gtype.id)
-		if(!(GLOB.gas_data.flags[gas_id_str] & flag))
+	for(var/gas_id in gas_ids)
+		if(!(GLOB.gas_data.flags[gas_id] & flag))
 			continue
-		var/share = get_moles(gtype) * (to_remove / total_matching)
-		adjust_moles(gtype, -share)
-		removed.set_moles(gtype, share)
+		var/share = get_moles(gas_id) * (to_remove / total_matching)
+		adjust_moles(gas_id, -share)
+		removed.set_moles(gas_id, share)
 	return removed
 
 // XGM: iteration over present gases. Used by air alarms / scrubbers / analyzers
 // that expected the XGM string-keyed .gas[] dict.
 /datum/gas_mixture/proc/gas_ids()
-	. = list()
-	var/list/gas_type_list = get_gases()
-	if(!gas_type_list)
-		return
-	for(var/datum/gas/gtype as anything in gas_type_list)
-		. += initial(gtype.id)
+	// auxmos get_gases() already returns the present gases' string ids.
+	return get_gases() || list()
 
 // XGM: get_mass() — sum of moles × molar mass across all gases. Used by
 // gas thruster (code/modules/overmap/ships/engines/gas_thruster.dm) for
@@ -177,12 +174,12 @@
 	var/list/gas_type_list = get_gases()
 	if(!gas_type_list)
 		return
-	for(var/datum/gas/gtype as anything in gas_type_list)
-		var/gas_id_str = initial(gtype.id)
-		var/molar_mass = GLOB.gas_data.molar_mass[gas_id_str]
+	for(var/gas_id in gas_type_list)
+		var/molar_mass = GLOB.gas_data.molar_mass[gas_id]
 		if(!molar_mass)
-			molar_mass = initial(gtype.specific_heat) * 0.05
-		. += get_moles(gtype) * molar_mass
+			var/gas_meta = GLOB.meta_gas_info[gas_id]
+			molar_mass = (gas_meta ? gas_meta[META_GAS_SPECIFIC_HEAT] : 20) * 0.05
+		. += get_moles(gas_id) * molar_mass
 
 // XGM: check_combustability() — true iff this mixture can burn (oxidizer + fuel
 // both present at meaningful levels). Used by gas thruster to gate exhaust ignition.
@@ -308,6 +305,11 @@
 	var/list/molar_specific_volume = list()
 	var/list/flags = list()
 	var/list/overlay_limit = list()
+	// Read by the Rust auxmos post-process visual path (GLOB.gas_data.overlays). This
+	// fork computes overlays from meta_gas_info in return_visuals()/set_visuals(), so
+	// this stays empty — it exists only so the Rust-side read succeeds before it hands
+	// off to /turf/open/set_visuals(), which recomputes.
+	var/list/overlays = list()
 
 // Real molar masses (kg/mol) for the LINDA-only /datum/gas subtypes that
 // don't have a matching /datum/decl/xgm_gas in code/defines/gases.dm. Real

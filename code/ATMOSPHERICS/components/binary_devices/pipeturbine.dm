@@ -20,8 +20,8 @@
 
 /obj/machinery/atmospherics/pipeturbine/Initialize(mapload, newdir)
 	. = ..()
-	air_in.volume = 200
-	air_out.volume = 800
+	air_in.set_volume(200)
+	air_out.set_volume(800)
 	volume_ratio = air_in.volume / (air_in.volume + air_out.volume)
 	switch(dir)
 		if(NORTH)
@@ -59,7 +59,7 @@
 			air_in.set_temperature(air_in.return_temperature() * volume_ratio**ADIABATIC_EXPONENT)
 
 			var/datum/gas_mixture/air_all = new
-			air_all.volume = air_in.volume + air_out.volume
+			air_all.set_volume(air_in.volume + air_out.volume)
 			air_all.merge(air_in.remove_ratio(1))
 			air_all.merge(air_out.remove_ratio(1))
 

@@ -81,26 +81,6 @@
 	}
 
 GLOBAL_LIST_INIT(nonoverlaying_gases, typecache_of_gases_with_no_overlays())
-// GAS_OVERLAYS — PHASE4: this macro takes a raw .gases list which no longer
-// exists under the handle model. Callers should use gas_mixture.return_visuals()
-// instead. Left here for any external call site that still passes a valid
-// sub-list (e.g. a locally-built list); it will silently produce no output once
-// the source .gases list is gone.
-// PHASE4: audit and remove every remaining GAS_OVERLAYS(datum.gases, ...) call site.
-#define GAS_OVERLAYS(gases, out_var, z_layer_turf)\
-	do { \
-		out_var = list();\
-		var/offset = GET_TURF_PLANE_OFFSET(z_layer_turf) + 1;\
-		for(var/_ID in gases){\
-			if(GLOB.nonoverlaying_gases[_ID]) continue;\
-			var/_GAS = gases[_ID];\
-			var/_GAS_META = _GAS[GAS_META];\
-			if(_GAS[MOLES] <= _GAS_META[META_GAS_MOLES_VISIBLE]) continue;\
-			var/_GAS_OVERLAY = _GAS_META[META_GAS_OVERLAY][offset];\
-			out_var += _GAS_OVERLAY[min(TOTAL_VISIBLE_STATES, CEILING(_GAS[MOLES] / MOLES_GAS_VISIBLE_STEP, 1))];\
-		} \
-	}\
-	while (FALSE)
 
 #ifdef TESTING
 GLOBAL_LIST_INIT(atmos_adjacent_savings, list(0,0))

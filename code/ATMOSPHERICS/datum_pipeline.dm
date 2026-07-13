@@ -39,7 +39,7 @@
 	for(var/obj/machinery/atmospherics/pipe/member in members)
 		member.air_temporary = new
 		member.air_temporary.copy_from(air)
-		member.air_temporary.volume = member.volume
+		member.air_temporary.set_volume(member.volume)
 		member.air_temporary.multiply(member.volume / air.volume)
 
 /datum/pipeline/proc/build_pipeline(obj/machinery/atmospherics/pipe/base)
@@ -96,7 +96,7 @@
 
 			possible_expansions -= borderline
 
-	air.volume = volume
+	air.set_volume(volume)
 
 /datum/pipeline/proc/network_expand(datum/pipe_network/new_network, obj/machinery/atmospherics/pipe/reference)
 
@@ -135,7 +135,7 @@
 	if(!turf_air)
 		return
 	var/datum/gas_mixture/air_sample = air.remove_ratio(mingle_volume / air.volume)
-	air_sample.volume = mingle_volume
+	air_sample.set_volume(mingle_volume)
 
 	// share() does symmetric exchange weighted by volume; both mixes converge.
 	air_sample.share(turf_air, 4, 4)

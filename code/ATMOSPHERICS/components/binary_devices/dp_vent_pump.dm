@@ -47,8 +47,8 @@
 	if(frequency)
 		set_frequency(frequency)
 
-	air1.volume = ATMOS_DEFAULT_VOLUME_PUMP
-	air2.volume = ATMOS_DEFAULT_VOLUME_PUMP
+	air1.set_volume(ATMOS_DEFAULT_VOLUME_PUMP)
+	air2.set_volume(ATMOS_DEFAULT_VOLUME_PUMP)
 	icon = null
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/Destroy()
@@ -60,8 +60,8 @@
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/high_volume/Initialize(mapload)
 	. = ..()
-	air1.volume = ATMOS_DEFAULT_VOLUME_PUMP + 800
-	air2.volume = ATMOS_DEFAULT_VOLUME_PUMP + 800
+	air1.set_volume(ATMOS_DEFAULT_VOLUME_PUMP + 800)
+	air2.set_volume(ATMOS_DEFAULT_VOLUME_PUMP + 800)
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/update_icon(safety = 0)
 	cut_overlays()

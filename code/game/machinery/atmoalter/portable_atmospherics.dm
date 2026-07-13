@@ -16,7 +16,7 @@
 /obj/machinery/portable_atmospherics/Initialize(mapload)
 	..()
 	air_contents = new
-	air_contents.volume = volume
+	air_contents.set_volume(volume)
 	air_contents.set_temperature(T20C)
 	return INITIALIZE_HINT_LATELOAD
 
