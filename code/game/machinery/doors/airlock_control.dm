@@ -5,6 +5,8 @@
 	var/shockedby = list()
 	var/datum/radio_frequency/radio_connection
 	var/cur_command = null	//the command the door is currently attempting to complete
+	var/last_reported_density = -1
+	var/last_reported_locked = -1
 
 /obj/machinery/door/airlock/process()
 	if (..() == PROCESS_KILL && !cur_command)
@@ -31,6 +33,9 @@
 
 	if (!cur_command)
 		return
+	if(cur_command != "update" && command_completed(cur_command))
+		check_completion()
+		return
 
 	do_command(cur_command)
 
@@ -42,9 +47,10 @@
 	if(delayed_status)
 		addtimer(CALLBACK(src, PROC_REF(check_completion)), 0.2 SECONDS)
 		return
-	if(command_completed(cur_command))
+	var/completed_command = cur_command
+	if(command_completed(completed_command))
 		cur_command = null
-	send_status()
+	send_status(force = completed_command == "update")
 
 /obj/machinery/door/airlock/proc/do_command(command)
 	switch(command)
@@ -107,8 +113,10 @@
 
 	return 1	//Unknown command. Just assume it's completed.
 
-/obj/machinery/door/airlock/proc/send_status(bumped = 0)
+/obj/machinery/door/airlock/proc/send_status(bumped = FALSE, force = FALSE)
 	if(radio_connection)
+		if(!force && !bumped && density == last_reported_density && locked == last_reported_locked)
+			return
 		var/datum/signal/signal = new
 		signal.transmission_method = TRANSMISSION_RADIO //radio signal
 		signal.data["tag"] = id_tag
@@ -121,6 +129,8 @@
 			signal.data["bumped_with_access"] = 1
 
 		radio_connection.post_signal(src, signal, range = AIRLOCK_CONTROL_RANGE, radio_filter = RADIO_AIRLOCK)
+		last_reported_density = density
+		last_reported_locked = locked
 
 
 /obj/machinery/door/airlock/open(surpress_send)
@@ -145,6 +155,8 @@
 	radio_connection = null
 	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
+	last_reported_density = -1
+	last_reported_locked = -1
 
 	if(new_frequency)
 		radio_connection = SSradio.add_object(src, new_frequency, RADIO_AIRLOCK)
