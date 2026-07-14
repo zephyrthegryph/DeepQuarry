@@ -121,7 +121,7 @@
 	return mix
 
 /turf/open/assume_air(datum/gas_mixture/giver) //use this for machines to adjust air
-	if(!giver)
+	if(!giver || !air)
 		return FALSE
 	air.merge(giver)
 	update_visuals()

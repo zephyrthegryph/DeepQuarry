@@ -292,6 +292,20 @@ fn process_turf(
 			super::katmos::send_to_equalize(high_pressure_turfs.clone());
 		}
 	}
+	// The snapshot vector stays indexed by arena ID, but completed mixtures must
+	// not retain their heap-backed gas arrays. The first generation snapshots the
+	// whole station; keeping those clones would permanently duplicate the gas arena
+	// even after the active frontier shrinks to a few hundred mixtures.
+	snapshot_mix_ids.par_iter().for_each(|&id| {
+		if let Some(mixture) = snapshot.get(id) {
+			*mixture.write() = Mixture::default();
+		}
+	});
+	for &id in &snapshot_mix_ids {
+		if let Some(revision) = base_revisions.get_mut(id) {
+			*revision = 0;
+		}
+	}
 	TurfProcessResult {
 		generation: TURF_GENERATION.fetch_add(1, Ordering::AcqRel) + 1,
 		turf_cost_ms,

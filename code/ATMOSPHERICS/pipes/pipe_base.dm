@@ -96,6 +96,7 @@
 	QDEL_NULL(parent)
 	if(air_temporary)
 		loc.assume_air(air_temporary)
+		QDEL_NULL(air_temporary)
 	for(var/obj/machinery/meter/meter in loc)
 		if(meter.target == src)
 			var/obj/item/pipe_meter/PM = new /obj/item/pipe_meter(loc)
