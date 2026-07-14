@@ -7,6 +7,7 @@
 #define LIGHT_BULB_TEMPERATURE 400 //K - used value for a 60W bulb
 #define LIGHTING_POWER_FACTOR 2		//2W per luminosity * range
 #define LIGHT_EMERGENCY_POWER_USE 0.2 //How much power emergency lights will consume per tick
+#define LIGHT_EMERGENCY_POWER_STEP 0.05
 
 GLOBAL_LIST_EMPTY(light_type_cache)
 /proc/get_light_type_instance(light_type)
@@ -704,7 +705,8 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 		installed_light.status = status
 		return FALSE
 	cell.use(pwr)
-	set_light(brightness_range * bulb_emergency_brightness_mul, max(bulb_emergency_pow_min, bulb_emergency_pow_mul * (cell.charge / cell.maxcharge)), bulb_emergency_colour)
+	var/emergency_power = max(bulb_emergency_pow_min, bulb_emergency_pow_mul * (cell.charge / cell.maxcharge))
+	set_light(brightness_range * bulb_emergency_brightness_mul, round(emergency_power, LIGHT_EMERGENCY_POWER_STEP), bulb_emergency_colour)
 	return TRUE
 
 /obj/machinery/light/proc/flicker(amount = rand(10, 20), flicker_color)
@@ -1179,6 +1181,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 #undef LIGHT_BULB_TEMPERATURE
 #undef LIGHTING_POWER_FACTOR
 #undef LIGHT_EMERGENCY_POWER_USE
+#undef LIGHT_EMERGENCY_POWER_STEP
 
 
 // I hate the way macros look stupid standing near lights. I don't care how absurd this looks.

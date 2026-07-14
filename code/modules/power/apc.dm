@@ -760,14 +760,18 @@ GLOBAL_LIST_EMPTY(apcs)
 
 // update() — push channel state to the area and fire power_change().
 /obj/machinery/power/apc/proc/update()
+	var/new_power_light = FALSE
+	var/new_power_equip = FALSE
+	var/new_power_environ = FALSE
 	if(operating && !shorted && !grid_check && !failure_timer)
-		area.power_light  = (lighting  >= POWERCHAN_ON)
-		area.power_equip  = (equipment >= POWERCHAN_ON)
-		area.power_environ = (environ   >= POWERCHAN_ON)
-	else
-		area.power_light  = 0
-		area.power_equip  = 0
-		area.power_environ = 0
+		new_power_light = (lighting >= POWERCHAN_ON)
+		new_power_equip = (equipment >= POWERCHAN_ON)
+		new_power_environ = (environ >= POWERCHAN_ON)
+	if(area.power_light == new_power_light && area.power_equip == new_power_equip && area.power_environ == new_power_environ)
+		return
+	area.power_light = new_power_light
+	area.power_equip = new_power_equip
+	area.power_environ = new_power_environ
 	area.power_change()
 
 /obj/machinery/power/apc/proc/can_use(mob/user, loud = 0)
