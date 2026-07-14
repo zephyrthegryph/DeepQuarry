@@ -7,6 +7,7 @@ use byondapi::prelude::*;
 use eyre::Result;
 pub use mixture::Mixture;
 use parking_lot::{const_rwlock, RwLock};
+use rustc_hash::FxHashSet;
 use std::sync::atomic::{AtomicU64, Ordering};
 pub use types::*;
 
@@ -27,12 +28,15 @@ static GAS_MIXTURES: RwLock<Option<Vec<RwLock<Mixture>>>> = const_rwlock(None);
 static NEXT_GAS_IDS: RwLock<Option<Vec<usize>>> = const_rwlock(None);
 static GAS_REVISIONS: RwLock<Option<Vec<AtomicU64>>> = const_rwlock(None);
 static GAS_PUBLICATION: RwLock<()> = const_rwlock(());
+static DIRTY_GAS_MIXTURES: RwLock<Option<FxHashSet<usize>>> = const_rwlock(None);
+const PRESSURE_DIRTY_EPSILON: f32 = 0.01;
 
 #[byondapi::init]
 pub fn initialize_gases() {
 	*GAS_MIXTURES.write() = Some(Vec::with_capacity(240_000));
 	*NEXT_GAS_IDS.write() = Some(Vec::with_capacity(2000));
 	*GAS_REVISIONS.write() = Some(Vec::with_capacity(240_000));
+	*DIRTY_GAS_MIXTURES.write() = Some(FxHashSet::default());
 }
 
 pub fn shut_down_gases() {
@@ -40,6 +44,7 @@ pub fn shut_down_gases() {
 	GAS_MIXTURES.write().as_mut().unwrap().clear();
 	NEXT_GAS_IDS.write().as_mut().unwrap().clear();
 	GAS_REVISIONS.write().as_mut().unwrap().clear();
+	DIRTY_GAS_MIXTURES.write().as_mut().unwrap().clear();
 }
 
 impl GasArena {
@@ -94,12 +99,18 @@ impl GasArena {
 			if let (Some(source), Some(target)) = (snapshot.get(id), gases.get(id)) {
 				let source = source.read();
 				let mut target = target.write();
+				let pressure_before = target.return_pressure();
 				if source.compare(&target) > crate::constants::GAS_MIN_MOLES
 					|| source.temperature_compare(&target)
 				{
 					*target = source.clone();
 					changed.push(id);
 					Self::bump_revision(id);
+					Self::mark_pressure_dirty_if_changed(
+						id,
+						pressure_before,
+						target.return_pressure(),
+					);
 				}
 			}
 		}
@@ -123,6 +134,23 @@ impl GasArena {
 			revision.fetch_add(1, Ordering::AcqRel);
 		}
 		crate::turfs::mark_mix_active(id);
+	}
+
+	pub(crate) fn mark_pressure_dirty_if_changed(id: usize, before: f32, after: f32) {
+		if (before - after).abs() < PRESSURE_DIRTY_EPSILON {
+			return;
+		}
+		if let Some(dirty) = DIRTY_GAS_MIXTURES.write().as_mut() {
+			dirty.insert(id);
+		}
+	}
+
+	pub fn take_dirty_mixtures() -> Vec<usize> {
+		DIRTY_GAS_MIXTURES
+			.write()
+			.as_mut()
+			.map(|dirty| std::mem::take(dirty).into_iter().collect())
+			.unwrap_or_default()
 	}
 	/// Locks the gas arena and and runs the given closure with it locked.
 	/// # Panics
@@ -181,9 +209,12 @@ impl GasArena {
 			.get(id)
 			.ok_or_else(|| eyre::eyre!("No gas mixture with ID {id} exists!"))?
 			.write();
+		let pressure_before = mix.return_pressure();
 		let result = f(&mut mix);
+		let pressure_after = mix.return_pressure();
 		drop(mix);
 		Self::bump_revision(id);
+		Self::mark_pressure_dirty_if_changed(id, pressure_before, pressure_after);
 		result
 	}
 	/// Read locks the given gas mixtures and runs the given closure on them.
@@ -224,6 +255,16 @@ impl GasArena {
 		}
 		let lock = GAS_MIXTURES.read();
 		let gas_mixtures = lock.as_ref().unwrap();
+		let src_pressure_before = gas_mixtures
+			.get(src)
+			.ok_or_else(|| eyre::eyre!("No gas mixture with ID {src} exists!"))?
+			.read()
+			.return_pressure();
+		let arg_pressure_before = gas_mixtures
+			.get(arg)
+			.ok_or_else(|| eyre::eyre!("No gas mixture with ID {arg} exists!"))?
+			.read()
+			.return_pressure();
 		let result = if src == arg {
 			let mut entry = gas_mixtures
 				.get(src)
@@ -245,8 +286,12 @@ impl GasArena {
 			)
 		};
 		Self::bump_revision(src);
+		let src_pressure_after = gas_mixtures.get(src).unwrap().read().return_pressure();
+		Self::mark_pressure_dirty_if_changed(src, src_pressure_before, src_pressure_after);
 		if src != arg {
 			Self::bump_revision(arg);
+			let arg_pressure_after = gas_mixtures.get(arg).unwrap().read().return_pressure();
+			Self::mark_pressure_dirty_if_changed(arg, arg_pressure_before, arg_pressure_after);
 		}
 		result
 	}
@@ -266,6 +311,16 @@ impl GasArena {
 		}
 		let lock = GAS_MIXTURES.read();
 		let gas_mixtures = lock.as_ref().unwrap();
+		let src_pressure_before = gas_mixtures
+			.get(src)
+			.ok_or_else(|| eyre::eyre!("No gas mixture with ID {src} exists!"))?
+			.read()
+			.return_pressure();
+		let arg_pressure_before = gas_mixtures
+			.get(arg)
+			.ok_or_else(|| eyre::eyre!("No gas mixture with ID {arg} exists!"))?
+			.read()
+			.return_pressure();
 		let result = if src == arg {
 			let entry = gas_mixtures
 				.get(src)
@@ -283,8 +338,12 @@ impl GasArena {
 			)
 		};
 		Self::bump_revision(src);
+		let src_pressure_after = gas_mixtures.get(src).unwrap().read().return_pressure();
+		Self::mark_pressure_dirty_if_changed(src, src_pressure_before, src_pressure_after);
 		if src != arg {
 			Self::bump_revision(arg);
+			let arg_pressure_after = gas_mixtures.get(arg).unwrap().read().return_pressure();
+			Self::mark_pressure_dirty_if_changed(arg, arg_pressure_before, arg_pressure_after);
 		}
 		result
 	}
@@ -489,6 +548,8 @@ mod tests {
 			Ok(())
 		})
 		.unwrap();
+		assert_eq!(GasArena::take_dirty_mixtures(), vec![0]);
+		assert!(GasArena::take_dirty_mixtures().is_empty());
 		snapshot[0].write().set_moles(0, 5.0);
 		assert!(GasArena::publish_snapshot(&[0], &revisions, &snapshot).is_none());
 		assert_eq!(

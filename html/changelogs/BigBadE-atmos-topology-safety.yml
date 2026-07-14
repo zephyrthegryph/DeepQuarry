@@ -1,0 +1,6 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - bugfix: "Prevented explosions and turf replacement from crashing the asynchronous atmosphere worker."
+  - code_imp: "Added panic containment and topology-barrier regression coverage to Rust atmosphere processing."
+  - refactor: "Made sleeping vents and scrubbers subscribe to pressure-changing gas mixtures instead of timed polling."

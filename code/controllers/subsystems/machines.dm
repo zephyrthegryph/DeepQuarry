@@ -26,8 +26,8 @@ SUBSYSTEM_DEF(machines)
 
 	var/list/all_machines = list()
 	var/list/hibernating_vents = list()
-	/// Next bounded health-check of vents that have no current pressure work.
-	var/next_vent_health_check = 0
+	/// Rust gas arena ID -> assoc list of weakrefs for sleeping pressure devices.
+	var/list/gas_mixture_subscribers = list()
 
 	var/list/processing_machines = list()
 	var/list/powernets = list()
@@ -121,7 +121,7 @@ SUBSYSTEM_DEF(machines)
 
 /datum/controller/subsystem/machines/proc/process_machinery(resumed = 0)
 	if (!resumed)
-		update_hibernating_vents()
+		wake_dirty_gas_subscribers()
 		src.current_run = processing_machines.Copy()
 
 	var/wait = src.wait
@@ -188,16 +188,36 @@ SUBSYSTEM_DEF(machines)
 	powernets = SSmachines.powernets
 	powerobjs = SSmachines.powerobjs
 
-/datum/controller/subsystem/machines/proc/update_hibernating_vents()
-	if(world.time < next_vent_health_check)
+/datum/controller/subsystem/machines/proc/wake_dirty_gas_subscribers()
+	var/list/dirty_mixtures = drain_dirty_gas_mixtures()
+	for(var/mixture_id in dirty_mixtures)
+		var/list/subscribers = gas_mixture_subscribers[mixture_id]
+		if(!length(subscribers))
+			continue
+		for(var/key in subscribers.Copy())
+			var/datum/weakref/WR = subscribers[key]
+			var/obj/machinery/atmospherics/unary/V = WR?.resolve()
+			if(!V || V.gas_dependency_changed(mixture_id))
+				wake_vent(WR)
+
+/datum/controller/subsystem/machines/proc/subscribe_sleeping_vent(mixture_id, datum/weakref/WR)
+	if(isnull(mixture_id) || !WR)
 		return
-	next_vent_health_check = world.time + 10 SECONDS
-	var/i = 30
-	for(var/key in hibernating_vents)
-		if(i <= 0 || !length(hibernating_vents))
-			break
-		wake_vent(hibernating_vents[key])
-		i--
+	var/list/subscribers = gas_mixture_subscribers[mixture_id]
+	if(!subscribers)
+		subscribers = list()
+		gas_mixture_subscribers[mixture_id] = subscribers
+	subscribers[WR.reference] = WR
+
+/datum/controller/subsystem/machines/proc/unsubscribe_sleeping_vent(mixture_id, datum/weakref/WR)
+	if(isnull(mixture_id) || !WR)
+		return
+	var/list/subscribers = gas_mixture_subscribers[mixture_id]
+	if(!subscribers)
+		return
+	subscribers.Remove(WR.reference)
+	if(!length(subscribers))
+		gas_mixture_subscribers.Remove(mixture_id)
 
 /datum/controller/subsystem/machines/proc/hibernate_vent(obj/machinery/atmospherics/unary/V)
 	if(!V)
@@ -206,6 +226,7 @@ SUBSYSTEM_DEF(machines)
 	if(!WR)
 		return
 	hibernating_vents[WR.reference] = WR
+	V.register_gas_dependencies(WR)
 	STOP_MACHINE_PROCESSING(V)
 
 /datum/controller/subsystem/machines/proc/wake_vent(datum/weakref/WR)
@@ -213,6 +234,7 @@ SUBSYSTEM_DEF(machines)
 		return
 	var/obj/machinery/atmospherics/unary/V = WR.resolve()
 	if(V)
+		V.unregister_gas_dependencies(WR)
 		START_MACHINE_PROCESSING(V)
 	if(WR.reference)
 		hibernating_vents[WR.reference] = null

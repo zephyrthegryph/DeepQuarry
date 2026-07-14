@@ -306,6 +306,10 @@
 	if(frequency)
 		set_frequency(frequency)
 
+/obj/machinery/atmospherics/unary/vent_pump/click_ctrl(mob/user)
+	. = ..()
+	invalidate_gas_dependencies()
+
 /obj/machinery/atmospherics/unary/vent_pump/proc/set_frequency(new_frequency)
 	//some vents work his own special way
 	radio_filter_in = new_frequency==1439?(RADIO_FROM_AIRALARM):null
@@ -398,10 +402,12 @@
 				if(!welded)
 					user.visible_message(span_bold("\The [user]") + " welds the vent shut.", span_notice("You weld the vent shut."), "You hear welding.")
 					welded = 1
+					invalidate_gas_dependencies()
 					update_icon()
 				else
 					user.visible_message(span_notice("[user] unwelds the vent."), span_notice("You unweld the vent."), "You hear welding.")
 					welded = 0
+					invalidate_gas_dependencies()
 					update_icon()
 			else
 				to_chat(user, span_notice("The welding tool needs to be on to start this task."))
@@ -447,6 +453,7 @@
 	var/old_stat = stat
 	..()
 	if(old_stat != stat)
+		invalidate_gas_dependencies()
 		update_icon()
 
 /obj/machinery/atmospherics/unary/vent_pump/proc/multitool_act(obj/item/W, mob/user)
@@ -471,6 +478,7 @@
 
 		if("Direction")
 			pump_direction = !pump_direction
+			invalidate_gas_dependencies()
 			to_chat(user, span_notice("[src] is now [pump_direction ? "pumping in" : "siphoning out"]."))
 			update_icon()
 

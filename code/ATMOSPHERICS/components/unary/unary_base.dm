@@ -12,12 +12,48 @@
 	var/datum/pipe_network/network
 
 	var/welded = FALSE //defining this here for ventcrawl stuff
+	/// Arena dependencies captured while this device is absent from SSmachines.
+	var/sleeping_turf_mixture_id
+	var/sleeping_turf_revision = -1
+	var/sleeping_pipe_mixture_id
+	var/sleeping_pipe_revision = -1
 
 /obj/machinery/atmospherics/unary/Initialize(mapload)
 	. = ..()
 
 	air_contents = new
 	air_contents.set_volume(200)
+
+/obj/machinery/atmospherics/unary/proc/register_gas_dependencies(datum/weakref/WR)
+	unregister_gas_dependencies(WR)
+	var/datum/gas_mixture/environment = return_air()
+	if(environment)
+		sleeping_turf_mixture_id = environment.arena_id()
+		sleeping_turf_revision = environment.revision()
+		SSmachines.subscribe_sleeping_vent(sleeping_turf_mixture_id, WR)
+	if(air_contents)
+		sleeping_pipe_mixture_id = air_contents.arena_id()
+		sleeping_pipe_revision = air_contents.revision()
+		SSmachines.subscribe_sleeping_vent(sleeping_pipe_mixture_id, WR)
+
+/obj/machinery/atmospherics/unary/proc/unregister_gas_dependencies(datum/weakref/WR)
+	SSmachines.unsubscribe_sleeping_vent(sleeping_turf_mixture_id, WR)
+	SSmachines.unsubscribe_sleeping_vent(sleeping_pipe_mixture_id, WR)
+	sleeping_turf_mixture_id = null
+	sleeping_turf_revision = -1
+	sleeping_pipe_mixture_id = null
+	sleeping_pipe_revision = -1
+
+/obj/machinery/atmospherics/unary/proc/gas_dependency_changed(mixture_id)
+	if(mixture_id == sleeping_turf_mixture_id)
+		var/datum/gas_mixture/environment = return_air()
+		return !environment || environment.arena_id() != sleeping_turf_mixture_id || environment.revision() != sleeping_turf_revision
+	if(mixture_id == sleeping_pipe_mixture_id)
+		return !air_contents || air_contents.arena_id() != sleeping_pipe_mixture_id || air_contents.revision() != sleeping_pipe_revision
+	return TRUE
+
+/obj/machinery/atmospherics/unary/proc/invalidate_gas_dependencies()
+	SSmachines.wake_vent(WEAKREF(src))
 
 /obj/machinery/atmospherics/unary/init_dir()
 	initialize_directions = dir
@@ -49,6 +85,7 @@
 	return ..()
 
 /obj/machinery/atmospherics/unary/atmos_init()
+	invalidate_gas_dependencies()
 	if(node)
 		return
 
@@ -78,6 +115,7 @@
 	return null
 
 /obj/machinery/atmospherics/unary/reassign_network(datum/pipe_network/old_network, datum/pipe_network/new_network)
+	invalidate_gas_dependencies()
 	if(network == old_network)
 		network = new_network
 
@@ -92,6 +130,7 @@
 	return results
 
 /obj/machinery/atmospherics/unary/disconnect(obj/machinery/atmospherics/reference)
+	invalidate_gas_dependencies()
 	if(reference==node)
 		qdel(network)
 		node = null

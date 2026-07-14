@@ -125,6 +125,13 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 /datum/gas_mixture/proc/revision()
 	return call_ext(VERDIGRIS, "byond:hook_mix_revision_ffi")(src)
 
+/// Stable Rust arena ID used for dependency subscriptions.
+/datum/gas_mixture/proc/arena_id()
+	return _extools_pointer_gasmixture
+
+/proc/drain_dirty_gas_mixtures()
+	return call_ext(VERDIGRIS, "byond:drain_dirty_gas_mixtures_ffi")()
+
 /datum/gas_mixture/proc/total_moles()
 	return call_ext(VERDIGRIS, "byond:total_moles_hook_ffi")(src)
 

@@ -145,14 +145,17 @@ impl TurfMixture {
 	/// Clears the turf's airs, see [`super::gas::Mixture`]
 	pub fn clear_air(&self) {
 		GasArena::bump_revision(self.mix);
-		GasArena::with_all_mixtures(|all_mixtures| {
-			all_mixtures
+		let (before, after) = GasArena::with_all_mixtures(|all_mixtures| {
+			let mut mixture = all_mixtures
 				.get(self.mix)
 				.unwrap_or_else(|| panic!("Gas mixture not found for turf: {}", self.mix))
-				.write()
-				.clear();
+				.write();
+			let before = mixture.return_pressure();
+			mixture.clear();
+			(before, mixture.return_pressure())
 		});
 		GasArena::bump_revision(self.mix);
+		GasArena::mark_pressure_dirty_if_changed(self.mix, before, after);
 	}
 	/// Prevents diffusion and other gas operations from changing this turf's mixture.
 	pub fn mark_immutable(&self) {
@@ -169,20 +172,28 @@ impl TurfMixture {
 	/// Copies from a given gas mixture to the turf's airs, see [`super::gas::Mixture`]
 	pub fn copy_from_mutable(&self, sample: &Mixture) {
 		GasArena::bump_revision(self.mix);
-		GasArena::with_all_mixtures(|all_mixtures| {
-			all_mixtures
+		let (before, after) = GasArena::with_all_mixtures(|all_mixtures| {
+			let mut mixture = all_mixtures
 				.get(self.mix)
 				.unwrap_or_else(|| panic!("Gas mixture not found for turf: {}", self.mix))
-				.write()
-				.copy_from_mutable(sample);
+				.write();
+			let before = mixture.return_pressure();
+			mixture.copy_from_mutable(sample);
+			(before, mixture.return_pressure())
 		});
 		GasArena::bump_revision(self.mix);
+		GasArena::mark_pressure_dirty_if_changed(self.mix, before, after);
 	}
 	/// Clears a number of moles from the turf's air
 	/// If the number of moles is greater than the turf's total moles, just clears the turf
 	pub fn clear_moles(&self, amt: f32) {
 		GasArena::bump_revision(self.mix);
-		GasArena::with_all_mixtures(|all_mixtures| {
+		let (before, after) = GasArena::with_all_mixtures(|all_mixtures| {
+			let before = all_mixtures
+				.get(self.mix)
+				.unwrap_or_else(|| panic!("Gas mixture not found for turf: {}", self.mix))
+				.read()
+				.return_pressure();
 			let moles = all_mixtures
 				.get(self.mix)
 				.unwrap_or_else(|| panic!("Gas mixture not found for turf: {}", self.mix))
@@ -203,8 +214,15 @@ impl TurfMixture {
 						.remove(amt),
 				);
 			}
+			let after = all_mixtures
+				.get(self.mix)
+				.unwrap_or_else(|| panic!("Gas mixture not found for turf: {}", self.mix))
+				.read()
+				.return_pressure();
+			(before, after)
 		});
 		GasArena::bump_revision(self.mix);
+		GasArena::mark_pressure_dirty_if_changed(self.mix, before, after);
 	}
 	/// Gets a copy of the turf's airs, see [`super::gas::Mixture`]
 	pub fn get_gas_copy(&self) -> Mixture {
@@ -380,6 +398,8 @@ static MIX_TO_TURF: RwLock<Option<FxHashMap<usize, TurfID>>> = const_rwlock(None
 
 #[derive(Debug)]
 enum PendingTopologyUpdate {
+	Insert(TurfMixture),
+	Remove(TurfID),
 	Adjacencies(TurfID, Vec<(TurfID, u8)>),
 	RemoveAdjacencies(TurfID),
 }
@@ -414,6 +434,11 @@ fn mark_turf_active(turf: TurfID) {
 
 fn take_active_turfs() -> FxHashSet<TurfID> {
 	std::mem::take(ACTIVE_TURFS.write().as_mut().unwrap())
+}
+
+pub(super) fn reactivate_all_turfs() {
+	let ids = with_turf_gases_read(|arena| arena.map.keys().copied().collect::<Vec<_>>());
+	ACTIVE_TURFS.write().as_mut().unwrap().extend(ids);
 }
 #[byondapi::init]
 pub fn initialize_turfs() {
@@ -452,6 +477,23 @@ where
 
 fn apply_topology_update(arena: &mut TurfGases, update: PendingTopologyUpdate) {
 	match update {
+		PendingTopologyUpdate::Insert(mixture) => {
+			let id = mixture.id;
+			let mix = mixture.mix;
+			arena.insert_turf(mixture);
+			MIX_TO_TURF.write().as_mut().unwrap().insert(mix, id);
+			mark_turf_active(id);
+		}
+		PendingTopologyUpdate::Remove(id) => {
+			if let Some(mix) = arena
+				.get_id(id)
+				.and_then(|node| arena.get(node))
+				.map(|mixture| mixture.mix)
+			{
+				MIX_TO_TURF.write().as_mut().unwrap().remove(&mix);
+			}
+			arena.remove_turf(id);
+		}
 		PendingTopologyUpdate::Adjacencies(id, adjacent) => {
 			arena.update_adjacencies_from_ids(id, &adjacent)
 		}
@@ -460,6 +502,14 @@ fn apply_topology_update(arena: &mut TurfGases, update: PendingTopologyUpdate) {
 				arena.remove_adjacencies(node);
 			}
 		}
+	}
+}
+
+fn apply_or_queue_topology_update(update: PendingTopologyUpdate) {
+	if let Some(_task_barrier) = TASKS.try_write() {
+		with_turf_gases_write(|arena| apply_topology_update(arena, update));
+	} else {
+		PENDING_TOPOLOGY.write().push(update);
 	}
 }
 
@@ -531,15 +581,7 @@ fn register_turf_impl(src: ByondValue, flag: i32) -> Result<()> {
 	let id = src.get_ref()?;
 	if let Ok(blocks) = src.read_number_id(byond_string!("blocks_air")) {
 		if blocks > 0.0 {
-			if let Some(mix) = with_turf_gases_read(|arena| {
-				arena
-					.get_id(id)
-					.and_then(|node| arena.get(node))
-					.map(|mixture| mixture.mix)
-			}) {
-				MIX_TO_TURF.write().as_mut().unwrap().remove(&mix);
-			}
-			with_turf_gases_write(|arena| arena.remove_turf(id));
+			apply_or_queue_topology_update(PendingTopologyUpdate::Remove(id));
 			#[cfg(feature = "superconductivity")]
 			superconduct::supercond_update_ref(src)?;
 			return Ok(());
@@ -591,20 +633,9 @@ fn register_turf_impl(src: ByondValue, flag: i32) -> Result<()> {
 				}
 			}
 		}
-		let mix = to_insert.mix;
-		with_turf_gases_write(|arena| arena.insert_turf(to_insert));
-		MIX_TO_TURF.write().as_mut().unwrap().insert(mix, id);
-		mark_turf_active(id);
+		apply_or_queue_topology_update(PendingTopologyUpdate::Insert(to_insert));
 	} else {
-		if let Some(mix) = with_turf_gases_read(|arena| {
-			arena
-				.get_id(id)
-				.and_then(|node| arena.get(node))
-				.map(|mixture| mixture.mix)
-		}) {
-			MIX_TO_TURF.write().as_mut().unwrap().remove(&mix);
-		}
-		with_turf_gases_write(|arena| arena.remove_turf(id));
+		apply_or_queue_topology_update(PendingTopologyUpdate::Remove(id));
 	}
 
 	#[cfg(feature = "superconductivity")]
@@ -672,11 +703,7 @@ fn infos_impl(src: ByondValue) -> Result<ByondValue> {
 	} else {
 		PendingTopologyUpdate::RemoveAdjacencies(id)
 	};
-	if let Some(mut arena) = TURF_GASES.try_write() {
-		apply_topology_update(arena.as_mut().unwrap(), update);
-	} else {
-		PENDING_TOPOLOGY.write().push(update);
-	}
+	apply_or_queue_topology_update(update);
 	mark_turf_active(id);
 
 	#[cfg(feature = "superconductivity")]
@@ -802,5 +829,33 @@ fn adjacent_tile_ids(adj: Directions, i: TurfID, max_x: i32, max_y: i32) -> Adja
 		max_x,
 		max_y,
 		count: 0,
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn topology_updates_wait_for_generation_barrier() {
+		initialize_turfs();
+		let id = 42;
+		let mixture = TurfMixture {
+			id,
+			..Default::default()
+		};
+		let task = TASKS.read();
+		apply_or_queue_topology_update(PendingTopologyUpdate::Insert(mixture));
+		assert!(with_turf_gases_read(|arena| arena.get_id(id)).is_none());
+		drop(task);
+		apply_pending_topology_updates();
+		assert!(with_turf_gases_read(|arena| arena.get_id(id)).is_some());
+
+		let task = TASKS.read();
+		apply_or_queue_topology_update(PendingTopologyUpdate::Remove(id));
+		assert!(with_turf_gases_read(|arena| arena.get_id(id)).is_some());
+		drop(task);
+		apply_pending_topology_updates();
+		assert!(with_turf_gases_read(|arena| arena.get_id(id)).is_none());
 	}
 }

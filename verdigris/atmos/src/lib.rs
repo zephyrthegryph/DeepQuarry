@@ -39,6 +39,18 @@ fn atmos_callback_handle(remaining: ByondValue) -> Result<ByondValue> {
 	auxcallback::callback_processing_hook(remaining)
 }
 
+#[byondapi::bind("/proc/drain_dirty_gas_mixtures")]
+#[auxmacros::panic_safe]
+fn drain_dirty_gas_mixtures() -> Result<ByondValue> {
+	let ids = GasArena::take_dirty_mixtures()
+		.into_iter()
+		.map(|id| ByondValue::from(id as f32))
+		.collect::<Vec<_>>();
+	let list = ByondValue::new_list()?;
+	list.write_list(&ids)?;
+	Ok(list)
+}
+
 /// Fills in the first unused slot in the gas mixtures vector, or adds another one, then sets the argument ByondValue to point to it.
 #[byondapi::bind("/datum/gas_mixture/proc/__gasmixture_register")]
 #[auxmacros::panic_safe]

@@ -152,7 +152,26 @@ fn start_turf_process_worker() {
 			};
 			let _task_lock = TASKS.read();
 			apply_pending_topology_updates();
-			let result = process_turf(request, &mut snapshot, &mut base_revisions);
+			let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+				process_turf(request, &mut snapshot, &mut base_revisions)
+			}))
+			.unwrap_or_else(|panic| {
+				TURF_REJECTED_GENERATIONS.fetch_add(1, Ordering::AcqRel);
+				super::reactivate_all_turfs();
+				snapshot.clear();
+				base_revisions.clear();
+				let message = panic
+					.downcast_ref::<&str>()
+					.copied()
+					.or_else(|| panic.downcast_ref::<String>().map(String::as_str))
+					.unwrap_or("unknown panic");
+				eprintln!("auxmos turf worker rejected a panicked generation: {message}");
+				TurfProcessResult {
+					generation: TURF_GENERATION.fetch_add(1, Ordering::AcqRel) + 1,
+					rejected_generations: TURF_REJECTED_GENERATIONS.load(Ordering::Acquire),
+					..Default::default()
+				}
+			});
 			apply_pending_topology_updates();
 			if turf_result_channel().0.send(result).is_err() {
 				return;
@@ -433,7 +452,7 @@ fn fdm(
 			{
 				let turfs_to_save = active_nodes
 					.par_iter()
-					.map(|&idx| (idx, arena.get(idx).unwrap()))
+					.filter_map(|&idx| arena.get(idx).map(|mixture| (idx, mixture)))
 					.filter(|(index, mixture)| should_process(*index, mixture, all_mixtures, arena))
 					.filter_map(|(index, _)| process_cell(index, all_mixtures, arena))
 					.collect::<Vec<_>>();
@@ -448,7 +467,7 @@ fn fdm(
 				let (low_pressure, high_pressure): (Vec<_>, Vec<_>) = turfs_to_save
 					.into_par_iter()
 					.filter_map(|(i, end_gas, mut pressure_diffs, adj_amount)| {
-						let m = arena.get(i).unwrap();
+						let m = arena.get(i)?;
 						all_mixtures.get(m.mix).map(|entry| {
 							let mut max_diff = 0.0_f32;
 							let moved_pressure = {
@@ -573,7 +592,7 @@ fn post_process(active_nodes: &rustc_hash::FxHashSet<NodeIndex>) {
 				active_nodes
 					.par_iter()
 					.filter_map(|&node_index| {
-						let mix = arena.get(node_index).unwrap();
+						let mix = arena.get(node_index)?;
 						mix.enabled().then_some(mix)
 					})
 					.filter_map(|mixture| post_process_cell(mixture, &vis, all_mixtures, reactions))
