@@ -83,6 +83,15 @@ GLOBAL_REAL(Master, /datum/controller/master)
 	/// How long to run our rolling usage averaging
 	var/rolling_usage_length = 5 SECONDS
 
+	/// Bounded per-MC-tick history used by the admin performance dashboard.
+	var/list/perf_tick_usage = list()
+	var/list/perf_tick_realtime = list()
+	var/list/perf_outliers = list()
+	var/perf_history_limit = 12000
+	var/perf_tick_top_name = "None"
+	var/perf_tick_top_usage = 0
+	var/perf_tick_peak_usage = 0
+
 /datum/controller/master/New()
 	// Ensure usr is null, to prevent any potential weirdness resulting from the MC having a usr if it's manually restarted.
 	usr = null
@@ -663,6 +672,9 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 		var/newdrift = ((REALTIMEOFDAY - init_timeofday) - (world.time - init_time)) / world.tick_lag
 		tickdrift = max(0, MC_AVERAGE_FAST(tickdrift, newdrift))
 		var/starting_tick_usage = TICK_USAGE
+		perf_tick_top_name = "None"
+		perf_tick_top_usage = 0
+		perf_tick_peak_usage = starting_tick_usage
 
 		if(newdrift - olddrift >= CONFIG_GET(number/drift_dump_threshold))
 			AttemptProfileDump(CONFIG_GET(number/drift_profile_delay))
@@ -793,7 +805,57 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 				current_ticklimit -= (TICK_LIMIT_RUNNING * 0.25) //reserve the tail 1/4 of the next tick for the mc if we plan on running next tick
 
 		check_and_perform_fast_update()
+		record_performance_tick(max(perf_tick_peak_usage, TICK_USAGE))
 		sleep(world.tick_lag * (processing * sleep_delta))
+
+/datum/controller/master/proc/record_performance_tick(usage)
+	usage = max(usage, 0)
+	perf_tick_usage += usage
+	perf_tick_realtime += REALTIMEOFDAY
+	if(perf_tick_usage.len > perf_history_limit)
+		// Trim in chunks so a full five-minute ring does not shift twelve
+		// thousand list entries on every server tick.
+		var/trim_count = min(1000, perf_tick_usage.len - 1)
+		perf_tick_usage.Cut(1, trim_count + 1)
+		perf_tick_realtime.Cut(1, trim_count + 1)
+	if(usage > 100)
+		perf_outliers += list(list(
+			"world_time" = world.time,
+			"usage" = usage,
+			"overrun" = usage - 100,
+			"top_subsystem" = perf_tick_top_name,
+			"top_usage" = perf_tick_top_usage,
+		))
+		if(perf_outliers.len > 20)
+			perf_outliers.Cut(1, perf_outliers.len - 19)
+
+/datum/controller/master/proc/performance_window(seconds)
+	var/sample_count = min(perf_tick_usage.len, max(round(world.fps * seconds), 1))
+	if(!sample_count)
+		return list("samples" = 0, "avg" = 0, "p50" = 0, "p95" = 0, "p99" = 0, "max" = 0, "overruns" = 0, "tps" = 0)
+	var/start_index = perf_tick_usage.len - sample_count + 1
+	var/list/samples = perf_tick_usage.Copy(start_index)
+	var/sum = 0
+	var/overruns = 0
+	for(var/value in samples)
+		sum += value
+		if(value > 100)
+			overruns++
+	var/list/sorted = samples.Copy()
+	sortTim(sorted, GLOBAL_PROC_REF(cmp_numeric_asc))
+	var/realtime_delta = perf_tick_realtime[perf_tick_realtime.len] - perf_tick_realtime[start_index]
+	if(realtime_delta < 0)
+		realtime_delta += 24 HOURS
+	return list(
+		"samples" = sample_count,
+		"avg" = sum / sample_count,
+		"p50" = sorted[max(CEILING(sample_count * 0.50, 1), 1)],
+		"p95" = sorted[max(CEILING(sample_count * 0.95, 1), 1)],
+		"p99" = sorted[max(CEILING(sample_count * 0.99, 1), 1)],
+		"max" = sorted[sample_count],
+		"overruns" = overruns,
+		"tps" = realtime_delta > 0 ? ((sample_count - 1) / (realtime_delta * 0.1)) : world.fps,
+	)
 
 // This is what decides if something should run.
 /datum/controller/master/proc/CheckQueue(list/subsystemstocheck)
@@ -904,6 +966,10 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 			tick_usage = TICK_USAGE
 			var/state = queue_node.ignite(queue_node_paused)
 			tick_usage = TICK_USAGE - tick_usage
+			perf_tick_peak_usage = max(perf_tick_peak_usage, TICK_USAGE)
+			if(tick_usage > perf_tick_top_usage)
+				perf_tick_top_usage = tick_usage
+				perf_tick_top_name = queue_node.name
 
 			if(use_rolling_usage)
 				queue_node.prune_rolling_usage()

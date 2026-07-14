@@ -18,6 +18,7 @@ if (!String.prototype.trim) {
 let status_tab_parts = ['Loading...'];
 let current_tab = null;
 let mc_tab_parts = [['Loading...', '']];
+let mc_metrics = null;
 let href_token = null;
 let spells = [];
 let spell_tabs = [];
@@ -398,7 +399,18 @@ function draw_status() {
 
 function draw_mc() {
   statcontentdiv.textContent = '';
+
+  if (mc_metrics) {
+    draw_mc_dashboard(mc_metrics);
+  }
+
+  const details = document.createElement('details');
+  details.className = 'mc-details';
+  const summary = document.createElement('summary');
+  summary.textContent = 'Detailed controller state';
+  details.appendChild(summary);
   const table = document.createElement('table');
+  table.className = 'mc-legacy-table';
   for (let i = 0; i < mc_tab_parts.length; i++) {
     const part = mc_tab_parts[i];
     const tr = document.createElement('tr');
@@ -417,7 +429,191 @@ function draw_mc() {
     tr.appendChild(td2);
     table.appendChild(tr);
   }
-  document.getElementById('statcontent').appendChild(table);
+  details.appendChild(table);
+  statcontentdiv.appendChild(details);
+}
+
+function mc_number(value, digits = 1) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number.toFixed(digits) : '0.0';
+}
+
+function mc_metric_card(label, value, detail, severity = '') {
+  const card = document.createElement('div');
+  card.className = `mc-metric-card ${severity}`;
+  const labelNode = document.createElement('div');
+  labelNode.className = 'mc-metric-label';
+  labelNode.textContent = label;
+  const valueNode = document.createElement('div');
+  valueNode.className = 'mc-metric-value';
+  valueNode.textContent = value;
+  const detailNode = document.createElement('div');
+  detailNode.className = 'mc-metric-detail';
+  detailNode.textContent = detail;
+  card.append(labelNode, valueNode, detailNode);
+  return card;
+}
+
+function mc_usage_severity(value) {
+  if (value > 100) return 'critical';
+  if (value > 75) return 'warning';
+  return 'healthy';
+}
+
+function draw_mc_dashboard(metrics) {
+  const dashboard = document.createElement('div');
+  dashboard.className = 'mc-dashboard';
+
+  const headline = document.createElement('div');
+  headline.className = 'mc-card-grid';
+  const current = Number(metrics.current_usage) || 0;
+  const w30 = metrics.window_30s || {};
+  headline.append(
+    mc_metric_card('Current tick', `${mc_number(current)}%`, `${mc_number(current * metrics.tick_budget_ms / 100, 2)} ms of ${mc_number(metrics.tick_budget_ms, 1)} ms`, mc_usage_severity(current)),
+    mc_metric_card('TPS', mc_number(w30.tps, 1), `${mc_number(metrics.target_tps, 0)} target`, Number(w30.tps) < Number(metrics.target_tps) * 0.95 ? 'warning' : 'healthy'),
+    mc_metric_card('30s p99', `${mc_number(w30.p99)}%`, `max ${mc_number(w30.max)}%`, mc_usage_severity(Number(w30.p99))),
+    mc_metric_card('Overruns', `${w30.overruns || 0}`, `${w30.samples || 0} ticks / 30s`, w30.overruns ? 'critical' : 'healthy'),
+    mc_metric_card('Map send', `${mc_number(metrics.maptick)}%`, 'BYOND internal map work', mc_usage_severity(Number(metrics.maptick))),
+    mc_metric_card('TiDi', `${mc_number(metrics.tidi)}%`, `avg ${mc_number(metrics.tidi_fast)} / ${mc_number(metrics.tidi_medium)} / ${mc_number(metrics.tidi_slow)}`),
+  );
+  dashboard.appendChild(headline);
+
+  const graphCard = document.createElement('section');
+  graphCard.className = 'mc-panel';
+  const graphTitle = document.createElement('h3');
+  graphTitle.textContent = 'Recent tick budget';
+  const graphHint = document.createElement('span');
+  graphHint.className = 'mc-panel-hint';
+  graphHint.textContent = 'green <75% · amber 75–100% · red overrun';
+  const graph = document.createElement('div');
+  graph.className = 'mc-tick-graph';
+  for (const rawValue of metrics.graph || []) {
+    const value = Number(rawValue) || 0;
+    const bar = document.createElement('div');
+    bar.className = `mc-tick-bar ${mc_usage_severity(value)}`;
+    bar.style.height = `${Math.max(1, Math.min(value, 200) / 2)}%`;
+    bar.title = `${mc_number(value)}% (${mc_number(value * metrics.tick_budget_ms / 100, 2)} ms)`;
+    graph.appendChild(bar);
+  }
+  const budgetLine = document.createElement('div');
+  budgetLine.className = 'mc-budget-line';
+  graph.appendChild(budgetLine);
+  graphCard.append(graphTitle, graphHint, graph);
+  dashboard.appendChild(graphCard);
+
+  const windows = document.createElement('section');
+  windows.className = 'mc-panel';
+  const windowsTitle = document.createElement('h3');
+  windowsTitle.textContent = 'Tick distribution';
+  const distributionTable = document.createElement('table');
+  distributionTable.className = 'mc-performance-table';
+  const header = document.createElement('tr');
+  for (const text of ['Window', 'TPS', 'Average', 'p50', 'p95', 'p99', 'Maximum', 'Overruns']) {
+    const th = document.createElement('th');
+    th.textContent = text;
+    header.appendChild(th);
+  }
+  distributionTable.appendChild(header);
+  for (const [label, windowData] of [['5 sec', metrics.window_5s], ['30 sec', metrics.window_30s], ['5 min', metrics.window_5m]]) {
+    const row = document.createElement('tr');
+    const values = [label, mc_number(windowData.tps, 1), `${mc_number(windowData.avg)}%`, `${mc_number(windowData.p50)}%`, `${mc_number(windowData.p95)}%`, `${mc_number(windowData.p99)}%`, `${mc_number(windowData.max)}%`, `${windowData.overruns || 0}`];
+    for (const value of values) {
+      const cell = document.createElement('td');
+      cell.textContent = value;
+      row.appendChild(cell);
+    }
+    distributionTable.appendChild(row);
+  }
+  windows.append(windowsTitle, distributionTable);
+  dashboard.appendChild(windows);
+
+  const runtime = metrics.runtime || {};
+  const runtimePanel = document.createElement('section');
+  runtimePanel.className = 'mc-panel';
+  const runtimeTitle = document.createElement('h3');
+  runtimeTitle.textContent = 'Runtime health';
+  const runtimeGrid = document.createElement('div');
+  runtimeGrid.className = 'mc-runtime-grid';
+  const runtimeValues = [
+    ['BYOND CPU', `${mc_number(runtime.cpu)}%`],
+    ['Instances', Number(runtime.instances || 0).toLocaleString()],
+    ['Clients', `${runtime.clients || 0}`],
+    ['Timers', Number(runtime.timers || 0).toLocaleString()],
+    ['Tick drift', mc_number(runtime.tick_drift, 2)],
+    ['Sleep factor', mc_number(runtime.sleep_delta, 2)],
+    ['Queue pressure', `${mc_number(runtime.queue_priority, 2)} + ${mc_number(runtime.queue_priority_background, 2)} bg`],
+    ['Rust memory', `${mc_number(Number(runtime.rust_current_bytes) / 1048576, 1)} / ${mc_number(Number(runtime.rust_peak_bytes) / 1048576, 1)} MiB`],
+  ];
+  for (const [label, value] of runtimeValues) {
+    const item = document.createElement('div');
+    item.className = 'mc-runtime-item';
+    const labelNode = document.createElement('span');
+    labelNode.textContent = label;
+    const valueNode = document.createElement('strong');
+    valueNode.textContent = value;
+    item.append(labelNode, valueNode);
+    runtimeGrid.appendChild(item);
+  }
+  runtimePanel.append(runtimeTitle, runtimeGrid);
+  dashboard.appendChild(runtimePanel);
+
+  const subsystemPanel = document.createElement('section');
+  subsystemPanel.className = 'mc-panel';
+  const subsystemTitle = document.createElement('h3');
+  subsystemTitle.textContent = 'Subsystem pressure';
+  subsystemPanel.appendChild(subsystemTitle);
+  const sortedSubsystems = (metrics.subsystems || []).slice().sort((a, b) => (Number(b.usage) + Number(b.overrun)) - (Number(a.usage) + Number(a.overrun)));
+  for (const subsystem of sortedSubsystems) {
+    const usage = Number(subsystem.usage) || 0;
+    const overrun = Number(subsystem.overrun) || 0;
+    if (usage < 0.05 && overrun < 0.05) continue;
+    const row = document.createElement('div');
+    row.className = 'mc-subsystem-row';
+    const name = document.createElement('a');
+    name.className = 'mc-subsystem-name';
+    name.href = `byond://?_src_=vars;admin_token=${href_token};Vars=${subsystem.ref}`;
+    name.textContent = `[${subsystem.state || '-'}] ${subsystem.name}`;
+    const track = document.createElement('div');
+    track.className = 'mc-subsystem-track';
+    const usedBar = document.createElement('div');
+    usedBar.className = `mc-subsystem-used ${mc_usage_severity(usage)}`;
+    usedBar.style.width = `${Math.min(usage, 100)}%`;
+    track.appendChild(usedBar);
+    if (overrun > 0) {
+      const overrunBar = document.createElement('div');
+      overrunBar.className = 'mc-subsystem-overrun';
+      overrunBar.style.width = `${Math.min(overrun, 100)}%`;
+      track.appendChild(overrunBar);
+    }
+    const value = document.createElement('span');
+    value.className = 'mc-subsystem-value';
+    value.textContent = `${mc_number(subsystem.cost, 2)} ms · ${mc_number(usage)}% · +${mc_number(overrun)}%`;
+    row.append(name, track, value);
+    subsystemPanel.appendChild(row);
+  }
+  dashboard.appendChild(subsystemPanel);
+
+  const outliers = (metrics.outliers || []).slice().reverse();
+  const outlierPanel = document.createElement('section');
+  outlierPanel.className = 'mc-panel';
+  const outlierTitle = document.createElement('h3');
+  outlierTitle.textContent = `Recent overruns (${outliers.length}/20 retained)`;
+  outlierPanel.appendChild(outlierTitle);
+  if (!outliers.length) {
+    const empty = document.createElement('div');
+    empty.className = 'mc-empty';
+    empty.textContent = 'No tick overruns recorded.';
+    outlierPanel.appendChild(empty);
+  } else {
+    for (const outlier of outliers) {
+      const item = document.createElement('div');
+      item.className = 'mc-outlier';
+      item.textContent = `t=${mc_number(outlier.world_time / 10, 1)}s · ${mc_number(outlier.usage)}% (+${mc_number(outlier.overrun)}%) · top: ${outlier.top_subsystem} ${mc_number(outlier.top_usage)}%`;
+      outlierPanel.appendChild(item);
+    }
+  }
+  dashboard.appendChild(outlierPanel);
+  statcontentdiv.appendChild(dashboard);
 }
 
 function remove_tickets() {
@@ -940,6 +1136,7 @@ Byond.subscribeTo('update_stat', (payload) => {
 
 Byond.subscribeTo('update_mc', (payload) => {
   mc_tab_parts = payload.mc_data;
+  mc_metrics = payload.mc_metrics;
   mc_tab_parts.splice(0, 0, ['Location:', payload.coord_entry]);
 
   if (!verb_tabs.includes('MC')) {

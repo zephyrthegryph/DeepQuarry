@@ -5,3 +5,4 @@ changes:
   - refactor: "Made sleeping atmos devices wake from exact gas dependencies instead of timed polling."
   - code_imp: "Added live atmos and machinery profiling diagnostics."
   - server: "Reduced idle atmos polling, gas arena growth, and unnecessary machine processing."
+  - admin: "Reworked the MC tab into a live performance dashboard with tick graphs, TPS, percentiles, overruns, outliers, and subsystem pressure."

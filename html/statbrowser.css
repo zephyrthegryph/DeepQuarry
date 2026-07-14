@@ -303,3 +303,48 @@ body.dark {
   background-color: inherit;
   color: inherit;
 }
+
+/* Master Controller performance dashboard */
+.mc-dashboard { display: flex; flex-direction: column; gap: 0.65em; padding: 0.4em; }
+.mc-card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.45em; }
+.mc-metric-card, .mc-panel { background: #f1f3f5; border: 1px solid #c8cdd2; border-radius: 0.35em; padding: 0.55em; }
+.mc-metric-card { border-left-width: 0.35em; }
+.mc-metric-card.healthy { border-left-color: #2c9b52; }
+.mc-metric-card.warning { border-left-color: #d28b18; }
+.mc-metric-card.critical { border-left-color: #cf3b3b; }
+.mc-metric-label { color: #59636e; font-size: 0.82em; text-transform: uppercase; }
+.mc-metric-value { font-size: 1.45em; font-weight: bold; line-height: 1.2; }
+.mc-metric-detail, .mc-panel-hint { color: #65717d; font-size: 0.78em; }
+.mc-panel h3 { margin: 0 0 0.35em; font-size: 1em; }
+.mc-tick-graph { position: relative; display: flex; align-items: flex-end; gap: 1px; height: 7em; margin-top: 0.4em; overflow: hidden; background: linear-gradient(to top, rgba(44,155,82,.08) 0 37.5%, rgba(210,139,24,.08) 37.5% 50%, rgba(207,59,59,.08) 50% 100%); }
+.mc-tick-bar { flex: 1 1 1px; min-width: 1px; opacity: 0.85; }
+.mc-tick-bar.healthy, .mc-subsystem-used.healthy { background: #2c9b52; }
+.mc-tick-bar.warning, .mc-subsystem-used.warning { background: #d28b18; }
+.mc-tick-bar.critical, .mc-subsystem-used.critical { background: #cf3b3b; }
+.mc-budget-line { position: absolute; left: 0; right: 0; bottom: 50%; border-top: 1px dashed #cf3b3b; pointer-events: none; }
+.mc-performance-table, .mc-legacy-table { width: 100%; border-collapse: collapse; font-size: 0.82em; }
+.mc-performance-table th, .mc-performance-table td { padding: 0.25em; text-align: right; border-bottom: 1px solid #d8dce0; }
+.mc-performance-table th:first-child, .mc-performance-table td:first-child { text-align: left; }
+.mc-subsystem-row { display: grid; grid-template-columns: minmax(8em, 1fr) minmax(7em, 2fr) auto; gap: 0.45em; align-items: center; margin: 0.23em 0; font-size: 0.82em; }
+.mc-subsystem-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mc-subsystem-track { display: flex; height: 0.62em; background: #d9dde1; border-radius: 1em; overflow: hidden; }
+.mc-subsystem-used, .mc-subsystem-overrun { height: 100%; flex: 0 0 auto; }
+.mc-subsystem-overrun { background: #842323; }
+.mc-subsystem-value { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.mc-outlier { padding: 0.27em 0; border-bottom: 1px solid #d8dce0; font-family: monospace; font-size: 0.8em; }
+.mc-empty { color: #65717d; font-style: italic; }
+.mc-runtime-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.3em 0.8em; }
+.mc-runtime-item { display: flex; justify-content: space-between; gap: 0.5em; border-bottom: 1px solid #d8dce0; padding: 0.2em 0; font-size: 0.82em; }
+.mc-runtime-item span { color: #65717d; }
+.mc-details { margin: 0.5em; }
+.mc-details summary { cursor: pointer; font-weight: bold; }
+.dark .mc-metric-card, .dark .mc-panel { background: #20262d; border-color: #3a4652; }
+.dark .mc-metric-label, .dark .mc-metric-detail, .dark .mc-panel-hint, .dark .mc-empty { color: #8fa1b5; }
+.dark .mc-performance-table th, .dark .mc-performance-table td, .dark .mc-outlier { border-color: #3a4652; }
+.dark .mc-runtime-item { border-color: #3a4652; }
+.dark .mc-runtime-item span { color: #8fa1b5; }
+.dark .mc-subsystem-track { background: #35404a; }
+
+@media only screen and (min-width: 650px) {
+  .mc-card-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}

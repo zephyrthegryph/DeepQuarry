@@ -7,6 +7,7 @@ SUBSYSTEM_DEF(statpanels)
 	var/list/currentrun = list()
 	var/list/global_data
 	var/list/mc_data
+	var/list/mc_metrics
 
 	///how many subsystem fires between most tab updates
 	var/default_wait = 10
@@ -51,6 +52,7 @@ SUBSYSTEM_DEF(statpanels)
 
 		src.currentrun = GLOB.clients.Copy()
 		mc_data = null
+		mc_metrics = null
 
 	var/list/currentrun = src.currentrun
 	while(length(currentrun))
@@ -147,7 +149,60 @@ SUBSYSTEM_DEF(statpanels)
 	var/coord_entry = COORD(eye_turf)
 	if(!mc_data)
 		generate_mc_data()
-	target.stat_panel.send_message("update_mc", list("mc_data" = mc_data, "coord_entry" = coord_entry))
+	if(!mc_metrics)
+		mc_metrics = generate_mc_metrics()
+	target.stat_panel.send_message("update_mc", list(
+		"mc_data" = mc_data,
+		"mc_metrics" = mc_metrics,
+		"coord_entry" = coord_entry,
+	))
+
+/datum/controller/subsystem/statpanels/proc/generate_mc_metrics()
+	var/list/history = Master.perf_tick_usage
+	var/list/rust_allocator = SSair.verdigris_allocator_diagnostics()
+	var/history_start = max(1, history.len - 119)
+	var/list/graph = history.len ? history.Copy(history_start) : list()
+	var/list/subsystems = list()
+	for(var/datum/controller/subsystem/SS as anything in Master.subsystems)
+		if(!SS.can_fire || (SS.flags & SS_NO_FIRE))
+			continue
+		subsystems += list(list(
+			"name" = SS.name,
+			"state" = SS.state_letter(),
+			"usage" = SS.tick_usage,
+			"overrun" = SS.tick_overrun,
+			"cost" = SS.cost,
+			"fires" = SS.times_fired,
+			"ref" = REF(SS),
+		))
+	return list(
+		"tick_budget_ms" = world.tick_lag * 100,
+		"target_tps" = world.fps,
+		"current_usage" = history.len ? history[history.len] : 0,
+		"maptick" = MAPTICK_LAST_INTERNAL_TICK_USAGE,
+		"tidi" = SStime_track.time_dilation_current,
+		"tidi_fast" = SStime_track.time_dilation_avg_fast,
+		"tidi_medium" = SStime_track.time_dilation_avg,
+		"tidi_slow" = SStime_track.time_dilation_avg_slow,
+		"window_5s" = Master.performance_window(5),
+		"window_30s" = Master.performance_window(30),
+		"window_5m" = Master.performance_window(300),
+		"graph" = graph,
+		"outliers" = Master.perf_outliers.Copy(),
+		"subsystems" = subsystems,
+		"runtime" = list(
+			"cpu" = world.cpu,
+			"instances" = length(world.contents),
+			"clients" = length(GLOB.clients),
+			"timers" = length(SStimer.timer_id_dict),
+			"tick_drift" = Master.tickdrift,
+			"sleep_delta" = Master.sleep_delta,
+			"queue_priority" = Master.queue_priority_count,
+			"queue_priority_background" = Master.queue_priority_count_bg,
+			"rust_current_bytes" = rust_allocator?.len >= 1 ? rust_allocator[1] : 0,
+			"rust_peak_bytes" = rust_allocator?.len >= 2 ? rust_allocator[2] : 0,
+		),
+	)
 
 /datum/controller/subsystem/statpanels/proc/set_examine_tab(client/target)
 	var/description_holders = target.description_holders

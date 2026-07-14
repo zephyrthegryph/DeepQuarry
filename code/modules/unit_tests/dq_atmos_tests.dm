@@ -2608,6 +2608,27 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	qdel(S)
 
 
+/datum/unit_test/dq_mc_performance_window_statistics
+
+/datum/unit_test/dq_mc_performance_window_statistics/Run()
+	var/list/old_usage = Master.perf_tick_usage
+	var/list/old_realtime = Master.perf_tick_realtime
+	Master.perf_tick_usage = list()
+	Master.perf_tick_realtime = list()
+	for(var/i in 1 to 100)
+		Master.perf_tick_usage += i
+		Master.perf_tick_realtime += i * world.tick_lag
+	var/list/window = Master.performance_window(30)
+	TEST_ASSERT_EQUAL(window["samples"], 100, "MC performance window lost samples")
+	TEST_ASSERT_EQUAL(window["p50"], 50, "MC performance window calculated the wrong median")
+	TEST_ASSERT_EQUAL(window["p95"], 95, "MC performance window calculated the wrong p95")
+	TEST_ASSERT_EQUAL(window["p99"], 99, "MC performance window calculated the wrong p99")
+	TEST_ASSERT_EQUAL(window["max"], 100, "MC performance window calculated the wrong maximum")
+	TEST_ASSERT(abs(window["tps"] - world.fps) < 0.01, "MC performance window calculated incorrect TPS")
+	Master.perf_tick_usage = old_usage
+	Master.perf_tick_realtime = old_realtime
+
+
 // =====================================================================
 // Pipenet dispatch (catches "START_PROCESSING_PIPENET targets wrong list")
 // =====================================================================
