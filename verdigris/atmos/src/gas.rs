@@ -7,6 +7,7 @@ use byondapi::prelude::*;
 use eyre::Result;
 pub use mixture::Mixture;
 use parking_lot::{const_rwlock, RwLock};
+use std::sync::atomic::{AtomicU64, Ordering};
 pub use types::*;
 
 pub type GasIDX = usize;
@@ -24,20 +25,105 @@ pub struct GasArena {}
 static GAS_MIXTURES: RwLock<Option<Vec<RwLock<Mixture>>>> = const_rwlock(None);
 
 static NEXT_GAS_IDS: RwLock<Option<Vec<usize>>> = const_rwlock(None);
+static GAS_REVISIONS: RwLock<Option<Vec<AtomicU64>>> = const_rwlock(None);
+static GAS_PUBLICATION: RwLock<()> = const_rwlock(());
 
 #[byondapi::init]
 pub fn initialize_gases() {
 	*GAS_MIXTURES.write() = Some(Vec::with_capacity(240_000));
 	*NEXT_GAS_IDS.write() = Some(Vec::with_capacity(2000));
+	*GAS_REVISIONS.write() = Some(Vec::with_capacity(240_000));
 }
 
 pub fn shut_down_gases() {
 	crate::turfs::wait_for_tasks();
 	GAS_MIXTURES.write().as_mut().unwrap().clear();
 	NEXT_GAS_IDS.write().as_mut().unwrap().clear();
+	GAS_REVISIONS.write().as_mut().unwrap().clear();
 }
 
 impl GasArena {
+	pub fn snapshot_mixtures_into(
+		ids: &[usize],
+		snapshot: &mut Vec<RwLock<Mixture>>,
+		revisions: &mut Vec<u64>,
+	) {
+		let _publication = GAS_PUBLICATION.read();
+		let gases = GAS_MIXTURES.read();
+		let gases = gases.as_ref().unwrap();
+		snapshot.resize_with(gases.len(), Default::default);
+		revisions.resize(gases.len(), 0);
+		for &id in ids {
+			if let (Some(source), Some(target)) = (gases.get(id), snapshot.get(id)) {
+				loop {
+					let revision_before = Self::revision(id);
+					let copied = source.read().clone();
+					let revision_after = Self::revision(id);
+					if revision_before == revision_after {
+						*target.write() = copied;
+						revisions[id] = revision_after;
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	/// Publishes a transaction only when none of its input mixtures changed while
+	/// the worker was computing. The publication lock makes the set visible to DM
+	/// readers as one generation.
+	pub fn publish_snapshot(
+		ids: &[usize],
+		base_revisions: &[u64],
+		snapshot: &[RwLock<Mixture>],
+	) -> Option<Vec<usize>> {
+		let _publication = GAS_PUBLICATION.write();
+		if ids
+			.iter()
+			.any(|&id| base_revisions.get(id).copied().unwrap_or_default() != Self::revision(id))
+		{
+			for &id in ids {
+				crate::turfs::mark_mix_active(id);
+			}
+			return None;
+		}
+		let gases = GAS_MIXTURES.read();
+		let gases = gases.as_ref().unwrap();
+		let mut changed = Vec::new();
+		for &id in ids {
+			if let (Some(source), Some(target)) = (snapshot.get(id), gases.get(id)) {
+				let source = source.read();
+				let mut target = target.write();
+				if source.compare(&target) > crate::constants::GAS_MIN_MOLES
+					|| source.temperature_compare(&target)
+				{
+					*target = source.clone();
+					changed.push(id);
+					Self::bump_revision(id);
+				}
+			}
+		}
+		Some(changed)
+	}
+
+	pub fn revision(id: usize) -> u64 {
+		GAS_REVISIONS
+			.read()
+			.as_ref()
+			.and_then(|revisions| revisions.get(id))
+			.map_or(0, |revision| revision.load(Ordering::Acquire))
+	}
+
+	pub fn bump_revision(id: usize) {
+		if let Some(revision) = GAS_REVISIONS
+			.read()
+			.as_ref()
+			.and_then(|revisions| revisions.get(id))
+		{
+			revision.fetch_add(1, Ordering::AcqRel);
+		}
+		crate::turfs::mark_mix_active(id);
+	}
 	/// Locks the gas arena and and runs the given closure with it locked.
 	/// # Panics
 	/// if `GAS_MIXTURES` hasn't been initialized, somehow.
@@ -45,6 +131,7 @@ impl GasArena {
 	where
 		F: FnOnce(&[RwLock<Mixture>]) -> T,
 	{
+		let _publication = GAS_PUBLICATION.read();
 		f(GAS_MIXTURES.read().as_ref().unwrap())
 	}
 
@@ -55,6 +142,7 @@ impl GasArena {
 	where
 		F: FnOnce(Option<&[RwLock<Mixture>]>) -> T,
 	{
+		let _publication = GAS_PUBLICATION.read();
 		let gases = GAS_MIXTURES.try_read_for(std::time::Duration::from_millis(30));
 		f(gases.as_ref().unwrap().as_ref().map(|vec| vec.as_slice()))
 	}
@@ -67,6 +155,7 @@ impl GasArena {
 	where
 		F: FnOnce(&Mixture) -> Result<T>,
 	{
+		let _publication = GAS_PUBLICATION.read();
 		let lock = GAS_MIXTURES.read();
 		let gas_mixtures = lock.as_ref().unwrap();
 		let mix = gas_mixtures
@@ -84,13 +173,18 @@ impl GasArena {
 	where
 		F: FnOnce(&mut Mixture) -> Result<T>,
 	{
+		let _publication = GAS_PUBLICATION.read();
+		Self::bump_revision(id);
 		let lock = GAS_MIXTURES.read();
 		let gas_mixtures = lock.as_ref().unwrap();
 		let mut mix = gas_mixtures
 			.get(id)
 			.ok_or_else(|| eyre::eyre!("No gas mixture with ID {id} exists!"))?
 			.write();
-		f(&mut mix)
+		let result = f(&mut mix);
+		drop(mix);
+		Self::bump_revision(id);
+		result
 	}
 	/// Read locks the given gas mixtures and runs the given closure on them.
 	/// # Errors
@@ -101,6 +195,7 @@ impl GasArena {
 	where
 		F: FnOnce(&Mixture, &Mixture) -> Result<T>,
 	{
+		let _publication = GAS_PUBLICATION.read();
 		let lock = GAS_MIXTURES.read();
 		let gas_mixtures = lock.as_ref().unwrap();
 		let src_gas = gas_mixtures
@@ -122,9 +217,14 @@ impl GasArena {
 	where
 		F: FnOnce(&mut Mixture, &mut Mixture) -> Result<T>,
 	{
+		let _publication = GAS_PUBLICATION.read();
+		Self::bump_revision(src);
+		if src != arg {
+			Self::bump_revision(arg);
+		}
 		let lock = GAS_MIXTURES.read();
 		let gas_mixtures = lock.as_ref().unwrap();
-		if src == arg {
+		let result = if src == arg {
 			let mut entry = gas_mixtures
 				.get(src)
 				.ok_or_else(|| eyre::eyre!("No gas mixture with ID {src} exists!"))?
@@ -143,7 +243,12 @@ impl GasArena {
 					.ok_or_else(|| eyre::eyre!("No gas mixture with ID {arg} exists!"))?
 					.write(),
 			)
+		};
+		Self::bump_revision(src);
+		if src != arg {
+			Self::bump_revision(arg);
 		}
+		result
 	}
 	/// Runs the given closure on the gas mixture *locks* rather than an already-locked version.
 	/// # Errors
@@ -154,9 +259,14 @@ impl GasArena {
 	where
 		F: FnOnce(&RwLock<Mixture>, &RwLock<Mixture>) -> Result<T>,
 	{
+		let _publication = GAS_PUBLICATION.read();
+		Self::bump_revision(src);
+		if src != arg {
+			Self::bump_revision(arg);
+		}
 		let lock = GAS_MIXTURES.read();
 		let gas_mixtures = lock.as_ref().unwrap();
-		if src == arg {
+		let result = if src == arg {
 			let entry = gas_mixtures
 				.get(src)
 				.ok_or_else(|| eyre::eyre!("No gas mixture with ID {src} exists!"))?;
@@ -171,7 +281,12 @@ impl GasArena {
 					.get(arg)
 					.ok_or_else(|| eyre::eyre!("No gas mixture with ID {arg} exists!"))?,
 			)
+		};
+		Self::bump_revision(src);
+		if src != arg {
+			Self::bump_revision(arg);
 		}
+		result
 	}
 	/// Fills in the first unused slot in the gas mixtures vector, or adds another one, then sets the argument ByondValue to point to it.
 	/// # Errors
@@ -186,6 +301,11 @@ impl GasArena {
 			let gas_mixtures = gas_lock.as_mut().unwrap();
 			let next_idx = gas_mixtures.len();
 			gas_mixtures.push(RwLock::new(Mixture::from_vol(init_volume)));
+			GAS_REVISIONS
+				.write()
+				.as_mut()
+				.unwrap()
+				.push(AtomicU64::new(1));
 
 			mix.write_var_id(
 				byond_string!("_extools_pointer_gasmixture"),
@@ -206,6 +326,11 @@ impl GasArena {
 			};
 			next_gas_ids.extend(cur_last..(cur_last + cap));
 			gas_mixtures.resize_with(cur_last + cap, Default::default);
+			GAS_REVISIONS
+				.write()
+				.as_mut()
+				.unwrap()
+				.resize_with(cur_last + cap, || AtomicU64::new(0));
 		} else {
 			let idx = {
 				let mut next_gas_ids = NEXT_GAS_IDS.write();
@@ -219,6 +344,7 @@ impl GasArena {
 				.unwrap()
 				.write()
 				.clear_with_vol(init_volume);
+			Self::bump_revision(idx);
 			mix.write_var_id(
 				byond_string!("_extools_pointer_gasmixture"),
 				&(idx as f32).into(),
@@ -233,6 +359,7 @@ impl GasArena {
 	/// If `NEXT_GAS_IDS` hasn't been initialized, somehow.
 	pub fn unregister_mix(mix: &ByondValue) {
 		if let Ok(idx) = mix.read_number_id(byond_string!("_extools_pointer_gasmixture")) {
+			Self::bump_revision(idx as usize);
 			let mut next_gas_ids = NEXT_GAS_IDS.write();
 			next_gas_ids.as_mut().unwrap().push(idx as usize);
 		} else {
@@ -252,6 +379,13 @@ where
 		mix.read_number_id(byond_string!("_extools_pointer_gasmixture"))? as usize,
 		f,
 	)
+}
+
+#[byondapi::bind("/datum/gas_mixture/proc/revision")]
+#[auxmacros::panic_safe]
+fn hook_mix_revision(src: ByondValue) -> Result<ByondValue> {
+	let id = src.read_number_id(byond_string!("_extools_pointer_gasmixture"))? as usize;
+	Ok((GasArena::revision(id) as f32).into())
 }
 
 /// As `with_mix`, but mutable.
@@ -321,4 +455,54 @@ pub fn amt_gases() -> usize {
 /// if `GAS_MIXTURES` hasn't been initialized, somehow.
 pub fn tot_gases() -> usize {
 	GAS_MIXTURES.read().as_ref().unwrap().len()
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use crate::gas::types::{destroy_gas_statics, register_gas_manually, set_gas_statics_manually};
+
+	#[test]
+	fn snapshot_rejects_concurrent_mutation_and_publishes_stable_state() {
+		set_gas_statics_manually();
+		register_gas_manually("test", 20.0);
+		initialize_gases();
+		crate::turfs::initialize_turfs();
+		let mut initial = Mixture::from_vol(2_500.0);
+		initial.set_moles(0, 1.0);
+		GAS_MIXTURES
+			.write()
+			.as_mut()
+			.unwrap()
+			.push(RwLock::new(initial));
+		GAS_REVISIONS
+			.write()
+			.as_mut()
+			.unwrap()
+			.push(AtomicU64::new(0));
+
+		let mut snapshot = Vec::new();
+		let mut revisions = Vec::new();
+		GasArena::snapshot_mixtures_into(&[0], &mut snapshot, &mut revisions);
+		GasArena::with_gas_mixture_mut(0, |mixture| {
+			mixture.set_moles(0, 10.0);
+			Ok(())
+		})
+		.unwrap();
+		snapshot[0].write().set_moles(0, 5.0);
+		assert!(GasArena::publish_snapshot(&[0], &revisions, &snapshot).is_none());
+		assert_eq!(
+			GasArena::with_gas_mixture(0, |mixture| Ok(mixture.get_moles(0))).unwrap(),
+			10.0
+		);
+
+		GasArena::snapshot_mixtures_into(&[0], &mut snapshot, &mut revisions);
+		snapshot[0].write().set_moles(0, 20.0);
+		assert!(GasArena::publish_snapshot(&[0], &revisions, &snapshot).is_some());
+		assert_eq!(
+			GasArena::with_gas_mixture(0, |mixture| Ok(mixture.get_moles(0))).unwrap(),
+			20.0
+		);
+		destroy_gas_statics();
+	}
 }

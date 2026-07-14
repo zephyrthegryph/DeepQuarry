@@ -21,10 +21,8 @@
 // process_atmos_callbacks / auxtools_atmos_init live in auxmos_init_bridge.dm;
 // don't redeclare them here.
 
-/// Runs one FDM turf-sharing cycle in the Rust arena, bounded by `remaining` ms.
-/// Reads SSair.share_max_steps / equalize_enabled / planet_share_ratio and
-/// writes back cost_turfs / cost_post_process / low_pressure_turfs /
-/// high_pressure_turfs. Returns TRUE if interrupted by the time budget.
+/// Starts or polls an asynchronous Rust turf-sharing generation.
+/// Returns TRUE while the worker is computing so SSair resumes this step.
 /datum/controller/subsystem/air/proc/process_turfs_auxtools(remaining)
 	return call_ext(VERDIGRIS, "byond:process_turf_hook_ffi")(src, remaining)
 
@@ -57,6 +55,10 @@
 /// Rust arena heat temperature (K) for this turf, or a sentinel if untracked.
 /turf/proc/return_temperature()
 	return call_ext(VERDIGRIS, "byond:hook_turf_temperature_ffi")(src)
+
+/// Monotonic gas revision used by sensors to avoid rescanning unchanged air.
+/turf/proc/air_revision()
+	return call_ext(VERDIGRIS, "byond:hook_air_revision_ffi")(src)
 
 /// Set this turf's temperature. The superconductivity arena OWNS turf heat (it seeds
 /// from the `temperature` var only at registration, then runs its own conduction), so

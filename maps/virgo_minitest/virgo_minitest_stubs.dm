@@ -19,3 +19,12 @@
 
 // Loot landmark placed on the away sectors. Inert on the test map.
 /obj/effect/landmark/loot_spawn
+
+// Engine selection is unused on the minimal map, but SSmapping's typed fields
+// and load proc are compiled for every map.
+/obj/effect/landmark/engine_loader
+
+/obj/effect/landmark/engine_loader/proc/annihilate_bounds()
+	return
+
+/datum/map_template/engine

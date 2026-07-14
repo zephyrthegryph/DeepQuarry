@@ -122,6 +122,9 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 	return call_ext(VERDIGRIS, "byond:partial_heat_capacity_ffi")(src, "[gas_id]")
 
 /// Calculate moles
+/datum/gas_mixture/proc/revision()
+	return call_ext(VERDIGRIS, "byond:hook_mix_revision_ffi")(src)
+
 /datum/gas_mixture/proc/total_moles()
 	return call_ext(VERDIGRIS, "byond:total_moles_hook_ffi")(src)
 

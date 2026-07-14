@@ -1,0 +1,7 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - refactor: "Moved turf atmosphere diffusion to a transactional asynchronous Rust worker."
+  - code_imp: "Added active-room atmosphere generations, mutation conflict detection, and performance telemetry."
+  - bugfix: "Reduced redundant air alarm, air sensor, vent, and canister atmosphere processing."
+  - server: "Made unit tests select the small Virgo test map."

@@ -309,7 +309,7 @@ export const DmTestTarget = new Juke.Target({
   executes: async ({ get }) => {
     fs.copyFileSync(`${DME_NAME}.dme`, `${DME_NAME}.test.dme`);
     await DreamMaker(`${DME_NAME}.test.dme`, {
-      defines: ['CBT', 'CIBUILDING', ...get(DefineParameter)],
+      defines: ['CBT', 'CIBUILDING', 'CITESTING', ...get(DefineParameter)],
       warningsAsErrors: get(WarningParameter).includes('error'),
       ignoreWarningCodes: get(NoWarningParameter),
       namedDmVersion: get(DmVersionParameter),

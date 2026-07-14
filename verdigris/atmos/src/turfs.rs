@@ -19,7 +19,7 @@ use indexmap::IndexMap;
 use parking_lot::{const_rwlock, RwLock, RwLockUpgradableReadGuard};
 use petgraph::{graph::NodeIndex, stable_graph::StableDiGraph, visit::EdgeRef, Direction};
 use rayon::prelude::*;
-use rustc_hash::FxBuildHasher;
+use rustc_hash::{FxBuildHasher, FxHashMap, FxHashSet};
 use std::hash::{Hash, Hasher};
 use std::time::Duration;
 use std::{mem::drop, sync::atomic::AtomicU64};
@@ -144,6 +144,7 @@ impl TurfMixture {
 	}
 	/// Clears the turf's airs, see [`super::gas::Mixture`]
 	pub fn clear_air(&self) {
+		GasArena::bump_revision(self.mix);
 		GasArena::with_all_mixtures(|all_mixtures| {
 			all_mixtures
 				.get(self.mix)
@@ -151,9 +152,11 @@ impl TurfMixture {
 				.write()
 				.clear();
 		});
+		GasArena::bump_revision(self.mix);
 	}
 	/// Prevents diffusion and other gas operations from changing this turf's mixture.
 	pub fn mark_immutable(&self) {
+		GasArena::bump_revision(self.mix);
 		GasArena::with_all_mixtures(|all_mixtures| {
 			all_mixtures
 				.get(self.mix)
@@ -161,9 +164,11 @@ impl TurfMixture {
 				.write()
 				.mark_immutable();
 		});
+		GasArena::bump_revision(self.mix);
 	}
 	/// Copies from a given gas mixture to the turf's airs, see [`super::gas::Mixture`]
 	pub fn copy_from_mutable(&self, sample: &Mixture) {
+		GasArena::bump_revision(self.mix);
 		GasArena::with_all_mixtures(|all_mixtures| {
 			all_mixtures
 				.get(self.mix)
@@ -171,10 +176,12 @@ impl TurfMixture {
 				.write()
 				.copy_from_mutable(sample);
 		});
+		GasArena::bump_revision(self.mix);
 	}
 	/// Clears a number of moles from the turf's air
 	/// If the number of moles is greater than the turf's total moles, just clears the turf
 	pub fn clear_moles(&self, amt: f32) {
+		GasArena::bump_revision(self.mix);
 		GasArena::with_all_mixtures(|all_mixtures| {
 			let moles = all_mixtures
 				.get(self.mix)
@@ -197,6 +204,7 @@ impl TurfMixture {
 				);
 			}
 		});
+		GasArena::bump_revision(self.mix);
 	}
 	/// Gets a copy of the turf's airs, see [`super::gas::Mixture`]
 	pub fn get_gas_copy(&self) -> Mixture {
@@ -242,19 +250,18 @@ impl TurfGases {
 			self.graph.remove_node(index);
 		}
 	}
-	pub fn update_adjacencies(&mut self, idx: TurfID, adjacent_list: ByondValue) -> Result<()> {
+	fn update_adjacencies_from_ids(&mut self, idx: TurfID, adjacent: &[(TurfID, u8)]) {
 		if let Some(&this_index) = self.map.get(&idx) {
 			self.remove_adjacencies(this_index);
-			adjacent_list
-				.iter()?
-				.filter_map(|(k, v)| Some((k.get_ref().ok()?, v.get_number().unwrap_or(0.0) as u8)))
+			adjacent
+				.iter()
+				.copied()
 				.filter_map(|(adj_ref, flag)| Some((self.map.get(&adj_ref)?, flag)))
 				.for_each(|(adj_index, flag)| {
 					let flags = AdjacentFlags::from_bits_truncate(flag);
 					self.graph.add_edge(this_index, *adj_index, flags);
 				})
-		};
-		Ok(())
+		}
 	}
 
 	pub fn remove_adjacencies(&mut self, index: NodeIndex) {
@@ -368,6 +375,16 @@ static TURF_GASES: RwLock<Option<TurfGases>> = const_rwlock(None);
 
 // We store planetary atmos by hash of the initial atmos string here for speed.
 static PLANETARY_ATMOS: RwLock<Option<IndexMap<u32, Mixture, FxBuildHasher>>> = const_rwlock(None);
+static ACTIVE_TURFS: RwLock<Option<FxHashSet<TurfID>>> = const_rwlock(None);
+static MIX_TO_TURF: RwLock<Option<FxHashMap<usize, TurfID>>> = const_rwlock(None);
+
+#[derive(Debug)]
+enum PendingTopologyUpdate {
+	Adjacencies(TurfID, Vec<(TurfID, u8)>),
+	RemoveAdjacencies(TurfID),
+}
+
+static PENDING_TOPOLOGY: RwLock<Vec<PendingTopologyUpdate>> = const_rwlock(Vec::new());
 
 //whether there is any tasks running
 static TASKS: RwLock<()> = const_rwlock(());
@@ -380,6 +397,24 @@ pub fn wait_for_tasks() {
 		),
 	}
 }
+
+pub(crate) fn mark_mix_active(mix: usize) {
+	let turf = MIX_TO_TURF
+		.read()
+		.as_ref()
+		.and_then(|mapping| mapping.get(&mix).copied());
+	if let Some(turf) = turf {
+		ACTIVE_TURFS.write().as_mut().unwrap().insert(turf);
+	}
+}
+
+fn mark_turf_active(turf: TurfID) {
+	ACTIVE_TURFS.write().as_mut().unwrap().insert(turf);
+}
+
+fn take_active_turfs() -> FxHashSet<TurfID> {
+	std::mem::take(ACTIVE_TURFS.write().as_mut().unwrap())
+}
 #[byondapi::init]
 pub fn initialize_turfs() {
 	// 10x 255x255 zlevels
@@ -389,12 +424,16 @@ pub fn initialize_turfs() {
 		map: IndexMap::with_capacity_and_hasher(650_250, FxBuildHasher),
 	});
 	*PLANETARY_ATMOS.write() = Some(Default::default());
+	*ACTIVE_TURFS.write() = Some(Default::default());
+	*MIX_TO_TURF.write() = Some(Default::default());
 }
 
 pub fn shutdown_turfs() {
 	wait_for_tasks();
 	TURF_GASES.write().as_mut().unwrap().clear();
 	PLANETARY_ATMOS.write().as_mut().unwrap().clear();
+	ACTIVE_TURFS.write().as_mut().unwrap().clear();
+	MIX_TO_TURF.write().as_mut().unwrap().clear();
 }
 
 fn with_turf_gases_read<T, F>(f: F) -> T
@@ -409,6 +448,31 @@ where
 	F: FnOnce(&mut TurfGases) -> T,
 {
 	f(TURF_GASES.write().as_mut().unwrap())
+}
+
+fn apply_topology_update(arena: &mut TurfGases, update: PendingTopologyUpdate) {
+	match update {
+		PendingTopologyUpdate::Adjacencies(id, adjacent) => {
+			arena.update_adjacencies_from_ids(id, &adjacent)
+		}
+		PendingTopologyUpdate::RemoveAdjacencies(id) => {
+			if let Some(&node) = arena.map.get(&id) {
+				arena.remove_adjacencies(node);
+			}
+		}
+	}
+}
+
+pub(super) fn apply_pending_topology_updates() {
+	let pending = std::mem::take(&mut *PENDING_TOPOLOGY.write());
+	if pending.is_empty() {
+		return;
+	}
+	with_turf_gases_write(|arena| {
+		for update in pending {
+			apply_topology_update(arena, update);
+		}
+	});
 }
 
 fn with_planetary_atmos<T, F>(f: F) -> T
@@ -434,6 +498,21 @@ fn hook_register_turf(src: ByondValue, flag: ByondValue) -> Result<ByondValue> {
 	Ok(ByondValue::null())
 }
 
+/// Monotonic revision of this turf's gas mixture. Consumers can skip expensive
+/// polling while the value is unchanged.
+#[byondapi::bind("/turf/proc/air_revision")]
+#[auxmacros::panic_safe]
+fn hook_air_revision(src: ByondValue) -> Result<ByondValue> {
+	let id = src.get_ref()?;
+	let revision = with_turf_gases_read(|arena| {
+		arena
+			.get_id(id)
+			.and_then(|node| arena.get(node))
+			.map_or(0, |mixture| GasArena::revision(mixture.mix))
+	});
+	Ok((revision as f32).into())
+}
+
 /// Bulk form of hook_register_turf: takes a /list of turfs and registers each
 /// with the given flag in ONE FFI entry. Roundstart setup_allturfs used to make
 /// one call_ext per turf (~327k on a 5-z station) — the call dispatch overhead
@@ -452,6 +531,14 @@ fn register_turf_impl(src: ByondValue, flag: i32) -> Result<()> {
 	let id = src.get_ref()?;
 	if let Ok(blocks) = src.read_number_id(byond_string!("blocks_air")) {
 		if blocks > 0.0 {
+			if let Some(mix) = with_turf_gases_read(|arena| {
+				arena
+					.get_id(id)
+					.and_then(|node| arena.get(node))
+					.map(|mixture| mixture.mix)
+			}) {
+				MIX_TO_TURF.write().as_mut().unwrap().remove(&mix);
+			}
 			with_turf_gases_write(|arena| arena.remove_turf(id));
 			#[cfg(feature = "superconductivity")]
 			superconduct::supercond_update_ref(src)?;
@@ -504,8 +591,19 @@ fn register_turf_impl(src: ByondValue, flag: i32) -> Result<()> {
 				}
 			}
 		}
+		let mix = to_insert.mix;
 		with_turf_gases_write(|arena| arena.insert_turf(to_insert));
+		MIX_TO_TURF.write().as_mut().unwrap().insert(mix, id);
+		mark_turf_active(id);
 	} else {
+		if let Some(mix) = with_turf_gases_read(|arena| {
+			arena
+				.get_id(id)
+				.and_then(|node| arena.get(node))
+				.map(|mixture| mixture.mix)
+		}) {
+			MIX_TO_TURF.write().as_mut().unwrap().remove(&mix);
+		}
 		with_turf_gases_write(|arena| arena.remove_turf(id));
 	}
 
@@ -557,18 +655,29 @@ fn hook_infos_bulk(list: ByondValue) -> Result<ByondValue> {
 
 fn infos_impl(src: ByondValue) -> Result<ByondValue> {
 	let id = src.get_ref()?;
-	with_turf_gases_write(|arena| -> Result<()> {
-		if let Some(adjacent_list) = src
-			.read_var_id(byond_string!("atmos_adjacent_turfs"))
-			.ok()
-			.and_then(|adjs| adjs.is_list().then_some(adjs))
-		{
-			arena.update_adjacencies(id, adjacent_list)?;
-		} else if let Some(&idx) = arena.map.get(&id) {
-			arena.remove_adjacencies(idx);
-		}
-		Ok(())
-	})?;
+	let update = if let Some(adjacent_list) = src
+		.read_var_id(byond_string!("atmos_adjacent_turfs"))
+		.ok()
+		.and_then(|adjs| adjs.is_list().then_some(adjs))
+	{
+		PendingTopologyUpdate::Adjacencies(
+			id,
+			adjacent_list
+				.iter()?
+				.filter_map(|(key, value)| {
+					Some((key.get_ref().ok()?, value.get_number().unwrap_or(0.0) as u8))
+				})
+				.collect(),
+		)
+	} else {
+		PendingTopologyUpdate::RemoveAdjacencies(id)
+	};
+	if let Some(mut arena) = TURF_GASES.try_write() {
+		apply_topology_update(arena.as_mut().unwrap(), update);
+	} else {
+		PENDING_TOPOLOGY.write().push(update);
+	}
+	mark_turf_active(id);
 
 	#[cfg(feature = "superconductivity")]
 	superconduct::supercond_update_adjacencies(id)?;

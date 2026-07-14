@@ -5,7 +5,56 @@ use byondapi::{byond_string, prelude::*};
 use coarsetime::{Duration, Instant};
 use parking_lot::RwLock;
 use std::collections::{BTreeMap, BTreeSet};
+use std::sync::{
+	atomic::{AtomicBool, AtomicU64, Ordering},
+	OnceLock,
+};
 use tinyvec::TinyVec;
+
+#[derive(Clone, Copy)]
+struct TurfProcessRequest {
+	fdm_max_steps: i32,
+	equalize_enabled: bool,
+	planet_share_ratio: f32,
+}
+
+#[derive(Default)]
+struct TurfProcessResult {
+	generation: u64,
+	turf_cost_ms: f32,
+	post_process_cost_ms: f32,
+	total_cost_ms: f32,
+	low_pressure_turfs: usize,
+	high_pressure_turfs: usize,
+	active_turfs: usize,
+	rejected_generations: u64,
+}
+
+static TURF_PROCESS_CHANNEL: OnceLock<(
+	flume::Sender<TurfProcessRequest>,
+	flume::Receiver<TurfProcessRequest>,
+)> = OnceLock::new();
+static TURF_RESULT_CHANNEL: OnceLock<(
+	flume::Sender<TurfProcessResult>,
+	flume::Receiver<TurfProcessResult>,
+)> = OnceLock::new();
+static TURF_PROCESS_RUNNING: AtomicBool = AtomicBool::new(false);
+static TURF_GENERATION: AtomicU64 = AtomicU64::new(0);
+static TURF_REJECTED_GENERATIONS: AtomicU64 = AtomicU64::new(0);
+
+fn turf_process_channel() -> &'static (
+	flume::Sender<TurfProcessRequest>,
+	flume::Receiver<TurfProcessRequest>,
+) {
+	TURF_PROCESS_CHANNEL.get_or_init(|| flume::bounded(1))
+}
+
+fn turf_result_channel() -> &'static (
+	flume::Sender<TurfProcessResult>,
+	flume::Receiver<TurfProcessResult>,
+) {
+	TURF_RESULT_CHANNEL.get_or_init(|| flume::bounded(1))
+}
 
 /// Returns: If a processing thread is running or not.
 /// NOTE: the DM caller (SSair.thread_running) was removed as dead code; this
@@ -13,7 +62,7 @@ use tinyvec::TinyVec;
 #[byondapi::bind("/datum/controller/subsystem/air/proc/thread_running")]
 #[auxmacros::panic_safe]
 fn thread_running_hook() -> Result<ByondValue> {
-	Ok(TASKS.try_write().is_none().into())
+	Ok(TURF_PROCESS_RUNNING.load(Ordering::Acquire).into())
 }
 
 /// Returns: If this cycle is interrupted by overtiming or not. Calls all outstanding callbacks created by other processes, usually ones that can't run on other threads and only the main thread.
@@ -25,8 +74,50 @@ fn finish_process_turfs(time_remaining: ByondValue) -> Result<ByondValue> {
 /// Returns: If this cycle is interrupted by overtiming or not. Starts a processing turfs cycle.
 #[byondapi::bind("/datum/controller/subsystem/air/proc/process_turfs_auxtools")]
 #[auxmacros::panic_safe]
-fn process_turf_hook(src: ByondValue, remaining: ByondValue) -> Result<ByondValue> {
-	let remaining_time = Duration::from_millis(remaining.get_number().unwrap_or(50.0) as u64);
+fn process_turf_hook(mut src: ByondValue, remaining: ByondValue) -> Result<ByondValue> {
+	let _ = remaining;
+	if let Ok(result) = turf_result_channel().1.try_recv() {
+		let previous_turf_cost = src.read_number_id(byond_string!("cost_turfs"))?;
+		src.write_var_id(
+			byond_string!("cost_turfs"),
+			&(0.8 * previous_turf_cost + 0.2 * result.turf_cost_ms).into(),
+		)?;
+		let previous_post_cost = src.read_number_id(byond_string!("cost_post_process"))?;
+		src.write_var_id(
+			byond_string!("cost_post_process"),
+			&(0.8 * previous_post_cost + 0.2 * result.post_process_cost_ms).into(),
+		)?;
+		src.write_var_id(
+			byond_string!("low_pressure_turfs"),
+			&(result.low_pressure_turfs as f32).into(),
+		)?;
+		src.write_var_id(
+			byond_string!("high_pressure_turfs"),
+			&(result.high_pressure_turfs as f32).into(),
+		)?;
+		src.write_var_id(
+			byond_string!("async_generation"),
+			&(result.generation as f32).into(),
+		)?;
+		src.write_var_id(
+			byond_string!("async_compute_cost"),
+			&result.total_cost_ms.into(),
+		)?;
+		src.write_var_id(
+			byond_string!("async_active_turfs"),
+			&(result.active_turfs as f32).into(),
+		)?;
+		src.write_var_id(
+			byond_string!("async_rejected_generations"),
+			&(result.rejected_generations as f32).into(),
+		)?;
+		return Ok(false.into());
+	}
+
+	if TURF_PROCESS_RUNNING.load(Ordering::Acquire) {
+		return Ok(true.into());
+	}
+
 	let fdm_max_steps = src
 		.read_number_id(byond_string!("share_max_steps"))
 		.unwrap_or(1.0) as i32;
@@ -37,104 +128,186 @@ fn process_turf_hook(src: ByondValue, remaining: ByondValue) -> Result<ByondValu
 		.read_number_id(byond_string!("planet_share_ratio"))
 		.unwrap_or(GAS_DIFFUSION_CONSTANT);
 
-	process_turf(
-		remaining_time,
+	let request = TurfProcessRequest {
 		fdm_max_steps,
 		equalize_enabled,
 		planet_share_ratio,
-		src,
-	)?;
-	Ok(ByondValue::null())
+	};
+	TURF_PROCESS_RUNNING.store(true, Ordering::Release);
+	if turf_process_channel().0.try_send(request).is_err() {
+		TURF_PROCESS_RUNNING.store(false, Ordering::Release);
+	}
+	Ok(true.into())
+}
+
+#[byondapi::init]
+fn start_turf_process_worker() {
+	rayon::spawn(|| {
+		let mut snapshot = Vec::new();
+		let mut base_revisions = Vec::new();
+		loop {
+			let request = match turf_process_channel().1.recv() {
+				Ok(request) => request,
+				Err(_) => return,
+			};
+			let _task_lock = TASKS.read();
+			apply_pending_topology_updates();
+			let result = process_turf(request, &mut snapshot, &mut base_revisions);
+			apply_pending_topology_updates();
+			if turf_result_channel().0.send(result).is_err() {
+				return;
+			}
+			TURF_PROCESS_RUNNING.store(false, Ordering::Release);
+		}
+	});
 }
 
 #[cfg_attr(feature = "tracy", tracing::instrument(skip_all))]
 fn process_turf(
-	remaining: Duration,
-	fdm_max_steps: i32,
-	equalize_enabled: bool,
-	planet_share_ratio: f32,
-	mut ssair: ByondValue,
-) -> Result<()> {
+	request: TurfProcessRequest,
+	snapshot: &mut Vec<RwLock<Mixture>>,
+	base_revisions: &mut Vec<u64>,
+) -> TurfProcessResult {
+	let total_start = Instant::now();
+	let active_nodes = with_turf_gases_read(|arena| {
+		GasArena::with_all_mixtures(|all_mixtures| {
+			let mut frontier = take_active_turfs()
+				.into_iter()
+				.filter_map(|turf_id| arena.get_id(turf_id))
+				.collect::<std::collections::VecDeque<_>>();
+			let mut nodes = rustc_hash::FxHashSet::default();
+			while let Some(node) = frontier.pop_front() {
+				if !nodes.insert(node) {
+					continue;
+				}
+				let Some(mixture) = arena.get(node) else {
+					continue;
+				};
+				let immutable = all_mixtures
+					.get(mixture.mix)
+					.is_none_or(|gas| gas.read().is_immutable());
+				if !immutable {
+					frontier.extend(arena.adjacent_node_ids(node));
+				}
+			}
+			nodes
+		})
+	});
+	if active_nodes.is_empty() {
+		return TurfProcessResult {
+			generation: TURF_GENERATION.fetch_add(1, Ordering::AcqRel) + 1,
+			total_cost_ms: total_start.elapsed().as_millis() as f32,
+			rejected_generations: TURF_REJECTED_GENERATIONS.load(Ordering::Acquire),
+			..Default::default()
+		};
+	}
+	let snapshot_mix_ids = with_turf_gases_read(|arena| {
+		let mut ids = rustc_hash::FxHashSet::default();
+		for &node in &active_nodes {
+			if let Some(mixture) = arena.get(node) {
+				ids.insert(mixture.mix);
+			}
+			ids.extend(
+				arena
+					.adjacent_node_ids(node)
+					.filter_map(|adjacent| arena.get(adjacent).map(|mixture| mixture.mix)),
+			);
+		}
+		ids.into_iter().collect::<Vec<_>>()
+	});
+	GasArena::snapshot_mixtures_into(&snapshot_mix_ids, snapshot, base_revisions);
 	//this will block until process_turfs is called
-	let (low_pressure_turfs, _high_pressure_turfs) = {
+	let (low_pressure_turfs, high_pressure_turfs, pressure_events, turf_cost_ms) = {
 		let start_time = Instant::now();
-		let (low_pressure_turfs, high_pressure_turfs) =
-			fdm((&start_time, remaining), fdm_max_steps, equalize_enabled);
-		let bench = start_time.elapsed().as_millis();
-		let (lpt, hpt) = (low_pressure_turfs.len(), high_pressure_turfs.len());
-		let prev_cost = ssair.read_number_id(byond_string!("cost_turfs"))?;
-		ssair.write_var_id(
-			byond_string!("cost_turfs"),
-			&(0.8 * prev_cost + 0.2 * (bench as f32)).into(),
-		)?;
-		ssair.write_var_id(byond_string!("low_pressure_turfs"), &(lpt as f32).into())?;
-		ssair.write_var_id(byond_string!("high_pressure_turfs"), &(hpt as f32).into())?;
-		(low_pressure_turfs, high_pressure_turfs)
+		let (low_pressure_turfs, high_pressure_turfs, pressure_events) = fdm(
+			(&start_time, Duration::from_secs(60)),
+			request.fdm_max_steps,
+			request.equalize_enabled,
+			snapshot,
+			&active_nodes,
+		);
+		let bench = start_time.elapsed().as_millis() as f32;
+		(
+			low_pressure_turfs,
+			high_pressure_turfs,
+			pressure_events,
+			bench,
+		)
 	};
-	{
+	planet_process(request.planet_share_ratio, snapshot, &active_nodes);
+	let published =
+		GasArena::publish_snapshot(&snapshot_mix_ids, base_revisions, snapshot).is_some();
+	if !published {
+		TURF_REJECTED_GENERATIONS.fetch_add(1, Ordering::AcqRel);
+	}
+	let post_process_cost_ms = {
 		let start_time = Instant::now();
-		post_process();
-		let bench = start_time.elapsed().as_millis();
-		let prev_cost = ssair.read_number_id(byond_string!("cost_post_process"))?;
-		ssair.write_var_id(
-			byond_string!("cost_post_process"),
-			&(0.8 * prev_cost + 0.2 * (bench as f32)).into(),
-		)?;
+		if published {
+			post_process(&active_nodes);
+		}
+		start_time.elapsed().as_millis() as f32
+	};
+	if published {
+		dispatch_pressure_events(pressure_events);
+		super::groups::send_to_groups(low_pressure_turfs.clone());
 	}
-	{
-		planet_process(planet_share_ratio);
-	}
-	{
-		super::groups::send_to_groups(low_pressure_turfs);
-	}
-	if equalize_enabled {
+	if published && request.equalize_enabled {
 		#[cfg(feature = "fastmos")]
 		{
-			super::katmos::send_to_equalize(_high_pressure_turfs);
+			super::katmos::send_to_equalize(high_pressure_turfs.clone());
 		}
 	}
-	Ok(())
+	TurfProcessResult {
+		generation: TURF_GENERATION.fetch_add(1, Ordering::AcqRel) + 1,
+		turf_cost_ms,
+		post_process_cost_ms,
+		total_cost_ms: total_start.elapsed().as_millis() as f32,
+		low_pressure_turfs: low_pressure_turfs.len(),
+		high_pressure_turfs: high_pressure_turfs.len(),
+		active_turfs: active_nodes.len(),
+		rejected_generations: TURF_REJECTED_GENERATIONS.load(Ordering::Acquire),
+	}
 }
 
 #[cfg_attr(not(target_feature = "avx2"), auxmacros::generate_simd_functions)]
 #[cfg_attr(feature = "tracy", tracing::instrument(skip_all))]
-fn planet_process(planet_share_ratio: f32) {
+fn planet_process(
+	planet_share_ratio: f32,
+	all_mixtures: &[RwLock<Mixture>],
+	active_nodes: &rustc_hash::FxHashSet<NodeIndex>,
+) {
 	with_turf_gases_read(|arena| {
-		GasArena::with_all_mixtures(|all_mixtures| {
-			with_planetary_atmos(|map| {
-				arena
-					.map
-					.par_values()
-					.filter_map(|&node_idx| {
-						let mix = arena.get(node_idx)?;
-						Some((mix, mix.planetary_atmos.and_then(|id| map.get(&id))?))
-					})
-					.for_each(|(turf_mix, planet_atmos)| {
-						if let Some(gas_read) = all_mixtures
-							.get(turf_mix.mix)
-							.and_then(|lock| lock.try_upgradable_read())
+		with_planetary_atmos(|map| {
+			active_nodes
+				.par_iter()
+				.filter_map(|&node_idx| {
+					let mix = arena.get(node_idx)?;
+					Some((mix, mix.planetary_atmos.and_then(|id| map.get(&id))?))
+				})
+				.for_each(|(turf_mix, planet_atmos)| {
+					if let Some(gas_read) = all_mixtures
+						.get(turf_mix.mix)
+						.and_then(|lock| lock.try_upgradable_read())
+					{
+						let comparison = gas_read.compare(planet_atmos);
+						let has_temp_difference = gas_read.temperature_compare(planet_atmos);
+						if let Some(mut gas) = (has_temp_difference || (comparison > GAS_MIN_MOLES))
+							.then(|| {
+								parking_lot::lock_api::RwLockUpgradableReadGuard::try_upgrade(
+									gas_read,
+								)
+								.ok()
+							})
+							.flatten()
 						{
-							let comparison = gas_read.compare(planet_atmos);
-							let has_temp_difference = gas_read.temperature_compare(planet_atmos);
-							if let Some(mut gas) = (has_temp_difference
-								|| (comparison > GAS_MIN_MOLES))
-								.then(|| {
-									parking_lot::lock_api::RwLockUpgradableReadGuard::try_upgrade(
-										gas_read,
-									)
-									.ok()
-								})
-								.flatten()
-							{
-								if comparison > 0.1 || has_temp_difference {
-									gas.share_ratio(planet_atmos, planet_share_ratio);
-								} else {
-									gas.copy_from_mutable(planet_atmos);
-								}
+							if comparison > 0.1 || has_temp_difference {
+								gas.share_ratio(planet_atmos, planet_share_ratio);
+							} else {
+								gas.copy_from_mutable(planet_atmos);
 							}
 						}
-					})
-			})
+					}
+				})
 		})
 	});
 }
@@ -232,7 +405,13 @@ fn fdm(
 	(start_time, remaining_time): (&Instant, Duration),
 	fdm_max_steps: i32,
 	equalize_enabled: bool,
-) -> (BTreeSet<TurfID>, BTreeSet<TurfID>) {
+	all_mixtures: &[RwLock<Mixture>],
+	active_nodes: &rustc_hash::FxHashSet<NodeIndex>,
+) -> (
+	BTreeSet<TurfID>,
+	BTreeSet<TurfID>,
+	Vec<(TurfID, TinyVec<[(TurfID, f32); 6]>)>,
+) {
 	/*
 		This is the replacement system for LINDA. LINDA requires a lot of bookkeeping,
 		which, when coefficient-wise operations are this fast, is all just unnecessary overhead.
@@ -241,26 +420,19 @@ fn fdm(
 	*/
 	let mut low_pressure_turfs: BTreeSet<TurfID> = Default::default();
 	let mut high_pressure_turfs: BTreeSet<TurfID> = Default::default();
+	let mut pressure_events = Vec::new();
 	let mut cur_count = 1;
 	with_turf_gases_read(|arena| {
 		loop {
 			if cur_count > fdm_max_steps || start_time.elapsed() >= remaining_time {
 				break;
 			}
-			GasArena::with_all_mixtures(|all_mixtures| {
-				let turfs_to_save = arena
-					.map
-					/*
-						This directly yanks the internal node vec
-						of the graph as a slice to parallelize the process.
-						The speedup gained from this is actually linear
-						with the amount of cores the CPU has, which, to be frank,
-						is way better than I was expecting, even though this operation
-						is technically embarassingly parallel. It'll probably reach
-						some maximum due to the global turf mixture lock access,
-						but it's already blazingly fast on my i7, so it should be fine.
-					*/
-					.par_values()
+			if active_nodes.is_empty() {
+				break;
+			}
+			{
+				let turfs_to_save = active_nodes
+					.par_iter()
 					.map(|&idx| (idx, arena.get(idx).unwrap()))
 					.filter(|(index, mixture)| should_process(*index, mixture, all_mixtures, arena))
 					.filter_map(|(index, _)| process_cell(index, all_mixtures, arena))
@@ -321,46 +493,51 @@ fn fdm(
 				low_pressure_turfs.par_extend(low_pressure.par_iter().map(|(i, _, _, _)| i));
 				//tossing things around is already handled by katmos, so we don't need to do it here.
 				if !equalize_enabled {
-					high_pressure
-						.into_par_iter()
-						.filter_map(|(_, pressures, _, node_id)| {
-							Some((arena.get(node_id)?.id, pressures))
-						})
-						.for_each(|(id, diffs)| {
-							let sender = byond_callback_sender();
-							drop(sender.try_send(Box::new(move || {
-								let turf = ByondValue::new_ref(ValueType::Turf, id);
-								for (id, diff) in diffs.iter().copied() {
-									if id != 0 {
-										let enemy_tile = ByondValue::new_ref(ValueType::Turf, id);
-										if diff > 5.0 {
-											turf.call_id(
-												byond_string!("consider_pressure_difference"),
-												&[enemy_tile, diff.into()],
-											)
-											.wrap_err("Processing consider pressure differences")?;
-										} else if diff < -5.0 {
-											enemy_tile
-												.call_id(
-													byond_string!("consider_pressure_difference"),
-													&[turf, (-diff).into()],
-												)
-												.wrap_err(
-													"Processing consider pressure differences",
-												)?;
-										}
-									}
-								}
-								Ok(())
-							})));
-						});
+					pressure_events.extend(
+						high_pressure
+							.into_par_iter()
+							.filter_map(|(_, pressures, _, node_id)| {
+								Some((arena.get(node_id)?.id, pressures))
+							})
+							.collect::<Vec<_>>(),
+					);
 				}
-			});
+			}
 
 			cur_count += 1;
 		}
 	});
-	(low_pressure_turfs, high_pressure_turfs)
+	(low_pressure_turfs, high_pressure_turfs, pressure_events)
+}
+
+fn dispatch_pressure_events(events: Vec<(TurfID, TinyVec<[(TurfID, f32); 6]>)>) {
+	events.into_par_iter().for_each(|(id, diffs)| {
+		let sender = byond_callback_sender();
+		drop(sender.try_send(Box::new(move || {
+			let turf = ByondValue::new_ref(ValueType::Turf, id);
+			for (other_id, diff) in diffs.iter().copied() {
+				if other_id == 0 {
+					continue;
+				}
+				let other_turf = ByondValue::new_ref(ValueType::Turf, other_id);
+				if diff > 5.0 {
+					turf.call_id(
+						byond_string!("consider_pressure_difference"),
+						&[other_turf, diff.into()],
+					)
+					.wrap_err("Processing consider pressure differences")?;
+				} else if diff < -5.0 {
+					other_turf
+						.call_id(
+							byond_string!("consider_pressure_difference"),
+							&[turf, (-diff).into()],
+						)
+						.wrap_err("Processing consider pressure differences")?;
+				}
+			}
+			Ok(())
+		})));
+	});
 }
 
 // Checks if the gas can react or can update visuals, returns None if not.
@@ -388,14 +565,13 @@ fn post_process_cell<'a>(
 // update visuals, if it should react, sends a callback if it should.
 #[cfg_attr(not(target_feature = "avx2"), auxmacros::generate_simd_functions)]
 #[cfg_attr(feature = "tracy", tracing::instrument(skip_all))]
-fn post_process() {
+fn post_process(active_nodes: &rustc_hash::FxHashSet<NodeIndex>) {
 	let vis = crate::gas::visibility_copies();
 	with_turf_gases_read(|arena| {
 		let processables = crate::gas::types::with_reactions(|reactions| {
 			GasArena::with_all_mixtures(|all_mixtures| {
-				arena
-					.map
-					.par_values()
+				active_nodes
+					.par_iter()
 					.filter_map(|&node_index| {
 						let mix = arena.get(node_index).unwrap();
 						mix.enabled().then_some(mix)

@@ -34,6 +34,14 @@ SUBSYSTEM_DEF(air)
 	// Rust write_var_id(byond_string!(...)) panics with NonExistentString.
 	var/cost_post_process = 0
 	var/cost_equalize = 0
+	/// Last atmosphere generation published by the detached Rust turf worker.
+	var/async_generation = 0
+	/// End-to-end worker time for the most recently published generation, in milliseconds.
+	var/async_compute_cost = 0
+	/// Turfs in the connected components considered by the last generation.
+	var/async_active_turfs = 0
+	/// Transactions discarded because synchronous mutations changed their inputs.
+	var/async_rejected_generations = 0
 
 	// === auxmos turf-processing tunables (read by the Rust binds) ===
 	// Every var below is read via read_number_id(byond_string!(...)) in the
@@ -121,6 +129,7 @@ SUBSYSTEM_DEF(air)
 	msg += "PN:[round(cost_pipenets,1)]|"
 	msg += "RB:[round(cost_rebuilds,1)]|"
 	msg += "AJ:[round(cost_adjacent,1)]|"
+	msg += "ASYNC:[round(async_compute_cost,1)]|"
 	msg += "} "
 	// Active-turf/excited-group counts now live in the Rust arena; the DM lists
 	// are gone. Surface the auxmos-reported per-tick turf counts instead.
@@ -134,6 +143,9 @@ SUBSYSTEM_DEF(air)
 	msg += "RB:[rebuild_queue.len]|"
 	msg += "EP:[expansion_queue.len]|"
 	msg += "AJ:[adjacent_rebuild.len]"
+	msg += "|GEN:[async_generation]"
+	msg += "|ACT:[async_active_turfs]"
+	msg += "|REJ:[async_rejected_generations]"
 	msg += "}"
 	return ..()
 
@@ -231,13 +243,10 @@ SUBSYSTEM_DEF(air)
 	// SSAIR_ATMOSMACHINERY step removed: see vars block comment.
 
 	// === auxmos turf processing ===
-	// The Rust binds run their own internal work loops bounded by a millisecond
-	// budget (SSAIR_REMAINING_MS) and return TRUE if they were interrupted
-	// ("overtimed"). On interruption we pause and resume this same currentpart
-	// next fire(). process_turfs also SPAWNS callbacks (react / set_visuals /
-	// consider_pressure_difference) onto a queue that FINALIZE_TURFS drains on the
-	// main thread. cost_turfs / cost_post_process / cost_groups / cost_equalize are
-	// written back into SSair by the binds themselves.
+	// Turf diffusion runs on a detached Rust worker against a private snapshot.
+	// The hook returns TRUE while that generation is in flight, keeping SSair on
+	// this step until it atomically publishes or rejects the result. Reactions,
+	// visuals, and pressure callbacks remain queued for the main thread.
 	// NOTE on cost bookkeeping: the Rust binds maintain their own smoothed cost
 	// mirrors (cost_turfs, cost_post_process, cost_groups, cost_equalize) by
 	// read-modify-writing those SSair vars themselves. So we do NOT reassign them

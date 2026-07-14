@@ -36,12 +36,20 @@
 	// 32 for carbon dioxide concentration
 
 	var/datum/radio_frequency/radio_connection
+	var/last_air_revision = -1
+	var/next_sensor_heartbeat = 0
 
 /obj/machinery/air_sensor/update_icon()
 	icon_state = "gsensor[on]"
 
 /obj/machinery/air_sensor/process()
 	if(on)
+		var/turf/location = get_turf(src)
+		var/current_air_revision = location?.air_revision()
+		if(current_air_revision == last_air_revision && world.time < next_sensor_heartbeat)
+			return
+		last_air_revision = current_air_revision
+		next_sensor_heartbeat = world.time + 10 SECONDS
 		var/datum/signal/signal = new
 		signal.transmission_method = TRANSMISSION_RADIO //radio signal
 		signal.data["tag"] = id_tag

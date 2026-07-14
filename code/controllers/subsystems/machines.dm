@@ -26,6 +26,8 @@ SUBSYSTEM_DEF(machines)
 
 	var/list/all_machines = list()
 	var/list/hibernating_vents = list()
+	/// Next bounded health-check of vents that have no current pressure work.
+	var/next_vent_health_check = 0
 
 	var/list/processing_machines = list()
 	var/list/powernets = list()
@@ -114,7 +116,7 @@ SUBSYSTEM_DEF(machines)
 	msg += "PN:[length(SSmachines.powernets)][defering_powernets ? " - !!DEFER!!" : ""]|"
 	msg += "PO:[length(SSmachines.powerobjs)]|"
 	msg += "HV:[length(SSmachines.hibernating_vents)]|"
-	msg += "MC/MS:[round((cost ? length(SSmachines.processing_machines)/cost_machinery : 0),0.1)]"
+	msg += "MC/MS:[round((cost_machinery ? length(SSmachines.processing_machines)/cost_machinery : 0),0.1)]"
 	return ..()
 
 /datum/controller/subsystem/machines/proc/process_machinery(resumed = 0)
@@ -187,14 +189,10 @@ SUBSYSTEM_DEF(machines)
 	powerobjs = SSmachines.powerobjs
 
 /datum/controller/subsystem/machines/proc/update_hibernating_vents()
-	// pick at random
-	var/i = rand(20,40)
-	while(i-- > 0)
-		if(!length(hibernating_vents))
-			break
-		wake_vent(hibernating_vents[pick(hibernating_vents)])
-	// do first 10 entries
-	i = 10
+	if(world.time < next_vent_health_check)
+		return
+	next_vent_health_check = world.time + 10 SECONDS
+	var/i = 30
 	for(var/key in hibernating_vents)
 		if(i <= 0 || !length(hibernating_vents))
 			break

@@ -5,12 +5,10 @@ with /tg/-lineage LINDA atmospherics backed by an in-tree Rust port of
 [auxmos](https://github.com/Putnam3145/auxmos). It is the authoritative
 document for sequencing, decisions, and compat-layer scope.
 
-**Status**: Phases 0–2 ✅. The fork is **LINDA-only**: ZAS (`code/ZAS/`) and
-XGM (`code/modules/xgm/`) are deleted, the tree compiles and boots, and the
-atmos unit tests pass. Gas math currently runs in **pure DM** (the
-`/datum/gas_mixture` bodies); the optional Rust-accelerated **auxmos backend
-is not yet wired** (`auxmos_bindings.dm` uncompiled, `auxtools_atmos_init`
-uncalled) — that is the remaining perf work (Phases 3–4).
+**Status**: LINDA and the Rust auxmos backend are live. ZAS (`code/ZAS/`) and
+XGM (`code/modules/xgm/`) are deleted. Gas math uses the Rust arena, and turf
+diffusion runs on a detached worker using revision-validated private generations.
+DM remains authoritative for reactions, hotspots, pipenets, and callbacks.
 
 CHOMP/ZAS-era callers are served by the compat layer in
 `code/ATMOSPHERICS/xgm_compat.dm` (XGM/ZAS gas + airblock API → LINDA) and

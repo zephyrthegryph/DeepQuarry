@@ -2941,6 +2941,18 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	TEST_ASSERT(abs(mix.get_moles(/datum/gas/oxygen) - 20) < 0.001, \
 		"negative adjust wrong: 50 - 30 should be 20, got [mix.get_moles(/datum/gas/oxygen)]")
 
+/datum/unit_test/dq_gas_revision_tracks_mutations
+
+/datum/unit_test/dq_gas_revision_tracks_mutations/Run()
+	var/datum/gas_mixture/mix = new(CELL_VOLUME)
+	var/initial_revision = mix.revision()
+	mix.return_pressure()
+	TEST_ASSERT_EQUAL(mix.revision(), initial_revision, \
+		"read-only gas access advanced its mutation revision")
+	mix.adjust_moles(/datum/gas/oxygen, 1)
+	TEST_ASSERT(mix.revision() > initial_revision, \
+		"gas mutation did not advance its revision")
+
 
 // =====================================================================
 // Real SSair scheduling (no fire-disable)
@@ -3444,6 +3456,32 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 		"air alarm did not detect a dangerous (plasma-laden) atmosphere: danger_level stayed [A.danger_level]")
 
 	turf_air.set_moles(/datum/gas/plasma, 0)
+	qdel(A)
+
+/datum/unit_test/dq_air_alarm_skips_unchanged_air
+
+/datum/unit_test/dq_air_alarm_skips_unchanged_air/Run()
+	var/turf/simulated/floor/T = null
+	for(var/turf/simulated/floor/candidate in world)
+		if(candidate.air && !candidate.blocks_air)
+			T = candidate
+			break
+	TEST_ASSERT_NOTNULL(T, "no floor for event-driven air alarm test")
+	var/obj/machinery/alarm/A = new(T)
+	A.update_area()
+	A.set_initial_TLV()
+	A.last_air_revision = T.air_revision()
+	A.next_air_health_scan = world.time + 1 MINUTE
+	A.danger_level = 1
+	A.process()
+	TEST_ASSERT_EQUAL(A.danger_level, 1, \
+		"air alarm rescanned an unchanged gas revision")
+	A.danger_level = 0
+	T.air.adjust_moles(/datum/gas/plasma, 50)
+	A.process()
+	TEST_ASSERT(A.danger_level > 0, \
+		"air alarm did not rescan after its gas revision changed")
+	T.air.set_moles(/datum/gas/plasma, 0)
 	qdel(A)
 
 

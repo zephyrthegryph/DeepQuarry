@@ -108,6 +108,10 @@
 
 	var/datum/looping_sound/alarm/decompression_alarm/soundloop // Looping Alarms
 	var/atmoswarn = FALSE // Looping Alarms
+	/// Last Rust gas revision inspected by this sensor.
+	var/last_air_revision = -1
+	/// Periodic fallback scan time for topology or configuration changes that do not mutate gas.
+	var/next_air_health_scan = 0
 
 /obj/machinery/alarm/nobreach
 	breach_detection = 0
@@ -229,6 +233,14 @@
 		MA = alarm_area.main_air_alarm?.resolve() // try again
 	if(!MA || (stat & (NOPOWER|BROKEN)) || shorted || MA.shorted)
 		return
+	var/turf/location = get_turf(src)
+	if(!location)
+		return
+	var/current_air_revision = location.air_revision()
+	if(!regulating_temperature && current_air_revision == last_air_revision && world.time < next_air_health_scan)
+		return
+	last_air_revision = current_air_revision
+	next_air_health_scan = world.time + 30 SECONDS
 	scan_atmo()
 
 /obj/machinery/alarm/proc/handle_heating_cooling(datum/gas_mixture/environment)

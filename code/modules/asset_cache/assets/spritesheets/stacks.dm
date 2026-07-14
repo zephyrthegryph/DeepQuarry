@@ -3,6 +3,8 @@
 
 /datum/asset/spritesheet_batched/sheetmaterials/create_spritesheets()
 	for(var/obj/item/stack/material/M as anything in subtypesof(/obj/item/stack/material))
+		if(M::exotic_no_autolathe_reprint)
+			continue
 		if(M::default_type in entries)
 			continue
 

@@ -431,6 +431,7 @@ fn process_heat_start() {
 									GasArena::with_all_mixtures(|all_mixtures| {
 										if let Some(entry) = all_mixtures.get(tmix.mix) {
 											if let Some(mut gas) = entry.try_write() {
+												GasArena::bump_revision(tmix.mix);
 												*temp_write = gas.temperature_share_non_gas(
 													/*
 														This value should be lower than the
@@ -443,6 +444,7 @@ fn process_heat_start() {
 													*temp_write,
 													info.heat_capacity,
 												);
+												GasArena::bump_revision(tmix.mix);
 											}
 										}
 									})
