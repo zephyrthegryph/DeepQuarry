@@ -150,12 +150,12 @@ impl TurfMixture {
 				.get(self.mix)
 				.unwrap_or_else(|| panic!("Gas mixture not found for turf: {}", self.mix))
 				.write();
-			let before = mixture.return_pressure();
+			let before = GasArena::change_signature(&mixture);
 			mixture.clear();
-			(before, mixture.return_pressure())
+			(before, GasArena::change_signature(&mixture))
 		});
 		GasArena::bump_revision(self.mix);
-		GasArena::mark_pressure_dirty_if_changed(self.mix, before, after);
+		GasArena::mark_dirty_if_changed(self.mix, before, after);
 	}
 	/// Prevents diffusion and other gas operations from changing this turf's mixture.
 	pub fn mark_immutable(&self) {
@@ -177,23 +177,24 @@ impl TurfMixture {
 				.get(self.mix)
 				.unwrap_or_else(|| panic!("Gas mixture not found for turf: {}", self.mix))
 				.write();
-			let before = mixture.return_pressure();
+			let before = GasArena::change_signature(&mixture);
 			mixture.copy_from_mutable(sample);
-			(before, mixture.return_pressure())
+			(before, GasArena::change_signature(&mixture))
 		});
 		GasArena::bump_revision(self.mix);
-		GasArena::mark_pressure_dirty_if_changed(self.mix, before, after);
+		GasArena::mark_dirty_if_changed(self.mix, before, after);
 	}
 	/// Clears a number of moles from the turf's air
 	/// If the number of moles is greater than the turf's total moles, just clears the turf
 	pub fn clear_moles(&self, amt: f32) {
 		GasArena::bump_revision(self.mix);
 		let (before, after) = GasArena::with_all_mixtures(|all_mixtures| {
-			let before = all_mixtures
-				.get(self.mix)
-				.unwrap_or_else(|| panic!("Gas mixture not found for turf: {}", self.mix))
-				.read()
-				.return_pressure();
+			let before = GasArena::change_signature(
+				&all_mixtures
+					.get(self.mix)
+					.unwrap_or_else(|| panic!("Gas mixture not found for turf: {}", self.mix))
+					.read(),
+			);
 			let moles = all_mixtures
 				.get(self.mix)
 				.unwrap_or_else(|| panic!("Gas mixture not found for turf: {}", self.mix))
@@ -214,15 +215,16 @@ impl TurfMixture {
 						.remove(amt),
 				);
 			}
-			let after = all_mixtures
-				.get(self.mix)
-				.unwrap_or_else(|| panic!("Gas mixture not found for turf: {}", self.mix))
-				.read()
-				.return_pressure();
+			let after = GasArena::change_signature(
+				&all_mixtures
+					.get(self.mix)
+					.unwrap_or_else(|| panic!("Gas mixture not found for turf: {}", self.mix))
+					.read(),
+			);
 			(before, after)
 		});
 		GasArena::bump_revision(self.mix);
-		GasArena::mark_pressure_dirty_if_changed(self.mix, before, after);
+		GasArena::mark_dirty_if_changed(self.mix, before, after);
 	}
 	/// Gets a copy of the turf's airs, see [`super::gas::Mixture`]
 	pub fn get_gas_copy(&self) -> Mixture {

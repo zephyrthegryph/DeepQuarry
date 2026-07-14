@@ -26,7 +26,8 @@ SUBSYSTEM_DEF(machines)
 
 	var/list/all_machines = list()
 	var/list/hibernating_vents = list()
-	/// Rust gas arena ID -> assoc list of weakrefs for sleeping pressure devices.
+	var/list/sleeping_gas_devices = list()
+	/// Rust gas arena ID -> assoc list of weakrefs for sleeping gas-dependent devices.
 	var/list/gas_mixture_subscribers = list()
 
 	var/list/processing_machines = list()
@@ -190,34 +191,52 @@ SUBSYSTEM_DEF(machines)
 
 /datum/controller/subsystem/machines/proc/wake_dirty_gas_subscribers()
 	var/list/dirty_mixtures = drain_dirty_gas_mixtures()
-	for(var/mixture_id in dirty_mixtures)
-		var/list/subscribers = gas_mixture_subscribers[mixture_id]
+	for(var/mixture_index = 1; mixture_index <= length(dirty_mixtures); mixture_index += 2)
+		var/mixture_id = dirty_mixtures[mixture_index]
+		var/change_mask = dirty_mixtures[mixture_index + 1]
+		var/list/subscribers = gas_mixture_subscribers["[mixture_id]"]
 		if(!length(subscribers))
 			continue
 		for(var/key in subscribers.Copy())
 			var/datum/weakref/WR = subscribers[key]
-			var/obj/machinery/atmospherics/unary/V = WR?.resolve()
-			if(!V || V.gas_dependency_changed(mixture_id))
-				wake_vent(WR)
+			var/atom/subscriber = WR?.resolve()
+			if(!subscriber)
+				wake_gas_subscriber(WR)
+			else if(istype(subscriber, /obj/machinery/atmospherics/unary))
+				var/obj/machinery/atmospherics/unary/V = subscriber
+				if(V.gas_dependency_changed(mixture_id, change_mask))
+					wake_gas_subscriber(WR)
+			else if(istype(subscriber, /obj/machinery/alarm))
+				var/obj/machinery/alarm/A = subscriber
+				if(A.gas_dependency_changed(mixture_id, change_mask))
+					wake_gas_subscriber(WR)
+			else if(istype(subscriber, /obj/machinery/air_sensor))
+				var/obj/machinery/air_sensor/S = subscriber
+				if(S.gas_dependency_changed(mixture_id, change_mask))
+					wake_gas_subscriber(WR)
+			else
+				wake_gas_subscriber(WR)
 
-/datum/controller/subsystem/machines/proc/subscribe_sleeping_vent(mixture_id, datum/weakref/WR)
+/datum/controller/subsystem/machines/proc/subscribe_gas_dependency(mixture_id, datum/weakref/WR)
 	if(isnull(mixture_id) || !WR)
 		return
-	var/list/subscribers = gas_mixture_subscribers[mixture_id]
+	var/key = "[mixture_id]"
+	var/list/subscribers = gas_mixture_subscribers[key]
 	if(!subscribers)
 		subscribers = list()
-		gas_mixture_subscribers[mixture_id] = subscribers
+		gas_mixture_subscribers[key] = subscribers
 	subscribers[WR.reference] = WR
 
-/datum/controller/subsystem/machines/proc/unsubscribe_sleeping_vent(mixture_id, datum/weakref/WR)
+/datum/controller/subsystem/machines/proc/unsubscribe_gas_dependency(mixture_id, datum/weakref/WR)
 	if(isnull(mixture_id) || !WR)
 		return
-	var/list/subscribers = gas_mixture_subscribers[mixture_id]
+	var/key = "[mixture_id]"
+	var/list/subscribers = gas_mixture_subscribers[key]
 	if(!subscribers)
 		return
 	subscribers.Remove(WR.reference)
 	if(!length(subscribers))
-		gas_mixture_subscribers.Remove(mixture_id)
+		gas_mixture_subscribers.Remove(key)
 
 /datum/controller/subsystem/machines/proc/hibernate_vent(obj/machinery/atmospherics/unary/V)
 	if(!V)
@@ -226,19 +245,73 @@ SUBSYSTEM_DEF(machines)
 	if(!WR)
 		return
 	hibernating_vents[WR.reference] = WR
+	sleeping_gas_devices[WR.reference] = WR
 	V.register_gas_dependencies(WR)
 	STOP_MACHINE_PROCESSING(V)
 
+/datum/controller/subsystem/machines/proc/hibernate_air_alarm(obj/machinery/alarm/A)
+	if(!A)
+		return
+	var/datum/weakref/WR = WEAKREF(A)
+	sleeping_gas_devices[WR.reference] = WR
+	A.register_gas_dependencies(WR)
+	STOP_MACHINE_PROCESSING(A)
+
+/datum/controller/subsystem/machines/proc/hibernate_air_sensor(obj/machinery/air_sensor/S)
+	if(!S)
+		return
+	var/datum/weakref/WR = WEAKREF(S)
+	sleeping_gas_devices[WR.reference] = WR
+	S.register_gas_dependencies(WR)
+	STOP_MACHINE_PROCESSING(S)
+
 /datum/controller/subsystem/machines/proc/wake_vent(datum/weakref/WR)
+	wake_gas_subscriber(WR)
+
+/datum/controller/subsystem/machines/proc/wake_gas_subscriber(datum/weakref/WR)
 	if(!WR)
 		return
-	var/obj/machinery/atmospherics/unary/V = WR.resolve()
-	if(V)
+	var/atom/subscriber = WR.resolve()
+	if(istype(subscriber, /obj/machinery/atmospherics/unary))
+		var/obj/machinery/atmospherics/unary/V = subscriber
 		V.unregister_gas_dependencies(WR)
 		START_MACHINE_PROCESSING(V)
+	else if(istype(subscriber, /obj/machinery/alarm))
+		var/obj/machinery/alarm/A = subscriber
+		A.unregister_gas_dependencies(WR)
+		START_MACHINE_PROCESSING(A)
+	else if(istype(subscriber, /obj/machinery/air_sensor))
+		var/obj/machinery/air_sensor/S = subscriber
+		S.unregister_gas_dependencies(WR)
+		START_MACHINE_PROCESSING(S)
 	if(WR.reference)
+		sleeping_gas_devices.Remove(WR.reference)
 		hibernating_vents[WR.reference] = null
 		hibernating_vents.Remove(WR.reference)
+
+/// Diagnostic-only invariant audit. This never wakes devices or participates in gameplay.
+/datum/controller/subsystem/machines/proc/audit_sleeping_gas_subscribers(fail_hard = FALSE)
+	var/list/problems = list()
+	for(var/key in sleeping_gas_devices)
+		var/datum/weakref/WR = sleeping_gas_devices[key]
+		var/atom/device = WR?.resolve()
+		if(!device)
+			problems += "dead subscriber [key]"
+			continue
+		if(istype(device, /obj/machinery/atmospherics/unary/vent_pump))
+			var/obj/machinery/atmospherics/unary/vent_pump/V = device
+			if(V.can_pump() && V.get_pressure_delta(V.return_air()) > 0.5)
+				problems += "[V] sleeps with actionable pressure delta"
+		else if(istype(device, /obj/machinery/alarm))
+			var/obj/machinery/alarm/A = device
+			if(A.regulating_temperature)
+				problems += "[A] sleeps while regulating temperature"
+	if(length(problems))
+		var/message = "Gas dependency audit failed: [problems.Join("; ")]"
+		if(fail_hard)
+			CRASH(message)
+		log_world(message)
+	return problems
 
 #undef SSMACHINES_MACHINERY
 #undef SSMACHINES_POWERNETS

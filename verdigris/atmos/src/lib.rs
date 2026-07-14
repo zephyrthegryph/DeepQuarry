@@ -42,12 +42,12 @@ fn atmos_callback_handle(remaining: ByondValue) -> Result<ByondValue> {
 #[byondapi::bind("/proc/drain_dirty_gas_mixtures")]
 #[auxmacros::panic_safe]
 fn drain_dirty_gas_mixtures() -> Result<ByondValue> {
-	let ids = GasArena::take_dirty_mixtures()
+	let changes = GasArena::take_dirty_mixtures()
 		.into_iter()
-		.map(|id| ByondValue::from(id as f32))
+		.flat_map(|(id, mask)| [ByondValue::from(id as f32), ByondValue::from(mask as f32)])
 		.collect::<Vec<_>>();
 	let list = ByondValue::new_list()?;
-	list.write_list(&ids)?;
+	list.write_list(&changes)?;
 	Ok(list)
 }
 

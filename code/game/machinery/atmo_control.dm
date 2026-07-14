@@ -36,20 +36,14 @@
 	// 32 for carbon dioxide concentration
 
 	var/datum/radio_frequency/radio_connection
-	var/last_air_revision = -1
-	var/next_sensor_heartbeat = 0
+	var/sleeping_mixture_id
+	var/sleeping_mixture_revision = -1
 
 /obj/machinery/air_sensor/update_icon()
 	icon_state = "gsensor[on]"
 
 /obj/machinery/air_sensor/process()
 	if(on)
-		var/turf/location = get_turf(src)
-		var/current_air_revision = location?.air_revision()
-		if(current_air_revision == last_air_revision && world.time < next_sensor_heartbeat)
-			return
-		last_air_revision = current_air_revision
-		next_sensor_heartbeat = world.time + 10 SECONDS
 		var/datum/signal/signal = new
 		signal.transmission_method = TRANSMISSION_RADIO //radio signal
 		signal.data["tag"] = id_tag
@@ -83,8 +77,47 @@
 				signal.data[GAS_CH4] = 0
 		signal.data["sigtype"]="status"
 		radio_connection.post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
+	SSmachines.hibernate_air_sensor(src)
+
+/obj/machinery/air_sensor/proc/dependency_mask()
+	var/mask = 0
+	if(output & SENSOR_PRESSURE)
+		mask |= GAS_DEPENDENCY_PRESSURE
+	if(output & SENSOR_TEMPERATURE)
+		mask |= GAS_DEPENDENCY_TEMPERATURE
+	if(output & (SENSOR_O2|SENSOR_PHORON|SENSOR_N2|SENSOR_CO2|SENSOR_N2O|SENSOR_CH4))
+		mask |= GAS_DEPENDENCY_COMPOSITION
+	return mask
+
+/obj/machinery/air_sensor/proc/register_gas_dependencies(datum/weakref/WR)
+	unregister_gas_dependencies(WR)
+	var/datum/gas_mixture/environment = return_air()
+	if(!environment)
+		return
+	sleeping_mixture_id = environment.arena_id()
+	sleeping_mixture_revision = environment.revision()
+	SSmachines.subscribe_gas_dependency(sleeping_mixture_id, WR)
+
+/obj/machinery/air_sensor/proc/unregister_gas_dependencies(datum/weakref/WR)
+	SSmachines.unsubscribe_gas_dependency(sleeping_mixture_id, WR)
+	sleeping_mixture_id = null
+	sleeping_mixture_revision = -1
+
+/obj/machinery/air_sensor/proc/gas_dependency_changed(mixture_id, change_mask)
+	if(!(change_mask & dependency_mask()) || mixture_id != sleeping_mixture_id)
+		return FALSE
+	var/datum/gas_mixture/environment = return_air()
+	return !environment || environment.arena_id() != sleeping_mixture_id || environment.revision() != sleeping_mixture_revision
+
+/obj/machinery/air_sensor/proc/invalidate_gas_dependencies()
+	SSmachines.wake_gas_subscriber(WEAKREF(src))
+
+/obj/machinery/air_sensor/Moved(atom/old_loc, direction, forced = FALSE)
+	. = ..()
+	invalidate_gas_dependencies()
 
 /obj/machinery/air_sensor/proc/set_frequency(new_frequency)
+	invalidate_gas_dependencies()
 	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
 	radio_connection = SSradio.add_object(src, frequency, RADIO_ATMOSIA)
@@ -95,6 +128,7 @@
 		set_frequency(frequency)
 
 /obj/machinery/air_sensor/Destroy()
+	SSmachines.wake_gas_subscriber(WEAKREF(src))
 	if(SSradio)
 		SSradio.remove_object(src,frequency)
 	. = ..()
@@ -137,6 +171,7 @@
 		return TRUE
 
 	if(answer in options) // Null will break us out
+		invalidate_gas_dependencies()
 		switch(options[answer])
 			if(SENSOR_PRESSURE)
 				output ^= SENSOR_PRESSURE

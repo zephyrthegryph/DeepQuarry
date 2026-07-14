@@ -1,4 +1,5 @@
 /obj/machinery/atmospherics/unary/vent_scrubber
+	gas_dependency_mask = GAS_DEPENDENCY_ALL
 	icon = 'icons/atmos/vent_scrubber.dmi'
 	icon_state = "map_scrubber_off"
 	pipe_state = "scrubber"
@@ -191,6 +192,7 @@
 		return
 	if(!signal.data["tag"] || (signal.data["tag"] != id_tag) || (signal.data["sigtype"]!="command"))
 		return 0
+	invalidate_gas_dependencies()
 
 	if(signal.data["power"] != null)
 		update_use_power(text2num(signal.data["power"]))
@@ -277,6 +279,7 @@
 	var/old_stat = stat
 	..()
 	if(old_stat != stat)
+		invalidate_gas_dependencies()
 		update_icon()
 
 /obj/machinery/atmospherics/unary/vent_scrubber/attackby(obj/item/W as obj, mob/user as mob)
@@ -291,10 +294,12 @@
 				if(!welded)
 					user.visible_message(span_notice("<b>\The [user]</b> welds the vent shut."), span_notice("You weld the vent shut."), "You hear welding.")
 					welded = TRUE
+					invalidate_gas_dependencies()
 					update_icon()
 				else
 					user.visible_message(span_notice("[user] unwelds the vent."), span_notice("You unweld the vent."), "You hear welding.")
 					welded = FALSE
+					invalidate_gas_dependencies()
 					update_icon()
 			else
 				to_chat(user, span_notice("The welding tool needs to be on to start this task."))

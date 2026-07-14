@@ -7,7 +7,7 @@ use byondapi::prelude::*;
 use eyre::Result;
 pub use mixture::Mixture;
 use parking_lot::{const_rwlock, RwLock};
-use rustc_hash::FxHashSet;
+use rustc_hash::FxHashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
 pub use types::*;
 
@@ -28,15 +28,26 @@ static GAS_MIXTURES: RwLock<Option<Vec<RwLock<Mixture>>>> = const_rwlock(None);
 static NEXT_GAS_IDS: RwLock<Option<Vec<usize>>> = const_rwlock(None);
 static GAS_REVISIONS: RwLock<Option<Vec<AtomicU64>>> = const_rwlock(None);
 static GAS_PUBLICATION: RwLock<()> = const_rwlock(());
-static DIRTY_GAS_MIXTURES: RwLock<Option<FxHashSet<usize>>> = const_rwlock(None);
+static DIRTY_GAS_MIXTURES: RwLock<Option<FxHashMap<usize, u8>>> = const_rwlock(None);
 const PRESSURE_DIRTY_EPSILON: f32 = 0.01;
+const TEMPERATURE_DIRTY_EPSILON: f32 = 0.01;
+pub const GAS_CHANGE_PRESSURE: u8 = 1;
+pub const GAS_CHANGE_TEMPERATURE: u8 = 2;
+pub const GAS_CHANGE_COMPOSITION: u8 = 4;
+
+#[derive(Clone, Copy)]
+pub(crate) struct GasChangeSignature {
+	pressure: f32,
+	temperature: f32,
+	composition: u64,
+}
 
 #[byondapi::init]
 pub fn initialize_gases() {
 	*GAS_MIXTURES.write() = Some(Vec::with_capacity(240_000));
 	*NEXT_GAS_IDS.write() = Some(Vec::with_capacity(2000));
 	*GAS_REVISIONS.write() = Some(Vec::with_capacity(240_000));
-	*DIRTY_GAS_MIXTURES.write() = Some(FxHashSet::default());
+	*DIRTY_GAS_MIXTURES.write() = Some(FxHashMap::default());
 }
 
 pub fn shut_down_gases() {
@@ -99,18 +110,14 @@ impl GasArena {
 			if let (Some(source), Some(target)) = (snapshot.get(id), gases.get(id)) {
 				let source = source.read();
 				let mut target = target.write();
-				let pressure_before = target.return_pressure();
+				let before = Self::change_signature(&target);
 				if source.compare(&target) > crate::constants::GAS_MIN_MOLES
 					|| source.temperature_compare(&target)
 				{
 					*target = source.clone();
 					changed.push(id);
 					Self::bump_revision(id);
-					Self::mark_pressure_dirty_if_changed(
-						id,
-						pressure_before,
-						target.return_pressure(),
-					);
+					Self::mark_dirty_if_changed(id, before, Self::change_signature(&target));
 				}
 			}
 		}
@@ -136,16 +143,42 @@ impl GasArena {
 		crate::turfs::mark_mix_active(id);
 	}
 
-	pub(crate) fn mark_pressure_dirty_if_changed(id: usize, before: f32, after: f32) {
-		if (before - after).abs() < PRESSURE_DIRTY_EPSILON {
-			return;
-		}
-		if let Some(dirty) = DIRTY_GAS_MIXTURES.write().as_mut() {
-			dirty.insert(id);
+	pub(crate) fn change_signature(mixture: &Mixture) -> GasChangeSignature {
+		GasChangeSignature {
+			pressure: mixture.return_pressure(),
+			temperature: mixture.get_temperature(),
+			composition: mixture.composition_signature(),
 		}
 	}
 
-	pub fn take_dirty_mixtures() -> Vec<usize> {
+	pub(crate) fn mark_dirty_if_changed(
+		id: usize,
+		before: GasChangeSignature,
+		after: GasChangeSignature,
+	) {
+		let mut mask = 0;
+		if (before.pressure - after.pressure).abs() >= PRESSURE_DIRTY_EPSILON {
+			mask |= GAS_CHANGE_PRESSURE;
+		}
+		if (before.temperature - after.temperature).abs() >= TEMPERATURE_DIRTY_EPSILON {
+			mask |= GAS_CHANGE_TEMPERATURE;
+		}
+		if before.composition != after.composition {
+			mask |= GAS_CHANGE_COMPOSITION;
+		}
+		if mask == 0 {
+			return;
+		}
+		Self::mark_dirty(id, mask);
+	}
+
+	fn mark_dirty(id: usize, mask: u8) {
+		if let Some(dirty) = DIRTY_GAS_MIXTURES.write().as_mut() {
+			*dirty.entry(id).or_default() |= mask;
+		}
+	}
+
+	pub fn take_dirty_mixtures() -> Vec<(usize, u8)> {
 		DIRTY_GAS_MIXTURES
 			.write()
 			.as_mut()
@@ -209,12 +242,12 @@ impl GasArena {
 			.get(id)
 			.ok_or_else(|| eyre::eyre!("No gas mixture with ID {id} exists!"))?
 			.write();
-		let pressure_before = mix.return_pressure();
+		let before = Self::change_signature(&mix);
 		let result = f(&mut mix);
-		let pressure_after = mix.return_pressure();
+		let after = Self::change_signature(&mix);
 		drop(mix);
 		Self::bump_revision(id);
-		Self::mark_pressure_dirty_if_changed(id, pressure_before, pressure_after);
+		Self::mark_dirty_if_changed(id, before, after);
 		result
 	}
 	/// Read locks the given gas mixtures and runs the given closure on them.
@@ -255,16 +288,18 @@ impl GasArena {
 		}
 		let lock = GAS_MIXTURES.read();
 		let gas_mixtures = lock.as_ref().unwrap();
-		let src_pressure_before = gas_mixtures
-			.get(src)
-			.ok_or_else(|| eyre::eyre!("No gas mixture with ID {src} exists!"))?
-			.read()
-			.return_pressure();
-		let arg_pressure_before = gas_mixtures
-			.get(arg)
-			.ok_or_else(|| eyre::eyre!("No gas mixture with ID {arg} exists!"))?
-			.read()
-			.return_pressure();
+		let src_before = Self::change_signature(
+			&gas_mixtures
+				.get(src)
+				.ok_or_else(|| eyre::eyre!("No gas mixture with ID {src} exists!"))?
+				.read(),
+		);
+		let arg_before = Self::change_signature(
+			&gas_mixtures
+				.get(arg)
+				.ok_or_else(|| eyre::eyre!("No gas mixture with ID {arg} exists!"))?
+				.read(),
+		);
 		let result = if src == arg {
 			let mut entry = gas_mixtures
 				.get(src)
@@ -286,12 +321,12 @@ impl GasArena {
 			)
 		};
 		Self::bump_revision(src);
-		let src_pressure_after = gas_mixtures.get(src).unwrap().read().return_pressure();
-		Self::mark_pressure_dirty_if_changed(src, src_pressure_before, src_pressure_after);
+		let src_after = Self::change_signature(&gas_mixtures.get(src).unwrap().read());
+		Self::mark_dirty_if_changed(src, src_before, src_after);
 		if src != arg {
 			Self::bump_revision(arg);
-			let arg_pressure_after = gas_mixtures.get(arg).unwrap().read().return_pressure();
-			Self::mark_pressure_dirty_if_changed(arg, arg_pressure_before, arg_pressure_after);
+			let arg_after = Self::change_signature(&gas_mixtures.get(arg).unwrap().read());
+			Self::mark_dirty_if_changed(arg, arg_before, arg_after);
 		}
 		result
 	}
@@ -311,16 +346,18 @@ impl GasArena {
 		}
 		let lock = GAS_MIXTURES.read();
 		let gas_mixtures = lock.as_ref().unwrap();
-		let src_pressure_before = gas_mixtures
-			.get(src)
-			.ok_or_else(|| eyre::eyre!("No gas mixture with ID {src} exists!"))?
-			.read()
-			.return_pressure();
-		let arg_pressure_before = gas_mixtures
-			.get(arg)
-			.ok_or_else(|| eyre::eyre!("No gas mixture with ID {arg} exists!"))?
-			.read()
-			.return_pressure();
+		let src_before = Self::change_signature(
+			&gas_mixtures
+				.get(src)
+				.ok_or_else(|| eyre::eyre!("No gas mixture with ID {src} exists!"))?
+				.read(),
+		);
+		let arg_before = Self::change_signature(
+			&gas_mixtures
+				.get(arg)
+				.ok_or_else(|| eyre::eyre!("No gas mixture with ID {arg} exists!"))?
+				.read(),
+		);
 		let result = if src == arg {
 			let entry = gas_mixtures
 				.get(src)
@@ -338,12 +375,12 @@ impl GasArena {
 			)
 		};
 		Self::bump_revision(src);
-		let src_pressure_after = gas_mixtures.get(src).unwrap().read().return_pressure();
-		Self::mark_pressure_dirty_if_changed(src, src_pressure_before, src_pressure_after);
+		let src_after = Self::change_signature(&gas_mixtures.get(src).unwrap().read());
+		Self::mark_dirty_if_changed(src, src_before, src_after);
 		if src != arg {
 			Self::bump_revision(arg);
-			let arg_pressure_after = gas_mixtures.get(arg).unwrap().read().return_pressure();
-			Self::mark_pressure_dirty_if_changed(arg, arg_pressure_before, arg_pressure_after);
+			let arg_after = Self::change_signature(&gas_mixtures.get(arg).unwrap().read());
+			Self::mark_dirty_if_changed(arg, arg_before, arg_after);
 		}
 		result
 	}
@@ -404,6 +441,10 @@ impl GasArena {
 				.write()
 				.clear_with_vol(init_volume);
 			Self::bump_revision(idx);
+			Self::mark_dirty(
+				idx,
+				GAS_CHANGE_PRESSURE | GAS_CHANGE_TEMPERATURE | GAS_CHANGE_COMPOSITION,
+			);
 			mix.write_var_id(
 				byond_string!("_extools_pointer_gasmixture"),
 				&(idx as f32).into(),
@@ -419,6 +460,10 @@ impl GasArena {
 	pub fn unregister_mix(mix: &ByondValue) {
 		if let Ok(idx) = mix.read_number_id(byond_string!("_extools_pointer_gasmixture")) {
 			Self::bump_revision(idx as usize);
+			Self::mark_dirty(
+				idx as usize,
+				GAS_CHANGE_PRESSURE | GAS_CHANGE_TEMPERATURE | GAS_CHANGE_COMPOSITION,
+			);
 			let mut next_gas_ids = NEXT_GAS_IDS.write();
 			next_gas_ids.as_mut().unwrap().push(idx as usize);
 		} else {
@@ -525,6 +570,7 @@ mod tests {
 	fn snapshot_rejects_concurrent_mutation_and_publishes_stable_state() {
 		set_gas_statics_manually();
 		register_gas_manually("test", 20.0);
+		register_gas_manually("test2", 20.0);
 		initialize_gases();
 		crate::turfs::initialize_turfs();
 		let mut initial = Mixture::from_vol(2_500.0);
@@ -548,7 +594,10 @@ mod tests {
 			Ok(())
 		})
 		.unwrap();
-		assert_eq!(GasArena::take_dirty_mixtures(), vec![0]);
+		assert_eq!(
+			GasArena::take_dirty_mixtures(),
+			vec![(0, GAS_CHANGE_PRESSURE | GAS_CHANGE_COMPOSITION)]
+		);
 		assert!(GasArena::take_dirty_mixtures().is_empty());
 		snapshot[0].write().set_moles(0, 5.0);
 		assert!(GasArena::publish_snapshot(&[0], &revisions, &snapshot).is_none());
@@ -563,6 +612,17 @@ mod tests {
 		assert_eq!(
 			GasArena::with_gas_mixture(0, |mixture| Ok(mixture.get_moles(0))).unwrap(),
 			20.0
+		);
+		GasArena::take_dirty_mixtures();
+		GasArena::with_gas_mixture_mut(0, |mixture| {
+			mixture.set_moles(0, 0.0);
+			mixture.set_moles(1, 20.0);
+			Ok(())
+		})
+		.unwrap();
+		assert_eq!(
+			GasArena::take_dirty_mixtures(),
+			vec![(0, GAS_CHANGE_COMPOSITION)]
 		);
 		destroy_gas_statics();
 	}

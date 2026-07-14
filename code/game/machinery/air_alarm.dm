@@ -42,6 +42,7 @@
 		return
 	main_air_alarm = WEAKREF(pick(checks))
 	for(var/obj/machinery/alarm/AA in checks)
+		AA.invalidate_gas_dependencies()
 		AA.update_icon()
 
 /area/proc/main_air_alarm_is_operating()
@@ -108,10 +109,8 @@
 
 	var/datum/looping_sound/alarm/decompression_alarm/soundloop // Looping Alarms
 	var/atmoswarn = FALSE // Looping Alarms
-	/// Last Rust gas revision inspected by this sensor.
-	var/last_air_revision = -1
-	/// Periodic fallback scan time for topology or configuration changes that do not mutate gas.
-	var/next_air_health_scan = 0
+	var/sleeping_mixture_id
+	var/sleeping_mixture_revision = -1
 
 /obj/machinery/alarm/nobreach
 	breach_detection = 0
@@ -147,6 +146,7 @@
 	soundloop = new(list(src), FALSE)
 
 /obj/machinery/alarm/Destroy()
+	SSmachines.wake_gas_subscriber(WEAKREF(src))
 	unregister_radio(src, frequency)
 	qdel(wires)
 	wires = null
@@ -162,6 +162,7 @@
 	pixel_y = (dir & 3) ? (dir == 1 ? -26 : 26) : 0
 
 /obj/machinery/alarm/proc/set_initial_TLV()
+	invalidate_gas_dependencies()
 	// breathable air according to human/Life()
 	TLV[GAS_O2] =			list(16, 19, 135, 140) // Partial pressure, kpa
 	TLV[GAS_N2] =		list(0, 0, 135, 140) // Partial pressure, kpa
@@ -175,6 +176,7 @@
 	update_icon()
 
 /obj/machinery/alarm/proc/update_area()
+	invalidate_gas_dependencies()
 	alarm_area = get_area(src)
 	area_uid = "\ref[alarm_area]"
 	if(name == "alarm")
@@ -232,16 +234,45 @@
 		alarm_area.elect_main_air_alarm()
 		MA = alarm_area.main_air_alarm?.resolve() // try again
 	if(!MA || (stat & (NOPOWER|BROKEN)) || shorted || MA.shorted)
+		SSmachines.hibernate_air_alarm(src)
 		return
 	var/turf/location = get_turf(src)
 	if(!location)
 		return
-	var/current_air_revision = location.air_revision()
-	if(!regulating_temperature && current_air_revision == last_air_revision && world.time < next_air_health_scan)
-		return
-	last_air_revision = current_air_revision
-	next_air_health_scan = world.time + 30 SECONDS
 	scan_atmo()
+	if(!regulating_temperature)
+		SSmachines.hibernate_air_alarm(src)
+
+/obj/machinery/alarm/proc/register_gas_dependencies(datum/weakref/WR)
+	unregister_gas_dependencies(WR)
+	var/datum/gas_mixture/environment = return_air()
+	if(!environment)
+		return
+	sleeping_mixture_id = environment.arena_id()
+	sleeping_mixture_revision = environment.revision()
+	SSmachines.subscribe_gas_dependency(sleeping_mixture_id, WR)
+
+/obj/machinery/alarm/proc/unregister_gas_dependencies(datum/weakref/WR)
+	SSmachines.unsubscribe_gas_dependency(sleeping_mixture_id, WR)
+	sleeping_mixture_id = null
+	sleeping_mixture_revision = -1
+
+/obj/machinery/alarm/proc/gas_dependency_changed(mixture_id, change_mask)
+	if(!(change_mask & GAS_DEPENDENCY_ALL) || mixture_id != sleeping_mixture_id)
+		return FALSE
+	var/datum/gas_mixture/environment = return_air()
+	return !environment || environment.arena_id() != sleeping_mixture_id || environment.revision() != sleeping_mixture_revision
+
+/obj/machinery/alarm/proc/invalidate_gas_dependencies()
+	SSmachines.wake_gas_subscriber(WEAKREF(src))
+
+/obj/machinery/alarm/update_use_power(new_use_power)
+	invalidate_gas_dependencies()
+	return ..()
+
+/obj/machinery/alarm/Moved(atom/old_loc, direction, forced = FALSE)
+	. = ..()
+	invalidate_gas_dependencies()
 
 /obj/machinery/alarm/proc/handle_heating_cooling(datum/gas_mixture/environment)
 	DECLARE_TLV_VALUES
@@ -416,6 +447,7 @@
 	set_light_on(TRUE)
 
 /obj/machinery/alarm/receive_signal(datum/signal/signal)
+	invalidate_gas_dependencies()
 	if(stat & (NOPOWER|BROKEN))
 		return
 	if(!signal || signal.encryption)
@@ -707,6 +739,7 @@
 	return data
 
 /obj/machinery/alarm/tgui_act(action, params, datum/tgui/ui, datum/tgui_state/state)
+	invalidate_gas_dependencies()
 	if(..())
 		return TRUE
 
@@ -855,6 +888,7 @@
 		AA.update_icon()
 
 /obj/machinery/alarm/attackby(obj/item/W as obj, mob/user)
+	invalidate_gas_dependencies()
 	add_fingerprint(user)
 	if(alarm_deconstruction_screwdriver(user, W))
 		return
@@ -882,6 +916,7 @@
 	togglelock(user)
 
 /obj/machinery/alarm/power_change()
+	invalidate_gas_dependencies()
 	..()
 	var/delay_time = rand(0,15)
 	if(delay_time)

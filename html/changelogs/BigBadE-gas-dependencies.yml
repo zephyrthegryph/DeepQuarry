@@ -1,0 +1,6 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - refactor: "Replaced timed vent, scrubber, air alarm, and gas sensor checks with exact gas-mixture dependency wakeups."
+  - code_imp: "Added independent pressure, temperature, and composition change tracking to the Rust gas arena."
+  - bugfix: "Made device configuration, power, movement, welding, topology, deletion, and mixture replacement invalidate sleeping atmosphere devices."

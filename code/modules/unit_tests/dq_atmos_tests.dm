@@ -3470,19 +3470,56 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	var/obj/machinery/alarm/A = new(T)
 	A.update_area()
 	A.set_initial_TLV()
-	A.last_air_revision = T.air_revision()
-	A.next_air_health_scan = world.time + 1 MINUTE
-	A.danger_level = 1
 	A.process()
-	TEST_ASSERT_EQUAL(A.danger_level, 1, \
-		"air alarm rescanned an unchanged gas revision")
-	A.danger_level = 0
+	var/datum/weakref/alarm_ref = WEAKREF(A)
+	TEST_ASSERT(SSmachines.sleeping_gas_devices[alarm_ref.reference], \
+		"stable air alarm did not enter dependency sleep")
 	T.air.adjust_moles(/datum/gas/plasma, 50)
+	SSmachines.wake_dirty_gas_subscribers()
+	TEST_ASSERT(A.datum_flags & DF_ISPROCESSING, \
+		"air alarm did not wake after its gas dependency changed")
 	A.process()
 	TEST_ASSERT(A.danger_level > 0, \
 		"air alarm did not rescan after its gas revision changed")
 	T.air.set_moles(/datum/gas/plasma, 0)
 	qdel(A)
+
+/datum/unit_test/dq_gas_dependencies_wake_exact_devices
+
+/datum/unit_test/dq_gas_dependencies_wake_exact_devices/Run()
+	var/turf/simulated/floor/T
+	for(var/turf/simulated/floor/candidate in world)
+		if(candidate.air && !candidate.blocks_air)
+			T = candidate
+			break
+	TEST_ASSERT_NOTNULL(T, "no floor for gas dependency test")
+	drain_dirty_gas_mixtures()
+
+	var/obj/machinery/atmospherics/unary/vent_pump/V = new(T)
+	SSmachines.hibernate_vent(V)
+	var/datum/weakref/vent_ref = WEAKREF(V)
+	TEST_ASSERT(SSmachines.hibernating_vents[vent_ref.reference], "vent did not register as sleeping")
+	T.air.adjust_moles(/datum/gas/oxygen, 5)
+	SSmachines.wake_dirty_gas_subscribers()
+	TEST_ASSERT(!SSmachines.hibernating_vents[vent_ref.reference], "pressure change did not wake vent")
+
+	var/obj/machinery/alarm/A = new(T)
+	A.update_area()
+	A.set_initial_TLV()
+	SSmachines.hibernate_air_alarm(A)
+	T.air.adjust_moles(/datum/gas/plasma, 1)
+	SSmachines.wake_dirty_gas_subscribers()
+	TEST_ASSERT(A.datum_flags & DF_ISPROCESSING, "composition change did not wake air alarm")
+
+	var/obj/machinery/air_sensor/S = new(T)
+	SSmachines.hibernate_air_sensor(S)
+	T.air.set_temperature(T.air.return_temperature() + 5)
+	SSmachines.wake_dirty_gas_subscribers()
+	TEST_ASSERT(S.datum_flags & DF_ISPROCESSING, "temperature change did not wake air sensor")
+
+	qdel(V)
+	qdel(A)
+	qdel(S)
 
 
 // =====================================================================

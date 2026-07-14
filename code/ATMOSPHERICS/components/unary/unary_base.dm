@@ -17,6 +17,7 @@
 	var/sleeping_turf_revision = -1
 	var/sleeping_pipe_mixture_id
 	var/sleeping_pipe_revision = -1
+	var/gas_dependency_mask = GAS_DEPENDENCY_PRESSURE
 
 /obj/machinery/atmospherics/unary/Initialize(mapload)
 	. = ..()
@@ -30,21 +31,23 @@
 	if(environment)
 		sleeping_turf_mixture_id = environment.arena_id()
 		sleeping_turf_revision = environment.revision()
-		SSmachines.subscribe_sleeping_vent(sleeping_turf_mixture_id, WR)
+		SSmachines.subscribe_gas_dependency(sleeping_turf_mixture_id, WR)
 	if(air_contents)
 		sleeping_pipe_mixture_id = air_contents.arena_id()
 		sleeping_pipe_revision = air_contents.revision()
-		SSmachines.subscribe_sleeping_vent(sleeping_pipe_mixture_id, WR)
+		SSmachines.subscribe_gas_dependency(sleeping_pipe_mixture_id, WR)
 
 /obj/machinery/atmospherics/unary/proc/unregister_gas_dependencies(datum/weakref/WR)
-	SSmachines.unsubscribe_sleeping_vent(sleeping_turf_mixture_id, WR)
-	SSmachines.unsubscribe_sleeping_vent(sleeping_pipe_mixture_id, WR)
+	SSmachines.unsubscribe_gas_dependency(sleeping_turf_mixture_id, WR)
+	SSmachines.unsubscribe_gas_dependency(sleeping_pipe_mixture_id, WR)
 	sleeping_turf_mixture_id = null
 	sleeping_turf_revision = -1
 	sleeping_pipe_mixture_id = null
 	sleeping_pipe_revision = -1
 
-/obj/machinery/atmospherics/unary/proc/gas_dependency_changed(mixture_id)
+/obj/machinery/atmospherics/unary/proc/gas_dependency_changed(mixture_id, change_mask)
+	if(!(change_mask & gas_dependency_mask))
+		return FALSE
 	if(mixture_id == sleeping_turf_mixture_id)
 		var/datum/gas_mixture/environment = return_air()
 		return !environment || environment.arena_id() != sleeping_turf_mixture_id || environment.revision() != sleeping_turf_revision
@@ -54,6 +57,14 @@
 
 /obj/machinery/atmospherics/unary/proc/invalidate_gas_dependencies()
 	SSmachines.wake_vent(WEAKREF(src))
+
+/obj/machinery/atmospherics/unary/update_use_power(new_use_power)
+	invalidate_gas_dependencies()
+	return ..()
+
+/obj/machinery/atmospherics/unary/Moved(atom/old_loc, direction, forced = FALSE)
+	. = ..()
+	invalidate_gas_dependencies()
 
 /obj/machinery/atmospherics/unary/init_dir()
 	initialize_directions = dir
@@ -161,6 +172,7 @@
 	if((power_rating != null) && !(pipe_state in list("scrubber", "uvent", "injector"))) //TODO: Add compatibility with air alarm. When not disabled, overrides air alarm state and doesn't tell the air alarm that. Injectors have their own, different bind for enabling.
 		user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 		if(allowed(user))
+			invalidate_gas_dependencies()
 			update_use_power(!use_power)
 			update_icon()
 			add_fingerprint(user)

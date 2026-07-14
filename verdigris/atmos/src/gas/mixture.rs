@@ -10,6 +10,7 @@ use itertools::{
 	Itertools,
 };
 use std::collections::BTreeMap;
+use std::hash::{Hash, Hasher};
 use std::sync::atomic::{AtomicU64, Ordering::Relaxed};
 use tinyvec::TinyVec;
 
@@ -71,6 +72,17 @@ pub struct Mixture {
 	moles: TinyVec<[f32; 8]>,
 	cached_heat_capacity: GasCache,
 	immutable: bool,
+}
+
+impl Mixture {
+	pub(crate) fn composition_signature(&self) -> u64 {
+		let mut hasher = rustc_hash::FxHasher::default();
+		self.moles.len().hash(&mut hasher);
+		for moles in &self.moles {
+			moles.to_bits().hash(&mut hasher);
+		}
+		hasher.finish()
+	}
 }
 
 impl Default for Mixture {
