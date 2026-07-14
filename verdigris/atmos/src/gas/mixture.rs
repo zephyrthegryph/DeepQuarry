@@ -68,7 +68,9 @@ pub struct Mixture {
 	temperature: f32,
 	pub volume: f32,
 	min_heat_capacity: f32,
-	moles: TinyVec<[f32; 8]>,
+	// DeepQuarry registers 20 gases. Keeping the normal roster inline avoids a
+	// separate heap allocation for every arena mixture and every async snapshot.
+	moles: TinyVec<[f32; 24]>,
 	cached_heat_capacity: GasCache,
 	immutable: bool,
 }
