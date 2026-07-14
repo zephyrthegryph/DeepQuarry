@@ -19,6 +19,9 @@ let status_tab_parts = ['Loading...'];
 let current_tab = null;
 let mc_tab_parts = [['Loading...', '']];
 let mc_metrics = null;
+let mc_view = 'overview';
+let mc_selected_outlier = null;
+let mc_details_open = false;
 let href_token = null;
 let spells = [];
 let spell_tabs = [];
@@ -398,6 +401,10 @@ function draw_status() {
 }
 
 function draw_mc() {
+  const previousScroll = statcontentdiv.scrollTop;
+  const previousWindowScroll = window.scrollY;
+  const existingDetails = statcontentdiv.querySelector('.mc-details');
+  if (existingDetails) mc_details_open = existingDetails.open;
   statcontentdiv.textContent = '';
 
   if (mc_metrics) {
@@ -406,6 +413,7 @@ function draw_mc() {
 
   const details = document.createElement('details');
   details.className = 'mc-details';
+  details.open = mc_details_open;
   const summary = document.createElement('summary');
   summary.textContent = 'Detailed controller state';
   details.appendChild(summary);
@@ -431,6 +439,10 @@ function draw_mc() {
   }
   details.appendChild(table);
   statcontentdiv.appendChild(details);
+  requestAnimationFrame(() => {
+    statcontentdiv.scrollTop = previousScroll;
+    window.scrollTo(0, previousWindowScroll);
+  });
 }
 
 function mc_number(value, digits = 1) {
@@ -476,10 +488,27 @@ function draw_mc_dashboard(metrics) {
     mc_metric_card('Map send', `${mc_number(metrics.maptick)}%`, 'BYOND internal map work', mc_usage_severity(Number(metrics.maptick))),
     mc_metric_card('TiDi', `${mc_number(metrics.tidi)}%`, `avg ${mc_number(metrics.tidi_fast)} / ${mc_number(metrics.tidi_medium)} / ${mc_number(metrics.tidi_slow)}`),
   );
+  headline.dataset.mcView = 'overview';
   dashboard.appendChild(headline);
+
+  const navigation = document.createElement('div');
+  navigation.className = 'mc-navigation';
+  for (const [view, label] of [['overview', 'Overview'], ['ticks', 'Ticks'], ['subsystems', 'Subsystems'], ['outliers', 'Outliers'], ['runtime', 'Runtime']]) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `mc-nav-button${mc_view === view ? ' active' : ''}`;
+    button.textContent = label;
+    button.onclick = () => {
+      mc_view = view;
+      draw_mc();
+    };
+    navigation.appendChild(button);
+  }
+  dashboard.appendChild(navigation);
 
   const graphCard = document.createElement('section');
   graphCard.className = 'mc-panel';
+  graphCard.dataset.mcView = 'ticks';
   const graphTitle = document.createElement('h3');
   graphTitle.textContent = 'Recent tick budget';
   const graphHint = document.createElement('span');
@@ -503,12 +532,13 @@ function draw_mc_dashboard(metrics) {
 
   const windows = document.createElement('section');
   windows.className = 'mc-panel';
+  windows.dataset.mcView = 'ticks';
   const windowsTitle = document.createElement('h3');
   windowsTitle.textContent = 'Tick distribution';
   const distributionTable = document.createElement('table');
   distributionTable.className = 'mc-performance-table';
   const header = document.createElement('tr');
-  for (const text of ['Window', 'TPS', 'Average', 'p50', 'p95', 'p99', 'Maximum', 'Overruns']) {
+  for (const text of ['Window', 'TPS', 'Average', 'p50', 'p95', 'p99', 'Maximum', 'Overruns', 'pctl n']) {
     const th = document.createElement('th');
     th.textContent = text;
     header.appendChild(th);
@@ -516,7 +546,7 @@ function draw_mc_dashboard(metrics) {
   distributionTable.appendChild(header);
   for (const [label, windowData] of [['5 sec', metrics.window_5s], ['30 sec', metrics.window_30s], ['5 min', metrics.window_5m]]) {
     const row = document.createElement('tr');
-    const values = [label, mc_number(windowData.tps, 1), `${mc_number(windowData.avg)}%`, `${mc_number(windowData.p50)}%`, `${mc_number(windowData.p95)}%`, `${mc_number(windowData.p99)}%`, `${mc_number(windowData.max)}%`, `${windowData.overruns || 0}`];
+    const values = [label, mc_number(windowData.tps, 1), `${mc_number(windowData.avg)}%`, `${mc_number(windowData.p50)}%`, `${mc_number(windowData.p95)}%`, `${mc_number(windowData.p99)}%`, `${mc_number(windowData.max)}%`, `${windowData.overruns || 0}`, `${windowData.percentile_samples || windowData.samples || 0}`];
     for (const value of values) {
       const cell = document.createElement('td');
       cell.textContent = value;
@@ -530,6 +560,7 @@ function draw_mc_dashboard(metrics) {
   const runtime = metrics.runtime || {};
   const runtimePanel = document.createElement('section');
   runtimePanel.className = 'mc-panel';
+  runtimePanel.dataset.mcView = 'runtime';
   const runtimeTitle = document.createElement('h3');
   runtimeTitle.textContent = 'Runtime health';
   const runtimeGrid = document.createElement('div');
@@ -559,6 +590,7 @@ function draw_mc_dashboard(metrics) {
 
   const subsystemPanel = document.createElement('section');
   subsystemPanel.className = 'mc-panel';
+  subsystemPanel.dataset.mcView = 'subsystems';
   const subsystemTitle = document.createElement('h3');
   subsystemTitle.textContent = 'Subsystem pressure';
   subsystemPanel.appendChild(subsystemTitle);
@@ -596,6 +628,7 @@ function draw_mc_dashboard(metrics) {
   const outliers = (metrics.outliers || []).slice().reverse();
   const outlierPanel = document.createElement('section');
   outlierPanel.className = 'mc-panel';
+  outlierPanel.dataset.mcView = 'outliers';
   const outlierTitle = document.createElement('h3');
   outlierTitle.textContent = `Recent overruns (${outliers.length}/20 retained)`;
   outlierPanel.appendChild(outlierTitle);
@@ -608,11 +641,49 @@ function draw_mc_dashboard(metrics) {
     for (const outlier of outliers) {
       const item = document.createElement('div');
       item.className = 'mc-outlier';
-      item.textContent = `t=${mc_number(outlier.world_time / 10, 1)}s · ${mc_number(outlier.usage)}% (+${mc_number(outlier.overrun)}%) · top: ${outlier.top_subsystem} ${mc_number(outlier.top_usage)}%`;
+      const outlierId = `${outlier.world_time}-${outlier.usage}`;
+      const heading = document.createElement('button');
+      heading.type = 'button';
+      heading.className = 'mc-outlier-heading';
+      heading.textContent = `${mc_selected_outlier === outlierId ? '▾' : '▸'} t=${mc_number(outlier.world_time / 10, 1)}s · ${mc_number(outlier.usage)}% (+${mc_number(outlier.overrun)}%) · top: ${outlier.top_subsystem} ${mc_number(outlier.top_usage)}%`;
+      heading.onclick = () => {
+        mc_selected_outlier = mc_selected_outlier === outlierId ? null : outlierId;
+        draw_mc();
+      };
+      item.appendChild(heading);
+      if (mc_selected_outlier === outlierId) {
+        const detail = document.createElement('div');
+        detail.className = 'mc-outlier-breakdown';
+        const breakdown = (outlier.breakdown || []).slice().sort((a, b) => Number(b.usage) - Number(a.usage));
+        for (const entry of breakdown) {
+          const row = document.createElement('div');
+          row.className = 'mc-breakdown-row';
+          const name = document.createElement('span');
+          name.textContent = entry.name;
+          const track = document.createElement('div');
+          track.className = 'mc-breakdown-track';
+          const bar = document.createElement('div');
+          bar.className = `mc-breakdown-bar ${mc_usage_severity(Number(entry.usage))}`;
+          bar.style.width = `${Math.min(Number(entry.usage) || 0, 100)}%`;
+          track.appendChild(bar);
+          const value = document.createElement('strong');
+          value.textContent = `${mc_number(entry.usage)}%`;
+          row.append(name, track, value);
+          detail.appendChild(row);
+        }
+        const mapTick = document.createElement('div');
+        mapTick.className = 'mc-outlier-note';
+        mapTick.textContent = `BYOND map-send usage at capture: ${mc_number(outlier.maptick)}%`;
+        detail.appendChild(mapTick);
+        item.appendChild(detail);
+      }
       outlierPanel.appendChild(item);
     }
   }
   dashboard.appendChild(outlierPanel);
+  for (const panel of dashboard.querySelectorAll('[data-mc-view]')) {
+    panel.hidden = panel.dataset.mcView !== mc_view;
+  }
   statcontentdiv.appendChild(dashboard);
 }
 

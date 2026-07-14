@@ -8,6 +8,7 @@ SUBSYSTEM_DEF(statpanels)
 	var/list/global_data
 	var/list/mc_data
 	var/list/mc_metrics
+	var/mc_metrics_generated_at = -INFINITY
 
 	///how many subsystem fires between most tab updates
 	var/default_wait = 10
@@ -52,7 +53,6 @@ SUBSYSTEM_DEF(statpanels)
 
 		src.currentrun = GLOB.clients.Copy()
 		mc_data = null
-		mc_metrics = null
 
 	var/list/currentrun = src.currentrun
 	while(length(currentrun))
@@ -149,8 +149,9 @@ SUBSYSTEM_DEF(statpanels)
 	var/coord_entry = COORD(eye_turf)
 	if(!mc_data)
 		generate_mc_data()
-	if(!mc_metrics)
+	if(!mc_metrics || world.time >= mc_metrics_generated_at + 5 SECONDS)
 		mc_metrics = generate_mc_metrics()
+		mc_metrics_generated_at = world.time
 	target.stat_panel.send_message("update_mc", list(
 		"mc_data" = mc_data,
 		"mc_metrics" = mc_metrics,

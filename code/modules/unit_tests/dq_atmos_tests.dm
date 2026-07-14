@@ -2625,8 +2625,18 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	TEST_ASSERT_EQUAL(window["p99"], 99, "MC performance window calculated the wrong p99")
 	TEST_ASSERT_EQUAL(window["max"], 100, "MC performance window calculated the wrong maximum")
 	TEST_ASSERT(abs(window["tps"] - world.fps) < 0.01, "MC performance window calculated incorrect TPS")
+	var/list/old_outliers = Master.perf_outliers
+	var/list/old_breakdown = Master.perf_tick_breakdown
+	Master.perf_outliers = list()
+	Master.perf_tick_breakdown = list("Atmospherics" = 80, "Stat Panels" = 30)
+	Master.record_performance_tick(125)
+	var/list/outlier = Master.perf_outliers[1]
+	TEST_ASSERT_EQUAL(outlier["overrun"], 25, "MC outlier recorded an incorrect overrun")
+	TEST_ASSERT_EQUAL(length(outlier["breakdown"]), 3, "MC outlier omitted attributed or external tick usage")
 	Master.perf_tick_usage = old_usage
 	Master.perf_tick_realtime = old_realtime
+	Master.perf_outliers = old_outliers
+	Master.perf_tick_breakdown = old_breakdown
 
 
 // =====================================================================

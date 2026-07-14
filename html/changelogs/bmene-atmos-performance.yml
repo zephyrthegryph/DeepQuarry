@@ -6,3 +6,4 @@ changes:
   - code_imp: "Added live atmos and machinery profiling diagnostics."
   - server: "Reduced idle atmos polling, gas arena growth, and unnecessary machine processing."
   - admin: "Reworked the MC tab into a live performance dashboard with tick graphs, TPS, percentiles, overruns, outliers, and subsystem pressure."
+  - bugfix: "Preserved MC dashboard navigation, expanded details, and scroll position across live updates."

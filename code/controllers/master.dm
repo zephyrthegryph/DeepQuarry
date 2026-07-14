@@ -91,6 +91,7 @@ GLOBAL_REAL(Master, /datum/controller/master)
 	var/perf_tick_top_name = "None"
 	var/perf_tick_top_usage = 0
 	var/perf_tick_peak_usage = 0
+	var/list/perf_tick_breakdown = list()
 
 /datum/controller/master/New()
 	// Ensure usr is null, to prevent any potential weirdness resulting from the MC having a usr if it's manually restarted.
@@ -675,6 +676,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 		perf_tick_top_name = "None"
 		perf_tick_top_usage = 0
 		perf_tick_peak_usage = starting_tick_usage
+		perf_tick_breakdown.Cut()
 
 		if(newdrift - olddrift >= CONFIG_GET(number/drift_dump_threshold))
 			AttemptProfileDump(CONFIG_GET(number/drift_profile_delay))
@@ -819,12 +821,23 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 		perf_tick_usage.Cut(1, trim_count + 1)
 		perf_tick_realtime.Cut(1, trim_count + 1)
 	if(usage > 100)
+		var/list/breakdown = list()
+		var/attributed_usage = 0
+		for(var/subsystem_name in perf_tick_breakdown)
+			var/subsystem_usage = perf_tick_breakdown[subsystem_name]
+			attributed_usage += subsystem_usage
+			breakdown += list(list("name" = subsystem_name, "usage" = subsystem_usage))
+		var/unattributed = max(usage - attributed_usage, 0)
+		if(unattributed)
+			breakdown += list(list("name" = "BYOND / pre-MC / external", "usage" = unattributed))
 		perf_outliers += list(list(
 			"world_time" = world.time,
 			"usage" = usage,
 			"overrun" = usage - 100,
 			"top_subsystem" = perf_tick_top_name,
 			"top_usage" = perf_tick_top_usage,
+			"maptick" = MAPTICK_LAST_INTERNAL_TICK_USAGE,
+			"breakdown" = breakdown,
 		))
 		if(perf_outliers.len > 20)
 			perf_outliers.Cut(1, perf_outliers.len - 19)
@@ -837,22 +850,31 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 	var/list/samples = perf_tick_usage.Copy(start_index)
 	var/sum = 0
 	var/overruns = 0
+	var/window_max = 0
 	for(var/value in samples)
 		sum += value
+		window_max = max(window_max, value)
 		if(value > 100)
 			overruns++
-	var/list/sorted = samples.Copy()
+	// Percentiles use an evenly-spaced maximum of 300 observations. Average,
+	// maximum, overrun count, and TPS still cover every tick in the window.
+	var/sample_stride = max(CEILING(sample_count / 300, 1), 1)
+	var/list/sorted = list()
+	for(var/i in 1 to sample_count step sample_stride)
+		sorted += samples[i]
 	sortTim(sorted, GLOBAL_PROC_REF(cmp_numeric_asc))
+	var/percentile_count = sorted.len
 	var/realtime_delta = perf_tick_realtime[perf_tick_realtime.len] - perf_tick_realtime[start_index]
 	if(realtime_delta < 0)
 		realtime_delta += 24 HOURS
 	return list(
 		"samples" = sample_count,
 		"avg" = sum / sample_count,
-		"p50" = sorted[max(CEILING(sample_count * 0.50, 1), 1)],
-		"p95" = sorted[max(CEILING(sample_count * 0.95, 1), 1)],
-		"p99" = sorted[max(CEILING(sample_count * 0.99, 1), 1)],
-		"max" = sorted[sample_count],
+		"percentile_samples" = percentile_count,
+		"p50" = sorted[max(CEILING(percentile_count * 0.50, 1), 1)],
+		"p95" = sorted[max(CEILING(percentile_count * 0.95, 1), 1)],
+		"p99" = sorted[max(CEILING(percentile_count * 0.99, 1), 1)],
+		"max" = window_max,
 		"overruns" = overruns,
 		"tps" = realtime_delta > 0 ? ((sample_count - 1) / (realtime_delta * 0.1)) : world.fps,
 	)
@@ -967,6 +989,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 			var/state = queue_node.ignite(queue_node_paused)
 			tick_usage = TICK_USAGE - tick_usage
 			perf_tick_peak_usage = max(perf_tick_peak_usage, TICK_USAGE)
+			perf_tick_breakdown[queue_node.name] = (perf_tick_breakdown[queue_node.name] || 0) + max(tick_usage, 0)
 			if(tick_usage > perf_tick_top_usage)
 				perf_tick_top_usage = tick_usage
 				perf_tick_top_name = queue_node.name
