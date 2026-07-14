@@ -149,7 +149,11 @@ would spawn and follow the beaker, even if it is carried or thrown.
 		direction = pick(GLOB.alldirs)
 	for(var/i=0, i<pick(1,2,3), i++)
 		sleep(5)
+		if(QDELETED(src) || QDELETED(sparks))
+			return
 		step(sparks,direction)
+	if(QDELETED(src))
+		return
 	addtimer(CALLBACK(src, PROC_REF(dec_sparks)), 20)
 
 /datum/effect/effect/system/spark_spread/proc/dec_sparks()

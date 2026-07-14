@@ -26,16 +26,25 @@
 	air_contents.set_volume(200)
 
 /obj/machinery/atmospherics/unary/proc/register_gas_dependencies(datum/weakref/WR)
-	unregister_gas_dependencies(WR)
 	var/datum/gas_mixture/environment = return_air()
-	if(environment)
-		sleeping_turf_mixture_id = environment.arena_id()
-		sleeping_turf_revision = environment.revision()
+	var/new_turf_mixture_id = environment?.arena_id()
+	if(sleeping_turf_mixture_id != new_turf_mixture_id)
+		SSmachines.unsubscribe_gas_dependency(sleeping_turf_mixture_id, WR)
+		sleeping_turf_mixture_id = new_turf_mixture_id
 		SSmachines.subscribe_gas_dependency(sleeping_turf_mixture_id, WR)
-	if(air_contents)
-		sleeping_pipe_mixture_id = air_contents.arena_id()
-		sleeping_pipe_revision = air_contents.revision()
+	if(environment)
+		sleeping_turf_revision = environment.revision()
+	else
+		sleeping_turf_revision = -1
+	var/new_pipe_mixture_id = air_contents?.arena_id()
+	if(sleeping_pipe_mixture_id != new_pipe_mixture_id)
+		SSmachines.unsubscribe_gas_dependency(sleeping_pipe_mixture_id, WR)
+		sleeping_pipe_mixture_id = new_pipe_mixture_id
 		SSmachines.subscribe_gas_dependency(sleeping_pipe_mixture_id, WR)
+	if(air_contents)
+		sleeping_pipe_revision = air_contents.revision()
+	else
+		sleeping_pipe_revision = -1
 
 /obj/machinery/atmospherics/unary/proc/unregister_gas_dependencies(datum/weakref/WR)
 	SSmachines.unsubscribe_gas_dependency(sleeping_turf_mixture_id, WR)

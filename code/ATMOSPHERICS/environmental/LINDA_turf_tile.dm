@@ -242,19 +242,18 @@
  * for every turf whose gas changed during the FDM share — this is how a turf that
  * RECEIVED gas from a neighbour (not the injector) gets its overlay updated.
  *
- * The Rust callback passes its own computed overlay list, but we IGNORE it and
- * recompute from air: the Rust-side gas_data.overlays table is a compat shim and
- * the turf's arena air is authoritative, so recomputing here is always correct and
- * keeps the DM path and the Rust-triggered path identical. Empty air clears.
+ * Rust publication passes a precomputed overlay list so the main thread does not
+ * re-enumerate every changed mixture. Direct DM callers omit the argument and
+ * recompute from the authoritative arena mixture. Empty air clears.
  */
-/turf/open/proc/set_visuals(list/_rust_overlay_types)
+/turf/open/proc/set_visuals(list/rust_overlay_types)
 	// (Formerly refreshed a DM temperature mirror here. Under the /tg/ opaque-handle
 	// model there is no mirror — the arena is authoritative and read via
 	// return_temperature() — so this per-turf sync is gone. Do NOT re-add a
 	// set_temperature() here: writing the arena its own value re-marks the turf active
 	// and causes endless re-processing/re-visualising.)
-	var/list/new_overlay_types
-	if(air)
+	var/list/new_overlay_types = rust_overlay_types
+	if(isnull(rust_overlay_types) && air)
 		// get_gases() returns an assoc id -> moles (id = gas-type path). Per-gas meta
 		// lives in the global meta table keyed by the same path.
 		var/list/gases = air.get_gases()

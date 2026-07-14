@@ -14,8 +14,7 @@
 		return
 	primary_threat = M
 	add_personal(M, DQ_DISPOSITION_HOSTILE, 60 SECONDS, "given_target")
-	if(urgent)
-		invalidate_selection()
+	invalidate_selection()
 
 /datum/ai_brain/proc/lose_target()
 	lose_threat_at = 0
@@ -23,6 +22,8 @@
 		var/old = primary_threat
 		primary_threat = null
 		SEND_SIGNAL(holder, COMSIG_DQAI_TARGET_LOST, old)
+		if(active_behavior_type)
+			stop_active(DQ_BEHAVIOR_STOP_INTERRUPTED)
 		invalidate_selection()
 
 /// Legacy name for lose_target — kept so direct sed-style migrations work.
@@ -65,7 +66,8 @@
 		return
 	if(holder.client && !autopilot)
 		return
-	manage_processing(DQAI_PROCESSING | DQAI_FASTPROCESSING)
+	manage_processing(DQAI_PROCESSING)
+	sync_fast_processing()
 
 // ---------------------------------------------------------------------------
 // Legacy attribute proxies — getters/setters so caller code that reads or

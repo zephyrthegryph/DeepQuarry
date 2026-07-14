@@ -90,13 +90,13 @@
 	return mask
 
 /obj/machinery/air_sensor/proc/register_gas_dependencies(datum/weakref/WR)
-	unregister_gas_dependencies(WR)
 	var/datum/gas_mixture/environment = return_air()
-	if(!environment)
-		return
-	sleeping_mixture_id = environment.arena_id()
-	sleeping_mixture_revision = environment.revision()
-	SSmachines.subscribe_gas_dependency(sleeping_mixture_id, WR)
+	var/new_mixture_id = environment?.arena_id()
+	if(sleeping_mixture_id != new_mixture_id)
+		SSmachines.unsubscribe_gas_dependency(sleeping_mixture_id, WR)
+		sleeping_mixture_id = new_mixture_id
+		SSmachines.subscribe_gas_dependency(sleeping_mixture_id, WR)
+	sleeping_mixture_revision = environment ? environment.revision() : -1
 
 /obj/machinery/air_sensor/proc/unregister_gas_dependencies(datum/weakref/WR)
 	SSmachines.unsubscribe_gas_dependency(sleeping_mixture_id, WR)

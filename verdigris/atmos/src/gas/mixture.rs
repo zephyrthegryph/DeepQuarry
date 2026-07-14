@@ -10,7 +10,6 @@ use itertools::{
 	Itertools,
 };
 use std::collections::BTreeMap;
-use std::hash::{Hash, Hasher};
 use std::sync::atomic::{AtomicU64, Ordering::Relaxed};
 use tinyvec::TinyVec;
 
@@ -75,13 +74,8 @@ pub struct Mixture {
 }
 
 impl Mixture {
-	pub(crate) fn composition_signature(&self) -> u64 {
-		let mut hasher = rustc_hash::FxHasher::default();
-		self.moles.len().hash(&mut hasher);
-		for moles in &self.moles {
-			moles.to_bits().hash(&mut hasher);
-		}
-		hasher.finish()
+	pub(crate) fn composition_moles(&self) -> Vec<f32> {
+		self.moles.to_vec()
 	}
 }
 

@@ -76,7 +76,6 @@
 #define COMSIG_DQAI_BEHAVIORS_DIRTY  "dqai_behaviors_dirty"   // ()
 #define COMSIG_DQAI_LOW_HEALTH       "dqai_low_health"        // (hp_fraction)
 #define COMSIG_DQAI_ENTERED_VIEW     "dqai_entered_view"      // (mob_seen)
-#define COMSIG_DQAI_HEARD_HAZARD     "dqai_heard_hazard"      // (hazard_atom)
 
 // ---------------------------------------------------------------------------
 // Misc helpers / tuning.
@@ -91,10 +90,6 @@
 #define DQ_DAMAGE_HISTORY_CAP 8
 // Default behavior cooldown after FAILED.
 #define DQ_BEHAVIOR_FAIL_COOLDOWN (1 SECOND)
-// How long a mob remembers / pursues a heard noise before giving up.
-// (DQ_AI_NOISE_MIN_VOL lives in code/__defines/mobs.dm — it's referenced from
-// game/sound.dm, which is compiled well before this modular block.)
-#define DQ_NOISE_INVESTIGATE_TTL (8 SECONDS)
 // Grace period (deciseconds) before the brain drops a target that left view().
 // Mirrors legacy ai_holder.lose_target_timeout (5 SECONDS).
 #define DQ_LOSE_THREAT_TIMEOUT (5 SECONDS)

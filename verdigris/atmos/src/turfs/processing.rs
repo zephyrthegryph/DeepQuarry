@@ -604,30 +604,20 @@ fn post_process(active_nodes: &rustc_hash::FxHashSet<NodeIndex>) {
 			.for_each(|(tmix, should_update_vis, should_react)| {
 				let sender = byond_callback_sender();
 				let id = tmix.id;
-
-				if should_react {
-					drop(sender.try_send(Box::new(move || {
-						let turf = ByondValue::new_ref(ValueType::Turf, id);
-						match turf.read_var_id(byond_string!("air")) {
-							Ok(air) if !air.is_null() => {
+				drop(sender.try_send(Box::new(move || {
+					let turf = ByondValue::new_ref(ValueType::Turf, id);
+					if should_react {
+						if let Ok(air) = turf.read_var_id(byond_string!("air")) {
+							if !air.is_null() {
 								react_hook(air, turf).wrap_err("Reacting")?;
-								Ok(())
 							}
-							//turf is no longer valid for reactions
-							_ => Ok(()),
 						}
-					})));
-				}
-
-				if should_update_vis {
-					drop(sender.try_send(Box::new(move || {
-						let turf = ByondValue::new_ref(ValueType::Turf, id);
-
-						//turf is checked for validity in update_visuals
+					}
+					if should_update_vis {
 						update_visuals(turf).wrap_err("Updating Visuals")?;
-						Ok(())
-					})));
-				}
+					}
+					Ok(())
+				})));
 			});
 	});
 }

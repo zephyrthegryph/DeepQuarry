@@ -29,17 +29,20 @@ static NEXT_GAS_IDS: RwLock<Option<Vec<usize>>> = const_rwlock(None);
 static GAS_REVISIONS: RwLock<Option<Vec<AtomicU64>>> = const_rwlock(None);
 static GAS_PUBLICATION: RwLock<()> = const_rwlock(());
 static DIRTY_GAS_MIXTURES: RwLock<Option<FxHashMap<usize, u8>>> = const_rwlock(None);
-const PRESSURE_DIRTY_EPSILON: f32 = 0.01;
-const TEMPERATURE_DIRTY_EPSILON: f32 = 0.01;
+static DIRTY_GAS_BASELINES: RwLock<Option<FxHashMap<usize, GasChangeSignature>>> =
+	const_rwlock(None);
+const PRESSURE_DIRTY_EPSILON: f32 = 0.1;
+const TEMPERATURE_DIRTY_EPSILON: f32 = 0.1;
+const COMPOSITION_DIRTY_EPSILON: f32 = 0.001;
 pub const GAS_CHANGE_PRESSURE: u8 = 1;
 pub const GAS_CHANGE_TEMPERATURE: u8 = 2;
 pub const GAS_CHANGE_COMPOSITION: u8 = 4;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub(crate) struct GasChangeSignature {
 	pressure: f32,
 	temperature: f32,
-	composition: u64,
+	composition: Vec<f32>,
 }
 
 #[byondapi::init]
@@ -48,6 +51,7 @@ pub fn initialize_gases() {
 	*NEXT_GAS_IDS.write() = Some(Vec::with_capacity(2000));
 	*GAS_REVISIONS.write() = Some(Vec::with_capacity(240_000));
 	*DIRTY_GAS_MIXTURES.write() = Some(FxHashMap::default());
+	*DIRTY_GAS_BASELINES.write() = Some(FxHashMap::default());
 }
 
 pub fn shut_down_gases() {
@@ -56,6 +60,7 @@ pub fn shut_down_gases() {
 	NEXT_GAS_IDS.write().as_mut().unwrap().clear();
 	GAS_REVISIONS.write().as_mut().unwrap().clear();
 	DIRTY_GAS_MIXTURES.write().as_mut().unwrap().clear();
+	DIRTY_GAS_BASELINES.write().as_mut().unwrap().clear();
 }
 
 impl GasArena {
@@ -147,7 +152,7 @@ impl GasArena {
 		GasChangeSignature {
 			pressure: mixture.return_pressure(),
 			temperature: mixture.get_temperature(),
-			composition: mixture.composition_signature(),
+			composition: mixture.composition_moles(),
 		}
 	}
 
@@ -156,19 +161,47 @@ impl GasArena {
 		before: GasChangeSignature,
 		after: GasChangeSignature,
 	) {
+		let mut baselines = DIRTY_GAS_BASELINES.write();
+		let baseline = baselines
+			.as_mut()
+			.expect("dirty gas baselines are not initialized")
+			.entry(id)
+			.or_insert(before);
 		let mut mask = 0;
-		if (before.pressure - after.pressure).abs() >= PRESSURE_DIRTY_EPSILON {
+		if (baseline.pressure - after.pressure).abs() >= PRESSURE_DIRTY_EPSILON {
 			mask |= GAS_CHANGE_PRESSURE;
 		}
-		if (before.temperature - after.temperature).abs() >= TEMPERATURE_DIRTY_EPSILON {
+		if (baseline.temperature - after.temperature).abs() >= TEMPERATURE_DIRTY_EPSILON {
 			mask |= GAS_CHANGE_TEMPERATURE;
 		}
-		if before.composition != after.composition {
+		let composition_changed = baseline
+			.composition
+			.iter()
+			.zip(after.composition.iter())
+			.any(|(old, new)| (old - new).abs() >= COMPOSITION_DIRTY_EPSILON)
+			|| baseline.composition.len() != after.composition.len()
+				&& baseline
+					.composition
+					.iter()
+					.skip(after.composition.len())
+					.chain(after.composition.iter().skip(baseline.composition.len()))
+					.any(|moles| moles.abs() >= COMPOSITION_DIRTY_EPSILON);
+		if composition_changed {
 			mask |= GAS_CHANGE_COMPOSITION;
 		}
 		if mask == 0 {
 			return;
 		}
+		if mask & GAS_CHANGE_PRESSURE != 0 {
+			baseline.pressure = after.pressure;
+		}
+		if mask & GAS_CHANGE_TEMPERATURE != 0 {
+			baseline.temperature = after.temperature;
+		}
+		if mask & GAS_CHANGE_COMPOSITION != 0 {
+			baseline.composition = after.composition;
+		}
+		drop(baselines);
 		Self::mark_dirty(id, mask);
 	}
 
@@ -440,6 +473,7 @@ impl GasArena {
 				.unwrap()
 				.write()
 				.clear_with_vol(init_volume);
+			DIRTY_GAS_BASELINES.write().as_mut().unwrap().remove(&idx);
 			Self::bump_revision(idx);
 			Self::mark_dirty(
 				idx,
@@ -459,6 +493,11 @@ impl GasArena {
 	/// If `NEXT_GAS_IDS` hasn't been initialized, somehow.
 	pub fn unregister_mix(mix: &ByondValue) {
 		if let Ok(idx) = mix.read_number_id(byond_string!("_extools_pointer_gasmixture")) {
+			DIRTY_GAS_BASELINES
+				.write()
+				.as_mut()
+				.unwrap()
+				.remove(&(idx as usize));
 			Self::bump_revision(idx as usize);
 			Self::mark_dirty(
 				idx as usize,
@@ -596,7 +635,7 @@ mod tests {
 		.unwrap();
 		assert_eq!(
 			GasArena::take_dirty_mixtures(),
-			vec![(0, GAS_CHANGE_PRESSURE | GAS_CHANGE_COMPOSITION)]
+			vec![(0, GAS_CHANGE_COMPOSITION)]
 		);
 		assert!(GasArena::take_dirty_mixtures().is_empty());
 		snapshot[0].write().set_moles(0, 5.0);
@@ -617,6 +656,23 @@ mod tests {
 		GasArena::with_gas_mixture_mut(0, |mixture| {
 			mixture.set_moles(0, 0.0);
 			mixture.set_moles(1, 20.0);
+			Ok(())
+		})
+		.unwrap();
+		assert_eq!(
+			GasArena::take_dirty_mixtures(),
+			vec![(0, GAS_CHANGE_COMPOSITION)]
+		);
+		for step in 1..=4 {
+			GasArena::with_gas_mixture_mut(0, |mixture| {
+				mixture.set_moles(1, 20.0 + step as f32 * 0.0002);
+				Ok(())
+			})
+			.unwrap();
+			assert!(GasArena::take_dirty_mixtures().is_empty());
+		}
+		GasArena::with_gas_mixture_mut(0, |mixture| {
+			mixture.set_moles(1, 20.0012);
 			Ok(())
 		})
 		.unwrap();

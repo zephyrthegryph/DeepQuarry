@@ -74,7 +74,7 @@
 	model = new /datum/world_model(owner)
 	target_selector_chain = list(/datum/target_selector/closest)
 	home_turf = get_turf(owner)
-	manage_processing(DQAI_PROCESSING | DQAI_FASTPROCESSING)
+	manage_processing(DQAI_PROCESSING)
 	RegisterSignal(holder, COMSIG_MOB_STATCHANGE, PROC_REF(on_stat_change))
 	// Lazily add the player-castable-moves dispatcher verb on login — avoids
 	// bloating the verbs list of every wild simple_mob in the round.
@@ -149,6 +149,11 @@
 	if(QDELETED(holder) || holder.stat >= DEAD)
 		return
 	if(holder.client && !autopilot)
+		return
+	if(!primary_threat)
+		if(active_behavior_type)
+			stop_active(DQ_BEHAVIOR_STOP_INTERRUPTED)
+		sync_fast_processing()
 		return
 	if(busy)
 		return
@@ -324,6 +329,15 @@
 
 /datum/ai_brain/proc/invalidate_selection()
 	selection_dirty = TRUE
+	sync_fast_processing()
+
+/// Keeps the quarter-second tactical loop limited to brains with a combat target.
+/datum/ai_brain/proc/sync_fast_processing()
+	var/should_process_fast = primary_threat && holder && !QDELETED(holder) && holder.stat < DEAD && (!holder.client || autopilot)
+	if(should_process_fast)
+		DQAI_START_FASTPROCESSING(src)
+	else
+		DQAI_STOP_FASTPROCESSING(src)
 
 // ---------------------------------------------------------------------------
 // Targeting.
@@ -346,6 +360,9 @@
 			var/old = primary_threat
 			primary_threat = null
 			SEND_SIGNAL(holder, COMSIG_DQAI_TARGET_LOST, old)
+			if(active_behavior_type)
+				stop_active(DQ_BEHAVIOR_STOP_INTERRUPTED)
+			sync_fast_processing()
 		return
 	// Target is visible again — reset the grace timer.
 	lose_threat_at = 0
@@ -359,6 +376,7 @@
 		var/old = primary_threat
 		primary_threat = new_threat
 		SEND_SIGNAL(holder, COMSIG_DQAI_TARGET_CHANGED, new_threat, old)
+		sync_fast_processing()
 
 // ---------------------------------------------------------------------------
 // Dispositions.
@@ -462,7 +480,7 @@
 		manage_processing(0)
 		stop_active(DQ_BEHAVIOR_STOP_INTERRUPTED)
 	else if(old_stat >= DEAD)
-		manage_processing(DQAI_PROCESSING | DQAI_FASTPROCESSING)
+		manage_processing(DQAI_PROCESSING)
 
 /// Called by /mob/living/dq_notify_damage when the mob takes a hit.
 /datum/ai_brain/proc/notify_damage(amount, damagetype, atom/attacker)
@@ -471,6 +489,10 @@
 	model.record_damage(amount, damagetype, attacker)
 	if(ismob(attacker) && attacker != holder)
 		add_personal(attacker, DQ_DISPOSITION_HOSTILE, DQ_PERSONAL_DEFAULT_DURATION, "hit me")
+		if(!primary_threat)
+			var/mob/old = primary_threat
+			primary_threat = attacker
+			SEND_SIGNAL(holder, COMSIG_DQAI_TARGET_CHANGED, attacker, old)
 	SEND_SIGNAL(holder, COMSIG_DQAI_DAMAGE_TAKEN, amount, damagetype, attacker)
 	dispatch_behavior_signal(COMSIG_DQAI_DAMAGE_TAKEN, amount, damagetype, attacker)
 	if(holder.maxHealth && holder.health / holder.maxHealth <= DQ_LOW_HP_THRESHOLD)

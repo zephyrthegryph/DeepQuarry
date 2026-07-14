@@ -3499,9 +3499,15 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	SSmachines.hibernate_vent(V)
 	var/datum/weakref/vent_ref = WEAKREF(V)
 	TEST_ASSERT(SSmachines.hibernating_vents[vent_ref.reference], "vent did not register as sleeping")
+	var/turf_mixture_id = V.sleeping_turf_mixture_id
+	var/list/original_subscribers = SSmachines.gas_mixture_subscribers["[turf_mixture_id]"]
 	T.air.adjust_moles(/datum/gas/oxygen, 5)
 	SSmachines.wake_dirty_gas_subscribers()
 	TEST_ASSERT(!SSmachines.hibernating_vents[vent_ref.reference], "pressure change did not wake vent")
+	TEST_ASSERT(original_subscribers[vent_ref.reference], "waking removed an unchanged gas subscription")
+	SSmachines.hibernate_vent(V)
+	TEST_ASSERT_EQUAL(SSmachines.gas_mixture_subscribers["[turf_mixture_id]"], original_subscribers, \
+		"re-hibernating on the same mixture replaced the subscriber collection")
 
 	var/obj/machinery/alarm/A = new(T)
 	A.update_area()

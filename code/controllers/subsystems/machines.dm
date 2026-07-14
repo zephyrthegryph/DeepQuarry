@@ -199,6 +199,8 @@ SUBSYSTEM_DEF(machines)
 			continue
 		for(var/key in subscribers.Copy())
 			var/datum/weakref/WR = subscribers[key]
+			if(!sleeping_gas_devices[WR?.reference])
+				continue
 			var/atom/subscriber = WR?.resolve()
 			if(!subscriber)
 				wake_gas_subscriber(WR)
@@ -274,15 +276,12 @@ SUBSYSTEM_DEF(machines)
 	var/atom/subscriber = WR.resolve()
 	if(istype(subscriber, /obj/machinery/atmospherics/unary))
 		var/obj/machinery/atmospherics/unary/V = subscriber
-		V.unregister_gas_dependencies(WR)
 		START_MACHINE_PROCESSING(V)
 	else if(istype(subscriber, /obj/machinery/alarm))
 		var/obj/machinery/alarm/A = subscriber
-		A.unregister_gas_dependencies(WR)
 		START_MACHINE_PROCESSING(A)
 	else if(istype(subscriber, /obj/machinery/air_sensor))
 		var/obj/machinery/air_sensor/S = subscriber
-		S.unregister_gas_dependencies(WR)
 		START_MACHINE_PROCESSING(S)
 	if(WR.reference)
 		sleeping_gas_devices.Remove(WR.reference)

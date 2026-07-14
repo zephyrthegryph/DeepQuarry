@@ -1,0 +1,7 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - bugfix: "Limited fast combat AI processing to mobs with an active threat."
+  - rscdel: "Removed the obsolete AI noise-investigation behavior."
+  - bugfix: "Prevented deleted spark emitters from scheduling invalid timers."
+  - code_imp: "Reduced atmos publication callbacks and gas-device subscription churn."

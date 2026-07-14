@@ -33,7 +33,6 @@
 		/datum/ai_behavior/maul_unconscious,
 		/datum/ai_behavior/approach_threat,
 		/datum/ai_behavior/retaliate_to_attacker,
-		/datum/ai_behavior/investigate_noise,
 		/datum/ai_behavior/idle_wander,
 		/datum/ai_behavior/idle_speak,
 	)

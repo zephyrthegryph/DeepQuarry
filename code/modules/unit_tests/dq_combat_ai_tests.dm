@@ -308,6 +308,23 @@
 	TEST_ASSERT_EQUAL(S.ai_attack_on_sight, TRUE, "set_hostile(TRUE) didn't flip ai_attack_on_sight")
 
 
+// --- runtime: fast processing is combat-scoped ---------------------------
+
+/datum/unit_test/dq_combat_ai_fast_processing_is_combat_scoped
+
+/datum/unit_test/dq_combat_ai_fast_processing_is_combat_scoped/Run()
+	var/mob/living/simple_mob/quarry_stalker/hunter = allocate(/mob/living/simple_mob/quarry_stalker)
+	var/mob/living/carbon/human/target = allocate(/mob/living/carbon/human)
+	TEST_ASSERT(!(hunter.ai_brain in SSaifast.processing), \
+		"idle AI brain was registered for quarter-second tactical processing")
+	hunter.ai_brain.give_target(target, TRUE)
+	TEST_ASSERT(hunter.ai_brain in SSaifast.processing, \
+		"AI brain did not enter tactical processing after receiving a combat target")
+	hunter.ai_brain.lose_target()
+	TEST_ASSERT(!(hunter.ai_brain in SSaifast.processing), \
+		"AI brain remained in tactical processing after losing its combat target")
+
+
 // --- runtime: aggro-on-damage: retaliate_to_attacker drives primary_threat ---
 //
 // Regression test for the three-symptom cluster reported after the combat-AI
