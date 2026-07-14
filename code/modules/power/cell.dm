@@ -121,6 +121,10 @@
 	var/used = min(charge, amount)
 	charge -= used
 	last_use = world.time
+	if(used && istype(loc, /obj/machinery/power/apc))
+		var/obj/machinery/power/apc/A = loc
+		if(!(A in SSmachines.processing_machines))
+			A.wake_for_power_dependency()
 	if(update_appearance)
 		update_icon()
 	return used
@@ -142,6 +146,10 @@
 	if(maxcharge < amount)	return 0
 	var/amount_used = min(maxcharge-charge,amount)
 	charge += amount_used
+	if(amount_used && istype(loc, /obj/machinery/power/apc))
+		var/obj/machinery/power/apc/A = loc
+		if(!(A in SSmachines.processing_machines))
+			A.wake_for_power_dependency()
 	if(update_appearance)
 		update_icon()
 		if(loc)

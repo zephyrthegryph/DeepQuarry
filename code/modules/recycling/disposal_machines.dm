@@ -67,6 +67,15 @@
 	eject()
 	return ..()
 
+/// Contents are the only reason a charged disposal needs periodic autoflush work.
+/obj/machinery/disposal/Entered(atom/movable/thing, atom/old_loc)
+	. = ..()
+	wake_for_state_change()
+
+/obj/machinery/disposal/proc/wake_for_state_change()
+	SSmachines.publish_reactive_dependency("disposal:[REF(src)]")
+	START_MACHINE_PROCESSING(src)
+
 /obj/machinery/disposal/singularity_pull(S, current_size)
 	..()
 	if(current_size >= STAGE_FIVE)
@@ -74,6 +83,7 @@
 
 // attack by item places it in to disposal
 /obj/machinery/disposal/attackby(obj/item/I, mob/user, attack_modifier, click_parameters, drag_dropped = FALSE)
+	wake_for_state_change()
 	if(stat & BROKEN || !I || !user || !istype(I))
 		return
 
@@ -346,6 +356,7 @@
 		tgui_interact(user)
 	else
 		flush = !flush
+		wake_for_state_change()
 		update_icon()
 	return
 
@@ -357,6 +368,7 @@
 	if(get_dist(user, src) > 1 || user.loc == src || user.stat) //Until the above exists...
 		return
 	flush = !flush
+	wake_for_state_change()
 	update_icon()
 
 // user interaction
@@ -413,6 +425,7 @@
 
 		if("eject")
 			eject()
+	wake_for_state_change()
 
 	return TRUE
 
@@ -464,6 +477,12 @@
 /obj/machinery/disposal/process()
 	if(!air_contents || (stat & BROKEN))			// nothing can happen if broken
 		update_use_power(USE_POWER_OFF)
+		return PROCESS_KILL
+
+	if(mode != DISPOSALMODE_CHARGING && !flush && !length(contents))
+		update_use_power(USE_POWER_IDLE)
+		flush_count = 0
+		SSmachines.hibernate_reactive_machine(src, list("disposal:[REF(src)]"))
 		return
 
 	flush_count++
@@ -483,6 +502,9 @@
 	else if(air_contents.return_pressure() >= SEND_PRESSURE)
 		mode = DISPOSALMODE_CHARGED //if full enough, switch to ready mode
 		update_icon()
+		if(!flush && !length(contents))
+			SSmachines.hibernate_reactive_machine(src, list("disposal:[REF(src)]"))
+			return
 	else
 		pressurize() //otherwise charge
 
@@ -548,11 +570,13 @@
 	if(mode == DISPOSALMODE_CHARGED)	// if was ready,
 		mode = DISPOSALMODE_CHARGING	// switch to charging
 
+	wake_for_state_change()
 	update_icon()
 
 // called when area power changes
 /obj/machinery/disposal/power_change()
 	..()	// do default setting/reset of stat NOPOWER bit
+	wake_for_state_change()
 	update_icon()	// update icon
 	return
 

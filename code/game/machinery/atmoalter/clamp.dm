@@ -64,9 +64,9 @@
 		network_node2 = network_node1
 
 	if(network_node1)
-		network_node1.update = 1
+		network_node1.mark_dirty()
 	else if(network_node2)
-		network_node2.update = 1
+		network_node2.mark_dirty()
 
 	update_networks()
 

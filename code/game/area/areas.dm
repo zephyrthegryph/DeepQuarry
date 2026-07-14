@@ -292,6 +292,8 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 			oneoff_light += amount
 		if(ENVIRON)
 			oneoff_environ += amount
+	if(amount)
+		SSmachines.publish_reactive_dependency("area_power:[REF(src)]")
 	return amount
 
 // This is used by machines to properly update the area of power changes.
@@ -307,6 +309,8 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 			static_light += amount
 		if(ENVIRON)
 			static_environ += amount
+	if(amount)
+		SSmachines.publish_reactive_dependency("area_power:[REF(src)]")
 
 // This recomputes the continued power usage; can be used for testing or error recovery, but is not called every tick.
 /area/proc/retally_power()

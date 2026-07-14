@@ -19,12 +19,19 @@
 	var/netexcess    = 0       // excess power on the net (avail - load), updated each tick
 
 	var/problem = 0            // non-zero = some issue; power monitors will display warnings
+	/// Stable demand retained for APCs that are dependency-sleeping.
+	var/list/sleeping_apc_loads = list()
+	var/sleeping_apc_load_total = 0
+	var/revision = 1
 
 /datum/powernet/New()
 	START_PROCESSING_POWERNET(src)
 	..()
 
 /datum/powernet/Destroy()
+	for(var/obj/machinery/power/apc/A as anything in sleeping_apc_loads)
+		A?.wake_for_power_dependency()
+	sleeping_apc_loads.Cut()
 	for(var/obj/structure/cable/C in cables)
 		cables -= C
 		C.powernet = null
@@ -33,6 +40,26 @@
 		M.powernet = null
 	STOP_PROCESSING_POWERNET(src)
 	return ..()
+
+/datum/powernet/proc/reserve_sleeping_apc_load(obj/machinery/power/apc/A, amount)
+	if(!A)
+		return
+	unreserve_sleeping_apc_load(A)
+	amount = max(amount, 0)
+	sleeping_apc_loads[A] = amount
+	sleeping_apc_load_total += amount
+
+/datum/powernet/proc/unreserve_sleeping_apc_load(obj/machinery/power/apc/A)
+	if(!A || !(A in sleeping_apc_loads))
+		return
+	var/reserved = sleeping_apc_loads[A]
+	sleeping_apc_load_total -= reserved
+	load = max(load - reserved, 0)
+	sleeping_apc_loads.Remove(A)
+
+/datum/powernet/proc/publish_dependency()
+	revision++
+	SSmachines.publish_reactive_dependency("powernet:[REF(src)]")
 
 /// last_surplus() — excess power before refunds to SMESes, from last tick.
 /// Machines may read this to adjust consumption.
@@ -52,6 +79,7 @@
 /datum/powernet/proc/remove_cable(obj/structure/cable/C)
 	cables -= C
 	C.powernet = null
+	publish_dependency()
 	if(is_empty())
 		qdel(src)
 
@@ -64,12 +92,17 @@
 		C.powernet.remove_cable(C)
 	C.powernet = src
 	cables += C
+	publish_dependency()
 
 /// remove_machine() — remove a power machine; deletes the net if now empty.
 /// Caller must verify the machine is in this net before calling.
 /datum/powernet/proc/remove_machine(obj/machinery/power/M)
+	if(istype(M, /obj/machinery/power/apc))
+		var/obj/machinery/power/apc/A = M
+		unreserve_sleeping_apc_load(A)
 	nodes -= M
 	M.powernet = null
+	publish_dependency()
 	if(is_empty())
 		qdel(src)
 
@@ -82,6 +115,7 @@
 		M.disconnect_from_network()
 	M.powernet = src
 	nodes[M] = M
+	publish_dependency()
 
 /// trigger_warning() — flag a powernet problem visible on power monitors.
 /datum/powernet/proc/trigger_warning(duration_ticks = 20)
@@ -98,6 +132,9 @@
 ///   5. Smooth the viewable load/avail.
 ///   6. Reset accumulators for the next tick.
 /datum/powernet/proc/reset()
+	var/old_avail = avail
+	var/old_perapc = perapc
+	var/old_netexcess = netexcess
 	// 1. Decay problem warning.
 	if(problem > 0)
 		problem = max(problem - 1, 0)
@@ -146,13 +183,15 @@
 	viewload  = round(0.8 * viewload  + 0.2 * load)
 
 	// 6. Reset accumulators for next tick.
-	load         = 0
+	load         = sleeping_apc_load_total
 	avail        = newavail
 	smes_avail   = smes_newavail
 	inputting.Cut()
 	smes_demand  = 0
 	newavail     = 0
 	smes_newavail = 0
+	if(avail != old_avail || perapc != old_perapc || netexcess != old_netexcess)
+		publish_dependency()
 
 /datum/powernet/proc/get_percent_load(smes_only = 0)
 	if(smes_only)

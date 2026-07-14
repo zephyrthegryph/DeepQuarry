@@ -80,7 +80,7 @@
 		reagents.remove_any(REAGENT_COOLING_CONSUMED)
 
 		heating = 1
-		network.update = 1
+		network.mark_dirty()
 	else
 		heating = 0
 

@@ -82,7 +82,7 @@
 	// STEP 2 - Take the CO2 out of the input!
 	var/power_draw = scrub_gas(src, list(input_gas), air1, internal, moles_to_convert)
 	if(network1)
-		network1.update = 1
+		network1.mark_dirty()
 	if (power_draw > 0)
 		use_power(power_draw)
 		last_power_draw += power_draw
@@ -105,7 +105,7 @@
 	internal.adjust_gas(input_gas, -converted_moles)
 	air2.adjust_gas_temp(output_gas, converted_moles, internal.return_temperature())
 	if(network2)
-		network2.update = 1
+		network2.mark_dirty()
 	recent_moles_transferred = converted_moles
 	ui_error = null // Success!
 	update_icon()

@@ -135,10 +135,10 @@
 
 	if (returnval >= 0)
 		if(network1)
-			network1.update = 1
+			network1.mark_dirty()
 
 		if(network2)
-			network2.update = 1
+			network2.mark_dirty()
 
 	if (last_flow_rate)
 		flowing = 1

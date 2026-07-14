@@ -1794,7 +1794,7 @@
 	var/datum/pipe_network/network = connected_port.return_network(src)
 	if(network && !network.gases.Find(cabin_air))
 		network.gases += cabin_air
-		network.update = 1
+		network.mark_dirty()
 
 	playsound(src, 'sound/mecha/gasconnected.ogg', 50, 1)
 	mecha_log_message("Connected to gas port.")

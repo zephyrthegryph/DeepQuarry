@@ -2550,6 +2550,41 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	qdel(P2)
 
 
+/datum/unit_test/dq_reactive_disposal_wakes_on_contents
+
+/datum/unit_test/dq_reactive_disposal_wakes_on_contents/Run()
+	var/list/pair = dq_atmos_test_find_clear_pipe_run(1)
+	TEST_ASSERT_NOTNULL(pair, "no clear floor for reactive disposal test")
+	var/obj/machinery/disposal/D = new(pair[1])
+	D.mode = 2 // DISPOSALMODE_CHARGED is file-local to disposal_machines.dm.
+	D.process()
+	TEST_ASSERT(!(D in SSmachines.processing_machines), \
+		"stable empty disposal did not enter dependency sleep")
+	var/obj/item/I = new(pair[1])
+	I.forceMove(D)
+	TEST_ASSERT(D in SSmachines.processing_machines, \
+		"disposal contents mutation did not wake the sleeping disposal")
+	qdel(D)
+
+
+/datum/unit_test/dq_sleeping_apc_load_reservation
+
+/datum/unit_test/dq_sleeping_apc_load_reservation/Run()
+	var/datum/powernet/P = new
+	TEST_ASSERT(length(GLOB.apcs), "tiny map has no APC for reservation test")
+	var/obj/machinery/power/apc/A = GLOB.apcs[1]
+	P.reserve_sleeping_apc_load(A, 1250)
+	TEST_ASSERT_EQUAL(P.sleeping_apc_load_total, 1250, \
+		"powernet did not retain sleeping APC demand")
+	P.load = P.sleeping_apc_load_total
+	P.unreserve_sleeping_apc_load(A)
+	TEST_ASSERT_EQUAL(P.sleeping_apc_load_total, 0, \
+		"powernet retained APC demand after wake")
+	TEST_ASSERT_EQUAL(P.load, 0, \
+		"waking APC left its reserved load double-counted")
+	qdel(P)
+
+
 // =====================================================================
 // Pipenet dispatch (catches "START_PROCESSING_PIPENET targets wrong list")
 // =====================================================================
@@ -2587,6 +2622,15 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	var/datum/pipe_network/N = P1.parent.network
 	TEST_ASSERT(N in SSair.networks, \
 		"pipe_network NOT in SSair.networks after build_network — START_PROCESSING_PIPENET is targeting the wrong list, reconcile_air will never run in the live game")
+	var/initial_revision = N.revision
+	N.process()
+	TEST_ASSERT(!(N in SSair.networks), \
+		"clean sealed pipe_network remained scheduled after reconciliation")
+	N.mark_dirty()
+	TEST_ASSERT(N in SSair.networks, \
+		"mark_dirty() did not reenroll a sleeping pipe_network")
+	TEST_ASSERT(N.revision > initial_revision, \
+		"mark_dirty() did not advance the pipe_network mutation generation")
 	// SSmachines.networks was removed entirely (see machines.dm). If
 	// a future merge re-adds it, the macro's redirect should still keep
 	// pipenets out of it.

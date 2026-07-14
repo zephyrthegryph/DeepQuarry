@@ -115,7 +115,7 @@
 			var/datum/pipe_network/network = pad.return_network(internal_tank)
 			if(network && !network.gases.Find(internal_tank.air_contents))
 				network.gases += internal_tank.air_contents
-				network.update = 1
+				network.mark_dirty()
 			// Sfx
 			playsound(src, 'sound/mecha/gasconnected.ogg', 50, 1)
 		else

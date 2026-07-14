@@ -1,0 +1,5 @@
+author: "Codex"
+delete-after: true
+changes:
+  - refactor: "Made stable pipenets, APCs, disposals, vents, and air alarms dependency-driven instead of periodically polling."
+  - code_imp: "Added versioned reactive dependency auditing and exact wakeup scheduling for machinery."

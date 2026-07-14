@@ -8,7 +8,10 @@
 
 	var/list/leaks = list()
 
+	/// TRUE while this network needs one reconciliation pass.
 	var/update = TRUE
+	/// Monotonic mutation generation used by sleeping dependants and diagnostics.
+	var/revision = 1
 	//var/datum/gas_mixture/air_transient = null
 
 	/// Scratch pool (/datum/gas type → total moles) reused by reconcile_air() to
@@ -34,7 +37,13 @@
 		update = 0
 		reconcile_air() //equalize_gases(gases)
 
-	listclearnulls(leaks) // Let's not have forever-seals.
+	if(length(leaks))
+		listclearnulls(leaks) // Let's not have forever-seals.
+
+	// Clean, sealed networks have no periodic work. mark_dirty() enrolls them again.
+	if(!update && !length(leaks))
+		STOP_PROCESSING_PIPENET(src)
+		return PROCESS_KILL
 
 	//Give pipelines their process call for pressure checking and what not. Have to remove pressure checks for the time being as pipes dont radiate heat - Mport
 	//for(var/datum/pipeline/line_member in line_members)
@@ -53,7 +62,7 @@
 	update_network_gases()
 
 	if((normal_members.len>0)||(line_members.len>0))
-		START_PROCESSING_PIPENET(src)
+		mark_dirty()
 	else
 		qdel(src)
 
@@ -90,6 +99,13 @@
 
 	for(var/datum/gas_mixture/air in gases)
 		volume += air.return_volume()
+	mark_dirty()
+
+/// Records an authoritative network mutation and schedules exactly one reconciliation pass.
+/datum/pipe_network/proc/mark_dirty()
+	update = TRUE
+	revision++
+	START_PROCESSING_PIPENET(src)
 
 // pipenet gas equalization. The original /proc/equalize_gases pooled
 // every member mixture's gases + thermal energy, then redistributed to each

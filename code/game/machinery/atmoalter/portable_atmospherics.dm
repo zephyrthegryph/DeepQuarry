@@ -72,7 +72,7 @@
 	var/datum/pipe_network/network = connected_port.return_network(src)
 	if(network && !network.gases.Find(air_contents))
 		network.gases += air_contents
-		network.update = 1
+		network.mark_dirty()
 
 	return 1
 
@@ -97,7 +97,7 @@
 
 	var/datum/pipe_network/network = connected_port.return_network(src)
 	if (network)
-		network.update = 1
+		network.mark_dirty()
 
 /obj/machinery/portable_atmospherics/attackby(obj/item/W as obj, mob/user as mob)
 	if ((istype(W, /obj/item/tank) && !( src.destroyed )))

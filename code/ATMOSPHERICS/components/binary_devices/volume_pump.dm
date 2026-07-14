@@ -146,10 +146,10 @@ Thus, the two variables affect pump operation are set in New():
 		use_power(power_draw)
 
 		if(network1)
-			network1.update = TRUE
+			network1.mark_dirty()
 
 		if(network2)
-			network2.update = TRUE
+			network2.mark_dirty()
 
 	return TRUE
 

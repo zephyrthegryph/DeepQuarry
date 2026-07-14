@@ -254,7 +254,7 @@
 				T.update_visuals()
 				T.air_update_turf(FALSE, FALSE)
 		if(network)
-			network.update = 1
+			network.mark_dirty()
 
 	return 1
 

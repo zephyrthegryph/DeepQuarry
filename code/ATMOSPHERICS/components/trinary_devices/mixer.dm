@@ -69,13 +69,13 @@
 		power_draw = mix_gas(src, mixing_inputs, air3, transfer_moles, power_rating)
 
 		if(network1 && mixing_inputs[air1])
-			network1.update = 1
+			network1.mark_dirty()
 
 		if(network2 && mixing_inputs[air2])
-			network2.update = 1
+			network2.mark_dirty()
 
 		if(network3)
-			network3.update = 1
+			network3.mark_dirty()
 
 	if (power_draw >= 0)
 		last_power_draw = power_draw

@@ -67,11 +67,11 @@
 
 	if(network)
 		if(abs(old_temperature-air_contents.return_temperature()) > 1)
-			network.update = 1
+			network.mark_dirty()
 
 	if(partner.network)
 		if(abs(other_old_temperature-partner.air_contents.return_temperature()) > 1)
-			partner.network.update = 1
+			partner.network.mark_dirty()
 
 	return 1
 

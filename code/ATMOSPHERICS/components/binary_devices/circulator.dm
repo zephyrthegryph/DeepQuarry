@@ -55,7 +55,7 @@
 				last_temperature = removed.return_temperature()
 
 				//Update the gas networks.
-				network1.update = 1
+				network1.mark_dirty()
 
 				last_worldtime_transfer = world.time
 		else

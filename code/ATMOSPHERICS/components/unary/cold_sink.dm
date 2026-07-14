@@ -147,7 +147,7 @@
 
 		use_power(power_rating)
 
-		network.update = 1
+		network.mark_dirty()
 	else
 		cooling = 0
 

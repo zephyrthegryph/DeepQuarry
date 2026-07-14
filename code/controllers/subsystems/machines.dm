@@ -29,6 +29,12 @@ SUBSYSTEM_DEF(machines)
 	var/list/sleeping_gas_devices = list()
 	/// Rust gas arena ID -> assoc list of weakrefs for sleeping gas-dependent devices.
 	var/list/gas_mixture_subscribers = list()
+	/// Resource key -> monotonic generation for non-gas reactive dependencies.
+	var/list/reactive_revisions = list()
+	/// Resource key -> weakref map of sleeping machinery.
+	var/list/reactive_subscribers = list()
+	/// Weakref reference -> captured resource generations for sleeping machinery.
+	var/list/reactive_sleepers = list()
 
 	var/list/processing_machines = list()
 	var/list/powernets = list()
@@ -227,6 +233,79 @@ SUBSYSTEM_DEF(machines)
 	processing_machines = SSmachines.processing_machines
 	powernets = SSmachines.powernets
 	powerobjs = SSmachines.powerobjs
+
+/// Advances a dependency generation and immediately wakes its exact subscribers.
+/datum/controller/subsystem/machines/proc/publish_reactive_dependency(resource_key)
+	if(isnull(resource_key))
+		return
+	resource_key = "[resource_key]"
+	reactive_revisions[resource_key] = (reactive_revisions[resource_key] || 0) + 1
+	var/list/subscribers = reactive_subscribers[resource_key]
+	if(!length(subscribers))
+		return
+	for(var/subscriber_key in subscribers.Copy())
+		wake_reactive_machine(subscribers[subscriber_key])
+
+/// Atomically subscribes to the supplied resources before removing a machine from polling.
+/datum/controller/subsystem/machines/proc/hibernate_reactive_machine(obj/machinery/M, list/resource_keys)
+	if(!M || QDELETED(M) || !length(resource_keys))
+		return FALSE
+	var/datum/weakref/WR = WEAKREF(M)
+	var/list/captured = list()
+	for(var/raw_key in resource_keys)
+		var/resource_key = "[raw_key]"
+		captured[resource_key] = reactive_revisions[resource_key] || 0
+		var/list/subscribers = reactive_subscribers[resource_key]
+		if(!subscribers)
+			subscribers = list()
+			reactive_subscribers[resource_key] = subscribers
+		subscribers[WR.reference] = WR
+	reactive_sleepers[WR.reference] = captured
+	// Subscribe-before-sleep validation closes changes introduced by callbacks.
+	for(var/resource_key in captured)
+		if(captured[resource_key] != (reactive_revisions[resource_key] || 0))
+			wake_reactive_machine(WR)
+			return FALSE
+	STOP_MACHINE_PROCESSING(M)
+	return TRUE
+
+/datum/controller/subsystem/machines/proc/wake_reactive_machine(datum/weakref/WR)
+	if(!WR?.reference)
+		return
+	var/list/captured = reactive_sleepers[WR.reference]
+	if(!captured)
+		return
+	for(var/resource_key in captured)
+		var/list/subscribers = reactive_subscribers[resource_key]
+		subscribers?.Remove(WR.reference)
+		if(subscribers && !length(subscribers))
+			reactive_subscribers.Remove(resource_key)
+	reactive_sleepers.Remove(WR.reference)
+	var/obj/machinery/M = WR.resolve()
+	if(M && !QDELETED(M))
+		START_MACHINE_PROCESSING(M)
+
+/// Diagnostic-only invariant audit; gameplay never relies on this to wake objects.
+/datum/controller/subsystem/machines/proc/audit_reactive_sleepers(fail_hard = FALSE)
+	var/list/problems = list()
+	for(var/subscriber_key in reactive_sleepers)
+		var/list/captured = reactive_sleepers[subscriber_key]
+		var/datum/weakref/WR
+		for(var/resource_key in captured)
+			var/list/subscribers = reactive_subscribers[resource_key]
+			WR ||= subscribers?[subscriber_key]
+			if(!subscribers?[subscriber_key])
+				problems += "[subscriber_key] missing subscription to [resource_key]"
+			if(captured[resource_key] != (reactive_revisions[resource_key] || 0))
+				problems += "[subscriber_key] stale on [resource_key]"
+		var/obj/machinery/M = WR?.resolve()
+		if(!M)
+			problems += "dead reactive subscriber [subscriber_key]"
+		else if(M in processing_machines)
+			problems += "[M] is both sleeping and processing"
+	if(length(problems) && fail_hard)
+		CRASH("Reactive dependency audit failed: [problems.Join("; ")]")
+	return problems
 
 /datum/controller/subsystem/machines/proc/wake_dirty_gas_subscribers()
 	var/list/dirty_mixtures = drain_dirty_gas_mixtures()

@@ -155,7 +155,7 @@
 		SSair.add_to_active(target)
 
 	if(network)
-		network.update = 1
+		network.mark_dirty()
 
 /datum/pipeline/proc/temperature_interact(turf/target, share_volume, thermal_conductivity)
 	var/total_heat_capacity = air.heat_capacity()
@@ -170,7 +170,7 @@
 				new_temp = TCMB
 			air.set_temperature(new_temp)
 			if (network)
-				network.update = TRUE
+				network.mark_dirty()
 
 		if(modeled_location.blocks_air)
 
@@ -221,7 +221,7 @@
 
 			air.set_temperature(air.return_temperature() - heat/total_heat_capacity)
 	if(network)
-		network.update = 1
+		network.mark_dirty()
 
 //surface must be the surface area in m^2
 /datum/pipeline/proc/radiate_heat_to_space(surface, thermal_conductivity)
@@ -239,4 +239,4 @@
 
 	air.add_thermal_energy(heat_gain)
 	if(network)
-		network.update = 1
+		network.mark_dirty()

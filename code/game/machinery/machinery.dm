@@ -136,6 +136,7 @@ Class Procs:
 		power_change()
 
 /obj/machinery/Destroy()
+	SSmachines.wake_reactive_machine(WEAKREF(src))
 	if(!speed_process)
 		STOP_MACHINE_PROCESSING(src)
 	else

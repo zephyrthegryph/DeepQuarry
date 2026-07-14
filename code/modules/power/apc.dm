@@ -132,6 +132,7 @@ GLOBAL_LIST_EMPTY(apcs)
 		terminal.connect_to_network()
 
 /obj/machinery/power/apc/drain_power(drain_check, surge, amount = 0)
+	wake_for_power_dependency()
 	if(drain_check)
 		return 1
 
@@ -190,6 +191,8 @@ GLOBAL_LIST_EMPTY(apcs)
 
 /obj/machinery/power/apc/Destroy()
 	GLOB.apcs -= src
+	terminal?.powernet?.unreserve_sleeping_apc_load(src)
+	SSmachines.publish_reactive_dependency("apc:[REF(src)]")
 	update()
 
 	if(area)
@@ -217,6 +220,10 @@ GLOBAL_LIST_EMPTY(apcs)
 	QDEL_NULL(icon_renderer)
 
 	return ..()
+
+/obj/machinery/power/apc/proc/wake_for_power_dependency()
+	SSmachines.publish_reactive_dependency("apc:[REF(src)]")
+	START_MACHINE_PROCESSING(src)
 
 /obj/machinery/power/apc/proc/offset_apc()
 	pixel_x = (dir & 3) ? 0 : (dir == 4 ? 26 : -26)
@@ -374,6 +381,7 @@ GLOBAL_LIST_EMPTY(apcs)
 // ─────────────────────────────────────────────────────────────────────────────
 
 /obj/machinery/power/apc/attackby(obj/item/W, mob/user)
+	wake_for_power_dependency()
 	if(issilicon(user) && get_dist(src, user) > 1)
 		return attack_hand(user)
 	add_fingerprint(user)
@@ -815,6 +823,7 @@ GLOBAL_LIST_EMPTY(apcs)
 	return 1
 
 /obj/machinery/power/apc/tgui_act(action, params, datum/tgui/ui)
+	wake_for_power_dependency()
 	if(..() || !can_use(ui.user, TRUE))
 		return TRUE
 
@@ -891,6 +900,7 @@ GLOBAL_LIST_EMPTY(apcs)
 				overload_lighting()
 
 /obj/machinery/power/apc/proc/toggle_breaker()
+	wake_for_power_dependency()
 	operating = !operating
 	update()
 	update_icon()
@@ -923,6 +933,8 @@ GLOBAL_LIST_EMPTY(apcs)
 // ─────────────────────────────────────────────────────────────────────────────
 
 /obj/machinery/power/apc/process()
+	var/datum/powernet/connected_powernet = terminal?.powernet
+	connected_powernet?.unreserve_sleeping_apc_load(src)
 	if(!area.requires_power)
 		return PROCESS_KILL
 	if(stat & (BROKEN | MAINT))
@@ -953,6 +965,16 @@ GLOBAL_LIST_EMPTY(apcs)
 		update()
 	else if(changed & 2)
 		queue_icon_update()
+
+	// A full, externally powered APC with no state transition can retain its
+	// stable demand in the powernet and wait for an exact dependency change.
+	if(!changed && !force_update && !failure_timer && connected_powernet && cell && cell.charge >= cell.maxcharge && charging == 2)
+		connected_powernet.reserve_sleeping_apc_load(src, lastused_total)
+		SSmachines.hibernate_reactive_machine(src, list(
+			"powernet:[REF(connected_powernet)]",
+			"area_power:[REF(area)]",
+			"apc:[REF(src)]"
+		))
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Legacy passthrough procs — kept for external call-site compatibility
@@ -995,6 +1017,7 @@ GLOBAL_LIST_EMPTY(apcs)
 // ─────────────────────────────────────────────────────────────────────────────
 
 /obj/machinery/power/apc/emp_act(severity, recursive)
+	wake_for_power_dependency()
 	. = ..()
 	if(. & EMP_PROTECT_SELF)
 		return
@@ -1007,6 +1030,7 @@ GLOBAL_LIST_EMPTY(apcs)
 	update_icon()
 
 /obj/machinery/power/apc/ex_act(severity)
+	wake_for_power_dependency()
 	switch(severity)
 		if(1)
 			if(cell)
@@ -1031,6 +1055,7 @@ GLOBAL_LIST_EMPTY(apcs)
 	return
 
 /obj/machinery/power/apc/disconnect_terminal(obj/machinery/power/terminal/term)
+	wake_for_power_dependency()
 	if(terminal)
 		terminal.master = null
 		terminal = null

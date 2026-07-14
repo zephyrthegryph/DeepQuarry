@@ -130,9 +130,9 @@ GLOBAL_LIST_EMPTY(all_turbines)
 
 	//Update the gas networks
 	if(circ1.network2)
-		circ1.network2.update = 1
+		circ1.network2.mark_dirty()
 	if(circ2.network2)
-		circ2.network2.update = 1
+		circ2.network2.mark_dirty()
 
 	//Exceeding maximum power leads to some power loss
 	if(effective_gen > max_power && prob(5))

@@ -127,7 +127,7 @@
 				power_draw = pump_gas(src, air1, environment, transfer_moles, power_rating)
 
 				if(power_draw >= 0 && network1)
-					network1.update = 1
+					network1.mark_dirty()
 		else //external -> internal
 			if (node2 && (environment.return_temperature() || air2.return_temperature()))
 				var/transfer_moles = calculate_transfer_moles(environment, air2, pressure_delta, (network2)? network2.volume : 0)
@@ -137,7 +137,7 @@
 				power_draw = pump_gas(src, environment, air2, transfer_moles, power_rating)
 
 				if(power_draw >= 0 && network2)
-					network2.update = 1
+					network2.mark_dirty()
 
 	if (power_draw >= 0)
 		last_power_draw = power_draw

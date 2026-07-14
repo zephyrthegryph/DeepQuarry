@@ -88,12 +88,12 @@
 		use_power(power_draw)
 
 		if(input.network)
-			input.network.update = 1
+			input.network.mark_dirty()
 		if(output.network)
-			output.network.update = 1
+			output.network.mark_dirty()
 		for(var/datum/omni_port/P in atmos_filters)
 			if(P.network)
-				P.network.update = 1
+				P.network.mark_dirty()
 
 	return 1
 

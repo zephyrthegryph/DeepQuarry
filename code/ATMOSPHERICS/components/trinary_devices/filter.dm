@@ -103,13 +103,13 @@
 		power_draw = filter_gas(src, filtered_out, air1, air2, air3, transfer_moles, power_rating)
 
 		if(network2)
-			network2.update = 1
+			network2.mark_dirty()
 
 		if(network3)
-			network3.update = 1
+			network3.mark_dirty()
 
 		if(network1)
-			network1.update = 1
+			network1.mark_dirty()
 
 	if (power_draw >= 0)
 		last_power_draw = power_draw

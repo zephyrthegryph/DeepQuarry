@@ -78,9 +78,9 @@
 		update_icon()
 
 	if (network1)
-		network1.update = 1
+		network1.mark_dirty()
 	if (network2)
-		network2.update = 1
+		network2.mark_dirty()
 
 /obj/machinery/atmospherics/pipeturbine/update_icon()
 	cut_overlays()

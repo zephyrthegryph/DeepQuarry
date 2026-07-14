@@ -60,7 +60,7 @@
 		on = 0
 		return
 	if(network)
-		network.update = 1
+		network.mark_dirty()
 	return 1
 
 // Housekeeping and pipe network stuff below
