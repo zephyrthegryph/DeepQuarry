@@ -16,6 +16,7 @@ struct TurfProcessRequest {
 	fdm_max_steps: i32,
 	equalize_enabled: bool,
 	planet_share_ratio: f32,
+	group_pressure_goal: f32,
 }
 
 #[derive(Default)]
@@ -31,6 +32,8 @@ struct TurfProcessResult {
 	snapshot_mixtures: usize,
 	published_mixtures: usize,
 	rejected_generations: u64,
+	group_cost_ms: f32,
+	group_turfs: usize,
 }
 
 static TURF_PROCESS_CHANNEL: OnceLock<(
@@ -126,6 +129,15 @@ fn process_turf_hook(mut src: ByondValue, remaining: ByondValue) -> Result<Byond
 			byond_string!("async_rejected_generations"),
 			&(result.rejected_generations as f32).into(),
 		)?;
+		let previous_group_cost = src.read_number_id(byond_string!("cost_groups"))?;
+		src.write_var_id(
+			byond_string!("cost_groups"),
+			&(0.8 * previous_group_cost + 0.2 * result.group_cost_ms).into(),
+		)?;
+		src.write_var_id(
+			byond_string!("num_group_turfs_processed"),
+			&(result.group_turfs as f32).into(),
+		)?;
 		return Ok(false.into());
 	}
 
@@ -142,11 +154,15 @@ fn process_turf_hook(mut src: ByondValue, remaining: ByondValue) -> Result<Byond
 	let planet_share_ratio = src
 		.read_number_id(byond_string!("planet_share_ratio"))
 		.unwrap_or(GAS_DIFFUSION_CONSTANT);
+	let group_pressure_goal = src
+		.read_number_id(byond_string!("excited_group_pressure_goal"))
+		.unwrap_or(0.5);
 
 	let request = TurfProcessRequest {
 		fdm_max_steps,
 		equalize_enabled,
 		planet_share_ratio,
+		group_pressure_goal,
 	};
 	TURF_PROCESS_RUNNING.store(true, Ordering::Release);
 	if turf_process_channel().0.try_send(request).is_err() {
@@ -282,10 +298,12 @@ fn process_turf(
 		}
 		start_time.elapsed().as_millis() as f32
 	};
-	if published {
+	let (group_turfs, group_cost_ms) = if published {
 		dispatch_pressure_events(pressure_events);
-		super::groups::send_to_groups(low_pressure_turfs.clone());
-	}
+		super::groups::process_groups(request.group_pressure_goal, low_pressure_turfs.clone())
+	} else {
+		(0, 0.0)
+	};
 	if published && request.equalize_enabled {
 		#[cfg(feature = "fastmos")]
 		{
@@ -318,6 +336,8 @@ fn process_turf(
 		snapshot_mixtures: snapshot_mix_ids.len(),
 		published_mixtures: published_ids.as_ref().map_or(0, Vec::len),
 		rejected_generations: TURF_REJECTED_GENERATIONS.load(Ordering::Acquire),
+		group_cost_ms,
+		group_turfs,
 	}
 }
 

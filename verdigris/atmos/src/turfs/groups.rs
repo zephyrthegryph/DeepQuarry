@@ -16,6 +16,19 @@ fn with_groups<T>(f: impl Fn(Option<BTreeSet<TurfID>>) -> T) -> T {
 pub fn send_to_groups(sent: BTreeSet<TurfID>) {
 	GROUPS_CHANNEL.try_lock().map(|mut opt| opt.replace(sent));
 }
+
+pub(super) fn process_groups(
+	group_pressure_goal: f32,
+	low_pressure_turfs: BTreeSet<TurfID>,
+) -> (usize, f32) {
+	let start_time = Instant::now();
+	let (processed, _) = excited_group_processing(
+		group_pressure_goal,
+		low_pressure_turfs,
+		(&start_time, Duration::from_secs(60)),
+	);
+	(processed, start_time.elapsed().as_millis() as f32)
+}
 /// Returns: If this cycle is interrupted by overtiming or not. Starts a processing excited groups cycle, does nothing if process_turfs isn't ran.
 #[byondapi::bind("/datum/controller/subsystem/air/proc/process_excited_groups_auxtools")]
 #[auxmacros::panic_safe]
@@ -72,12 +85,12 @@ fn excited_group_processing(
 			break;
 		}
 
-		with_turf_gases_read(|arena| {
+		let changes = with_turf_gases_read(|arena| {
 			let Some(initial_mix_ref) = arena.get_from_id(initial_turf) else {
-				return;
+				return Vec::new();
 			};
 			if !initial_mix_ref.enabled() {
-				return;
+				return Vec::new();
 			}
 
 			let mut border_turfs: VecDeque<TurfID> = VecDeque::with_capacity(40);
@@ -126,11 +139,24 @@ fn excited_group_processing(
 				if !fully_mixed.is_corrupt() {
 					turfs
 						.par_iter()
-						.filter_map(|turf| all_mixtures.get(turf.mix))
-						.for_each(|mix_lock| mix_lock.write().copy_from_mutable(&fully_mixed));
+						.filter_map(|turf| {
+							let mix_lock = all_mixtures.get(turf.mix)?;
+							let mut mixture = mix_lock.write();
+							let before = GasArena::change_signature(&mixture);
+							mixture.copy_from_mutable(&fully_mixed);
+							let after = GasArena::change_signature(&mixture);
+							Some((turf.mix, before, after))
+						})
+						.collect()
+				} else {
+					Vec::new()
 				}
-			});
+			})
 		});
+		for (mix, before, after) in changes {
+			GasArena::bump_revision(mix);
+			GasArena::mark_dirty_if_changed(mix, before, after);
+		}
 	}
 	(found_turfs.len(), is_cancelled)
 }

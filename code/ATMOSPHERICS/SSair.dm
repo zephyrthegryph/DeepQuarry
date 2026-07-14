@@ -265,10 +265,6 @@ SUBSYSTEM_DEF(air)
 	// here — doing so would clobber the arena-reported timings.
 	if(currentpart == SSAIR_TURFS)
 		var/overtimed = process_turfs_auxtools(src, SSAIR_REMAINING_MS)
-		// process_excited_groups only does work if process_turfs ran this cycle,
-		// so run it immediately after (it has its own budget/overtime return).
-		if(!overtimed && low_pressure_turfs)
-			overtimed = process_excited_groups_auxtools(src, SSAIR_REMAINING_MS)
 		if(state != SS_RUNNING)
 			return
 		if(overtimed)
