@@ -285,6 +285,8 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 
 // Use this for a one-time power draw from the area, typically for non-machines.
 /area/proc/use_power_oneoff(amount, chan)
+	if(amount && apc?.adjust_sleeping_area_load(amount, chan))
+		return amount
 	switch(chan)
 		if(EQUIP)
 			oneoff_equip += amount

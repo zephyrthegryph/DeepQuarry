@@ -187,6 +187,25 @@
 	var/on = 1
 	var/alert = 0
 	var/previousPressure
+	var/sleeping_mixture_id
+	var/sleeping_mixture_revision = -1
+
+/obj/machinery/airlock_sensor/proc/register_gas_dependencies(datum/weakref/WR)
+	var/datum/gas_mixture/environment = return_air()
+	sleeping_mixture_id = environment?.arena_id()
+	sleeping_mixture_revision = environment?.revision() || -1
+	SSmachines.subscribe_gas_dependency(sleeping_mixture_id, WR)
+
+/obj/machinery/airlock_sensor/proc/unregister_gas_dependencies(datum/weakref/WR)
+	SSmachines.unsubscribe_gas_dependency(sleeping_mixture_id, WR)
+	sleeping_mixture_id = null
+	sleeping_mixture_revision = -1
+
+/obj/machinery/airlock_sensor/proc/gas_dependency_changed(mixture_id, change_mask)
+	if(mixture_id != sleeping_mixture_id || !(change_mask & GAS_DEPENDENCY_PRESSURE))
+		return FALSE
+	var/datum/gas_mixture/environment = return_air()
+	return !environment || environment.arena_id() != sleeping_mixture_id || environment.revision() != sleeping_mixture_revision
 
 /obj/machinery/airlock_sensor/update_icon()
 	if(panel_open)
@@ -231,6 +250,7 @@
 			alert = (pressure < ONE_ATMOSPHERE*0.8)
 
 			update_icon()
+	SSmachines.hibernate_airlock_sensor(src)
 
 /obj/machinery/airlock_sensor/proc/set_frequency(new_frequency)
 	SSradio.remove_object(src, frequency)
@@ -242,6 +262,7 @@
 	set_frequency(frequency)
 
 /obj/machinery/airlock_sensor/Destroy()
+	SSmachines.wake_gas_subscriber(WEAKREF(src))
 	if(SSradio)
 		SSradio.remove_object(src,frequency)
 	return ..()

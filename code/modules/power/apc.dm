@@ -65,6 +65,10 @@ GLOBAL_LIST_EMPTY(apcs)
 	/// 0.0005 means cellcharge is capped to ~0.05% per second.
 	var/chargelevel = 0.0005
 	var/start_charge = 90           // initial cell charge %
+	/// World time of the last power-state update; sleeping APCs charge by elapsed time.
+	var/last_power_process_time = 0
+	/// Coarse timer used only while a stable battery is charging.
+	var/charging_wake_timer
 	var/cell_type = /obj/item/cell/apc
 
 	// ── physical state ──────────────────────────────────────────────────────
@@ -191,6 +195,9 @@ GLOBAL_LIST_EMPTY(apcs)
 
 /obj/machinery/power/apc/Destroy()
 	GLOB.apcs -= src
+	if(charging_wake_timer)
+		deltimer(charging_wake_timer)
+		charging_wake_timer = null
 	terminal?.powernet?.unreserve_sleeping_apc_load(src)
 	SSmachines.publish_reactive_dependency("apc:[REF(src)]")
 	update()
@@ -224,6 +231,24 @@ GLOBAL_LIST_EMPTY(apcs)
 /obj/machinery/power/apc/proc/wake_for_power_dependency()
 	SSmachines.publish_reactive_dependency("apc:[REF(src)]")
 	START_MACHINE_PROCESSING(src)
+
+/// Fold routine area consumption into this APC's retained grid reservation.
+/obj/machinery/power/apc/proc/adjust_sleeping_area_load(amount, chan)
+	if(!amount)
+		return FALSE
+	switch(chan)
+		if(EQUIP)
+			if(equipment < POWERCHAN_ON)
+				return FALSE
+		if(LIGHT)
+			if(lighting < POWERCHAN_ON)
+				return FALSE
+		if(ENVIRON)
+			if(environ < POWERCHAN_ON)
+				return FALSE
+		else
+			return FALSE
+	return terminal?.powernet?.adjust_sleeping_apc_load(src, amount)
 
 /obj/machinery/power/apc/proc/offset_apc()
 	pixel_x = (dir & 3) ? 0 : (dir == 4 ? 26 : -26)
@@ -933,6 +958,9 @@ GLOBAL_LIST_EMPTY(apcs)
 // ─────────────────────────────────────────────────────────────────────────────
 
 /obj/machinery/power/apc/process()
+	if(charging_wake_timer)
+		deltimer(charging_wake_timer)
+		charging_wake_timer = null
 	var/datum/powernet/connected_powernet = terminal?.powernet
 	connected_powernet?.unreserve_sleeping_apc_load(src)
 	if(!area.requires_power)
@@ -950,7 +978,10 @@ GLOBAL_LIST_EMPTY(apcs)
 		return
 
 	// Run the distributor's per-tick logic.
-	var/changed = power_distributor.tick()
+	var/machine_wait = max(SSmachines.wait, 1)
+	var/elapsed_machine_ticks = last_power_process_time ? max(1, round((world.time - last_power_process_time) / machine_wait)) : 1
+	last_power_process_time = world.time
+	var/changed = power_distributor.tick(elapsed_machine_ticks)
 
 	// Sync results back into APC vars for TGUI and icon rendering.
 	_sync_from_distributor()
@@ -966,15 +997,22 @@ GLOBAL_LIST_EMPTY(apcs)
 	else if(changed & 2)
 		queue_icon_update()
 
-	// A full, externally powered APC with no state transition can retain its
-	// stable demand in the powernet and wait for an exact dependency change.
-	if(!changed && !force_update && !failure_timer && connected_powernet && cell && cell.charge >= cell.maxcharge && charging == 2)
+	// Stable APCs retain their demand in the powernet and wait for an exact
+	// dependency change. Charging batteries use one coarse elapsed-time wakeup
+	// instead of polling on every machinery tick.
+	if(!changed && !force_update && !failure_timer && connected_powernet && cell && charging)
 		connected_powernet.reserve_sleeping_apc_load(src, lastused_total)
 		SSmachines.hibernate_reactive_machine(src, list(
 			"powernet:[REF(connected_powernet)]",
 			"area_power:[REF(area)]",
 			"apc:[REF(src)]"
 		))
+		if(charging == 1 && !charging_wake_timer)
+			charging_wake_timer = addtimer(CALLBACK(src, PROC_REF(wake_for_charging)), 10 SECONDS, TIMER_STOPPABLE)
+
+/obj/machinery/power/apc/proc/wake_for_charging()
+	charging_wake_timer = null
+	START_MACHINE_PROCESSING(src)
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Legacy passthrough procs — kept for external call-site compatibility

@@ -694,7 +694,7 @@ fn equalize_all_hook(gas_list: ByondValue) -> Result<ByondValue> {
 				.map(|f| f as usize)
 		})
 		.collect::<BTreeSet<_>>();
-	GasArena::with_all_mixtures(move |all_mixtures| {
+	let changes = GasArena::with_all_mixtures(move |all_mixtures| {
 		let mut tot = gas::Mixture::new();
 		let mut tot_vol: f64 = 0.0;
 		gas_list
@@ -705,18 +705,26 @@ fn equalize_all_hook(gas_list: ByondValue) -> Result<ByondValue> {
 				tot.merge(&src_gas);
 				tot_vol += f64::from(src_gas.volume);
 			});
+		let mut changes = Vec::with_capacity(gas_list.len());
 		if tot_vol > 0.0 {
 			gas_list
 				.iter()
-				.filter_map(|&id| all_mixtures.get(id))
-				.for_each(|dest_gas_lock| {
+				.filter_map(|&id| all_mixtures.get(id).map(|mixture| (id, mixture)))
+				.for_each(|(id, dest_gas_lock)| {
 					let dest_gas = &mut dest_gas_lock.write();
+					let before = GasArena::change_signature(dest_gas);
 					let vol = dest_gas.volume; // don't wanna borrow it in the below
 					dest_gas.copy_from_mutable(&tot);
 					dest_gas.multiply((f64::from(vol) / tot_vol) as f32);
+					changes.push((id, before, GasArena::change_signature(dest_gas)));
 				});
 		}
+		changes
 	});
+	for (id, before, after) in changes {
+		GasArena::bump_revision(id);
+		GasArena::mark_dirty_if_changed(id, before, after);
+	}
 	Ok(ByondValue::null())
 }
 

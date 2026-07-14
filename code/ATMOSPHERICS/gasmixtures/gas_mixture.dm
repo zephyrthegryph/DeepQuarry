@@ -27,11 +27,6 @@ GLOBAL_LIST_INIT(meta_gas_info, meta_gas_list()) //see ATMOSPHERICS/gas_types.dm
 // GAS_TYPE_COUNT / the GAS_2_LIST helpers, so it is kept.
 GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 
-#define GAS_DEPENDENCY_PRESSURE 1
-#define GAS_DEPENDENCY_TEMPERATURE 2
-#define GAS_DEPENDENCY_COMPOSITION 4
-#define GAS_DEPENDENCY_ALL (GAS_DEPENDENCY_PRESSURE|GAS_DEPENDENCY_TEMPERATURE|GAS_DEPENDENCY_COMPOSITION)
-
 /proc/init_gaslist_cache()
 	var/list/gases = list()
 	for(var/id in GLOB.meta_gas_info)

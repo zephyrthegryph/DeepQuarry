@@ -2576,13 +2576,36 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	P.reserve_sleeping_apc_load(A, 1250)
 	TEST_ASSERT_EQUAL(P.sleeping_apc_load_total, 1250, \
 		"powernet did not retain sleeping APC demand")
+	P.adjust_sleeping_apc_load(A, 300)
+	TEST_ASSERT_EQUAL(P.sleeping_apc_load_total, 1550, \
+		"powernet did not fold dynamic area usage into sleeping APC demand")
 	P.load = P.sleeping_apc_load_total
+	P.reset()
+	TEST_ASSERT_EQUAL(P.sleeping_apc_load_total, 1250, \
+		"powernet retained one-tick area usage in the stable APC reservation")
 	P.unreserve_sleeping_apc_load(A)
 	TEST_ASSERT_EQUAL(P.sleeping_apc_load_total, 0, \
 		"powernet retained APC demand after wake")
 	TEST_ASSERT_EQUAL(P.load, 0, \
 		"waking APC left its reserved load double-counted")
 	qdel(P)
+
+
+/datum/unit_test/dq_airlock_sensor_wakes_on_pressure
+
+/datum/unit_test/dq_airlock_sensor_wakes_on_pressure/Run()
+	var/list/pair = dq_atmos_test_find_clear_pipe_run(1)
+	TEST_ASSERT_NOTNULL(pair, "no clear floor for airlock sensor dependency test")
+	var/turf/simulated/floor/T = pair[1]
+	var/obj/machinery/airlock_sensor/S = new(T)
+	S.process()
+	TEST_ASSERT(!(S in SSmachines.processing_machines), \
+		"stable airlock sensor did not enter gas dependency sleep")
+	T.return_air().adjust_moles(/datum/gas/oxygen, 10)
+	SSmachines.wake_dirty_gas_subscribers()
+	TEST_ASSERT(S in SSmachines.processing_machines, \
+		"pressure mutation did not wake sleeping airlock sensor")
+	qdel(S)
 
 
 // =====================================================================

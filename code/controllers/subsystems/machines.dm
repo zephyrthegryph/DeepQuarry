@@ -334,6 +334,10 @@ SUBSYSTEM_DEF(machines)
 				var/obj/machinery/air_sensor/S = subscriber
 				if(S.gas_dependency_changed(mixture_id, change_mask))
 					wake_gas_subscriber(WR)
+			else if(istype(subscriber, /obj/machinery/airlock_sensor))
+				var/obj/machinery/airlock_sensor/S = subscriber
+				if(S.gas_dependency_changed(mixture_id, change_mask))
+					wake_gas_subscriber(WR)
 			else
 				wake_gas_subscriber(WR)
 
@@ -385,6 +389,14 @@ SUBSYSTEM_DEF(machines)
 	S.register_gas_dependencies(WR)
 	STOP_MACHINE_PROCESSING(S)
 
+/datum/controller/subsystem/machines/proc/hibernate_airlock_sensor(obj/machinery/airlock_sensor/S)
+	if(!S)
+		return
+	var/datum/weakref/WR = WEAKREF(S)
+	sleeping_gas_devices[WR.reference] = WR
+	S.register_gas_dependencies(WR)
+	STOP_MACHINE_PROCESSING(S)
+
 /datum/controller/subsystem/machines/proc/wake_vent(datum/weakref/WR)
 	wake_gas_subscriber(WR)
 
@@ -404,6 +416,10 @@ SUBSYSTEM_DEF(machines)
 		START_MACHINE_PROCESSING(A)
 	else if(istype(subscriber, /obj/machinery/air_sensor))
 		var/obj/machinery/air_sensor/S = subscriber
+		S.unregister_gas_dependencies(WR)
+		START_MACHINE_PROCESSING(S)
+	else if(istype(subscriber, /obj/machinery/airlock_sensor))
+		var/obj/machinery/airlock_sensor/S = subscriber
 		S.unregister_gas_dependencies(WR)
 		START_MACHINE_PROCESSING(S)
 	if(WR.reference)

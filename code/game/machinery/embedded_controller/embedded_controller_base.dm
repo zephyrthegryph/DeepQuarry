@@ -30,6 +30,7 @@
 	if(!signal || signal.encryption) return
 
 	if(program)
+		START_MACHINE_PROCESSING(src)
 		program.receive_signal(signal, receive_method, receive_param)
 
 /obj/machinery/embedded_controller/Topic()
@@ -41,6 +42,7 @@
 		return TRUE
 	if(LAZYLEN(valid_actions))
 		if(action in valid_actions)
+			START_MACHINE_PROCESSING(src)
 			program.receive_user_command(action)
 			return TRUE
 	if(ui.user)
@@ -51,6 +53,12 @@
 		program.process()
 
 	update_icon()
+	if(!program || !program.memory["processing"])
+		return PROCESS_KILL
+
+/obj/machinery/embedded_controller/power_change()
+	. = ..()
+	START_MACHINE_PROCESSING(src)
 
 /obj/machinery/embedded_controller/attack_ai(mob/user as mob)
 	tgui_interact(user)

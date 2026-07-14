@@ -25,7 +25,7 @@
 	/// Cell-charge bookkeeping.
 	var/charging    = 0  ///< 0 = not charging, 1 = charging, 2 = full
 	var/chargemode  = 1  ///< 1 = auto-charge enabled, 0 = disabled
-	var/chargecount = 0  ///< consecutive ticks above charge threshold
+	var/chargecount = 0  ///< consecutive equivalent machine ticks above charge threshold
 
 	/// Long-term power trend (+= surplus ticks, -= deficit ticks).
 	/// Positive = sustained surplus, negative = sustained deficit.
@@ -113,7 +113,7 @@
 /// Called from APC.process() after broken/failure-timer early-exits.
 /// Returns a ADIST_CHANGED_* bitfield indicating what changed so the APC
 /// can decide whether to queue an icon update.
-/datum/apc_power_distributor/proc/tick()
+/datum/apc_power_distributor/proc/tick(elapsed_machine_ticks = 1)
 	var/area/A = apc.area
 
 	// Sample area load from the last tick.
@@ -140,7 +140,7 @@
 		main_status = APC_EXTERNAL_POWER_GOOD
 
 	if(apc.cell && !apc.shorted && !apc.grid_check)
-		_process_with_cell(excess)
+		_process_with_cell(excess, elapsed_machine_ticks)
 	else
 		_process_no_cell()
 
@@ -153,18 +153,17 @@
 	return changed
 
 /// _process_with_cell() — normal operating path (cell present).
-/datum/apc_power_distributor/proc/_process_with_cell(excess)
+/datum/apc_power_distributor/proc/_process_with_cell(excess, elapsed_machine_ticks)
 	var/obj/item/cell/C = apc.cell
 
-	// Draw from cell to cover last tick's load (capped to cell charge).
-	var/cellused = min(C.charge, CELLRATE * lastused_total)
-	C.use(cellused, FALSE)
-
-	if(excess > lastused_total)
-		// Grid has plenty — reimburse the cell for what was drawn.
-		var/draw = apc.draw_power(cellused / CELLRATE)
-		C.give(draw * CELLRATE, FALSE)
+	if(excess >= lastused_total)
+		// Stable grid power serves the area directly. Cycling the cell through an
+		// equal drain/reimbursement creates needless writes and prevents sleep.
+		apc.draw_power(lastused_total)
 	else
+		// The cell covers demand before the grid supplies its available share.
+		var/cellused = min(C.charge, CELLRATE * lastused_total)
+		C.use(cellused, FALSE)
 		if((C.charge / CELLRATE + excess) >= lastused_total)
 			// Cell + grid covers this tick's demand.
 			var/draw = apc.draw_power(excess)
@@ -186,7 +185,7 @@
 	lastused_charging = 0
 	if(attempt_charging())
 		if(excess > 0)
-			var/ch = min(excess * CELLRATE, C.maxcharge * apc.chargelevel)
+			var/ch = min(excess * CELLRATE * elapsed_machine_ticks, C.maxcharge * apc.chargelevel * elapsed_machine_ticks)
 			ch = apc.draw_power(ch / CELLRATE)
 			C.give(ch * CELLRATE, FALSE)
 			lastused_charging = ch
@@ -204,7 +203,7 @@
 	if(chargemode)
 		if(!charging)
 			if(excess > C.maxcharge * apc.chargelevel)
-				chargecount++
+				chargecount += elapsed_machine_ticks
 			else
 				chargecount = 0
 			if(chargecount >= 10)

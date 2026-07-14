@@ -331,11 +331,10 @@
 	if(stat & (NOPOWER|BROKEN))
 		return
 
-	SSmachines.wake_vent(WEAKREF(src))
-
 	//log_admin("DEBUG \[[world.timeofday]\]: /obj/machinery/atmospherics/unary/vent_pump/receive_signal([signal.debug_print()])")
 	if(!signal.data["tag"] || (signal.data["tag"] != id_tag) || (signal.data["sigtype"]!="command"))
 		return 0
+	SSmachines.wake_vent(WEAKREF(src))
 
 	if(signal.data["purge"] != null)
 		pressure_checks &= ~1

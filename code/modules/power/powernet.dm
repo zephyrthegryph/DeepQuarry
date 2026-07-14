@@ -21,6 +21,8 @@
 	var/problem = 0            // non-zero = some issue; power monitors will display warnings
 	/// Stable demand retained for APCs that are dependency-sleeping.
 	var/list/sleeping_apc_loads = list()
+	/// One-tick machine usage folded into sleeping APC reservations.
+	var/list/sleeping_apc_dynamic_loads = list()
 	var/sleeping_apc_load_total = 0
 	var/revision = 1
 
@@ -32,6 +34,7 @@
 	for(var/obj/machinery/power/apc/A as anything in sleeping_apc_loads)
 		A?.wake_for_power_dependency()
 	sleeping_apc_loads.Cut()
+	sleeping_apc_dynamic_loads.Cut()
 	for(var/obj/structure/cable/C in cables)
 		cables -= C
 		C.powernet = null
@@ -56,6 +59,19 @@
 	sleeping_apc_load_total -= reserved
 	load = max(load - reserved, 0)
 	sleeping_apc_loads.Remove(A)
+	sleeping_apc_dynamic_loads.Remove(A)
+
+/// Adjust demand in place without waking an APC for routine area accounting.
+/datum/powernet/proc/adjust_sleeping_apc_load(obj/machinery/power/apc/A, delta)
+	if(!A || !delta || !(A in sleeping_apc_loads))
+		return FALSE
+	var/old_amount = sleeping_apc_loads[A]
+	var/new_amount = max(old_amount + delta, 0)
+	sleeping_apc_loads[A] = new_amount
+	sleeping_apc_dynamic_loads[A] = (sleeping_apc_dynamic_loads[A] || 0) + delta
+	sleeping_apc_load_total += new_amount - old_amount
+	load = max(load + new_amount - old_amount, 0)
+	return TRUE
 
 /datum/powernet/proc/publish_dependency()
 	revision++
@@ -133,7 +149,6 @@
 ///   6. Reset accumulators for the next tick.
 /datum/powernet/proc/reset()
 	var/old_avail = avail
-	var/old_perapc = perapc
 	var/old_netexcess = netexcess
 	// 1. Decay problem warning.
 	if(problem > 0)
@@ -183,6 +198,14 @@
 	viewload  = round(0.8 * viewload  + 0.2 * load)
 
 	// 6. Reset accumulators for next tick.
+	// Dynamic area usage is reported again by machines next tick. Keep only the
+	// APC's stable base reservation between accounting windows.
+	for(var/obj/machinery/power/apc/A as anything in sleeping_apc_dynamic_loads)
+		var/dynamic_amount = sleeping_apc_dynamic_loads[A]
+		if(A in sleeping_apc_loads)
+			sleeping_apc_loads[A] = max(sleeping_apc_loads[A] - dynamic_amount, 0)
+			sleeping_apc_load_total = max(sleeping_apc_load_total - dynamic_amount, 0)
+	sleeping_apc_dynamic_loads.Cut()
 	load         = sleeping_apc_load_total
 	avail        = newavail
 	smes_avail   = smes_newavail
@@ -190,7 +213,10 @@
 	smes_demand  = 0
 	newavail     = 0
 	smes_newavail = 0
-	if(avail != old_avail || perapc != old_perapc || netexcess != old_netexcess)
+	// Sleeping APC demand is already reserved. Generator output jitter is not a
+	// state change for them while the net remains on the same side of deficit;
+	// charging progress has its own coarse elapsed-time wakeup.
+	if((avail <= 0) != (old_avail <= 0) || ((netexcess < -1) != (old_netexcess < -1)))
 		publish_dependency()
 
 /datum/powernet/proc/get_percent_load(smes_only = 0)

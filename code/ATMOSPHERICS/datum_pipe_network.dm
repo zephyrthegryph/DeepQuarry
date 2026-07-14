@@ -14,11 +14,6 @@
 	var/revision = 1
 	//var/datum/gas_mixture/air_transient = null
 
-	/// Scratch pool (/datum/gas type → total moles) reused by reconcile_air() to
-	/// avoid a fresh list() allocation every equalization cycle. Cleared on entry.
-	/// Safe to cache because reconcile_air() runs only from process(), is
-	/// non-sleeping and non-reentrant.
-	var/list/reconcile_pool = list()
 
 /datum/pipe_network/Destroy()
 	STOP_PROCESSING_PIPENET(src)
@@ -28,7 +23,6 @@
 		normal_member.reassign_network(src, null)
 	gases.Cut()  // Do not qdel the gases, we don't own them
 	leaks.Cut()
-	reconcile_pool.Cut()
 	return ..()
 
 /datum/pipe_network/process()
@@ -118,34 +112,5 @@
 // pipes to empty pipes — a per-pipe `multiply()` won't because it scales
 // existing content only and can't push gas into an empty mixture.
 /datum/pipe_network/proc/reconcile_air()
-	if(!length(gases))
-		return
-	var/list/pooled = reconcile_pool // /datum/gas type → total moles in network
-	pooled.Cut()                     // reused scratch list; clear last cycle's contents
-	var/total_thermal = 0
-	var/total_moles = 0
-	var/total_volume = 0
-	for(var/datum/gas_mixture/mix in gases)
-		var/m = mix.total_moles()
-		total_moles += m
-		total_thermal += m * mix.return_temperature()
-		total_volume += mix.return_volume()
-		var/list/mix_gases = mix.get_gases()
-		for(var/datum/gas/g as anything in mix_gases)
-			pooled[g] = (pooled[g] || 0) + mix_gases[g]
-	if(total_volume <= 0)
-		return
-	var/avg_temp = total_moles > 0 ? total_thermal / total_moles : T20C
-	for(var/datum/gas_mixture/mix in gases)
-		var/share = mix.return_volume() / total_volume
-		// Zero out current gases first so removed gas types disappear.
-		for(var/datum/gas/g as anything in mix.get_gases())
-			mix.set_moles(g, 0)
-		// Now redistribute pooled moles into this mixture by volume share.
-		for(var/datum/gas/g as anything in pooled)
-			var/redist = pooled[g] * share
-			if(redist <= 0)
-				continue
-			mix.set_moles(g, redist)
-		// Zero entries are auto-managed by the arena; no manual pruning needed.
-		mix.set_temperature(avg_temp)
+	if(length(gases))
+		call_ext(VERDIGRIS, "byond:equalize_all_hook_ffi")(gases)
