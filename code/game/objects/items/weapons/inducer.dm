@@ -267,8 +267,8 @@
 	QDEL_IN(src, 20 SECONDS)
 
 
-/obj/item/cell/standin/give(amount)
-	. = ..(amount * NUTRITION_COEFF) //Shrink amount to store
+/obj/item/cell/standin/give(amount, update_appearance = TRUE)
+	. = ..(amount * NUTRITION_COEFF, update_appearance) //Shrink amount to store
 	hume.adjust_nutrition(.) //Add the amount we really stored
 	. /= NUTRITION_COEFF //Inflate amount to take from the giver
 

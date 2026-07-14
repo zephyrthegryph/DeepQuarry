@@ -158,12 +158,12 @@
 
 	// Draw from cell to cover last tick's load (capped to cell charge).
 	var/cellused = min(C.charge, CELLRATE * lastused_total)
-	C.use(cellused)
+	C.use(cellused, FALSE)
 
 	if(excess > lastused_total)
 		// Grid has plenty — reimburse the cell for what was drawn.
 		var/draw = apc.draw_power(cellused / CELLRATE)
-		C.give(draw * CELLRATE)
+		C.give(draw * CELLRATE, FALSE)
 	else
 		if((C.charge / CELLRATE + excess) >= lastused_total)
 			// Cell + grid covers this tick's demand.
@@ -188,7 +188,7 @@
 		if(excess > 0)
 			var/ch = min(excess * CELLRATE, C.maxcharge * apc.chargelevel)
 			ch = apc.draw_power(ch / CELLRATE)
-			C.give(ch * CELLRATE)
+			C.give(ch * CELLRATE, FALSE)
 			lastused_charging = ch
 			lastused_total    += ch  // sensors need this to not report APC charging as "Other"
 		else

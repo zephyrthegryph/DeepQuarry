@@ -114,14 +114,15 @@
 	return max(maxcharge - charge, 0)
 
 // use power from a cell, returns the amount actually used
-/obj/item/cell/proc/use(amount)
+/obj/item/cell/proc/use(amount, update_appearance = TRUE)
 	if(rigged && amount > 0)
 		explode()
 		return 0
 	var/used = min(charge, amount)
 	charge -= used
 	last_use = world.time
-	update_icon()
+	if(update_appearance)
+		update_icon()
 	return used
 
 // Checks if the specified amount can be provided. If it can, it removes the amount
@@ -133,7 +134,7 @@
 	return 1
 
 // recharge the cell
-/obj/item/cell/proc/give(amount)
+/obj/item/cell/proc/give(amount, update_appearance = TRUE)
 	if(rigged && amount > 0)
 		explode()
 		return 0
@@ -141,9 +142,10 @@
 	if(maxcharge < amount)	return 0
 	var/amount_used = min(maxcharge-charge,amount)
 	charge += amount_used
-	update_icon()
-	if(loc)
-		loc.update_icon()
+	if(update_appearance)
+		update_icon()
+		if(loc)
+			loc.update_icon()
 	return amount_used
 
 /// Recharges the cell over time. 100 per second multiplied by the multiplier.

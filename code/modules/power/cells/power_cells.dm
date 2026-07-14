@@ -150,7 +150,7 @@
 /obj/item/cell/infinite/check_charge()
 	return 1
 
-/obj/item/cell/infinite/use()
+/obj/item/cell/infinite/use(amount, update_appearance = TRUE)
 	return 1
 
 /*
