@@ -152,6 +152,16 @@ impl TurfMixture {
 				.clear();
 		});
 	}
+	/// Prevents diffusion and other gas operations from changing this turf's mixture.
+	pub fn mark_immutable(&self) {
+		GasArena::with_all_mixtures(|all_mixtures| {
+			all_mixtures
+				.get(self.mix)
+				.unwrap_or_else(|| panic!("Gas mixture not found for turf: {}", self.mix))
+				.write()
+				.mark_immutable();
+		});
+	}
 	/// Copies from a given gas mixture to the turf's airs, see [`super::gas::Mixture`]
 	pub fn copy_from_mutable(&self, sample: &Mixture) {
 		GasArena::with_all_mixtures(|all_mixtures| {
@@ -452,6 +462,13 @@ fn register_turf_impl(src: ByondValue, flag: i32) -> Result<()> {
 		let mut to_insert: TurfMixture = TurfMixture::default();
 		let air = src.read_var_id(byond_string!("air"))?;
 		to_insert.mix = air.read_number_id(byond_string!("_extools_pointer_gasmixture"))? as usize;
+		if src
+			.read_number_id(byond_string!("immutable_atmos"))
+			.unwrap_or(0.0)
+			!= 0.0
+		{
+			to_insert.mark_immutable();
+		}
 		to_insert.flags = SimulationFlags::from_bits_truncate(flag as u8);
 		to_insert.id = id;
 

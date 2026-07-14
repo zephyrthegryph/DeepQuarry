@@ -366,6 +366,11 @@ GLOBAL_VAR_INIT(focused_tests, focused_tests())
 
 /proc/RunUnitTests()
 	CHECK_TICK
+	// Mapped patrol bots run independently of tests and can enqueue expensive
+	// pathfinding while the suite is deliberately saturating the tick budget.
+	// Tests that exercise bots allocate their own isolated instances.
+	for(var/mob/living/bot/map_bot in world)
+		qdel(map_bot)
 
 	var/list/tests_to_run = subtypesof(/datum/unit_test)
 	var/list/focused_tests = list()

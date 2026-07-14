@@ -1026,6 +1026,7 @@
 	initial_flooring = /datum/decl/flooring/eris_plating
 
 /turf/simulated/floor/plating/eris/airless
+	initial_gas_mix = AIRLESS_ATMOS
 	oxygen = 0
 	nitrogen = 0
 	temperature = TCMB
@@ -1066,6 +1067,7 @@
 	initial_flooring = /datum/decl/flooring/eris_plating/under
 
 /turf/simulated/floor/plating/eris/under/airless
+	initial_gas_mix = AIRLESS_ATMOS
 	oxygen = 0
 	nitrogen = 0
 	temperature = TCMB
@@ -1114,6 +1116,7 @@
 	initial_flooring = /datum/decl/flooring/eris_plating/hull
 
 /turf/simulated/floor/hull/airless
+	initial_gas_mix = AIRLESS_ATMOS
 	oxygen = 0
 	nitrogen = 0
 	temperature = TCMB

@@ -51,6 +51,8 @@
 	var/obj/effect/hotspot/active_hotspot
 	/// air will slowly revert to initial_gas_mix
 	var/planetary_atmos = FALSE
+	/// The gas mixture is a constant source or sink and cannot be changed by diffusion.
+	var/immutable_atmos = FALSE
 	/// once our paired turfs are finished with all other shares, do one 100% share
 	/// exists so things like space can ask to take 100% of a tile's gas
 	var/run_later = FALSE
@@ -395,8 +397,11 @@
 	return TRUE
 
 /turf/open/should_conduct_to_space()
+	for(var/direction in GLOB.cardinals)
+		var/turf/neighbor = get_step(src, direction)
+		if(istype(neighbor, /turf/space))
+			return TRUE
 	return FALSE
 
 /turf/space/should_conduct_to_space()
 	return TRUE
-

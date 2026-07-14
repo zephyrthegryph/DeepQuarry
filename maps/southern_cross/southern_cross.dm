@@ -36,6 +36,9 @@
 	#include "structures/closets/security.dm"
 	#include "turfs/outdoors.dm"
 	#include "overmap/sectors.dm"
+	#include "../submaps/engine_submaps/engine.dm"
+	#include "../submaps/engine_submaps/engine_areas.dm"
+	#include "../submaps/engine_submaps/southern_cross/_engine_submaps.dm"
 
 	// Station-only trim (2026-07-01). Load order sets z-levels:
 	//   -1 = station decks (z1,2,3), -6 = CentCom (z4), -7 = Transit (z5).

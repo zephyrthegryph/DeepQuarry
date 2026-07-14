@@ -53,3 +53,109 @@
 	TEST_ASSERT_EQUAL(S.moving_status, prior_status, "null jump changed moving_status")
 	TEST_ASSERT_EQUAL(S.current_location, prior_location, "null jump moved the shuttle")
 	S.create_warning_effect(null) // must be a no-op
+
+/datum/unit_test/dq_arrivals_shuttle_preserves_air
+
+/datum/unit_test/dq_arrivals_shuttle_preserves_air/Run()
+	var/datum/shuttle/autodock/ferry/arrivals/shuttle = SSshuttles.shuttles["Arrivals"]
+	TEST_ASSERT_NOTNULL(shuttle, "Southern Cross arrivals shuttle was not registered")
+	TEST_ASSERT_NOTNULL(shuttle.landmark_station, "arrivals shuttle has no station landmark")
+	var/total_o2_before = 0
+	var/pressurized_turfs_before = 0
+	for(var/area/A as anything in shuttle.shuttle_area)
+		for(var/turf/open/T in A)
+			if(T.blocks_air || !T.air)
+				continue
+			total_o2_before += T.air.get_moles(/datum/gas/oxygen)
+			if(T.air.return_pressure() > 80)
+				pressurized_turfs_before++
+	TEST_ASSERT(pressurized_turfs_before > 0, "arrivals shuttle is already airless off-station")
+	var/list/visited = list()
+	for(var/area/A as anything in shuttle.shuttle_area)
+		for(var/turf/open/component_seed in A)
+			if(component_seed.blocks_air || component_seed.initial_gas_mix != OPENTURF_DEFAULT_ATMOS || visited[component_seed])
+				continue
+			visited[component_seed] = TRUE
+			var/list/queue = list(component_seed)
+			var/head = 1
+			while(head <= queue.len)
+				var/turf/open/current = queue[head++]
+				for(var/turf/open/neighbor as anything in current.atmos_adjacent_turfs)
+					if(visited[neighbor])
+						continue
+					TEST_ASSERT(!istype(neighbor, /turf/space), "arrivals shuttle atmosphere from [component_seed.x],[component_seed.y],[component_seed.z] reaches space at [current.x],[current.y],[current.z] -> [neighbor.x],[neighbor.y],[neighbor.z]")
+					TEST_ASSERT(neighbor.initial_gas_mix != AIRLESS_ATMOS, "arrivals shuttle atmosphere from [component_seed.x],[component_seed.y],[component_seed.z] reaches an airless turf at [current.x],[current.y],[current.z] -> [neighbor.x],[neighbor.y],[neighbor.z]")
+					visited[neighbor] = TRUE
+					queue += neighbor
+	var/baseline_fires = SSair.times_fired
+	while(SSair.times_fired < baseline_fires + 40)
+		sleep(SSair.wait)
+	var/soaked_o2 = 0
+	for(var/area/A as anything in shuttle.shuttle_area)
+		for(var/turf/open/T in A)
+			if(!T.blocks_air && T.air)
+				soaked_o2 += T.air.get_moles(/datum/gas/oxygen)
+				if(T.initial_gas_mix == OPENTURF_DEFAULT_ATMOS)
+					TEST_ASSERT(T.air.return_pressure() > 80, "habitable arrivals shuttle turf became airless while waiting at [T.x],[T.y],[T.z]: [T.air.return_pressure()] kPa in [get_area(T)]")
+	TEST_ASSERT(soaked_o2 >= total_o2_before * 0.99, "arrivals shuttle lost oxygen while waiting off-station: [total_o2_before] -> [soaked_o2]")
+	TEST_ASSERT(shuttle.attempt_move(shuttle.landmark_station), "arrivals shuttle could not move to its station landmark")
+	var/total_o2_after = 0
+	var/pressurized_turfs_after = 0
+	for(var/area/A as anything in shuttle.shuttle_area)
+		for(var/turf/open/T in A)
+			if(T.blocks_air || !T.air)
+				continue
+			total_o2_after += T.air.get_moles(/datum/gas/oxygen)
+			if(T.air.return_pressure() > 80)
+				pressurized_turfs_after++
+			if(T.initial_gas_mix == OPENTURF_DEFAULT_ATMOS)
+				TEST_ASSERT(T.air.return_pressure() > 80, "habitable arrivals shuttle turf arrived airless at [T.x],[T.y],[T.z]: [T.air.return_pressure()] kPa in [get_area(T)]")
+	TEST_ASSERT(pressurized_turfs_after > 0, "arrivals shuttle became airless after moving")
+	TEST_ASSERT(total_o2_after >= total_o2_before * 0.99, "arrivals shuttle lost oxygen while moving: [total_o2_before] -> [total_o2_after]")
+	TEST_ASSERT(shuttle.attempt_move(shuttle.landmark_offsite), "arrivals shuttle could not return to its off-station landmark")
+
+/datum/unit_test/dq_escape_shuttle_preserves_air
+
+/datum/unit_test/dq_escape_shuttle_preserves_air/Run()
+	var/datum/shuttle/autodock/ferry/emergency/shuttle = SSshuttles.shuttles["Escape"]
+	TEST_ASSERT_NOTNULL(shuttle, "Southern Cross escape shuttle was not registered")
+	TEST_ASSERT_NOTNULL(shuttle.landmark_station, "escape shuttle has no station landmark")
+	var/total_o2_before = 0
+	var/turf/open/component_start
+	for(var/area/A as anything in shuttle.shuttle_area)
+		for(var/turf/open/T in A)
+			if(T.blocks_air || !T.air)
+				continue
+			total_o2_before += T.air.get_moles(/datum/gas/oxygen)
+			if(T.air.return_pressure() > 80)
+				component_start ||= T
+	TEST_ASSERT_NOTNULL(component_start, "escape shuttle is already airless off-station")
+	var/list/visited = list()
+	visited[component_start] = TRUE
+	var/list/queue = list(component_start)
+	var/head = 1
+	while(head <= queue.len)
+		var/turf/open/current = queue[head++]
+		for(var/turf/open/neighbor as anything in current.atmos_adjacent_turfs)
+			if(visited[neighbor])
+				continue
+			TEST_ASSERT(!istype(neighbor, /turf/space), "escape shuttle atmosphere reaches space at [current.x],[current.y],[current.z] -> [neighbor.x],[neighbor.y],[neighbor.z]")
+			visited[neighbor] = TRUE
+			queue += neighbor
+	var/baseline_fires = SSair.times_fired
+	while(SSair.times_fired < baseline_fires + 40)
+		sleep(SSair.wait)
+	var/soaked_o2 = 0
+	for(var/area/A as anything in shuttle.shuttle_area)
+		for(var/turf/open/T in A)
+			if(!T.blocks_air && T.air)
+				soaked_o2 += T.air.get_moles(/datum/gas/oxygen)
+	TEST_ASSERT(soaked_o2 >= total_o2_before * 0.99, "escape shuttle lost oxygen while waiting off-station: [total_o2_before] -> [soaked_o2]")
+	TEST_ASSERT(shuttle.attempt_move(shuttle.landmark_station), "escape shuttle could not move to its station landmark")
+	var/total_o2_after = 0
+	for(var/area/A as anything in shuttle.shuttle_area)
+		for(var/turf/open/T in A)
+			if(!T.blocks_air && T.air)
+				total_o2_after += T.air.get_moles(/datum/gas/oxygen)
+	TEST_ASSERT(total_o2_after >= soaked_o2 * 0.99, "escape shuttle lost oxygen while moving: [soaked_o2] -> [total_o2_after]")
+	TEST_ASSERT(shuttle.attempt_move(shuttle.landmark_offsite), "escape shuttle could not return to its off-station landmark")

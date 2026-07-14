@@ -418,6 +418,7 @@
 	initial_flooring = /datum/decl/flooring/tiling/steel_dirty
 
 /turf/simulated/floor/tiled/steel/airless
+	initial_gas_mix = AIRLESS_ATMOS
 	oxygen = 0
 	nitrogen = 0
 
@@ -427,6 +428,7 @@
 
 /turf/simulated/floor/tiled/asteroid_steel/airless
 	name = "plating"
+	initial_gas_mix = AIRLESS_ATMOS
 	oxygen = 0
 	nitrogen = 0
 
@@ -472,30 +474,35 @@
 //ATMOS PREMADES
 /turf/simulated/floor/reinforced/airless
 	name = "vacuum floor"
+	initial_gas_mix = AIRLESS_ATMOS
 	oxygen = 0
 	nitrogen = 0
 	temperature = TCMB
 
 /turf/simulated/floor/airless
 	name = "plating"
+	initial_gas_mix = AIRLESS_ATMOS
 	oxygen = 0
 	nitrogen = 0
 	temperature = TCMB
 
 /turf/simulated/floor/tiled/airless
 	name = "floor"
+	initial_gas_mix = AIRLESS_ATMOS
 	oxygen = 0
 	nitrogen = 0
 	temperature = TCMB
 
 /turf/simulated/floor/bluegrid/airless
 	name = "floor"
+	initial_gas_mix = AIRLESS_ATMOS
 	oxygen = 0
 	nitrogen = 0
 	temperature = TCMB
 
 /turf/simulated/floor/greengrid/airless
 	name = "floor"
+	initial_gas_mix = AIRLESS_ATMOS
 	oxygen = 0
 	nitrogen = 0
 	temperature = TCMB
@@ -505,6 +512,7 @@
 
 /turf/simulated/floor/tiled/white/airless
 	name = "floor"
+	initial_gas_mix = AIRLESS_ATMOS
 	oxygen = 0
 	nitrogen = 0
 	temperature = TCMB

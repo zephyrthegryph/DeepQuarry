@@ -15,6 +15,7 @@ SUBSYSTEM_DEF(mapping)
 	flags = SS_NO_FIRE
 
 	var/list/map_templates = list()
+	var/obj/effect/landmark/engine_loader/engine_loader
 	var/list/shelter_templates = list()
 
 	// TODO: Implement Later
@@ -29,6 +30,7 @@ SUBSYSTEM_DEF(mapping)
 		return
 	world.max_z_changed() // This is to set up the player z-level list, maxz hasn't actually changed (probably)
 	load_map_templates()
+	load_engine()
 
 	preloadShelterTemplates() // EDIT: Re-enable Shelter Capsules
 	// Mining generation probably should be here too
@@ -50,6 +52,37 @@ SUBSYSTEM_DEF(mapping)
 		template = new template()
 		map_templates[template.name] = template
 	return TRUE
+
+/datum/controller/subsystem/mapping/proc/load_engine()
+	if(!engine_loader)
+		return
+	var/turf/origin = get_turf(engine_loader)
+	if(!istype(origin))
+		log_mapping("[log_info_line(engine_loader)] is not on a turf; cannot place an engine template.")
+		return
+
+	var/datum/map_template/engine/chosen
+	var/list/configured_engines = CONFIG_GET(str_list/engine_map)
+	if(LAZYLEN(configured_engines))
+		var/chosen_name = pick(configured_engines)
+		chosen = map_templates[chosen_name]
+		if(!istype(chosen))
+			log_mapping("Configured engine map '[chosen_name]' is not a valid engine template.")
+	if(!istype(chosen))
+		var/list/available = list()
+		for(var/template_name in map_templates)
+			var/datum/map_template/engine/candidate = map_templates[template_name]
+			if(istype(candidate))
+				available += candidate
+		if(!available.len)
+			log_mapping("No engine templates are available for [log_info_line(engine_loader)].")
+			return
+		chosen = pick(available)
+
+	log_mapping("Loading engine map: [chosen.name]")
+	admin_notice(span_danger("Loading engine map: [chosen.name]"), R_DEBUG)
+	engine_loader.annihilate_bounds()
+	chosen.load(origin)
 
 /datum/controller/subsystem/mapping/proc/loadLateMaps()
 	var/list/deffo_load = using_map.lateload_z_levels

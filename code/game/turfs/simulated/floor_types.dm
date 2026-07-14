@@ -146,7 +146,9 @@
 			us.underlays = list(landed_on)
 			appearance = us
 
-		spawn update_breaklights() //So that we update the breaklight overlays only after turfs are connected
+		spawn
+			if(istype(src, /turf/simulated/shuttle))
+				update_breaklights() // Update only if this coordinate is still a shuttle turf.
 		return
 
 	if(!under)
@@ -189,7 +191,9 @@
 
 	appearance = us
 
-	spawn update_breaklights() //So that we update the breaklight overlays only after turfs are connected
+	spawn
+		if(istype(src, /turf/simulated/shuttle))
+			update_breaklights() // Update only if this coordinate is still a shuttle turf.
 
 	return under
 
@@ -246,6 +250,7 @@
 	icon_state = "plating"
 
 /turf/simulated/shuttle/plating/airless
+	initial_gas_mix = AIRLESS_ATMOS
 	oxygen = 0
 	nitrogen = 0
 
@@ -402,6 +407,7 @@
 	light_color = "#66ffff" // Bright cyan.
 
 /turf/simulated/shuttle/floor/alienplating/vacuum
+	initial_gas_mix = AIRLESS_ATMOS
 	oxygen = 0
 	nitrogen = 0
 	temperature = TCMB

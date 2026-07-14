@@ -604,10 +604,18 @@
 /// update_visuals all run on it. Without this, gases don't spread or render on
 /// the actual map (since the map terrain is /turf/simulated/floor, not /turf/open).
 /datum/unit_test/dq_simulated_floor_is_open_turf
+	priority = TEST_PRE
 
 /datum/unit_test/dq_simulated_floor_is_open_turf/Run()
+	var/list/default_parts = SSair.gas_string_to_list(OPENTURF_DEFAULT_ATMOS)
+	TEST_ASSERT_EQUAL(default_parts[GAS_N2], "82", "default atmos parser did not retain nitrogen")
+	var/datum/gas_mixture/default_mix = SSair.parse_gas_string(OPENTURF_DEFAULT_ATMOS)
+	TEST_ASSERT(default_mix.get_moles(/datum/gas/nitrogen) > 80, \
+		"parsed default atmosphere has no nitrogen: [default_mix.get_moles(/datum/gas/nitrogen)] moles")
 	var/turf/simulated/floor/F = null
 	for(var/turf/simulated/floor/cand in world)
+		if(cand.initial_gas_mix != OPENTURF_DEFAULT_ATMOS)
+			continue
 		F = cand
 		break
 	TEST_ASSERT_NOTNULL(F, "no /turf/simulated/floor on the test map — can't validate reparent")
@@ -615,6 +623,75 @@
 		"/turf/simulated/floor is NOT /turf/open — the reparent in code/game/turfs/simulated.dm didn't take effect")
 	TEST_ASSERT_NOTNULL(F.air, \
 		"/turf/simulated/floor.air is null — /turf/open/Initialize didn't create the mixture (blocks_air? unexpected initial_gas_mix?)")
+	TEST_ASSERT(F.air.get_moles(/datum/gas/oxygen) > 20, \
+		"default station floor has no round-start oxygen: [F.air.get_moles(/datum/gas/oxygen)] moles")
+	TEST_ASSERT(F.air.get_moles(/datum/gas/nitrogen) > 80, \
+		"default station floor has no round-start nitrogen: [F.air.get_moles(/datum/gas/nitrogen)] moles")
+
+
+/// A closed station atmosphere component containing an air alarm must not have
+/// an atmos adjacency path to space at round start.
+/datum/unit_test/dq_station_alarm_component_is_sealed
+	priority = TEST_PRE
+
+/datum/unit_test/dq_station_alarm_component_is_sealed/Run()
+	var/list/checked = list()
+	var/list/alarm_turfs = list()
+	var/list/alarm_pressures = list()
+	var/list/alarm_temperatures = list()
+	var/list/alarm_turf_temperatures = list()
+	var/alarm_count = 0
+	for(var/obj/machinery/alarm/candidate in world)
+		var/turf/candidate_turf = get_turf(candidate)
+		if(!candidate_turf || candidate_turf.z > 3 || checked[candidate_turf])
+			continue
+		alarm_count++
+		var/turf/open/start = candidate_turf
+		TEST_ASSERT_NOTNULL(start.air, "air alarm at [start.x],[start.y],[start.z] is not on an air-bearing turf")
+		if(start.air.return_temperature() >= 285)
+			alarm_turfs += start
+			alarm_pressures += start.air.return_pressure()
+			alarm_temperatures += start.air.return_temperature()
+			alarm_turf_temperatures += start.return_temperature()
+		var/list/queue = list(start)
+		checked[start] = TRUE
+		var/head = 1
+		while(head <= length(queue))
+			var/turf/open/current = queue[head++]
+			for(var/turf/open/neighbor as anything in current.atmos_adjacent_turfs)
+				if(checked[neighbor])
+					continue
+				if(istype(neighbor, /turf/space))
+					TEST_FAIL("air alarm area [get_area(candidate)] at [start.x],[start.y],[start.z] reaches space through atmos edge [current.x],[current.y],[current.z] -> [neighbor.x],[neighbor.y],[neighbor.z]")
+				if(neighbor.initial_gas_mix == AIRLESS_ATMOS)
+					var/list/blockers = list()
+					for(var/obj/blocker in current.contents + neighbor.contents)
+						blockers += "[blocker.type](dir=[blocker.dir], anchored=[blocker.anchored], pass=[CANATMOSPASS(blocker, blocker.loc == current ? neighbor : current, FALSE)])"
+					TEST_FAIL("air alarm area [get_area(candidate)] at [start.x],[start.y],[start.z] reaches an airless turf through atmos edge [current.x],[current.y],[current.z] -> [neighbor.x],[neighbor.y],[neighbor.z]; objects: [jointext(blockers, "; ")]")
+				checked[neighbor] = TRUE
+				queue += neighbor
+			CHECK_TICK
+	TEST_ASSERT(alarm_count > 0, "no Southern Cross air alarm found")
+	for(var/turf/open/vertical_source in world)
+		for(var/turf/open/vertical_target as anything in vertical_source.atmos_adjacent_turfs)
+			if(vertical_source.z == vertical_target.z)
+				continue
+			var/turf/upper = vertical_source.z > vertical_target.z ? vertical_source : vertical_target
+			TEST_ASSERT(istype(upper, /turf/simulated/open), \
+				"solid stacked turfs have a vertical atmos edge: [vertical_source.x],[vertical_source.y],[vertical_source.z] <-> [vertical_target.x],[vertical_target.y],[vertical_target.z]")
+	var/baseline_fires = SSair.times_fired
+	while(SSair.times_fired < baseline_fires + 40)
+		sleep(SSair.wait)
+	var/list/alarm_pressure_losses = list()
+	for(var/alarm_index in 1 to length(alarm_turfs))
+		var/turf/open/alarm_turf = alarm_turfs[alarm_index]
+		var/final_pressure = alarm_turf.air.return_pressure()
+		var/final_temperature = alarm_turf.air.return_temperature()
+		var/final_turf_temperature = alarm_turf.return_temperature()
+		if(final_pressure < alarm_pressures[alarm_index] * 0.98 || final_temperature < alarm_temperatures[alarm_index] * 0.98)
+			alarm_pressure_losses += "[get_area(alarm_turf)] at [alarm_turf.x],[alarm_turf.y],[alarm_turf.z]: [alarm_pressures[alarm_index]] -> [final_pressure] kPa, gas [alarm_temperatures[alarm_index]] -> [final_temperature] K, turf [alarm_turf_temperatures[alarm_index]] -> [final_turf_temperature] K"
+	var/alarm_loss_report = jointext(alarm_pressure_losses, "; ")
+	TEST_ASSERT(!length(alarm_pressure_losses), "station air alarms rapidly lost pressure: [alarm_loss_report]")
 
 
 /// Phoron (= LINDA plasma, GAS_PHORON #defined to GAS_PLASMA) must render a
@@ -1809,6 +1886,35 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 /// giver unchanged. This is the contract the verdigris auxmos byondapi-bound
 /// version implements; the DM fallback in xgm_compat.dm has to match exactly.
 /datum/unit_test/dq_share_ratio_matches_rust_semantics
+
+/datum/unit_test/dq_phoron_canister_releases_to_turf
+
+/datum/unit_test/dq_phoron_canister_releases_to_turf/Run()
+	var/turf/simulated/floor/T
+	for(var/turf/simulated/floor/candidate in world)
+		if(candidate.air && !candidate.blocks_air)
+			T = candidate
+			break
+	TEST_ASSERT_NOTNULL(T, "no simulated floor is available for the canister release test")
+	var/datum/gas_mixture/original_air = new(T.air.return_volume())
+	original_air.copy_from(T.air)
+	var/obj/machinery/portable_atmospherics/canister/phoron/C = allocate(/obj/machinery/portable_atmospherics/canister/phoron, T)
+	var/before_canister = C.air_contents.get_moles(/datum/gas/plasma)
+	var/before_turf = T.air.get_moles(/datum/gas/plasma)
+	C.valve_open = TRUE
+	C.release_pressure = 10 * ONE_ATMOSPHERE
+	C.process()
+	var/after_canister = C.air_contents.get_moles(/datum/gas/plasma)
+	var/after_turf = T.air.get_moles(/datum/gas/plasma)
+	var/overlay_visible = LAZYLEN(T.atmos_overlay_types) > 0
+	var/analyzer_readout = jointext(atmosanalyzer_scan(T, T.air, null), " ")
+	T.air.copy_from(original_air)
+	T.update_visuals()
+	T.air_update_turf(FALSE, FALSE)
+	TEST_ASSERT(after_canister < before_canister, "phoron canister did not drain: [before_canister] -> [after_canister]")
+	TEST_ASSERT(after_turf > before_turf, "released phoron vanished: turf [before_turf] -> [after_turf], canister [before_canister] -> [after_canister]")
+	TEST_ASSERT(overlay_visible, "released phoron exceeded its visibility threshold but produced no turf overlay")
+	TEST_ASSERT(findtext(analyzer_readout, "Phoron"), "gas analyzer did not identify released phoron: [analyzer_readout]")
 
 /datum/unit_test/dq_share_ratio_matches_rust_semantics/Run()
 	var/datum/gas_mixture/self_mix = new(CELL_VOLUME)
@@ -5246,6 +5352,3 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	TEST_ASSERT(tracked >= eligible / 2, \
 		"only [tracked]/[eligible] heat-eligible floors reached the heat arena — turf registration is partially broken")
 	log_test("Superconductivity: [tracked]/[eligible] eligible floors heat-tracked; sample arena temp [sample_temp] K")
-
-
-

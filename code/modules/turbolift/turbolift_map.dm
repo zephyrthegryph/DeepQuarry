@@ -211,7 +211,7 @@
 
 		// Update area.
 		if(az > areas_to_use.len)
-			log_mapping("Insufficient defined areas in turbolift datum, aborting.")
+			log_mapping("[name] at [ux],[uy],[uz] requires [depth] floor areas but has [areas_to_use.len]; failed while creating z=[cz]. Aborting.")
 			qdel(src)
 			return
 

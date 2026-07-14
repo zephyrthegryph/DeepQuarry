@@ -66,10 +66,13 @@
 	default_language = GLOB.all_languages[LANGUAGE_GALCOM]
 
 /mob/living/bot/Destroy()
-	. = ..()
-	ignore_list.Cut()
-	patrol_path.Cut()
-	target_path.Cut()
+	if(ignore_list)
+		ignore_list.Cut()
+	if(patrol_path)
+		patrol_path.Cut()
+	if(target_path)
+		target_path.Cut()
+	return ..()
 
 /mob/living/bot/Life()
 	..()

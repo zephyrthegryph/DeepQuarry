@@ -7,6 +7,7 @@
 /obj/turbolift_map_holder/southern_cross/port
 	name = "Sothern Cross turbolift map placeholder - Port"
 	dir = EAST
+	depth = 2
 
 	areas_to_use = list(
 		/area/turbolift/port_deck_one,

@@ -29,8 +29,9 @@ fn heat_channel() -> &'static (flume::Sender<SSheatInfo>, flume::Receiver<SSheat
 static WORLD_DIMS: RwLock<Option<(i32, i32)>> = const_rwlock(None);
 
 fn world_dims() -> Result<(i32, i32)> {
-	(*WORLD_DIMS.read())
-		.ok_or_else(|| eyre::eyre!("auxmos world dimensions not set — call auxmos_set_world_dims first"))
+	(*WORLD_DIMS.read()).ok_or_else(|| {
+		eyre::eyre!("auxmos world dimensions not set — call auxmos_set_world_dims first")
+	})
 }
 
 // Called once by DM (SSair init) with world.maxx / world.maxy before any turf
@@ -124,7 +125,7 @@ impl TurfHeat {
 	pub fn adjacent_node_ids<'a>(
 		&'a self,
 		index: NodeIndex<usize>,
-	) -> impl Iterator<Item = NodeIndex<usize>> + '_ {
+	) -> impl Iterator<Item = NodeIndex<usize>> + 'a {
 		self.graph.neighbors(index)
 	}
 
@@ -146,12 +147,11 @@ impl TurfHeat {
 	) {
 		if let Some(&this_node) = self.get_id(&idx) {
 			self.remove_adjacencies(this_node);
-			for (_, adj_idx) in adjacent_tile_ids(
-				Directions::ALL_CARDINALS_MULTIZ - blocked_dirs,
-				idx,
-				max_x,
-				max_y,
-			) {
+			// A solid deck separates coordinate z-neighbors, and adjacent z slots
+			// can hold unrelated maps. Cross-z heat requires an explicit conductor.
+			for (_, adj_idx) in
+				adjacent_tile_ids(Directions::ALL_CARDINALS - blocked_dirs, idx, max_x, max_y)
+			{
 				if let Some(&adjacent_node) = self.get_id(&adj_idx) {
 					//this fucking happens, I don't even know anymore
 					if adjacent_node != this_node {
@@ -176,13 +176,17 @@ impl TurfHeat {
 
 pub fn supercond_update_ref(src: ByondValue) -> Result<()> {
 	let id = src.get_ref()?;
+	let immutable_atmos = src
+		.read_number_id(byond_string!("immutable_atmos"))
+		.unwrap_or(0.0)
+		!= 0.0;
 	let therm_cond = src
 		.read_number_id(byond_string!("thermal_conductivity"))
 		.unwrap_or(0.0);
 	let therm_cap = src
 		.read_number_id(byond_string!("heat_capacity"))
 		.unwrap_or(0.0);
-	if therm_cond > 0.0 && therm_cap > 0.0 {
+	if !immutable_atmos && therm_cond > 0.0 && therm_cap > 0.0 {
 		let therm_info = ThermalInfo {
 			id,
 			adjacent_to_space: src
@@ -207,7 +211,9 @@ pub fn supercond_update_adjacencies(id: u32) -> Result<()> {
 	let (max_x, max_y) = world_dims()?;
 	let src_turf = ByondValue::new_ref(ValueType::Turf, id);
 	with_turf_heat_write(|arena| -> Result<()> {
-		if let Ok(blocked_dirs) = src_turf.read_number_id(byond_string!("conductivity_blocked_directions")) {
+		if let Ok(blocked_dirs) =
+			src_turf.read_number_id(byond_string!("conductivity_blocked_directions"))
+		{
 			let actual_dir = Directions::from_bits_truncate(blocked_dirs as u8);
 			arena.update_adjacencies(id, actual_dir, max_x, max_y)
 		} else if let Some(&idx) = arena.get_id(&id) {
@@ -297,18 +303,40 @@ fn get_share_energy(delta: f32, cap_1: f32, cap_2: f32) -> f32 {
 	delta * ((cap_1 * cap_2) / (cap_1 + cap_2))
 }
 
+#[cfg(test)]
+mod tests {
+	use super::get_share_energy;
+
+	#[test]
+	fn solid_heat_transfer_conserves_energy() {
+		let hot_capacity = 10_000.0;
+		let cold_capacity = 2_500.0;
+		let hot_start = 350.0;
+		let cold_start = 250.0;
+		let transferred =
+			0.04 * 0.5 * get_share_energy(cold_start - hot_start, hot_capacity, cold_capacity);
+		let hot_end = hot_start + transferred / hot_capacity;
+		let cold_end = cold_start - transferred / cold_capacity;
+		let energy_before = hot_start * hot_capacity + cold_start * cold_capacity;
+		let energy_after = hot_end * hot_capacity + cold_end * cold_capacity;
+		assert!((energy_before - energy_after).abs() < 0.5);
+		assert!(hot_end < hot_start);
+		assert!(cold_end > cold_start);
+	}
+}
+
 //Fires the task into the thread pool, once
 #[byondapi::init]
 fn process_heat_start() {
 	INIT_HEAT.call_once(|| {
 		rayon::spawn(|| loop {
 			//this will block until process_turf_heat is called
-			let info = with_heat_processing_callback_receiver(|receiver| receiver.recv().unwrap());
+			let tick_info =
+				with_heat_processing_callback_receiver(|receiver| receiver.recv().unwrap());
 			let task_lock = TASKS.read();
 			let start_time = Instant::now();
 			let sender = byond_callback_sender();
-			let _emissivity_constant: f64 = STEFAN_BOLTZMANN_CONSTANT * info.time_delta;
-			let _radiation_from_space_tick: f64 = RADIATION_FROM_SPACE * info.time_delta;
+			let time_delta = tick_info.time_delta as f32;
 			with_turf_heat_read(|arena| {
 				with_turf_gases_read(|air_arena| {
 					let adjacencies_to_consider = arena
@@ -389,7 +417,7 @@ fn process_heat_start() {
 							if info.adjacent_to_space && *temp_write > T20C {
 								let delta = *temp_write - TCMB;
 								let energy = get_share_energy(
-									info.thermal_conductivity * delta,
+									info.thermal_conductivity * time_delta * delta,
 									HEAT_CAPACITY_VACUUM,
 									info.heat_capacity,
 								);
@@ -411,7 +439,7 @@ fn process_heat_start() {
 														just sort of solve theirselves over time.
 													*/
 													info.thermal_conductivity
-														* OPEN_HEAT_TRANSFER_COEFFICIENT,
+														* OPEN_HEAT_TRANSFER_COEFFICIENT * time_delta,
 													*temp_write,
 													info.heat_capacity,
 												);
@@ -452,6 +480,9 @@ fn process_heat_start() {
 									.adjacent_node_ids(cur_index)
 									.filter_map(|idx| arena.get(idx))
 								{
+									if other.id <= info.id {
+										continue;
+									}
 									/*
 										The horrible line below is essentially
 										sharing between solids--making it the minimum of both
@@ -465,6 +496,7 @@ fn process_heat_start() {
 												info.heat_capacity,
 												other.heat_capacity,
 											);
+										let shareds = shareds * time_delta;
 										*temp_write += shareds / info.heat_capacity;
 										*other_write -= shareds / other.heat_capacity;
 									}

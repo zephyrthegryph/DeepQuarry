@@ -607,7 +607,7 @@ GLOBAL_LIST_EMPTY(colored_images)
 	// setters (set_moles stringifies the gas path per the get_strid contract;
 	// set_temperature clamps + refreshes the DM mirror). immutable mixtures parse
 	// through their own parse_string_immutable path instead.
-	var/list/gas = params2list(gas_string)
+	var/list/gas = gas_string_to_list(gas_string)
 	if(gas["TEMP"])
 		canonical_mix.set_temperature(text2num(gas["TEMP"]))
 		gas -= "TEMP"
@@ -630,6 +630,18 @@ GLOBAL_LIST_EMPTY(colored_images)
 		return gas_string
 	var/datum/atmosphere/mix = atmos_gen[gas_string]
 	return mix.gas_string
+
+/// Parses the semicolon-delimited mapping format without URL-decoding its values.
+/datum/controller/subsystem/air/proc/gas_string_to_list(gas_string)
+	var/list/parsed = list()
+	for(var/entry in splittext(gas_string, ";"))
+		var/separator = findtext(entry, "=")
+		if(!separator)
+			continue
+		var/key = copytext(entry, 1, separator)
+		var/value = copytext(entry, separator + 1)
+		parsed[key] = value
+	return parsed
 
 // start_processing_machine / stop_processing_machine removed.
 // See vars block comment: SSair never owned device processing on this fork.

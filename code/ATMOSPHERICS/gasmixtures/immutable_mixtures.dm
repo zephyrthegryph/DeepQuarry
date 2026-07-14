@@ -45,7 +45,7 @@
 /datum/gas_mixture/immutable/planetary/proc/parse_string_immutable(gas_string) //I know I know, I need this tho
 	gas_string = SSair.preprocess_gas_string(gas_string)
 
-	var/list/gas = params2list(gas_string)
+	var/list/gas = SSair.gas_string_to_list(gas_string)
 	if(gas["TEMP"])
 		initial_temperature = text2num(gas["TEMP"])
 		gas -= "TEMP"

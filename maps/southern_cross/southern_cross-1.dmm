@@ -108548,7 +108548,7 @@
 /turf/simulated/floor/tiled/dark,
 /area/hallway/secondary/entry/D3)
 "tZc" = (
-/obj/effect/landmark/poi_loader,
+/obj/effect/landmark/engine_loader,
 /turf/space,
 /area/space)
 "vTW" = (
@@ -108561,7 +108561,6 @@
 /obj/machinery/smartfridge/sheets/persistent,
 /turf/simulated/floor/plating,
 /area/quartermaster/foyer)
-
 (1,1,1) = {"
 aaa
 aaa
@@ -127972,7 +127971,7 @@ akL
 apk
 aBf
 aBf
-als
+alt
 als
 als
 als

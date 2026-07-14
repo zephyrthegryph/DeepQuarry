@@ -192,25 +192,25 @@ Entries must match /code/defines/gases.dm entries.
 */
 const GASES = [
   {
-    id: 'oxygen',
+    id: 'o2',
     name: 'Oxygen',
     label: 'O₂',
     color: 'blue',
   },
   {
-    id: 'nitrogen',
+    id: 'n2',
     name: 'Nitrogen',
     label: 'N₂',
     color: 'green',
   },
   {
-    id: 'carbon_dioxide',
+    id: 'co2',
     name: 'Carbon Dioxide',
     label: 'CO₂',
     color: 'grey',
   },
   {
-    id: 'phoron',
+    id: 'plasma',
     name: 'Phoron',
     label: 'Phoron',
     color: 'pink',
@@ -222,7 +222,7 @@ const GASES = [
     color: 'teal',
   },
   {
-    id: 'nitrous_oxide',
+    id: 'n2o',
     name: 'Nitrous Oxide',
     label: 'N₂O',
     color: 'red',

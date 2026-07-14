@@ -1,0 +1,6 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - bugfix: "Restored Southern Cross's selectable supermatter/Tesla engine installation."
+  - bugfix: "Added atmosphere retention coverage for the arrivals and emergency shuttles."
+  - bugfix: "Added coverage for portable canisters releasing phoron into room air."
