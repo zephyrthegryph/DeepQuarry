@@ -142,11 +142,13 @@
 	// Merge the sample into the turf mix so both sets of contents fully mix,
 	// then reclaim the pipe's share back out by volume ratio.
 	turf_air.merge(air_sample)
+	qdel(air_sample)
 	var/turf_volume = turf_air.return_volume()
 	if(turf_volume > 0)
 		var/datum/gas_mixture/reclaimed = turf_air.remove_ratio(mingle_volume / (mingle_volume + turf_volume))
 		if(reclaimed)
 			air.merge(reclaimed)
+			qdel(reclaimed)
 
 	// Mark the turf so SSair re-equalises it with its neighbours next tick.
 	if(SSair?.initialized)

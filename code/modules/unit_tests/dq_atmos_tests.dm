@@ -1335,7 +1335,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	var/turf/simulated/wall/W = null
 	var/turf/simulated/floor/B = null
 	for(var/turf/simulated/floor/cand in world)
-		if(!cand.air || cand.blocks_air)
+		if(!cand.air || cand.blocks_air || cand.initial_gas_mix != OPENTURF_DEFAULT_ATMOS)
 			continue
 		for(var/direction in GLOB.cardinal)
 			var/turf/n1 = get_step(cand, direction)
@@ -1345,7 +1345,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 			if(!istype(n2, /turf/simulated/floor))
 				continue
 			var/turf/simulated/floor/n2f = n2
-			if(!n2f.air || n2f.blocks_air)
+			if(!n2f.air || n2f.blocks_air || n2f.initial_gas_mix != OPENTURF_DEFAULT_ATMOS)
 				continue
 			A = cand
 			W = n1
@@ -1362,6 +1362,12 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 		"wall ended up in A's atmos_adjacent_turfs — blocks_air check broken")
 	TEST_ASSERT(!(A.atmos_adjacent_turfs && A.atmos_adjacent_turfs[B]), \
 		"B somehow ended up adjacent to A despite a wall between them")
+
+	// Isolate the far-side turf from unrelated station routes and ambient test
+	// contamination. The assertions above test the wall topology; this isolates
+	// the Rust publication check so only a stale/phantom Rust edge can reach B.
+	B.atmos_adjacent_turfs.Cut()
+	B.__update_auxtools_turf_adjacency_info()
 
 	for(var/datum/gas/g as anything in A.air.get_gases())
 		A.air.set_moles(g, 0)
@@ -1382,6 +1388,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	dq_atmos_test_wait_real_ssair_ticks(20)
 
 	var/b_p = B.air.get_moles(/datum/gas/plasma)
+	B.immediate_calculate_adjacent_turfs()
+	B.__update_auxtools_turf_adjacency_info()
 	TEST_ASSERT_EQUAL(b_p, 0, \
 		"plasma leaked through a wall: B has [b_p] mol after 100 ticks with A→W→B layout")
 
@@ -3496,6 +3504,10 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	drain_dirty_gas_mixtures()
 
 	var/obj/machinery/atmospherics/unary/vent_pump/V = new(T)
+	V.update_use_power(USE_POWER_IDLE)
+	V.external_pressure_bound = T.air.return_pressure() + 50
+	V.air_contents.adjust_moles(/datum/gas/oxygen, 10)
+	drain_dirty_gas_mixtures()
 	SSmachines.hibernate_vent(V)
 	var/datum/weakref/vent_ref = WEAKREF(V)
 	TEST_ASSERT(SSmachines.hibernating_vents[vent_ref.reference], "vent did not register as sleeping")
@@ -3504,10 +3516,10 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	T.air.adjust_moles(/datum/gas/oxygen, 5)
 	SSmachines.wake_dirty_gas_subscribers()
 	TEST_ASSERT(!SSmachines.hibernating_vents[vent_ref.reference], "pressure change did not wake vent")
-	TEST_ASSERT(original_subscribers[vent_ref.reference], "waking removed an unchanged gas subscription")
+	TEST_ASSERT(!original_subscribers[vent_ref.reference], "waking retained a stale gas subscription")
 	SSmachines.hibernate_vent(V)
-	TEST_ASSERT_EQUAL(SSmachines.gas_mixture_subscribers["[turf_mixture_id]"], original_subscribers, \
-		"re-hibernating on the same mixture replaced the subscriber collection")
+	TEST_ASSERT(SSmachines.gas_mixture_subscribers["[turf_mixture_id]"][vent_ref.reference], \
+		"re-hibernating did not restore the gas subscription")
 
 	var/obj/machinery/alarm/A = new(T)
 	A.update_area()

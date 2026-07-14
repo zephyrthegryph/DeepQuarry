@@ -197,6 +197,8 @@ impl GasArena {
 		}
 		if mask & GAS_CHANGE_TEMPERATURE != 0 {
 			baseline.temperature = after.temperature;
+			#[cfg(feature = "superconductivity")]
+			crate::turfs::superconduct::mark_heat_dirty();
 		}
 		if mask & GAS_CHANGE_COMPOSITION != 0 {
 			baseline.composition = after.composition;
@@ -217,6 +219,26 @@ impl GasArena {
 			.as_mut()
 			.map(|dirty| std::mem::take(dirty).into_iter().collect())
 			.unwrap_or_default()
+	}
+
+	pub fn diagnostics() -> (usize, usize, usize, usize, usize, usize) {
+		let gases = GAS_MIXTURES.read();
+		let gases = gases.as_ref().unwrap();
+		let free = NEXT_GAS_IDS.read();
+		let baselines = DIRTY_GAS_BASELINES.read();
+		let baselines = baselines.as_ref().unwrap();
+		let composition_capacity = baselines
+			.values()
+			.map(|signature| signature.composition.capacity())
+			.sum();
+		(
+			gases.len(),
+			gases.capacity(),
+			free.as_ref().unwrap().len(),
+			baselines.len(),
+			composition_capacity,
+			DIRTY_GAS_MIXTURES.read().as_ref().unwrap().len(),
+		)
 	}
 	/// Locks the gas arena and and runs the given closure with it locked.
 	/// # Panics

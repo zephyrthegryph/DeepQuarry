@@ -2,7 +2,7 @@ SUBSYSTEM_DEF(profiler)
 	name = "Profiler"
 	init_stage = INITSTAGE_FIRST
 	runlevels = RUNLEVELS_DEFAULT | RUNLEVEL_LOBBY
-	wait = 300 SECONDS
+	wait = 30 SECONDS
 	var/fetch_cost = 0
 	var/write_cost = 0
 
@@ -17,7 +17,36 @@ SUBSYSTEM_DEF(profiler)
 	else
 		StopProfiling() //Stop the early start profiler
 	wait = CONFIG_GET(number/profiler_interval)
+	if(fexists("data/benchmark_sm"))
+		fdel("data/benchmark_sm")
+		Master.sleep_offline_after_initializations = FALSE
+		SSticker.start_immediately = TRUE
+		SSmachines.profile_machine_types = TRUE
+		SSticker.OnRoundstart(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(schedule_sm_benchmark)))
 	return SS_INIT_SUCCESS
+
+/proc/schedule_sm_benchmark()
+	log_runtime("ATMOS_BENCHMARK scheduled supermatter explosion in 60 seconds")
+	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(run_sm_benchmark)), 60 SECONDS)
+
+/proc/run_sm_benchmark()
+	for(var/obj/machinery/power/supermatter/SM in world)
+		log_runtime("ATMOS_BENCHMARK detonating [SM] at [SM.x],[SM.y],[SM.z]")
+		SM.explode()
+		return
+	var/list/station_areas = get_station_areas(list())
+	while(length(station_areas))
+		var/area/target_area = pick_n_take(station_areas)
+		var/list/open_turfs = list()
+		for(var/turf/open/T in target_area)
+			open_turfs += T
+		if(!length(open_turfs))
+			continue
+		var/turf/open/epicenter = pick(open_turfs)
+		log_runtime("ATMOS_BENCHMARK detonating fallback bomb at [epicenter.x],[epicenter.y],[epicenter.z]")
+		explosion(epicenter, 8, 16, 24, 32, TRUE)
+		return
+	log_runtime("ATMOS_BENCHMARK could not find a valid station turf")
 
 /datum/controller/subsystem/profiler/OnConfigLoad()
 	if(CONFIG_GET(flag/auto_profile))
@@ -29,6 +58,7 @@ SUBSYSTEM_DEF(profiler)
 
 /datum/controller/subsystem/profiler/fire()
 	DumpFile()
+	log_runtime("ATMOS_PROFILE [json_encode(SSair.auxmos_diagnostics())]")
 
 /datum/controller/subsystem/profiler/Shutdown()
 	if(CONFIG_GET(flag/auto_profile))

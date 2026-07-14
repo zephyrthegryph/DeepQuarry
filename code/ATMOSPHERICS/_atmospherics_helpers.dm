@@ -62,6 +62,7 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 	var/power_draw = specific_power*transfer_moles
 
 	sink.merge(removed)
+	qdel(removed)
 
 	return power_draw
 
@@ -96,6 +97,7 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 	if(!removed) //Just in case
 		return -1
 	sink.merge(removed)
+	qdel(removed)
 
 	return 0
 
@@ -248,6 +250,7 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 	// sink_filtered.update_values() / removed.update_values() removed.
 
 	sink_clean.merge(removed)
+	qdel(removed)
 
 	return filtered_power_used + unfiltered_power_used
 
@@ -326,6 +329,7 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 		power_draw += filtered_power_used[sink_filtered]
 
 	sink_clean.merge(removed)
+	qdel(removed)
 
 	return power_draw
 
@@ -395,6 +399,7 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 		total_power_draw += power_draw
 
 		sink.merge(removed)
+		qdel(removed)
 
 	return total_power_draw
 

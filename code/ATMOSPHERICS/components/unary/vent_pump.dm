@@ -197,6 +197,17 @@
 		return 0
 	return 1
 
+/obj/machinery/atmospherics/unary/vent_pump/gas_dependency_changed(mixture_id, change_mask)
+	if(!..())
+		return FALSE
+	if(!can_pump())
+		return FALSE
+	var/datum/gas_mixture/environment = return_air()
+	if(!environment || get_pressure_delta(environment) <= 0.5)
+		return FALSE
+	var/datum/gas_mixture/source = pump_direction ? air_contents : environment
+	return source && source.total_moles() >= MINIMUM_MOLES_TO_PUMP
+
 /obj/machinery/atmospherics/unary/vent_pump/process()
 	..()
 
@@ -224,13 +235,11 @@
 			transfer_moles = min(transfer_moles, environment.total_moles()*air_contents.return_volume()/environment.return_volume())	//group_multiplier gets divided out here
 			power_draw = pump_gas(src, environment, air_contents, transfer_moles, power_rating)
 
-	else
-		//If we're in an area that is fucking ideal, and we don't have to do anything, chances are we won't next tick either so why redo these calculations?
-		//JESUS FUCK.  THERE ARE LITERALLY 250 OF YOU MOTHERFUCKERS ON ZLEVEL ONE AND YOU DO THIS SHIT EVERY TICK WHEN VERY OFTEN THERE IS NO REASON TO
-
-		if(pump_direction && pressure_checks == PRESSURE_CHECK_EXTERNAL && Master.iteration > 10)	//99% of all vents
-			//Fucking hibernate because you ain't doing shit.
-			SSmachines.hibernate_vent(src)
+	// A pressure target can remain actionable while the source mixture is empty.
+	// Both mixtures are subscribed before sleeping, so either new source gas or a
+	// changed target pressure wakes the vent without polling.
+	if(power_draw < 0 && Master.iteration > 10)
+		SSmachines.hibernate_vent(src)
 
 	if (power_draw >= 0)
 		last_power_draw = power_draw

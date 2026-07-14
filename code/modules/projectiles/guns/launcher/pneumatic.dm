@@ -130,7 +130,9 @@
 		var/datum/gas_mixture/removed = tank.air_contents.remove(lost_gas_amount)
 
 		var/turf/T = get_turf(src.loc)
-		if(T) T.assume_air(removed)
+		if(T)
+			T.assume_air(removed)
+		qdel(removed)
 	..()
 
 /obj/item/gun/launcher/pneumatic/update_icon()

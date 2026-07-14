@@ -26,6 +26,12 @@ pub fn byond_callback_sender() -> flume::Sender<DeferredFunc> {
 	CALLBACK_CHANNEL.get_or_init(flume::unbounded).0.clone()
 }
 
+pub fn pending_callbacks() -> usize {
+	CALLBACK_CHANNEL
+		.get()
+		.map_or(0, |(_, receiver)| receiver.len())
+}
+
 /// Goes through every single outstanding callback and calls them.
 fn process_callbacks() {
 	//let stack_trace = Proc::find("/proc/auxtools_stack_trace").unwrap();

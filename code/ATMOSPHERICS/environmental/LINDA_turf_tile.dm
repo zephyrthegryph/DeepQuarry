@@ -103,6 +103,7 @@
 			near_turf.__update_auxtools_turf_adjacency_info()
 		SSair.add_to_active(near_turf)
 	atmos_adjacent_turfs = null
+	QDEL_NULL(air)
 	return ..()
 
 /////////////////GAS MIXTURE PROCS///////////////////
@@ -148,8 +149,10 @@
 
 /turf/return_air()
 	RETURN_TYPE(/datum/gas_mixture)
-	var/datum/gas_mixture/copied_mixture = create_gas_mixture()
-	return copied_mixture
+	var/static/datum/gas_mixture/immutable/space/vacuum
+	if(!vacuum)
+		vacuum = new
+	return vacuum
 
 /turf/open/return_air()
 	RETURN_TYPE(/datum/gas_mixture)

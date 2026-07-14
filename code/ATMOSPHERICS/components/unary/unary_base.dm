@@ -68,6 +68,8 @@
 	SSmachines.wake_vent(WEAKREF(src))
 
 /obj/machinery/atmospherics/unary/update_use_power(new_use_power)
+	if(use_power == new_use_power)
+		return
 	invalidate_gas_dependencies()
 	return ..()
 

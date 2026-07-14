@@ -62,11 +62,18 @@
 
 			var/datum/gas_mixture/air_all = new
 			air_all.set_volume(air_in.return_volume() + air_out.return_volume())
-			air_all.merge(air_in.remove_ratio(1))
-			air_all.merge(air_out.remove_ratio(1))
+			var/datum/gas_mixture/removed_in = air_in.remove_ratio(1)
+			var/datum/gas_mixture/removed_out = air_out.remove_ratio(1)
+			air_all.merge(removed_in)
+			air_all.merge(removed_out)
+			qdel(removed_in)
+			qdel(removed_out)
 
-			air_in.merge(air_all.remove(volume_ratio))
+			var/datum/gas_mixture/returned_in = air_all.remove(volume_ratio)
+			air_in.merge(returned_in)
+			qdel(returned_in)
 			air_out.merge(air_all)
+			qdel(air_all)
 
 		update_icon()
 

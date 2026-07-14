@@ -54,6 +54,10 @@
 	var/oldtype = src.type
 	var/old_density = src.density
 	var/was_open = isopenturf(src)
+	var/datum/gas_mixture/old_air
+	var/turf/open/old_open_turf = src
+	if(istype(old_open_turf) && old_open_turf.air)
+		old_air = old_open_turf.air.copy()
 	var/datum/sunlight_handler/old_shandler
 	var/turf/simulated/simself = src
 	if(istype(simself) && simself.shandler)
@@ -76,6 +80,10 @@
 	qdel(src)
 
 	var/turf/W = new N( locate(src.x, src.y, src.z) )
+	var/turf/open/new_open_turf = W
+	if(old_air && istype(new_open_turf) && new_open_turf.air)
+		new_open_turf.air.copy_from(old_air)
+	QDEL_NULL(old_air)
 	if(ispath(N, /turf/simulated/floor))
 		// W.fire was a ZAS hotspot pointer; LINDA hotspots are tracked
 		// in SSair.active_hotspots, not as a turf var.

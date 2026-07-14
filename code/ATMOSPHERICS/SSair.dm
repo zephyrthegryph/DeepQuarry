@@ -40,6 +40,12 @@ SUBSYSTEM_DEF(air)
 	var/async_compute_cost = 0
 	/// Turfs in the connected components considered by the last generation.
 	var/async_active_turfs = 0
+	/// Turfs queued for the next local-frontier generation.
+	var/async_pending_turfs = 0
+	/// Mixtures copied into the latest worker snapshot.
+	var/async_snapshot_mixtures = 0
+	/// Mixtures materially changed by the latest published generation.
+	var/async_published_mixtures = 0
 	/// Transactions discarded because synchronous mutations changed their inputs.
 	var/async_rejected_generations = 0
 
@@ -119,6 +125,7 @@ SUBSYSTEM_DEF(air)
 
 
 /datum/controller/subsystem/air/stat_entry(msg)
+	var/list/arena_diag = auxmos_diagnostics()
 	msg += "\n  Cost:{"
 	msg += "AT:[round(cost_turfs,1)]|"
 	msg += "PP:[round(cost_post_process,1)]|"
@@ -145,8 +152,13 @@ SUBSYSTEM_DEF(air)
 	msg += "AJ:[adjacent_rebuild.len]"
 	msg += "|GEN:[async_generation]"
 	msg += "|ACT:[async_active_turfs]"
+	msg += "|PEND:[async_pending_turfs]"
+	msg += "|SNAP:[async_snapshot_mixtures]"
+	msg += "|PUB:[async_published_mixtures]"
 	msg += "|REJ:[async_rejected_generations]"
 	msg += "}"
+	if(length(arena_diag) >= 15)
+		msg += "\n  Arena:{MIX:[arena_diag[1]]/[arena_diag[2]]|FREE:[arena_diag[3]]|BASE:[arena_diag[4]]|BCAP:[arena_diag[5]]|DIRTY:[arena_diag[6]]|TURF:[arena_diag[7]]/[arena_diag[8]]|NODE:[arena_diag[9]]|EDGE:[arena_diag[10]]|ACTIVE:[arena_diag[11]]|CB:[arena_diag[12]]|HEAT:[arena_diag[13]]/[arena_diag[14]]/[arena_diag[15]]us}"
 	return ..()
 
 
@@ -259,8 +271,11 @@ SUBSYSTEM_DEF(air)
 			overtimed = process_excited_groups_auxtools(src, SSAIR_REMAINING_MS)
 		if(state != SS_RUNNING)
 			return
-		if(overtimed) // ran out of tick; pause so we resume this step next run
-			pause()
+		if(overtimed)
+			// The Rust worker owns this generation until publication. Marking the
+			// subsystem paused makes the MC immediately resume and busy-poll it
+			// thousands of times, preventing unrelated DM subsystems from running.
+			// Keep the stage and poll once at SSair's next scheduled fire instead.
 			return
 		resumed = FALSE
 		currentpart = SSAIR_EQUALIZE
@@ -271,7 +286,7 @@ SUBSYSTEM_DEF(air)
 		if(state != SS_RUNNING)
 			return
 		if(overtimed)
-			pause()
+			// Equalization is also worker-owned while this reports overtime.
 			return
 		resumed = FALSE
 		currentpart = SSAIR_FINALIZE_TURFS

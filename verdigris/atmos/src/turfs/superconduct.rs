@@ -6,11 +6,29 @@ use auxcallback::byond_callback_sender;
 use coarsetime::Instant;
 use eyre::Result;
 use parking_lot::Once;
-use std::sync::OnceLock;
+use std::sync::{
+	atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
+	OnceLock,
+};
 
 static INIT_HEAT: Once = Once::new();
 
 static TURF_HEAT: RwLock<Option<TurfHeat>> = const_rwlock(None);
+static HEAT_DIRTY: AtomicBool = AtomicBool::new(true);
+static LAST_HEAT_CANDIDATES: AtomicUsize = AtomicUsize::new(0);
+static LAST_HEAT_MICROS: AtomicU64 = AtomicU64::new(0);
+
+pub(crate) fn mark_heat_dirty() {
+	HEAT_DIRTY.store(true, Ordering::Release);
+}
+
+pub(crate) fn heat_diagnostics() -> (bool, usize, u64) {
+	(
+		HEAT_DIRTY.load(Ordering::Acquire),
+		LAST_HEAT_CANDIDATES.load(Ordering::Acquire),
+		LAST_HEAT_MICROS.load(Ordering::Acquire),
+	)
+}
 
 // Ported from auxtools lazy_static to std OnceLock. Bounded(1) so a still-processing
 // heat tick can't pile up backlog.
@@ -175,6 +193,7 @@ impl TurfHeat {
 }
 
 pub fn supercond_update_ref(src: ByondValue) -> Result<()> {
+	mark_heat_dirty();
 	let id = src.get_ref()?;
 	let immutable_atmos = src
 		.read_number_id(byond_string!("immutable_atmos"))
@@ -208,6 +227,7 @@ pub fn supercond_update_ref(src: ByondValue) -> Result<()> {
 }
 
 pub fn supercond_update_adjacencies(id: u32) -> Result<()> {
+	mark_heat_dirty();
 	let (max_x, max_y) = world_dims()?;
 	let src_turf = ByondValue::new_ref(ValueType::Turf, id);
 	with_turf_heat_write(|arena| -> Result<()> {
@@ -286,6 +306,12 @@ fn process_heat_notify(src: ByondValue) -> Result<ByondValue> {
 		turf tiles are 1 meter^2 anyway--the atmos subsystem
 		does this in general, thus turf gas mixtures being 2.5 m^3.
 	*/
+	if !HEAT_DIRTY.load(Ordering::Acquire) {
+		return Ok(ByondValue::null());
+	}
+	// Consume the work that caused this pass. A mutation arriving while the
+	// worker runs sets the flag again and must survive an otherwise-idle pass.
+	HEAT_DIRTY.store(false, Ordering::Release);
 	let sender = heat_processing_callbacks_sender();
 	let time_delta = (src.read_number_id(byond_string!("wait")).map_err(|_| {
 		eyre::eyre!(
@@ -336,6 +362,7 @@ fn process_heat_start() {
 			let task_lock = TASKS.read();
 			let start_time = Instant::now();
 			let sender = byond_callback_sender();
+			let had_work = AtomicBool::new(false);
 			let time_delta = tick_info.time_delta as f32;
 			with_turf_heat_read(|arena| {
 				with_turf_gases_read(|air_arena| {
@@ -354,6 +381,7 @@ fn process_heat_start() {
 								(temp - *item.temperature.read()).abs()
 									> MINIMUM_TEMPERATURE_DELTA_TO_CONSIDER
 							}) {
+								had_work.store(true, Ordering::Relaxed);
 								return Some((turf_id, heat_index, true));
 							}
 							if temp > MINIMUM_TEMPERATURE_FOR_SUPERCONDUCTION {
@@ -366,6 +394,7 @@ fn process_heat_start() {
 										})
 										.is_some()
 								{
+									had_work.store(true, Ordering::Relaxed);
 									Some((turf_id, heat_index, false))
 								} else {
 									None
@@ -387,7 +416,10 @@ fn process_heat_start() {
 									}
 									(temp - air_temp).abs() > MINIMUM_TEMPERATURE_DELTA_TO_CONSIDER
 								})
-								.then(|| (turf_id, heat_index, false))
+								.then(|| {
+									had_work.store(true, Ordering::Relaxed);
+									(turf_id, heat_index, false)
+								})
 							} else {
 								None
 							}
@@ -477,6 +509,7 @@ fn process_heat_start() {
 							has_adjacents.then(|| node_index)
 						})
 						.collect::<Vec<_>>();
+					LAST_HEAT_CANDIDATES.store(adjacencies_to_consider.len(), Ordering::Release);
 
 					_ = adjacencies_to_consider
 						.par_iter()
@@ -518,7 +551,10 @@ fn process_heat_start() {
 			// reading the SSair global off the World value is unreliable on BYOND 516,
 			// the same failure that crashes world-var reads. Heat conduction itself
 			// does not need it.)
-			let _ = start_time.elapsed();
+			if had_work.load(Ordering::Relaxed) {
+				HEAT_DIRTY.store(true, Ordering::Release);
+			}
+			LAST_HEAT_MICROS.store(start_time.elapsed().as_micros() as u64, Ordering::Release);
 			drop(task_lock);
 		});
 	});

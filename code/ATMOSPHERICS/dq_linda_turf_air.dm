@@ -46,6 +46,10 @@
 /datum/controller/subsystem/air/proc/auxmos_set_world_dims(max_x, max_y)
 	return call_ext(VERDIGRIS, "byond:set_world_dims_ffi")(max_x, max_y)
 
+/// Returns arena capacities, active work, callback backlog, and heat-worker state.
+/datum/controller/subsystem/air/proc/auxmos_diagnostics()
+	return call_ext(VERDIGRIS, "byond:auxmos_diagnostics_ffi")()
+
 /// Fires the Rust superconductivity (heat-conduction) pass on a detached thread;
 /// results land via the atmos callback queue drained in SSAIR_FINALIZE_TURFS.
 /// cost_superconductivity is written back from the worker thread.

@@ -161,8 +161,9 @@
 
 		power_draw = pump_gas(src, environment, air_contents, transfer_moles, power_rating)
 
-	if(scrubbing && power_draw < 0 && Master.iteration > 10)	//99% of all scrubbers
-		//Fucking hibernate because you ain't doing shit.
+	// Scrubbing and siphoning both depend exclusively on the subscribed turf and
+	// pipenet mixtures while their explicit configuration is unchanged.
+	if(power_draw < 0 && Master.iteration > 10)
 		SSmachines.hibernate_vent(src)
 
 	if (power_draw >= 0)
@@ -182,6 +183,21 @@
 		network.update = 1
 
 	return 1
+
+/obj/machinery/atmospherics/unary/vent_scrubber/gas_dependency_changed(mixture_id, change_mask)
+	if(!..())
+		return FALSE
+	if(!use_power || (stat & (NOPOWER|BROKEN)) || welded)
+		return FALSE
+	var/datum/gas_mixture/environment = return_air()
+	if(!environment)
+		return FALSE
+	if(!scrubbing)
+		return environment.total_moles() >= MINIMUM_MOLES_TO_PUMP
+	for(var/gas_id in scrubbing_gas)
+		if(LINDA_GAS_AMT(environment, gas_id) > 0)
+			return TRUE
+	return FALSE
 
 /obj/machinery/atmospherics/unary/vent_scrubber/hide(i) //to make the little pipe section invisible, the icon changes.
 	update_icon()

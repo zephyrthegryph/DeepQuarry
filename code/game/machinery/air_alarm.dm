@@ -267,6 +267,8 @@
 	SSmachines.wake_gas_subscriber(WEAKREF(src))
 
 /obj/machinery/alarm/update_use_power(new_use_power)
+	if(use_power == new_use_power)
+		return
 	invalidate_gas_dependencies()
 	return ..()
 

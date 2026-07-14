@@ -125,6 +125,7 @@ Thus, the two variables affect pump operation are set in New():
 		var/datum/gas_mixture/environment = loc.return_air()
 		var/datum/gas_mixture/leaked = removed.remove_ratio(VOLUME_PUMP_LEAK_AMOUNT)
 		environment.merge(leaked)
+		qdel(leaked)
 		// leaked gas just mutated the turf's air mix; enroll the turf
 		// so SSair sees the change and the overlay updates.
 		if(isturf(loc))
@@ -134,6 +135,7 @@ Thus, the two variables affect pump operation are set in New():
 				T.air_update_turf(FALSE, FALSE)
 
 	air2.merge(removed)
+	qdel(removed)
 
 	// This part is necessary, as the function pump_gas has limits that reduces the volume pump to just a glorified pressure pump.
 	// The gas pump does not care about trying to meet a specific pressure. It will keep moving gas till a pressure limit is reached.

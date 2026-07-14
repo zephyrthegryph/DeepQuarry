@@ -107,9 +107,10 @@
 					removed.add_thermal_energy(heat_transfer)
 
 				else
-					return
+					heat_transfer = 0
 
 				env.merge(removed)
+				qdel(removed)
 
 
 

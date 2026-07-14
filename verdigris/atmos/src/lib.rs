@@ -51,6 +51,41 @@ fn drain_dirty_gas_mixtures() -> Result<ByondValue> {
 	Ok(list)
 }
 
+#[cfg(feature = "turf_processing")]
+#[byondapi::bind("/datum/controller/subsystem/air/proc/auxmos_diagnostics")]
+#[auxmacros::panic_safe]
+fn auxmos_diagnostics() -> Result<ByondValue> {
+	let gas = GasArena::diagnostics();
+	let turf = turfs::turf_arena_diagnostics();
+	#[cfg(feature = "superconductivity")]
+	let heat = turfs::superconduct::heat_diagnostics();
+	#[cfg(not(feature = "superconductivity"))]
+	let heat = (false, 0, 0);
+	let values = [
+		gas.0,
+		gas.1,
+		gas.2,
+		gas.3,
+		gas.4,
+		gas.5,
+		turf.0,
+		turf.1,
+		turf.2,
+		turf.3,
+		turfs::pending_active_turfs(),
+		auxcallback::pending_callbacks(),
+		heat.0 as usize,
+		heat.1,
+		heat.2 as usize,
+	]
+	.into_iter()
+	.map(|value| ByondValue::from(value as f32))
+	.collect::<Vec<_>>();
+	let list = ByondValue::new_list()?;
+	list.write_list(&values)?;
+	Ok(list)
+}
+
 /// Fills in the first unused slot in the gas mixtures vector, or adds another one, then sets the argument ByondValue to point to it.
 #[byondapi::bind("/datum/gas_mixture/proc/__gasmixture_register")]
 #[auxmacros::panic_safe]

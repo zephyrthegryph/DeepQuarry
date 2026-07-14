@@ -405,7 +405,8 @@
 	if(!env || !removed || !xgm_total_moles(removed)) // total_moles is a proc in LINDA, use xgm_total_moles helper
 		damage += max((power - 15*POWER_FACTOR)/10, 0)
 	else if (grav_pulling) //If supermatter is detonating, remove all air from the zone
-		env.remove(xgm_total_moles(env)) // total_moles is a proc in LINDA, use xgm_total_moles helper
+		var/datum/gas_mixture/drained = env.remove(xgm_total_moles(env)) // total_moles is a proc in LINDA, use xgm_total_moles helper
+		qdel(drained)
 	else
 		damage_archived = damage
 
@@ -450,6 +451,8 @@
 		removed.set_temperature(between(0, removed.return_temperature(), 10000))
 
 		env.merge(removed)
+
+	qdel(removed)
 
 	for(var/mob/living/carbon/human/l in view(src, min(7, round(sqrt(power/6))))) // If they can see it without mesons on.  Bad on them.
 		if(!istype(l.glasses, /obj/item/clothing/glasses/meson) || l.is_incorporeal()) //Only mesons can protect you! OR if they're not in the same plane of existence

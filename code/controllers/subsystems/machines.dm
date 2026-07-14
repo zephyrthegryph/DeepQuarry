@@ -33,6 +33,12 @@ SUBSYSTEM_DEF(machines)
 	var/list/processing_machines = list()
 	var/list/powernets = list()
 	var/list/powerobjs = list()
+	/// Enables concrete-type timing for machine polling audits.
+	var/profile_machine_types = FALSE
+	var/list/machine_profile_cost = list()
+	var/list/machine_profile_calls = list()
+	var/list/machine_profile_kills = list()
+	var/next_machine_profile_dump = 0
 
 	// Wait to rebuild powernets
 	VAR_PRIVATE/defering_powernets = FALSE
@@ -124,17 +130,50 @@ SUBSYSTEM_DEF(machines)
 	if (!resumed)
 		wake_dirty_gas_subscribers()
 		src.current_run = processing_machines.Copy()
+		if(profile_machine_types && !next_machine_profile_dump)
+			next_machine_profile_dump = world.time + 30 SECONDS
 
 	var/wait = src.wait
 	var/list/current_run = src.current_run
 	while(length(current_run))
 		var/obj/machinery/M = current_run[length(current_run)]
 		current_run.len--
-		if(!istype(M) || QDELETED(M) || (M.process(wait) == PROCESS_KILL))
+		var/process_result
+		if(istype(M) && !QDELETED(M))
+			if(profile_machine_types)
+				var/machine_type = "[M.type]"
+				var/profile_start = TICK_USAGE_REAL
+				process_result = M.process(wait)
+				machine_profile_cost[machine_type] += TICK_DELTA_TO_MS(TICK_USAGE_REAL - profile_start)
+				machine_profile_calls[machine_type]++
+				if(process_result == PROCESS_KILL)
+					machine_profile_kills[machine_type]++
+			else
+				process_result = M.process(wait)
+		if(!istype(M) || QDELETED(M) || process_result == PROCESS_KILL)
 			processing_machines.Remove(M)
 			DISABLE_BITFIELD(M?.datum_flags, DF_ISPROCESSING)
 		if(MC_TICK_CHECK)
 			return
+	if(profile_machine_types && world.time >= next_machine_profile_dump)
+		dump_machine_profile()
+
+/datum/controller/subsystem/machines/proc/dump_machine_profile()
+	var/list/current_counts = list()
+	for(var/obj/machinery/M as anything in processing_machines)
+		if(M && !QDELETED(M))
+			current_counts["[M.type]"]++
+	var/list/sorted_cost = machine_profile_cost.Copy()
+	sortTim(sorted_cost, /proc/cmp_numeric_desc, TRUE)
+	var/rank = 0
+	for(var/machine_type in sorted_cost)
+		log_runtime("MACHINE_PROFILE type=[machine_type] cost_ms=[round(machine_profile_cost[machine_type], 0.01)] calls=[machine_profile_calls[machine_type]] active=[current_counts[machine_type] || 0] killed=[machine_profile_kills[machine_type] || 0]")
+		if(++rank >= 25)
+			break
+	machine_profile_cost.Cut()
+	machine_profile_calls.Cut()
+	machine_profile_kills.Cut()
+	next_machine_profile_dump = world.time + 30 SECONDS
 
 /datum/controller/subsystem/machines/proc/process_powernets(resumed = 0)
 	if (!resumed)
@@ -273,15 +312,20 @@ SUBSYSTEM_DEF(machines)
 /datum/controller/subsystem/machines/proc/wake_gas_subscriber(datum/weakref/WR)
 	if(!WR)
 		return
+	if(WR.reference && !sleeping_gas_devices[WR.reference])
+		return
 	var/atom/subscriber = WR.resolve()
 	if(istype(subscriber, /obj/machinery/atmospherics/unary))
 		var/obj/machinery/atmospherics/unary/V = subscriber
+		V.unregister_gas_dependencies(WR)
 		START_MACHINE_PROCESSING(V)
 	else if(istype(subscriber, /obj/machinery/alarm))
 		var/obj/machinery/alarm/A = subscriber
+		A.unregister_gas_dependencies(WR)
 		START_MACHINE_PROCESSING(A)
 	else if(istype(subscriber, /obj/machinery/air_sensor))
 		var/obj/machinery/air_sensor/S = subscriber
+		S.unregister_gas_dependencies(WR)
 		START_MACHINE_PROCESSING(S)
 	if(WR.reference)
 		sleeping_gas_devices.Remove(WR.reference)

@@ -7,6 +7,13 @@ GLOBAL_VAR_INIT(total_runtimes_skipped, 0)
 /world/Error(exception/E, datum/e_src)
 	GLOB.total_runtimes++
 
+#ifdef UNIT_TESTS
+	// Preserve even very-early runtimes that occur before the normal error cache
+	// is initialized; CI treats any runtime as fatal and needs an actionable file.
+	var/runtime_log_directory = GLOB?.log_directory || "data/logs/ci"
+	text2file("[time_stamp()] [E?.file]:[E?.line] [E?.name]\n[E?.desc]\n", "[runtime_log_directory]/runtime-errors.log")
+#endif
+
 	if(!istype(E)) //Something threw an unusual exception
 		log_world("uncaught runtime error: [E]")
 		return ..()

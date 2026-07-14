@@ -9,7 +9,7 @@ mod putnamos;
 #[cfg(feature = "katmos")]
 pub mod katmos;
 #[cfg(feature = "superconductivity")]
-mod superconduct;
+pub(crate) mod superconduct;
 
 use crate::{constants::*, gas::Mixture, GasArena};
 use bitflags::bitflags;
@@ -436,6 +436,25 @@ fn mark_turf_active(turf: TurfID) {
 
 fn take_active_turfs() -> FxHashSet<TurfID> {
 	std::mem::take(ACTIVE_TURFS.write().as_mut().unwrap())
+}
+
+pub(super) fn reactivate_turfs(ids: impl IntoIterator<Item = TurfID>) {
+	ACTIVE_TURFS.write().as_mut().unwrap().extend(ids);
+}
+
+pub(super) fn pending_active_turfs() -> usize {
+	ACTIVE_TURFS.read().as_ref().map_or(0, FxHashSet::len)
+}
+
+pub(super) fn turf_arena_diagnostics() -> (usize, usize, usize, usize) {
+	with_turf_gases_read(|arena| {
+		(
+			arena.map.len(),
+			arena.map.capacity(),
+			arena.graph.node_count(),
+			arena.graph.edge_count(),
+		)
+	})
 }
 
 pub(super) fn reactivate_all_turfs() {

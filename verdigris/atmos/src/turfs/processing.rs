@@ -27,6 +27,9 @@ struct TurfProcessResult {
 	low_pressure_turfs: usize,
 	high_pressure_turfs: usize,
 	active_turfs: usize,
+	pending_turfs: usize,
+	snapshot_mixtures: usize,
+	published_mixtures: usize,
 	rejected_generations: u64,
 }
 
@@ -106,6 +109,18 @@ fn process_turf_hook(mut src: ByondValue, remaining: ByondValue) -> Result<Byond
 		src.write_var_id(
 			byond_string!("async_active_turfs"),
 			&(result.active_turfs as f32).into(),
+		)?;
+		src.write_var_id(
+			byond_string!("async_pending_turfs"),
+			&(result.pending_turfs as f32).into(),
+		)?;
+		src.write_var_id(
+			byond_string!("async_snapshot_mixtures"),
+			&(result.snapshot_mixtures as f32).into(),
+		)?;
+		src.write_var_id(
+			byond_string!("async_published_mixtures"),
+			&(result.published_mixtures as f32).into(),
 		)?;
 		src.write_var_id(
 			byond_string!("async_rejected_generations"),
@@ -189,28 +204,15 @@ fn process_turf(
 ) -> TurfProcessResult {
 	let total_start = Instant::now();
 	let active_nodes = with_turf_gases_read(|arena| {
-		GasArena::with_all_mixtures(|all_mixtures| {
-			let mut frontier = take_active_turfs()
-				.into_iter()
-				.filter_map(|turf_id| arena.get_id(turf_id))
-				.collect::<std::collections::VecDeque<_>>();
-			let mut nodes = rustc_hash::FxHashSet::default();
-			while let Some(node) = frontier.pop_front() {
-				if !nodes.insert(node) {
-					continue;
-				}
-				let Some(mixture) = arena.get(node) else {
-					continue;
-				};
-				let immutable = all_mixtures
-					.get(mixture.mix)
-					.is_none_or(|gas| gas.read().is_immutable());
-				if !immutable {
-					frontier.extend(arena.adjacent_node_ids(node));
-				}
+		let seeds = take_active_turfs();
+		let mut nodes = rustc_hash::FxHashSet::default();
+		for turf_id in seeds {
+			if let Some(node) = arena.get_id(turf_id) {
+				nodes.insert(node);
+				nodes.extend(arena.adjacent_node_ids(node));
 			}
-			nodes
-		})
+		}
+		nodes
 	});
 	if active_nodes.is_empty() {
 		return TurfProcessResult {
@@ -254,10 +256,24 @@ fn process_turf(
 		)
 	};
 	planet_process(request.planet_share_ratio, snapshot, &active_nodes);
-	let published =
-		GasArena::publish_snapshot(&snapshot_mix_ids, base_revisions, snapshot).is_some();
+	let next_active = with_turf_gases_read(|arena| {
+		active_nodes
+			.par_iter()
+			.filter(|&&node| {
+				arena
+					.get(node)
+					.is_some_and(|mixture| should_process(node, mixture, snapshot, arena))
+			})
+			.flat_map_iter(|&node| std::iter::once(node).chain(arena.adjacent_node_ids(node)))
+			.filter_map(|node| arena.get(node).map(|mixture| mixture.id))
+			.collect::<rustc_hash::FxHashSet<_>>()
+	});
+	let published_ids = GasArena::publish_snapshot(&snapshot_mix_ids, base_revisions, snapshot);
+	let published = published_ids.is_some();
 	if !published {
 		TURF_REJECTED_GENERATIONS.fetch_add(1, Ordering::AcqRel);
+	} else {
+		super::reactivate_turfs(next_active);
 	}
 	let post_process_cost_ms = {
 		let start_time = Instant::now();
@@ -284,6 +300,9 @@ fn process_turf(
 		low_pressure_turfs: low_pressure_turfs.len(),
 		high_pressure_turfs: high_pressure_turfs.len(),
 		active_turfs: active_nodes.len(),
+		pending_turfs: super::pending_active_turfs(),
+		snapshot_mixtures: snapshot_mix_ids.len(),
+		published_mixtures: published_ids.as_ref().map_or(0, Vec::len),
 		rejected_generations: TURF_REJECTED_GENERATIONS.load(Ordering::Acquire),
 	}
 }
