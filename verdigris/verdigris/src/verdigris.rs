@@ -45,6 +45,19 @@ mod ffi {
         Ok(ByondValue::new_str(CRATE_FEATURES)?)
     }
 
+    #[byondapi::bind("/proc/verdigris_allocator_diagnostics")]
+    #[auxmacros::panic_safe]
+    fn verdigris_allocator_diagnostics() -> Result<ByondValue> {
+        let (current, peak) = crate::allocator::diagnostics();
+        let values = [current, peak]
+            .into_iter()
+            .map(|value| ByondValue::from(value as f32))
+            .collect::<Vec<_>>();
+        let list = ByondValue::new_list()?;
+        list.write_list(&values)?;
+        Ok(list)
+    }
+
     /// One-time global state init. DM should call this in `/world/New()` before
     /// any other verdigris call.
     #[byondapi::bind("/proc/verdigris_init")]

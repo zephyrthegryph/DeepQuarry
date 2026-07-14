@@ -50,6 +50,10 @@
 /datum/controller/subsystem/air/proc/auxmos_diagnostics()
 	return call_ext(VERDIGRIS, "byond:auxmos_diagnostics_ffi")()
 
+/// Returns current and peak bytes requested through Rust's global allocator.
+/datum/controller/subsystem/air/proc/verdigris_allocator_diagnostics()
+	return call_ext(VERDIGRIS, "byond:verdigris_allocator_diagnostics_ffi")()
+
 /// Fires the Rust superconductivity (heat-conduction) pass on a detached thread;
 /// results land via the atmos callback queue drained in SSAIR_FINALIZE_TURFS.
 /// cost_superconductivity is written back from the worker thread.

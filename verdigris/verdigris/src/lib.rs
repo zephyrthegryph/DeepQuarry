@@ -1,5 +1,9 @@
+mod allocator;
 pub mod random_map;
 pub mod verdigris;
+
+#[global_allocator]
+static ALLOCATOR: allocator::TrackingAllocator = allocator::TrackingAllocator;
 
 // Force-link auxmos's byondapi binds into libverdigris.so. Without this, the
 // auxmos rlib's #[no_mangle] FFI exports may be stripped by the linker. The

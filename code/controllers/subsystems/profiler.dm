@@ -59,6 +59,7 @@ SUBSYSTEM_DEF(profiler)
 /datum/controller/subsystem/profiler/fire()
 	DumpFile()
 	log_runtime("ATMOS_PROFILE [json_encode(SSair.auxmos_diagnostics())]")
+	log_runtime("RUST_ALLOC_PROFILE [json_encode(SSair.verdigris_allocator_diagnostics())]")
 
 /datum/controller/subsystem/profiler/Shutdown()
 	if(CONFIG_GET(flag/auto_profile))

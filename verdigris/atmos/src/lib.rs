@@ -77,6 +77,8 @@ fn auxmos_diagnostics() -> Result<ByondValue> {
 		heat.0 as usize,
 		heat.1,
 		heat.2 as usize,
+		turf.4,
+		turf.5,
 	]
 	.into_iter()
 	.map(|value| ByondValue::from(value as f32))

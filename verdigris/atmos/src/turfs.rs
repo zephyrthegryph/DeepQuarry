@@ -446,13 +446,16 @@ pub(super) fn pending_active_turfs() -> usize {
 	ACTIVE_TURFS.read().as_ref().map_or(0, FxHashSet::len)
 }
 
-pub(super) fn turf_arena_diagnostics() -> (usize, usize, usize, usize) {
+pub(super) fn turf_arena_diagnostics() -> (usize, usize, usize, usize, usize, usize) {
 	with_turf_gases_read(|arena| {
+		let (node_capacity, edge_capacity) = arena.graph.capacity();
 		(
 			arena.map.len(),
 			arena.map.capacity(),
 			arena.graph.node_count(),
 			arena.graph.edge_count(),
+			node_capacity,
+			edge_capacity,
 		)
 	})
 }
@@ -463,11 +466,12 @@ pub(super) fn reactivate_all_turfs() {
 }
 #[byondapi::init]
 pub fn initialize_turfs() {
-	// 10x 255x255 zlevels
-	// double that for edges since each turf can have up to 6 edges but eehhhh
+	// Southern Cross normally tracks about 368k atmospheric tiles and 1.44m
+	// directed edges. Leave modest growth room without reserving ten complete
+	// 255x255 levels and then doubling the edge arena during initialization.
 	*TURF_GASES.write() = Some(TurfGases {
-		graph: StableDiGraph::with_capacity(650_250, 1_300_500),
-		map: IndexMap::with_capacity_and_hasher(650_250, FxBuildHasher),
+		graph: StableDiGraph::with_capacity(400_000, 1_500_000),
+		map: IndexMap::with_capacity_and_hasher(400_000, FxBuildHasher),
 	});
 	*PLANETARY_ATMOS.write() = Some(Default::default());
 	*ACTIVE_TURFS.write() = Some(Default::default());
