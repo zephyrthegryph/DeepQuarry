@@ -569,7 +569,8 @@ where
 #[auxmacros::panic_safe]
 fn hook_register_turf(src: ByondValue, flag: ByondValue) -> Result<ByondValue> {
 	let flag = flag.get_number()? as i32;
-	register_turf_impl(src, flag)?;
+	let visibility = crate::gas::visibility_copies();
+	register_turf_impl(src, flag, &visibility)?;
 	Ok(ByondValue::null())
 }
 
@@ -596,13 +597,14 @@ fn hook_air_revision(src: ByondValue) -> Result<ByondValue> {
 #[auxmacros::panic_safe]
 fn hook_register_turfs_bulk(list: ByondValue, flag: ByondValue) -> Result<ByondValue> {
 	let flag = flag.get_number()? as i32;
+	let visibility = crate::gas::visibility_copies();
 	for (turf, _) in list.iter()? {
-		register_turf_impl(turf, flag)?;
+		register_turf_impl(turf, flag, &visibility)?;
 	}
 	Ok(ByondValue::null())
 }
 
-fn register_turf_impl(src: ByondValue, flag: i32) -> Result<()> {
+fn register_turf_impl(src: ByondValue, flag: i32, visibility: &[Option<f32>]) -> Result<()> {
 	let id = src.get_ref()?;
 	if let Ok(blocks) = src.read_number_id(byond_string!("blocks_air")) {
 		if blocks > 0.0 {
@@ -625,6 +627,18 @@ fn register_turf_impl(src: ByondValue, flag: i32) -> Result<()> {
 		}
 		to_insert.flags = SimulationFlags::from_bits_truncate(flag as u8);
 		to_insert.id = id;
+		// Ordinary station air has no gas overlay. Prime its visibility hash at
+		// registration so the first whole-map generation does not queue one
+		// no-op BYOND callback per turf. Visible maploaded gas keeps the zero
+		// sentinel and receives the normal initial overlay update.
+		let (is_visible, vis_hash) = GasArena::with_gas_mixture(to_insert.mix, |gas| {
+			Ok((gas.is_visible(), gas.vis_hash(visibility)))
+		})?;
+		if !is_visible {
+			to_insert
+				.vis_hash
+				.store(vis_hash, std::sync::atomic::Ordering::Relaxed);
+		}
 
 		if let Ok(is_planet) = src.read_number_id(byond_string!("planetary_atmos")) {
 			if is_planet != 0.0 {

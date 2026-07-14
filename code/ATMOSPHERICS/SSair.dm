@@ -267,7 +267,7 @@ SUBSYSTEM_DEF(air)
 		var/overtimed = process_turfs_auxtools(src, SSAIR_REMAINING_MS)
 		// process_excited_groups only does work if process_turfs ran this cycle,
 		// so run it immediately after (it has its own budget/overtime return).
-		if(!overtimed)
+		if(!overtimed && low_pressure_turfs)
 			overtimed = process_excited_groups_auxtools(src, SSAIR_REMAINING_MS)
 		if(state != SS_RUNNING)
 			return
@@ -282,7 +282,7 @@ SUBSYSTEM_DEF(air)
 
 	if(currentpart == SSAIR_EQUALIZE)
 		// katmos equalize. No-op unless a process_turfs cycle queued equalizes.
-		var/overtimed = process_turf_equalize_auxtools(src, SSAIR_REMAINING_MS)
+		var/overtimed = high_pressure_turfs && process_turf_equalize_auxtools(src, SSAIR_REMAINING_MS)
 		if(state != SS_RUNNING)
 			return
 		if(overtimed)
