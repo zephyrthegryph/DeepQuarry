@@ -26,6 +26,10 @@
 	skipped_tests = list(
 		/datum/unit_test/dq_arrivals_shuttle_preserves_air,
 		/datum/unit_test/dq_escape_shuttle_preserves_air,
+		/datum/unit_test/dq_live_carrier_independently_orbits_sif,
+		/datum/unit_test/dq_live_flight_payload_preserves_carrier_hierarchy,
+		/datum/unit_test/dq_station_flight_never_substitutes_carrier_port,
+		/datum/unit_test/dq_southern_cross_berth_fits_every_expedition_craft,
 	)
 
 	station_name  = "NSS Ade-testing"

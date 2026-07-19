@@ -219,7 +219,7 @@ FIRE ALARM
 	var/area/area = get_area(src)
 	for(var/obj/machinery/firealarm/FA in area)
 		GLOB.fire_alarm.clearAlarm(src.loc, FA)
-		FA.soundloop.stop() // Soundloop
+		FA.soundloop?.stop() // Mapped alarms may be destroyed before Initialize creates this.
 		FA.firewarn = FALSE // Soundloop Fix
 	update_icon()
 	if(user)
@@ -233,7 +233,7 @@ FIRE ALARM
 		GLOB.global_announcer.autosay("Tripped [area]", "Fire Alarm Monitor", DEPARTMENT_ENGINEERING)
 	for(var/obj/machinery/firealarm/FA in area)
 		GLOB.fire_alarm.triggerAlarm(loc, FA, duration, hidden = alarms_hidden)
-		FA.soundloop.start() // Soundloop
+		FA.soundloop?.start() // Mapped alarms may be triggered before Initialize creates this.
 		FA.firewarn = TRUE // Soundloop Fix
 	update_icon()
 	// playsound(src, 'sound/machines/airalarm.ogg', 25, 0, 4, volume_channel = VOLUME_CHANNEL_ALARMS) // Disable as per soundloop

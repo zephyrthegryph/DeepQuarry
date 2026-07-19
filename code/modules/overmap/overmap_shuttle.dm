@@ -3,7 +3,7 @@
 /datum/shuttle/autodock/overmap
 	warmup_time = 10
 
-	var/range = 0	//how many overmap tiles can shuttle go, for picking destinations and returning.
+	var/range = 1	// Short-jump craft can reach sectors one overmap tile away.
 	var/fuel_consumption = 0 //Amount of moles of gas consumed per trip; If zero, then shuttle is magic and does not need fuel
 	var/list/obj/structure/fuel_port/fuel_ports //the fuel ports of the shuttle (but usually just one)
 	var/obj/effect/overmap/visitable/ship/landable/myship //my overmap ship object
@@ -42,6 +42,8 @@
 	var/our_sector = waypoint_sector(current_location)
 	if(myship?.landmark && next_location == myship.landmark)
 		return TRUE //We're not on the overmap yet (admin spawned probably), and we're trying to hook up with our openspace sector
+	if(!our_sector || !waypoint_sector(next_location))
+		return FALSE
 	return get_dist(our_sector, waypoint_sector(next_location)) <= range
 
 /datum/shuttle/autodock/overmap/can_launch()
@@ -51,7 +53,11 @@
 	return ..() && can_go()
 
 /datum/shuttle/autodock/overmap/get_travel_time()
-	var/distance_mod = get_dist(waypoint_sector(current_location),waypoint_sector(next_location))
+	var/obj/effect/overmap/visitable/current_sector = waypoint_sector(current_location)
+	var/obj/effect/overmap/visitable/destination_sector = waypoint_sector(next_location)
+	if(!current_sector || !destination_sector)
+		return move_time
+	var/distance_mod = get_dist(current_sector, destination_sector)
 	return move_time * (1 + distance_mod)
 
 /datum/shuttle/autodock/overmap/proc/set_destination(obj/effect/shuttle_landmark/A)
@@ -64,6 +70,8 @@
 	if(!our_sector && myship?.landmark)
 		res["Perform Test Jump"] = myship.landmark
 		return res //We're not on the overmap, maybe an admin spawned us on a non-sector map. We're broken until we connect to our space z-level.
+	if(!our_sector)
+		return res
 	for (var/obj/effect/overmap/visitable/S in range(get_turf(our_sector), range))
 		var/list/waypoints = S.get_waypoints(name)
 		for(var/obj/effect/shuttle_landmark/LZ in waypoints)

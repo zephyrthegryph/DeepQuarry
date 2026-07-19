@@ -36,7 +36,7 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 /datum/admins/proc/edit_admin_permissions(action, log_target, log_actor, log_operation, log_page)
 	if(!check_rights(R_PERMISSIONS))
 		return
-	if(!owner)
+	if(!owner?.mob)
 		return
 	dq_perms_page = action || PERMISSIONS_PAGE_PERMISSIONS
 	if(dq_perms_page == PERMISSIONS_PAGE_LOGGING)
@@ -50,7 +50,7 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 	if(!dq_permissions_panel)
 		dq_permissions_panel = new(src)
 	if(QDELETED(usr) || usr.client != owner)
-		dq_permissions_panel.tgui_interact(owner)
+		dq_permissions_panel.tgui_interact(owner.mob)
 	else
 		dq_permissions_panel.tgui_interact(usr)
 		SStgui.update_uis(dq_permissions_panel)

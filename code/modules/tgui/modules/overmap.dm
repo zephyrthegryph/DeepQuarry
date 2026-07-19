@@ -80,6 +80,8 @@
 
 /datum/tgui_module/ship/nav/tgui_interact(mob/user, datum/tgui/ui)
 	if(!linked)
+		sync_linked()
+	if(!linked)
 		var/obj/machinery/computer/ship/navigation/host = tgui_host()
 		if(istype(host))
 			// Real Computer path

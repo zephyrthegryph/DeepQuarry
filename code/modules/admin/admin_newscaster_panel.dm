@@ -12,11 +12,11 @@
 // instead. Wiring this up to TGUI assets is a follow-up.
 
 /datum/admins/proc/dq_open_newscaster_panel()
-	if(!owner)
+	if(!owner?.mob)
 		return
 	if(!dq_newscaster_panel)
 		dq_newscaster_panel = new(src)
-	dq_newscaster_panel.tgui_interact(owner)
+	dq_newscaster_panel.tgui_interact(owner.mob)
 
 /datum/admins
 	var/datum/newscaster_panel/dq_newscaster_panel

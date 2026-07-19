@@ -1,0 +1,78 @@
+"aaa" = (/obj/effect/floor_decal/borderfloor{dir = 4},/obj/effect/floor_decal/corner/green/border{dir = 4},/turf/simulated/floor/tiled,/area/hangar/three)
+"aab" = (/turf/simulated/wall/r_wall,/area/hangar/three)
+"aac" = (/turf/simulated/wall,/area/rnd/research/firstdeck/hallway)
+"aad" = (/obj/structure/stairs/spawner/west,/turf/simulated/floor/tiled/dark,/area/rnd/research/firstdeck/hallway)
+"aae" = (/turf/simulated/floor/tiled/dark,/area/rnd/research/firstdeck/hallway)
+"aaf" = (/obj/machinery/firealarm{dir = 4;pixel_x = 24},/obj/structure/cable/green{d1 = 1;d2 = 2;icon_state = "1-2"},/obj/effect/floor_decal/steeldecal/steel_decals4{dir = 9},/obj/effect/floor_decal/steeldecal/steel_decals4{dir = 4},/turf/simulated/floor/tiled/steel_grid,/area/rnd/research/firstdeck/hallway)
+"aag" = (/turf/simulated/wall,/area/rnd/xenobiology/xenoflora)
+"aah" = (/obj/structure/closet/crate/hydroponics{desc = "All you need to start your own honey farm.";name = "beekeeping crate"},/obj/item/beehive_assembly,/obj/item/bee_smoker,/obj/item/honey_frame,/obj/item/honey_frame,/obj/item/honey_frame,/obj/item/honey_frame,/obj/item/honey_frame,/obj/item/bee_pack,/obj/item/tool/crowbar,/turf/simulated/floor/tiled/white,/area/rnd/xenobiology/xenoflora)
+"aai" = (/obj/machinery/smartfridge/drying_rack,/turf/simulated/floor/tiled/white,/area/rnd/xenobiology/xenoflora)
+"aaj" = (/obj/machinery/portable_atmospherics/hydroponics,/obj/machinery/light{dir = 1},/obj/effect/floor_decal/industrial/hatch,/turf/simulated/floor/tiled/white,/area/rnd/xenobiology/xenoflora)
+"aak" = (/obj/machinery/portable_atmospherics/hydroponics,/obj/effect/floor_decal/industrial/hatch,/turf/simulated/floor/tiled/white,/area/rnd/xenobiology/xenoflora)
+"aal" = (/obj/machinery/portable_atmospherics/hydroponics,/obj/machinery/firealarm{pixel_y = 24},/obj/effect/floor_decal/industrial/hatch,/turf/simulated/floor/tiled/white,/area/rnd/xenobiology/xenoflora)
+"aam" = (/obj/machinery/portable_atmospherics/hydroponics,/obj/structure/extinguisher_cabinet{pixel_y = 30},/obj/effect/floor_decal/industrial/hatch,/turf/simulated/floor/tiled/white,/area/rnd/xenobiology/xenoflora)
+"aan" = (/obj/structure/cable/green{d1 = 1;d2 = 2;icon_state = "1-2"},/obj/machinery/door/firedoor/glass,/obj/machinery/door/airlock/glass_research{name = "Expedition Shuttle";req_access = list(47)},/turf/simulated/floor/tiled/steel_grid,/area/rnd/research/firstdeck/hallway)
+"aao" = (/obj/effect/wingrille_spawn/reinforced,/obj/machinery/door/firedoor/border_only,/turf/simulated/floor/plating,/area/rnd/xenobiology/xenoflora)
+"aap" = (/turf/simulated/wall/r_wall,/area/rnd/xenobiology/xenoflora)
+"aaq" = (/obj/effect/floor_decal/borderfloor{dir = 10},/obj/effect/floor_decal/corner/pink/border{dir = 10},/turf/simulated/floor/tiled,/area/expoutpost/stationshuttle)
+"aar" = (/obj/effect/floor_decal/borderfloor,/obj/effect/floor_decal/corner/pink/border,/obj/machinery/camera/network/research{c_tag = "SCI -Carrier Sling Shuttle Dock";dir = 1},/turf/simulated/floor/tiled,/area/expoutpost/stationshuttle)
+"aas" = (/obj/machinery/light,/obj/effect/floor_decal/borderfloor/corner{dir = 8},/obj/effect/floor_decal/corner/pink/bordercorner{dir = 8},/turf/simulated/floor/tiled,/area/expoutpost/stationshuttle)
+"aat" = (/obj/structure/cable/green{d1 = 2;d2 = 4;icon_state = "2-4"},/obj/effect/floor_decal/steeldecal/steel_decals4{dir = 5},/obj/effect/floor_decal/steeldecal/steel_decals4{dir = 8},/turf/simulated/floor/tiled,/area/expoutpost/stationshuttle)
+"aau" = (/obj/machinery/power/apc{name = "south bump";pixel_y = -24},/obj/structure/cable/green{d2 = 8;icon_state = "0-8"},/obj/effect/floor_decal/borderfloor/corner,/obj/effect/floor_decal/corner/pink/bordercorner,/turf/simulated/floor/tiled,/area/expoutpost/stationshuttle)
+"aav" = (/obj/effect/floor_decal/industrial/outline/grey,/obj/effect/floor_decal/borderfloor,/obj/effect/floor_decal/corner/pink/border,/turf/simulated/floor/tiled,/area/expoutpost/stationshuttle)
+"aaw" = (/obj/effect/floor_decal/borderfloor,/obj/effect/floor_decal/corner/pink/border,/turf/simulated/floor/tiled,/area/expoutpost/stationshuttle)
+"aax" = (/obj/effect/floor_decal/borderfloor/corner{dir = 8},/obj/effect/floor_decal/corner/pink/bordercorner{dir = 8},/turf/simulated/floor/tiled,/area/expoutpost/stationshuttle)
+"aay" = (/obj/effect/wingrille_spawn/reinforced,/obj/machinery/door/firedoor/border_only,/turf/simulated/floor/plating,/area/expoutpost/stationshuttle)
+"aaz" = (/turf/space,/area/space)
+"aaA" = (/obj/machinery/atmospherics/unary/vent_pump/on{dir = 8},/obj/machinery/status_display{layer = 4;pixel_x = 32},/obj/effect/floor_decal/borderfloor{dir = 4},/obj/effect/floor_decal/corner/green/border{dir = 4},/turf/simulated/floor/tiled,/area/hangar/three)
+"aaB" = (/obj/machinery/alarm{dir = 4;pixel_x = -22},/obj/effect/floor_decal/borderfloor{dir = 8},/obj/effect/floor_decal/corner/pink/border{dir = 8},/turf/simulated/floor/tiled,/area/expoutpost/stationshuttle)
+"aaC" = (/turf/simulated/floor/tiled,/area/expoutpost/stationshuttle)
+"aaD" = (/obj/machinery/embedded_controller/radio/simple_docking_controller{frequency = 1380;id_tag = "exp_sling_station";name = "shuttle bay controller";pixel_y = 26;tag_door = "exp_sling_station_door"},/turf/simulated/floor/tiled,/area/expoutpost/stationshuttle)
+"aaE" = (/obj/machinery/hologram/holopad,/obj/effect/floor_decal/industrial/outline/grey,/turf/simulated/floor/tiled/dark,/area/expoutpost/stationshuttle)
+"aaF" = (/obj/machinery/computer/shuttle_control/exploration,/turf/simulated/floor/tiled,/area/expoutpost/stationshuttle)
+"aaG" = (/obj/structure/closet/emcloset/legacy,/turf/simulated/floor/tiled,/area/expoutpost/stationshuttle)
+"aaH" = (/obj/effect/floor_decal/borderfloor/corner,/obj/effect/floor_decal/corner/green/bordercorner,/turf/simulated/floor/tiled,/area/hangar/three)
+"aaI" = (/obj/machinery/light_switch{pixel_x = -36},/obj/item/radio/intercom{dir = 8;name = "Station Intercom (General)";pixel_x = -21},/obj/effect/floor_decal/borderfloor/corner{dir = 8},/obj/effect/floor_decal/corner/pink/bordercorner{dir = 8},/turf/simulated/floor/tiled,/area/expoutpost/stationshuttle)
+"aaJ" = (/obj/machinery/atmospherics/unary/vent_pump/on{dir = 1},/turf/simulated/floor/tiled,/area/expoutpost/stationshuttle)
+"aaK" = (/turf/simulated/wall/r_wall,/area/expoutpost/stationshuttle)
+"aaL" = (/obj/structure/lattice,/obj/structure/grille,/turf/space,/area/space)
+"aaM" = (/obj/machinery/atmospherics/pipe/simple/hidden/supply{dir = 4},/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers{dir = 4},/obj/effect/floor_decal/steeldecal/steel_decals4,/obj/effect/floor_decal/steeldecal/steel_decals4{dir = 10},/turf/simulated/floor/tiled,/area/hangar/three)
+"aaN" = (/obj/machinery/atmospherics/pipe/simple/hidden/supply{dir = 4},/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers{dir = 4},/obj/machinery/door/firedoor/glass,/obj/machinery/door/airlock/glass_research{name = "Expedition Shuttle";req_one_access = null},/turf/simulated/floor/tiled/steel_grid,/area/hangar/three)
+"aaO" = (/obj/machinery/atmospherics/pipe/simple/hidden/supply{dir = 4},/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers{dir = 4},/obj/effect/floor_decal/steeldecal/steel_decals4{dir = 6},/obj/effect/floor_decal/steeldecal/steel_decals4{dir = 1},/turf/simulated/floor/tiled,/area/expoutpost/stationshuttle)
+"aaP" = (/obj/machinery/atmospherics/pipe/simple/hidden/supply{dir = 10},/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers{dir = 9},/turf/simulated/floor/tiled,/area/expoutpost/stationshuttle)
+"aaQ" = (/obj/structure/shuttle/engine/propulsion/burst{dir = 8},/turf/simulated/shuttle/wall/voidcraft/blue,/area/shuttle/expoutpost/station)
+"aaR" = (/turf/simulated/shuttle/wall/voidcraft/blue,/area/shuttle/expoutpost/station)
+"aaS" = (/turf/simulated/floor/tiled,/area/hangar/three)
+"aaT" = (/obj/machinery/light{dir = 8},/obj/machinery/status_display{layer = 4;pixel_x = -32},/turf/simulated/floor/tiled,/area/expoutpost/stationshuttle)
+"aaU" = (/obj/machinery/atmospherics/unary/vent_scrubber/on,/turf/simulated/floor/tiled,/area/expoutpost/stationshuttle)
+"aaV" = (/obj/structure/shuttle/engine/heater{dir = 8},/obj/structure/window/reinforced{dir = 4;max_integrity = 1e+006},/obj/structure/window/reinforced{dir = 1},/turf/simulated/shuttle/wall/voidcraft/blue,/area/shuttle/expoutpost/station)
+"aaW" = (/obj/structure/bed/chair/shuttle{dir = 1},/turf/simulated/shuttle/floor/darkred,/area/shuttle/expoutpost/station)
+"aaX" = (/obj/structure/bed/chair/shuttle{dir = 1},/obj/machinery/light,/obj/machinery/embedded_controller/radio/simple_docking_controller{frequency = 1380;id_tag = "exp_sling";name = "shuttle bay controller";pixel_y = -26;tag_door = "exp_sling_hatch"},/turf/simulated/shuttle/floor/darkred,/area/shuttle/expoutpost/station)
+"aaY" = (/obj/structure/closet/emcloset/legacy,/turf/simulated/shuttle/floor/darkred,/area/shuttle/expoutpost/station)
+"aaZ" = (/obj/machinery/light{dir = 1},/obj/effect/floor_decal/steeldecal/steel_decals4{dir = 10},/obj/effect/floor_decal/steeldecal/steel_decals4,/turf/simulated/floor/tiled,/area/expoutpost/stationshuttle)
+"aba" = (/obj/machinery/door/airlock/glass_external{frequency = 1380;icon_state = "door_locked";id_tag = "exp_sling_station_door";locked = 1;name = "Carrier Sling Access";req_access = list();req_one_access = list(5,43,67)},/obj/machinery/door/firedoor/glass,/turf/simulated/floor/plating,/area/expoutpost/stationshuttle)
+"abb" = (/obj/machinery/door/airlock/glass_external{frequency = 1380;icon_state = "door_locked";id_tag = "exp_sling_hatch";locked = 1;name = "Carrier Sling Hatch";req_access = list();req_one_access = list(5,43,67)},/turf/simulated/shuttle/floor/darkred,/area/shuttle/expoutpost/station)
+"abc" = (/obj/effect/shuttle_landmark/southern_cross/sling_station,/turf/simulated/shuttle/floor/darkred,/area/shuttle/expoutpost/station)
+"abd" = (/turf/simulated/shuttle/floor/darkred,/area/shuttle/expoutpost/station)
+"abe" = (/obj/machinery/computer/shuttle_control/exploration{dir = 8},/obj/machinery/camera/network/carrier{c_tag = "CAR - Sling Shuttle";dir = 9},/turf/simulated/shuttle/floor/darkred,/area/shuttle/expoutpost/station)
+"abf" = (/obj/structure/shuttle/engine/heater{dir = 8},/obj/structure/window/reinforced{dir = 4;max_integrity = 1e+006},/obj/structure/window/reinforced,/turf/simulated/shuttle/wall/voidcraft/blue,/area/shuttle/expoutpost/station)
+"abg" = (/obj/structure/bed/chair/shuttle,/turf/simulated/shuttle/floor/darkred,/area/shuttle/expoutpost/station)
+"abh" = (/obj/machinery/light{dir = 1},/obj/structure/bed/chair/shuttle,/turf/simulated/shuttle/floor/darkred,/area/shuttle/expoutpost/station)
+"abi" = (/obj/structure/lattice,/turf/space,/area/space)
+"abj" = (/obj/structure/lattice,/obj/item/stack/rods,/turf/space,/area/space)
+
+(1,1,1) = {"
+abiabiaazaazaazaazaazabiaazaazabiaazaazaaz
+aazabjaazaazaazaazaazabiaazaazabiaazaazaaz
+aazabiaazaazaaKaaKaaKaaKaaKaaKaaKaaKabiabi
+aazabiaaKaaKaaKaaQaaRaaRaaRaaRaaRaaRaazaaz
+aabaabaaKaaKaaKaaQabfabgabhabgaaYaaRaazaaz
+aabaabaaCaaZabaabbabcabdabdabdabeaaRaazaaz
+aaSaabaaTaaUaayaaQaaVaaWaaXaaWaaYaaRaazaaz
+aaMaaNaaOaaPaayaaQaaRaaRaaRaaRaaRaaRaazaaz
+aaHaabaaIaaJaaKaaKaaKaaKaaKaaKaaKaaKaaLaaL
+aaAaabaaBaaCaaDaaEaaCaaFaaCaaGaayaazaazaaz
+aabaabaaqaaraasaataauaavaawaaxaayaazaazaaz
+aaaaabaacaacaacaanaagaaoaaoaaoaaoaagaagaap
+aaaaabaacaadaaeaafaagaahaaiaajaakaalaamaak
+"}

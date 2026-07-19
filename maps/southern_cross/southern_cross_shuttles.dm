@@ -75,7 +75,6 @@
 	landmark_tag = "transport1_station"
 	docking_controller = "centcom_shuttle_dock_airlock"
 
-
 //Merc
 
 //Skipjack

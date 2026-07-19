@@ -34,6 +34,9 @@
 #define EXP_SIZE_MEDIUM 2
 #define EXP_SIZE_LARGE  3
 
+/// Maximum playable width/height of a generated expedition region.
+#define EXP_REGION_SIZE 96
+
 // ---- Enemy factions --------------------------------------------------------
 // The kind of hostiles guarding a site. Rolled per-site (rarer factions gated
 // to higher difficulty) or pinned by a mission. Drives every enemy spawn and

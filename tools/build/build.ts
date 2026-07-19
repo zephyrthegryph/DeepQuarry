@@ -541,7 +541,7 @@ export const TguiTarget = new Juke.Target({
   inputs: [
     'tgui/rspack.config.ts',
     'tgui/**/package.json',
-    'tgui/packages/**/*.+(js|cjs|ts|tsx|jsx|scss)',
+    'tgui/packages/**/*.+(js|cjs|ts|tsx|jsx|scss|svg)',
   ],
   outputs: [
     'tgui/public/tgui.bundle.css',

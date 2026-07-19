@@ -10,8 +10,9 @@
 #define Z_LEVEL_STATION_ONE				1
 #define Z_LEVEL_STATION_TWO				2
 #define Z_LEVEL_STATION_THREE			3
-#define Z_LEVEL_CENTCOM					4
-#define Z_LEVEL_TRANSIT					5
+#define Z_LEVEL_CARRIER					4
+#define Z_LEVEL_CENTCOM					5
+#define Z_LEVEL_TRANSIT					6
 
 /datum/map/southern_cross
 	name = "Southern Cross"
@@ -102,7 +103,18 @@
 	// /datum/map_template/surface/* templates and /area/surface/* areas that the
 	// hard fork removed. Those are intentionally not generated here, so the
 	// surface z-levels stay empty. Revive that subsystem to restore the planet.
-	return 1
+	var/datum/map_template/southern_cross_carrier_sling/sling = new()
+	var/turf/origin = locate(167, 144, Z_LEVEL_STATION_ONE)
+	var/loaded = sling.load(origin)
+	qdel(sling)
+	if(!loaded)
+		log_world("Southern Cross: failed to restore the carrier sling north of Dock 2.")
+	return loaded
+
+/datum/map_template/southern_cross_carrier_sling
+	name = "Southern Cross carrier sling"
+	mappath = "maps/southern_cross/southern_cross-sling.dmm"
+	annihilate = TRUE
 
 // Skybox Settings
 /datum/skybox_settings/southern_cross
@@ -148,6 +160,12 @@
 	z = Z_LEVEL_CENTCOM
 	name = "Centcom"
 	flags = MAP_LEVEL_ADMIN|MAP_LEVEL_CONTACT
+
+/datum/map_z_level/southern_cross/carrier
+	z = Z_LEVEL_CARRIER
+	name = "Exploration Carrier"
+	flags = MAP_LEVEL_CONTACT|MAP_LEVEL_PLAYER|MAP_LEVEL_CONSOLES
+	base_turf = /turf/space
 
 /datum/map_z_level/southern_cross/transit
 	z = Z_LEVEL_TRANSIT

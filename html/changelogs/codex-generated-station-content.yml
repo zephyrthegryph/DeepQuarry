@@ -1,0 +1,8 @@
+author: "Codex"
+delete-after: true
+changes:
+  - rscadd: "Procedural stations now furnish every department room with scalable functional machinery, workstations, storage, seating, and department-specific decoration."
+  - refactor: "Generated room content now uses role contracts and area-scaled activity clusters instead of sparse generic filler."
+  - bugfix: "Fixed empty fallback rooms, large numeric station seeds, undersized department claims, and disconnected public-circulation planning."
+  - bugfix: "Generated rooms now start pressurized and receive wall-mounted lights, fire alarms, air alarms, APCs, vents, and scrubbers connected to station-wide power and atmosphere networks."
+  - maptweak: "Generated rooms now use role-specific floors, authored activity fragments, and clean perimeter trim without random colored center tiles."

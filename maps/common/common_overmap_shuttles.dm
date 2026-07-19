@@ -16,7 +16,7 @@
 	shuttle = "Stargazer"
 
 /obj/machinery/computer/shuttle_control/explore/stargazer
-	name = "short jump console"
+	name = "flight operations console"
 	shuttle_tag = "Stargazer"
 
 //Baby_Mammoth
@@ -37,7 +37,7 @@
 	shuttle = "Baby_mammoth"
 
 /obj/machinery/computer/shuttle_control/explore/baby_mammoth
-	name = "short jump console"
+	name = "flight operations console"
 	shuttle_tag = "Baby_mammoth"
 
 //Ursula
@@ -58,7 +58,7 @@
 	shuttle = "Ursula"
 
 /obj/machinery/computer/shuttle_control/explore/ursula
-	name = "short jump console"
+	name = "flight operations console"
 	shuttle_tag = "Ursula"
 
 //Needle
@@ -79,7 +79,7 @@
 	shuttle = "Needle"
 
 /obj/machinery/computer/shuttle_control/explore/needle
-	name = "short jump console"
+	name = "flight operations console"
 	shuttle_tag = "Needle"
 
 //Echidna
@@ -100,7 +100,7 @@
 	shuttle = "Echidna"
 
 /obj/machinery/computer/shuttle_control/explore/echidna
-	name = "short jump console"
+	name = "flight operations console"
 	shuttle_tag = "Echidna"
 
 //Spacebus
@@ -122,7 +122,7 @@
 	known = TRUE
 
 /obj/machinery/computer/shuttle_control/explore/spacebus
-	name = "short jump console"
+	name = "flight operations console"
 	shuttle_tag = "Space Bus"
 
 //POI Junker
@@ -143,7 +143,7 @@
 	shuttle = "Junker"
 
 /obj/machinery/computer/shuttle_control/explore/junker
-	name = "short jump console"
+	name = "flight operations console"
 	shuttle_tag = "Junker"
 
 /*POI Temp removal so I can properly add it in it's own PR
@@ -167,4 +167,3 @@
 	name = "short jump console"
 	shuttle_tag = "phoenix"
 */
-

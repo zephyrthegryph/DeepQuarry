@@ -41,7 +41,7 @@
 	. = ..()
 	if(.)
 		return
-	if(!owner_admin || !check_rights(R_ADMIN))
+	if(!owner_admin || !ui.user?.client || !check_rights_for(ui.user.client, R_ADMIN))
 		return
 
 	switch(action)

@@ -302,14 +302,14 @@
 GLOBAL_LIST_EMPTY(dq_jobban_panels)
 
 /datum/admins/proc/dq_open_jobban_panel(mob/target)
-	if(!owner || !target)
+	if(!owner?.mob || !target)
 		return
 	var/key = "[REF(src)]-[REF(target)]"
 	var/datum/jobban_panel/panel = LAZYACCESS(GLOB.dq_jobban_panels, key)
 	if(!panel)
 		panel = new(src, target)
 		GLOB.dq_jobban_panels[key] = panel
-	panel.tgui_interact(owner)
+	panel.tgui_interact(owner.mob)
 
 /datum/jobban_panel
 	var/datum/admins/holder
@@ -633,4 +633,3 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 /obj/machinery/syndicate_beacon/virgo/attack_hand(mob/user)
 	user.set_machine(src)
 	tgui_interact(user)
-

@@ -23,7 +23,8 @@ SUBSYSTEM_DEF(events)
 			/*EVENT_LEVEL_MAJOR 	= */ new/datum/event_container/major
 		)
 	if(using_map.use_overmap)
-		GLOB.overmap_event_handler.create_events(using_map.overmap_z, using_map.overmap_size, using_map.overmap_event_areas)
+		if(using_map.overmap_z)
+			GLOB.overmap_event_handler.create_events(using_map.overmap_z, using_map.overmap_size, using_map.overmap_event_areas)
 	return SS_INIT_SUCCESS
 
 /datum/controller/subsystem/events/fire(resumed)

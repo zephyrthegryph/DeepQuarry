@@ -11,6 +11,18 @@
 /proc/expedition_is_walkable(turf/T)
 	return isturf(T) && !T.density && !istype(T, /turf/space)
 
+/proc/expedition_region_min_x()
+	return max(2, round((world.maxx - min(EXP_REGION_SIZE, world.maxx - 4)) / 2))
+
+/proc/expedition_region_min_y()
+	return max(2, round((world.maxy - min(EXP_REGION_SIZE, world.maxy - 4)) / 2))
+
+/proc/expedition_region_max_x()
+	return min(world.maxx - 1, expedition_region_min_x() + EXP_REGION_SIZE - 1)
+
+/proc/expedition_region_max_y()
+	return min(world.maxy - 1, expedition_region_min_y() + EXP_REGION_SIZE - 1)
+
 /datum/expedition_biome
 	/// Display name, shown on the console.
 	var/name = "Cavern"
@@ -33,7 +45,7 @@
 	weight = 10
 
 /datum/expedition_biome/cave/generate(z)
-	new /datum/random_map/automata/cave_system/expedition(null, 1, 1, z, world.maxx, world.maxy)
+	new /datum/random_map/automata/cave_system/expedition(null, expedition_region_min_x(), expedition_region_min_y(), z, EXP_REGION_SIZE, EXP_REGION_SIZE)
 
 // ---------------------------------------------------------------------------
 // Plains — open grassland with scattered rock outcrops. Breathable surface.
@@ -45,8 +57,8 @@
 
 /datum/expedition_biome/plains/generate(z)
 	var/n = 0
-	for(var/x = 2 to world.maxx - 1)
-		for(var/y = 2 to world.maxy - 1)
+	for(var/x = expedition_region_min_x() to expedition_region_max_x())
+		for(var/y = expedition_region_min_y() to expedition_region_max_y())
 			var/turf/T = locate(x, y, z)
 			if(T)
 				T.ChangeTurf(/turf/simulated/floor/outdoors/grass, tell_universe = FALSE)
@@ -54,7 +66,7 @@
 				CHECK_TICK
 	// Rock outcrops as obstacles / cover.
 	for(var/i in 1 to rand(24, 44))
-		scatter_outcrop(z, rand(4, world.maxx - 4), rand(4, world.maxy - 4))
+		scatter_outcrop(z, rand(expedition_region_min_x() + 2, expedition_region_max_x() - 2), rand(expedition_region_min_y() + 2, expedition_region_max_y() - 2))
 
 /datum/expedition_biome/plains/proc/scatter_outcrop(z, cx, cy)
 	var/turf/center = locate(cx, cy, z)
@@ -75,18 +87,18 @@
 	vacuum = TRUE
 
 /datum/expedition_biome/asteroid/generate(z)
-	new /datum/random_map/automata/cave_system/expedition(null, 1, 1, z, world.maxx, world.maxy)
+	new /datum/random_map/automata/cave_system/expedition(null, expedition_region_min_x(), expedition_region_min_y(), z, EXP_REGION_SIZE, EXP_REGION_SIZE)
 	// Expose the rim to space.
-	for(var/x = 2 to world.maxx - 1)
-		expose(locate(x, 2, z))
-		expose(locate(x, world.maxy - 1, z))
-	for(var/y = 2 to world.maxy - 1)
-		expose(locate(2, y, z))
-		expose(locate(world.maxx - 1, y, z))
+	for(var/x = expedition_region_min_x() to expedition_region_max_x())
+		expose(locate(x, expedition_region_min_y(), z))
+		expose(locate(x, expedition_region_max_y(), z))
+	for(var/y = expedition_region_min_y() to expedition_region_max_y())
+		expose(locate(expedition_region_min_x(), y, z))
+		expose(locate(expedition_region_max_x(), y, z))
 	// Punch a handful of vacuum windows into the rock (walls only — never the
 	// floor crews walk on, so nobody floats off mid-stride).
 	for(var/i in 1 to rand(10, 18))
-		var/turf/T = locate(rand(4, world.maxx - 4), rand(4, world.maxy - 4), z)
+		var/turf/T = locate(rand(expedition_region_min_x() + 2, expedition_region_max_x() - 2), rand(expedition_region_min_y() + 2, expedition_region_max_y() - 2), z)
 		if(T && T.density)
 			T.ChangeTurf(/turf/space, tell_universe = FALSE)
 
@@ -107,18 +119,18 @@
 /datum/expedition_biome/orbital/generate(z)
 	var/n = 0
 	// Flood the interior with space.
-	for(var/x = 2 to world.maxx - 1)
-		for(var/y = 2 to world.maxy - 1)
+	for(var/x = expedition_region_min_x() to expedition_region_max_x())
+		for(var/y = expedition_region_min_y() to expedition_region_max_y())
 			var/turf/T = locate(x, y, z)
 			if(T)
 				T.ChangeTurf(/turf/space, tell_universe = FALSE)
 			if(++n % 500 == 0)
 				CHECK_TICK
 	// Lay a central plating platform — the deck the crew operates on.
-	var/px1 = round(world.maxx * 0.28)
-	var/px2 = round(world.maxx * 0.72)
-	var/py1 = round(world.maxy * 0.28)
-	var/py2 = round(world.maxy * 0.72)
+	var/px1 = expedition_region_min_x() + 12
+	var/px2 = expedition_region_max_x() - 12
+	var/py1 = expedition_region_min_y() + 12
+	var/py2 = expedition_region_max_y() - 12
 	for(var/x = px1 to px2)
 		for(var/y = py1 to py2)
 			var/turf/T = locate(x, y, z)

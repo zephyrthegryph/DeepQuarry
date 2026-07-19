@@ -1,0 +1,26 @@
+/datum/unit_test/dq_generated_station_consequence_apis
+
+/datum/unit_test/dq_generated_station_consequence_apis/Run()
+	var/datum/generated_station_planner/planner = new
+	var/datum/generated_station_spec/spec = planner.plan(9001)
+	var/datum/generated_station_simulation/simulation = new(spec)
+	var/datum/generated_station_director/director = new(simulation)
+	TEST_ASSERT(generated_station_runtime(spec.id) == simulation, "Station runtime registry did not publish the simulation")
+	TEST_ASSERT(director.ai_can_coordinate(), "Operational AI could not coordinate the station")
+	TEST_ASSERT(director.request_security_reserve(), "Operational Security could not dispatch a finite reserve")
+	TEST_ASSERT_EQUAL(director.security_reserves, 5, "Security reserve dispatch did not consume its finite count")
+	simulation.set_integrity("medical-1", 20)
+	TEST_ASSERT(director.engineering_repair("medical-1", 30), "Engineering could not spend fuel and supplies on a repair")
+	var/datum/generated_station_department_runtime/medical = simulation.departments["medical-1"]
+	TEST_ASSERT_EQUAL(medical.integrity, 50, "Engineering repair did not update department integrity")
+	simulation.set_stockpile("medical-1", "medicine", 0)
+	TEST_ASSERT(director.logistics_resupply("medical-1", "medicine", 5), "Logistics could not resupply Medical")
+	TEST_ASSERT_EQUAL(medical.stockpiles["medicine"], 5, "Logistics resupply did not update the target stockpile")
+	simulation.set_integrity("ai-1", 0)
+	director.on_capabilities_changed()
+	TEST_ASSERT(!director.ai_can_coordinate(), "Destroyed AI still coordinated the station")
+	qdel(director)
+	qdel(simulation)
+	TEST_ASSERT_NULL(generated_station_runtime(spec.id), "Deleted simulation remained in the station runtime registry")
+	qdel(spec)
+	qdel(planner)

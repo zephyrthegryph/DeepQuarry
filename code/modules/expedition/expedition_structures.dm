@@ -66,43 +66,6 @@
 	w_class = ITEMSIZE_SMALL
 
 // ---------------------------------------------------------------------------
-// Extraction beacon: dropped on the site landing pad. Touching it bluespace-
-// jumps the user (and anything they're dragging) back to the launch console.
-// ---------------------------------------------------------------------------
-/obj/structure/expedition_return_beacon
-	name = "extraction beacon"
-	desc = "A bluespace extraction beacon keyed to the station launch pad. Activate it to return."
-	density = FALSE
-	anchored = TRUE
-	/// The site this beacon belongs to; set when the site is generated.
-	var/datum/expedition_site/site
-
-/obj/structure/expedition_return_beacon/attack_hand(mob/user)
-	if(!istype(site) || !site.origin_console)
-		to_chat(user, span_warning("[src] gives a flat error tone — no return link established."))
-		return
-	var/turf/dest = site.origin_console.get_return_turf()
-	if(!dest)
-		to_chat(user, span_warning("[src] cannot find a clear return point on the station pad."))
-		return
-	user.visible_message(
-		span_notice("[user] keys [src] for extraction."),
-		span_notice("You key [src] for extraction...")
-	)
-	if(!do_after(user, 2 SECONDS, src))
-		return
-	// Pull anything the user is dragging along with them.
-	var/atom/movable/pulled = user.pulling
-	do_teleport(user, dest, precision = 1, channel = TELEPORT_CHANNEL_BLUESPACE, forced = TRUE)
-	if(istype(pulled))
-		do_teleport(pulled, dest, precision = 1, channel = TELEPORT_CHANNEL_BLUESPACE, forced = TRUE)
-	to_chat(user, span_notice("Bluespace extraction complete. Welcome back."))
-
-/obj/structure/expedition_return_beacon/Destroy()
-	site = null
-	return ..()
-
-// ---------------------------------------------------------------------------
 // Demolition target: a genuinely destructible unstable core. It takes real
 // damage from melee, gunfire, mining tools, and explosives via the TG obj_integrity
 // model. The "destroy" objective

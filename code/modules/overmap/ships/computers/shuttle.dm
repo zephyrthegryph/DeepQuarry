@@ -27,7 +27,9 @@
 			"can_pick" = shuttle.moving_status == SHUTTLE_IDLE,
 			"fuel_usage" = shuttle.fuel_consumption * 100,
 			"remaining_fuel" = round(total_gas, 0.01) * 100,
-			"fuel_span" = fuel_span
+			"fuel_span" = fuel_span,
+			"expedition" = expedition_data(),
+			"can_plot_expedition" = shuttle.moving_status == SHUTTLE_IDLE && can_plot_expedition()
 		)
 
 /obj/machinery/computer/shuttle_control/explore/tgui_act(action, list/params, datum/tgui/ui)
@@ -40,6 +42,9 @@
 		return TRUE
 
 	switch(action)
+		if("plot_expedition")
+			plot_expedition(ui.user, shuttle)
+			return TRUE
 		if("pick")
 			var/list/possible_d = shuttle.get_possible_destinations()
 			var/D

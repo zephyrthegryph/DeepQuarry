@@ -70,6 +70,16 @@
 	if(time_limit)
 		deadline = world.time + time_limit
 
+/datum/expedition_mission/proc/has_viable_objectives()
+	if(!length(objectives))
+		return FALSE
+	for(var/datum/expedition_objective/objective in objectives)
+		if(!objective.required || istype(objective, /datum/expedition_objective/survive))
+			continue
+		if(!LAZYLEN(objective.tracked))
+			return FALSE
+	return TRUE
+
 // Polled by SSexpedition.fire(). Returns TRUE when all required objectives are
 // done; flips state to FAILED on a deadline or a total party wipe.
 /datum/expedition_mission/proc/check_completion()
@@ -114,7 +124,7 @@
 		if(!O.required && O.state == EXP_OBJ_COMPLETE)
 			pts += O.bonus_points
 			cash += O.bonus_cash
-	var/turf/payout_turf = site?.origin_console?.get_return_turf()
+	var/turf/payout_turf = site?.payout_turf || get_turf(site?.origin_console)
 	if(site && length(site.participants))
 		for(var/mob/living/L in site.participants)
 			if(QDELETED(L) || L.stat == DEAD)

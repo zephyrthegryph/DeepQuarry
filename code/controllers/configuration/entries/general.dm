@@ -815,7 +815,7 @@
 	default = 4 SECONDS
 
 /datum/config_entry/number/drift_profile_delay
-	default = 15 SECONDS
+	default = 2 MINUTES
 
 /datum/config_entry/flag/forbid_all_profiling
 

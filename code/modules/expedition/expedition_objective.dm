@@ -55,8 +55,15 @@
 // Shared helpers -------------------------------------------------------------
 
 /datum/expedition_objective/proc/count_returned(typepath)
-	var/obj/machinery/computer/expedition/con = site?.origin_console
-	return con ? con.count_on_pad(typepath) : 0
+	var/datum/shuttle/autodock/overmap/shuttle = site?.assigned_shuttle
+	if(!shuttle)
+		return 0
+	var/count = 0
+	for(var/area/A in shuttle.shuttle_area)
+		for(var/atom/movable/AM in A)
+			if(istype(AM, typepath))
+				count++
+	return count
 
 /datum/expedition_objective/proc/count_alive()
 	var/n = 0

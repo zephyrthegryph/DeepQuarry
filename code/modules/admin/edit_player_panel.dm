@@ -8,14 +8,14 @@
 GLOBAL_LIST_EMPTY(dq_edit_player_panels)
 
 /datum/admins/proc/dq_open_edit_player_panel(mob/player)
-	if(!owner || !player)
+	if(!owner?.mob || !player)
 		return
 	var/key = "[REF(src)]-[REF(player)]"
 	var/datum/edit_player_panel/panel = LAZYACCESS(GLOB.dq_edit_player_panels, key)
 	if(!panel)
 		panel = new(src, player)
 		GLOB.dq_edit_player_panels[key] = panel
-	panel.tgui_interact(owner)
+	panel.tgui_interact(owner.mob)
 
 /datum/edit_player_panel
 	var/datum/admins/holder

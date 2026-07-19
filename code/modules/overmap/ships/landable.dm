@@ -190,23 +190,40 @@
 				break
 	if(!target || target == src)
 		return
-	forceMove(target)
-	halt()
+	var/datum/flight_vessel/vessel = SSflight_operations?.vessel_for_ship(src)
+	var/datum/flight_destination/destination = SSflight_operations?.destination_for_target(target)
+	if(vessel && destination)
+		var/datum/flight_port/port = SSflight_operations.port_for_landmark(into)
+		if(vessel.docked_port_id && vessel.docked_port_id != port?.id)
+			var/datum/flight_port/old_port = SSflight_operations.ports[vessel.docked_port_id]
+			if(old_port?.occupied_by == vessel)
+				old_port.occupied_by = null
+		vessel.docked_port_id = port?.id
+		if(port)
+			port.occupied_by = vessel
+		// A delegated port inherits the physical host's celestial context, while
+		// the active flight plan retains the logical route destination.
+		var/datum/flight_destination/physical_host = SSflight_operations.destinations[port?.host_destination_id]
+		vessel.orbit_parent_id = physical_host?.orbit_parent_id || (destination.kind == FLIGHT_DEST_SURFACE ? destination.id : destination.orbit_parent_id)
 
 /obj/effect/overmap/visitable/ship/landable/proc/on_takeoff(obj/effect/shuttle_landmark/from, obj/effect/shuttle_landmark/into)
-	if(!isturf(loc))
-		forceMove(get_turf(loc))
-		unhalt()
+	var/datum/flight_vessel/vessel = SSflight_operations?.vessel_for_ship(src)
+	if(vessel)
+		var/datum/flight_port/port = SSflight_operations.ports[vessel.docked_port_id]
+		if(port?.occupied_by == vessel)
+			port.occupied_by = null
+		vessel.docked_port_id = null
 
 /obj/effect/overmap/visitable/ship/landable/get_landed_info()
 	switch(status)
 		if(SHIP_STATUS_LANDED)
-			var/obj/effect/overmap/visitable/location = loc
-			if(location.in_space)
-				return "Docked with \the [location.name]. Use secondary thrust to get clear before activating primary engines."
-			else
-				return "Landed on \the [location.name]. Use secondary thrust to get clear before activating primary engines."
+			var/datum/flight_vessel/vessel = SSflight_operations?.vessel_for_ship(src)
+			var/datum/flight_port/port = SSflight_operations?.ports[vessel?.docked_port_id]
+			var/datum/flight_destination/location = SSflight_operations?.destinations[port?.host_destination_id]
+			return location ? "Docked at [location.name], [port.name]." : "Landed at an unregistered port."
 		if(SHIP_STATUS_TRANSIT)
-			return "Maneuvering under secondary thrust."
+			return "In local transfer."
 		if(SHIP_STATUS_OVERMAP)
-			return "In open space."
+			var/datum/flight_vessel/vessel = SSflight_operations?.vessel_for_ship(src)
+			var/datum/flight_destination/orbit = SSflight_operations?.destinations[vessel?.orbit_parent_id]
+			return "In orbit of [orbit?.name || "an unregistered body"]."

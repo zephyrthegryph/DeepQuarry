@@ -1,6 +1,6 @@
-// Blank mineral substrate a fresh expedition site is carved out of. Loaded onto
-// a freshly-allocated z-level by SSexpedition; the carver below then digs the
-// walkable cave network into it.
+// Blank vacuum volume a fresh expedition station is built inside. Keeping the
+// template as space prevents unused map bounds from appearing as an asteroid
+// around the generated hull.
 /datum/map_template/expedition_site
 	name = "Expedition Site"
 	mappath = "maps/expedition/expedition_blank.dmm"

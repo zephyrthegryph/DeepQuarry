@@ -10,6 +10,11 @@ somewhere on that shuttle. Subtypes of these can be then used to perform ship ov
 	/// Whether AI/silicon mobs are permitted to interact with this console. Subtypes may override to FALSE.
 	var/ai_control = TRUE
 
+/obj/machinery/computer/ship/Destroy()
+	QDEL_NULL(flight_operations_ui)
+	linked = null
+	return ..()
+
 // A late init operation called in SSshuttles, used to attach the thing to the right ship.
 /obj/machinery/computer/ship/proc/attempt_hook_up(obj/effect/overmap/visitable/ship/sector)
 	if(!istype(sector))

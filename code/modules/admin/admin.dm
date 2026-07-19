@@ -108,9 +108,7 @@ ADMIN_VERB(access_news_network, R_ADMIN|R_EVENT, "Access Newscaster Network", "A
 
 /datum/admins/proc/Game()
 	if(!check_rights(0))	return
-	// structured TGUI Game Panel (see
-	// code/modules/admin/game_panel_panel.dm).
-	open_game_panel(owner)
+	open_game_panel(owner?.mob)
 
 /////////////////////////////////////////////////////////////////////////////////////////////////admins2.dm merge
 //i.e. buttons/verbs

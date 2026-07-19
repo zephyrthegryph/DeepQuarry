@@ -21,14 +21,28 @@
 	var/datum/expedition_mission/mission
 	/// The biome this site was generated as.
 	var/datum/expedition_biome/biome
+	/// Reproducible planner input and realized station geometry for this site.
+	var/generation_seed
+	var/datum/generated_station_spec/station_spec
+	var/datum/generated_station_materialization/station_materialization
 	/// The enemy faction (EXP_FACTION_*) guarding this site — themes every hostile spawn.
 	var/faction = EXP_FACTION_FAUNA
 	/// Mobs that have deployed here (for reward payout).
 	var/list/participants
-	/// The console that launched this site (return target + reward drop).
-	var/obj/machinery/computer/expedition/origin_console
-	/// The extraction beacon dropped on the landing pad.
-	var/obj/structure/expedition_return_beacon/beacon
+	/// The short-jump craft assigned to this expedition.
+	var/datum/shuttle/autodock/overmap/assigned_shuttle
+	/// Authoritative vessel assignment; survives console replacement or deletion.
+	var/datum/flight_vessel/assigned_flight_vessel
+	/// The craft's control console, used as the physical payout point.
+	var/obj/machinery/computer/shuttle_control/explore/origin_console
+	var/turf/payout_turf
+	/// Overmap destination and landing waypoint owned by this site.
+	var/obj/effect/overmap/visitable/sector/expedition/overmap_sector
+	var/obj/effect/shuttle_landmark/automatic/clearing/expedition/landing_waypoint
+	/// Stable destination registry key used before and after physical generation.
+	var/flight_destination_id
+	/// Planet destination that owns this surface site.
+	var/parent_destination_id
 	/// world.time at generation, and the last time a player was aboard.
 	var/generated_at = 0
 	var/last_occupied = 0
@@ -50,12 +64,23 @@
 	landing = null
 	floors = null
 	origin_console = null
-	beacon = null
+	assigned_shuttle = null
+	assigned_flight_vessel = null
+	payout_turf = null
+	overmap_sector = null
+	landing_waypoint = null
 	participants = null
+	QDEL_LIST(station_controls)
+	QDEL_NULL(station_defense)
+	QDEL_NULL(station_director)
+	QDEL_NULL(station_simulation)
+	QDEL_NULL(station_utilities)
 	if(mission)
 		QDEL_NULL(mission)
 	if(biome)
 		QDEL_NULL(biome)
+	QDEL_NULL(station_spec)
+	QDEL_NULL(station_materialization)
 	return ..()
 
 // A random walkable floor on this site (prefers the cached list, falls back to
@@ -73,3 +98,12 @@
 	if(length(floors))
 		return pick(floors)
 	return null
+
+/datum/expedition_site/proc/has_active_assignment()
+	if(assigned_flight_vessel && !QDELETED(assigned_flight_vessel) && assigned_flight_vessel.active_expedition == src)
+		return TRUE
+	return origin_console && !QDELETED(origin_console) && origin_console.active_expedition == src
+
+/datum/expedition_site/proc/has_travel_lease()
+	var/datum/flight_destination/destination = SSflight_operations?.destinations[flight_destination_id]
+	return LAZYLEN(destination?.active_plans)

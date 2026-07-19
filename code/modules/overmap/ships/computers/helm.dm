@@ -15,7 +15,7 @@ GLOBAL_LIST_EMPTY(all_waypoints)
 // End LEGACY_RECORD_STRUCTURE(all_waypoints, waypoint)
 
 /obj/machinery/computer/ship/helm
-	name = "helm control console"
+	name = "flight operations console"
 	icon_keyboard = "teleport_key"
 	icon_screen = "helm"
 	light_color = "#7faaff"
@@ -294,6 +294,13 @@ GLOBAL_LIST_EMPTY(all_waypoints)
 /obj/machinery/computer/ship/navigation/Initialize(mapload)
 	. = ..()
 	nav_tgui = new(src)
+	if(linked)
+		nav_tgui.attempt_hook_up(linked)
+
+/obj/machinery/computer/ship/navigation/attempt_hook_up(obj/effect/overmap/visitable/ship/sector)
+	. = ..()
+	if(.)
+		nav_tgui?.attempt_hook_up(sector)
 
 /obj/machinery/computer/ship/navigation/Destroy()
 	QDEL_NULL(nav_tgui)

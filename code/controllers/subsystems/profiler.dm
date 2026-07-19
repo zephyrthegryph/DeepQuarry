@@ -57,7 +57,9 @@ SUBSYSTEM_DEF(profiler)
 		can_fire = FALSE
 
 /datum/controller/subsystem/profiler/fire()
-	DumpFile()
+	// Full BYOND profile serialization is synchronous and can itself overrun a tick.
+	// Periodic collection therefore records only the inexpensive native diagnostics;
+	// profile dumps are requested explicitly or by the MC drift outlier detector.
 	log_runtime("ATMOS_PROFILE [json_encode(SSair.auxmos_diagnostics())]")
 	log_runtime("RUST_ALLOC_PROFILE [json_encode(SSair.verdigris_allocator_diagnostics())]")
 

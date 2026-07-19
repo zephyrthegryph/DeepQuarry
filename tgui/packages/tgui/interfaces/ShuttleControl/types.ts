@@ -31,6 +31,13 @@ type ExploData = {
   fuel_usage: number;
   remaining_fuel: number;
   fuel_span: string;
+  can_plot_expedition: BooleanLike;
+  expedition: {
+    name: string;
+    objective: string;
+    progress: string;
+    complete: BooleanLike;
+  } | null;
 };
 
 type WebData = {

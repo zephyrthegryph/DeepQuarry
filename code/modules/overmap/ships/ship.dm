@@ -45,6 +45,8 @@
 
 	/// Vis contents overlay holding the ship's vector when in motion
 	var/obj/effect/overlay/vis/vector
+	/// Stable registry key used by the unified flight-operations system.
+	var/flight_vessel_id
 	render_map = TRUE
 
 /obj/effect/overmap/visitable/ship/Initialize(mapload)
@@ -52,21 +54,28 @@
 	min_speed = round(min_speed, SHIP_MOVE_RESOLUTION)
 	max_speed = round(max_speed, SHIP_MOVE_RESOLUTION)
 	SSshuttles.ships += src
-	position_x = ((loc.x - 1) * WORLD_ICON_SIZE) + (WORLD_ICON_SIZE/2) + pixel_x + 1
-	position_y = ((loc.y - 1) * WORLD_ICON_SIZE) + (WORLD_ICON_SIZE/2) + pixel_y + 1
+	position_x = 0
+	position_y = 0
 	vector = add_vis_overlay("vector", dir = SOUTH, layer = 10, unique = TRUE)
 	vector.vis_flags = (VIS_INHERIT_PLANE|VIS_INHERIT_ID)
 	GLOB.listening_objects += src
+	SSflight_operations?.register_vessel(src)
 
 /obj/effect/overmap/visitable/ship/Destroy()
 	STOP_PROCESSING(SSprocessing, src)
 	remove_vis_overlay(vector)
 	SSshuttles.ships -= src
+	if(SSflight_operations && flight_vessel_id)
+		var/datum/flight_vessel/vessel = SSflight_operations.vessels[flight_vessel_id]
+		if(vessel)
+			SSflight_operations.vessels -= flight_vessel_id
+			SSflight_operations.vessel_by_ship -= REF(src)
+			qdel(vessel)
 	GLOB.listening_objects -= src
 	return ..()
 
 /obj/effect/overmap/visitable/ship/relaymove(mob/user, direction, accel_limit)
-	accelerate(direction, accel_limit)
+	return
 
 /obj/effect/overmap/visitable/ship/proc/is_still()
 	return !MOVING(speed[1]) && !MOVING(speed[2])
@@ -170,51 +179,14 @@
 	return round(num_burns/burns_per_grid)
 
 /obj/effect/overmap/visitable/ship/proc/decelerate()
-	if(((speed[1]) || (speed[2])) && can_burn())
-		if (speed[1])
-			adjust_speed(-SIGN(speed[1]) * min(get_burn_acceleration(),abs(speed[1])), 0)
-		if (speed[2])
-			adjust_speed(0, -SIGN(speed[2]) * min(get_burn_acceleration(),abs(speed[2])))
-		last_burn = world.time
+	adjust_speed(-speed[1], -speed[2])
 
 /obj/effect/overmap/visitable/ship/proc/accelerate(direction, accel_limit)
-	if(can_burn())
-		last_burn = world.time
-		var/acceleration = min(get_burn_acceleration(), accel_limit)
-		if(direction & EAST)
-			adjust_speed(acceleration, 0)
-		if(direction & WEST)
-			adjust_speed(-acceleration, 0)
-		if(direction & NORTH)
-			adjust_speed(0, acceleration)
-		if(direction & SOUTH)
-			adjust_speed(0, -acceleration)
+	return
 
 /obj/effect/overmap/visitable/ship/process(wait)
-	var/new_position_x = position_x + (speed[1] * WORLD_ICON_SIZE * wait)
-	var/new_position_y = position_y + (speed[2] * WORLD_ICON_SIZE * wait)
-
-	// For simplicity we assume that you can't travel more than one turf per tick.  That would be hella-fast.
-	var/new_turf_x = CEILING(new_position_x / WORLD_ICON_SIZE, 1)
-	var/new_turf_y = CEILING(new_position_y / WORLD_ICON_SIZE, 1)
-
-	var/new_pixel_x = MODULUS(new_position_x, WORLD_ICON_SIZE) - (WORLD_ICON_SIZE/2) - 1
-	var/new_pixel_y = MODULUS(new_position_y, WORLD_ICON_SIZE) - (WORLD_ICON_SIZE/2) - 1
-
-	var/new_loc = locate(new_turf_x, new_turf_y, z)
-
-	position_x = new_position_x
-	position_y = new_position_y
-
-	if(new_loc != loc)
-		var/turf/old_loc = loc
-		Move(new_loc, NORTH, wait)
-		if(get_dist(old_loc, loc) > 1)
-			pixel_x = new_pixel_x
-			pixel_y = new_pixel_y
-			return
-	animate(src, pixel_x = new_pixel_x, pixel_y = new_pixel_y, time = wait, flags = ANIMATION_END_NOW)
-	update_screen()
+	adjust_speed(-speed[1], -speed[2])
+	return PROCESS_KILL
 
 // If we get moved, update our internal tracking to account for it
 /obj/effect/overmap/visitable/ship/Moved(atom/old_loc, direction, forced = FALSE)
@@ -292,10 +264,9 @@
 	return "This ship cannot land."
 
 /obj/effect/overmap/visitable/ship/get_distress_info()
-	var/turf/T = get_turf(src) // Usually we're on the turf, but sometimes we might be landed or something.
-	var/x_to_use = T?.x || "UNK"
-	var/y_to_use = T?.y || "UNK"
-	return "\[X:[x_to_use], Y:[y_to_use], VEL:[get_speed() * 1000], HDG:[get_heading_degrees()]\]"
+	var/datum/flight_vessel/vessel = SSflight_operations?.vessel_for_ship(src)
+	var/datum/flight_destination/orbit = SSflight_operations?.destinations[vessel?.orbit_parent_id]
+	return "\[ORBIT:[orbit?.name || "unregistered"]\]"
 
 #undef SHIP_MOVE_RESOLUTION
 #undef MOVING

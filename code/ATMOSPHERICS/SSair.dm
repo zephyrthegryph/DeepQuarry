@@ -215,7 +215,10 @@ SUBSYSTEM_DEF(air)
 		process_adjacent_rebuild()
 		//This does mean that the apperent rebuild costs fluctuate very quickly, this is just the cost of having them always process, no matter what
 		cost_adjacent = TICK_USAGE_REAL - timer
-		if(state != SS_RUNNING)
+		// Never start a Rust diffusion generation against a partially rebuilt
+		// topology. Large atomic changes such as shuttle translation can exceed one
+		// DM tick; finish the remaining adjacency batch on later SSair fires first.
+		if(state != SS_RUNNING || length(adjacent_rebuild))
 			return
 
 	// /tg/-style rebuild_queue/expansion_queue dispatch removed — CHOMP pipes

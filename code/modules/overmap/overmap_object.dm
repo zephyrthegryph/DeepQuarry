@@ -100,20 +100,15 @@
 		SSskybox.rebuild_skyboxes(O.map_z)
 
 /obj/effect/overmap/proc/get_scan_data(mob/user)
-	var/dat = {"\[b\]Scan conducted at\[/b\]: [stationtime2text()] [stationdate2text()]\n\[b\]Grid coordinates\[/b\]: [x],[y]\n\n[scanner_desc]"}
+	var/dat = {"\[b\]Scan conducted at\[/b\]: [stationtime2text()] [stationdate2text()]\n\n[scanner_desc]"}
 
 	return dat
 
 /obj/effect/overmap/Crossed(obj/effect/overmap/visitable/other)
-	if(istype(other))
-		for(var/obj/effect/overmap/visitable/O in loc)
-			SSskybox.rebuild_skyboxes(O.map_z)
+	return
 
 /obj/effect/overmap/Uncrossed(obj/effect/overmap/visitable/other)
-	if(istype(other))
-		SSskybox.rebuild_skyboxes(other.map_z)
-		for(var/obj/effect/overmap/visitable/O in loc)
-			SSskybox.rebuild_skyboxes(O.map_z)
+	return
 
 /**
  * Updates the screen object, which is displayed on all connected helms

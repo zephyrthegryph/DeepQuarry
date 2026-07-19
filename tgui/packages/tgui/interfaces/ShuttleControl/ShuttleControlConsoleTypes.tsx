@@ -83,6 +83,29 @@ export const ShuttleControlConsoleExploration = (props) => {
             ''}
         </LabeledList>
       </Section>
+      <Section title="Expedition Assignment">
+        {data.expedition ? (
+          <LabeledList>
+            <LabeledList.Item label="Destination">
+              {data.expedition.name}
+            </LabeledList.Item>
+            <LabeledList.Item label="Objective">
+              {data.expedition.objective}
+            </LabeledList.Item>
+            <LabeledList.Item label="Progress">
+              {data.expedition.progress}
+            </LabeledList.Item>
+          </LabeledList>
+        ) : (
+          <Button
+            icon="map-marked-alt"
+            disabled={!data.can_plot_expedition}
+            onClick={() => act('plot_expedition')}
+          >
+            Plot Dynamic Expedition
+          </Button>
+        )}
+      </Section>
       <ShuttleControlSharedShuttleControls />
     </>
   );

@@ -1,6 +1,91 @@
 // Debug entry points for the expedition system. The production flow is the
 // launch console (auto-placed by SSexpedition); these verbs let an admin jump a
 // site directly for testing the generator + missions.
+
+/// Builds a generated station on an expedition-owned z-level. Registering the
+/// result as a site gives the ordinary expedition lifecycle sole ownership of
+/// the z-level, materialized areas, and entry landmark.
+/datum/controller/subsystem/expedition/proc/generate_debug_station(seed, list/validation_messages)
+	seed = round(seed)
+	var/datum/generated_station_planner/planner = new
+	var/datum/generated_station_spec/spec = planner.plan(seed, 112, 112)
+	var/datum/generated_station_validation_result/validation = spec?.validate()
+	if(!spec || !validation?.is_valid())
+		if(validation_messages)
+			if(!spec)
+				validation_messages += "The planner returned no station specification."
+			else
+				for(var/datum/generated_station_validation_issue/issue in validation.issues)
+					validation_messages += "[issue.severity == GENERATED_STATION_ISSUE_ERROR ? "error" : "warning"] [issue.code][issue.subject_id ? " ([issue.subject_id])" : ""]: [issue.message]"
+		qdel(validation)
+		qdel(spec)
+		qdel(planner)
+		return null
+	qdel(validation)
+
+	var/z = acquire_z()
+	if(!isnum(z) || z < 1)
+		if(validation_messages)
+			validation_messages += "No expedition z-level was available."
+		qdel(spec)
+		qdel(planner)
+		return null
+	var/origin_x = max(1, round((world.maxx - spec.grid_width) / 2))
+	var/origin_y = max(1, round((world.maxy - spec.grid_height) / 2))
+	var/datum/generated_station_materializer/materializer = new
+	var/datum/generated_station_materialization/materialization = materializer.materialize(spec, z, origin_x, origin_y)
+	qdel(materializer)
+	qdel(planner)
+	if(!materialization?.entry)
+		if(validation_messages)
+			validation_messages += materialization ? "The materialized station has no docking entry." : "Station materialization failed."
+		qdel(materialization)
+		qdel(spec)
+		wipe_z(z)
+		free_z |= z
+		return null
+
+	var/datum/expedition_site/site = new(z, EXP_DIFF_LOW, get_turf(materialization.entry))
+	site.name = spec.name
+	site.generation_seed = seed
+	site.station_spec = spec
+	site.station_materialization = materialization
+	if(!site.initialize_generated_station_runtime() || !site.initialize_generated_station_utilities() || !site.initialize_generated_station_infrastructure() || !site.initialize_generated_station_defenders())
+		if(validation_messages)
+			validation_messages += "Station runtime initialization failed."
+		qdel(site)
+		wipe_z(z)
+		free_z |= z
+		return null
+	site.floors = scan_floors(z)
+	site.status = EXP_STATUS_ACTIVE
+	site.deployed_at = world.time
+	site.last_occupied = world.time
+	sites["[z]"] = site
+	return site
+
+/client/verb/generate_procedural_station()
+	set name = "Generate Procedural Station"
+	set category = "Debug"
+
+	if(!check_rights(R_DEBUG))
+		return
+	var/seed_text = stripped_input(usr, "Enter a numeric seed, or leave blank for a random seed.", "Generated Station", "", 20)
+	if(isnull(seed_text))
+		return
+	var/seed = length(seed_text) ? text2num(seed_text) : rand(1, 2147483646)
+	if(!isnum(seed) || seed <= 0)
+		to_chat(usr, span_warning("The station seed must be a positive number."))
+		return
+	seed = max(1, round(seed) % 2147483647)
+	var/list/validation_messages = list()
+	var/datum/expedition_site/site = SSexpedition.generate_debug_station(seed, validation_messages)
+	if(!site)
+		to_chat(usr, span_warning("Generated station [seed] failed: [length(validation_messages) ? jointext(validation_messages, "; ") : "no diagnostic was returned"]."))
+		return
+	if(mob)
+		mob.forceMove(site.landing)
+	to_chat(usr, span_notice("Generated station seed [seed] on z[site.z_level]; moved you to its docking entry. The expedition lifecycle will recycle it after it is vacated."))
 /client/verb/generate_expedition_site()
 	set name = "Generate Expedition Site"
 	set category = "Debug"
@@ -38,6 +123,7 @@
 		/datum/expedition_mission/siege,
 		/datum/expedition_mission/recon,
 		/datum/expedition_mission/restore,
+		/datum/expedition_mission/station_assault,
 	)
 	var/mission_type = input(usr, "Mission type?", "Expedition Mission") as null|anything in mission_types
 	if(!mission_type)

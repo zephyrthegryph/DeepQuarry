@@ -30,7 +30,11 @@
 // pairs, since the unit_tests.dmm sealed-room template isn't loaded — see
 // unit_test.dm New()) get a clean purpose-built station instead of pathological
 // Southern Cross turfs (airlock tiles, closets, unsimulated planetary floors).
+#ifdef CITESTING_FULL_MAP
+#define USE_MAP_SOUTHERN_CROSS
+#else
 #define USE_MAP_MINITEST
+#endif
 
 /*********************/
 /* End Map Selection */

@@ -59,13 +59,9 @@
 	find_z_levels() // This populates map_z and assigns z levels to the ship.
 	register_z_levels() // This makes external calls to update global z level information.
 
-	if(!using_map.overmap_z)
-		build_overmap()
-
-	start_x = start_x || rand(OVERMAP_EDGE, using_map.overmap_size - OVERMAP_EDGE)
-	start_y = start_y || rand(OVERMAP_EDGE, using_map.overmap_size - OVERMAP_EDGE)
-
-	forceMove(locate(start_x, start_y, using_map.overmap_z))
+	// Celestial and docking positions live in SSflight_operations. The object is
+	// only an identity/z-ownership anchor and does not occupy a navigation grid.
+	moveToNullspace()
 
 	if(!docking_codes)
 		docking_codes = "[ascii2text(rand(65,90))][ascii2text(rand(65,90))][ascii2text(rand(65,90))][ascii2text(rand(65,90))]"

@@ -54,7 +54,93 @@
 	TEST_ASSERT_EQUAL(S.current_location, prior_location, "null jump moved the shuttle")
 	S.create_warning_effect(null) // must be a no-op
 
+/datum/unit_test/dq_shuttle_repeated_moves_preserve_air
+
+/datum/unit_test/dq_shuttle_repeated_moves_preserve_air/proc/measure_oxygen(datum/shuttle/shuttle)
+	. = 0
+	for(var/area/A as anything in shuttle.shuttle_area)
+		for(var/turf/open/T in A)
+			if(!T.blocks_air && T.air)
+				. += T.air.get_moles(/datum/gas/oxygen)
+
+/datum/unit_test/dq_shuttle_repeated_moves_preserve_air/proc/wait_for_atmos(cycles)
+	var/target_fires = SSair.times_fired + cycles
+	while(SSair.times_fired < target_fires)
+		sleep(SSair.wait)
+
+/datum/unit_test/dq_shuttle_repeated_moves_preserve_air/proc/find_space_leak(datum/shuttle/shuttle)
+	var/list/visited = list()
+	var/list/queue = list()
+	for(var/area/A as anything in shuttle.shuttle_area)
+		for(var/turf/open/T in A)
+			if(!T.blocks_air && T.air?.return_pressure() > 80)
+				visited[T] = TRUE
+				queue += T
+	var/head = 1
+	while(head <= length(queue))
+		var/turf/open/current = queue[head++]
+		for(var/turf/open/neighbor as anything in current.atmos_adjacent_turfs)
+			if(visited[neighbor])
+				continue
+			if(istype(neighbor, /turf/space))
+				var/list/blockers = list()
+				for(var/obj/O in current)
+					blockers += "[O.type](density=[O.density],atmos=[O.can_atmos_pass])"
+				return "[current.x],[current.y],[current.z] -> space [neighbor.x],[neighbor.y],[neighbor.z]; contents=[blockers.Join(", ")]"
+			visited[neighbor] = TRUE
+			queue += neighbor
+
+/datum/unit_test/dq_shuttle_repeated_moves_preserve_air/Run()
+	var/datum/shuttle/autodock/ferry/shuttle = SSshuttles.shuttles["Ferry-Demo"]
+	if(!shuttle)
+		log_test("Ferry-Demo is not mapped; skipping generic repeated shuttle move test.")
+		return
+	// attempt_move() deliberately bypasses the autodock handshake used by launch(),
+	// so seal the mapped external hatch before exercising turf translation itself.
+	for(var/attempt in 1 to 10)
+		var/all_closed = TRUE
+		for(var/area/A as anything in shuttle.shuttle_area)
+			for(var/obj/machinery/door/airlock/D in A)
+				if(!D.density)
+					all_closed = FALSE
+					if(!D.operating)
+						D.unlock()
+						D.close(TRUE, TRUE)
+		if(all_closed)
+			break
+		sleep(1 SECOND)
+	for(var/area/A as anything in shuttle.shuttle_area)
+		for(var/obj/machinery/door/airlock/D in A)
+			TEST_ASSERT(D.density, "Ferry-Demo test hatch did not close before repeated moves")
+	wait_for_atmos(5)
+	var/baseline = measure_oxygen(shuttle)
+	TEST_ASSERT(baseline > 0, "Ferry-Demo began without oxygen")
+	for(var/hop in 1 to 8)
+		var/obj/effect/shuttle_landmark/next_landmark = shuttle.current_location == shuttle.landmark_offsite ? shuttle.landmark_station : shuttle.landmark_offsite
+		TEST_ASSERT(shuttle.attempt_move(next_landmark), "Ferry-Demo repeated move [hop] failed")
+		var/immediate_oxygen = measure_oxygen(shuttle)
+		TEST_ASSERT(immediate_oxygen >= baseline * 0.99, "Ferry-Demo lost oxygen during turf translation on move [hop]: [baseline] -> [immediate_oxygen]")
+		if(next_landmark == shuttle.landmark_offsite)
+			var/leak = find_space_leak(shuttle)
+			TEST_ASSERT(!leak, "Ferry-Demo pressure volume was connected to space after move [hop]: [leak]")
+		wait_for_atmos(5)
+		var/hop_oxygen = measure_oxygen(shuttle)
+		if(next_landmark == shuttle.landmark_offsite)
+			TEST_ASSERT(hop_oxygen >= baseline * 0.99, "Ferry-Demo lost oxygen after returning offsite on repeated move [hop]: [baseline] -> [hop_oxygen]")
+
 /datum/unit_test/dq_arrivals_shuttle_preserves_air
+
+/datum/unit_test/dq_arrivals_shuttle_preserves_air/proc/measure_oxygen(datum/shuttle/shuttle)
+	. = 0
+	for(var/area/A as anything in shuttle.shuttle_area)
+		for(var/turf/open/T in A)
+			if(!T.blocks_air && T.air)
+				. += T.air.get_moles(/datum/gas/oxygen)
+
+/datum/unit_test/dq_arrivals_shuttle_preserves_air/proc/wait_for_atmos(cycles)
+	var/target_fires = SSair.times_fired + cycles
+	while(SSair.times_fired < target_fires)
+		sleep(SSair.wait)
 
 /datum/unit_test/dq_arrivals_shuttle_preserves_air/Run()
 	var/datum/shuttle/autodock/ferry/arrivals/shuttle = SSshuttles.shuttles["Arrivals"]
@@ -113,6 +199,14 @@
 	TEST_ASSERT(pressurized_turfs_after > 0, "arrivals shuttle became airless after moving")
 	TEST_ASSERT(total_o2_after >= total_o2_before * 0.99, "arrivals shuttle lost oxygen while moving: [total_o2_before] -> [total_o2_after]")
 	TEST_ASSERT(shuttle.attempt_move(shuttle.landmark_offsite), "arrivals shuttle could not return to its off-station landmark")
+	var/repeated_move_baseline = measure_oxygen(shuttle)
+	for(var/hop in 1 to 6)
+		wait_for_atmos(5)
+		var/obj/effect/shuttle_landmark/next_landmark = shuttle.current_location == shuttle.landmark_offsite ? shuttle.landmark_station : shuttle.landmark_offsite
+		TEST_ASSERT(shuttle.attempt_move(next_landmark), "arrivals shuttle repeated move [hop] failed")
+		wait_for_atmos(5)
+		var/hop_oxygen = measure_oxygen(shuttle)
+		TEST_ASSERT(hop_oxygen >= repeated_move_baseline * 0.99, "arrivals shuttle lost oxygen over repeated move [hop]: [repeated_move_baseline] -> [hop_oxygen]")
 
 /datum/unit_test/dq_escape_shuttle_preserves_air
 

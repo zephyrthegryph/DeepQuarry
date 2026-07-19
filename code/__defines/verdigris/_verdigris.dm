@@ -15,6 +15,7 @@
 /proc/verdigris_features()	return VERDIGRIS_CALL("verdigris_features_ffi")
 /proc/verdigris_init()		return VERDIGRIS_CALL("verdigris_init_ffi")
 /proc/verdigris_cleanup()	return VERDIGRIS_CALL("verdigris_cleanup_ffi")
+/proc/verdigris_generate_station_layout(payload)	return VERDIGRIS_CALL("verdigris_generate_station_layout_ffi", payload)
 
 // NOTE: verdigris bring-up (verdigris_init/cleanup + version log) lives in the real
 // /world/New() in code/game/world.dm. A duplicate /world/New() here was silently

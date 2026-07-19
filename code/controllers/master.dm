@@ -678,12 +678,15 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 		perf_tick_peak_usage = starting_tick_usage
 		perf_tick_breakdown.Cut()
 
+		if (init_stage != init_stage_completed)
+			// Initialization deliberately blocks for long stretches. Establish the
+			// drift baseline without treating boot work as a gameplay outlier.
+			olddrift = newdrift
+			return MC_LOOP_RTN_NEWSTAGES
+
 		if(newdrift - olddrift >= CONFIG_GET(number/drift_dump_threshold))
 			AttemptProfileDump(CONFIG_GET(number/drift_profile_delay))
 		olddrift = newdrift
-
-		if (init_stage != init_stage_completed)
-			return MC_LOOP_RTN_NEWSTAGES
 		if (processing <= 0)
 			current_ticklimit = TICK_LIMIT_RUNNING
 			sleep(1 SECONDS)
@@ -1135,7 +1138,8 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 /// Attempts to dump our current profile info into a file, triggered if the MC thinks shit is going down
 /// Accepts a delay in deciseconds of how long ago our last dump can be, this saves causing performance problems ourselves
 /datum/controller/master/proc/AttemptProfileDump(delay)
-	if(REALTIMEOFDAY - last_profiled <= delay)
+	var/profile_cooldown = max(delay, 2 MINUTES)
+	if(REALTIMEOFDAY - last_profiled <= profile_cooldown)
 		return FALSE
 	last_profiled = REALTIMEOFDAY
 	SSprofiler.DumpFile(allow_yield = FALSE)

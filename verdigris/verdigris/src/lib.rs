@@ -1,5 +1,6 @@
 mod allocator;
 pub mod random_map;
+pub mod station_layout;
 pub mod verdigris;
 
 #[global_allocator]

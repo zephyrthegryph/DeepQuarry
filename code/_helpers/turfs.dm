@@ -85,6 +85,7 @@
 	return turf_map
 
 /proc/translate_turfs(list/translation, area/base_area = null, turf/base_turf)
+	var/list/changed_turfs = list()
 	for(var/turf/source in translation)
 
 		var/turf/target = translation[source]
@@ -92,8 +93,23 @@
 		if(target)
 			if(base_area) ChangeArea(target, get_area(source))
 			var/leave_turf = base_turf ? base_turf : get_base_turf_by_area(base_area ? base_area : source)
-			translate_turf(source, target, leave_turf)
+			var/source_x = source.x
+			var/source_y = source.y
+			var/source_z = source.z
+			var/turf/new_destination = translate_turf(source, target, leave_turf)
+			if(new_destination)
+				changed_turfs |= new_destination
+			changed_turfs |= locate(source_x, source_y, source_z)
 			if(base_area) ChangeArea(source, base_area)
+
+	// ChangeTurf initially sees each destination before the shuttle's blocking
+	// objects have been relocated onto it. Rebuild the complete moved footprint
+	// only after every wall, window, and door is in its final location, then
+	// publish the resulting symmetric graph to the Rust arena as one DM operation.
+	for(var/turf/changed as anything in changed_turfs)
+		changed.immediate_calculate_adjacent_turfs()
+	for(var/turf/changed as anything in changed_turfs)
+		changed.air_update_turf(FALSE, FALSE)
 
 	//change the old turfs (Currently done by translate_turf for us)
 	//for(var/turf/source in translation)
@@ -179,7 +195,7 @@
 	T.post_translate_A(B)
 	B.post_translate_B(T)
 
-	return TRUE
+	return X
 
 //Used for border objects. This returns true if this atom is on the border between the two specified turfs
 //This assumes that the atom is located inside the target turf
