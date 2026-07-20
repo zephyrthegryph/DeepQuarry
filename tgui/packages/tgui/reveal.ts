@@ -81,6 +81,26 @@ function nativeGeometrySignature(observed: any): string | undefined {
   return `${sizeText}@${posText}`;
 }
 
+async function queryNativeGeometry(): Promise<any> {
+  // BYOND returns the value itself for a single-property winget (for example,
+  // `{x, y}` for size), not an object keyed by a semicolon-separated property
+  // list. Query independently and normalize the result for matching/logging.
+  const [size, pos] = await Promise.all([
+    Byond.winget(Byond.windowId, 'size'),
+    Byond.winget(Byond.windowId, 'pos'),
+  ]);
+  return { size, pos };
+}
+
+async function queryNativePresentation(): Promise<any> {
+  const [geometry, alpha, visible] = await Promise.all([
+    queryNativeGeometry(),
+    Byond.winget(Byond.windowId, 'alpha'),
+    Byond.winget(Byond.windowId, 'is-visible'),
+  ]);
+  return { ...geometry, alpha, 'is-visible': visible };
+}
+
 function geometryMatches(
   observed: any,
   expected: NativeGeometryPayload,
@@ -102,7 +122,7 @@ async function waitForNativeGeometry(
   let observed: any;
   try {
     do {
-      observed = await Byond.winget(Byond.windowId, 'size;pos');
+      observed = await queryNativeGeometry();
       if (geometryMatches(observed, expected)) {
         return { matched: true, observed: nativeGeometrySignature(observed) };
       }
@@ -167,9 +187,7 @@ async function monitorRevealedGeometry(
     previousDelay = delay;
     if (!isCurrentGeneration(generation)) return;
     try {
-      const signature = nativeGeometrySignature(
-        await Byond.winget(Byond.windowId, 'size;pos'),
-      );
+      const signature = nativeGeometrySignature(await queryNativeGeometry());
       if (signature) observations.push(signature);
     } catch {
       return;
@@ -301,10 +319,7 @@ async function samplePresentedTransition(generation?: number): Promise<void> {
     elapsed = delay;
     if (!isCurrentGeneration(generation)) return;
     try {
-      const observed = await Byond.winget(
-        Byond.windowId,
-        'size;pos;alpha;is-visible',
-      );
+      const observed = await queryNativePresentation();
       profileTransition(
         `post-opacity-${delay}ms`,
         observedNativeGeometry(observed),

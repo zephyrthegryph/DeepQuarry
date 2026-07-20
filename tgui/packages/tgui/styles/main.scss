@@ -102,10 +102,19 @@
 // otherwise briefly resolve a newly-painted icon/content node against html's cursor.
 .Button,
 .Button * {
-  cursor: var(--cursor-pointer) !important;
+  cursor: pointer !important;
+}
+
+// Treat a visual Button as one hit-test surface. BYOND's embedded Chromium can
+// alternate between nested Stack/Icon/content layers while the pointer moves,
+// briefly resolving the system cursor from an element behind the button. Button
+// actions live on the root, so descendants do not need independent pointer events.
+.Button__content,
+.Button__content * {
+  pointer-events: none;
 }
 
 .Button--disabled,
 .Button--disabled * {
-  cursor: var(--cursor-disabled) !important;
+  cursor: default !important;
 }

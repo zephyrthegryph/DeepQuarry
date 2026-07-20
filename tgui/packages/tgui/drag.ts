@@ -256,7 +256,10 @@ export async function recallWindowGeometry(
       vecScale(screenOffset, -1.0),
     );
     const nativePos = vecAdd(centeredPos, screenOffset);
-    resolved.pos = [nativePos[0], nativePos[1]];
+    // Native window positions are integral. Sending half-pixels for odd window
+    // sizes makes a subsequent winget verification disagree forever after the
+    // client rounds them.
+    resolved.pos = [Math.round(nativePos[0]), Math.round(nativePos[1])];
   }
   return resolved;
 }

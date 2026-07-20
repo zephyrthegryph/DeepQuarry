@@ -48,7 +48,9 @@ describe('native window reveal', () => {
     const winset = mock(() => {});
     const sendMessage = mock(() => {});
     Byond.winset = winset;
-    Byond.winget = mock(async () => ({ size: { x: 400, y: 600 } }));
+    Byond.winget = mock(async (_id, property) =>
+      property === 'size' ? { x: 400, y: 600 } : { x: 0, y: 0 },
+    ) as unknown as typeof Byond.winget;
     Object.defineProperty(window, 'innerWidth', {
       configurable: true,
       value: 400,
