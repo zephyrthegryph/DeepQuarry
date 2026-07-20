@@ -112,16 +112,54 @@ async function waitForNativeGeometry(
   return { matched: false, observed: nativeGeometrySignature(observed) };
 }
 
+function expectedViewportSize(size?: string): [number, number] | undefined {
+  if (!size) return undefined;
+  const match = /^(\d+)x(\d+)$/.exec(size);
+  if (!match) return undefined;
+  return [Number(match[1]), Number(match[2])];
+}
+
+function browserViewportSignature(): string {
+  return `${window.innerWidth}x${window.innerHeight}`;
+}
+
+async function waitForBrowserViewport(
+  expectedSize?: string,
+): Promise<{ matched: boolean; observed: string }> {
+  const expected = expectedViewportSize(expectedSize);
+  if (!expected) {
+    return { matched: true, observed: browserViewportSignature() };
+  }
+  const deadline = performance.now() + 500;
+  do {
+    // BYOND's native size maps to the browser viewport in this skin. Waiting
+    // here prevents showing a correctly-sized OS window whose embedded browser
+    // is still painting at the pooled shell's previous dimensions.
+    if (
+      window.innerWidth === expected[0] &&
+      window.innerHeight === expected[1]
+    ) {
+      return { matched: true, observed: browserViewportSignature() };
+    }
+    await new Promise<void>((resolve) => setTimeout(resolve, 8));
+  } while (performance.now() < deadline);
+  return { matched: false, observed: browserViewportSignature() };
+}
+
 async function monitorRevealedGeometry(
   generation: number | undefined,
   expected: NativeGeometryPayload,
 ): Promise<void> {
   if (!store.get(configAtom)?.client?.profiling) return;
   const observations: string[] = [];
+  let previousDelay = 0;
   for (const delay of [0, 50, 150, 400]) {
-    if (delay) {
-      await new Promise<void>((resolve) => setTimeout(resolve, delay));
+    if (delay > previousDelay) {
+      await new Promise<void>((resolve) =>
+        setTimeout(resolve, delay - previousDelay),
+      );
     }
+    previousDelay = delay;
     if (!isCurrentGeneration(generation)) return;
     try {
       const signature = nativeGeometrySignature(
@@ -191,6 +229,16 @@ export async function revealWindow(
         expected_size: nativeGeometry.size,
         expected_pos: nativeGeometry.pos,
         observed: verification.observed,
+      });
+    }
+    const viewport = await waitForBrowserViewport(nativeGeometry.size);
+    if (!viewport.matched && config?.client?.profiling) {
+      Byond.sendMessage('perf/flicker', {
+        kind: 'pre-reveal-viewport-mismatch',
+        generation: currentGeneration,
+        interface: config?.interface?.name,
+        expected_size: nativeGeometry.size,
+        observed: viewport.observed,
       });
     }
     if (!isCurrentGeneration(generation)) {

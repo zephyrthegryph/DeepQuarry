@@ -6,11 +6,21 @@ import { buildNativeRevealPayload, revealWindow } from './reveal';
 const originalWinset = Byond.winset;
 const originalWinget = Byond.winget;
 const originalSendMessage = Byond.sendMessage;
+const originalInnerWidth = window.innerWidth;
+const originalInnerHeight = window.innerHeight;
 
 afterEach(() => {
   Byond.winset = originalWinset;
   Byond.winget = originalWinget;
   Byond.sendMessage = originalSendMessage;
+  Object.defineProperty(window, 'innerWidth', {
+    configurable: true,
+    value: originalInnerWidth,
+  });
+  Object.defineProperty(window, 'innerHeight', {
+    configurable: true,
+    value: originalInnerHeight,
+  });
   store.set(suspendedAtom, Date.now());
 });
 
@@ -33,6 +43,14 @@ describe('native window reveal', () => {
     const sendMessage = mock(() => {});
     Byond.winset = winset;
     Byond.winget = mock(async () => ({ size: { x: 400, y: 600 } }));
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      value: 400,
+    });
+    Object.defineProperty(window, 'innerHeight', {
+      configurable: true,
+      value: 600,
+    });
     Byond.sendMessage = sendMessage;
     store.set(configAtom, {
       interface: { name: 'TestInterface' },
