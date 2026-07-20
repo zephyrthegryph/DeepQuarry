@@ -1416,6 +1416,7 @@ window "tgui_window_template"
 		anchor1 = -1,-1
 		anchor2 = -1,-1
 		is-visible = false
+		alpha = 0
 		saved-params = ""
 		statusbar = false
 		can-minimize = false

@@ -70,11 +70,14 @@ export function Window(props: Props) {
   // We need to set the window to be invisible before we can set its geometry
   // Otherwise, we get a flicker effect when the window is first rendered
   useLayoutEffect(() => {
+    if (config?.window?.native_shell) {
+      Byond.winset(Byond.windowId, { alpha: 0 });
+    }
     Byond.winset(Byond.windowId, {
       'is-visible': false,
     });
     setIsReadyToRender(true);
-  }, []);
+  }, [config?.window?.native_shell]);
 
   const { scale } = config?.window || false;
 

@@ -33,7 +33,7 @@ describe('native window reveal', () => {
     Byond.sendMessage = sendMessage;
     store.set(configAtom, {
       interface: { name: 'TestInterface' },
-      window: { generation: 4 },
+      window: { generation: 4, native_shell: 1 },
     } as Config);
     store.set(suspendedAtom, false);
 
@@ -41,13 +41,17 @@ describe('native window reveal', () => {
     expect(winset).not.toHaveBeenCalled();
 
     expect(await revealWindow(4, { size: [400, 600] })).toBe(true);
-    expect(winset).toHaveBeenCalledTimes(2);
+    expect(winset).toHaveBeenCalledTimes(3);
     expect(winset).toHaveBeenNthCalledWith(1, 'test-window', {
-      'is-visible': false,
-      size: '400x600',
+      alpha: 0,
+      'is-visible': true,
     });
     expect(winset).toHaveBeenNthCalledWith(2, 'test-window', {
-      'is-visible': true,
+      alpha: 0,
+      size: '400x600',
+    });
+    expect(winset).toHaveBeenNthCalledWith(3, 'test-window', {
+      alpha: 255,
     });
     expect(sendMessage).toHaveBeenCalledTimes(1);
   });

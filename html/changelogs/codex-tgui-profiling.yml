@@ -3,6 +3,7 @@ delete-after: true
 changes:
   - bugfix: "Prevented TGUI prewarm shells from appearing on screen and made DreamSeeker confirm window geometry before reveal."
   - bugfix: "Prevented cold TGUI windows from briefly rendering with the previous interface's geometry."
+  - bugfix: "Kept pooled TGUI windows transparent through DreamSeeker's native first-show positioning."
   - bugfix: "Stabilized the pointer cursor across TGUI button contents and icons."
   - code_imp: "Added automated TGUI performance benchmarks and a development-only live profiler."
   - qol: "Reduced Power Monitor update size and rendering stalls on large station grids."

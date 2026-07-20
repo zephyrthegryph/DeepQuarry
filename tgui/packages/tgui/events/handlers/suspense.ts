@@ -32,9 +32,13 @@ export function suspend(): void {
   store.set(suspendingAtom, false);
   store.set(suspendedAtom, Date.now());
 
-  Byond.winset(Byond.windowId, {
-    'is-visible': false,
-  });
+  if (store.get(configAtom)?.window?.native_shell) {
+    // Leave reusable native shells transparent as well as hidden. On their
+    // next use DreamSeeker can run its first-show placement while alpha is 0,
+    // before final geometry is confirmed and the shell becomes opaque.
+    Byond.winset(Byond.windowId, { alpha: 0 });
+  }
+  Byond.winset(Byond.windowId, { 'is-visible': false });
 
   focusMap();
 }

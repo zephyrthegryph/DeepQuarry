@@ -85,10 +85,17 @@ export async function revealWindow(
 ): Promise<boolean> {
   const config = store.get(configAtom);
   const currentGeneration = config?.window?.generation;
+  const nativeShell = Boolean(config?.window?.native_shell);
   if (!isCurrentGeneration(generation)) {
     return false;
   }
   const nativeGeometry = buildNativeGeometryPayload(geometry);
+  if (nativeShell) {
+    // Let DreamSeeker perform the native hidden->shown transition while the
+    // OS window is fully transparent. Some clients center or paint a window
+    // during winshow even when geometry was assigned while it was hidden.
+    Byond.winset(Byond.windowId, { alpha: 0, 'is-visible': true });
+  }
   if (nativeGeometry.size || nativeGeometry.pos) {
     // Keep the shell hidden while DreamSeeker applies geometry. A single
     // winset containing is-visible can be painted in property order on cold
@@ -97,7 +104,7 @@ export async function revealWindow(
     // has been processed before the separate show command is sent.
     Byond.winset(Byond.windowId, {
       ...nativeGeometry,
-      'is-visible': false,
+      ...(nativeShell ? { alpha: 0 } : { 'is-visible': false }),
     });
     await waitForNativeGeometry();
     if (!isCurrentGeneration(generation)) {
@@ -108,7 +115,10 @@ export async function revealWindow(
     generation: currentGeneration,
     verifiedGeometry: Boolean(nativeGeometry.size || nativeGeometry.pos),
   });
-  Byond.winset(Byond.windowId, { 'is-visible': true });
+  Byond.winset(
+    Byond.windowId,
+    nativeShell ? { alpha: 255 } : { 'is-visible': true },
+  );
   Byond.sendMessage('visible', {
     generation: currentGeneration,
     geometry: nativeGeometry,

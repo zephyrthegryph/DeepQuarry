@@ -92,7 +92,7 @@
 		native_shell = winexists(client, id) == "MAIN"
 		if(native_shell)
 			winshow(client, id, FALSE)
-			winset(client, id, "titlebar=[!fancy];can-resize=[!fancy];can-minimize=false;on-close=\"uiclose [id]\"")
+			winset(client, id, "alpha=0;titlebar=[!fancy];can-resize=[!fancy];can-minimize=false;on-close=\"uiclose [id]\"")
 	// Build window options
 	var/options = "file=[id].html;can_minimize=0;auto_format=0;"
 	// Remove titlebar and resize handles for a fancy window
