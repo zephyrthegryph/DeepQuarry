@@ -207,6 +207,15 @@
  * optional ui /datum/tgui
  */
 /datum/tgui_window/proc/acquire_lock(datum/tgui/ui)
+	// A READY pooled window may still be visibly painting its previous interface:
+	// close() sends the browser-side suspend asynchronously, and a rapid reopen can
+	// acquire the shell before that message is processed. Hide it synchronously on
+	// the server before the new owner can send content, otherwise the new content
+	// flashes at the previous interface's geometry and React hides it a frame later.
+	if(client && pooled)
+		if(native_shell)
+			winset(client, id, "alpha=0")
+		winshow(client, id, FALSE)
 	generation++
 	locked = TRUE
 	locked_by = ui
@@ -263,6 +272,13 @@
 		#ifdef TGUI_DEBUGGING
 		log_tgui(client, "[id]/close: suspending")
 		#endif
+		// Do not rely on the asynchronous browser suspend handler to hide the shell.
+		// The pool can hand this READY window to another UI immediately after return.
+		if(pooled)
+			if(native_shell)
+				winset(client, id, "alpha=0")
+			winshow(client, id, FALSE)
+		visible = FALSE
 		status = TGUI_WINDOW_READY
 		send_message("suspend")
 		return
