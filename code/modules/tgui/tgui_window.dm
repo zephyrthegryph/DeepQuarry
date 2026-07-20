@@ -424,8 +424,10 @@
 			visible = TRUE
 			SEND_SIGNAL(src, COMSIG_TGUI_WINDOW_VISIBLE, client)
 		if("perf/flicker")
+			#ifndef DEBUG
 			if(client?.address != "127.0.0.1" && client?.address != "::1")
 				return
+			#endif
 			if(world.time < last_perf_log_at + 1 SECOND)
 				return
 			last_perf_log_at = world.time
@@ -433,6 +435,15 @@
 			if(length(encoded_payload) > 8000)
 				encoded_payload = copytext(encoded_payload, 1, 8001)
 			log_tgui(client, "Automatic TGUI flicker telemetry: [encoded_payload]", window = src)
+		if("perf/status")
+			#ifndef DEBUG
+			if(client?.address != "127.0.0.1" && client?.address != "::1")
+				return
+			#endif
+			var/encoded_payload = json_encode(payload)
+			if(length(encoded_payload) > 8000)
+				encoded_payload = copytext(encoded_payload, 1, 8001)
+			log_tgui(client, "Automatic TGUI performance telemetry: [encoded_payload]", window = src)
 		if("suspend")
 			close(can_be_suspended = TRUE)
 		if("close")

@@ -8,6 +8,7 @@ import {
   useSyncExternalStore,
 } from 'react';
 import { configAtom, store } from '../events/store';
+import { preloadInterface } from '../routes';
 import { profileStartup } from './hooks';
 import { appendBounded, summarizeProfiler } from './metrics';
 import type {
@@ -43,6 +44,7 @@ const listeners = new Set<() => void>();
 let lastNotification = 0;
 let startupSessionActive = false;
 let startupStages = new Set<string>();
+let startupSamples: StartupSample[] = [];
 let lastAutomaticLog = 0;
 
 function automaticLog(kind: string, detail: Record<string, unknown>): void {
@@ -123,6 +125,7 @@ function recordStartupSample(sample: StartupSample): void {
   if (sample.stage === 'backend_received') {
     startupSessionActive = true;
     startupStages = new Set<string>();
+    startupSamples = [];
   }
   const isDocumentStage =
     sample.stage === 'document_ready' ||
@@ -133,8 +136,25 @@ function recordStartupSample(sample: StartupSample): void {
   const key = `${sample.stage}:${sample.interfaceName || ''}`;
   if (startupStages.has(key)) return;
   startupStages.add(key);
+  startupSamples.push(sample);
   add('startup', sample);
   if (sample.stage === 'native_geometry_observed') {
+    const backend = startupSamples.find(
+      (entry) => entry.stage === 'backend_received',
+    );
+    const chunkStart = startupSamples.find(
+      (entry) => entry.stage === 'chunk_load_started',
+    );
+    const chunkEnd = startupSamples.find(
+      (entry) => entry.stage === 'chunk_load_finished',
+    );
+    Byond.sendMessage('perf/status', {
+      kind: 'startup-complete',
+      interface: sample.interfaceName || backend?.interfaceName,
+      total_ms: backend ? sample.at - backend.at : undefined,
+      chunk_ms: chunkStart && chunkEnd ? chunkEnd.at - chunkStart.at : 0,
+      stages: startupSamples,
+    });
     startupSessionActive = false;
   }
 }
@@ -389,6 +409,11 @@ export function DevelopmentProfiler({ children }: { children: ReactNode }) {
   const enabled = Boolean(config?.client?.profiling);
   useEffect(() => {
     if (!enabled) return;
+    Byond.sendMessage('perf/status', {
+      kind: 'profiler-active',
+      interface: config?.interface?.name,
+      generation: config?.window?.generation,
+    });
     const removeBridge = installBridge();
     const removeObservers = installRuntimeObservers();
     profileStartup('profiler_loaded', config?.interface?.name);
@@ -397,6 +422,23 @@ export function DevelopmentProfiler({ children }: { children: ReactNode }) {
       removeBridge();
     };
   }, [enabled]);
+  useEffect(() => {
+    if (config?.interface?.name !== 'LobbyMenu') return;
+    // Character setup is the first large interface most lobby clients open.
+    // Fetch its code while the persistent lobby browser is idle so the click is warm.
+    const idle = window.requestIdleCallback?.(
+      () => preloadInterface('PreferencesMenu'),
+      { timeout: 1000 },
+    );
+    const fallback =
+      idle === undefined
+        ? window.setTimeout(() => preloadInterface('PreferencesMenu'), 250)
+        : undefined;
+    return () => {
+      if (idle !== undefined) window.cancelIdleCallback?.(idle);
+      if (fallback !== undefined) window.clearTimeout(fallback);
+    };
+  }, [config?.interface?.name]);
   if (!enabled) {
     return children;
   }

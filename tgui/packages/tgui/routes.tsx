@@ -132,6 +132,27 @@ function resolveInterfacePath(name: string): string | null {
 // Cache the lazy component per interface name so React.lazy's identity is stable
 // across re-renders (otherwise React would unmount/remount and re-fetch every time).
 const componentCache = new Map<string, ComponentType>();
+const moduleCache = new Map<string, Promise<any>>();
+
+function loadInterfaceModule(name: string, path: string): Promise<any> {
+  const cached = moduleCache.get(name);
+  if (cached) return cached;
+  profileStartup('chunk_load_started', name, { path });
+  const pending = requireInterface(path).then((module) => {
+    profileStartup('chunk_load_finished', name, { path });
+    return module;
+  });
+  moduleCache.set(name, pending);
+  return pending;
+}
+
+/** Fetch an interface chunk during browser idle time without mounting it. */
+export function preloadInterface(name: string): void {
+  if (EAGER_INTERFACES[name] || moduleCache.has(name)) return;
+  const path = resolveInterfacePath(name);
+  if (path)
+    loadInterfaceModule(name, path).catch(() => moduleCache.delete(name));
+}
 
 function getRoutedComponent(name: string): ComponentType {
   // Eager interfaces are in the main bundle — return them directly, no lazy/Suspense.
@@ -152,9 +173,7 @@ function getRoutedComponent(name: string): ComponentType {
     Routed = () => <RoutingErrorWindow type="notFound" name={name} />;
   } else {
     Routed = lazy(async () => {
-      profileStartup('chunk_load_started', name, { path });
-      const esModule = await requireInterface(path);
-      profileStartup('chunk_load_finished', name, { path });
+      const esModule = await loadInterfaceModule(name, path);
       const Resolved = esModule[name];
       if (!Resolved) {
         return {
