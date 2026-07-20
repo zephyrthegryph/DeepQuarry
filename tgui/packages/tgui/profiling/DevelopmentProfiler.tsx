@@ -1,3 +1,4 @@
+import { useAtomValue } from 'jotai';
 import {
   Profiler,
   type ProfilerOnRenderCallback,
@@ -7,6 +8,7 @@ import {
   useSyncExternalStore,
 } from 'react';
 import { configAtom, store } from '../events/store';
+import { profileStartup } from './hooks';
 import { appendBounded, summarizeProfiler } from './metrics';
 import type {
   ActionSample,
@@ -41,6 +43,21 @@ const listeners = new Set<() => void>();
 let lastNotification = 0;
 let startupSessionActive = false;
 let startupStages = new Set<string>();
+let lastAutomaticLog = 0;
+
+function automaticLog(kind: string, detail: Record<string, unknown>): void {
+  const at = now();
+  if (at - lastAutomaticLog < 1000) return;
+  lastAutomaticLog = at;
+  const config = store.get(configAtom);
+  Byond.sendMessage('perf/flicker', {
+    kind,
+    at,
+    interface: config?.interface?.name,
+    generation: config?.window?.generation,
+    ...detail,
+  });
+}
 
 function publish(next: ProfileState, immediate = false): void {
   state = next;
@@ -117,6 +134,9 @@ function recordStartupSample(sample: StartupSample): void {
   if (startupStages.has(key)) return;
   startupStages.add(key);
   add('startup', sample);
+  if (sample.stage === 'native_geometry_observed') {
+    startupSessionActive = false;
+  }
 }
 
 function targetName(element: Element | null): string {
@@ -146,6 +166,9 @@ function installRuntimeObservers(): () => void {
       const duration = at - lastFrame;
       lastFrame = at;
       add('frames', { at, duration });
+      if (startupSessionActive && duration >= 50) {
+        automaticLog('startup-frame-stall', { duration });
+      }
       if (x >= 0 && y >= 0 && document.elementFromPoint) {
         const element = document.elementFromPoint(x, y);
         const cursor = element ? getComputedStyle(element).cursor : '(none)';
@@ -153,6 +176,13 @@ function installRuntimeObservers(): () => void {
         const signature = `${cursor}|${target}|${moved}`;
         if (signature !== lastCursorSignature) {
           add('cursors', { at, x, y, cursor, target, stationary: !moved });
+          if (!moved && lastCursorSignature) {
+            automaticLog('stationary-hit-target-change', {
+              cursor,
+              target,
+              previous: lastCursorSignature,
+            });
+          }
           lastCursorSignature = signature;
         }
         moved = false;
@@ -355,14 +385,21 @@ const headerStyle = {
 } as const;
 
 export function DevelopmentProfiler({ children }: { children: ReactNode }) {
+  const config = useAtomValue(configAtom);
+  const enabled = Boolean(config?.client?.profiling);
   useEffect(() => {
+    if (!enabled) return;
     const removeBridge = installBridge();
     const removeObservers = installRuntimeObservers();
+    profileStartup('profiler_loaded', config?.interface?.name);
     return () => {
       removeObservers();
       removeBridge();
     };
-  }, []);
+  }, [enabled]);
+  if (!enabled) {
+    return children;
+  }
   return (
     <>
       <Profiler id="tgui" onRender={onRender}>

@@ -78,6 +78,54 @@ async function waitForNativeGeometry(): Promise<void> {
   await Promise.race([confirmed, timeout]);
 }
 
+function nativeGeometrySignature(observed: any): string | undefined {
+  const size = observed?.size;
+  const pos = observed?.pos;
+  if (!size && !pos) return undefined;
+  const sizeText = size ? `${size.x}x${size.y}` : '';
+  const posText = pos ? `${pos.x},${pos.y}` : '';
+  return `${sizeText}@${posText}`;
+}
+
+async function monitorRevealedGeometry(
+  generation: number | undefined,
+  expected: NativeGeometryPayload,
+): Promise<void> {
+  if (!store.get(configAtom)?.client?.profiling) return;
+  const observations: string[] = [];
+  for (const delay of [0, 50, 150, 400]) {
+    if (delay) {
+      await new Promise<void>((resolve) => setTimeout(resolve, delay));
+    }
+    if (!isCurrentGeneration(generation)) return;
+    try {
+      const signature = nativeGeometrySignature(
+        await Byond.winget(Byond.windowId, 'size;pos'),
+      );
+      if (signature) observations.push(signature);
+    } catch {
+      return;
+    }
+  }
+  const unique = [...new Set(observations)];
+  profileStartup('native_geometry_observed', undefined, {
+    expectedSize: expected.size,
+    expectedPos: expected.pos,
+    first: observations[0],
+    last: observations.at(-1),
+    changes: Math.max(0, unique.length - 1),
+  });
+  if (unique.length > 1) {
+    Byond.sendMessage('perf/flicker', {
+      kind: 'post-reveal-geometry-change',
+      generation,
+      interface: store.get(configAtom)?.interface?.name,
+      expected,
+      observations,
+    });
+  }
+}
+
 /** Reveal only the current acquisition of a non-suspended pooled shell. */
 export async function revealWindow(
   generation?: number,
@@ -123,6 +171,7 @@ export async function revealWindow(
     generation: currentGeneration,
     geometry: nativeGeometry,
   });
+  void monitorRevealedGeometry(currentGeneration, nativeGeometry);
   return true;
 }
 

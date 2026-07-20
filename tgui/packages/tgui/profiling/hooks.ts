@@ -6,7 +6,6 @@ import type {
 } from './types';
 
 function bridge(): TguiProfilerBridge | undefined {
-  if (process.env.NODE_ENV !== 'development') return undefined;
   return window.__tguiProfiler;
 }
 
@@ -27,7 +26,6 @@ export function profileStartup(
   interfaceName?: string,
   detail?: StartupSample['detail'],
 ): void {
-  if (process.env.NODE_ENV !== 'development') return;
   const sample = {
     at: performance.now?.() ?? Date.now(),
     stage,
@@ -43,4 +41,7 @@ export function profileStartup(
     window.__tguiProfilerStartupQueue = [];
   }
   window.__tguiProfilerStartupQueue.push(sample);
+  if (window.__tguiProfilerStartupQueue.length > 100) {
+    window.__tguiProfilerStartupQueue.shift();
+  }
 }

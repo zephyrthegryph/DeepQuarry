@@ -39,6 +39,7 @@ export type StartupStage =
   | 'geometry_probe_finished'
   | 'server_profile'
   | 'window_revealed'
+  | 'native_geometry_observed'
   | 'first_paint';
 
 export type StartupSample = {

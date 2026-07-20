@@ -8,6 +8,7 @@ type Client = {
   address: string;
   ckey: string;
   computer_id: string;
+  profiling?: BinaryIO;
 };
 
 type IFace = {

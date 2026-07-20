@@ -10,7 +10,11 @@ client. Expand the `TGUI PERF` panel in the lower-right. It reports React commit
 backend payload/application cost, action-to-update latency, frame stalls, and cursor
 or hit-target changes under a stationary pointer. Reset before reproducing, then
 export JSON. Visible flicker with zero stationary changes implicates the embedded
-browser compositor. The panel and observers are excluded from production builds.
+browser compositor. The profiler is present in the guaranteed main bundle, but the
+panel and observers activate only when the server authorizes a localhost development
+client. Detected post-reveal geometry changes, startup frame stalls, and stationary
+hit-target changes are rate-limited into the server's `href-tgui` log automatically;
+manual export is only needed for the complete sample history.
 
 For startup captures, export immediately after the target's first cold open. For a
 warm comparison, reset that target's profiler, close it, and reopen it. The export records backend receipt,

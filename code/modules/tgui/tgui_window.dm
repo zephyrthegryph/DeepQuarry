@@ -18,6 +18,8 @@
 	var/generation = 0
 	/// TRUE when this pooled shell was cloned from the hidden native skin template.
 	var/native_shell = FALSE
+	/// Rate limit for automatic local-development browser telemetry.
+	var/last_perf_log_at = 0
 	var/datum/tgui/locked_by
 	var/datum/subscriber_object
 	var/subscriber_delegate
@@ -421,6 +423,16 @@
 				return
 			visible = TRUE
 			SEND_SIGNAL(src, COMSIG_TGUI_WINDOW_VISIBLE, client)
+		if("perf/flicker")
+			if(client?.address != "127.0.0.1" && client?.address != "::1")
+				return
+			if(world.time < last_perf_log_at + 1 SECOND)
+				return
+			last_perf_log_at = world.time
+			var/encoded_payload = json_encode(payload)
+			if(length(encoded_payload) > 8000)
+				encoded_payload = copytext(encoded_payload, 1, 8001)
+			log_tgui(client, "Automatic TGUI flicker telemetry: [encoded_payload]", window = src)
 		if("suspend")
 			close(can_be_suspended = TRUE)
 		if("close")

@@ -315,6 +315,9 @@
 			"ckey" = user.client.ckey,
 			"address" = user.client.address,
 			"computer_id" = user.client.computer_id,
+			// Browser profiling is strictly local-development-only. Keeping the
+			// authority server-side prevents remote clients from enabling telemetry.
+			"profiling" = user.client.address == "127.0.0.1" || user.client.address == "::1",
 		),
 		"user" = list(
 			"name" = "[user]",
