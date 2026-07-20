@@ -1,8 +1,10 @@
-import { describe, expect, it } from 'bun:test';
-import { act, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it } from 'bun:test';
+import { act, cleanup, render, screen } from '@testing-library/react';
 import { gameDataAtom, store } from '../events/store';
 
 import { Radio } from './Radio';
+
+afterEach(cleanup);
 
 // Just an example unit test!
 

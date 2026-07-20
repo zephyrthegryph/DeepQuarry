@@ -14,8 +14,11 @@
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
 		ui = new(user, src, "PreferencesMenu", "Preferences")
-		ui.set_autoupdate(FALSE)
 		ui.open()
+	// try_update_ui() can return a previously-created UI whose autoupdate flag
+	// is still TRUE. Preferences payloads are large and only change in response
+	// to explicit actions, so enforce this on both the new and reused paths.
+	ui.set_autoupdate(FALSE)
 
 /datum/preferences/tgui_state(mob/user)
 	return GLOB.tgui_always_state

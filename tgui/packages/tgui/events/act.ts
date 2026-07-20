@@ -1,4 +1,5 @@
 import { logger } from '../logging';
+import { profileAction } from '../profiling/hooks';
 import { createQueue } from './handlers/chunking';
 
 /**
@@ -18,6 +19,9 @@ export function sendAct(
   }
 
   const stringifiedPayload = JSON.stringify(payload);
+  if (process.env.NODE_ENV === 'development') {
+    profileAction(action, stringifiedPayload.length);
+  }
   const urlSize = Object.entries({
     type: `act/${action}`,
     payload: stringifiedPayload,

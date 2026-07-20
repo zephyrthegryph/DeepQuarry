@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { memo, useMemo, useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import {
   Box,
@@ -10,7 +10,6 @@ import {
   Stack,
   Table,
 } from 'tgui-core/components';
-import { flow } from 'tgui-core/fp';
 
 import { PEAK_DRAW } from './constants';
 import { powerRank } from './functions';
@@ -32,54 +31,42 @@ export const PowerMonitorFocus = (props: { focus: sensor }) => {
     ...history.demand,
   );
 
+  const decodedAreas: area[] = useMemo(
+    () =>
+      focus.areas.map((payload) => {
+        if (!Array.isArray(payload)) return payload;
+        const [name, charge, load, charging, eqp, lgt, env] = payload;
+        return { name, charge, load, charging, eqp, lgt, env };
+      }),
+    [focus.areas],
+  );
+
   // Process area data
-  const areas: area[] = flow([
-    (areas: area[]) =>
-      areas.map((area, i) => ({
-        ...area,
-        // Generate a unique id
-        id: area.name + i,
-      })),
-    (areas: area[]) => {
-      if (sortByField !== 'name') {
-        return areas;
-      } else {
-        return areas.sort((a, b) => a.name.localeCompare(b.name));
-      }
-    },
-    (areas: area[]) => {
-      if (sortByField !== 'charge') {
-        return areas;
-      } else {
-        return areas.sort((a, b) => b.charge - a.charge);
-      }
-    },
-    (areas: area[]) => {
-      if (sortByField !== 'draw') {
-        return areas;
-      } else {
-        return areas.sort(
-          (a, b) =>
-            powerRank(b.load) - powerRank(a.load) ||
-            parseFloat(b.load) - parseFloat(a.load),
-        );
-      }
-    },
-    (areas: area[]) => {
-      if (sortByField !== 'problems') {
-        return areas;
-      } else {
-        return areas.sort(
-          (a, b) =>
-            a.eqp - b.eqp ||
-            a.lgt - b.lgt ||
-            a.env - b.env ||
-            a.charge - b.charge ||
-            a.name.localeCompare(b.name),
-        );
-      }
-    },
-  ])(focus.areas);
+  const areas = useMemo(() => {
+    if (!sortByField) return decodedAreas;
+    const sorted = [...decodedAreas];
+    if (sortByField === 'name') {
+      sorted.sort((a, b) => a.name.localeCompare(b.name));
+    } else if (sortByField === 'charge') {
+      sorted.sort((a, b) => b.charge - a.charge);
+    } else if (sortByField === 'draw') {
+      sorted.sort(
+        (a, b) =>
+          powerRank(b.load) - powerRank(a.load) ||
+          parseFloat(b.load) - parseFloat(a.load),
+      );
+    } else if (sortByField === 'problems') {
+      sorted.sort(
+        (a, b) =>
+          a.eqp - b.eqp ||
+          a.lgt - b.lgt ||
+          a.env - b.env ||
+          a.charge - b.charge ||
+          a.name.localeCompare(b.name),
+      );
+    }
+    return sorted;
+  }, [decodedAreas, sortByField]);
 
   return (
     <>
@@ -187,27 +174,39 @@ export const PowerMonitorFocus = (props: { focus: sensor }) => {
             <Table.Cell collapsing>Env</Table.Cell>
           </Table.Row>
           {areas.map((area, i) => (
-            <tr key={i} className="Table__row candystripe">
-              <td>{area.name}</td>
-              <td className="Table__cell text-right text-nowrap">
-                <AreaCharge charging={area.charging} charge={area.charge} />
-              </td>
-              <td className="Table__cell text-right text-nowrap">
-                {area.load}
-              </td>
-              <td className="Table__cell text-center text-nowrap">
-                <AreaStatusColorBox status={area.eqp} />
-              </td>
-              <td className="Table__cell text-center text-nowrap">
-                <AreaStatusColorBox status={area.lgt} />
-              </td>
-              <td className="Table__cell text-center text-nowrap">
-                <AreaStatusColorBox status={area.env} />
-              </td>
-            </tr>
+            <PowerMonitorAreaRow key={`${area.name}-${i}`} area={area} />
           ))}
         </Table>
       </Section>
     </>
   );
 };
+
+const PowerMonitorAreaRow = memo(
+  ({ area }: { area: area }) => (
+    <tr className="Table__row candystripe">
+      <td>{area.name}</td>
+      <td className="Table__cell text-right text-nowrap">
+        <AreaCharge charging={area.charging} charge={area.charge} />
+      </td>
+      <td className="Table__cell text-right text-nowrap">{area.load}</td>
+      <td className="Table__cell text-center text-nowrap">
+        <AreaStatusColorBox status={area.eqp} />
+      </td>
+      <td className="Table__cell text-center text-nowrap">
+        <AreaStatusColorBox status={area.lgt} />
+      </td>
+      <td className="Table__cell text-center text-nowrap">
+        <AreaStatusColorBox status={area.env} />
+      </td>
+    </tr>
+  ),
+  (previous, next) =>
+    previous.area.name === next.area.name &&
+    previous.area.charge === next.area.charge &&
+    previous.area.load === next.area.load &&
+    previous.area.charging === next.area.charging &&
+    previous.area.eqp === next.area.eqp &&
+    previous.area.lgt === next.area.lgt &&
+    previous.area.env === next.area.env,
+);

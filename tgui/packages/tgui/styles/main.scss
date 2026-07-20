@@ -97,3 +97,15 @@
 .Button {
   transition: none !important;
 }
+
+// Keep every pixel inside a button on one cursor value. Embedded Chromium can
+// otherwise briefly resolve a newly-painted icon/content node against html's cursor.
+.Button,
+.Button * {
+  cursor: var(--cursor-pointer) !important;
+}
+
+.Button--disabled,
+.Button--disabled * {
+  cursor: var(--cursor-disabled) !important;
+}

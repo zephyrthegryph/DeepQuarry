@@ -24,13 +24,18 @@ import type {
 type Props = {
   page: PrefCategory;
   staticData?: Record<string, Record<string, unknown>>;
+  values: Record<string, unknown>;
+  editorData: Record<string, Record<string, unknown>>;
   /// When true, this page hosts a full-height editor (e.g. loadout). Skip the
   /// grid layout and let the editor own the container directly.
   fillHeight?: boolean;
 };
 
 const titleCase = (s: string) =>
-  s.replace(/(^|[_\s])([a-z])/g, (_, sep, ch) => (sep ? ' ' : '') + ch.toUpperCase());
+  s.replace(
+    /(^|[_\s])([a-z])/g,
+    (_, sep, ch) => (sep ? ' ' : '') + ch.toUpperCase(),
+  );
 
 // User-facing names for groups that don't pretty-print well via titleCase.
 // titleCase("ooc_notes") yields "Ooc Notes" (looks wrong); titleCase("mind_body")
@@ -48,8 +53,7 @@ const GROUP_LABELS: Record<string, string> = {
   background: 'Background',
 };
 
-const labelForGroup = (key: string) =>
-  GROUP_LABELS[key] ?? titleCase(key);
+const labelForGroup = (key: string) => GROUP_LABELS[key] ?? titleCase(key);
 
 // User-facing names for prefs whose DM-side savefile_key is short/cryptic
 // (h_style, s_tone, etc.) and whose display_label isn't set. titleCase("s_tone")
@@ -192,7 +196,13 @@ const FULL_WIDTH_EDITORS = new Set<string>([
   'language',
 ]);
 
-export const CategoryPage = ({ page, staticData, fillHeight }: Props) => {
+export const CategoryPage = ({
+  page,
+  staticData,
+  values,
+  editorData,
+  fillHeight,
+}: Props) => {
   if (fillHeight) {
     return (
       <Box style={{ height: '100%' }}>
@@ -201,6 +211,8 @@ export const CategoryPage = ({ page, staticData, fillHeight }: Props) => {
             key={`${gi}-${group.group}`}
             group={group}
             staticData={staticData}
+            values={values}
+            editorData={editorData}
             fillHeight
           />
         ))}
@@ -225,12 +237,15 @@ export const CategoryPage = ({ page, staticData, fillHeight }: Props) => {
           <Box
             key={`${gi}-${group.group}`}
             style={
-              containsFullWidthEditor
-                ? { gridColumn: '1 / -1' }
-                : undefined
+              containsFullWidthEditor ? { gridColumn: '1 / -1' } : undefined
             }
           >
-            <GroupBlock group={group} staticData={staticData} />
+            <GroupBlock
+              group={group}
+              staticData={staticData}
+              values={values}
+              editorData={editorData}
+            />
           </Box>
         );
       })}
@@ -243,14 +258,27 @@ export const CategoryPage = ({ page, staticData, fillHeight }: Props) => {
 /// longest label and every widget column lines up. Multi-column packing
 /// looked nice for short labels but caused dropdowns/inputs to overflow
 /// inconsistently when one cell's value was longer than the next.
-const WidgetGrid = ({ widgets }: { widgets: PrefWidgetItem[] }) => (
+const WidgetGrid = ({
+  widgets,
+  values,
+}: {
+  widgets: PrefWidgetItem[];
+  values: Record<string, unknown>;
+}) => (
   <LabeledList>
     {widgets.map((item) => (
       <LabeledList.Item
         key={item.key}
         label={labelForKey(item.key, item.label)}
       >
-        <PrefWidget item={item} />
+        <PrefWidget
+          item={{
+            ...item,
+            value: Object.hasOwn(values, item.key)
+              ? values[item.key]
+              : item.value,
+          }}
+        />
       </LabeledList.Item>
     ))}
   </LabeledList>
@@ -259,10 +287,14 @@ const WidgetGrid = ({ widgets }: { widgets: PrefWidgetItem[] }) => (
 const GroupBlock = ({
   group,
   staticData,
+  values,
+  editorData,
   fillHeight,
 }: {
   group: PrefGroup;
   staticData?: Record<string, Record<string, unknown>>;
+  values: Record<string, unknown>;
+  editorData: Record<string, Record<string, unknown>>;
   fillHeight?: boolean;
 }) => {
   const widgets = group.items.filter(
@@ -283,6 +315,7 @@ const GroupBlock = ({
           <EditorBlock
             key={`editor:${item.key}-${idx}`}
             item={item}
+            editorData={editorData}
             staticData={staticData}
           />
         ))}
@@ -299,6 +332,7 @@ const GroupBlock = ({
           <EditorBlock
             key={`editor:${item.key}-${idx}`}
             item={item}
+            editorData={editorData}
             staticData={staticData}
           />
         ))}
@@ -308,13 +342,17 @@ const GroupBlock = ({
 
   return (
     <Section title={hasTitle ? labelForGroup(group.group) : null}>
-      {widgets.length > 0 && <WidgetGrid widgets={widgets} />}
+      {widgets.length > 0 && <WidgetGrid widgets={widgets} values={values} />}
       {editors.map((item, idx) => (
         <Box
           key={`editor:${item.key}-${idx}`}
           mt={widgets.length > 0 ? 0.5 : 0}
         >
-          <EditorBlock item={item} staticData={staticData} />
+          <EditorBlock
+            item={item}
+            editorData={editorData}
+            staticData={staticData}
+          />
         </Box>
       ))}
     </Section>
@@ -323,12 +361,19 @@ const GroupBlock = ({
 
 const EditorBlock = ({
   item,
+  editorData,
   staticData,
 }: {
   item: PrefGroupItem;
+  editorData: Record<string, Record<string, unknown>>;
   staticData?: Record<string, Record<string, unknown>>;
 }) => {
   if (item.type !== 'editor') return null;
   const Editor = getEditor(item.key);
-  return <Editor data={item.data} staticData={staticData?.[item.key]} />;
+  return (
+    <Editor
+      data={editorData[item.key] ?? item.data ?? {}}
+      staticData={staticData?.[item.key]}
+    />
+  );
 };

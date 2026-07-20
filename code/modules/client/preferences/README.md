@@ -146,7 +146,7 @@ Window data shape:
 
 ```ts
 {
-  dq_categories: [
+  dq_categories: [ // static_data: layout, labels, choices, thumbnails
     {
       category: "appearance",
       groups: [
@@ -157,7 +157,9 @@ Window data shape:
     },
     ...
   ],
-  dq_editor_static?: { [editor_key]: { ... } }  // per-editor static catalog data
+  dq_values?: { [preference_key]: value }        // ui_data: current widget values
+  dq_editor_data?: { [editor_key]: { ... } }     // ui_data: mutable editor state
+  dq_editor_static?: { [editor_key]: { ... } }   // static_data: editor catalogs
 }
 ```
 

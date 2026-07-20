@@ -1,6 +1,8 @@
 import { perf } from 'common/perf';
 import { setupDrag } from '../../drag';
 import { logger } from '../../logging';
+import { profileStartup, profileUpdate } from '../../profiling/hooks';
+import type { PayloadFieldSample } from '../../profiling/types';
 import { resumeRenderer } from '../../renderer';
 import { revealWindow } from '../../reveal';
 import {
@@ -20,11 +22,77 @@ type UpdatePayload = Omit<BackendState<Record<string, unknown>>, 'act'> & {
 };
 
 export function update(payload: UpdatePayload): void {
-  if (store.get(suspendedAtom)) {
+  const wasSuspended = Boolean(store.get(suspendedAtom));
+  const interfaceName = payload.config?.interface?.name;
+  const profileStart =
+    process.env.NODE_ENV === 'development'
+      ? (performance.now?.() ?? Date.now())
+      : 0;
+  if (process.env.NODE_ENV === 'development' && wasSuspended) {
+    profileStartup('backend_received', interfaceName, {
+      bytes: JSON.stringify(payload).length,
+    });
+  }
+  if (wasSuspended) {
     resume(payload);
     store.set(suspendedAtom, false);
   }
   updateData(payload);
+  if (process.env.NODE_ENV === 'development') {
+    const profileFinish = performance.now?.() ?? Date.now();
+    const payloadJson = JSON.stringify(payload);
+    profileUpdate(
+      payloadJson.length,
+      profileFinish - profileStart,
+      payloadFieldBreakdown(payload),
+    );
+    if (wasSuspended) {
+      profileStartup('backend_applied', interfaceName, {
+        duration: profileFinish - profileStart,
+      });
+    }
+  }
+}
+
+function payloadFieldBreakdown(payload: UpdatePayload): PayloadFieldSample[] {
+  const fields: PayloadFieldSample[] = [];
+  const measure = (prefix: string, value: unknown, depth: number) => {
+    try {
+      fields.push({
+        path: prefix,
+        bytes: JSON.stringify(value).length,
+        items: Array.isArray(value)
+          ? value.length
+          : value && typeof value === 'object'
+            ? Object.keys(value).length
+            : undefined,
+      });
+    } catch {
+      // Backend payloads should be JSON-safe; omit a field if instrumentation
+      // encounters something unusual instead of affecting the update.
+    }
+    if (
+      depth >= 2 ||
+      !value ||
+      typeof value !== 'object' ||
+      Array.isArray(value)
+    ) {
+      return;
+    }
+    for (const [key, child] of Object.entries(value)) {
+      measure(`${prefix}.${key}`, child, depth + 1);
+    }
+  };
+  for (const [containerName, container] of [
+    ['data', payload.data],
+    ['static_data', payload.static_data],
+    ['config', payload.config],
+    ['shared', payload.shared],
+  ] as const) {
+    if (!container || typeof container !== 'object') continue;
+    measure(containerName, container, 0);
+  }
+  return fields.sort((a, b) => b.bytes - a.bytes).slice(0, 12);
 }
 
 /// --------- Helpers -------------------------------------------------------///

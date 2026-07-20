@@ -30,6 +30,7 @@ let claimed = false;
 
 /** Reveal the window now and notify DM. Idempotent (winset is harmless to repeat). */
 export function revealWindow(): void {
+  profileStartup('window_revealed', store.get(configAtom)?.interface?.name);
   Byond.winset(Byond.windowId, { 'is-visible': true });
   Byond.sendMessage('visible');
 }
@@ -54,3 +55,6 @@ export function revealIfUnclaimed(): void {
 export function resetReveal(): void {
   claimed = false;
 }
+
+import { configAtom, store } from './events/store';
+import { profileStartup } from './profiling/hooks';

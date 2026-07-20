@@ -190,6 +190,7 @@
 	if(!ui)
 		ui = new(user, src, "InvestigateLog", "Investigate: [subject]")
 		ui.open()
+	ui.set_autoupdate(FALSE)
 
 /datum/dq_investigate_panel/tgui_data(mob/user)
 	return list(
@@ -227,6 +228,7 @@
 		snapshot_bans()
 		ui = new(user, src, "UnbanPanel", "Unban")
 		ui.open()
+	ui.set_autoupdate(FALSE)
 
 /datum/unban_panel/proc/snapshot_bans()
 	cached_rows = list()
@@ -337,6 +339,7 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 	if(!ui)
 		ui = new(user, src, "JobBanPanel", "Job-Ban Panel: [target.name]")
 		ui.open()
+	ui.set_autoupdate(FALSE)
 
 /datum/jobban_panel/proc/get_offmap_job_titles()
 	var/static/list/titles
@@ -520,6 +523,7 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 	if(!ui)
 		ui = new(user, src, "VendingLog", "[machine_name] Vending Log")
 		ui.open()
+	ui.set_autoupdate(FALSE)
 
 /datum/dq_vending_log_panel/tgui_data(mob/user)
 	return list(
@@ -559,6 +563,7 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 	if(!ui)
 		ui = new(user, src, "DeleteBookPanel", "Delete Book")
 		ui.open()
+	ui.set_autoupdate(FALSE)
 
 /datum/dq_delete_book_panel/tgui_data(mob/user)
 	return list(

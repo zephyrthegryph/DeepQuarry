@@ -19,10 +19,9 @@ import type { CharacterPreviewAssets, CharacterSetupData } from './types';
 /// container width. Image-rendering: pixelated keeps the 32-px source crisp
 /// when CSS scales it up.
 const PreviewPane = ({ assets }: { assets: CharacterPreviewAssets }) => {
-  const directions: Array<keyof Pick<
-    CharacterPreviewAssets,
-    'south' | 'north' | 'east' | 'west'
-  >> = ['south', 'north', 'east', 'west'];
+  const directions: Array<
+    keyof Pick<CharacterPreviewAssets, 'south' | 'north' | 'east' | 'west'>
+  > = ['south', 'north', 'east', 'west'];
   return (
     <Box
       style={{
@@ -133,9 +132,13 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 const titleCase = (s: string) =>
-  s.replace(/(^|[_\s])([a-z])/g, (_, sep, ch) => (sep ? ' ' : '') + ch.toUpperCase());
+  s.replace(
+    /(^|[_\s])([a-z])/g,
+    (_, sep, ch) => (sep ? ' ' : '') + ch.toUpperCase(),
+  );
 
-const labelForCategory = (key: string) => CATEGORY_LABELS[key] ?? titleCase(key);
+const labelForCategory = (key: string) =>
+  CATEGORY_LABELS[key] ?? titleCase(key);
 
 // Editors that fill their container and manage their own internal scrolling. When the
 // active page hosts one of these, the wrapping Section drops `scrollable` so we don't
@@ -146,6 +149,8 @@ const FULL_HEIGHT_EDITORS = new Set<string>(['loadout', 'mind_body']);
 export const DQCharacterSetup = () => {
   const { act, data } = useBackend<CharacterSetupData>();
   const categories = data.dq_categories ?? [];
+  const values = data.dq_values ?? {};
+  const editorData = data.dq_editor_data ?? {};
   const previewAssets = data.character_preview_assets ?? {};
   const [selected, setSelected] = useState<string | null>(null);
 
@@ -235,10 +240,15 @@ export const DQCharacterSetup = () => {
               <Stack.Item grow>
                 <Section fill fitted scrollable={!pageIsFullHeight}>
                   {selectedPage && (
-                    <Box p={0.5} style={{ height: pageIsFullHeight ? '100%' : 'auto' }}>
+                    <Box
+                      p={0.5}
+                      style={{ height: pageIsFullHeight ? '100%' : 'auto' }}
+                    >
                       <CategoryPage
                         page={selectedPage}
                         staticData={data.dq_editor_static}
+                        values={values}
+                        editorData={editorData}
                         fillHeight={pageIsFullHeight}
                       />
                     </Box>

@@ -14,11 +14,12 @@ import {
   Suspense,
   useEffect,
 } from 'react';
-import { backendStateAtom } from './events/store';
+import { backendStateAtom, configAtom, store } from './events/store';
 import { LoadingScreen } from './interfaces/common/LoadingScreen';
 import { LobbyMenu } from './interfaces/LobbyMenu';
 import { MediaPlayer } from './interfaces/MediaPlayer';
 import { Window } from './layouts';
+import { profileStartup } from './profiling/hooks';
 import { revealIfUnclaimed } from './reveal';
 
 // EAGER interfaces — kept in the main bundle, never lazy-split. These are the
@@ -151,11 +152,15 @@ function getRoutedComponent(name: string): ComponentType {
     Routed = () => <RoutingErrorWindow type="notFound" name={name} />;
   } else {
     Routed = lazy(async () => {
+      profileStartup('chunk_load_started', name, { path });
       const esModule = await requireInterface(path);
+      profileStartup('chunk_load_finished', name, { path });
       const Resolved = esModule[name];
       if (!Resolved) {
         return {
-          default: () => <RoutingErrorWindow type="missingExport" name={name} />,
+          default: () => (
+            <RoutingErrorWindow type="missingExport" name={name} />
+          ),
         };
       }
       return { default: Resolved };
@@ -182,6 +187,13 @@ const SELF_MANAGED = new Set<string>(['Tooltip']);
 // resizes. resume() (events/handlers/update.ts) keeps a delayed failsafe reveal.
 function RevealWindow({ children }: { children: ReactNode }) {
   useEffect(() => {
+    const interfaceName = store.get(configAtom)?.interface?.name;
+    profileStartup('content_committed', interfaceName, { source: 'route' });
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        profileStartup('first_paint', interfaceName, { source: 'route' });
+      });
+    });
     revealIfUnclaimed();
   }, []);
   return <>{children}</>;
@@ -217,7 +229,11 @@ class RouteErrorBoundary extends Component<
   componentDidCatch(error: Error, info: ErrorInfo) {
     // Surface to the console (picked up by the tgui logging/error pipeline). This is
     // the path a failed chunk fetch lands on, so make it visible rather than silent.
-    console.error(`Interface "${this.props.name}" failed to load:`, error, info);
+    console.error(
+      `Interface "${this.props.name}" failed to load:`,
+      error,
+      info,
+    );
   }
 
   render() {
@@ -274,6 +290,7 @@ export function RoutedComponent() {
   }
 
   const Component = getRoutedComponent(name);
+  profileStartup('route_requested', name);
 
   // The Suspense fallback is null (not a <Window>): while the interface chunk loads,
   // nothing is rendered and the host window stays as the DM left it (hidden for pooled

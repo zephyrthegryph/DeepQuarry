@@ -110,14 +110,17 @@
 						cell_charge = 0
 					else
 						cell_charge = A.cell.percent()
+					// This list is sent every TGUI tick and can contain hundreds of
+					// APCs. A positional tuple avoids repeating seven JSON field names
+					// per row, cutting Power Monitor bridge traffic substantially.
 					data["areas"] += list(list(
-						"name" = A.area.name,
-						"charge" = cell_charge,
-						"load" = DisplayPower(A.lastused_total),
-						"charging" = A.charging,
-						"eqp" = A.equipment,
-						"lgt" = A.lighting,
-						"env" = A.environ,
+						A.area.name,
+						cell_charge,
+						DisplayPower(A.lastused_total),
+						A.charging,
+						A.equipment,
+						A.lighting,
+						A.environ,
 					))
 
 	return data

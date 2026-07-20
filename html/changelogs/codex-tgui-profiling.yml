@@ -1,0 +1,7 @@
+author: "Codex"
+delete-after: true
+changes:
+  - bugfix: "Stabilized the pointer cursor across TGUI button contents and icons."
+  - code_imp: "Added automated TGUI performance benchmarks and a development-only live profiler."
+  - qol: "Reduced Power Monitor update size and rendering stalls on large station grids."
+  - qol: "Stopped Character Preferences from polling and resending its full widget catalog on every update."

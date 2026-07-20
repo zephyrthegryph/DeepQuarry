@@ -158,12 +158,7 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 	"game"        = list("input", "view", "sound", "ui", "chat", "persistence", "roleplay", "nif", "pai"),
 ))
 
-/datum/preference_middleware/character_setup/get_ui_data(mob/user)
-	var/list/data = ..()
-
-	if(preferences.current_window != PREFERENCE_TAB_CHARACTER_PREFERENCES)
-		return data
-
+/datum/preference_middleware/character_setup/proc/dq_build_category_structure()
 	// Build the category page list. Each category has zero or more groups; each group has
 	// widget items (auto-rendered) and editor items (delegated to a registered editor).
 	var/list/categories_data = list()
@@ -332,7 +327,34 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 				group["sort_priority"] = idx ? idx : 999
 			sortTim(cat["groups"], GLOBAL_PROC_REF(dq_cmp_group_by_sort_priority))
 
-	data["dq_categories"] = categories_data
+	return categories_data
+
+/datum/preference_middleware/character_setup/get_ui_data(mob/user)
+	var/list/data = ..()
+
+	if(preferences.current_window != PREFERENCE_TAB_CHARACTER_PREFERENCES)
+		return data
+
+	// The category tree, widget configuration, choices, thumbnails, and editor
+	// placement live in static_data. Recurring updates only need the current
+	// widget values and each composite editor's mutable state.
+	var/list/widget_values = list()
+	for(var/pref_type in GLOB.preference_entries)
+		var/datum/preference/pref = GLOB.preference_entries[pref_type]
+		if(pref.savefile_identifier != PREFERENCE_CHARACTER)
+			continue
+		if(pref.get_widget(preferences) == PREF_WIDGET_HIDDEN)
+			continue
+		widget_values[pref.savefile_key] = preferences.read_preference(pref_type)
+	data["dq_values"] = widget_values
+
+	var/list/editor_data = list()
+	for(var/datum/preference_editor/editor as anything in GLOB.preference_editors)
+		if(editor.hidden)
+			continue
+		editor_data[editor.key] = editor.build_ui_data(preferences)
+	data["dq_editor_data"] = editor_data
+
 	return data
 
 /proc/dq_cmp_category_entries(list/a, list/b)
@@ -384,6 +406,16 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 
 	if(preferences.current_window != PREFERENCE_TAB_CHARACTER_PREFERENCES)
 		return data
+
+	var/list/categories_data = dq_build_category_structure()
+	for(var/list/category as anything in categories_data)
+		for(var/list/group as anything in category["groups"])
+			for(var/list/item as anything in group["items"])
+				if(item["type"] == "widget")
+					item -= "value"
+				else if(item["type"] == "editor")
+					item -= "data"
+	data["dq_categories"] = categories_data
 
 	// editor static_data is cached per-preferences-datum. Catalogs
 	// (markings, loadout, hair) don't change between opens; rebuilding them
@@ -452,4 +484,9 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 			if(!editor)
 				return FALSE
 			var/result = editor.handle_action(preferences, params["action"], params["params"], ui.user)
+			// Switching human/robot/pAI mode changes which category groups exist.
+			// That structure now lives in static_data, so refresh it only for the
+			// structural species-picker action rather than on every preference edit.
+			if(result == PREF_UPDATE_ACCEPTED && editor_key == "species_picker")
+				preferences.update_tgui_static_data(ui.user)
 			return (result == PREF_UPDATE_ACCEPTED)

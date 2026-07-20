@@ -29,6 +29,7 @@ import {
 } from '../drag';
 import { suspendStart } from '../events/handlers/suspense';
 import { createLogger } from '../logging';
+import { profileStartup } from '../profiling/hooks';
 import { claimReveal, revealWindow } from '../reveal';
 import { Layout } from './Layout';
 import { TitleBar } from './TitleBar';
@@ -86,6 +87,7 @@ export function Window(props: Props) {
       claimReveal();
 
       const updateGeometry = async () => {
+        profileStartup('geometry_started', config.interface?.name);
         const options = {
           ...config.window,
           size: DEFAULT_SIZE,
@@ -107,6 +109,7 @@ export function Window(props: Props) {
             await recallWindowGeometry(options);
           }
         } finally {
+          profileStartup('geometry_finished', config.interface?.name);
           revealWindow();
           logger.log('set to visible');
         }
