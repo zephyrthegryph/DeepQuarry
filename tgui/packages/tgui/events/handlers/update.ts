@@ -33,6 +33,8 @@ export function update(payload: UpdatePayload): void {
     profileStartup('backend_received', interfaceName, {
       bytes: JSON.stringify(payload).length,
       prewarmed: Boolean(payload.config?.window?.prewarmed),
+      nativeShell: Boolean(payload.config?.window?.native_shell),
+      generation: payload.config?.window?.generation,
     });
   }
   if (
@@ -144,6 +146,7 @@ function resume(payload: UpdatePayload): void {
   resumeRenderer();
   // Setup drag
   setupDrag();
+  const generation = payload.config?.window?.generation;
   // Failsafe reveal — RevealWindow (routes.tsx) is the primary, content-timed reveal.
   setTimeout(() => {
     perf.mark('resume/start');
@@ -152,7 +155,7 @@ function resume(payload: UpdatePayload): void {
       return;
     }
 
-    revealWindow();
+    revealWindow(generation);
     perf.mark('resume/finish');
 
     if (process.env.NODE_ENV !== 'production') {

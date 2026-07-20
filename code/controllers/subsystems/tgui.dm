@@ -33,10 +33,10 @@ SUBSYSTEM_DEF(tgui)
 	/// emit a manifest (e.g. an unsplit bundle) — interfaces then rely on whatever is
 	/// already in the main bundle.
 	var/list/chunk_manifest
-	/// Number of reusable browser shells warmed per client. These windows load
-	/// the shared TGUI runtime while hidden, then remain READY for an interface
-	/// to acquire without another browse()/React bootstrap.
-	var/prewarm_window_count = TGUI_WINDOW_SOFT_LIMIT
+	/// Number of idle reusable browser shells kept warm per client. The reserve
+	/// is replenished as shells are acquired instead of opening the whole pool at
+	/// login, avoiding a Chromium startup burst while keeping normal opens warm.
+	var/prewarm_window_reserve = 2
 
 /datum/controller/subsystem/tgui/PreInit()
 	basehtml = file2text('tgui/public/tgui.html')
@@ -137,6 +137,7 @@ SUBSYSTEM_DEF(tgui)
 		if(window.locked)
 			continue
 		if(window.status == TGUI_WINDOW_READY)
+			addtimer(CALLBACK(src, PROC_REF(maintain_client_prewarm), user.client), 1 SECOND, TIMER_UNIQUE)
 			return window
 		if(window.status == TGUI_WINDOW_CLOSED)
 			window.status = TGUI_WINDOW_LOADING
@@ -146,6 +147,7 @@ SUBSYSTEM_DEF(tgui)
 		log_tgui(user, "Error: Pool exhausted",
 			context = "SStgui/request_pooled_window")
 		return null
+	addtimer(CALLBACK(src, PROC_REF(maintain_client_prewarm), user.client), 1 SECOND, TIMER_UNIQUE)
 	return window
 
 /**
@@ -156,7 +158,7 @@ SUBSYSTEM_DEF(tgui)
  * real UI is left untouched.
  */
 /datum/controller/subsystem/tgui/proc/prewarm_client_window(client/client, pool_index)
-	if(!client || QDELETED(client) || pool_index < 1 || pool_index > prewarm_window_count)
+	if(!client || QDELETED(client) || pool_index < 1 || pool_index > TGUI_WINDOW_SOFT_LIMIT)
 		return
 	var/window_id = TGUI_WINDOW_ID(pool_index)
 	var/datum/tgui_window/window = client.tgui_windows[window_id]
@@ -177,13 +179,33 @@ SUBSYSTEM_DEF(tgui)
 	if(flush_queue)
 		client.browse_queue_flush()
 
+/** Keep a small idle reserve warm, starting at most one browser per call. */
+/datum/controller/subsystem/tgui/proc/maintain_client_prewarm(client/client)
+	if(!client || QDELETED(client))
+		return
+	var/reserve_count = 0
+	var/closed_index
+	for(var/index in 1 to TGUI_WINDOW_SOFT_LIMIT)
+		var/window_id = TGUI_WINDOW_ID(index)
+		var/datum/tgui_window/window = client.tgui_windows[window_id]
+		if(!window)
+			if(!closed_index)
+				closed_index = index
+			continue
+		if(!window.locked && (window.status == TGUI_WINDOW_READY || (window.prewarmed && window.status == TGUI_WINDOW_LOADING)))
+			reserve_count++
+		else if(!window.locked && window.status == TGUI_WINDOW_CLOSED && !closed_index)
+			closed_index = index
+	if(reserve_count < prewarm_window_reserve && closed_index)
+		prewarm_client_window(client, closed_index)
+
 /datum/controller/subsystem/tgui/proc/schedule_client_prewarm(client/client)
 	if(!client)
 		return
-	for(var/index in 1 to prewarm_window_count)
-		var/datum/callback/prewarm_callback = CALLBACK(src, PROC_REF(prewarm_client_window), client, index)
+	for(var/index in 1 to prewarm_window_reserve)
+		var/datum/callback/prewarm_callback = CALLBACK(src, PROC_REF(maintain_client_prewarm), client)
 		var/prewarm_delay = (1 + ((index - 1) * 2)) SECONDS
-		addtimer(prewarm_callback, prewarm_delay, TIMER_UNIQUE)
+		addtimer(prewarm_callback, prewarm_delay)
 
 /**
  * public

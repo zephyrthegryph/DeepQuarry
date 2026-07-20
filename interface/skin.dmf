@@ -1405,7 +1405,34 @@ window "popupwindow"
 		statusbar = false
 		can-resize = false
 
+// Hidden native template for reusable, flicker-free TGUI browser shells. Runtime pool
+// windows are cloned from this instead of being created by browse(), because
+// browse-created popup windows are visible before their page can hide itself.
+window "tgui_window_template"
+	elem "tgui_window_template"
+		type = MAIN
+		pos = 0,0
+		size = 400x600
+		anchor1 = -1,-1
+		anchor2 = -1,-1
+		is-visible = false
+		saved-params = ""
+		statusbar = false
+		can-minimize = false
+		can-resize = true
+		titlebar = true
+	elem "browser"
+		type = BROWSER
+		pos = 0,0
+		size = 400x600
+		anchor1 = 0,0
+		anchor2 = 100,100
+		is-visible = true
+		background-color = none
+		saved-params = ""
+
 window "prefs_markings_subwindow"
+
 	elem "prefs_markings_subwindow"
 		type = MAIN
 		pos = 281,0

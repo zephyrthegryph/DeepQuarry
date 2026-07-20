@@ -22,6 +22,8 @@ type TguiWindow = {
   scale: BinaryIO;
   size: [number, number];
   prewarmed?: BinaryIO;
+  generation?: number;
+  native_shell?: BinaryIO;
 };
 
 type User = {

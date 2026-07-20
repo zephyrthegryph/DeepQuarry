@@ -14,6 +14,10 @@
 	var/visible = FALSE
 	/// TRUE when the shared browser shell was initialized before a UI acquired it.
 	var/prewarmed = FALSE
+	/// Monotonic token identifying the current use of this reusable shell.
+	var/generation = 0
+	/// TRUE when this pooled shell was cloned from the hidden native skin template.
+	var/native_shell = FALSE
 	var/datum/tgui/locked_by
 	var/datum/subscriber_object
 	var/subscriber_delegate
@@ -79,6 +83,16 @@
 	src.initial_inline_css = inline_css
 	status = TGUI_WINDOW_LOADING
 	fatally_errored = FALSE
+	// browse() popup options cannot make a newly-created native window hidden.
+	// Clone an already-hidden skin window first, so browse() targets its existing
+	// browser control without ever painting a default popup on screen.
+	if(pooled)
+		if(!winexists(client, id))
+			winclone(client, "tgui_window_template", id)
+		native_shell = winexists(client, id) == "MAIN"
+		if(native_shell)
+			winshow(client, id, FALSE)
+			winset(client, id, "titlebar=[!fancy];can-resize=[!fancy];can-minimize=false;on-close=\"uiclose [id]\"")
 	// Build window options
 	var/options = "file=[id].html;can_minimize=0;auto_format=0;"
 	// Remove titlebar and resize handles for a fancy window
@@ -96,8 +110,6 @@
 	// (suspended) window regardless of layout, so this can't strand a window hidden.
 	// Scoped to pooled windows only — dedicated windows (lobby, media, tooltip)
 	// manage their own visibility and are left alone.
-	if(pooled)
-		options += "is-visible=0;"
 	// Generate page html
 	var/html = SStgui.basehtml
 	html = replacetextEx(html, "\[tgui:windowId]", id)
@@ -130,6 +142,10 @@
 		html = replacetextEx(html, "<!-- tgui:inline-css -->", inline_css)
 	// Open the window
 	client << browse(html, "window=[id];[options]")
+	if(native_shell)
+		// Defensive across client versions: only the JS geometry transaction may
+		// make a reusable shell visible.
+		winshow(client, id, FALSE)
 	// Detect whether the control is a browser
 	is_browser = winexists(client, id) == "BROWSER"
 	// Instruct the client to signal UI when the window is closed.
@@ -189,8 +205,10 @@
  * optional ui /datum/tgui
  */
 /datum/tgui_window/proc/acquire_lock(datum/tgui/ui)
+	generation++
 	locked = TRUE
 	locked_by = ui
+	visible = FALSE
 
 /**
  * public
@@ -350,6 +368,15 @@
 		? "[id]:replaceHtml" \
 		: "[id].browser:replaceHtml")
 
+/** Verify a newly-warmed native shell never became visible on the client. */
+/datum/tgui_window/proc/audit_prewarmed_hidden()
+	if(!client || locked || !prewarmed)
+		return
+	var/is_visible = winget(client, id, "is-visible")
+	if(is_visible == "true")
+		log_tgui(client, "Prewarmed shell became visible; forcing it hidden.", window = src)
+		winshow(client, id, FALSE)
+
 /**
  * private
  *
@@ -369,6 +396,8 @@
 	if(status != TGUI_WINDOW_READY)
 		status = TGUI_WINDOW_READY
 		flush_message_queue()
+	if(type == "ready" && prewarmed && !locked)
+		INVOKE_ASYNC(src, PROC_REF(audit_prewarmed_hidden))
 	// Pass message to UI that requested the lock
 	if(locked && locked_by)
 		var/prevent_default = locked_by.on_message(type, payload, href_list)
@@ -386,6 +415,10 @@
 		if("ping")
 			send_message("ping/reply", payload)
 		if("visible")
+			var/reported_generation = text2num("[payload?["generation"]]")
+			if(reported_generation && reported_generation != generation)
+				log_tgui(client, "Ignored stale reveal for generation [reported_generation]; current generation is [generation].", window = src)
+				return
 			visible = TRUE
 			SEND_SIGNAL(src, COMSIG_TGUI_WINDOW_VISIBLE, client)
 		if("suspend")

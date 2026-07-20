@@ -1,6 +1,7 @@
 author: "Codex"
 delete-after: true
 changes:
+  - bugfix: "Prevented TGUI prewarm shells from appearing on screen and made window geometry apply atomically before reveal."
   - bugfix: "Stabilized the pointer cursor across TGUI button contents and icons."
   - code_imp: "Added automated TGUI performance benchmarks and a development-only live profiler."
   - qol: "Reduced Power Monitor update size and rendering stalls on large station grids."

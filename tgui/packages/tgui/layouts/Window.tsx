@@ -21,6 +21,7 @@ import { decodeHtmlEntities } from 'tgui-core/string';
 import { useBackend } from '../backend';
 import {
   dragStartHandler,
+  type ResolvedWindowGeometry,
   recallWindowGeometry,
   resizeStartHandler,
   setWindowKey,
@@ -78,6 +79,7 @@ export function Window(props: Props) {
   const { scale } = config?.window || false;
 
   useEffect(() => {
+    let cancelled = false;
     if (!suspended && isReadyToRender) {
       // Claim the reveal synchronously, before any await. This Window owns its
       // own visibility (it reveals AFTER geometry below), so the route-level
@@ -104,15 +106,21 @@ export function Window(props: Props) {
         // try/finally: if the geometry recall throws, the window must STILL
         // reveal — the resume() failsafe only covers previously-suspended
         // windows, so a fresh window would otherwise stay invisible forever.
+        let geometry: ResolvedWindowGeometry | undefined;
         try {
           if (!fitted) {
-            await recallWindowGeometry(options);
+            geometry = await recallWindowGeometry(options);
           }
-        } finally {
-          profileStartup('geometry_finished', config.interface?.name);
-          revealWindow();
-          logger.log('set to visible');
+        } catch (error) {
+          logger.error('failed to resolve window geometry', error);
+          geometry = options.size ? { size: options.size } : undefined;
         }
+        if (cancelled) {
+          return;
+        }
+        profileStartup('geometry_finished', config.interface?.name);
+        revealWindow(config.window?.generation, geometry);
+        logger.log('set to visible');
       };
 
       Byond.winset(Byond.windowId, {
@@ -123,9 +131,22 @@ export function Window(props: Props) {
       updateGeometry();
     }
     return () => {
+      cancelled = true;
       logger.log('unmounting');
     };
-  }, [isReadyToRender, width, height, scale]);
+  }, [
+    canClose,
+    config.interface?.name,
+    config.window?.generation,
+    config.window?.key,
+    config.window?.locked,
+    fitted,
+    height,
+    isReadyToRender,
+    scale,
+    suspended,
+    width,
+  ]);
 
   const fancy = config.window?.fancy;
 

@@ -187,14 +187,16 @@ const SELF_MANAGED = new Set<string>(['Tooltip']);
 // resizes. resume() (events/handlers/update.ts) keeps a delayed failsafe reveal.
 function RevealWindow({ children }: { children: ReactNode }) {
   useEffect(() => {
-    const interfaceName = store.get(configAtom)?.interface?.name;
+    const config = store.get(configAtom);
+    const interfaceName = config?.interface?.name;
+    const generation = config?.window?.generation;
     profileStartup('content_committed', interfaceName, { source: 'route' });
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         profileStartup('first_paint', interfaceName, { source: 'route' });
       });
     });
-    revealIfUnclaimed();
+    revealIfUnclaimed(generation);
   }, []);
   return <>{children}</>;
 }

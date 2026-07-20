@@ -2,7 +2,7 @@
  * @file
  * Window-reveal coordination.
  *
- * A tgui window is born hidden (`is-visible=0`, set DM-side for pooled windows)
+ * A pooled tgui window is cloned from a hidden native skin template
  * and must be revealed exactly once its content is ready — but for `<Window>`
  * interfaces "ready" means *after geometry has been applied*, otherwise the
  * window paints at BYOND's default size for a frame and then resizes (the
@@ -26,13 +26,53 @@
  * a Pane-interface it must fall back to the route-level reveal again.
  */
 
+import type { ResolvedWindowGeometry } from './drag';
+import { configAtom, store, suspendedAtom } from './events/store';
+import { profileStartup } from './profiling/hooks';
+
 let claimed = false;
 
-/** Reveal the window now and notify DM. Idempotent (winset is harmless to repeat). */
-export function revealWindow(): void {
-  profileStartup('window_revealed', store.get(configAtom)?.interface?.name);
-  Byond.winset(Byond.windowId, { 'is-visible': true });
-  Byond.sendMessage('visible');
+type NativeRevealPayload = {
+  'is-visible': true;
+  pos?: string;
+  size?: string;
+};
+
+/** Build one native transaction so BYOND cannot paint between resize and show. */
+export function buildNativeRevealPayload(
+  geometry?: ResolvedWindowGeometry,
+): NativeRevealPayload {
+  return {
+    'is-visible': true,
+    ...(geometry?.pos && { pos: `${geometry.pos[0]},${geometry.pos[1]}` }),
+    ...(geometry?.size && { size: `${geometry.size[0]}x${geometry.size[1]}` }),
+  };
+}
+
+/** Reveal only the current acquisition of a non-suspended pooled shell. */
+export function revealWindow(
+  generation?: number,
+  geometry?: ResolvedWindowGeometry,
+): boolean {
+  const config = store.get(configAtom);
+  const currentGeneration = config?.window?.generation;
+  if (
+    store.get(suspendedAtom) ||
+    (generation !== undefined && generation !== currentGeneration)
+  ) {
+    return false;
+  }
+  const nativePayload = buildNativeRevealPayload(geometry);
+  profileStartup('window_revealed', config?.interface?.name, {
+    generation: currentGeneration,
+    atomicGeometry: Boolean(geometry?.size || geometry?.pos),
+  });
+  Byond.winset(Byond.windowId, nativePayload);
+  Byond.sendMessage('visible', {
+    generation: currentGeneration,
+    geometry: nativePayload,
+  });
+  return true;
 }
 
 /**
@@ -45,9 +85,9 @@ export function claimReveal(): void {
 }
 
 /** Route-level fallback reveal: fires only if no layout claimed the reveal. */
-export function revealIfUnclaimed(): void {
+export function revealIfUnclaimed(generation?: number): void {
   if (!claimed) {
-    revealWindow();
+    revealWindow(generation);
   }
 }
 
@@ -55,6 +95,3 @@ export function revealIfUnclaimed(): void {
 export function resetReveal(): void {
   claimed = false;
 }
-
-import { configAtom, store } from './events/store';
-import { profileStartup } from './profiling/hooks';

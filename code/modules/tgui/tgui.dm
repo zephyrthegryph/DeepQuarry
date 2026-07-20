@@ -308,6 +308,8 @@
 			"locked" = user.read_preference(/datum/preference/toggle/tgui_lock),
 			"scale" = user.read_preference(/datum/preference/toggle/ui_scale),
 			"prewarmed" = window?.prewarmed ? TRUE : FALSE,
+			"generation" = window?.generation || 0,
+			"native_shell" = window?.native_shell ? TRUE : FALSE,
 		),
 		"client" = list(
 			"ckey" = user.client.ckey,
