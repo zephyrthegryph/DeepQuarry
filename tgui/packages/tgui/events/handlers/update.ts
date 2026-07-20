@@ -25,11 +25,12 @@ export function update(payload: UpdatePayload): void {
   const wasSuspended = Boolean(store.get(suspendedAtom));
   const interfaceName = payload.config?.interface?.name;
   const previousInterface = store.get(configAtom)?.interface?.name;
-  const profileStart =
-    process.env.NODE_ENV === 'development'
-      ? (performance.now?.() ?? Date.now())
-      : 0;
-  if (process.env.NODE_ENV === 'development' && wasSuspended) {
+  const profiling = Boolean(
+    payload.config?.client?.profiling ||
+      store.get(configAtom)?.client?.profiling,
+  );
+  const profileStart = profiling ? (performance.now?.() ?? Date.now()) : 0;
+  if (profiling && wasSuspended) {
     profileStartup('backend_received', interfaceName, {
       bytes: JSON.stringify(payload).length,
       prewarmed: Boolean(payload.config?.window?.prewarmed),
@@ -37,10 +38,7 @@ export function update(payload: UpdatePayload): void {
       generation: payload.config?.window?.generation,
     });
   }
-  if (
-    process.env.NODE_ENV === 'development' &&
-    payload.data?.dq_server_profile
-  ) {
+  if (profiling && payload.data?.dq_server_profile) {
     profileStartup('server_profile', interfaceName, {
       ...(payload.data.dq_server_profile as Record<string, unknown>),
       catalog_build_ms: payload.data.dq_catalog_build_ms,
@@ -64,7 +62,7 @@ export function update(payload: UpdatePayload): void {
     resume(payload);
     store.set(suspendedAtom, false);
   }
-  if (process.env.NODE_ENV === 'development') {
+  if (profiling) {
     const profileFinish = performance.now?.() ?? Date.now();
     const payloadJson = JSON.stringify(payload);
     profileUpdate(

@@ -405,7 +405,9 @@ const headerStyle = {
 } as const;
 
 export function DevelopmentProfiler({ children }: { children: ReactNode }) {
-  const config = useAtomValue(configAtom);
+  // This wrapper is intentionally mounted outside <App>'s Provider, so explicitly
+  // subscribe to the same custom store used by the backend event handlers.
+  const config = useAtomValue(configAtom, { store });
   const enabled = Boolean(config?.client?.profiling);
   useEffect(() => {
     if (!enabled) return;
