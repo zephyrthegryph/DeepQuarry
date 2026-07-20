@@ -148,12 +148,34 @@ function recordStartupSample(sample: StartupSample): void {
     const chunkEnd = startupSamples.find(
       (entry) => entry.stage === 'chunk_load_finished',
     );
+    const commit = startupSamples.find(
+      (entry) => entry.stage === 'content_committed',
+    );
+    const geometryStart = startupSamples.find(
+      (entry) => entry.stage === 'geometry_started',
+    );
+    const geometryEnd = startupSamples.find(
+      (entry) => entry.stage === 'geometry_finished',
+    );
+    const revealed = startupSamples.find(
+      (entry) => entry.stage === 'window_revealed',
+    );
     Byond.sendMessage('perf/status', {
       kind: 'startup-complete',
       interface: sample.interfaceName || backend?.interfaceName,
       total_ms: backend ? sample.at - backend.at : undefined,
       chunk_ms: chunkStart && chunkEnd ? chunkEnd.at - chunkStart.at : 0,
-      stages: startupSamples,
+      backend_to_commit_ms:
+        backend && commit ? commit.at - backend.at : undefined,
+      geometry_ms:
+        geometryStart && geometryEnd
+          ? geometryEnd.at - geometryStart.at
+          : undefined,
+      backend_to_reveal_ms:
+        backend && revealed ? revealed.at - backend.at : undefined,
+      native_changes: sample.detail?.changes,
+      native_first: sample.detail?.first,
+      native_last: sample.detail?.last,
     });
     startupSessionActive = false;
   }
@@ -173,6 +195,7 @@ function installRuntimeObservers(): () => void {
   let y = -1;
   let moved = false;
   let lastCursorSignature = '';
+  let viewport = `${window.innerWidth}x${window.innerHeight}`;
 
   const pointerMove = (event: PointerEvent) => {
     moved = event.clientX !== x || event.clientY !== y;
@@ -180,6 +203,20 @@ function installRuntimeObservers(): () => void {
     y = event.clientY;
   };
   window.addEventListener('pointermove', pointerMove, { passive: true });
+  const viewportResize = () => {
+    const next = `${window.innerWidth}x${window.innerHeight}`;
+    if (next !== viewport) {
+      automaticLog('browser-viewport-resize', {
+        previous: viewport,
+        current: next,
+        after_reveal: startupStages.has(
+          `window_revealed:${store.get(configAtom)?.interface?.name || ''}`,
+        ),
+      });
+      viewport = next;
+    }
+  };
+  window.addEventListener('resize', viewportResize, { passive: true });
 
   const frame = (at: number) => {
     try {
@@ -193,7 +230,7 @@ function installRuntimeObservers(): () => void {
         const element = document.elementFromPoint(x, y);
         const cursor = element ? getComputedStyle(element).cursor : '(none)';
         const target = targetName(element);
-        const signature = `${cursor}|${target}|${moved}`;
+        const signature = `${cursor}|${target}`;
         if (signature !== lastCursorSignature) {
           add('cursors', { at, x, y, cursor, target, stationary: !moved });
           if (!moved && lastCursorSignature) {
@@ -217,6 +254,7 @@ function installRuntimeObservers(): () => void {
   return () => {
     cancelAnimationFrame(frameId);
     window.removeEventListener('pointermove', pointerMove);
+    window.removeEventListener('resize', viewportResize);
   };
 }
 

@@ -67,17 +67,6 @@ function isCurrentGeneration(generation?: number): boolean {
   );
 }
 
-async function waitForNativeGeometry(): Promise<void> {
-  const confirmed = Byond.winget(Byond.windowId, 'size;pos').then(
-    () => undefined,
-    () => undefined,
-  );
-  const timeout = new Promise<void>((resolve) => {
-    setTimeout(resolve, 500);
-  });
-  await Promise.race([confirmed, timeout]);
-}
-
 function nativeGeometrySignature(observed: any): string | undefined {
   const size = observed?.size;
   const pos = observed?.pos;
@@ -85,6 +74,42 @@ function nativeGeometrySignature(observed: any): string | undefined {
   const sizeText = size ? `${size.x}x${size.y}` : '';
   const posText = pos ? `${pos.x},${pos.y}` : '';
   return `${sizeText}@${posText}`;
+}
+
+function geometryMatches(
+  observed: any,
+  expected: NativeGeometryPayload,
+): boolean {
+  const observedSize = observed?.size;
+  const observedPos = observed?.pos;
+  const actualSize = observedSize ? `${observedSize.x}x${observedSize.y}` : '';
+  const actualPos = observedPos ? `${observedPos.x},${observedPos.y}` : '';
+  return (
+    (!expected.size || expected.size === actualSize) &&
+    (!expected.pos || expected.pos === actualPos)
+  );
+}
+
+async function waitForNativeGeometry(
+  expected: NativeGeometryPayload,
+): Promise<{ matched: boolean; observed?: string }> {
+  const deadline = performance.now() + 500;
+  let observed: any;
+  try {
+    do {
+      observed = await Byond.winget(Byond.windowId, 'size;pos');
+      if (geometryMatches(observed, expected)) {
+        return { matched: true, observed: nativeGeometrySignature(observed) };
+      }
+      // Yield a frame before checking again. DreamSeeker can acknowledge the
+      // winget call before the native OS window has committed its resize.
+      // Hidden browser windows may throttle animation frames indefinitely.
+      await new Promise<void>((resolve) => setTimeout(resolve, 16));
+    } while (performance.now() < deadline);
+  } catch {
+    // Reveal still has a bounded fallback; telemetry records the mismatch.
+  }
+  return { matched: false, observed: nativeGeometrySignature(observed) };
 }
 
 async function monitorRevealedGeometry(
@@ -120,8 +145,11 @@ async function monitorRevealedGeometry(
       kind: 'post-reveal-geometry-change',
       generation,
       interface: store.get(configAtom)?.interface?.name,
-      expected,
-      observations,
+      expected_size: expected.size,
+      expected_pos: expected.pos,
+      first: observations[0],
+      last: observations.at(-1),
+      changes: unique.length - 1,
     });
   }
 }
@@ -154,7 +182,17 @@ export async function revealWindow(
       ...nativeGeometry,
       ...(nativeShell ? { alpha: 0 } : { 'is-visible': false }),
     });
-    await waitForNativeGeometry();
+    const verification = await waitForNativeGeometry(nativeGeometry);
+    if (!verification.matched && config?.client?.profiling) {
+      Byond.sendMessage('perf/flicker', {
+        kind: 'pre-reveal-geometry-mismatch',
+        generation: currentGeneration,
+        interface: config?.interface?.name,
+        expected_size: nativeGeometry.size,
+        expected_pos: nativeGeometry.pos,
+        observed: verification.observed,
+      });
+    }
     if (!isCurrentGeneration(generation)) {
       return false;
     }

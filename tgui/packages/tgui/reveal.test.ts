@@ -4,10 +4,12 @@ import type { Config } from './events/types';
 import { buildNativeRevealPayload, revealWindow } from './reveal';
 
 const originalWinset = Byond.winset;
+const originalWinget = Byond.winget;
 const originalSendMessage = Byond.sendMessage;
 
 afterEach(() => {
   Byond.winset = originalWinset;
+  Byond.winget = originalWinget;
   Byond.sendMessage = originalSendMessage;
   store.set(suspendedAtom, Date.now());
 });
@@ -30,6 +32,7 @@ describe('native window reveal', () => {
     const winset = mock(() => {});
     const sendMessage = mock(() => {});
     Byond.winset = winset;
+    Byond.winget = mock(async () => ({ size: { x: 400, y: 600 } }));
     Byond.sendMessage = sendMessage;
     store.set(configAtom, {
       interface: { name: 'TestInterface' },
