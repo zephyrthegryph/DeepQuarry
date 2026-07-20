@@ -880,8 +880,13 @@ GLOBAL_LIST_EMPTY(apcs)
 			if(last_nightshift_switch > world.time - 10 SECONDS)
 				to_chat(ui.user, span_warning("[src]'s night lighting circuit breaker is still cycling!"))
 				return 0
+			var/requested_nightshift = text2num("[params["nightshift"]]")
+			if(requested_nightshift < NIGHTSHIFT_AUTO || requested_nightshift > NIGHTSHIFT_ALWAYS)
+				return 0
+			if(requested_nightshift == nightshift_setting)
+				return 0
 			last_nightshift_switch = world.time
-			nightshift_setting = params["nightshift"]
+			nightshift_setting = requested_nightshift
 			update_nightshift()
 		if("charge")
 			chargemode = !chargemode
@@ -1210,7 +1215,6 @@ GLOBAL_LIST_EMPTY(apcs)
 		if(NIGHTSHIFT_ALWAYS) new_state = TRUE
 	for(var/obj/machinery/light/L in area)
 		L.nightshift_mode(new_state)
-		L.update()
 		CHECK_TICK
 
 /obj/machinery/power/apc/proc/update_area()

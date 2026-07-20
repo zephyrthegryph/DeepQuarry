@@ -29,6 +29,10 @@
 
 /turf/proc/lighting_clear_overlay()
 	if(lighting_object)
+		// qdel() is deferred. Remove the appearance synchronously so callers that
+		// snapshot this turf's underlays (notably shuttle landing) cannot preserve
+		// a stale lighting gradient as part of the turf's permanent appearance.
+		lighting_object.removefromturf()
 		qdel(lighting_object, force=TRUE)
 
 // Builds a lighting object for us, but only if our area is dynamic.

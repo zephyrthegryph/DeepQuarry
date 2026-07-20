@@ -1,0 +1,5 @@
+author: "Codex"
+delete-after: true
+changes:
+  - bugfix: "Fixed shuttle departures sometimes leaving a solid lighting block behind."
+  - bugfix: "Fixed APC night lighting repeatedly cycling and wearing out light fixtures."
