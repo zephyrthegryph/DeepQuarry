@@ -20,8 +20,9 @@ updates above 100 KB or commits longer than one 60 Hz frame.
 
 The startup panel identifies warm versus cold pooled shells, whether the shell came
 from the hidden native template, and records the early geometry probe. A small idle
-reserve is replenished as windows are acquired. Geometry and visibility are sent in
-one native transaction, guarded by a per-acquisition generation token. Interfaces
+reserve is replenished as windows are acquired. Geometry is applied while hidden and
+read back from DreamSeeker before a separate reveal, guarded by a per-acquisition
+generation token. Interfaces
 that expose `dq_server_profile` (currently Preferences)
 also report pre-backend, catalog-build, and preview-render costs. Other interfaces
 still begin at first backend receipt unless they add equivalent server phase data.

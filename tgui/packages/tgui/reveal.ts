@@ -38,6 +38,8 @@ type NativeRevealPayload = {
   size?: string;
 };
 
+type NativeGeometryPayload = Omit<NativeRevealPayload, 'is-visible'>;
+
 /** Build one native transaction so BYOND cannot paint between resize and show. */
 export function buildNativeRevealPayload(
   geometry?: ResolvedWindowGeometry,
@@ -49,28 +51,67 @@ export function buildNativeRevealPayload(
   };
 }
 
+function buildNativeGeometryPayload(
+  geometry?: ResolvedWindowGeometry,
+): NativeGeometryPayload {
+  const payload = buildNativeRevealPayload(geometry);
+  const { 'is-visible': _visible, ...nativeGeometry } = payload;
+  return nativeGeometry;
+}
+
+function isCurrentGeneration(generation?: number): boolean {
+  return (
+    !store.get(suspendedAtom) &&
+    (generation === undefined ||
+      generation === store.get(configAtom)?.window?.generation)
+  );
+}
+
+async function waitForNativeGeometry(): Promise<void> {
+  const confirmed = Byond.winget(Byond.windowId, 'size;pos').then(
+    () => undefined,
+    () => undefined,
+  );
+  const timeout = new Promise<void>((resolve) => {
+    setTimeout(resolve, 500);
+  });
+  await Promise.race([confirmed, timeout]);
+}
+
 /** Reveal only the current acquisition of a non-suspended pooled shell. */
-export function revealWindow(
+export async function revealWindow(
   generation?: number,
   geometry?: ResolvedWindowGeometry,
-): boolean {
+): Promise<boolean> {
   const config = store.get(configAtom);
   const currentGeneration = config?.window?.generation;
-  if (
-    store.get(suspendedAtom) ||
-    (generation !== undefined && generation !== currentGeneration)
-  ) {
+  if (!isCurrentGeneration(generation)) {
     return false;
   }
-  const nativePayload = buildNativeRevealPayload(geometry);
+  const nativeGeometry = buildNativeGeometryPayload(geometry);
+  if (nativeGeometry.size || nativeGeometry.pos) {
+    // Keep the shell hidden while DreamSeeker applies geometry. A single
+    // winset containing is-visible can be painted in property order on cold
+    // browser windows, exposing the template size for one frame. winget is a
+    // client round trip and therefore confirms the preceding geometry command
+    // has been processed before the separate show command is sent.
+    Byond.winset(Byond.windowId, {
+      ...nativeGeometry,
+      'is-visible': false,
+    });
+    await waitForNativeGeometry();
+    if (!isCurrentGeneration(generation)) {
+      return false;
+    }
+  }
   profileStartup('window_revealed', config?.interface?.name, {
     generation: currentGeneration,
-    atomicGeometry: Boolean(geometry?.size || geometry?.pos),
+    verifiedGeometry: Boolean(nativeGeometry.size || nativeGeometry.pos),
   });
-  Byond.winset(Byond.windowId, nativePayload);
+  Byond.winset(Byond.windowId, { 'is-visible': true });
   Byond.sendMessage('visible', {
     generation: currentGeneration,
-    geometry: nativePayload,
+    geometry: nativeGeometry,
   });
   return true;
 }

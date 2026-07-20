@@ -119,7 +119,7 @@ export function Window(props: Props) {
           return;
         }
         profileStartup('geometry_finished', config.interface?.name);
-        revealWindow(config.window?.generation, geometry);
+        await revealWindow(config.window?.generation, geometry);
         logger.log('set to visible');
       };
 

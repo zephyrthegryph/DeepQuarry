@@ -13,7 +13,7 @@ afterEach(() => {
 });
 
 describe('native window reveal', () => {
-  test('combines geometry and visibility into one native transaction', () => {
+  test('formats native reveal geometry consistently', () => {
     expect(
       buildNativeRevealPayload({
         pos: [120, 240],
@@ -26,7 +26,7 @@ describe('native window reveal', () => {
     });
   });
 
-  test('rejects stale generations before touching the native window', () => {
+  test('rejects stale generations before touching the native window', async () => {
     const winset = mock(() => {});
     const sendMessage = mock(() => {});
     Byond.winset = winset;
@@ -37,14 +37,17 @@ describe('native window reveal', () => {
     } as Config);
     store.set(suspendedAtom, false);
 
-    expect(revealWindow(3, { size: [400, 600] })).toBe(false);
+    expect(await revealWindow(3, { size: [400, 600] })).toBe(false);
     expect(winset).not.toHaveBeenCalled();
 
-    expect(revealWindow(4, { size: [400, 600] })).toBe(true);
-    expect(winset).toHaveBeenCalledTimes(1);
-    expect(winset).toHaveBeenCalledWith('test-window', {
-      'is-visible': true,
+    expect(await revealWindow(4, { size: [400, 600] })).toBe(true);
+    expect(winset).toHaveBeenCalledTimes(2);
+    expect(winset).toHaveBeenNthCalledWith(1, 'test-window', {
+      'is-visible': false,
       size: '400x600',
+    });
+    expect(winset).toHaveBeenNthCalledWith(2, 'test-window', {
+      'is-visible': true,
     });
     expect(sendMessage).toHaveBeenCalledTimes(1);
   });
