@@ -239,6 +239,24 @@ function installRuntimeObservers(): () => void {
               target,
               previous: lastCursorSignature,
             });
+          } else if (moved && lastCursorSignature) {
+            const previousCursor = lastCursorSignature.split('|', 1)[0];
+            if (cursor !== previousCursor) {
+              Byond.sendMessage('perf/transition', {
+                kind: 'cursor-boundary',
+                at,
+                interface: store.get(configAtom)?.interface?.name,
+                generation: store.get(configAtom)?.window?.generation,
+                x,
+                y,
+                cursor,
+                target,
+                previous_cursor: previousCursor,
+                previous_target: lastCursorSignature.slice(
+                  lastCursorSignature.indexOf('|') + 1,
+                ),
+              });
+            }
           }
           lastCursorSignature = signature;
         }

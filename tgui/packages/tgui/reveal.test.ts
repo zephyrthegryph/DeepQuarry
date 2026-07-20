@@ -1,7 +1,12 @@
 import { afterEach, describe, expect, mock, test } from 'bun:test';
 import { configAtom, store, suspendedAtom } from './events/store';
 import type { Config } from './events/types';
-import { buildNativeRevealPayload, revealWindow } from './reveal';
+import {
+  buildNativeRevealPayload,
+  hasRevealed,
+  resetReveal,
+  revealWindow,
+} from './reveal';
 
 const originalWinset = Byond.winset;
 const originalWinget = Byond.winget;
@@ -22,6 +27,7 @@ afterEach(() => {
     value: originalInnerHeight,
   });
   store.set(suspendedAtom, Date.now());
+  resetReveal();
 });
 
 describe('native window reveal', () => {
@@ -62,6 +68,8 @@ describe('native window reveal', () => {
     expect(winset).not.toHaveBeenCalled();
 
     expect(await revealWindow(4, { size: [400, 600] })).toBe(true);
+    expect(hasRevealed(4)).toBe(true);
+    expect(hasRevealed(3)).toBe(false);
     expect(winset).toHaveBeenCalledTimes(3);
     expect(winset).toHaveBeenNthCalledWith(1, 'test-window', {
       alpha: 0,

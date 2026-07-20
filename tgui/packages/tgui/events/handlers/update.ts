@@ -5,7 +5,7 @@ import { profileStartup, profileUpdate } from '../../profiling/hooks';
 import { profileTransition } from '../../profiling/transitions';
 import type { PayloadFieldSample } from '../../profiling/types';
 import { resumeRenderer } from '../../renderer';
-import { revealWindow } from '../../reveal';
+import { hasRevealed, revealWindow } from '../../reveal';
 import {
   configAtom,
   gameDataAtom,
@@ -168,6 +168,9 @@ function resume(payload: UpdatePayload): void {
     perf.mark('resume/start');
     // Doublecheck if we are not re-suspended.
     if (store.get(suspendedAtom)) {
+      return;
+    }
+    if (hasRevealed(generation)) {
       return;
     }
 

@@ -35,6 +35,7 @@ import {
 } from './profiling/transitions';
 
 let claimed = false;
+let revealedGeneration: number | undefined;
 
 type NativeRevealPayload = {
   'is-visible': true;
@@ -278,6 +279,7 @@ export async function revealWindow(
     Byond.windowId,
     nativeShell ? { alpha: 255 } : { 'is-visible': true },
   );
+  revealedGeneration = currentGeneration;
   profileTransition('opacity-reveal-sent');
   void samplePresentedTransition(currentGeneration);
   Byond.sendMessage('visible', {
@@ -328,6 +330,10 @@ export function claimReveal(): void {
   claimed = true;
 }
 
+export function hasRevealed(generation?: number): boolean {
+  return generation !== undefined && revealedGeneration === generation;
+}
+
 /** Route-level fallback reveal: fires only if no layout claimed the reveal. */
 export function revealIfUnclaimed(generation?: number): void {
   if (!claimed) {
@@ -338,4 +344,5 @@ export function revealIfUnclaimed(generation?: number): void {
 /** Reset the claim on suspend so a reused pooled window reveals again next open. */
 export function resetReveal(): void {
   claimed = false;
+  revealedGeneration = undefined;
 }

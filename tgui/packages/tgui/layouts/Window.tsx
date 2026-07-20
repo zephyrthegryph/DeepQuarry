@@ -71,6 +71,9 @@ export function Window(props: Props) {
   // We need to set the window to be invisible before we can set its geometry
   // Otherwise, we get a flicker effect when the window is first rendered
   useLayoutEffect(() => {
+    // Claim during the layout-effect phase, before the route wrapper's passive
+    // effect can perform its no-geometry fallback reveal.
+    claimReveal();
     profileTransition('layout-hide-start');
     if (config?.window?.native_shell) {
       Byond.winset(Byond.windowId, { alpha: 0 });
@@ -87,13 +90,6 @@ export function Window(props: Props) {
   useEffect(() => {
     let cancelled = false;
     if (!suspended && isReadyToRender) {
-      // Claim the reveal synchronously, before any await. This Window owns its
-      // own visibility (it reveals AFTER geometry below), so the route-level
-      // fallback (<RevealWindow>) must not pre-empt it and flash the window at
-      // default size. Effects fire child-first, so this runs before the parent
-      // fallback's revealIfUnclaimed() in the same commit.
-      claimReveal();
-
       const updateGeometry = async () => {
         profileStartup('geometry_started', config.interface?.name);
         const options = {
