@@ -33,6 +33,10 @@ SUBSYSTEM_DEF(tgui)
 	/// emit a manifest (e.g. an unsplit bundle) — interfaces then rely on whatever is
 	/// already in the main bundle.
 	var/list/chunk_manifest
+	/// Number of reusable browser shells warmed per client. These windows load
+	/// the shared TGUI runtime while hidden, then remain READY for an interface
+	/// to acquire without another browse()/React bootstrap.
+	var/prewarm_window_count = TGUI_WINDOW_SOFT_LIMIT
 
 /datum/controller/subsystem/tgui/PreInit()
 	basehtml = file2text('tgui/public/tgui.html')
@@ -143,6 +147,43 @@ SUBSYSTEM_DEF(tgui)
 			context = "SStgui/request_pooled_window")
 		return null
 	return window
+
+/**
+ * Warm the reusable browser pool for a newly connected client.
+ *
+ * Slots are staggered by the caller so asset delivery and browser startup do
+ * not create one large login spike. A slot already opened or acquired by a
+ * real UI is left untouched.
+ */
+/datum/controller/subsystem/tgui/proc/prewarm_client_window(client/client, pool_index)
+	if(!client || QDELETED(client) || pool_index < 1 || pool_index > prewarm_window_count)
+		return
+	var/window_id = TGUI_WINDOW_ID(pool_index)
+	var/datum/tgui_window/window = client.tgui_windows[window_id]
+	if(!window)
+		window = new(client, window_id, pooled = TRUE)
+	if(window.locked || window.status != TGUI_WINDOW_CLOSED)
+		return
+	window.prewarmed = TRUE
+	window.initialize(
+		strict_mode = TRUE,
+		fancy = client.prefs?.read_preference(/datum/preference/toggle/tgui_fancy),
+		assets = list(get_asset_datum(/datum/asset/simple/tgui)),
+	)
+	var/flush_queue = window.send_asset(get_asset_datum(/datum/asset/simple/namespaced/fontawesome))
+	flush_queue |= window.send_asset(get_asset_datum(/datum/asset/simple/namespaced/tgfont))
+	flush_queue |= window.send_asset(get_asset_datum(/datum/asset/simple/namespaced/tgui_extra_fonts))
+	flush_queue |= window.send_asset(get_asset_datum(/datum/asset/json/icon_ref_map))
+	if(flush_queue)
+		client.browse_queue_flush()
+
+/datum/controller/subsystem/tgui/proc/schedule_client_prewarm(client/client)
+	if(!client)
+		return
+	for(var/index in 1 to prewarm_window_count)
+		var/datum/callback/prewarm_callback = CALLBACK(src, PROC_REF(prewarm_client_window), client, index)
+		var/prewarm_delay = (1 + ((index - 1) * 2)) SECONDS
+		addtimer(prewarm_callback, prewarm_delay, TIMER_UNIQUE)
 
 /**
  * public

@@ -12,6 +12,8 @@
 	var/status = TGUI_WINDOW_CLOSED
 	var/locked = FALSE
 	var/visible = FALSE
+	/// TRUE when the shared browser shell was initialized before a UI acquired it.
+	var/prewarmed = FALSE
 	var/datum/tgui/locked_by
 	var/datum/subscriber_object
 	var/subscriber_delegate

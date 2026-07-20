@@ -2,15 +2,8 @@
 	COOLDOWN_DECLARE(ui_refresh_cooldown)
 
 /datum/preferences/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui, custom_state)
-	// build the base64 preview assets before tgui opens so the
-	// initial static_data includes them. update_preview_icon → update_character_previews
-	// flattens the mannequin into 4 direction PNGs + BG PNG via icon2base64.
-	if(!character_preview_b64)
-		try
-			update_preview_icon()
-		catch(var/exception/e)
-			stack_trace("preview_icon build at tgui_interact: [e.name] at [e.file]:[e.line]")
-
+	// Preview composition is intentionally not done here. ShowChoices opens the
+	// lightweight UI first and schedules a background render when the cache is cold.
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
 		ui = new(user, src, "PreferencesMenu", "Preferences")
@@ -41,7 +34,7 @@
 
 	return assets
 
-/datum/preferences/tgui_data(mob/user)
+/datum/preferences/tgui_data(mob/user, datum/tgui/ui)
 	var/list/data = list()
 
 	if(tainted_character_profiles)
@@ -66,7 +59,13 @@
 		data["character_preview_assets"] = character_preview_b64
 
 	for(var/datum/preference_middleware/preference_middleware as anything in middleware)
-		data += preference_middleware.get_ui_data(user)
+		data += preference_middleware.get_ui_data(user, ui)
+
+	data["dq_server_profile"] = list(
+		"pre_backend_ms" = dq_open_requested_at ? (REALTIMEOFDAY - dq_open_requested_at) * 100 : 0,
+		"preview_render_ms" = dq_last_preview_render_ms,
+	)
+	dq_open_requested_at = null
 
 	return data
 
@@ -211,8 +210,7 @@
 	// state — load_character() re-read the whole savefile (which already matched the in-memory
 	// cache) and re-ran the priority-order read/sanitize loop, and save_preferences() re-wrote
 	// already-written player prefs — costing ~2s of synchronous, blocking savefile I/O on the
-	// close click. Just free the preview byte cache and queue one async straggler-flush.
-	clear_character_previews()
+	// close click. Keep the preview byte cache warm and queue one async straggler-flush.
 	SScharacter_setup.queue_preferences_save(src)
 
 /datum/preferences/proc/create_character_profiles()

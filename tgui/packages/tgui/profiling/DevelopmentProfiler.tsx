@@ -276,7 +276,22 @@ function ProfilerOverlay() {
                 paddingTop: 5,
               }}
             >
-              <div>Startup: {startup.interfaceName || '(unknown)'}</div>
+              <div>
+                Startup: {startup.interfaceName || '(unknown)'} Â·{' '}
+                {startup.prewarmed ? 'warm shell' : 'cold shell'}
+              </div>
+              <div>Geometry probe: {format(startup.geometryProbe)}</div>
+              {!!startup.serverPreBackend && (
+                <div>
+                  Server before backend: {format(startup.serverPreBackend)}
+                </div>
+              )}
+              {!!startup.serverCatalogBuild && (
+                <div>Catalog build: {format(startup.serverCatalogBuild)}</div>
+              )}
+              {!!startup.serverPreviewRender && (
+                <div>Preview render: {format(startup.serverPreviewRender)}</div>
+              )}
               <div>Backend → commit: {format(startup.backendToCommit)}</div>
               <div>Chunk load: {format(startup.chunkLoad)}</div>
               <div>Commit → paint: {format(startup.commitToPaint)}</div>

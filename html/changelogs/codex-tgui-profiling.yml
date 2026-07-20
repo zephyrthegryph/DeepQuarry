@@ -5,3 +5,5 @@ changes:
   - code_imp: "Added automated TGUI performance benchmarks and a development-only live profiler."
   - qol: "Reduced Power Monitor update size and rendering stalls on large station grids."
   - qol: "Stopped Character Preferences from polling and resending its full widget catalog on every update."
+  - qol: "Prewarmed reusable TGUI browser shells and removed the repeated cold window-geometry wait."
+  - qol: "Made Character Preferences catalogs load per tab and moved mannequin previews off the window-open path."

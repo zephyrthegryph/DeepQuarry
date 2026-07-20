@@ -12,7 +12,22 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack, Tabs } from 'tgui-core/components';
 import { CategoryPage } from './CategoryPage';
-import type { CharacterPreviewAssets, CharacterSetupData } from './types';
+import type {
+  CharacterPreviewAssets,
+  CharacterSetupData,
+  PrefCategory,
+} from './types';
+
+let catalogOwner = '';
+let cachedStructureVersion = 0;
+const categoryCache: Record<string, PrefCategory> = {};
+const editorStaticCache: Record<string, Record<string, unknown>> = {};
+const editorStaticVersions: Record<string, number> = {};
+const editorDataCache: Record<string, Record<string, unknown>> = {};
+
+const clearRecord = (record: Record<string, unknown>) => {
+  for (const key of Object.keys(record)) delete record[key];
+};
 
 /// Renders the BG image at the back and stacks the four direction sprites
 /// (SOUTH top, NORTH, EAST, WEST bottom) in the center column at 1/3 of the
@@ -148,9 +163,34 @@ const FULL_HEIGHT_EDITORS = new Set<string>(['loadout', 'mind_body']);
 
 export const DQCharacterSetup = () => {
   const { act, data } = useBackend<CharacterSetupData>();
-  const categories = data.dq_categories ?? [];
+  const owner = data.dq_cache_key ?? 'legacy';
+  if (catalogOwner !== owner) {
+    catalogOwner = owner;
+    cachedStructureVersion = 0;
+    clearRecord(categoryCache);
+    clearRecord(editorStaticCache);
+    clearRecord(editorStaticVersions);
+    clearRecord(editorDataCache);
+  }
+  const structureVersion = data.dq_structure_version ?? 1;
+  if (cachedStructureVersion !== structureVersion) {
+    cachedStructureVersion = structureVersion;
+    clearRecord(categoryCache);
+  }
+  for (const category of data.dq_categories ?? []) {
+    categoryCache[category.category] = category;
+  }
+  Object.assign(categoryCache, data.dq_category_patch ?? {});
+  const staticPatch =
+    data.dq_editor_static_patch ?? data.dq_editor_static ?? {};
+  Object.assign(editorStaticCache, staticPatch);
+  for (const key of Object.keys(staticPatch)) {
+    editorStaticVersions[key] = data.dq_editor_versions?.[key] ?? 1;
+  }
+  Object.assign(editorDataCache, data.dq_editor_data ?? {});
+
+  const categoryIndex = data.dq_category_index ?? Object.keys(categoryCache);
   const values = data.dq_values ?? {};
-  const editorData = data.dq_editor_data ?? {};
   const previewAssets = data.character_preview_assets ?? {};
   const [selected, setSelected] = useState<string | null>(null);
 
@@ -158,13 +198,42 @@ export const DQCharacterSetup = () => {
   // poll with empty `categories` locks `selected = null` and the tab strip renders
   // unhighlighted until the user clicks something.
   useEffect(() => {
-    if (!selected && categories.length > 0) {
-      setSelected(categories[0].category);
+    if (!selected && categoryIndex.length > 0) {
+      setSelected(data.dq_active_category ?? categoryIndex[0]);
+    } else if (selected && !categoryIndex.includes(selected)) {
+      setSelected(data.dq_active_category ?? categoryIndex[0] ?? null);
     }
-  }, [categories, selected]);
+  }, [categoryIndex, data.dq_active_category, selected]);
 
-  const selectedPage =
-    categories.find((p) => p.category === selected) ?? categories[0];
+  const selectedPage = selected ? categoryCache[selected] : undefined;
+  const activeEditorVersions =
+    selected === data.dq_active_category ? (data.dq_editor_versions ?? {}) : {};
+  const missingEditorCatalog =
+    !!selectedPage &&
+    selectedPage.groups.some((group) =>
+      group.items.some(
+        (item) =>
+          item.type === 'editor' &&
+          activeEditorVersions[item.key] !== undefined &&
+          editorStaticVersions[item.key] !== activeEditorVersions[item.key],
+      ),
+    );
+
+  useEffect(() => {
+    if (!selected || selected !== data.dq_active_category) return;
+    if (!selectedPage || missingEditorCatalog) {
+      act('dq_select_category', {
+        category: selected,
+        force_catalogs: true,
+      });
+    }
+  }, [
+    act,
+    data.dq_active_category,
+    missingEditorCatalog,
+    selected,
+    selectedPage,
+  ]);
 
   const pageIsFullHeight =
     selectedPage?.groups.some((g) =>
@@ -226,31 +295,41 @@ export const DQCharacterSetup = () => {
               </Stack.Item>
               <Stack.Item>
                 <Tabs fluid>
-                  {categories.map((page) => (
+                  {categoryIndex.map((category) => (
                     <Tabs.Tab
-                      key={page.category}
-                      selected={page.category === selected}
-                      onClick={() => setSelected(page.category)}
+                      key={category}
+                      selected={category === selected}
+                      onClick={() => {
+                        setSelected(category);
+                        act('dq_select_category', {
+                          category,
+                          force_catalogs: !categoryCache[category],
+                        });
+                      }}
                     >
-                      {labelForCategory(page.category)}
+                      {labelForCategory(category)}
                     </Tabs.Tab>
                   ))}
                 </Tabs>
               </Stack.Item>
               <Stack.Item grow>
                 <Section fill fitted scrollable={!pageIsFullHeight}>
-                  {selectedPage && (
+                  {selectedPage ? (
                     <Box
                       p={0.5}
                       style={{ height: pageIsFullHeight ? '100%' : 'auto' }}
                     >
                       <CategoryPage
                         page={selectedPage}
-                        staticData={data.dq_editor_static}
+                        staticData={editorStaticCache}
                         values={values}
-                        editorData={editorData}
+                        editorData={editorDataCache}
                         fillHeight={pageIsFullHeight}
                       />
+                    </Box>
+                  ) : (
+                    <Box p={2} color="label">
+                      Loading category...
                     </Box>
                   )}
                 </Section>

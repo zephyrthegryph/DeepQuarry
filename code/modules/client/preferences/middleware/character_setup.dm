@@ -158,7 +158,7 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 	"game"        = list("input", "view", "sound", "ui", "chat", "persistence", "roleplay", "nif", "pai"),
 ))
 
-/datum/preference_middleware/character_setup/proc/dq_build_category_structure()
+/datum/preference_middleware/character_setup/proc/dq_build_category_structure(category_filter, include_details = TRUE)
 	// Build the category page list. Each category has zero or more groups; each group has
 	// widget items (auto-rendered) and editor items (delegated to a registered editor).
 	var/list/categories_data = list()
@@ -216,6 +216,8 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 				continue
 			if(GLOB.dq_human_mode_hidden_pref_keys[pref.savefile_key])
 				continue
+		if(category_filter && cat != category_filter)
+			continue
 
 		var/list/category_entry = categories_by_name[cat]
 		if(!category_entry)
@@ -238,15 +240,15 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 			"key" = pref.savefile_key,
 			"label" = pref.display_label,
 			"widget" = widget_hint,
-			"value" = preferences.read_preference(pref_type),
-			"props" = pref.get_widget_props(preferences),
+			"props" = include_details ? pref.get_widget_props(preferences) : list(),
 		)
-		var/list/choices = pref.get_pref_choices(preferences)
-		if(choices)
-			widget_payload["choices"] = choices
-		var/list/thumbnails = pref.get_pref_thumbnails(preferences)
-		if(thumbnails)
-			widget_payload["thumbnails"] = thumbnails
+		if(include_details)
+			var/list/choices = pref.get_pref_choices(preferences)
+			if(choices)
+				widget_payload["choices"] = choices
+			var/list/thumbnails = pref.get_pref_thumbnails(preferences)
+			if(thumbnails)
+				widget_payload["thumbnails"] = thumbnails
 
 		group_entry["items"] += list(widget_payload)
 
@@ -270,6 +272,8 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 			else
 				if(editor.group && (editor.group in GLOB.dq_human_mode_hidden_groups))
 					continue
+		if(category_filter && editor.category != category_filter)
+			continue
 		var/list/category_entry = categories_by_name[editor.category]
 		if(!category_entry)
 			category_entry = list("category" = editor.category, "groups" = list())
@@ -291,7 +295,6 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 			"key" = editor.key,
 			"sort_order" = editor.sort_order,
 			"display_name" = editor.display_name,
-			"data" = editor.build_ui_data(preferences),
 		))
 
 	// drop categories whose only contents are empty groups (every pref/editor is
@@ -329,15 +332,79 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 
 	return categories_data
 
-/datum/preference_middleware/character_setup/get_ui_data(mob/user)
+/datum/preference_middleware/character_setup/proc/dq_ensure_category_cache(category_key)
+	if(!islist(preferences.dq_category_static_cache))
+		preferences.dq_category_static_cache = list()
+	if(!islist(preferences.dq_category_index))
+		preferences.dq_category_index = list()
+		var/list/category_skeletons = dq_build_category_structure(null, FALSE)
+		for(var/list/category as anything in category_skeletons)
+			preferences.dq_category_index += category["category"]
+	if(!category_key || (category_key in preferences.dq_category_static_cache))
+		return
+	var/list/categories_data = dq_build_category_structure(category_key, TRUE)
+	for(var/list/category as anything in categories_data)
+		for(var/list/group as anything in category["groups"])
+			for(var/list/item as anything in group["items"])
+				if(item["type"] == "widget")
+					item -= "value"
+				else if(item["type"] == "editor")
+					item -= "data"
+		var/built_category_key = category["category"]
+		preferences.dq_category_static_cache[built_category_key] = category
+
+/datum/preference_middleware/character_setup/proc/dq_editor_version(editor_key)
+	LAZYINITLIST(preferences.dq_editor_static_versions)
+	if(!preferences.dq_editor_static_versions[editor_key])
+		preferences.dq_editor_static_versions[editor_key] = 1
+	return preferences.dq_editor_static_versions[editor_key]
+
+/datum/preferences/proc/dq_invalidate_category_cache()
+	dq_category_static_cache = null
+	dq_category_index = null
+	dq_category_structure_version++
+
+/datum/preferences/proc/dq_invalidate_all_catalogs()
+	dq_editor_static_cache = null
+	LAZYINITLIST(dq_editor_static_versions)
+	for(var/datum/preference_editor/editor as anything in GLOB.preference_editors)
+		if(editor.hidden)
+			continue
+		dq_editor_static_versions[editor.key] = (dq_editor_static_versions[editor.key] || 1) + 1
+	dq_invalidate_category_cache()
+
+/datum/preference_middleware/character_setup/get_ui_data(mob/user, datum/tgui/ui)
 	var/list/data = ..()
 
 	if(preferences.current_window != PREFERENCE_TAB_CHARACTER_PREFERENCES)
 		return data
 
-	// The category tree, widget configuration, choices, thumbnails, and editor
-	// placement live in static_data. Recurring updates only need the current
-	// widget values and each composite editor's mutable state.
+	var/catalog_started = TICK_USAGE_REAL
+	dq_ensure_category_cache()
+	if(!(preferences.dq_active_category in preferences.dq_category_static_cache))
+		if(!(preferences.dq_active_category in preferences.dq_category_index))
+			preferences.dq_active_category = preferences.dq_category_index?[1]
+		dq_ensure_category_cache(preferences.dq_active_category)
+
+	data["dq_cache_key"] = "[REF(preferences)]-[preferences.default_slot]"
+	data["dq_active_category"] = preferences.dq_active_category
+	data["dq_category_index"] = preferences.dq_category_index
+	data["dq_structure_version"] = preferences.dq_category_structure_version
+
+	var/window_id = ui?.window?.id || "unpooled"
+	LAZYINITLIST(preferences.dq_window_category_versions)
+	if(!islist(preferences.dq_window_category_versions[window_id]))
+		preferences.dq_window_category_versions[window_id] = list()
+	var/list/window_category_versions = preferences.dq_window_category_versions[window_id]
+	if(window_category_versions[preferences.dq_active_category] != preferences.dq_category_structure_version)
+		var/list/category_patch = list()
+		category_patch[preferences.dq_active_category] = preferences.dq_category_static_cache[preferences.dq_active_category]
+		data["dq_category_patch"] = category_patch
+		window_category_versions[preferences.dq_active_category] = preferences.dq_category_structure_version
+
+	// Values are small and allow a cached category to display current state
+	// immediately. Large editor state and catalogs are restricted to the active
+	// category so unopened tabs cost nothing.
 	var/list/widget_values = list()
 	for(var/pref_type in GLOB.preference_entries)
 		var/datum/preference/pref = GLOB.preference_entries[pref_type]
@@ -349,11 +416,29 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 	data["dq_values"] = widget_values
 
 	var/list/editor_data = list()
+	var/list/editor_versions = list()
+	var/list/editor_static_patch = list()
+	LAZYINITLIST(preferences.dq_window_editor_versions)
+	if(!islist(preferences.dq_window_editor_versions[window_id]))
+		preferences.dq_window_editor_versions[window_id] = list()
+	var/list/window_editor_versions = preferences.dq_window_editor_versions[window_id]
 	for(var/datum/preference_editor/editor as anything in GLOB.preference_editors)
-		if(editor.hidden)
+		if(editor.hidden || editor.category != preferences.dq_active_category)
 			continue
 		editor_data[editor.key] = editor.build_ui_data(preferences)
+		var/editor_version = dq_editor_version(editor.key)
+		editor_versions[editor.key] = editor_version
+		if(window_editor_versions[editor.key] == editor_version)
+			continue
+		if(!islist(preferences.dq_editor_static_cache) || !(editor.key in preferences.dq_editor_static_cache))
+			preferences.dq_rebuild_editor_static_entry(editor)
+		editor_static_patch[editor.key] = preferences.dq_editor_static_cache?[editor.key] || list()
+		window_editor_versions[editor.key] = editor_version
 	data["dq_editor_data"] = editor_data
+	data["dq_editor_versions"] = editor_versions
+	if(length(editor_static_patch))
+		data["dq_editor_static_patch"] = editor_static_patch
+	data["dq_catalog_build_ms"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - catalog_started)
 
 	return data
 
@@ -371,9 +456,8 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 /proc/dq_cmp_group_by_sort_priority(list/a, list/b)
 	return a["sort_priority"] - b["sort_priority"]
 
-// Rebuild a single editor's cache entry on demand. Called from
-// dq_ensure_editor_static_cache when an entry is missing (initial build, or
-// invalidation by update_preference's static_invalidator_keys map).
+// Rebuild a single editor catalog on demand when the active browser slot has
+// not received its current version.
 /datum/preferences/proc/dq_rebuild_editor_static_entry(datum/preference_editor/editor)
 	if(!editor)
 		return
@@ -384,59 +468,8 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 		dq_editor_static_cache[editor.key] = static_payload
 	else
 		dq_editor_static_cache -= editor.key
-
-// Build any cache entries the editor list expects but the cache is missing.
-/datum/preferences/proc/dq_ensure_editor_static_cache()
-	if(!islist(dq_editor_static_cache))
-		dq_editor_static_cache = list()
-	for(var/datum/preference_editor/editor as anything in GLOB.preference_editors)
-		if(editor.key in dq_editor_static_cache)
-			continue
-		dq_rebuild_editor_static_entry(editor)
-
-// Initial-build entry point for the deferred timer scheduled by
-// get_ui_static_data when the prefs window first opens.
-/datum/preferences/proc/dq_build_editor_static_cache()
-	dq_ensure_editor_static_cache()
-	dq_static_pending = FALSE
-	dq_schedule_static_push()
-
 /datum/preference_middleware/character_setup/get_ui_static_data(mob/user)
 	var/list/data = ..()
-
-	if(preferences.current_window != PREFERENCE_TAB_CHARACTER_PREFERENCES)
-		return data
-
-	var/list/categories_data = dq_build_category_structure()
-	for(var/list/category as anything in categories_data)
-		for(var/list/group as anything in category["groups"])
-			for(var/list/item as anything in group["items"])
-				if(item["type"] == "widget")
-					item -= "value"
-				else if(item["type"] == "editor")
-					item -= "data"
-	data["dq_categories"] = categories_data
-
-	// editor static_data is cached per-preferences-datum. Catalogs
-	// (markings, loadout, hair) don't change between opens; rebuilding them
-	// on every send_full_update is wasted CPU + JSON serialization.
-	// Per-editor invalidation: update_preference removes only the entries
-	// whose editor declared a dependency on the changed key (see
-	// /datum/preference_editor.static_invalidator_keys). Missing entries
-	// are rebuilt inline here; the rest of the cache stays warm.
-	if(islist(preferences.dq_editor_static_cache) && length(preferences.dq_editor_static_cache))
-		preferences.dq_ensure_editor_static_cache()
-		data["dq_editor_static"] = preferences.dq_editor_static_cache
-		return data
-
-	// Cold path: cache empty (first open after world start, before the
-	// preference_editors registry has populated, or after an explicit reset).
-	// Defer the initial build so tgui_interact paints the window immediately
-	// and we don't pay the full ~30-editor cost on the open click.
-	if(!preferences.dq_static_pending)
-		preferences.dq_static_pending = TRUE
-		addtimer(CALLBACK(preferences, TYPE_PROC_REF(/datum/preferences, dq_build_editor_static_cache)), 1, TIMER_UNIQUE | TIMER_OVERRIDE)
-	data["dq_editor_static"] = list()
 	return data
 
 /datum/preference_middleware/character_setup/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
@@ -445,6 +478,22 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 		return
 
 	switch(action)
+		if("dq_select_category")
+			dq_ensure_category_cache()
+			var/category_key = params["category"]
+			if(!(category_key in preferences.dq_category_index))
+				return FALSE
+			preferences.dq_active_category = category_key
+			if(params["force_catalogs"])
+				var/window_id = ui?.window?.id || "unpooled"
+				if(islist(preferences.dq_window_category_versions?[window_id]))
+					preferences.dq_window_category_versions[window_id] -= category_key
+				if(islist(preferences.dq_window_editor_versions?[window_id]))
+					for(var/datum/preference_editor/editor as anything in GLOB.preference_editors)
+						if(!editor.hidden && editor.category == category_key)
+							preferences.dq_window_editor_versions[window_id] -= editor.key
+			return TRUE
+
 		// Single-pref update from the auto-renderer.
 		if("dq_update_preference")
 			var/key = params["key"]
@@ -485,8 +534,8 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 				return FALSE
 			var/result = editor.handle_action(preferences, params["action"], params["params"], ui.user)
 			// Switching human/robot/pAI mode changes which category groups exist.
-			// That structure now lives in static_data, so refresh it only for the
-			// structural species-picker action rather than on every preference edit.
+			// Drop the structure cache and bump its version; each pooled browser
+			// receives the new active-category patch on its next update.
 			if(result == PREF_UPDATE_ACCEPTED && editor_key == "species_picker")
-				preferences.update_tgui_static_data(ui.user)
+				preferences.dq_invalidate_category_cache()
 			return (result == PREF_UPDATE_ACCEPTED)

@@ -289,15 +289,37 @@
 	update_preview_icon(south_only = TRUE)
 	addtimer(CALLBACK(src, TYPE_PROC_REF(/datum/preferences, update_preview_icon)), 1, TIMER_UNIQUE | TIMER_OVERRIDE)
 
+/datum/preferences/proc/dq_preference_affects_preview(datum/preference/preference)
+	if(!preference || preference.savefile_identifier != PREFERENCE_CHARACTER)
+		return FALSE
+	var/static/list/preview_categories = list("appearance" = TRUE, "traits" = TRUE)
+	if(preview_categories[preference.get_category(src)])
+		return TRUE
+	var/static/list/preview_keys = list(
+		"species" = TRUE,
+		"custom_species" = TRUE,
+		"custom_base" = TRUE,
+		"play_mode" = TRUE,
+		"gender" = TRUE,
+		"size_multiplier" = TRUE,
+		"bgstate" = TRUE,
+		"preview_loadout" = TRUE,
+		"preview_job" = TRUE,
+		"animations_toggle" = TRUE,
+	)
+	return preview_keys[preference.savefile_key]
+
 /datum/preferences/proc/update_preview_icon(south_only = FALSE)
 	if(updating_preview_icon)
 		return
+	var/profile_started = TICK_USAGE_REAL
 	updating_preview_icon = TRUE
 	try
 		dq_render_preview(south_only)
 	catch(var/exception/e)
 		stack_trace("update_preview_icon runtimed: [e.name] at [e.file]:[e.line]")
 	updating_preview_icon = FALSE
+	dq_last_preview_render_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - profile_started)
 	dq_schedule_data_push()
 
 /datum/preferences/proc/dq_schedule_data_push()
@@ -312,10 +334,8 @@
 		window.send_update()
 
 /datum/preferences/proc/dq_schedule_static_push()
-	// Coalesce multiple static_data invalidations in the same tick into a
-	// single send_full_update. Used by update_preference when it drops
-	// editor cache entries (species/play_mode/etc. changes) and by
-	// dq_build_editor_static_cache after the cold-start build.
+	// Coalesce editor-catalog invalidations into one update. The next payload
+	// includes only active catalogs whose per-window version is stale.
 	if(dq_preview_pending)
 		return
 	dq_preview_pending = TRUE
@@ -323,7 +343,8 @@
 
 /datum/preferences/proc/dq_flush_static_push()
 	dq_preview_pending = FALSE
-	update_static_data_for_all_viewers()
+	for(var/datum/tgui/window as anything in open_tguis)
+		window.send_update()
 
 /datum/preferences/proc/dq_render_preview(south_only = FALSE)
 	var/play_mode = read_preference(/datum/preference/text/human/play_mode) || "human"

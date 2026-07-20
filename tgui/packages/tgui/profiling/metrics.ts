@@ -47,6 +47,11 @@ export type ProfilerSummary = {
 
 export type StartupSummary = {
   interfaceName?: string;
+  prewarmed: boolean;
+  geometryProbe: number;
+  serverPreBackend: number;
+  serverCatalogBuild: number;
+  serverPreviewRender: number;
   backendToChunk: number;
   chunkLoad: number;
   backendToCommit: number;
@@ -127,9 +132,23 @@ export function summarizeLatestStartup(
   const documentReady = samples.find(
     (sample) => sample.stage === 'document_ready',
   )?.at;
+  const geometryProbeStarted = samples.find(
+    (sample) => sample.stage === 'geometry_probe_started',
+  )?.at;
+  const geometryProbeFinished = samples.find(
+    (sample) => sample.stage === 'geometry_probe_finished',
+  )?.at;
+  const serverProfile = session.find(
+    (sample) => sample.stage === 'server_profile',
+  )?.detail;
   const chunkStart = time('chunk_load_started');
   return {
     interfaceName: backend.interfaceName,
+    prewarmed: Boolean(backend.detail?.prewarmed),
+    geometryProbe: difference(geometryProbeStarted, geometryProbeFinished),
+    serverPreBackend: Number(serverProfile?.pre_backend_ms || 0),
+    serverCatalogBuild: Number(serverProfile?.catalog_build_ms || 0),
+    serverPreviewRender: Number(serverProfile?.preview_render_ms || 0),
     backendToChunk: difference(backend.at, chunkStart),
     chunkLoad: difference(chunkStart, time('chunk_load_finished')),
     backendToCommit: difference(backend.at, time('content_committed')),

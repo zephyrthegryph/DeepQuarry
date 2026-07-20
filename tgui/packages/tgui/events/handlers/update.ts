@@ -24,6 +24,7 @@ type UpdatePayload = Omit<BackendState<Record<string, unknown>>, 'act'> & {
 export function update(payload: UpdatePayload): void {
   const wasSuspended = Boolean(store.get(suspendedAtom));
   const interfaceName = payload.config?.interface?.name;
+  const previousInterface = store.get(configAtom)?.interface?.name;
   const profileStart =
     process.env.NODE_ENV === 'development'
       ? (performance.now?.() ?? Date.now())
@@ -31,11 +32,30 @@ export function update(payload: UpdatePayload): void {
   if (process.env.NODE_ENV === 'development' && wasSuspended) {
     profileStartup('backend_received', interfaceName, {
       bytes: JSON.stringify(payload).length,
+      prewarmed: Boolean(payload.config?.window?.prewarmed),
+    });
+  }
+  if (
+    process.env.NODE_ENV === 'development' &&
+    payload.data?.dq_server_profile
+  ) {
+    profileStartup('server_profile', interfaceName, {
+      ...(payload.data.dq_server_profile as Record<string, unknown>),
+      catalog_build_ms: payload.data.dq_catalog_build_ms,
     });
   }
   if (wasSuspended) {
     resume(payload);
     store.set(suspendedAtom, false);
+  }
+  if (
+    wasSuspended &&
+    previousInterface &&
+    interfaceName &&
+    previousInterface !== interfaceName
+  ) {
+    store.set(gameDataAtom, {});
+    store.set(gameStaticDataAtom, {});
   }
   updateData(payload);
   if (process.env.NODE_ENV === 'development') {

@@ -96,9 +96,25 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	/// Invalidated by update_preference when a structural pref changes (see
 	/// GLOB.dq_editor_static_invalidator_keys). null means "not built yet".
 	var/list/dq_editor_static_cache = null
-	// / Guard against scheduling multiple deferred cache builds when
-	/// get_ui_static_data is called repeatedly before the first build lands.
-	var/dq_static_pending = FALSE
+	/// Monotonic version per editor catalog. Each pooled browser window reports
+	/// which version it has received so large catalogs are sent once per slot.
+	var/list/dq_editor_static_versions
+	/// window id -> (editor key -> last delivered version)
+	var/list/dq_window_editor_versions
+	/// Cached static category structures, indexed by category name.
+	var/list/dq_category_static_cache
+	/// Ordered category names matching dq_category_static_cache.
+	var/list/dq_category_index
+	/// Changes whenever play mode alters the visible category/group structure.
+	var/dq_category_structure_version = 1
+	/// window id -> last delivered category-structure version
+	var/list/dq_window_category_versions
+	/// Category whose mutable editor state is currently being produced.
+	var/dq_active_category = "identity"
+	/// REALTIMEOFDAY captured immediately before opening Preferences.
+	var/dq_open_requested_at
+	/// Most recent synchronous mannequin composition cost in milliseconds.
+	var/dq_last_preview_render_ms = 0
 
 /datum/preferences/New(client/C)
 	client = C
@@ -169,16 +185,13 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 		to_chat(user, span_danger("No mob exists for the given client!"))
 		return
 
-	// refresh the body appearance + base64 assets before tgui opens.
-	// Preview build is the dominant cost of opening the window
-	// (~500-1500ms for a fully-dressed mannequin × 4 directions). Defer the
-	// north/east/west renders to a spawn() so the window paints with the
-	// south frame immediately; the remaining directions stream in via the
-	// next ui_data poll (preview_assets live in ui_data, see preferences_tgui.dm).
+	// Open first; a cold preview is composed on a fresh tick and streamed into
+	// the visible window instead of blocking the initial backend payload.
 	current_window = PREFERENCE_TAB_CHARACTER_PREFERENCES
-	if(!character_preview_b64)
-		update_preview_icon_lazy()
+	dq_open_requested_at = REALTIMEOFDAY
 	tgui_interact(user)
+	if(!character_preview_b64)
+		addtimer(CALLBACK(src, TYPE_PROC_REF(/datum/preferences, update_preview_icon_lazy)), 0, TIMER_UNIQUE | TIMER_OVERRIDE)
 
 // asset-based character preview. update_character_previews
 // flattens the mannequin (one frame per cardinal direction) plus the BG
@@ -261,9 +274,7 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 			open_copy_dialog(usr)
 			return 1
 	else if(href_list["close"])
-		// User closed preferences window, cleanup anything we need to.
-		clear_character_previews()
-		//Mannequin removal code needed here...For the far future once harddels are solved.
+		// Keep preview assets warm for the next open.
 		return 1
 	else
 		return 0

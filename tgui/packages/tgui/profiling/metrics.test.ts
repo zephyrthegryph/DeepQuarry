@@ -62,7 +62,24 @@ describe('TGUI profiler metrics', () => {
   test('summarizes explicit startup stages', () => {
     const startup = summarizeLatestStartup([
       { at: 10, stage: 'document_ready' },
-      { at: 100, stage: 'backend_received', interfaceName: 'PowerMonitor' },
+      { at: 12, stage: 'geometry_probe_started' },
+      { at: 42, stage: 'geometry_probe_finished' },
+      {
+        at: 100,
+        stage: 'backend_received',
+        interfaceName: 'PowerMonitor',
+        detail: { prewarmed: true },
+      },
+      {
+        at: 101,
+        stage: 'server_profile',
+        interfaceName: 'PowerMonitor',
+        detail: {
+          pre_backend_ms: 80,
+          catalog_build_ms: 12,
+          preview_render_ms: 44,
+        },
+      },
       { at: 120, stage: 'chunk_load_started', interfaceName: 'PowerMonitor' },
       { at: 170, stage: 'chunk_load_finished', interfaceName: 'PowerMonitor' },
       { at: 220, stage: 'content_committed', interfaceName: 'PowerMonitor' },
@@ -71,6 +88,11 @@ describe('TGUI profiler metrics', () => {
     ]);
     expect(startup).toEqual({
       interfaceName: 'PowerMonitor',
+      prewarmed: true,
+      geometryProbe: 30,
+      serverPreBackend: 80,
+      serverCatalogBuild: 12,
+      serverPreviewRender: 44,
       backendToChunk: 20,
       chunkLoad: 50,
       backendToCommit: 120,

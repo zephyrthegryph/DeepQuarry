@@ -146,25 +146,27 @@ Window data shape:
 
 ```ts
 {
-  dq_categories: [ // static_data: layout, labels, choices, thumbnails
-    {
-      category: "appearance",
-      groups: [
-        { group: "body", items: [PrefWidgetItem | EditorRef, ...] },
-        { group: "hair", items: [...] },
-        ...
-      ]
-    },
-    ...
-  ],
-  dq_values?: { [preference_key]: value }        // ui_data: current widget values
-  dq_editor_data?: { [editor_key]: { ... } }     // ui_data: mutable editor state
-  dq_editor_static?: { [editor_key]: { ... } }   // static_data: editor catalogs
+  dq_category_index: ["identity", "appearance", ...],
+  dq_active_category: "identity",
+  dq_category_patch?: {                         // once per pool slot/version
+    identity: { groups: [...] }
+  },
+  dq_values: { [preference_key]: value },       // small current widget values
+  dq_editor_data: { [editor_key]: { ... } },    // active category mutable state
+  dq_editor_versions: { [editor_key]: number },
+  dq_editor_static_patch?: {                    // lazy, versioned catalogs
+    [editor_key]: { ... }
+  }
 }
 ```
 
+The browser caches category/catalog patches across tab switches and Preferences
+reopens. The server tracks delivered versions per pooled window; invalidating an
+editor catalog increments its version so only that catalog is resent.
+
 Actions from the window:
 
+- `dq_select_category` `{ category, force_catalogs? }` — switches active data and recovers a missing browser cache after refresh.
 - `dq_update_preference` `{ key, value }` — single-pref update; the backend routes through `update_preference()` so constraints fire.
 - `dq_editor_action` `{ editor, action, params }` — composite editor's `handle_action()`.
 

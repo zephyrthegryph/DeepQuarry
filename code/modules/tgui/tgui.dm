@@ -307,6 +307,7 @@
 			"fancy" = user.read_preference(/datum/preference/toggle/tgui_fancy),
 			"locked" = user.read_preference(/datum/preference/toggle/tgui_lock),
 			"scale" = user.read_preference(/datum/preference/toggle/ui_scale),
+			"prewarmed" = window?.prewarmed ? TRUE : FALSE,
 		),
 		"client" = list(
 			"ckey" = user.client.ckey,

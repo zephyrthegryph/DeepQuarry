@@ -180,6 +180,7 @@
 		update_character(needs_update, save_data) //needs_update == savefile_version if we need an update (positive integer
 
 	clear_character_previews()
+	dq_invalidate_all_catalogs()
 	return TRUE
 
 /datum/preferences/proc/save_character(override)

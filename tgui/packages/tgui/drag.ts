@@ -21,7 +21,7 @@ let windowKey = Byond.windowId;
 let dragging = false;
 let resizing = false;
 let screenOffset: Point = [0, 0];
-let screenOffsetPromise: Promise<Point>;
+let screenOffsetPromise: Promise<Point> | undefined;
 let dragPointOffset: Point;
 let resizeMatrix: Point;
 let initialSize: Point;
@@ -203,7 +203,7 @@ export async function recallWindowGeometry(
   }
 
   // Wait until screen offset gets resolved
-  await screenOffsetPromise;
+  await setupDrag();
   const areaAvailable = getScreenSize();
   // Set window size
   if (size) {
@@ -233,16 +233,27 @@ export async function recallWindowGeometry(
 }
 
 // Setup draggable window
-export async function setupDrag(): Promise<void> {
+export function setupDrag(): Promise<Point> {
+  if (screenOffsetPromise) {
+    return screenOffsetPromise;
+  }
   // Calculate screen offset caused by the windows taskbar
   const windowPosition = getWindowPosition();
 
-  screenOffsetPromise = Byond.winget(Byond.windowId, 'pos').then((pos) => [
-    pos.x - windowPosition[0],
-    pos.y - windowPosition[1],
-  ]);
-  screenOffset = await screenOffsetPromise;
-  logger.debug('screen offset', screenOffset);
+  screenOffsetPromise = Byond.winget(Byond.windowId, 'pos')
+    .then(
+      (pos): Point => [pos.x - windowPosition[0], pos.y - windowPosition[1]],
+    )
+    .catch((error): Point => {
+      logger.error('failed to query screen offset', error);
+      return [0, 0];
+    })
+    .then((offset) => {
+      screenOffset = offset;
+      logger.debug('screen offset', screenOffset);
+      return offset;
+    });
+  return screenOffsetPromise;
 }
 
 /**

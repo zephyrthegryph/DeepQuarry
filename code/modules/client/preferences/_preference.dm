@@ -418,9 +418,12 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 		// play_mode changes only drop robot_chassis's, etc. The next
 		// get_ui_static_data call rebuilds the missing entries inline.
 		var/list/affected_editors = GLOB.dq_editor_static_invalidators_by_key?[preference.savefile_key]
-		if(islist(affected_editors) && islist(dq_editor_static_cache))
+		if(islist(affected_editors))
 			for(var/datum/preference_editor/editor as anything in affected_editors)
-				dq_editor_static_cache -= editor.key
+				if(islist(dq_editor_static_cache))
+					dq_editor_static_cache -= editor.key
+				LAZYINITLIST(dq_editor_static_versions)
+				dq_editor_static_versions[editor.key] = (dq_editor_static_versions[editor.key] || 1) + 1
 			// We dropped at least one entry; schedule a static_data push so
 			// the React side picks up the rebuild. Push is deferred so it
 			// runs out of update_preference's call stack and coalesces
@@ -443,7 +446,7 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 
 		if(preference.savefile_identifier == PREFERENCE_PLAYER)
 			preference.apply_to_client_updated(client, read_preference(preference.type))
-		else if(constraint_cascade_depth == 0)
+		else if(constraint_cascade_depth == 0 && dq_preference_affects_preview(preference))
 			// outermost call only. Constraint-triggered inner calls
 			// (species_resets_hair, etc.) skip the preview; one rebuild at the
 			// end captures the cumulative new state. update_preview_icon_lazy

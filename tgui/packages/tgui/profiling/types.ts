@@ -35,6 +35,9 @@ export type StartupStage =
   | 'content_committed'
   | 'geometry_started'
   | 'geometry_finished'
+  | 'geometry_probe_started'
+  | 'geometry_probe_finished'
+  | 'server_profile'
   | 'window_revealed'
   | 'first_paint';
 

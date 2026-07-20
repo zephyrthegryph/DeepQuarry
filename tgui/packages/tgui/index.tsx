@@ -38,6 +38,7 @@ import { setupHotReloading } from 'tgui-dev-server/link/client';
 
 import { App } from './App';
 import { setDebugHotKeys } from './debug/use-debug';
+import { setupDrag } from './drag';
 import { bus } from './events/listeners';
 import { setupHotKeys } from './hotkeys';
 import { profileStartup } from './profiling/hooks';
@@ -53,6 +54,8 @@ function setupApp() {
 
   window.__augmentStack__ = createStackAugmentor();
   profileStartup('document_ready');
+  profileStartup('geometry_probe_started');
+  setupDrag().then(() => profileStartup('geometry_probe_finished'));
 
   setupGlobalEvents();
   setupHotKeys({

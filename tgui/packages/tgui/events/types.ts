@@ -21,6 +21,7 @@ type TguiWindow = {
   locked: BinaryIO;
   scale: BinaryIO;
   size: [number, number];
+  prewarmed?: BinaryIO;
 };
 
 type User = {

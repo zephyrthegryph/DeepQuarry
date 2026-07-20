@@ -18,7 +18,7 @@ route resolution, async chunk load, content commit, first paint, geometry comple
 and window reveal. The overlay also shows the largest nested payload fields and flags
 updates above 100 KB or commits longer than one 60 Hz frame.
 
-Startup timing begins at the first backend message received by the browser. It does
-not include DM work performed before `ui.open()` (for example icon flattening or
-static-data construction), so compare backend-to-reveal with the player's observed
-click-to-window delay when diagnosing server-side open stalls.
+The startup panel identifies warm versus cold pooled shells and records the early
+geometry probe. Interfaces that expose `dq_server_profile` (currently Preferences)
+also report pre-backend, catalog-build, and preview-render costs. Other interfaces
+still begin at first backend receipt unless they add equivalent server phase data.

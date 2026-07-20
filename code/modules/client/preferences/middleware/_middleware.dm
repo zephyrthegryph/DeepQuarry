@@ -24,7 +24,7 @@
 	return ..()
 
 /// Append all of these into ui_data
-/datum/preference_middleware/proc/get_ui_data(mob/user)
+/datum/preference_middleware/proc/get_ui_data(mob/user, datum/tgui/ui)
 	return list()
 
 /// Append all of these into ui_static_data
