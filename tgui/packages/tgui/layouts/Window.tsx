@@ -8,7 +8,6 @@ import {
   type ComponentProps,
   type PropsWithChildren,
   type ReactNode,
-  useEffect,
   useLayoutEffect,
   useState,
 } from 'react';
@@ -66,7 +65,12 @@ export function Window(props: Props) {
 
   const { config, suspended, debug } = useBackend();
 
-  const [isReadyToRender, setIsReadyToRender] = useState(false);
+  // Native pooled shells are hidden by the server before their payload is sent,
+  // so they can apply geometry in the first commit. Legacy windows retain the
+  // defensive second commit after the browser itself has issued the hide.
+  const [isReadyToRender, setIsReadyToRender] = useState(
+    Boolean(config?.window?.native_shell),
+  );
 
   // We need to set the window to be invisible before we can set its geometry
   // Otherwise, we get a flicker effect when the window is first rendered
@@ -82,12 +86,12 @@ export function Window(props: Props) {
       'is-visible': false,
     });
     profileTransition('layout-hide-sent');
-    setIsReadyToRender(true);
+    if (!isReadyToRender) setIsReadyToRender(true);
   }, [config?.window?.native_shell]);
 
   const { scale } = config?.window || false;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     let cancelled = false;
     if (!suspended && isReadyToRender) {
       const updateGeometry = async () => {

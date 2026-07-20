@@ -146,14 +146,6 @@ function loadInterfaceModule(name: string, path: string): Promise<any> {
   return pending;
 }
 
-/** Fetch an interface chunk during browser idle time without mounting it. */
-export function preloadInterface(name: string): void {
-  if (EAGER_INTERFACES[name] || moduleCache.has(name)) return;
-  const path = resolveInterfacePath(name);
-  if (path)
-    loadInterfaceModule(name, path).catch(() => moduleCache.delete(name));
-}
-
 function getRoutedComponent(name: string): ComponentType {
   // Eager interfaces are in the main bundle — return them directly, no lazy/Suspense.
   const eager = EAGER_INTERFACES[name];
@@ -205,10 +197,10 @@ const SELF_MANAGED = new Set<string>(['Tooltip']);
 // what prevents the cold-open flash of the window at default size before it
 // resizes. resume() (events/handlers/update.ts) keeps a delayed failsafe reveal.
 function RevealWindow({ children }: { children: ReactNode }) {
+  const config = store.get(configAtom);
+  const interfaceName = config?.interface?.name;
+  const generation = config?.window?.generation;
   useEffect(() => {
-    const config = store.get(configAtom);
-    const interfaceName = config?.interface?.name;
-    const generation = config?.window?.generation;
     profileStartup('content_committed', interfaceName, { source: 'route' });
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
@@ -216,7 +208,7 @@ function RevealWindow({ children }: { children: ReactNode }) {
       });
     });
     revealIfUnclaimed(generation);
-  }, []);
+  }, [generation, interfaceName]);
   return <>{children}</>;
 }
 

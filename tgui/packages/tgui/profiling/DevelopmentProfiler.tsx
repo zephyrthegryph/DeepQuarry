@@ -8,7 +8,6 @@ import {
   useSyncExternalStore,
 } from 'react';
 import { configAtom, store } from '../events/store';
-import { preloadInterface } from '../routes';
 import { profileStartup } from './hooks';
 import { appendBounded, summarizeProfiler } from './metrics';
 import type {
@@ -480,23 +479,6 @@ export function DevelopmentProfiler({ children }: { children: ReactNode }) {
       removeBridge();
     };
   }, [enabled]);
-  useEffect(() => {
-    if (config?.interface?.name !== 'LobbyMenu') return;
-    // Character setup is the first large interface most lobby clients open.
-    // Fetch its code while the persistent lobby browser is idle so the click is warm.
-    const idle = window.requestIdleCallback?.(
-      () => preloadInterface('PreferencesMenu'),
-      { timeout: 1000 },
-    );
-    const fallback =
-      idle === undefined
-        ? window.setTimeout(() => preloadInterface('PreferencesMenu'), 250)
-        : undefined;
-    return () => {
-      if (idle !== undefined) window.cancelIdleCallback?.(idle);
-      if (fallback !== undefined) window.clearTimeout(fallback);
-    };
-  }, [config?.interface?.name]);
   if (!enabled) {
     return children;
   }

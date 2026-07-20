@@ -23,6 +23,8 @@ export type PayloadFieldSample = {
 };
 
 export type StartupStage =
+  | 'generic_warmup_started'
+  | 'generic_warmup_finished'
   | 'document_ready'
   | 'initial_render'
   | 'profiler_requested'

@@ -1,0 +1,5 @@
+author: "Codex"
+delete-after: true
+changes:
+  - qol: "Reduced first-open TGUI delays by warming shared UI infrastructure in hidden pooled windows."
+  - code_imp: "Removed interface-specific TGUI preloading; named interfaces remain demand-loaded."
