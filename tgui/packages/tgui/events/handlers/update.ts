@@ -46,10 +46,6 @@ export function update(payload: UpdatePayload): void {
       catalog_build_ms: payload.data.dq_catalog_build_ms,
     });
   }
-  if (wasSuspended) {
-    resume(payload);
-    store.set(suspendedAtom, false);
-  }
   if (
     wasSuspended &&
     previousInterface &&
@@ -59,7 +55,15 @@ export function update(payload: UpdatePayload): void {
     store.set(gameDataAtom, {});
     store.set(gameStaticDataAtom, {});
   }
+  // Install the complete new interface snapshot while the renderer still sees
+  // the shell as suspended. Unsuspending first allows React to mount one frame
+  // with the previous interface's/default geometry before this payload lands,
+  // which appears as a wrong-sized/positioned cold-open flash.
   updateData(payload);
+  if (wasSuspended) {
+    resume(payload);
+    store.set(suspendedAtom, false);
+  }
   if (process.env.NODE_ENV === 'development') {
     const profileFinish = performance.now?.() ?? Date.now();
     const payloadJson = JSON.stringify(payload);
