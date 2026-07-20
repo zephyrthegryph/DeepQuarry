@@ -31,6 +31,7 @@ import {
 import { suspendStart } from '../events/handlers/suspense';
 import { createLogger } from '../logging';
 import { profileStartup } from '../profiling/hooks';
+import { profileTransition } from '../profiling/transitions';
 import { claimReveal, revealWindow } from '../reveal';
 import { Layout } from './Layout';
 import { TitleBar } from './TitleBar';
@@ -70,12 +71,14 @@ export function Window(props: Props) {
   // We need to set the window to be invisible before we can set its geometry
   // Otherwise, we get a flicker effect when the window is first rendered
   useLayoutEffect(() => {
+    profileTransition('layout-hide-start');
     if (config?.window?.native_shell) {
       Byond.winset(Byond.windowId, { alpha: 0 });
     }
     Byond.winset(Byond.windowId, {
       'is-visible': false,
     });
+    profileTransition('layout-hide-sent');
     setIsReadyToRender(true);
   }, [config?.window?.native_shell]);
 

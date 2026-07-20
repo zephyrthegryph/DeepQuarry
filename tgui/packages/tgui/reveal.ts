@@ -29,6 +29,10 @@
 import type { ResolvedWindowGeometry } from './drag';
 import { configAtom, store, suspendedAtom } from './events/store';
 import { profileStartup } from './profiling/hooks';
+import {
+  observedNativeGeometry,
+  profileTransition,
+} from './profiling/transitions';
 
 let claimed = false;
 
@@ -204,11 +208,17 @@ export async function revealWindow(
     return false;
   }
   const nativeGeometry = buildNativeGeometryPayload(geometry);
+  profileTransition('reveal-start', {
+    requested_size: nativeGeometry.size,
+    requested_pos: nativeGeometry.pos,
+    native_shell: nativeShell,
+  });
   if (nativeShell) {
     // Let DreamSeeker perform the native hidden->shown transition while the
     // OS window is fully transparent. Some clients center or paint a window
     // during winshow even when geometry was assigned while it was hidden.
     Byond.winset(Byond.windowId, { alpha: 0, 'is-visible': true });
+    profileTransition('transparent-native-show-sent');
   }
   if (nativeGeometry.size || nativeGeometry.pos) {
     // Keep the shell hidden while DreamSeeker applies geometry. A single
@@ -221,6 +231,12 @@ export async function revealWindow(
       ...(nativeShell ? { alpha: 0 } : { 'is-visible': false }),
     });
     const verification = await waitForNativeGeometry(nativeGeometry);
+    profileTransition('native-geometry-verified', {
+      matched: verification.matched,
+      observed: verification.observed,
+      requested_size: nativeGeometry.size,
+      requested_pos: nativeGeometry.pos,
+    });
     if (!verification.matched && config?.client?.profiling) {
       Byond.sendMessage('perf/flicker', {
         kind: 'pre-reveal-geometry-mismatch',
@@ -232,6 +248,11 @@ export async function revealWindow(
       });
     }
     const viewport = await waitForBrowserViewport(nativeGeometry.size);
+    profileTransition('browser-viewport-verified', {
+      matched: viewport.matched,
+      observed: viewport.observed,
+      requested_size: nativeGeometry.size,
+    });
     if (!viewport.matched && config?.client?.profiling) {
       Byond.sendMessage('perf/flicker', {
         kind: 'pre-reveal-viewport-mismatch',
@@ -249,16 +270,53 @@ export async function revealWindow(
     generation: currentGeneration,
     verifiedGeometry: Boolean(nativeGeometry.size || nativeGeometry.pos),
   });
+  profileTransition('opacity-reveal-sending', {
+    requested_size: nativeGeometry.size,
+    requested_pos: nativeGeometry.pos,
+  });
   Byond.winset(
     Byond.windowId,
     nativeShell ? { alpha: 255 } : { 'is-visible': true },
   );
+  profileTransition('opacity-reveal-sent');
+  void samplePresentedTransition(currentGeneration);
   Byond.sendMessage('visible', {
     generation: currentGeneration,
     geometry: nativeGeometry,
   });
   void monitorRevealedGeometry(currentGeneration, nativeGeometry);
   return true;
+}
+
+async function samplePresentedTransition(generation?: number): Promise<void> {
+  let elapsed = 0;
+  for (const delay of [0, 16, 50, 150]) {
+    if (delay > elapsed) {
+      await new Promise<void>((resolve) =>
+        setTimeout(resolve, delay - elapsed),
+      );
+    }
+    elapsed = delay;
+    if (!isCurrentGeneration(generation)) return;
+    try {
+      const observed = await Byond.winget(
+        Byond.windowId,
+        'size;pos;alpha;is-visible',
+      );
+      profileTransition(
+        `post-opacity-${delay}ms`,
+        observedNativeGeometry(observed),
+      );
+    } catch {
+      profileTransition(`post-opacity-${delay}ms`, {
+        native_query_failed: true,
+      });
+    }
+  }
+  requestAnimationFrame(() => {
+    profileTransition('first-animation-frame');
+    requestAnimationFrame(() => profileTransition('second-animation-frame'));
+  });
 }
 
 /**

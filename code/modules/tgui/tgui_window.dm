@@ -213,9 +213,11 @@
 	// the server before the new owner can send content, otherwise the new content
 	// flashes at the previous interface's geometry and React hides it a frame later.
 	if(client && pooled)
+		log_tgui(client, "TGUI transition: stage=server-acquire-hide-sending generation=[generation + 1] previous_visible=[visible] status=[status] native_shell=[native_shell].", window = src)
 		if(native_shell)
 			winset(client, id, "alpha=0")
 		winshow(client, id, FALSE)
+		log_tgui(client, "TGUI transition: stage=server-acquire-hide-sent generation=[generation + 1].", window = src)
 	generation++
 	locked = TRUE
 	locked_by = ui
@@ -275,9 +277,11 @@
 		// Do not rely on the asynchronous browser suspend handler to hide the shell.
 		// The pool can hand this READY window to another UI immediately after return.
 		if(pooled)
+			log_tgui(client, "TGUI transition: stage=server-release-hide-sending generation=[generation] previous_visible=[visible] status=[status] native_shell=[native_shell].", window = src)
 			if(native_shell)
 				winset(client, id, "alpha=0")
 			winshow(client, id, FALSE)
+			log_tgui(client, "TGUI transition: stage=server-release-hide-sent generation=[generation].", window = src)
 		visible = FALSE
 		status = TGUI_WINDOW_READY
 		send_message("suspend")
@@ -460,6 +464,15 @@
 			if(length(encoded_payload) > 8000)
 				encoded_payload = copytext(encoded_payload, 1, 8001)
 			log_tgui(client, "Automatic TGUI performance telemetry: [encoded_payload]", window = src)
+		if("perf/transition")
+			#ifndef DEBUG
+			if(client?.address != "127.0.0.1" && client?.address != "::1")
+				return
+			#endif
+			var/encoded_payload = json_encode(payload)
+			if(length(encoded_payload) > 8000)
+				encoded_payload = copytext(encoded_payload, 1, 8001)
+			log_tgui(client, "TGUI transition: [encoded_payload]", window = src)
 		if("suspend")
 			close(can_be_suspended = TRUE)
 		if("close")

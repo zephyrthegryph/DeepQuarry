@@ -1,5 +1,6 @@
 import { focusMap } from '../../focus';
 import { logger } from '../../logging';
+import { profileTransition } from '../../profiling/transitions';
 import { suspendRenderer } from '../../renderer';
 import { resetReveal } from '../../reveal';
 import {
@@ -16,6 +17,7 @@ let suspendInterval: NodeJS.Timeout | null = null;
 
 /** Resets all state and refocuses byond window */
 export function suspend(): void {
+  profileTransition('browser-suspend-received');
   suspendRenderer();
   resetStore();
   // Release the reveal claim: a pooled window may be reused for a different
@@ -39,6 +41,7 @@ export function suspend(): void {
     Byond.winset(Byond.windowId, { alpha: 0 });
   }
   Byond.winset(Byond.windowId, { 'is-visible': false });
+  profileTransition('browser-suspend-hide-sent');
 
   focusMap();
 }

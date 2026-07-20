@@ -2,6 +2,7 @@ import { perf } from 'common/perf';
 import { setupDrag } from '../../drag';
 import { logger } from '../../logging';
 import { profileStartup, profileUpdate } from '../../profiling/hooks';
+import { profileTransition } from '../../profiling/transitions';
 import type { PayloadFieldSample } from '../../profiling/types';
 import { resumeRenderer } from '../../renderer';
 import { revealWindow } from '../../reveal';
@@ -29,6 +30,18 @@ export function update(payload: UpdatePayload): void {
     payload.config?.client?.profiling ||
       store.get(configAtom)?.client?.profiling,
   );
+  if (profiling && wasSuspended) {
+    profileTransition(
+      'backend-received',
+      {
+        previous_interface: previousInterface,
+        next_interface: interfaceName,
+        next_generation: payload.config?.window?.generation,
+        native_shell: Boolean(payload.config?.window?.native_shell),
+      },
+      true,
+    );
+  }
   const profileStart = profiling ? (performance.now?.() ?? Date.now()) : 0;
   if (profiling && wasSuspended) {
     profileStartup('backend_received', interfaceName, {
@@ -61,6 +74,7 @@ export function update(payload: UpdatePayload): void {
   if (wasSuspended) {
     resume(payload);
     store.set(suspendedAtom, false);
+    if (profiling) profileTransition('backend-applied-and-unsuspended');
   }
   if (profiling) {
     const profileFinish = performance.now?.() ?? Date.now();
