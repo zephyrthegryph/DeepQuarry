@@ -1489,6 +1489,31 @@
 	compact.circulation_min = 0.2
 	return compact
 
+/// Authored contract for a true 2x2 service pocket. Door circulation and the
+/// room's required utility socket can consume its complete walkable footprint,
+/// so dense furniture would make the room physically impossible. Its department
+/// floor treatment, named area, access, alarm, and atmos/power fixtures remain
+/// its intentional station function; this is not the emergency runtime shell.
+/proc/generated_micro_room_definition_for(department_id, role)
+	var/datum/generated_room_definition/micro = generated_room_definition_for(department_id, role)
+	if(!micro)
+		micro = new
+	micro.id = "[department_id]-micro-[role]"
+	micro.name = "Micro [capitalize(replacetext(role, "-", " "))]"
+	micro.min_width = 1
+	micro.min_height = 1
+	micro.max_width = 2
+	micro.max_height = 2
+	micro.allow_narrow_irregular = TRUE
+	micro.required_features = list()
+	micro.required_groups = list()
+	micro.optional_groups = list()
+	micro.fragment_options = list()
+	micro.density_min = 0
+	micro.density_max = 0
+	micro.circulation_min = 0
+	return micro
+
 /// Guaranteed room shell used only after authored and compact content cannot
 /// satisfy a runtime footprint. Tests keep strict contracts and never accept it.
 /proc/generated_minimum_room_definition_for(department_id, role)

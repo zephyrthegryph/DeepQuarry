@@ -179,7 +179,11 @@
 		return FALSE
 	for(var/existing_id in intent.utility_intents)
 		if(existing_id != GENERATED_STATION_UTILITY_POWER_ROUTE && existing_id != GENERATED_STATION_UTILITY_SUPPLY_ROUTE && existing_id != GENERATED_STATION_UTILITY_SCRUB_ROUTE)
-			if((utility_id in list(GENERATED_STATION_UTILITY_APC, GENERATED_STATION_UTILITY_AIR_ALARM, GENERATED_STATION_UTILITY_FIRE_ALARM, GENERATED_STATION_UTILITY_LIGHT)) && (existing_id in list(GENERATED_STATION_UTILITY_VENT, GENERATED_STATION_UTILITY_SCRUBBER)))
+			var/new_is_wall_fixture = utility_id in list(GENERATED_STATION_UTILITY_APC, GENERATED_STATION_UTILITY_AIR_ALARM, GENERATED_STATION_UTILITY_FIRE_ALARM, GENERATED_STATION_UTILITY_LIGHT)
+			var/existing_is_wall_fixture = existing_id in list(GENERATED_STATION_UTILITY_APC, GENERATED_STATION_UTILITY_AIR_ALARM, GENERATED_STATION_UTILITY_FIRE_ALARM, GENERATED_STATION_UTILITY_LIGHT)
+			var/new_is_floor_atmos = utility_id in list(GENERATED_STATION_UTILITY_VENT, GENERATED_STATION_UTILITY_SCRUBBER)
+			var/existing_is_floor_atmos = existing_id in list(GENERATED_STATION_UTILITY_VENT, GENERATED_STATION_UTILITY_SCRUBBER)
+			if((new_is_wall_fixture && existing_is_floor_atmos) || (new_is_floor_atmos && existing_is_wall_fixture))
 				continue
 			errors += "Utility fixture [utility_id] conflicts with [existing_id] at [local_x],[local_y]."
 			return FALSE

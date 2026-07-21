@@ -303,17 +303,28 @@
 /datum/generated_station_materializer/proc/planned_utility_floor(datum/generated_station_tile_plan/plan, owner_id, list/reserved, against_hull = FALSE, zone_id)
 	for(var/datum/generated_station_tile_intent/intent in plan.utility_floors(owner_id, zone_id))
 		var/key = plan.coordinate_key(intent.local_x, intent.local_y)
-		if(intent.owner_id != owner_id || (zone_id && intent.zone_id != zone_id) || intent.structure_kind != GENERATED_STATION_TILE_FLOOR || intent.door_type || reserved[key])
+		if(intent.owner_id != owner_id || (zone_id && intent.zone_id != zone_id) || intent.structure_kind != GENERATED_STATION_TILE_FLOOR || intent.door_type)
 			continue
 		if(against_hull)
+			var/wall_reservation = "wall-floor:[key]"
+			if(reserved[wall_reservation])
+				continue
 			var/has_hull = FALSE
 			for(var/list/offset in list(list(1, 0), list(-1, 0), list(0, 1), list(0, -1)))
-				if(plan.tile(intent.local_x + offset[1], intent.local_y + offset[2])?.structure_kind == GENERATED_STATION_TILE_HULL)
+				var/wall_x = intent.local_x + offset[1]
+				var/wall_y = intent.local_y + offset[2]
+				if(plan.tile(wall_x, wall_y)?.structure_kind == GENERATED_STATION_TILE_HULL)
 					has_hull = TRUE
 					break
 			if(!has_hull)
 				continue
-		reserved[key] = TRUE
+			// Wall fixtures may share the floor with one vent or scrubber, but two
+			// wall-mounted machines may not occupy the same floor coordinate.
+			reserved[wall_reservation] = TRUE
+		else
+			if(reserved[key])
+				continue
+			reserved[key] = TRUE
 		return intent
 	return null
 
@@ -324,11 +335,14 @@
 			continue
 		for(var/list/offset in list(list(1, 0), list(-1, 0), list(0, 1), list(0, -1)))
 			var/datum/generated_station_tile_intent/connector = plan.tile(device.local_x + offset[1], device.local_y + offset[2])
-			var/connector_key = connector && plan.coordinate_key(connector.local_x, connector.local_y)
-			if(!connector || connector.owner_id != owner_id || (zone_id && connector.zone_id != zone_id) || connector.structure_kind != GENERATED_STATION_TILE_FLOOR || connector.door_type || reserved[connector_key])
+			if(!connector || connector.owner_id != owner_id || (zone_id && connector.zone_id != zone_id) || connector.structure_kind != GENERATED_STATION_TILE_FLOOR || connector.door_type)
 				continue
+			// The connector is underfloor routing, not another physical fixture.
+			// Supply and scrubber pipes use separate layers and may share this tile
+			// with each other, cables, or a wall-mounted APC/alarm. Reserving it as
+			// occupied made otherwise valid compact rooms require seven clear tiles
+			// for five actual machines.
 			reserved[key] = TRUE
-			reserved[connector_key] = TRUE
 			return list("device" = device, "connector" = connector)
 	return null
 
@@ -336,13 +350,12 @@
 /datum/generated_station_materializer/proc/plan_generated_station_lights(datum/generated_station_tile_plan/plan, owner_id, list/reserved, zone_id)
 	var/list/candidates = list()
 	for(var/datum/generated_station_tile_intent/intent in plan.utility_floors(owner_id, zone_id))
-		var/key = plan.coordinate_key(intent.local_x, intent.local_y)
 		if(intent.owner_id != owner_id || (zone_id && intent.zone_id != zone_id) || intent.structure_kind != GENERATED_STATION_TILE_FLOOR || intent.door_type)
 			continue
 		// A wall light may share a coordinate with an underfloor/floor atmos
 		// device, but never a wall edge with an APC or alarm. Tile occupancy and
 		// wall-edge occupancy are independent typed slots.
-		if(reserved[key] && intent.has_wall_utility_fixture())
+		if(intent.has_wall_utility_fixture())
 			continue
 		for(var/list/offset in list(list(1, 0), list(-1, 0), list(0, 1), list(0, -1)))
 			if(plan.tile(intent.local_x + offset[1], intent.local_y + offset[2])?.structure_kind == GENERATED_STATION_TILE_HULL)

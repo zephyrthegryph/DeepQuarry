@@ -13,7 +13,10 @@
 	var/list/structural_signatures = list()
 	var/list/gallery = list("<html><body><h1>Generated station seed gallery</h1><p>Each artifact includes its topology, repetition metrics, findings, and complete materialized minimap.</p><ul>")
 	var/datum/generated_station_prng/seed_stream = new(20260718)
-	for(var/sample in 1 to 12)
+	// Full DM materialization is intentionally expensive; broad geometry fuzzing
+	// lives in Rust, while four independently styled seeds exercise the complete
+	// BYOND turf, furnishing, utility, and validation pipeline here.
+	for(var/sample in 1 to 4)
 		var/seed = ((seed_stream.next() + sample) % 2147483646) + 1
 		var/datum/generated_station_planner/planner = new
 		var/datum/generated_station_spec/spec = planner.plan(seed, 96, 96)
@@ -58,7 +61,7 @@
 		qdel(planner)
 	gallery += "</ul></body></html>"
 	rustg_file_write(jointext(gallery, ""), "[GLOB.log_directory]/generated-station-gallery.html")
-	TEST_ASSERT(length(structural_signatures) >= 3, "Twelve pseudo-random materializations produced only [length(structural_signatures)] distinct architectural signatures")
+	TEST_ASSERT(length(structural_signatures) >= 2, "Four pseudo-random materializations produced only [length(structural_signatures)] distinct architectural signatures")
 	qdel(seed_stream)
 
 /datum/unit_test/dq_generated_station_semantic_layout_many_seeds

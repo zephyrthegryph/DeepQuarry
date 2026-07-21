@@ -1,0 +1,6 @@
+author: "Codex"
+delete-after: true
+changes:
+  - bugfix: "Made Rust-planned compact station rooms materialize with complete, non-overlapping power, atmospherics, alarms, and lighting."
+  - bugfix: "Fixed generated-room furnishing connectivity checks producing list-index runtimes."
+  - refactor: "Added an explicit authored micro-room contract and randomized end-to-end station materialization coverage."

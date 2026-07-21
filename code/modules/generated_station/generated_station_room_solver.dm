@@ -633,12 +633,16 @@
 		var/ny = blocked_y + (direction == NORTH) - (direction == SOUTH)
 		var/index = grid_index(nx, ny)
 		if(module.contains_tile(nx, ny) && candidate_mask[index] && !occupied_mask[index])
-			open_neighbors[index] = TRUE
+			open_neighbors["[index]"] = TRUE
 	if(length(open_neighbors) <= 1)
 		return TRUE
-	var/list/frontier = list(open_neighbors[1])
+	var/first_neighbor
+	for(var/index_key in open_neighbors)
+		first_neighbor = text2num(index_key)
+		break
+	var/list/frontier = list(first_neighbor)
 	var/list/visited = list()
-	visited[frontier[1]] = TRUE
+	visited["[first_neighbor]"] = TRUE
 	while(length(frontier))
 		var/index = frontier[1]
 		frontier.Cut(1, 2)
@@ -650,12 +654,12 @@
 			if(abs(nx - blocked_x) > 1 || abs(ny - blocked_y) > 1 || (nx == blocked_x && ny == blocked_y))
 				continue
 			var/next_index = grid_index(nx, ny)
-			if(visited[next_index] || !module.contains_tile(nx, ny) || !candidate_mask[next_index] || occupied_mask[next_index])
+			if(visited["[next_index]"] || !module.contains_tile(nx, ny) || !candidate_mask[next_index] || occupied_mask[next_index])
 				continue
-			visited[next_index] = TRUE
+			visited["[next_index]"] = TRUE
 			frontier += next_index
-	for(var/index in open_neighbors)
-		if(!visited[index])
+	for(var/index_key in open_neighbors)
+		if(!visited[index_key])
 			return FALSE
 	return TRUE
 
@@ -983,15 +987,19 @@
 		if(!primary_definition)
 			continue
 		var/list/definitions = list()
-		// An irregular footprint may satisfy the solver's geometric ratio while
-		// still being too small for the full activity program. Route those rooms
-		// directly to their authored compact program instead of letting a full
-		// definition masquerade as successful in nine usable tiles.
-		if(module.satisfies(primary_definition) && module.footprint_tiles() >= primary_definition.min_width * primary_definition.min_height)
-			definitions += primary_definition
-		else
+		if(module.footprint_tiles() <= 4)
 			qdel(primary_definition)
-		definitions += resolve_minimum_room_definition(department_id, module.role)
+			definitions += generated_micro_room_definition_for(department_id, module.role)
+		else
+			// An irregular footprint may satisfy the solver's geometric ratio while
+			// still being too small for the full activity program. Route those rooms
+			// directly to their authored compact program instead of letting a full
+			// definition masquerade as successful in nine usable tiles.
+			if(module.satisfies(primary_definition) && module.footprint_tiles() >= primary_definition.min_width * primary_definition.min_height)
+				definitions += primary_definition
+			else
+				qdel(primary_definition)
+			definitions += resolve_minimum_room_definition(department_id, module.role)
 		// Runtime generation must remain playable even if an unexpected footprint
 		// defeats both authored contracts. Strict tests deliberately omit this last
 		// resort so every catalog/solver regression remains visible.

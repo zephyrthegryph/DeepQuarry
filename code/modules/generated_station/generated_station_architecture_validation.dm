@@ -399,7 +399,10 @@
 		if(!definition)
 			validation.add(GENERATED_STATION_ISSUE_ERROR, "unknown-room-definition", "Functional room references an unknown definition.", module.id)
 			continue
-		if(findtext(solution.definition_id, "-compact"))
+		if(findtext(solution.definition_id, "-micro-"))
+			qdel(definition)
+			definition = generated_micro_room_definition_for(module_department_id, module.role)
+		else if(findtext(solution.definition_id, "-compact-"))
 			qdel(definition)
 			definition = generated_compact_room_definition_for(module_department_id, module.role)
 		var/minimum_usable_tiles = min(definition.min_width * definition.min_height, 21)

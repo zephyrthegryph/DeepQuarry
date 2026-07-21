@@ -60,13 +60,9 @@
 		flight_plan.generation_progress = max(flight_plan.generation_progress, progress)
 	if(force_yield || slice_usage >= tick_budget)
 		yield_count++
-		// A zero-duration sleep only moves this proc to the back of BYOND's current
-		// scheduler queue. Under sustained generation it can immediately resume in
-		// the same tick, starving the master controller and client map sending.
-		// world.tick_lag is fractional (0.25 ds at 40 TPS). The generator normally
-		// reaches sleep before the MC, so an equal-duration sleep also wakes it first
-		// and makes background work delay every MC cycle. Wait for the MC iteration
-		// to advance, then resume inside its sleep window instead.
+		// A negative sleep has no scheduled wake-up and can suspend generation
+		// forever. Yield through one MC interval, then wait until the controller
+		// has actually advanced so generation resumes in its idle window.
 		var/mc_iteration = Master?.iteration
 		sleep(world.tick_lag)
 		while(Master && Master.iteration == mc_iteration)
