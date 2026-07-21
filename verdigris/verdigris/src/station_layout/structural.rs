@@ -1,16 +1,15 @@
 use super::error::LayoutError;
 use super::model::{
     Department, Door, LayoutGraph, LayoutRequest, MacroArchetype, Point, Rect, Room, RoomType,
-    StationLayout, TileCell, TileClass,
+    STATION_MAINTENANCE_WIDTH, StationLayout, TileCell, TileClass,
 };
 use std::cmp::Reverse;
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
-const MAINTENANCE_WIDTH: u16 = 2;
 // A logical cell contains its walkable interior followed by one structural
 // boundary tile. Main and local corridors deliberately share this compact
 // module so intersections cannot accidentally widen maintenance.
-const PITCH: u16 = MAINTENANCE_WIDTH + 1;
+const PITCH: u16 = STATION_MAINTENANCE_WIDTH + 1;
 const INTERIOR: u16 = PITCH - 1;
 const DOOR_FLAG: u32 = 1;
 
@@ -3623,9 +3622,9 @@ mod tests {
 
     #[test]
     fn maintenance_module_has_exactly_two_walkable_tiles() {
-        assert_eq!(MAINTENANCE_WIDTH, 2);
-        assert_eq!(INTERIOR, MAINTENANCE_WIDTH);
-        assert_eq!(PITCH, MAINTENANCE_WIDTH + 1);
+        assert_eq!(STATION_MAINTENANCE_WIDTH, 2);
+        assert_eq!(INTERIOR, STATION_MAINTENANCE_WIDTH);
+        assert_eq!(PITCH, STATION_MAINTENANCE_WIDTH + 1);
     }
 
     #[test]

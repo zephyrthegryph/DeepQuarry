@@ -122,7 +122,7 @@
 	var/list/settings = list(
 		"hull_thickness" = 1,
 		"corridor_width" = 2,
-		"maintenance_width" = 1,
+		"maintenance_width" = 2,
 		"candidate_count" = 24,
 		"room_jitter" = 3,
 		"architecture_choices" = list("cross", "ring", "bent", "branch", "courtyard"),

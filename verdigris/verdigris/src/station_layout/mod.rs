@@ -57,7 +57,7 @@ mod tests {
                 height: 112,
                 hull_thickness: 1,
                 corridor_width: 3,
-                maintenance_width: 3,
+                maintenance_width: STATION_MAINTENANCE_WIDTH,
                 room_jitter: 3,
             },
             departments,

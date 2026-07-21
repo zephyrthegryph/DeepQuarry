@@ -1,4 +1,6 @@
 use serde::{Deserialize, Serialize};
+
+pub const STATION_MAINTENANCE_WIDTH: u16 = 2;
 use std::collections::BTreeMap;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]

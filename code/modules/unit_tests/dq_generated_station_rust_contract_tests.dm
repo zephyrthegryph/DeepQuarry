@@ -17,7 +17,7 @@
 	var/list/settings = request["settings"]
 	TEST_ASSERT_EQUAL(settings["hull_thickness"], 1, "Catalog omitted hull geometry settings")
 	TEST_ASSERT_EQUAL(settings["corridor_width"], 2, "Catalog omitted corridor geometry settings")
-	TEST_ASSERT_EQUAL(settings["maintenance_width"], 1, "Catalog omitted maintenance geometry settings")
+	TEST_ASSERT_EQUAL(settings["maintenance_width"], 2, "Catalog did not request the Rust planner's two-tile maintenance geometry")
 	TEST_ASSERT(settings["candidate_count"] > 1 && length(settings["architecture_choices"]) >= 5, "Catalog omitted architecture search settings")
 	var/list/room = request["rooms"][1]
 	TEST_ASSERT_EQUAL(room["min_count"], 1, "Room occurrence minimum was not exported")

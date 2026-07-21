@@ -20,6 +20,9 @@ pub fn decode_catalog(json: &str) -> Result<(LayoutRequest, CatalogMapping)> {
     if wire.settings.candidate_count == 0 {
         bail!("candidate_count must be positive");
     }
+    if wire.settings.maintenance_width != STATION_MAINTENANCE_WIDTH {
+        bail!("maintenance_width must be {STATION_MAINTENANCE_WIDTH} for the structural lattice");
+    }
     let architecture_choices = parse_archetypes(&wire.settings.architecture_choices)?;
     let seed = wire
         .seed
