@@ -1191,10 +1191,34 @@ fn assign_department_common_and_rooms(
                     department.id
                 ))
             })?;
-        let center = nearest_in_set(plan.department_centers[&department.id], &department_cells)
-            .ok_or_else(|| {
-                LayoutError(format!("department {} has no owned center", department.id))
-            })?;
+        let requested_center =
+            nearest_in_set(plan.department_centers[&department.id], &department_cells).ok_or_else(
+                || LayoutError(format!("department {} has no owned center", department.id)),
+            )?;
+        let boundary: Vec<_> = department_cells
+            .iter()
+            .copied()
+            .filter(|point| {
+                plan.neighbors(*point)
+                    .any(|neighbor| !department_cells.contains(&neighbor))
+            })
+            .collect();
+        let center = department_cells
+            .iter()
+            .copied()
+            .max_by_key(|point| {
+                let clearance = boundary
+                    .iter()
+                    .map(|edge| cell_distance(*point, *edge))
+                    .min()
+                    .unwrap_or(0);
+                (
+                    clearance,
+                    Reverse(cell_distance(*point, requested_center)),
+                    Reverse(*point),
+                )
+            })
+            .unwrap_or(requested_center);
         let mut common =
             shortest_path_in_set(frontage, center, &department_cells, plan.width, plan.height)
                 .ok_or_else(|| {
@@ -1203,6 +1227,10 @@ fn assign_department_common_and_rooms(
                         department.id
                     ))
                 })?;
+        // This is the department's semantic spine, not merely temporary room
+        // frontage. Preserve it through the later compaction pass so an
+        // alternate service-edge route cannot replace the interior hallway.
+        let primary_spine = common.clone();
 
         let maintenance_components =
             adjacent_components(&department_cells, Space::Maintenance, plan);
@@ -1512,6 +1540,7 @@ fn assign_department_common_and_rooms(
             &mut common,
             &mut assignments,
             &matched_types,
+            &primary_spine,
         );
         for (room_type, cells) in matched_types.into_iter().zip(assignments) {
             if cells.is_empty() {
@@ -1549,15 +1578,21 @@ fn compact_department_circulation(
     common: &mut BTreeSet<CellPoint>,
     rooms: &mut [BTreeSet<CellPoint>],
     room_types: &[&RoomType],
+    primary_spine: &BTreeSet<CellPoint>,
 ) {
     loop {
         let mut changed = false;
         let candidates: Vec<_> = common.iter().copied().collect();
         for point in candidates {
-            // These cells are explicit interfaces and must remain circulation.
+            if primary_spine.contains(&point) {
+                continue;
+            }
+            // Public frontage is the department's required entrance. Maintenance
+            // frontage may be absorbed into a room, creating a useful service
+            // door instead of preserving a hallway around the department edge.
             if plan
                 .neighbors(point)
-                .any(|neighbor| matches!(plan.get(neighbor), Space::Public | Space::Maintenance))
+                .any(|neighbor| plan.get(neighbor) == Space::Public)
             {
                 continue;
             }
