@@ -29,7 +29,7 @@ export class TguiChunkManifestPlugin {
         nestedModules: true,
         modules: false,
         assets: false,
-        reasons: false,
+        reasons: true,
         source: false,
       });
       // Match an interface ENTRY module path: `interfaces/Name.tsx`,
@@ -47,8 +47,15 @@ export class TguiChunkManifestPlugin {
           if (m.modules) collectNames(m.modules, out);
         }
       };
-      const manifest: Record<string, string[]> = {};
-      const fromChompstation: Record<string, boolean> = {};
+      type Candidate = {
+        chunk: any;
+        files: string[];
+        fromChompstation: boolean;
+        size: number;
+      };
+      const candidates: Record<string, Candidate[]> = {};
+      const chunksById = new Map<any, any>();
+      for (const chunk of json.chunks || []) chunksById.set(chunk.id, chunk);
       for (const chunk of json.chunks || []) {
         const files: string[] = [
           ...(chunk.files || []),
@@ -62,11 +69,52 @@ export class TguiChunkManifestPlugin {
           if (!match) continue;
           const iface = match[2];
           const isChomp = Boolean(match[1]);
-          // chompstation entry wins over a same-named root entry.
-          if (manifest[iface] && fromChompstation[iface] && !isChomp) continue;
-          manifest[iface] = files;
-          fromChompstation[iface] = isChomp;
+          if (!candidates[iface]) candidates[iface] = [];
+          candidates[iface].push({
+            chunk,
+            files,
+            fromChompstation: isChomp,
+            size: (chunk.modules || []).reduce(
+              (total: number, module: any) => total + (module.size || 0),
+              0,
+            ),
+          });
         }
+      }
+
+      const dependencyFiles = (root: any): string[] => {
+        const files = new Set<string>();
+        const visited = new Set<any>();
+        const visit = (chunk: any) => {
+          if (!chunk || visited.has(chunk.id)) return;
+          visited.add(chunk.id);
+          for (const file of [
+            ...(chunk.files || []),
+            ...(chunk.auxiliaryFiles || []),
+          ]) {
+            if (/\.chunk\.(js|css)$/.test(file)) files.add(file);
+          }
+          for (const childId of chunk.children || []) {
+            visit(chunksById.get(childId));
+          }
+        };
+        visit(root);
+        return [...files];
+      };
+
+      const manifest: Record<string, string[]> = {};
+      for (const [iface, choices] of Object.entries(candidates)) {
+        // A routable interface module can also be statically imported by another
+        // route (CrewManifest is embedded in PDA, for example), so it appears in
+        // several self-contained chunks. Its own context chunk is the smallest
+        // candidate; importer chunks necessarily add their own entry and modules.
+        // Preserve the existing chompstation-over-root precedence first.
+        choices.sort(
+          (left, right) =>
+            Number(right.fromChompstation) - Number(left.fromChompstation) ||
+            left.size - right.size,
+        );
+        manifest[iface] = dependencyFiles(choices[0].chunk);
       }
       writeFileSync(this.outFile, JSON.stringify(manifest, null, 0));
     });
