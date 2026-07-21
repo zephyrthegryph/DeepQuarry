@@ -38,6 +38,10 @@ type StoredWindowGeometry = {
 };
 
 const geometryCache = new Map<string, StoredWindowGeometry | null>();
+const geometryRequestCache = new Map<
+  string,
+  Promise<StoredWindowGeometry | null>
+>();
 
 async function readStoredGeometry(
   key: string,
@@ -51,6 +55,23 @@ async function readStoredGeometry(
     setTimeout(() => resolve(null), 500);
   });
   return Promise.race([query, timeout]);
+}
+
+/** Begin the asynchronous storage lookup before the interface route mounts. */
+export function prepareWindowGeometry(
+  key: string | undefined,
+): Promise<StoredWindowGeometry | null> | undefined {
+  if (!key || geometryCache.has(key)) {
+    return undefined;
+  }
+  let request = geometryRequestCache.get(key);
+  if (!request) {
+    request = readStoredGeometry(key).finally(() => {
+      geometryRequestCache.delete(key);
+    });
+    geometryRequestCache.set(key, request);
+  }
+  return request;
 }
 
 let winsetRaf: number | undefined;
@@ -201,7 +222,10 @@ export async function recallWindowGeometry(
 ): Promise<ResolvedWindowGeometry> {
   let geometry = geometryCache.get(windowKey);
   if (geometry === undefined) {
-    geometry = await readStoredGeometry(windowKey);
+    geometry =
+      (await prepareWindowGeometry(windowKey)) ??
+      geometryCache.get(windowKey) ??
+      null;
     geometryCache.set(windowKey, geometry);
   }
   if (geometry) {
@@ -209,9 +233,9 @@ export async function recallWindowGeometry(
   }
   // options.pos is assumed to already be in display-pixels
   let pos = geometry?.pos || options.pos;
-  let size = options.size;
+  let size = geometry?.size || options.size;
   // Convert size from css-pixels to display-pixels
-  if (options.scale && size) {
+  if (!geometry?.size && options.scale && size) {
     size = [size[0] * pixelRatio, size[1] * pixelRatio];
   }
 

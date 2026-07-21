@@ -16,7 +16,7 @@ import rspack, { type StatsOptions } from '@rspack/core';
  * an optional `chompstation/` prefix, and a trailing `/index` — chompstation entries
  * win over root entries of the same name (routes.tsx searches chompstation first).
  */
-class TguiChunkManifestPlugin {
+export class TguiChunkManifestPlugin {
   private outFile: string;
   constructor(outFile: string) {
     this.outFile = outFile;

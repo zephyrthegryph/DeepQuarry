@@ -1,5 +1,3 @@
-import dateformat from 'dateformat';
-import yaml from 'js-yaml';
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import { resolveAsset } from 'tgui/assets';
 import { useBackend } from 'tgui/backend';
@@ -44,11 +42,26 @@ const icons = {
 
 type Data = { dates: string[] };
 
+const monthFormatter = new Intl.DateTimeFormat('en-US', {
+  month: 'long',
+  timeZone: 'UTC',
+  year: 'numeric',
+});
+const dayFormatter = new Intl.DateTimeFormat('en-US', {
+  day: 'numeric',
+  month: 'long',
+  timeZone: 'UTC',
+  year: 'numeric',
+});
+
+const formatDate = (date: string, includeDay = false) =>
+  (includeDay ? dayFormatter : monthFormatter).format(new Date(date));
+
 export const Changelog = (props) => {
   const { act, data } = useBackend<Data>();
   const { dates = [] } = data;
 
-  const dateChoices = dates.map((d) => dateformat(d, 'mmmm yyyy', true));
+  const dateChoices = dates.map((date) => formatDate(date));
 
   const [changelogData, setChangelogData] = useState<unknown>(
     'Loading changelog data...',
@@ -82,7 +95,9 @@ export const Changelog = (props) => {
             getData(date, attemptNumber + 1);
           }, timeout);
         } else {
-          setChangelogData(yaml.load(result, { schema: yaml.CORE_SCHEMA }));
+          import('js-yaml').then((yaml) => {
+            setChangelogData(yaml.load(result, { schema: yaml.CORE_SCHEMA }));
+          });
         }
       });
     },
@@ -187,7 +202,7 @@ export const Changelog = (props) => {
     Object.entries(changelogData as Record<string, unknown>)
       .reverse()
       .map(([date, authors]) => (
-        <Section key={date} title={dateformat(date, 'd mmmm yyyy', true)}>
+        <Section key={date} title={formatDate(date, true)}>
           <Box ml={3}>
             {Object.entries(authors as Record<string, unknown>).map(
               ([name, authorChanges]) => (

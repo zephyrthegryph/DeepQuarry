@@ -103,6 +103,11 @@
  * return bool - TRUE if a new pooled window is opened, FALSE in all other situations including if a new pooled window didn't open because one already exists.
  */
 /datum/tgui/proc/open(preinitialized = FALSE)
+	#ifdef DEBUG
+	var/startup_timer = "tgui-open-[REF(src)]"
+	var/list/startup_profile = list()
+	rustg_time_reset(startup_timer)
+	#endif
 	if(!user?.client)
 		return FALSE
 	if(window && window.status > TGUI_WINDOW_LOADING)
@@ -112,6 +117,9 @@
 		return FALSE
 	if(!window)
 		window = SStgui.request_pooled_window(user)
+	#ifdef DEBUG
+	startup_profile["pool_acquired_ms"] = rustg_time_milliseconds(startup_timer)
+	#endif
 	if(!window)
 		return FALSE
 	opened_at = world.time
@@ -125,16 +133,34 @@
 				))
 	else
 		window.send_message("ping")
+	#ifdef DEBUG
+	startup_profile["shell_ready_ms"] = rustg_time_milliseconds(startup_timer)
+	send_assets(startup_profile, startup_timer)
+	var/list/startup_payload = get_payload(
+		with_data = TRUE,
+		with_static_data = TRUE,
+		startup_profile = startup_profile,
+		startup_timer = startup_timer)
+	startup_profile["payload_ready_ms"] = rustg_time_milliseconds(startup_timer)
+	window.send_message("update", startup_payload)
+	startup_profile["update_sent_ms"] = rustg_time_milliseconds(startup_timer)
+	startup_profile["interface"] = interface
+	startup_profile["prewarmed"] = window.prewarmed ? TRUE : FALSE
+	startup_profile["native_shell"] = window.native_shell ? TRUE : FALSE
+	startup_profile["generation"] = window.generation
+	log_tgui(user, "Automatic TGUI server startup telemetry: [json_encode(startup_profile)]", window = window)
+	#else
 	send_assets()
 	window.send_message("update", get_payload(
 		with_data = TRUE,
 		with_static_data = TRUE))
+	#endif
 	SStgui.on_open(src)
 
 	return TRUE
 
 
-/datum/tgui/proc/send_assets()
+/datum/tgui/proc/send_assets(list/startup_profile, startup_timer)
 	var/flush_queue = window.send_asset(get_asset_datum(
 		/datum/asset/simple/namespaced/fontawesome))
 	flush_queue |= window.send_asset(get_asset_datum(
@@ -145,16 +171,33 @@
 		/datum/asset/json/icon_ref_map))
 	for(var/datum/asset/asset in src_object.ui_assets(user))
 		flush_queue |= window.send_asset(asset)
+	#ifdef DEBUG
+	if(startup_profile)
+		startup_profile["assets_queued_ms"] = rustg_time_milliseconds(startup_timer)
+	#endif
 	// Ship this interface's code-split chunk(s) before the window receives its
 	// "update" payload, so the React side can lazy-import the interface module the
 	// moment it mounts. Each interface chunk is self-contained (rspack splitChunks is
 	// off), so the single manifest entry is the complete set of files needed — no
 	// dependency closure. No-op when the build emitted no manifest (unsplit bundle).
 	var/list/interface_chunks = LAZYACCESS(SStgui.chunk_manifest, interface)
-	if(interface_chunks)
+	var/send_interface_chunks = TRUE
+	#ifdef DEBUG
+	// The local development reloader atomically publishes every development chunk
+	// directly into DreamSeeker's cache before setting tgui_cache_reloaded. Sending
+	// the same chunk through browse_rsc again adds a mandatory client round trip and
+	// makes development cold-start profiles slower than the code they measure.
+	if(user.client.tgui_cache_reloaded && (user.client.address == "127.0.0.1" || user.client.address == "::1"))
+		send_interface_chunks = FALSE
+	#endif
+	if(send_interface_chunks && interface_chunks)
 		flush_queue |= SSassets.transport.send_assets(user.client, interface_chunks)
 	if (flush_queue)
 		user.client.browse_queue_flush()
+	#ifdef DEBUG
+	if(startup_profile)
+		startup_profile["assets_flushed_ms"] = rustg_time_milliseconds(startup_timer)
+	#endif
 
 /**
  * public
@@ -285,7 +328,7 @@
  *
  * return list
  */
-/datum/tgui/proc/get_payload(custom_data, with_data, with_static_data)
+/datum/tgui/proc/get_payload(custom_data, with_data, with_static_data, list/startup_profile, startup_timer)
 	var/list/json_data = list()
 	json_data["config"] = list(
 		"title" = title,
@@ -329,9 +372,17 @@
 		),
 	)
 	var/data = custom_data || with_data && src_object.tgui_data(user, src, state)
+	#ifdef DEBUG
+	if(startup_profile)
+		startup_profile["dynamic_data_ms"] = rustg_time_milliseconds(startup_timer)
+	#endif
 	if(data)
 		json_data["data"] = data
 	var/static_data = with_static_data && src_object.tgui_static_data(user)
+	#ifdef DEBUG
+	if(startup_profile)
+		startup_profile["static_data_ms"] = rustg_time_milliseconds(startup_timer)
+	#endif
 	if(static_data)
 		json_data["static_data"] = static_data
 	if(src_object.tgui_shared_states)

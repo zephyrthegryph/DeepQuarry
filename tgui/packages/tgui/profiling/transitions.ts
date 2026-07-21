@@ -1,6 +1,17 @@
 import { configAtom, store } from '../events/store';
 
 let sequence = 0;
+let flushTimer: number | undefined;
+const pendingTransitions: Record<string, unknown>[] = [];
+
+function flushTransitions(): void {
+  flushTimer = undefined;
+  if (!pendingTransitions.length) return;
+  Byond.sendMessage('perf/transition', {
+    kind: 'window-transition-batch',
+    events: pendingTransitions.splice(0, pendingTransitions.length),
+  });
+}
 
 /** Emit one flat, server-persisted event in the native-window transition timeline. */
 export function profileTransition(
@@ -10,7 +21,7 @@ export function profileTransition(
 ): void {
   const config = store.get(configAtom);
   if (!force && !config?.client?.profiling) return;
-  Byond.sendMessage('perf/transition', {
+  pendingTransitions.push({
     kind: 'window-transition',
     seq: ++sequence,
     at: performance.now?.() ?? Date.now(),
@@ -20,6 +31,11 @@ export function profileTransition(
     viewport: `${window.innerWidth}x${window.innerHeight}`,
     ...detail,
   });
+  if (pendingTransitions.length >= 40) {
+    flushTransitions();
+  } else if (flushTimer === undefined) {
+    flushTimer = window.setTimeout(flushTransitions, 150);
+  }
 }
 
 export function observedNativeGeometry(observed: any): Record<string, string> {

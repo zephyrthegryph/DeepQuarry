@@ -2,7 +2,10 @@ import path from 'node:path';
 
 import rspack, { type Configuration } from '@rspack/core';
 
-import oldConfig, { createStats } from './rspack.config';
+import oldConfig, {
+  createStats,
+  TguiChunkManifestPlugin,
+} from './rspack.config';
 
 export const config = {
   ...oldConfig,
@@ -24,6 +27,14 @@ export const config = {
       NODE_ENV: 'development',
     }),
     new rspack.HotModuleReplacementPlugin(),
+    new TguiChunkManifestPlugin(
+      path.resolve(
+        import.meta.dirname,
+        'public',
+        '.tmp',
+        'tgui-chunk-manifest.json',
+      ),
+    ),
   ],
   stats: createStats(false),
 } satisfies Configuration;

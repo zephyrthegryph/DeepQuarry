@@ -1,0 +1,6 @@
+author: "Codex"
+delete-after: true
+changes:
+  - qol: "Reduced first-open delays for TGUI windows while preserving flicker-free geometry setup."
+  - bugfix: "Prevented repeated TGUI reset-position subscriptions and restored saved window sizes."
+  - code_imp: "Added automatic server-side TGUI startup telemetry and lower-overhead browser profiling."

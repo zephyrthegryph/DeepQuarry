@@ -8,6 +8,7 @@ import {
   type ComponentProps,
   type PropsWithChildren,
   type ReactNode,
+  useEffect,
   useLayoutEffect,
   useState,
 } from 'react';
@@ -37,6 +38,16 @@ import { TitleBar } from './TitleBar';
 
 const logger = createLogger('Window');
 const DEFAULT_SIZE: [number, number] = [400, 600];
+let resetPositionSubscribed = false;
+
+function ensureResetPositionSubscription(): void {
+  if (resetPositionSubscribed) return;
+  resetPositionSubscribed = true;
+  Byond.subscribeTo('resetposition', () => {
+    setWindowPosition([0, 0]);
+    storeWindowGeometry();
+  });
+}
 
 type Props = Partial<{
   buttons: ReactNode;
@@ -221,16 +232,14 @@ function WindowContent(props: ContentProps) {
   const { className, fitted, children, ...rest } = props;
   const [altDown, setAltDown] = useState(false);
 
+  useEffect(ensureResetPositionSubscription, []);
+
   const dragStartIfAltHeld = (event) => {
     if (altDown) {
       dragStartHandler(event);
     }
   };
 
-  Byond.subscribeTo('resetposition', (payload) => {
-    setWindowPosition([0, 0]);
-    storeWindowGeometry();
-  });
   return (
     <Layout.Content
       onMouseDown={dragStartIfAltHeld}

@@ -1,5 +1,5 @@
 import { perf } from 'common/perf';
-import { setupDrag } from '../../drag';
+import { prepareWindowGeometry, setupDrag } from '../../drag';
 import { prepareRequestedInterface } from '../../interfacePreparation';
 import { logger } from '../../logging';
 import { profileStartup, profileUpdate } from '../../profiling/hooks';
@@ -82,6 +82,9 @@ export function update(payload: UpdatePayload): void {
   if (wasSuspended) {
     const request = ++resumeRequest;
     const generation = payload.config?.window?.generation;
+    // Start storage and route I/O together. Window.tsx will await the already
+    // running geometry request once the route supplies its default dimensions.
+    prepareWindowGeometry(payload.config?.window?.key);
     const preparation = prepareRequestedInterface(interfaceName);
     const finishResume = () => {
       const currentConfig = store.get(configAtom);
@@ -118,7 +121,7 @@ export function update(payload: UpdatePayload): void {
     profileUpdate(
       payloadJson.length,
       profileFinish - profileStart,
-      payloadFieldBreakdown(payload),
+      payloadFieldBreakdown(payload, payloadJson.length),
     );
     if (wasSuspended) {
       profileStartup('backend_applied', interfaceName, {
@@ -128,7 +131,10 @@ export function update(payload: UpdatePayload): void {
   }
 }
 
-function payloadFieldBreakdown(payload: UpdatePayload): PayloadFieldSample[] {
+function payloadFieldBreakdown(
+  payload: UpdatePayload,
+  totalBytes: number,
+): PayloadFieldSample[] {
   const fields: PayloadFieldSample[] = [];
   const measure = (prefix: string, value: unknown, depth: number) => {
     try {
@@ -146,6 +152,7 @@ function payloadFieldBreakdown(payload: UpdatePayload): PayloadFieldSample[] {
       // encounters something unusual instead of affecting the update.
     }
     if (
+      totalBytes < 100_000 ||
       depth >= 2 ||
       !value ||
       typeof value !== 'object' ||

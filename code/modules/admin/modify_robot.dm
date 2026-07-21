@@ -42,10 +42,10 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 	. = ..()
 
 /datum/eventkit/modify_robot/ui_assets(mob/user)
-	var/list/our_assets = list()
-	for(var/entry in GLOB.robot_sprite_sheets)
-		our_assets += GLOB.robot_sprite_sheets[entry]
-	return our_assets
+	if(!target)
+		return list()
+	var/datum/asset/spritesheet_batched/robot_icons/spritesheet = GLOB.robot_sprite_sheets[target.modtype]
+	return spritesheet ? list(spritesheet) : list()
 
 /datum/eventkit/modify_robot/tgui_data(mob/user)
 	. = list()
