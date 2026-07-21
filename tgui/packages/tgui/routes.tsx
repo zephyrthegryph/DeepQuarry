@@ -140,7 +140,18 @@ function loadInterfaceModule(name: string, path: string): Promise<any> {
   const cached = moduleCache.get(name);
   if (cached) return cached;
   profileStartup('chunk_load_started', name, { path });
-  const pending = requireInterface(path).then((module) => {
+  const load = (attempt: number): Promise<any> =>
+    requireInterface(path).catch((error) => {
+      // Development cache publication and BYOND's browse_rsc registration happen
+      // on different native paths. A request can very occasionally reach Chromium
+      // between them. Retry a ChunkLoadError while the pooled shell is still hidden
+      // instead of mounting a permanent routing-error window.
+      if (attempt >= 2 || error?.name !== 'ChunkLoadError') throw error;
+      return new Promise((resolve) => window.setTimeout(resolve, 50)).then(() =>
+        load(attempt + 1),
+      );
+    });
+  const pending = load(1).then((module) => {
     profileStartup('chunk_load_finished', name, { path });
     return module;
   });

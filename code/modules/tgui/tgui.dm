@@ -181,16 +181,11 @@
 	// off), so the single manifest entry is the complete set of files needed — no
 	// dependency closure. No-op when the build emitted no manifest (unsplit bundle).
 	var/list/interface_chunks = LAZYACCESS(SStgui.chunk_manifest, interface)
-	var/send_interface_chunks = TRUE
-	#ifdef DEBUG
-	// The local development reloader atomically publishes every development chunk
-	// directly into DreamSeeker's cache before setting tgui_cache_reloaded. Sending
-	// the same chunk through browse_rsc again adds a mandatory client round trip and
-	// makes development cold-start profiles slower than the code they measure.
-	if(user.client.tgui_cache_reloaded && (user.client.address == "127.0.0.1" || user.client.address == "::1"))
-		send_interface_chunks = FALSE
-	#endif
-	if(send_interface_chunks && interface_chunks)
+	// Directly copying development chunks into BYOND's cache is not sufficient:
+	// Chromium can request a file before BYOND has registered its browse_rsc name,
+	// producing an intermittent ChunkLoadError. The asset transport deduplicates
+	// files already sent to this client, so always use the reliable publication path.
+	if(interface_chunks)
 		flush_queue |= SSassets.transport.send_assets(user.client, interface_chunks)
 	if (flush_queue)
 		user.client.browse_queue_flush()

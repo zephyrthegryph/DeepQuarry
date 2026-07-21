@@ -20,14 +20,15 @@
 	return user.client == client ? STATUS_INTERACTIVE : STATUS_CLOSE
 
 /datum/preferences/ui_assets(mob/user)
-	var/list/assets = list(
-		get_asset_datum(/datum/asset/simple/preferences),
-		get_asset_datum(/datum/asset/spritesheet/preferences),
-		get_asset_datum(/datum/asset/json/preferences),
-	)
-
-	if(GLOB.asset_datums[/datum/asset/spritesheet_batched/pai_icons])
-		assets += get_asset_datum(/datum/asset/spritesheet_batched/pai_icons)
+	var/list/assets = list()
+	// The DeepQuarry character editor renders its active category from the compact
+	// middleware payload and base64 preview. The legacy preference spritesheet and
+	// JSON catalog are only consumed by the game-preferences renderer; sending them
+	// on every character-editor cold open was the measured 760 ms asset stall.
+	if(current_window != PREFERENCE_TAB_CHARACTER_PREFERENCES)
+		assets += get_asset_datum(/datum/asset/simple/preferences)
+		assets += get_asset_datum(/datum/asset/spritesheet/preferences)
+		assets += get_asset_datum(/datum/asset/json/preferences)
 
 	for (var/datum/preference_middleware/preference_middleware as anything in middleware)
 		assets += preference_middleware.get_ui_assets()
@@ -41,7 +42,11 @@
 		data["character_profiles"] = create_character_profiles()
 		tainted_character_profiles = FALSE
 
-	data["character_preferences"] = compile_character_preferences(user)
+	// DQCharacterSetup consumes dq_values/editor patches below. Building the legacy
+	// all-preferences structure for that route duplicated the same work and accounted
+	// for another ~650 ms in the first-open trace.
+	if(current_window != PREFERENCE_TAB_CHARACTER_PREFERENCES)
+		data["character_preferences"] = compile_character_preferences(user)
 
 	data["active_slot"] = default_slot
 	data["saved_notification"] = saved_notification
